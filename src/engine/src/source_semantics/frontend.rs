@@ -9845,7 +9845,7 @@ mod tests {
 
     #[cfg(all(feature = "matrix", feature = "u8"))]
     #[test]
-    fn control_diagnostics_identify_record_buffer_capture() {
+    fn control_record_buffer_capture_reaches_canonical_artifact() {
         let source = "choose(flag<bool>, bytes<[u8]>) => (out<[u8]>) :=\n  record := {bytes: bytes}\n  out := (flag? | true => record.bytes | false => bytes).\nchoose(flag<bool>, bytes<[u8]>)\n";
         let parsed = mech_syntax::document::parse_canonical_document(
             mech_syntax::document::TextSnapshot::new(DocumentId(84), Revision(1), source).unwrap(),
@@ -9854,16 +9854,14 @@ mod tests {
         assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
         let mut catalog = mech_core::FunctionCatalogBuilder::new();
         crate::install_intrinsic_resident(&mut catalog).unwrap();
-        let error = CanonicalSourceFrontend
+        CanonicalSourceFrontend
             .compile_document_with_catalog(
                 &DocumentSyntax::cast(parsed.syntax()).unwrap(),
                 Arc::new(catalog.build().unwrap()),
             )
-            .err()
-            .expect("record buffer capture currently unsupported");
-        assert_eq!(error.code, "source-semantics/unsupported-control-capture");
-        assert!(error.message.contains("Record"));
-        assert!(error.message.contains("bytes"));
+            .unwrap()
+            .compile_artifact()
+            .unwrap();
     }
 
     #[test]

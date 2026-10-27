@@ -413,3 +413,77 @@ fn shared_record_children_keep_independent_values_after_clear_and_append() {
         assert_eq!(memory.retained_snapshot_nodes(), 0);
     }
 }
+
+#[test]
+fn selected_record_buffer_capture_preserves_aliases_failure_and_retry() {
+    let source = "+> sequence\nchoose(flag<bool>, bytes<[u8]>, words<[u32]>, at<u64>) => (out<[u32]>) :=\n  tally := {freqs-litlen: words, freqs-offset: words, litlen-lens: bytes, offset-lens: bytes, litlen-codewords: words, offset-codewords: words}\n  out := (flag? | true => sequence/append(tally.litlen-codewords, tally.freqs-litlen[at] + tally.freqs-offset[at] + tally.offset-codewords[at]) | false => sequence/append(tally.offset-codewords, 0u32)).\nchoose(flag<bool>, bytes<[u8]>, words<[u32]>, at<u64>)\n";
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        for (flag, words, at, fails) in [
+            (true, vec![7u32, 11], 2, false),
+            (false, vec![13], 999, false),
+            (true, vec![17], 2, true),
+            (true, vec![19, 23, 29], 3, false),
+        ] {
+            let args = inputs(
+                &artifact,
+                &[
+                    ("flag", Data::Bool(flag)),
+                    ("bytes", Data::Matrix(vec![Data::U8(3)].into())),
+                    (
+                        "words",
+                        Data::Matrix(words.iter().copied().map(Data::U32).collect()),
+                    ),
+                    ("at", Data::U64(at)),
+                ],
+                &memory,
+            );
+            let aliases = args.clone();
+            let prior = output.clone();
+            let retained = memory.used_bytes();
+            let nodes = memory.retained_snapshot_nodes();
+            let native = jit.evaluate_into(&args, &mut output, limits(), &memory);
+            let resident = reference_result(&artifact, &args);
+            if fails {
+                assert!(native.is_err());
+                assert!(resident.is_err());
+                assert!(prior.iter().zip(&output).all(|(a, b)| {
+                    a.as_ref()
+                        .unwrap()
+                        .shares_frozen_storage(b.as_ref().unwrap())
+                }));
+                assert_eq!(memory.used_bytes(), retained);
+                assert_eq!(memory.retained_snapshot_nodes(), nodes);
+            } else {
+                native.unwrap();
+                super::equal(&artifact, &output, &resident.unwrap());
+                let mut expected = words.iter().copied().map(Data::U32).collect::<Vec<_>>();
+                if flag {
+                    expected.push(Data::U32(words[at as usize - 1] * 3));
+                } else {
+                    expected.push(Data::U32(0));
+                }
+                assert_eq!(
+                    output
+                        .last()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    Data::Matrix(expected.into())
+                );
+            }
+            assert!(
+                args.iter()
+                    .zip(&aliases)
+                    .all(|(a, b)| a.shares_frozen_storage(b))
+            );
+        }
+        drop(output);
+        assert_eq!(memory.used_bytes(), 0);
+        assert_eq!(memory.retained_snapshot_nodes(), 0);
+    }
+}

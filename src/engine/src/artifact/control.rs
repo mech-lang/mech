@@ -1734,27 +1734,48 @@ pub(crate) fn is_control_result_schema(schema: &mech_core::Schema) -> bool {
             && matrix_result(schema.body()) == Some(true))
 }
 
-/// A lexical matrix capture may retain its turn-local shape in a canonical
-/// snapshot. This does not make variable-shaped scrutinees, structural pattern
-/// bindings, or block results closed control values.
+/// Lexical matrices and records of matrices retain their turn-local geometry
+/// in a canonical snapshot. This does not widen pattern or state eligibility.
 pub(crate) fn is_control_capture_schema(schema: &mech_core::Schema) -> bool {
     use mech_core::{DimensionLifetime, SchemaBody};
+    fn carrier(body: &SchemaBody) -> Option<bool> {
+        match body {
+            SchemaBody::Matrix {
+                element,
+                dimensions,
+            } if dimensions.len() == 2
+                && matches!(
+                    element.as_ref(),
+                    SchemaBody::Bool
+                        | SchemaBody::Index
+                        | SchemaBody::String
+                        | SchemaBody::UnsignedInteger(_)
+                        | SchemaBody::SignedInteger(_)
+                        | SchemaBody::FloatingPoint(_)
+                ) =>
+            {
+                Some(true)
+            }
+            SchemaBody::Record(fields) => fields.iter().try_fold(false, |matrix, field| {
+                carrier(&field.schema).map(|child| matrix || child)
+            }),
+            body if is_builtin_control_scalar_body(body)
+                || matches!(
+                    body,
+                    SchemaBody::String | SchemaBody::Id | SchemaBody::Atom(_)
+                ) =>
+            {
+                Some(false)
+            }
+            _ => None,
+        }
+    }
     is_control_value_schema(schema)
-        || (matches!(
-            schema.body(),
-            SchemaBody::Matrix { element, dimensions }
-                if dimensions.len() == 2
-                    && matches!(element.as_ref(),
-                        SchemaBody::Bool
-                            | SchemaBody::Index
-                            | SchemaBody::String
-                            | SchemaBody::UnsignedInteger(_)
-                            | SchemaBody::SignedInteger(_)
-                            | SchemaBody::FloatingPoint(_))
-        ) && schema
-            .dimension_parameters()
-            .iter()
-            .all(|parameter| parameter.lifetime() == DimensionLifetime::Turn))
+        || (carrier(schema.body()) == Some(true)
+            && schema
+                .dimension_parameters()
+                .iter()
+                .all(|parameter| parameter.lifetime() == DimensionLifetime::Turn))
 }
 
 #[cfg(test)]
@@ -1879,13 +1900,13 @@ mod tests {
             assert!(is_control_result_schema(&turn));
             assert!(!is_control_value_schema(&turn));
             assert!(!is_control_literal_schema(&turn));
-            if !matches!(body, SchemaBody::Matrix { .. }) {
-                assert!(!is_control_capture_schema(&turn));
-            }
-            assert!(!is_control_result_schema(&schema(
-                body,
-                DimensionLifetime::Activation
-            )));
+            assert_eq!(
+                is_control_capture_schema(&turn),
+                matches!(body, SchemaBody::Matrix { .. } | SchemaBody::Record(_))
+            );
+            let activation = schema(body, DimensionLifetime::Activation);
+            assert!(!is_control_result_schema(&activation));
+            assert!(!is_control_capture_schema(&activation));
         }
         let bounded = schema(matrix.clone(), DimensionLifetime::Turn);
         assert!(mech_core::shape_for_resolved_extents(&bounded, &[1, 8]).is_ok());
