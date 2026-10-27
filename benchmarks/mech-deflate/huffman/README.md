@@ -7,8 +7,50 @@ bucket and heapsort, packed stripped tree, length limiting, canonical assignment
 and reversed codewords. It executes Mech code through the canonical native
 compiler. The C function is used only to generate reference values.
 
-This is a compressor component. The full matchfinder, near-optimal parser,
-block encoder, bit writer, and the `reymont` compression timing remain outstanding.
+This fixed-shape qualification is retained. The real-size component below now
+connects the first-block collector, backward path search, forward tally and code
+generation in one compiled program. Cost-model generation/iteration, block
+writing, `compress_into` and complete compression timing remain outstanding.
+
+## Real level-12 call layout
+
+[`deflate-huffman-level12.mec`](../../../hosts/gpu/tests/fixtures/native/deflate-huffman-level12.mec)
+uses the pinned implementation's allocation sites and representations. It accepts
+513/270/19 U32 frequencies and returns exactly 288/32/19 U8 lengths and U32
+codewords, with maximum lengths 14/15/7. Each sort allocates `n` U64 counters;
+the normal tree path allocates `maximum + 2` U64 length counts and then 17 U32
+next codewords. The degenerate path omits those last two allocations. A shared
+256-byte reversal table is built by reserve/append and passed to both codes.
+Ordinary recursive functions carry mutable buffers; no fixed-size padded state
+is substituted for these allocations.
+
+The executed pinned reference generator checks all fourteen package modules
+before building its oracle. Seventeen cases compare every codeword, including
+unused ones, and every length in original/decoded native programs. The reversal
+test checks all 256 bytes and its retained reservation. Failure/retry checks keep
+previously published outputs and input aliases unchanged.
+
+```sh
+python3 benchmarks/mech-deflate/huffman/generate_level12_reference.py \
+  /path/to/pinned/roc-deflate --roc /path/to/pinned/roc \
+  --work-dir /tmp/huffman-reference --out /tmp/huffman-reference.json
+cargo test --locked --offline -p mech-gpu --no-default-features \
+  --features canonical-native-program --test canonical_artifact_program \
+  level12_huffman_qualification -- --test-threads=1 --nocapture
+```
+
+[`deflate-tally.mec`](../../../hosts/gpu/tests/fixtures/native/deflate-tally.mec)
+walks the packed U64 nodes forward, uses 513/270 U32 frequency buffers, adds the
+end symbol with checked arithmetic, and builds the two real codes. Its tests
+compare all six returned buffers with executed pinned results through 320-byte
+paths. Connected tests initialize Mech's own 262144-entry U16 tree and
+1500513-word U32 cache, reserve 305257 U64 nodes, and run collector → path → tally
+→ codes. Those tests still supply cost tables and stop before block writing.
+
+The connected diagnostic uses explicit finite 16384-block compilation, 1 GiB
+managed memory, 128 MiB temporary memory, 1T work and a 2 MiB transport allowance.
+Its measured transport demand is 1103136 bytes; the default 1 MiB denial, atomic
+publication and successful retry remain checked. Project defaults are unchanged.
 
 ## Inputs and scratch
 
@@ -25,12 +67,14 @@ immutable. The current value-copy implementation and native call metadata are
 expensive; the qualification uses an explicit 2 GiB memory account and larger
 finite work allowances. Host defaults are unchanged.
 
-Native work policy 68 reads U8/U16/U32/U64 elements directly into native scalar storage
+The direct-read support introduced in native work policy 68 reads U8/U16/U32/U64 elements into native scalar storage
 through the maintained indexed-access operation. It keeps the original visits,
 checked selectors, source admission, and logical output limits, while avoiding
 transient selector/result snapshots. The twelve checked conversions between
 these unsigned widths also execute as native scalar instructions. Buffer writes
-and structural buffer carriers still use the existing canonical value path.
+still use maintained selected factories. Later private buffer-frame support
+retains reusable buffers across nonescaping function returns; escaping values
+keep canonical publication.
 
 The ordinary resident route retains its whole-control comparison-work cap. The
 full builder exceeds that cap even on a two-symbol input; a separate regression

@@ -96,6 +96,12 @@ mod access_qualification;
 #[path = "support/canonical_program_huffman.rs"]
 mod huffman_qualification;
 
+#[path = "support/canonical_program_level12_huffman.rs"]
+mod level12_huffman_qualification;
+
+#[path = "support/canonical_program_tally.rs"]
+mod tally_qualification;
+
 #[path = "support/canonical_program_word_reads.rs"]
 mod word_read_qualification;
 
