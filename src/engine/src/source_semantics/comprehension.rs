@@ -1573,10 +1573,12 @@ mod tests {
             if count > crate::MAX_CONTROL_OPERATIONS {
                 assert!(matches!(
                     draft.finalize(),
-                    Err(crate::ArtifactBuildError::InvalidControl {
-                        reason: "control graph admission limit",
+                    Err(crate::ArtifactBuildError::ControlAdmissionLimit {
+                        resource: "control operations",
+                        required,
+                        limit: crate::MAX_CONTROL_OPERATIONS,
                         ..
-                    })
+                    }) if required == count
                 ));
             } else {
                 let artifact = draft.finalize().unwrap();

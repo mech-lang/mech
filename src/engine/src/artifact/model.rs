@@ -1202,6 +1202,16 @@ pub enum ArtifactBuildError {
         node: NodeId,
         reason: &'static str,
     },
+    ControlAdmissionLimit {
+        node: NodeId,
+        resource: &'static str,
+        required: usize,
+        limit: usize,
+    },
+    ControlAdmissionOverflow {
+        node: NodeId,
+        resource: &'static str,
+    },
     CompiledMetadataLengthMismatch {
         table: &'static str,
         expected: usize,
