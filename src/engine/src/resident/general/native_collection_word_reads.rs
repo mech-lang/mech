@@ -162,11 +162,7 @@ impl NativePreparedLibraryCall {
                 let cells = matrix.elements();
                 // Reuse the maintained linear scalar selector's one-based check
                 // and error, including zero, empty input, and oversized ordinals.
-                let ordinal =
-                    crate::resident::numeric::selected_string_matrix::available_scalar_index(
-                        index,
-                        cells.len(),
-                    )?;
+                let ordinal = crate::resident::numeric::available_scalar_index(index, cells.len())?;
                 match (width, cells) {
                     (IntegerWidth::W8, SequenceView::U8(values)) => values
                         .get(ordinal)

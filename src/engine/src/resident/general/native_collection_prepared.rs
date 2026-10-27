@@ -29,6 +29,20 @@ fn composite_shape_from_children(template: &NativeProgramLibraryTemplate) -> boo
         )
 }
 
+fn buffer_shape_follows_input(template: &NativeProgramLibraryTemplate) -> bool {
+    #[cfg(feature = "sequence_buffers")]
+    return matches!(
+        template.primitive(),
+        crate::native_artifact::NativeCollectionPrimitive::SequenceReserve
+            | crate::native_artifact::NativeCollectionPrimitive::SequenceAppend
+    );
+    #[cfg(not(feature = "sequence_buffers"))]
+    {
+        let _ = template;
+        false
+    }
+}
+
 fn record_selector(
     template: &NativeProgramLibraryTemplate,
     inputs: &[Option<Value>],
@@ -43,7 +57,11 @@ fn record_selector(
     }
 }
 
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 #[path = "native_collection_prepared_image.rs"]
 mod image;
 
@@ -55,11 +73,15 @@ mod record_words;
 mod string_map_entry;
 #[path = "native_collection_string_span.rs"]
 mod string_span;
+#[cfg(feature = "sequence_buffers")]
+#[path = "native_collection_unsigned_buffers.rs"]
+mod unsigned_buffers;
 #[cfg(feature = "pure_text")]
 #[path = "native_collection_unsigned_lengths.rs"]
 mod unsigned_lengths;
 #[path = "native_collection_word_reads.rs"]
 mod word_reads;
+
 pub use string_span::NativeSelectedStringSpanSelector;
 #[cfg(feature = "pure_text")]
 #[path = "native_collection_private_string.rs"]
@@ -283,6 +305,7 @@ pub fn prepare_native_program_library_call(
         .and_then(|n| n.checked_add(256))
         .ok_or_else(|| super::invalid(node))?;
     let output_follows_input = composite_shape_from_children(&template)
+        || buffer_shape_follows_input(&template)
         || matches!(
             template.contract(),
             mech_core::ResolvedOperationContract::Declared(contract)
@@ -356,7 +379,11 @@ impl NativePreparedLibraryCall {
     /// strategy, NOT a kernel invocation or a materialized Matrix. The caller
     /// prepays binding_work and reserves binding_metadata_bytes on the SAME
     /// invocation account before this schema/shape traversal or allocation.
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     pub fn selected_u64_range_cardinality(&self, start: u64, end: u64) -> Result<u64, InvokeError> {
         let count = self.selected_u64_range_count(start, end)?;
         self.validate_selected_u64_range_shape(count)?;
@@ -365,7 +392,11 @@ impl NativePreparedLibraryCall {
 
     // Endpoint arithmetic remains fresh even when a constructor-private
     // selector carries an already checked shape for the same cardinality.
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     fn selected_u64_range_count(&self, start: u64, end: u64) -> Result<u64, InvokeError> {
         use crate::native_artifact::NativeCollectionPrimitive as Primitive;
         use mech_core::{IntegerWidth, SchemaBody, snapshot::ValueDataDraft};
@@ -397,7 +428,11 @@ impl NativePreparedLibraryCall {
             .map_err(|_| InvokeError::Kernel(mech_core::ResidentKernelError::InvalidShape))
     }
 
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     fn validate_selected_u64_range_shape(&self, count: u64) -> Result<(), InvokeError> {
         // Exactly the ordinary range's shape resolver, including parameter
         // bounds and fixed cardinality constraints. Never silently retag it.
@@ -500,7 +535,28 @@ impl NativePreparedLibraryCall {
             mech_core::OutputConstruction::ReadModifyWrite { base_input, .. } => Some(*base_input),
             _ => None,
         };
-        let output_parameters = if composite_shape_from_children(&self.template) {
+        let output_parameters = if buffer_shape_follows_input(&self.template) {
+            let source = inputs
+                .first()
+                .and_then(Option::as_ref)
+                .ok_or(InvokeError::InvalidInput)?;
+            let mech_core::ValueData::Matrix(matrix) = source.data() else {
+                return Err(InvokeError::InvalidInput);
+            };
+            let count = matrix.elements().len() as u64;
+            #[cfg(feature = "sequence_buffers")]
+            let count = if self.template.primitive()
+                == crate::native_artifact::NativeCollectionPrimitive::SequenceAppend
+            {
+                count.checked_add(1).ok_or(InvokeError::InvalidInput)?
+            } else {
+                count
+            };
+            current_shape =
+                mech_core::shape_for_resolved_extents(self.template.output(), &[1, count])
+                    .map_err(|_| InvokeError::InvalidInput)?;
+            current_shape.parameter_values()
+        } else if composite_shape_from_children(&self.template) {
             // Each child's parameter tape belongs to its own schema. Infer
             // the aggregate's CURRENT shape before binding, including after a
             // prior result with different extents. This runs inside the same

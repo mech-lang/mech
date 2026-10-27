@@ -1,49 +1,97 @@
 //! Private wire representations for the build-owned descriptor loader.
 //! These are not semantic validators and must never become public Deserialize
 //! implementations for constructor-private native proofs.
-#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    test,
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 use super::{NativeMatchAction, NativeMatchTerminator, NativeMatchValue, NativeScalarOp};
 #[cfg(test)]
 use super::{NativeMatchBlock, NativeMatchOrigin};
-#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    test,
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 use serde::Deserialize;
 
 #[path = "program_image_canonical_json.rs"]
 pub(crate) mod canonical_json;
 
 #[path = "program_image_raw_json.rs"]
-#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    test,
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 pub(crate) mod raw_json;
 
 #[path = "program_image_plan.rs"]
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 mod plan;
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 pub use plan::{
     decode_build_owned_native_plan_body, decode_build_owned_native_plan_image,
     decode_build_owned_native_plan_value,
 };
 
 #[path = "program_image_collections.rs"]
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 mod collections;
 
 #[path = "program_image_iteration.rs"]
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 mod iteration;
 #[path = "program_image_library.rs"]
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 pub(crate) mod library;
 #[path = "program_image_loops.rs"]
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 mod loops;
 #[path = "program_image_nodes.rs"]
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 mod nodes;
 #[path = "program_image_values.rs"]
 pub(crate) mod values;
 
-#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    test,
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 macro_rules! scalar_operations {
     ($($op:ident),+ $(,)?) => {
         #[derive(Deserialize)]
@@ -53,7 +101,12 @@ macro_rules! scalar_operations {
         }
     };
 }
-#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    test,
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 scalar_operations! {
     U64BitAnd, U64BitOr, U64BitXor, U64BitNot, U64ShlWrap, U64ShrWrap, U64Clz, U64Ctz, U64WrappingAdd, U64WrappingSub, U64WrappingMul,
     U8Eq, U8Ne, U8Lt, U8Le, U8Gt, U8Ge, U16Eq, U16Ne, U16Lt, U16Le, U16Gt, U16Ge, U32Eq, U32Ne, U32Lt, U32Le, U32Gt, U32Ge,
@@ -67,7 +120,12 @@ scalar_operations! {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    test,
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 struct WireOrigin {
     node: u32,
     block: Option<u32>,
@@ -76,7 +134,12 @@ struct WireOrigin {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    test,
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 enum WireAction {
     Primitive {
         op: WireOp,
@@ -92,7 +155,12 @@ enum WireAction {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    test,
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 enum WireTerminator {
     Jump(u32),
     Branch {
@@ -144,7 +212,12 @@ pub(super) unsafe fn decode_control_block(
     })
 }
 
-#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    test,
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 fn action(wire: WireAction) -> NativeMatchAction {
     match wire {
         WireAction::Primitive {
@@ -167,7 +240,12 @@ fn action(wire: WireAction) -> NativeMatchAction {
         WireAction::None => NativeMatchAction::None,
     }
 }
-#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    test,
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 fn terminator(wire: WireTerminator) -> NativeMatchTerminator {
     match wire {
         WireTerminator::Jump(next) => NativeMatchTerminator::Jump(next),

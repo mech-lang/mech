@@ -38,6 +38,14 @@ pub enum NativeCollectionPrimitive {
     SumRows,
     #[cfg(feature = "sequence_sort")]
     SortIndices,
+    #[cfg(feature = "sequence_buffers")]
+    SequenceWithCapacity,
+    #[cfg(feature = "sequence_buffers")]
+    SequenceReserve,
+    #[cfg(feature = "sequence_buffers")]
+    SequenceAppend,
+    #[cfg(feature = "sequence_buffers")]
+    SequenceClear,
     StringRangeAccess,
     #[cfg(feature = "native-artifact")]
     StringAllAccess,
@@ -288,6 +296,18 @@ pub mod linkage_factories {
         super::super::pure_text::bind_length,
         NativeCollectionPrimitive::SequenceLength
     );
+    #[cfg(feature = "sequence_buffers")]
+    factory!(@features SEQUENCE_WITH_CAPACITY, &["sequence_buffers"], &["sequence"], "with-capacity", CanonicalFinalize,
+        super::super::sequence_buffers::bind_with_capacity, NativeCollectionPrimitive::SequenceWithCapacity);
+    #[cfg(feature = "sequence_buffers")]
+    factory!(@features SEQUENCE_RESERVE, &["sequence_buffers"], &["sequence"], "reserve", CanonicalFinalize,
+        super::super::sequence_buffers::bind_reserve, NativeCollectionPrimitive::SequenceReserve);
+    #[cfg(feature = "sequence_buffers")]
+    factory!(@features SEQUENCE_APPEND, &["sequence_buffers"], &["sequence"], "append", CanonicalFinalize,
+        super::super::sequence_buffers::bind_append, NativeCollectionPrimitive::SequenceAppend);
+    #[cfg(feature = "sequence_buffers")]
+    factory!(@features SEQUENCE_CLEAR, &["sequence_buffers"], &["sequence"], "clear", CanonicalFinalize,
+        super::super::sequence_buffers::bind_clear, NativeCollectionPrimitive::SequenceClear);
     #[cfg(feature = "map_ops")]
     factory!(
         @features MAP_NEW, &["map_ops"], &["map"], "new", CanonicalFinalize,
@@ -446,6 +466,14 @@ pub(super) fn register_text(builder: &mut FunctionCatalogBuilder) -> MResult<()>
 pub(super) fn register_format_and_length(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     NUMBER_FORMAT.install(builder)?;
     SEQUENCE_LENGTH.install(builder)
+}
+
+#[cfg(feature = "sequence_buffers")]
+pub(crate) fn register_sequence_buffers(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    SEQUENCE_WITH_CAPACITY.install(builder)?;
+    SEQUENCE_RESERVE.install(builder)?;
+    SEQUENCE_APPEND.install(builder)?;
+    SEQUENCE_CLEAR.install(builder)
 }
 
 #[cfg(feature = "map_ops")]

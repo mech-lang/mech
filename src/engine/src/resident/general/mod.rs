@@ -16,12 +16,20 @@ pub use comprehension::{
 mod live;
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 pub(crate) mod native_collection_calls;
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 pub(crate) mod native_collection_templates;
 #[cfg(feature = "native-artifact")]
@@ -32,7 +40,11 @@ pub(crate) mod native_lowering;
 pub(crate) mod native_match_lowering;
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 pub(crate) mod native_structural_projection;
 #[cfg(feature = "native-artifact")]

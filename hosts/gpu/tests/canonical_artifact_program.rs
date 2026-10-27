@@ -34,6 +34,9 @@ mod shared_transport_qualification;
 #[path = "support/canonical_program_uniform_words.rs"]
 mod uniform_words_qualification;
 
+#[path = "support/canonical_program_sequence_capacity.rs"]
+mod sequence_capacity_qualification;
+
 #[path = "support/canonical_program_linked.rs"]
 mod linked_qualification;
 

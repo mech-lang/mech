@@ -35,7 +35,11 @@ pub mod native_artifact;
 #[cfg(feature = "native-artifact")]
 pub mod linked_factories {
     pub use crate::resident::matrix_literal::linkage_factories::*;
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     pub use crate::resident::native_collection_semantics::linkage_factories::*;
     pub use crate::resident::native_factory_linkage::{
         NativeFactoryLinkageProfile, NativeLinkedFactory,
@@ -161,6 +165,11 @@ pub mod __mech_native {
     pub use crate::intrinsics::pure_text::{
         install_number_format_matrix, install_number_format_scalar, install_parse_u64,
         install_sequence_length,
+    };
+    #[cfg(feature = "sequence_buffers")]
+    pub use crate::intrinsics::sequence_buffers::{
+        install_sequence_append, install_sequence_clear, install_sequence_reserve,
+        install_sequence_with_capacity,
     };
     #[cfg(feature = "sequence_sort")]
     pub use crate::intrinsics::sequence_sort::install_sequence_sort_indices;

@@ -78,7 +78,11 @@ impl NativeMapKeySpan {
     }
 }
 
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 fn key_spans(
     plan: &Plan,
     regions: &[NativeMapOwnerRegion],
@@ -129,7 +133,11 @@ fn key_spans(
     }
     Ok(result)
 }
-#[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+#[cfg(not(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+)))]
 fn key_spans(_: &Plan, _: &[NativeMapOwnerRegion]) -> Result<Vec<NativeMapKeySpan>, &'static str> {
     Ok(Vec::new())
 }

@@ -223,7 +223,9 @@ fn selected_template(
 // IR106 admits record-field access through the maintained snapshot selector.
 // IR107 binds pure uniform unsigned construction to its same-plan header.
 // IR108 selects checked U32 counter addition through the maintained scalar leaf.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 108;
+// IR109 derives original-site last-use candidates for packed buffer calls.
+// The cache is rebuilt from the validated plan, not accepted as image authority.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 109;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -389,7 +391,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 108;
 // without constructing an unused general binding or canonical scalar owner.
 // Policy84 returns selected scalar record fields into their native lane without
 // general call binding, dimension closure or a canonical scalar result owner.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 84;
+// Policy85 funds selected packed-buffer operations, actual capacity/copy
+// coexistence, consuming ownership transfer and checked fresh publication.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 85;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

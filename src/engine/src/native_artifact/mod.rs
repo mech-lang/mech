@@ -46,36 +46,76 @@ mod phase_validation;
 mod program;
 mod program_factory_linkage;
 mod program_image;
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 pub(crate) mod program_image_proofs;
 pub(crate) mod program_image_read;
 pub use crate::resident::general::native_match_lowering::lower_native_program_artifact;
 pub use program::*;
 pub use program_image::encode_native_program_plan_image;
 pub use program_image_read::values::schemas as decode_native_schema_image;
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 pub use program_image_read::{
     decode_build_owned_native_plan_body, decode_build_owned_native_plan_image,
     decode_build_owned_native_plan_value,
 };
 
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 mod window_query_region;
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 pub use window_query_region::NativeWindowRegion;
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 mod string_map_region;
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 pub use string_map_region::NativeStringMapRegion;
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 mod scalar_aggregates;
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 pub use scalar_aggregates::{
     NativeAggregateWord, NativeScalarAggregateAction, NativeScalarAggregates,
 };
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 mod borrowed_strings;
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 pub use borrowed_strings::{NativeBorrowedStringAction, NativeBorrowedStringRegion};
 
 #[cfg(feature = "pure_text")]
@@ -102,14 +142,22 @@ pub use text_line_frontier::{
     NativeTextLineReadGuard, NativeTextLineRetentionFrontier, NativeTextLineRetentionState,
 };
 
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 pub use crate::resident::general::native_collection_templates::{
     NativeCollectionLexicalSource, NativeCollectionLexicalTemplate,
     NativeCollectionOperationTemplate, NativeCollectionPrimitive,
     native_collection_lexical_template, native_collection_operation_template,
 };
 
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 pub use crate::resident::general::native_collection_calls::{
     NativeCollectionCall, NativeCollectionInvocationError, NativePreparedLibraryCall,
     NativePreparedLibraryCallCache, NativeSelectedStringSpanSelector,
@@ -117,7 +165,11 @@ pub use crate::resident::general::native_collection_calls::{
     bind_native_program_library_call, prepare_native_program_library_call,
 };
 
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 pub use crate::resident::general::native_structural_projection::native_project_structural_value;
 
 pub(crate) mod structural_values;
@@ -136,3 +188,8 @@ pub use map_owner_region::NativeMapOwnerRegion;
 mod map_owner_words;
 #[cfg(feature = "map_ops")]
 pub use map_owner_words::NativeMapOwnerWords;
+
+#[cfg(feature = "sequence_buffers")]
+mod unsigned_buffer_call;
+#[cfg(feature = "sequence_buffers")]
+pub use unsigned_buffer_call::NativeUnsignedBufferCall;

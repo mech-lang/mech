@@ -119,6 +119,12 @@ fn linked_uniform_words_restore_the_same_plan_fact_and_recover() {
     linked_assertion_retry(source, ValueDataDraft::U64);
 }
 
+#[test]
+fn linked_buffer_lifecycle_preserves_publication_and_recovers() {
+    let source = "+> sequence\nchecked(n<u64>) => (out<u64>) :=\n  words := sequence/append(sequence/clear(sequence/append(sequence/reserve(sequence/with-capacity(0u64, 32u64), 3u64), 17u64)), n)\n  positive! := n > 0u64\n  out := 12u64 / words[1u64].\nchecked(input<u64>)\n";
+    linked_assertion_retry(source, ValueDataDraft::U64);
+}
+
 fn linked_assertion_retry(source: &str, input_word: fn(u64) -> ValueDataDraft) {
     let temporary = tempfile::tempdir().unwrap();
     let directory = temporary.path();

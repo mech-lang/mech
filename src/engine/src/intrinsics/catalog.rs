@@ -205,6 +205,8 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     super::map_ops::install_source(builder)?;
     #[cfg(feature = "sequence_sort")]
     super::sequence_sort::install_source(builder)?;
+    #[cfg(feature = "sequence_buffers")]
+    super::sequence_buffers::install_source(builder)?;
     #[cfg(feature = "matrix_horzcat")]
     crate::intrinsics::horzcat::install_source_runtime(builder)?;
     #[cfg(feature = "matrix_comprehensions")]
@@ -439,6 +441,7 @@ pub fn install_runtime(
         feature = "integer_bits",
         feature = "map_ops",
         feature = "sequence_sort",
+        feature = "sequence_buffers",
         feature = "table"
     ))]
     builder: &mut FunctionCatalogBuilder,
@@ -457,6 +460,7 @@ pub fn install_runtime(
         feature = "integer_bits",
         feature = "map_ops",
         feature = "sequence_sort",
+        feature = "sequence_buffers",
         feature = "table"
     )))]
     _: &mut FunctionCatalogBuilder,
@@ -471,6 +475,8 @@ pub fn install_runtime(
     super::map_ops::install_runtime(builder)?;
     #[cfg(feature = "sequence_sort")]
     super::sequence_sort::install_runtime(builder)?;
+    #[cfg(feature = "sequence_buffers")]
+    super::sequence_buffers::install_runtime(builder)?;
     #[cfg(feature = "access")]
     super::access::install_runtime(builder)?;
     #[cfg(feature = "assign")]

@@ -21,7 +21,11 @@ pub(crate) mod map_ops;
 pub(crate) mod matrix_literal;
 #[cfg(all(
     feature = "resident-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 pub(crate) mod native_collection_semantics;
 #[cfg(feature = "resident-artifact")]
@@ -34,6 +38,8 @@ pub(crate) mod numeric;
 mod packed_word_matrix;
 #[cfg(all(feature = "resident-artifact", feature = "pure_text"))]
 pub(crate) mod pure_text;
+#[cfg(all(feature = "resident-artifact", feature = "sequence_buffers"))]
+pub(crate) mod sequence_buffers;
 #[cfg(all(feature = "resident-artifact", feature = "sequence_sort"))]
 pub(crate) mod sequence_sort;
 #[cfg(feature = "resident-artifact")]

@@ -357,7 +357,11 @@ impl Builder<'_> {
     /// A constant tuple selector becomes the same checked structural child
     /// operation used by pattern binding. Callers select it only after the
     /// actual maintained access factory and its exact contract were certified.
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     fn tuple_scalar_projection(
         &mut self,
         at: NativeMatchOrigin,
@@ -421,7 +425,11 @@ impl Builder<'_> {
         arguments: &[NativeMatchValue],
         output: NativeMatchValue,
     ) -> Result<u32, Error> {
-        #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+        #[cfg(any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        ))]
         if self.allow_collections {
             use crate::native_artifact::{
                 NativeProgramLibraryTemplate, native_collection_lexical_template,
@@ -1545,7 +1553,11 @@ mod iteration_proof_tests {
     #[cfg(all(
         feature = "semantic-compiler",
         feature = "resident-artifact",
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     ))]
     fn closed_tail_plans() -> Vec<NativeProgramArtifactPlan> {
         // Real canonical enum packing and structural pattern sites. Bool is
@@ -1583,7 +1595,11 @@ mod iteration_proof_tests {
     #[cfg(all(
         feature = "semantic-compiler",
         feature = "resident-artifact",
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     ))]
     #[test]
     fn tail_current_visit_proof_rejects_forged_roles_edges_and_stale_return_slots() {
@@ -1660,7 +1676,11 @@ mod iteration_proof_tests {
     #[cfg(all(
         feature = "semantic-compiler",
         feature = "resident-artifact",
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     ))]
     #[test]
     fn tail_proof_keeps_nominal_enum_identity_and_validates_tag_and_projection_paths() {

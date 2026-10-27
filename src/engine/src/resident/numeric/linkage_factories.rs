@@ -471,7 +471,11 @@ factory!(
 // Ordinary collection profiles register their owner's declaration instead.
 #[cfg(any(
     feature = "native-artifact",
-    not(any(feature = "pure_text", feature = "map_ops"))
+    not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))
 ))]
 factory!(
     NUMERIC_COMPARE_EQ,
@@ -483,7 +487,11 @@ factory!(
 // Ordinary collection profiles register their owner's declaration instead.
 #[cfg(any(
     feature = "native-artifact",
-    not(any(feature = "pure_text", feature = "map_ops"))
+    not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))
 ))]
 factory!(
     NUMERIC_COMPARE_NEQ,
@@ -537,7 +545,11 @@ factory!(
 // Ordinary collection profiles register their owner's declaration instead.
 #[cfg(any(
     feature = "native-artifact",
-    not(any(feature = "pure_text", feature = "map_ops"))
+    not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))
 ))]
 factory!(
     NUMERIC_ACCESS_SCALAR,
@@ -548,7 +560,11 @@ factory!(
 );
 #[cfg(any(
     feature = "native-artifact",
-    not(any(feature = "pure_text", feature = "map_ops"))
+    not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))
 ))]
 factory!(
     NUMERIC_ACCESS_COLUMN,
@@ -581,7 +597,11 @@ factory!(
 // Ordinary collection profiles register their owner's declaration instead.
 #[cfg(any(
     feature = "native-artifact",
-    not(any(feature = "pure_text", feature = "map_ops"))
+    not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))
 ))]
 factory!(
     NUMERIC_ACCESS_RANGE,
@@ -660,7 +680,11 @@ factory!(
     CanonicalFinalize,
     super::bind_whole_matrix_assign
 );
-#[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+#[cfg(not(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+)))]
 factory!(
     NUMERIC_CORE_ASSIGN_INDEXED_AXIS,
     &["core", "assign"],
@@ -727,7 +751,11 @@ factory!(
 // Ordinary collection profiles register their owner's declaration instead.
 #[cfg(any(
     feature = "native-artifact",
-    not(any(feature = "pure_text", feature = "map_ops"))
+    not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))
 ))]
 factory!(
     NUMERIC_RANGE_EXCLUSIVE,
@@ -739,7 +767,11 @@ factory!(
 // Ordinary collection profiles register their owner's declaration instead.
 #[cfg(any(
     feature = "native-artifact",
-    not(any(feature = "pure_text", feature = "map_ops"))
+    not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))
 ))]
 factory!(
     NUMERIC_RANGE_EXCLUSIVE_INCREMENT,
@@ -751,7 +783,11 @@ factory!(
 // Ordinary collection profiles register their owner's declaration instead.
 #[cfg(any(
     feature = "native-artifact",
-    not(any(feature = "pure_text", feature = "map_ops"))
+    not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))
 ))]
 factory!(
     NUMERIC_RANGE_INCLUSIVE,
@@ -763,7 +799,11 @@ factory!(
 // Ordinary collection profiles register their owner's declaration instead.
 #[cfg(any(
     feature = "native-artifact",
-    not(any(feature = "pure_text", feature = "map_ops"))
+    not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))
 ))]
 factory!(
     NUMERIC_RANGE_INCLUSIVE_INCREMENT,
@@ -782,7 +822,11 @@ factory!(
 // Ordinary collection profiles register their owner's declaration instead.
 #[cfg(any(
     feature = "native-artifact",
-    not(any(feature = "pure_text", feature = "map_ops"))
+    not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))
 ))]
 factory!(
     NUMERIC_STATS_SUM_COLUMN,
@@ -794,7 +838,11 @@ factory!(
 // Ordinary collection profiles register their owner's declaration instead.
 #[cfg(any(
     feature = "native-artifact",
-    not(any(feature = "pure_text", feature = "map_ops"))
+    not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))
 ))]
 factory!(
     NUMERIC_STATS_SUM_ROW,

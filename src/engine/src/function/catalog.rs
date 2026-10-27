@@ -44,6 +44,8 @@ pub fn install_intrinsic_resident(
     crate::resident::map_ops::install(builder)?;
     #[cfg(all(feature = "resident-artifact", feature = "sequence_sort"))]
     crate::resident::sequence_sort::install(builder)?;
+    #[cfg(all(feature = "resident-artifact", feature = "sequence_buffers"))]
+    crate::resident::native_collection_semantics::register_sequence_buffers(builder)?;
     #[cfg(feature = "resident-artifact")]
     crate::resident::set::install(builder)?;
     #[cfg(all(feature = "resident-artifact", feature = "table"))]

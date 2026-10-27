@@ -147,6 +147,14 @@ impl NativeCollectionPrimitive {
             Self::SumRows => "stats/sum/row",
             #[cfg(feature = "sequence_sort")]
             Self::SortIndices => "sequence/sort-indices",
+            #[cfg(feature = "sequence_buffers")]
+            Self::SequenceWithCapacity => "sequence/with-capacity",
+            #[cfg(feature = "sequence_buffers")]
+            Self::SequenceReserve => "sequence/reserve",
+            #[cfg(feature = "sequence_buffers")]
+            Self::SequenceAppend => "sequence/append",
+            #[cfg(feature = "sequence_buffers")]
+            Self::SequenceClear => "sequence/clear",
             Self::StringRangeAccess | Self::StringAllAccess | Self::MatrixRangeAccess => {
                 "access/range"
             }
@@ -206,6 +214,8 @@ impl NativeCollectionPrimitive {
             | Self::StringRangeAccess => 2,
             #[cfg(feature = "pure_text")]
             Self::TextJoin | Self::NumberFormat => 2,
+            #[cfg(feature = "sequence_buffers")]
+            Self::SequenceWithCapacity | Self::SequenceReserve | Self::SequenceAppend => 2,
             _ => 1,
         }
     }
@@ -237,11 +247,13 @@ fn source_schema_id(artifact: &ProgramArtifact, source: ArtifactSource) -> Resul
 fn is_matrix(body: &SchemaBody) -> bool {
     matches!(body, SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2)
 }
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
 fn is_string_matrix(body: &SchemaBody, row: bool) -> bool {
     matches!(body, SchemaBody::Matrix { element, dimensions }
         if element.as_ref() == &SchemaBody::String && dimensions.len() == 2
         && (!row || dimensions[0] == mech_core::DimensionExpr::Constant(1)))
 }
+#[cfg(any(feature = "pure_text", feature = "map_ops", feature = "convert"))]
 fn is_u64(body: &SchemaBody) -> bool {
     body == &SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)
 }
@@ -550,6 +562,28 @@ fn validate_schemas(
             is_string_matrix(first, false)
                 && inputs[1].body() == &SchemaBody::String
                 && output == &SchemaBody::String
+        }
+        #[cfg(feature = "sequence_buffers")]
+        kind @ (NativeCollectionPrimitive::SequenceWithCapacity
+        | NativeCollectionPrimitive::SequenceReserve
+        | NativeCollectionPrimitive::SequenceAppend
+        | NativeCollectionPrimitive::SequenceClear) => {
+            use crate::intrinsics::sequence_buffers::{self as buffers, Operation as O};
+            let operation = match kind {
+                NativeCollectionPrimitive::SequenceWithCapacity => O::WithCapacity,
+                NativeCollectionPrimitive::SequenceReserve => O::Reserve,
+                NativeCollectionPrimitive::SequenceAppend => O::Append,
+                NativeCollectionPrimitive::SequenceClear => O::Clear,
+                _ => unreachable!(),
+            };
+            buffers::schemas_supported(
+                operation,
+                &inputs
+                    .iter()
+                    .map(|schema| schema.body().clone())
+                    .collect::<Vec<_>>(),
+                output,
+            )
         }
         #[cfg(feature = "pure_text")]
         NativeCollectionPrimitive::SequenceLength => {

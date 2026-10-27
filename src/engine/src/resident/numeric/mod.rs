@@ -31,6 +31,21 @@ use mech_core::{
 };
 use std::sync::Arc;
 
+#[cfg(all(
+    feature = "native-artifact",
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
+))]
+pub(in crate::resident) fn available_scalar_index(
+    index: u64,
+    available: usize,
+) -> Result<usize, ResidentKernelError> {
+    access_index(&ValueData::U64(index), available)
+}
+
 const MAX_MATRIX_SOLVE_WORK: usize = 16_777_216;
 
 fn snapshot_clone_cost(
@@ -811,9 +826,17 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     linkage_factories::NUMERIC_LOGIC_NOT.install(builder)?;
     // The entry witness describes only the exact String branch. Numeric
     // scalar binders keep their separate finished-kernel semantic seals.
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     super::native_collection_semantics::register_string_comparisons(builder)?;
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     {
         linkage_factories::NUMERIC_COMPARE_EQ.install(builder)?;
         linkage_factories::NUMERIC_COMPARE_NEQ.install(builder)?;
@@ -824,20 +847,44 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     linkage_factories::NUMERIC_COMPARE_GTE.install(builder)?;
     linkage_factories::NUMERIC_COMPARE_SEQ.install(builder)?;
     linkage_factories::NUMERIC_COMPARE_SNEQ.install(builder)?;
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     super::native_collection_semantics::register_access(builder, true)?;
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     linkage_factories::NUMERIC_ACCESS_SCALAR.install(builder)?;
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     super::native_collection_semantics::register_column_access(builder)?;
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     linkage_factories::NUMERIC_ACCESS_COLUMN.install(builder)?;
     linkage_factories::NUMERIC_ACCESS_ROWS.install(builder)?;
     linkage_factories::NUMERIC_ACCESS_COLUMNS.install(builder)?;
     linkage_factories::NUMERIC_ACCESS_INDEX.install(builder)?;
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     super::native_collection_semantics::register_access(builder, false)?;
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     linkage_factories::NUMERIC_ACCESS_RANGE.install(builder)?;
     linkage_factories::NUMERIC_ACCESS_RECTANGLE.install(builder)?;
     linkage_factories::NUMERIC_MATRIX_HORZCAT.install(builder)?;
@@ -852,9 +899,17 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     linkage_factories::NUMERIC_MATRIX_TRANSPOSE.install(builder)?;
     linkage_factories::NUMERIC_CORE_ASSIGN.install(builder)?;
     linkage_factories::NUMERIC_CORE_ASSIGN_WHOLE_VALUE.install(builder)?;
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     super::native_collection_semantics::register_indexed_assignment(builder)?;
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     linkage_factories::NUMERIC_CORE_ASSIGN_INDEXED_AXIS.install(builder)?;
     linkage_factories::NUMERIC_CORE_ASSIGN_INDEXED_ROWS.install(builder)?;
     linkage_factories::NUMERIC_CORE_ASSIGN_INDEXED_COLUMNS.install(builder)?;
@@ -907,9 +962,17 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     nested_selection!("mul", 2);
     nested_selection!("div", 3);
     nested_selection!("pow", 5);
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     super::native_collection_semantics::register_ranges(builder)?;
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     {
         linkage_factories::NUMERIC_RANGE_EXCLUSIVE.install(builder)?;
         linkage_factories::NUMERIC_RANGE_EXCLUSIVE_INCREMENT.install(builder)?;
@@ -917,9 +980,17 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         linkage_factories::NUMERIC_RANGE_INCLUSIVE_INCREMENT.install(builder)?;
     }
     linkage_factories::NUMERIC_COMBINATORICS_N_CHOOSE_K.install(builder)?;
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     super::native_collection_semantics::register_sums(builder)?;
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     {
         linkage_factories::NUMERIC_STATS_SUM_COLUMN.install(builder)?;
         linkage_factories::NUMERIC_STATS_SUM_ROW.install(builder)?;
@@ -18544,7 +18615,11 @@ fn snapshot_arithmetic_storage_geometry(
 
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 pub(super) fn canonical_u64_range_selector_representation(
     count: u64,

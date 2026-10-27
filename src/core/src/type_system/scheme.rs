@@ -1132,6 +1132,40 @@ fn sequence_length() -> Result<Vec<KindScheme>, SemanticModelError> {
     ])
 }
 
+fn sequence_buffer(name: &str) -> Result<Vec<KindScheme>, SemanticModelError> {
+    [
+        BuiltinScalarKind::U8,
+        BuiltinScalarKind::U16,
+        BuiltinScalarKind::U32,
+        BuiltinScalarKind::U64,
+    ]
+    .into_iter()
+    .map(|scalar| {
+        let element = scalar.kind_expr();
+        let row = |count| matrix(element.clone(), DimensionExpr::Constant(1), count);
+        let (inputs, count, dims) = match name {
+            "sequence/with-capacity" => (
+                vec![element.clone(), BuiltinScalarKind::U64.kind_expr()],
+                dim(0),
+                1,
+            ),
+            "sequence/reserve" => (
+                vec![row(dim(0)), BuiltinScalarKind::U64.kind_expr()],
+                dim(0),
+                1,
+            ),
+            "sequence/append" => (vec![row(dim(0)), element.clone()], dim(1), 2),
+            "sequence/clear" => (vec![row(dim(0))], dim(1), 2),
+            _ => unreachable!("maintained buffer scheme selection"),
+        };
+        // These are turn-shaped sequences. Their producer resolves the current
+        // initialized length; a first empty visit must not freeze a recursive
+        // frame's schema to zero (or an ever-growing affine expression).
+        make(0, dims, inputs, vec![row(count)], Vec::new())
+    })
+    .collect()
+}
+
 fn sequence_sort_indices() -> Result<KindScheme, SemanticModelError> {
     let primary_length = DimensionExpr::Multiply(vec![dim(0), dim(1)].into_boxed_slice());
     let secondary_length = DimensionExpr::Multiply(vec![dim(2), dim(3)].into_boxed_slice());
@@ -1783,6 +1817,10 @@ pub fn maintained_source_schemes(
         )?],
         "number/format" => number_format()?,
         "sequence/length" => sequence_length()?,
+        name @ ("sequence/with-capacity"
+        | "sequence/reserve"
+        | "sequence/append"
+        | "sequence/clear") => sequence_buffer(name)?,
         "sequence/sort-indices" => vec![sequence_sort_indices()?],
         "text/lines" => vec![text_lines()?],
         "text/join" => vec![text_join()?],

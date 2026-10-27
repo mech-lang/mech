@@ -227,6 +227,7 @@ pure_text = ["functions", "string"]
 integer_bits = ["functions"]
 map_ops = ["functions", "map", "string", "bool"]
 sequence_sort = ["functions", "string"]
+sequence_buffers = ["functions"]
 
 # Values and shapes. Syntax forwarding is weak so runtime-only builds do not
 # activate the parser dependency.

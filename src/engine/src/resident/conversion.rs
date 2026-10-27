@@ -451,9 +451,17 @@ fn preflight_string_conversion(
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     super::set_conversion::install(builder)?;
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     super::native_collection_semantics::register_conversion(builder)?;
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     builder.insert_resident_factory(
         ["convert"],
         "kind",

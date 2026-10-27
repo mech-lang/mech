@@ -224,6 +224,7 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
         .facts()
         .uniform_unsigned_collections()
         .into_boxed_slice();
+    let unsigned_buffer_calls = plan.unsigned_buffer_calls().into_boxed_slice();
     let descriptor = NativeProgramDescriptor {
         metadata: native::program::prepare::ProgramMetadata {
             plan,
@@ -241,6 +242,7 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
             observation_schema_bytes: w.observation_schema_bytes,
             max_library_inputs: w.max_library_inputs,
             uniform_word_collections,
+            unsigned_buffer_calls,
             window_regions: w.window_regions,
             string_map_regions: w.string_map_regions,
             scalar_aggregates: w.scalar_aggregates,

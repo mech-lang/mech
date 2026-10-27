@@ -25,7 +25,11 @@ fn add(left: u64, right: u64) -> MemoryRuntimeResult<u64> {
 
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 pub(in crate::resident) fn native_scope_metadata_bytes() -> u64 {
     // Native calls use zero dense String trackers: only these two concrete
@@ -184,7 +188,11 @@ pub(crate) struct ResidentPayloadAdmission {
 impl ResidentPayloadAdmission {
     #[cfg(all(
         feature = "native-artifact",
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     ))]
     pub(super) fn record_error(&self, error: MemoryRuntimeError) {
         *self.last_error.borrow_mut() = Some(error);
