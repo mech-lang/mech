@@ -269,7 +269,10 @@ impl ControlPlan for super::NativeProgramArtifactPlan {
 }
 
 const BAD: &str = "invalid counted-loop ownership or current-visit definitions";
-const ANALYSIS_BYTES: usize = 16 * 1024 * 1024;
+// Finite compile-time storage for the current-visit proof. Integrated source
+// programs can require more than 16 MiB even with bit-packed definition sets;
+// keep this shared bound identical for compilation and linked revalidation.
+const ANALYSIS_BYTES: usize = 64 * 1024 * 1024;
 fn cursor_cell(plan: &impl ControlPlan, iteration: u32) -> Result<usize, &'static str> {
     if iteration as usize >= plan.cursor_cells()
         || !matches!(plan.iteration(iteration as usize), Loop::Collection(data)
@@ -460,7 +463,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
     let analysis_bytes = DefinitionSet::storage_bytes(blocks.len(), cells)
         .ok_or("current-visit analysis storage size overflow")?;
     if analysis_bytes > ANALYSIS_BYTES {
-        return Err("current-visit analysis storage exceeds the 16 MiB compiler limit");
+        return Err("current-visit analysis storage exceeds the 64 MiB compiler limit");
     }
     let ty = |v: Value| plan.values().get(v.get() as usize).ok_or(BAD);
     let mut initial = DefinitionSet::new(cells).ok_or(BAD)?;

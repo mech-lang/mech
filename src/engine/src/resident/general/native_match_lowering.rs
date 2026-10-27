@@ -1576,13 +1576,13 @@ mod iteration_proof_tests {
             Err("current-visit scope count differs from value count")
         );
         // The proof rejects the estimated storage before building its fact sets.
-        // Keep the test's own metadata small while crossing the existing 16 MiB cap.
+        // Keep the test's own metadata small while crossing the 64 MiB cap.
         let mut oversized = valid;
         oversized.blocks = vec![oversized.blocks[0].clone(); 4096].into();
-        oversized.values = vec![oversized.values[0].clone(); 32768].into();
+        oversized.values = vec![oversized.values[0].clone(); 131072].into();
         oversized.value_scopes =
-            vec![NativeIterationValueScope::Immutable { iteration: None }; 32768].into();
-        let reason = "current-visit analysis storage exceeds the 16 MiB compiler limit";
+            vec![NativeIterationValueScope::Immutable { iteration: None }; 131072].into();
+        let reason = "current-visit analysis storage exceeds the 64 MiB compiler limit";
         assert_eq!(
             crate::native_artifact::iteration_validation::validate(&oversized),
             Err(reason)
