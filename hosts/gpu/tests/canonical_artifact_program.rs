@@ -117,6 +117,10 @@ mod literal_choice_qualification;
 #[path = "support/canonical_program_optimization.rs"]
 mod optimization_qualification;
 
+#[path = "support/canonical_program_path_writer.rs"]
+mod path_writer_qualification;
+#[path = "support/canonical_program_sequence_writer.rs"]
+mod sequence_writer_qualification;
 #[path = "support/canonical_program_writer_tables.rs"]
 mod writer_tables_qualification;
 

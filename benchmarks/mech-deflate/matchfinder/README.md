@@ -1,6 +1,27 @@
 # DEFLATE binary-tree match finder
 
 
+## Executing sequence and optimal-path writers
+
+The sequence writer and optimal-path writer now execute as compiled Mech
+functions using the original sequence records and U64 path nodes. Both preserve
+bit-buffer carry and byte flush order. Four maintained tests compare bytes and
+remaining bit state against 26 pinned reference cases, in original and decoded
+artifacts. The largest supplied path block is 320 bytes; the largest sequence
+input is 259 bytes. These are writer components, not complete compression.
+
+Separate internal return/clear/append checks retain the 6,633,832-byte output
+reservation for every case. After equal metadata warmup, changing the reservation
+from 512 bytes changes allocated bytes by exactly 6,633,320. Publishing the whole
+result record canonicalizes nested storage, so capacity is qualified before that
+publication boundary. [Receipts and reproducibility evidence](../results/2026-10-27-writers/review.json)
+include the unchanged reference cases and precise qualification scope.
+
+The next step connects block cost/type selection, header output, stored payloads,
+end-of-block, and final bit draining. Full collector/parser/controller integration,
+complete-stream equality and decompression, and the first benchmark still follow.
+
+
 ## Mixed record-list and buffer frames
 
 The sequence writer carries a byte output buffer alongside a list of fixed
