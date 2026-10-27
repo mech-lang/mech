@@ -451,11 +451,16 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             )
         })
         .ok_or(BAD)?;
-    if plan.entry() as usize >= blocks.len()
-        || plan.value_scopes().len() != count
-        || DefinitionSet::storage_bytes(blocks.len(), cells).is_none_or(|n| n > ANALYSIS_BYTES)
-    {
-        return Err(BAD);
+    if plan.entry() as usize >= blocks.len() {
+        return Err("current-visit entry is outside the control blocks");
+    }
+    if plan.value_scopes().len() != count {
+        return Err("current-visit scope count differs from value count");
+    }
+    let analysis_bytes = DefinitionSet::storage_bytes(blocks.len(), cells)
+        .ok_or("current-visit analysis storage size overflow")?;
+    if analysis_bytes > ANALYSIS_BYTES {
+        return Err("current-visit analysis storage exceeds the 16 MiB compiler limit");
     }
     let ty = |v: Value| plan.values().get(v.get() as usize).ok_or(BAD);
     let mut initial = DefinitionSet::new(cells).ok_or(BAD)?;

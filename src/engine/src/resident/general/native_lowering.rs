@@ -52,13 +52,32 @@ impl NativeArtifactPlan {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum NativeArtifactLoweringError {
-    UnsupportedProgram { feature: &'static str },
-    UnsupportedNode { node: NodeId, feature: &'static str },
-    UnsupportedSchema { schema: SchemaId },
-    InvalidBinding { node: Option<NodeId> },
-    MissingSemanticWitness { node: NodeId },
-    WitnessTypeMismatch { node: NodeId },
-    ResidentBinding { error: ResidentActivationError },
+    UnsupportedProgram {
+        feature: &'static str,
+    },
+    UnsupportedNode {
+        node: NodeId,
+        feature: &'static str,
+    },
+    UnsupportedSchema {
+        schema: SchemaId,
+    },
+    InvalidBinding {
+        node: Option<NodeId>,
+    },
+    InvalidPlan {
+        stage: &'static str,
+        reason: &'static str,
+    },
+    MissingSemanticWitness {
+        node: NodeId,
+    },
+    WitnessTypeMismatch {
+        node: NodeId,
+    },
+    ResidentBinding {
+        error: ResidentActivationError,
+    },
 }
 impl std::fmt::Display for NativeArtifactLoweringError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

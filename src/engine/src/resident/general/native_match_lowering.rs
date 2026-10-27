@@ -1150,6 +1150,12 @@ pub fn lower_native_program_artifact(
     lower_control_artifact(artifact, catalog, true, true)
 }
 
+// Keep the validator's reason at the public lowering boundary. These checks
+// still reject the same plans; callers can now identify the rejecting stage.
+fn checked_plan_step(stage: &'static str, result: Result<(), &'static str>) -> Result<(), Error> {
+    result.map_err(|reason| Error::InvalidPlan { stage, reason })
+}
+
 fn lower_control_artifact(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
@@ -1463,23 +1469,37 @@ fn lower_control_artifact(
             // managed phase boundary or generated phase dispatch.
             crate::native_artifact::iteration_validation::validate(&plan)
         };
-        checked.map_err(|_| Error::InvalidBinding { node: None })?;
+        checked_plan_step("current visits before lowering", checked)?;
     }
     if allow_collections {
-        crate::native_artifact::range_cursor::lower(&mut plan)
-            .map_err(|_| Error::InvalidBinding { node: None })?;
-        crate::native_artifact::text_join_sink::lower(&mut plan)
-            .map_err(|_| Error::InvalidBinding { node: None })?;
-        crate::native_artifact::guarded_histogram_query::lower(&mut plan)
-            .map_err(|_| Error::InvalidBinding { node: None })?;
-        crate::native_artifact::histogram_sink::lower(&mut plan)
-            .map_err(|_| Error::InvalidBinding { node: None })?;
-        crate::native_artifact::string_span_projection::lower(&mut plan)
-            .map_err(|_| Error::InvalidBinding { node: None })?;
-        crate::native_artifact::string_element_map_projection::lower(&mut plan)
-            .map_err(|_| Error::InvalidBinding { node: None })?;
-        plan.validate_current_visits()
-            .map_err(|_| Error::InvalidBinding { node: None })?;
+        checked_plan_step(
+            "range cursor lowering",
+            crate::native_artifact::range_cursor::lower(&mut plan),
+        )?;
+        checked_plan_step(
+            "text join sink lowering",
+            crate::native_artifact::text_join_sink::lower(&mut plan),
+        )?;
+        checked_plan_step(
+            "guarded histogram query lowering",
+            crate::native_artifact::guarded_histogram_query::lower(&mut plan),
+        )?;
+        checked_plan_step(
+            "histogram sink lowering",
+            crate::native_artifact::histogram_sink::lower(&mut plan),
+        )?;
+        checked_plan_step(
+            "string span projection lowering",
+            crate::native_artifact::string_span_projection::lower(&mut plan),
+        )?;
+        checked_plan_step(
+            "string element map projection lowering",
+            crate::native_artifact::string_element_map_projection::lower(&mut plan),
+        )?;
+        checked_plan_step(
+            "current visits after lowering",
+            plan.validate_current_visits(),
+        )?;
     }
     Ok(plan)
 }
@@ -1515,6 +1535,70 @@ mod iteration_proof_tests {
         let (artifact, catalog) = artifact(source);
         lower_scalar_iteration_artifact(&artifact, &catalog).unwrap()
     }
+    #[test]
+    fn plan_rejection_preserves_stage_and_validator_reason() {
+        let (artifact, catalog) = artifact("input<u64>");
+        let valid = lower_native_program_artifact(&artifact, &catalog).unwrap();
+        checked_plan_step(
+            "current visits before lowering",
+            valid.validate_current_visits(),
+        )
+        .unwrap();
+        let mut invalid = valid;
+        invalid.entry = u32::MAX;
+        let reason = invalid.validate_current_visits().unwrap_err();
+        for stage in [
+            "current visits before lowering",
+            "current visits after lowering",
+        ] {
+            let error = checked_plan_step(stage, invalid.validate_current_visits()).unwrap_err();
+            assert_eq!(error, Error::InvalidPlan { stage, reason });
+            let message = error.to_string();
+            assert!(message.contains(stage));
+            assert!(message.contains(reason));
+        }
+    }
+
+    #[test]
+    fn visit_admission_distinguishes_invalid_metadata_from_analysis_limit() {
+        let (artifact, catalog) = artifact("input<u64>");
+        let valid = lower_native_program_artifact(&artifact, &catalog).unwrap();
+        let mut invalid_entry = valid.clone();
+        invalid_entry.entry = u32::MAX;
+        assert_eq!(
+            crate::native_artifact::iteration_validation::validate(&invalid_entry),
+            Err("current-visit entry is outside the control blocks")
+        );
+        let mut missing_scope = valid.clone();
+        missing_scope.value_scopes = Box::new([]);
+        assert_eq!(
+            crate::native_artifact::iteration_validation::validate(&missing_scope),
+            Err("current-visit scope count differs from value count")
+        );
+        // The proof rejects the estimated storage before building its fact sets.
+        // Keep the test's own metadata small while crossing the existing 16 MiB cap.
+        let mut oversized = valid;
+        oversized.blocks = vec![oversized.blocks[0].clone(); 4096].into();
+        oversized.values = vec![oversized.values[0].clone(); 32768].into();
+        oversized.value_scopes =
+            vec![NativeIterationValueScope::Immutable { iteration: None }; 32768].into();
+        let reason = "current-visit analysis storage exceeds the 16 MiB compiler limit";
+        assert_eq!(
+            crate::native_artifact::iteration_validation::validate(&oversized),
+            Err(reason)
+        );
+        assert_eq!(
+            checked_plan_step(
+                "current visits before lowering",
+                crate::native_artifact::iteration_validation::validate(&oversized)
+            ),
+            Err(Error::InvalidPlan {
+                stage: "current visits before lowering",
+                reason
+            })
+        );
+    }
+
     #[test]
     fn mixed_current_visit_proof_rejects_stale_managed_carriers_and_cross_scope_edges() {
         for count in [0, 25] {
