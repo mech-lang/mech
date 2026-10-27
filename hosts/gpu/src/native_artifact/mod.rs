@@ -133,6 +133,9 @@ pub use crate::native_artifact::program::runtime::{
     NativeProgramExecutionError, NativeProgramExecutionLimits, NativeProgramExecutionReport,
 };
 
+#[cfg(feature = "canonical-native-program-runtime")]
+pub use crate::native_artifact::program::limits::NativeProgramLimitMode;
+
 #[cfg(feature = "canonical-native")]
 mod codegen;
 

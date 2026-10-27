@@ -1134,6 +1134,7 @@ fn lower_scalar_control_artifact(
         catalog,
         allow_iteration,
         false,
+        crate::native_artifact::DEFAULT_NATIVE_ANALYSIS_BYTES,
     )?)
 }
 
@@ -1147,7 +1148,20 @@ pub fn lower_native_program_artifact(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramArtifactPlan, Error> {
-    lower_control_artifact(artifact, catalog, true, true)
+    lower_native_program_artifact_with_analysis_limit(
+        artifact,
+        catalog,
+        crate::native_artifact::DEFAULT_NATIVE_ANALYSIS_BYTES,
+    )
+}
+
+/// Uses the caller's explicit compiler-memory budget for every proof pass.
+pub fn lower_native_program_artifact_with_analysis_limit(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    analysis_byte_limit: u64,
+) -> Result<NativeProgramArtifactPlan, Error> {
+    lower_control_artifact(artifact, catalog, true, true, analysis_byte_limit)
 }
 
 // Keep the validator's reason at the public lowering boundary. These checks
@@ -1156,11 +1170,27 @@ fn checked_plan_step(stage: &'static str, result: Result<(), &'static str>) -> R
     result.map_err(|reason| Error::InvalidPlan { stage, reason })
 }
 
+fn checked_visit_step(
+    stage: &'static str,
+    result: Result<(), crate::native_artifact::iteration_validation::ValidationError>,
+) -> Result<(), Error> {
+    use crate::native_artifact::iteration_validation::ValidationError;
+    result.map_err(|error| match error {
+        ValidationError::Invalid(reason) => Error::InvalidPlan { stage, reason },
+        ValidationError::AnalysisLimit { required, limit } => Error::AnalysisLimit {
+            stage,
+            required,
+            limit,
+        },
+    })
+}
+
 fn lower_control_artifact(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
     allow_iteration: bool,
     allow_collections: bool,
+    analysis_byte_limit: u64,
 ) -> Result<NativeProgramArtifactPlan, Error> {
     if !allow_collections && !artifact.requirements().is_empty() {
         return Err(Error::UnsupportedProgram {
@@ -1437,6 +1467,7 @@ fn lower_control_artifact(
         })?;
     }
     let mut plan = NativeProgramArtifactPlan {
+        analysis_byte_limit,
         revision: artifact.revision(),
         resource_requirements,
         observations: observations.into(),
@@ -1463,13 +1494,13 @@ fn lower_control_artifact(
     };
     if allow_iteration {
         let checked = if allow_collections {
-            plan.validate_current_visits()
+            plan.validate_current_visits_detailed()
         } else {
             // Frozen scalar views retain their original proof and acquire no
             // managed phase boundary or generated phase dispatch.
-            crate::native_artifact::iteration_validation::validate(&plan)
+            crate::native_artifact::iteration_validation::validate_detailed(&plan)
         };
-        checked_plan_step("current visits before lowering", checked)?;
+        checked_visit_step("current visits before lowering", checked)?;
     }
     if allow_collections {
         checked_plan_step(
@@ -1496,9 +1527,9 @@ fn lower_control_artifact(
             "string element map projection lowering",
             crate::native_artifact::string_element_map_projection::lower(&mut plan),
         )?;
-        checked_plan_step(
+        checked_visit_step(
             "current visits after lowering",
-            plan.validate_current_visits(),
+            plan.validate_current_visits_detailed(),
         )?;
     }
     Ok(plan)
@@ -1576,27 +1607,89 @@ mod iteration_proof_tests {
             Err("current-visit scope count differs from value count")
         );
         // The proof rejects the estimated storage before building its fact sets.
-        // Keep the test's own metadata small while crossing the 64 MiB cap.
+        // Keep the test's own metadata small while crossing the default 64 MiB cap.
         let mut oversized = valid;
         oversized.blocks = vec![oversized.blocks[0].clone(); 4096].into();
         oversized.values = vec![oversized.values[0].clone(); 131072].into();
         oversized.value_scopes =
             vec![NativeIterationValueScope::Immutable { iteration: None }; 131072].into();
-        let reason = "current-visit analysis storage exceeds the 64 MiB compiler limit";
+        let reason = "current-visit analysis storage exceeds its configured byte limit";
         assert_eq!(
             crate::native_artifact::iteration_validation::validate(&oversized),
             Err(reason)
         );
         assert_eq!(
-            checked_plan_step(
+            checked_visit_step(
                 "current visits before lowering",
-                crate::native_artifact::iteration_validation::validate(&oversized)
+                crate::native_artifact::iteration_validation::validate_detailed(&oversized)
             ),
-            Err(Error::InvalidPlan {
+            Err(Error::AnalysisLimit {
                 stage: "current visits before lowering",
-                reason
+                required: 67_239_936,
+                limit: 67_108_864,
             })
         );
+    }
+
+    #[test]
+    fn composed_definition_chain_admits_larger_proof_without_accepting_future_reads() {
+        let (artifact, catalog) = artifact("input<u64>");
+        let mut valid = lower_native_program_artifact(&artifact, &catalog).unwrap();
+        assert!(valid.iterations().is_empty() && valid.collections().is_empty());
+        let boundary = valid.activation_boundary.unwrap() as usize;
+        let NativeIterationTerminator::Scalar(NativeMatchTerminator::Jump(complete)) =
+            valid.blocks[boundary].terminator
+        else {
+            panic!("boundary jump")
+        };
+        let mut blocks = valid.blocks.into_vec();
+        let mut values = valid.values.into_vec();
+        let mut scopes = valid.value_scopes.into_vec();
+        let first = blocks.len();
+        let mut previous = valid.inputs[0].value();
+        let ty = values[previous.get() as usize].clone();
+        for _ in 0..24576 {
+            let output = NativeMatchValue(values.len() as u32);
+            values.push(ty.clone());
+            scopes.push(NativeIterationValueScope::Immutable { iteration: None });
+            let mut block = blocks[boundary].clone();
+            block.action = NativeIterationAction::Scalar(NativeMatchAction::Copy {
+                source: previous,
+                output,
+            });
+            block.terminator = NativeMatchTerminator::Jump(blocks.len() as u32 + 1).into();
+            blocks.push(block);
+            previous = output;
+        }
+        blocks.last_mut().unwrap().terminator = NativeMatchTerminator::Jump(complete).into();
+        blocks[boundary].terminator = NativeMatchTerminator::Jump(first as u32).into();
+        // Even the packed payload alone crosses the former 64 MiB allowance.
+        let payload = blocks.len() * values.len().div_ceil(64) * 8;
+        assert!(payload > 64 * 1024 * 1024 && payload < 512 * 1024 * 1024);
+        valid.blocks = blocks.into();
+        valid.values = values.into();
+        valid.value_scopes = scopes.into();
+        valid.outputs[0].value = previous;
+        assert!(matches!(
+            valid.validate_current_visits_detailed(),
+            Err(
+                crate::native_artifact::iteration_validation::ValidationError::AnalysisLimit { .. }
+            )
+        ));
+        let bounded_image = serde_json::to_vec(&valid).unwrap();
+        valid.analysis_byte_limit = u64::MAX;
+        // Resource policy does not change the selected semantic image.
+        assert_eq!(serde_json::to_vec(&valid).unwrap(), bounded_image);
+        valid.validate_current_visits().unwrap();
+        // A generous storage allowance must still reject a type-correct read
+        // of a value that only a later block defines.
+        let NativeIterationAction::Scalar(NativeMatchAction::Copy { source, .. }) =
+            &mut valid.blocks[first].action
+        else {
+            panic!("first copy")
+        };
+        *source = previous;
+        assert!(valid.validate_current_visits().is_err());
     }
 
     #[cfg(feature = "map_ops")]

@@ -12,7 +12,7 @@ use crate::native_artifact::{
 use cranelift_module::{DataDescription, Linkage, Module};
 use mech_core::{FunctionCatalog, ManagedMemoryBudget, Value};
 use mech_engine::ProgramArtifact;
-use mech_engine::native_artifact::lower_native_program_artifact;
+use mech_engine::native_artifact::lower_native_program_artifact_with_analysis_limit;
 
 // Keep generated function placement independent of unrelated host link-size
 // changes on AArch64. 128-byte alignment covers both 64- and 128-byte cache
@@ -86,7 +86,12 @@ impl JitProgramArtifact {
         options: &crate::native_artifact::codegen::options::OptimizationOptions,
     ) -> Result<Self, NativeCompileError> {
         host_supported()?;
-        let plan = lower_native_program_artifact(artifact, catalog).map_err(backend)?;
+        let plan = lower_native_program_artifact_with_analysis_limit(
+            artifact,
+            catalog,
+            limits.max_analysis_bytes,
+        )
+        .map_err(backend)?;
         let mut module = codegen_backend::jit(PROGRAM_CODEGEN_FLAGS)?;
         preflight(&plan, &module, limits)?;
         let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
@@ -275,7 +280,12 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
     options: &crate::native_artifact::codegen::options::OptimizationOptions,
 ) -> Result<NativeProgramObject, NativeCompileError> {
     host_supported()?;
-    let plan = lower_native_program_artifact(artifact, catalog).map_err(backend)?;
+    let plan = lower_native_program_artifact_with_analysis_limit(
+        artifact,
+        catalog,
+        limits.max_analysis_bytes,
+    )
+    .map_err(backend)?;
     let mut module = codegen_backend::object("mech_canonical_program", PROGRAM_CODEGEN_FLAGS)?;
     preflight(&plan, &module, limits)?;
     let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;

@@ -51,6 +51,9 @@ pub(crate) trait ControlPlan {
     fn lifecycle_barrier(&self, _block: usize) -> bool {
         false
     }
+    fn analysis_byte_limit(&self) -> u64 {
+        super::DEFAULT_NATIVE_ANALYSIS_BYTES
+    }
     fn cursor_cells(&self) -> usize {
         0
     }
@@ -151,6 +154,9 @@ impl ControlPlan for NativeIterationArtifactPlan {
     }
 }
 impl ControlPlan for super::NativeProgramArtifactPlan {
+    fn analysis_byte_limit(&self) -> u64 {
+        self.analysis_byte_limit()
+    }
     common_plan_view!(super::NativeProgramArtifactPlan, super::NativeProgramType);
     fn collections(&self) -> &[super::NativeProgramCollection] {
         self.collections()
@@ -269,10 +275,26 @@ impl ControlPlan for super::NativeProgramArtifactPlan {
 }
 
 const BAD: &str = "invalid counted-loop ownership or current-visit definitions";
-// Finite compile-time storage for the current-visit proof. Integrated source
-// programs can require more than 16 MiB even with bit-packed definition sets;
-// keep this shared bound identical for compilation and linked revalidation.
-const ANALYSIS_BYTES: usize = 64 * 1024 * 1024;
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum ValidationError {
+    Invalid(&'static str),
+    AnalysisLimit { required: u64, limit: u64 },
+}
+impl ValidationError {
+    pub(crate) const fn reason(self) -> &'static str {
+        match self {
+            Self::Invalid(reason) => reason,
+            Self::AnalysisLimit { .. } => {
+                "current-visit analysis storage exceeds its configured byte limit"
+            }
+        }
+    }
+}
+impl From<&'static str> for ValidationError {
+    fn from(reason: &'static str) -> Self {
+        Self::Invalid(reason)
+    }
+}
 fn cursor_cell(plan: &impl ControlPlan, iteration: u32) -> Result<usize, &'static str> {
     if iteration as usize >= plan.cursor_cells()
         || !matches!(plan.iteration(iteration as usize), Loop::Collection(data)
@@ -429,6 +451,10 @@ fn structural_body<'a>(
 /// Called before the opaque engine plan is returned, including runtime-only
 /// same-Object rederivation. No caller can construct or mutate a certified plan.
 pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
+    validate_detailed(plan).map_err(ValidationError::reason)
+}
+
+pub(crate) fn validate_detailed(plan: &impl ControlPlan) -> Result<(), ValidationError> {
     let blocks = plan.blocks();
     let count = plan.values().len();
     let cells = count
@@ -455,15 +481,18 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
         })
         .ok_or(BAD)?;
     if plan.entry() as usize >= blocks.len() {
-        return Err("current-visit entry is outside the control blocks");
+        return Err("current-visit entry is outside the control blocks".into());
     }
     if plan.value_scopes().len() != count {
-        return Err("current-visit scope count differs from value count");
+        return Err("current-visit scope count differs from value count".into());
     }
     let analysis_bytes = DefinitionSet::storage_bytes(blocks.len(), cells)
         .ok_or("current-visit analysis storage size overflow")?;
-    if analysis_bytes > ANALYSIS_BYTES {
-        return Err("current-visit analysis storage exceeds the 64 MiB compiler limit");
+    let required = u64::try_from(analysis_bytes)
+        .map_err(|_| "current-visit analysis storage size overflow")?;
+    let limit = plan.analysis_byte_limit();
+    if required > limit {
+        return Err(ValidationError::AnalysisLimit { required, limit });
     }
     let ty = |v: Value| plan.values().get(v.get() as usize).ok_or(BAD);
     let mut initial = DefinitionSet::new(cells).ok_or(BAD)?;
@@ -475,14 +504,14 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             .parent()
             .is_some_and(|parent| parent as usize >= id)
         {
-            return Err(BAD);
+            return Err(BAD.into());
         }
         let mut depth = 0;
         let mut parent = iteration.parent();
         while let Some(p) = parent {
             depth += 1;
             if depth > crate::MAX_CONTROL_DEPTH {
-                return Err(BAD);
+                return Err(BAD.into());
             }
             parent = plan.iteration(p as usize).parent();
         }
@@ -495,7 +524,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                         iteration: id as u32,
                     })
             {
-                return Err(BAD);
+                return Err(BAD.into());
             }
         }
         if let Loop::Tail(tail) = iteration {
@@ -515,7 +544,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                         iteration: Some(id as u32),
                     })
             {
-                return Err(BAD);
+                return Err(BAD.into());
             }
             let finish = blocks.get(tail.finish() as usize).ok_or(BAD)?;
             if finish.iteration() != Some(id as u32)
@@ -527,7 +556,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                     .replace((id as u32, 4))
                     .is_some()
             {
-                return Err(BAD);
+                return Err(BAD.into());
             }
         }
         for (block, role) in [
@@ -538,7 +567,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
         ] {
             let entry = roles.get_mut(block as usize).ok_or(BAD)?;
             if entry.replace((id as u32, role)).is_some() {
-                return Err(BAD);
+                return Err(BAD.into());
             }
         }
         let init = &blocks[iteration.initialize() as usize];
@@ -587,7 +616,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 .iteration()
                 != Some(id as u32)
         {
-            return Err(BAD);
+            return Err(BAD.into());
         }
     }
     for (id, scope) in plan.value_scopes().iter().enumerate() {
@@ -596,7 +625,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             Scope::Carrier { iteration } => Some(*iteration),
         };
         if owner.is_some_and(|n| n as usize >= plan.iteration_count()) {
-            return Err(BAD);
+            return Err(BAD.into());
         }
         if let Scope::Carrier { iteration } = scope {
             if !match plan.iteration(*iteration as usize) {
@@ -604,7 +633,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 Loop::Tail(tail) => tail.carrier().get() as usize == id,
                 Loop::Collection(_) => false,
             } {
-                return Err(BAD);
+                return Err(BAD.into());
             }
         }
     }
@@ -615,7 +644,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             .iteration()
             .is_some_and(|n| n as usize >= plan.iteration_count())
         {
-            return Err(BAD);
+            return Err(BAD.into());
         }
         let successors = match block.terminator() {
             Terminator::Scalar(term) => scalar_successors(term),
@@ -636,19 +665,19 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 _ => block.iteration() == next_block.iteration(),
             };
             if !special {
-                return Err(BAD);
+                return Err(BAD.into());
             }
         }
         if let Terminator::Header { iteration, .. } = block.terminator() {
             if roles[id] != Some((iteration, 1)) {
-                return Err(BAD);
+                return Err(BAD.into());
             }
         }
         if let Terminator::TailHeader { iteration, .. } = block.terminator()
             && (roles[id] != Some((iteration, 1))
                 || !matches!(plan.iteration(iteration as usize), Loop::Tail(_)))
         {
-            return Err(BAD);
+            return Err(BAD.into());
         }
         match block.action() {
             Action::Structural {
@@ -684,7 +713,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                             && target.body() == &SchemaBody::Bool
                     }
                 } {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
             }
             Action::CollectionBegin { collection }
@@ -697,14 +726,14 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                     _ => collection.push(),
                 };
                 if expected as usize != id {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
             }
             Action::CollectionElement { iteration } => {
                 if *iteration as usize >= plan.iteration_count()
                     || !matches!(plan.iteration(*iteration as usize), Loop::Collection(data) if data.body() as usize == id)
                 {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
             }
             Action::LibraryCall {
@@ -717,10 +746,10 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             Action::TextJoinFinish { collection } => {
                 let data = plan.collections().get(*collection as usize).ok_or(BAD)?;
                 let super::NativeCollectionResult::TextJoin(sink) = data.result() else {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 };
                 if sink.consumer() as usize != id || block.iteration() != data.parent() {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
                 plan.library(
                     block.origin(),
@@ -732,10 +761,10 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             Action::HistogramFinish { collection } => {
                 let data = plan.collections().get(*collection as usize).ok_or(BAD)?;
                 let super::NativeCollectionResult::Histogram(sink) = data.result() else {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 };
                 if sink.consumer() as usize != id || block.iteration() != data.parent() {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
                 plan.library(
                     block.origin(),
@@ -748,11 +777,11 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 let data = plan.collections().get(*collection as usize).ok_or(BAD)?;
                 let super::NativeCollectionResult::GuardedHistogramQuery(sink) = data.result()
                 else {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 };
                 let step = sink.steps().get(*step as usize).ok_or(BAD)?;
                 if step.site() as usize != id || block.iteration() != data.parent() {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
                 if let Some(template) = step.template() {
                     plan.library(
@@ -766,27 +795,27 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                     match step.kind() {
                         K::Alias { .. } => {
                             let [source] = step.operands() else {
-                                return Err(BAD);
+                                return Err(BAD.into());
                             };
                             if ty(*source)? != ty(step.output().ok_or(BAD)?)? {
-                                return Err(BAD);
+                                return Err(BAD.into());
                             }
                         }
                         K::Cleanup if step.operands().is_empty() && step.output().is_none() => {}
-                        _ => return Err(BAD),
+                        _ => return Err(BAD.into()),
                     }
                 }
             }
             Action::PrepareU64Range { iteration } => {
                 cursor_cell(plan, *iteration)?;
                 let Loop::Collection(data) = plan.iteration(*iteration as usize) else {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 };
                 let super::NativeCollectionSource::U64Range(cursor) = data.source() else {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 };
                 if cursor.prepare() as usize != id {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
                 plan.library(
                     block.origin(),
@@ -800,7 +829,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 let data = &plan.collections()[*collection as usize];
                 let p = data.string_span_projection().ok_or(BAD)?;
                 if p.range_site() as usize != id {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
                 plan.library(
                     block.origin(),
@@ -814,7 +843,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 let data = &plan.collections()[*collection as usize];
                 let p = data.string_span_projection().ok_or(BAD)?;
                 if p.selection_site() as usize != id {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
                 plan.library(
                     block.origin(),
@@ -829,7 +858,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                     .string_element_map_projection()
                     .ok_or(BAD)?;
                 if p.selection_site() as usize != id {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
                 plan.library(
                     block.origin(),
@@ -839,32 +868,36 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
                 )?;
             }
             Action::Initialize { iteration } if roles[id] != Some((*iteration, 0)) => {
-                return Err(BAD);
+                return Err(BAD.into());
             }
-            Action::Latch { iteration } if roles[id] != Some((*iteration, 2)) => return Err(BAD),
+            Action::Latch { iteration } if roles[id] != Some((*iteration, 2)) => {
+                return Err(BAD.into());
+            }
             Action::Scalar(Scalar::Primitive {
                 operands, output, ..
             }) => {
                 ty(*output)?;
                 if operands.iter().any(|v| ty(*v).is_err()) {
-                    return Err(BAD);
+                    return Err(BAD.into());
                 }
             }
             Action::Scalar(Scalar::Copy { source, output }) if ty(*source)? != ty(*output)? => {
-                return Err(BAD);
+                return Err(BAD.into());
             }
             _ => {}
         }
         match block.terminator() {
             Terminator::Scalar(Term::Branch { condition, .. }) if !ty(condition)?.is_bool() => {
-                return Err(BAD);
+                return Err(BAD.into());
             }
             Terminator::Scalar(Term::LiteralBranch { left, right, .. })
                 if ty(left)? != ty(right)? =>
             {
-                return Err(BAD);
+                return Err(BAD.into());
             }
-            Terminator::Scalar(Term::Complete) if block.iteration().is_some() => return Err(BAD),
+            Terminator::Scalar(Term::Complete) if block.iteration().is_some() => {
+                return Err(BAD.into());
+            }
             _ => {}
         }
     }
@@ -879,7 +912,7 @@ pub(crate) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             && !(matches!(block.action(), Action::Scalar(Scalar::None))
                 && matches!(block.terminator(), Terminator::Scalar(Term::Reject)))
         {
-            return Err(BAD);
+            return Err(BAD.into());
         }
     }
     Ok(())

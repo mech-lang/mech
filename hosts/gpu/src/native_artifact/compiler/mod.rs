@@ -24,6 +24,7 @@ mod narrow_scalar_tests;
 
 #[derive(Clone, Copy, Debug)]
 pub struct NativeCompileLimits {
+    pub max_analysis_bytes: u64,
     pub max_nodes: u64,
     pub max_inputs: u64,
     pub max_outputs: u64,
@@ -33,6 +34,7 @@ pub struct NativeCompileLimits {
 impl Default for NativeCompileLimits {
     fn default() -> Self {
         Self {
+            max_analysis_bytes: mech_engine::native_artifact::DEFAULT_NATIVE_ANALYSIS_BYTES,
             max_nodes: 4096,
             max_inputs: 4096,
             max_outputs: 4096,

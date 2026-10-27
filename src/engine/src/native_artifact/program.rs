@@ -475,8 +475,13 @@ impl NativeProgramLibraryTemplate {
     }
 }
 
+pub const DEFAULT_NATIVE_ANALYSIS_BYTES: u64 = 64 * 1024 * 1024;
+
 #[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeProgramArtifactPlan {
+    // Compiler admission policy is not part of program semantics or image identity.
+    #[serde(skip)]
+    pub(crate) analysis_byte_limit: u64,
     pub(crate) revision: ProgramRevision,
     pub(crate) resource_requirements: Box<[ExecutionResourceRequest]>,
     pub(crate) observations: Box<[NativeProgramObservation]>,
@@ -495,6 +500,10 @@ pub struct NativeProgramArtifactPlan {
     pub(crate) activation_boundary: Option<u32>,
 }
 impl NativeProgramArtifactPlan {
+    pub const fn analysis_byte_limit(&self) -> u64 {
+        self.analysis_byte_limit
+    }
+
     pub const fn program_revision(&self) -> ProgramRevision {
         self.revision
     }
@@ -587,8 +596,14 @@ impl NativeProgramArtifactPlan {
         self.activation_boundary
     }
     pub fn validate_current_visits(&self) -> Result<(), &'static str> {
+        self.validate_current_visits_detailed()
+            .map_err(super::iteration_validation::ValidationError::reason)
+    }
+    pub(crate) fn validate_current_visits_detailed(
+        &self,
+    ) -> Result<(), super::iteration_validation::ValidationError> {
         super::range_cursor::validate(self)?;
         super::phase_validation::validate(self)?;
-        super::iteration_validation::validate(self)
+        super::iteration_validation::validate_detailed(self)
     }
 }

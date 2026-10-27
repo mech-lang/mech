@@ -69,6 +69,11 @@ pub enum NativeArtifactLoweringError {
         stage: &'static str,
         reason: &'static str,
     },
+    AnalysisLimit {
+        stage: &'static str,
+        required: u64,
+        limit: u64,
+    },
     MissingSemanticWitness {
         node: NodeId,
     },

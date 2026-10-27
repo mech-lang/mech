@@ -6,7 +6,7 @@ use crate::native_artifact::{
 };
 use mech_core::{FunctionCatalog, ManagedMemoryBudget, Value};
 use mech_engine::ProgramArtifact;
-use mech_engine::native_artifact::lower_native_program_artifact;
+use mech_engine::native_artifact::lower_native_program_artifact_with_analysis_limit;
 use std::ffi::c_void;
 pub struct LinkedProgramArtifact {
     entry: unsafe extern "C" fn(*mut c_void) -> u64,
@@ -122,7 +122,7 @@ pub(in crate::native_artifact) fn prepare_descriptor(
             "program Object lacks checked stack/code metadata",
         ));
     }
-    let plan = lower_native_program_artifact(artifact, catalog)
+    let plan = lower_native_program_artifact_with_analysis_limit(artifact, catalog, u64::MAX)
         .map_err(|_| NativeLinkError::new("program Object has no current canonical selection"))?;
     let prepared = crate::native_artifact::program::prepare::PreparedNativeProgram::prepare(
         artifact, catalog, plan,
