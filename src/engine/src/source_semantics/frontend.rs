@@ -9790,6 +9790,83 @@ mod tests {
     use super::*;
 
     #[test]
+    fn control_diagnostics_report_limit_and_result_separately() {
+        let parsed = mech_syntax::document::parse_canonical_document(
+            mech_syntax::document::TextSnapshot::new(DocumentId(83), Revision(1), "true").unwrap(),
+            mech_syntax::document::ParseConfig::default(),
+        );
+        let syntax = parsed.syntax();
+        let anchor = SourceSemanticAnchor::for_node(&syntax);
+        for (limit, body, expected) in [
+            (
+                crate::MAX_CONTROL_BLOCKS as u32,
+                SchemaBody::Bool,
+                "source-semantics/control-block-limit",
+            ),
+            (
+                0,
+                SchemaBody::Dynamic,
+                "source-semantics/unsupported-control-result",
+            ),
+        ] {
+            let mut builder = SemanticBuilder::new(anchor);
+            builder.next_control_block = limit;
+            builder.inputs.push(PendingInput {
+                name: "value".to_owned(),
+                schema: SchemaDraft {
+                    body,
+                    dimension_parameters: Box::new([]),
+                },
+                anchor,
+            });
+            let result = builder.control_block_with(
+                &syntax,
+                &crate::MatchPattern::Bind,
+                &BTreeMap::new(),
+                PendingValue::Input(0),
+                &mut Vec::new(),
+                &mut Vec::new(),
+                |_| Ok(PendingValue::Input(0)),
+            );
+            let error = result.err().expect("must reject unsupported block");
+            assert_eq!(error.code, expected);
+            assert_eq!(error.anchor, anchor);
+            if limit != 0 {
+                assert!(
+                    error
+                        .message
+                        .contains(&crate::MAX_CONTROL_BLOCKS.to_string())
+                );
+            } else {
+                assert!(error.message.contains("Dynamic"));
+            }
+        }
+    }
+
+    #[cfg(all(feature = "matrix", feature = "u8"))]
+    #[test]
+    fn control_diagnostics_identify_record_buffer_capture() {
+        let source = "choose(flag<bool>, bytes<[u8]>) => (out<[u8]>) :=\n  record := {bytes: bytes}\n  out := (flag? | true => record.bytes | false => bytes).\nchoose(flag<bool>, bytes<[u8]>)\n";
+        let parsed = mech_syntax::document::parse_canonical_document(
+            mech_syntax::document::TextSnapshot::new(DocumentId(84), Revision(1), source).unwrap(),
+            mech_syntax::document::ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
+        let mut catalog = mech_core::FunctionCatalogBuilder::new();
+        crate::install_intrinsic_resident(&mut catalog).unwrap();
+        let error = CanonicalSourceFrontend
+            .compile_document_with_catalog(
+                &DocumentSyntax::cast(parsed.syntax()).unwrap(),
+                Arc::new(catalog.build().unwrap()),
+            )
+            .err()
+            .expect("record buffer capture currently unsupported");
+        assert_eq!(error.code, "source-semantics/unsupported-control-capture");
+        assert!(error.message.contains("Record"));
+        assert!(error.message.contains("bytes"));
+    }
+
+    #[test]
     fn mixed_control_schema_walk_visits_each_nested_declaration_once() {
         let schema = |body| SchemaDraft {
             body,
@@ -10730,18 +10807,24 @@ impl SemanticBuilder {
         captures: &mut Vec<(u16, SchemaDraft, bool)>,
         build: impl FnOnce(&mut Self) -> Result<PendingValue, SourceSemanticError>,
     ) -> Result<(PendingControlBlock, SchemaDraft), SourceSemanticError> {
-        let unsupported = || SourceSemanticError {
-            code: "source-semantics/unsupported-match-block",
-            message:
-                "match blocks require pure maintained operations and supported final value schemas"
-                    .to_owned(),
+        let rejected = |code, message: String| SourceSemanticError {
+            code,
+            message,
             anchor: SourceSemanticAnchor::for_node(syntax),
         };
         let id = self.next_control_block;
         self.next_control_block = id
             .checked_add(1)
             .filter(|id| *id as usize <= crate::MAX_CONTROL_BLOCKS)
-            .ok_or_else(unsupported)?;
+            .ok_or_else(|| {
+                rejected(
+                    "source-semantics/control-block-limit",
+                    format!(
+                        "cannot allocate control block {id}: maximum control block count is {}",
+                        crate::MAX_CONTROL_BLOCKS
+                    ),
+                )
+            })?;
         let start = self.nodes.len();
         self.control_depth += 1;
         let result =
@@ -10762,7 +10845,13 @@ impl SemanticBuilder {
                 .is_ok_and(|schema| !matches!(schema.body(), SchemaBody::Dynamic))
         };
         if !result_value(&schema) {
-            return Err(unsupported());
+            return Err(rejected(
+                "source-semantics/unsupported-control-result",
+                format!(
+                    "selected block result has unsupported schema: {:?}",
+                    schema.body
+                ),
+            ));
         }
         let mut parameters = Vec::<(crate::ControlParameterSource, SchemaDraft)>::new();
         let mut parameter_values = Vec::new();
@@ -10773,7 +10862,10 @@ impl SemanticBuilder {
                     PendingValue::Node(index) if index as usize >= start => {
                         Ok(PendingControlValue::Local(index - start as u32))
                     }
-                    PendingValue::UnresolvedEmpty(_) => Err(unsupported()),
+                    PendingValue::UnresolvedEmpty(_) => Err(rejected(
+                        "source-semantics/unresolved-control-value",
+                        "selected block uses an empty value whose type is unresolved".to_owned(),
+                    )),
                     _ => {
                         if let Some(index) = parameter_values
                             .iter()
@@ -10797,42 +10889,49 @@ impl SemanticBuilder {
                                 .finalize()
                                 .is_ok_and(|schema| crate::is_control_capture_schema(&schema))
                         {
-                            return Err(unsupported());
+                            return Err(rejected(
+                                "source-semantics/unsupported-control-capture",
+                                format!(
+                                    "selected block captures a value with unsupported schema: {:?}",
+                                    schema.body
+                                ),
+                            ));
                         }
-                        let source =
-                            if matches!(pattern, crate::MatchPattern::Bind) && value == scrutinee {
-                                crate::ControlParameterSource::Scrutinee
-                            } else if let Some(local) = pattern_binding {
-                                crate::ControlParameterSource::PatternBinding(local)
-                            } else {
-                                let input =
-                                    match inputs.iter().position(|existing| *existing == value) {
-                                        Some(index) => index,
-                                        None => {
-                                            inputs.push(value);
-                                            inputs.len() - 1
-                                        }
-                                    };
-                                let input = u16::try_from(input).map_err(|_| unsupported())?;
-                                let capture = match captures
-                                    .iter()
-                                    .position(|(existing, _, _)| *existing == input)
-                                {
-                                    Some(index) => index,
-                                    None => {
-                                        captures.push((
-                                            input,
-                                            schema.clone(),
-                                            !matches!(value, PendingValue::Input(_)),
-                                        ));
-                                        captures.len() - 1
-                                    }
-                                };
-                                crate::ControlParameterSource::Capture(
-                                    u16::try_from(capture).map_err(|_| unsupported())?,
-                                )
+                        let source = if matches!(pattern, crate::MatchPattern::Bind)
+                            && value == scrutinee
+                        {
+                            crate::ControlParameterSource::Scrutinee
+                        } else if let Some(local) = pattern_binding {
+                            crate::ControlParameterSource::PatternBinding(local)
+                        } else {
+                            let input = match inputs.iter().position(|existing| *existing == value)
+                            {
+                                Some(index) => index,
+                                None => {
+                                    inputs.push(value);
+                                    inputs.len() - 1
+                                }
                             };
-                        let ordinal = u16::try_from(parameters.len()).map_err(|_| unsupported())?;
+                            let input = u16::try_from(input).map_err(|_| rejected("source-semantics/control-parameter-limit", "selected block exceeds the representable input, capture, or parameter count (65536)".to_owned()))?;
+                            let capture = match captures
+                                .iter()
+                                .position(|(existing, _, _)| *existing == input)
+                            {
+                                Some(index) => index,
+                                None => {
+                                    captures.push((
+                                        input,
+                                        schema.clone(),
+                                        !matches!(value, PendingValue::Input(_)),
+                                    ));
+                                    captures.len() - 1
+                                }
+                            };
+                            crate::ControlParameterSource::Capture(
+                                    u16::try_from(capture).map_err(|_| rejected("source-semantics/control-parameter-limit", "selected block exceeds the representable input, capture, or parameter count (65536)".to_owned()))?,
+                                )
+                        };
+                        let ordinal = u16::try_from(parameters.len()).map_err(|_| rejected("source-semantics/control-parameter-limit", "selected block exceeds the representable input, capture, or parameter count (65536)".to_owned()))?;
                         parameter_values.push(value);
                         parameters.push((source, schema));
                         Ok(PendingControlValue::Parameter(ordinal))
@@ -10844,11 +10943,22 @@ impl SemanticBuilder {
             // Intermediate results may carry per-turn dimensions through
             // pure operations. Only the selected block's final yield must be
             // an admitted control result with its actual snapshot shape.
-            if node.state.is_some()
-                || (!intermediate_value(&node.schema)
-                    && !matches!(&node.body, PendingNodeBody::Comprehension(_)))
+            if node.state.is_some() {
+                return Err(rejected(
+                    "source-semantics/stateful-control-operation",
+                    "selected block contains a state-bearing operation".to_owned(),
+                ));
+            }
+            if !intermediate_value(&node.schema)
+                && !matches!(&node.body, PendingNodeBody::Comprehension(_))
             {
-                return Err(unsupported());
+                return Err(rejected(
+                    "source-semantics/unsupported-control-intermediate",
+                    format!(
+                        "selected block operation has unsupported intermediate schema: {:?}",
+                        node.schema.body
+                    ),
+                ));
             }
             let body = match node.body {
                 PendingNodeBody::Operation {
@@ -10875,7 +10985,32 @@ impl SemanticBuilder {
 
                 PendingNodeBody::Suspend => PendingControlOperationBody::Suspend,
                 PendingNodeBody::Publish => PendingControlOperationBody::Publish,
-                _ => return Err(unsupported()),
+                body => {
+                    let reason = match body {
+                        PendingNodeBody::Operation { contract: None, .. } => {
+                            "operation has no maintained contract"
+                        }
+                        PendingNodeBody::Operation {
+                            requirement: Some(_),
+                            ..
+                        } => "operation has an unresolved application requirement",
+                        PendingNodeBody::Operation { .. } => "operation is not pure",
+                        PendingNodeBody::Activation(_) => {
+                            "activation operation is unsupported in a selected block"
+                        }
+                        PendingNodeBody::Fsm(_) => {
+                            "state machine operation is unsupported in a selected block"
+                        }
+                        PendingNodeBody::CollectionBinding => {
+                            "collection binding is unsupported in a selected block"
+                        }
+                        _ => unreachable!("supported control operations were handled above"),
+                    };
+                    return Err(rejected(
+                        "source-semantics/unsupported-control-operation",
+                        reason.to_owned(),
+                    ));
+                }
             };
             operations.push(PendingControlOperation {
                 body,
