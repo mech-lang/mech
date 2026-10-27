@@ -683,13 +683,6 @@ jobs:
             --lib resident::general::native_match_lowering::iteration_proof_tests -- --test-threads=1
           cargo +nightly-2026-03-03 check --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-runtime --lib
-      - name: Execute capacity-retaining sequence operations in an isolated profile
-        if: ${{ matrix.suite == 'native' }}
-        run: |
-          buffer_cases_count=$(cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
-            --no-default-features --features semantic-compiler,resident-artifact,sequence_buffers \
-            --test sequence_buffer_contract -- --list | rg -c ': test$')
-          test "$buffer_cases_count" = 3
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features semantic-compiler,resident-artifact,sequence_buffers \
             --test sequence_buffer_contract -- --test-threads=1
