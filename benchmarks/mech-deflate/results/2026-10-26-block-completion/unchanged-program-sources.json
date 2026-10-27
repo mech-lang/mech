@@ -1,0 +1,8 @@
+{
+  "hosts/gpu/tests/fixtures/native/deflate-matchfinder.mec": "c0b1504fac74da69953c822597b0b135d363fe76efd96b3a92b5de9931bcba93",
+  "hosts/gpu/tests/fixtures/native/deflate-binary-tree.mec": "dd60cc6210256a75dff97a9df2c3b5f9d073220836a8edc8787422a8ded2518c",
+  "hosts/gpu/tests/fixtures/native/deflate-collector.mec": "6efeaf50c93c8d5abc008c82203a655828cefac06dda2bdfb125764472375075",
+  "hosts/gpu/tests/fixtures/native/deflate-block-collector.mec": "1a16469ff01b349c4bffebfaa63090facc9135a9069a8d8b163578f7f379d5d0",
+  "hosts/gpu/tests/fixtures/native/deflate-block-heuristics.mec": "4f4491dc7d100373788bf777e6798fdb03251ae6ea81874be00721910c2c12d8",
+  "hosts/gpu/tests/fixtures/native/deflate-block-loop.mec": "c2a35cff5cb4437fc077f68ebd320efe1dbf48e3373697e3bc7a509333c61694"
+}

@@ -43,6 +43,28 @@ fn real_buffer_complete_320_byte_block_diagnostic() {
     collect_cases(&["320-overlap"], 1_000_000_000_000, 16_384);
 }
 
+#[test]
+#[ignore = "explicit completion-cost diagnostic with a separate 1 GiB account"]
+fn real_buffer_complete_eight_byte_blocks_large_account_diagnostic() {
+    collect_cases_in_account(
+        &["eight-literals", "eight-overlap"],
+        1_000_000_000_000,
+        16_384,
+        1024 * 1024 * 1024,
+    );
+}
+
+#[test]
+#[ignore = "explicit 320-position completion-cost diagnostic with a separate 1 GiB account"]
+fn real_buffer_complete_320_byte_block_large_account_diagnostic() {
+    collect_cases_in_account(
+        &["320-overlap"],
+        1_000_000_000_000,
+        16_384,
+        1024 * 1024 * 1024,
+    );
+}
+
 fn assert_reference(actual: &Data, case: &Json) {
     let Data::Record(fields) = actual else {
         panic!("complete block state")
@@ -93,6 +115,10 @@ fn assert_reference(actual: &Data, case: &Json) {
 }
 
 fn collect_cases(names: &[&str], work_limit: u64, max_blocks: u64) {
+    collect_cases_in_account(names, work_limit, max_blocks, 256 * 1024 * 1024);
+}
+
+fn collect_cases_in_account(names: &[&str], work_limit: u64, max_blocks: u64, account_bytes: u64) {
     let reference: Json = serde_json::from_str(include_str!(
         "../fixtures/native/deflate-block-reference.json"
     ))
@@ -121,7 +147,7 @@ fn collect_cases(names: &[&str], work_limit: u64, max_blocks: u64) {
                 .find(|case| case["name"] == *name)
                 .unwrap();
             let input = case["input"].as_array().unwrap();
-            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let memory = ManagedMemoryBudget::new(account_bytes);
             let args = inputs(
                 &artifact,
                 &[(
@@ -148,9 +174,29 @@ fn collect_cases(names: &[&str], work_limit: u64, max_blocks: u64) {
             let (result, allocations, bytes) = allocation_probe::measured_with_bytes(|| {
                 jit.evaluate_into(&args, &mut output, policy, &memory)
             });
+            let elapsed_seconds = start.elapsed().as_secs_f64();
+            let failing_operation = match &result {
+                Err(mech_gpu::native_artifact::NativeProgramExecutionError::Library {
+                    origin,
+                    ..
+                }) => jit
+                    .descriptor()
+                    .plan()
+                    .blocks()
+                    .iter()
+                    .find(|block| block.origin() == *origin)
+                    .map(|block| match block.action() {
+                        mech_engine::native_artifact::NativeIterationAction::LibraryCall {
+                            template,
+                            ..
+                        } => template.primitive().name().to_owned(),
+                        action => format!("{action:?}"),
+                    }),
+                _ => None,
+            };
             println!(
                 "{}",
-                serde_json::json!({"witness":"first-complete-block","case":name,"artifact":form,"input_bytes":input.len(),"work_limit":work_limit,"compile_block_limit":max_blocks,"lowered_blocks":jit.descriptor().plan().blocks().len(),"compile_seconds":compile_seconds,"elapsed_seconds":start.elapsed().as_secs_f64(),"allocation_requests":allocations,"requested_allocation_bytes":bytes,"retained_before":before,"retained_after":memory.used_bytes(),"result":format!("{result:?}")})
+                serde_json::json!({"witness":"first-complete-block","case":name,"artifact":form,"input_bytes":input.len(),"work_limit":work_limit,"account_limit_bytes":account_bytes,"compile_block_limit":max_blocks,"lowered_blocks":jit.descriptor().plan().blocks().len(),"compile_seconds":compile_seconds,"elapsed_seconds":elapsed_seconds,"allocation_requests":allocations,"requested_allocation_bytes":bytes,"retained_before":before,"retained_after":memory.used_bytes(),"result":format!("{result:?}"),"failing_operation":failing_operation})
             );
             if result.is_err() {
                 assert!(output.iter().all(Option::is_none));
