@@ -1,6 +1,33 @@
 # DEFLATE binary-tree match finder
 
 
+## Executing stored-block writer
+
+`block-write-stored` and its consecutive-block loop now write the pinned stored
+(uncompressed) DEFLATE representation. Nine cases match reference bytes and bit
+state in original and decoded artifacts, including partial-byte carry and the
+65,535-byte split. Five complete streams per artifact independently decompress
+to the expected input. The largest payload is 65,536 bytes, written as two stored
+blocks; this does not establish level-12 compression of that input.
+
+Every case retains the real 6,633,832-byte output reservation through internal
+return, clear, and append. Changing capacity from 131,072 to 6,633,832 changes
+allocated bytes by exactly 6,502,760. The 65,536-byte publication witness takes
+about 1.07 ms unoptimized, including its output reservation and publication.
+The separate internal-reuse observation takes about 0.66 ms; these differ in
+observable outputs and are not an optimization comparison or compressor timing.
+
+This new test uses the existing full-block output-element bound of 1,500,513.
+It retains a rejection/cleanup check for the generic 65,536 bound, which cannot
+hold a 65,535-byte payload plus its five-byte header. Existing test allowances
+and compiler defaults are unchanged. [Receipts and exact scope](../results/2026-10-27-stored-writer/review.json)
+record both runs. Fixture compression is only golden-file storage and is decoded
+before measurement; the compiler executes the writer itself.
+
+Compressed-block payload connection, full compressor integration, complete
+correctness, and the first level-12 benchmark remain.
+
+
 ## Stored payload range append
 
 The stored-block path requires `List.append_sublist` at pinned

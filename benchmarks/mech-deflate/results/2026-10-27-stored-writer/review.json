@@ -1,0 +1,42 @@
+{
+  "compiler_base": "09770d5633b0bdb19f67a91f8c928200c7a9c1fd",
+  "source_pin": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "reference_compiler": "d99c7b838fb05bb1047eb0c18d4d06d0f86f345d",
+  "executing": [
+    "block-store-at",
+    "block-write-stored"
+  ],
+  "validation": "One maintained test passes;350filtered;35.35s tests,56.26s with build.9 reference cases original/decoded exact bytes+bitstate.5 complete streams per artifact independently decompressed. All9 internal return/clear/append cases checked at131072 and6633832 capacity; exact allocated-byte delta6502760.",
+  "largest_payload": 65536,
+  "largest_input_buffer": 65541,
+  "measurements": {
+    "final65536_publish_seconds": [
+      0.0010685,
+      0.001071083
+    ],
+    "final65536_publish_allocation_requests": 2428,
+    "final65536_publish_allocated_bytes": 6929176,
+    "final65536_internal_reuse_seconds": [
+      0.000655417,
+      0.0006565
+    ],
+    "final65536_internal_reuse_allocation_requests": 739,
+    "final65536_internal_reuse_allocated_bytes": 6705007,
+    "boundary": "Unoptimized evaluate_into after equal warmup;includes output reservation/writer execution/publication or clear+append for reuse variant. Excludes input setup,compilation,golden decompression,and result checking. Not a complete compressor benchmark."
+  },
+  "policy": "New stored-writer test uses established full-block qualification OutputElements1500513. First run inherited generic65536 cap and rejected65540 (payload65535+header5); regression retains that rejection and cleanup check. Compiler defaults and existing qualification allowances unchanged.",
+  "fixture_storage": "Pinned reference bytes are zlib-compressed hex only to keep fixture size small. Expand before timing and compare exact bytes. Mech does all stored-block writing; the host decompressor only validates.",
+  "remaining": [
+    "connect cost choice/compressed headers/path or sequence payload/end-of-block/final drain",
+    "full compressor integration and complete correctness",
+    "first full measured level12 run"
+  ],
+  "not_claimed": [
+    "Complete level12 compressor",
+    "Full match collection from65536bytes",
+    "Near-optimal compression of65536bytes",
+    "Benchmark timing",
+    "Green CI"
+  ],
+  "static": "Four architecture/catalog checks,CI inventory[],format,diff checks passed."
+}

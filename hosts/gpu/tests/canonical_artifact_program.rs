@@ -115,6 +115,8 @@ mod header_qualification;
 mod block_choice_qualification;
 #[path = "support/canonical_program_block_header_writer.rs"]
 mod block_header_writer_qualification;
+#[path = "support/canonical_program_stored_writer.rs"]
+mod stored_writer_qualification;
 
 #[path = "support/canonical_program_literal_choice.rs"]
 mod literal_choice_qualification;

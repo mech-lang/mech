@@ -1,0 +1,18 @@
+// Stored-block emission from BlockOut.flush_block lines 578–610,
+// pinned at 671077457ff7ef3a3d44caf715a3fc595addf379.
+// Include deflate-huffman-level12.mec and deflate-path-writer.mec first.
+// See deflate-huffman-LICENSES.md for source attribution and licenses.
+block-store-at(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, input<[u8]>, in-next<u64>, in-end<u64>, final<u64>) => (out<path-written>) :=
+  remaining := in-end - in-next
+  length := huff-minimum(remaining, 65535u64)
+  block-final := ((remaining <= 65535u64)? | true => final | false => 0u64)
+  first := huff-byte(bits/or(bits/shift-left-wrap(block-final, bits/and(bitcount, 255u64)), bitbuf))
+  header0 := sequence/append(bytes, first)
+  header1 := ((bitcount > 5u64)? | true => sequence/append(header0, 0u8) | false => header0)
+  header2 := sequence/append-le-bytes(header1, length, 2u8)
+  header3 := sequence/append-le-bytes(header2, bits/not(length), 2u8)
+  payload := sequence/append-sublist(header3, input, in-next, length)
+  next := in-next + length
+  out := ((next == in-end)? | true => {bytes: payload, bitbuf: 0u64, bitcount: 0u64} | false => block-store-at(payload, 0u64, 0u64, input, next, in-end, final)).
+block-write-stored(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, input<[u8]>, begin<u64>, length<u64>, final<u64>) => (out<path-written>) :=
+  out := block-store-at(bytes, bitbuf, bitcount, input, begin, begin + length, final).
