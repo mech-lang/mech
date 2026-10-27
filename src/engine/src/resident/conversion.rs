@@ -640,7 +640,25 @@ fn bind_conversion(
             let Ok(source_body) = source_schema.closed_body(&input.shape_instance) else {
                 return Err(error);
             };
-            let Ok(target_body) = target_schema.closed_body(&request.output.shape_instance) else {
+            // Control-local layouts are seeded independently. Reified free
+            // axes may start at zero while a computed source axis starts at
+            // a positive constant. Bind against the source's current extents;
+            // execution still validates each live shape before publication.
+            let SchemaBody::Matrix { dimensions, .. } = source_schema.body() else {
+                return Err(error);
+            };
+            let extents = dimensions
+                .iter()
+                .map(|axis| input.shape_instance.resolve_dimension(axis))
+                .collect::<Result<Vec<_>, _>>();
+            let Ok(extents) = extents else {
+                return Err(error);
+            };
+            let Ok(target_shape) = mech_core::shape_for_resolved_extents(target_schema, &extents)
+            else {
+                return Err(error);
+            };
+            let Ok(target_body) = target_schema.closed_body(&target_shape) else {
                 return Err(error);
             };
             if source_body != target_body {

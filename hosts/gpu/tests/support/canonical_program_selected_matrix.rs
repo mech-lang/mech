@@ -197,3 +197,51 @@ fn already_matching_computed_results_do_not_add_conversion_calls() {
         }
     }
 }
+
+#[test]
+fn constant_offset_branch_agrees_with_resident() {
+    let source =
+        "row := [x | x <- values<[u64]>]\n(flag<bool>? | true => [row 0u64] | false => row)\n";
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        for flag in [true, false, true] {
+            let memory = ManagedMemoryBudget::new(128 * 1024 * 1024);
+            let args = inputs(
+                &artifact,
+                &[
+                    (
+                        "values",
+                        Data::Matrix(vec![Data::U64(7), Data::U64(9)].into()),
+                    ),
+                    ("flag", Data::Bool(flag)),
+                ],
+                &memory,
+            );
+            let reference = reference_result(&artifact, &args).unwrap();
+            let mut output = vec![None; artifact.outputs().len()];
+            jit.evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            let expected = if flag {
+                vec![Data::U64(7), Data::U64(9), Data::U64(0)]
+            } else {
+                vec![Data::U64(7), Data::U64(9)]
+            };
+            assert_eq!(
+                reference.last().unwrap().canonical_data_draft().unwrap(),
+                Data::Matrix(expected.clone().into())
+            );
+            assert_eq!(
+                output
+                    .last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                Data::Matrix(expected.into())
+            );
+            drop((args, output, reference));
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+}
