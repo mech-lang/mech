@@ -398,7 +398,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 109;
 // Policy87 retains nonescaping buffer argument frames in planned handle lanes.
 // Policy88 uses the core composite binding witness for frame metadata admission.
 // Policy89 retains private record fields through validated reference transport.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 89;
+// Policy90 packs current-visit proof rows within the existing finite byte bound.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 90;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
