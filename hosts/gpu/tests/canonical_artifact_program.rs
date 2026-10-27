@@ -37,6 +37,9 @@ mod uniform_words_qualification;
 #[path = "support/canonical_program_sequence_capacity.rs"]
 mod sequence_capacity_qualification;
 
+#[path = "support/canonical_program_buffer_frames.rs"]
+mod buffer_frame_qualification;
+
 #[path = "support/canonical_program_linked.rs"]
 mod linked_qualification;
 

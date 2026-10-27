@@ -42,8 +42,12 @@ pub use string_element_map_projection::NativeStringElementMapProjection;
 pub(crate) mod string_span_projection;
 pub(crate) mod text_join_sink;
 
+#[cfg(feature = "sequence_buffers")]
+mod buffer_frames;
 mod phase_validation;
 mod program;
+#[cfg(feature = "sequence_buffers")]
+pub use buffer_frames::{NativeBufferFrameAction, NativeBufferFrameOperation, NativeBufferFrames};
 mod program_factory_linkage;
 mod program_image;
 #[cfg(any(

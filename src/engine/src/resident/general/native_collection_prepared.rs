@@ -65,6 +65,9 @@ fn record_selector(
 #[path = "native_collection_prepared_image.rs"]
 mod image;
 
+#[cfg(feature = "sequence_buffers")]
+#[path = "native_collection_buffer_frames.rs"]
+mod buffer_frames;
 #[path = "native_collection_histogram.rs"]
 mod histogram;
 #[path = "native_collection_record_words.rs"]

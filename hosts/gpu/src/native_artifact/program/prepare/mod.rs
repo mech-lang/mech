@@ -33,6 +33,7 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     // from another artifact or rebind one to a different selected factory.
     // Same-plan last-use candidates are recomputed on every image load. The
     // runtime still checks exact current owners and exclusive core storage.
+    pub(in crate::native_artifact) buffer_frames: mech_engine::native_artifact::NativeBufferFrames,
     pub(in crate::native_artifact) unsigned_buffer_calls:
         Box<[Option<mech_engine::native_artifact::NativeUnsignedBufferCall>]>,
     // Pure derived cache. Recomputed from the validated plan on image load;
@@ -351,6 +352,7 @@ impl PreparedNativeProgram {
             .transpose()
             .map_err(str::to_owned)?
             .unwrap_or_default();
+        let buffer_frames = facts.buffer_frames();
         let (scalar_aggregates, line_retention_frontiers) = facts.into_preparation_inventories();
         let metadata = ProgramMetadata {
             plan,
@@ -366,6 +368,7 @@ impl PreparedNativeProgram {
             max_library_inputs,
             uniform_word_collections,
             unsigned_buffer_calls,
+            buffer_frames,
             window_regions,
             string_map_regions,
             scalar_aggregates,

@@ -316,3 +316,5 @@ mod state;
 use self::hooks::{admit, helper};
 use self::invocation::Invocation;
 use self::state::{ExecutionState, RuntimeStats};
+
+mod buffer_frames;

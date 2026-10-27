@@ -7,6 +7,7 @@ use crate::native_artifact::{NativeValueHandle, NativeWorkMeter};
 use mech_core::{MemoryBudgetLimits, Value};
 use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeMatchValue};
 
+mod buffer_frames;
 mod unsigned_buffers;
 mod word_reads;
 
@@ -475,6 +476,10 @@ impl Invocation<'_, '_, '_> {
             if self.state.consumed || args != [0; 3] {
                 return Err(invalid("duplicate or malformed structural observation"));
             }
+            if let Some(result) = self.buffer_frame_action(site, tag, &[])? {
+                self.state.consumed = true;
+                return Ok(result);
+            }
             let NativeIterationAction::Structural {
                 source,
                 path,
@@ -620,6 +625,10 @@ impl Invocation<'_, '_, '_> {
             // the synchronous entry. Native code is suspended in this callback;
             // no Rust reference to the lane survives across native writes.
             let words = unsafe { core::slice::from_raw_parts(self.arguments, operands.len()) };
+            if let Some(result) = self.buffer_frame_action(site, tag, words)? {
+                self.state.consumed = true;
+                return Ok(result);
+            }
             if self.unsigned_buffer_call(site, words)? {
                 self.state.consumed = true;
                 return Ok(None);
@@ -700,15 +709,18 @@ impl Invocation<'_, '_, '_> {
             let (source, output) = self
                 .needs_move(site)
                 .ok_or_else(|| invalid("move outside managed copy/carrier"))?;
-            if self.move_joined_map(source.get(), output.get())? {
+            let frame_move = self.buffer_frame_action(site, tag, &[])?.is_some();
+            if !frame_move && self.move_joined_map(source.get(), output.get())? {
                 self.state.consumed = true;
                 return Ok(None);
             }
-            self.state.arena.copy_current_to(
-                source.get(),
-                output.get(),
-                &mut self.state.control.work,
-            )?;
+            if !frame_move {
+                self.state.arena.copy_current_to(
+                    source.get(),
+                    output.get(),
+                    &mut self.state.control.work,
+                )?;
+            }
             if let NativeIterationAction::Latch { iteration } =
                 descriptor.metadata().plan.blocks()[site].action()
                 && matches!(
@@ -1044,6 +1056,11 @@ impl Invocation<'_, '_, '_> {
             .work
             .charge(NativeExecutionPhase::Setup, scan)?;
         for &slot in slots {
+            self.state.buffer_frames.retire(
+                &self.descriptor.metadata().buffer_frames,
+                slot as u32,
+                &mut self.state.control.work,
+            )?;
             self.state
                 .arena
                 .retire_current(slot as u32, &mut self.state.control.work)?;
