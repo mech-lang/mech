@@ -30,6 +30,11 @@ pub(super) fn bind_append_le_bytes(
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind(request, Operation::AppendLeBytes)
 }
+pub(super) fn bind_append_sublist(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind(request, Operation::AppendSublist)
+}
 pub(super) fn bind_clear(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
@@ -143,13 +148,32 @@ fn execute(
     let source = (plan.operation != Operation::WithCapacity)
         .then(|| input(plan, inputs, 0))
         .transpose()?;
-    let argument = if plan.operation.arity() >= 2 {
+    let argument = if plan.operation == Operation::AppendSublist {
+        0
+    } else if plan.operation.arity() >= 2 {
         primitive::scalar_word(input(plan, inputs, 1)?.data())
             .map_err(|_| ResidentKernelError::InvalidInput)?
     } else {
         0
     };
-    let extent_argument = if plan.operation == Operation::AppendLeBytes {
+    let sublist = if plan.operation == Operation::AppendSublist {
+        let source = input(plan, inputs, 1)?;
+        let range = primitive::sublist_range(
+            source,
+            plan.width,
+            primitive::scalar_word(input(plan, inputs, 2)?.data())
+                .map_err(|_| ResidentKernelError::InvalidInput)?,
+            primitive::scalar_word(input(plan, inputs, 3)?.data())
+                .map_err(|_| ResidentKernelError::InvalidInput)?,
+        )
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+        Some((source, range))
+    } else {
+        None
+    };
+    let extent_argument = if let Some((_, range)) = &sublist {
+        range.len() as u64
+    } else if plan.operation == Operation::AppendLeBytes {
         primitive::scalar_word(input(plan, inputs, 2)?.data())
             .map_err(|_| ResidentKernelError::InvalidInput)?
     } else {
@@ -184,6 +208,10 @@ fn execute(
     let source_footprint = source
         .map(|source| budget::measure_canonical_value_footprint(&mut meter, source, schemas))
         .transpose()?;
+    let sublist_footprint = sublist
+        .as_ref()
+        .map(|(source, _)| budget::measure_canonical_value_footprint(&mut meter, source, schemas))
+        .transpose()?;
     let prior = target
         .as_ref()
         .map(|prior| budget::published_canonical_footprint(&mut meter, prior, schemas))
@@ -207,8 +235,10 @@ fn execute(
     let prior_bytes = prior.map_or(0, |f| f.retained_bytes);
     let output_bytes = prospective.retained_bytes;
     let measured = meter.estimate();
-    let no_op = plan.operation == Operation::AppendLeBytes
-        && extent_argument == 0
+    let no_op = matches!(
+        plan.operation,
+        Operation::AppendLeBytes | Operation::AppendSublist
+    ) && extent_argument == 0
         && source.is_some_and(|value| {
             value.schema_key() == metadata.schema_key
                 && value.schema() == metadata.schema
@@ -222,8 +252,16 @@ fn execute(
             _ => 0,
         })
     };
+    let cloned = cloned
+        .checked_add(
+            sublist
+                .as_ref()
+                .map_or(0, |(_, r)| r.len() as u64 * plan.width as u64),
+        )
+        .ok_or(ResidentKernelError::InvalidShape)?;
     let temporary = output_bytes
         .checked_add(source_bytes)
+        .and_then(|n| n.checked_add(sublist_footprint.map_or(0, |f| f.retained_bytes)))
         .and_then(|n| n.checked_add(prior_bytes))
         .and_then(|n| n.checked_add(schema_scratch))
         .ok_or(ResidentKernelError::InvalidShape)?;
@@ -235,6 +273,7 @@ fn execute(
     let nodes = prospective
         .node_count
         .checked_add(source_footprint.map_or(0, |f| f.node_count))
+        .and_then(|n| n.checked_add(sublist_footprint.map_or(0, |f| f.node_count)))
         .and_then(|n| n.checked_add(prior.map_or(0, |f| f.node_count)))
         .and_then(|n| n.checked_add(8))
         .ok_or(ResidentKernelError::InvalidShape)?;
@@ -246,8 +285,14 @@ fn execute(
     let next = if no_op {
         source.ok_or(ResidentKernelError::InvalidInput)?.clone()
     } else {
-        let buffer = primitive::copy_buffer(plan.operation, source, geometry, argument)
-            .map_err(|_| ResidentKernelError::InvalidOutput)?;
+        let buffer = primitive::copy_buffer_with_sublist(
+            plan.operation,
+            source,
+            geometry,
+            argument,
+            sublist,
+        )
+        .map_err(|_| ResidentKernelError::InvalidOutput)?;
         let next =
             Value::from_unsigned_matrix_buffer(metadata.schema, shape, buffer, Arc::clone(schemas))
                 .map_err(|_| ResidentKernelError::InvalidOutput)?;

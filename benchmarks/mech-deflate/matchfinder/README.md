@@ -1,6 +1,39 @@
 # DEFLATE binary-tree match finder
 
 
+## Stored payload range append
+
+The stored-block path requires `List.append_sublist` at pinned
+`BlockOut.roc:603`. The new generic `sequence/append-sublist(destination, source,
+start, count)` operates on packed U8/U16/U32/U64 rows. It clamps start to the
+source length and count to the remaining length, including U64::MAX inputs.
+The source remains borrowed. A uniquely owned destination retains its allocation;
+shared destinations preserve aliases. An empty range retains the exact destination
+owner when its schema already matches.
+
+The operation uses the existing maintained contract/catalog, managed runtime,
+resident kernel and derived native buffer-ownership path. Native IR115 adds the
+second managed input to the selected call witness. The native helper borrows that
+input before retiring destination slots, so self-append cannot free its source.
+The copied source range is charged as cloned bytes; there is no intermediate
+sublist allocation or repeated whole-output concatenation.
+
+The [requirement and receipts](../results/2026-10-27-range-append/requirement.json)
+include the failing parent acceptance test. Original/decoded native tests retain
+6,633,832 bytes of output capacity and copy every byte at the 65,535/65,536 boundary.
+The 65,536-byte calls take approximately 0.23–0.29 ms in the unoptimized witness,
+including construction of the reserved output. This is a range-copy measurement,
+not compression. Small/real reservations request the same 213 allocations and
+differ in cumulative allocated bytes by exactly 6,633,320.
+
+Clamping, source/self aliases, zero-count identity, resource-denial recovery,
+unchanged prior publication, managed factory signatures, current cached ranges,
+and cleanup are qualified. Resident comparisons use the small reservation under
+its existing limits; the real reservation runs natively and in the linked test.
+Full block assembly, complete compressor integration and correctness still
+precede any compression timing.
+
+
 ## Block cost and compressed-header assembly
 
 `block-compute-costs` now executes the block writer's exact dynamic, static,

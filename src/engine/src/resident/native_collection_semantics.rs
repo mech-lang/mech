@@ -49,6 +49,8 @@ pub enum NativeCollectionPrimitive {
     #[cfg(feature = "sequence_buffers")]
     SequenceAppendLeBytes,
     #[cfg(feature = "sequence_buffers")]
+    SequenceAppendSublist,
+    #[cfg(feature = "sequence_buffers")]
     SequenceClear,
     StringRangeAccess,
     #[cfg(feature = "native-artifact")]
@@ -329,6 +331,9 @@ pub mod linkage_factories {
     factory!(@features SEQUENCE_APPEND_LE_BYTES, &["sequence_buffers"], &["sequence"], "append-le-bytes", CanonicalFinalize,
         super::super::sequence_buffers::bind_append_le_bytes, NativeCollectionPrimitive::SequenceAppendLeBytes);
     #[cfg(feature = "sequence_buffers")]
+    factory!(@features SEQUENCE_APPEND_SUBLIST, &["sequence_buffers"], &["sequence"], "append-sublist", CanonicalFinalize,
+        super::super::sequence_buffers::bind_append_sublist, NativeCollectionPrimitive::SequenceAppendSublist);
+    #[cfg(feature = "sequence_buffers")]
     factory!(@features SEQUENCE_CLEAR, &["sequence_buffers"], &["sequence"], "clear", CanonicalFinalize,
         super::super::sequence_buffers::bind_clear, NativeCollectionPrimitive::SequenceClear);
     #[cfg(feature = "map_ops")]
@@ -497,6 +502,7 @@ pub(crate) fn register_sequence_buffers(builder: &mut FunctionCatalogBuilder) ->
     SEQUENCE_RESERVE.install(builder)?;
     SEQUENCE_APPEND.install(builder)?;
     SEQUENCE_APPEND_LE_BYTES.install(builder)?;
+    SEQUENCE_APPEND_SUBLIST.install(builder)?;
     SEQUENCE_CLEAR.install(builder)
 }
 

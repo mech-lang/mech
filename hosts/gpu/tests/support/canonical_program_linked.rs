@@ -179,6 +179,13 @@ fn linked_mixed_record_buffer_frames_preserve_publication_and_recover() {
     });
 }
 
+#[test]
+fn linked_sublist_append_preserves_publication_and_recovers() {
+    let source = "+> sequence\nchecked(n<u64>) => (out<u64>) :=\n  positive! := n > 0u64\n  bytes := sequence/append-sublist(sequence/with-capacity(0u8, 6633832u64), [1u8 2u8 3u8], 0u64, n)\n  out := 12u64 / sequence/length(bytes).\nchecked(input<u64>)\n";
+    let oracle = source.replace("6633832u64", "512u64");
+    linked_assertion_retry_with_oracle(source, &oracle, ValueDataDraft::U64);
+}
+
 fn linked_assertion_retry(source: &str, input_word: fn(u64) -> ValueDataDraft) {
     linked_assertion_retry_with_oracle(source, source, input_word);
 }

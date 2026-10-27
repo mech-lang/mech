@@ -36,6 +36,7 @@ fn buffer_shape_follows_input(template: &NativeProgramLibraryTemplate) -> bool {
         crate::native_artifact::NativeCollectionPrimitive::SequenceReserve
             | crate::native_artifact::NativeCollectionPrimitive::SequenceAppend
             | crate::native_artifact::NativeCollectionPrimitive::SequenceAppendLeBytes
+            | crate::native_artifact::NativeCollectionPrimitive::SequenceAppendSublist
     );
     #[cfg(not(feature = "sequence_buffers"))]
     {
@@ -553,6 +554,12 @@ impl NativePreparedLibraryCall {
                 crate::native_artifact::NativeCollectionPrimitive::SequenceAppend => {
                     count.checked_add(1).ok_or(InvokeError::InvalidInput)?
                 }
+                crate::native_artifact::NativeCollectionPrimitive::SequenceAppendSublist => count
+                    .checked_add(
+                        prepared_sublist_count(&self.template, inputs)
+                            .ok_or(InvokeError::InvalidInput)?,
+                    )
+                    .ok_or(InvokeError::InvalidInput)?,
                 crate::native_artifact::NativeCollectionPrimitive::SequenceAppendLeBytes => {
                     let Some(mech_core::ValueData::U8(bytes @ 0..=8)) =
                         inputs.get(2).and_then(Option::as_ref).map(Value::data)
@@ -638,6 +645,32 @@ impl NativePreparedLibraryCall {
         inputs: &[Option<Value>],
         output: &Option<Value>,
     ) -> bool {
+        #[cfg(feature = "sequence_buffers")]
+        if self.template.primitive()
+            == crate::native_artifact::NativeCollectionPrimitive::SequenceAppendSublist
+        {
+            let Some(mech_core::ValueData::Matrix(source)) =
+                inputs.first().and_then(Option::as_ref).map(Value::data)
+            else {
+                return false;
+            };
+            let Some(count) = prepared_sublist_count(&self.template, inputs) else {
+                return false;
+            };
+            let mech_core::SchemaBody::Matrix { dimensions, .. } = self.template.output().body()
+            else {
+                return false;
+            };
+            if (source.elements().len() as u64).checked_add(count)
+                != call
+                    .output()
+                    .shape_instance
+                    .resolve_dimension(&dimensions[1])
+                    .ok()
+            {
+                return false;
+            }
+        }
         #[cfg(feature = "sequence_buffers")]
         if self.template.primitive()
             == crate::native_artifact::NativeCollectionPrimitive::SequenceAppendLeBytes
@@ -945,4 +978,24 @@ impl NativePreparedLibraryCall {
         let call = self.bind_values(inputs, output, nested)?;
         call.invoke(inputs, output, work)
     }
+}
+
+#[cfg(feature = "sequence_buffers")]
+fn prepared_sublist_count(
+    template: &NativeProgramLibraryTemplate,
+    inputs: &[Option<Value>],
+) -> Option<u64> {
+    use crate::intrinsics::sequence_buffers as buffers;
+    let source = inputs.get(1)?.as_ref()?;
+    let width = buffers::width(buffers::output_element(
+        buffers::Operation::AppendSublist,
+        template.output().body(),
+    )?)?;
+    let start = buffers::scalar_word(inputs.get(2)?.as_ref()?.data()).ok()?;
+    let count = buffers::scalar_word(inputs.get(3)?.as_ref()?.data()).ok()?;
+    Some(
+        buffers::sublist_range(source, width, start, count)
+            .ok()?
+            .len() as u64,
+    )
 }

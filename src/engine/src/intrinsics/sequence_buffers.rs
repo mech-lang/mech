@@ -19,14 +19,16 @@ pub(crate) enum Operation {
     Reserve,
     Append,
     AppendLeBytes,
+    AppendSublist,
     Clear,
 }
 #[cfg(feature = "semantic-compiler")]
-pub(crate) const OPERATIONS: [Operation; 5] = [
+pub(crate) const OPERATIONS: [Operation; 6] = [
     Operation::WithCapacity,
     Operation::Reserve,
     Operation::Append,
     Operation::AppendLeBytes,
+    Operation::AppendSublist,
     Operation::Clear,
 ];
 impl Operation {
@@ -36,6 +38,7 @@ impl Operation {
             Self::Reserve => "sequence/reserve",
             Self::Append => "sequence/append",
             Self::AppendLeBytes => "sequence/append-le-bytes",
+            Self::AppendSublist => "sequence/append-sublist",
             Self::Clear => "sequence/clear",
         }
     }
@@ -46,6 +49,7 @@ impl Operation {
             Self::Reserve => "reserve",
             Self::Append => "append",
             Self::AppendLeBytes => "append-le-bytes",
+            Self::AppendSublist => "append-sublist",
             Self::Clear => "clear",
         }
     }
@@ -53,6 +57,7 @@ impl Operation {
         match self {
             Self::Clear => 1,
             Self::AppendLeBytes => 3,
+            Self::AppendSublist => 4,
             _ => 2,
         }
     }
@@ -69,6 +74,9 @@ impl Operation {
         static BYTES: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
             mech_core::maintained_operation_contract("sequence/append-le-bytes", 3, true).unwrap()
         });
+        static SUBLIST: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
+            mech_core::maintained_operation_contract("sequence/append-sublist", 4, true).unwrap()
+        });
         static CLEAR: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
             mech_core::maintained_operation_contract("sequence/clear", 1, true).unwrap()
         });
@@ -77,6 +85,7 @@ impl Operation {
             Self::Reserve => &RESERVE,
             Self::Append => &APPEND,
             Self::AppendLeBytes => &BYTES,
+            Self::AppendSublist => &SUBLIST,
             Self::Clear => &CLEAR,
         }
     }
@@ -114,7 +123,10 @@ fn input_element(body: &SchemaBody) -> Option<&SchemaBody> {
     }
 }
 pub(crate) fn output_element(operation: Operation, body: &SchemaBody) -> Option<&SchemaBody> {
-    if operation == Operation::AppendLeBytes {
+    if matches!(
+        operation,
+        Operation::AppendLeBytes | Operation::AppendSublist
+    ) {
         input_element(body)
     } else {
         element(body)
@@ -146,6 +158,11 @@ pub(crate) fn schemas_supported(
                 source == &SchemaBody::UnsignedInteger(IntegerWidth::W8)
                     && inputs[1] == SchemaBody::UnsignedInteger(IntegerWidth::W64)
                     && inputs[2] == SchemaBody::UnsignedInteger(IntegerWidth::W8)
+            }
+            Operation::AppendSublist => {
+                input_element(&inputs[1]) == Some(source)
+                    && inputs[2] == SchemaBody::UnsignedInteger(IntegerWidth::W64)
+                    && inputs[3] == SchemaBody::UnsignedInteger(IntegerWidth::W64)
             }
             Operation::Clear => true,
         }
@@ -266,12 +283,15 @@ fn geometry_for_header(
             ),
             width: source_width,
         },
-        Operation::Append | Operation::AppendLeBytes => {
+        Operation::Append | Operation::AppendLeBytes | Operation::AppendSublist => {
             let count = if operation == Operation::AppendLeBytes {
                 if source_width != 1 || argument > 8 {
                     return Err(invalid("byte append count exceeds eight"));
                 }
                 argument as usize
+            } else if operation == Operation::AppendSublist {
+                usize::try_from(argument)
+                    .map_err(|_| invalid("sequence range exceeds address space"))?
             } else {
                 1
             };
@@ -297,6 +317,64 @@ fn geometry_for_header(
     }
     Ok(result)
 }
+/// Clamp before arithmetic, matching sublist semantics even at U64::MAX.
+pub(crate) fn clamped_sublist(length: usize, start: u64, count: u64) -> core::ops::Range<usize> {
+    let start = start.min(length as u64) as usize;
+    let count = count.min((length - start) as u64) as usize;
+    start..start + count
+}
+pub(crate) fn sublist_range(
+    source: &Value,
+    width: usize,
+    start: u64,
+    count: u64,
+) -> MResult<core::ops::Range<usize>> {
+    let header = geometry(Operation::Reserve, Some(source), width, 0)?;
+    let ValueData::Matrix(matrix) = source.data() else {
+        return Err(invalid("sublist source is not a matrix"));
+    };
+    let actual_width = match matrix.elements() {
+        SequenceView::U8(_) => 1,
+        SequenceView::U16(_) => 2,
+        SequenceView::U32(_) => 4,
+        SequenceView::U64(_) => 8,
+        _ => return Err(invalid("sublist source is not packed unsigned")),
+    };
+    if actual_width != width {
+        return Err(invalid("sublist element width differs"));
+    }
+    Ok(clamped_sublist(header.length, start, count))
+}
+/// The caller admits and reserves the final capacity before this single copy.
+pub(crate) fn append_sublist(
+    buffer: &mut UnsignedMatrixBuffer,
+    source: &Value,
+    range: core::ops::Range<usize>,
+) -> MResult<()> {
+    let ValueData::Matrix(matrix) = source.data() else {
+        return Err(invalid("sublist source is not a matrix"));
+    };
+    macro_rules! append {
+        ($words:expr, $source:expr) => {{
+            let values = $source
+                .get(range)
+                .ok_or_else(|| invalid("sublist bounds changed"))?;
+            if values.len() > $words.capacity() - $words.len() {
+                return Err(invalid("sublist exceeds admitted capacity"));
+            }
+            $words.extend_from_slice(values);
+        }};
+    }
+    match (buffer, matrix.elements()) {
+        (UnsignedMatrixBuffer::U8(a), SequenceView::U8(b)) => append!(a, b),
+        (UnsignedMatrixBuffer::U16(a), SequenceView::U16(b)) => append!(a, b),
+        (UnsignedMatrixBuffer::U32(a), SequenceView::U32(b)) => append!(a, b),
+        (UnsignedMatrixBuffer::U64(a), SequenceView::U64(b)) => append!(a, b),
+        _ => return Err(invalid("sublist element width differs")),
+    }
+    Ok(())
+}
+
 pub(crate) fn scalar_word(value: &ValueData) -> MResult<u64> {
     match value {
         ValueData::U8(x) => Ok(u64::from(*x)),
@@ -311,11 +389,12 @@ pub(crate) fn scalar_word(value: &ValueData) -> MResult<u64> {
 
 /// Construct a fresh backing only for an actual allocation/copy path. The
 /// caller owns all admission before entering; no capacity-sized zero fill runs.
-pub(crate) fn copy_buffer(
+pub(crate) fn copy_buffer_with_sublist(
     operation: Operation,
     source: Option<&Value>,
     geometry: Geometry,
     argument: u64,
+    sublist: Option<(&Value, core::ops::Range<usize>)>,
 ) -> MResult<UnsignedMatrixBuffer> {
     macro_rules! copy {
         ($ty:ty, $variant:ident) => {{
@@ -360,19 +439,24 @@ pub(crate) fn copy_buffer(
                         .map(|&byte| <$ty>::from(byte)),
                 );
             }
-            if words.len() != geometry.length {
+            if operation != Operation::AppendSublist && words.len() != geometry.length {
                 return Err(invalid("sequence constructed length changed"));
             }
             UnsignedMatrixBuffer::$variant(words)
         }};
     }
-    Ok(match geometry.width {
+    let mut buffer = match geometry.width {
         1 => copy!(u8, U8),
         2 => copy!(u16, U16),
         4 => copy!(u32, U32),
         8 => copy!(u64, U64),
         _ => return Err(invalid("sequence buffer width")),
-    })
+    };
+    if operation == Operation::AppendSublist {
+        let (source, range) = sublist.ok_or_else(|| invalid("sublist source missing"))?;
+        append_sublist(&mut buffer, source, range)?;
+    }
+    Ok(buffer)
 }
 
 #[derive(Debug)]
@@ -390,9 +474,11 @@ impl BufferRuntime {
             invocation.input_cells(),
         )?;
         let body = invocation.output_cell().closed_schema_body()?;
-        let width =
-            width(element(&body).ok_or_else(|| invalid("sequence output must be a packed row"))?)
-                .unwrap();
+        let width = width(
+            output_element(operation, &body)
+                .ok_or_else(|| invalid("sequence output must be a packed row"))?,
+        )
+        .unwrap();
         Ok(Box::new(Self {
             operation,
             inputs: invocation.input_cells().to_vec(),
@@ -401,7 +487,23 @@ impl BufferRuntime {
         }))
     }
     fn geometry(&self) -> MResult<Geometry> {
-        let argument = if self.operation.arity() >= 2 {
+        let argument = if self.operation == Operation::AppendSublist {
+            let extents = self.inputs[1]
+                .resolved_descriptor()?
+                .current_extents()
+                .map_err(|_| invalid("sublist input geometry"))?;
+            if extents.len() != 2 || extents[0] != 1 {
+                return Err(invalid("sublist requires one row"));
+            }
+            let length =
+                usize::try_from(extents[1]).map_err(|_| invalid("sublist input too large"))?;
+            clamped_sublist(
+                length,
+                scalar_word(self.inputs[2].snapshot()?.data())?,
+                scalar_word(self.inputs[3].snapshot()?.data())?,
+            )
+            .len() as u64
+        } else if self.operation.arity() >= 2 {
             let index = if self.operation == Operation::AppendLeBytes {
                 2
             } else {
@@ -544,12 +646,26 @@ impl MechFunctionImpl for BufferRuntime {
                 )?);
             }
             let source = (self.operation != Operation::WithCapacity).then(|| &inputs[0]);
-            let argument = if inputs.len() >= 2 {
+            let argument = if self.operation == Operation::AppendSublist {
+                0
+            } else if inputs.len() >= 2 {
                 scalar_word(inputs[1].data())?
             } else {
                 0
             };
-            let extent_argument = if self.operation == Operation::AppendLeBytes {
+            let range = if self.operation == Operation::AppendSublist {
+                Some(sublist_range(
+                    &inputs[1],
+                    self.width,
+                    scalar_word(inputs[2].data())?,
+                    scalar_word(inputs[3].data())?,
+                )?)
+            } else {
+                None
+            };
+            let extent_argument = if let Some(range) = &range {
+                range.len() as u64
+            } else if self.operation == Operation::AppendLeBytes {
                 scalar_word(inputs[2].data())?
             } else {
                 argument
@@ -565,8 +681,10 @@ impl MechFunctionImpl for BufferRuntime {
             let value = construction.try_build_canonical_candidate_with(|_| {
                 let schemas =
                     std::sync::Arc::new(self.output.retained_schema_table().as_ref().clone());
-                if self.operation == Operation::AppendLeBytes
-                    && extent_argument == 0
+                if matches!(
+                    self.operation,
+                    Operation::AppendLeBytes | Operation::AppendSublist
+                ) && extent_argument == 0
                     && source.is_some_and(|value| {
                         value.schema_key() == schemas.entry(self.output.schema()).unwrap().key()
                             && value.schema() == self.output.schema()
@@ -578,7 +696,13 @@ impl MechFunctionImpl for BufferRuntime {
                 Value::from_unsigned_matrix_buffer(
                     self.output.schema(),
                     shape,
-                    copy_buffer(self.operation, source, geometry, argument)?,
+                    copy_buffer_with_sublist(
+                        self.operation,
+                        source,
+                        geometry,
+                        argument,
+                        range.clone().map(|range| (&inputs[1], range)),
+                    )?,
                     schemas,
                 )
                 .map_err(|_| invalid("sequence output construction rejected"))
@@ -614,7 +738,11 @@ impl MechFunctionCompiler for BufferRuntime {
             context.emit_unop(function, output, first);
         } else {
             let second = compile_value_cell_register(&self.inputs[1], context)?;
-            if self.inputs.len() == 3 {
+            if self.inputs.len() == 4 {
+                let third = compile_value_cell_register(&self.inputs[2], context)?;
+                let fourth = compile_value_cell_register(&self.inputs[3], context)?;
+                context.emit_quadop(function, output, first, second, third, fourth);
+            } else if self.inputs.len() == 3 {
                 let third = compile_value_cell_register(&self.inputs[2], context)?;
                 context.emit_ternop(function, output, first, second, third);
             } else {
@@ -698,6 +826,21 @@ define_factory!(
     validate_append_le_bytes
 );
 define_factory!(
+    AppendSublistFactory,
+    AppendSublist,
+    register_append_sublist,
+    install_sequence_append_sublist,
+    "sequence/append-sublist",
+    RuntimeFunctionSignature::quaternary(
+        FunctionValueRepresentation::AnyValue,
+        FunctionValueRepresentation::AnyValue,
+        FunctionValueRepresentation::AnyValue,
+        FunctionValueRepresentation::AnyValue,
+        FunctionValueRepresentation::AnyValue
+    ),
+    validate_append_sublist
+);
+define_factory!(
     ClearFactory,
     Clear,
     register_clear,
@@ -714,6 +857,7 @@ pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     register_reserve(builder)?;
     register_append(builder)?;
     register_append_le_bytes(builder)?;
+    register_append_sublist(builder)?;
     register_clear(builder)
 }
 #[cfg(feature = "semantic-compiler")]

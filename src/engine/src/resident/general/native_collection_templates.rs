@@ -158,6 +158,8 @@ impl NativeCollectionPrimitive {
             #[cfg(feature = "sequence_buffers")]
             Self::SequenceAppendLeBytes => "sequence/append-le-bytes",
             #[cfg(feature = "sequence_buffers")]
+            Self::SequenceAppendSublist => "sequence/append-sublist",
+            #[cfg(feature = "sequence_buffers")]
             Self::SequenceClear => "sequence/clear",
             Self::StringRangeAccess | Self::StringAllAccess | Self::MatrixRangeAccess => {
                 "access/range"
@@ -196,6 +198,8 @@ impl NativeCollectionPrimitive {
             Self::MatrixIndexedReplace => 3,
             #[cfg(feature = "sequence_buffers")]
             Self::SequenceAppendLeBytes => 3,
+            #[cfg(feature = "sequence_buffers")]
+            Self::SequenceAppendSublist => 4,
             #[cfg(feature = "map_ops")]
             Self::MapNew => 0,
             #[cfg(feature = "map_ops")]
@@ -606,6 +610,7 @@ fn validate_schemas(
         | NativeCollectionPrimitive::SequenceReserve
         | NativeCollectionPrimitive::SequenceAppend
         | NativeCollectionPrimitive::SequenceAppendLeBytes
+        | NativeCollectionPrimitive::SequenceAppendSublist
         | NativeCollectionPrimitive::SequenceClear) => {
             use crate::intrinsics::sequence_buffers::{self as buffers, Operation as O};
             let operation = match kind {
@@ -613,6 +618,7 @@ fn validate_schemas(
                 NativeCollectionPrimitive::SequenceReserve => O::Reserve,
                 NativeCollectionPrimitive::SequenceAppend => O::Append,
                 NativeCollectionPrimitive::SequenceAppendLeBytes => O::AppendLeBytes,
+                NativeCollectionPrimitive::SequenceAppendSublist => O::AppendSublist,
                 NativeCollectionPrimitive::SequenceClear => O::Clear,
                 _ => unreachable!(),
             };

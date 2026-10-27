@@ -38,7 +38,7 @@ impl Invocation<'_, '_, '_> {
         }
         for (index, operand) in operands.iter().enumerate() {
             let kind = descriptor.metadata().plan.values()[operand.get() as usize].scalar_kind();
-            if Some(*operand) == proof.source() {
+            if Some(*operand) == proof.source() || Some(*operand) == proof.sublist() {
                 if kind.is_some() || words[index] != 0 {
                     return Err(invalid("buffer source is not a managed owner"));
                 }
@@ -65,6 +65,16 @@ impl Invocation<'_, '_, '_> {
             .control
             .work
             .charge(crate::native_artifact::NativeExecutionPhase::Setup, checks)?;
+        // Borrow before retiring destination aliases: self-append must keep the
+        // old backing immutable while its selected range is read.
+        let sublist = proof
+            .sublist()
+            .map(|value| {
+                self.state
+                    .arena
+                    .copy_current(value.get(), &mut self.state.control.work)
+            })
+            .transpose()?;
         let source = proof
             .source()
             .map(|source| {
@@ -83,10 +93,14 @@ impl Invocation<'_, '_, '_> {
             }
         }
         let result = call
-            .unsigned_buffer_with_count(
+            .unsigned_buffer_with_sublist(
                 source,
-                words.get(1).copied().unwrap_or(0),
-                words.get(2).copied(),
+                words
+                    .get(if sublist.is_some() { 2 } else { 1 })
+                    .copied()
+                    .unwrap_or(0),
+                words.get(if sublist.is_some() { 3 } else { 2 }).copied(),
+                sublist,
                 !proof.owned_source_slots().is_empty(),
                 self.limits,
                 &self.state.library,

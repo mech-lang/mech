@@ -1178,6 +1178,16 @@ fn sequence_buffer(name: &str) -> Result<Vec<KindScheme>, SemanticModelError> {
                 dim(2),
                 3,
             ),
+            "sequence/append-sublist" => (
+                vec![
+                    matrix(element.clone(), dim(0), dim(1)),
+                    matrix(element.clone(), dim(2), dim(3)),
+                    BuiltinScalarKind::U64.kind_expr(),
+                    BuiltinScalarKind::U64.kind_expr(),
+                ],
+                dim(4),
+                5,
+            ),
             "sequence/clear" => (vec![matrix(element.clone(), dim(0), dim(1))], dim(2), 3),
             _ => unreachable!("maintained buffer scheme selection"),
         };
@@ -1186,7 +1196,13 @@ fn sequence_buffer(name: &str) -> Result<Vec<KindScheme>, SemanticModelError> {
         // frame's schema to zero (or an ever-growing affine expression).
         // A generic matrix parameter need not prove its row extent statically;
         // the operation checks the current row and refines the successful result.
-        make(0, dims, inputs, vec![row(count)], Vec::new())
+        let output = if name == "sequence/append-sublist" {
+            // Keep the destination row axis so an empty append can retain its owner.
+            matrix(element.clone(), dim(0), count)
+        } else {
+            row(count)
+        };
+        make(0, dims, inputs, vec![output], Vec::new())
     })
     .collect()
 }
@@ -1846,6 +1862,7 @@ pub fn maintained_source_schemes(
         | "sequence/reserve"
         | "sequence/append"
         | "sequence/append-le-bytes"
+        | "sequence/append-sublist"
         | "sequence/clear") => sequence_buffer(name)?,
         "sequence/sort-indices" => vec![sequence_sort_indices()?],
         "text/lines" => vec![text_lines()?],

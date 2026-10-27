@@ -20,6 +20,7 @@ impl NativePreparedLibraryCall {
             P::SequenceReserve => Operation::Reserve,
             P::SequenceAppend => Operation::Append,
             P::SequenceAppendLeBytes => Operation::AppendLeBytes,
+            P::SequenceAppendSublist => Operation::AppendSublist,
             P::SequenceClear => Operation::Clear,
             _ => return None,
         })
@@ -57,27 +58,41 @@ impl NativePreparedLibraryCall {
         work: &NativeLibraryWorkBudget,
         coexistence: ResourceDemand,
     ) -> Result<Value, InvokeError> {
+        self.unsigned_buffer_with_sublist(
+            source,
+            argument,
+            count,
+            None,
+            may_consume,
+            limits,
+            work,
+            coexistence,
+        )
+    }
+    /// The second managed input is borrowed; it is never retired with the destination.
+    pub fn unsigned_buffer_with_sublist(
+        &self,
+        source: Option<Value>,
+        argument: u64,
+        count: Option<u64>,
+        sublist: Option<Value>,
+        may_consume: bool,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+    ) -> Result<Value, InvokeError> {
         finite_limits(self.template.origin().node(), limits).map_err(InvokeError::Binding)?;
         let operation = self.buffer_operation().ok_or(InvokeError::InvalidInput)?;
+        if (operation == Operation::AppendSublist) != sublist.is_some() {
+            return Err(InvokeError::InvalidInput);
+        }
         let extent_argument = match (operation, count) {
+            (Operation::AppendSublist, Some(count)) => count,
+            (Operation::AppendSublist, None) => return Err(InvokeError::InvalidInput),
             (Operation::AppendLeBytes, Some(count @ 0..=8)) => count,
             (Operation::AppendLeBytes, _) | (_, Some(_)) => return Err(InvokeError::InvalidInput),
             (_, None) => argument,
         };
-        // Identity applies only when no schema/shape adaptation is required.
-        // Statically sized inputs retain the admitted immutable-copy fallback.
-        let no_op = operation == Operation::AppendLeBytes
-            && extent_argument == 0
-            && source.as_ref().is_some_and(|value| {
-                value.schema_key() == self.template.output().key()
-                    && value.schema()
-                        == match self.template.contract() {
-                            mech_core::ResolvedOperationContract::Declared(contract) => {
-                                contract.outputs[0].schema
-                            }
-                            _ => return false,
-                        }
-            });
         work.with_call_limits(
             limits.max_compute_work.unwrap(),
             limits.max_comparison_work.unwrap(),
@@ -122,11 +137,59 @@ impl NativePreparedLibraryCall {
                     None if operation == Operation::WithCapacity => (0, 0),
                     _ => return Err(InvokeError::InvalidInput),
                 };
+                let mut sublist_bytes = 0;
+                let mut sublist_nodes = 0;
+                let range = if let Some(value) = sublist.as_ref() {
+                    if value.schema() != contract.inputs[1].schema
+                        || value.schema_key() != self.input_keys[1]
+                    {
+                        return Err(InvokeError::InvalidInput);
+                    }
+                    value
+                        .validate_against(&self.schemas)
+                        .map_err(|_| InvokeError::InvalidInput)?;
+                    sublist_bytes = value
+                        .memory_budget_retained_bytes(&memory)
+                        .ok_or(InvokeError::UnadmittedValue)?;
+                    sublist_nodes = value
+                        .memory_budget_retained_nodes(&memory)
+                        .ok_or(InvokeError::UnadmittedValue)?;
+                    Some(
+                        primitive::sublist_range(value, width, argument, extent_argument)
+                            .map_err(|_| InvokeError::InvalidInput)?,
+                    )
+                } else {
+                    None
+                };
+                let extent_argument = range.as_ref().map_or(extent_argument, |r| r.len() as u64);
+                // Identity applies only when no schema/shape adaptation is required.
+                // Statically sized inputs retain the admitted immutable-copy fallback.
+                let no_op = matches!(
+                    operation,
+                    Operation::AppendLeBytes | Operation::AppendSublist
+                ) && extent_argument == 0
+                    && source.as_ref().is_some_and(|value| {
+                        value.schema_key() == self.template.output().key()
+                            && value.schema()
+                                == match self.template.contract() {
+                                    mech_core::ResolvedOperationContract::Declared(contract) => {
+                                        contract.outputs[0].schema
+                                    }
+                                    _ => return false,
+                                }
+                    });
                 let geometry =
                     primitive::geometry(operation, source.as_ref(), width, extent_argument)
                         .map_err(|_| InvokeError::InvalidInput)?;
                 let context = NativeProjectionIndexContext::new(work, limits, coexistence)
-                    .with_added_capacity(source_bytes, source_nodes)?;
+                    .with_added_capacity(
+                        source_bytes
+                            .checked_add(sublist_bytes)
+                            .ok_or(InvokeError::InvalidInput)?,
+                        source_nodes
+                            .checked_add(sublist_nodes)
+                            .ok_or(InvokeError::InvalidInput)?,
+                    )?;
                 context.check_capacity(0, 0)?;
                 // Shape resolution, construction and eventual schema/owner retirement
                 // use this exact selected template's existing descriptor envelope.
@@ -187,6 +250,9 @@ impl NativePreparedLibraryCall {
                 } else {
                     0
                 };
+                let copy_bytes = copy_bytes
+                    .checked_add(range.as_ref().map_or(0, |r| r.len() as u64 * width as u64))
+                    .ok_or(InvokeError::InvalidInput)?;
                 let allocation = metadata
                     .checked_add(payload_allocation)
                     .ok_or(InvokeError::InvalidInput)?;
@@ -243,11 +309,23 @@ impl NativePreparedLibraryCall {
                     let buffer = if let Some(owned) = owned {
                         let (mut buffer, charge) = owned.into_parts();
                         admission.merge_capacity(charge)?;
-                        mutate(&mut buffer, operation, geometry, argument)?;
+                        mutate(
+                            &mut buffer,
+                            operation,
+                            geometry,
+                            argument,
+                            sublist.as_ref().zip(range.clone()),
+                        )?;
                         buffer
                     } else {
-                        primitive::copy_buffer(operation, source.as_ref(), geometry, argument)
-                            .map_err(|_| InvokeError::InvalidInput)?
+                        primitive::copy_buffer_with_sublist(
+                            operation,
+                            source.as_ref(),
+                            geometry,
+                            argument,
+                            sublist.as_ref().zip(range.clone()),
+                        )
+                        .map_err(|_| InvokeError::InvalidInput)?
                     };
                     let value = Value::from_unsigned_matrix_buffer(
                         output_schema,
@@ -271,6 +349,7 @@ fn mutate(
     operation: Operation,
     geometry: primitive::Geometry,
     argument: u64,
+    sublist: Option<(&Value, core::ops::Range<usize>)>,
 ) -> Result<(), InvokeError> {
     if operation == Operation::AppendLeBytes {
         let UnsignedMatrixBuffer::U8(words) = buffer else {
@@ -336,10 +415,10 @@ fn mutate(
                             .map(|&byte| <$ty>::from(byte)),
                     );
                 }
-                Operation::Reserve => {}
+                Operation::Reserve | Operation::AppendSublist => {}
                 Operation::WithCapacity => return Err(InvokeError::InvalidInput),
             }
-            if $words.len() != geometry.length {
+            if operation != Operation::AppendSublist && $words.len() != geometry.length {
                 return Err(InvokeError::InvalidInput);
             }
         }};
@@ -349,6 +428,13 @@ fn mutate(
         UnsignedMatrixBuffer::U16(v) => words!(v, u16),
         UnsignedMatrixBuffer::U32(v) => words!(v, u32),
         UnsignedMatrixBuffer::U64(v) => words!(v, u64),
+    }
+    if operation == Operation::AppendSublist {
+        let (source, range) = sublist.ok_or(InvokeError::InvalidInput)?;
+        primitive::append_sublist(buffer, source, range).map_err(|_| InvokeError::InvalidInput)?;
+        if buffer.elements().len() != geometry.length {
+            return Err(InvokeError::InvalidInput);
+        }
     }
     Ok(())
 }

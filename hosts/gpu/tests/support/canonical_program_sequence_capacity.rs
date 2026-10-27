@@ -739,3 +739,239 @@ fn bulk_byte_append_generic_native_binding_tracks_count_and_retries() {
         assert_eq!(memory.used_bytes(), 0);
     }
 }
+
+#[test]
+fn append_sublist_clamps_ranges_preserves_capacity_aliases_and_recovers() {
+    for width in [8, 16, 32, 64] {
+        let source = format!(
+            "+> sequence\nsequence/append-sublist(sequence/append(sequence/with-capacity(0u{width}, capacity<u64>), 99u{width}), values<[u{width}]>, start<u64>, count<u64>)\n"
+        );
+        for artifact in artifacts(&source).0 {
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let scalar = |n| match width {
+                8 => Data::U8(n as u8),
+                16 => Data::U16(n as u16),
+                32 => Data::U32(n as u32),
+                _ => Data::U64(n),
+            };
+            let mut measurements = Vec::new();
+            for capacity in if width == 8 {
+                vec![512, 6633832]
+            } else {
+                vec![512]
+            } {
+                let memory = ManagedMemoryBudget::new(128 * 1024 * 1024);
+                let mut output = vec![None; artifact.outputs().len()];
+                for (start, count) in [
+                    (1, 2),
+                    (0, 0),
+                    (4, 2),
+                    (u64::MAX, u64::MAX),
+                    (2, u64::MAX),
+                    (0, 4),
+                ] {
+                    let values = Data::Matrix([10, 20, 30, 40].into_iter().map(scalar).collect());
+                    let args = inputs(
+                        &artifact,
+                        &[
+                            ("values", values.clone()),
+                            ("capacity", Data::U64(capacity)),
+                            ("start", Data::U64(start)),
+                            ("count", Data::U64(count)),
+                        ],
+                        &memory,
+                    );
+                    let aliases = args.clone();
+                    jit.evaluate_into(&args, &mut output, limits(), &memory)
+                        .unwrap();
+                    let begin = start.min(4) as usize;
+                    let number = count.min((4 - begin) as u64) as usize;
+                    let mut expected = vec![scalar(99)];
+                    expected.extend(
+                        [10, 20, 30, 40][begin..begin + number]
+                            .iter()
+                            .copied()
+                            .map(scalar),
+                    );
+                    assert_eq!(
+                        output
+                            .last()
+                            .unwrap()
+                            .as_ref()
+                            .unwrap()
+                            .canonical_data_draft()
+                            .unwrap(),
+                        Data::Matrix(expected.into())
+                    );
+                    let ValueData::Matrix(matrix) = output.last().unwrap().as_ref().unwrap().data()
+                    else {
+                        panic!()
+                    };
+                    assert_eq!(matrix.unsigned_buffer_capacity(), Some(capacity as usize));
+                    if capacity == 512 {
+                        equal(
+                            &artifact,
+                            &output,
+                            &reference_result(&artifact, &args).unwrap(),
+                        );
+                    }
+                    if start == 1 && count == 2 {
+                        let (result, requests, bytes) =
+                            allocation_probe::measured_with_bytes(|| {
+                                jit.evaluate_into(&args, &mut output, limits(), &memory)
+                            });
+                        result.unwrap();
+                        measurements.push(bytes);
+                        println!(
+                            "{}",
+                            serde_json::json!({"witness":"append-sublist","width":width,"capacity":capacity,"requests":requests,"allocated_bytes":bytes})
+                        );
+                        let prior = output.clone();
+                        let retained = memory.used_bytes();
+                        let nodes = memory.retained_snapshot_nodes();
+                        let mut denied = limits();
+                        denied.library.max_cloned_bytes = Some(0);
+                        assert!(
+                            jit.evaluate_into(&args, &mut output, denied, &memory)
+                                .is_err()
+                        );
+                        assert_eq!(memory.used_bytes(), retained);
+                        assert_eq!(memory.retained_snapshot_nodes(), nodes);
+                        assert!(output.iter().zip(&prior).all(|(a, b)| {
+                            a.as_ref()
+                                .unwrap()
+                                .shares_frozen_storage(b.as_ref().unwrap())
+                        }));
+                        jit.evaluate_into(&args, &mut output, limits(), &memory)
+                            .unwrap();
+                    }
+                    assert!(
+                        args.iter()
+                            .zip(&aliases)
+                            .all(|(a, b)| a.shares_frozen_storage(b))
+                    );
+                    assert!(
+                        aliases
+                            .iter()
+                            .any(|v| v.canonical_data_draft().unwrap() == values)
+                    );
+                }
+                drop(output);
+                assert_eq!(memory.used_bytes(), 0);
+                assert_eq!(memory.retained_snapshot_nodes(), 0);
+            }
+            if width == 8 {
+                assert_eq!(measurements[1] - measurements[0], 6633832 - 512);
+            }
+        }
+    }
+}
+
+#[test]
+fn append_sublist_self_alias_and_empty_ranges_keep_original_values() {
+    let source =
+        "+> sequence\nsequence/append-sublist(values<[u8]>, values, start<u64>, count<u64>)\n";
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(16 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        for (start, count) in [
+            (0, 3),
+            (1, 2),
+            (3, u64::MAX),
+            (u64::MAX, u64::MAX),
+            (0, 0),
+            (0, 3),
+        ] {
+            let data = Data::Matrix(vec![Data::U8(10), Data::U8(20), Data::U8(30)].into());
+            let args = inputs(
+                &artifact,
+                &[
+                    ("values", data.clone()),
+                    ("start", Data::U64(start)),
+                    ("count", Data::U64(count)),
+                ],
+                &memory,
+            );
+            let original = args
+                .iter()
+                .find(|v| matches!(v.data(), ValueData::Matrix(_)))
+                .unwrap()
+                .clone();
+            jit.evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            let reference = reference_result(&artifact, &args).unwrap();
+            equal(&artifact, &output, &reference);
+            let begin = start.min(3) as usize;
+            let size = count.min((3 - begin) as u64) as usize;
+            let mut expected = vec![10, 20, 30];
+            expected.extend_from_slice(&[10, 20, 30][begin..begin + size]);
+            let value = output.last().unwrap().as_ref().unwrap();
+            assert_eq!(
+                value.canonical_data_draft().unwrap(),
+                Data::Matrix(expected.into_iter().map(Data::U8).collect())
+            );
+            assert_eq!(original.canonical_data_draft().unwrap(), data);
+            if size == 0 {
+                assert!(value.shares_frozen_storage(&original));
+                assert!(reference.last().unwrap().shares_frozen_storage(&original));
+            }
+        }
+        drop(output);
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
+fn append_sublist_copies_stored_block_boundaries_into_real_reservation() {
+    let source = "+> sequence\nsequence/append-sublist(sequence/with-capacity(0u8, 6633832u64), values<[u8]>, start<u64>, count<u64>)\n";
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(128 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        let data = (0..65536)
+            .map(|n| Data::U8((n % 251) as u8))
+            .collect::<Vec<_>>();
+        for (start, count) in [
+            (0, 65535),
+            (0, 65536),
+            (65535, u64::MAX),
+            (65536, 1),
+            (0, 65536),
+        ] {
+            let args = inputs(
+                &artifact,
+                &[
+                    ("values", Data::Matrix(data.clone().into())),
+                    ("start", Data::U64(start)),
+                    ("count", Data::U64(count)),
+                ],
+                &memory,
+            );
+            let begin = start.min(65536) as usize;
+            let size = count.min((65536 - begin) as u64) as usize;
+            let before = std::time::Instant::now();
+            let (result, requests, bytes) = allocation_probe::measured_with_bytes(|| {
+                jit.evaluate_into(&args, &mut output, limits(), &memory)
+            });
+            result.unwrap();
+            println!(
+                "{}",
+                serde_json::json!({"witness":"stored-range-append","start":start,"count":size,"seconds":before.elapsed().as_secs_f64(),"allocation_requests":requests,"allocated_bytes":bytes})
+            );
+            let value = output.last().unwrap().as_ref().unwrap();
+            assert_eq!(
+                value.canonical_data_draft().unwrap(),
+                Data::Matrix(data[begin..begin + size].to_vec().into())
+            );
+            let ValueData::Matrix(matrix) = value.data() else {
+                panic!()
+            };
+            assert_eq!(matrix.unsigned_buffer_capacity(), Some(6633832));
+        }
+        drop(output);
+        assert_eq!(memory.used_bytes(), 0);
+        assert_eq!(memory.retained_snapshot_nodes(), 0);
+    }
+}

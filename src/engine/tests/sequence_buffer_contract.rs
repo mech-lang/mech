@@ -118,6 +118,10 @@ fn source_buffer_operations_reject_wrong_scalar_kinds() {
         "sequence/with-capacity(0u8, 1u8)",
         "sequence/append(sequence/with-capacity(0u8, 1u64), 1u16)",
         "sequence/clear(1u64)",
+        "sequence/append-sublist([0u8], [1u16], 0u64, 1u64)",
+        "sequence/append-sublist([0u8], [1u8], 0u32, 1u64)",
+        "sequence/append-sublist([0u8], [1u8], 0u64, 1u8)",
+        "sequence/append-sublist([true], [false], 0u64, 1u64)",
         "sequence/append-le-bytes(sequence/with-capacity(0u16, 8u64), 1u64, 1u8)",
         "sequence/append-le-bytes(sequence/with-capacity(0u8, 8u64), 1u32, 1u8)",
         "sequence/append-le-bytes(sequence/with-capacity(0u8, 8u64), 1u64, 1u64)",
@@ -182,6 +186,7 @@ fn managed_buffer_factories_keep_current_capacity_and_preserve_inputs() {
             "append",
             "clear",
             "append-le-bytes",
+            "append-sublist",
         ] {
             if item == "append-le-bytes" && width != W::W8 {
                 continue;
@@ -214,6 +219,25 @@ fn managed_buffer_factories_keep_current_capacity_and_preserve_inputs() {
                 .unwrap();
             let invocation = match item {
                 "clear" => FunctionInvocation::unary(output.clone(), source.clone()),
+                "append-sublist" => FunctionInvocation::quaternary(
+                    output.clone(),
+                    source.clone(),
+                    row(vec![scalar(129), scalar(7)]),
+                    ValueCell::from_snapshot(
+                        ValueCell::from_schema_data(S::UnsignedInteger(W::W64), Data::U64(0))
+                            .unwrap()
+                            .snapshot()
+                            .unwrap(),
+                    )
+                    .unwrap(),
+                    ValueCell::from_snapshot(
+                        ValueCell::from_schema_data(S::UnsignedInteger(W::W64), Data::U64(1))
+                            .unwrap()
+                            .snapshot()
+                            .unwrap(),
+                    )
+                    .unwrap(),
+                ),
                 "append-le-bytes" => FunctionInvocation::ternary(
                     output.clone(),
                     source.clone(),
@@ -773,4 +797,167 @@ fn native_bulk_byte_append_current_counts_and_real_capacity_identity() {
     }
     drop((source, word, work));
     assert_eq!(memory.used_bytes(), 0);
+}
+
+#[test]
+#[cfg(feature = "native-artifact")]
+fn native_sublist_append_cached_ranges_rebind_and_recover() {
+    use mech_core::{
+        ManagedMemoryBudget, MemoryBudgetLimits, ResolvedOperationContract, Value, ValueDraft,
+        snapshot::{SnapshotValidationContext, UnsignedMatrixBuffer},
+    };
+    use mech_engine::native_artifact::{
+        NativeCollectionPrimitive as P, NativeIterationAction as A, NativeLibraryWorkBudget,
+        NativePreparedLibraryCallCache, lower_native_program_artifact,
+        prepare_native_program_library_call,
+    };
+    let mut builder = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
+    mech_engine::install_intrinsic_compiler_runtime(&mut builder).unwrap();
+    mech_engine::install_intrinsic_source(&mut builder).unwrap();
+    mech_engine::install_intrinsic_resident(&mut builder).unwrap();
+    let catalog = Arc::new(builder.build().unwrap());
+    let parsed=parse_canonical_document(TextSnapshot::new(DocumentId(0x425546),Revision(1),"+> sequence\nsequence/append-sublist(bytes<[u8]>, values<[u8]>, start<u64>, count<u64>)\n").unwrap(),ParseConfig::default());
+    assert!(parsed.is_strictly_clean());
+    let syntax = DocumentSyntax::cast(parsed.syntax()).unwrap();
+    let original = CanonicalSourceFrontend
+        .compile_document_with_catalog(&syntax, catalog.clone())
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap(),
+    )
+    .unwrap();
+    for artifact in [original, decoded] {
+        let plan = lower_native_program_artifact(&artifact, &catalog).unwrap();
+        let template = plan
+            .blocks()
+            .iter()
+            .find_map(|b| match b.action() {
+                A::LibraryCall { template, .. }
+                    if template.primitive() == P::SequenceAppendSublist =>
+                {
+                    Some(template)
+                }
+                _ => None,
+            })
+            .unwrap();
+        let call = prepare_native_program_library_call(&artifact, template, &catalog).unwrap();
+        let ResolvedOperationContract::Declared(contract) = template.contract() else {
+            panic!()
+        };
+        let schemas = Arc::new(artifact.schemas().clone());
+        let memory = ManagedMemoryBudget::new(128 * 1024 * 1024);
+        let limits = MemoryBudgetLimits {
+            max_output_elements: Some(8_000_000),
+            max_output_bytes: Some(64 * 1024 * 1024),
+            max_temporary_bytes: Some(64 * 1024 * 1024),
+            max_cloned_bytes: Some(64 * 1024 * 1024),
+            max_retained_nodes: Some(1_000_000),
+            max_comparison_work: Some(1_000_000_000_000),
+            max_compute_work: Some(1_000_000_000_000),
+            ..Default::default()
+        };
+        let admit = |value: Value| {
+            let mut r = memory
+                .reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap())
+                .unwrap();
+            value.into_memory_budget(&mut r).unwrap()
+        };
+        let scalar = |index: usize, word| {
+            admit(
+                ValueDraft {
+                    schema: contract.inputs[index].schema,
+                    shape_values: Box::new([]),
+                    data: Data::U64(word),
+                }
+                .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+                .unwrap(),
+            )
+        };
+        let mut prefix = Vec::with_capacity(512);
+        prefix.push(99);
+        let source = admit(
+            Value::from_unsigned_matrix_buffer(
+                contract.inputs[0].schema,
+                mech_core::shape_for_resolved_extents(&template.inputs()[0], &[1, 1]).unwrap(),
+                UnsignedMatrixBuffer::U8(prefix),
+                schemas.clone(),
+            )
+            .unwrap(),
+        );
+        let payload = admit(
+            Value::from_unsigned_matrix_buffer(
+                contract.inputs[1].schema,
+                mech_core::shape_for_resolved_extents(&template.inputs()[1], &[1, 8]).unwrap(),
+                UnsignedMatrixBuffer::U8((1..=8).collect()),
+                schemas.clone(),
+            )
+            .unwrap(),
+        );
+        let work = NativeLibraryWorkBudget::new(
+            limits.max_compute_work.unwrap(),
+            limits.max_comparison_work.unwrap(),
+            &memory,
+        )
+        .unwrap();
+        for cached in [false, true] {
+            let mut output = None;
+            let mut cache = NativePreparedLibraryCallCache::default();
+            for (start, count, deny) in [
+                (1, 3, false),
+                (0, 8, true),
+                (7, u64::MAX, false),
+                (u64::MAX, u64::MAX, false),
+                (0, 8, false),
+                (0, 0, false),
+                (2, 2, false),
+            ] {
+                let inputs = [
+                    Some(source.clone()),
+                    Some(payload.clone()),
+                    Some(scalar(2, start)),
+                    Some(scalar(3, count)),
+                ];
+                let prior = output.clone();
+                let retained = memory.used_bytes();
+                let mut policy = limits;
+                if deny {
+                    policy.max_cloned_bytes = Some(0);
+                }
+                let result = if cached {
+                    call.invoke_current_cached(&mut cache, &inputs, &mut output, policy, &work)
+                } else {
+                    call.invoke_current(&inputs, &mut output, policy, &work)
+                };
+                if deny {
+                    assert!(result.is_err());
+                    assert!(
+                        output
+                            .as_ref()
+                            .unwrap()
+                            .shares_frozen_storage(prior.as_ref().unwrap())
+                    );
+                    assert_eq!(memory.used_bytes(), retained);
+                } else {
+                    result.unwrap();
+                    let begin = start.min(8);
+                    let size = count.min(8 - begin);
+                    let expected = std::iter::once(Data::U8(99))
+                        .chain((begin + 1..begin + 1 + size).map(|n| Data::U8(n as u8)))
+                        .collect();
+                    assert_eq!(
+                        output.as_ref().unwrap().canonical_data_draft().unwrap(),
+                        Data::Matrix(expected)
+                    );
+                    if size == 0 {
+                        assert!(output.as_ref().unwrap().shares_frozen_storage(&source));
+                    }
+                }
+            }
+        }
+        drop((source, payload, work));
+        assert_eq!(memory.used_bytes(), 0);
+    }
 }

@@ -11,6 +11,7 @@ use super::{
 pub struct NativeUnsignedBufferCall {
     site: u32,
     source: Option<Value>,
+    sublist: Option<Value>,
     owned_source_slots: Box<[Value]>,
 }
 impl NativeUnsignedBufferCall {
@@ -19,6 +20,9 @@ impl NativeUnsignedBufferCall {
     }
     pub fn source(&self) -> Option<Value> {
         self.source
+    }
+    pub fn sublist(&self) -> Option<Value> {
+        self.sublist
     }
     pub fn owned_source_slots(&self) -> &[Value] {
         &self.owned_source_slots
@@ -35,7 +39,7 @@ impl Facts<'_> {
         let facts = self;
         let plan = facts.plan();
         if !plan.blocks().iter().any(|block| matches!(block.action(), Action::LibraryCall { template, .. }
-            if matches!(template.primitive(), Primitive::SequenceWithCapacity | Primitive::SequenceReserve | Primitive::SequenceAppend | Primitive::SequenceAppendLeBytes | Primitive::SequenceClear))) {
+            if matches!(template.primitive(), Primitive::SequenceWithCapacity | Primitive::SequenceReserve | Primitive::SequenceAppend | Primitive::SequenceAppendLeBytes | Primitive::SequenceAppendSublist | Primitive::SequenceClear))) {
             return Vec::new();
         }
         let Ok(actions) = facts.actions() else {
@@ -59,9 +63,13 @@ impl Facts<'_> {
                     Primitive::SequenceReserve
                     | Primitive::SequenceAppend
                     | Primitive::SequenceAppendLeBytes
+                    | Primitive::SequenceAppendSublist
                     | Primitive::SequenceClear => Some(*operands.first()?),
                     _ => return None,
                 };
+                let sublist = (template.primitive() == Primitive::SequenceAppendSublist)
+                    .then(|| operands.get(1).copied())
+                    .flatten();
                 let mut eligible = vec![false; plan.values().len()];
                 if let Some(source) = source {
                     if can_retire(facts, reads, source, site as u32) {
@@ -93,6 +101,7 @@ impl Facts<'_> {
                 Some(NativeUnsignedBufferCall {
                     site: site as u32,
                     source,
+                    sublist,
                     owned_source_slots,
                 })
             })

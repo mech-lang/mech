@@ -230,7 +230,8 @@ fn selected_template(
 // IR112 admits scalar selection of fixed-schema record/tuple matrix elements.
 // IR113 admits fixed record/tuple matrix arguments across control frames.
 // IR114 retains immutable aggregate-matrix leaves in private buffer frames.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 114;
+// IR115 adds a borrowed packed source range to selected unsigned-buffer calls.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 115;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
