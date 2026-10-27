@@ -1,0 +1,9 @@
+{
+  "src/engine/src/artifact/control.rs": "f77ed42e80c038aaf69020e180f1fc1e43693c30eb8dcddd409e7272bf9ad29a",
+  "src/engine/src/resident/structural_values.rs": "9c8f362ac4600ca6a70658fa2e2ab6975fe48ea99c6d6d8eb61469b75d1cc200",
+  "src/engine/src/native_artifact/structural_values.rs": "86c2548ee0d29e37812d250f058abf3d801c22b2a181bcd78bae51f1051620d9",
+  "src/engine/src/resident/general/native_collection_templates.rs": "3430927138a45292c04d6464cc3ad2833ce2d1b837b28c07b00984972726cc70",
+  "hosts/gpu/src/native_artifact/program/image/identity.rs": "0f5f27f1d1927de5a5fe3a25b9b8ff3690a11ad688f5b03ebae43b8e853b0e9d",
+  "hosts/gpu/tests/support/canonical_program_record_buffers.rs": "9447a8d0e8e62b96074651bada1cc82e65d05e1ddb90bbd679f5bf61063866b6",
+  "hosts/gpu/tests/support/canonical_program_linked.rs": "aac6a25363a030ff4700581767d3e22130523f1b71e1cad320ef65977cb7d252"
+}

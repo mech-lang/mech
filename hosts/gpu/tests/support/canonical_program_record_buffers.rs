@@ -876,3 +876,204 @@ fn record_matrix_scalar_read_only_executes_on_selected_path() {
         assert_eq!(memory.retained_snapshot_nodes(), 0);
     }
 }
+
+#[test]
+fn recursive_record_matrix_arguments_keep_fresh_fields_aliases_and_retry() {
+    let source = "+> sequence\n<entry> := <{length<u32> enabled<bool> offset<u16>}>\nbump(entries<[entry]>, left<u32>, at<u64>) => (out<[entry]>) :=\n  current := entries[at]\n  ~next := entries\n  next[at] = {length: current.length + left, enabled: (current.enabled? | true => false | false => true), offset: current.offset}\n  out := next.\nwalk(entries<[entry]>, left<u32>, at<u64>) => (out<(u32,bool,u64)>) :=\n  current := entries[at]\n  next := ((left > 0u32)? | true => bump(entries, left, at) | false => entries)\n  out := ((left > 0u32)? | true => walk(next, left - 1u32, at) | false => (current.length, current.enabled, sequence/length(entries))).\nwalk(entries<[entry]>, left<u32>, at<u64>)\n";
+    let record = |length, enabled| {
+        Data::Record(
+            [
+                ("length", Data::U32(length)),
+                ("enabled", Data::Bool(enabled)),
+                ("offset", Data::U16(32768)),
+            ]
+            .into_iter()
+            .map(|(name, value)| mech_core::snapshot::NamedValueDraft {
+                name: name.into(),
+                value,
+            })
+            .collect(),
+        )
+    };
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        for (initial, left, at, len, expected) in [
+            (10, 3, 1, 2, Some((16, false))),
+            (10, 3, 0, 2, None),
+            (21, 2, 1, 1, Some((24, true))),
+            (u32::MAX, 1, 1, 2, None),
+            (31, 0, 1, 2, Some((31, true))),
+        ] {
+            let original = Data::Matrix(vec![record(initial, true); len].into());
+            let args = inputs(
+                &artifact,
+                &[
+                    ("entries", original.clone()),
+                    ("left", Data::U32(left)),
+                    ("at", Data::U64(at)),
+                ],
+                &memory,
+            );
+            let aliases = args.clone();
+            let prior = output.clone();
+            let retained = memory.used_bytes();
+            let nodes = memory.retained_snapshot_nodes();
+            let native = jit.evaluate_into(&args, &mut output, limits(), &memory);
+            let resident = reference_result(&artifact, &args);
+            if let Some((length, enabled)) = expected {
+                native.unwrap();
+                super::equal(&artifact, &output, &resident.unwrap());
+                assert_eq!(
+                    output
+                        .last()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    Data::Tuple(
+                        vec![
+                            Data::U32(length),
+                            Data::Bool(enabled),
+                            Data::U64(len as u64)
+                        ]
+                        .into()
+                    )
+                );
+            } else {
+                assert!(native.is_err());
+                assert!(resident.is_err());
+                assert_eq!(memory.used_bytes(), retained);
+                assert_eq!(memory.retained_snapshot_nodes(), nodes);
+                assert!(output.iter().zip(&prior).all(|(a, b)| {
+                    a.as_ref()
+                        .unwrap()
+                        .shares_frozen_storage(b.as_ref().unwrap())
+                }));
+            }
+            assert!(
+                args.iter()
+                    .zip(&aliases)
+                    .all(|(a, b)| a.shares_frozen_storage(b))
+            );
+            assert!(
+                aliases
+                    .iter()
+                    .any(|value| value.canonical_data_draft().unwrap() == original)
+            );
+        }
+        drop(output);
+        assert_eq!(memory.used_bytes(), 0);
+        assert_eq!(memory.retained_snapshot_nodes(), 0);
+    }
+}
+
+#[test]
+fn selected_record_matrix_capture_skips_failed_reads_and_recovers() {
+    let source = "<entry> := <{length<u32> offset<u16>}>\nread(entries<[entry]>, at<u64>) => (out<u32>) :=\n  current := entries[at]\n  out := current.length.\n(enabled<bool>? | true => read(entries<[entry]>, at<u64>) | false => 7u32)\n";
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        for (enabled, at, length) in [
+            (false, 0, 11),
+            (true, 0, 23),
+            (true, 1, 31),
+            (false, u64::MAX, 41),
+        ] {
+            let record = Data::Record(
+                [("length", Data::U32(length)), ("offset", Data::U16(32768))]
+                    .into_iter()
+                    .map(|(name, value)| mech_core::snapshot::NamedValueDraft {
+                        name: name.into(),
+                        value,
+                    })
+                    .collect(),
+            );
+            let args = inputs(
+                &artifact,
+                &[
+                    ("entries", Data::Matrix(vec![record].into())),
+                    ("at", Data::U64(at)),
+                    ("enabled", Data::Bool(enabled)),
+                ],
+                &memory,
+            );
+            let prior = output.clone();
+            let retained = memory.used_bytes();
+            let nodes = memory.retained_snapshot_nodes();
+            let native = jit.evaluate_into(&args, &mut output, limits(), &memory);
+            let resident = reference_result(&artifact, &args);
+            if enabled && at == 0 {
+                assert!(native.is_err());
+                assert!(resident.is_err());
+                assert_eq!(memory.used_bytes(), retained);
+                assert_eq!(memory.retained_snapshot_nodes(), nodes);
+                assert!(output.iter().zip(&prior).all(|(a, b)| {
+                    a.as_ref()
+                        .unwrap()
+                        .shares_frozen_storage(b.as_ref().unwrap())
+                }));
+            } else {
+                native.unwrap();
+                super::equal(&artifact, &output, &resident.unwrap());
+                assert_eq!(
+                    output
+                        .last()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    Data::U32(if enabled { length } else { 7 })
+                );
+            }
+        }
+        drop(output);
+        assert_eq!(memory.used_bytes(), 0);
+        assert_eq!(memory.retained_snapshot_nodes(), 0);
+    }
+}
+
+#[test]
+fn recursive_tuple_matrix_arguments_preserve_nested_fixed_elements() {
+    let source = "walk(entries<[(u32,bool)]>, left<u64>) => (out<[(u32,bool)]>) :=\n  out := ((left > 0u64)? | true => walk(entries, left - 1u64) | false => entries).\nwalk(entries<[(u32,bool)]>, left<u64>)\n";
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
+        for count in [0, 1, 2] {
+            let expected = Data::Matrix(
+                (0..count)
+                    .map(|n| Data::Tuple(vec![Data::U32(n + 17), Data::Bool(n % 2 == 0)].into()))
+                    .collect(),
+            );
+            let args = inputs(
+                &artifact,
+                &[("entries", expected.clone()), ("left", Data::U64(2))],
+                &memory,
+            );
+            let mut output = vec![None; artifact.outputs().len()];
+            jit.evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            super::equal(
+                &artifact,
+                &output,
+                &reference_result(&artifact, &args).unwrap(),
+            );
+            assert_eq!(
+                output
+                    .last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                expected
+            );
+        }
+        assert_eq!(memory.used_bytes(), 0);
+        assert_eq!(memory.retained_snapshot_nodes(), 0);
+    }
+}

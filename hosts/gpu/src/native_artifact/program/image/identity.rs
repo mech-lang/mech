@@ -228,7 +228,8 @@ fn selected_template(
 // IR110 adds checked U8 addition and U32 subtraction.
 // IR111 adds bulk little-endian byte append with an explicit count operand.
 // IR112 admits scalar selection of fixed-schema record/tuple matrix elements.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 112;
+// IR113 admits fixed record/tuple matrix arguments across control frames.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 113;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

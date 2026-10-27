@@ -1,5 +1,31 @@
 # DEFLATE binary-tree match finder
 
+## Record argument checkpoint: 2026-10-27
+
+Fixed record/tuple elements can now cross turn-shaped matrix argument and capture
+boundaries. The compiler retains the existing source lifetime gates, canonical
+artifact/codec validation, structural projections and budgeted snapshot
+construction. Shape parameters may have different indices in the caller and
+callee; exact element schemas and constant extents must still agree, and each
+live shape is closed by the maintained binder. Aggregate cells do not enter the
+packed unsigned-buffer copy path. Nonrecursive immutable captures are unchanged.
+Native program image IR is 113; the base is
+`610d5642100f35330512567591918a12fb393141`.
+
+[Requirements and failure evidence](../results/2026-10-27-record-arguments/requirement.json)
+trace this to the level-12 all-literal writer's sequence-record loop. The draft
+sequence writer now matches 14 pinned cases in original and decoded execution,
+with the real 6633832-byte output reservation. The independently drafted path-node
+writer matches 12 cases through 320-byte supplied blocks. These are component
+results, not complete compression or benchmark timings; their permanent component
+registration is the next integration step.
+
+A separate tuple-of-record projection rejection arose from the draft helper's
+return packaging. The pinned source has local loop variables, so the helper now
+returns one state record without changing its operations or arithmetic. That
+incidental projection gap was recorded and left outside this compiler patch.
+
+
 ## Record selection checkpoint: 2026-10-27
 
 The block writer needs to select a sequence record and read its U32/U16 fields.

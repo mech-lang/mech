@@ -331,7 +331,7 @@ fn is_count_map(body: &SchemaBody) -> bool {
 // still validate exact child schemas and admit recursive payload copies.
 fn is_native_state_carrier(body: &SchemaBody) -> bool {
     is_shallow_atomic(body)
-        || crate::native_artifact::structural_values::word_matrix(body)
+        || crate::native_artifact::structural_values::carrier_matrix(body)
         || match body {
             SchemaBody::Map { key, value, .. } => {
                 is_shallow_atomic(key) && is_shallow_atomic(value)

@@ -161,6 +161,12 @@ fn linked_record_matrix_scalar_read_preserves_publication_and_recovers() {
     linked_assertion_retry(source, |n| ValueDataDraft::U32(n.try_into().unwrap()));
 }
 
+#[test]
+fn linked_recursive_record_matrix_arguments_preserve_publication_and_recover() {
+    let source = "<entry> := <{length<u32> offset<u16>}>\nwalk(entries<[entry]>, left<u64>) => (out<u32>) :=\n  current := entries[1u64]\n  out := ((left > 0u64)? | true => walk(entries, left - 1u64) | false => current.length).\nchecked(n<u32>) => (out<u64>) :=\n  entries := [{length: n, offset: 32768u16}]\n  positive! := n > 0u32\n  length<u64> := walk(entries, 2u64)\n  out := 12u64 / length.\nchecked(input<u32>)\n";
+    linked_assertion_retry(source, |n| ValueDataDraft::U32(n.try_into().unwrap()));
+}
+
 fn linked_assertion_retry(source: &str, input_word: fn(u64) -> ValueDataDraft) {
     let temporary = tempfile::tempdir().unwrap();
     let directory = temporary.path();

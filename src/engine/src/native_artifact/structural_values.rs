@@ -3,7 +3,7 @@
 //! Field-label drafts and foreign Dynamic roots still require their own witnesses.
 use mech_core::SchemaBody;
 
-pub(crate) use crate::resident::structural_values::{carrier_component_matches, word_matrix};
+pub(crate) use crate::resident::structural_values::{carrier_component_matches, carrier_matrix};
 
 pub(crate) fn supported(body: &SchemaBody) -> bool {
     fn visit(body: &SchemaBody, depth: usize) -> bool {
@@ -21,7 +21,7 @@ pub(crate) fn supported(body: &SchemaBody) -> bool {
             | SchemaBody::FloatingPoint(_)
             | SchemaBody::Complex(_)
             | SchemaBody::Rational64 => true,
-            SchemaBody::Matrix { .. } => word_matrix(body),
+            SchemaBody::Matrix { .. } => carrier_matrix(body),
             SchemaBody::Tuple(items) => items.iter().all(|item| visit(item, depth + 1)),
             SchemaBody::Option(item) | SchemaBody::Set { element: item, .. } => {
                 visit(item, depth + 1)

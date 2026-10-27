@@ -1,0 +1,31 @@
+{
+  "name": "writer-recursive-record-argument-statement",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "--manifest-path",
+    "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+    "writer_recursive_record_argument_probe",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "27bdd8b2c5b1ad35590121653589d06251ae5161",
+  "dirty": " M benchmarks/mech-deflate/matchfinder/README.md\n M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/tests/support/canonical_program_linked.rs\n M hosts/gpu/tests/support/canonical_program_record_buffers.rs\n M src/engine/src/resident/general/native_collection_templates.rs\n?? benchmarks/mech-deflate/results/2026-10-27-record-read/\n?? hosts/gpu/tests/fixtures/native/deflate-sequence-writer.mec\n",
+  "exit": 101,
+  "seconds": 3.373049020767212,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/writer-recursive-record-argument-statement.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

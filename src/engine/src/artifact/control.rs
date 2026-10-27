@@ -1653,7 +1653,31 @@ pub(crate) fn is_control_value_schema(schema: &mech_core::Schema) -> bool {
         && !matches!(schema.body(), mech_core::SchemaBody::Dynamic)
 }
 
-/// A turn-shaped unsigned buffer or argument tuple carries its live dimensions
+// Fixed record/tuple elements carry no child-container dimensions. A matrix
+// of these values uses the same turn-local geometry as an unsigned buffer.
+pub(crate) fn is_control_fixed_aggregate_element(body: &mech_core::SchemaBody) -> bool {
+    use mech_core::SchemaBody as B;
+    fn field(body: &B) -> bool {
+        matches!(
+            body,
+            B::Bool
+                | B::Index
+                | B::Id
+                | B::Atom(_)
+                | B::String
+                | B::UnsignedInteger(_)
+                | B::SignedInteger(_)
+                | B::FloatingPoint(_)
+        ) || is_control_fixed_aggregate_element(body)
+    }
+    match body {
+        B::Record(fields) => fields.iter().all(|entry| field(&entry.schema)),
+        B::Tuple(fields) => fields.iter().all(field),
+        _ => false,
+    }
+}
+
+/// A turn-shaped unsigned or fixed-aggregate matrix carries its live dimensions
 /// in a canonical snapshot. This is structural-pattern authority; closed-value,
 /// literal and capture eligibility remain separate predicates.
 pub(crate) fn is_control_pattern_schema(schema: &mech_core::Schema) -> bool {
@@ -1663,7 +1687,10 @@ pub(crate) fn is_control_pattern_schema(schema: &mech_core::Schema) -> bool {
             B::Matrix {
                 element,
                 dimensions,
-            } if dimensions.len() == 2 && matches!(element.as_ref(), B::UnsignedInteger(_)) => {
+            } if dimensions.len() == 2
+                && (matches!(element.as_ref(), B::UnsignedInteger(_))
+                    || is_control_fixed_aggregate_element(element)) =>
+            {
                 Some(true)
             }
             B::Tuple(fields) => fields.iter().try_fold(false, |matrix, body| {
@@ -1744,15 +1771,16 @@ pub(crate) fn is_control_capture_schema(schema: &mech_core::Schema) -> bool {
                 element,
                 dimensions,
             } if dimensions.len() == 2
-                && matches!(
-                    element.as_ref(),
-                    SchemaBody::Bool
-                        | SchemaBody::Index
-                        | SchemaBody::String
-                        | SchemaBody::UnsignedInteger(_)
-                        | SchemaBody::SignedInteger(_)
-                        | SchemaBody::FloatingPoint(_)
-                ) =>
+                && (is_control_fixed_aggregate_element(element)
+                    || matches!(
+                        element.as_ref(),
+                        SchemaBody::Bool
+                            | SchemaBody::Index
+                            | SchemaBody::String
+                            | SchemaBody::UnsignedInteger(_)
+                            | SchemaBody::SignedInteger(_)
+                            | SchemaBody::FloatingPoint(_)
+                    )) =>
             {
                 Some(true)
             }
@@ -1782,6 +1810,72 @@ pub(crate) fn is_control_capture_schema(schema: &mech_core::Schema) -> bool {
 mod tests {
     use super::*;
     use mech_core::{DimensionExpr, FloatWidth, SchemaBody, SchemaDraft, SchemaTableBuilder};
+
+    #[test]
+    fn turn_record_matrix_carriers_reject_child_containers_and_other_lifetimes() {
+        use mech_core::{
+            DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin, SchemaField,
+        };
+        let record = |field| {
+            SchemaBody::Record(
+                vec![SchemaField {
+                    name: "value".into(),
+                    schema: field,
+                }]
+                .into_boxed_slice(),
+            )
+        };
+        let schema = |element, lifetime| {
+            SchemaDraft {
+                body: SchemaBody::Matrix {
+                    element: Box::new(element),
+                    dimensions: vec![
+                        DimensionExpr::Constant(1),
+                        DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                    ]
+                    .into_boxed_slice(),
+                },
+                dimension_parameters: vec![DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(0),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: None,
+                }]
+                .into_boxed_slice(),
+            }
+            .finalize()
+            .unwrap()
+        };
+        let fixed = record(SchemaBody::Tuple(
+            vec![
+                SchemaBody::Bool,
+                SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W32),
+            ]
+            .into_boxed_slice(),
+        ));
+        for lifetime in [DimensionLifetime::Turn, DimensionLifetime::Activation] {
+            let value = schema(fixed.clone(), lifetime);
+            assert_eq!(
+                is_control_pattern_schema(&value),
+                lifetime == DimensionLifetime::Turn
+            );
+            assert_eq!(
+                is_control_capture_schema(&value),
+                lifetime == DimensionLifetime::Turn
+            );
+            assert!(!is_control_value_schema(&value));
+        }
+        let child = record(SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
+            dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(2)]
+                .into_boxed_slice(),
+        });
+        let value = schema(child, DimensionLifetime::Turn);
+        assert!(!is_control_pattern_schema(&value));
+        assert!(!is_control_capture_schema(&value));
+    }
 
     #[test]
     fn turn_matrix_capture_eligibility_does_not_widen_closed_values() {
