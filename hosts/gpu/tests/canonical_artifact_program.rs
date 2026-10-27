@@ -826,3 +826,6 @@ mod string_matrix_qualification;
 
 #[path = "support/canonical_program_selected_matrix.rs"]
 mod selected_matrix_qualification;
+
+#[path = "support/canonical_program_selected_record_axes.rs"]
+mod selected_record_axes_qualification;

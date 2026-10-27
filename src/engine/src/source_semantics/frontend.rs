@@ -6618,10 +6618,10 @@ impl SemanticBuilder {
         Ok(self.emit_with_schema_draft(
             "core/composite-pack",
             inputs,
-            SchemaDraft {
+            annotation_shape_identity::fresh_record(SchemaDraft {
                 dimension_parameters: parameters.into_boxed_slice(),
                 body: SchemaBody::Record(fields.into_boxed_slice()),
-            },
+            }),
             record.syntax(),
             "record",
             Some(detail),
@@ -9789,6 +9789,78 @@ fn syntax_kind_name(kind: SyntaxKind) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn selected_record_preserves_independent_axis_identity() {
+        fn find_expression(node: SyntaxNode) -> Option<ExpressionSyntax> {
+            ExpressionSyntax::cast(node.clone())
+                .or_else(|| node.children().find_map(find_expression))
+        }
+        let parsed = mech_syntax::document::parse_canonical_document(
+            mech_syntax::document::TextSnapshot::new(
+                DocumentId(86), Revision(1), "(flag<bool>? | true => {nodes: rebuilt.nodes, costs: rebuilt.costs} | false => {nodes: retained.nodes, costs: retained.costs})",
+            ).unwrap(),
+            mech_syntax::document::ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean());
+        let expression = find_expression(parsed.syntax()).unwrap();
+        let anchor = SourceSemanticAnchor::for_node(expression.syntax());
+        let mut builder = SemanticBuilder::new(anchor);
+        let record = |origin| SchemaDraft {
+            dimension_parameters: (0..2)
+                .map(|id| DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(id),
+                    origin,
+                    lifetime: DimensionLifetime::Turn,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: None,
+                })
+                .collect(),
+            body: SchemaBody::Record(Box::new([
+                SchemaField {
+                    name: "nodes".into(),
+                    schema: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+                        dimensions: Box::new([
+                            DimensionExpr::Constant(1),
+                            DimensionExpr::Parameter(DimensionParameterId::new(1)),
+                        ]),
+                    },
+                },
+                SchemaField {
+                    name: "costs".into(),
+                    schema: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W32)),
+                        dimensions: Box::new([
+                            DimensionExpr::Constant(1),
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                        ]),
+                    },
+                },
+            ])),
+        };
+        let rebuilt = record(DimensionParameterOrigin::Inferred);
+        let mut retained = record(DimensionParameterOrigin::Explicit);
+        retained.dimension_parameters[1].origin = DimensionParameterOrigin::Inferred;
+        assert_ne!(
+            rebuilt.clone().finalize().unwrap(),
+            retained.clone().finalize().unwrap()
+        );
+        assert!(annotation_shape_identity::equivalent(&rebuilt, &retained));
+        for (name, schema) in [("rebuilt", rebuilt), ("retained", retained)] {
+            let index = builder.inputs.len() as u32;
+            builder.inputs.push(PendingInput {
+                name: name.into(),
+                schema,
+                anchor,
+            });
+            builder.bindings.insert(
+                name.into(),
+                PendingBinding::Value(PendingValue::Input(index)),
+            );
+        }
+        builder.expression(&expression).unwrap();
+    }
 
     #[test]
     fn recursive_result_specialization_preserves_independent_axis_identity() {

@@ -2,6 +2,25 @@
 //! This does not admit reshapes, coupled axes, bounds, or element conversion.
 use mech_core::{DimensionExpr, DimensionLifetime, SchemaBody, SchemaDraft};
 
+/// A fresh record constructor binds its result dimensions from its fields.
+/// Unlike an existing snapshot, it has no positional shape to preserve yet.
+/// Give independent free axes occurrence order, keeping every field's geometry
+/// and shared-axis relationships. Bounded or persistent axes retain their order.
+pub(super) fn fresh_record(mut draft: SchemaDraft) -> SchemaDraft {
+    if !matches!(draft.body, SchemaBody::Record(_)) {
+        return draft;
+    }
+    let original = draft.clone();
+    for parameter in draft.dimension_parameters.iter_mut() {
+        parameter.origin = mech_core::DimensionParameterOrigin::Inferred;
+    }
+    if equivalent(&original, &draft) {
+        draft
+    } else {
+        original
+    }
+}
+
 pub(super) fn equivalent(actual: &SchemaDraft, expected: &SchemaDraft) -> bool {
     let (Ok(actual), Ok(expected)) = (actual.clone().finalize(), expected.clone().finalize())
     else {
@@ -42,6 +61,29 @@ fn same_body(
     reverse: &mut [Option<usize>],
 ) -> bool {
     match (actual, expected) {
+        // Closed matrix fields (including fixed arrays of scalar records)
+        // carry no free axes that participate in this renaming.
+        (
+            SchemaBody::Matrix {
+                element: a,
+                dimensions: ad,
+            },
+            SchemaBody::Matrix {
+                element: b,
+                dimensions: bd,
+            },
+        ) if a == b
+            && ad == bd
+            && ad.iter().all(|d| matches!(d, DimensionExpr::Constant(_)))
+            && (SchemaDraft {
+                body: a.as_ref().clone(),
+                dimension_parameters: Box::new([]),
+            })
+            .finalize()
+            .is_ok() =>
+        {
+            true
+        }
         (
             SchemaBody::Matrix {
                 element: a,
@@ -124,6 +166,69 @@ mod tests {
                 },
             ])),
         }
+    }
+
+    #[test]
+    fn fresh_record_uses_field_order_without_changing_axis_relationships() {
+        let actual = buffers(1, 0);
+        let expected = buffers(0, 1).finalize().unwrap();
+        assert_eq!(fresh_record(actual).finalize().unwrap(), expected);
+        let shared = buffers(0, 0);
+        assert_eq!(
+            fresh_record(shared.clone()).finalize().unwrap(),
+            shared.finalize().unwrap()
+        );
+    }
+
+    #[test]
+    fn fresh_record_retains_bounded_and_persistent_axes() {
+        for case in 0..3 {
+            let mut actual = buffers(1, 0);
+            match case {
+                0 => actual.dimension_parameters[0].lower_bound = DimensionExpr::Constant(1),
+                1 => actual.dimension_parameters[0].upper_bound = Some(DimensionExpr::Constant(32)),
+                _ => actual.dimension_parameters[0].lifetime = DimensionLifetime::Activation,
+            }
+            assert_eq!(fresh_record(actual.clone()), actual);
+        }
+    }
+
+    #[test]
+    fn fixed_record_array_fields_must_really_be_closed() {
+        let add_field = |mut draft: SchemaDraft, element| {
+            let SchemaBody::Record(fields) = draft.body else {
+                panic!()
+            };
+            let mut fields = fields.into_vec();
+            fields.push(SchemaField {
+                name: "sequences".into(),
+                schema: SchemaBody::Matrix {
+                    element: Box::new(element),
+                    dimensions: Box::new([DimensionExpr::Constant(1), DimensionExpr::Constant(1)]),
+                },
+            });
+            draft.body = SchemaBody::Record(fields.into_boxed_slice());
+            draft
+        };
+        let element = SchemaBody::Record(Box::new([SchemaField {
+            name: "length".into(),
+            schema: SchemaBody::UnsignedInteger(IntegerWidth::W32),
+        }]));
+        let actual = add_field(buffers(1, 0), element.clone());
+        let expected = add_field(buffers(0, 1), element).finalize().unwrap();
+        assert_eq!(fresh_record(actual).finalize().unwrap(), expected);
+        let open = SchemaBody::Record(Box::new([SchemaField {
+            name: "buffer".into(),
+            schema: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W32)),
+                dimensions: Box::new([
+                    DimensionExpr::Constant(1),
+                    DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                ]),
+            },
+        }]));
+        let actual = add_field(buffers(1, 0), open);
+        assert_eq!(fresh_record(actual.clone()), actual);
     }
 
     #[test]
