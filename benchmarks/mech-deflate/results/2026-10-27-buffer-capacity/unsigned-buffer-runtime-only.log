@@ -1,0 +1,5 @@
+    Checking mech-core v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/core)
+    Checking mech-engine v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/engine)
+    Checking mech-compute v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/compute)
+    Checking mech-gpu v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/gpu)
+    Finished `dev` profile [unoptimized] target(s) in 15.53s

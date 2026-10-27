@@ -65,11 +65,34 @@ this core API does not decide that a source value has reached its last use.
   allocations / 856 bytes**, independent of payload capacity. Payload pointers,
   original account charges and capacity remain unchanged; final usage is zero.
   These are core storage calls, not a compiled-source compression result.
-- Canonical component rerun on clean implementation 710e82a: pending; retain the
-  terminal receipt before claiming a result. Expected values and allowances are
-  unchanged from the 143-test command at the linear-stack checkpoint.
+- Canonical component rerun on clean implementation 710e82a: **143 passed,
+  0 failed, 0 ignored, 129 filtered**, 355.06 seconds of test execution and
+  828.76 seconds including the 7m49s rebuild. Expected values and allowances are
+  unchanged from the linear-stack command. No full-compression timing is inferred.
+- The new managed-memory CI step is separately committed as
+  `d0271b90ae51db78630cda2a76c01c61a75719da`. Its exact shell body runs locally
+  with `--all-features`: nonempty inventory gates confirm **1 allocation case**
+  and **6 new ownership cases**; execution passes **1 allocation case plus 13
+  ownership cases** (including 7 existing String cases), 326 other unit cases
+  filtered. This schedules the tests without weakening the warning policy.
+- Workflow contract tests: **90 passed**. CI inventory tests: **42 passed** with
+  the existing PyYAML 6.0.3 CI environment. The live integration inventory reports
+  **zero gaps**. Formatting, native layout, warning policy, resident routing,
+  source-catalog entrypoints and the working source whitespace check pass.
+- Fresh reviews of #937 at 114eef487c, #938 at 304a1382c, and the storage code in
+  #940 at 62860ea623 report no major issues. The later CI scheduling/receipt
+  updates are not misrepresented as part of those reviewed code heads. The
+  native GitHub stack has 25 PRs with all 24 adjacent base/head edges matching;
+  the local series has zero merge commits above architecture cleanup a68fb2e.
 
-No complete CI result is claimed or awaited.
+Runtime-only host compilation (`canonical-native-program-runtime`) passes on
+clean d0271b90a in 15.56 seconds. Core `--no-default-features --features no_std
+--lib` compilation also passes in 2.44 seconds; its only dirty paths are receipt
+and report updates. No compiler/runtime source changed after implementation
+710e82a. Full linked/AOT qualification and a completed remote CI run were not
+rerun for this storage prerequisite. No complete CI result is claimed or awaited.
+The new #938/#940 CI runs were canceled at the user's direction; #929 and the
+foundation were left untouched.
 
 ## Failure disposition
 
@@ -79,6 +102,12 @@ requirements and unused imports under warnings-as-errors. The exact command on
 clean base 304a138 reproduces the same diagnostic headings. This is an inherited
 test-feature combination failure, outside this storage change. The complete
 minimal/full profiles above pass; warnings-as-errors remain enabled.
+
+The first CI-contract discovery attempt used the wrong directory and exited 5
+with zero tests; correcting it executes 90 tests. The default Python environment
+also lacks PyYAML for the inventory checker; the existing dependency-equipped
+CI interpreter executes all 42 tests and the live inventory. These were command
+selection/environment failures, now resolved; no empty run is called a pass.
 
 The first witness harness attempt used the reference helper's wrong signature;
 that introduced test scaffolding error was corrected before the actual frontend

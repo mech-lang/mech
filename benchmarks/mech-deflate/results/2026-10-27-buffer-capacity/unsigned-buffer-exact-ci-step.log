@@ -1,0 +1,45 @@
+   Compiling crossbeam-utils v0.8.22
+   Compiling crossbeam-epoch v0.9.20
+   Compiling rayon-core v1.13.0
+   Compiling crossbeam-deque v0.8.7
+   Compiling fxhash v0.2.1
+   Compiling rayon v1.12.0
+   Compiling hashbrown v0.16.1
+   Compiling embedded-io v0.7.1
+   Compiling rlibc v1.0.0
+   Compiling mech-core v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/core)
+    Finished `test` profile [unoptimized] target(s) in 20.38s
+     Running tests/unsigned_buffer_capacity.rs (/private/tmp/mech-live-control-target/debug/deps/unsigned_buffer_capacity-3dff3772dc30b020)
+    Finished `test` profile [unoptimized] target(s) in 0.23s
+     Running tests/unsigned_buffer_capacity.rs (/private/tmp/mech-live-control-target/debug/deps/unsigned_buffer_capacity-3dff3772dc30b020)
+
+running 1 test
+test retained_capacity_roundtrips_allocate_only_size_independent_snapshot_metadata ... width=W64 capacity=305257 rounds=3 allocation_requests_and_bytes=[(13, 856), (13, 856), (13, 856)] payload_pointer_unchanged=true
+width=W8 capacity=6633832 rounds=3 allocation_requests_and_bytes=[(13, 856), (13, 856), (13, 856)] payload_pointer_unchanged=true
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Compiling mech-core v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/core)
+    Finished `test` profile [unoptimized] target(s) in 16.41s
+     Running unittests src/lib.rs (/private/tmp/mech-live-control-target/debug/deps/mech_core-731dcc636cc41694)
+    Finished `test` profile [unoptimized] target(s) in 0.11s
+     Running unittests src/lib.rs (/private/tmp/mech-live-control-target/debug/deps/mech_core-731dcc636cc41694)
+
+running 13 tests
+test snapshot::validation::owned_string::tests::an_exclusive_physical_payload_ticket_is_not_consumed ... ok
+test snapshot::validation::owned_string::tests::exclusive_strings_transfer_without_payload_copy_or_new_budget_charge ... ok
+test snapshot::validation::owned_string::tests::foreign_import_blocks_data_transfer_until_that_owner_retires ... ok
+test snapshot::validation::owned_string::tests::mutable_bytes_keep_the_original_charge_and_require_utf8_revalidation ... ok
+test snapshot::validation::owned_string::tests::refreezing_reused_string_backing_cannot_revive_old_frozen_identity ... ok
+test snapshot::validation::owned_string::tests::shared_wrapper_rejection_preserves_owner_identity_admission_and_import_cache ... ok
+test snapshot::validation::owned_string::tests::unadmitted_and_wrong_account_transfers_do_not_rehome_capacity ... ok
+test snapshot::validation::owned_unsigned_matrix::tests::aliases_and_cross_account_imports_block_consumption_then_allow_recovery ... ok
+test snapshot::validation::owned_unsigned_matrix::tests::output_bytes_reuse_the_original_input_sized_reservation_across_repetitions ... ok
+test snapshot::validation::owned_unsigned_matrix::tests::path_nodes_clear_append_and_refreeze_reuse_the_actual_305257_slot_allocation ... ok
+test snapshot::validation::owned_unsigned_matrix::tests::reserved_buffer_construction_rejects_wrong_element_kinds_and_logical_extents ... ok
+test snapshot::validation::owned_unsigned_matrix::tests::reserved_words_preserve_capacity_and_charge_it_but_encode_only_initialized_elements ... ok
+test snapshot::validation::owned_unsigned_matrix::tests::wrong_account_and_failed_capacity_admission_preserve_the_previous_publication ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 326 filtered out; finished in 0.00s
+
