@@ -45,10 +45,20 @@ Measured evaluation is **663.475494208 seconds**, with 2601119 allocations and
 15207850276, and visits 976780. Retained managed bytes are 43092 before and
 6615540 after publication. Input aliases and complete cleanup pass.
 
-The decoded case is still running at this checkpoint, so the enclosing test is
-not claimed passed. A partial log and observed-result snapshot are explicitly
-labeled; retain the terminal receipt when it arrives. The original run contains
-one one-second external sampling observation. Its host has stripped symbols, so
+The decoded artifact also completes all 320 positions with exact reference
+agreement in **663.621672875 seconds**. It records 2601118 allocation requests,
+16781118671 cumulative requested bytes, and identical work, comparisons, visits
+and retained memory. Alias preservation and final cleanup pass in both forms.
+The terminal Rust test result is **1 passed, 0 failed, 0 ignored, 271 filtered**
+in 1374.91 seconds of test execution (1396.24 seconds including setup). The
+command receipt records starting HEAD `7ba38a870660706efd47d081f2e25ce046c30ce5`
+and its exact dirty test/provenance paths; those changes were subsequently
+committed as `cce7e60b6ff9f43c93d028eec761ac48a78c7273` and
+`49ffc5e7ac2c9a499e54edab6b9810f02beb17a0`. Formatting passes on the latter
+clean revision. Earlier partial observations remain labeled historical evidence.
+
+The original run contains one one-second external sampling observation. Its
+host has stripped symbols, so
 the anonymous sample is not evidence identifying a particular compiler cost.
 At the observation point, `ps` reports 647408 KiB RSS; the sampler separately
 reports 53.7 MiB physical footprint and 163.5 MiB peak physical footprint. These
