@@ -1599,24 +1599,6 @@ impl SourceSchemas {
     ) -> Result<Self, SourceSemanticError> {
         let mut builder = SchemaTableBuilder::new();
         let mut insert = |draft: &SchemaDraft| retain_schema_tree(anchor, &mut builder, draft);
-        // Structural control introduces predicate values even when the source
-        // has no Boolean literal, comparison or explicit guard. Keep their
-        // canonical type in the schema closure instead of depending on an
-        // unrelated Boolean expression to happen to intern it.
-        if nodes.iter().any(|node| {
-            matches!(
-                &node.body,
-                PendingNodeBody::Match(_)
-                    | PendingNodeBody::Activation(_)
-                    | PendingNodeBody::Iteration(_)
-                    | PendingNodeBody::Comprehension(_)
-            )
-        }) {
-            insert(&SchemaDraft {
-                dimension_parameters: Box::new([]),
-                body: SchemaBody::Bool,
-            })?;
-        }
         let input_handles = inputs
             .iter()
             .map(|value| insert(&value.schema))
@@ -1628,7 +1610,7 @@ impl SourceSchemas {
         for node in nodes {
             if let PendingNodeBody::Iteration(control) = &node.body {
                 let mut failure = None;
-                control.visit_schemas(&mut |schema| {
+                control.visit_schemas(constants, &mut |schema| {
                     if failure.is_none()
                         && let Err(error) = insert(schema)
                     {
@@ -1641,7 +1623,7 @@ impl SourceSchemas {
             }
             if let PendingNodeBody::Comprehension(control) = &node.body {
                 let mut failure = None;
-                control.visit_schemas(&mut |schema| {
+                control.visit_schemas(constants, &mut |schema| {
                     if failure.is_none()
                         && let Err(error) = insert(schema)
                     {
@@ -1656,7 +1638,7 @@ impl SourceSchemas {
                 &node.body
             {
                 let mut failure = None;
-                control.visit_schemas(&mut |schema| {
+                control.visit_schemas(constants, &mut |schema| {
                     if failure.is_none()
                         && let Err(error) = insert(schema)
                     {
@@ -2871,9 +2853,44 @@ struct PendingMatch {
     arms: Vec<PendingMatchArm>,
 }
 
+fn pattern_has_enum_test<S, V>(pattern: &crate::CollectionPattern<S, V>) -> bool {
+    match pattern {
+        crate::CollectionPattern::Enum { .. } => true,
+        crate::CollectionPattern::Tuple(items) => items.iter().any(pattern_has_enum_test),
+        crate::CollectionPattern::Array {
+            prefix,
+            rest,
+            suffix,
+        } => prefix
+            .iter()
+            .chain(rest.as_deref())
+            .chain(suffix.iter())
+            .any(pattern_has_enum_test),
+        crate::CollectionPattern::Wildcard
+        | crate::CollectionPattern::Bind { .. }
+        | crate::CollectionPattern::Equal(_) => false,
+    }
+}
+
 impl PendingMatch {
-    fn visit_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
+    fn visit_schemas(&self, constants: &[PendingConstant], visit: &mut impl FnMut(&SchemaDraft)) {
         for arm in &self.arms {
+            // Enum tag tests and managed String literal tests produce implicit
+            // Boolean values. Scalar literal branches and plain bindings do
+            // not: retaining an unused schema changes their admission scans.
+            let predicate = match &arm.pattern {
+                crate::MatchPattern::Literal(index) => constants
+                    .get(*index)
+                    .is_some_and(|constant| constant.schema.body == SchemaBody::String),
+                crate::MatchPattern::Structural(pattern) => pattern_has_enum_test(pattern),
+                crate::MatchPattern::Wildcard | crate::MatchPattern::Bind => false,
+            };
+            if predicate {
+                visit(&SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Bool,
+                });
+            }
             if let crate::MatchPattern::Structural(pattern) = &arm.pattern {
                 pattern.bindings(&mut |_, schema| visit(schema));
             }
@@ -2884,12 +2901,14 @@ impl PendingMatch {
                 for operation in &block.operations {
                     visit(&operation.schema);
                     match &operation.body {
-                        PendingControlOperationBody::Match(nested) => nested.visit_schemas(visit),
+                        PendingControlOperationBody::Match(nested) => {
+                            nested.visit_schemas(constants, visit)
+                        }
                         PendingControlOperationBody::Comprehension(nested) => {
-                            nested.visit_schemas(visit)
+                            nested.visit_schemas(constants, visit)
                         }
                         PendingControlOperationBody::Iteration(nested) => {
-                            nested.visit_schemas(visit)
+                            nested.visit_schemas(constants, visit)
                         }
                         PendingControlOperationBody::Operation { .. }
                         | PendingControlOperationBody::Recur(_)
@@ -9792,7 +9811,7 @@ mod tests {
             }],
         };
         let mut visited = Vec::new();
-        root.visit_schemas(&mut |schema| visited.push(schema.body.clone()));
+        root.visit_schemas(&[], &mut |schema| visited.push(schema.body.clone()));
         assert_eq!(visited.len(), 4);
         for body in [
             SchemaBody::Bool,

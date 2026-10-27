@@ -4421,7 +4421,7 @@ fn map_insert(
             }
         }
     }
-    let next = build_snapshot_aggregate_assignment(kernel, &EntryInputs(inputs), current)?;
+    let next = build_snapshot_aggregate_assignment::<true>(kernel, &EntryInputs(inputs), current)?;
     let ResidentValueMut::Snapshot([target]) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
@@ -10733,7 +10733,7 @@ fn indexed_assign_snapshot_aggregate(
         return Err(ResidentKernelError::InvalidOutput);
     };
     let current = target.as_ref().ok_or(ResidentKernelError::InvalidOutput)?;
-    let next = build_snapshot_aggregate_assignment(kernel, inputs, current)?;
+    let next = build_snapshot_aggregate_assignment::<false>(kernel, inputs, current)?;
     let changed = !current
         .snapshot_eq(schemas, &next, schemas)
         .map_err(|_| ResidentKernelError::InvalidOutput)?;
@@ -10741,7 +10741,7 @@ fn indexed_assign_snapshot_aggregate(
     Ok(changed)
 }
 
-fn build_snapshot_aggregate_assignment(
+fn build_snapshot_aggregate_assignment<const INSERT_MISSING: bool>(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     current: &mech_core::Value,
@@ -10783,12 +10783,18 @@ fn build_snapshot_aggregate_assignment(
     )?;
     let execution_ordinal = match (current_schema.body(), current.data()) {
         (SchemaBody::Map { key, .. }, ValueData::Map(map)) => {
-            map_optional_entry_for_selector_with_meter(
+            let selected = map_optional_entry_for_selector_with_meter(
                 map,
                 key,
                 input(inputs, 1)?,
                 &mut footprint_meter,
-            )?
+            )?;
+            // Indexed assignment selects an existing entry. Only explicit
+            // map/insert may admit growth and retain a new key.
+            if !INSERT_MISSING && selected.is_none() {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            selected
         }
         (SchemaBody::Record(fields), ValueData::Record(_)) => {
             let selected = named_schema_ordinal_with_meter(
