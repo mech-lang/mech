@@ -1205,8 +1205,15 @@ fn comprehension_foreign_dynamic_schemas_survive_pattern_matching() {
     let source = "out := [1 | (x, *) <- signal<[*]:1,1>]\nout\n";
     let compiled = compiled(source);
     let artifact = compiled.compile_artifact().unwrap();
+    // Structural control retains Bool; use two absent children for this witness.
     let tuple_schema = SchemaDraft {
-        body: SchemaBody::Tuple(vec![SchemaBody::String, SchemaBody::Bool].into_boxed_slice()),
+        body: SchemaBody::Tuple(
+            vec![
+                SchemaBody::String,
+                SchemaBody::SignedInteger(mech_core::IntegerWidth::W32),
+            ]
+            .into_boxed_slice(),
+        ),
         dimension_parameters: Box::new([]),
     }
     .finalize()
@@ -1220,7 +1227,7 @@ fn comprehension_foreign_dynamic_schemas_survive_pattern_matching() {
         assert!(
             artifact.schemas().entries().all(|entry| !matches!(
                 entry.schema().body(),
-                SchemaBody::String | SchemaBody::Bool
+                SchemaBody::String | SchemaBody::SignedInteger(mech_core::IntegerWidth::W32)
             )),
             "the plan deliberately lacks both the foreign tuple and its child schemas",
         );
@@ -1261,7 +1268,7 @@ fn comprehension_foreign_dynamic_schemas_survive_pattern_matching() {
                         schema: tuple,
                         shape_values: Box::new([]),
                         data: D::Tuple(
-                            vec![D::String("foreign".into()), D::Bool(true)].into_boxed_slice(),
+                            vec![D::String("foreign".into()), D::I32(7)].into_boxed_slice(),
                         ),
                     })))]
                     .into_boxed_slice(),
@@ -1316,8 +1323,15 @@ fn comprehension_same_plan_dynamic_schema_supplies_missing_pattern_children() {
     let source = "out := [1 | (x, *) <- signal<[*]:1,1>]\nout\n";
     let compiled = compiled(source);
     let artifact = compiled.compile_artifact().unwrap();
+    // Structural control retains Bool; use two absent children for this witness.
     let tuple_schema = SchemaDraft {
-        body: SchemaBody::Tuple(vec![SchemaBody::String, SchemaBody::Bool].into_boxed_slice()),
+        body: SchemaBody::Tuple(
+            vec![
+                SchemaBody::String,
+                SchemaBody::SignedInteger(mech_core::IntegerWidth::W32),
+            ]
+            .into_boxed_slice(),
+        ),
         dimension_parameters: Box::new([]),
     }
     .finalize()
@@ -1335,11 +1349,10 @@ fn comprehension_same_plan_dynamic_schema_supplies_missing_pattern_children() {
         .extend_preserving_ids(&additional)
         .unwrap();
     assert!(schemas.find_by_key(tuple_schema.key()).is_some());
-    assert!(
-        schemas
-            .entries()
-            .all(|entry| !matches!(entry.schema().body(), SchemaBody::String | SchemaBody::Bool))
-    );
+    assert!(schemas.entries().all(|entry| !matches!(
+        entry.schema().body(),
+        SchemaBody::String | SchemaBody::SignedInteger(mech_core::IntegerWidth::W32)
+    )));
     let artifact = ProgramArtifactDraft {
         schemas,
         constants: artifact.constants().clone(),
@@ -1367,7 +1380,7 @@ fn comprehension_same_plan_dynamic_schema_supplies_missing_pattern_children() {
                     schema: tuple,
                     shape_values: Box::new([]),
                     data: D::Tuple(
-                        vec![D::String("same-plan".into()), D::Bool(true)].into_boxed_slice(),
+                        vec![D::String("same-plan".into()), D::I32(7)].into_boxed_slice(),
                     ),
                 })))]
                 .into_boxed_slice(),
@@ -1407,11 +1420,10 @@ fn comprehension_same_plan_dynamic_schema_supplies_missing_pattern_children() {
             .entries()
             .any(|entry| matches!(entry.schema().body(), SchemaBody::String))
     );
-    assert!(
-        output_schemas
-            .entries()
-            .any(|entry| matches!(entry.schema().body(), SchemaBody::Bool))
-    );
+    assert!(output_schemas.entries().any(|entry| matches!(
+        entry.schema().body(),
+        SchemaBody::SignedInteger(mech_core::IntegerWidth::W32)
+    )));
 }
 
 #[test]
