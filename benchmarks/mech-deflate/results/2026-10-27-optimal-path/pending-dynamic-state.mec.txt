@@ -1,0 +1,5 @@
+#Hold(values<[u8]>) => <[u8]>
+  | :Done(values<[u8]>).
+#Hold(values) -> :Done(values)
+  :Done(values) => values.
+#Hold(input<[u8]>)

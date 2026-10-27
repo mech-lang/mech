@@ -1,0 +1,8 @@
+{
+  "base": "2a8ef64a83ed5cd36a87cca1485ced634082635a",
+  "head": "93a7be76e36a6e364152c50b1557cf6c49d07e0f",
+  "existing_fixture_count": 28,
+  "changed_existing_fixtures": [],
+  "scalar_codegen_syntax_or_source_semantic_changes": [],
+  "new_path_source_sha256": "9ba96d49f96993cc870fdbc5a1a76c897a26ac92d8c857a0d4adb837e39c670e"
+}
