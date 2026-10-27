@@ -56,6 +56,62 @@ fn from_numeric_matrix(
     ))
 }
 
+/// Detached packed words. Length describes initialized logical elements;
+/// capacity describes owned storage and is never encoded as matrix data.
+#[derive(Debug)]
+pub enum UnsignedMatrixBuffer {
+    U8(Vec<u8>),
+    U16(Vec<u16>),
+    U32(Vec<u32>),
+    U64(Vec<u64>),
+}
+impl UnsignedMatrixBuffer {
+    pub fn elements(&self) -> super::super::SequenceView<'_> {
+        use super::super::SequenceView;
+        match self {
+            Self::U8(words) => SequenceView::U8(words),
+            Self::U16(words) => SequenceView::U16(words),
+            Self::U32(words) => SequenceView::U32(words),
+            Self::U64(words) => SequenceView::U64(words),
+        }
+    }
+    pub fn capacity_bytes(&self) -> usize {
+        match self {
+            Self::U8(words) => words.capacity(),
+            Self::U16(words) => words.capacity() * core::mem::size_of::<u16>(),
+            Self::U32(words) => words.capacity() * core::mem::size_of::<u32>(),
+            Self::U64(words) => words.capacity() * core::mem::size_of::<u64>(),
+        }
+    }
+}
+
+impl Value {
+    /// Freeze a caller-admitted packed buffer without shrinking its allocation
+    /// or initializing unused capacity. Ordinary schema/shape checks still run.
+    /// This detached constructor grants no execution or budget authority.
+    pub fn from_unsigned_matrix_buffer(
+        schema: SchemaId,
+        shape: ShapeInstance,
+        buffer: UnsignedMatrixBuffer,
+        schemas: Arc<SchemaTable>,
+    ) -> Result<Self, SnapshotValueError> {
+        use IntegerWidth as W;
+        let (width, storage) = match buffer {
+            UnsignedMatrixBuffer::U8(words) => (W::W8, SequenceStorage::U8(words)),
+            UnsignedMatrixBuffer::U16(words) => (W::W16, SequenceStorage::U16(words)),
+            UnsignedMatrixBuffer::U32(words) => (W::W32, SequenceStorage::U32(words)),
+            UnsignedMatrixBuffer::U64(words) => (W::W64, SequenceStorage::U64(words)),
+        };
+        from_numeric_matrix(
+            schema,
+            shape,
+            SchemaBody::UnsignedInteger(width),
+            storage,
+            schemas,
+        )
+    }
+}
+
 macro_rules! constructor {
     ($name:ident, $ty:ty, $storage:ident, $body:expr) => {
         /// Transfer an already-admitted numeric buffer into canonical packed
@@ -73,7 +129,7 @@ macro_rules! constructor {
                 schema,
                 shape,
                 $body,
-                SequenceStorage::$storage(elements),
+                SequenceStorage::$storage(elements.into()),
                 schemas,
             )
         }

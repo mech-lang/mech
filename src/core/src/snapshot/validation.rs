@@ -17,6 +17,11 @@ pub use string_matrix::StringMatrixSnapshotConstructor;
 
 #[path = "numeric_matrix.rs"]
 mod numeric_matrix;
+pub use numeric_matrix::UnsignedMatrixBuffer;
+
+#[path = "owned_unsigned_matrix.rs"]
+mod owned_unsigned_matrix;
+pub use owned_unsigned_matrix::{OwnedSnapshotUnsignedMatrix, UnsignedMatrixOwnershipTransfer};
 
 #[cfg(test)]
 #[path = "frozen_identity_tests.rs"]
@@ -4075,7 +4080,7 @@ fn finalize_scalar_sequence(
                 };
                 packed.push(value);
             }
-            Ok(SequenceStorage::$storage(packed.into_boxed_slice()))
+            Ok(SequenceStorage::$storage(packed.into()))
         }};
     }
 
