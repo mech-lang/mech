@@ -14,6 +14,29 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def pinned_package_sources(root, revision=PIN):
+    """Check the full tracked package, including transitive oracle imports."""
+    names = subprocess.check_output(
+        ["git", "ls-tree", "-r", "--name-only", revision, "--", "package"],
+        cwd=root, text=True,
+    ).splitlines()
+    sources = {}
+    for name in names:
+        if not name.endswith(".roc"):
+            continue
+        pinned = subprocess.check_output(["git", "show", f"{revision}:{name}"], cwd=root)
+        try:
+            actual = (root / name).read_bytes()
+        except FileNotFoundError as error:
+            raise ValueError(f"pinned package source is missing: {name}") from error
+        if actual != pinned:
+            raise ValueError(f"package source differs from the pin: {name}")
+        sources[name] = pinned
+    if "package/CompressOptimal.roc" not in sources:
+        raise ValueError("pinned collection source is absent from the package")
+    return sources
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("reference_root", type=Path)
@@ -22,10 +45,11 @@ def main():
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args()
     root = args.reference_root.resolve()
-    original = root / "package/CompressOptimal.roc"
-    pinned = subprocess.check_output(["git", "show", f"{PIN}:package/CompressOptimal.roc"], cwd=root)
-    if original.read_bytes() != pinned:
-        parser.error("original collection source differs from the pin")
+    try:
+        package_sources = pinned_package_sources(root)
+    except ValueError as error:
+        parser.error(str(error))
+    pinned = package_sources["package/CompressOptimal.roc"]
     source = pinned.decode()
     start = source.index("\t\t\t# Starting a new block.")
     end = source.index("\t\t\tblock_length = $block_end - $in_block_begin", start)
@@ -114,6 +138,7 @@ collect = |input| {
                 case[kind].append([int(key), int(value)])
         cases.append(case)
     output = {"reference": {"source_pin": PIN, "compiler_pin": COMPILER_PIN,
+                           "package_source_sha256": {name: digest(data) for name, data in package_sources.items()},
                            "source_sha256": digest(pinned), "exact_block_fragment_sha256": digest(loop.encode()),
                            "generated_source_sha256": digest(app.encode()), "binary_sha256": digest(binary.read_bytes()),
                            "command": command, "purpose": "first complete block before optimal parsing/writing"}, "cases": cases}
