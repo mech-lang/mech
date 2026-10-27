@@ -975,6 +975,24 @@ mod tests {
         assert_eq!(before_draft.reads.get(), 1);
         assert!(output[0].is_none());
 
+        // A cap more than one unit short must still report the complete
+        // rejected key-comparison debit rather than an invented limit + 1.
+        before_draft.reads.set(0);
+        denied.budget_limits.max_comparison_work = Some(measured.comparison_work() - 37);
+        assert_eq!(
+            super::super::budget::with_resident_turn_plan(denied.clone(), || {
+                kernel.execute(&before_draft, ResidentValueMut::Snapshot(&mut output))
+            }),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: measured.comparison_work(),
+                limit: measured.comparison_work() - 37,
+            })
+        );
+        assert_eq!(before_draft.reads.get(), 1);
+        assert!(output[0].is_none());
+
         // Exact funding, without changing any Set key or global limit, permits
         // the unchanged literal and preserves all canonical values.
         denied.budget_limits.max_comparison_work = Some(measured.comparison_work());

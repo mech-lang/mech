@@ -108,6 +108,7 @@ pub(crate) trait SnapshotConstructionAuthority {
 pub struct SnapshotCanonicalizationBudget {
     limit: u64,
     consumed: Cell<u64>,
+    rejected_total: Cell<u64>,
 }
 
 impl SnapshotCanonicalizationBudget {
@@ -115,6 +116,17 @@ impl SnapshotCanonicalizationBudget {
         Self {
             limit,
             consumed: Cell::new(0),
+            rejected_total: Cell::new(0),
+        }
+    }
+
+    /// Exact cumulative work requested by the most recent rejected charge.
+    /// Rejection leaves `consumed` unchanged. Arithmetic overflow has no exact
+    /// representable total and returns None, as does a budget with no denial.
+    pub fn rejected_total_work(&self) -> Option<u64> {
+        match self.rejected_total.get() {
+            0 => None,
+            required => Some(required),
         }
     }
 
@@ -123,11 +135,14 @@ impl SnapshotCanonicalizationBudget {
     }
 
     pub(crate) fn charge(&self, amount: u64) -> Result<(), SnapshotValueError> {
-        let consumed =
-            self.consumed.get().checked_add(amount).ok_or(
-                SnapshotValueError::CanonicalizationWorkLimitExceededV1 { limit: self.limit },
-            )?;
+        let Some(consumed) = self.consumed.get().checked_add(amount) else {
+            self.rejected_total.set(0);
+            return Err(SnapshotValueError::CanonicalizationWorkLimitExceededV1 {
+                limit: self.limit,
+            });
+        };
         if consumed > self.limit {
+            self.rejected_total.set(consumed);
             return Err(SnapshotValueError::CanonicalizationWorkLimitExceededV1 {
                 limit: self.limit,
             });

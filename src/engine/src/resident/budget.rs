@@ -2140,10 +2140,25 @@ pub(crate) fn preflight_canonical_data_finalization(
     let result = mech_core::snapshot::canonical_data_draft_finalization_work_with_budget(
         schema, data, &budget,
     );
-    if result.is_err() && meter.native_projection_limits.is_some() {
-        // A failed preflight already performed its admitted prefix of key
-        // comparisons. Keep that spent work on the invocation across retries.
-        meter.charge_comparison_work(budget.consumed())?;
+    if result.is_err() {
+        let spent = if meter.native_projection_limits.is_some() {
+            // A failed preflight already performed its admitted prefix of key
+            // comparisons. Keep that spent work on the invocation across retries.
+            meter.charge_comparison_work(budget.consumed())?;
+            budget.consumed()
+        } else {
+            0
+        };
+        if let Some(required) = budget.rejected_total_work() {
+            // Let the same meter report the exact rejected cumulative debit.
+            // Do not flatten finite admission into a generic shape error or
+            // invent a required value from the limit alone.
+            meter.charge_comparison_work(
+                required
+                    .checked_sub(spent)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )?;
+        }
     }
     let work = result.map_err(map_snapshot_work_error)?;
     meter.charge_comparison_work(work)?;
