@@ -229,16 +229,26 @@ fn execute(
     let next =
         Value::from_unsigned_matrix_buffer(metadata.schema, shape, buffer, Arc::clone(schemas))
             .map_err(|_| ResidentKernelError::InvalidOutput)?;
-    let changed = target
+    // Capacity is omitted from language equality, but a changed reservation
+    // must still dirty downstream buffer consumers in this resident turn.
+    let capacity = |value: &Value| match value.data() {
+        ValueData::Matrix(matrix) => matrix.unsigned_buffer_capacity(),
+        _ => None,
+    };
+    let capacity_changed = target
         .as_ref()
-        .map(|prior| {
-            prior
-                .snapshot_eq(schemas, &next, schemas)
-                .map(|same| !same)
-                .map_err(|_| ResidentKernelError::InvalidOutput)
-        })
-        .transpose()?
-        .unwrap_or(true);
+        .is_none_or(|prior| capacity(prior) != capacity(&next));
+    let changed = capacity_changed
+        || target
+            .as_ref()
+            .map(|prior| {
+                prior
+                    .snapshot_eq(schemas, &next, schemas)
+                    .map(|same| !same)
+                    .map_err(|_| ResidentKernelError::InvalidOutput)
+            })
+            .transpose()?
+            .unwrap_or(true);
     // This is the ordinary staged snapshot lane. Its enclosing payload scope
     // admits ownership before the invocation can publish the candidate.
     *target = Some(next);

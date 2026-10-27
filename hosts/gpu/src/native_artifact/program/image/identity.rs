@@ -393,7 +393,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 109;
 // general call binding, dimension closure or a canonical scalar result owner.
 // Policy85 funds selected packed-buffer operations, actual capacity/copy
 // coexistence, consuming ownership transfer and checked fresh publication.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 85;
+// Policy86 admits the complete old backing when consuming growth reallocates,
+// and enforces the copy-byte quota through ResourceDemand's correct field.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 86;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

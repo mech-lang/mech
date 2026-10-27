@@ -121,15 +121,18 @@ impl NativePreparedLibraryCall {
                 } else {
                     0
                 };
-                let copy_bytes = if grows && operation != Operation::Clear {
-                    let length = owned
+                let copy_bytes = if grows && let Some(buffer) = owned.as_ref() {
+                    // Allocator reallocation may move the complete old layout,
+                    // including uninitialized spare capacity after a clear.
+                    u64::try_from(buffer.capacity_bytes()).map_err(|_| InvokeError::InvalidInput)?
+                } else if grows && operation != Operation::Clear {
+                    // A shared backing is rebuilt separately and copies only
+                    // initialized words; its spare storage is never read.
+                    let length = source
                         .as_ref()
-                        .map(|buffer| buffer.elements().len())
-                        .or_else(|| {
-                            source.as_ref().and_then(|value| match value.data() {
-                                ValueData::Matrix(matrix) => Some(matrix.elements().len()),
-                                _ => None,
-                            })
+                        .and_then(|value| match value.data() {
+                            ValueData::Matrix(matrix) => Some(matrix.elements().len()),
+                            _ => None,
                         })
                         .unwrap_or(0);
                     (length as u64)
@@ -150,6 +153,7 @@ impl NativePreparedLibraryCall {
                 )?;
                 let demand = ResourceDemand {
                     output_elements: geometry.length as u64,
+                    cloned_bytes: copy_bytes,
                     ..ResourceDemand::default()
                 };
                 if let Some(violation) = mech_core::evaluate_call_memory_budget(
@@ -159,7 +163,7 @@ impl NativePreparedLibraryCall {
                     },
                     demand,
                     footprint.retained_bytes,
-                    copy_bytes,
+                    0,
                     limits,
                 )
                 .first()

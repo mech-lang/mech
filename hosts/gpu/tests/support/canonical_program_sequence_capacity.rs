@@ -371,3 +371,113 @@ fn generic_buffer_parameters_check_current_rows_without_partial_publication() {
         }
     }
 }
+
+#[test]
+fn consuming_growth_admits_full_old_backing_work_and_copy_quota() {
+    let source = "+> sequence\nsequence/reserve(sequence/clear(sequence/with-capacity(0u8, 1000000u64)), target<u64>)\n";
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let growth_origin = jit.descriptor().plan().blocks().iter().find_map(|block| {
+            matches!(block.action(), mech_engine::native_artifact::NativeIterationAction::LibraryCall { template, .. }
+                if template.primitive() == mech_engine::native_artifact::NativeCollectionPrimitive::SequenceReserve).then_some(block.origin())
+        }).unwrap();
+        let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        let mut allowed = limits();
+        allowed.library.max_cloned_bytes = Some(1_000_000);
+        let control_args = inputs(&artifact, &[("target", Data::U64(1_000_000))], &memory);
+        let growth_args = inputs(&artifact, &[("target", Data::U64(1_000_001))], &memory);
+        jit.evaluate_into(&control_args, &mut output, allowed, &memory)
+            .unwrap();
+        let template = jit
+            .descriptor()
+            .plan()
+            .blocks()
+            .iter()
+            .find_map(|block| match block.action() {
+                mech_engine::native_artifact::NativeIterationAction::LibraryCall {
+                    template,
+                    ..
+                } if template.primitive()
+                    == mech_engine::native_artifact::NativeCollectionPrimitive::SequenceReserve =>
+                {
+                    Some(template)
+                }
+                _ => None,
+            })
+            .unwrap();
+        let call = mech_engine::native_artifact::prepare_native_program_library_call(
+            &artifact,
+            template,
+            &mech_stdlib::source_catalog(),
+        )
+        .unwrap();
+        let work = mech_engine::native_artifact::NativeLibraryWorkBudget::new(
+            allowed.library.max_compute_work.unwrap(),
+            allowed.library.max_comparison_work.unwrap(),
+            &memory,
+        )
+        .unwrap();
+        let source = output.last_mut().unwrap().take().unwrap();
+        let source = call
+            .unsigned_buffer(
+                Some(source),
+                1_000_000,
+                true,
+                allowed.library,
+                &work,
+                mech_core::ResourceDemand::default(),
+            )
+            .unwrap();
+        let mut compute_policy = allowed;
+        // Measure only this selected call's no-growth work. The full Program's
+        // report also includes native transport and other library calls.
+        compute_policy.library.max_compute_work = Some(work.used().0);
+        *output.last_mut().unwrap() = Some(source);
+        drop(work);
+        let mut control_output = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&control_args, &mut control_output, compute_policy, &memory)
+            .unwrap();
+        drop(control_output);
+        jit.evaluate_into(&growth_args, &mut output, allowed, &memory)
+            .unwrap();
+        let prior = output
+            .iter()
+            .map(|value| value.clone().unwrap())
+            .collect::<Vec<_>>();
+        for (dimension, policy) in [
+            ("ClonedBytes", {
+                let mut policy = allowed;
+                policy.library.max_cloned_bytes = Some(999_999);
+                policy
+            }),
+            ("ComputeWork", compute_policy),
+        ] {
+            let before = memory.used_bytes();
+            let error = jit
+                .evaluate_into(&growth_args, &mut output, policy, &memory)
+                .unwrap_err();
+            assert!(
+                matches!(&error, mech_gpu::native_artifact::NativeProgramExecutionError::Library { origin, .. } if *origin == growth_origin),
+                "{error:?}"
+            );
+            assert!(format!("{error:?}").contains(dimension), "{error:?}");
+            assert!(
+                output
+                    .iter()
+                    .zip(&prior)
+                    .all(|(current, old)| current.as_ref().unwrap().shares_frozen_storage(old))
+            );
+            assert_eq!(memory.used_bytes(), before);
+        }
+        jit.evaluate_into(&growth_args, &mut output, allowed, &memory)
+            .unwrap();
+        equal(&artifact, &output, &prior);
+        let ValueData::Matrix(matrix) = output.last().unwrap().as_ref().unwrap().data() else {
+            panic!()
+        };
+        assert_eq!(matrix.unsigned_buffer_capacity(), Some(1_000_001));
+        drop((control_args, growth_args, output, prior));
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}

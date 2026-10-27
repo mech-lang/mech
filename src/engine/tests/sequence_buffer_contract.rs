@@ -359,3 +359,95 @@ fn generic_buffer_row_checks_keep_published_resident_values_and_recover() {
         }
     }
 }
+
+#[test]
+fn capacity_only_changes_propagate_through_reserve_clear_and_append() {
+    use mech_core::{ValueDraft, snapshot::SnapshotValidationContext};
+    use mech_engine::resident::CapturedValueInput;
+    let mut builder = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
+    mech_engine::install_intrinsic_compiler_runtime(&mut builder).unwrap();
+    mech_engine::install_intrinsic_source(&mut builder).unwrap();
+    mech_engine::install_intrinsic_resident(&mut builder).unwrap();
+    let catalog = Arc::new(builder.build().unwrap());
+    let source = "+> sequence\nsequence/append(sequence/clear(sequence/reserve(sequence/with-capacity(0u8, capacity<u64>), 3u64)), 7u8)\n";
+    let parsed = parse_canonical_document(
+        TextSnapshot::new(DocumentId(0x425546), Revision(1), source).unwrap(),
+        ParseConfig::default(),
+    );
+    assert!(parsed.is_strictly_clean());
+    let product = CanonicalSourceFrontend
+        .compile_document_with_catalog(
+            &DocumentSyntax::cast(parsed.syntax()).unwrap(),
+            catalog.clone(),
+        )
+        .unwrap();
+    let original = product.compile_artifact().unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap(),
+    )
+    .unwrap();
+    for artifact in [original, decoded] {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x425546, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        let slot = instance.plan.inputs[0].slot;
+        let mut prior = None;
+        for capacity in [32, 64, u64::MAX, 16] {
+            let value = ValueDraft {
+                schema: artifact.inputs()[0].schema,
+                shape_values: Box::new([]),
+                data: Data::U64(capacity),
+            }
+            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+            .unwrap();
+            if capacity == u64::MAX {
+                assert!(
+                    instance
+                        .prepare_turn_values(&[CapturedValueInput {
+                            slot,
+                            value: &value
+                        }])
+                        .is_err()
+                );
+                let current = instance
+                    .copied_output(artifact.outputs().len() - 1)
+                    .unwrap();
+                assert!(current.shares_frozen_storage(prior.as_ref().unwrap()));
+                continue;
+            }
+            instance
+                .prepare_turn_values(&[CapturedValueInput {
+                    slot,
+                    value: &value,
+                }])
+                .unwrap()
+                .publish()
+                .unwrap();
+            let current = instance
+                .copied_output(artifact.outputs().len() - 1)
+                .unwrap();
+            assert_eq!(
+                current.canonical_data_draft().unwrap(),
+                Data::Matrix(vec![Data::U8(7)].into())
+            );
+            let mech_core::ValueData::Matrix(matrix) = current.data() else {
+                panic!()
+            };
+            assert_eq!(matrix.unsigned_buffer_capacity(), Some(capacity as usize));
+            if let Some(previous) = &prior {
+                assert!(
+                    current
+                        .snapshot_eq(artifact.schemas(), previous, artifact.schemas())
+                        .unwrap()
+                );
+                assert!(!current.shares_frozen_storage(previous));
+            }
+            prior = Some(current);
+        }
+    }
+}
