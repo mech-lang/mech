@@ -1,0 +1,215 @@
+{
+  "base": "7b0f64b890ce28244cb171dcdf187f1da3684bb9",
+  "source_head": "43feee9210d8baa2277dfd56c46875857c41b231",
+  "commits": {
+    "diagnostics": "ab49ca0e6a9c2d0528263621ec6e99385a4c5a42",
+    "record_capture": "43feee9210d8baa2277dfd56c46875857c41b231"
+  },
+  "source_sha256": {
+    "src/engine/src/artifact/control.rs": "e122e94f934e8624dfe4d540aaf2ec217100efc0c4608a56a01e972bcfceba72",
+    "src/engine/src/source_semantics/frontend.rs": "dbbee052a1ff25b6a43700732a0472b5a1aecbb31df19bee9e39c82fc8be776c",
+    "hosts/gpu/tests/support/canonical_program_record_buffers.rs": "1d4e10a385bc7b6d542f3a3baeb49119febce846f65551bae26a9db838bb6f97"
+  },
+  "receipts": [
+    {
+      "name": "control-diagnostics-engine-v2",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j1",
+        "-p",
+        "mech-engine",
+        "--no-default-features",
+        "--features",
+        "full_source,native-artifact,sequence_buffers",
+        "--lib",
+        "--",
+        "control_diagnostics",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "7b0f64b890ce28244cb171dcdf187f1da3684bb9",
+      "dirty": " M src/engine/src/source_semantics/frontend.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n",
+      "exit": 0,
+      "seconds": 65.88741779327393,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/control-diagnostics-engine-v2.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    {
+      "name": "record-capture-native-v2",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j1",
+        "--manifest-path",
+        "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+        "selected_record_buffer_capture",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "ab49ca0e6a9c2d0528263621ec6e99385a4c5a42",
+      "dirty": " M hosts/gpu/tests/support/canonical_program_record_buffers.rs\n M src/engine/src/artifact/control.rs\n M src/engine/src/source_semantics/frontend.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n",
+      "exit": 0,
+      "seconds": 3.14884877204895,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/record-capture-native-v2.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    {
+      "name": "record-capture-engine",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j1",
+        "-p",
+        "mech-engine",
+        "--no-default-features",
+        "--features",
+        "full_source,native-artifact,sequence_buffers",
+        "--lib",
+        "--",
+        "turn_matrix",
+        "control_diagnostics",
+        "control_record_buffer_capture",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "ab49ca0e6a9c2d0528263621ec6e99385a4c5a42",
+      "dirty": " M hosts/gpu/tests/support/canonical_program_record_buffers.rs\n M src/engine/src/artifact/control.rs\n M src/engine/src/source_semantics/frontend.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n",
+      "exit": 0,
+      "seconds": 66.66575694084167,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/record-capture-engine.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    {
+      "name": "record-capture-maintained",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j1",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_program",
+        "--",
+        "record_buffer_qualification",
+        "buffer_frame_qualification",
+        "function_axes_qualification",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "ab49ca0e6a9c2d0528263621ec6e99385a4c5a42",
+      "dirty": " M hosts/gpu/tests/support/canonical_program_record_buffers.rs\n M src/engine/src/artifact/control.rs\n M src/engine/src/source_semantics/frontend.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n",
+      "exit": 0,
+      "seconds": 115.2629759311676,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/record-capture-maintained.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    {
+      "name": "optimization-record-capture-native",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j1",
+        "--manifest-path",
+        "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+        "optimization_costs",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "ab49ca0e6a9c2d0528263621ec6e99385a4c5a42",
+      "dirty": " M hosts/gpu/tests/support/canonical_program_record_buffers.rs\n M src/engine/src/artifact/control.rs\n M src/engine/src/source_semantics/frontend.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n",
+      "exit": 101,
+      "seconds": 49.12849402427673,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/optimization-record-capture-native.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    }
+  ],
+  "maintained_test_count": 19,
+  "design": "Allow records recursively containing existing supported scalar buffers to carry Turn geometry via canonical snapshots. Require at least one matrix for open geometry. Preserve closed-value, pattern, result, state, and activation-lifetime gates. No runtime, code generation, codec revision, admission-default or benchmark algorithm changes. Report distinct selected-block limit, capture, result, operation, unresolved-value and intermediate errors.",
+  "remaining_failure": {
+    "command": "optimization-record-capture-native",
+    "class": "pre-existing next compiler restriction exposed after removing capture rejection",
+    "code": "source-semantics/incompatible-match-result-kind",
+    "operation": "final recursive optimizer return record",
+    "status": "not resolved; no complete compressor or performance result"
+  },
+  "development_failures": [
+    "First diagnostic test fixture used incorrect statement-function syntax; corrected.",
+    "First capture witness compared append row output with arbitrary matrix output; aligned both branches to append without changing compiler shape rules.",
+    "System Python lacked PyYAML; inventory rerun with established CI environment passed."
+  ],
+  "static_checks": {
+    "production_resident_routing": "pass",
+    "source_catalog": "pass",
+    "native_host_catalog": "pass",
+    "native_build_analysis_layout": "pass",
+    "format": "pass",
+    "git_diff_check": "pass",
+    "ci_inventory": []
+  },
+  "skipped": [
+    "Full suite and source-free profiles not rerun.",
+    "CI intentionally not awaited; new branch runs are canceled per request."
+  ],
+  "reference_pin": "671077457ff7ef3a3d44caf715a3fc595addf379"
+}
