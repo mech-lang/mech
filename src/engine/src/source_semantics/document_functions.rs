@@ -520,7 +520,7 @@ impl SemanticBuilder {
                 let elements = arguments
                     .iter()
                     .map(|argument| {
-                        embed_schema_draft(
+                        function_argument_shape::embed(
                             &self.schema_draft_of(*argument)?,
                             &mut dimensions,
                             SourceSemanticAnchor::for_node(call),
@@ -1161,7 +1161,7 @@ impl SemanticBuilder {
             let elements = arguments
                 .iter()
                 .map(|argument| {
-                    embed_schema_draft(
+                    function_argument_shape::embed(
                         &self.schema_draft_of(*argument)?,
                         &mut dimensions,
                         SourceSemanticAnchor::for_node(call),

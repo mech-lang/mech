@@ -81,7 +81,7 @@ impl SemanticBuilder {
             let fields = arguments
                 .iter()
                 .map(|value| {
-                    embed_schema_draft(
+                    function_argument_shape::embed(
                         &self.schema_draft_of(*value)?,
                         &mut dimensions,
                         SourceSemanticAnchor::for_node(call),

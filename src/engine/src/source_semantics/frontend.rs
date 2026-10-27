@@ -1,3 +1,6 @@
+#[path = "function_argument_shape.rs"]
+mod function_argument_shape;
+
 #[path = "annotation_conversion_shape.rs"]
 mod annotation_conversion_shape;
 

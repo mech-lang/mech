@@ -102,6 +102,9 @@ mod level12_huffman_qualification;
 #[path = "support/canonical_program_tally.rs"]
 mod tally_qualification;
 
+#[path = "support/canonical_program_function_axes.rs"]
+mod function_axes_qualification;
+
 #[path = "support/canonical_program_word_reads.rs"]
 mod word_read_qualification;
 
