@@ -1,5 +1,39 @@
 # DEFLATE binary-tree match finder
 
+## Byte output checkpoint: 2026-10-27
+
+`sequence/append-le-bytes(bytes, word, count)` now supports appending 0–8 low
+little-endian bytes to an existing U8 sequence. Counts above eight reject before
+mutation. Native execution preserves exclusive backing capacity, grows once for
+the complete count, and keeps aliases immutable. The source type retains its row
+axis; compatible zero-count calls retain the exact admitted owner, shape and
+receipt token. Statically sized inputs requiring output-schema adaptation still
+use the admitted copy fallback.
+
+The implementation revision is `3e262c87aac0c0ae49b689561cd53bcfa4b34eaa`, based on
+`8fd668d6eb11a49f32790dca11cb9f9b22e6db38`. Native program image IR is 111.
+[Receipts and failure dispositions](../results/2026-10-27-byte-append/review.json)
+cover eight engine tests and twelve host/linked tests. The real 6633832-byte
+reservation and a 16-byte reservation each use 264 allocation requests in the
+append/append/zero-append/clear/append witness. Cumulative allocated bytes differ
+by exactly 6633816, so only the initial payload reservation scales with capacity.
+Original and decoded artifacts produce the same result. These are allocation
+checks, not compression timing.
+
+```sh
+cargo test --locked --offline -j1 -p mech-engine --no-default-features \
+  --features full_source,native-artifact,sequence_buffers \
+  --test sequence_buffer_contract -- --nocapture --test-threads=1
+cargo test --locked --offline -j1 -p mech-gpu --no-default-features \
+  --features canonical-native-program --test canonical_artifact_program -- \
+  sequence_capacity_qualification linked_bulk_byte_append --nocapture --test-threads=1
+```
+
+This removes the confirmed bulk-byte-output blocker for `write_sequences` and
+`flush_block`. It does not implement those functions or complete `compress_into`.
+Block writing/choice, multi-block integration, exact compressed-byte validation,
+independent decompression and the first full benchmark remain outstanding.
+
 ## Component checkpoint: 2026-10-27
 
 The maintained source components now include default cost selection and updates,
@@ -32,7 +66,7 @@ these are not production compiler defaults. Reported allocations are cumulative
 requests, not peak live memory.
 
 These are compressor components, not a complete compressor or a compression
-benchmark. Remaining work includes byte output, `write_sequences`, block choice
+benchmark. Remaining work includes `write_sequences`, block choice
 and `flush_block`, observation-driven carryover and `compress_into`. Complete raw
 bytes, independent decompression and full-input timing have not been established.
 Earlier sections below describe historical checkpoints and failures that led to

@@ -1,0 +1,60 @@
+{
+  "base": "8fd668d6eb11a49f32790dca11cb9f9b22e6db38",
+  "implementation": "3e262c87aac0c0ae49b689561cd53bcfa4b34eaa",
+  "native_program_ir": 111,
+  "reference_source": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "reference_compiler": "d99c7b838fb05bb1047eb0c18d4d06d0f86f345d",
+  "tests": {
+    "engine": 8,
+    "host_and_linked": 12,
+    "host_filtered": 316
+  },
+  "engine_receipt_note": "Engine tests passed before commit; only explanatory comments were added afterward. Host/linked tests and reduced-feature check ran against the clean implementation commit.",
+  "allocation": {
+    "small_capacity": 16,
+    "real_capacity": 6633832,
+    "small_requests": 264,
+    "real_requests": 264,
+    "small_cumulative_bytes": 27685,
+    "real_cumulative_bytes": 6661501,
+    "extra_payload_bytes": 6633816,
+    "forms": [
+      "original",
+      "decoded"
+    ],
+    "scope": "Whole append/append/zero-byte-append/clear/append computation, after descriptor warmup. Test execution is unoptimized, not compression timing."
+  },
+  "limitations": [
+    "Full compressor integration, exact raw compressed bytes, independent decompression and reymont timing remain unfinished.",
+    "Statically sized source schemas requiring output-shape adaptation retain the admitted immutable-copy fallback, including at count zero. The writer uses runtime-sized output buffers.",
+    "Full CI is not awaited; newly triggered branch runs are to be cancelled under the existing user instruction."
+  ],
+  "failure_disposition": [
+    {
+      "kind": "introduced",
+      "failure": "Zero-byte append copied a generic input backing",
+      "resolution": "Preserve the input row axis in the source scheme; reuse the exact admitted Value for compatible zero-count calls."
+    },
+    {
+      "kind": "introduced",
+      "failure": "Generic native call rejected a shorter result after a previous publication",
+      "resolution": "Treat the prior publication shape separately from the current count-derived result shape; cached bindings check the current count."
+    },
+    {
+      "kind": "introduced",
+      "failure": "Zero-count real-buffer call requested 6635110 bytes against a 1302198-byte construction reservation",
+      "resolution": "Keep the original admitted schema arena and owner instead of rebinding an equivalent table and creating another import."
+    },
+    {
+      "kind": "discarded experiment",
+      "failure": "General frozen-root sharing across different shapes violated existing ownership/token invariants",
+      "resolution": "Removed before publication. No frozen storage or snapshot-validation changes remain. One validation run was intentionally terminated."
+    },
+    {
+      "kind": "inherited",
+      "failure": "native-artifact without sequence_buffers fails uniform_word_collection.rs primitive feature gating",
+      "resolution": "Previously reproduced on clean 72ae21413293ce7fc7a8c4f9b0587377588d03d6; remains assigned outside this patch. native-artifact,sequence_buffers passes."
+    }
+  ],
+  "remaining_introduced_failures": []
+}
