@@ -703,6 +703,8 @@ struct SnapshotAccessPlan {
 
 #[derive(Clone, Debug)]
 struct SnapshotAggregateAssignPlan {
+    base_schema: SchemaId,
+    base_key: mech_core::SchemaKey,
     source: SnapshotAccessSelectorLayout,
     selector: SnapshotAccessSelectorLayout,
     aggregate_ordinal: Option<usize>,
@@ -4195,6 +4197,240 @@ fn bind_indexed_assign(
     bind_indexed_assign_with_region(request, RegionPolicy::IndexedAxis { axis: 0 })
 }
 
+#[cfg(feature = "map_ops")]
+#[derive(Clone, Debug)]
+struct MapContainsPlan {
+    map_schema: SchemaId,
+    map_key: mech_core::SchemaKey,
+    selector: SnapshotAccessSelectorLayout,
+}
+
+#[cfg(feature = "map_ops")]
+pub(super) fn bind_map_contains_key(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        2,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::ExactScalar,
+    )?;
+    let [map, key] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let schema = request
+        .schemas
+        .get(map.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let SchemaBody::Map { key: key_body, .. } = schema.body() else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if map.kind != ResidentValueKind::Snapshot
+        || map.shape != ResidentShape::SCALAR
+        || !matches!(
+            request.output.kind,
+            ResidentValueKind::Bool | ResidentValueKind::Snapshot
+        )
+        || request.output.shape != ResidentShape::SCALAR
+        || request
+            .schemas
+            .get(request.output.schema_id)
+            .map(|s| s.body())
+            != Some(&SchemaBody::Bool)
+        || request.schemas.get(key.schema_id).map(|s| s.body()) != Some(key_body.as_ref())
+        || !access_selector_layout_matches_schema(key, key_body)
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let kernel = bound(map_contains_key, Vec::<u64>::new().into_boxed_slice())?
+        .with_retained_state(Arc::new(MapContainsPlan {
+            map_schema: map.schema_id,
+            map_key: map.schema_key,
+            selector: SnapshotAccessSelectorLayout {
+                schema: key.schema_id,
+                shape: key.shape_instance.clone(),
+                resident_shape: key.shape,
+            },
+        }))
+        .with_snapshot_schemas(request.schemas.clone());
+    Ok(crate::resident::set::membership_output::bind(
+        kernel, request,
+    ))
+}
+
+#[cfg(feature = "map_ops")]
+fn map_contains_key(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 2 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    if !matches!(
+        &output,
+        ResidentValueMut::Bool([_]) | ResidentValueMut::Snapshot([_])
+    ) {
+        return Err(ResidentKernelError::InvalidOutput);
+    }
+    let plan = kernel
+        .retained_state::<MapContainsPlan>()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let ResidentValueRef::Snapshot([Some(value)]) = input(inputs, 0)? else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    if value.schema() != plan.map_schema || value.schema_key() != plan.map_key {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let schema = value
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let SchemaBody::Map { key, .. } = schema.body() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let ValueData::Map(map) = value.data() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let mut meter = super::budget::ResidentBudgetMeter::default();
+    // Validate the actual selector identity/layout before comparing key data.
+    snapshot_selector_materialization_cost(schemas, &plan.selector, input(inputs, 1)?, &mut meter)?;
+    let mut publication = super::budget::KernelCostEstimate::default();
+    publication.set_compute_work(1)?;
+    let footprint = crate::resident::set::membership_output::footprint(kernel)?;
+    publication.set_output_elements(footprint.elements);
+    publication.set_output_bytes(footprint.retained_bytes);
+    publication.set_retained_nodes(footprint.retained_nodes);
+    super::budget::PreparedKernel::new((), publication)
+        .admit()?
+        .into_plan();
+    let found =
+        map_optional_entry_for_selector_with_meter(map, key, input(inputs, 1)?, &mut meter)?
+            .is_some();
+    crate::resident::set::membership_output::write(kernel, output, found)
+}
+
+/// Pure entry insertion uses the same admitted single-entry builder as
+/// assignment. Its base is borrowed and its result is a distinct map value.
+#[cfg(feature = "map_ops")]
+pub(super) fn bind_map_insert(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        3,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::KernelReported,
+    )?;
+    let [base, key, value] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let source = request
+        .schemas
+        .get(base.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let output = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let SchemaBody::Map {
+        key: key_body,
+        value: value_body,
+        ..
+    } = source.body()
+    else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let SchemaBody::Map {
+        key: out_key,
+        value: out_value,
+        cardinality,
+    } = output.body()
+    else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if key_body != out_key
+        || value_body != out_value
+        || *cardinality != (mech_core::CardinalitySpec::Dynamic { upper_bound: None })
+        || request.schemas.get(key.schema_id).map(|s| s.body()) != Some(key_body.as_ref())
+        || request.schemas.get(value.schema_id).map(|s| s.body()) != Some(value_body.as_ref())
+        || base.kind != ResidentValueKind::Snapshot
+        || base.shape != ResidentShape::SCALAR
+        || request.output.kind != ResidentValueKind::Snapshot
+        || request.output.shape != ResidentShape::SCALAR
+        || !access_selector_layout_matches_schema(key, key_body)
+        || !access_selector_layout_matches_schema(value, value_body)
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    if value.kind != ResidentValueKind::Snapshot
+        && matches!(value_body.as_ref(), SchemaBody::Matrix { .. })
+    {
+        let (rows, columns) = declared_matrix_dimensions(request, value)?;
+        if value.shape != resident_shape_from_dimensions(rows, columns)? {
+            return Err(ResidentKernelBindError::UnsupportedLayout);
+        }
+    }
+    let layout = |port: &mech_core::ResidentPortLayout| SnapshotAccessSelectorLayout {
+        schema: port.schema_id,
+        shape: port.shape_instance.clone(),
+        resident_shape: port.shape,
+    };
+    Ok(bound(map_insert, Vec::<u64>::new().into_boxed_slice())?
+        .with_retained_state(Arc::new(SnapshotAggregateAssignPlan {
+            base_schema: base.schema_id,
+            base_key: base.schema_key,
+            source: layout(value),
+            selector: layout(key),
+            aggregate_ordinal: None,
+        }))
+        .with_snapshot_output(ResidentSnapshotOutput {
+            schema: request.output.schema_id,
+            schema_key: request.output.schema_key,
+            shape: request.output.shape_instance.clone(),
+            exact_cardinality: None,
+            maximum_cardinality: None,
+        })
+        .with_snapshot_schemas(request.schemas.clone()))
+}
+
+#[cfg(feature = "map_ops")]
+fn map_insert(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 3 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let ResidentValueRef::Snapshot([Some(current)]) = input(inputs, 0)? else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    struct EntryInputs<'a>(&'a dyn ResidentKernelInputs);
+    impl ResidentKernelInputs for EntryInputs<'_> {
+        fn len(&self) -> usize {
+            2
+        }
+        fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
+            match index {
+                0 => self.0.get(2),
+                1 => self.0.get(1),
+                _ => None,
+            }
+        }
+    }
+    let next = build_snapshot_aggregate_assignment::<true>(kernel, &EntryInputs(inputs), current)?;
+    let ResidentValueMut::Snapshot([target]) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    *target = Some(next);
+    // Full-write evaluation can conservatively report a change. It must not
+    // compare against the input map and suppress first-turn publication.
+    Ok(true)
+}
+
 fn bind_collection_entry_assign(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
@@ -4787,6 +5023,8 @@ fn bind_indexed_assign_with_region(
             return Err(ResidentKernelBindError::UnsupportedLayout);
         }
         let plan = SnapshotAggregateAssignPlan {
+            base_schema: base.schema_id,
+            base_key: base.schema_key,
             source: SnapshotAccessSelectorLayout {
                 schema: source.schema_id,
                 shape: source.shape_instance.clone(),
@@ -10423,13 +10661,26 @@ fn aggregate_assignment_data(
             let replacement = source
                 .canonical_data_draft()
                 .map_err(|_| ResidentKernelError::InvalidInput)?;
-            let selected = resolved_ordinal.ok_or(ResidentKernelError::InvalidInput)?;
-            let value = entries
-                .get_mut(selected)
-                .and_then(|entry| entry.items.get_mut(1))
-                .ok_or(ResidentKernelError::InvalidInput)?;
-            *value = replacement;
-            Ok(ValueDataDraft::Map(entries))
+            if let Some(selected) = resolved_ordinal {
+                let value = entries
+                    .get_mut(selected)
+                    .and_then(|entry| entry.items.get_mut(1))
+                    .ok_or(ResidentKernelError::InvalidInput)?;
+                *value = replacement;
+                Ok(ValueDataDraft::Map(entries))
+            } else {
+                let key = selector
+                    .canonical_data_draft()
+                    .map_err(|_| ResidentKernelError::InvalidInput)?;
+                let mut entries = entries.into_vec();
+                entries
+                    .try_reserve_exact(1)
+                    .map_err(|_| ResidentKernelError::InvalidShape)?;
+                entries.push(mech_core::snapshot::MapEntryDraft {
+                    items: vec![key, replacement].into_boxed_slice(),
+                });
+                Ok(ValueDataDraft::Map(entries.into_boxed_slice()))
+            }
         }
         SchemaBody::Table { columns, .. } => {
             let ValueData::Id(_) = selector.data() else {
@@ -10472,9 +10723,6 @@ fn indexed_assign_snapshot_aggregate(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let plan = kernel
-        .retained_state::<SnapshotAggregateAssignPlan>()
-        .ok_or(ResidentKernelError::InvalidInput)?;
     if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
     }
@@ -10485,13 +10733,40 @@ fn indexed_assign_snapshot_aggregate(
         return Err(ResidentKernelError::InvalidOutput);
     };
     let current = target.as_ref().ok_or(ResidentKernelError::InvalidOutput)?;
+    let next = build_snapshot_aggregate_assignment::<false>(kernel, inputs, current)?;
+    let changed = !current
+        .snapshot_eq(schemas, &next, schemas)
+        .map_err(|_| ResidentKernelError::InvalidOutput)?;
+    *target = Some(next);
+    Ok(changed)
+}
+
+fn build_snapshot_aggregate_assignment<const INSERT_MISSING: bool>(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    current: &mech_core::Value,
+) -> Result<mech_core::Value, ResidentKernelError> {
+    let plan = kernel
+        .retained_state::<SnapshotAggregateAssignPlan>()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    if current.schema() != plan.base_schema || current.schema_key() != plan.base_key {
+        return Err(ResidentKernelError::InvalidInput);
+    }
     let current_schema = current
         .validate_against(schemas)
         .map_err(|_| ResidentKernelError::InvalidOutput)?;
     let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
     let current_footprint =
         super::budget::measure_canonical_value_footprint(&mut footprint_meter, current, schemas)
-            .map_err(|_| ResidentKernelError::InvalidOutput)?;
+            .map_err(|error| match error {
+                // Footprint admission can refuse a valid map before mutation.
+                // Preserve that denial rather than misreporting invalid data.
+                ResidentKernelError::ResourceLimit { .. } => error,
+                _ => ResidentKernelError::InvalidOutput,
+            })?;
     let current_bytes = current_footprint.retained_bytes;
     let current_nodes = current_footprint.node_count;
     let source_cost = snapshot_selector_materialization_cost(
@@ -10508,12 +10783,18 @@ fn indexed_assign_snapshot_aggregate(
     )?;
     let execution_ordinal = match (current_schema.body(), current.data()) {
         (SchemaBody::Map { key, .. }, ValueData::Map(map)) => {
-            Some(map_access_entry_for_selector_with_meter(
+            let selected = map_optional_entry_for_selector_with_meter(
                 map,
                 key,
                 input(inputs, 1)?,
                 &mut footprint_meter,
-            )?)
+            )?;
+            // Indexed assignment selects an existing entry. Only explicit
+            // map/insert may admit growth and retain a new key.
+            if !INSERT_MISSING && selected.is_none() {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            selected
         }
         (SchemaBody::Record(fields), ValueData::Record(_)) => {
             let selected = named_schema_ordinal_with_meter(
@@ -10545,6 +10826,82 @@ fn indexed_assign_snapshot_aggregate(
         }
         _ => plan.aggregate_ordinal,
     };
+    let inserting =
+        matches!(current_schema.body(), SchemaBody::Map { .. }) && execution_ordinal.is_none();
+    let insertion_work = if inserting {
+        let ValueData::Map(map) = current.data() else {
+            unreachable!()
+        };
+        let output_schema = kernel
+            .snapshot_output()
+            .and_then(|output| schemas.get(output.schema))
+            .ok_or(ResidentKernelError::InvalidOutput)?;
+        let SchemaBody::Map { cardinality, .. } = output_schema.body() else {
+            unreachable!()
+        };
+        let limit = match cardinality {
+            mech_core::CardinalitySpec::Exact(mech_core::DimensionExpr::Constant(limit))
+            | mech_core::CardinalitySpec::Dynamic {
+                upper_bound: Some(mech_core::DimensionExpr::Constant(limit)),
+            } => Some(*limit),
+            _ => None,
+        };
+        if limit.is_some_and(|limit| map.entries().len() as u64 >= limit) {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        let string_bytes = match (current_schema.body(), input(inputs, 1)?) {
+            (SchemaBody::Map { key, .. }, selector) if key.as_ref() == &SchemaBody::String => {
+                let text = match selector {
+                    ResidentValueRef::String([text]) => text.as_str(),
+                    ResidentValueRef::Snapshot([Some(value)]) => {
+                        let ValueData::String(text) = value.data() else {
+                            return Err(ResidentKernelError::InvalidInput);
+                        };
+                        text.as_ref()
+                    }
+                    _ => return Err(ResidentKernelError::InvalidInput),
+                };
+                Some(super::budget::checked_u64(text.len())?)
+            }
+            _ => None,
+        };
+        if let Some(bytes) = string_bytes {
+            string_map_access::appended_entry_work(
+                current_footprint.encoded_bytes,
+                super::budget::checked_u64(map.entries().len())?,
+                bytes,
+            )?
+        } else {
+            current_footprint
+                .encoded_bytes
+                .checked_add(selector_cost.retained_bytes)
+                .and_then(|n| n.checked_add(128))
+                .and_then(|n| n.checked_mul(map.entries().len() as u64 + 1))
+                .and_then(|n| n.checked_mul(8))
+                .ok_or(ResidentKernelError::InvalidShape)?
+        }
+    } else {
+        0
+    };
+    // Only a new entry retains its selector as a key in the resulting tree.
+    // All insertion lookup, growth and canonical sorting is admitted before
+    // materialization; existing-key writes retain their preceding accounting.
+    let retained_key_bytes = if inserting {
+        selector_cost
+            .retained_bytes
+            .checked_add(128)
+            .ok_or(ResidentKernelError::InvalidShape)?
+    } else {
+        0
+    };
+    let retained_key_nodes = if inserting {
+        selector_cost
+            .retained_nodes
+            .checked_add(2)
+            .ok_or(ResidentKernelError::InvalidShape)?
+    } else {
+        0
+    };
     let mut finalization_work = snapshot_data_finalization_work(
         &mut footprint_meter,
         current_schema.body(),
@@ -10562,6 +10919,9 @@ fn indexed_assign_snapshot_aggregate(
             )?)
             .ok_or(ResidentKernelError::InvalidShape)?;
     }
+    finalization_work = finalization_work
+        .checked_add(insertion_work)
+        .ok_or(ResidentKernelError::InvalidShape)?;
     let materialized_bytes = source_cost
         .retained_bytes
         .checked_mul(2)
@@ -10570,10 +10930,14 @@ fn indexed_assign_snapshot_aggregate(
         .ok_or(ResidentKernelError::InvalidShape)?;
     let output_bytes = current_bytes
         .checked_add(source_cost.retained_bytes)
+        .and_then(|n| n.checked_add(retained_key_bytes))
         .ok_or(ResidentKernelError::InvalidShape)?;
     let (final_output_nodes, node_phases) = snapshot_aggregate_assignment_node_phases(
         current_nodes,
-        source_cost.retained_nodes,
+        source_cost
+            .retained_nodes
+            .checked_add(retained_key_nodes)
+            .ok_or(ResidentKernelError::InvalidShape)?,
         selector_cost.retained_nodes,
     )?;
     let measured_nodes = node_phases
@@ -10592,6 +10956,7 @@ fn indexed_assign_snapshot_aggregate(
         encoded_bytes: current_footprint
             .encoded_bytes
             .checked_add(source_cost.retained_bytes)
+            .and_then(|n| n.checked_add(retained_key_bytes))
             .ok_or(ResidentKernelError::InvalidShape)?,
         retained_bytes: output_bytes,
         node_count: final_output_nodes,
@@ -10607,14 +10972,17 @@ fn indexed_assign_snapshot_aggregate(
     let footprint_work = footprint_meter.estimate();
     let cost = super::budget::resident_cost! {
         comparison_work: footprint_work.comparison_work()
-            .checked_add(publication_equality_work)
+            .checked_add(insertion_work)
+            .and_then(|n| n.checked_add(publication_equality_work))
             .ok_or(ResidentKernelError::InvalidShape)?,
         compute_work: measured_nodes
             .checked_add(footprint_work.compute_work())
             .and_then(|work| work.checked_add(publication_equality_work))
+            .and_then(|work| work.checked_add(insertion_work))
             .ok_or(ResidentKernelError::InvalidShape)?,
         temporary_bytes: current_bytes
             .checked_add(materialized_bytes)
+            .and_then(|n| n.checked_add(retained_key_bytes))
             .ok_or(ResidentKernelError::InvalidShape)?,
         cloned_bytes: output_bytes
             .checked_add(source_cost.cloned_bytes)
@@ -10648,11 +11016,7 @@ fn indexed_assign_snapshot_aggregate(
     )?;
     let next =
         finalize_snapshot_data_with_work_budget(kernel, data, Some(canonicalization_work_limit))?;
-    let changed = !current
-        .snapshot_eq(schemas, &next, schemas)
-        .map_err(|_| ResidentKernelError::InvalidOutput)?;
-    *target = Some(next);
-    Ok(changed)
+    Ok(next)
 }
 
 fn snapshot_aggregate_assignment_node_phases(
@@ -15776,6 +16140,16 @@ fn map_access_entry_for_selector_with_meter(
     selector: ResidentValueRef<'_>,
     meter: &mut super::budget::ResidentBudgetMeter,
 ) -> Result<usize, ResidentKernelError> {
+    map_optional_entry_for_selector_with_meter(map, key_schema, selector, meter)?
+        .ok_or(ResidentKernelError::InvalidInput)
+}
+
+fn map_optional_entry_for_selector_with_meter(
+    map: &mech_core::snapshot::MapValue,
+    key_schema: &SchemaBody,
+    selector: ResidentValueRef<'_>,
+    meter: &mut super::budget::ResidentBudgetMeter,
+) -> Result<Option<usize>, ResidentKernelError> {
     let compare = |candidate: &ValueData| -> Result<core::cmp::Ordering, ResidentKernelError> {
         let ordering = match selector {
             ResidentValueRef::Snapshot([Some(value)]) => {
@@ -15826,7 +16200,7 @@ fn map_access_entry_for_selector_with_meter(
         _ => return Err(ResidentKernelError::InvalidInput),
     };
     if matches!(key_schema, SchemaBody::String) {
-        return string_map_access::find_with_compare(map, candidate_work, meter, compare);
+        return string_map_access::find_optional_with_compare(map, candidate_work, meter, compare);
     } else {
         for entry in map.entries() {
             super::budget::charge_canonical_key_footprint(meter, key_schema, entry.key().data())?;
@@ -15844,10 +16218,10 @@ fn map_access_entry_for_selector_with_meter(
         match compare(map.entries()[middle].key().data())? {
             core::cmp::Ordering::Less => upper = middle,
             core::cmp::Ordering::Greater => lower = middle + 1,
-            core::cmp::Ordering::Equal => return Ok(middle),
+            core::cmp::Ordering::Equal => return Ok(Some(middle)),
         }
     }
-    Err(ResidentKernelError::InvalidInput)
+    Ok(None)
 }
 
 #[cfg(test)]
@@ -28448,6 +28822,347 @@ mod tests {
                 .language_eq(&schemas, &current, &schemas)
                 .unwrap()
         );
+    }
+
+    #[cfg(feature = "map_ops")]
+    #[test]
+    fn map_membership_reports_changes_and_preserves_output_on_denial() {
+        let body = SchemaBody::Map {
+            key: Box::new(SchemaBody::String),
+            value: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
+            cardinality: mech_core::CardinalitySpec::Dynamic { upper_bound: None },
+        };
+        let (schemas, ids) = test_schema_table([body, SchemaBody::String, SchemaBody::Bool]);
+        let [map_schema, key_schema, bool_schema] = ids.as_slice() else {
+            unreachable!()
+        };
+        let contract = test_contract(
+            &[*map_schema, *key_schema],
+            *bool_schema,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            AccessMode::Write,
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::ExactScalar,
+        );
+        let kernel = bind_map_contains_key(&ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &[
+                test_layout(
+                    &schemas,
+                    *map_schema,
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                ),
+                test_layout(
+                    &schemas,
+                    *key_schema,
+                    ResidentValueKind::String,
+                    ResidentShape::SCALAR,
+                ),
+            ],
+            output: test_layout(
+                &schemas,
+                *bool_schema,
+                ResidentValueKind::Bool,
+                ResidentShape::SCALAR,
+            ),
+        })
+        .unwrap();
+        let map = [Some(test_value(
+            &schemas,
+            *map_schema,
+            ValueDataDraft::Map(
+                vec![mech_core::snapshot::MapEntryDraft {
+                    items: vec![
+                        ValueDataDraft::String("é".to_owned()),
+                        ValueDataDraft::U64(1),
+                    ]
+                    .into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        ))];
+        let previous = map[0].clone().unwrap();
+        let present = ["é".to_owned()];
+        let missing = ["absent".to_owned()];
+        let mut output = [0];
+        let inputs = [
+            ResidentValueRef::Snapshot(&map),
+            ResidentValueRef::String(&present),
+        ];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+            Ok(true)
+        );
+        assert_eq!(output, [1]);
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+            Ok(false)
+        );
+        let absent = [
+            ResidentValueRef::Snapshot(&map),
+            ResidentValueRef::String(&missing),
+        ];
+        let mut denied =
+            super::super::budget::detached_turn_plan(mech_core::ResourceDemand::default()).unwrap();
+        denied.budget_limits.max_comparison_work = Some(0);
+        let result = super::super::budget::with_resident_turn_plan(denied, || {
+            kernel.execute(&Inputs(&absent), ResidentValueMut::Bool(&mut output))
+        });
+        assert!(
+            matches!(result, Err(ResidentKernelError::ResourceLimit { .. })),
+            "{result:?}"
+        );
+        assert_eq!(output, [1]);
+        assert_eq!(
+            kernel.execute(&Inputs(&absent), ResidentValueMut::Bool(&mut output)),
+            Ok(true)
+        );
+        assert_eq!(output, [0]);
+        assert!(map[0].as_ref().unwrap().shares_frozen_storage(&previous));
+    }
+
+    #[test]
+    fn string_map_appended_entry_bound_covers_actual_canonicalizer_work() {
+        let body = SchemaBody::Map {
+            key: Box::new(SchemaBody::String),
+            value: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
+            cardinality: mech_core::CardinalitySpec::Dynamic { upper_bound: None },
+        };
+        let (schemas, ids) = test_schema_table([body.clone()]);
+        let schema = ids[0];
+        for count in [0, 1, 8, 32] {
+            for prefix in [String::new(), "x".repeat(2048)] {
+                let current = test_value(
+                    &schemas,
+                    schema,
+                    ValueDataDraft::Map(
+                        (0..count)
+                            .map(|index| mech_core::snapshot::MapEntryDraft {
+                                items: vec![
+                                    ValueDataDraft::String(format!("{prefix}key-{index:03}")),
+                                    ValueDataDraft::U64(index as u64),
+                                ]
+                                .into_boxed_slice(),
+                            })
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                    ),
+                );
+                let old_work = mech_core::snapshot::canonical_data_draft_finalization_work(
+                    &body,
+                    current.data(),
+                )
+                .unwrap();
+                let encoded = current.retained_footprint(&schemas).unwrap().encoded_bytes;
+                for key in [
+                    String::new(),
+                    "\0".to_owned(),
+                    format!("{prefix}key-015a"),
+                    format!("{prefix}zzz"),
+                    "é🧑‍🚀".to_owned(),
+                ] {
+                    let bound = string_map_access::appended_entry_work(
+                        encoded,
+                        count as u64,
+                        key.len() as u64,
+                    )
+                    .unwrap();
+                    let ValueDataDraft::Map(entries) = current.canonical_data_draft().unwrap()
+                    else {
+                        unreachable!()
+                    };
+                    let mut entries = entries.into_vec();
+                    entries.push(mech_core::snapshot::MapEntryDraft {
+                        items: vec![ValueDataDraft::String(key), ValueDataDraft::U64(99)]
+                            .into_boxed_slice(),
+                    });
+                    let draft = ValueDraft {
+                        schema,
+                        shape_values: Box::new([]),
+                        data: ValueDataDraft::Map(entries.into_boxed_slice()),
+                    };
+                    let budget = SnapshotCanonicalizationBudget::new(old_work + bound);
+                    let result = draft
+                        .clone()
+                        .finalize(
+                            &SnapshotValidationContext::new(&schemas)
+                                .with_canonicalization_budget(&budget),
+                        )
+                        .unwrap();
+                    let ValueData::Map(map) = result.data() else {
+                        unreachable!()
+                    };
+                    assert_eq!(map.entries().len(), count + 1);
+                    let actual = budget.consumed();
+                    assert!(actual <= old_work + bound);
+                    if actual > 0 {
+                        let denied = SnapshotCanonicalizationBudget::new(actual - 1);
+                        assert!(
+                            draft
+                                .finalize(
+                                    &SnapshotValidationContext::new(&schemas)
+                                        .with_canonicalization_budget(&denied)
+                                )
+                                .is_err()
+                        );
+                    }
+                }
+            }
+        }
+        assert!(string_map_access::appended_entry_work(u64::MAX, 1, 1).is_err());
+        assert!(string_map_access::appended_entry_work(1, u64::MAX, 1).is_err());
+    }
+
+    #[cfg(feature = "map_ops")]
+    #[test]
+    fn pure_map_insert_denial_keeps_input_and_output_unchanged_and_can_retry() {
+        let scalar = SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64);
+        let map = |cardinality| SchemaBody::Map {
+            key: Box::new(scalar.clone()),
+            value: Box::new(scalar.clone()),
+            cardinality,
+        };
+        let (schemas, ids) = test_schema_table([
+            scalar.clone(),
+            map(mech_core::CardinalitySpec::Exact(
+                mech_core::DimensionExpr::Constant(1),
+            )),
+            map(mech_core::CardinalitySpec::Dynamic { upper_bound: None }),
+        ]);
+        let [scalar_id, input_id, output_id] = ids.as_slice() else {
+            unreachable!()
+        };
+        let contract = test_contract(
+            &[*input_id, *scalar_id, *scalar_id],
+            *output_id,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            AccessMode::Write,
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let snapshot = |schema| {
+            test_layout(
+                &schemas,
+                schema,
+                ResidentValueKind::Snapshot,
+                ResidentShape::SCALAR,
+            )
+        };
+        let kernel = bind_map_insert(&ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &[
+                snapshot(*input_id),
+                snapshot(*scalar_id),
+                snapshot(*scalar_id),
+            ],
+            output: snapshot(*output_id),
+        })
+        .unwrap();
+        let base = [Some(test_value(
+            &schemas,
+            *input_id,
+            ValueDataDraft::Map(
+                vec![mech_core::snapshot::MapEntryDraft {
+                    items: vec![ValueDataDraft::U64(1), ValueDataDraft::U64(4)].into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        ))];
+        let previous = base[0].clone().unwrap();
+        let key = [Some(test_value(
+            &schemas,
+            *scalar_id,
+            ValueDataDraft::U64(2),
+        ))];
+        let value = [Some(test_value(
+            &schemas,
+            *scalar_id,
+            ValueDataDraft::U64(8),
+        ))];
+        let inputs = [
+            ResidentValueRef::Snapshot(&base),
+            ResidentValueRef::Snapshot(&key),
+            ResidentValueRef::Snapshot(&value),
+        ];
+        let mut output = [None];
+        let wrong_base = [Some(test_value(
+            &schemas,
+            *output_id,
+            ValueDataDraft::Map(Box::new([])),
+        ))];
+        let wrong_inputs = [
+            ResidentValueRef::Snapshot(&wrong_base),
+            ResidentValueRef::Snapshot(&key),
+            ResidentValueRef::Snapshot(&value),
+        ];
+        assert_eq!(
+            kernel.execute(
+                &Inputs(&wrong_inputs),
+                ResidentValueMut::Snapshot(&mut output)
+            ),
+            Err(ResidentKernelError::InvalidInput)
+        );
+        assert!(output[0].is_none());
+        let mut denied =
+            super::super::budget::detached_turn_plan(mech_core::ResourceDemand::default()).unwrap();
+        denied.budget_limits.max_comparison_work = Some(0);
+        let result = super::super::budget::with_resident_turn_plan(denied, || {
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output))
+        });
+        assert!(
+            matches!(result, Err(ResidentKernelError::ResourceLimit { .. })),
+            "expected admission denial, received {result:?}"
+        );
+        assert!(output[0].is_none());
+        assert!(base[0].as_ref().unwrap().shares_frozen_storage(&previous));
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
+            Ok(true)
+        );
+        let ValueData::Map(result) = output[0].as_ref().unwrap().data() else {
+            unreachable!()
+        };
+        assert_eq!(result.entries().len(), 2);
+        assert!(matches!(result.entries()[0].value(), ValueData::U64(4)));
+        assert!(matches!(result.entries()[1].value(), ValueData::U64(8)));
+        assert!(base[0].as_ref().unwrap().shares_frozen_storage(&previous));
+        // A full-write result must publish even when it equals the INPUT;
+        // the preceding output can be different or absent.
+        let same_key = [Some(test_value(
+            &schemas,
+            *scalar_id,
+            ValueDataDraft::U64(1),
+        ))];
+        let same_value = [Some(test_value(
+            &schemas,
+            *scalar_id,
+            ValueDataDraft::U64(4),
+        ))];
+        let same_inputs = [
+            ResidentValueRef::Snapshot(&base),
+            ResidentValueRef::Snapshot(&same_key),
+            ResidentValueRef::Snapshot(&same_value),
+        ];
+        output[0] = None;
+        assert_eq!(
+            kernel.execute(
+                &Inputs(&same_inputs),
+                ResidentValueMut::Snapshot(&mut output)
+            ),
+            Ok(true)
+        );
+        let ValueData::Map(same) = output[0].as_ref().unwrap().data() else {
+            unreachable!()
+        };
+        assert_eq!(same.entries().len(), 1);
+        assert!(matches!(same.entries()[0].value(), ValueData::U64(4)));
     }
 
     #[test]

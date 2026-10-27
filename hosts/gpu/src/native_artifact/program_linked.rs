@@ -1,4 +1,4 @@
-//! Build-owned ABI12 binding. JIT and linked calls use one invocation boundary.
+//! Build-owned ABI16 binding. JIT and linked calls use one invocation boundary.
 use super::{
     NATIVE_PROGRAM_LINK_IDENTITY_BYTES, NativeLinkError, NativeProgramDescriptor,
     NativeProgramExecutionError, NativeProgramExecutionLimits, NativeProgramExecutionReport,
@@ -31,7 +31,7 @@ impl LinkedProgramArtifact {
         )
     }
     /// # Safety
-    /// The entry must be the process-lifetime ABI12 entry emitted by this crate's
+    /// The entry must be the process-lifetime ABI16 entry emitted by this crate's
     /// checked shared CFG definition, and identity its readonly symbol in the
     /// SAME unchanged Object. The build must verify source/Object/bytecode pins
     /// before linking. No retained pointers, unwinding, ambient effects, foreign

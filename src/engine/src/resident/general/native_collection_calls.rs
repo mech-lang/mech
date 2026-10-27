@@ -26,8 +26,9 @@ pub use prepared::{
 };
 #[cfg(feature = "pure_text")]
 pub use prepared::{
-    NativeSelectedStringMatrix, NativeTextLineCaptureFacts, NativeTextLineChunks,
-    NativeTextLineMatrix, NativeTextLineMatrixChoice, NativeTextLineWindow,
+    NativePrivateStringBuffer, NativeSelectedStringMatrix, NativeTextLineCaptureFacts,
+    NativeTextLineChunks, NativeTextLineJoinChunk, NativeTextLineMatrix,
+    NativeTextLineMatrixChoice, NativeTextLineWindow,
 };
 
 /// A constructor-private binding of one actual artifact call at its current
@@ -222,7 +223,7 @@ fn bind_selected(
     )
 }
 
-fn finite_limits(node: NodeId, limits: MemoryBudgetLimits) -> Result<(), Error> {
+pub(super) fn finite_limits(node: NodeId, limits: MemoryBudgetLimits) -> Result<(), Error> {
     if [
         limits.max_output_elements,
         limits.max_output_bytes,

@@ -564,7 +564,8 @@ jobs:
           --test control_local_geometry --test control_matrix_captures
           --test control_result_shapes --test function_output_contexts
           --test knucleotide_record_source --test map_keys_comprehensions
-          --test map_source --test match_result_schemas --test matrix_block_comprehensions
+          --test map_source --test source_map_entry_contract --test source_map_lookup_contract
+          --test match_result_schemas --test matrix_block_comprehensions
           --test postfix_selection --test primitive_snapshot_constructors
           --test pure_text_managed --test pure_text_source --test retention_work
           --test sequence_sort --test set_comprehension_operands
@@ -591,7 +592,7 @@ jobs:
             --test native_artifact_cast_lowering \
             --test native_artifact_match_lowering \
             --test native_artifact_iteration_lowering \
-            --test native_collection_templates \
+            --test native_collection_templates --test native_map_entries \
             --test native_artifact_output_initializers -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features full_compiler,native-artifact \

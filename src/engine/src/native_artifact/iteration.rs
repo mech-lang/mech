@@ -108,9 +108,15 @@ pub enum NativeStructuralStep {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeStructuralObservation {
-    EnumOrdinal { ordinal: u32 },
+    EnumOrdinal {
+        ordinal: u32,
+    },
     U64,
-    StringEqual { peer: NativeMatchValue },
+    /// Schema-checked canonical child binding, with funded copy/publication.
+    CanonicalValue,
+    StringEqual {
+        peer: NativeMatchValue,
+    },
 }
 
 impl From<NativeMatchTerminator> for NativeIterationTerminator {

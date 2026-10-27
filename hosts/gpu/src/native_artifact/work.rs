@@ -20,6 +20,59 @@ mod tests {
     use super::*;
 
     #[test]
+    fn worker_meter_attaches_without_root_renewal_or_promotion_and_reconciles_to_parent() {
+        let memory = ManagedMemoryBudget::new(8192);
+        let mut parent = NativeWorkMeter::new(1000).unwrap();
+        let library = parent
+            .shared_library_budget(NativeExecutionPhase::Setup, 100, &memory)
+            .unwrap();
+        let group = library.reserve_worker_group(100, 20).unwrap();
+        let held = memory.used_bytes();
+        let exact = held + NativeLibraryWorkBudget::worker_account_metadata_bytes();
+        assert!(exact < memory.limit_bytes());
+        assert!(
+            group
+                .worker_loan_with_memory(&memory.with_limits(exact - 1, 100))
+                .is_err()
+        );
+        assert_eq!(memory.used_bytes(), held);
+        let capped = memory.with_limits(exact, 100);
+        let loan = group.worker_loan_with_memory(&capped).unwrap();
+        let worker_memory = capped.clone();
+        let used = std::thread::spawn(move || {
+            let local = NativeLibraryWorkBudget::from_worker_loan(loan).unwrap();
+            let clone = local.clone();
+            let mut worker = NativeWorkMeter::from_worker_budget(local, &worker_memory).unwrap();
+            assert_eq!(worker.used(), 0);
+            assert_eq!(worker.limit(), 100);
+            worker.charge(NativeExecutionPhase::Setup, 7).unwrap();
+            clone.charge(13, 2).unwrap();
+            assert_eq!(worker.used(), 20);
+            assert!(worker.charge(NativeExecutionPhase::Completion, 81).is_err());
+            worker.used()
+        })
+        .join()
+        .unwrap();
+        assert_eq!(used, 20);
+        assert_eq!(group.finish().unwrap(), (20, 2));
+        assert_eq!(parent.used(), 84);
+    }
+
+    #[test]
+    fn worker_meter_rejects_root_accounts_and_foreign_memory() {
+        let memory = ManagedMemoryBudget::new(8192);
+        let root = NativeLibraryWorkBudget::new(100, 20, &memory).unwrap();
+        assert!(NativeWorkMeter::from_worker_budget(root.clone(), &memory).is_err());
+        let group = root.reserve_worker_group(100, 20).unwrap();
+        let worker =
+            NativeLibraryWorkBudget::from_worker_loan(group.worker_loan().unwrap()).unwrap();
+        assert!(
+            NativeWorkMeter::from_worker_budget(worker, &ManagedMemoryBudget::new(8192)).is_err()
+        );
+        assert_eq!(group.finish().unwrap(), (0, 0));
+    }
+
+    #[test]
     fn closed_tail_fuel_observes_the_same_spent_account_and_declines_nested_scopes() {
         let memory = ManagedMemoryBudget::new(4096);
         let mut work = NativeWorkMeter::new(1000).unwrap();
@@ -259,6 +312,37 @@ mod tests {
     }
 }
 impl NativeWorkMeter {
+    /// Attach a meter to a consumed parent-backed worker loan. This does not
+    /// promote a scalar ledger, mint root fuel or copy thread-local scopes.
+    pub fn from_worker_budget(
+        library: NativeLibraryWorkBudget,
+        memory: &ManagedMemoryBudget,
+    ) -> Result<Self, NativeExecutionError> {
+        if NativeLibraryWorkBudget::has_active_scope() || !library.is_worker_budget() {
+            return Err(NativeExecutionError::Descriptor {
+                reason: "worker work meter requires an inactive parent-backed worker budget",
+            });
+        }
+        let admitted = library.memory_budget();
+        if admitted != *memory {
+            return Err(NativeExecutionError::Descriptor {
+                reason: "worker work meter cannot change memory account",
+            });
+        }
+        let identity = NEXT_WORK_LEDGER
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |id| id.checked_add(1))
+            .map_err(|_| NativeExecutionError::Descriptor {
+                reason: "native work ledger identity exhausted",
+            })?;
+        Ok(Self {
+            identity,
+            used: 0,
+            limit: library.limits().0,
+            library: Some(library),
+            memory: Some(memory.with_limits(admitted.limit_bytes(), admitted.limit_nodes())),
+        })
+    }
+
     pub fn new(limit: u64) -> Result<Self, NativeExecutionError> {
         if NativeLibraryWorkBudget::has_active_scope() {
             return Err(NativeExecutionError::Descriptor {

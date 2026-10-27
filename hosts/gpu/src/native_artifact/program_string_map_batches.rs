@@ -8,7 +8,7 @@ pub(super) fn emit(
     b: &mut FunctionBuilder<'_>,
     source: Value,
     length: Value,
-    table: Value,
+    table: &ScalarTable,
     output: Value,
     start: Value,
 ) -> Value {
@@ -39,11 +39,9 @@ pub(super) fn emit(
     for i in 0..8 {
         let byte = b.ins().ushr_imm(bytes, i * 8);
         let byte = b.ins().band_imm(byte, 255);
-        // The entry guard proved every source byte is ASCII. Thus the
-        // ordinary native-endian u16 lookup stays in the actual 128-cell table.
-        let index = b.ins().ishl_imm(byte, 1);
-        let cell = b.ins().iadd(table, index);
-        values.push(b.ins().load(types::I16, MemFlags::new(), cell, 0));
+        // The entry guard proved ASCII. Both prepared representations use
+        // the same bounded lookup and the same missing/valid-zero contract.
+        values.push(table.lookup(b, byte));
     }
     let mut combined = values[0];
     for &value in &values[1..] {

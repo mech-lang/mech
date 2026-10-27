@@ -30,6 +30,16 @@ pub(super) struct Builder {
     entry_reservation: ManagedMemoryReservation,
     key_reservation: ManagedMemoryReservation,
 }
+impl Builder {
+    pub(super) fn caller_retained_nodes(&self) -> Result<u64, Error> {
+        // One independently owned String per entry; packed counter bins own
+        // one flat backing, irrespective of their numeric element count.
+        add(
+            add(self.entries.len() as u64, 3)?,
+            u64::from(self.compiled_bins.is_some()),
+        )
+    }
+}
 fn sink(
     descriptor: &crate::native_artifact::NativeProgramDescriptor,
     id: u32,

@@ -219,8 +219,19 @@ fn capture_qualified_catalog_inventory(source: &mech_core::FunctionCatalog) {
     let module_exports = modules.into_iter().map(|(module, item, canonical_name, id_hex)|
         serde_json::json!({"module": module, "item": item, "canonical_name": canonical_name, "id_hex": id_hex})
     ).collect::<Vec<_>>();
-    let additions = ["map/histogram", "map/keys", "map/values"].into_iter().map(|name| {
-        let entry = source.runtime_entry(RuntimeFunctionId::from_name(name)).unwrap();
+    let additions = [
+        "map/new",
+        "map/insert",
+        "map/contains-key",
+        "map/histogram",
+        "map/keys",
+        "map/values",
+    ]
+    .into_iter()
+    .map(|name| {
+        let entry = source
+            .runtime_entry(RuntimeFunctionId::from_name(name))
+            .unwrap();
         let linkage = entry.native_linkage.as_ref().unwrap();
         serde_json::json!({
             "name": entry.name,
@@ -230,7 +241,8 @@ fn capture_qualified_catalog_inventory(source: &mech_core::FunctionCatalog) {
             "native_linkage": {"package": linkage.package, "crate_name": linkage.crate_name,
                 "installer_path": linkage.installer_path, "cargo_features": linkage.cargo_features},
         })
-    }).collect::<Vec<_>>();
+    })
+    .collect::<Vec<_>>();
     let inventory = serde_json::json!({
         "schema": 1,
         "profile": "mech-stdlib/full_compiler,map_ops",

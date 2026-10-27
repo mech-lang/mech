@@ -1691,6 +1691,20 @@ impl MemoryDomain {
         Self::new_with_budget(Some(budget))
     }
 
+    /// Shared-account bytes for one contiguous Host arena containing a single
+    /// fixed object, including its exact initialization-coverage metadata.
+    /// Uses the same geometry as plan validation and materialization.
+    pub fn host_arena_admission_bytes(capacity_bytes: u64) -> MemoryRuntimeResult<u64> {
+        let metadata = initialization_metadata_bytes(capacity_bytes, true)?;
+        capacity_bytes.checked_add(metadata).ok_or(
+            MemoryRuntimeError::AccountingInvariantViolation {
+                dimension: "host arena admission bytes",
+                current: capacity_bytes,
+                change: metadata,
+            },
+        )
+    }
+
     pub fn memory_budget(&self) -> Option<super::ManagedMemoryBudget> {
         self.state.borrow().memory_budget.clone()
     }

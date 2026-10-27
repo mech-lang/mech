@@ -127,6 +127,67 @@ fn every_short_utf8_split_matches_the_ordinary_lines_iterator() {
 }
 
 #[test]
+fn certified_fragments_preserve_geometry_admission_and_work_at_every_utf8_split() {
+    for source in ["", "a\0b\r\n\nlast\r", "é\r\n猫\n🦎", "\n\r\r\nend\n"] {
+        let boundaries = source
+            .char_indices()
+            .map(|(index, _)| index)
+            .chain([source.len()])
+            .collect::<Vec<_>>();
+        for &first in &boundaries {
+            for &second in boundaries.iter().filter(|&&index| index >= first) {
+                let mut expected = None;
+                for certified in [false, true] {
+                    let memory = ManagedMemoryBudget::new(4 * 1024 * 1024);
+                    let ledger = work(&memory);
+                    let mut store = prepare(source.len() as u64, 64, limits(), &ledger).unwrap();
+                    let mut observations = Vec::new();
+                    for fragment in [
+                        "",
+                        &source[..first],
+                        &source[first..second],
+                        &source[second..],
+                        "",
+                    ] {
+                        if certified {
+                            store
+                                .push_fragment(
+                                    mech_core::Utf8Fragment::decode(fragment.as_bytes()).unwrap(),
+                                )
+                                .unwrap();
+                        } else {
+                            store.push(fragment).unwrap();
+                        }
+                        observations.push((
+                            store.available_lines(),
+                            ledger.used(),
+                            store.retained_capacity_bytes(),
+                            store.peak_capacity_bytes(),
+                            memory.used_bytes(),
+                        ));
+                    }
+                    finish_matches(&mut store, source);
+                    observations.push((
+                        store.available_lines(),
+                        ledger.used(),
+                        store.retained_capacity_bytes(),
+                        store.peak_capacity_bytes(),
+                        memory.used_bytes(),
+                    ));
+                    if let Some(expected) = &expected {
+                        assert_eq!(&observations, expected, "{source:?}, {first}, {second}");
+                    } else {
+                        expected = Some(observations);
+                    }
+                    drop((store, ledger));
+                    assert_eq!(memory.used_bytes(), 0);
+                }
+            }
+        }
+    }
+}
+
+#[test]
 fn crlf_search_preserves_repeated_cr_and_every_utf8_fragment_split() {
     every_utf8_split_matches(&['a', '\r', '\n', 'é'], 5);
 }
@@ -237,6 +298,128 @@ fn final_contiguous_join_retires_payload_while_the_logical_owner_is_still_alive(
 }
 
 #[test]
+fn prepaid_empty_separator_copy_matches_every_utf8_split_and_contiguous_selection() {
+    for source in [
+        "",
+        "\n",
+        "\r\n",
+        "\r\r\n",
+        "a\nb\r\nc",
+        "é\n猫\r\nλ\n",
+        "e\u{301}\n\n猫\r\r\nlast\r",
+    ] {
+        let rows = source.lines().collect::<Vec<_>>();
+        for split in source.char_indices().map(|(i, _)| i).chain([source.len()]) {
+            for first in 0..=rows.len() {
+                for end in first..=rows.len() {
+                    let memory = ManagedMemoryBudget::new(1024 * 1024);
+                    let work = work(&memory);
+                    let mut store = prepare(4096, 4096, limits(), &work).unwrap();
+                    store.push(&source[..split]).unwrap();
+                    store.push(&source[split..]).unwrap();
+                    let facts = store.finish().unwrap();
+                    assert_eq!(facts.lines(), rows.len() as u64);
+                    let expected = "prefix ✓".to_owned() + &rows[first..end].concat();
+                    let mut target = "prefix ✓".to_owned();
+                    target
+                        .try_reserve_exact(expected.len() - target.len())
+                        .unwrap();
+                    let output = memory.reserve_capacity(target.capacity() as u64).unwrap();
+                    let prepaid = work.used();
+                    let capacity = target.capacity();
+                    store
+                        .append_joined_consuming(first as u64 + 1, end as u64 + 1, "", &mut target)
+                        .unwrap();
+                    assert_eq!(
+                        target, expected,
+                        "{source:?} split {split}, range {first}..{end}"
+                    );
+                    assert_eq!(
+                        target.capacity(),
+                        capacity,
+                        "prepaid copying cannot grow the target"
+                    );
+                    assert_eq!(work.used(), prepaid, "copying cannot renew source work");
+                    assert!(store.chunks.is_empty());
+                    drop((store, work, output));
+                    assert_eq!(memory.used_bytes(), 0);
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn empty_separator_copy_rejects_short_capacity_without_publishing_bytes() {
+    let memory = ManagedMemoryBudget::new(1024 * 1024);
+    let work = work(&memory);
+    let mut store = prepare(4096, 4096, limits(), &work).unwrap();
+    store.push("é\r\n猫\nlast\n").unwrap();
+    store.finish().unwrap();
+    let chunk = store.chunks.front().unwrap();
+    let mut target = String::new();
+    let prepaid = work.used();
+    assert!(matches!(
+        chunk.append_payload(chunk.first, chunk.end(), &mut target),
+        Err(InvokeError::InvalidInput)
+    ));
+    assert!(target.is_empty());
+    assert_eq!(work.used(), prepaid);
+    drop((store, work));
+    assert_eq!(memory.used_bytes(), 0);
+}
+
+#[test]
+fn consuming_join_chunks_initialize_and_retire_before_a_following_native_transform() {
+    for source in [
+        "",
+        "\n",
+        "a\nb\r\n\nc",
+        "ab\ncd\r\nef\nlast\r",
+        "é\n猫\r\nλ\n",
+    ] {
+        for split in source.char_indices().map(|(i, _)| i).chain([source.len()]) {
+            let memory = ManagedMemoryBudget::new(1024 * 1024);
+            let work = work(&memory);
+            let mut store = prepare(4096, 4096, limits(), &work).unwrap();
+            store.push(&source[..split]).unwrap();
+            store.push(&source[split..]).unwrap();
+            let facts = store.finish().unwrap();
+            let expected = source.lines().collect::<String>().to_ascii_uppercase();
+            let mut output = Vec::new();
+            output.try_reserve_exact(expected.len()).unwrap();
+            let reservation = memory.reserve_capacity(output.capacity() as u64).unwrap();
+            let capacity = output.capacity();
+            let prepaid = work.used();
+            let mut next = 1;
+            loop {
+                let start = output.len();
+                let following = store
+                    .append_joined_chunk(next, facts.lines() + 1, &mut output)
+                    .unwrap();
+                let Some(following) = following else {
+                    break;
+                };
+                assert!(following > next);
+                assert!(
+                    store.line(next).is_none(),
+                    "copied backing retires before its output is transformed"
+                );
+                // Tests transform only the newly initialized private byte span.
+                output[start..].make_ascii_uppercase();
+                next = following;
+            }
+            assert_eq!(output, expected.as_bytes());
+            assert_eq!(output.capacity(), capacity);
+            assert_eq!(work.used(), prepaid);
+            assert!(store.chunks.is_empty());
+            drop((store, work, reservation));
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+}
+
+#[test]
 fn sealed_range_keeps_real_unicode_lines_and_counts_unretained_suffix_without_backing() {
     let memory = ManagedMemoryBudget::new(1024 * 1024);
     let work = work(&memory);
@@ -305,7 +488,7 @@ fn exact_and_one_short_global_and_local_capacities_include_replacement_peaks() {
     let facts = store.finish().unwrap();
     drop((store, ledger));
     assert_eq!(memory.used_bytes(), 0);
-    for local in [false, true] {
+    for (local, certified) in [(false, false), (false, true), (true, false), (true, true)] {
         for short in [false, true] {
             let memory = ManagedMemoryBudget::new(if local {
                 1024 * 1024
@@ -318,7 +501,11 @@ fn exact_and_one_short_global_and_local_capacities_include_replacement_peaks() {
                 limits.max_temporary_bytes = Some(peak - u64::from(short));
             }
             let mut store = prepare(128, 128, limits, &ledger).unwrap();
-            let result = store.push(source);
+            let result = if certified {
+                store.push_fragment(mech_core::Utf8Fragment::decode(source.as_bytes()).unwrap())
+            } else {
+                store.push(source)
+            };
             if short {
                 assert!(result.is_err());
                 assert_eq!(store.line(1), None);

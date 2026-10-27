@@ -25,8 +25,8 @@ mod tests;
 pub(in crate::native_artifact) struct EntryFacts {
     pub is_prefix: Value,
     pub final_input: Value,
-    pending_count: Value,
-    available: Value,
+    pub pending_count: Value,
+    pub available: Value,
 }
 impl EntryFacts {
     pub fn load(b: &mut FunctionBuilder, frame: Value, phase: Value) -> Self {
@@ -183,12 +183,23 @@ pub(in crate::native_artifact) fn scanned(
     let zero = b.ins().iconst(types::I64, 0);
     let layout = &borrowed.regions[region.borrowed];
     for word in layout.ready..layout.end {
-        b.ins().store(MemFlags::new(), zero, locals, offset(word)?);
+        b.ins().store(
+            super::super::compiler::memory_regions::borrowed(),
+            zero,
+            locals,
+            offset(word)?,
+        );
     }
     if let Some(ordinal) = closed.sites[region.tail.header() as usize] {
-        let words = closed.regions[ordinal].words;
+        let loan = &closed.regions[ordinal];
+        let words = loan.words;
         for word in words..words + 3 {
-            b.ins().store(MemFlags::new(), zero, locals, offset(word)?);
+            b.ins().store(
+                super::tail_codegen::flags(loan),
+                zero,
+                locals,
+                offset(word)?,
+            );
         }
     }
     hooks.call(
@@ -227,30 +238,17 @@ pub(in crate::native_artifact) fn gate(
     let ordinal = b
         .ins()
         .load(types::I64, MemFlags::new(), locals, offset(region.carrier)?);
-    let mut known = b.ins().iconst(types::I8, 0);
-    let mut pending = b.ins().iconst(types::I8, 0);
-    for state in region.frontier.states() {
-        let matches = b
-            .ins()
-            .icmp_imm(IntCC::Equal, ordinal, i64::from(state.ordinal()));
-        known = b.ins().bor(known, matches);
-        let waiting = if let Some(field) = state.index_field() {
-            let index = b.ins().load(
-                types::I64,
-                MemFlags::new(),
-                locals,
-                offset(region.carrier + field)?,
-            );
-            let absent = b.ins().icmp(IntCC::UnsignedGreaterThan, index, available);
-            b.ins().band(matches, absent)
-        } else {
-            // Even an already returned range must await the SAME capture's
-            // EOF/error validation before finish/join/output can be reached.
-            matches
-        };
-        pending = b.ins().bor(pending, waiting);
-    }
-    guard(b, known, error, STATUS_ABI);
+    let pending = pending_at_header(
+        b,
+        facts,
+        region,
+        ordinal,
+        |b, slot| {
+            Ok(b.ins()
+                .load(types::I64, MemFlags::new(), locals, offset(slot)?))
+        },
+        error,
+    )?;
     let pause = b.create_block();
     b.ins().brif(pending, pause, &[], proceed, &[]);
     b.switch_to_block(pause);
@@ -330,7 +328,12 @@ pub(in crate::native_artifact) fn gate(
     // Clear all raw pair lanes, including derived Strings from the last
     // traversal, BEFORE the helper drops their actual immutable owner loans.
     for word in layout.ready..layout.end {
-        b.ins().store(MemFlags::new(), zero, locals, offset(word)?);
+        b.ins().store(
+            super::super::compiler::memory_regions::borrowed(),
+            zero,
+            locals,
+            offset(word)?,
+        );
     }
     hooks.call(
         b,
@@ -345,4 +348,37 @@ pub(in crate::native_artifact) fn gate(
     b.ins().return_(&[status]);
     b.switch_to_block(proceed);
     Ok(())
+}
+
+/// Same original retention test with a caller-supplied physical/SSA word home.
+/// Call only on the unfinished prefix edge, before another body is admitted.
+pub(super) fn pending_at_header(
+    b: &mut FunctionBuilder,
+    facts: EntryFacts,
+    region: &Region,
+    ordinal: Value,
+    mut read: impl FnMut(&mut FunctionBuilder, usize) -> Result<Value, NativeCompileError>,
+    error: Block,
+) -> Result<Value, NativeCompileError> {
+    let available = facts.available;
+    let mut known = b.ins().iconst(types::I8, 0);
+    let mut pending = b.ins().iconst(types::I8, 0);
+    for state in region.frontier.states() {
+        let matches = b
+            .ins()
+            .icmp_imm(IntCC::Equal, ordinal, i64::from(state.ordinal()));
+        known = b.ins().bor(known, matches);
+        let waiting = if let Some(field) = state.index_field() {
+            let index = read(b, region.carrier + field)?;
+            let absent = b.ins().icmp(IntCC::UnsignedGreaterThan, index, available);
+            b.ins().band(matches, absent)
+        } else {
+            // Even an already returned range must await the SAME capture's
+            // EOF/error validation before finish/join/output can be reached.
+            matches
+        };
+        pending = b.ins().bor(pending, waiting);
+    }
+    guard(b, known, error, STATUS_ABI);
+    Ok(pending)
 }

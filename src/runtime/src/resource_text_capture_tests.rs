@@ -72,6 +72,38 @@ fn every_unicode_split_short_read_and_interruption_preserves_exact_text() {
 }
 
 #[test]
+fn certified_fragments_retain_exact_facts_across_short_reads_and_utf8_carry() {
+    for input in ["", "a\0b\r\n\nlast\r", "éλ漢字🦎", "x\r\né🦎\n"] {
+        for chunk in 1..=11 {
+            for step in 1..=7 {
+                let memory = ManagedMemoryBudget::new(64);
+                let pump =
+                    RuntimeTextCaptureBuffer::prepare(input.len() as u64, chunk, &memory).unwrap();
+                let mut reader = ShortReads::new(input.as_bytes(), step);
+                reader.interrupt = true;
+                let mut received = String::new();
+                let result = pump.capture_fragments_deferred(&mut reader, |fragment| {
+                    let text = fragment.text();
+                    assert_eq!(fragment.is_ascii(), text.is_ascii());
+                    assert_eq!(
+                        fragment.line_feeds(),
+                        text.bytes().filter(|&byte| byte == b'\n').count()
+                    );
+                    assert!(text.len() <= chunk + UTF8_CARRY);
+                    received.push_str(text);
+                    Ok::<_, ()>(())
+                });
+                assert!(result.is_ok());
+                assert_eq!(result.ok().unwrap().input_bytes(), input.len() as u64);
+                assert_eq!(received, input);
+                assert_eq!(reader.position, input.len());
+                assert_eq!(memory.used_bytes(), 0);
+            }
+        }
+    }
+}
+
+#[test]
 fn incremental_utf8_errors_match_whole_input_validation() {
     let mut inputs = (0..=255u8)
         .map(|byte| vec![b'o', b'k', byte])

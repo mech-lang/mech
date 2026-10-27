@@ -204,6 +204,35 @@ impl<'a> NativeValueArena<'a> {
             .ok_or(NativeValueError::StaleHandle)
     }
 
+    /// Private read inside an already prepaid generated operation. The caller
+    /// must include this fixed-size slot/generation/refcount work in that
+    /// operation's complete bound before entering this leaf. It cannot publish
+    /// a value, create fuel, or replace the arena's original invocation ledger.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(super) fn copy_current_prepaid(
+        &self,
+        slot: u32,
+        work: &NativeWorkMeter,
+    ) -> Result<Option<(Value, NativeValueHandle)>, NativeValueError> {
+        self.check_work(work)?;
+        let index = slot as usize;
+        let value = self
+            .values
+            .values()
+            .get(index)
+            .ok_or(NativeValueError::InvalidSlot)?;
+        Ok(value.as_ref().map(|value| {
+            (
+                value.clone(),
+                NativeValueHandle {
+                    domain: self.values.domain_id(),
+                    slot,
+                    generation: self.generations.values()[index],
+                },
+            )
+        }))
+    }
+
     /// Capture an existing current generation without publishing/replacing a
     /// slot. Only the certified generated caller can obtain this handle.
     #[cfg(feature = "canonical-native-program-runtime")]
@@ -370,6 +399,90 @@ mod tests {
     };
     const TRANSPORT_LIMIT: u64 = 1024 * 1024;
 
+    #[cfg(feature = "canonical-native-program-runtime")]
+    #[test]
+    fn arena_transport_preserves_shared_account_census_and_external_roots() {
+        let budget = ManagedMemoryBudget::new(16 * 1024 * 1024);
+        let (text_ty, raw_a) = text(&"λ".repeat(8192));
+        let (_, raw_b) = text("replacement");
+        let (map_ty, raw_map) = value(
+            SchemaBody::Map {
+                key: Box::new(SchemaBody::String),
+                value: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
+                cardinality: mech_core::CardinalitySpec::Dynamic { upper_bound: None },
+            },
+            ValueDataDraft::Map(
+                [("a", 1), ("b", u64::MAX)]
+                    .into_iter()
+                    .map(|(key, value)| MapEntryDraft {
+                        items: vec![
+                            ValueDataDraft::String(key.into()),
+                            ValueDataDraft::U64(value),
+                        ]
+                        .into_boxed_slice(),
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        );
+        let a = admit(&raw_a, &budget);
+        let b = admit(&raw_b, &budget);
+        let map = admit(&raw_map, &budget);
+        assert_eq!(a.memory_budget_retained_nodes(&budget), Some(2));
+        assert_eq!(map.memory_budget_retained_nodes(&budget), Some(6));
+        let types = [text_ty, text_ty, map_ty];
+        let mut work = NativeWorkMeter::new(100_000_000).unwrap();
+        let mut arena = NativeValueArena::new(&types, TRANSPORT_LIMIT, &budget, &mut work).unwrap();
+        assert_eq!(budget.retained_snapshot_nodes(), 10);
+        let before = budget.used_bytes();
+        arena.put(0, &a, &mut work).unwrap();
+        arena.put(1, &a, &mut work).unwrap();
+        let handle = arena.put(2, &map, &mut work).unwrap();
+        assert_eq!(budget.retained_snapshot_nodes(), 10);
+        assert_eq!(
+            budget.used_bytes(),
+            before,
+            "no census allocation on put/read"
+        );
+        assert!(matches!(
+            arena.put(2, &a, &mut work),
+            Err(NativeValueError::TypeMismatch)
+        ));
+        assert_eq!(budget.retained_snapshot_nodes(), 10);
+        arena.put(0, &b, &mut work).unwrap();
+        arena.retire_current_matching(1, &a, &mut work).unwrap();
+        assert_eq!(budget.retained_snapshot_nodes(), 10);
+        arena.retire_current(1, &mut work).unwrap();
+        assert_eq!(budget.retained_snapshot_nodes(), 10);
+        let taken = arena.take(handle, &mut work).unwrap();
+        assert_eq!(budget.retained_snapshot_nodes(), 10);
+        assert!(matches!(
+            arena.get(handle, &mut work),
+            Err(NativeValueError::StaleHandle)
+        ));
+        let mut foreign_work = NativeWorkMeter::new(1_000_000).unwrap();
+        assert!(matches!(
+            arena.put(0, &a, &mut foreign_work),
+            Err(NativeValueError::WrongWorkLedger)
+        ));
+        arena.retire_current(0, &mut work).unwrap();
+        assert_eq!(budget.retained_snapshot_nodes(), 10);
+        drop(a);
+        assert_eq!(budget.retained_snapshot_nodes(), 8);
+        drop(b);
+        assert_eq!(budget.retained_snapshot_nodes(), 6);
+        drop(map);
+        assert_eq!(
+            budget.retained_snapshot_nodes(),
+            6,
+            "taken map remains a live caller root"
+        );
+        drop(taken);
+        assert_eq!(budget.retained_snapshot_nodes(), 0);
+        drop((arena, raw_a, raw_b, raw_map, work, foreign_work));
+        assert_eq!(budget.used_bytes(), 0);
+    }
+
     fn value(body: SchemaBody, data: ValueDataDraft) -> (NativeValueSlot, Value) {
         let schema = SchemaDraft {
             dimension_parameters: Box::new([]),
@@ -421,11 +534,21 @@ mod tests {
         let before = budget.used_bytes();
         let mut foreign = NativeWorkMeter::new(1_000_000).unwrap();
         assert_eq!(
+            arena.copy_current_prepaid(0, &foreign).unwrap_err(),
+            NativeValueError::WrongWorkLedger
+        );
+        work.charge(NativeExecutionPhase::Setup, 128).unwrap();
+        let (read, handle) = arena.copy_current_prepaid(0, &work).unwrap().unwrap();
+        assert_eq!(handle, local);
+        assert!(read.shares_frozen_storage(&owned));
+        drop(read);
+        assert_eq!(
             arena.retire_current(0, &mut foreign).unwrap_err(),
             NativeValueError::WrongWorkLedger
         );
         assert!(arena.get(local, &mut work).is_ok());
         arena.retire_current(0, &mut work).unwrap();
+        assert!(arena.copy_current_prepaid(0, &work).unwrap().is_none());
         assert_eq!(
             arena.get(local, &mut work).unwrap_err(),
             NativeValueError::StaleHandle

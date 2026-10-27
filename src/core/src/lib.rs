@@ -145,6 +145,7 @@ pub mod source_diagnostic;
 pub mod state_journal;
 pub mod stdlib;
 pub mod structures;
+mod text_fragment;
 pub mod types;
 
 pub use self::browser_document::root_document_program_output_id;
@@ -186,6 +187,7 @@ pub use self::structures::matrix::{
     CopyMat, IncompatibleMatrixAppendToTableError, MechMatrix, PushIntoStaticMatrixError,
     ResizeStaticMatrixError, ToMatrix,
 };
+pub use self::text_fragment::Utf8Fragment;
 pub use self::types::*;
 
 pub mod dimension;

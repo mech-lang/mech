@@ -2,18 +2,18 @@
   "schema": "mech.native-linkage-coverage-summary.v1",
   "detail_schema": "mech.native-linkage-coverage.v2",
   "full": {
-    "entry_count": 9726,
-    "linked_entry_count": 9726,
+    "entry_count": 9729,
+    "linked_entry_count": 9729,
     "missing_linkage_count": 0,
-    "runtime_surface_digest": "314afbacd3791b46f7b3dea7fb70e45d48adfd76c8c7ffbb10736c7623ca0aeb",
-    "installer_surface_digest": "de31cb7a1ae6445096f0050a2994d15527325ff00d3d3e8dee33fe64bcb39f80",
-    "feature_surface_digest": "3f324ee65f85865c0ab04edfc09ceb3cea3071215ec5011485db5b083e76ec82",
-    "runtime_contract_count": 9726,
+    "runtime_surface_digest": "aa970a5d179b73562619d83045ff31a95456afe65fc4ede85856b0926610acd4",
+    "installer_surface_digest": "7bd779da239f73b1f20809ca0bb8556f3c2c8e93f760075b3722abaff2ba2de9",
+    "feature_surface_digest": "67a531d157ce0bb272ba923ed87342d65aea9a9aaab71c932d6d7f6cae4d4017",
+    "runtime_contract_count": 9729,
     "missing_contract_count": 0,
-    "runtime_contract_surface_digest": "91a62a8f6c224542f8622df2bd2e789c1057ea427b5b6160c69aff977da9b56f",
-    "runtime_signature_count": 9726,
+    "runtime_contract_surface_digest": "ed113a68179e80b046c0f315bea25beedd497d691b3c1c7bd72acf00f8bce50d",
+    "runtime_signature_count": 9729,
     "missing_signature_count": 0,
-    "runtime_signature_surface_digest": "67021ae809d49598c7023fbcecfecfe99ef84d734cb7247485d69841a29c9c51"
+    "runtime_signature_surface_digest": "9f2672921f2f719fe1530d344aecbbf3ef5d68d5a26340c0f2d71ffb02a684cc"
   },
   "extended": {
     "entry_count": 121897,
@@ -30,8 +30,8 @@
     "runtime_signature_surface_digest": "9a23039b0921c7964f97a7bcf4ec0217248d4743e6ee0145e00d7ae581880735"
   },
   "complete_catalog": {
-    "entry_count": 122093,
-    "runtime_surface_digest": "911b2653d0a74023a90f190d51b3ba078bbc800c12d31203b477c6995fb38baf",
+    "entry_count": 122096,
+    "runtime_surface_digest": "018c8efe8b9057e7b500e0003ac9f25e70135cc28faba78a4248713cff8e5ca6",
     "retained_entry_count": 122083,
     "retained_runtime_surface_digest": "34db793ac637b3b1bc532978c6e8a6e0be1b8be63c33ec5f3043045f765616f5"
   },
@@ -40,9 +40,9 @@
     "representation_feature_missing_count": 0,
     "representation_feature_manually_listed_extra_count": 0,
     "feature_dependent_output_representation_count": 0,
-    "exact_closure_count": 34921,
+    "exact_closure_count": 34922,
     "exact_closure_shard_counts": [
-      4422,
+      4423,
       4322,
       4379,
       4226,
@@ -54,7 +54,7 @@
   },
   "coverage_digest": {
     "algorithm": "sha256-canonical-json-without-coverage-digest-v2",
-    "sha256": "592c35a0c7e1749a7838edaa1066e24ced6032314444a4fd61098cccecc257dc"
+    "sha256": "70739efb21adcae22ea00171c65cc1eca100c62cf4c062ad8673594a6d95d4c6"
   },
   "detail_artifact": {
     "path": "target/native-linkage/coverage-full.json",

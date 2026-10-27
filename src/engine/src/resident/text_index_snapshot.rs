@@ -3,7 +3,7 @@
 use super::{Backing, CachedIndex, IndexUse, PreparedGraphemeIndex, budget};
 use crate::resident::budget::NativeLibraryWorkBudget;
 use mech_core::{
-    ManagedMemoryReservation, ResidentKernelError, Value, ValueData,
+    ManagedMemoryReservation, ManagedNodeReservation, ResidentKernelError, Value, ValueData,
     snapshot::FrozenSnapshotIdentity,
 };
 use std::{
@@ -27,12 +27,14 @@ pub(in crate::resident) struct Slot {
 struct Pending<'a> {
     slot: &'a Slot,
     reservation: Option<ManagedMemoryReservation>,
+    nodes: Option<ManagedNodeReservation>,
     complete: bool,
 }
 impl Drop for Pending<'_> {
     fn drop(&mut self) {
         if !self.complete {
             drop(self.reservation.take());
+            drop(self.nodes.take());
             self.slot.bytes.set(0);
             self.slot.nodes.set(0);
         }
@@ -48,6 +50,11 @@ impl Pending<'_> {
         memory_error: &impl Fn(mech_core::MemoryRuntimeError) -> ResidentKernelError,
     ) -> Result<(), ResidentKernelError> {
         check(bytes, nodes)?;
+        self.nodes
+            .as_mut()
+            .unwrap()
+            .resize(nodes)
+            .map_err(memory_error)?;
         self.reservation
             .as_mut()
             .unwrap()
@@ -151,11 +158,17 @@ impl Slot {
         let mut pending = Pending {
             slot: self,
             reservation: None,
+            nodes: None,
             complete: false,
         };
         pending.reservation = Some(
             work.memory_budget()
                 .reserve_capacity(0)
+                .map_err(&memory_error)?,
+        );
+        pending.nodes = Some(
+            work.memory_budget()
+                .reserve_nodes(0)
                 .map_err(&memory_error)?,
         );
         let header = Value::frozen_storage_identity_allocation_bytes()
@@ -215,6 +228,7 @@ impl Slot {
                 bytes: 0,
                 nodes: 0,
                 _reservation: pending.reservation.take(),
+                _native_nodes: pending.nodes.take(),
             },
         });
         *self.entry.borrow_mut() = Some(Entry {

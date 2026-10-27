@@ -31,6 +31,10 @@ fn load(
     Ok(b.ins()
         .load(types::I64, MemFlags::new(), locals, offset(index)?))
 }
+
+#[cfg(test)]
+#[path = "program_map_owner_word_tests.rs"]
+mod map_owner_tests;
 pub(in crate::native_artifact) fn constants(
     b: &mut FunctionBuilder<'_>,
     locals: Value,
@@ -78,6 +82,30 @@ pub(in crate::native_artifact) fn emit(
             // Read all words before any write, including carrier aliases.
             let values = (0..count)
                 .map(|i| load(b, locals, field(plan, *source, i)?))
+                .collect::<Result<Vec<_>, _>>()?;
+            (*output, values)
+        }
+        Action::Project {
+            source,
+            offset: start,
+            guards,
+            output,
+        } => {
+            for &(index, ordinal) in guards {
+                let tag = load(b, locals, field(plan, *source, index)?)?;
+                let valid = b.ins().icmp_imm(IntCC::Equal, tag, i64::from(ordinal));
+                guard(b, valid, error, super::super::abi::STATUS_ABI);
+            }
+            let (_, count) = plan
+                .slot(*output)
+                .ok_or_else(|| backend("aggregate projection target missing"))?;
+            let values = (0..count)
+                .map(|i| {
+                    let index = start
+                        .checked_add(i)
+                        .ok_or_else(|| backend("aggregate projection offset overflow"))?;
+                    load(b, locals, field(plan, *source, index)?)
+                })
                 .collect::<Result<Vec<_>, _>>()?;
             (*output, values)
         }

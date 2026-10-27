@@ -1,12 +1,26 @@
-//! Mixed-value ABI12 ends the input scan before final captured-source consumers,
-//! allowing row loans to retire without changing the frozen scalar-frame prefix.
+//! ABI33 shares an owner-prepared 16-byte header and 128-byte table allowance.
+//! An exhaustively proved 32-cell projection selects a separate leaf once;
+//! arbitrary maps keep the full 128-cell representation. Signatures remain.
+//! ABI32 stores the joined mapper's admitted table as 128 bytes: 0..127 are
+//! valid outputs (including zero), and the high bit denotes a missing entry.
+//! Both its scalar and vector paths read this same prepared representation.
+//! ABI31 binds owned selected-source geometry and exact initialized extents
+//! for direct generated transform/copy. Frame banks and signatures remain.
+//! ABI30 adds paired selected-join chunk loans and completed String-map entry.
+//! ABI29 discriminates borrowed compact line offsets.
+//! ABI28 binds the optional owned complete-key lookup cache
+//! pointer in the packed map frame. The ordinary table and helper lanes remain.
+//! Entry phases, control pointer and scalar transport stay unchanged.
 use super::abi::NativeEntryFrame;
 use core::ffi::c_void;
-pub(super) const VERSION: u64 = 12;
+pub(super) const VERSION: u64 = 33;
+pub(super) const JOIN_MAP_MISSING_BYTE: u8 = 0x80;
 pub(super) const PHASE_ACTIVATION: u64 = 0;
 pub(super) const PHASE_TURN: u64 = 1;
 pub(super) const PHASE_PREFIX: u64 = 2;
 pub(super) const PHASE_CAPTURE_TAIL: u64 = 3;
+pub(super) const PHASE_WORKER: u64 = 4;
+pub(super) const STATUS_WORKER_RESULT: u64 = 8;
 pub(super) const STATUS_ACTIVATED: u64 = 5;
 pub(super) const STATUS_INPUT_PENDING: u64 = 6;
 pub(super) const STATUS_INPUT_SCANNED: u64 = 7;
@@ -29,6 +43,21 @@ pub(super) const PREFIX_PAUSE: u64 = u64::MAX - 9;
 pub(super) const PREFIX_BORROWED_RESUME: u64 = u64::MAX - 10;
 pub(super) const PREFIX_TAIL_RESUME: u64 = u64::MAX - 11;
 pub(super) const PREFIX_SCANNED: u64 = u64::MAX - 12;
+pub(super) const JOIN_MAP_PREPARE: u64 = u64::MAX - 13;
+pub(super) const JOIN_MAP_FINISH: u64 = u64::MAX - 14;
+// Source geometry occupies six immutable words; only this final lane is writable.
+pub(super) const JOIN_MAP_INITIALIZED_WORD: usize = 6;
+pub(super) const MAP_OWNER_BEGIN: u64 = u64::MAX - 16;
+pub(super) const MAP_OWNER_CALL: u64 = u64::MAX - 17;
+pub(super) const MAP_OWNER_END: u64 = u64::MAX - 18;
+pub(super) const MAP_OWNER_SPAN: u64 = u64::MAX - 19;
+pub(super) const PARALLEL_RUN: u64 = u64::MAX - 20;
+pub(super) const PARALLEL_TAKE: u64 = u64::MAX - 21;
+pub(super) const PARALLEL_YIELD: u64 = u64::MAX - 22;
+pub(super) const PARALLEL_ENTER: u64 = u64::MAX - 23;
+// Global Context helpers; distinct from private bound Owner operations.
+pub(super) const FROZEN_MAP_COPY: u64 = u64::MAX - 24;
+pub(super) const FROZEN_MAP_READ: u64 = u64::MAX - 25;
 pub(super) type Helper =
     unsafe extern "C" fn(*mut c_void, u64, u64, u64, u64, u64, *mut u64) -> u64;
 #[repr(C)]
@@ -38,13 +67,15 @@ pub(super) struct Frame {
     pub result: *mut u64,
     pub arguments: *mut u64,
     pub argument_capacity: u64,
-    // Immutable for each call; only the owning session selects the second phase.
+    // Immutable for each call; only the owning session selects the phase.
     pub phase: u64,
     // Constructor-private continuation facts, immutable throughout an entry.
     // These are NOT canonical line/count Values or arbitrary jump targets.
+    // PHASE_WORKER reuses these lanes for proved begin site, original element
+    // index and original source count; PARALLEL_ENTER checks all three against
+    // the private child constructor before the first source-body visit.
     pub resume_site: u64,
     pub available_lines: u64,
     pub input_eof: u64,
 }
-#[cfg(feature = "canonical-native-program")]
 pub(super) type Entry = unsafe extern "C" fn(*mut Frame) -> u64;

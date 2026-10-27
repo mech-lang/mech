@@ -1,4 +1,4 @@
-//! Native finite fuel for a proved callback-free Tail, inside the same round.
+//! Native finite fuel for closed scalar/map Tail bodies, inside the same round.
 use super::super::{
     NativeCompileError,
     compiler::offset,
@@ -9,17 +9,31 @@ use super::super::{
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 
-fn load(b: &mut FunctionBuilder, locals: Value, word: usize) -> Result<Value, NativeCompileError> {
+pub(in crate::native_artifact) fn flags(region: &Region) -> MemFlags {
+    if region.map.is_none() {
+        super::super::compiler::memory_regions::scalar_tail()
+    } else {
+        MemFlags::new()
+    }
+}
+
+fn load(
+    b: &mut FunctionBuilder,
+    locals: Value,
+    region: &Region,
+    word: usize,
+) -> Result<Value, NativeCompileError> {
     Ok(b.ins()
-        .load(types::I64, MemFlags::new(), locals, offset(word)?))
+        .load(types::I64, flags(region), locals, offset(word)?))
 }
 fn store(
     b: &mut FunctionBuilder,
     locals: Value,
+    region: &Region,
     word: usize,
     value: Value,
 ) -> Result<(), NativeCompileError> {
-    b.ins().store(MemFlags::new(), value, locals, offset(word)?);
+    b.ins().store(flags(region), value, locals, offset(word)?);
     Ok(())
 }
 fn leave(
@@ -31,16 +45,16 @@ fn leave(
     hooks: &Hooks,
     error: Block,
 ) -> Result<(), NativeCompileError> {
-    let ready = load(b, locals, region.words)?;
+    let ready = load(b, locals, region, region.words)?;
     let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
     let finish = b.create_block();
     let done = b.create_block();
     b.ins().brif(ready, finish, &[], done, &[]);
     b.switch_to_block(finish);
-    let compute = load(b, locals, region.words + 1)?;
-    let comparison = load(b, locals, region.words + 2)?;
+    let compute = load(b, locals, region, region.words + 1)?;
+    let comparison = load(b, locals, region, region.words + 2)?;
     let zero = b.ins().iconst(types::I64, 0);
-    store(b, locals, region.words, zero)?;
+    store(b, locals, region, region.words, zero)?;
     let mode = b.ins().iconst(types::I64, mode);
     hooks.call_at(
         b,
@@ -137,7 +151,7 @@ pub(in crate::native_artifact) fn pause(
         let zero = b.ins().iconst(types::I64, 0);
         // A declined loan may leave capture words in the unused fuel lane.
         for word in layout.regions[region].words..layout.regions[region].words + 3 {
-            store(b, locals, word, zero)?;
+            store(b, locals, &layout.regions[region], word, zero)?;
         }
     }
     Ok(())
@@ -152,17 +166,37 @@ fn prepare_region(
     error: Block,
 ) -> Result<(), NativeCompileError> {
     let zero = b.ins().iconst(types::I64, 0);
+    if let Some(packed) = region.packed.as_ref() {
+        let mut offsets = [zero; 2];
+        for (word, value) in offsets
+            .iter_mut()
+            .zip([packed.start_offset(), packed.end_offset()])
+        {
+            if let Some(value) = value {
+                *word = b
+                    .ins()
+                    .load(types::I64, MemFlags::new(), locals, offset(value as usize)?);
+            }
+        }
+        // The map initializer's output words have already been copied into
+        // locals. Reuse words 0/1 as input, consumed before the entry callback
+        // replaces words 0..4 with its private return values.
+        hooks.write_entry_words(b, &offsets, error)?;
+    }
     hooks.call(b, site, operation, [zero; 3], error);
     let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
-    store(b, locals, region.words, ready)?;
-    for i in 0..2 {
-        let word = load(b, hooks.arguments, i)?;
-        store(b, locals, region.words + 1 + i, word)?;
+    store(b, locals, region, region.words, ready)?;
+    for i in 0..if region.map.is_some() { 4 } else { 2 } {
+        let word = b
+            .ins()
+            .load(types::I64, MemFlags::new(), hooks.arguments, offset(i)?);
+        store(b, locals, region, region.words + 1 + i, word)?;
     }
     Ok(())
 }
 /// Emit native admission or leave in the ordinary callback arm; the caller
-/// joins that callback at the returned block. No helper occurs on a funded body.
+/// joins that callback at the returned block. Closed map bodies call only their
+/// private storage binding; scalar bodies have no callbacks.
 pub(in crate::native_artifact) fn admission(
     b: &mut FunctionBuilder,
     locals: Value,
@@ -179,16 +213,51 @@ pub(in crate::native_artifact) fn admission(
         return Ok(None);
     };
     let region = &layout.regions[region];
-    let ready = load(b, locals, region.words)?;
+    let ready = load(b, locals, region, region.words)?;
     let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
     let native = b.create_block();
     let ordinary = b.create_block();
     let joined = b.create_block();
     b.ins().brif(ready, native, &[], ordinary, &[]);
     b.switch_to_block(native);
-    if site == region.tail.header() as usize {
-        let compute = load(b, locals, region.words + 1)?;
-        let comparison = load(b, locals, region.words + 2)?;
+    if site == region.tail.header() as usize && region.map.is_some() {
+        let remaining = load(b, locals, region, region.words + 1)?;
+        let empty = b.ins().icmp_imm(IntCC::Equal, remaining, 0);
+        let replenish = b.create_block();
+        let funded = b.create_block();
+        b.ins().brif(empty, replenish, &[], funded, &[]);
+        b.switch_to_block(replenish);
+        let function = load(b, locals, region, region.words + 3)?;
+        let context = load(b, locals, region, region.words + 4)?;
+        let zero = b.ins().iconst(types::I64, 0);
+        hooks.bound_call(b, function, context, site, 0, [zero; 3], error);
+        let count = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+        store(b, locals, region, region.words + 1, count)?;
+        b.ins().jump(funded, &[]);
+        b.switch_to_block(funded);
+        let remaining = load(b, locals, region, region.words + 1)?;
+        let remaining = b.ins().iadd_imm(remaining, -1);
+        store(b, locals, region, region.words + 1, remaining)?;
+        if region.packed.is_some() {
+            let context = load(b, locals, region, region.words + 4)?;
+            let frame = b.ins().load(types::I64, MemFlags::new(), context, 0);
+            let selected = b.ins().icmp_imm(IntCC::NotEqual, frame, 0);
+            let sync = b.create_block();
+            let ready = b.create_block();
+            b.ins().brif(selected, sync, &[], ready, &[]);
+            b.switch_to_block(sync);
+            b.ins().store(
+                MemFlags::new(),
+                remaining,
+                frame,
+                core::mem::offset_of!(super::super::program_packed_map::Frame, fuel) as i32,
+            );
+            b.ins().jump(ready, &[]);
+            b.switch_to_block(ready);
+        }
+    } else if site == region.tail.header() as usize {
+        let compute = load(b, locals, region, region.words + 1)?;
+        let comparison = load(b, locals, region, region.words + 2)?;
         let compute_cost = b.ins().iconst(types::I64, region.compute as i64);
         let comparison_cost = b.ins().iconst(types::I64, region.comparison as i64);
         let a = b
@@ -210,8 +279,8 @@ pub(in crate::native_artifact) fn admission(
         b.switch_to_block(funded);
         let compute = b.ins().isub(compute, compute_cost);
         let comparison = b.ins().isub(comparison, comparison_cost);
-        store(b, locals, region.words + 1, compute)?;
-        store(b, locals, region.words + 2, comparison)?;
+        store(b, locals, region, region.words + 1, compute)?;
+        store(b, locals, region, region.words + 2, comparison)?;
     }
     b.ins().jump(joined, &[]);
     b.switch_to_block(ordinary);

@@ -229,6 +229,7 @@ fn synthetic_allocator_spare_capacity_is_rejected_before_index_publication() {
     let mut pending = Pending {
         slot: &slot,
         reservation: Some(memory.reserve_capacity(0).unwrap()),
+        nodes: Some(memory.reserve_nodes(0).unwrap()),
         complete: false,
     };
     let memory_error = |_| ResidentKernelError::InvalidShape;
@@ -288,4 +289,70 @@ fn offset_guard_accepts_only_the_actual_admitted_reported_capacity() {
     assert!(data.is_empty());
     assert_eq!(data.capacity(), actual);
     assert!(admitted_offsets(Vec::new(), 1).is_err());
+}
+
+#[test]
+fn snapshot_index_nodes_share_one_ceiling_and_follow_outstanding_index_loans() {
+    let memory = ManagedMemoryBudget::new(8 * 1024 * 1024);
+    let value = source("ACGT", &memory);
+    let baseline = memory.retained_nodes();
+    let capped = memory.with_limits(memory.limit_bytes(), baseline + 2);
+    let first_work = NativeLibraryWorkBudget::new(100_000_000, 1_000_000, &capped).unwrap();
+    let second_work = NativeLibraryWorkBudget::new(100_000_000, 1_000_000, &capped).unwrap();
+    let first = Slot::default();
+    let loan = first.prepare(&value, &first_work, unlimited).unwrap();
+    assert_eq!(first.nodes(), 2);
+    assert_eq!(memory.retained_nodes(), baseline + 2);
+    let second = Slot::default();
+    let bytes = memory.used_bytes();
+    assert!(second.prepare(&value, &second_work, unlimited).is_err());
+    assert_eq!((second.bytes(), second.nodes()), (0, 0));
+    assert_eq!(memory.used_bytes(), bytes);
+    assert_eq!(memory.retained_nodes(), baseline + 2);
+    drop(first);
+    assert_eq!(
+        memory.retained_nodes(),
+        baseline + 2,
+        "live index loan owns its claim"
+    );
+    assert!(second.prepare(&value, &second_work, unlimited).is_err());
+    drop(loan);
+    assert_eq!(memory.retained_nodes(), baseline);
+    let loan = second.prepare(&value, &second_work, unlimited).unwrap();
+    assert_eq!(memory.retained_nodes(), baseline + 2);
+    drop((loan, second, value, first_work, second_work));
+    assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+}
+
+#[test]
+fn snapshot_offset_node_growth_denial_retires_pending_header_claim() {
+    let memory = ManagedMemoryBudget::new(8 * 1024 * 1024);
+    let unicode = source("éA", &memory);
+    let baseline = memory.retained_nodes();
+    let capped = memory.with_limits(memory.limit_bytes(), baseline + 2);
+    let work = NativeLibraryWorkBudget::new(100_000_000, 1_000_000, &capped).unwrap();
+    let bytes = memory.used_bytes();
+    let slot = Slot::default();
+    let mut calls = 0;
+    assert!(
+        slot.prepare(&unicode, &work, |_, nodes| {
+            calls += 1;
+            assert!(nodes == 2 || nodes == 3);
+            Ok(())
+        })
+        .is_err()
+    );
+    assert_eq!(
+        calls, 2,
+        "header succeeds, shared offset-node admission fails"
+    );
+    assert_eq!((slot.bytes(), slot.nodes()), (0, 0));
+    assert!(!slot.building.get());
+    assert!(slot.entry.borrow().is_none());
+    assert_eq!(
+        (memory.used_bytes(), memory.retained_nodes()),
+        (bytes, baseline)
+    );
+    drop((slot, unicode, work));
+    assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
 }

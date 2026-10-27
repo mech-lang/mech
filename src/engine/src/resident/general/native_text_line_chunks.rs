@@ -9,6 +9,11 @@ use std::{collections::VecDeque, rc::Rc, sync::Arc};
 #[path = "native_text_line_chunk_allocation.rs"]
 mod allocation;
 use allocation::{Account, Bytes, ChunkData, Claim, Offsets};
+#[path = "native_text_line_join_copy.rs"]
+mod join_copy;
+#[path = "native_text_line_join_loan.rs"]
+mod join_loan;
+pub use join_loan::NativeTextLineJoinChunk;
 #[path = "native_text_line_window.rs"]
 mod window;
 pub use window::NativeTextLineWindow;
@@ -251,6 +256,56 @@ pub(super) fn capture_work_bound(
 }
 
 impl NativeTextLineChunks {
+    /// One physical copy step of an already admitted empty-separator join.
+    /// No borrowed source pointer survives: the completed bytes are initialized
+    /// in target before the physical chunk is retired and control returns.
+    pub(super) fn append_joined_chunk(
+        &mut self,
+        first: u64,
+        end: u64,
+        target: &mut Vec<u8>,
+    ) -> Result<Option<u64>, InvokeError> {
+        if self.final_facts().is_none()
+            || first == 0
+            || first > end
+            || end > self.facts.lines + 1
+            || (first < end && (first < self.lower || self.upper.is_some_and(|upper| end > upper)))
+        {
+            return Err(InvokeError::InvalidInput);
+        }
+        while self
+            .chunks
+            .front()
+            .is_some_and(|chunk| chunk.end() <= first)
+        {
+            self.chunks.pop_front();
+        }
+        if first == end {
+            self.chunks.clear();
+            #[cfg(all(unix, feature = "native-capture-pages"))]
+            self.pages.clear();
+            self.pending.backing = None;
+            return Ok(None);
+        }
+        let chunk = self.chunks.front().ok_or(InvokeError::InvalidInput)?;
+        let stop = end.min(chunk.end());
+        if chunk.offsets.is_some() {
+            chunk.append_payload_bytes(first, stop, target)?;
+        } else {
+            let text = chunk.line(first).ok_or(InvokeError::InvalidInput)?;
+            let needed = target
+                .len()
+                .checked_add(text.len())
+                .ok_or(InvokeError::InvalidInput)?;
+            if needed > target.capacity() {
+                return Err(InvokeError::InvalidInput);
+            }
+            target.extend_from_slice(text.as_bytes());
+        }
+        self.chunks.pop_front();
+        Ok(Some(stop))
+    }
+
     /// Consume the only owner's proven contiguous selection. The selected join
     /// has already prepaid its entire selector/copy/retirement traversal and
     /// allocated the exact output; no source-call allowance is renewed here.
@@ -278,10 +333,15 @@ impl NativeTextLineChunks {
             }
             let chunk = self.chunks.front().ok_or(InvokeError::InvalidInput)?;
             let stop = end.min(chunk.end());
-            for ordinal in next..stop {
-                let text = chunk.line(ordinal).ok_or(InvokeError::InvalidInput)?;
-                crate::resident::text_ops::append_joined(target, separator, has_previous, text);
+            if separator.is_empty() && chunk.offsets.is_some() {
+                chunk.append_payload(next, stop, target)?;
                 has_previous = true;
+            } else {
+                for ordinal in next..stop {
+                    let text = chunk.line(ordinal).ok_or(InvokeError::InvalidInput)?;
+                    crate::resident::text_ops::append_joined(target, separator, has_previous, text);
+                    has_previous = true;
+                }
             }
             next = stop;
             self.chunks.pop_front();
@@ -329,6 +389,9 @@ impl NativeTextLineChunks {
     }
     pub fn retained_capacity_bytes(&self) -> u64 {
         self.account.used()
+    }
+    pub fn retained_chunk_count(&self) -> u64 {
+        self.chunks.len() as u64
     }
     pub fn peak_capacity_bytes(&self) -> u64 {
         self.account.peak()
@@ -385,17 +448,40 @@ impl NativeTextLineChunks {
     /// crossing fragments uses one amortized growing buffer, not one buffer
     /// per character or a repeated copy of its full prefix on every fragment.
     pub fn push(&mut self, text: &str) -> Result<(), InvokeError> {
+        self.push_with_facts(text, None)
+    }
+    /// Reuse actual decoder byte facts; this certificate grants no resource or
+    /// source authority. Preserve the original fragment admission and debit
+    /// before using the facts, including on declined/failed producer paths.
+    pub fn push_fragment(
+        &mut self,
+        fragment: mech_core::Utf8Fragment<'_>,
+    ) -> Result<(), InvokeError> {
+        self.push_with_facts(
+            fragment.text(),
+            Some((fragment.is_ascii(), fragment.line_feeds())),
+        )
+    }
+    fn push_with_facts(
+        &mut self,
+        text: &str,
+        facts: Option<(bool, usize)>,
+    ) -> Result<(), InvokeError> {
         if self.failed || self.eof {
             return Err(InvokeError::InvalidInput);
         }
         self.failed = true;
-        let result = self.push_inner(text);
+        let result = self.push_inner(text, facts);
         if result.is_ok() {
             self.failed = false;
         }
         result
     }
-    fn push_inner(&mut self, mut text: &str) -> Result<(), InvokeError> {
+    fn push_inner(
+        &mut self,
+        mut text: &str,
+        facts: Option<(bool, usize)>,
+    ) -> Result<(), InvokeError> {
         let total = self
             .facts
             .bytes
@@ -411,26 +497,22 @@ impl NativeTextLineChunks {
                 .ok_or(InvokeError::InvalidInput)?,
         )?;
         self.facts.bytes = total;
-        self.facts.ascii &= text.is_ascii();
+        self.facts.ascii &= facts.map_or_else(|| text.is_ascii(), |facts| facts.0);
+        let mut known_lfs = facts.map(|facts| facts.1);
         if self.pending.bytes != 0 {
             if let Some(end) = text.find('\n') {
                 self.append_pending(&text[..end])?;
                 self.complete_pending(true)?;
                 text = &text[end + 1..];
+                known_lfs = known_lfs.map(|count| count - 1);
             } else {
                 return self.append_pending(text);
             }
         }
         if let Some(last) = text.rfind('\n') {
             let complete = &text[..last + 1];
-            let count = crate::intrinsics::text_ops::line_count(complete);
-            // A single-byte delimiter search avoids a general two-character
-            // substring scan. CRLF cannot overlap itself; inspect the checked
-            // following byte only at actual CR positions, including CRCRLF.
-            let crlf = complete
-                .match_indices('\r')
-                .filter(|(index, _)| complete.as_bytes().get(*index + 1) == Some(&b'\n'))
-                .count();
+            let count =
+                known_lfs.unwrap_or_else(|| crate::intrinsics::text_ops::line_count(complete));
             let first = self
                 .facts
                 .lines
@@ -441,12 +523,6 @@ impl NativeTextLineChunks {
                 .lines
                 .checked_add(count as u64)
                 .ok_or(InvokeError::InvalidInput)?;
-            let payload_bytes = complete.len() - count - crlf;
-            self.facts.payload = self
-                .facts
-                .payload
-                .checked_add(payload_bytes as u64)
-                .ok_or(InvokeError::InvalidInput)?;
             // Fund every mandatory backing in this fragment before preferring
             // a slab. Otherwise its unused capacity can crowd out offsets,
             // directory growth or the unfinished tail even though heap storage
@@ -455,7 +531,14 @@ impl NativeTextLineChunks {
                 // Release the old directory before acquiring any new fragment
                 // backing, keeping its replacement peak independent of the tail.
                 self.reserve_chunk_slot()?;
-                let offsets = Offsets::new(complete, count, payload_bytes, &self.account)?;
+                let offsets = Offsets::new(complete, count, &self.account)?;
+                // This total is bounded by the already checked input-byte
+                // total. The scan and allocation expose no partial producer.
+                self.facts.payload = self
+                    .facts
+                    .payload
+                    .checked_add(offsets.payload_bytes as u64)
+                    .ok_or(InvokeError::InvalidInput)?;
                 self.append_pending(&text[last + 1..])?;
                 #[cfg(all(unix, feature = "native-capture-pages"))]
                 let bytes = match self.pages.copy(complete, self.input_limit, &self.account)? {
@@ -471,6 +554,17 @@ impl NativeTextLineChunks {
                     offsets: Some(offsets),
                 });
             } else {
+                // Sealed ranges retain no offset backing. Keep their original
+                // allocation-free scan and exact final producer geometry.
+                let crlf = complete
+                    .match_indices('\r')
+                    .filter(|(index, _)| complete.as_bytes().get(*index + 1) == Some(&b'\n'))
+                    .count();
+                self.facts.payload = self
+                    .facts
+                    .payload
+                    .checked_add((complete.len() - count - crlf) as u64)
+                    .ok_or(InvokeError::InvalidInput)?;
                 self.append_pending(&text[last + 1..])?;
             }
             return Ok(());

@@ -28,6 +28,7 @@ pub enum ResolvedOutputSchemaRule {
     FromInput(usize),
     TransposeOfInput(usize),
     Declared(SchemaBody),
+    DynamicMap,
     DynamicSetCartesianProduct,
     DynamicSetPowerset,
 }
@@ -188,6 +189,18 @@ pub fn materialize_resolved_output(
             .ok_or_else(|| invalid_rule(format!("input {index} is unavailable")))?,
         ResolvedOutputSchemaRule::TransposeOfInput(_) => unreachable!("handled above"),
         ResolvedOutputSchemaRule::Declared(body) => body.clone(),
+        ResolvedOutputSchemaRule::DynamicMap => {
+            let SchemaBody::Map { key, value, .. } =
+                schema_body_from_resolved(resolved.kind(), resolved.dimension_parameters())?
+            else {
+                return Err(invalid_rule("dynamic map output requires a map kind"));
+            };
+            SchemaBody::Map {
+                key,
+                value,
+                cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+            }
+        }
         ResolvedOutputSchemaRule::DynamicSetCartesianProduct => {
             if inputs.len() != 2 {
                 return Err(invalid_rule(format!(

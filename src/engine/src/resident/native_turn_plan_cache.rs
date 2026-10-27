@@ -2,7 +2,8 @@
 use super::*;
 use crate::memory_planner::{TurnMemoryFacts, TurnMemoryPlan};
 use mech_core::{
-    CallMemoryPlan, CurrentMemoryFootprint, ManagedMemoryReservation, MemoryBudgetLimits,
+    CallMemoryPlan, CurrentMemoryFootprint, ManagedMemoryReservation, ManagedNodeReservation,
+    MemoryBudgetLimits,
 };
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 
@@ -42,6 +43,7 @@ pub(crate) struct NativeTurnPlanCache {
     miss_work: u64,
     // Every owned map/plan and its retirement precede this reservation's drop.
     reservation: ManagedMemoryReservation,
+    _nodes: ManagedNodeReservation,
 }
 
 impl NativeTurnPlanCache {
@@ -78,11 +80,19 @@ impl NativeTurnPlanCache {
         metadata: u64,
         descriptor_work: u64,
         reservation: ManagedMemoryReservation,
+        nodes: ManagedNodeReservation,
         work: &NativeLibraryWorkBudget,
     ) -> Result<Rc<Self>, ResidentKernelError> {
         if reservation.capacity_bytes()
             != Self::retained_bytes(call, metadata).ok_or(ResidentKernelError::InvalidShape)?
             || reservation.budget() != work.memory_budget()
+            || nodes.budget() != work.memory_budget()
+            || nodes.nodes()
+                != 1u64
+                    .checked_add(
+                        Self::retained_data_nodes(call).ok_or(ResidentKernelError::InvalidShape)?,
+                    )
+                    .ok_or(ResidentKernelError::InvalidShape)?
         {
             return Err(ResidentKernelError::InvalidInput);
         }
@@ -137,6 +147,7 @@ impl NativeTurnPlanCache {
             probe_work,
             miss_work: metadata,
             reservation,
+            _nodes: nodes,
         }))
     }
 
@@ -156,6 +167,30 @@ impl NativeTurnPlanCache {
             .capacity_bytes()
             .checked_add(self.snapshot_index.bytes())
             .unwrap_or(u64::MAX)
+    }
+
+    pub(crate) fn retained_metadata_demand(
+        &self,
+        work: &NativeLibraryWorkBudget,
+    ) -> Result<ResourceDemand, ResidentKernelError> {
+        if !self.validate(self.limits, work) {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+        // Planning/fact/schema metadata remains fully byte-admitted, including
+        // unused coexistence capacity. Count its one cache owner, then the
+        // existing index/weak-data witnesses, as maintained planner admission
+        // does. Reserved bytes are not live semantic/data nodes.
+        let metadata = self.reservation.capacity_bytes();
+        Ok(ResourceDemand {
+            turn_peak_bytes: metadata
+                .checked_add(self.snapshot_index.bytes())
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            retained_nodes: 1u64
+                .checked_add(self.snapshot_index.nodes())
+                .and_then(|n| n.checked_add(self.data_nodes))
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            ..ResourceDemand::default()
+        })
     }
     pub(crate) fn index_nodes(&self) -> u64 {
         self.snapshot_index
@@ -380,6 +415,7 @@ mod tests {
             probe_work: 1,
             miss_work: 1,
             reservation: memory.reserve_capacity(4096).unwrap(),
+            _nodes: memory.reserve_nodes(1).unwrap(),
         });
         let plan = Arc::new(detached_turn_plan(ResourceDemand::default()).unwrap());
         assert_eq!(retained_bytes(), 0);

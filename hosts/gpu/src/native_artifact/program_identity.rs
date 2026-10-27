@@ -1,4 +1,4 @@
-//! Explicit program IR/ABI12 identity. No Debug or pointer serialization.
+//! Explicit program IR/ABI identity. No Debug or pointer serialization.
 use mech_engine::native_artifact::{
     NativeIterationAction, NativeIterationTerminator, NativeIterationValueScope, NativeMatchAction,
     NativeMatchTerminator, NativeProgramArtifactPlan, NativeScalarKind, NativeSelectedTextJoin,
@@ -67,7 +67,140 @@ fn selected_template(
 // authenticate Objects emitted before the corrected retention instructions.
 // IR27 pins the optional sole-use Range producer/endpoints/inclusivity in the
 // selected matrix-join proof. The three original LibraryCall visits remain.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 27;
+// IR28 pins funded canonical child bindings in structural patterns.
+// IR29 pins the complete same-plan retained-map candidate and word inventory
+// carried by build-owned descriptors. It does not activate owner execution.
+// IR30 pins the explicit owner boundary after borrowed/closed-loop storage;
+// candidate words may not overlap those separately retained metadata lanes.
+// IR31 selects conditional owner words and per-region live flags.
+// IR32 pins non-escaping range/String projections used by retained map keys.
+// IR33 pins single-entry native owner groups and precise interior error origins.
+// IR34 pins acyclic native path frontiers and fused map-helper admission.
+// IR35 binds a private storage pair and pinned String to closed map Tail bodies.
+// IR36 admits a closed map Tail within an ordinary suspended parent loop.
+// IR37 carries an invariant-width proof for generated private map storage.
+// IR38 versions closed packed bodies into native SSA while preserving the
+// original source CFG. Private op13 attests actual first-header selection.
+// IR40 binds constructor-private parallel entries to immutable root captures
+// and original collection result frontiers; linked children share ABI21.
+// IR41 adds source-derived finite character domains to those same generated
+// SSA bodies, retaining every canonical String map key and worker boundary.
+// IR42 probes eight admitted control bytes with SIMD equality, retaining full
+// packed-key verification, bounded wraparound and original source updates.
+// IR43 substitutes only scalar guards/arithmetic proved by bounded exact
+// current-traversal edge facts; source CFG, work charges and ABI are unchanged.
+// IR44 selects a one-word key only when every admitted width fits the proved
+// source domain; both representations retain the complete U64 source count.
+// IR45 threads exact enum tags through a bounded product CFG. Initial/unknown
+// tags still dispatch, and all original header debits and terminal visits run.
+// IR46 emits the ABI24 folded-product hash in generated packed probes.
+// IR47 synchronizes proved private helper read/write sets in packed SSA;
+// the ABI, source work, finite charges and full exit/error spills are unchanged.
+// IR48 adds a source-proved unsigned stop/range version, selected only when
+// invariant widths/limits fit the actual pinned source. Original work remains.
+// ABI25 binds private op14's validated, once-per-invocation selection receipt.
+// IR49 binds complete-use frozen owners and private same-scope read helpers.
+// IR50 carries source-proved current-key cache/presence facts within one
+// closed traversal. New selections, headers and mutations invalidate aliases.
+// IR51 removes only literal constant branches and unreachable continuations
+// after native data optimization, before register allocation. Work is unchanged.
+// IR52 isolates proved closed packed loops into local native functions; the
+// identical inline body remains the fallback and finite work is unchanged.
+// IR53 versions guarded calls and peels rolling-key adjacency into a
+// source-proved steady loop. ABI27 binds the actual call-guard selection.
+// IR54 cleans literal control flow before the single ordinary backend data
+// optimization pass, avoiding repeated expression placement/rematerialization.
+// IR55 moves native helper register preservation into an owned PreserveAll
+// bridge. The original C ABI, source work envelope and finite limits remain.
+// IR56 gives that bridge one caller-owned scratch-pointer argument instead of
+// nine register/stack arguments. Original helper arguments and status remain.
+// IR57 stores exact invocation-constant helper bindings once, outside the
+// loop. Distinct function/context operands retain the ordinary native call.
+// IR58 proves a single insertion per index+1 recurrence, checks the active
+// entry's tally/index equality, and reuses that exact source progress. Only
+// certified completed recurrence nodes establish steady nonempty storage.
+// IR59 proves the stored-value bound of an empty, single-insertion source
+// recurrence before omitting its exact read+1 source overflow checks.
+// IR60 loads admitted AArch64 control groups directly into a 64-bit vector;
+// integer fingerprints/empty masks and the eight-byte read extent remain.
+// IR61 was an unpromoted cache-header experiment. IR62 binds immutable hash
+// constants and a source-certified endpoint in owned caller stack storage.
+// Rust helper ABI, packed frame layout and original work prices remain.
+// IR63 was an unpromoted lookup-state experiment. IR64 separates a proved
+// funded, present-entry source trace from its precise cold continuations.
+// The original helper ABI, source operations and finite work prices remain.
+// IR65 folds scalar expressions before constant control-edge cleanup inside
+// helper-free funded functions; ordinary/checked functions keep IR64's policy.
+// IR66 was an unpromoted immutable-snapshot experiment. IR67 versions the
+// helper-free source graph by the actual private width, with bounded complete
+// constant-width arms and the original generic fallback.
+// IR68 moves the identical fuel test to each incoming header edge, keeping
+// exact header continuations while retiring prior-iteration snapshot liveness.
+// IR69 also admits productive traversal at those incoming edges. Terminal
+// traversal returns before its original header/debit for exact outer replay.
+// IR70 gives each incoming header edge its own precise cold snapshot, avoiding
+// initial/completed-state joins while retaining the same source continuation.
+// IR71 admits a direct present-entry continuation, a peeled first control
+// group and raw first-match SIMD bits. Precise missing/error continuations,
+// bounded later probing and original work prices remain.
+// IR72 strip-mines the proved +1 source recurrence by its existing prepaid
+// fuel and endpoint. A cold stack word reconstructs exact fuel on every exit;
+// the hot source loop needs one stopping bound and no fuel counter mutation.
+// IR73 binds that prepaid extent and cold fuel base as private call arguments,
+// preventing loop rematerialization of their scalar preparation. Original
+// source continuations, finite credit and external helper ABI remain unchanged.
+// IR74 represents the proved adjacent read by a source-derived byte cursor.
+// Opaque caller stop/credit pointers preserve the exact prepaid extent; cold
+// continuations recover the original scalar counter and previous selection.
+// IR75 reconstructs only source-proved affine scalar/frame values inside
+// their precise cold continuations. Initial and completed cursor coordinates
+// remain distinct; unknown values retain their original SSA storage.
+// IR76 obtains the cold index bias from the owned frame at the snapshot,
+// rather than sharing the hot source SSA expression and its live registers.
+// Frame immutability, source recipes and original finite prices are unchanged.
+// IR77 / ABI28 add an optional bounded complete-key lookup cache over the
+// original hash table. Every key and source update remains; allocation, cache
+// maintenance and growth refreshes are admitted under work policy66.
+// IR78 separates admitted cached and ordinary hash funded functions. Both
+// emit the original source graph; the caller binds actual cache/width guards,
+// and code/stack admission includes both versions under unchanged prices.
+// IR79 declares disjoint origin, borrowed-view and scalar-Tail metadata
+// storage to native alias analysis. Calls retain full memory effects, and
+// source checks, prices and continuation clearance remain unchanged.
+// IR80 binds aligned private control-group placement to generated probes.
+// Candidate payload addresses use control-bit byte offsets and an early group
+// base. Frame layout, finite body prices and per-group charges are unchanged.
+// IR81 / ABI29 read selected rows directly from existing LF offsets in a
+// pinned one/two-chunk ASCII window. Other representations keep checked cells.
+// IR82 composes a sole-use selected join with its source-derived byte map in
+// initialized physical chunks. Original error/admission boundaries remain.
+// IR86 carries a private same-account initialized String buffer across a
+// complete-use-proved join/map chain, without a frozen intermediate or a
+// second UTF-8 scan. Original admissions, finite prices and ABI30 remain.
+// IR87 / ABI31 loads immutable selected-source spans and maps directly into
+// checked output spare capacity. The original finite join/map prices remain;
+// only a complete initialized-extent receipt permits publishing its length.
+// IR88 / ABI32 prepare joined-map byte tables once at the owning host
+// boundary, avoiding per-row u16-to-byte conversion. Original source proofs,
+// geometry/extent receipts, work policy69 and finite prices are unchanged.
+// IR89 reads only the length home for a borrowed Length action. The unused
+// pointer load is absent; source checks, finite prices, ABI32 and policy69
+// remain. No new memory-access promise is made.
+// IR90 marks only owner-proved private origin/view/scalar-loan homes nontrapping.
+// Mutable values, callback barriers, source bounds, ABI32 and policy69 remain;
+// no readonly, alignment or arbitrary code-motion permission is introduced.
+// IR91 / ABI33 share a prepared byte-table format between ordinary and joined
+// mapping. A verified low-five-bit projection selects a two-vector leaf;
+// incompatible maps retain all 128 cells. All source prices and owners remain.
+// IR92 runs admitted callback-free scalar Tails with the maintained bounded
+// tag graph and SSA aggregate/view homes. Original checkpoint, error, work
+// prices, fallback and owner-retirement boundaries remain; ABI33 is unchanged.
+// IR93 loads initialized candidate payloads beside hash keys in helper-free
+// source loops. A callee-local valid bit preserves ordinary reload fallback;
+// no runtime frame, resource price or library/storage ABI changes.
+// IR94 reads the two initialized narrow-slot words together; wide slots retain
+// separate full-width accesses. Runtime storage and original prices are unchanged.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 94;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -137,7 +270,72 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 27;
 // complete weak identity shell before use. It never retains source payloads
 // or permissions; every call still pays the original full scan bound and
 // validates its fresh owners, shapes and finite limits on the same ledger.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 37;
+// Policy38 retains actual library hash-table updates for compiled ASCII
+// windows instead of dense or query-only counters. Growth, collisions and
+// ownership remain finite on the original invocation account. ABI13 binds the
+// new private accumulator/callback loans and rejects preceding Object images.
+// Policy39 produces rolling ASCII keys in the emitted loop and amortizes
+// finite work on the same account. Capacity changes prepay remaining deltas;
+// every window still updates the library table. ABI14 binds packed-key loans.
+// Policy40 batches at most 128 initialized rolling keys in descriptor-admitted
+// stack storage. ABI15 binds the private batch callback contract; every key
+// retains its original table update and finite accounting.
+// Policy41 admits canonical structural child measurement, copying and finalization
+// on the same invocation ledger before publishing the bound value.
+// Policy42 retains admitted node witnesses and funds per-slot node metadata;
+// old Objects must not reuse the earlier snapshot/transport allocation prices.
+// Policy43 funds each snapshot owner's account-wide node witness claim. The
+// complete owner size, including that claim, remains part of byte admission.
+// Policy44 removes the superseded per-slot node census. The account-wide
+// snapshot claim still covers admitted owners, including caller-held roots.
+// Policy45 retains the recursive binding node witness independently of byte
+// reservations. Older Objects must not reuse the preceding binding layout price.
+// Policy46 retains lazy map-owner session metadata through entry boundaries.
+// Fixed caller geometry includes that state; table allocations remain lazy.
+// Policy47 funds owner transport and retained session entry/call/exit operations.
+// Policy48 maintains call-cache metadata totals at mutation boundaries rather
+// than scanning every unrelated cache during each retained-map operation.
+// Policy49 funds selected map-key metadata and genuine-owner projection lanes.
+// Policy50 prepays straight-line native groups, retaining per-block canonical
+// fallback prices and all library/ownership/loop admission boundaries.
+// Policy51 admits an immutable outer caller census for closed map loops.
+// Snapshot and cache holdings stay dynamic; each loop invocation owns its census.
+// Policy52 prepays every native branch in an acyclic path and validates the
+// next observable frontier. Map helpers admit themselves on the same ledger.
+// Policy53 prepays bounded source-body batches on the same account used by
+// private map storage. Checked growth and canonical publication remain funded.
+// Policy54 retains one successful range shape in the invocation-owned map
+// lane. Fresh endpoints and changed shapes are checked; full selector work
+// and scratch remain prepaid, and private owner metadata remains accounted.
+// Policy55 shares one setup/teardown of the native call's thread-local
+// account, observer and cap addresses, preserving all debits and restoration.
+// Policy56 retains a same-version lookup for one pinned immutable key in a
+// closed loop. Full lookup debits remain; every write invalidates the proof.
+// Policy57 fuses a selected adjacent range/String projection in a closed map
+// body. Both original visits, range charges and diagnostic origins remain.
+// Policy58 prepays bounded packed-map bodies and growth deltas on the same
+// finite account. Generated probes/stores retain every source operation.
+// Policy59 fences the SSA emission/protocol; existing finite body prices and
+// source-operation caps remain in force, including slow-path synchronization.
+// Policy61 lends finite parent work to isolated native children, accounts their
+// shared memory concurrently, and reconciles all spending before publication.
+// Policy62 includes compact-key validation and decoding inside the existing
+// finite loop, growth and publication bounds, with shared worker claims intact.
+// Policy63 admits both control/slot containers and their simultaneous growth;
+// ABI22 pins the new control pointer and three-word payload slot layout.
+// Policy64 prices the actual domain-selected slot backing and its concurrent
+// growth. Full-chain body prices, source-call caps and shared claims remain.
+// ABI23 binds both payload layouts; the packed Frame remains nineteen words.
+// Policy65 prices complete frozen-map validation and private read probes;
+// physical canonical-map import, sorting and allocation are genuinely absent.
+// Policy67 admits the actual immutable-owner layout containing its inline
+// shared String representation fact. Original scan charges remain in force.
+// Policy68 includes the inline borrowed-offset descriptors in the actual loan
+// layout. Original row/payload work and row-capacity claims stay in force.
+// Policy69 admits the actual composition-state layout and requires a bounded
+// chunk/table computation to fit the original prepaid join envelope. Source
+// operation prices, finite allowances and later map charges are unchanged.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 69;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
@@ -197,6 +395,8 @@ pub(super) fn typed_ir_sha256(
     frontiers: &[NativeTextLineRetentionFrontier],
     joins: &[NativeSelectedTextJoin],
     lines: &[NativeTextLineMatrixRegion],
+    map_owners: Option<&mech_engine::native_artifact::NativeMapOwnerWords>,
+    frozen_maps: &super::program_frozen_map_layout::Layout,
 ) -> [u8; 32] {
     let mut hash = Sha256::new();
     hash.update(b"mech.canonical-managed-program-cfg\0");
@@ -204,6 +404,28 @@ pub(super) fn typed_ir_sha256(
     word(&mut hash, super::program_abi::VERSION);
     word(&mut hash, NATIVE_PROGRAM_WORK_POLICY_VERSION);
     hash.update(plan.program_revision().as_bytes());
+    bytes(&mut hash, b"mech.complete-frozen-map-layout.v1");
+    serde_json::to_writer(ProofDigest(&mut hash), frozen_maps)
+        .expect("frozen map proof contains only finite ordered integer fields");
+    // These proof records contain only ordered struct/enum fields, arrays and
+    // integer words (no maps, floats, pointers or Debug output). Stream their
+    // complete encoding, including lengths and otherwise unused candidates,
+    // rather than reconstructing selection or allocating a second image.
+    bytes(&mut hash, b"mech.retained-map-candidate-layout.v1");
+    struct ProofDigest<'a>(&'a mut Sha256);
+    impl std::io::Write for ProofDigest<'_> {
+        fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+            self.0.update(bytes);
+            Ok(bytes.len())
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+    // The fixed proof grammar above has no fallible JSON values; the digest
+    // sink is infallible. A failure still receives a distinct invalid marker.
+    let encoded = serde_json::to_writer(ProofDigest(&mut hash), &map_owners);
+    word(&mut hash, u64::from(encoded.is_ok()));
     word(&mut hash, frontiers.len() as u64);
     for frontier in frontiers {
         word(&mut hash, u64::from(frontier.iteration()));
@@ -430,6 +652,9 @@ pub(super) fn typed_ir_sha256(
                     }
                 }
                 match observation {
+                    mech_engine::native_artifact::NativeStructuralObservation::CanonicalValue => {
+                        hash.update([3]);
+                    }
                     mech_engine::native_artifact::NativeStructuralObservation::U64 => {
                         hash.update([0])
                     }

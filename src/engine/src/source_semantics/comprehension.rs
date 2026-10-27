@@ -35,7 +35,11 @@ pub(super) struct PendingComprehensionOperation {
 }
 
 impl PendingComprehension {
-    pub(super) fn visit_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
+    pub(super) fn visit_schemas(
+        &self,
+        constants: &[PendingConstant],
+        visit: &mut impl FnMut(&SchemaDraft),
+    ) {
         for step in &self.steps {
             match step {
                 PendingComprehensionStep::Generator { pattern, .. } => {
@@ -50,13 +54,13 @@ impl PendingComprehension {
                         | PendingControlOperationBody::Suspend
                         | PendingControlOperationBody::Publish => {}
                         PendingControlOperationBody::Match(nested) => {
-                            nested.visit_schemas(visit);
+                            nested.visit_schemas(constants, visit);
                         }
                         PendingControlOperationBody::Comprehension(nested) => {
-                            nested.visit_schemas(visit);
+                            nested.visit_schemas(constants, visit);
                         }
                         PendingControlOperationBody::Iteration(nested) => {
-                            nested.visit_schemas(visit)
+                            nested.visit_schemas(constants, visit)
                         }
                     }
                 }

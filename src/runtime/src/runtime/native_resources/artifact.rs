@@ -319,7 +319,7 @@ pub struct CanonicalNativeResourceTextChunk<'a> {
     revision: ProgramRevision,
     invocation: CanonicalNativeResourceInvocation,
     offset: u64,
-    text: &'a str,
+    fragment: mech_core::Utf8Fragment<'a>,
 }
 impl CanonicalNativeResourceTextChunk<'_> {
     pub fn site(&self) -> &CanonicalNativeResourceSite {
@@ -335,7 +335,10 @@ impl CanonicalNativeResourceTextChunk<'_> {
         self.offset
     }
     pub fn text(&self) -> &str {
-        self.text
+        self.fragment.text()
+    }
+    pub fn fragment(&self) -> mech_core::Utf8Fragment<'_> {
+        self.fragment
     }
 }
 
@@ -742,7 +745,7 @@ impl MechRuntime {
                             staged,
                             site.schema_key,
                             buffer,
-                            &mut |text| {
+                            &mut |fragment| {
                                 chunk(
                                     &mut prepared.state,
                                     CanonicalNativeResourceTextChunk {
@@ -750,11 +753,12 @@ impl MechRuntime {
                                         revision: plan.revision,
                                         invocation,
                                         offset,
-                                        text,
+                                        fragment,
                                     },
                                 )?;
-                                offset =
-                                    offset.checked_add(text.len() as u64).ok_or_else(|| {
+                                offset = offset
+                                    .checked_add(fragment.text().len() as u64)
+                                    .ok_or_else(|| {
                                         error("native text delivery offset overflows")
                                     })?;
                                 Ok(())

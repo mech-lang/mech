@@ -3,7 +3,7 @@
 use super::*;
 use crate::resource_text_capture::{ConsumerFailure, DeferredCaptureFailure};
 use crate::{RuntimeTextCaptureBuffer, RuntimeTextCaptureError, RuntimeTextCaptureSummary};
-use mech_core::{SchemaKey, ValueData};
+use mech_core::{SchemaKey, Utf8Fragment, ValueData};
 use std::{convert::Infallible, io::Cursor};
 
 fn invalid(reason: &str) -> MechError {
@@ -53,7 +53,7 @@ impl RuntimeResourceRegistry {
         staged: Option<Value>,
         expected: SchemaKey,
         buffer: RuntimeTextCaptureBuffer,
-        consumer: &mut dyn FnMut(&str) -> MResult<()>,
+        consumer: &mut dyn FnMut(Utf8Fragment<'_>) -> MResult<()>,
     ) -> MResult<Result<RuntimeTextCaptureSummary, ConsumerFailure<MechError>>> {
         let (entry, label) = self.text_capture_provider(&request)?;
         let finish = |result| match result {
@@ -97,7 +97,9 @@ impl RuntimeResourceRegistry {
                     "staged String schema differs from canonical observation",
                 ));
             }
-            return finish(buffer.capture_deferred(Cursor::new(text.as_bytes()), consumer));
+            return finish(
+                buffer.capture_fragments_deferred(Cursor::new(text.as_bytes()), consumer),
+            );
         }
         if !invoke_extension_value(label.clone(), "supports_single_use_text_capture", || {
             entry.provider.supports_single_use_text_capture(&request)
@@ -115,7 +117,7 @@ impl RuntimeResourceRegistry {
                     let Some(buffer) = buffer.take() else {
                         return Err(invalid("provider replayed a one-shot text reader"));
                     };
-                    result = Some(buffer.capture_deferred(reader, &mut *consumer));
+                    result = Some(buffer.capture_fragments_deferred(reader, &mut *consumer));
                     // Do not unwind a native consumer panic through provider locks.
                     // Finish the reader loan first; propagate it below only if the
                     // complete capture succeeded. No provider retry is permitted.

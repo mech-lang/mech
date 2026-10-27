@@ -6,8 +6,8 @@
 use super::{budget, general::*};
 use crate::text_index::PreparedGraphemeIndex;
 use mech_core::{
-    ManagedMemoryBudget, ManagedMemoryReservation, MemoryDomainId, ResidentKernelError,
-    ResidentKernelInputs, ResidentValueMut, ResidentValueRef,
+    ManagedMemoryBudget, ManagedMemoryReservation, ManagedNodeReservation, MemoryDomainId,
+    ResidentKernelError, ResidentKernelInputs, ResidentValueMut, ResidentValueRef,
 };
 use std::{cell::RefCell, rc::Rc};
 
@@ -61,6 +61,9 @@ struct Backing {
     bytes: u64,
     nodes: u64,
     _reservation: Option<ManagedMemoryReservation>,
+    // Native snapshot claims follow the Rc-backed offsets, including loans
+    // that outlive the binding slot. Dense lexical owners use their own census.
+    _native_nodes: Option<ManagedNodeReservation>,
 }
 impl Backing {
     fn reserve(owner: &Owner, bytes: u64, nodes: u64) -> Result<Self, ResidentKernelError> {
@@ -96,6 +99,7 @@ impl Backing {
             bytes,
             nodes,
             _reservation: reservation,
+            _native_nodes: None,
         })
     }
 }
@@ -575,6 +579,7 @@ fn prepare(
             bytes: 0,
             nodes: 0,
             _reservation: None,
+            _native_nodes: None,
         }),
     });
     if let Some((scope, slot)) = selected {

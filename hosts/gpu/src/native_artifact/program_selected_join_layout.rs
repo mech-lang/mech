@@ -1,5 +1,7 @@
 //! Immutable site associations derived only from the canonical complete-use proof.
 use mech_engine::native_artifact::{NativeProgramArtifactPlan, NativeSelectedTextJoin};
+#[path = "program_selected_join_map_layout.rs"]
+pub(super) mod mapped;
 
 #[derive(Clone, Copy, Debug, serde::Serialize, serde::Deserialize)]
 pub(super) enum Site {
@@ -14,6 +16,7 @@ pub(super) struct Layout {
     #[serde(deserialize_with = "super::program_descriptor::image::proof")]
     pub regions: Box<[NativeSelectedTextJoin]>,
     pub sites: Box<[Option<Site>]>,
+    pub maps: Box<[Option<mapped::Map>]>,
 }
 
 impl Layout {
@@ -59,7 +62,16 @@ impl Layout {
                 }
             }
         }
-        Ok(Self { regions, sites })
+        let string_maps = plan.string_map_regions();
+        let maps = regions
+            .iter()
+            .map(|join| mapped::derive(plan, join, &string_maps))
+            .collect();
+        Ok(Self {
+            regions,
+            sites,
+            maps,
+        })
     }
 }
 

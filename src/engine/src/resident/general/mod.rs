@@ -30,6 +30,11 @@ pub(crate) mod native_comprehension_lowering;
 pub(crate) mod native_lowering;
 #[cfg(feature = "native-artifact")]
 pub(crate) mod native_match_lowering;
+#[cfg(all(
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
+pub(crate) mod native_structural_projection;
 #[cfg(feature = "native-artifact")]
 mod native_tail_lowering;
 
@@ -5448,7 +5453,7 @@ fn closed_producer_disposition(
     if operation.module_path.as_ref() == ["map"]
         && matches!(
             operation.operation_name.as_str(),
-            "histogram" | "keys" | "values"
+            "histogram" | "keys" | "values" | "new" | "insert" | "contains-key"
         )
         || operation.module_path.as_ref() == ["number"]
             && matches!(operation.operation_name.as_str(), "format" | "parse-u64")
@@ -22563,6 +22568,21 @@ mod shape_fact_tests {
             (&["compare"], "gte"),
         ];
         const DEFERRED_PRODUCERS: &[(&[&str], &str, ClosedProducerDisposition)] = &[
+            (
+                &["map"],
+                "new",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["map"],
+                "contains-key",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
+            (
+                &["map"],
+                "insert",
+                ClosedProducerDisposition::DeferredPureValue,
+            ),
             (
                 &["map"],
                 "histogram",

@@ -32,10 +32,30 @@ impl Context<'_, '_> {
             .collections
             .take()
             .ok_or_else(|| invalid("compiled String map lacks state"))?;
-        let result = state.prepare_compiled_string_map(self, region, args[0]);
+        enum Bound {
+            Complete,
+            Kernel([u64; 5]),
+            Declined,
+        }
+        let result = (|| {
+            if let Some(processed) = state.prepare_joined_string_map(self, region, args[0])? {
+                state.finish_compiled_string_map(self, region, args[0], processed)?;
+                Ok(Bound::Complete)
+            } else {
+                state
+                    .prepare_compiled_string_map(self, region, args[0])
+                    .map(|words| words.map_or(Bound::Declined, Bound::Kernel))
+            }
+        })();
         self.collections = Some(state);
-        let Some(words) = result? else {
-            return Ok(Some(0));
+        let words = match result? {
+            Bound::Declined => return Ok(Some(0)),
+            Bound::Complete => {
+                self.control.progress[region.iteration() as usize * 2] = 0;
+                self.call_inputs.values_mut()[..2].fill(None);
+                return Ok(Some(2));
+            }
+            Bound::Kernel(words) => words,
         };
         self.window_region = Some((region.collection(), args[0]));
         self.write_window_arguments(words)?;

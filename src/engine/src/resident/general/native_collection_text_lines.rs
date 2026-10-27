@@ -17,7 +17,9 @@ mod captured_line_tests;
 mod chunks;
 #[path = "native_collection_line_reads.rs"]
 mod reads;
-pub use chunks::{NativeTextLineCaptureFacts, NativeTextLineChunks, NativeTextLineWindow};
+pub use chunks::{
+    NativeTextLineCaptureFacts, NativeTextLineChunks, NativeTextLineJoinChunk, NativeTextLineWindow,
+};
 
 /// Immutable logical line matrix admitted by the maintained prepared factory.
 /// Snapshot rows retain their scalar String; captured backing retains only
@@ -85,6 +87,27 @@ impl NativeTextLineMatrix {
             target,
         )?;
         Ok(true)
+    }
+    pub(super) fn append_capture_join_chunk(
+        &mut self,
+        first: u64,
+        end: u64,
+        target: &mut Vec<u8>,
+    ) -> Result<Option<u64>, InvokeError> {
+        let Backing::Captured(owner) = &mut self.backing else {
+            return Err(InvokeError::InvalidInput);
+        };
+        owner.append_joined_chunk(first, end, target)
+    }
+    pub(super) fn take_capture_join_chunk(
+        &mut self,
+        first: u64,
+        end: u64,
+    ) -> Result<Option<NativeTextLineJoinChunk>, InvokeError> {
+        let Backing::Captured(owner) = &mut self.backing else {
+            return Err(InvokeError::InvalidInput);
+        };
+        owner.take_join_chunk(first, end)
     }
     pub fn shape(&self) -> &ShapeInstance {
         &self.shape

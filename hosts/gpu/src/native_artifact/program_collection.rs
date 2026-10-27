@@ -6,8 +6,9 @@ use crate::native_artifact::{
 };
 use core::mem::size_of;
 use mech_core::{
-    ManagedMemoryBudget, ManagedMemoryReservation, MemoryBudgetDimension as Dimension,
-    MemoryBudgetLimits, ResidentKernelError, ResidentResourcePhase, Value, ValueData,
+    ManagedMemoryBudget, ManagedMemoryReservation, ManagedNodeReservation,
+    MemoryBudgetDimension as Dimension, MemoryBudgetLimits, ResidentKernelError,
+    ResidentResourcePhase, Value, ValueData,
     snapshot::{SnapshotValidationContext, ValueDataDraft, ValueDraft},
 };
 use mech_engine::{
@@ -31,6 +32,21 @@ pub(super) fn admitted_capacity<T>(
 }
 #[path = "program_collection_data.rs"]
 mod data;
+pub(super) fn source_count(value: &Value) -> Result<u64, Error> {
+    data::count(value)
+}
+/// Optional constant-time scheduling hint for an already admitted Matrix/Set.
+/// Atomic elements count as one unit; text uses its retained UTF-8 byte length.
+/// This borrows no new owner and grants no source visit or execution authority.
+pub(super) fn element_work_hint(value: &Value, ordinal: u64) -> u64 {
+    if !matches!(value.data(), ValueData::Matrix(_) | ValueData::Set(_)) {
+        return 1;
+    }
+    match data::element(value, ordinal, 0) {
+        Ok((data::Element::Text(text), _)) => (text.len() as u64).max(1),
+        _ => 1,
+    }
+}
 #[path = "program_histogram.rs"]
 mod histogram;
 #[path = "program_histogram_layout.rs"]
@@ -59,6 +75,7 @@ struct Source {
     // Present only for a certified borrowed String-element generator.
     handle: Option<NativeValueHandle>,
     count: u64,
+    index_offset: u64,
     byte_offset: usize,
     element: Option<(NativeValueHandle, u64)>,
 }
@@ -86,6 +103,7 @@ struct Builder {
     compute: u64,
     projection_comparison: u64,
     reservation: ManagedMemoryReservation,
+    nodes: ManagedNodeReservation,
 }
 pub(super) struct State {
     sources: Vec<Option<Source>>,
@@ -109,6 +127,7 @@ pub(super) struct State {
     // complete fixed metadata reservation below. No canonical root is kept.
     ascii_facts: ascii_facts::Cache,
     _metadata: ManagedMemoryReservation,
+    _metadata_nodes: ManagedNodeReservation,
 }
 fn add(left: u64, right: u64) -> Result<u64, Error> {
     left.checked_add(right)
@@ -118,7 +137,7 @@ fn mul(left: u64, right: u64) -> Result<u64, Error> {
     left.checked_mul(right)
         .ok_or_else(|| invalid("native collection size/work overflow"))
 }
-fn check(
+pub(super) fn check(
     origin: Origin,
     dimension: Dimension,
     required: u64,
@@ -142,6 +161,59 @@ fn charge(work: &mut NativeWorkMeter, amount: u64) -> Result<(), Error> {
     work.charge(Phase::Setup, amount).map_err(Into::into)
 }
 impl State {
+    /// Only otherwise-unclaimed private owners in the parked parent. The
+    /// common lane, drafts, TextJoin and canonical roots have their own claims.
+    pub(super) fn parked_private_nodes(
+        &self,
+        work: &mut NativeWorkMeter,
+    ) -> Result<Option<u64>, Error> {
+        if self.active_string_spans != 0 || self.active_string_maps != 0 {
+            return Ok(None);
+        }
+        charge(work, super::amount(self.builders.len(), 256, 512)?)?;
+        let mut nodes = 0;
+        for builder in self.builders.iter().flatten() {
+            if builder
+                .join
+                .as_ref()
+                .is_some_and(|join| join.has_compiled_map())
+            {
+                return Ok(None);
+            }
+            if let Some(histogram) = &builder.histogram {
+                nodes = add(nodes, histogram.caller_retained_nodes()?)?;
+            }
+            if builder.query.is_some() {
+                // Query scalars already have canonical snapshot claims.
+                nodes = add(nodes, 2)?;
+            }
+        }
+        Ok(Some(nodes))
+    }
+
+    pub(super) fn caller_retained_nodes(&self, work: &mut NativeWorkMeter) -> Result<u64, Error> {
+        charge(work, super::amount(self.builders.len(), 256, 512)?)?;
+        // This reservation contains fixed per-site carriers and weak ASCII
+        // metadata, not collection payloads. Its capacity bounds those nodes.
+        let mut nodes = add(self._metadata.capacity_bytes(), self.retained_nodes()?)?;
+        for builder in self.builders.iter().flatten() {
+            // CollectionPush accepts only scalar/Index/String drafts. Each
+            // draft contributes at most one node, plus the flat carrier/root.
+            // Bodies and input payloads are never traversed here.
+            nodes = add(nodes, add(builder.values.len() as u64, 2)?)?;
+            if let Some(join) = &builder.join {
+                nodes = add(nodes, join.caller_retained_nodes())?;
+            }
+            if let Some(histogram) = &builder.histogram {
+                nodes = add(nodes, histogram.caller_retained_nodes()?)?;
+            }
+            if let Some(query) = &builder.query {
+                nodes = add(nodes, query.caller_retained_nodes()?)?;
+            }
+        }
+        Ok(nodes)
+    }
+
     pub(super) fn retained_demand(&self) -> Result<mech_core::ResourceDemand, Error> {
         Ok(mech_core::ResourceDemand {
             turn_peak_bytes: self.live_bytes,
@@ -197,6 +269,7 @@ impl State {
         )?;
         charge(work, add(mul(bytes, 8)?, 256)?)?;
         let metadata = memory.reserve_capacity(bytes)?;
+        let metadata_nodes = memory.reserve_nodes(bytes)?;
         let sources = allocation::metadata(
             plan.iterations().len(),
             "collection source metadata allocation",
@@ -229,6 +302,7 @@ impl State {
             active_string_maps: 0,
             ascii_facts: ascii_facts::Cache::default(),
             _metadata: metadata,
+            _metadata_nodes: metadata_nodes,
         }))
     }
     pub(super) fn is_complete(&self) -> bool {
@@ -242,6 +316,21 @@ impl State {
     #[cfg(test)]
     pub(super) fn test_live_bytes(&self) -> u64 {
         self.live_bytes
+    }
+    #[cfg(test)]
+    pub(super) fn test_builder_kinds(&self) -> u8 {
+        self.builders.iter().flatten().fold(0, |kinds, builder| {
+            kinds
+                | if builder.join.is_some() {
+                    2
+                } else if builder.histogram.is_some() {
+                    4
+                } else if builder.query.is_some() {
+                    8
+                } else {
+                    1
+                }
+        })
     }
     fn builder(&mut self, id: u32) -> Result<&mut Builder, Error> {
         if self.current != Some(id) {
@@ -394,6 +483,7 @@ impl State {
                     return Err(invalid("collection begin outside exact enclosing builder"));
                 }
                 charge(&mut ctx.control.work, 64)?;
+                let nodes = ctx.library.memory_budget().reserve_nodes(2)?;
                 self.builders[*collection as usize] = Some(Builder {
                     values: Vec::new(),
                     join: None,
@@ -404,6 +494,7 @@ impl State {
                     compute: 0,
                     projection_comparison: 0,
                     reservation: ctx.library.memory_budget().reserve_capacity(0)?,
+                    nodes,
                 });
                 self.current = Some(*collection);
                 self.begin_text_join(ctx, *collection)?;
@@ -423,39 +514,49 @@ impl State {
                 }
                 let (backing, handle, count, cost) = match definition.source() {
                     NativeCollectionSource::Value(source) => {
-                        let handle = if plan.collections()[definition.collection() as usize]
-                            .string_element_map_projection()
-                            .is_some()
-                        {
-                            Some(
-                                ctx.arena
-                                    .current_handle(source.get(), &mut ctx.control.work)?,
-                            )
+                        if let Some(count) = ctx.initialize_joined_map(*iteration, source.get())? {
+                            self.account(
+                                ctx,
+                                definition.collection(),
+                                0,
+                                add(mul(count, 64)?, 64)?,
+                            )?;
+                            (SourceBacking::ConsumedString, None, count, 0)
                         } else {
-                            None
-                        };
-                        let value = ctx
-                            .arena
-                            .copy_current(source.get(), &mut ctx.control.work)?;
-                        let cost = match value.data() {
-                            ValueData::String(text) => add(mul(text.len() as u64, 64)?, 64)?,
-                            _ => 64,
-                        };
-                        self.account(ctx, definition.collection(), 0, cost)?;
-                        // A window-bearing descriptor has already admitted
-                        // the one weak fact slot. Keep the full fresh scan
-                        // charge above even when this exact root is a hit.
-                        let count = match value.data() {
-                            ValueData::String(text)
-                                if !descriptor.window_regions.is_empty()
-                                    && self.ascii_facts.inspect(&value)? =>
+                            let handle = if plan.collections()[definition.collection() as usize]
+                                .string_element_map_projection()
+                                .is_some()
                             {
-                                u64::try_from(text.len())
-                                    .map_err(|_| invalid("generator count exceeds u64"))?
-                            }
-                            _ => data::count(&value)?,
-                        };
-                        (SourceBacking::Value(value), handle, count, 0)
+                                Some(
+                                    ctx.arena
+                                        .current_handle(source.get(), &mut ctx.control.work)?,
+                                )
+                            } else {
+                                None
+                            };
+                            let value = ctx
+                                .arena
+                                .copy_current(source.get(), &mut ctx.control.work)?;
+                            let cost = match value.data() {
+                                ValueData::String(text) => add(mul(text.len() as u64, 64)?, 64)?,
+                                _ => 64,
+                            };
+                            self.account(ctx, definition.collection(), 0, cost)?;
+                            // A window-bearing descriptor has already admitted
+                            // the one weak fact slot. Keep the full fresh scan
+                            // charge above even when this exact root is a hit.
+                            let count = match value.data() {
+                                ValueData::String(text)
+                                    if !descriptor.window_regions.is_empty()
+                                        && self.ascii_facts.inspect(&value)? =>
+                                {
+                                    u64::try_from(text.len())
+                                        .map_err(|_| invalid("generator count exceeds u64"))?
+                                }
+                                _ => data::count(&value)?,
+                            };
+                            (SourceBacking::Value(value), handle, count, 0)
+                        }
                     }
                     NativeCollectionSource::U64Range(_) => {
                         let range = self.prepared_ranges[*iteration as usize]
@@ -474,11 +575,28 @@ impl State {
                 if cost != 0 {
                     self.account(ctx, definition.collection(), 0, cost)?;
                 }
+                let (count, index_offset) = if let Some(worker) = &ctx.worker
+                    && descriptor.parallel.regions[worker.region].iteration == *iteration
+                {
+                    if count != worker.count
+                        || worker.index >= count
+                        || !matches!(&backing, SourceBacking::Value(value)
+                            if matches!(value.data(), ValueData::Matrix(_) | ValueData::Set(_)))
+                    {
+                        return Err(invalid(
+                            "worker source differs from admitted original sequence",
+                        ));
+                    }
+                    (1, worker.index)
+                } else {
+                    (count, 0)
+                };
                 ctx.control.bind_collection_count(*iteration, count)?;
                 self.sources[*iteration as usize] = Some(Source {
                     backing,
                     handle,
                     count,
+                    index_offset,
                     byte_offset: 0,
                     element: None,
                 });
@@ -501,7 +619,9 @@ impl State {
                     .count
                     .checked_sub(ctx.control.progress[*iteration as usize * 2])
                     .filter(|index| *index < source.count)
-                    .ok_or_else(|| invalid("collection element outside current count"))?;
+                    .ok_or_else(|| invalid("collection element outside current count"))?
+                    .checked_add(source.index_offset)
+                    .ok_or_else(|| invalid("worker source index overflow"))?;
                 let Some(output) = definition.element() else {
                     return Ok(None);
                 };
@@ -735,6 +855,12 @@ impl State {
                     &mut ctx.control.work,
                     add(add(mul(extra, 16)?, mul(moved, 4)?)?, 128)?,
                 )?;
+                // The pending draft and replacement carrier coexist with the
+                // original builder until every fallible allocation succeeds.
+                let memory = ctx.library.memory_budget();
+                let pending_node = memory.reserve_nodes(1)?;
+                let _replacement_node =
+                    memory.reserve_nodes(u64::from(capacity > builder.values.capacity()))?;
                 builder.reservation.resize_capacity(backing)?;
                 if capacity > builder.values.capacity() {
                     builder
@@ -762,6 +888,7 @@ impl State {
                     _ => return Err(invalid("invalid collected scalar word")),
                 };
                 builder.values.push(data);
+                builder.nodes.merge(pending_node)?;
                 builder.payload_bytes = payload_bytes;
                 self.live_bytes = add(old_live, extra)?;
                 Ok(None)
@@ -850,6 +977,10 @@ impl State {
             )?,
             ctx.limits.max_retained_nodes,
         )?;
+        let _publication_nodes = ctx
+            .library
+            .memory_budget()
+            .reserve_nodes(data::output_nodes(output.definition().body(), count)?)?;
         let mut reservation = ctx.library.memory_budget().reserve_capacity(envelope)?;
         // Normal scalar comprehensions are always 1xN, including 1x0.
         let extents = if definition.kind() == ComprehensionKind::MatrixPreserveShape {

@@ -1,4 +1,4 @@
-//! ABI12 facade over the SAME canonical iteration CFG definition pass.
+//! ABI16 facade over the SAME canonical iteration CFG definition pass.
 use super::compiler::{backend, host_supported};
 use super::iteration_code_plan::CodePlan;
 use super::program_abi::{ENTRY, Entry, VERSION};
@@ -30,12 +30,30 @@ const PROGRAM_CODEGEN_FLAGS: &[(&str, &str)] = &[
     ),
 ];
 
+#[path = "program_ascii_map_codegen.rs"]
+pub(super) mod ascii_map_codegen;
 #[path = "program_borrowed_codegen.rs"]
 pub(super) mod borrowed_codegen;
+#[path = "program_cfg_cleanup.rs"]
+pub(super) mod cfg_cleanup;
+#[path = "program_join_map_codegen.rs"]
+pub(super) mod join_map_codegen;
+#[path = "program_map_owner_codegen.rs"]
+pub(super) mod map_owner_codegen;
+#[path = "program_packed_loop_codegen.rs"]
+pub(super) mod packed_loop_codegen;
+#[path = "program_packed_map_codegen.rs"]
+pub(super) mod packed_maps;
+#[path = "program_parallel_codegen.rs"]
+pub(super) mod parallel_codegen;
 #[path = "program_prefix_codegen.rs"]
 pub(super) mod prefix_codegen;
 #[path = "program_scalar_aggregates.rs"]
 pub(super) mod scalar_aggregates;
+#[path = "program_scalar_loop_codegen.rs"]
+pub(super) mod scalar_loop_codegen;
+#[path = "program_ssa_words.rs"]
+pub(super) mod ssa_words;
 #[path = "program_string_map_codegen.rs"]
 pub(super) mod string_map_codegen;
 #[path = "program_tail_codegen.rs"]
@@ -84,7 +102,7 @@ impl JitProgramArtifact {
             cranelift_jit::JITBuilder::with_flags(PROGRAM_CODEGEN_FLAGS, default_libcall_names())
                 .map_err(backend)?;
         let mut module = cranelift_jit::JITModule::new(builder);
-        let (function, stack, code) = super::iteration_compiler::define_cfg(
+        let (function, stack, code, _) = super::iteration_compiler::define_cfg(
             CodePlan::Program(&plan),
             ENTRY,
             VERSION,
@@ -94,7 +112,7 @@ impl JitProgramArtifact {
         let descriptor = NativeProgramDescriptor::prepare(artifact, catalog, plan, stack, code)
             .map_err(backend)?;
         module.finalize_definitions().map_err(backend)?;
-        // SAFETY: define_cfg emits exactly the private ABI12 signature, and
+        // SAFETY: define_cfg emits exactly the private ABI16 signature, and
         // this owner retains the module for every synchronous invocation.
         let entry = unsafe {
             std::mem::transmute::<*const u8, Entry>(module.get_finalized_function(function))
@@ -135,7 +153,7 @@ impl JitProgramArtifact {
         super::program_runtime::execute(
             &self.descriptor,
             |frame| {
-                // SAFETY: this owner retains the exact checked ABI12 entry.
+                // SAFETY: this owner retains the exact checked ABI16 entry.
                 unsafe { (self.entry)(frame) }
             },
             inputs,
@@ -150,6 +168,7 @@ pub struct NativeProgramObject {
     bytes: Vec<u8>,
     descriptor: NativeProgramDescriptor,
     identity: NativeProgramObjectIdentity,
+    codegen: super::iteration_compiler::CodegenReport,
 }
 impl NativeProgramObject {
     pub fn bytes(&self) -> &[u8] {
@@ -162,7 +181,7 @@ impl NativeProgramObject {
         &self.identity
     }
     pub fn metadata(&self) -> serde_json::Value {
-        serde_json::json!({
+        let mut metadata = serde_json::json!({
             "schema": "mech.canonical-managed-program-object.v1",
             "abi_version": VERSION,
             "entry_symbol": ENTRY,
@@ -181,17 +200,38 @@ impl NativeProgramObject {
             "code_bytes": self.descriptor.code_bytes(),
             "object_bytes": self.bytes.len(),
             "object_optimization": "speed",
+            "compiled_window_accumulator": (!self.descriptor.window_regions.is_empty()).then_some("hashbrown-0.15.5-entry-updates"),
             "compiled_window_query_regions": self.descriptor.window_regions.iter().filter(|region| region.query().is_some()).count(),
             "compiled_window_histogram_regions": self.descriptor.window_regions.iter().filter(|region| region.query().is_none()).count(),
             "compiled_string_map_regions": self.descriptor.string_map_regions.len(),
             "unboxed_scalar_aggregate_values": self.descriptor.scalar_aggregates.value_count(),
             "borrowed_string_regions": self.descriptor.borrowed_strings.regions.len(),
             "closed_tail_regions": self.descriptor.closed_tails.regions.len(),
+            "private_frozen_map_candidates": self.descriptor.frozen_maps.regions.len(),
+            "retained_map_scalar_admission_groups": self.descriptor.map_admission.groups.len(),
             "selected_matrix_join_regions": self.descriptor.selected_joins.regions.len(),
             "private_line_matrix_regions": self.descriptor.line_matrices.regions.len(),
             "compiled_header_continuation_regions": usize::from(self.descriptor.prefix.is_some()),
+            "compiled_source_edge_facts": &self.codegen.source_edge_facts,
+            "compiled_tag_threading": &self.codegen.tag_threading,
+            "compiled_frame_effects": &self.codegen.frame_effects,
+            "compiled_guarded_loops": &self.codegen.guarded_loops,
+            "compiled_lookup_facts": &self.codegen.lookup_facts,
+            "compiled_cfg_cleanup": &self.codegen.cfg_cleanup,
+            "compiled_outlined_loops": &self.codegen.outlined_loops,
+            "compiled_loop_invariants": &self.codegen.loop_invariants,
             "linked": false, "executed": false, "timing_samples": 0,
-        })
+        });
+        metadata["compiled_bound_call_shim"] = serde_json::json!(&self.codegen.bound_call_shim);
+        metadata["compiled_preserving_call_regions"] =
+            serde_json::json!(&self.codegen.preserving_call_regions);
+        metadata["compiled_mutation_loops"] = serde_json::json!(&self.codegen.mutation_loops);
+        metadata["compiled_count_value_loops"] = serde_json::json!(&self.codegen.count_value_loops);
+        metadata["compiled_loop_constants"] = serde_json::json!(&self.codegen.loop_constants);
+        metadata["compiled_steady_loops"] = serde_json::json!(&self.codegen.steady_loops);
+        metadata["compiled_join_map_copies"] = serde_json::json!(&self.codegen.join_map_copies);
+        metadata["compiled_scalar_loops"] = serde_json::json!(&self.codegen.scalar_loops);
+        metadata
     }
 }
 pub fn emit_program_object(
@@ -219,7 +259,7 @@ pub fn emit_program_object_with_limits(
         ObjectBuilder::new(isa, "mech_canonical_program", default_libcall_names())
             .map_err(backend)?,
     );
-    let (_, stack, code) = super::iteration_compiler::define_cfg(
+    let (_, stack, code, codegen) = super::iteration_compiler::define_cfg(
         CodePlan::Program(&plan),
         ENTRY,
         VERSION,
@@ -240,5 +280,6 @@ pub fn emit_program_object_with_limits(
         bytes: module.finish().emit().map_err(backend)?,
         descriptor,
         identity,
+        codegen,
     })
 }

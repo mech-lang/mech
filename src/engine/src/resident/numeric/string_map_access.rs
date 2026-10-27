@@ -46,6 +46,29 @@ pub(in crate::resident) fn candidate_work(
     Ok(work)
 }
 
+/// Extra canonicalization work when ONE String entry is appended to an
+/// already ordered map draft. The old prefix's neighbor comparisons are
+/// funded separately. The finalizer compares the new key with the last key,
+/// scans at most the old prefix once, then shifts at most `entries` slots.
+/// Existing key bytes are visited at most twice; the new key at most N+1
+/// times. Encoded input bytes conservatively include all old key bytes.
+pub(super) fn appended_entry_work(
+    current_encoded_bytes: u64,
+    entries: u64,
+    new_key_bytes: u64,
+) -> Result<u64, ResidentKernelError> {
+    current_encoded_bytes
+        .checked_mul(2)
+        .and_then(|old| {
+            new_key_bytes
+                .checked_add(1)
+                .and_then(|key| entries.checked_add(1).and_then(|n| n.checked_mul(key)))
+                .and_then(|new| old.checked_add(new))
+        })
+        .and_then(|work| work.checked_add(entries))
+        .ok_or(ResidentKernelError::InvalidShape)
+}
+
 /// Admission precedes the first payload comparison, including absent and late
 /// keys. All String maps share this same header scan and raw canonical search.
 #[cfg(all(
@@ -66,12 +89,26 @@ pub(in crate::resident) fn find(
     })
 }
 
+#[cfg(all(
+    feature = "native-artifact",
+    any(feature = "pure_text", feature = "map_ops")
+))]
 pub(super) fn find_with_compare(
     map: &MapValue,
     candidate_work: u64,
     meter: &mut impl Budget,
-    mut compare: impl FnMut(&ValueData) -> Result<core::cmp::Ordering, ResidentKernelError>,
+    compare: impl FnMut(&ValueData) -> Result<core::cmp::Ordering, ResidentKernelError>,
 ) -> Result<usize, ResidentKernelError> {
+    find_optional_with_compare(map, candidate_work, meter, compare)?
+        .ok_or(ResidentKernelError::InvalidInput)
+}
+
+pub(super) fn find_optional_with_compare(
+    map: &MapValue,
+    candidate_work: u64,
+    meter: &mut impl Budget,
+    mut compare: impl FnMut(&ValueData) -> Result<core::cmp::Ordering, ResidentKernelError>,
+) -> Result<Option<usize>, ResidentKernelError> {
     let mut largest_key_work = candidate_work;
     let mut key_bytes = 0u64;
     for entry in map.entries() {
@@ -111,8 +148,8 @@ pub(super) fn find_with_compare(
         match compare(map.entries()[middle].key().data())? {
             core::cmp::Ordering::Less => upper = middle,
             core::cmp::Ordering::Greater => lower = middle + 1,
-            core::cmp::Ordering::Equal => return Ok(middle),
+            core::cmp::Ordering::Equal => return Ok(Some(middle)),
         }
     }
-    Err(ResidentKernelError::InvalidInput)
+    Ok(None)
 }

@@ -1,11 +1,21 @@
 //! Observe real admitted buffers in original/decoded generated invocations.
-use super::super::super::super::tests::{artifact_source, limits};
+use super::super::super::super::tests::{artifact_source, limits as previous_limits};
 use crate::native_artifact::JitProgramArtifact;
 use mech_core::{
     ManagedMemoryBudget, Value, ValueDataDraft as Data,
     snapshot::{SnapshotValidationContext, ValueDraft},
 };
 use std::cell::Cell;
+
+// These tests target storage thresholds and atomic memory denial. Real table
+// lookups now consume comparison work as well as the original bounded scan.
+// Keep both finite and preserve every exact/one-short memory assertion.
+fn limits() -> crate::native_artifact::NativeProgramExecutionLimits {
+    let mut limits = previous_limits();
+    limits.library.max_compute_work = Some(1_000_000_000);
+    limits.library.max_comparison_work = Some(1_000_000_000);
+    limits
+}
 
 #[derive(Clone, Copy, Debug)]
 struct Record {

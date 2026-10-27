@@ -160,6 +160,12 @@ impl NativeCollectionPrimitive {
             #[cfg(feature = "pure_text")]
             Self::NumberFormat => "number/format",
             #[cfg(feature = "map_ops")]
+            Self::MapNew => "map/new",
+            #[cfg(feature = "map_ops")]
+            Self::MapInsert => "map/insert",
+            #[cfg(feature = "map_ops")]
+            Self::MapContainsKey => "map/contains-key",
+            #[cfg(feature = "map_ops")]
             Self::StringHistogram => "map/histogram",
             #[cfg(feature = "map_ops")]
             Self::StringMapKeys => "map/keys",
@@ -170,6 +176,12 @@ impl NativeCollectionPrimitive {
     pub const fn arity(self) -> usize {
         match self {
             Self::CompositePack(arity) => arity,
+            #[cfg(feature = "map_ops")]
+            Self::MapNew => 0,
+            #[cfg(feature = "map_ops")]
+            Self::MapInsert => 3,
+            #[cfg(feature = "map_ops")]
+            Self::MapContainsKey => 2,
             #[cfg(feature = "sequence_sort")]
             Self::SortIndices => 4,
             Self::RangeIncrementExclusive | Self::RangeIncrementInclusive => 3,
@@ -247,6 +259,23 @@ fn is_count_map(body: &SchemaBody) -> bool {
     crate::intrinsics::map_ops::is_count_map(body)
 }
 
+// Canonical state carriers may combine scalar fields with ordinary maps.
+// This only selects the existing composite/enum constructors: their binders
+// still validate exact child schemas and admit recursive payload copies.
+fn is_native_state_carrier(body: &SchemaBody) -> bool {
+    is_shallow_atomic(body)
+        || match body {
+            SchemaBody::Map { key, value, .. } => {
+                is_shallow_atomic(key) && is_shallow_atomic(value)
+            }
+            SchemaBody::Tuple(items) => items.iter().all(is_native_state_carrier),
+            SchemaBody::Record(fields) => fields
+                .iter()
+                .all(|field| is_native_state_carrier(&field.schema)),
+            _ => false,
+        }
+}
+
 fn validate_schemas(
     primitive: NativeCollectionPrimitive,
     inputs: &[Schema],
@@ -283,38 +312,52 @@ fn validate_schemas(
             SchemaBody::Tuple(elements) => {
                 elements.len() == inputs.len()
                     && elements.iter().zip(inputs).all(|(element, input)| {
-                        is_shallow_atomic(element) && element == input.body()
+                        is_native_state_carrier(element) && element == input.body()
                     })
             }
             SchemaBody::Record(fields) => {
                 fields.len() == inputs.len()
                     && fields.iter().zip(inputs).all(|(field, input)| {
-                        is_shallow_atomic(&field.schema) && &field.schema == input.body()
+                        is_native_state_carrier(&field.schema) && &field.schema == input.body()
                     })
             }
             _ => false,
         };
+    }
+    #[cfg(feature = "map_ops")]
+    if primitive == NativeCollectionPrimitive::MapNew {
+        return matches!(
+            output,
+            SchemaBody::Map {
+                cardinality: mech_core::CardinalitySpec::Dynamic { upper_bound: None },
+                ..
+            }
+        );
     }
     let Some(first) = inputs.first().map(Schema::body) else {
         return false;
     };
     match primitive {
         NativeCollectionPrimitive::CompositePack(_) => unreachable!("validated above"),
+        #[cfg(feature = "map_ops")]
+        NativeCollectionPrimitive::MapNew => unreachable!("validated above"),
+        #[cfg(feature = "map_ops")]
+        NativeCollectionPrimitive::MapContainsKey => matches!(first,
+            SchemaBody::Map { key, .. } if inputs[1].body() == key.as_ref()
+                && output == &SchemaBody::Bool),
+        #[cfg(feature = "map_ops")]
+        NativeCollectionPrimitive::MapInsert => matches!((first, output),
+            (SchemaBody::Map { key, value, .. }, SchemaBody::Map {
+                key: out_key, value: out_value,
+                cardinality: mech_core::CardinalitySpec::Dynamic { upper_bound: None },
+            }) if key == out_key && value == out_value
+                && inputs[1].body() == key.as_ref() && inputs[2].body() == value.as_ref()),
         NativeCollectionPrimitive::EnumPack => {
-            fn state_payload(body: &SchemaBody) -> bool {
-                match body {
-                    SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64) => true,
-                    SchemaBody::Tuple(items) => items.iter().all(|item| {
-                        item == &SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)
-                    }),
-                    _ => false,
-                }
-            }
             first == &SchemaBody::Index
                 && inputs
                     .iter()
                     .all(|input| input.dimension_parameters().is_empty())
-                && state_payload(inputs[1].body())
+                && is_native_state_carrier(inputs[1].body())
                 && matches!(output, SchemaBody::Enum { variants, .. } if variants.iter()
                     .any(|variant| variant.payload.as_ref() == Some(inputs[1].body())))
         }

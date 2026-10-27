@@ -74,6 +74,85 @@ fn mul(a: u64, b: u64) -> Result<u64, ResidentKernelError> {
     a.checked_mul(b).ok_or_else(invalid_shape)
 }
 impl NativeSelectedStringMatrix {
+    /// Representation/lifetime eligibility only; this grants no operation visit.
+    pub fn can_consume_ascii_join_chunks(&self) -> bool {
+        self.geometry.contiguous_range().is_some()
+            && matches!(&self.source, Source::Lines(lines) if lines.is_ascii()
+                && lines.captured_chunks().is_some() && Rc::strong_count(lines) == 1
+                && Rc::weak_count(lines) == 0)
+    }
+    pub fn consuming_join_first(&self) -> Option<u64> {
+        self.geometry
+            .contiguous_range()
+            .and_then(|(first, _)| (first as u64).checked_add(1))
+    }
+    pub fn consuming_join_chunk_bound(&self) -> Option<u64> {
+        match &self.source {
+            Source::Lines(lines) => Some(lines.captured_chunks()?.retained_chunk_count()),
+            _ => None,
+        }
+    }
+    /// Append one fully initialized physical payload, allowing a generated
+    /// consumer to transform that output chunk while it is still cache-local.
+    /// The caller has prepaid the complete original selection/join traversal.
+    pub fn append_consuming_ascii_join_chunk(
+        &mut self,
+        next: u64,
+        target: &mut Vec<u8>,
+    ) -> Result<Option<u64>, InvokeError> {
+        if !self.can_consume_ascii_join_chunks() {
+            return Err(InvokeError::InvalidInput);
+        }
+        let (first, end) = self
+            .geometry
+            .contiguous_range()
+            .ok_or(InvokeError::InvalidInput)?;
+        let lower = (first as u64)
+            .checked_add(1)
+            .ok_or(InvokeError::InvalidInput)?;
+        let upper = (end as u64)
+            .checked_add(1)
+            .ok_or(InvokeError::InvalidInput)?;
+        if next < lower || next > upper {
+            return Err(InvokeError::InvalidInput);
+        }
+        let Source::Lines(lines) = &mut self.source else {
+            return Err(InvokeError::InvalidInput);
+        };
+        Rc::get_mut(lines)
+            .ok_or(InvokeError::InvalidInput)?
+            .append_capture_join_chunk(next, upper, target)
+    }
+    /// Transfer one immutable physical chunk to a generated transform/copy.
+    /// The original selected join has prepaid all traversal and retirement;
+    /// this owner grants no source visit and contains no copied row directory.
+    pub fn take_consuming_ascii_join_chunk(
+        &mut self,
+        next: u64,
+    ) -> Result<Option<super::NativeTextLineJoinChunk>, InvokeError> {
+        if !self.can_consume_ascii_join_chunks() {
+            return Err(InvokeError::InvalidInput);
+        }
+        let (first, end) = self
+            .geometry
+            .contiguous_range()
+            .ok_or(InvokeError::InvalidInput)?;
+        let lower = (first as u64)
+            .checked_add(1)
+            .ok_or(InvokeError::InvalidInput)?;
+        let upper = (end as u64)
+            .checked_add(1)
+            .ok_or(InvokeError::InvalidInput)?;
+        if next < lower || next > upper {
+            return Err(InvokeError::InvalidInput);
+        }
+        let Source::Lines(lines) = &mut self.source else {
+            return Err(InvokeError::InvalidInput);
+        };
+        Rc::get_mut(lines)
+            .ok_or(InvokeError::InvalidInput)?
+            .take_capture_join_chunk(next, upper)
+    }
     pub const fn count(&self) -> usize {
         self.geometry.count
     }
@@ -110,6 +189,18 @@ impl NativeSelectedStringMatrix {
 }
 
 impl NativePreparedLibraryCall {
+    /// Keep the original selected factory, genuine owners, target capacity and
+    /// memory-account checks before choosing the chunk-composed representation.
+    pub fn selected_matrix_join_chunks_ready(
+        &self,
+        view: &NativeSelectedStringMatrix,
+        separator: &Value,
+        target: &String,
+        memory: &ManagedMemoryBudget,
+    ) -> Result<bool, InvokeError> {
+        let (separator, _) = self.selected_matrix_join_target(view, separator, target, memory)?;
+        Ok(separator.is_empty() && view.can_consume_ascii_join_chunks())
+    }
     /// Representation preference only; actual projection still validates the
     /// selected schemas, current owners, finite policy and original geometry.
     pub fn supports_selected_string_matrix(&self, inputs: &[Option<Value>]) -> bool {

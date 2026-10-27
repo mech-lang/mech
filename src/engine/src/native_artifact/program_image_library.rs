@@ -3,15 +3,9 @@ use crate::native_artifact::{
     NativeCollectionLexicalTemplate, NativeCollectionOperationTemplate,
     NativeProgramLibraryTemplate,
 };
-use mech_core::{FunctionCatalog, NodeId, ProgramRevision, ResolvedOperationContract, SchemaTable};
+use mech_core::{FunctionCatalog, NodeId, SchemaTable};
 use serde::Deserialize;
 use serde_json::Value;
-
-#[derive(Deserialize)]
-enum Selected {
-    Root(Value),
-    Lexical(Value),
-}
 
 #[derive(Deserialize)]
 struct Origin {
@@ -19,22 +13,6 @@ struct Origin {
     block: Option<u32>,
     local: Option<u32>,
 }
-#[derive(Deserialize)]
-struct Key {
-    module_path: Box<[String]>,
-    operation_name: String,
-}
-#[derive(Deserialize)]
-struct Outer {
-    origin: Origin,
-    revision: ProgramRevision,
-    inputs: Box<[Value]>,
-    output: Value,
-    contract: ResolvedOperationContract,
-    selected_key: Key,
-    selected: Selected,
-}
-
 /// # Safety
 /// Keep the returned template confined until the full image has unchanged
 /// compiler/Object provenance. No source-site proof is inferred from JSON.
@@ -43,47 +21,65 @@ pub(crate) unsafe fn template(
     catalog: &FunctionCatalog,
     schemas: &SchemaTable,
 ) -> Result<NativeProgramLibraryTemplate, String> {
-    let wire: Outer = super::canonical_json::decode(image)?;
-    // The selected reader validates these schemas exactly once below. Compare
-    // their redundant outer images directly, preserving exact wire equality
-    // without re-finalizing or re-serializing each schema a second time.
-    let selected_image = match &wire.selected {
-        Selected::Root(image) | Selected::Lexical(image) => image,
-    };
+    const FIELDS: [&str; 7] = [
+        "origin",
+        "revision",
+        "inputs",
+        "output",
+        "contract",
+        "selected_key",
+        "selected",
+    ];
+    let outer = image
+        .as_object()
+        .ok_or("template image must be an object")?;
+    if outer.len() != FIELDS.len() || FIELDS.iter().any(|key| !outer.contains_key(*key)) {
+        return Err("template image differs from its canonical wire structure".into());
+    }
+    let origin: Origin = super::canonical_json::decode(&outer["origin"])?;
+    let selected = outer["selected"]
+        .as_object()
+        .ok_or("missing selected image tag")?;
+    if selected.len() != 1 {
+        return Err("selected image must have exactly one tag".into());
+    }
+    let (tag, selected_image) = selected.iter().next().unwrap();
     let leaf = selected_image
         .get("leaf")
         .ok_or("missing selected image leaf")?;
-    if leaf
-        .get("inputs")
-        .and_then(Value::as_array)
-        .map(Vec::as_slice)
-        != Some(wire.inputs.as_ref())
-        || leaf.get("output") != Some(&wire.output)
+    // Borrow redundant wire fields for comparison. The selected reader still
+    // finalizes schemas, validates the contract and checks the actual factory.
+    // Deserializing another owned JSON tree or contract here adds no check.
+    if ["inputs", "output", "contract", "selected_key"]
+        .iter()
+        .any(|key| leaf.get(*key) != Some(&outer[*key]))
+        || selected_image.get("revision") != Some(&outer["revision"])
     {
-        return Err("outer image schemas differ from selected source metadata".into());
+        return Err("outer image metadata differs from selected source metadata".into());
     }
-    let template = match wire.selected {
-        Selected::Root(image) => {
+    let template = match tag.as_str() {
+        "Root" => {
             // SAFETY: delegated unchanged build-image confinement obligation.
             NativeProgramLibraryTemplate::from_root(unsafe {
-                NativeCollectionOperationTemplate::from_build_image(&image, catalog, schemas)?
+                NativeCollectionOperationTemplate::from_build_image(
+                    selected_image,
+                    catalog,
+                    schemas,
+                )?
             })
         }
-        Selected::Lexical(image) => {
+        "Lexical" => {
             // SAFETY: delegated unchanged build-image confinement obligation.
             NativeProgramLibraryTemplate::from_lexical(unsafe {
-                NativeCollectionLexicalTemplate::from_build_image(&image, catalog, schemas)?
+                NativeCollectionLexicalTemplate::from_build_image(selected_image, catalog, schemas)?
             })
         }
+        _ => return Err("unknown selected image tag".into()),
     };
-    let origin = template.origin();
-    if wire.origin.node != origin.node
-        || wire.origin.block != origin.block
-        || wire.origin.local != origin.local
-        || wire.revision != template.program_revision()
-        || &wire.contract != template.contract()
-        || wire.selected_key.module_path != template.selected_key().module_path
-        || wire.selected_key.operation_name != template.selected_key().operation_name
+    let expected = template.origin();
+    if origin.node != expected.node
+        || origin.block != expected.block
+        || origin.local != expected.local
     {
         return Err("outer image template differs from selected source metadata".into());
     }

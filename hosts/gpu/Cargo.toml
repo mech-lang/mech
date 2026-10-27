@@ -14,7 +14,7 @@ rust-version = "1.92"
 default = []
 canonical-native-runtime = ["mech-engine/native-artifact"]
 canonical-native = ["canonical-native-runtime", "aot", "dep:toml_edit"]
-canonical-native-program-runtime = ["canonical-native-runtime", "mech-engine/pure_text", "mech-engine/map_ops", "mech-engine/convert", "dep:grapheme", "dep:miniz_oxide"]
+canonical-native-program-runtime = ["dep:hashbrown", "canonical-native-runtime", "mech-engine/pure_text", "mech-engine/map_ops", "mech-engine/convert", "dep:grapheme", "dep:miniz_oxide"]
 canonical-native-program = ["canonical-native-program-runtime", "canonical-native"]
 # Runtime-only capability bridge; no source-native sequence frontend or JIT.
 canonical-native-program-host-runtime = ["canonical-native-program-runtime", "runtime-host", "mech-runtime/canonical-native-images"]

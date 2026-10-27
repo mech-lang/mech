@@ -19,6 +19,7 @@ pub(super) struct State {
     pub views: Box<[Option<Rc<NativeTextLineMatrix>>]>,
     pub captured: Option<Captured>,
     reservation: Option<ManagedMemoryReservation>,
+    _metadata_nodes: Option<mech_core::ManagedNodeReservation>,
 }
 pub(super) struct Captured {
     pub ordinal: usize,
@@ -48,6 +49,7 @@ impl State {
                 views: Box::new([]),
                 captured: None,
                 reservation: None,
+                _metadata_nodes: None,
             });
         }
         let bytes = Self::metadata_bytes(count)?;
@@ -56,6 +58,7 @@ impl State {
         }
         work.charge(NativeExecutionPhase::Setup, amount(count, 512, 1024)?)?;
         let reservation = memory.reserve_capacity(bytes)?;
+        let metadata_nodes = memory.reserve_nodes(1)?;
         let mut views = Vec::new();
         views
             .try_reserve_exact(count)
@@ -68,6 +71,7 @@ impl State {
             views: views.into_boxed_slice(),
             captured: None,
             reservation: Some(reservation),
+            _metadata_nodes: Some(metadata_nodes),
         })
     }
     pub fn retained_demand(
@@ -100,6 +104,13 @@ impl State {
             }
         }
         Ok(demand)
+    }
+
+    pub(super) fn parked_view_nodes(&self, memory: &ManagedMemoryBudget) -> Result<u64, Error> {
+        self.retained_demand(None, memory)?
+            .retained_nodes
+            .checked_sub(u64::from(self.reservation.is_some()))
+            .ok_or_else(|| invalid("line matrix private node inventory underflows"))
     }
 }
 

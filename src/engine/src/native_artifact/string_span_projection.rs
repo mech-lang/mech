@@ -207,8 +207,6 @@ fn candidate(
     counts: &[usize],
     actions: &super::fusion_semantics::SemanticActions<'_>,
 ) -> Option<Projection> {
-    use super::NativeCollectionPrimitive as Primitive;
-    use mech_core::{DimensionExpr, IntegerWidth, SchemaBody};
     let data = plan.collections().get(collection)?;
     if !matches!(
         data.result(),
@@ -219,6 +217,24 @@ fn candidate(
     let Action::CollectionPush { value: output, .. } = actions.get(data.push() as usize)? else {
         return None;
     };
+    if counts.get(output.get() as usize) != Some(&1) {
+        return None;
+    }
+    let projection = selected_pair(plan, output, counts, actions)?;
+    adjacent(plan, projection.selection_site(), data.push()).then_some(projection)
+}
+
+/// Shared selected range/String proof. The consumer must separately prove
+/// every output use and preserve the lifetime of the genuine String owner.
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+pub(super) fn selected_pair(
+    plan: &impl ControlPlan,
+    output: &Value,
+    counts: &[usize],
+    actions: &super::fusion_semantics::SemanticActions<'_>,
+) -> Option<Projection> {
+    use super::NativeCollectionPrimitive as Primitive;
+    use mech_core::{DimensionExpr, IntegerWidth, SchemaBody};
     let definition = |value: Value| {
         plan.values()
             .get(value.get() as usize)
@@ -229,7 +245,7 @@ fn candidate(
             schema.body() == &SchemaBody::String && schema.dimension_parameters().is_empty()
         })
     };
-    if counts.get(output.get() as usize) != Some(&1) || !plain_string(*output) {
+    if !plain_string(*output) {
         return None;
     }
     let mut producers = actions
@@ -307,7 +323,6 @@ fn candidate(
             u32::try_from(range_site).ok()?,
             u32::try_from(selection_site).ok()?,
         )
-        || !adjacent(plan, u32::try_from(selection_site).ok()?, data.push())
     {
         return None;
     }

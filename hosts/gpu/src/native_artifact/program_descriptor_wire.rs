@@ -32,6 +32,7 @@ engine_proofs!(
     NativeWindowRegion,
     NativeStringMapRegion,
     NativeScalarAggregates,
+    NativeMapOwnerWords,
     NativeBorrowedStringRegion,
     NativeSelectedTextJoin,
     NativeTextLineMatrixRegion,
@@ -48,6 +49,15 @@ impl<T: ProofImage> ProofImage for Vec<T> {
 impl<T: ProofImage> ProofImage for Box<[T]> {
     fn read(image: Json) -> Result<Self, String> {
         Vec::<T>::read(image).map(Vec::into_boxed_slice)
+    }
+}
+impl<T: ProofImage> ProofImage for Option<T> {
+    fn read(image: Json) -> Result<Self, String> {
+        if image.is_null() {
+            Ok(None)
+        } else {
+            T::read(image).map(Some)
+        }
     }
 }
 
@@ -105,6 +115,11 @@ struct Descriptor<'a> {
     string_map_regions: Box<[NativeStringMapRegion]>,
     #[serde(deserialize_with = "proof")]
     scalar_aggregates: NativeScalarAggregates,
+    #[serde(deserialize_with = "proof")]
+    map_owner_words: Option<NativeMapOwnerWords>,
+    frozen_maps: native::program_frozen_map_layout::Layout,
+    map_admission: native::program_map_admission::Layout,
+    parallel: native::program_parallel_layout::Layout,
     borrowed_strings: native::program_borrowed_layout::Layout,
     closed_tails: native::program_tail_layout::Layout,
     selected_joins: native::program_selected_join_layout::Layout,
@@ -181,6 +196,22 @@ pub(super) fn decode(
     {
         return Err("descriptor image inventory differs from its plan".into());
     }
+    let frozen_maps = w
+        .map_owner_words
+        .as_ref()
+        .map(|owner| {
+            native::program_frozen_map_layout::Layout::derive(&plan, owner, &w.closed_tails)
+        })
+        .transpose()
+        .map_err(str::to_owned)?
+        .unwrap_or_default();
+    if frozen_maps != w.frozen_maps {
+        return Err("frozen-map descriptor proof differs from its complete source uses".into());
+    }
+    let selected_joins = native::program_selected_join_layout::Layout::derive(&plan)?;
+    if selected_joins.maps != w.selected_joins.maps {
+        return Err("selected-join map proof differs from its complete source uses".into());
+    }
     let descriptor = NativeProgramDescriptor {
         plan,
         schemas,
@@ -188,6 +219,7 @@ pub(super) fn decode(
         types,
         visits: w.visits.into_vec().into_iter().map(Into::into).collect(),
         retirements: w.retirements,
+        constant_admission_bytes: super::super::constant_admission_total(&w.constant_bytes)?,
         constant_bytes: w.constant_bytes,
         scalar_bytes: w.scalar_bytes,
         observation_schema_bytes: w.observation_schema_bytes,
@@ -195,6 +227,10 @@ pub(super) fn decode(
         window_regions: w.window_regions,
         string_map_regions: w.string_map_regions,
         scalar_aggregates: w.scalar_aggregates,
+        map_owner_words: w.map_owner_words,
+        frozen_maps,
+        map_admission: w.map_admission,
+        parallel: w.parallel,
         borrowed_strings: w.borrowed_strings,
         closed_tails: w.closed_tails,
         selected_joins: w.selected_joins,

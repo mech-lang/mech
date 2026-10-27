@@ -186,6 +186,20 @@ impl NativePreparedLibraryCall {
         start: u64,
         end: u64,
     ) -> Result<NativeSelectedStringSpanSelector, InvokeError> {
+        self.selected_u64_string_span_selector_reusing_shape(start, end, None)
+    }
+
+    /// Reuse only a successful shape/physical-layout proof for the SAME schema
+    /// and cardinality. Endpoint arithmetic is always evaluated afresh. The
+    /// constructor-private selector contains no payload, work credit, source
+    /// owner or visit permission. A different count/schema uses the maintained
+    /// resolver. Callers still reserve scratch and pay the full selector bound.
+    pub fn selected_u64_string_span_selector_reusing_shape(
+        &self,
+        start: u64,
+        end: u64,
+        previous: Option<&NativeSelectedStringSpanSelector>,
+    ) -> Result<NativeSelectedStringSpanSelector, InvokeError> {
         let scalar = SchemaBody::UnsignedInteger(IntegerWidth::W64);
         let SchemaBody::Matrix {
             element,
@@ -200,10 +214,12 @@ impl NativePreparedLibraryCall {
         {
             return Err(InvokeError::InvalidInput);
         }
-        // This is the maintained cardinality + shape solver, including the
-        // ordinary Range's rejection of empty/reversed unit ranges. No absent
-        // endpoint is inspected after that original-site rejection.
-        let count = self.selected_u64_range_cardinality(start, end)?;
+        // Preserve the ordinary Range's rejection of empty/reversed/overflowing
+        // unit ranges before considering the earlier successful shape proof.
+        let count = self.selected_u64_range_count(start, end)?;
+        if !previous.is_some_and(|old| old.schema_key == self.output_key && old.count == count) {
+            self.validate_selected_u64_range_shape(count)?;
+        }
         Ok(NativeSelectedStringSpanSelector {
             start,
             count,
@@ -317,6 +333,10 @@ impl NativePreparedLibraryCall {
                     // every old index/call BEFORE taking replacement capacity.
                     drop(cache.binding.take());
                     context.check_capacity(bytes, 1)?;
+                    let nodes = memory.reserve_nodes(
+                        1u64.checked_add(self.binding_nodes)
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                    )?;
                     let reservation = memory.reserve_capacity(bytes)?;
                     let shape = mech_core::shape_for_resolved_extents(
                         self.template.inputs().get(1).unwrap(),
@@ -347,8 +367,10 @@ impl NativePreparedLibraryCall {
                         limits,
                         work: work.clone(),
                         projection_count: Some(selector.count),
+                        binding_nodes: self.binding_nodes,
                         projection_index: Default::default(),
                         _reservation: reservation,
+                        _nodes: nodes,
                     }));
                 }
                 let binding = cache.binding.as_ref().ok_or(InvokeError::InvalidInput)?;

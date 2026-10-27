@@ -94,11 +94,18 @@ class NativeLinkageProfileTests(unittest.TestCase):
             path = Path(directory) / "frozen.json"
             raw = json.dumps({"runtime_factories": [
                 {"name": entry["runtime_factory_name"], "id_hex": entry["runtime_factory_id"]}
-                for entry in entries
+                for entry in entries if entry["runtime_factory_name"] not in LINKAGE.CURRENT_MAP_ADDITIONS
             ]}).encode()
             path.write_bytes(raw)
+            contract = Path(directory) / "profile_contracts.rs"
+            contract.write_text(
+                f"const EXPECTED_RUNTIME_FACTORIES: usize = {len(entries)};\n"
+                "const EXPECTED_CURRENT_RUNTIME_SURFACE_DIGEST: &str =\n"
+                f'    "{LINKAGE.catalog_surface_digest(entries)}";\n'
+            )
             with patch.object(LINKAGE, "FROZEN_SURFACE", path), \
-                 patch.object(LINKAGE, "EXPECTED_FULL_COUNT", len(entries)), \
+                 patch.object(LINKAGE, "STDLIB_PROFILE_CONTRACT", contract), \
+                 patch.object(LINKAGE, "EXPECTED_FULL_COUNT", len(entries) - len(LINKAGE.CURRENT_MAP_ADDITIONS)), \
                  patch.object(LINKAGE, "EXPECTED_FULL_SURFACE_SHA256", LINKAGE.sha256(raw).hexdigest()), \
                  patch.object(LINKAGE, "EXPECTED_RETAINED_FULL_RUNTIME_SURFACE_DIGEST",
                               LINKAGE.digest([retained])):
@@ -111,6 +118,12 @@ class NativeLinkageProfileTests(unittest.TestCase):
                 ]:
                     with self.assertRaisesRegex(LINKAGE.ContractError, "frozen full surface"):
                         LINKAGE.verify_full_surface(malformed)
+                for name in LINKAGE.CURRENT_MAP_ADDITIONS:
+                    changed = [{**entry, "runtime_factory_id": "ff"}
+                               if entry["runtime_factory_name"] == name else entry
+                               for entry in entries]
+                    with self.assertRaisesRegex(LINKAGE.ContractError, "current full surface"):
+                        LINKAGE.verify_full_surface(changed)
 
     def test_malformed_extended_rust_contract_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:

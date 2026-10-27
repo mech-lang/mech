@@ -9,7 +9,11 @@ fn run_windowed(jit: &JitProgramArtifact, text: &str) {
     run_windowed_delivery(jit, text, true);
 }
 
-fn run_windowed_delivery(jit: &JitProgramArtifact, text: &str, incremental: bool) {
+fn run_windowed_delivery(
+    jit: &JitProgramArtifact,
+    text: &str,
+    incremental: bool,
+) -> Vec<Box<[u8]>> {
     let descriptor = jit.descriptor();
     let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
     assert_eq!(descriptor.plan.transport_input_count(), 1);
@@ -66,7 +70,7 @@ fn run_windowed_delivery(jit: &JitProgramArtifact, text: &str, incremental: bool
             prior_available + 1
         };
         let window = owner.borrow_window(first, available + 1).unwrap();
-        assert!(window.rows().len() <= 1, "no full-input pointer table");
+        assert!(window.row_count() <= 1, "no full-input pointer table");
         super::super::borrowed::take_window_capture();
         prepared
             .run_prefix_window(&mut entry, available, false, Some(&window))
@@ -75,8 +79,8 @@ fn run_windowed_delivery(jit: &JitProgramArtifact, text: &str, incremental: bool
         assert_eq!(
             super::super::borrowed::take_window_capture(),
             Some((
-                window.rows().as_ptr() as u64,
-                window.rows().len() as u64,
+                window.native_rows().0,
+                window.row_count() as u64,
                 window.first(),
             ))
         );
@@ -112,7 +116,15 @@ fn run_windowed_delivery(jit: &JitProgramArtifact, text: &str, incremental: bool
         report.work >= producer_work,
         "framing/window work belongs to the program account too"
     );
+    let mut snapshots = Vec::new();
     for (actual, expected) in actual.iter().zip(&expected) {
+        snapshots.push(
+            actual
+                .as_ref()
+                .unwrap()
+                .canonical_snapshot_bytes(&descriptor.schemas)
+                .unwrap(),
+        );
         assert_eq!(
             actual
                 .as_ref()
@@ -128,6 +140,194 @@ fn run_windowed_delivery(jit: &JitProgramArtifact, text: &str, incremental: bool
     }
     drop((owner, library, actual, expected, inputs, observations));
     assert_eq!(memory.used_bytes(), 0);
+    snapshots
+}
+
+#[test]
+fn private_home_contract_preserves_results_across_callbacks_and_window_resumes() {
+    use crate::native_artifact::compiler::memory_regions::{
+        without_disjoint_state, without_nontrapping_homes,
+    };
+    for artifact in call_cache_tests::artifacts(source()) {
+        let catalog = mech_stdlib::source_catalog();
+        let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let ordinary =
+            without_disjoint_state(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
+        let alias_only =
+            without_nontrapping_homes(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
+        let descriptor = optimized.descriptor();
+        assert!(!descriptor.closed_tails.regions.is_empty());
+        for (text, expected) in [
+            ("skip\nopen\nA\nB\nclose\nafter\n", "A|B"),
+            (
+                "skip\r\nopen\r\ne\u{301}\r\n猫\r\nclose\r\nafter\r",
+                "e\u{301}|猫",
+            ),
+            ("", ""),
+            ("missing\n", ""),
+            ("open\nA", "A"),
+        ] {
+            let expected = ValueDraft {
+                schema: descriptor.plan.transport_output_type(0).schema(),
+                shape_values: Box::new([]),
+                data: ValueDataDraft::String(expected.into()),
+            }
+            .finalize(&SnapshotValidationContext::with_shared_schemas(
+                &descriptor.schemas,
+            ))
+            .unwrap()
+            .canonical_snapshot_bytes(&descriptor.schemas)
+            .unwrap();
+            for incremental in [false, true] {
+                for jit in [&ordinary, &alias_only, &optimized] {
+                    assert_eq!(
+                        run_windowed_delivery(jit, text, incremental),
+                        [expected.clone()]
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn private_home_contract_preserves_first_failure_and_finite_work_accounting() {
+    use crate::native_artifact::compiler::memory_regions::{
+        without_disjoint_state, without_nontrapping_homes,
+    };
+    for artifact in call_cache_tests::artifacts(source()) {
+        let catalog = mech_stdlib::source_catalog();
+        let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let ordinary =
+            without_disjoint_state(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
+        let alias_only =
+            without_nontrapping_homes(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
+        let mut failed = 0;
+        let mut succeeded = 0;
+        for max_work in [0, 256, 4096, 65536, 1_000_000_000] {
+            let mut outcomes = Vec::new();
+            for jit in [&ordinary, &alias_only, &optimized] {
+                let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                let descriptor = jit.descriptor();
+                let inputs = [string_value(
+                    descriptor,
+                    descriptor.plan.transport_input_type(0).schema(),
+                    "skip\nopen\nA\nB\nclose\nafter\n",
+                    &memory,
+                )];
+                let mut outputs = vec![None; descriptor.plan.transport_output_count()];
+                let mut limit = limits();
+                limit.execution.max_work = max_work;
+                let outcome = jit.evaluate_into(&inputs, &mut outputs, limit, &memory);
+                if outcome.is_err() {
+                    assert!(outputs.iter().all(Option::is_none));
+                    failed += 1;
+                } else {
+                    succeeded += 1;
+                }
+                // Both the exact error origin and required/allowed meter
+                // values are observable. Successful reports must match too.
+                outcomes.push(format!("{outcome:?}"));
+                drop((inputs, outputs));
+                assert_eq!(memory.used_bytes(), 0);
+            }
+            for outcome in &outcomes[1..] {
+                assert_eq!(&outcomes[0], outcome, "max_work={max_work}");
+            }
+        }
+        assert!(failed > 0 && succeeded > 0);
+    }
+}
+
+#[test]
+fn pure_scalar_graph_preserves_window_resumes_against_memory_backed_reference() {
+    use crate::native_artifact::program_compiler::scalar_loop_codegen::without_scalar_loops;
+    let renamed = source()
+        .replace("#Locate", "#FindRows")
+        .replace(":Skip", ":Search")
+        .replace(":Take", ":Collect")
+        .replace(":Ready", ":Finished");
+    for source in [source(), renamed.as_str()] {
+        for artifact in call_cache_tests::artifacts(source) {
+            let catalog = mech_stdlib::source_catalog();
+            let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+            let metadata = object.metadata();
+            let loops = metadata["compiled_scalar_loops"].as_array().unwrap();
+            assert_eq!(loops.len(), 1, "{metadata}");
+            let proof = &loops[0];
+            assert!(proof["register_words"].as_u64().unwrap() > 3);
+            assert!(!proof["folded_branches"].as_array().unwrap().is_empty());
+            assert!(!proof["known_latches"].as_array().unwrap().is_empty());
+            assert!(proof["fixed_template_instructions"].as_u64().unwrap() <= 1024);
+            assert!(proof["maximum_source_instructions"].as_u64().unwrap() <= 512);
+            let reference = without_scalar_loops(|| {
+                crate::native_artifact::emit_program_object(&artifact, &catalog)
+            })
+            .unwrap();
+            assert!(
+                reference.metadata()["compiled_scalar_loops"]
+                    .as_array()
+                    .unwrap()
+                    .is_empty()
+            );
+            let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let ordinary =
+                without_scalar_loops(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
+            for text in [
+                "skip\nopen\nA\nB\nclose\nafter\n",
+                "skip\r\nopen\r\ne\u{301}\r\n猫\r\nclose\r\nafter\r",
+                "",
+                "missing\n",
+                "open\nA",
+                "open\nclose\n",
+            ] {
+                for incremental in [false, true] {
+                    assert_eq!(
+                        run_windowed_delivery(&optimized, text, incremental),
+                        run_windowed_delivery(&ordinary, text, incremental)
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn pure_scalar_graph_preserves_first_errors_and_original_finite_work() {
+    use crate::native_artifact::program_compiler::scalar_loop_codegen::without_scalar_loops;
+    let overflow = source().replace(":Skip(i + 1u64)", ":Skip(i + 18446744073709551615u64)");
+    for source in [source(), overflow.as_str()] {
+        for artifact in call_cache_tests::artifacts(source) {
+            let catalog = mech_stdlib::source_catalog();
+            let optimized = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let ordinary =
+                without_scalar_loops(|| JitProgramArtifact::compile(&artifact, &catalog)).unwrap();
+            for max_work in [0, 256, 4096, 65536, 1_000_000_000] {
+                let mut outcomes = Vec::new();
+                for jit in [&ordinary, &optimized] {
+                    let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                    let descriptor = jit.descriptor();
+                    let inputs = [string_value(
+                        descriptor,
+                        descriptor.plan.transport_input_type(0).schema(),
+                        "skip\nopen\nA\nB\nclose\nafter\n",
+                        &memory,
+                    )];
+                    let mut outputs = vec![None; descriptor.plan.transport_output_count()];
+                    let mut limit = limits();
+                    limit.execution.max_work = max_work;
+                    let result = jit.evaluate_into(&inputs, &mut outputs, limit, &memory);
+                    outcomes.push(format!("{result:?}"));
+                    if result.is_err() {
+                        assert!(outputs.iter().all(Option::is_none));
+                    }
+                    drop((inputs, outputs));
+                    assert_eq!(memory.used_bytes(), 0);
+                }
+                assert_eq!(outcomes[0], outcomes[1], "max_work={max_work}");
+            }
+        }
+    }
 }
 
 #[test]

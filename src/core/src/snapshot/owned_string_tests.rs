@@ -47,6 +47,7 @@ fn exclusive_strings_transfer_without_payload_copy_or_new_budget_charge() {
     for text in ["", "acgt", "éA\0🧑‍🚀", &"aCGt".repeat(16_384)] {
         let budget = ManagedMemoryBudget::new(1_000_000);
         let value = admit(string(text), &budget);
+        assert_eq!(budget.retained_snapshot_nodes(), 2);
         let pointer = match value.data() {
             ValueData::String(text) => text.as_ptr(),
             _ => unreachable!(),
@@ -66,6 +67,11 @@ fn exclusive_strings_transfer_without_payload_copy_or_new_budget_charge() {
         assert_eq!(owned.memory_budget(), budget);
         assert_eq!(owned.retained_capacity_bytes(), charged);
         assert_eq!(budget.used_bytes(), charged);
+        assert_eq!(
+            budget.retained_snapshot_nodes(),
+            0,
+            "owned String is no longer a canonical snapshot"
+        );
         assert_eq!(identity.data.strong_count(), 0);
         drop(owned);
         assert_eq!(budget.used_bytes(), 0);
@@ -76,6 +82,7 @@ fn exclusive_strings_transfer_without_payload_copy_or_new_budget_charge() {
 fn refreezing_reused_string_backing_cannot_revive_old_frozen_identity() {
     let budget = ManagedMemoryBudget::new(1_000_000);
     let original = admit(string("acgt"), &budget);
+    assert_eq!(budget.retained_snapshot_nodes(), 2);
     let schema = original.schema();
     let schemas = original.schemas().unwrap();
     let identity = original.frozen_storage_identity();
@@ -89,6 +96,7 @@ fn refreezing_reused_string_backing_cannot_revive_old_frozen_identity() {
         panic!()
     };
     let (mut text, mut reservation) = owned.into_parts();
+    assert_eq!(budget.retained_snapshot_nodes(), 0);
     text.make_ascii_uppercase();
     assert_eq!(text.as_ptr(), pointer);
     let output = ValueDraft {
@@ -101,12 +109,14 @@ fn refreezing_reused_string_backing_cannot_revive_old_frozen_identity() {
     .into_memory_budget(&mut reservation)
     .unwrap();
     assert!(!identity.matches(&output));
+    assert_eq!(budget.retained_snapshot_nodes(), 2);
     assert!(
         matches!(output.data(),ValueData::String(text) if text.as_ref()=="ACGT" && text.as_ptr()==pointer)
     );
     assert_eq!(budget.used_bytes(), charged);
     drop((output, reservation));
     assert_eq!(budget.used_bytes(), 0);
+    assert_eq!(budget.retained_snapshot_nodes(), 0);
 }
 
 #[test]
@@ -117,6 +127,11 @@ fn shared_wrapper_rejection_preserves_owner_identity_admission_and_import_cache(
     let identity = value.frozen_storage_identity();
     let charged = budget.used_bytes();
     let value = unavailable(value.try_into_owned_string(&budget).unwrap());
+    assert_eq!(
+        budget.retained_snapshot_nodes(),
+        2,
+        "denied transfer preserves the claim"
+    );
     assert!(identity.matches(&value));
     assert!(value.shares_frozen_storage(&alias));
     assert!(value.memory_budget_retained_bytes(&budget).is_some());

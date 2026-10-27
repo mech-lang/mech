@@ -37,10 +37,15 @@ fn row_loans_use_real_global_ordinals_and_utf8_owners_until_the_loan_drops() {
             assert_eq!(window.end(), end);
             assert_eq!(window.available_lines(), 4);
             assert!(window.final_facts().is_none());
-            assert_eq!(window.rows().len(), (end - first) as usize);
+            assert_eq!(window.row_count(), (end - first) as usize);
             assert_eq!(window.line(first - 1), None);
             assert_eq!(window.line(end), None);
-            for (offset, row) in window.rows().iter().enumerate() {
+            for (offset, row) in window
+                .rows()
+                .expect("mixed-source cells retain the row fallback")
+                .iter()
+                .enumerate()
+            {
                 let ordinal = first + offset as u64;
                 let actual = owner.line(ordinal).unwrap();
                 assert_eq!(*row, [actual.as_ptr() as u64, actual.len() as u64]);
@@ -64,7 +69,7 @@ fn row_loans_use_real_global_ordinals_and_utf8_owners_until_the_loan_drops() {
     let empty = owner
         .borrow_window(facts.lines() + 1, facts.lines() + 1)
         .unwrap();
-    assert!(empty.rows().is_empty());
+    assert!(empty.row_count() == 0);
     assert_eq!(empty.final_facts(), Some(facts));
     drop(empty);
     drop((owner, ledger));
@@ -136,7 +141,7 @@ fn cached_payload_preserves_exact_window_debits_across_fragmentation_and_retenti
                     count * 256 + 4096 + payload * 4 + claim_bytes * 8 + 128,
                     "the cached and partial-edge paths must retain the exact original charges"
                 );
-                assert_eq!(window.rows().len(), expected.len());
+                assert_eq!(window.row_count(), expected.len());
                 assert_eq!(
                     window.is_ascii(),
                     expected.iter().all(|line| line.is_ascii())
@@ -223,7 +228,7 @@ fn many_completed_lines_do_not_force_a_full_input_pointer_table() {
     }
     let held = owner.retained_capacity_bytes();
     let window = owner.borrow_window(4093, 4097).unwrap();
-    assert_eq!(window.rows().len(), 4);
+    assert_eq!(window.row_count(), 4);
     assert_eq!(window.first(), 4093);
     assert!(window.retained_capacity_bytes() - held < 1024);
     assert_eq!(window.line(4093), Some("a"));
@@ -317,5 +322,68 @@ fn every_window_uses_the_same_spent_compute_allowance_and_foreign_scopes_fail() 
             .is_err()
     );
     drop((owner, ledger, foreign));
+    assert_eq!(memory.used_bytes(), 0);
+}
+
+#[test]
+fn compact_offset_loans_cover_chunk_transitions_without_materialized_rows() {
+    let memory = ManagedMemoryBudget::new(1024 * 1024);
+    let ledger = work(&memory);
+    for source in ["A\nB\r\nC\r\r\nlast\r", "\n\r\n\n", "ABC", "ABC\n", ""] {
+        let reference = source.lines().collect::<Vec<_>>();
+        for split in 0..=source.len() {
+            let mut owner = store(&ledger, limits());
+            owner.push(&source[..split]).unwrap();
+            owner.push(&source[split..]).unwrap();
+            owner.finish().unwrap();
+            for first in 1..=reference.len() as u64 + 1 {
+                for end in first..=reference.len() as u64 + 1 {
+                    let window = owner.borrow_window(first, end).unwrap();
+                    let (pointer, count) = window.native_rows();
+                    assert_eq!(count, end - first);
+                    assert_eq!(window.row_count(), count as usize);
+                    if window.direct {
+                        assert_eq!(pointer & 1, 1);
+                        assert!(window.rows().is_none());
+                        assert_eq!(
+                            window.rows.capacity(),
+                            0,
+                            "compact loans create no row backing"
+                        );
+                        assert_eq!(
+                            window
+                                .segments
+                                .iter()
+                                .map(|segment| segment[4])
+                                .sum::<u64>(),
+                            count
+                        );
+                    } else {
+                        assert_eq!(pointer & 1, 0);
+                        assert_eq!(window.rows().unwrap().len(), count as usize);
+                    }
+                    for ordinal in first..end {
+                        assert_eq!(
+                            window.line(ordinal),
+                            Some(reference[(ordinal - 1) as usize])
+                        );
+                    }
+                }
+            }
+        }
+    }
+    let mut owner = store(&ledger, limits());
+    for text in ["a\n", "b\n", "c\n"] {
+        owner.push(text).unwrap();
+    }
+    owner.finish().unwrap();
+    let window = owner.borrow_window(1, 4).unwrap();
+    assert!(
+        window.rows().is_some(),
+        "larger physical windows retain checked fallback"
+    );
+    assert_eq!(window.native_rows().0 & 1, 0);
+    drop(window);
+    drop((owner, ledger));
     assert_eq!(memory.used_bytes(), 0);
 }
