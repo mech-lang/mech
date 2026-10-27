@@ -1,3 +1,6 @@
+#[path = "selected_matrix_result.rs"]
+mod selected_matrix_result;
+use selected_matrix_result::selected_matrix_result_schema;
 #[path = "function_argument_shape.rs"]
 mod function_argument_shape;
 
@@ -10718,6 +10721,60 @@ impl SemanticBuilder {
                         result_schema_identity = Some(candidate_identity);
                     }
                 }
+                // Preserve already-valid matches exactly. Reify computed
+                // extents only when otherwise-incompatible result schemas can
+                // meet at the same unconstrained matrix result boundary.
+                if !activation
+                    && !body.tail_recur_result()
+                    && lowered.iter().all(|arm| !arm.body.tail_recur_result())
+                    && result_schema_identity.as_ref().is_some_and(|expected| {
+                        expected
+                            != &schema
+                                .clone()
+                                .finalize()
+                                .expect("validated candidate schema")
+                    })
+                {
+                    let expected = result_schema.as_ref().unwrap();
+                    let common =
+                        selected_matrix_result_schema(expected).unwrap_or_else(|| expected.clone());
+                    let candidate =
+                        selected_matrix_result_schema(&schema).unwrap_or_else(|| schema.clone());
+                    let common_identity = common.clone().finalize().map_err(|error| {
+                        internal(
+                            SourceSemanticAnchor::for_node(&arm.syntax),
+                            format!("invalid selected matrix schema: {error:?}"),
+                        )
+                    })?;
+                    let candidate_identity = candidate.clone().finalize().map_err(|error| {
+                        internal(
+                            SourceSemanticAnchor::for_node(&arm.syntax),
+                            format!("invalid selected matrix schema: {error:?}"),
+                        )
+                    })?;
+                    if common_identity == candidate_identity {
+                        if result_schema_identity.as_ref() != Some(&common_identity) {
+                            for prior in &mut lowered {
+                                self.reify_selected_matrix_result(
+                                    &mut prior.body,
+                                    &common,
+                                    &arm.syntax,
+                                )?;
+                            }
+                        }
+                        if schema
+                            .clone()
+                            .finalize()
+                            .expect("validated candidate schema")
+                            != common_identity
+                        {
+                            self.reify_selected_matrix_result(&mut body, &common, &arm.syntax)?;
+                        }
+                        schema = common.clone();
+                        result_schema = Some(common);
+                        result_schema_identity = Some(common_identity);
+                    }
+                }
                 // Dimension specialization supplies the concrete schema for
                 // terminal recursion; every arm still passes this exact final
                 // semantic check before it enters the canonical artifact.
@@ -10837,6 +10894,38 @@ impl SemanticBuilder {
             },
         });
         Ok(PendingValue::Node(index))
+    }
+
+    fn reify_selected_matrix_result(
+        &self,
+        body: &mut PendingControlBlock,
+        selected: &SchemaDraft,
+        syntax: &SyntaxNode,
+    ) -> Result<(), SourceSemanticError> {
+        let contract = self
+            .source_operation_contract("convert/kind", 1, selected)
+            .ok_or_else(|| {
+                internal(
+                    SourceSemanticAnchor::for_node(syntax),
+                    "missing selected matrix conversion contract".to_owned(),
+                )
+            })?;
+        let index = u32::try_from(body.operations.len()).map_err(|_| {
+            internal(
+                SourceSemanticAnchor::for_node(syntax),
+                "selected block operation count overflow".to_owned(),
+            )
+        })?;
+        body.operations.push(PendingControlOperation {
+            body: PendingControlOperationBody::Operation {
+                operation: operation_reference("convert/kind"),
+                contract,
+            },
+            inputs: vec![body.yield_value],
+            schema: selected.clone(),
+        });
+        body.yield_value = PendingControlValue::Local(index);
+        Ok(())
     }
 
     fn control_block(

@@ -823,3 +823,6 @@ fn generated_arithmetic_denial_after_a_library_call_keeps_prior_typed_roots() {
 mod closed_tail_qualification;
 #[path = "support/canonical_program_string_matrix.rs"]
 mod string_matrix_qualification;
+
+#[path = "support/canonical_program_selected_matrix.rs"]
+mod selected_matrix_qualification;
