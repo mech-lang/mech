@@ -117,5 +117,4 @@ pub(in crate::native_artifact) fn optimize(
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::codegen::cfg_cleanup) mod tests;
+mod tests;

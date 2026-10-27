@@ -388,5 +388,4 @@ fn define_leaf<M: Module>(
 }
 
 #[cfg(all(test, feature = "canonical-native-program-host"))]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::codegen::join_map) mod tests;
+mod tests;

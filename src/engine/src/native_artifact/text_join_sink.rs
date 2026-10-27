@@ -3,44 +3,13 @@
 use super::iteration_validation::{ControlPlan, ControlType};
 use super::{
     NativeCollectionResult as ResultKind, NativeIterationAction as Action,
-    NativeIterationTerminator as Terminator, NativeMatchAction as Scalar,
-    NativeMatchTerminator as Term, NativeMatchValue as Value, NativeProgramArtifactPlan as Plan,
-    NativeTextJoinSink as Sink,
+    NativeMatchValue as Value, NativeProgramArtifactPlan as Plan, NativeTextJoinSink as Sink,
 };
 
 const BAD: &str = "invalid native selected TextJoin sink";
 
 fn uses(plan: &impl ControlPlan) -> Result<Vec<usize>, &'static str> {
     super::guarded_histogram_query::semantic_use_counts(plan)
-}
-
-fn adjacent(
-    plan: &impl ControlPlan,
-    collection: &super::NativeProgramCollection,
-    consumer: u32,
-) -> bool {
-    let mut next = collection.finish() as usize;
-    for _ in 0..plan.blocks().len() {
-        let Some(block) = plan.blocks().get(next) else {
-            return false;
-        };
-        if block.iteration() != collection.parent() || plan.lifecycle_barrier(next) {
-            return false;
-        }
-        if next == consumer as usize {
-            return true;
-        }
-        if next != collection.finish() as usize
-            && !matches!(block.action(), Action::Scalar(Scalar::None))
-        {
-            return false;
-        }
-        let Terminator::Scalar(Term::Jump(target)) = block.terminator() else {
-            return false;
-        };
-        next = target as usize;
-    }
-    false
 }
 
 #[cfg(feature = "pure_text")]
@@ -83,7 +52,7 @@ pub(super) fn validate(
             || !plain_string(sink.separator())
             || !plain_string(sink.output())
             || !matches!(consumer.action(), Action::TextJoinFinish { collection } if *collection as usize == id)
-            || !adjacent(plan, data, sink.consumer())
+            || !super::fusion_semantics::collection_consumer_adjacent(plan, data, sink.consumer())
         {
             return Err(BAD);
         }
@@ -129,7 +98,7 @@ pub(crate) fn lower(plan: &mut Plan) -> Result<(), &'static str> {
             if operands.len() != 2
                 || operands[0] != data.output()
                 || !selected(template)
-                || !adjacent(plan, data, site as u32)
+                || !super::fusion_semantics::collection_consumer_adjacent(plan, data, site as u32)
             {
                 return None;
             }
@@ -171,6 +140,10 @@ pub(crate) fn lower(plan: &mut Plan) -> Result<(), &'static str> {
 ))]
 mod tests {
     use super::*;
+    use crate::native_artifact::{
+        NativeIterationTerminator as Terminator, NativeMatchAction as Scalar,
+        NativeMatchTerminator as Term,
+    };
     use mech_syntax::document::{
         AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
         parse_canonical_document,

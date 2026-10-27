@@ -3,10 +3,8 @@ use crate::native_artifact::program::protocol::abi::{PARALLEL_RUN, PHASE_TURN, P
 use crate::native_artifact::program::runtime::*;
 use std::cell::Cell;
 
-#[path = "credit_tests.rs"]
-pub(in crate::native_artifact::program::runtime::invocation::parallel::tests) mod credit_tests;
-#[path = "schedule_tests.rs"]
-pub(in crate::native_artifact::program::runtime::invocation::parallel::tests) mod schedule_tests;
+mod credit_tests;
+mod schedule_tests;
 
 thread_local! {
     static BATCHES: Cell<usize> = const { Cell::new(0) };

@@ -282,5 +282,4 @@ pub(in crate::native_artifact) fn aggregate_at<'a>(
 /// single-backedge invariants; no spelling of a source function is recognized.
 
 #[cfg(test)]
-#[path = "map_owner_tests.rs"]
-pub(in crate::native_artifact::codegen::common::aggregates) mod map_owner_tests;
+mod map_owner_tests;

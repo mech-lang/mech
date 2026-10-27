@@ -479,5 +479,4 @@ impl Layout {
 }
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::prepare::frozen_map) mod tests;
+mod tests;

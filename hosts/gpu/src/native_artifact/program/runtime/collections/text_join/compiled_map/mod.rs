@@ -5,8 +5,7 @@ use crate::native_artifact::program::runtime::maps::ascii as ascii_map;
 use mech_engine::native_artifact::NativeStringMapRegion;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "owned_tests.rs"]
-pub(in crate::native_artifact::program::runtime::collections::text_join::compiled_map) mod owned_tests;
+mod owned_tests;
 
 enum Owned {
     Snapshot(mech_core::snapshot::OwnedSnapshotBytes),

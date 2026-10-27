@@ -3,10 +3,8 @@
 use crate::native_artifact::program::runtime::invocation::Invocation;
 use crate::native_artifact::program::runtime::{NativeProgramExecutionError as Error, invalid};
 use mech_engine::native_artifact::NativeControlLoop;
-#[path = "hashes/mod.rs"]
 pub(in crate::native_artifact::program::runtime) mod hashes;
-#[path = "string_map.rs"]
-pub(in crate::native_artifact::program::runtime::invocation::window) mod string_map;
+mod string_map;
 
 impl Invocation<'_, '_, '_> {
     pub(in crate::native_artifact::program::runtime) fn prepare_window_region(

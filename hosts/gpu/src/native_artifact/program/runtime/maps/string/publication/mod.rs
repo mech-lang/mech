@@ -6,8 +6,8 @@ use mech_core::snapshot::{
     ValueDraft,
 };
 use mech_core::{
-    CardinalitySpec, DimensionExpr, IntegerWidth, MemoryBudgetLimits, SchemaBody, SchemaId,
-    SchemaTable, Value, ValueData,
+    CardinalitySpec, DimensionExpr, IntegerWidth, MemoryBudgetLimits, ResidentKernelError,
+    SchemaBody, SchemaId, SchemaTable, Value, ValueData,
 };
 use std::sync::Arc;
 
@@ -311,5 +311,4 @@ fn sort_with_debits(
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::runtime::maps::string::publication) mod tests;
+mod tests;

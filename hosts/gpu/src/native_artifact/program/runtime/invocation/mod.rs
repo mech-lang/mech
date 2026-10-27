@@ -1280,23 +1280,16 @@ impl CollectionRead for CollectionExecution<'_, '_, '_, '_> {
     }
 }
 
-#[path = "borrowed.rs"]
 pub(in crate::native_artifact::program::runtime) mod borrowed;
 
-#[path = "caller_geometry/mod.rs"]
 pub(in crate::native_artifact::program::runtime) mod caller_geometry;
 
-#[path = "tail.rs"]
 pub(in crate::native_artifact::program::runtime) mod tail;
 
-#[path = "parallel/mod.rs"]
 pub(in crate::native_artifact::program::runtime) mod parallel;
 
-#[path = "joins/mod.rs"]
 pub(in crate::native_artifact::program::runtime) mod joins;
 
-#[path = "prefix/mod.rs"]
 pub(in crate::native_artifact::program::runtime) mod prefix;
 
-#[path = "window/mod.rs"]
 pub(in crate::native_artifact::program::runtime) mod window;

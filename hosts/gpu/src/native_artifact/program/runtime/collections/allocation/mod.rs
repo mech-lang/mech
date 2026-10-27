@@ -72,5 +72,4 @@ fn text_with(
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::runtime::collections::allocation) mod tests;
+mod tests;

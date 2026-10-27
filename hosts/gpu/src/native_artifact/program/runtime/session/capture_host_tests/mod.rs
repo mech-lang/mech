@@ -10,8 +10,7 @@ use std::sync::{Arc, Mutex};
 
 #[path = "../../../../../../tests/support/canonical_hosted_fixture.rs"]
 pub(in crate::native_artifact::program::runtime::session::capture_host_tests) mod fixture;
-#[path = "joined_map_tests.rs"]
-pub(in crate::native_artifact::program::runtime::session::capture_host_tests) mod joined_map_tests;
+mod joined_map_tests;
 
 const FULL: &str =
     include_str!("../../../../../../tests/fixtures/native/knucleotide-idiomatic.mec");
@@ -308,8 +307,7 @@ fn original_and_decoded_full_program_stream_through_authorized_cli_and_match_sna
     }
 }
 
-#[path = "chunk_boundaries.rs"]
-pub(in crate::native_artifact::program::runtime::session::capture_host_tests) mod chunk_boundaries;
+mod chunk_boundaries;
 
 #[test]
 fn capture_failures_precede_a_real_generated_body_failure_and_publish_nothing() {

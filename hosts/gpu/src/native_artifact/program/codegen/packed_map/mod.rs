@@ -13,14 +13,14 @@ use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{Block, Endianness, InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::FunctionBuilder;
 
-#[path = "frame_state/mod.rs"]
-pub(in crate::native_artifact::program::codegen::packed_map) mod frame_state;
-pub(in crate::native_artifact) use crate::native_artifact::program::codegen::packed_map::frame_state::FrameState;
-pub(in crate::native_artifact) use crate::native_artifact::program::codegen::packed_map::frame_state::LookupMode;
+mod frame_state;
+pub(in crate::native_artifact) use crate::native_artifact::program::codegen::packed_map::frame_state::{
+    FrameState,
+    LookupMode,
+};
 
 #[cfg(test)]
-#[path = "hash_tests/mod.rs"]
-pub(in crate::native_artifact::program::codegen::packed_map) mod hash_tests;
+mod hash_tests;
 
 /// Compile-time facts rederived from the source CFG for this selected key.
 /// Memory-mode callers and unsupported graphs always use Unknown.

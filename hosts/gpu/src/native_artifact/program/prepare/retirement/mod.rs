@@ -180,5 +180,4 @@ impl RetirementTables {
 }
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::prepare::retirement) mod tests;
+mod tests;

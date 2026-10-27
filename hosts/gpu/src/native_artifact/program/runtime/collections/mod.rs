@@ -18,10 +18,8 @@ use mech_engine::native_artifact::{
     NativeMatchOrigin as Origin, NativeScalarKind,
 };
 
-#[path = "allocation/mod.rs"]
-pub(in crate::native_artifact::program::runtime::collections) mod allocation;
-#[path = "ascii_facts/mod.rs"]
-pub(in crate::native_artifact::program::runtime::collections) mod ascii_facts;
+mod allocation;
+mod ascii_facts;
 pub(in crate::native_artifact::program::runtime) fn admitted_capacity<T>(
     values: Vec<T>,
     count: usize,
@@ -29,8 +27,7 @@ pub(in crate::native_artifact::program::runtime) fn admitted_capacity<T>(
 ) -> Result<Vec<T>, Error> {
     allocation::exact_capacity(values, count, reason)
 }
-#[path = "data.rs"]
-pub(in crate::native_artifact::program::runtime::collections) mod data;
+mod data;
 pub(in crate::native_artifact::program::runtime) fn source_count(
     value: &Value,
 ) -> Result<u64, Error> {
@@ -51,34 +48,28 @@ pub(in crate::native_artifact::program::runtime) fn element_work_hint(
         _ => 1,
     }
 }
-#[path = "histogram/mod.rs"]
-pub(in crate::native_artifact::program::runtime::collections) mod histogram;
-#[path = "histogram_layout/mod.rs"]
-pub(in crate::native_artifact::program::runtime::collections) mod histogram_layout;
-#[path = "histogram_query/mod.rs"]
-pub(in crate::native_artifact::program::runtime::collections) mod histogram_query;
-#[path = "lifetime.rs"]
-pub(in crate::native_artifact::program::runtime::collections) mod lifetime;
-#[path = "string_map_entry/mod.rs"]
-pub(in crate::native_artifact::program::runtime::collections) mod string_map_entry;
-#[path = "string_span/mod.rs"]
-pub(in crate::native_artifact::program::runtime::collections) mod string_span;
+mod histogram;
+mod histogram_layout;
+mod histogram_query;
+mod lifetime;
+mod string_map_entry;
+mod string_span;
 #[cfg(all(test, feature = "canonical-native-program"))]
 pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::collections::string_span::before_helper as before_span_helper;
-#[path = "text_join/mod.rs"]
-pub(in crate::native_artifact::program::runtime::collections) mod text_join;
+mod text_join;
 #[cfg(all(test, feature = "canonical-native-program"))]
-pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::collections::histogram::HistogramDemand;
-#[cfg(all(test, feature = "canonical-native-program"))]
-pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::collections::histogram::HistogramStage;
-#[cfg(all(test, feature = "canonical-native-program"))]
-pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::collections::histogram::HistogramVisit;
+pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::collections::histogram::{
+    HistogramDemand,
+    HistogramStage,
+    HistogramVisit,
+};
 #[cfg(all(test, feature = "canonical-native-program"))]
 pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::collections::histogram_query::QueryDemand;
 #[cfg(all(test, feature = "canonical-native-program"))]
-pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::collections::text_join::TextJoinDemand;
-#[cfg(all(test, feature = "canonical-native-program"))]
-pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::collections::text_join::TextJoinStage;
+pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::collections::text_join::{
+    TextJoinDemand,
+    TextJoinStage,
+};
 
 struct Source {
     backing: SourceBacking,

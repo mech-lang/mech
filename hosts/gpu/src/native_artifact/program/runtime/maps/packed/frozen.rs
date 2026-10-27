@@ -109,7 +109,7 @@ impl FrozenPackedMap {
         schema: SchemaId,
         limits: MemoryBudgetLimits,
     ) -> Result<(), Error> {
-        finite(limits)?;
+        finite(limits, cap)?;
         self.owner.work.with_call_limits(
             cap(limits.max_compute_work)?,
             cap(limits.max_comparison_work)?,

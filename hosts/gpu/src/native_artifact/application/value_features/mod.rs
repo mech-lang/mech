@@ -108,5 +108,4 @@ fn from_bodies<'a>(bodies: impl Iterator<Item = &'a SchemaBody>) -> Requirements
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::application::value_features) mod tests;
+mod tests;

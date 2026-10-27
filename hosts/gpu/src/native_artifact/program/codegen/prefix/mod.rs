@@ -16,8 +16,7 @@ use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::NativeMatchAction;
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::codegen::prefix) mod tests;
+mod tests;
 
 /// Per-entry SSA facts. The owning session keeps these frame fields immutable
 /// across every callback, but ordinary local stores can obscure that property

@@ -100,5 +100,4 @@ pub(in crate::native_artifact::program::runtime::collections) fn certify(
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::runtime::collections::histogram_layout) mod tests;
+mod tests;

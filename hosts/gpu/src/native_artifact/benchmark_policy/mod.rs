@@ -334,5 +334,4 @@ impl CapabilityKernel for NativeBenchmarkCapabilityKernel {
 }
 
 #[cfg(test)]
-#[path = "tests/mod.rs"]
-pub(in crate::native_artifact::benchmark_policy) mod tests;
+mod tests;

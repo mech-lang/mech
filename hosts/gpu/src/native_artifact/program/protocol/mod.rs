@@ -1,7 +1,6 @@
 //! Typed private helper domains. Raw u64 lanes remain the unchanged transport.
 #[cfg(feature = "canonical-native-program-runtime")]
-#[path = "owner.rs"]
-pub(in crate::native_artifact::program::protocol) mod owner;
+mod owner;
 #[cfg(feature = "canonical-native-program-runtime")]
 pub(in crate::native_artifact) use crate::native_artifact::program::protocol::owner::OwnerOperation;
 
@@ -119,5 +118,4 @@ impl GlobalHelper {
 }
 
 #[cfg(feature = "canonical-native-program-runtime")]
-#[path = "abi.rs"]
 pub(in crate::native_artifact) mod abi;

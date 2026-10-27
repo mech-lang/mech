@@ -6,11 +6,9 @@ use mech_core::snapshot::{
     MapEntryDraft, SnapshotCanonicalizationBudget, SnapshotValidationContext, ValueDataDraft,
     ValueDraft,
 };
-#[path = "allocation/mod.rs"]
-pub(in crate::native_artifact::program::runtime::collections::histogram::finish) mod allocation;
+mod allocation;
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "allocation_tests.rs"]
-pub(in crate::native_artifact::program::runtime::collections::histogram::finish) mod allocation_tests;
+mod allocation_tests;
 impl State {
     pub(in crate::native_artifact) fn park_histogram(
         &mut self,

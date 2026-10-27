@@ -8,7 +8,6 @@ use mech_engine::native_artifact::{
     NativePrivateStringBuffer, NativeStringMapRegion, NativeTextLineJoinChunk,
 };
 #[cfg(all(test, feature = "canonical-native-program-host"))]
-#[path = "faults.rs"]
 pub(in crate::native_artifact::program::runtime::invocation::joins) mod faults;
 
 pub(in crate::native_artifact::program::runtime::invocation::joins) struct Prepared {

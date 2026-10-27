@@ -16,8 +16,7 @@ pub struct NativeWorkMeter {
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::work) mod tests;
+mod tests;
 impl NativeWorkMeter {
     /// Attach a meter to a consumed parent-backed worker loan. This does not
     /// promote a scalar ledger, mint root fuel or copy thread-local scopes.

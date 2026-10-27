@@ -12,8 +12,7 @@ use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeWorkerBudgetEr
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-#[path = "schedule.rs"]
-pub(in crate::native_artifact::program::runtime::invocation::parallel) mod schedule;
+mod schedule;
 
 #[derive(Default)]
 struct Activity {
@@ -842,8 +841,6 @@ impl Invocation<'_, '_, '_> {
     }
 }
 
-#[path = "admission/mod.rs"]
 pub(in crate::native_artifact::program::runtime) mod admission;
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "tests/mod.rs"]
 pub(in crate::native_artifact::program::runtime) mod tests;

@@ -4,8 +4,7 @@
 use crate::native_artifact::program::codegen::window::*;
 use cranelift_codegen::ir::{Block, Endianness, Value};
 
-#[path = "simd.rs"]
-pub(in crate::native_artifact::program::codegen::window::query) mod simd;
+mod simd;
 
 #[derive(Clone, Copy)]
 struct WindowValues {

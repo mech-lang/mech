@@ -4,8 +4,7 @@ use cranelift_codegen::ir::AbiParam;
 use cranelift_frontend::FunctionBuilderContext;
 use cranelift_module::{Linkage, Module, default_libcall_names};
 
-#[path = "probe_group_tests.rs"]
-pub(in crate::native_artifact::program::codegen::packed_map::hash_tests) mod probe_group_tests;
+mod probe_group_tests;
 
 #[test]
 fn direct_lookup_cache_generated_keeps_absence_zero_values_and_hash_fallback() {

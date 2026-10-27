@@ -394,5 +394,4 @@ impl<'a> NativeValueArena<'a> {
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::values) mod tests;
+mod tests;

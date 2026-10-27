@@ -542,5 +542,4 @@ pub(in crate::native_artifact) fn execute<F: FnOnce(*mut Frame) -> u64>(
 }
 
 #[cfg(all(test, feature = "canonical-native"))]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::iteration_runtime) mod tests;
+mod tests;

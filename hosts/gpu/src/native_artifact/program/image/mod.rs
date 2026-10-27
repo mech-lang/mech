@@ -3,7 +3,6 @@ use crate::native_artifact::iteration_abi::NativeIterationVisit;
 use mech_core::SchemaTable;
 use mech_engine::native_artifact::{NativeIterationAction, NativeProgramArtifactPlan};
 
-#[path = "decode/mod.rs"]
 pub(in crate::native_artifact) mod decode;
 
 #[derive(Debug)]
@@ -144,8 +143,7 @@ impl NativeProgramDescriptor {
     }
 }
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "string_map_factory_tests.rs"]
-pub(in crate::native_artifact::program::image) mod string_map_factory_tests;
+mod string_map_factory_tests;
 impl crate::native_artifact::iteration_runtime::VisitPlan for NativeProgramDescriptor {
     fn entry(&self) -> u32 {
         self.metadata.plan.entry()
@@ -161,9 +159,5 @@ impl crate::native_artifact::iteration_runtime::VisitPlan for NativeProgramDescr
     }
 }
 
-#[cfg(feature = "canonical-native-program-runtime")]
-#[path = "identity.rs"]
 pub(in crate::native_artifact) mod identity;
-#[cfg(feature = "canonical-native-program-runtime")]
-#[path = "packing.rs"]
 pub(in crate::native_artifact) mod packing;

@@ -47,8 +47,7 @@ pub(in crate::native_artifact::program::runtime) fn supported(
 }
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::runtime::invocation::parallel::admission) mod tests;
+mod tests;
 
 impl Invocation<'_, '_, '_> {
     /// The caller must retain this claim until every scoped worker has joined.

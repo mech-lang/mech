@@ -52,5 +52,4 @@ pub(in crate::native_artifact) fn prefer_banks(
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::prepare::window_histogram) mod tests;
+mod tests;

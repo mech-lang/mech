@@ -1,10 +1,9 @@
 //! Invocation-bound retained tables for a checked generated caller. Transport
 //! selection remains separate; these methods never evaluate a source body.
 use crate::native_artifact::program::runtime::invocation::{Invocation, MapExecution};
+use crate::native_artifact::program::runtime::maps::admission::Error as StorageError;
 use crate::native_artifact::program::runtime::maps::binding::{Binding, InitialWords, Key};
-use crate::native_artifact::program::runtime::maps::string::{
-    Error as StorageError, PublicationGeometry,
-};
+use crate::native_artifact::program::runtime::maps::string::PublicationGeometry;
 use crate::native_artifact::program::runtime::{
     NativeProgramExecutionError as Error, amount, invalid,
 };
@@ -14,14 +13,10 @@ use crate::native_artifact::{
 use mech_core::{ManagedMemoryBudget, ManagedMemoryReservation, ManagedNodeReservation, Value};
 use mech_engine::native_artifact::{NativeIterationAction as Action, NativeMapOwnerRegion};
 
-#[path = "caller_geometry.rs"]
-pub(in crate::native_artifact::program::runtime::maps::owner) mod caller_geometry;
-#[path = "closed.rs"]
-pub(in crate::native_artifact::program::runtime::maps::owner) mod closed;
-#[path = "frozen.rs"]
+mod caller_geometry;
+mod closed;
 pub(in crate::native_artifact::program::runtime) mod frozen;
-#[path = "spans.rs"]
-pub(in crate::native_artifact::program::runtime::maps::owner) mod spans;
+mod spans;
 use crate::native_artifact::program::runtime::maps::owner::frozen::FrozenSlot;
 
 pub(in crate::native_artifact::program::runtime) enum Publication {
@@ -618,7 +613,6 @@ impl<'plan> State<'plan> {
 }
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "tests.rs"]
 pub(in crate::native_artifact::program::runtime) mod tests;
 
 #[test]

@@ -11,14 +11,11 @@ use mech_engine::native_artifact::{
 };
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "boundary_tests.rs"]
-pub(in crate::native_artifact::program::runtime::collections::string_span) mod boundary_tests;
+mod boundary_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "selector_tests.rs"]
-pub(in crate::native_artifact::program::runtime::collections::string_span) mod selector_tests;
+mod selector_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::runtime::collections::string_span) mod tests;
+mod tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 pub(in super::super) use crate::native_artifact::program::runtime::collections::string_span::tests::before_helper;
 #[cfg(all(test, feature = "canonical-native-program"))]

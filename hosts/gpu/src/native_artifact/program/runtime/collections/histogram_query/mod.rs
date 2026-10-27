@@ -14,8 +14,7 @@ use mech_engine::native_artifact::{
     NativeHistogramQueryStepKind as Step, NativeMatchValue,
 };
 
-#[path = "compiled_window.rs"]
-pub(in crate::native_artifact::program::runtime::collections::histogram_query) mod compiled_window;
+mod compiled_window;
 
 pub(in crate::native_artifact::program::runtime::collections) struct Builder {
     // Retire the captured root before the enclosing admitted metadata lane.

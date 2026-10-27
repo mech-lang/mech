@@ -1,6 +1,7 @@
 //! Header observations around the SAME actual emitted entry and real helper.
 use crate::native_artifact::program::runtime::collections::QueryDemand;
 use crate::native_artifact::program::runtime::invocation::CollectionRead;
+use crate::native_artifact::program::runtime::test_support::snapshot_outputs as snapshots;
 use crate::native_artifact::program::runtime::*;
 use mech_core::{
     ManagedMemoryReservation, MemoryBudgetDimension as Dimension, MemoryRuntimeError,
@@ -316,18 +317,6 @@ fn args(
                 .reserve_capacity(value.memory_budget_admission_bytes(memory).unwrap())
                 .unwrap();
             value.into_memory_budget(&mut reservation).unwrap()
-        })
-        .collect()
-}
-fn snapshots(artifact: &mech_engine::ProgramArtifact, outputs: &[Option<Value>]) -> Vec<Box<[u8]>> {
-    outputs
-        .iter()
-        .map(|value| {
-            value
-                .as_ref()
-                .unwrap()
-                .canonical_snapshot_bytes(artifact.schemas())
-                .unwrap()
         })
         .collect()
 }

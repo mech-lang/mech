@@ -10,15 +10,14 @@ use mech_core::snapshot::{
 };
 use mech_core::{ManagedMemoryReservation, MemoryBudgetDimension as Dimension, Value, ValueData};
 use mech_engine::native_artifact::{NativeCollectionResult, NativeMatchValue, NativeTextJoinSink};
-#[path = "compiled_map/mod.rs"]
-pub(in crate::native_artifact::program::runtime::collections::text_join) mod compiled_map;
+mod compiled_map;
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "observation.rs"]
-pub(in crate::native_artifact::program::runtime::collections::text_join) mod observation;
+mod observation;
 #[cfg(all(test, feature = "canonical-native-program"))]
-pub(in crate::native_artifact) use crate::native_artifact::program::runtime::collections::text_join::observation::TextJoinDemand;
-#[cfg(all(test, feature = "canonical-native-program"))]
-pub(in crate::native_artifact) use crate::native_artifact::program::runtime::collections::text_join::observation::TextJoinStage;
+pub(in crate::native_artifact) use crate::native_artifact::program::runtime::collections::text_join::observation::{
+    TextJoinDemand,
+    TextJoinStage,
+};
 
 pub(in crate::native_artifact::program::runtime::collections) struct Builder {
     // Payloads are destroyed before the parent reservation is released.

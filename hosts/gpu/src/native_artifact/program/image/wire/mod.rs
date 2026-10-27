@@ -63,7 +63,6 @@ impl<T: ProofImage> ProofImage for Option<T> {
     }
 }
 
-#[path = "layouts.rs"]
 pub(in crate::native_artifact::program::image::decode::wire) mod layouts;
 
 #[derive(Deserialize)]

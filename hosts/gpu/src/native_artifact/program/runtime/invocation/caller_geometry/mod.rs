@@ -128,5 +128,4 @@ impl Invocation<'_, '_, '_> {
 }
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::runtime::invocation::caller_geometry) mod tests;
+mod tests;

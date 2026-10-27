@@ -7,44 +7,32 @@ use crate::native_artifact::program::protocol::abi::{
 };
 use crate::native_artifact::program::runtime::*;
 
-#[path = "call_cache_allocation/mod.rs"]
-pub(in crate::native_artifact::program::runtime::session) mod call_cache_allocation;
+mod call_cache_allocation;
 
-#[path = "capture.rs"]
-pub(in crate::native_artifact::program::runtime::session) mod capture;
+mod capture;
 #[cfg(feature = "canonical-native-program-host-runtime")]
-#[path = "capture_admission.rs"]
-pub(in crate::native_artifact::program::runtime::session) mod capture_admission;
+mod capture_admission;
 #[cfg(feature = "canonical-native-program-host-runtime")]
-#[path = "capture_host.rs"]
-pub(in crate::native_artifact::program::runtime::session) mod capture_host;
+mod capture_host;
 
 #[cfg(test)]
-#[path = "observation_tests.rs"]
-pub(in crate::native_artifact::program::runtime::session) mod observation_tests;
+mod observation_tests;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "call_cache_tests/mod.rs"]
-pub(in crate::native_artifact::program::runtime::session) mod call_cache_tests;
+mod call_cache_tests;
 #[cfg(all(test, feature = "canonical-native-program-host"))]
-#[path = "capture_host_tests/mod.rs"]
-pub(in crate::native_artifact::program::runtime::session) mod capture_host_tests;
+mod capture_host_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "capture_tests.rs"]
-pub(in crate::native_artifact::program::runtime::session) mod capture_tests;
+mod capture_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "identity_inventory_tests.rs"]
-pub(in crate::native_artifact::program::runtime::session) mod identity_inventory_tests;
+mod identity_inventory_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "prefix_tests.rs"]
-pub(in crate::native_artifact::program::runtime::session) mod prefix_tests;
+mod prefix_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "prefix_window_tests.rs"]
-pub(in crate::native_artifact::program::runtime::session) mod prefix_window_tests;
+mod prefix_window_tests;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "output_retirement_tests.rs"]
-pub(in crate::native_artifact::program::runtime::session) mod output_retirement_tests;
+mod output_retirement_tests;
 
 /// Validate and fund retirement of the caller's existing output roots before
 /// native publication. The shared account remains available even if a failed

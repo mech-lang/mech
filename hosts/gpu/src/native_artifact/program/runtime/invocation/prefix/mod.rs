@@ -380,5 +380,4 @@ impl Invocation<'_, '_, '_> {
 }
 
 #[cfg(test)]
-#[path = "retention_tests.rs"]
-pub(in crate::native_artifact::program::runtime::invocation::prefix) mod retention_tests;
+mod retention_tests;
