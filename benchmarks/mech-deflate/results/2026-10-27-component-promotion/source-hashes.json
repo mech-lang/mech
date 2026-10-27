@@ -1,0 +1,9 @@
+{
+  "hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec": "24d5f90b4938845bd3735936804005daa8a6fc7eb5c46c972a9decbdf9bc9c48",
+  "hosts/gpu/tests/fixtures/native/deflate-writer-tables.mec": "090083ece256f8c7ea6b588a4b942ed856f92af42ab002840baddea26691fef9",
+  "hosts/gpu/tests/fixtures/native/deflate-header.mec": "3b9986b2955c5c54652da271f3e2fb7484f3920c89a7b2bb06915e0869599161",
+  "hosts/gpu/tests/fixtures/native/deflate-static-codes.mec": "07f462f51b2dfb49ddcb7a15f0e40ddafc201cbd6c4c862a7f9d6833d560c61d",
+  "hosts/gpu/tests/fixtures/native/deflate-literal-choice.mec": "b279986adf2f8727e5163e835ceade500207c11d52b11ae3963dbe869728b787",
+  "hosts/gpu/tests/fixtures/native/deflate-optimize.mec": "1dc1dabd4c94412c1ccb191030eac2ab2a20e244e800c0b91ffb1c60073bf0a2",
+  "hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec": "4c2966e802d4e8dd4bff9f84a0a58c779a300175920884aad25746b17d2eee4e"
+}

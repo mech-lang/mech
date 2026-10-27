@@ -1,0 +1,101 @@
+{
+  "expected_values_changed": false,
+  "commands": [
+    {
+      "command": [
+        "python3",
+        "benchmarks/mech-deflate/matchfinder/generate_costs_reference.py",
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate",
+        "--roc",
+        "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "--work-dir",
+        "/private/tmp/mech-linear-restack-20261026/promoted-cost-oracles/costs",
+        "--out",
+        "/private/tmp/mech-linear-restack-20261026/promoted-cost-oracles/deflate-costs-reference.json"
+      ],
+      "exit": 0,
+      "stdout": "0 errors and 0 warnings found in 373ms while successfully building:\n\n    ../mech-linear-restack-20261026/promoted-cost-oracles/costs/costs-reference\n{\"cases\": 10, \"source_pin\": \"671077457ff7ef3a3d44caf715a3fc595addf379\"}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "benchmarks/mech-deflate/matchfinder/generate_default_costs_reference.py",
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate",
+        "--roc",
+        "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "--work-dir",
+        "/private/tmp/mech-linear-restack-20261026/promoted-cost-oracles/default_costs",
+        "--out",
+        "/private/tmp/mech-linear-restack-20261026/promoted-cost-oracles/deflate-default-costs-reference.json"
+      ],
+      "exit": 0,
+      "stdout": "0 errors and 0 warnings found in 108ms while successfully building:\n\n    ../mech-linear-restack-20261026/promoted-cost-oracles/default_costs/choose-costs-reference\n[[\"empty\", [6, 109]], [\"eight-literals\", [54, 109]], [\"eight-overlap\", [6, 109]], [\"320-overlap\", [16, 93]], [\"middle-table\", [48, 93]], [\"match-table\", [64, 84]], [\"cutoff\", [6, 109]], [\"full-alphabet\", [134, 109]]]\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "benchmarks/mech-deflate/matchfinder/generate_header_reference.py",
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate",
+        "--roc",
+        "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "--work-dir",
+        "/private/tmp/mech-linear-restack-20261026/promoted-component-oracles/header",
+        "--out",
+        "/private/tmp/mech-linear-restack-20261026/promoted-component-oracles/deflate-header-reference.json"
+      ],
+      "exit": 0,
+      "stdout": "0 errors and 0 warnings found in 1.1s while successfully building:\n\n    ../mech-linear-restack-20261026/promoted-component-oracles/header/header-reference\n{\"precode_cases\": 22, \"header_cases\": 8, \"source_pin\": \"671077457ff7ef3a3d44caf715a3fc595addf379\", \"output\": \"/private/tmp/mech-linear-restack-20261026/promoted-component-oracles/deflate-header-reference.json\"}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "benchmarks/mech-deflate/matchfinder/generate_literal_choice_reference.py",
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate",
+        "--roc",
+        "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "--work-dir",
+        "/private/tmp/mech-linear-restack-20261026/promoted-component-oracles/literal_choice",
+        "--out",
+        "/private/tmp/mech-linear-restack-20261026/promoted-component-oracles/deflate-literal-choice-reference.json"
+      ],
+      "exit": 0,
+      "stdout": "0 errors and 0 warnings found in 648ms while successfully building:\n\n    ../mech-linear-restack-20261026/promoted-component-oracles/literal_choice/literal-choice-reference\n{\"literal_cases\": 8, \"fixed_code_cases\": 1, \"output\": \"/private/tmp/mech-linear-restack-20261026/promoted-component-oracles/deflate-literal-choice-reference.json\"}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py",
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate",
+        "--roc",
+        "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "--work-dir",
+        "/private/tmp/mech-linear-restack-20261026/promoted-component-oracles/optimization",
+        "--out",
+        "/private/tmp/mech-linear-restack-20261026/promoted-component-oracles/deflate-optimization-reference.json"
+      ],
+      "exit": 0,
+      "stdout": "0 errors and 0 warnings found in 1.0s while successfully building:\n\n    ../mech-linear-restack-20261026/promoted-component-oracles/optimization/optimization-reference\n[[\"eight-literals\", 143, 9], [\"eight-overlap\", 105, 9], [\"320-overlap\", 135, 9], [\"one-pass-cap\", 143, 0]]\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "benchmarks/mech-deflate/matchfinder/generate_writer_tables_reference.py",
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate",
+        "--roc",
+        "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "--work-dir",
+        "/private/tmp/mech-linear-restack-20261026/promoted-component-oracles/writer_tables",
+        "--out",
+        "/private/tmp/mech-linear-restack-20261026/promoted-component-oracles/deflate-writer-tables-reference.json"
+      ],
+      "exit": 0,
+      "stdout": "0 errors and 0 warnings found in 174ms while successfully building:\n\n    ../mech-linear-restack-20261026/promoted-component-oracles/writer_tables/writer-tables-reference\n{\"packed_cases\": 6, \"full_length_cases\": 2, \"output\": \"/private/tmp/mech-linear-restack-20261026/promoted-component-oracles/deflate-writer-tables-reference.json\"}\n",
+      "stderr": ""
+    }
+  ]
+}

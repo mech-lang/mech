@@ -102,6 +102,24 @@ mod level12_huffman_qualification;
 #[path = "support/canonical_program_tally.rs"]
 mod tally_qualification;
 
+#[path = "support/canonical_program_costs.rs"]
+mod costs_qualification;
+
+#[path = "support/canonical_program_default_costs.rs"]
+mod default_costs_qualification;
+
+#[path = "support/canonical_program_header.rs"]
+mod header_qualification;
+
+#[path = "support/canonical_program_literal_choice.rs"]
+mod literal_choice_qualification;
+
+#[path = "support/canonical_program_optimization.rs"]
+mod optimization_qualification;
+
+#[path = "support/canonical_program_writer_tables.rs"]
+mod writer_tables_qualification;
+
 #[path = "support/canonical_program_function_axes.rs"]
 mod function_axes_qualification;
 

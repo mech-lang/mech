@@ -1,5 +1,44 @@
 # DEFLATE binary-tree match finder
 
+## Component checkpoint: 2026-10-27
+
+The maintained source components now include default cost selection and updates,
+dynamic-header construction and exact costs, literal-only and fixed codes,
+the dynamic optimization loop, and writer packed/full-length tables. Their
+qualification modules are registered in `canonical_artifact_program`; they no
+longer require temporary source paths. The reference generators in this directory
+accept `reference_root`, `--roc`, `--work-dir`, and `--out`, and validate all pinned
+package sources before executing the original functions. `generate_costs_reference.py`
+and `generate_default_costs_reference.py` reproduce the previously qualified
+10 and 8 cases without changing their expected values.
+
+Run the new component qualification with:
+
+```sh
+cargo test --locked --offline -j1 -p mech-gpu --no-default-features \
+  --features canonical-native-program --test canonical_artifact_program -- \
+  costs_qualification default_costs_qualification header_qualification \
+  literal_choice_qualification optimization_qualification writer_tables_qualification \
+  --nocapture --test-threads=1
+```
+
+The optimization qualification runs both supplied-cache cases (up to 320 bytes)
+and Mech's own collector followed by optimization (8-byte literal and overlap
+cases). It compares the returned path, current and saved models, frequencies,
+codes, costs and pass counts. It retains the real 262144-entry U16 tree,
+1500513-word U32 cache, 305257-word U64 path reservation, depth 300 and nice
+length 258. Explicit diagnostic work and compilation allowances are unchanged;
+these are not production compiler defaults. Reported allocations are cumulative
+requests, not peak live memory.
+
+These are compressor components, not a complete compressor or a compression
+benchmark. Remaining work includes byte output, `write_sequences`, block choice
+and `flush_block`, observation-driven carryover and `compress_into`. Complete raw
+bytes, independent decompression and full-input timing have not been established.
+Earlier sections below describe historical checkpoints and failures that led to
+these components.
+
+
 The [Mech implementation](../../../hosts/gpu/tests/fixtures/native/deflate-matchfinder.mec)
 provides the shared routines needed by the level-12 binary-tree match finder:
 
