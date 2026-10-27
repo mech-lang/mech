@@ -1,0 +1,114 @@
+{
+  "encoding": "gzip",
+  "mtime": 0,
+  "logs": [
+    {
+      "raw_name": "sequence-buffer-source-gap-frontend.log",
+      "raw_sha256": "a4c7a3ab2b39881b8223de4641b3a65ba4b6743997531ee7b122a87b9ddce2e3",
+      "raw_bytes": 1320,
+      "gzip_file": "sequence-buffer-source-gap-frontend.log.gz"
+    },
+    {
+      "raw_name": "sequence-buffer-source-gap.log",
+      "raw_sha256": "3c629f2114567809ffe5e055f358cd6a8a39ae61d95b153ea5db031084008d72",
+      "raw_bytes": 2109,
+      "gzip_file": "sequence-buffer-source-gap.log.gz"
+    },
+    {
+      "raw_name": "unsigned-buffer-allocation-evidence.log",
+      "raw_sha256": "1a6791e039cb9b13a8d1fbd04fee9d4d55ddcb7b9e0dc12a389d877b6d26882d",
+      "raw_bytes": 743,
+      "gzip_file": "unsigned-buffer-allocation-evidence.log.gz"
+    },
+    {
+      "raw_name": "unsigned-buffer-ci-contract-tests.log",
+      "raw_sha256": "23a0bc301dee50bdc91118941d4b716dc5c8e3d9037abdb7acefc96c10bba9f2",
+      "raw_bytes": 427,
+      "gzip_file": "unsigned-buffer-ci-contract-tests.log.gz"
+    },
+    {
+      "raw_name": "unsigned-buffer-ci-inventory-tests-with-dependencies.log",
+      "raw_sha256": "fd06bd99796d970bc1649635a9765263565e4e1fbf8a81044ea0f3c6ffac317d",
+      "raw_bytes": 141,
+      "gzip_file": "unsigned-buffer-ci-inventory-tests-with-dependencies.log.gz"
+    },
+    {
+      "raw_name": "unsigned-buffer-ci-inventory-tests.log",
+      "raw_sha256": "0d5f045e150c13d580387a69814727a5eee570c7ec962f9229382fb5603b376f",
+      "raw_bytes": 1325,
+      "gzip_file": "unsigned-buffer-ci-inventory-tests.log.gz"
+    },
+    {
+      "raw_name": "unsigned-buffer-ci-inventory.log",
+      "raw_sha256": "e70fec2825d9bf206d27463a792768195039599cb39bcca66339f47283f84cce",
+      "raw_bytes": 108,
+      "gzip_file": "unsigned-buffer-ci-inventory.log.gz"
+    },
+    {
+      "raw_name": "unsigned-buffer-components.log",
+      "raw_sha256": "f218aae8d90b0e47739b02fcd052f1668c126ff7676a70e68a7da9b3b4c668c4",
+      "raw_bytes": 17795,
+      "gzip_file": "unsigned-buffer-components.log.gz"
+    },
+    {
+      "raw_name": "unsigned-buffer-core-complete.log",
+      "raw_sha256": "2f2721ec75643bf621ff381bb14cc39b3fb363fb52b3eb43d3e59201d9df65f8",
+      "raw_bytes": 9635,
+      "gzip_file": "unsigned-buffer-core-complete.log.gz"
+    },
+    {
+      "raw_name": "unsigned-buffer-core-tests.log",
+      "raw_sha256": "5de262ff516174d29386ac184c0583e04c07f5deeacf8f408bec2b08b8a16d54",
+      "raw_bytes": 5234,
+      "gzip_file": "unsigned-buffer-core-tests.log.gz"
+    },
+    {
+      "raw_name": "unsigned-buffer-exact-ci-step.log",
+      "raw_sha256": "23db80e725ef24634b093211c8a5c6e788c53d23a738d30d0f7ac389fd5d377d",
+      "raw_bytes": 3464,
+      "gzip_file": "unsigned-buffer-exact-ci-step.log.gz"
+    },
+    {
+      "raw_name": "unsigned-buffer-full-core-snapshot-tests.log",
+      "raw_sha256": "86dd89286996462102cab91a1d18b86b76f21a5d785553ac726499674c5098c2",
+      "raw_bytes": 9841,
+      "gzip_file": "unsigned-buffer-full-core-snapshot-tests.log.gz"
+    },
+    {
+      "raw_name": "unsigned-buffer-live-ci-inventory.log",
+      "raw_sha256": "0d6e5ad2ca78664447899fe323c2ed9aecb4f86ff371b787d62253ffcbb908f7",
+      "raw_bytes": 19,
+      "gzip_file": "unsigned-buffer-live-ci-inventory.log.gz"
+    },
+    {
+      "raw_name": "unsigned-buffer-no-std.log",
+      "raw_sha256": "a6459f167949d72144bfb8fadbd7ebe1309fc6ee7b9434662abc3fe679f34a5e",
+      "raw_bytes": 256,
+      "gzip_file": "unsigned-buffer-no-std.log.gz"
+    },
+    {
+      "raw_name": "unsigned-buffer-parent-runtime-profile-tests.log",
+      "raw_sha256": "a0d947ce114558f50b577affb7af4500766290cce663dc6c341f4796f90fe2d0",
+      "raw_bytes": 42988,
+      "gzip_file": "unsigned-buffer-parent-runtime-profile-tests.log.gz"
+    },
+    {
+      "raw_name": "unsigned-buffer-runtime-only.log",
+      "raw_sha256": "1358300c8389bdfab150c1046a3d8979c1dac57b75fba1c491a10a57f2bcd8c0",
+      "raw_bytes": 391,
+      "gzip_file": "unsigned-buffer-runtime-only.log.gz"
+    },
+    {
+      "raw_name": "unsigned-buffer-runtime-profile-core-tests.log",
+      "raw_sha256": "1a304f468a8b844cece6bd96afec548ecd3693432f6ffac6a06f306b380efe9d",
+      "raw_bytes": 42984,
+      "gzip_file": "unsigned-buffer-runtime-profile-core-tests.log.gz"
+    },
+    {
+      "raw_name": "unsigned-buffer-static-contracts.log",
+      "raw_sha256": "cd38d87ea5920e41347cc00f8a39fab8b0270d1698831a4fcffff16e67095e24",
+      "raw_bytes": 163,
+      "gzip_file": "unsigned-buffer-static-contracts.log.gz"
+    }
+  ]
+}

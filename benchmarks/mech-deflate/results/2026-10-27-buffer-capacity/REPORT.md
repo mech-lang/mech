@@ -122,3 +122,12 @@ The inherited fixed-budget collector work/account denials remain visible in
 storage correctness failure is known; executable source buffer operations,
 compiled ownership proof, optimal parsing, writing, compressor orchestration and
 complete raw-byte/decompression validation remain incomplete.
+
+Raw command logs are stored as deterministic `.log.gz` files; decompress them to
+recover the exact captured bytes. `raw-log-encoding.json` records each original
+filename, byte count and SHA-256. This preserves trailing whitespace/blank lines
+from the test harness and diagnostics without introducing new patch whitespace
+failures. The first uncompressed receipt commits exposed six such formatting
+findings; compression resolves this introduced receipt-only problem. Source and
+workflow diffs remain clean. JSON command receipts retain their original live
+log paths as provenance, rather than pretending the commands emitted gzip files.
