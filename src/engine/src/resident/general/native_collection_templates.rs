@@ -304,7 +304,8 @@ fn is_shallow_matrix(body: &SchemaBody) -> bool {
         if dimensions.len() == 2 && is_shallow_atomic(element))
 }
 // Fixed-schema aggregate elements use the maintained snapshot constructor and
-// indexed replacement. Dynamic child containers are not admitted by this path.
+// scalar selection and indexed replacement. Dynamic child containers are not
+// admitted by this path.
 fn is_matrix_value_element(body: &SchemaBody) -> bool {
     is_shallow_atomic(body)
         || match body {
@@ -480,7 +481,7 @@ fn validate_schemas(
             let positional = mech_core::is_positional_selector_schema(selector)
                 || matches!(selector, SchemaBody::Matrix { element, dimensions }
                     if dimensions.len() == 2 && mech_core::is_positional_selector_schema(element));
-            is_shallow_matrix(first)
+            is_value_matrix(first)
                 && positional
                 && matches!(first, SchemaBody::Matrix { element, .. } if element.as_ref() == output)
         }

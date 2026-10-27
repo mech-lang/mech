@@ -227,7 +227,8 @@ fn selected_template(
 // The cache is rebuilt from the validated plan, not accepted as image authority.
 // IR110 adds checked U8 addition and U32 subtraction.
 // IR111 adds bulk little-endian byte append with an explicit count operand.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 111;
+// IR112 admits scalar selection of fixed-schema record/tuple matrix elements.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 112;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

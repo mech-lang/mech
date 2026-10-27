@@ -1,5 +1,36 @@
 # DEFLATE binary-tree match finder
 
+## Record selection checkpoint: 2026-10-27
+
+The block writer needs to select a sequence record and read its U32/U16 fields.
+This path is reachable at level 12: the all-literal decision in
+`CompressOptimal.roc:1109–1137` sets `use_items = 0`, selecting
+`BlockOut.write_sequences` through `BlockOut.roc:748–753`.
+
+Native scalar matrix selection now admits the same fixed-schema record and tuple
+values already admitted for matrix construction and indexed replacement. It
+retains exact element/output schema matching and positional selectors, and uses
+the existing resident selection implementation. Dynamic child containers remain
+outside this native subset. Native program image IR advances from 111 to 112;
+there is no new bytecode operation or runtime kernel.
+
+The base is `27bdd8b2c5b1ad35590121653589d06251ae5161`.
+[Reproducer and requirements](../results/2026-10-27-record-read/requirement.json)
+identify the original resident-success/native-rejection mismatch.
+The tests cover original/decoded artifacts, resident/native agreement, nested
+fields, index errors and overflow, unselected reads, aliases, unchanged prior
+publication, quota denial, cleanup and recovery. The linked executable also
+checks assertion-before-arithmetic failure and retry.
+
+This does not complete sequence writing. Passing a record matrix into a recursive
+function or lexical selected branch still rejects at source validation; its
+[separate reproducer and acceptance criteria](../results/2026-10-27-record-read/next-gap.json)
+are recorded before expanding compiler work. The drafted writer and 14 reference
+cases have not produced a Mech execution result. Full block writing/choice,
+compressor integration, complete byte/decompression checks and first timing
+remain outstanding.
+
+
 ## Byte output checkpoint: 2026-10-27
 
 `sequence/append-le-bytes(bytes, word, count)` now supports appending 0–8 low

@@ -155,6 +155,12 @@ fn linked_bulk_byte_append_preserves_publication_and_recovers() {
     linked_assertion_retry(source, ValueDataDraft::U64);
 }
 
+#[test]
+fn linked_record_matrix_scalar_read_preserves_publication_and_recovers() {
+    let source = "checked(n<u32>) => (out<u64>) :=\n  entries := [{length: n, offset: 1u16, slot: 0u16}, {length: 258u32, offset: 32768u16, slot: 29u16}]\n  positive! := n > 0u32\n  selected := entries[1u64]\n  length<u64> := selected.length\n  out := 12u64 / length.\nchecked(input<u32>)\n";
+    linked_assertion_retry(source, |n| ValueDataDraft::U32(n.try_into().unwrap()));
+}
+
 fn linked_assertion_retry(source: &str, input_word: fn(u64) -> ValueDataDraft) {
     let temporary = tempfile::tempdir().unwrap();
     let directory = temporary.path();
