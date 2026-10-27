@@ -1,6 +1,9 @@
 #[path = "annotation_conversion_shape.rs"]
 mod annotation_conversion_shape;
 
+#[path = "annotation_shape_identity.rs"]
+mod annotation_shape_identity;
+
 #[cfg(all(
     test,
     feature = "matrix",
@@ -7743,11 +7746,9 @@ impl SemanticBuilder {
         if is_dynamic_schema_draft(expected)
             || actual == *expected
             || schema_annotation_accepts(&actual.body, &expected.body)
-            // Projection drafts may retain unused source dimensions. If both
-            // sides finalize to the same canonical schema, there is no value
-            // conversion to execute (including for tuple/record outputs).
-            || actual.clone().finalize().ok().zip(expected.clone().finalize().ok())
-                .is_some_and(|(actual, expected)| actual == expected)
+            // Projection drafts may retain unused axes or independently
+            // number the same free axes. Neither requires a value conversion.
+            || annotation_shape_identity::equivalent(&actual, expected)
         {
             return Ok(value);
         }
