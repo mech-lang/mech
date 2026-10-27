@@ -137,6 +137,12 @@ fn linked_record_buffer_return_preserves_publication_and_recovers() {
     linked_assertion_retry(source, ValueDataDraft::U64);
 }
 
+#[test]
+fn linked_record_matrix_constructor_and_update_restore_and_recover() {
+    let source = "+> sequence\n<entry> := <{length<u64> offset<u16> slot<u16>}>\nchecked(n<u64>) => (out<u64>) :=\n  ~entries := [{length: 0u64, offset: 3u16, slot: 5u16}]\n  entries[1u64] = {length: n, offset: 7u16, slot: 11u16}\n  count := sequence/length(entries)\n  positive! := n > 0u64\n  out := 12u64 / n + count - 1u64.\nchecked(input<u64>)\n";
+    linked_assertion_retry(source, ValueDataDraft::U64);
+}
+
 fn linked_assertion_retry(source: &str, input_word: fn(u64) -> ValueDataDraft) {
     let temporary = tempfile::tempdir().unwrap();
     let directory = temporary.path();

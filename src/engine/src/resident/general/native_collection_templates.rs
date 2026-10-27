@@ -127,6 +127,8 @@ impl NativeCollectionPrimitive {
     pub const fn name(self) -> &'static str {
         match self {
             Self::CompositePack(_) => "core/composite-pack",
+            Self::MatrixHorizontal(_) => "matrix/horzcat",
+            Self::MatrixVertical(_) => "matrix/vertcat",
             Self::EnumPack => "core/enum-pack",
             Self::RangeExclusive => "range/exclusive",
             Self::RangeInclusive => "range/inclusive",
@@ -186,7 +188,9 @@ impl NativeCollectionPrimitive {
     }
     pub const fn arity(self) -> usize {
         match self {
-            Self::CompositePack(arity) => arity,
+            Self::CompositePack(arity)
+            | Self::MatrixHorizontal(arity)
+            | Self::MatrixVertical(arity) => arity,
             Self::MatrixIndexedReplace => 3,
             #[cfg(feature = "map_ops")]
             Self::MapNew => 0,
@@ -295,6 +299,22 @@ fn is_shallow_matrix(body: &SchemaBody) -> bool {
     matches!(body, SchemaBody::Matrix { element, dimensions }
         if dimensions.len() == 2 && is_shallow_atomic(element))
 }
+// Fixed-schema aggregate elements use the maintained snapshot constructor and
+// indexed replacement. Dynamic child containers are not admitted by this path.
+fn is_matrix_value_element(body: &SchemaBody) -> bool {
+    is_shallow_atomic(body)
+        || match body {
+            SchemaBody::Record(fields) => fields
+                .iter()
+                .all(|field| is_matrix_value_element(&field.schema)),
+            SchemaBody::Tuple(items) => items.iter().all(is_matrix_value_element),
+            _ => false,
+        }
+}
+fn is_value_matrix(body: &SchemaBody) -> bool {
+    matches!(body, SchemaBody::Matrix { element, dimensions }
+        if dimensions.len() == 2 && is_matrix_value_element(element))
+}
 #[cfg(feature = "map_ops")]
 fn is_count_map(body: &SchemaBody) -> bool {
     crate::intrinsics::map_ops::is_count_map(body)
@@ -374,6 +394,17 @@ fn validate_schemas(
             _ => false,
         };
     }
+    if matches!(
+        primitive,
+        NativeCollectionPrimitive::MatrixHorizontal(_)
+            | NativeCollectionPrimitive::MatrixVertical(_)
+    ) {
+        return matches!(output, SchemaBody::Matrix { element, dimensions }
+            if dimensions.len() == 2 && is_matrix_value_element(element)
+                && inputs.iter().all(|input| input.body() == element.as_ref()
+                    || matches!(input.body(), SchemaBody::Matrix { element: child, dimensions }
+                        if dimensions.len() == 2 && child == element)));
+    }
     #[cfg(feature = "map_ops")]
     if primitive == NativeCollectionPrimitive::MapNew {
         return matches!(
@@ -388,7 +419,9 @@ fn validate_schemas(
         return false;
     };
     match primitive {
-        NativeCollectionPrimitive::CompositePack(_) => unreachable!("validated above"),
+        NativeCollectionPrimitive::CompositePack(_)
+        | NativeCollectionPrimitive::MatrixHorizontal(_)
+        | NativeCollectionPrimitive::MatrixVertical(_) => unreachable!("validated above"),
         #[cfg(feature = "map_ops")]
         NativeCollectionPrimitive::MapNew => unreachable!("validated above"),
         #[cfg(feature = "map_ops")]
@@ -448,7 +481,7 @@ fn validate_schemas(
                 && matches!(first, SchemaBody::Matrix { element, .. } if element.as_ref() == output)
         }
         NativeCollectionPrimitive::MatrixIndexedReplace => {
-            is_shallow_matrix(first)
+            is_value_matrix(first)
                 && inputs[0] == *declared_output
                 && inputs[1].dimension_parameters().is_empty()
                 && inputs[2].dimension_parameters().is_empty()

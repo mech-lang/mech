@@ -487,3 +487,156 @@ fn selected_record_buffer_capture_preserves_aliases_failure_and_retry() {
         assert_eq!(memory.retained_snapshot_nodes(), 0);
     }
 }
+
+#[test]
+fn record_matrix_construction_and_update_preserve_publication_and_retry() {
+    let source = "<entry> := <{length<u32> offset<u16> slot<u16>}>\nupdate(length<u32>, index<u64>) => (out<[entry]>) :=\n  ~entries := [{length: 0u32, offset: 3u16, slot: 5u16}, {length: 7u32, offset: 11u16, slot: 13u16}]\n  entries[index] = {length: length, offset: 17u16, slot: 19u16}\n  out := entries.\nupdate(length<u32>, index<u64>)\n";
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        for (length, index) in [(320, 1), (91, 3), (640, 2), (17, 0), (19, 1)] {
+            let args = inputs(
+                &artifact,
+                &[("length", Data::U32(length)), ("index", Data::U64(index))],
+                &memory,
+            );
+            let aliases = args.clone();
+            let prior = output.clone();
+            let retained = memory.used_bytes();
+            let nodes = memory.retained_snapshot_nodes();
+            let native = jit.evaluate_into(&args, &mut output, limits(), &memory);
+            let resident = reference_result(&artifact, &args);
+            if (1..=2).contains(&index) {
+                native.unwrap();
+                super::equal(&artifact, &output, &resident.unwrap());
+                let record = |a, b, c| {
+                    Data::Record(
+                        [
+                            ("length", Data::U32(a)),
+                            ("offset", Data::U16(b)),
+                            ("slot", Data::U16(c)),
+                        ]
+                        .into_iter()
+                        .map(|(name, value)| mech_core::snapshot::NamedValueDraft {
+                            name: name.into(),
+                            value,
+                        })
+                        .collect(),
+                    )
+                };
+                let mut expected = vec![record(0, 3, 5), record(7, 11, 13)];
+                expected[index as usize - 1] = record(length, 17, 19);
+                assert_eq!(
+                    output
+                        .last()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    Data::Matrix(expected.into())
+                );
+            } else {
+                assert!(native.is_err());
+                assert!(resident.is_err());
+                assert_eq!(memory.used_bytes(), retained);
+                assert_eq!(memory.retained_snapshot_nodes(), nodes);
+                assert!(output.iter().zip(&prior).all(|(value, previous)| {
+                    value
+                        .as_ref()
+                        .unwrap()
+                        .shares_frozen_storage(previous.as_ref().unwrap())
+                }));
+            }
+            assert!(
+                args.iter()
+                    .zip(&aliases)
+                    .all(|(value, alias)| value.shares_frozen_storage(alias))
+            );
+        }
+        drop(output);
+        assert_eq!(memory.used_bytes(), 0);
+        assert_eq!(memory.retained_snapshot_nodes(), 0);
+    }
+}
+
+#[test]
+fn record_matrix_update_only_executes_on_the_selected_path() {
+    let source = "<entry> := <{length<u32> offset<u16> slot<u16>}>\nupdate(index<u64>) => (out<[entry]>) :=\n  ~entries := [{length: 7u32, offset: 11u16, slot: 13u16}]\n  entries[index] = {length: 19u32, offset: 17u16, slot: 23u16}\n  out := entries.\n(selected<bool>? | true => update(index<u64>) | false => update(1u64))\n";
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        for (selected, index) in [(false, 99), (true, 99), (true, 1), (false, 0)] {
+            let args = inputs(
+                &artifact,
+                &[
+                    ("selected", Data::Bool(selected)),
+                    ("index", Data::U64(index)),
+                ],
+                &memory,
+            );
+            let prior = output.clone();
+            let retained = memory.used_bytes();
+            let nodes = memory.retained_snapshot_nodes();
+            let native = jit.evaluate_into(&args, &mut output, limits(), &memory);
+            let resident = reference_result(&artifact, &args);
+            if selected && index != 1 {
+                assert!(native.is_err());
+                assert!(resident.is_err());
+                assert_eq!(memory.used_bytes(), retained);
+                assert_eq!(memory.retained_snapshot_nodes(), nodes);
+                assert!(output.iter().zip(&prior).all(|(value, previous)| {
+                    value
+                        .as_ref()
+                        .unwrap()
+                        .shares_frozen_storage(previous.as_ref().unwrap())
+                }));
+            } else {
+                native.unwrap();
+                super::equal(&artifact, &output, &resident.unwrap());
+            }
+        }
+        drop(output);
+        assert_eq!(memory.used_bytes(), 0);
+        assert_eq!(memory.retained_snapshot_nodes(), 0);
+    }
+}
+
+#[test]
+fn record_matrix_horizontal_and_vertical_constructors_preserve_geometry() {
+    for separator in [",", ";"] {
+        let source = format!(
+            "[{{length: value<u32>, offset: 3u16, slot: 5u16}}{separator} {{length: 7u32, offset: 11u16, slot: 13u16}}]\n"
+        );
+        for artifact in artifacts(&source).0 {
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
+            let args = inputs(&artifact, &[("value", Data::U32(320))], &memory);
+            let mut output = vec![None; artifact.outputs().len()];
+            jit.evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            super::equal(
+                &artifact,
+                &output,
+                &reference_result(&artifact, &args).unwrap(),
+            );
+            let Data::Matrix(values) = output
+                .last()
+                .unwrap()
+                .as_ref()
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap()
+            else {
+                panic!()
+            };
+            assert_eq!(values.len(), 2);
+            drop((args, output));
+            assert_eq!(memory.used_bytes(), 0);
+            assert_eq!(memory.retained_snapshot_nodes(), 0);
+        }
+    }
+}

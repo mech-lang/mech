@@ -3926,7 +3926,7 @@ fn bind_snapshot_sum(
     }
 }
 
-fn bind_horizontal(
+pub(super) fn bind_horizontal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_build(
@@ -5546,7 +5546,7 @@ fn is_snapshot_index_assign_element(body: &SchemaBody) -> bool {
     )
 }
 
-fn bind_vertical(
+pub(super) fn bind_vertical(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_build(

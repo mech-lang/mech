@@ -107,6 +107,8 @@ pub(super) fn specialize_primitive(
     use NativeCollectionPrimitive as P;
     match primitive {
         P::CompositePack(_) => P::CompositePack(inputs.len()),
+        P::MatrixHorizontal(_) => P::MatrixHorizontal(inputs.len()),
+        P::MatrixVertical(_) => P::MatrixVertical(inputs.len()),
         #[cfg(feature = "convert")]
         P::MatrixConversion if is_unsigned_word_conversion(inputs, _output) => {
             P::UnsignedWordConversion

@@ -617,6 +617,11 @@ factory!(
     CanonicalFinalize,
     super::bind_semantic_range_access
 );
+#[cfg(not(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+)))]
 factory!(
     NUMERIC_MATRIX_HORZCAT,
     &["matrix"],
@@ -624,6 +629,11 @@ factory!(
     CanonicalFinalize,
     super::bind_horizontal
 );
+#[cfg(not(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+)))]
 factory!(
     NUMERIC_MATRIX_VERTCAT,
     &["matrix"],
@@ -984,3 +994,12 @@ factory!(
     MatrixSolve,
     super::bind_matrix_solve
 );
+
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
+pub use crate::resident::native_collection_semantics::linkage_factories::{
+    NUMERIC_MATRIX_HORZCAT, NUMERIC_MATRIX_VERTCAT,
+};

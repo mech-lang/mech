@@ -13,6 +13,8 @@ use std::sync::Arc;
 #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeCollectionPrimitive {
     CompositePack(usize),
+    MatrixHorizontal(usize),
+    MatrixVertical(usize),
     EnumPack,
     RangeExclusive,
     RangeInclusive,
@@ -104,6 +106,22 @@ pub mod linkage_factories {
         CanonicalFinalize,
         super::super::composite::bind_composite_pack,
         NativeCollectionPrimitive::CompositePack(0)
+    );
+    factory!(
+        NUMERIC_MATRIX_HORZCAT,
+        &["matrix"],
+        "horzcat",
+        CanonicalFinalize,
+        super::super::numeric::bind_horizontal,
+        NativeCollectionPrimitive::MatrixHorizontal(0)
+    );
+    factory!(
+        NUMERIC_MATRIX_VERTCAT,
+        &["matrix"],
+        "vertcat",
+        CanonicalFinalize,
+        super::super::numeric::bind_vertical,
+        NativeCollectionPrimitive::MatrixVertical(0)
     );
     factory!(
         CORE_ENUM_PACK,
