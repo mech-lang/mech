@@ -1,6 +1,30 @@
 # DEFLATE binary-tree match finder
 
 
+## Block cost and compressed-header assembly
+
+`block-compute-costs` now executes the block writer's exact dynamic, static,
+and stored cost calculation. `block-choose-kind` preserves ties in stored,
+static, dynamic order. Twenty-four executed reference cases cover all three
+choices and the 65,535/65,536 stored-block length boundary; seven explicit
+cost ties are checked separately. Those lengths are cost inputs, not completed
+compression sizes.
+
+`block-write-static-header` and `block-write-dynamic-header` match bytes and
+remaining bit state in 32 executed reference cases, including final/nonfinal
+headers and partial-byte carry. Both use the real 6,633,832-byte output
+reservation. All cases pass original and decoded artifacts in the maintained
+canonical-native-program profile. The three tests take 65.50 seconds; these
+include compilation and qualification work and are not benchmark timings.
+[Receipts and scope](../results/2026-10-27-block-assembly/review.json)
+retain the initial test-helper shape failure and its correction without a
+compiler change.
+
+Block assembly still needs stored range append, payload writer connection,
+end-of-block and final draining. Full compressor integration and complete-stream
+correctness must precede the first benchmark. No optional tuning was undertaken.
+
+
 ## Executing sequence and optimal-path writers
 
 The sequence writer and optimal-path writer now execute as compiled Mech

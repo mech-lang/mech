@@ -111,6 +111,11 @@ mod default_costs_qualification;
 #[path = "support/canonical_program_header.rs"]
 mod header_qualification;
 
+#[path = "support/canonical_program_block_choice.rs"]
+mod block_choice_qualification;
+#[path = "support/canonical_program_block_header_writer.rs"]
+mod block_header_writer_qualification;
+
 #[path = "support/canonical_program_literal_choice.rs"]
 mod literal_choice_qualification;
 
