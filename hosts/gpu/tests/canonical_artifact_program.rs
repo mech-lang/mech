@@ -46,6 +46,9 @@ mod record_buffer_qualification;
 #[path = "support/canonical_program_proof_storage.rs"]
 mod proof_storage_qualification;
 
+#[path = "support/canonical_program_optimal_path.rs"]
+mod optimal_path_qualification;
+
 #[path = "support/canonical_program_linked.rs"]
 mod linked_qualification;
 
