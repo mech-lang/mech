@@ -1,5 +1,6 @@
 use super::super::tests::{plans, scan};
 use super::*;
+use crate::native_artifact::fusion_semantics::semantic_actions;
 
 #[test]
 fn each_original_and_decoded_read_is_guarded_in_its_current_visit() {

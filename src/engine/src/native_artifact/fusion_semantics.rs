@@ -43,37 +43,62 @@ impl std::ops::Index<usize> for SemanticActions<'_> {
 /// Scratch for ONE validation of one immutably borrowed plan. This is not a
 /// validated-plan token or a persistent cache. Every selected validator still
 /// runs, and rewriting/lowering passes construct their own fresh inventories.
-pub(super) struct ValidationInputs<'a, P: ControlPlan> {
+struct SemanticInputs<'a, P: ControlPlan> {
     plan: &'a P,
-    counts: Vec<usize>,
+    counts: OnceCell<Result<Vec<usize>, &'static str>>,
     actions: OnceCell<Result<SemanticActions<'a>, &'static str>>,
 }
-impl<'a, P: ControlPlan> ValidationInputs<'a, P> {
-    /// Called at the first selected validator's existing use-count check,
-    /// after ordinary collection validation. Keep the streaming count walk's
-    /// error order; do not eagerly expand all actions before that check.
-    pub(super) fn new(plan: &'a P) -> Result<Self, &'static str> {
-        Ok(Self {
+impl<'a, P: ControlPlan> SemanticInputs<'a, P> {
+    fn new(plan: &'a P) -> Self {
+        Self {
             plan,
-            counts: semantic_use_counts(plan)?,
+            counts: OnceCell::new(),
             actions: OnceCell::new(),
-        })
+        }
     }
-    pub(super) fn plan(&self) -> &'a P {
-        self.plan
+    fn counts(&self) -> Result<&[usize], &'static str> {
+        self.counts
+            .get_or_init(|| semantic_use_counts(self.plan))
+            .as_ref()
+            .map(Vec::as_slice)
+            .map_err(|error| *error)
     }
-    pub(super) fn counts(&self) -> &[usize] {
-        &self.counts
-    }
-    /// The guarded-query validator is the first reader. Earlier TextJoin
-    /// failures must still return before this fallible expansion is attempted.
-    pub(super) fn actions(&self) -> Result<&SemanticActions<'a>, &'static str> {
+    fn actions(&self) -> Result<&SemanticActions<'a>, &'static str> {
         self.actions
             .get_or_init(|| semantic_actions(self.plan))
             .as_ref()
             .map_err(|error| *error)
     }
 }
+pub(super) struct ValidationInputs<'a, P: ControlPlan> {
+    inputs: SemanticInputs<'a, P>,
+}
+impl<'a, P: ControlPlan> ValidationInputs<'a, P> {
+    // Keep streaming counts first and semantic expansion lazy at its original
+    // selected validator. Facts contexts share primitives, never this authority.
+    pub(super) fn new(plan: &'a P) -> Result<Self, &'static str> {
+        let inputs = SemanticInputs::new(plan);
+        inputs.counts()?;
+        Ok(Self { inputs })
+    }
+    pub(super) fn plan(&self) -> &'a P {
+        self.inputs.plan
+    }
+    pub(super) fn counts(&self) -> &[usize] {
+        self.inputs
+            .counts()
+            .expect("validation initialized its counts")
+    }
+    pub(super) fn actions(&self) -> Result<&SemanticActions<'a>, &'static str> {
+        self.inputs.actions()
+    }
+}
+
+#[path = "program_facts.rs"]
+mod facts;
+pub use facts::{
+    NativeProgramDefinition, NativeProgramFacts, NativeProgramProducerRole, NativeProgramReadRole,
+};
 
 /// Reconstruct semantic actions only; never construct missing language Values.
 /// All result strategies share this use inventory so one pass cannot hide an
@@ -212,13 +237,13 @@ pub(super) fn reads(
     )?;
     Ok(all)
 }
-fn visit_reads<'a>(
+fn visit_role_reads<'a>(
     plan: &impl ControlPlan,
     actions: impl Iterator<Item = Result<Cow<'a, Action>, &'static str>>,
-    mut read: impl FnMut(Value, Read) -> Result<(), &'static str>,
+    mut read: impl FnMut(Value, NativeProgramReadRole) -> Result<(), &'static str>,
 ) -> Result<(), &'static str> {
     for (site, (block, action)) in plan.blocks().iter().zip(actions).enumerate() {
-        let usage = Read::Action(site as u32);
+        let usage = NativeProgramReadRole::Action(site as u32);
         match action?.as_ref() {
             Action::LibraryCall { operands, .. }
             | Action::Scalar(Scalar::Primitive { operands, .. }) => {
@@ -266,7 +291,7 @@ fn visit_reads<'a>(
             | Action::ProjectStringSpan { .. }
             | Action::ProjectStringMapEntry { .. } => return Err(BAD),
         }
-        let usage = Read::Terminator(site as u32);
+        let usage = NativeProgramReadRole::Terminator(site as u32);
         match block.terminator() {
             Terminator::Scalar(Term::Branch { condition, .. }) => read(condition, usage)?,
             Terminator::Scalar(Term::LiteralBranch { left, right, .. }) => {
@@ -278,22 +303,35 @@ fn visit_reads<'a>(
     }
     for id in 0..plan.iteration_count() {
         match plan.iteration(id) {
-            Loop::Collection(g) => read(g.source().semantic_value(), Read::Other)?,
+            Loop::Collection(g) => read(
+                g.source().semantic_value(),
+                NativeProgramReadRole::CollectionSource(id as u32),
+            )?,
             Loop::Iteration(g) => {
-                read(g.seed(), Read::Other)?;
-                read(g.next(), Read::Other)?;
+                read(g.seed(), NativeProgramReadRole::LoopSeed(id as u32))?;
+                read(g.next(), NativeProgramReadRole::LoopNext(id as u32))?;
             }
             Loop::Tail(g) => {
-                read(g.seed(), Read::Other)?;
-                read(g.next(), Read::Other)?;
-                read(g.returned(), Read::Other)?;
+                read(g.seed(), NativeProgramReadRole::LoopSeed(id as u32))?;
+                read(g.next(), NativeProgramReadRole::LoopNext(id as u32))?;
+                read(g.returned(), NativeProgramReadRole::LoopReturned(id as u32))?;
             }
         }
     }
-    for (value, _) in plan.output_values().chain(plan.effect_values()) {
-        read(value, Read::Other)?;
+    for (index, (value, _)) in plan.output_values().enumerate() {
+        read(value, NativeProgramReadRole::Output(index))?;
+    }
+    for (index, (value, _)) in plan.effect_values().enumerate() {
+        read(value, NativeProgramReadRole::Effect(index))?;
     }
     Ok(())
+}
+fn visit_reads<'a>(
+    plan: &impl ControlPlan,
+    actions: impl Iterator<Item = Result<Cow<'a, Action>, &'static str>>,
+    mut read: impl FnMut(Value, Read) -> Result<(), &'static str>,
+) -> Result<(), &'static str> {
+    visit_role_reads(plan, actions, |value, role| read(value, role.fusion_read()))
 }
 pub(crate) fn semantic_use_counts(plan: &impl ControlPlan) -> Result<Vec<usize>, &'static str> {
     let mut counts = vec![0usize; plan.values().len()];
@@ -328,3 +366,25 @@ pub(crate) fn semantic_use_counts(plan: &impl ControlPlan) -> Result<Vec<usize>,
 ))]
 #[path = "fusion_semantics_tests.rs"]
 mod tests;
+
+// One lexical primitive for validation and descriptive same-plan queries.
+// Current-visit callers still validate definitions separately.
+pub(super) fn lexical_ancestor(
+    plan: &impl ControlPlan,
+    ancestor: Option<u32>,
+    mut scope: Option<u32>,
+) -> bool {
+    for _ in 0..=plan.iteration_count() {
+        if scope == ancestor {
+            return true;
+        }
+        let Some(id) = scope else {
+            return false;
+        };
+        if id as usize >= plan.iteration_count() {
+            return false;
+        }
+        scope = plan.iteration(id as usize).parent();
+    }
+    false
+}

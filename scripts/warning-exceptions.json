@@ -45,7 +45,7 @@
       "lint": "dead_code",
       "occurrences": 2,
       "owner": "Canonical native descriptor images",
-      "path": "hosts/gpu/src/native_artifact/program_borrowed_layout.rs",
+      "path": "hosts/gpu/src/native_artifact/program/prepare/borrowed.rs",
       "production_or_test": "production",
       "reason": "build-only descriptors retain runtime capture offsets in the shared image layout"
     },
@@ -57,7 +57,7 @@
       "lint": "dead_code",
       "occurrences": 1,
       "owner": "Canonical native descriptor images",
-      "path": "hosts/gpu/src/native_artifact/program_prefix_layout.rs",
+      "path": "hosts/gpu/src/native_artifact/program/prepare/prefix.rs",
       "production_or_test": "production",
       "reason": "build-only descriptors retain the runtime carrier offset in the shared image layout"
     },

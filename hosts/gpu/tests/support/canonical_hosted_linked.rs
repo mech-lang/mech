@@ -19,12 +19,20 @@ use process::{assert_no_ambient_cargo_config, bounded, clean, closure, hash, pin
 #[cfg(feature = "canonical-native-benchmark-policy")]
 #[path = "canonical_hosted_benchmark.rs"]
 mod benchmark;
+#[path = "canonical_hosted_launcher_tests.rs"]
+mod launcher_tests;
 #[path = "canonical_hosted_profile.rs"]
 mod profile;
 #[path = "canonical_program_pins.rs"]
 mod provenance;
-#[path = "canonical_hosted_template_tests.rs"]
-mod template_tests;
+
+fn cargo_target(evidence: &Path) -> PathBuf {
+    let target = std::env::var_os("MECH_CANONICAL_HOSTED_TARGET_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| evidence.join("cargo-target"));
+    assert!(target.is_absolute(), "qualification cache must be absolute");
+    target
+}
 
 fn launch() -> Value {
     json!({
@@ -196,10 +204,7 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
             String::from_utf8_lossy(&metadata_output.stderr)
         );
         let metadata: Value = serde_json::from_slice(&metadata_output.stdout).unwrap();
-        let target = std::env::var_os("MECH_CANONICAL_HOSTED_TARGET_DIR")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| evidence.join("cargo-target"));
-        assert!(target.is_absolute(), "qualification cache must be absolute");
+        let target = cargo_target(&evidence);
         let mut command = profile
             .invocation(&project.manifest_path(), binary_name, &target)
             .with_current_dir(isolated)
@@ -242,9 +247,8 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
         fs::copy(&built_binary, &binary).unwrap();
         let binary_pin = pin(&binary);
         assert_eq!(binary_pin, pin(&built_binary));
-        let generated_template_tests = template_tests::qualify(
+        let compiled_launcher_tests = launcher_tests::qualify(
             &project.manifest_path(),
-            binary_name,
             &target,
             &directory,
             profile.release(),
@@ -427,7 +431,7 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
             "variant":variant, "binary":binary, "binary_sha256":binary_pin,
             "program_revision":revision,
             "runtime_units":units, "cases":cases, "pin_rejections":pin_rejections,
-            "generated_template_tests":generated_template_tests,
+            "compiled_launcher_tests":compiled_launcher_tests,
             "rust_profile":profile.name(), "compiler_profiles":compiler_profiles,
             "source_sha256":hash(FULL.as_bytes()),
             "bytecode_sha256":pin(&project.root().join("program.mecb")),

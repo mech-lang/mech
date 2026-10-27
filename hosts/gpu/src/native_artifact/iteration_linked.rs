@@ -1,7 +1,9 @@
 //! Build-owned canonical Iteration entry, using the same managed evaluator as JIT.
-use super::iteration_abi::NativeIterationDescriptor;
-use super::iteration_identity::{NATIVE_ITERATION_LINK_IDENTITY_BYTES, descriptor_from_identity};
-use super::{
+use crate::native_artifact::iteration_abi::NativeIterationDescriptor;
+use crate::native_artifact::iteration_identity::{
+    NATIVE_ITERATION_LINK_IDENTITY_BYTES, descriptor_from_identity,
+};
+use crate::native_artifact::{
     NativeExecutionLimits, NativeIterationExecutionError, NativeIterationExecutionReport,
     NativeLinkError,
 };
@@ -44,7 +46,7 @@ impl LinkedIterationArtifact {
         limits: NativeExecutionLimits,
         budget: Option<&ManagedMemoryBudget>,
     ) -> Result<NativeIterationExecutionReport, NativeIterationExecutionError> {
-        super::iteration_runtime::execute(
+        crate::native_artifact::iteration_runtime::execute(
             &self.descriptor,
             |frame| {
                 // SAFETY: constructor proves the same exact checked entry;

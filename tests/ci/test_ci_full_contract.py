@@ -290,7 +290,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         commands = contracts.replace("\\\n", " ")
         self.assertRegex(commands, r"--features canonical-native-program\s+--test canonical_artifact_program\s+-- --test-threads=1")
         self.assertIn("--features canonical-native-program-runtime --lib", commands)
-        self.assertRegex(commands, r"--features canonical-native-program\s+--lib native_artifact::program_runtime::tests\s+-- --test-threads=1")
+        self.assertRegex(commands, r"--features canonical-native-program\s+--lib native_artifact::program::runtime::tests\s+-- --test-threads=1")
         manifest = (ROOT / "hosts/gpu/Cargo.toml").read_text()
         self.assertRegex(manifest, r'name = "canonical_artifact_program"\s+required-features = \["canonical-native-program"\]')
         self.assertNotIn("--no-run", contracts)
@@ -1129,10 +1129,10 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("fn " + case.split("::")[-1] + "()", fixture)
         self.assertIn("MECH_CANONICAL_HOSTED_SOURCE_COMMIT", fixture)
         self.assertIn("MECH_CANONICAL_HOSTED_EVIDENCE_DIR", fixture)
-        self.assertIn("template_tests::qualify(", fixture)
-        generated = (ROOT / "hosts/gpu/tests/support/canonical_hosted_template_tests.rs").read_text(encoding="utf-8")
-        self.assertIn("CargoInvocation::test_binary(", generated)
-        self.assertIn('"generated-template-tests", 300', generated)
+        self.assertIn("launcher_tests::qualify(", fixture)
+        generated = (ROOT / "hosts/gpu/tests/support/canonical_hosted_launcher_tests.rs").read_text(encoding="utf-8")
+        self.assertIn("CargoInvocation::test_library(", generated)
+        self.assertIn('"compiled-launcher-tests", 300', generated)
         self.assertIn("suite_passed(&output.stdout)", generated)
         for label in (
             "unused-arguments-exact-cap",
@@ -1274,6 +1274,8 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn('test "$(git rev-parse HEAD)" = "$CHECKOUT_SHA"', native)
         for path in ("src/cli/commands/build_cranelift.rs",
                      "hosts/gpu/Cargo.toml",
+                     "hosts/gpu/src/native_artifact/launch/*.rs",
+                     "hosts/gpu/src/native_artifact/launch/hosted/*.rs",
                      "src/cli/commands/build_cranelift_tests.rs", "tests/canonical_native_build.rs",
                      "tests/support/canonical_native_build.rs",
                      "hosts/gpu/tests/fixtures/native/knucleotide-idiomatic.mec",

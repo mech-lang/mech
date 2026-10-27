@@ -29,6 +29,9 @@ pub use collection::*;
 
 mod collection_validation;
 mod fusion_semantics;
+pub use fusion_semantics::{
+    NativeProgramDefinition, NativeProgramFacts, NativeProgramProducerRole, NativeProgramReadRole,
+};
 pub(crate) mod guarded_histogram_query;
 pub(crate) mod histogram_sink;
 pub(crate) mod iteration_validation;

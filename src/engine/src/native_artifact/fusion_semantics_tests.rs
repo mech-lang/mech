@@ -244,3 +244,108 @@ fn streamed_counts_reject_wrong_virtual_strategy_and_missing_query_step() {
         }
     }
 }
+
+#[test]
+fn same_plan_facts_preserve_read_roles_lazy_inventory_and_definition_classes() {
+    use crate::native_artifact::NativeProgramProducerRole as Role;
+    for source in SOURCES {
+        for plan in plans(source) {
+            let facts = plan.facts();
+            assert!(std::ptr::eq(facts.plan(), &plan));
+            assert_eq!(
+                facts.semantic_use_counts().unwrap(),
+                semantic_use_counts(&plan).unwrap()
+            );
+            for (index, &count) in facts.semantic_use_counts().unwrap().iter().enumerate() {
+                assert_eq!(facts.read_roles(Value(index as u32)).unwrap().len(), count);
+            }
+            assert!(std::ptr::eq(
+                facts.scalar_aggregates(),
+                facts.scalar_aggregates()
+            ));
+            assert_eq!(
+                serde_json::to_vec(facts.scalar_aggregates()).unwrap(),
+                serde_json::to_vec(&plan.scalar_aggregates()).unwrap()
+            );
+            for index in 0..plan.transport_input_count() {
+                assert!(
+                    facts
+                        .definition_sites(plan.transport_input_value(index).get())
+                        .unwrap()
+                        .iter()
+                        .any(|d| d.role() == Role::Input)
+                );
+            }
+            for collection in plan.collections() {
+                if matches!(collection.result(), ResultKind::Materialized) {
+                    let definitions = facts.definition_sites(collection.output().get()).unwrap();
+                    assert!(
+                        definitions
+                            .iter()
+                            .any(|d| d.role() == Role::CollectionBuilder)
+                    );
+                    assert!(
+                        definitions
+                            .iter()
+                            .any(|d| d.role() == Role::MaterializedCollection)
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn parallel_transition_reads_stay_distinct_from_fusion_and_strict_dominance() {
+    for plan in plans(SOURCES[1]) {
+        let facts = plan.facts();
+        let [super::super::NativeControlLoop::Collection(generator)] = plan.iterations() else {
+            panic!("range fixture must retain one loop")
+        };
+        let super::super::NativeCollectionSource::U64Range(cursor) = generator.source() else {
+            panic!("range fixture must retain its original source")
+        };
+        for site in [generator.initialize(), generator.latch()] {
+            let mut actual = Vec::new();
+            facts
+                .parallel_action_reads(site, &mut |value| {
+                    actual.push(value);
+                    Ok(())
+                })
+                .unwrap();
+            assert_eq!(actual, cursor.operands());
+            for &value in &actual {
+                assert!(
+                    !facts
+                        .read_roles(value)
+                        .unwrap()
+                        .contains(&NativeProgramReadRole::Action(site))
+                );
+            }
+        }
+        assert!(
+            facts
+                .strictly_dominates(generator.initialize(), generator.header())
+                .unwrap()
+        );
+        assert!(
+            !facts
+                .strictly_dominates(generator.header(), generator.initialize())
+                .unwrap()
+        );
+        assert!(
+            !facts
+                .strictly_dominates(generator.header(), generator.header())
+                .unwrap()
+        );
+        assert!(facts.lexical_ancestor(None, Some(0)));
+        assert!(facts.lexical_ancestor(Some(0), Some(0)));
+        assert!(!facts.lexical_ancestor(Some(0), None));
+        assert!(
+            facts
+                .predecessors(generator.header())
+                .unwrap()
+                .contains(&generator.initialize())
+        );
+    }
+}

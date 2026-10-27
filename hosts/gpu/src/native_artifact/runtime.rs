@@ -1,10 +1,10 @@
 //! Checked invocation boundary for the private nonprinting native scalar ABI.
-use super::NativeWorkMeter;
-use super::abi::{
+use crate::native_artifact::NativeWorkMeter;
+use crate::native_artifact::abi::{
     ABI_VERSION, NO_NODE, NativeAbiDescriptor, NativeEntryFrame as Frame, STATUS_ABI,
     STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK, primitive_work,
 };
-use super::memory::{NativeWordStorage, transport_bytes};
+use crate::native_artifact::memory::{NativeWordStorage, transport_bytes};
 use mech_core::{ManagedMemoryBudget, MemoryRuntimeError, NodeId};
 use mech_engine::native_artifact::{NativeScalarKind, NativeScalarValue};
 use std::ffi::c_void;
@@ -206,7 +206,7 @@ unsafe extern "C" fn admit_next(context: *mut c_void, ordinal: u64) -> u64 {
 
 /// Safe callers reach this only through a compiled artifact bound to the
 /// immutable descriptor and this module's private native entry signature.
-pub(super) fn execute<F>(
+pub(in crate::native_artifact) fn execute<F>(
     descriptor: &NativeAbiDescriptor,
     entry: F,
     inputs: &[NativeScalarValue],

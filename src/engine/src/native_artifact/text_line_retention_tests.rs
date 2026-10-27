@@ -1,5 +1,6 @@
 use super::super::tests::plans;
 use super::*;
+use crate::native_artifact::fusion_semantics::semantic_actions;
 
 pub(super) fn scan() -> String {
     "+> text\n+> sequence\n#Locate(rows<[string]>, count<u64>) => <(u64,u64)>\n  | :Skip(i<u64>)\n  | :Take(first<u64>, i<u64>)\n  | :Ready(first<u64>, last<u64>).\n#Locate(rows, count) -> :Skip(1u64)\n  :Skip(i)\n    | i > count -> :Ready(1u64, 1u64)\n    | rows[i] == \"open\" -> :Take(i + 1u64, i + 1u64)\n    | * -> :Skip(i + 1u64)\n  :Take(first, i)\n    | i > count -> :Ready(first, count + 1u64)\n    | rows[i] == \"close\" -> :Ready(first, i)\n    | * -> :Take(first, i + 1u64)\n  :Ready(first, last) => (first, last).\nrows := text/lines(input<string>)\nbounds := #Locate(rows, sequence/length(rows))\nresult := bounds?\n  | (first, last), first < last => text/join(rows[first..last], \"|\")\n  | * => \"\".\nresult\n".into()

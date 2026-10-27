@@ -254,7 +254,7 @@ jobs:
           MECH_CANONICAL_HOSTED_EVIDENCE_DIR: ${{ runner.temp }}/canonical-hosted-evidence
         run: |
           # Existing inner bounds: 2x900s initial builds, 2x120s metadata,
-          # 2x300s actual generated-template test suites,
+          # 2x300s compiled launcher test suites,
           # 26x120s launches, 10x120s pin/recovery builds and 4x15s git checks.
           # 7020s total ceilings leave 300s inside this stage for generation,
           # supervision and cleanup; the Actions step leaves another 300s.
@@ -425,8 +425,10 @@ jobs:
             src/cli/commands/build_cranelift_tests.rs tests/canonical_native_build.rs \
             tests/support/canonical_native_build.rs \
             hosts/gpu/tests/fixtures/native/knucleotide-idiomatic.mec \
-            hosts/gpu/src/native_artifact/application.rs hosts/gpu/src/native_artifact/mod.rs \
-            hosts/gpu/src/native_artifact/program_application.rs \
+            hosts/gpu/src/native_artifact/application/mod.rs hosts/gpu/src/native_artifact/mod.rs \
+            hosts/gpu/src/native_artifact/program/application.rs \
+            hosts/gpu/src/native_artifact/launch/*.rs \
+            hosts/gpu/src/native_artifact/launch/hosted/*.rs \
             hosts/gpu/src/native_artifact/templates/linked_*.in \
             src/runtime/src/runtime/program/compiler.rs \
             src/runtime/src/runtime/program/compiler_retained_input.rs \

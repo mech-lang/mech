@@ -9,7 +9,7 @@ use super::super::{
 use super::{
     Action, NativeControlLoop, Op, Plan, Scalar, SemanticActions, Value,
     availability::{NativeTextLineReadFrontier, identity},
-    definitions, predicate_branches, reads, semantic_actions, successors,
+    definitions, predicate_branches, successors,
 };
 use mech_core::{SchemaBody, ValueData};
 
@@ -699,23 +699,30 @@ impl Plan {
     /// bound. Unsupported graphs retain ordinary snapshot execution. These
     /// rules alone grant no capture capability or change the execution ABI.
     pub fn text_line_retention_frontiers(&self) -> Vec<NativeTextLineRetentionFrontier> {
-        let frontiers = self.text_line_read_frontiers();
-        if frontiers.is_empty() {
-            return Vec::new();
-        }
-        let Ok(actions) = semantic_actions(self) else {
-            return Vec::new();
-        };
-        let Ok(uses) = reads(self, &actions) else {
-            return Vec::new();
-        };
-        let defs = definitions(self, &actions);
-        let aggregates = self.scalar_aggregates();
-        frontiers
-            .into_iter()
-            .filter_map(|read| frontier(self, read, &actions, &defs, &uses, &aggregates))
-            .collect()
+        self.facts().into_retention_frontiers()
     }
+}
+
+pub(in crate::native_artifact) fn derive(
+    plan: &Plan,
+    facts: &crate::native_artifact::NativeProgramFacts<'_>,
+) -> Vec<NativeTextLineRetentionFrontier> {
+    let frontiers = facts.text_line_read_frontiers();
+    if frontiers.is_empty() {
+        return Vec::new();
+    }
+    let Ok(actions) = facts.actions() else {
+        return Vec::new();
+    };
+    let Ok(uses) = facts.fusion_reads() else {
+        return Vec::new();
+    };
+    let defs = definitions(plan, &actions);
+    let aggregates = facts.scalar_aggregates();
+    frontiers
+        .into_iter()
+        .filter_map(|read| frontier(plan, read, &actions, &defs, &uses, &aggregates))
+        .collect()
 }
 
 #[cfg(all(test, feature = "source", feature = "semantic-compiler"))]
