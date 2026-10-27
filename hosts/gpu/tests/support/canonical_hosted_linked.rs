@@ -26,6 +26,14 @@ mod profile;
 #[path = "canonical_program_pins.rs"]
 mod provenance;
 
+fn cargo_target(evidence: &Path) -> PathBuf {
+    let target = std::env::var_os("MECH_CANONICAL_HOSTED_TARGET_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| evidence.join("cargo-target"));
+    assert!(target.is_absolute(), "qualification cache must be absolute");
+    target
+}
+
 fn launch() -> Value {
     json!({
         "grants": [
@@ -196,10 +204,7 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
             String::from_utf8_lossy(&metadata_output.stderr)
         );
         let metadata: Value = serde_json::from_slice(&metadata_output.stdout).unwrap();
-        let target = std::env::var_os("MECH_CANONICAL_HOSTED_TARGET_DIR")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| evidence.join("cargo-target"));
-        assert!(target.is_absolute(), "qualification cache must be absolute");
+        let target = cargo_target(&evidence);
         let mut command = profile
             .invocation(&project.manifest_path(), binary_name, &target)
             .with_current_dir(isolated)
@@ -242,8 +247,12 @@ fn complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pi
         fs::copy(&built_binary, &binary).unwrap();
         let binary_pin = pin(&binary);
         assert_eq!(binary_pin, pin(&built_binary));
-        let compiled_launcher_tests =
-            launcher_tests::qualify(&target, &directory, profile.release());
+        let compiled_launcher_tests = launcher_tests::qualify(
+            &project.manifest_path(),
+            &target,
+            &directory,
+            profile.release(),
+        );
         assert_eq!(binary_pin, pin(&built_binary));
         let revision = variants[variant]
             .revision()

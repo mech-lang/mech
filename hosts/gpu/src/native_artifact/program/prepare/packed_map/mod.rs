@@ -37,7 +37,7 @@ impl Proof {
     pub fn range_site(&self) -> u32 {
         self.range_site
     }
-    #[cfg(test)]
+    #[cfg(all(test, feature = "canonical-native-program"))]
     pub fn selection_site(&self) -> u32 {
         self.selection_site
     }

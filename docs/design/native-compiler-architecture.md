@@ -9,11 +9,12 @@ entry points remain supported. No stack is merged by this work.
 ## Fixed baseline and evidence
 
 The handoff proposed I = `96e535307b30a69fa2dc8dd48c2192089e2361ea`.
-Before any cleanup measurement, adopt I =
-`8aafe1e16b50b333d7990dd107e79124405bb71b`, PR #934's rebased head.
-This preserves the subsequent test-only packed-frame gating fix and the merged
-#901–#910/#929 integration changes. The rebase preserves all 213 optimization
-commits. This I is fixed throughout the campaign; F/I measures only this cleanup.
+Before any primary measurement, adopt I =
+`ddf8cbc3b17a644ea6292ee3bf0c4a9c63af4514`, PR #934's repaired head.
+This preserves all optimization commits, the merged #901–#910/#929 integration
+changes and the subsequently verified CI repairs. Earlier source and executable
+receipts remain historical evidence. This I is fixed throughout the campaign;
+F/I measures only the architectural consolidation above that adopted base.
 
 W remains `d8d9a7d64944cd3de78fe3f8190284924069c508`. Its retained executable
 SHA256 is `43ec6990256fec678e99bc7726ce2f203a4191154e19963fee4a43b355fc70ca`;
@@ -439,3 +440,41 @@ capture ordering in the compiled launcher that now owns those operations. The
 factory-selection, profile, image-pin and no-fallback assertions remain. The
 snapshot integration target also runs in the existing canonical program CI
 profile, so the canonical test inventory has an executable owner for it.
+
+### Final source and evidence contract
+
+The adopted integration base is `ddf8cbc3b17a644ea6292ee3bf0c4a9c63af4514`.
+It preserves the earlier `8aafe1e16b50b333d7990dd107e79124405bb71b` base and
+repairs its independently failing CI contracts: program-only support is absent
+from scalar-only builds, the three maintained map operations are explicitly
+deferred from closed evaluation, the catalog census names those additions, and
+the tail fixtures describe the existing supported states and exact two-unit
+comparison debit. These changes add no folding eligibility or larger runtime
+resource limit. The earlier baseline and candidate receipts remain retained.
+
+The final adoption also preserves `17539acd704e622c5f8ad90e001e20227535d53f`
+and repairs the three failures in its completed CI: native test helpers are
+restricted to their actual consumers, the core empty-map test uses its available
+source-scheme interface, and linkage validation checks both the frozen historical
+surface and the current catalog with the three additive map factories. The current
+full surface and complete coverage inventory were regenerated from compiled
+catalogs. These later repairs change no production runtime or bytecode behavior.
+The base-only differential memory controls remain removed by this consolidation;
+explicit compilation options continue to own that behavior.
+
+Final qualification lives in `mech-lang/benchmarks`, under
+`experiments/mech/native-owner-aot-v1/native-architecture-consolidation-v1/`
+([evidence PR](https://github.com/mech-lang/benchmarks/pull/2)). Its plan must pin
+this adopted I, the exact final F source and public AOT builds, the unchanged W/R
+controls, prerequisites, serial schedule, controller and analysis before the
+first primary sample. Qualification requires the actual retained process
+receipts and both sessions' prescribed paired intervals. Code agreement,
+historical timings and statistical acceptance without those prerequisites do
+not establish performance qualification.
+
+Hosted and optional-policy contracts inspect bindings and dispatch in generated
+mains and stable behavior in the compiled owner. The launcher test executable is
+compiled under the existing hosted compilation bound, pinned, then executed
+under a separate unchanged test bound. Secured and optional-policy schemas stay
+distinct even when Cargo unifies features. Required public/hosted/policy process
+cases still execute their real original/decoded applications and negative pins.

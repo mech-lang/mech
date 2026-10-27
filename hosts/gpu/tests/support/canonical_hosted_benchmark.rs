@@ -167,7 +167,7 @@ fn complete_original_and_decoded_knucleotide_same_binary_policy_controls() {
         })
         .collect::<Vec<_>>();
     assert_eq!(projects[0].pins(), projects[1].pins());
-    let target = evidence.join("cargo-target");
+    let target = cargo_target(&evidence);
     let mut results = Vec::new();
     for (index, project) in projects.iter().enumerate() {
         let directory = evidence.join(format!("variant-{index}"));
@@ -190,8 +190,12 @@ fn complete_original_and_decoded_knucleotide_same_binary_policy_controls() {
         let binary = directory.join("native-executable");
         fs::copy(&built_binary, &binary).unwrap();
         let binary_pin = pin(&binary);
-        let compiled_launcher_tests =
-            launcher_tests::qualify(&target, &directory, profile.release());
+        let compiled_launcher_tests = launcher_tests::qualify(
+            &project.manifest_path(),
+            &target,
+            &directory,
+            profile.release(),
+        );
         assert_eq!(pin(&built_binary), binary_pin);
         let cases = cases::qualify(&binary, &directory, &binary_pin);
         let pin_rejections = if index == 0 {

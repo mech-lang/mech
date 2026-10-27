@@ -86,11 +86,12 @@ CONTRACT_KIND = re.compile(r"^[a-z][a-z0-9_]*$")
 CANONICAL_CONTRACT_KIND = re.compile(r"^[a-z][a-z0-9_-]*(?:/[a-z][a-z0-9_-]*)+$")
 # These independently audited additions extend, rather than replace, the
 # historical full surface. Current inventories and digests include them all.
+CURRENT_MAP_ADDITIONS = frozenset({"map/new", "map/insert", "map/contains-key"})
 ADDITIVE_RUNTIME_FACTORIES = frozenset({
     "number/parse-u64", "NumberFormatScalarCanonical", "NumberFormatMatrixCanonical",
     "sequence/length", "map/histogram", "map/keys", "map/values",
     "sequence/sort-indices", "text/lines", "text/join",
-})
+}) | CURRENT_MAP_ADDITIONS
 MATRIX_FEATURES = {
     "matrix", "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
     "matrixd", "row_vector2", "row_vector3", "row_vector4", "row_vectord",
@@ -131,19 +132,25 @@ def catalog_surface_digest(entries: list[dict[str, Any]]) -> str:
     return sha256("".join(lines).encode("utf-8")).hexdigest()
 
 
-def frozen_extended_runtime_contract() -> tuple[int, str]:
+def runtime_profile_contract(count_name: str, digest_name: str, profile: str) -> tuple[int, str]:
     source = STDLIB_PROFILE_CONTRACT.read_text(encoding="utf-8")
     count = re.search(
-        r"const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = ([0-9_]+);",
+        rf"const {re.escape(count_name)}: usize = ([0-9_]+);",
         source,
     )
     surface_digest = re.search(
-        r'const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =\s*"([0-9a-f]{64})";',
+        rf'const {re.escape(digest_name)}: &str =\s*"([0-9a-f]{{64}})";',
         source,
     )
     if count is None or surface_digest is None:
-        raise ContractError("stdlib extended runtime contract is missing or malformed")
+        raise ContractError(f"stdlib {profile} runtime contract is missing or malformed")
     return int(count.group(1).replace("_", "")), surface_digest.group(1)
+
+
+def frozen_extended_runtime_contract() -> tuple[int, str]:
+    return runtime_profile_contract(
+        "EXPECTED_EXTENDED_RUNTIME_FACTORIES", "EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST", "extended"
+    )
 
 
 def run(
@@ -473,9 +480,16 @@ def verify_full_surface(entries: list[dict[str, Any]]) -> None:
         raise ContractError("frozen full runtime surface count changed")
     expected = {(item["id_hex"], item["name"]) for item in frozen}
     retained = retained_runtime_entries(entries)
-    actual = {(item["runtime_factory_id"], item["runtime_factory_name"]) for item in entries}
-    if len(entries) != len(expected) or actual != expected:
+    frozen_entries = [entry for entry in entries
+                      if entry["runtime_factory_name"] not in CURRENT_MAP_ADDITIONS]
+    actual = {(item["runtime_factory_id"], item["runtime_factory_name"]) for item in frozen_entries}
+    if len(frozen_entries) != len(expected) or actual != expected:
         raise ContractError("runtime/native-plan drift in the frozen full surface")
+    current_count, current_digest = runtime_profile_contract(
+        "EXPECTED_RUNTIME_FACTORIES", "EXPECTED_CURRENT_RUNTIME_SURFACE_DIGEST", "full"
+    )
+    if len(entries) != current_count or catalog_surface_digest(entries) != current_digest:
+        raise ContractError("runtime/native-plan drift in the current full surface")
     retained_identity = [
         {"runtime_factory_id": entry["runtime_factory_id"],
          "runtime_factory_name": entry["runtime_factory_name"]}

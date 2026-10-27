@@ -40,48 +40,6 @@ pub(in crate::native_artifact) struct Frame {
     pub controls: u64,
     pub lookup_cache: u64,
 }
-#[cfg(test)]
-pub(in crate::native_artifact) const FRAME_WORDS: usize = 20;
-#[cfg(test)]
-pub(in crate::native_artifact) const SLOTS: usize = 0;
-#[cfg(test)]
-pub(in crate::native_artifact) const CAPACITY: usize = 1;
-#[cfg(test)]
-pub(in crate::native_artifact) const LENGTH: usize = 2;
-#[cfg(test)]
-pub(in crate::native_artifact) const FUEL: usize = 3;
-#[cfg(test)]
-pub(in crate::native_artifact) const UPDATES: usize = 4;
-#[cfg(test)]
-pub(in crate::native_artifact) const KEY_LOW: usize = 5;
-#[cfg(test)]
-pub(in crate::native_artifact) const KEY_HIGH: usize = 6;
-#[cfg(test)]
-pub(in crate::native_artifact) const ENTRY_POINTER: usize = 7;
-#[cfg(test)]
-pub(in crate::native_artifact) const ENTRY_KNOWN: usize = 8;
-#[cfg(test)]
-pub(in crate::native_artifact) const SOURCE_PTR: usize = 9;
-#[cfg(test)]
-pub(in crate::native_artifact) const SOURCE_LEN: usize = 10;
-#[cfg(test)]
-pub(in crate::native_artifact) const WIDTH: usize = 11;
-#[cfg(test)]
-pub(in crate::native_artifact) const PREVIOUS_START: usize = 12;
-#[cfg(test)]
-pub(in crate::native_artifact) const LOW_MASK: usize = 13;
-#[cfg(test)]
-pub(in crate::native_artifact) const HIGH_MASK: usize = 14;
-#[cfg(test)]
-pub(in crate::native_artifact) const RANGE_CALL_ALLOWED: usize = 15;
-#[cfg(test)]
-pub(in crate::native_artifact) const READ_CALL_ALLOWED: usize = 16;
-#[cfg(test)]
-pub(in crate::native_artifact) const WRITE_CALL_ALLOWED: usize = 17;
-#[cfg(test)]
-pub(in crate::native_artifact) const CONTROLS: usize = 18;
-#[cfg(test)]
-pub(in crate::native_artifact) const LOOKUP_CACHE: usize = 19;
 
 #[repr(C)]
 #[derive(Clone, Copy, Default, Debug)]
@@ -90,14 +48,6 @@ pub(in crate::native_artifact) struct Slot {
     pub high: u64,
     pub value: u64,
 }
-#[cfg(test)]
-pub(in crate::native_artifact) const SLOT_WORDS: usize = 3;
-#[cfg(test)]
-pub(in crate::native_artifact) const SLOT_LOW: usize = 0;
-#[cfg(test)]
-pub(in crate::native_artifact) const SLOT_HIGH: usize = 1;
-#[cfg(test)]
-pub(in crate::native_artifact) const SLOT_VALUE: usize = 2;
 
 #[path = "payload.rs"]
 pub(in crate::native_artifact::program::runtime::maps::packed) mod payload;

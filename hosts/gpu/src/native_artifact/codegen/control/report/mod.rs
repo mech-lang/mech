@@ -195,6 +195,7 @@ struct ConstantCaller {
     template_instructions: usize,
 }
 impl CodegenReport {
+    #[cfg(feature = "canonical-native-program")]
     pub fn loop_constant_caller(
         &mut self,
         header: usize,

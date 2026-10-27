@@ -1092,8 +1092,8 @@ fn prefix_matching_checks_known_shape_and_defers_missing_shape_relations() {
 
 #[test]
 fn nullary_map_constructor_uses_expected_key_value_and_cardinality_types() {
-    let declaration = maintained_source_type_declaration("map/new").unwrap();
-    let scheme = &declaration.overloads[0].scheme;
+    let schemes = maintained_source_schemes("map/new").unwrap().unwrap();
+    let scheme = &schemes[0];
     for (key, value) in [
         (BuiltinScalarKind::String, BuiltinScalarKind::U64),
         (BuiltinScalarKind::U64, BuiltinScalarKind::String),

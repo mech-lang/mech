@@ -20,19 +20,19 @@ use std::rc::Rc;
 
 #[path = "mapped/mod.rs"]
 pub(in crate::native_artifact::program::runtime::invocation::joins) mod mapped;
-#[cfg(all(test, feature = "canonical-native-program"))]
+#[cfg(all(test, feature = "canonical-native-program-host"))]
 pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::invocation::joins::mapped::faults::Control as JoinMapControl;
-#[cfg(all(test, feature = "canonical-native-program"))]
+#[cfg(all(test, feature = "canonical-native-program-host"))]
 pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::invocation::joins::mapped::faults::Fault as JoinMapFault;
-#[cfg(all(test, feature = "canonical-native-program"))]
+#[cfg(all(test, feature = "canonical-native-program-host"))]
 pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::invocation::joins::mapped::faults::Limit as JoinMapLimit;
-#[cfg(all(test, feature = "canonical-native-program"))]
+#[cfg(all(test, feature = "canonical-native-program-host"))]
 pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::invocation::joins::mapped::faults::demand as join_map_demand;
-#[cfg(all(test, feature = "canonical-native-program"))]
+#[cfg(all(test, feature = "canonical-native-program-host"))]
 pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::invocation::joins::mapped::faults::fired as join_map_fault_fired;
-#[cfg(all(test, feature = "canonical-native-program"))]
+#[cfg(all(test, feature = "canonical-native-program-host"))]
 pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::invocation::joins::mapped::faults::started as join_map_started;
-#[cfg(all(test, feature = "canonical-native-program"))]
+#[cfg(all(test, feature = "canonical-native-program-host"))]
 pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::invocation::joins::mapped::faults::with_control as with_join_map_control;
 #[path = "range.rs"]
 pub(in crate::native_artifact::program::runtime::invocation::joins) mod range;
@@ -195,7 +195,7 @@ impl Invocation<'_, '_, '_> {
         if tests::before_call(self, site, role)? {
             return Ok(true);
         }
-        #[cfg(all(test, feature = "canonical-native-program"))]
+        #[cfg(all(test, feature = "canonical-native-program-host"))]
         mapped::faults::before_join(self, role);
         if !matches!(role, Site::Range(_)) && words != [0, 0] {
             return Err(invalid(
@@ -538,7 +538,7 @@ impl Invocation<'_, '_, '_> {
                             .is_none(),
                     },
                 )?;
-                #[cfg(all(test, feature = "canonical-native-program"))]
+                #[cfg(all(test, feature = "canonical-native-program-host"))]
                 let _composition_pressure = mapped::faults::pressure(self)?;
                 for (dimension, required, limit) in [
                     (

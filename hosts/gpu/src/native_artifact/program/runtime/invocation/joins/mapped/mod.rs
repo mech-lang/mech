@@ -7,7 +7,7 @@ use mech_core::ManagedNodeReservation;
 use mech_engine::native_artifact::{
     NativePrivateStringBuffer, NativeStringMapRegion, NativeTextLineJoinChunk,
 };
-#[cfg(all(test, feature = "canonical-native-program"))]
+#[cfg(all(test, feature = "canonical-native-program-host"))]
 #[path = "faults.rs"]
 pub(in crate::native_artifact::program::runtime::invocation::joins) mod faults;
 
@@ -95,7 +95,7 @@ impl Invocation<'_, '_, '_> {
         join_peak: u64,
         join_nodes: u64,
     ) -> Result<Option<Prepared>, Error> {
-        #[cfg(all(test, feature = "canonical-native-program"))]
+        #[cfg(all(test, feature = "canonical-native-program-host"))]
         if faults::disabled() {
             return Ok(None);
         }
@@ -360,7 +360,7 @@ impl Invocation<'_, '_, '_> {
         if args != [0; 3] || !self.state.consumed {
             return Err(invalid("joined-map copy precedes its admitted join"));
         }
-        #[cfg(all(test, feature = "canonical-native-program"))]
+        #[cfg(all(test, feature = "canonical-native-program-host"))]
         faults::before_prepare(self, site)?;
         let descriptor = self.descriptor;
         let words = {
@@ -433,7 +433,7 @@ impl Invocation<'_, '_, '_> {
         };
         if let Some(words) = words {
             self.write_window_arguments(words)?;
-            #[cfg(all(test, feature = "canonical-native-program"))]
+            #[cfg(all(test, feature = "canonical-native-program-host"))]
             faults::after_prepare(self, site)?;
             return Ok(Some(1));
         }
@@ -448,7 +448,7 @@ impl Invocation<'_, '_, '_> {
         if args[1..] != [0; 2] || !self.state.consumed {
             return Err(invalid("joined-map completion arguments"));
         }
-        #[cfg(all(test, feature = "canonical-native-program"))]
+        #[cfg(all(test, feature = "canonical-native-program-host"))]
         if faults::before_finish(self, site)? {
             return Ok(None);
         }
@@ -582,7 +582,7 @@ impl Invocation<'_, '_, '_> {
                 initialized: false,
             }),
         });
-        #[cfg(all(test, feature = "canonical-native-program"))]
+        #[cfg(all(test, feature = "canonical-native-program-host"))]
         faults::after_mapped(self)?;
         Ok(())
     }

@@ -239,6 +239,9 @@ fn configured_catalog_census_rejects_unbound_names_before_arguments() {
         "number/format",
         "sequence/length",
         "map/histogram",
+        "map/new",
+        "map/insert",
+        "map/contains-key",
         "map/keys",
         "map/values",
         "sequence/sort-indices",
@@ -254,7 +257,7 @@ fn configured_catalog_census_rejects_unbound_names_before_arguments() {
         120,
         "review any change to the retained catalog census"
     );
-    assert_eq!(names.len(), 129, "review every catalog addition by name");
+    assert_eq!(names.len(), 132, "review every catalog addition by name");
     let mut checked = 0;
     for name in names {
         if catalog.all_exports().any(|export| {
