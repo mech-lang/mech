@@ -40,6 +40,9 @@ mod sequence_capacity_qualification;
 #[path = "support/canonical_program_buffer_frames.rs"]
 mod buffer_frame_qualification;
 
+#[path = "support/canonical_program_record_buffers.rs"]
+mod record_buffer_qualification;
+
 #[path = "support/canonical_program_linked.rs"]
 mod linked_qualification;
 

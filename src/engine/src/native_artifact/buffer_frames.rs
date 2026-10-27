@@ -1,4 +1,4 @@
-//! Private tuple argument frames whose leaves remain admitted immutable Values.
+//! Private tuple/record frames whose leaves remain admitted immutable Values.
 //! The complete connected component must have only pack/copy/project uses.
 use super::{
     NativeCollectionPrimitive as Primitive, NativeControlLoop as Loop,
@@ -69,11 +69,13 @@ fn fields(plan: &Plan, value: Value) -> Option<usize> {
     {
         return None;
     }
-    let SchemaBody::Tuple(fields) = plan.values()[value.get() as usize].definition().body() else {
-        return None;
+    let fields = match plan.values()[value.get() as usize].definition().body() {
+        SchemaBody::Tuple(fields) => fields.iter().collect::<Vec<_>>(),
+        SchemaBody::Record(fields) => fields.iter().map(|field| &field.schema).collect(),
+        _ => return None,
     };
     let mut buffer = false;
-    for field in fields {
+    for field in &fields {
         match field {
             SchemaBody::UnsignedInteger(
                 IntegerWidth::W8 | IntegerWidth::W16 | IntegerWidth::W32 | IntegerWidth::W64,
@@ -142,7 +144,43 @@ fn movement(plan: &Plan, action: &Action) -> Option<(Value, Value)> {
         _ => None,
     }
 }
-fn projection(action: &Action) -> Option<(Value, usize, Value)> {
+fn projection(plan: &Plan, action: &Action) -> Option<(Value, usize, Value)> {
+    if let Action::LibraryCall {
+        template,
+        operands,
+        output,
+    } = action
+    {
+        if template.primitive() != Primitive::RecordFieldAccess
+            || operands.len() != 2
+            || template.inputs().len() != 2
+            || template.inputs()[1].body() != &SchemaBody::Id
+            || template.output() != plan.values()[output.get() as usize].definition()
+            || template.inputs()[0] != *plan.values()[operands[0].get() as usize].definition()
+        {
+            return None;
+        }
+        let selected = plan
+            .constants()
+            .iter()
+            .find(|entry| entry.value() == operands[1])?;
+        let mech_core::ValueData::Id(id) = selected.constant().data() else {
+            return None;
+        };
+        let SchemaBody::Record(fields) = template.inputs()[0].body() else {
+            return None;
+        };
+        // Ambiguous hashes keep the maintained canonical selector path.
+        let mut matching = fields
+            .iter()
+            .enumerate()
+            .filter(|(_, field)| mech_core::hash_str(&field.name) == *id);
+        let (ordinal, _) = matching.next()?;
+        if matching.next().is_some() {
+            return None;
+        }
+        return Some((operands[0], ordinal, *output));
+    }
     let Action::Structural {
         source,
         path,
@@ -321,7 +359,7 @@ impl Facts<'_> {
                             source == value
                                 && plan.values()[source.get() as usize]
                                     == plan.values()[output.get() as usize]
-                        } else if let Some((source, ordinal, output)) = projection(action) {
+                        } else if let Some((source, ordinal, output)) = projection(plan, action) {
                             source == value
                                 && fields.get(ordinal).is_some_and(|schema| {
                                     *schema == plan.values()[output.get() as usize].schema()
@@ -331,6 +369,20 @@ impl Facts<'_> {
                         }
                     }
                     Read::LoopSeed(_) | Read::LoopNext(_) => read_site(plan, *read).is_some(),
+                    Read::LoopReturned(id) => match &plan.iterations()[id as usize] {
+                        // A tail finish only branches to this existing managed
+                        // copy. It does not publish a canonical record. Escape
+                        // rejection still propagates from the result through
+                        // the complete copy component.
+                        Loop::Tail(t) => {
+                            t.returned() == value
+                                && plan.values()[value.get() as usize]
+                                    == plan.values()[t.result().get() as usize]
+                                && matches!(&actions[t.exit() as usize], Action::Scalar(Scalar::Copy { source, output })
+                                if *source == value && *output == t.result())
+                        }
+                        _ => false,
+                    },
                     _ => false,
                 };
                 if !allowed {
@@ -389,7 +441,7 @@ impl Facts<'_> {
                             output,
                         )
                     } else if let Some((source, ordinal, output)) =
-                        projection(action).filter(|(v, _, _)| selected(*v))
+                        projection(plan, action).filter(|(v, _, _)| selected(*v))
                     {
                         (
                             NativeBufferFrameOperation::Project {

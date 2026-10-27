@@ -1,4 +1,4 @@
-//! Exact-site helpers for private buffer-containing tuple argument frames.
+//! Exact-site helpers for private buffer-containing tuple/record frames.
 use super::*;
 use mech_engine::native_artifact::NativeBufferFrameOperation as Operation;
 
@@ -87,16 +87,28 @@ impl Invocation<'_, '_, '_> {
                 source,
                 ordinal,
                 output,
-            } if tag == GlobalHelper::StructuralObservation && words.is_empty() => {
-                let NativeIterationAction::Structural {
-                    source: expected_source,
-                    output: expected_output,
-                    ..
-                } = descriptor.metadata().plan.blocks()[site].action()
-                else {
-                    return Err(invalid("private frame projection outside structural visit"));
+            } if (tag == GlobalHelper::StructuralObservation && words.is_empty())
+                || (tag == GlobalHelper::Library && words == [0, 0]) =>
+            {
+                let action = descriptor.metadata().plan.blocks()[site].action();
+                let matches_visit = match (tag, action) {
+                    (
+                        GlobalHelper::StructuralObservation,
+                        NativeIterationAction::Structural {
+                            source: expected_source, output: expected_output, ..
+                        },
+                    ) => expected_source == source && expected_output == output,
+                    (
+                        GlobalHelper::Library,
+                        NativeIterationAction::LibraryCall {
+                            operands, output: expected_output, template,
+                        },
+                    ) => operands.len() == 2 && operands[0] == *source
+                        && expected_output == output
+                        && template.primitive() == mech_engine::native_artifact::NativeCollectionPrimitive::RecordFieldAccess,
+                    _ => false,
                 };
-                if expected_source != source || expected_output != output {
+                if !matches_visit {
                     return Err(invalid("private frame projection differs from visit"));
                 }
                 let value = self.state.buffer_frames.project(
@@ -105,6 +117,28 @@ impl Invocation<'_, '_, '_> {
                     *ordinal,
                     &mut self.state.control.work,
                 )?;
+                if let NativeIterationAction::LibraryCall { operands, .. } = action {
+                    let selector = self
+                        .state
+                        .arena
+                        .copy_current(operands[1].get(), &mut self.state.control.work)?;
+                    let call = descriptor.metadata().calls[site]
+                        .as_ref()
+                        .ok_or_else(|| invalid("private record field lost selected factory"))?;
+                    let coexistence = self.selected_join_coexistence(None)?;
+                    call.admit_buffer_record_field(
+                        &selector,
+                        *ordinal,
+                        &value,
+                        self.limits,
+                        &self.state.library,
+                        coexistence,
+                    )
+                    .map_err(|error| Error::Library {
+                        origin: descriptor.metadata().plan.blocks()[site].origin(),
+                        error,
+                    })?;
+                }
                 let ty = &descriptor.metadata().plan.values()[output.get() as usize];
                 if value.schema() != ty.schema() || value.schema_key() != ty.schema_key() {
                     return Err(invalid("private frame field schema differs"));

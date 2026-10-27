@@ -131,6 +131,12 @@ fn linked_recursive_buffer_frame_preserves_publication_and_recovers() {
     linked_assertion_retry(source, ValueDataDraft::U64);
 }
 
+#[test]
+fn linked_record_buffer_return_preserves_publication_and_recovers() {
+    let source = "+> sequence\ngrow(words<[u64]>, left<u64>) => (out<{nodes<[u64]>}>) :=\n  out := ((left > 0u64)? | true => grow(sequence/append(words, left), left - 1u64) | false => {nodes: words}).\nchecked(n<u64>) => (out<u64>) :=\n  packet := grow(sequence/with-capacity(0u64, 32u64), 3u64)\n  positive! := n > 0u64\n  out := 12u64 / n + packet.nodes[1u64] - 3u64.\nchecked(input<u64>)\n";
+    linked_assertion_retry(source, ValueDataDraft::U64);
+}
+
 fn linked_assertion_retry(source: &str, input_word: fn(u64) -> ValueDataDraft) {
     let temporary = tempfile::tempdir().unwrap();
     let directory = temporary.path();

@@ -1,4 +1,4 @@
-//! Validate ONE selected tuple pack without materializing its child payloads.
+//! Validate ONE selected tuple/record pack without materializing its child payloads.
 use super::{InvokeError, NativePreparedLibraryCall, finite_limits};
 use crate::native_artifact::{NativeCollectionPrimitive as Primitive, NativeLibraryWorkBudget};
 use crate::resident::budget::{
@@ -10,6 +10,125 @@ use mech_core::{
 };
 
 impl NativePreparedLibraryCall {
+    /// Validate the exact selected field operation for a compiler-proved private
+    /// record. The pack already checked the complete record shape; its actual
+    /// canonical child remains the output owner, without a payload clone.
+    pub fn admit_buffer_record_field(
+        &self,
+        selector: &Value,
+        ordinal: usize,
+        child: &Value,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+    ) -> Result<(), InvokeError> {
+        finite_limits(self.template.origin().node(), limits).map_err(InvokeError::Binding)?;
+        if self.template.primitive() != Primitive::RecordFieldAccess
+            || self.template.inputs().len() != 2
+        {
+            return Err(InvokeError::InvalidInput);
+        }
+        work.with_call_limits(
+            limits.max_compute_work.unwrap(),
+            limits.max_comparison_work.unwrap(),
+            || {
+                let memory = work.memory_budget();
+                let mech_core::ResolvedOperationContract::Declared(contract) =
+                    self.template.contract()
+                else {
+                    return Err(InvokeError::InvalidInput);
+                };
+                if selector.schema() != contract.inputs[1].schema
+                    || selector.schema_key() != self.input_keys[1]
+                    || child.schema() != contract.outputs[0].schema
+                    || child.schema_key() != self.output_key
+                {
+                    return Err(InvokeError::InvalidInput);
+                }
+                selector
+                    .validate_against(&self.schemas)
+                    .map_err(|_| InvokeError::InvalidInput)?;
+                child
+                    .validate_against(&self.schemas)
+                    .map_err(|_| InvokeError::InvalidInput)?;
+                let retained = child
+                    .memory_budget_retained_bytes(&memory)
+                    .ok_or(InvokeError::UnadmittedValue)?;
+                let nodes = child
+                    .memory_budget_retained_nodes(&memory)
+                    .ok_or(InvokeError::UnadmittedValue)?;
+                let selector_bytes = selector
+                    .memory_budget_retained_bytes(&memory)
+                    .ok_or(InvokeError::UnadmittedValue)?;
+                let selector_nodes = selector
+                    .memory_budget_retained_nodes(&memory)
+                    .ok_or(InvokeError::UnadmittedValue)?;
+                let context = NativeProjectionIndexContext::new(work, limits, coexistence)
+                    .with_added_capacity(
+                        retained
+                            .checked_add(selector_bytes)
+                            .ok_or(InvokeError::InvalidInput)?,
+                        nodes
+                            .checked_add(selector_nodes)
+                            .ok_or(InvokeError::InvalidInput)?,
+                    )?;
+                context.check_capacity(0, 0)?;
+                context.charge(
+                    self.lookup_work
+                        .checked_add(128)
+                        .ok_or(InvokeError::InvalidInput)?,
+                    0,
+                )?;
+                let (mech_core::SchemaBody::Record(fields), mech_core::ValueData::Id(selected)) =
+                    (self.template.inputs()[0].body(), selector.data())
+                else {
+                    return Err(InvokeError::InvalidInput);
+                };
+                let actual = crate::resident::numeric::named_schema_ordinal(
+                    fields.iter().map(|f| f.name.as_str()),
+                    *selected,
+                    |characters| {
+                        context.charge(
+                            characters
+                                .checked_mul(16)
+                                .and_then(|n| n.checked_add(64))
+                                .ok_or(mech_core::ResidentKernelError::InvalidShape)?,
+                            characters,
+                        )
+                    },
+                )?;
+                if actual != ordinal {
+                    return Err(InvokeError::InvalidInput);
+                }
+                let mut meter = ResidentBudgetMeter::for_native_projection(work, limits)?;
+                let footprint =
+                    measure_borrowed_canonical_value_footprint(&mut meter, child, &self.schemas)?;
+                if let Some(violation) = mech_core::evaluate_call_memory_budget(
+                    mech_core::MemoryObjectOwner::NodeOutput {
+                        node: self.template.origin().node(),
+                        port: 0,
+                    },
+                    ResourceDemand {
+                        output_elements: 1,
+                        ..ResourceDemand::default()
+                    },
+                    footprint.retained_bytes,
+                    0,
+                    limits,
+                )
+                .first()
+                {
+                    return Err(InvokeError::Plan(
+                        mech_core::MemoryPlanError::TargetLimitExceeded {
+                            violation: violation.clone(),
+                        },
+                    ));
+                }
+                Ok(())
+            },
+        )?
+    }
+
     /// The generated caller proves private frame uses and retains the actual
     /// already-admitted child owners in its planned invocation-local lanes.
     /// This method supplies neither a visit grant nor a canonical tuple Value.
@@ -24,7 +143,7 @@ impl NativePreparedLibraryCall {
         if self.template.primitive() != Primitive::CompositePack(inputs.len())
             || !matches!(
                 self.template.output().body(),
-                mech_core::SchemaBody::Tuple(_)
+                mech_core::SchemaBody::Tuple(_) | mech_core::SchemaBody::Record(_)
             )
             || self.template.inputs().len() != inputs.len()
         {

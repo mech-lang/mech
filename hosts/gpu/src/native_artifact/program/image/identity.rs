@@ -397,7 +397,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 109;
 // and enforces the copy-byte quota through ResourceDemand's correct field.
 // Policy87 retains nonescaping buffer argument frames in planned handle lanes.
 // Policy88 uses the core composite binding witness for frame metadata admission.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 88;
+// Policy89 retains private record fields through validated reference transport.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 89;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
