@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+from generate_path_reference import pretty
 import generate_block_reference as module
 
 
@@ -65,7 +66,7 @@ def main():
     arrays={key:[int(v) for v in re.findall(r'\d+',tables.split(key+' = [',1)[1].split(']',1)[0])] for key in ['length_slot_tab','extra_length_bits','extra_offset_bits']}
     digest=lambda data:hashlib.sha256(data).hexdigest()
     result={'reference':{'source_pin':module.PIN,'compiler_pin':module.COMPILER_PIN,'package_source_sha256':{n:digest(d) for n,d in package.items()},'generated_source_sha256':digest(app.encode()),'binary_sha256':digest(binary.read_bytes()),'command':command},'tables':arrays,'cases':cases}
-    args.out.write_text(json.dumps(result,indent=2)+'\n');print(json.dumps({'cases':len(cases),'source_pin':module.PIN}))
+    args.out.write_text(pretty(result)+'\n');print(json.dumps({'cases':len(cases),'source_pin':module.PIN}))
 
 
 if __name__ == '__main__':

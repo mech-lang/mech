@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+from generate_path_reference import pretty
 import generate_block_reference as pinned
 
 
@@ -45,7 +46,7 @@ def main():
     source_text=package['package/CompressOptimal.roc'].decode();tables={key:[int(v) for v in re.findall(r'\d+',source_text.split(key+' = [',1)[1].split(']',1)[0])] for key in ['default_lit_cost_0','default_lit_cost_1','default_lit_cost_2','default_len_sym_costs']}
     assert [len(tables[k]) for k in tables]==[257,257,257,3]
     digest=lambda data:hashlib.sha256(data).hexdigest()
-    result={'reference':{'source_pin':pinned.PIN,'compiler_pin':pinned.COMPILER_PIN,'package_source_sha256':{n:digest(d) for n,d in package.items()},'generated_source_sha256':digest(app.encode()),'binary_sha256':digest(binary.read_bytes()),'command':command},'tables':tables,'cases':cases};args.out.write_text(json.dumps(result,indent=2)+'\n');print(json.dumps([(c['name'],c['expected']) for c in cases]))
+    result={'reference':{'source_pin':pinned.PIN,'compiler_pin':pinned.COMPILER_PIN,'package_source_sha256':{n:digest(d) for n,d in package.items()},'generated_source_sha256':digest(app.encode()),'binary_sha256':digest(binary.read_bytes()),'command':command},'tables':tables,'cases':cases};args.out.write_text(pretty(result)+'\n');print(json.dumps([(c['name'],c['expected']) for c in cases]))
 
 
 if __name__ == '__main__':
