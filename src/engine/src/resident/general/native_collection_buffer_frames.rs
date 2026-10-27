@@ -46,10 +46,42 @@ impl NativePreparedLibraryCall {
                     .and_then(|n| n.checked_add(4096))
                     .ok_or(InvokeError::InvalidInput)?;
                 let context = NativeProjectionIndexContext::new(work, limits, coexistence);
-                context.check_capacity(metadata, inputs.len() as u64 + 8)?;
+                // Prepay the allocation-free schema preflight, then use the
+                // core constructor's own shape/closure witness. Arity alone
+                // does not bound dimension expressions or solver metadata.
                 context.charge(metadata.checked_mul(8).ok_or(InvokeError::InvalidInput)?, 0)?;
+                let mech_core::ResolvedOperationContract::Declared(contract) =
+                    self.template.contract()
+                else {
+                    return Err(InvokeError::InvalidInput);
+                };
+                let output = contract.outputs[0].schema;
+                let normalization = CompositeSnapshotConstructor::binding_cost_for_inputs(
+                    output,
+                    inputs.len(),
+                    |index| Some(contract.inputs[index].schema),
+                    &self.schemas,
+                )
+                .ok_or(InvokeError::InvalidInput)?;
+                let metadata = metadata
+                    .checked_add(normalization.temporary_bytes)
+                    .ok_or(InvokeError::InvalidInput)?;
+                let nodes = normalization
+                    .metadata_nodes
+                    .checked_add(inputs.len() as u64)
+                    .and_then(|n| n.checked_add(8))
+                    .ok_or(InvokeError::InvalidInput)?;
+                context.check_capacity(metadata, nodes)?;
+                context.charge(
+                    normalization
+                        .temporary_bytes
+                        .checked_mul(8)
+                        .and_then(|n| n.checked_add(normalization.compute_work))
+                        .ok_or(InvokeError::InvalidInput)?,
+                    0,
+                )?;
                 let _admission = memory.reserve_capacity(metadata)?;
-                let _nodes = memory.reserve_nodes(inputs.len() as u64 + 8)?;
+                let _nodes = memory.reserve_nodes(nodes)?;
                 let mut children = Vec::with_capacity(inputs.len());
                 let mut meter = ResidentBudgetMeter::for_native_projection(work, limits)?;
                 let mut logical_bytes = 0u64;
@@ -73,12 +105,6 @@ impl NativePreparedLibraryCall {
                         .ok_or(InvokeError::InvalidInput)?;
                     children.push((value.schema(), value.shape().clone()));
                 }
-                let mech_core::ResolvedOperationContract::Declared(contract) =
-                    self.template.contract()
-                else {
-                    return Err(InvokeError::InvalidInput);
-                };
-                let output = contract.outputs[0].schema;
                 let shape = CompositeSnapshotConstructor::shape_for_children(
                     output,
                     &children,

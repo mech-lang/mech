@@ -332,3 +332,94 @@ fn build_owned_image_rederives_private_frame_metadata() {
         assert_eq!(restored.encode_build_owned_image().unwrap(), bytes);
     }
 }
+
+#[test]
+fn frame_shape_binding_admits_the_core_metadata_node_bound_before_construction() {
+    use mech_engine::native_artifact::{
+        NativeCollectionPrimitive as Primitive, NativeIterationAction as Action,
+        NativeLibraryWorkBudget, prepare_native_program_library_call,
+    };
+    let source = "+> sequence\nwalk(words<[u64]>, left<u64>) => (out<u64>) :=\n  out := ((left > 0u64)? | true => walk(words, left - 1u64) | false => sequence/length(words)).\nwalk(values<[u64]>, steps<u64>)\n";
+    for artifact in artifacts(source).0 {
+        let catalog = mech_stdlib::source_catalog();
+        let plan = lower_native_program_artifact(&artifact, &catalog).unwrap();
+        let template = plan
+            .blocks()
+            .iter()
+            .find_map(|b| match b.action() {
+                Action::LibraryCall { template, .. }
+                    if template.primitive() == Primitive::CompositePack(2) =>
+                {
+                    Some(template)
+                }
+                _ => None,
+            })
+            .unwrap();
+        let call = prepare_native_program_library_call(&artifact, template, &catalog).unwrap();
+        let mech_core::ResolvedOperationContract::Declared(contract) = template.contract() else {
+            panic!()
+        };
+        let bound = mech_core::snapshot::CompositeSnapshotConstructor::binding_cost_for_inputs(
+            contract.outputs[0].schema,
+            contract.inputs.len(),
+            |i| Some(contract.inputs[i].schema),
+            artifact.schemas(),
+        )
+        .unwrap();
+        let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
+        let args = inputs(
+            &artifact,
+            &[
+                ("values", Data::Matrix(vec![Data::U64(37)].into())),
+                ("steps", Data::U64(1)),
+            ],
+            &memory,
+        );
+        let current = contract
+            .inputs
+            .iter()
+            .map(|port| {
+                Some(
+                    args[artifact
+                        .inputs()
+                        .iter()
+                        .position(|input| input.schema == port.schema)
+                        .unwrap()]
+                    .clone(),
+                )
+            })
+            .collect::<Vec<_>>();
+        let aliases = current.clone();
+        let caps = limits().library;
+        // One existing per-call allowance for rejection and one for retry.
+        let work = NativeLibraryWorkBudget::new(
+            caps.max_compute_work.unwrap().checked_mul(2).unwrap(),
+            caps.max_comparison_work.unwrap().checked_mul(2).unwrap(),
+            &memory,
+        )
+        .unwrap();
+        let before = memory.used_bytes();
+        let mut tight = limits().library;
+        tight.max_retained_nodes = Some(bound.metadata_nodes + current.len() as u64 + 7);
+        let error = call
+            .admit_buffer_frame(&current, tight, &work, mech_core::ResourceDemand::default())
+            .unwrap_err();
+        assert!(format!("{error:?}").contains("RetainedNodes"), "{error:?}");
+        assert_eq!(memory.used_bytes(), before);
+        call.admit_buffer_frame(
+            &current,
+            limits().library,
+            &work,
+            mech_core::ResourceDemand::default(),
+        )
+        .unwrap();
+        assert_eq!(memory.used_bytes(), before);
+        assert!(current.iter().zip(&aliases).all(|(v, a)| {
+            v.as_ref()
+                .unwrap()
+                .shares_frozen_storage(a.as_ref().unwrap())
+        }));
+        drop((args, current, aliases, work));
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
