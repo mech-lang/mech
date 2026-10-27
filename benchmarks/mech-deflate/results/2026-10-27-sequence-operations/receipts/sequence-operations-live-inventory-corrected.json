@@ -1,0 +1,23 @@
+{
+  "name": "sequence-operations-live-inventory-corrected",
+  "command": [
+    "/private/tmp/mech-assertion-ci-python/bin/python",
+    "-c",
+    "import sys; sys.path.insert(0,\"scripts\"); from ci_test_inventory import inventory_gaps; gaps=inventory_gaps(); print(\"inventory gaps:\",gaps); assert not gaps"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "2771d1c23109bcd480ec4fa16daa67bd0d2809fe",
+  "dirty": " M .github/workflows/ci-full.yml\n",
+  "exit": 1,
+  "seconds": 9.066218137741089,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/sequence-operations-live-inventory-corrected.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}
