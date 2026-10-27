@@ -1150,17 +1150,26 @@ fn sequence_buffer(name: &str) -> Result<Vec<KindScheme>, SemanticModelError> {
                 1,
             ),
             "sequence/reserve" => (
-                vec![row(dim(0)), BuiltinScalarKind::U64.kind_expr()],
-                dim(0),
-                1,
+                vec![
+                    matrix(element.clone(), dim(0), dim(1)),
+                    BuiltinScalarKind::U64.kind_expr(),
+                ],
+                dim(2),
+                3,
             ),
-            "sequence/append" => (vec![row(dim(0)), element.clone()], dim(1), 2),
-            "sequence/clear" => (vec![row(dim(0))], dim(1), 2),
+            "sequence/append" => (
+                vec![matrix(element.clone(), dim(0), dim(1)), element.clone()],
+                dim(2),
+                3,
+            ),
+            "sequence/clear" => (vec![matrix(element.clone(), dim(0), dim(1))], dim(2), 3),
             _ => unreachable!("maintained buffer scheme selection"),
         };
         // These are turn-shaped sequences. Their producer resolves the current
         // initialized length; a first empty visit must not freeze a recursive
         // frame's schema to zero (or an ever-growing affine expression).
+        // A generic matrix parameter need not prove its row extent statically;
+        // the operation checks the current row and refines the successful result.
         make(0, dims, inputs, vec![row(count)], Vec::new())
     })
     .collect()

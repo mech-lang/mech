@@ -288,3 +288,86 @@ fn initial_append_growth_and_exact_reserve_keep_all_initialized_words() {
         }
     }
 }
+
+#[test]
+fn generic_buffer_parameters_check_current_rows_without_partial_publication() {
+    for width in [8, 16, 32, 64] {
+        let source = format!(
+            "+> sequence\nadd(xs<[u{width}]>, next<u{width}>) => (out<[u{width}]>) :=\n  out := sequence/append(xs, next).\nadd(values<[u{width}]>, next<u{width}>)\n"
+        );
+        for artifact in artifacts(&source).0 {
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+            let mut output = vec![None; artifact.outputs().len()];
+            let word = |n| match width {
+                8 => Data::U8(n as u8),
+                16 => Data::U16(n as u16),
+                32 => Data::U32(n as u32),
+                _ => Data::U64(n),
+            };
+            for (rows, columns) in [(1, 0), (2, 2), (1, 3)] {
+                let words = Data::Matrix(vec![word(17); (rows * columns) as usize].into());
+                let mut args = inputs(
+                    &artifact,
+                    &[("values", words.clone()), ("next", word(129))],
+                    &memory,
+                );
+                let index = artifact
+                    .inputs()
+                    .iter()
+                    .position(|v| {
+                        mech_engine::decode_source_input_name(&v.name).unwrap() == "values"
+                    })
+                    .unwrap();
+                let input = &artifact.inputs()[index];
+                let shape = mech_core::shape_for_resolved_extents(
+                    artifact.schemas().get(input.schema).unwrap(),
+                    &[rows, columns],
+                )
+                .unwrap();
+                let value = mech_core::ValueDraft {
+                    schema: input.schema,
+                    shape_values: shape.parameter_values().to_vec().into(),
+                    data: words.clone(),
+                }
+                .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+                    artifact.schemas(),
+                ))
+                .unwrap();
+                let mut charge = memory
+                    .reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap())
+                    .unwrap();
+                args[index] = value.into_memory_budget(&mut charge).unwrap();
+                drop(charge);
+                let aliases = args.clone();
+                let before = memory.used_bytes();
+                if rows == 2 {
+                    let prior = output
+                        .iter()
+                        .map(|v| v.clone().unwrap())
+                        .collect::<Vec<_>>();
+                    assert!(reference_result(&artifact, &args).is_err());
+                    assert!(
+                        jit.evaluate_into(&args, &mut output, limits(), &memory)
+                            .is_err()
+                    );
+                    equal(&artifact, &output, &prior);
+                    assert_eq!(memory.used_bytes(), before);
+                } else {
+                    jit.evaluate_into(&args, &mut output, limits(), &memory)
+                        .unwrap();
+                    equal(
+                        &artifact,
+                        &output,
+                        &reference_result(&artifact, &args).unwrap(),
+                    );
+                }
+                assert_eq!(args[index].canonical_data_draft().unwrap(), words);
+                assert!(args[index].shares_frozen_storage(&aliases[index]));
+            }
+            drop(output);
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+}

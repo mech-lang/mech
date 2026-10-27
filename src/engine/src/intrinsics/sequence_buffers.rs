@@ -92,6 +92,15 @@ pub(crate) fn element(body: &SchemaBody) -> Option<&SchemaBody> {
         && width(element).is_some())
     .then_some(element)
 }
+fn input_element(body: &SchemaBody) -> Option<&SchemaBody> {
+    match body {
+        SchemaBody::Matrix {
+            element,
+            dimensions,
+        } if dimensions.len() == 2 && width(element).is_some() => Some(element),
+        _ => None,
+    }
+}
 pub(crate) fn schemas_supported(
     operation: Operation,
     inputs: &[SchemaBody],
@@ -103,7 +112,7 @@ pub(crate) fn schemas_supported(
     let source = if operation == Operation::WithCapacity {
         width(&inputs[0]).map(|_| &inputs[0])
     } else {
-        element(&inputs[0])
+        input_element(&inputs[0])
     };
     let Some(source) = source else {
         return false;
@@ -181,6 +190,25 @@ pub(crate) fn geometry(
             let ValueData::Matrix(matrix) = source.data() else {
                 return Err(invalid("sequence buffer requires a matrix"));
             };
+            let schemas = source
+                .schemas()
+                .ok_or_else(|| invalid("sequence input schema missing"))?;
+            let SchemaBody::Matrix { dimensions, .. } = schemas
+                .get(source.schema())
+                .ok_or_else(|| invalid("sequence input schema missing"))?
+                .body()
+            else {
+                return Err(invalid("sequence buffer requires a matrix schema"));
+            };
+            if dimensions.len() != 2
+                || source
+                    .shape()
+                    .resolve_dimension(&dimensions[0])
+                    .map_err(|_| invalid("sequence input row extent"))?
+                    != 1
+            {
+                return Err(invalid("sequence buffer requires exactly one row"));
+            }
             (
                 matrix.elements().len(),
                 matrix
@@ -349,6 +377,9 @@ impl BufferRuntime {
             .resolved_descriptor()?
             .current_extents()
             .map_err(|_| invalid("sequence input geometry"))?;
+        if extents.len() != 2 || extents[0] != 1 {
+            return Err(invalid("sequence buffer requires exactly one row"));
+        }
         let length = usize::try_from(
             *extents
                 .get(1)

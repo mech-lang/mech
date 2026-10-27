@@ -107,7 +107,7 @@ fn source_buffer_leaves_preserve_values_and_capacity_in_resident_execution() {
 }
 
 #[test]
-fn source_buffer_operations_reject_wrong_scalar_kinds_and_non_rows() {
+fn source_buffer_operations_reject_wrong_scalar_kinds() {
     let mut builder = FunctionCatalogBuilder::new();
     mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
     mech_engine::install_intrinsic_compiler_runtime(&mut builder).unwrap();
@@ -118,7 +118,6 @@ fn source_buffer_operations_reject_wrong_scalar_kinds_and_non_rows() {
         "sequence/with-capacity(0u8, 1u8)",
         "sequence/append(sequence/with-capacity(0u8, 1u64), 1u16)",
         "sequence/clear(1u64)",
-        "sequence/reserve([1u8; 2u8], 4u64)",
     ] {
         let source = format!("+> sequence\n{expression}\n");
         let parsed = parse_canonical_document(
@@ -245,6 +244,117 @@ fn managed_buffer_factories_keep_current_capacity_and_preserve_inputs() {
                     panic!()
                 };
                 assert_eq!(matrix.unsigned_buffer_capacity(), Some(64));
+            }
+        }
+    }
+}
+
+#[test]
+fn generic_buffer_row_checks_keep_published_resident_values_and_recover() {
+    use mech_core::{ValueDraft, snapshot::SnapshotValidationContext};
+    use mech_engine::resident::CapturedValueInput;
+    let mut builder = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
+    mech_engine::install_intrinsic_compiler_runtime(&mut builder).unwrap();
+    mech_engine::install_intrinsic_source(&mut builder).unwrap();
+    mech_engine::install_intrinsic_resident(&mut builder).unwrap();
+    let catalog = Arc::new(builder.build().unwrap());
+    for item in ["reserve", "append", "clear"] {
+        let suffix = match item {
+            "reserve" => ", 4u64",
+            "append" => ", 129u8",
+            _ => "",
+        };
+        let source = format!("+> sequence\nsequence/{item}(values<[u8]>{suffix})\n");
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(0x425546), Revision(1), source.as_str()).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean());
+        let product = CanonicalSourceFrontend
+            .compile_document_with_catalog(
+                &DocumentSyntax::cast(parsed.syntax()).unwrap(),
+                catalog.clone(),
+            )
+            .unwrap();
+        let original = product.compile_artifact().unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap(),
+        )
+        .unwrap();
+        for artifact in [original, decoded] {
+            let mut instance = activate(
+                ReactiveInstanceId::new(0x425546, 0),
+                &artifact,
+                &catalog,
+                &ActivationFacts::default(),
+            )
+            .unwrap();
+            let input = &artifact.inputs()[0];
+            let slot = instance.plan.inputs[0].slot;
+            for (rows, columns) in [(1, 2), (2, 1), (1, 3)] {
+                let shape = mech_core::shape_for_resolved_extents(
+                    artifact.schemas().get(input.schema).unwrap(),
+                    &[rows, columns],
+                )
+                .unwrap();
+                let words = vec![Data::U8(17); (rows * columns) as usize];
+                let value = ValueDraft {
+                    schema: input.schema,
+                    shape_values: shape.parameter_values().to_vec().into(),
+                    data: Data::Matrix(words.clone().into()),
+                }
+                .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+                .unwrap();
+                if rows == 2 {
+                    let prior = instance
+                        .copied_output(artifact.outputs().len() - 1)
+                        .unwrap();
+                    assert!(
+                        instance
+                            .prepare_turn_values(&[CapturedValueInput {
+                                slot,
+                                value: &value
+                            }])
+                            .is_err()
+                    );
+                    let after = instance
+                        .copied_output(artifact.outputs().len() - 1)
+                        .unwrap();
+                    assert!(
+                        after
+                            .snapshot_eq(artifact.schemas(), &prior, artifact.schemas())
+                            .unwrap()
+                    );
+                } else {
+                    instance
+                        .prepare_turn_values(&[CapturedValueInput {
+                            slot,
+                            value: &value,
+                        }])
+                        .unwrap()
+                        .publish()
+                        .unwrap();
+                    let mut expected = words;
+                    if item == "clear" {
+                        expected.clear();
+                    }
+                    if item == "append" {
+                        expected.push(Data::U8(129));
+                    }
+                    assert_eq!(
+                        instance
+                            .copied_output(artifact.outputs().len() - 1)
+                            .unwrap()
+                            .canonical_data_draft()
+                            .unwrap(),
+                        Data::Matrix(expected.into())
+                    );
+                }
+                assert_eq!(
+                    value.canonical_data_draft().unwrap(),
+                    Data::Matrix(vec![Data::U8(17); (rows * columns) as usize].into())
+                );
             }
         }
     }
