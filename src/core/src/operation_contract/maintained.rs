@@ -164,6 +164,7 @@ pub fn maintained_operation_contract(
         "sequence/with-capacity" | "sequence/reserve" | "sequence/append" if input_count == 2 => {
             Some(full(ShapeRule::Declared))
         }
+        "sequence/append-le-bytes" if input_count == 3 => Some(full(ShapeRule::Declared)),
         "sequence/clear" if input_count == 1 => Some(full(ShapeRule::Declared)),
         "sequence/sort-indices" if input_count == 4 => Some(full(ShapeRule::Declared)),
         "map/contains-key" if input_count == 2 => Some(declaration(

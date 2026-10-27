@@ -35,6 +35,7 @@ fn buffer_shape_follows_input(template: &NativeProgramLibraryTemplate) -> bool {
         template.primitive(),
         crate::native_artifact::NativeCollectionPrimitive::SequenceReserve
             | crate::native_artifact::NativeCollectionPrimitive::SequenceAppend
+            | crate::native_artifact::NativeCollectionPrimitive::SequenceAppendLeBytes
     );
     #[cfg(not(feature = "sequence_buffers"))]
     {
@@ -548,12 +549,21 @@ impl NativePreparedLibraryCall {
             };
             let count = matrix.elements().len() as u64;
             #[cfg(feature = "sequence_buffers")]
-            let count = if self.template.primitive()
-                == crate::native_artifact::NativeCollectionPrimitive::SequenceAppend
-            {
-                count.checked_add(1).ok_or(InvokeError::InvalidInput)?
-            } else {
-                count
+            let count = match self.template.primitive() {
+                crate::native_artifact::NativeCollectionPrimitive::SequenceAppend => {
+                    count.checked_add(1).ok_or(InvokeError::InvalidInput)?
+                }
+                crate::native_artifact::NativeCollectionPrimitive::SequenceAppendLeBytes => {
+                    let Some(mech_core::ValueData::U8(bytes @ 0..=8)) =
+                        inputs.get(2).and_then(Option::as_ref).map(Value::data)
+                    else {
+                        return Err(InvokeError::InvalidInput);
+                    };
+                    count
+                        .checked_add(u64::from(*bytes))
+                        .ok_or(InvokeError::InvalidInput)?
+                }
+                _ => count,
             };
             current_shape =
                 mech_core::shape_for_resolved_extents(self.template.output(), &[1, count])
@@ -628,6 +638,35 @@ impl NativePreparedLibraryCall {
         inputs: &[Option<Value>],
         output: &Option<Value>,
     ) -> bool {
+        #[cfg(feature = "sequence_buffers")]
+        if self.template.primitive()
+            == crate::native_artifact::NativeCollectionPrimitive::SequenceAppendLeBytes
+        {
+            let Some(mech_core::ValueData::Matrix(source)) =
+                inputs.first().and_then(Option::as_ref).map(Value::data)
+            else {
+                return false;
+            };
+            let Some(mech_core::ValueData::U8(count @ 0..=8)) =
+                inputs.get(2).and_then(Option::as_ref).map(Value::data)
+            else {
+                return false;
+            };
+            let mech_core::SchemaBody::Matrix { dimensions, .. } = self.template.output().body()
+            else {
+                return false;
+            };
+            let expected = (source.elements().len() as u64).checked_add(u64::from(*count));
+            if expected
+                != call
+                    .output()
+                    .shape_instance
+                    .resolve_dimension(&dimensions[1])
+                    .ok()
+            {
+                return false;
+            }
+        }
         if self.template.primitive()
             == crate::native_artifact::NativeCollectionPrimitive::RecordFieldAccess
             && call

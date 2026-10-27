@@ -481,3 +481,261 @@ fn consuming_growth_admits_full_old_backing_work_and_copy_quota() {
         assert_eq!(memory.used_bytes(), 0);
     }
 }
+
+#[test]
+fn little_endian_byte_append_counts_aliases_rejection_and_recovery() {
+    let source = "+> sequence\nsequence/append-le-bytes(bytes<[u8]>, word<u64>, count<u8>)\n";
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let last = artifact.outputs().len() - 1;
+        let memory = ManagedMemoryBudget::new(128 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        for prefix in [vec![], vec![0x91, 0x82]] {
+            for word in [0u64, 0x0807060504030201, u64::MAX] {
+                for count in (0u8..=9).chain([3, 0, 255, 8]) {
+                    let original = Data::Matrix(prefix.iter().copied().map(Data::U8).collect());
+                    let args = inputs(
+                        &artifact,
+                        &[
+                            ("bytes", original.clone()),
+                            ("word", Data::U64(word)),
+                            ("count", Data::U8(count)),
+                        ],
+                        &memory,
+                    );
+                    let aliases = args.clone();
+                    let before = memory.used_bytes();
+                    if count > 8 {
+                        let prior = output
+                            .iter()
+                            .map(|value| value.clone().unwrap())
+                            .collect::<Vec<_>>();
+                        assert!(reference_result(&artifact, &args).is_err());
+                        assert!(
+                            jit.evaluate_into(&args, &mut output, limits(), &memory)
+                                .is_err()
+                        );
+                        equal(&artifact, &output, &prior);
+                        assert_eq!(memory.used_bytes(), before);
+                    } else {
+                        let mut expected = prefix.clone();
+                        expected.extend_from_slice(&word.to_le_bytes()[..count as usize]);
+                        let reference = reference_result(&artifact, &args).unwrap();
+                        jit.evaluate_into(&args, &mut output, limits(), &memory)
+                            .unwrap();
+                        equal(&artifact, &output, &reference);
+                        assert_eq!(
+                            output[last]
+                                .as_ref()
+                                .unwrap()
+                                .canonical_data_draft()
+                                .unwrap(),
+                            Data::Matrix(expected.into_iter().map(Data::U8).collect())
+                        );
+                        let source_capacity = args
+                            .iter()
+                            .find_map(|value| match value.data() {
+                                ValueData::Matrix(matrix) => matrix.unsigned_buffer_capacity(),
+                                _ => None,
+                            })
+                            .unwrap();
+                        let needed = prefix.len() + count as usize;
+                        let expected_capacity = if needed <= source_capacity {
+                            source_capacity
+                        } else {
+                            needed.max(if source_capacity == 0 {
+                                64
+                            } else {
+                                source_capacity * 2
+                            })
+                        };
+                        let ValueData::Matrix(matrix) = output[last].as_ref().unwrap().data()
+                        else {
+                            panic!()
+                        };
+                        assert_eq!(
+                            matrix.unsigned_buffer_capacity(),
+                            Some(expected_capacity),
+                            "grow once for the complete byte group"
+                        );
+                        if count == 3 && !prefix.is_empty() {
+                            let mut denied = limits();
+                            denied.library.max_cloned_bytes = Some(0);
+                            let prior = output
+                                .iter()
+                                .map(|value| value.clone().unwrap())
+                                .collect::<Vec<_>>();
+                            let before = memory.used_bytes();
+                            let error = jit
+                                .evaluate_into(&args, &mut output, denied, &memory)
+                                .unwrap_err();
+                            assert!(format!("{error:?}").contains("ClonedBytes"), "{error:?}");
+                            equal(&artifact, &output, &prior);
+                            assert_eq!(memory.used_bytes(), before);
+                            jit.evaluate_into(&args, &mut output, limits(), &memory)
+                                .unwrap();
+                        }
+                        if count == 0 {
+                            // Match by the retained source payload rather than assuming input order.
+                            assert!(
+                                args.iter().any(|arg| output[last]
+                                    .as_ref()
+                                    .unwrap()
+                                    .shares_frozen_storage(arg)),
+                                "zero-byte append must retain its backing"
+                            );
+                        }
+                    }
+                    for (arg, alias) in args.iter().zip(&aliases) {
+                        assert!(arg.shares_frozen_storage(alias));
+                        assert_eq!(
+                            arg.canonical_data_draft().unwrap(),
+                            alias.canonical_data_draft().unwrap()
+                        );
+                    }
+                }
+            }
+        }
+        drop(output);
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
+fn bulk_bytes_reuse_real_output_reservation_across_append_and_clear() {
+    let source = "+> sequence\nsequence/append-le-bytes(sequence/clear(sequence/append-le-bytes(sequence/append-le-bytes(sequence/append-le-bytes(sequence/with-capacity(0u8, capacity<u64>), 72623859790382856u64, 8u8), 257u64, 2u8), 0u64, 0u8)), 513u64, 2u8)\n";
+    let (forms, last) = artifacts(source);
+    for artifact in forms {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let mut costs = Vec::new();
+        for (round, capacity) in [16u64, 16, 6633832].into_iter().enumerate() {
+            let memory = ManagedMemoryBudget::new(128 * 1024 * 1024);
+            let args = inputs(&artifact, &[("capacity", Data::U64(capacity))], &memory);
+            let mut output = vec![None; artifact.outputs().len()];
+            let mut policy = limits();
+            policy.execution.max_work = 1_000_000_000_000;
+            policy.library.max_compute_work = Some(1_000_000_000_000);
+            let (result, requests, bytes) = allocation_probe::measured_with_bytes(|| {
+                jit.evaluate_into(&args, &mut output, policy, &memory)
+            });
+            result.unwrap();
+            assert_eq!(
+                output[last]
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                Data::Matrix(vec![Data::U8(1), Data::U8(2)].into())
+            );
+            let ValueData::Matrix(matrix) = output[last].as_ref().unwrap().data() else {
+                panic!()
+            };
+            assert_eq!(matrix.unsigned_buffer_capacity(), Some(capacity as usize));
+            if round > 0 {
+                costs.push((requests, bytes));
+            }
+            drop((args, output));
+            assert_eq!(memory.used_bytes(), 0);
+        }
+        println!("bulk-byte-append small={:?} real={:?}", costs[0], costs[1]);
+        assert_eq!(costs[0].0, costs[1].0);
+        assert_eq!(costs[1].1 - costs[0].1, 6633832 - 16);
+    }
+}
+
+#[test]
+fn bulk_byte_append_generic_native_binding_tracks_count_and_retries() {
+    use mech_engine::native_artifact::{
+        NativeCollectionPrimitive as P, NativeIterationAction as A, NativeLibraryWorkBudget,
+        prepare_native_program_library_call,
+    };
+    for artifact in
+        artifacts("+> sequence\nsequence/append-le-bytes(bytes<[u8]>, word<u64>, count<u8>)\n").0
+    {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let template = jit
+            .descriptor()
+            .plan()
+            .blocks()
+            .iter()
+            .find_map(|block| match block.action() {
+                A::LibraryCall { template, .. }
+                    if template.primitive() == P::SequenceAppendLeBytes =>
+                {
+                    Some(template)
+                }
+                _ => None,
+            })
+            .unwrap();
+        let call = prepare_native_program_library_call(
+            &artifact,
+            template,
+            &mech_stdlib::source_catalog(),
+        )
+        .unwrap();
+        let memory = ManagedMemoryBudget::new(128 * 1024 * 1024);
+        let mut output = None;
+        for count in [3u8, 9, 0, 8] {
+            let args = inputs(
+                &artifact,
+                &[
+                    ("bytes", Data::Matrix(vec![Data::U8(99)].into())),
+                    ("word", Data::U64(578437695752307201)),
+                    ("count", Data::U8(count)),
+                ],
+                &memory,
+            );
+            let ordered = ["bytes", "word", "count"].map(|name| {
+                Some(
+                    args[artifact
+                        .inputs()
+                        .iter()
+                        .position(|input| {
+                            mech_engine::decode_source_input_name(&input.name).unwrap() == name
+                        })
+                        .unwrap()]
+                    .clone(),
+                )
+            });
+            let policy = limits().library;
+            let work = NativeLibraryWorkBudget::new(
+                policy.max_compute_work.unwrap(),
+                policy.max_comparison_work.unwrap(),
+                &memory,
+            )
+            .unwrap();
+            let before = memory.used_bytes();
+            let prior = output.clone();
+            let result = call.invoke_current(&ordered, &mut output, policy, &work);
+            if count > 8 {
+                assert!(result.is_err());
+                assert!(
+                    output
+                        .as_ref()
+                        .unwrap()
+                        .shares_frozen_storage(prior.as_ref().unwrap())
+                );
+                assert_eq!(memory.used_bytes(), before);
+            } else {
+                result.unwrap();
+                let expected = std::iter::once(Data::U8(99))
+                    .chain((1..=count).map(Data::U8))
+                    .collect();
+                assert_eq!(
+                    output.as_ref().unwrap().canonical_data_draft().unwrap(),
+                    Data::Matrix(expected)
+                );
+                if count == 0 {
+                    assert!(
+                        output
+                            .as_ref()
+                            .unwrap()
+                            .shares_frozen_storage(ordered[0].as_ref().unwrap())
+                    );
+                }
+            }
+        }
+        drop(output);
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}

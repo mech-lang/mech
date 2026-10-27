@@ -19,6 +19,7 @@ impl NativePreparedLibraryCall {
             P::SequenceWithCapacity => Operation::WithCapacity,
             P::SequenceReserve => Operation::Reserve,
             P::SequenceAppend => Operation::Append,
+            P::SequenceAppendLeBytes => Operation::AppendLeBytes,
             P::SequenceClear => Operation::Clear,
             _ => return None,
         })
@@ -35,8 +36,48 @@ impl NativePreparedLibraryCall {
         work: &NativeLibraryWorkBudget,
         coexistence: ResourceDemand,
     ) -> Result<Value, InvokeError> {
+        self.unsigned_buffer_with_count(
+            source,
+            argument,
+            None,
+            may_consume,
+            limits,
+            work,
+            coexistence,
+        )
+    }
+    /// The optional count is required only for the bulk little-endian byte leaf.
+    pub fn unsigned_buffer_with_count(
+        &self,
+        source: Option<Value>,
+        argument: u64,
+        count: Option<u64>,
+        may_consume: bool,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+    ) -> Result<Value, InvokeError> {
         finite_limits(self.template.origin().node(), limits).map_err(InvokeError::Binding)?;
         let operation = self.buffer_operation().ok_or(InvokeError::InvalidInput)?;
+        let extent_argument = match (operation, count) {
+            (Operation::AppendLeBytes, Some(count @ 0..=8)) => count,
+            (Operation::AppendLeBytes, _) | (_, Some(_)) => return Err(InvokeError::InvalidInput),
+            (_, None) => argument,
+        };
+        // Identity applies only when no schema/shape adaptation is required.
+        // Statically sized inputs retain the admitted immutable-copy fallback.
+        let no_op = operation == Operation::AppendLeBytes
+            && extent_argument == 0
+            && source.as_ref().is_some_and(|value| {
+                value.schema_key() == self.template.output().key()
+                    && value.schema()
+                        == match self.template.contract() {
+                            mech_core::ResolvedOperationContract::Declared(contract) => {
+                                contract.outputs[0].schema
+                            }
+                            _ => return false,
+                        }
+            });
         work.with_call_limits(
             limits.max_compute_work.unwrap(),
             limits.max_comparison_work.unwrap(),
@@ -48,7 +89,7 @@ impl NativePreparedLibraryCall {
                     return Err(InvokeError::InvalidInput);
                 };
                 let output_schema = contract.outputs[0].schema;
-                let element = primitive::element(self.template.output().body())
+                let element = primitive::output_element(operation, self.template.output().body())
                     .ok_or(InvokeError::InvalidInput)?;
                 let width = primitive::width(element).ok_or(InvokeError::InvalidInput)?;
                 if operation == Operation::Append && width < 8 && argument >> (width * 8) != 0 {
@@ -81,8 +122,9 @@ impl NativePreparedLibraryCall {
                     None if operation == Operation::WithCapacity => (0, 0),
                     _ => return Err(InvokeError::InvalidInput),
                 };
-                let geometry = primitive::geometry(operation, source.as_ref(), width, argument)
-                    .map_err(|_| InvokeError::InvalidInput)?;
+                let geometry =
+                    primitive::geometry(operation, source.as_ref(), width, extent_argument)
+                        .map_err(|_| InvokeError::InvalidInput)?;
                 let context = NativeProjectionIndexContext::new(work, limits, coexistence)
                     .with_added_capacity(source_bytes, source_nodes)?;
                 context.check_capacity(0, 0)?;
@@ -107,15 +149,19 @@ impl NativePreparedLibraryCall {
                     .map_err(|_| InvokeError::InvalidInput)?;
                 let mut source = source;
                 let mut owned = None;
-                if may_consume && let Some(value) = source.take() {
+                if !no_op
+                    && may_consume
+                    && let Some(value) = source.take()
+                {
                     match value.try_into_owned_unsigned_matrix(&memory)? {
                         UnsignedMatrixOwnershipTransfer::Owned(buffer) => owned = Some(buffer),
                         UnsignedMatrixOwnershipTransfer::Unavailable(value) => source = Some(value),
                     }
                 }
-                let grows = owned
-                    .as_ref()
-                    .is_none_or(|buffer| buffer.capacity_bytes() < geometry.capacity * width);
+                let grows = !no_op
+                    && owned
+                        .as_ref()
+                        .is_none_or(|buffer| buffer.capacity_bytes() < geometry.capacity * width);
                 let payload_allocation = if grows {
                     geometry.bytes().map_err(|_| InvokeError::InvalidInput)?
                 } else {
@@ -189,22 +235,29 @@ impl NativePreparedLibraryCall {
                     &[1, geometry.length as u64],
                 )
                 .map_err(|_| InvokeError::InvalidInput)?;
-                let buffer = if let Some(owned) = owned {
-                    let (mut buffer, charge) = owned.into_parts();
-                    admission.merge_capacity(charge)?;
-                    mutate(&mut buffer, operation, geometry, argument)?;
-                    buffer
+                let value = if no_op {
+                    // Keep the exact admitted owner and schema arena. Rebinding
+                    // an equivalent table would create another budget import.
+                    source.as_ref().ok_or(InvokeError::InvalidInput)?.clone()
                 } else {
-                    primitive::copy_buffer(operation, source.as_ref(), geometry, argument)
-                        .map_err(|_| InvokeError::InvalidInput)?
+                    let buffer = if let Some(owned) = owned {
+                        let (mut buffer, charge) = owned.into_parts();
+                        admission.merge_capacity(charge)?;
+                        mutate(&mut buffer, operation, geometry, argument)?;
+                        buffer
+                    } else {
+                        primitive::copy_buffer(operation, source.as_ref(), geometry, argument)
+                            .map_err(|_| InvokeError::InvalidInput)?
+                    };
+                    let value = Value::from_unsigned_matrix_buffer(
+                        output_schema,
+                        shape,
+                        buffer,
+                        self.schemas.clone(),
+                    )
+                    .map_err(|_| InvokeError::InvalidInput)?;
+                    value
                 };
-                let value = Value::from_unsigned_matrix_buffer(
-                    output_schema,
-                    shape,
-                    buffer,
-                    self.schemas.clone(),
-                )
-                .map_err(|_| InvokeError::InvalidInput)?;
                 // Drop detached inputs only after the fresh candidate has frozen.
                 let value = value.into_memory_budget(&mut admission)?;
                 drop(source);
@@ -219,6 +272,35 @@ fn mutate(
     geometry: primitive::Geometry,
     argument: u64,
 ) -> Result<(), InvokeError> {
+    if operation == Operation::AppendLeBytes {
+        let UnsignedMatrixBuffer::U8(words) = buffer else {
+            return Err(InvokeError::InvalidInput);
+        };
+        let count = geometry
+            .length
+            .checked_sub(words.len())
+            .filter(|&count| count <= 8)
+            .ok_or(InvokeError::InvalidInput)?;
+        if count == 0 {
+            return Ok(());
+        }
+        if words.capacity() - words.len() >= 8 {
+            // The owned backing has room for one full little-endian word. Only
+            // count bytes become visible; initialized spare bytes remain slack.
+            let bytes = argument.to_le_bytes();
+            // SAFETY: the exclusive Vec owns at least eight spare bytes, the
+            // local source does not overlap it, and count is in 1..=8.
+            unsafe {
+                core::ptr::copy_nonoverlapping(
+                    bytes.as_ptr(),
+                    words.as_mut_ptr().add(words.len()),
+                    8,
+                );
+                words.set_len(geometry.length);
+            }
+            return Ok(());
+        }
+    }
     macro_rules! words {
         ($words:expr, $ty:ty) => {{
             if $words.capacity() < geometry.capacity {
@@ -238,6 +320,21 @@ fn mutate(
                 Operation::Clear => $words.clear(),
                 Operation::Append => {
                     $words.push(<$ty>::try_from(argument).map_err(|_| InvokeError::InvalidInput)?)
+                }
+                Operation::AppendLeBytes => {
+                    let count = geometry
+                        .length
+                        .checked_sub($words.len())
+                        .filter(|&n| n <= 8)
+                        .ok_or(InvokeError::InvalidInput)?;
+                    if geometry.width != 1 {
+                        return Err(InvokeError::InvalidInput);
+                    }
+                    $words.extend(
+                        argument.to_le_bytes()[..count]
+                            .iter()
+                            .map(|&byte| <$ty>::from(byte)),
+                    );
                 }
                 Operation::Reserve => {}
                 Operation::WithCapacity => return Err(InvokeError::InvalidInput),

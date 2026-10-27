@@ -118,6 +118,9 @@ fn source_buffer_operations_reject_wrong_scalar_kinds() {
         "sequence/with-capacity(0u8, 1u8)",
         "sequence/append(sequence/with-capacity(0u8, 1u64), 1u16)",
         "sequence/clear(1u64)",
+        "sequence/append-le-bytes(sequence/with-capacity(0u16, 8u64), 1u64, 1u8)",
+        "sequence/append-le-bytes(sequence/with-capacity(0u8, 8u64), 1u32, 1u8)",
+        "sequence/append-le-bytes(sequence/with-capacity(0u8, 8u64), 1u64, 1u64)",
     ] {
         let source = format!("+> sequence\n{expression}\n");
         let parsed = parse_canonical_document(
@@ -173,20 +176,34 @@ fn managed_buffer_factories_keep_current_capacity_and_preserve_inputs() {
             output.replace(&cell.snapshot().unwrap()).unwrap();
             output
         };
-        for item in ["with-capacity", "reserve", "append", "clear"] {
+        for item in [
+            "with-capacity",
+            "reserve",
+            "append",
+            "clear",
+            "append-le-bytes",
+        ] {
+            if item == "append-le-bytes" && width != W::W8 {
+                continue;
+            }
             let prototype =
                 ValueCell::from_schema_data(S::UnsignedInteger(width), scalar(0)).unwrap();
             let source = row(vec![scalar(17)]);
             let argument = if item == "append" {
                 ValueCell::from_schema_data(S::UnsignedInteger(width), scalar(129)).unwrap()
             } else {
-                ValueCell::from_schema_data(S::UnsignedInteger(W::W64), Data::U64(32)).unwrap()
+                ValueCell::from_schema_data(
+                    S::UnsignedInteger(W::W64),
+                    Data::U64(if item == "append-le-bytes" { 129 } else { 32 }),
+                )
+                .unwrap()
             };
             let prototype = ValueCell::from_snapshot(prototype.snapshot().unwrap()).unwrap();
             let argument = ValueCell::from_snapshot(argument.snapshot().unwrap()).unwrap();
             let expected = match item {
                 "with-capacity" | "clear" => vec![],
                 "reserve" => vec![scalar(17)],
+                "append-le-bytes" => vec![scalar(17), scalar(129), scalar(0)],
                 _ => vec![scalar(17), scalar(129)],
             };
             let output = row(expected.clone());
@@ -197,6 +214,18 @@ fn managed_buffer_factories_keep_current_capacity_and_preserve_inputs() {
                 .unwrap();
             let invocation = match item {
                 "clear" => FunctionInvocation::unary(output.clone(), source.clone()),
+                "append-le-bytes" => FunctionInvocation::ternary(
+                    output.clone(),
+                    source.clone(),
+                    argument.clone(),
+                    ValueCell::from_snapshot(
+                        ValueCell::from_schema_data(S::UnsignedInteger(W::W8), Data::U8(2))
+                            .unwrap()
+                            .snapshot()
+                            .unwrap(),
+                    )
+                    .unwrap(),
+                ),
                 "with-capacity" => {
                     FunctionInvocation::binary(output.clone(), prototype, argument.clone())
                 }
@@ -450,4 +479,298 @@ fn capacity_only_changes_propagate_through_reserve_clear_and_append() {
             prior = Some(current);
         }
     }
+}
+
+#[test]
+fn resident_bulk_byte_append_rejects_count_without_replacing_prior_output_and_recovers() {
+    use mech_core::{ValueDraft, snapshot::SnapshotValidationContext};
+    use mech_engine::resident::CapturedValueInput;
+    let mut builder = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
+    mech_engine::install_intrinsic_compiler_runtime(&mut builder).unwrap();
+    mech_engine::install_intrinsic_source(&mut builder).unwrap();
+    mech_engine::install_intrinsic_resident(&mut builder).unwrap();
+    let catalog = Arc::new(builder.build().unwrap());
+    let source = "+> sequence\nsequence/append-le-bytes(sequence/append(sequence/with-capacity(0u8, 16u64), 99u8), 578437695752307201u64, count<u8>)\n";
+    let parsed = parse_canonical_document(
+        TextSnapshot::new(DocumentId(0x425546), Revision(1), source).unwrap(),
+        ParseConfig::default(),
+    );
+    assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
+    let syntax = DocumentSyntax::cast(parsed.syntax()).unwrap();
+    let original = CanonicalSourceFrontend
+        .compile_document_with_catalog(&syntax, catalog.clone())
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap(),
+    )
+    .unwrap();
+    for artifact in [original, decoded] {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x425546, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        let slot = instance.plan.inputs[0].slot;
+        let last = artifact.outputs().len() - 1;
+        for count in [0u8, 8, 9, 3, 255, 0, 7] {
+            let input = ValueDraft {
+                schema: artifact.inputs()[0].schema,
+                shape_values: Box::new([]),
+                data: Data::U8(count),
+            }
+            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+            .unwrap();
+            if count > 8 {
+                let prior = instance.copied_output(last).unwrap();
+                assert!(
+                    instance
+                        .prepare_turn_values(&[CapturedValueInput {
+                            slot,
+                            value: &input
+                        }])
+                        .is_err()
+                );
+                let after = instance.copied_output(last).unwrap();
+                assert!(after.shares_frozen_storage(&prior));
+                assert_eq!(
+                    after.canonical_data_draft().unwrap(),
+                    prior.canonical_data_draft().unwrap()
+                );
+            } else {
+                instance
+                    .prepare_turn_values(&[CapturedValueInput {
+                        slot,
+                        value: &input,
+                    }])
+                    .unwrap()
+                    .publish()
+                    .unwrap();
+                let expected = std::iter::once(Data::U8(99))
+                    .chain((1..=count).map(Data::U8))
+                    .collect();
+                assert_eq!(
+                    instance
+                        .copied_output(last)
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    Data::Matrix(expected)
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn zero_byte_append_preserves_generic_input_shape_and_backing() {
+    use mech_core::{ValueDraft, snapshot::SnapshotValidationContext};
+    use mech_engine::resident::CapturedValueInput;
+    let mut builder = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
+    mech_engine::install_intrinsic_compiler_runtime(&mut builder).unwrap();
+    mech_engine::install_intrinsic_source(&mut builder).unwrap();
+    mech_engine::install_intrinsic_resident(&mut builder).unwrap();
+    let catalog = Arc::new(builder.build().unwrap());
+    let source = "+> sequence\nsequence/append-le-bytes(bytes<[u8]>, 123u64, 0u8)\n";
+    let parsed = parse_canonical_document(
+        TextSnapshot::new(DocumentId(0x425546), Revision(1), source).unwrap(),
+        ParseConfig::default(),
+    );
+    assert!(parsed.is_strictly_clean());
+    let syntax = DocumentSyntax::cast(parsed.syntax()).unwrap();
+    let artifact = CanonicalSourceFrontend
+        .compile_document_with_catalog(&syntax, catalog.clone())
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x425546, 0),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let schema = artifact.inputs()[0].schema;
+    let shape =
+        mech_core::shape_for_resolved_extents(artifact.schemas().get(schema).unwrap(), &[1, 2])
+            .unwrap();
+    let value = ValueDraft {
+        schema,
+        shape_values: shape.parameter_values().into(),
+        data: Data::Matrix(vec![Data::U8(17), Data::U8(34)].into()),
+    }
+    .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+    .unwrap();
+    instance
+        .prepare_turn_values(&[CapturedValueInput {
+            slot: instance.plan.inputs[0].slot,
+            value: &value,
+        }])
+        .unwrap()
+        .publish()
+        .unwrap();
+    let output = instance
+        .copied_output(artifact.outputs().len() - 1)
+        .unwrap();
+    assert!(
+        output.shares_frozen_storage(&value),
+        "input={:?} output={:?}",
+        artifact.schemas().get(value.schema()),
+        artifact.schemas().get(output.schema())
+    );
+    assert_eq!(output.resident_token(), value.resident_token());
+    assert_eq!(output.shape(), value.shape());
+}
+
+#[test]
+#[cfg(feature = "native-artifact")]
+fn native_bulk_byte_append_current_counts_and_real_capacity_identity() {
+    use mech_core::{
+        ManagedMemoryBudget, MemoryBudgetLimits, ResolvedOperationContract, Value, ValueDraft,
+        snapshot::{SnapshotValidationContext, UnsignedMatrixBuffer},
+    };
+    use mech_engine::native_artifact::{
+        NativeCollectionPrimitive as P, NativeIterationAction as A, NativeLibraryWorkBudget,
+        NativePreparedLibraryCallCache, lower_native_program_artifact,
+        prepare_native_program_library_call,
+    };
+    let mut builder = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
+    mech_engine::install_intrinsic_compiler_runtime(&mut builder).unwrap();
+    mech_engine::install_intrinsic_source(&mut builder).unwrap();
+    mech_engine::install_intrinsic_resident(&mut builder).unwrap();
+    let catalog = Arc::new(builder.build().unwrap());
+    let text = "+> sequence\nsequence/append-le-bytes(bytes<[u8]>, word<u64>, count<u8>)\n";
+    let parsed = parse_canonical_document(
+        TextSnapshot::new(DocumentId(0x425546), Revision(1), text).unwrap(),
+        ParseConfig::default(),
+    );
+    assert!(parsed.is_strictly_clean());
+    let syntax = DocumentSyntax::cast(parsed.syntax()).unwrap();
+    let artifact = CanonicalSourceFrontend
+        .compile_document_with_catalog(&syntax, catalog.clone())
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let plan = lower_native_program_artifact(&artifact, &catalog).unwrap();
+    let template = plan
+        .blocks()
+        .iter()
+        .find_map(|block| match block.action() {
+            A::LibraryCall { template, .. } if template.primitive() == P::SequenceAppendLeBytes => {
+                Some(template)
+            }
+            _ => None,
+        })
+        .unwrap();
+    let call = prepare_native_program_library_call(&artifact, template, &catalog).unwrap();
+    let ResolvedOperationContract::Declared(contract) = template.contract() else {
+        panic!()
+    };
+    let schemas = Arc::new(artifact.schemas().clone());
+    let memory = ManagedMemoryBudget::new(128 * 1024 * 1024);
+    let limits = MemoryBudgetLimits {
+        max_output_elements: Some(8_000_000),
+        max_output_bytes: Some(64 * 1024 * 1024),
+        max_temporary_bytes: Some(64 * 1024 * 1024),
+        max_cloned_bytes: Some(64 * 1024 * 1024),
+        max_retained_nodes: Some(1_000_000),
+        max_comparison_work: Some(1_000_000_000_000),
+        max_compute_work: Some(1_000_000_000_000),
+        ..Default::default()
+    };
+    let admit = |value: Value| {
+        let mut reservation = memory
+            .reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap())
+            .unwrap();
+        value.into_memory_budget(&mut reservation).unwrap()
+    };
+    let scalar = |index: usize, data| {
+        admit(
+            ValueDraft {
+                schema: contract.inputs[index].schema,
+                shape_values: Box::new([]),
+                data,
+            }
+            .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+            .unwrap(),
+        )
+    };
+    let shape = mech_core::shape_for_resolved_extents(&template.inputs()[0], &[1, 1]).unwrap();
+    let mut bytes = Vec::with_capacity(6633832);
+    bytes.push(99);
+    let source = admit(
+        Value::from_unsigned_matrix_buffer(
+            contract.inputs[0].schema,
+            shape,
+            UnsignedMatrixBuffer::U8(bytes),
+            schemas.clone(),
+        )
+        .unwrap(),
+    );
+    let word = scalar(1, Data::U64(578437695752307201));
+    let work = NativeLibraryWorkBudget::new(
+        limits.max_compute_work.unwrap(),
+        limits.max_comparison_work.unwrap(),
+        &memory,
+    )
+    .unwrap();
+    let identity = call
+        .unsigned_buffer_with_count(
+            Some(source.clone()),
+            0,
+            Some(0),
+            false,
+            limits,
+            &work,
+            Default::default(),
+        )
+        .unwrap();
+    assert!(identity.shares_frozen_storage(&source));
+    drop(identity);
+    for cached in [false, true] {
+        let mut output = None;
+        let mut cache = NativePreparedLibraryCallCache::default();
+        for count in [3u8, 9, 0, 8, 2] {
+            let inputs = [
+                Some(source.clone()),
+                Some(word.clone()),
+                Some(scalar(2, Data::U8(count))),
+            ];
+            let prior = output.clone();
+            let result = if cached {
+                call.invoke_current_cached(&mut cache, &inputs, &mut output, limits, &work)
+            } else {
+                call.invoke_current(&inputs, &mut output, limits, &work)
+            };
+            if count > 8 {
+                assert!(result.is_err());
+                assert!(
+                    output
+                        .as_ref()
+                        .unwrap()
+                        .shares_frozen_storage(prior.as_ref().unwrap())
+                );
+            } else {
+                result.unwrap();
+                let expected = std::iter::once(Data::U8(99))
+                    .chain((1..=count).map(Data::U8))
+                    .collect();
+                assert_eq!(
+                    output.as_ref().unwrap().canonical_data_draft().unwrap(),
+                    Data::Matrix(expected)
+                );
+                if count == 0 {
+                    assert!(output.as_ref().unwrap().shares_frozen_storage(&source));
+                }
+            }
+        }
+    }
+    drop((source, word, work));
+    assert_eq!(memory.used_bytes(), 0);
 }

@@ -18,13 +18,15 @@ pub(crate) enum Operation {
     WithCapacity,
     Reserve,
     Append,
+    AppendLeBytes,
     Clear,
 }
 #[cfg(feature = "semantic-compiler")]
-pub(crate) const OPERATIONS: [Operation; 4] = [
+pub(crate) const OPERATIONS: [Operation; 5] = [
     Operation::WithCapacity,
     Operation::Reserve,
     Operation::Append,
+    Operation::AppendLeBytes,
     Operation::Clear,
 ];
 impl Operation {
@@ -33,6 +35,7 @@ impl Operation {
             Self::WithCapacity => "sequence/with-capacity",
             Self::Reserve => "sequence/reserve",
             Self::Append => "sequence/append",
+            Self::AppendLeBytes => "sequence/append-le-bytes",
             Self::Clear => "sequence/clear",
         }
     }
@@ -42,11 +45,16 @@ impl Operation {
             Self::WithCapacity => "with-capacity",
             Self::Reserve => "reserve",
             Self::Append => "append",
+            Self::AppendLeBytes => "append-le-bytes",
             Self::Clear => "clear",
         }
     }
     pub(crate) const fn arity(self) -> usize {
-        if matches!(self, Self::Clear) { 1 } else { 2 }
+        match self {
+            Self::Clear => 1,
+            Self::AppendLeBytes => 3,
+            _ => 2,
+        }
     }
     pub(crate) fn contract(self) -> &'static OperationContractDeclaration {
         static WITH: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
@@ -58,6 +66,9 @@ impl Operation {
         static APPEND: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
             mech_core::maintained_operation_contract("sequence/append", 2, true).unwrap()
         });
+        static BYTES: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
+            mech_core::maintained_operation_contract("sequence/append-le-bytes", 3, true).unwrap()
+        });
         static CLEAR: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
             mech_core::maintained_operation_contract("sequence/clear", 1, true).unwrap()
         });
@@ -65,6 +76,7 @@ impl Operation {
             Self::WithCapacity => &WITH,
             Self::Reserve => &RESERVE,
             Self::Append => &APPEND,
+            Self::AppendLeBytes => &BYTES,
             Self::Clear => &CLEAR,
         }
     }
@@ -101,6 +113,13 @@ fn input_element(body: &SchemaBody) -> Option<&SchemaBody> {
         _ => None,
     }
 }
+pub(crate) fn output_element(operation: Operation, body: &SchemaBody) -> Option<&SchemaBody> {
+    if operation == Operation::AppendLeBytes {
+        input_element(body)
+    } else {
+        element(body)
+    }
+}
 pub(crate) fn schemas_supported(
     operation: Operation,
     inputs: &[SchemaBody],
@@ -117,12 +136,17 @@ pub(crate) fn schemas_supported(
     let Some(source) = source else {
         return false;
     };
-    element(output) == Some(source)
+    output_element(operation, output) == Some(source)
         && match operation {
             Operation::WithCapacity | Operation::Reserve => {
                 inputs[1] == SchemaBody::UnsignedInteger(IntegerWidth::W64)
             }
             Operation::Append => &inputs[1] == source,
+            Operation::AppendLeBytes => {
+                source == &SchemaBody::UnsignedInteger(IntegerWidth::W8)
+                    && inputs[1] == SchemaBody::UnsignedInteger(IntegerWidth::W64)
+                    && inputs[2] == SchemaBody::UnsignedInteger(IntegerWidth::W8)
+            }
             Operation::Clear => true,
         }
 }
@@ -242,9 +266,17 @@ fn geometry_for_header(
             ),
             width: source_width,
         },
-        Operation::Append => {
+        Operation::Append | Operation::AppendLeBytes => {
+            let count = if operation == Operation::AppendLeBytes {
+                if source_width != 1 || argument > 8 {
+                    return Err(invalid("byte append count exceeds eight"));
+                }
+                argument as usize
+            } else {
+                1
+            };
             let next = length
-                .checked_add(1)
+                .checked_add(count)
                 .ok_or_else(|| invalid("sequence append length overflows"))?;
             Geometry {
                 length: next,
@@ -313,6 +345,21 @@ pub(crate) fn copy_buffer(
                         .map_err(|_| invalid("sequence element exceeds its width"))?,
                 );
             }
+            if operation == Operation::AppendLeBytes {
+                let count = geometry
+                    .length
+                    .checked_sub(words.len())
+                    .filter(|&n| n <= 8)
+                    .ok_or_else(|| invalid("byte append geometry changed"))?;
+                if geometry.width != 1 {
+                    return Err(invalid("byte append requires U8 elements"));
+                }
+                words.extend(
+                    argument.to_le_bytes()[..count]
+                        .iter()
+                        .map(|&byte| <$ty>::from(byte)),
+                );
+            }
             if words.len() != geometry.length {
                 return Err(invalid("sequence constructed length changed"));
             }
@@ -354,8 +401,13 @@ impl BufferRuntime {
         }))
     }
     fn geometry(&self) -> MResult<Geometry> {
-        let argument = if self.operation.arity() == 2 {
-            scalar_word(self.inputs[1].snapshot()?.data())?
+        let argument = if self.operation.arity() >= 2 {
+            let index = if self.operation == Operation::AppendLeBytes {
+                2
+            } else {
+                1
+            };
+            scalar_word(self.inputs[index].snapshot()?.data())?
         } else {
             0
         };
@@ -492,12 +544,17 @@ impl MechFunctionImpl for BufferRuntime {
                 )?);
             }
             let source = (self.operation != Operation::WithCapacity).then(|| &inputs[0]);
-            let argument = if inputs.len() == 2 {
+            let argument = if inputs.len() >= 2 {
                 scalar_word(inputs[1].data())?
             } else {
                 0
             };
-            let geometry = geometry(self.operation, source, self.width, argument)?;
+            let extent_argument = if self.operation == Operation::AppendLeBytes {
+                scalar_word(inputs[2].data())?
+            } else {
+                argument
+            };
+            let geometry = geometry(self.operation, source, self.width, extent_argument)?;
             let shape = shape_for_resolved_extents(
                 self.output
                     .retained_schema_table()
@@ -508,6 +565,16 @@ impl MechFunctionImpl for BufferRuntime {
             let value = construction.try_build_canonical_candidate_with(|_| {
                 let schemas =
                     std::sync::Arc::new(self.output.retained_schema_table().as_ref().clone());
+                if self.operation == Operation::AppendLeBytes
+                    && extent_argument == 0
+                    && source.is_some_and(|value| {
+                        value.schema_key() == schemas.entry(self.output.schema()).unwrap().key()
+                            && value.schema() == self.output.schema()
+                            && value.shape() == &shape
+                    })
+                {
+                    return Ok(source.unwrap().clone());
+                }
                 Value::from_unsigned_matrix_buffer(
                     self.output.schema(),
                     shape,
@@ -547,7 +614,12 @@ impl MechFunctionCompiler for BufferRuntime {
             context.emit_unop(function, output, first);
         } else {
             let second = compile_value_cell_register(&self.inputs[1], context)?;
-            context.emit_binop(function, output, first, second);
+            if self.inputs.len() == 3 {
+                let third = compile_value_cell_register(&self.inputs[2], context)?;
+                context.emit_ternop(function, output, first, second, third);
+            } else {
+                context.emit_binop(function, output, first, second);
+            }
         }
         Ok(output)
     }
@@ -612,6 +684,20 @@ define_factory!(
     validate_append
 );
 define_factory!(
+    AppendLeBytesFactory,
+    AppendLeBytes,
+    register_append_le_bytes,
+    install_sequence_append_le_bytes,
+    "sequence/append-le-bytes",
+    RuntimeFunctionSignature::ternary(
+        FunctionValueRepresentation::AnyValue,
+        FunctionValueRepresentation::AnyValue,
+        FunctionValueRepresentation::AnyValue,
+        FunctionValueRepresentation::AnyValue
+    ),
+    validate_append_le_bytes
+);
+define_factory!(
     ClearFactory,
     Clear,
     register_clear,
@@ -627,6 +713,7 @@ pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     register_with_capacity(builder)?;
     register_reserve(builder)?;
     register_append(builder)?;
+    register_append_le_bytes(builder)?;
     register_clear(builder)
 }
 #[cfg(feature = "semantic-compiler")]

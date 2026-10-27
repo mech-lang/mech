@@ -1133,6 +1133,22 @@ fn sequence_length() -> Result<Vec<KindScheme>, SemanticModelError> {
 }
 
 fn sequence_buffer(name: &str) -> Result<Vec<KindScheme>, SemanticModelError> {
+    if name == "sequence/append-le-bytes" {
+        // Retain the input row axis: a zero-count append can then preserve
+        // the exact frozen value. Runtime geometry still requires one row.
+        let byte = BuiltinScalarKind::U8.kind_expr();
+        return Ok(vec![make(
+            0,
+            3,
+            vec![
+                matrix(byte.clone(), dim(0), dim(1)),
+                BuiltinScalarKind::U64.kind_expr(),
+                byte.clone(),
+            ],
+            vec![matrix(byte, dim(0), dim(2))],
+            Vec::new(),
+        )?]);
+    }
     [
         BuiltinScalarKind::U8,
         BuiltinScalarKind::U16,
@@ -1829,6 +1845,7 @@ pub fn maintained_source_schemes(
         name @ ("sequence/with-capacity"
         | "sequence/reserve"
         | "sequence/append"
+        | "sequence/append-le-bytes"
         | "sequence/clear") => sequence_buffer(name)?,
         "sequence/sort-indices" => vec![sequence_sort_indices()?],
         "text/lines" => vec![text_lines()?],

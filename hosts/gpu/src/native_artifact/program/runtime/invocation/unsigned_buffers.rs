@@ -83,9 +83,10 @@ impl Invocation<'_, '_, '_> {
             }
         }
         let result = call
-            .unsigned_buffer(
+            .unsigned_buffer_with_count(
                 source,
                 words.get(1).copied().unwrap_or(0),
+                words.get(2).copied(),
                 !proof.owned_source_slots().is_empty(),
                 self.limits,
                 &self.state.library,

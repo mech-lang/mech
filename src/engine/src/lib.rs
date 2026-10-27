@@ -168,8 +168,8 @@ pub mod __mech_native {
     };
     #[cfg(feature = "sequence_buffers")]
     pub use crate::intrinsics::sequence_buffers::{
-        install_sequence_append, install_sequence_clear, install_sequence_reserve,
-        install_sequence_with_capacity,
+        install_sequence_append, install_sequence_append_le_bytes, install_sequence_clear,
+        install_sequence_reserve, install_sequence_with_capacity,
     };
     #[cfg(feature = "sequence_sort")]
     pub use crate::intrinsics::sequence_sort::install_sequence_sort_indices;

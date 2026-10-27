@@ -25,6 +25,11 @@ pub(super) fn bind_append(
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind(request, Operation::Append)
 }
+pub(super) fn bind_append_le_bytes(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind(request, Operation::AppendLeBytes)
+}
 pub(super) fn bind_clear(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
@@ -89,7 +94,8 @@ fn bind(
     if !primitive::schemas_supported(operation, input_bodies, output_body) {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    let width = primitive::width(primitive::element(output_body).unwrap()).unwrap();
+    let width =
+        primitive::width(primitive::output_element(operation, output_body).unwrap()).unwrap();
     Ok(BoundResidentKernel::new(execute, Box::new([]))
         .with_retained_state(Arc::new(Plan {
             operation,
@@ -137,13 +143,19 @@ fn execute(
     let source = (plan.operation != Operation::WithCapacity)
         .then(|| input(plan, inputs, 0))
         .transpose()?;
-    let argument = if plan.operation.arity() == 2 {
+    let argument = if plan.operation.arity() >= 2 {
         primitive::scalar_word(input(plan, inputs, 1)?.data())
             .map_err(|_| ResidentKernelError::InvalidInput)?
     } else {
         0
     };
-    let geometry = primitive::geometry(plan.operation, source, plan.width, argument)
+    let extent_argument = if plan.operation == Operation::AppendLeBytes {
+        primitive::scalar_word(input(plan, inputs, 2)?.data())
+            .map_err(|_| ResidentKernelError::InvalidInput)?
+    } else {
+        argument
+    };
+    let geometry = primitive::geometry(plan.operation, source, plan.width, extent_argument)
         .map_err(|_| ResidentKernelError::InvalidShape)?;
     let ResidentValueMut::Snapshot([target]) = output else {
         return Err(ResidentKernelError::InvalidOutput);
@@ -195,7 +207,14 @@ fn execute(
     let prior_bytes = prior.map_or(0, |f| f.retained_bytes);
     let output_bytes = prospective.retained_bytes;
     let measured = meter.estimate();
-    let cloned = if plan.operation == Operation::Clear {
+    let no_op = plan.operation == Operation::AppendLeBytes
+        && extent_argument == 0
+        && source.is_some_and(|value| {
+            value.schema_key() == metadata.schema_key
+                && value.schema() == metadata.schema
+                && value.shape() == &shape
+        });
+    let cloned = if plan.operation == Operation::Clear || no_op {
         0
     } else {
         source.map_or(0, |source| match source.data() {
@@ -224,11 +243,16 @@ fn execute(
         output_elements: geometry.length, output_bytes, temporary_bytes: temporary, cloned_bytes: cloned, retained_nodes: nodes,
         ..budget::KernelCostEstimate::default()
     }).admit()?.into_plan();
-    let buffer = primitive::copy_buffer(plan.operation, source, geometry, argument)
-        .map_err(|_| ResidentKernelError::InvalidOutput)?;
-    let next =
-        Value::from_unsigned_matrix_buffer(metadata.schema, shape, buffer, Arc::clone(schemas))
+    let next = if no_op {
+        source.ok_or(ResidentKernelError::InvalidInput)?.clone()
+    } else {
+        let buffer = primitive::copy_buffer(plan.operation, source, geometry, argument)
             .map_err(|_| ResidentKernelError::InvalidOutput)?;
+        let next =
+            Value::from_unsigned_matrix_buffer(metadata.schema, shape, buffer, Arc::clone(schemas))
+                .map_err(|_| ResidentKernelError::InvalidOutput)?;
+        next
+    };
     // Capacity is omitted from language equality, but a changed reservation
     // must still dirty downstream buffer consumers in this resident turn.
     let capacity = |value: &Value| match value.data() {

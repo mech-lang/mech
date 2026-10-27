@@ -455,6 +455,10 @@ impl NativeCollectionCall {
                             shape: mech_core::ShapeRule::SameAsInput { .. }
                         } | mech_core::OutputConstruction::ReadModifyWrite { .. })
             );
+            #[cfg(feature = "sequence_buffers")]
+            let shape_follows_current_input = shape_follows_current_input
+                || self.template.primitive()
+                    == crate::native_artifact::NativeCollectionPrimitive::SequenceAppendLeBytes;
             if value.schema() != self.output.schema_id
                 || value.schema_key() != self.output.schema_key
                 || (!shape_follows_current_input

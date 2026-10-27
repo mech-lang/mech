@@ -149,6 +149,12 @@ fn linked_writer_narrow_arithmetic_restores_and_recovers() {
     linked_assertion_retry(source, |n| ValueDataDraft::U32(n.try_into().unwrap()));
 }
 
+#[test]
+fn linked_bulk_byte_append_preserves_publication_and_recovers() {
+    let source = "+> sequence\nchecked(n<u64>) => (out<u64>) :=\n  bytes := sequence/append-le-bytes(sequence/with-capacity(0u8, 32u64), n, 2u8)\n  same := sequence/append-le-bytes(bytes, 0u64, 0u8)\n  positive! := n > 0u64\n  low<u64> := same[1u64]\n  out := 12u64 / low.\nchecked(input<u64>)\n";
+    linked_assertion_retry(source, ValueDataDraft::U64);
+}
+
 fn linked_assertion_retry(source: &str, input_word: fn(u64) -> ValueDataDraft) {
     let temporary = tempfile::tempdir().unwrap();
     let directory = temporary.path();
