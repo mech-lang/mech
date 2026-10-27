@@ -3347,12 +3347,10 @@ impl PendingControlBlock {
         else {
             return false;
         };
-        if specialized
-            .finalize()
-            .ok()
-            .zip(result.clone().finalize().ok())
-            .is_none_or(|(declared, actual)| declared != actual)
-        {
+        // The solver can renumber independent free axes while resolving the
+        // return annotation. Reuse the existing bijective identity check;
+        // bounds, shared dimensions, and scalar kinds remain exact.
+        if !annotation_shape_identity::equivalent(&specialized, result) {
             return false;
         }
         operation.schema = result.clone();
@@ -9790,6 +9788,80 @@ mod tests {
     use super::*;
 
     #[test]
+    fn recursive_result_specialization_preserves_independent_axis_identity() {
+        let parsed = mech_syntax::document::parse_canonical_document(
+            mech_syntax::document::TextSnapshot::new(DocumentId(85), Revision(1), "true").unwrap(),
+            mech_syntax::document::ParseConfig::default(),
+        );
+        let parameter = |id, origin| DimensionParameterDeclaration {
+            id: DimensionParameterId::new(id),
+            origin,
+            lifetime: DimensionLifetime::Turn,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        };
+        let matrix = |dimensions: Vec<DimensionExpr>| SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W32)),
+            dimensions: dimensions.into_boxed_slice(),
+        };
+        let record = |a, b| {
+            SchemaBody::Record(Box::new([
+                SchemaField {
+                    name: "first".into(),
+                    schema: a,
+                },
+                SchemaField {
+                    name: "second".into(),
+                    schema: b,
+                },
+            ]))
+        };
+        let actual = SchemaDraft {
+            body: record(
+                matrix(vec![
+                    DimensionExpr::Constant(1),
+                    DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                ]),
+                matrix(vec![
+                    DimensionExpr::Constant(1),
+                    DimensionExpr::Parameter(DimensionParameterId::new(1)),
+                ]),
+            ),
+            dimension_parameters: Box::new([
+                parameter(0, DimensionParameterOrigin::Inferred),
+                parameter(1, DimensionParameterOrigin::Explicit),
+            ]),
+        };
+        let expected = SchemaDraft {
+            body: record(
+                matrix(vec![
+                    DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                    DimensionExpr::Parameter(DimensionParameterId::new(1)),
+                ]),
+                matrix(vec![
+                    DimensionExpr::Parameter(DimensionParameterId::new(2)),
+                    DimensionExpr::Parameter(DimensionParameterId::new(3)),
+                ]),
+            ),
+            dimension_parameters: (0..4)
+                .map(|id| parameter(id, DimensionParameterOrigin::Inferred))
+                .collect(),
+        };
+        let mut block = PendingControlBlock {
+            id: crate::ControlBlockId(0),
+            parameters: Vec::new(),
+            operations: vec![PendingControlOperation {
+                body: PendingControlOperationBody::Recur(0),
+                inputs: Vec::new(),
+                schema: expected,
+            }],
+            yield_value: PendingControlValue::Local(0),
+        };
+        assert!(block.specialize_tail_recur_result(&actual, &parsed.syntax()));
+        assert_eq!(block.operations[0].schema, actual);
+    }
+
+    #[test]
     fn control_diagnostics_report_limit_and_result_separately() {
         let parsed = mech_syntax::document::parse_canonical_document(
             mech_syntax::document::TextSnapshot::new(DocumentId(83), Revision(1), "true").unwrap(),
@@ -10661,7 +10733,11 @@ impl SemanticBuilder {
                 {
                     return Err(SourceSemanticError {
                         code: "source-semantics/incompatible-match-result-kind",
-                        message: "match arms require one exact result schema".to_owned(),
+                        message: format!(
+                            "match arms require one exact result schema; expected {:?}, found {:?}",
+                            result_schema_identity.as_ref().map(|schema| schema.body()),
+                            schema_identity.body(),
+                        ),
                         anchor: SourceSemanticAnchor::for_node(&arm.syntax),
                     });
                 }
