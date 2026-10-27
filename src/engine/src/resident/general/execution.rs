@@ -6992,6 +6992,14 @@ mod tests {
         let mut instance = source_document_instance(
             "spin(n<f64>) => <f64>\n  | 0 => 0\n  | n => spin(n).\nspin(signal<f64>)\n",
         );
+        assert!(
+            instance
+                .plan
+                .schemas
+                .entries()
+                .all(|entry| entry.schema().body() != &mech_core::SchemaBody::Bool),
+            "scalar control must not retain an unused predicate schema"
+        );
         let slot = instance.plan.inputs[0].slot;
         instance
             .turn(&[CapturedSignalInput {
@@ -7007,8 +7015,6 @@ mod tests {
                 value: ResidentValueRef::F64(&[1.0]),
             }])
             .unwrap_err();
-        // This tail match charges the two scalar operands together, so its
-        // first rejected debit exceeds the even comparison limit by two.
         assert!(
             matches!(
                 error,
@@ -7020,7 +7026,7 @@ mod tests {
                         limit,
                     },
                     ..
-                } if required == mech_core::RESIDENT_MAX_COMPARISON_WORK + 2
+                } if required == mech_core::RESIDENT_MAX_COMPARISON_WORK + 1
                     && limit == mech_core::RESIDENT_MAX_COMPARISON_WORK
             ),
             "{error:?}"
