@@ -1599,6 +1599,36 @@ mod iteration_proof_tests {
         );
     }
 
+    #[cfg(feature = "map_ops")]
+    #[test]
+    fn large_mapless_program_has_no_map_write_uses() {
+        let (artifact, catalog) = artifact("input<u64>");
+        let mut valid = lower_native_program_artifact(&artifact, &catalog).unwrap();
+        let boundary = valid.activation_boundary.unwrap() as usize;
+        let NativeIterationTerminator::Scalar(NativeMatchTerminator::Jump(complete)) =
+            valid.blocks[boundary].terminator
+        else {
+            panic!("boundary jump")
+        };
+        let mut blocks = valid.blocks.into_vec();
+        let first = blocks.len() as u32;
+        let mut empty = blocks[boundary].clone();
+        empty.action = NativeIterationAction::Scalar(NativeMatchAction::None);
+        for _ in 0..16385 {
+            let next = blocks.len() as u32 + 1;
+            empty.terminator = NativeMatchTerminator::Jump(next).into();
+            blocks.push(empty.clone());
+        }
+        blocks.last_mut().unwrap().terminator = NativeMatchTerminator::Jump(complete).into();
+        blocks[boundary].terminator = NativeMatchTerminator::Jump(first).into();
+        valid.blocks = blocks.into();
+        valid.validate_current_visits().unwrap();
+        assert!(valid.map_write_uses().unwrap().is_empty());
+        // An absent map write does not bypass validation of the underlying CFG.
+        valid.entry = u32::MAX;
+        assert!(valid.map_write_uses().is_err());
+    }
+
     #[test]
     fn mixed_current_visit_proof_rejects_stale_managed_carriers_and_cross_scope_edges() {
         for count in [0, 25] {

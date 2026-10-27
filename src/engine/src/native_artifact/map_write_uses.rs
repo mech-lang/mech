@@ -236,11 +236,20 @@ impl Plan {
     /// These facts alone do not authorize mutable storage or hash selection.
     pub fn map_write_uses(&self) -> Result<Box<[NativeMapWriteUses]>, &'static str> {
         self.validate_current_visits()?;
+        let actions = super::fusion_semantics::semantic_actions(self)?;
+        // No per-write ownership fact exists without a selected map insertion.
+        // Keep validating the plan, but do not apply map-specific graph bounds
+        // or build alias state for unrelated scalar and buffer computations.
+        if !actions.iter().any(|action| {
+            matches!(action, Action::LibraryCall { template, .. }
+                if template.primitive() == Primitive::MapInsert)
+        }) {
+            return Ok(Box::new([]));
+        }
         if self.blocks().len() > 16384 {
             return Err("native map alias graph limit");
         }
         let fields = Fields::new(self)?;
-        let actions = super::fusion_semantics::semantic_actions(self)?;
         let transfers = actions
             .iter()
             .map(|action| transfer(self, &fields, action))
