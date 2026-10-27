@@ -1,0 +1,111 @@
+   Compiling syn v2.0.119
+   Compiling zerocopy-derive v0.8.55
+   Compiling zerocopy v0.8.55
+   Compiling serde_json v1.0.151
+   Compiling num-traits v0.2.19
+   Compiling half v2.7.1
+   Compiling ciborium-ll v0.2.2
+   Compiling regex-automata v0.4.16
+   Compiling tinytemplate v1.2.1
+   Compiling regex v1.13.1
+   Compiling ciborium v0.2.2
+   Compiling criterion v0.8.2
+   Compiling mech-core v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/core)
+error[E0308]: mismatched types
+  --> src/core/src/snapshot/encoding_sink_tests.rs:11:43
+   |
+11 |                 SequenceStorage::$storage(vec![<$ty>::MIN, 0, 1, <$ty>::MAX].into_boxed_slice()),
+   |                 ------------------------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Vec<u8>`, found `Box<[u8]>`
+   |                 |
+   |                 arguments to this enum variant are incorrect
+...
+15 |     integer!(UnsignedInteger, W8, U8, u8);
+   |     ------------------------------------- in this macro invocation
+   |
+   = note: expected struct `std::vec::Vec<u8>`
+              found struct `std::boxed::Box<[u8]>`
+note: tuple variant defined here
+  --> src/core/src/snapshot/sequence.rs:13:5
+   |
+13 |     U8(Vec<u8>),
+   |     ^^
+   = note: this error originates in the macro `integer` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: try using a conversion method
+   |
+11 |                 SequenceStorage::$storage(vec![<$ty>::MIN, 0, 1, <$ty>::MAX].into_boxed_slice().to_vec()),
+   |                                                                                                +++++++++
+
+error[E0308]: mismatched types
+  --> src/core/src/snapshot/encoding_sink_tests.rs:11:43
+   |
+11 |                 SequenceStorage::$storage(vec![<$ty>::MIN, 0, 1, <$ty>::MAX].into_boxed_slice()),
+   |                 ------------------------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Vec<u16>`, found `Box<[u16]>`
+   |                 |
+   |                 arguments to this enum variant are incorrect
+...
+16 |     integer!(UnsignedInteger, W16, U16, u16);
+   |     ---------------------------------------- in this macro invocation
+   |
+   = note: expected struct `std::vec::Vec<u16>`
+              found struct `std::boxed::Box<[u16]>`
+note: tuple variant defined here
+  --> src/core/src/snapshot/sequence.rs:14:5
+   |
+14 |     U16(Vec<u16>),
+   |     ^^^
+   = note: this error originates in the macro `integer` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: try using a conversion method
+   |
+11 |                 SequenceStorage::$storage(vec![<$ty>::MIN, 0, 1, <$ty>::MAX].into_boxed_slice().to_vec()),
+   |                                                                                                +++++++++
+
+error[E0308]: mismatched types
+  --> src/core/src/snapshot/encoding_sink_tests.rs:11:43
+   |
+11 |                 SequenceStorage::$storage(vec![<$ty>::MIN, 0, 1, <$ty>::MAX].into_boxed_slice()),
+   |                 ------------------------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Vec<u32>`, found `Box<[u32]>`
+   |                 |
+   |                 arguments to this enum variant are incorrect
+...
+17 |     integer!(UnsignedInteger, W32, U32, u32);
+   |     ---------------------------------------- in this macro invocation
+   |
+   = note: expected struct `std::vec::Vec<u32>`
+              found struct `std::boxed::Box<[u32]>`
+note: tuple variant defined here
+  --> src/core/src/snapshot/sequence.rs:15:5
+   |
+15 |     U32(Vec<u32>),
+   |     ^^^
+   = note: this error originates in the macro `integer` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: try using a conversion method
+   |
+11 |                 SequenceStorage::$storage(vec![<$ty>::MIN, 0, 1, <$ty>::MAX].into_boxed_slice().to_vec()),
+   |                                                                                                +++++++++
+
+error[E0308]: mismatched types
+  --> src/core/src/snapshot/encoding_sink_tests.rs:11:43
+   |
+11 |                 SequenceStorage::$storage(vec![<$ty>::MIN, 0, 1, <$ty>::MAX].into_boxed_slice()),
+   |                 ------------------------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Vec<u64>`, found `Box<[u64]>`
+   |                 |
+   |                 arguments to this enum variant are incorrect
+...
+18 |     integer!(UnsignedInteger, W64, U64, u64);
+   |     ---------------------------------------- in this macro invocation
+   |
+   = note: expected struct `std::vec::Vec<u64>`
+              found struct `std::boxed::Box<[u64]>`
+note: tuple variant defined here
+  --> src/core/src/snapshot/sequence.rs:16:5
+   |
+16 |     U64(Vec<u64>),
+   |     ^^^
+   = note: this error originates in the macro `integer` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: try using a conversion method
+   |
+11 |                 SequenceStorage::$storage(vec![<$ty>::MIN, 0, 1, <$ty>::MAX].into_boxed_slice().to_vec()),
+   |                                                                                                +++++++++
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `mech-core` (lib test) due to 4 previous errors

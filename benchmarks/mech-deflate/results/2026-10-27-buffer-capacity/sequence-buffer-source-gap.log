@@ -1,0 +1,37 @@
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/gpu)
+error[E0061]: this function takes 2 arguments but 4 arguments were supplied
+   --> hosts/gpu/tests/support/canonical_program_sequence_capacity.rs:21:24
+    |
+ 21 |             assert_eq!(reference_result(&artifact, &args, last, &memory), expected);
+    |                        ^^^^^^^^^^^^^^^^                   ----  ------- unexpected argument #4 of type `&mech_core::ManagedMemoryBudget`
+    |                                                           |
+    |                                                           unexpected argument #3 of type `usize`
+    |
+note: function defined here
+   --> hosts/gpu/tests/canonical_artifact_program.rs:268:4
+    |
+268 | fn reference_result(artifact: &ProgramArtifact, args: &[Value]) -> Result<Vec<Value>, String> {
+    |    ^^^^^^^^^^^^^^^^
+help: remove the extra arguments
+    |
+ 21 -             assert_eq!(reference_result(&artifact, &args, last, &memory), expected);
+ 21 +             assert_eq!(reference_result(&artifact, &args), expected);
+    |
+
+error[E0369]: binary operation `==` cannot be applied to type `Result<Vec<mech_core::Value>, std::string::String>`
+  --> hosts/gpu/tests/support/canonical_program_sequence_capacity.rs:21:13
+   |
+21 |             assert_eq!(reference_result(&artifact, &args, last, &memory), expected);
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |             |
+   |             Result<Vec<mech_core::Value>, std::string::String>
+   |             mech_core::ValueDataDraft
+   |
+note: `Result<Vec<mech_core::Value>, std::string::String>` does not implement `PartialEq<mech_core::ValueDataDraft>`
+  --> /rustc/ec818fda361ca216eb186f5cf45131bd9c776bb4/library/core/src/result.rs:557:0
+   |
+   = note: `Result<Vec<mech_core::Value>, std::string::String>` is defined in another crate
+
+Some errors have detailed explanations: E0061, E0369.
+For more information about an error, try `rustc --explain E0061`.
+error: could not compile `mech-gpu` (test "canonical_artifact_program") due to 2 previous errors
