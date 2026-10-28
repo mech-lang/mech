@@ -1,0 +1,20 @@
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/engine)
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/compute)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/runtime)
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/gpu)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/stdlib)
+   Compiling mech-build v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/build)
+    Finished `test` profile [unoptimized] target(s) in 1m 41s
+     Running tests/canonical_artifact_program.rs (/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-561ab00dcd3ceccb)
+
+running 2 tests
+{"allocated_bytes":451724,"capacity":512,"requests":5537,"witness":"mixed-record-buffer-frames"}
+{"allocated_bytes":7085044,"capacity":6633832,"requests":5537,"witness":"mixed-record-buffer-frames"}
+{"allocated_bytes":451724,"capacity":512,"requests":5537,"witness":"mixed-record-buffer-frames"}
+{"allocated_bytes":7085044,"capacity":6633832,"requests":5537,"witness":"mixed-record-buffer-frames"}
+test record_buffer_qualification::mixed_record_buffer_frames_keep_capacity_aliases_and_failure_recovery ... ok
+test linked_qualification::linked_mixed_record_buffer_frames_preserve_publication_and_recover has been running for over 60 seconds
+test linked_qualification::linked_mixed_record_buffer_frames_preserve_publication_and_recover ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 371 filtered out; finished in 87.48s
+

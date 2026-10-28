@@ -1,0 +1,9 @@
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/gpu)
+    Finished `test` profile [unoptimized] target(s) in 21.16s
+     Running tests/canonical_artifact_program.rs (/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-561ab00dcd3ceccb)
+
+running 1 test
+test compress_qualification::assembly::tests::assembled_compressor_source_preserves_its_pinned_bytes ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 372 filtered out; finished in 0.00s
+

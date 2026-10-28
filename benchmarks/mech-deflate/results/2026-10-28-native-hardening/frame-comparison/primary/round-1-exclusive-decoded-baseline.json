@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-frame-comparison-20261028/baseline/native_frame_transport",
+    "exclusive",
+    "decoded",
+    "64",
+    "10",
+    "1"
+  ],
+  "exit": 0
+}

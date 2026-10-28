@@ -253,3 +253,49 @@ Direct Bool/U64/I64/F64 controls take about 1.06–1.09 ms per 1000 invocations
 public entry setup). These are diagnostic observations, not the balanced
 acceptance comparison. The immutable baseline executable is preserved before
 wiring any frame-storage change.
+
+## Typed frame result
+
+The targeted implementation is `2b4adb7289cb81ffd0c37456ce1f968c9ed3d43d`.
+Its optimized executable is SHA-256
+`3c34e2ff5a72f8981c7c23d57a04c13ca185cd63d73a14e91a72262c18cfb457`.
+The exact probe source remains unchanged from the saved baseline. The
+predeclared balanced comparison passed every gate on its first cohort. No
+observation was discarded and no failed cohort was rerun. The complete
+[observations and executable/source manifests](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/frame-comparison/)
+are retained.
+
+At 64 visits, original/decoded exclusive frames drop from 4578 requests and
+289771 requested bytes to 1428 requests and 61192 bytes; paired median elapsed
+ratios are 0.4654 and 0.4640. Aliased frames drop from 4750 requests and 305254
+bytes to 1600 requests and 74010 bytes, with ratios 0.4682 and 0.4678. This is
+66–69% fewer requests, 76–79% fewer requested bytes, and about 53–54% less time
+for this focused workload. It is not a whole-compressor speedup estimate.
+
+All four primitive scalar controls and the scalar loop retain exactly the same
+allocation requests and requested bytes. Their timing ratios remain within the
+predeclared 1.05 threshold. Zero and 64 scalar-loop visits both request 164
+allocations/24048 bytes. Across three rounds the cohort retains 840 primary
+observations, 84 explicit warmups and 16 scalar-slope diagnostic observations.
+The measured runtime runs alone; compilation had completed and no old
+compression job was active.
+
+Frame facts now prepare exact schema/kind/lane maps. Scalars occupy native
+word lanes with current-visit validity, while only managed fields retain Value
+owners. Copy and pack validate all fields before replacing owners; retirement
+invalidates words and releases managed references. Setup admission includes the
+real word and owner arenas. Selected record projection stays in word lanes
+until a real canonical consumer/publication needs a Value. Prepared frame
+geometry caches only immutable normalization bounds and a conservative flat
+shape recipe; each call revalidates current extents, fixed/repeated relations,
+scalar widths and account membership. Unsupported relations retain the core
+constructor/binder. Image restoration derives the recipe and lane map again.
+
+Nine frame integration tests, two recipe tests and the existing linked
+mixed-record regression pass. Coverage includes all seven scalar kinds, exact
+narrow maxima, signed limits, signed zero/NaN bits, changing shapes, invalid
+bits and successful retry. The first minimal engine-only unit command lacked
+the maintained semantic-compiler test features and failed in existing test
+imports; it also found a new test's missing Arc conversion, now corrected.
+The supported combined engine/GPU feature profile passes without suppressing
+warnings. Failed commands and their original output remain in the receipts.

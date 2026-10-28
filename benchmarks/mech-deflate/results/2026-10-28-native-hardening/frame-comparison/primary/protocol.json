@@ -1,0 +1,9 @@
+{
+  "baseline_sha256": "9528eafd738edf78e46d78f926b67dd2ef62e06894039415bf2f0d4b1ce33cda",
+  "candidate_sha256": "3c34e2ff5a72f8981c7c23d57a04c13ca185cd63d73a14e91a72262c18cfb457",
+  "steps": 64,
+  "rounds": 3,
+  "samples_per_round": 10,
+  "warmups_per_process": 1,
+  "discarded_observations": 0
+}

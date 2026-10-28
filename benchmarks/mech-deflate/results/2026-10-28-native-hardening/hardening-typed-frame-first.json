@@ -1,0 +1,35 @@
+{
+  "name": "hardening-typed-frame-first",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "canonical-native-program",
+    "--test",
+    "canonical_artifact_program",
+    "buffer_frames",
+    "--",
+    "--nocapture"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "e87715cee7b6eafbc6b648fab1e5946fd6e069fc",
+  "dirty": " M hosts/gpu/src/native_artifact/program/runtime/buffer_frames.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/buffer_frames.rs\n M hosts/gpu/src/native_artifact/program/runtime/session/mod.rs\n M src/engine/src/native_artifact/buffer_frames.rs\n M src/engine/src/native_artifact/mod.rs\n M src/engine/src/native_scalar.rs\n M src/engine/src/resident/budget.rs\n M src/engine/src/resident/general/native_collection_buffer_frames.rs\n M src/engine/src/resident/general/native_collection_prepared.rs\n M src/engine/src/resident/general/native_collection_prepared_image.rs\n?? src/engine/src/resident/general/native_collection_frame_shape.rs\n",
+  "exit": 0,
+  "seconds": 193.4694426059723,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/hardening-typed-frame-first.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

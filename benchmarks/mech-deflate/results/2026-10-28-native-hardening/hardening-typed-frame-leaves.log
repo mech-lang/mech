@@ -1,0 +1,46 @@
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/engine)
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/compute)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/runtime)
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/gpu)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/stdlib)
+   Compiling mech-build v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/build)
+    Finished `test` profile [unoptimized] target(s) in 1m 40s
+     Running tests/canonical_artifact_program.rs (/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-561ab00dcd3ceccb)
+
+running 9 tests
+test buffer_frame_qualification::build_owned_image_rederives_private_frame_metadata ... ok
+test buffer_frame_qualification::checked_frames_use_fresh_booleans_preserve_aliases_and_recover ... ok
+test buffer_frame_qualification::escaping_tuples_keep_canonical_storage_and_scalar_aggregates_stay_separate ... ok
+test buffer_frame_qualification::frame_shape_binding_admits_the_core_metadata_node_bound_before_construction ... ok
+test buffer_frame_qualification::frame_word_admission_rejects_invalid_width_without_retaining_a_visit ... ok
+test buffer_frame_qualification::native_frame_scalar_leaves_preserve_exact_kinds_bits_and_current_shapes ... ok
+test buffer_frame_qualification::nested_repeated_calls_keep_published_buffers_immutable_and_recover_from_denial ... ok
+test buffer_frame_qualification::real_recursive_arguments_keep_allocation_below_either_payload ... ok
+test buffer_frame_qualification::recursive_buffers_retain_real_reservations_without_payload_copies ... {"artifact":"original","capacity":16,"elapsed_seconds":0.000213959,"requested_bytes":34711,"requests":276,"steps":0,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":16,"elapsed_seconds":0.000194584,"requested_bytes":36015,"requests":310,"steps":1,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":16,"elapsed_seconds":0.000277959,"requested_bytes":38623,"requests":378,"steps":3,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":305257,"elapsed_seconds":0.000157375,"requested_bytes":2476639,"requests":276,"steps":0,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":305257,"elapsed_seconds":0.000196458,"requested_bytes":2477943,"requests":310,"steps":1,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":305257,"elapsed_seconds":0.00028225,"requested_bytes":2480551,"requests":378,"steps":3,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":16,"elapsed_seconds":0.000153791,"requested_bytes":34711,"requests":276,"steps":0,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":16,"elapsed_seconds":0.000192,"requested_bytes":36015,"requests":310,"steps":1,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":16,"elapsed_seconds":0.000279875,"requested_bytes":38623,"requests":378,"steps":3,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":305257,"elapsed_seconds":0.000155125,"requested_bytes":2476639,"requests":276,"steps":0,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":305257,"elapsed_seconds":0.000195833,"requested_bytes":2477943,"requests":310,"steps":1,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":305257,"elapsed_seconds":0.000282542,"requested_bytes":2480551,"requests":378,"steps":3,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":16,"elapsed_seconds":0.0001705,"requested_bytes":35335,"requests":282,"steps":0,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":16,"elapsed_seconds":0.000202375,"requested_bytes":36639,"requests":316,"steps":1,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":16,"elapsed_seconds":0.000284541,"requested_bytes":39247,"requests":384,"steps":3,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":6633832,"elapsed_seconds":0.000179917,"requested_bytes":6669151,"requests":282,"steps":0,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":6633832,"elapsed_seconds":0.00020425,"requested_bytes":6670455,"requests":316,"steps":1,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":6633832,"elapsed_seconds":0.000298292,"requested_bytes":6673063,"requests":384,"steps":3,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":16,"elapsed_seconds":0.000161458,"requested_bytes":35335,"requests":282,"steps":0,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":16,"elapsed_seconds":0.000210292,"requested_bytes":36639,"requests":316,"steps":1,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":16,"elapsed_seconds":0.000293584,"requested_bytes":39247,"requests":384,"steps":3,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":6633832,"elapsed_seconds":0.000179333,"requested_bytes":6669151,"requests":282,"steps":0,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":6633832,"elapsed_seconds":0.000205959,"requested_bytes":6670455,"requests":316,"steps":1,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":6633832,"elapsed_seconds":0.000311792,"requested_bytes":6673063,"requests":384,"steps":3,"width":8,"witness":"recursive-reserved-buffer"}
+ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 366 filtered out; finished in 9.29s
+
