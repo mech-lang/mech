@@ -133,3 +133,63 @@ fn sequential_recursive_calls_fit_compact_proof_rows_and_recover_after_denial() 
         assert_eq!(memory.retained_snapshot_nodes(), 0);
     }
 }
+
+#[test]
+fn public_application_limits_reach_object_emission_and_keep_default_identity() {
+    use mech_gpu::native_artifact::{
+        NativeCompileLimits, generate_linked_program_application,
+        generate_linked_program_application_with_limits,
+    };
+    let workspace = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap();
+    for artifact in super::artifacts("input<u64> + 1u64\n").0 {
+        let directory = tempfile::tempdir().unwrap();
+        let catalog = mech_stdlib::source_catalog();
+        let denied = directory.path().join("denied");
+        let error = generate_linked_program_application_with_limits(
+            workspace,
+            &denied,
+            "bounded",
+            &artifact,
+            &catalog,
+            b"input<u64> + 1u64\n",
+            NativeCompileLimits {
+                max_nodes: 0,
+                ..Default::default()
+            },
+        )
+        .err()
+        .expect("zero generated-block policy must reject");
+        assert!(format!("{error:?}").contains("limit: 0"), "{error:?}");
+        assert!(!denied.exists());
+        let default = generate_linked_program_application(
+            workspace,
+            &directory.path().join("default"),
+            "bounded",
+            &artifact,
+            &catalog,
+            b"source",
+        )
+        .unwrap();
+        let explicit = generate_linked_program_application_with_limits(
+            workspace,
+            &directory.path().join("explicit"),
+            "bounded",
+            &artifact,
+            &catalog,
+            b"source",
+            NativeCompileLimits::default(),
+        )
+        .unwrap();
+        for file in ["program.o", "object-identity.bin", "native-descriptor.bin"] {
+            assert_eq!(
+                std::fs::read(default.root().join(file)).unwrap(),
+                std::fs::read(explicit.root().join(file)).unwrap(),
+                "{file}"
+            );
+        }
+    }
+}
