@@ -96,12 +96,19 @@ separate JSON inputs; the public CLI also accepts `--native-compile-limits`.
 
 ## Current small timing
 
-The [latest eight-byte timing receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/matrix-read-order/REPORT.md)
-use the real tree/cache and unchanged 25 components. With **Roc = 1×**, the
-matrix-read correctness repair measures **1695× → 1693×**, 0.491693208 s to
-0.490911542 s against a fresh 0.000290 s reference. The 0.16% difference does
-not establish a performance improvement. The repair makes all four unsigned
-widths agree with resident column-major linear selection over canonical storage.
+The [latest eight-byte timing receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-05/REPORT.md)
+use the real tree/cache and unchanged 25 components. With **Roc = 1×**, counting
+fixed-width packed payload lengths from metadata measures **1727× → 1632×**,
+0.492213292 s to 0.464984292 s against a fresh 0.000285 s reference: 5.53% less
+elapsed time. The binary's numeric length path uses a saturated multiply/add;
+actual byte/hash encoding and ordered resource accounting remain unchanged.
+Stores still make physical copies. The next priority is consuming indexed
+replacement and ownership through the real recursive tree/cache carriers.
+
+The [preceding matrix-read repair](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/matrix-read-order/REPORT.md)
+measures **1695× → 1693×** against a different reference cohort. Its 0.16%
+difference is not a speedup claim. It makes all unsigned widths agree with
+resident column-major selection over canonical storage.
 
 The [preceding performance change](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-04/REPORT.md)
 removes a redundant full call-template clone. That isolated comparison improves
@@ -113,10 +120,11 @@ There are three retained observations per subject. Preparation and verification
 remain outside the timer; only the eight-byte complete case was timed.
 
 The [focused build](../../benchmarks/mech-deflate/native-profile/README.md)
-uses the existing catalog feature gates. These two iteration rebuilds took
-450.57 and 449.31 seconds, reusing every machine library, including math.
-All 120 scoped Rust tests pass at the metadata change; 80 pass at the later
-correctness repair. These overlapping selections retain their own revisions.
+uses the existing catalog feature gates. The length change's rebuild takes
+1007.38 seconds and rebuilds the machine libraries because core changed;
+the preceding two engine iterations took about 450 seconds and reused them.
+All 248 scoped Rust tests pass at the length change, plus no_std. The preceding
+120- and 80-test selections retain their own revisions.
 Protected scalar gates, exact source/artifact agreement, real-buffer witnesses,
 and architecture checks pass. Linked subprocess and generated runtime-only
 application qualification has not been refreshed for these changes. The PR

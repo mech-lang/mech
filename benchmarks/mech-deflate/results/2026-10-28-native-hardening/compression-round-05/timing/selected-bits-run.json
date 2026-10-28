@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-packed-length-round05-20261028/selected-bits-tests",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.9281774590490386,
+  "binary_sha256": "9110350e453f389dad2a295320ec89c3a463bf8506b0c2292999993fd10ace31",
+  "skipped_coverage": null
+}

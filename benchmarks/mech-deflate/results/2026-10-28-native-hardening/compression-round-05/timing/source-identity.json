@@ -1,0 +1,8 @@
+{
+  "implementation_head": "ced2c71c36d002a044b40f1f5cfb8ae293e92572",
+  "files": {
+    "src/core/src/snapshot/encoding.rs": "01b5d9f4b8cbd7116a3ab21d1958ec2a8c07bdac69f296af50ff86011d43b692",
+    "src/core/src/snapshot/encoding_sink_tests.rs": "a6bc43b10f9cda4b560d92c645782fff87b96c647da484fd32ff3420f35dc3ed"
+  },
+  "qualification_receipts": "Snapshot, memory and no_std checks recorded before commit with precisely these two modified files; no implementation changes between their passing run and commit. Static and release commands use the clean implementation head."
+}

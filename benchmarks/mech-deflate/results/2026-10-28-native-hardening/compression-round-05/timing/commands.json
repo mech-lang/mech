@@ -1,0 +1,39 @@
+[
+  {
+    "label": "word-updates",
+    "command": [
+      "/private/tmp/mech-packed-length-round05-20261028/word-updates"
+    ],
+    "exit": 0,
+    "process_seconds": 1.1807702910155058
+  },
+  {
+    "label": "roc",
+    "command": [
+      "/private/tmp/mech-deflate-profiling-20261028/roc-profile",
+      "12"
+    ],
+    "exit": 0,
+    "process_seconds": 5.965768624912016
+  },
+  {
+    "label": "before",
+    "command": [
+      "/private/tmp/mech-matrix-read-fix-20261028/timing/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 40.892772541963495
+  },
+  {
+    "label": "after",
+    "command": [
+      "/private/tmp/mech-packed-length-round05-20261028/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 40.606469625025056
+  }
+]
