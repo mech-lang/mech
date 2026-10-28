@@ -580,7 +580,7 @@ admission stay fresh; no new cache or Engine type field is introduced.
 
 The [round 10 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-10/REPORT.md)
 records **448.70× → 404.86× Roc**, or **9.77% less elapsed time**, on the unchanged
-pinned eight-byte compressor. Exact bytes, inflation, aliases, reserve13 reuse,
+pinned eight-byte compressor. Exact bytes, inflation, aliases, reserve13 capacity,
 cleanup and logical work 875610515844 agree. There are 41 scoped Rust passes and
 twelve passing static checks. Seven of eight direct scalar timing gates pass;
 decoded U64 is 1.0526× and fails the unchanged 1.05 gate, with exact allocation
@@ -590,3 +590,44 @@ Native-loop selection, broader linked/deployed tests and larger inputs remain
 pending; the optional source experiment stays separate. The next assignment
 continues the ordinary read-only numeric leaf capability, with private writes
 and growth excluded from the first slice. #973 remains draft; CI is cancelled.
+
+
+## Native read-only numeric leaf completion
+
+Compiler `06885e0d9a1466ba477d642ee9fd9fd8510b06f2` completes the bounded read-only
+slice. `3a16ffadb96d4c246b4eba86969902ccf3575e9d` adds all-edge invariant array
+provenance, invocation-current packed views, native scalar lanes/loads/branches,
+ordinary suspended-parent support and independent image proof/price validation.
+`88ee934f882e4fc404abcd28dff0df6e0189e1c8` audits actual emitted successful hot
+CFGs for calls. `e57c6278eed2a3f3d2becf4da3bcab18ae65e174` corrects the first
+run's pre-entry account snapshot. IR116/work policy91 identifies the new work;
+canonical bytecode revision14 and source remain unchanged.
+
+The [round 11 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-11/REPORT.md)
+records **408.21× → 346.11× Roc**, or **15.21% less elapsed**, 0.117155000 →
+0.099332833 s against a fresh 0.000287 s reference. Exact bytes, inflation,
+capacity13, aliases and zero terminal bytes/nodes agree. The caller clears and
+rebinds its prior result, but `same_backing` is false for every measured call on
+both compilers. Physical output copying at the immutable public boundary remains
+a timed cost. Earlier references to output reuse describe caller/capacity
+retention, not demonstrated physical backing identity.
+
+All 128 scoped Rust tests and twelve static contracts pass, including a real
+restored linked program and actual finite-fuel carrier observations. Ten cold
+exits restore current fields after 61/53/37/21/5 native traversals, preserving
+publication through denial and retry. All fresh scalar timing and exact
+allocation gates pass; the historical round-10 1.0526× observation remains
+unresolved. The post-key weighted diagnostic loses its 7 allocation/128-byte/
+57-visit per-element slope. Both forms stay at 245 requests, 40715 bytes and six
+ordinary visits from zero through 256 elements. The full Object selects 45
+parented native read-only regions, with 72 typed load sites and zero hot calls.
+
+Focused linked/unit qualification uses explicit nondefault features and records
+its actual Rust consumers. Default-profile compilation is restored for protected
+timing; no build or test overlaps it. Failed source-fixture, profile-setup,
+account-snapshot and observer attempts are retained with their dispositions.
+The latest inclusive profile has frame handling on 482/1347 ancestries, frame
+admission on 333 and ordinary visits on 245; these overlapping counts are not
+additive wall-time buckets. Private indexed-write recurrences are the next
+measured compiler slice. Larger inputs, general producers, growth and SIMD remain
+separate. #973 stays draft, review is requested and CI is cancelled by request.

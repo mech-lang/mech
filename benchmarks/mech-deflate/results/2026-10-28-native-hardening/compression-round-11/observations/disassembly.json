@@ -1,0 +1,13 @@
+{
+  "command": [
+    "otool",
+    "-tvV",
+    "/private/tmp/mech-readonly-numeric-round11-20261028/complete-object.o"
+  ],
+  "exit": 0,
+  "seconds": 2.654057207982987,
+  "object_sha256": "e12449a85862db009b43caace65cfa1b0b9a9ebbee1ca8a346207710008b6d95",
+  "lines": 1110273,
+  "full_text_sha256": "4fb3fa323d629be134225b5062320fbe187285b843acb87c783dff245b8619b8",
+  "excerpts": "contexts around unsigned quotient geometry and U8/U16/U32 loads; no source-name selection"
+}

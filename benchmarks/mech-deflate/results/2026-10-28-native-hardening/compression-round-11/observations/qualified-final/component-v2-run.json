@@ -1,0 +1,29 @@
+{
+  "command": [
+    "/private/tmp/mech-readonly-numeric-round11-20261028/qualified-final/component-v2-tests",
+    "packed_update_qualification",
+    "buffer_frame_qualification",
+    "sequence_capacity_qualification",
+    "collection_qualification",
+    "uniform_words_qualification",
+    "word_read_qualification",
+    "narrow_word_qualification",
+    "matchfinder_qualification",
+    "assembled_compressor_source_preserves_its_pinned_bytes",
+    "scalar_state_qualification",
+    "tail_qualification",
+    "costs_qualification",
+    "default_costs_qualification",
+    "pinned_min_cost_paths_keep_exact_nodes_and_real_reservation",
+    "path_checks_preserve_entry_order_publication_aliases_and_recovery",
+    "argument_transport_qualification",
+    "shared_transport_qualification",
+    "numeric_tail_qualification",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 50.815962541964836,
+  "binary_sha256": "32dccad757e34e75b0573310e255251d6a0c6bcbbfc2fc11aedbbb053edb66b7",
+  "skipped": []
+}

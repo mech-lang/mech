@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-readonly-numeric-round11-20261028/qualified-supervision/component-v2-tests",
+    "numeric_tail_qualification",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 101,
+  "seconds": 7.354429416009225,
+  "binary_sha256": "692bd1b0eec582dd6405f653d365b45415a9d938b579d54a123993ea6ccc90ac",
+  "skipped": []
+}

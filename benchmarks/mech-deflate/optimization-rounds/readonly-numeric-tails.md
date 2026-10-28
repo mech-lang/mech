@@ -57,3 +57,15 @@ no longer incur their old physical construction and comparison charges. Numeric
 body work uses the existing conservative source-site plus fixed Tail envelopes.
 Shared-worker/foreign active scopes retain the ordinary path. Independent image
 restoration rederives complete closed layouts, offsets, boundaries and prices.
+
+
+Completion: compiler `06885e0d9a1466ba477d642ee9fd9fd8510b06f2`,
+[round 11 receipts](../results/2026-10-28-native-hardening/compression-round-11/REPORT.md).
+The unchanged eight-byte pair measures 408.21× → 346.11× reference (1×),
+15.21% less elapsed. There are 128 scoped Rust passes, actual runtime-only linked
+execution, independently validated images, ten observed finite-fuel exits,
+zero per-element allocation/ordinary-visit slope, and 45 selected full-program
+parented regions with 72 typed loads/zero hot calls. Fresh scalar gates pass;
+the failed historical round-10 cohort remains explicit. Capacity13 is retained,
+but physical output backing changes across the immutable public boundary on both
+sides and remains timed. Private indexed writes are a separate next round.

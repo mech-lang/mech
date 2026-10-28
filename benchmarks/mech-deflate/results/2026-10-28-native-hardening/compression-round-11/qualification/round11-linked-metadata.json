@@ -1,0 +1,29 @@
+{
+  "name": "round11-linked-metadata",
+  "command": [
+    "cargo",
+    "metadata",
+    "--offline",
+    "--manifest-path",
+    "benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--features",
+    "linked-qualification",
+    "--format-version",
+    "1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "e57c6278eed2a3f3d2becf4da3bcab18ae65e174",
+  "dirty": " M benchmarks/mech-deflate/native-profile/Cargo.toml\n M hosts/gpu/src/native_artifact/program/compiler.rs\n M hosts/gpu/tests/support/canonical_program_buffer_frames.rs\n M hosts/gpu/tests/support/canonical_program_linked.rs\n M hosts/gpu/tests/support/canonical_program_numeric_tail.rs\n?? hosts/gpu/tests/support/canonical_program_numeric_tail_cases.rs\n?? hosts/gpu/tests/support/canonical_program_numeric_tail_resources.rs\n",
+  "exit": 0,
+  "seconds": 0.26731204986572266,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round11-linked-metadata.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

@@ -1,0 +1,189 @@
+{
+  "baseline_source": "projection-key compiler 89a48f961, published receipt 1fb6b06dea; same weighted source and finite diagnostic policy",
+  "baseline_log_sha256": "bcd6f19327b9b12f2953c5ce2db5a41aa45b712f15b8659454da3ff72886bbb8",
+  "baseline": [
+    {
+      "artifact": "original",
+      "report": "NativeProgramExecutionReport { work: 17150144, comparison_work: 0, visits: 36, transport_bytes: 9920, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 39219,
+      "requests": 245,
+      "steps": 0,
+      "witness": "readonly-weighted",
+      "visits": 36
+    },
+    {
+      "artifact": "original",
+      "report": "NativeProgramExecutionReport { work: 53060512, comparison_work: 2, visits: 93, transport_bytes: 9920, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 39347,
+      "requests": 252,
+      "steps": 1,
+      "witness": "readonly-weighted",
+      "visits": 93
+    },
+    {
+      "artifact": "original",
+      "report": "NativeProgramExecutionReport { work: 304433088, comparison_work: 16, visits: 492, transport_bytes: 9920, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 40243,
+      "requests": 301,
+      "steps": 8,
+      "witness": "readonly-weighted",
+      "visits": 492
+    },
+    {
+      "artifact": "original",
+      "report": "NativeProgramExecutionReport { work: 2315413696, comparison_work: 128, visits: 3684, transport_bytes: 9920, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 47411,
+      "requests": 693,
+      "steps": 64,
+      "witness": "readonly-weighted",
+      "visits": 3684
+    },
+    {
+      "artifact": "original",
+      "report": "NativeProgramExecutionReport { work: 9210204352, comparison_work: 512, visits: 14628, transport_bytes: 9920, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 71987,
+      "requests": 2037,
+      "steps": 256,
+      "witness": "readonly-weighted",
+      "visits": 14628
+    },
+    {
+      "artifact": "decoded",
+      "report": "NativeProgramExecutionReport { work: 17150144, comparison_work: 0, visits: 36, transport_bytes: 9920, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 39219,
+      "requests": 245,
+      "steps": 0,
+      "witness": "readonly-weighted",
+      "visits": 36
+    },
+    {
+      "artifact": "decoded",
+      "report": "NativeProgramExecutionReport { work: 53060512, comparison_work: 2, visits: 93, transport_bytes: 9920, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 39347,
+      "requests": 252,
+      "steps": 1,
+      "witness": "readonly-weighted",
+      "visits": 93
+    },
+    {
+      "artifact": "decoded",
+      "report": "NativeProgramExecutionReport { work: 304433088, comparison_work: 16, visits: 492, transport_bytes: 9920, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 40243,
+      "requests": 301,
+      "steps": 8,
+      "witness": "readonly-weighted",
+      "visits": 492
+    },
+    {
+      "artifact": "decoded",
+      "report": "NativeProgramExecutionReport { work: 2315413696, comparison_work: 128, visits: 3684, transport_bytes: 9920, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 47411,
+      "requests": 693,
+      "steps": 64,
+      "witness": "readonly-weighted",
+      "visits": 3684
+    },
+    {
+      "artifact": "decoded",
+      "report": "NativeProgramExecutionReport { work: 9210204352, comparison_work: 512, visits: 14628, transport_bytes: 9920, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 71987,
+      "requests": 2037,
+      "steps": 256,
+      "witness": "readonly-weighted",
+      "visits": 14628
+    }
+  ],
+  "after_compiler": "06885e0d9a1466ba477d642ee9fd9fd8510b06f2",
+  "after": [
+    {
+      "artifact": "original",
+      "report": "NativeProgramExecutionReport { work: 17322504, comparison_work: 0, visits: 6, transport_bytes: 11248, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 40715,
+      "requests": 245,
+      "steps": 0,
+      "witness": "readonly-weighted",
+      "visits": 6
+    },
+    {
+      "artifact": "original",
+      "report": "NativeProgramExecutionReport { work: 17386368, comparison_work: 0, visits: 6, transport_bytes: 11248, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 40715,
+      "requests": 245,
+      "steps": 1,
+      "witness": "readonly-weighted",
+      "visits": 6
+    },
+    {
+      "artifact": "original",
+      "report": "NativeProgramExecutionReport { work: 17833416, comparison_work: 0, visits: 6, transport_bytes: 11248, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 40715,
+      "requests": 245,
+      "steps": 8,
+      "witness": "readonly-weighted",
+      "visits": 6
+    },
+    {
+      "artifact": "original",
+      "report": "NativeProgramExecutionReport { work: 21409800, comparison_work: 0, visits: 6, transport_bytes: 11248, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 40715,
+      "requests": 245,
+      "steps": 64,
+      "witness": "readonly-weighted",
+      "visits": 6
+    },
+    {
+      "artifact": "original",
+      "report": "NativeProgramExecutionReport { work: 33671688, comparison_work: 0, visits: 6, transport_bytes: 11248, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 40715,
+      "requests": 245,
+      "steps": 256,
+      "witness": "readonly-weighted",
+      "visits": 6
+    },
+    {
+      "artifact": "decoded",
+      "report": "NativeProgramExecutionReport { work: 17322504, comparison_work: 0, visits: 6, transport_bytes: 11248, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 40715,
+      "requests": 245,
+      "steps": 0,
+      "witness": "readonly-weighted",
+      "visits": 6
+    },
+    {
+      "artifact": "decoded",
+      "report": "NativeProgramExecutionReport { work: 17386368, comparison_work: 0, visits: 6, transport_bytes: 11248, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 40715,
+      "requests": 245,
+      "steps": 1,
+      "witness": "readonly-weighted",
+      "visits": 6
+    },
+    {
+      "artifact": "decoded",
+      "report": "NativeProgramExecutionReport { work: 17833416, comparison_work: 0, visits: 6, transport_bytes: 11248, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 40715,
+      "requests": 245,
+      "steps": 8,
+      "witness": "readonly-weighted",
+      "visits": 6
+    },
+    {
+      "artifact": "decoded",
+      "report": "NativeProgramExecutionReport { work: 21409800, comparison_work: 0, visits: 6, transport_bytes: 11248, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 40715,
+      "requests": 245,
+      "steps": 64,
+      "witness": "readonly-weighted",
+      "visits": 6
+    },
+    {
+      "artifact": "decoded",
+      "report": "NativeProgramExecutionReport { work: 33671688, comparison_work: 0, visits: 6, transport_bytes: 11248, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "requested_bytes": 40715,
+      "requests": 245,
+      "steps": 256,
+      "witness": "readonly-weighted",
+      "visits": 6
+    }
+  ]
+}

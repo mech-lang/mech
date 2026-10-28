@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-readonly-numeric-round11-20261028/unit-tests5",
+    "numeric_fuel_exit_synchronizes",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 1.0057448749430478,
+  "binary_sha256": "1a431c0142e9cbe6c095206eadae62c172959fa27402c60fc9ac48cdf93521ca"
+}

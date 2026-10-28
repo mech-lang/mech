@@ -1,0 +1,22 @@
+{
+  "name": "round11-numeric-final-static",
+  "command": [
+    "python3",
+    "/private/tmp/mech-final-static-20261028.py"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "e57c6278eed2a3f3d2becf4da3bcab18ae65e174",
+  "dirty": " M benchmarks/mech-deflate/native-profile/Cargo.lock\n M benchmarks/mech-deflate/native-profile/Cargo.toml\n M benchmarks/mech-deflate/native-profile/README.md\n M hosts/gpu/src/native_artifact/program/compiler.rs\n M hosts/gpu/src/native_artifact/program/runtime/buffer_frames.rs\n M hosts/gpu/src/native_artifact/program/runtime/tests.rs\n M hosts/gpu/tests/support/canonical_program_buffer_frames.rs\n M hosts/gpu/tests/support/canonical_program_linked.rs\n M hosts/gpu/tests/support/canonical_program_numeric_tail.rs\n M hosts/gpu/tests/support/linked_assertion_retry.rs.in\n?? hosts/gpu/src/native_artifact/program/runtime/numeric_fuel_tests.rs\n?? hosts/gpu/tests/support/canonical_program_numeric_tail_cases.rs\n?? hosts/gpu/tests/support/canonical_program_numeric_tail_resources.rs\n",
+  "exit": 0,
+  "seconds": 196.37247109413147,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round11-numeric-final-static.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}
