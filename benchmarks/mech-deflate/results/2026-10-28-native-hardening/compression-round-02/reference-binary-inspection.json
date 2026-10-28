@@ -1,0 +1,156 @@
+[
+  {
+    "label": "c",
+    "path": "/private/tmp/roc-deflate-repro-20261024/results/reymont/cbench",
+    "sha256": "2cb5310a8290fe3dcc0e2b39898c386f4d1535b40ff007cda5d7a413faaf4569",
+    "symbol": "_deflate_compress_near_optimal",
+    "range": [
+      "0x100021d04",
+      "0x100022938"
+    ],
+    "command": [
+      "/opt/homebrew/opt/llvm/bin/llvm-objdump",
+      "--disassemble",
+      "--demangle",
+      "--start-address=0x100021d04",
+      "--stop-address=0x100022938",
+      "/private/tmp/roc-deflate-repro-20261024/results/reymont/cbench"
+    ],
+    "exit": 0,
+    "attempts": [],
+    "instructions": 781,
+    "word_store_excerpts": [
+      {
+        "line": 186,
+        "context": [
+          "100021fc4: f9800110    \tprfm\tpstl1keep, [x8]",
+          "100021fc8: 8b394ae8    \tadd\tx8, x23, w25, uxtw #2",
+          "100021fcc: 79c0010f    \tldrsh\tw15, [x8]",
+          "100021fd0: 7900010b    \tstrh\tw11, [x8]",
+          "100021fd4: 79c0050e    \tldrsh\tw14, [x8, #0x2]",
+          "100021fd8: 7900050f    \tstrh\tw15, [x8, #0x2]",
+          "100021fdc: aa1403e8    \tmov\tx8, x20"
+        ]
+      },
+      {
+        "line": 188,
+        "context": [
+          "100021fcc: 79c0010f    \tldrsh\tw15, [x8]",
+          "100021fd0: 7900010b    \tstrh\tw11, [x8]",
+          "100021fd4: 79c0050e    \tldrsh\tw14, [x8, #0x2]",
+          "100021fd8: 7900050f    \tstrh\tw15, [x8, #0x2]",
+          "100021fdc: aa1403e8    \tmov\tx8, x20",
+          "100021fe0: 6b0f01bf    \tcmp\tw13, w15",
+          "100021fe4: 5400032a    \tb.ge\t0x100022048 <_deflate_compress_near_optimal+0x344>"
+        ]
+      },
+      {
+        "line": 201,
+        "context": [
+          "100022000: 12003de8    \tand\tw8, w15, #0xffff",
+          "100022004: 8b1402ae    \tadd\tx14, x21, x20",
+          "100022008: 5280006f    \tmov\tw15, #0x3               ; =3",
+          "10002200c: 790001cf    \tstrh\tw15, [x14]",
+          "100022010: 4b080168    \tsub\tw8, w11, w8",
+          "100022014: 790005c8    \tstrh\tw8, [x14, #0x2]",
+          "100022018: 91001288    \tadd\tx8, x20, #0x4"
+        ]
+      },
+      {
+        "line": 203,
+        "context": [
+          "100022008: 5280006f    \tmov\tw15, #0x3               ; =3",
+          "10002200c: 790001cf    \tstrh\tw15, [x14]",
+          "100022010: 4b080168    \tsub\tw8, w11, w8",
+          "100022014: 790005c8    \tstrh\tw8, [x14, #0x2]",
+          "100022018: 91001288    \tadd\tx8, x20, #0x4",
+          "10002201c: 1400000b    \tb\t0x100022048 <_deflate_compress_near_optimal+0x344>",
+          "100022020: aa1403e8    \tmov\tx8, x20"
+        ]
+      }
+    ]
+  },
+  {
+    "label": "rust",
+    "path": "/private/tmp/mech-deflate-comparison-final-20261028/rust-target/release/deflate-comparison",
+    "sha256": "08a787b1aebfe45a96418fd75302c1ee06b644791ee13b9c5189926050455806",
+    "symbol": "__RNvNtNtCsbFLvZi76IQI_11miniz_oxide7deflate4core14compress_inner",
+    "range": [
+      "0x10000fab4",
+      "0x1000111b0"
+    ],
+    "command": [
+      "/opt/homebrew/opt/llvm/bin/llvm-objdump",
+      "--disassemble",
+      "--demangle",
+      "--start-address=0x10000fab4",
+      "--stop-address=0x1000111b0",
+      "/private/tmp/mech-deflate-comparison-final-20261028/rust-target/release/deflate-comparison"
+    ],
+    "exit": 0,
+    "attempts": [
+      {
+        "command": [
+          "/opt/homebrew/opt/llvm/bin/llvm-objdump",
+          "--demangle",
+          "--disassemble-symbols=__RNvNtNtCsbFLvZi76IQI_11miniz_oxide7deflate4core14compress_inner",
+          "/private/tmp/mech-deflate-comparison-final-20261028/rust-target/release/deflate-comparison"
+        ],
+        "exit": 0,
+        "stderr": "/opt/homebrew/opt/llvm/bin/llvm-objdump: warning: '/private/tmp/mech-deflate-comparison-final-20261028/rust-target/release/deflate-comparison': failed to disassemble missing symbol __RNvNtNtCsbFLvZi76IQI_11miniz_oxide7deflate4core14compress_inner\n",
+        "instructions": 0
+      }
+    ],
+    "instructions": 1471,
+    "word_store_excerpts": [
+      {
+        "line": 209,
+        "context": [
+          "10000fdd0: f940336a    \tldr\tx10, [x27, #0x60]",
+          "10000fdd4: 7869794b    \tldrh\tw11, [x10, x9, lsl #1]",
+          "10000fdd8: 1100056b    \tadd\tw11, w11, #0x1",
+          "10000fddc: 7829794b    \tstrh\tw11, [x10, x9, lsl #1]",
+          "10000fde0: 910006f7    \tadd\tx23, x23, #0x1",
+          "10000fde4: f9402b69    \tldr\tx9, [x27, #0x50]",
+          "10000fde8: 9100052a    \tadd\tx10, x9, #0x1"
+        ]
+      },
+      {
+        "line": 240,
+        "context": [
+          "10000fe4c: 4a4b454a    \teor\tw10, w10, w11, lsr #17",
+          "10000fe50: f940176c    \tldr\tx12, [x27, #0x28]",
+          "10000fe54: 786a598d    \tldrh\tw13, [x12, w10, uxtw #1]",
+          "10000fe58: 782a5997    \tstrh\tw23, [x12, w10, uxtw #1]",
+          "10000fe5c: 4b0d02ea    \tsub\tw10, w23, w13",
+          "10000fe60: f9402b6c    \tldr\tx12, [x27, #0x50]",
+          "10000fe64: eb2a219f    \tcmp\tx12, w10, uxth"
+        ]
+      },
+      {
+        "line": 528,
+        "context": [
+          "1000102cc: f940336a    \tldr\tx10, [x27, #0x60]",
+          "1000102d0: 7869794b    \tldrh\tw11, [x10, x9, lsl #1]",
+          "1000102d4: 1100056b    \tadd\tw11, w11, #0x1",
+          "1000102d8: 7829794b    \tstrh\tw11, [x10, x9, lsl #1]",
+          "1000102dc: 52800029    \tmov\tw9, #0x1                ; =1",
+          "1000102e0: b940176b    \tldr\tw11, [x27, #0x14]",
+          "1000102e4: f940036a    \tldr\tx10, [x27]"
+        ]
+      },
+      {
+        "line": 620,
+        "context": [
+          "10001043c: f940336a    \tldr\tx10, [x27, #0x60]",
+          "100010440: 7869594b    \tldrh\tw11, [x10, w9, uxtw #1]",
+          "100010444: 1100056b    \tadd\tw11, w11, #0x1",
+          "100010448: 7829594b    \tstrh\tw11, [x10, w9, uxtw #1]",
+          "10001044c: 52800029    \tmov\tw9, #0x1                ; =1",
+          "100010450: b940176b    \tldr\tw11, [x27, #0x14]",
+          "100010454: f940036a    \tldr\tx10, [x27]"
+        ]
+      }
+    ]
+  }
+]

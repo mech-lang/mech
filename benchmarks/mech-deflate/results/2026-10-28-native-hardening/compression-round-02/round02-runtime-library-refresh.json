@@ -1,0 +1,34 @@
+{
+  "name": "round02-runtime-library-refresh",
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--offline",
+    "--release",
+    "-j1",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "canonical-native-program",
+    "--example",
+    "native_frame_transport",
+    "--message-format=json"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "e0b6b18c60ed6b244263227f97b6cbe0c2a9eeba",
+  "dirty": " M benchmarks/mech-deflate/optimization-rounds/packed-single-assignment.md\n M hosts/gpu/tests/support/canonical_program_linked.rs\n M hosts/gpu/tests/support/canonical_program_packed_updates.rs\n M src/engine/src/resident/numeric/mod.rs\n M src/engine/src/resident/numeric/packed_indexed_assign.rs\n?? src/engine/src/resident/numeric/packed_indexed_assign/\n",
+  "exit": 0,
+  "seconds": 77.56584191322327,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round02-runtime-library-refresh.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

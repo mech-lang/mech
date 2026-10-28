@@ -1,0 +1,126 @@
+{
+  "build.py": {
+    "bytes": 2943,
+    "sha256": "49da57c06a24c43fac515685aaad3e71b3a8907acb4accd6fd19d91bde8b42fa"
+  },
+  "round02-single-projection-unit.json": {
+    "bytes": 1113,
+    "sha256": "dfdb282211f9a844ffdeb53381699578dc621777bbcf8e2013e3eb24f7a4386f"
+  },
+  "current-build.json": {
+    "bytes": 3441,
+    "sha256": "2855f1558839b98967bd85f86015accd1ce008d3ed9644d1b2673464a6a89eed"
+  },
+  "run.py": {
+    "bytes": 7098,
+    "sha256": "d6bd3bbb3421ae527fd43c8ff4f29f5923abdb8a7358a182f8b80ae0575b8066"
+  },
+  "current-build-before-library-refresh.log": {
+    "bytes": 318,
+    "sha256": "d4fb01591dccc260017516e27d24e1a3adc34f3ab5145a481e2e0b7e039d9c53"
+  },
+  "after.sample.txt.gz": {
+    "bytes": 104355,
+    "sha256": "d26bc54d8aae81456dc419912d173eb61cefa60e0388536bb4ec4811b3c47d5b"
+  },
+  "word-updates.stderr.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "REPORT.md": {
+    "bytes": 6140,
+    "sha256": "937251b0b53bc87d5e519bc1e0ab09d9f46a88fdf3c0beebb32fb05571e26d72"
+  },
+  "reference-binary-inspection.json": {
+    "bytes": 6038,
+    "sha256": "c15714f50fdb0c4bca42db05f0b57d36b571de5cd599c08510969a2032a75115"
+  },
+  "word-updates-build.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "results.json": {
+    "bytes": 10005,
+    "sha256": "7af4d1ce6b0b79769d7757ce9726df7dca0387922fbc2506c55cb10431c9ff32"
+  },
+  "current-build-before-library-refresh.json": {
+    "bytes": 3354,
+    "sha256": "cd6d327f16fa2c9cfa1d0983113410d3567a4beb243c6af3478b8305ba7bbf57"
+  },
+  "current-build.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "roc.stdout.gz": {
+    "bytes": 68709,
+    "sha256": "8d79e12f92de0cfd8ead7e90bd8c13a81f28f94fbb6e02ec3c4cd93862e77956"
+  },
+  "profile.stderr.gz": {
+    "bytes": 115,
+    "sha256": "64c5967ea8a03f3611a7b4a1a428e4a3687929562c33e155f55c1f0e7d1db50a"
+  },
+  "before.stderr.gz": {
+    "bytes": 109,
+    "sha256": "be911c0270765f5d67ccc3928e5cfc2caca0ba3cc71a70c25bd6df38aff74d74"
+  },
+  "commands.json": {
+    "bytes": 941,
+    "sha256": "e3a59654f89cd00a43920bcb717cc5f6bd723a6ebb27aabed8f6761ff1e7d2bb"
+  },
+  "after.stdout.gz": {
+    "bytes": 326,
+    "sha256": "e4484cb0d3aa4575ba4cce520fef26954bfe7b943a64854330635645a546fea4"
+  },
+  "word-updates.stdout.gz": {
+    "bytes": 499,
+    "sha256": "5d414df0a3398c838b680f4757fd7f60be5e679fdab5ab6e4d8b34ef5b4cdeb0"
+  },
+  "c-compression.s.gz": {
+    "bytes": 9046,
+    "sha256": "5e643f30d1a856f85515c1a56be23b750f977c0e90dcc97e139fa23bcf1a1644"
+  },
+  "profile-command.json": {
+    "bytes": 676,
+    "sha256": "8db4c741ad9c10595644abcc9f7cdddf905d2621dc71895f5c78b6952796ad92"
+  },
+  "round02-runtime-library-refresh.log.gz": {
+    "bytes": 16621,
+    "sha256": "5f46976cad9f803f34838275656e11785d84a6f4baab4cd598eff41d021b9b1c"
+  },
+  "round02-runtime-library-refresh.json": {
+    "bytes": 1259,
+    "sha256": "19febe739c9d5ed85b81b397a64e1a97b03abbf7ba1c2a42e06be00e4aa1192e"
+  },
+  "round02-single-projection-unit.log.gz": {
+    "bytes": 497,
+    "sha256": "597dbeec5f334d5092c608de254dc1aa60606d35a686f6c57a7b7caaeb0cf4b0"
+  },
+  "roc.stderr.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "word-updates-build.json": {
+    "bytes": 3346,
+    "sha256": "520f9382d900a5092784923e1c1be12d5134c03325b3fc80161d28bcb6efe899"
+  },
+  "after.stderr.gz": {
+    "bytes": 109,
+    "sha256": "6c62cd75700a0cbbb91d4390b1796e497b7b7c3f90bc10fcc0ed4eb8d8c012fb"
+  },
+  "before.stdout.gz": {
+    "bytes": 331,
+    "sha256": "2ef22e4c7dcc0fec04c85e6b676fdb698f1ce2b5dee190c89cdda3e5694c8fbe"
+  },
+  "profile.stdout.gz": {
+    "bytes": 371,
+    "sha256": "863f67d1c0a19e59e91fdf26a7e58c64097355d65f9f789ecf445e5724037a3e"
+  },
+  "word-update-results.json": {
+    "bytes": 6443,
+    "sha256": "0cfcf48446bf026517a7abc347e5982aaf709c825320cc9a959d4dd360789e01"
+  },
+  "rust-compression.s.gz": {
+    "bytes": 14598,
+    "sha256": "852712e327aba583641ce27cff61a542d1112d7f18d2000b40b1410083b67337"
+  }
+}
