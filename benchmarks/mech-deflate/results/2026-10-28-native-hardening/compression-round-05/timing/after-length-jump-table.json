@@ -1,0 +1,136 @@
+{
+  "table_address": "0x10318e1a6",
+  "file_offset": 51962278,
+  "dispatch_base": "0x102bfb67c",
+  "tag_order_source": "src/core/src/snapshot/sequence.rs SequenceStorage",
+  "entries": [
+    {
+      "tag": 0,
+      "kind": "U8",
+      "jump_byte": 21,
+      "branch_target": "0x102bfb6d0"
+    },
+    {
+      "tag": 1,
+      "kind": "U16",
+      "jump_byte": 20,
+      "branch_target": "0x102bfb6cc"
+    },
+    {
+      "tag": 2,
+      "kind": "U32",
+      "jump_byte": 4,
+      "branch_target": "0x102bfb68c"
+    },
+    {
+      "tag": 3,
+      "kind": "U64",
+      "jump_byte": 0,
+      "branch_target": "0x102bfb67c"
+    },
+    {
+      "tag": 4,
+      "kind": "U128",
+      "jump_byte": 2,
+      "branch_target": "0x102bfb684"
+    },
+    {
+      "tag": 5,
+      "kind": "I8",
+      "jump_byte": 21,
+      "branch_target": "0x102bfb6d0"
+    },
+    {
+      "tag": 6,
+      "kind": "I16",
+      "jump_byte": 20,
+      "branch_target": "0x102bfb6cc"
+    },
+    {
+      "tag": 7,
+      "kind": "I32",
+      "jump_byte": 4,
+      "branch_target": "0x102bfb68c"
+    },
+    {
+      "tag": 8,
+      "kind": "I64",
+      "jump_byte": 0,
+      "branch_target": "0x102bfb67c"
+    },
+    {
+      "tag": 9,
+      "kind": "I128",
+      "jump_byte": 2,
+      "branch_target": "0x102bfb684"
+    },
+    {
+      "tag": 10,
+      "kind": "F32",
+      "jump_byte": 4,
+      "branch_target": "0x102bfb68c"
+    },
+    {
+      "tag": 11,
+      "kind": "F64",
+      "jump_byte": 0,
+      "branch_target": "0x102bfb67c"
+    },
+    {
+      "tag": 12,
+      "kind": "Complex32",
+      "jump_byte": 0,
+      "branch_target": "0x102bfb67c"
+    },
+    {
+      "tag": 13,
+      "kind": "Complex64",
+      "jump_byte": 2,
+      "branch_target": "0x102bfb684"
+    },
+    {
+      "tag": 14,
+      "kind": "Rational64",
+      "jump_byte": 2,
+      "branch_target": "0x102bfb684"
+    },
+    {
+      "tag": 15,
+      "kind": "Bool",
+      "jump_byte": 21,
+      "branch_target": "0x102bfb6d0"
+    },
+    {
+      "tag": 16,
+      "kind": "String",
+      "jump_byte": 6,
+      "branch_target": "0x102bfb694"
+    },
+    {
+      "tag": 17,
+      "kind": "Id",
+      "jump_byte": 0,
+      "branch_target": "0x102bfb67c"
+    },
+    {
+      "tag": 18,
+      "kind": "Index",
+      "jump_byte": 0,
+      "branch_target": "0x102bfb67c"
+    },
+    {
+      "tag": 19,
+      "kind": "Unit",
+      "jump_byte": 6,
+      "branch_target": "0x102bfb694"
+    },
+    {
+      "tag": 20,
+      "kind": "Values",
+      "jump_byte": 6,
+      "branch_target": "0x102bfb694"
+    }
+  ],
+  "numeric_common_length_multiply": "0x102bfb6d0",
+  "note": "Fixed-width kinds route to width selection then the common saturated multiply/add. String, Unit and Values retain their fallback branches. Unreachable fallback Id/Index code remains emitted."
+}

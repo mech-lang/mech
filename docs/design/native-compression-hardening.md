@@ -422,3 +422,30 @@ Both cohorts retain exact bytes, work, aliases, capacity and cleanup; protected
 scalar controls pass. Each iteration reuses all machine libraries and rebuilds
 in about 7.5 minutes. Broader linked/application and full-input qualification
 remain unrefreshed; #973 remains draft.
+
+## Packed payload length and the next ownership target
+
+Protocol `7ffb113e5239e24fd34822d65161443df042919a` precedes implementation
+`ced2c71c36d002a044b40f1f5cfb8ae293e92572`. The existing private sink protocol
+lets the length sink count fixed-width packed data from length and encoded
+width. Other sinks keep the original encoder, and variable/composite data keep
+their traversal. Saturation, canonical bytes and ordered work/admission remain.
+
+The [round 05 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-05/REPORT.md)
+records **1727× → 1632× Roc**, 0.492213292 s to 0.464984292 s against a fresh
+0.000285 s reference, or 5.53% less elapsed time. It retains the unchanged source,
+artifact, allocator, eight-byte boundary and logical work. Binary inspection
+confirms numeric length calculation no longer loops over elements. All 248
+scoped Rust tests, no_std, static checks and protected scalar gates pass; the
+initial new-fixture borrow error is retained. The core change rebuilds the
+machine libraries and takes 1007.38 seconds. Broader linked/application and
+full-input qualification remain unrefreshed.
+
+The small gain does not close the performance gap. Scalar indexed replacement
+still copies the entire array and compares snapshots. The main next change is
+a consuming selected update with native scalar arguments and a direct changed
+bit, followed through the real recursive tree/cache carriers. Require private
+stores to avoid repeated payload copies, external aliases to remain immutable,
+and success/failure/retry to preserve publication and cleanup. Keep application
+rewrites as separate source revisions and measurements. Do not substitute
+further small metadata patches for this ownership work.

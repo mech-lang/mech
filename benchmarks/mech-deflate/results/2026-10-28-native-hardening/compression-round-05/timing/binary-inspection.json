@@ -1,0 +1,42 @@
+{
+  "reference_command": [
+    "/opt/homebrew/opt/llvm/bin/llvm-objdump",
+    "--disassemble",
+    "--start-address=0x10001e298",
+    "--stop-address=0x10001e308",
+    "/private/tmp/mech-deflate-profiling-20261028/roc-profile"
+  ],
+  "reference_binary_sha256": "3941ef59b2c9343d0493cc6b6d14ca4803e6bd27acfe520b1fb59d9b63026324",
+  "abi_path": "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/roc_platform_abi.h",
+  "abi_sha256": "29774c638bfd88af975ae8f13560c7c8529c78b3feb8308ffbadf21651e3e3db",
+  "before_command": [
+    "/opt/homebrew/opt/llvm/bin/llvm-nm",
+    "--numeric-sort",
+    "--demangle",
+    "/private/tmp/mech-matrix-read-fix-20261028/timing/current"
+  ],
+  "before_binary_sha256": "929f96c685c155f632a0b099660c4c5246e05667f389898063129b3c7247f1ae",
+  "before_length_symbols": [
+    "0000000102c95b40 t mech_core::snapshot::encoding::encode_sequence::<mech_core::snapshot::encoding::LengthSnapshotSink>"
+  ],
+  "after_symbols_command": [
+    "/opt/homebrew/opt/llvm/bin/llvm-nm",
+    "--numeric-sort",
+    "--demangle",
+    "/private/tmp/mech-packed-length-round05-20261028/current"
+  ],
+  "after_binary_sha256": "8ad35661bca41e0a3ab1c79bbe006c94b0474f8782d222b27050e5d4835ec33c",
+  "after_length_disassembly": [
+    {
+      "symbol": "0000000102bfb644 T <mech_core::snapshot::encoding::LengthSnapshotSink as mech_core::snapshot::encoding::SnapshotByteSink>::write_sequence",
+      "command": [
+        "/opt/homebrew/opt/llvm/bin/llvm-objdump",
+        "--disassemble",
+        "--start-address=0x102bfb644",
+        "--stop-address=0x102bfb7a8",
+        "/private/tmp/mech-packed-length-round05-20261028/current"
+      ],
+      "file": "after-length-0.s"
+    }
+  ]
+}
