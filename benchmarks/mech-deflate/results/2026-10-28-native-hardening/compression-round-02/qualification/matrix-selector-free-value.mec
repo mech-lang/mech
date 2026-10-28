@@ -1,0 +1,6 @@
+<buffer> := <[u32]:2,3>
+replace(xs<buffer>, at<[u64]>, incoming<[u32]>) => (out<buffer>) :=
+  ~next := xs
+  next[at] = incoming
+  out := next.
+replace(input<buffer>, at<[u64]>, incoming<[u32]>)
