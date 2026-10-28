@@ -1037,3 +1037,21 @@ fn linked_readonly_numeric_child_restores_and_recovers() {
     );
     linked_assertion_retry(source, ValueDataDraft::U64);
 }
+
+#[test]
+fn linked_private_numeric_child_freezes_recovers_and_preserves_error_order() {
+    let source = "leaf(words<[u32]>, left<u64>, divisor<u64>, next-divisor<u64>) => (out<u64>) :=\n  positive! := divisor > 0u64\n  checked := 1u64 / divisor\n  value := words[1u64] + 1u32\n  ~next := words\n  next[1u64] = value\n  widened<u64> := value\n  out := ((left > 0u64)? | true => leaf(next, left - 1u64, next-divisor, next-divisor) | false => widened / divisor).\nouter(words<[u32]>, left<u64>, divisor<u64>) => (out<u64>) :=\n  value := leaf(words, 2u64, 3u64, divisor)\n  out := ((left > 0u64)? | true => outer(words, left - 1u64, divisor) | false => value).\nouter([9u32], 1u64, input<u64>)\n";
+    let artifact = super::artifacts(source).0.into_iter().next().unwrap();
+    let metadata =
+        mech_gpu::native_artifact::emit_program_object(&artifact, &mech_stdlib::source_catalog())
+            .unwrap()
+            .metadata();
+    assert!(
+        metadata["compiled_numeric_write_loops"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|r| r["parent"].is_number() && !r["typed_stores"].as_array().unwrap().is_empty())
+    );
+    linked_assertion_retry(source, ValueDataDraft::U64);
+}

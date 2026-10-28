@@ -232,7 +232,8 @@ fn selected_template(
 // IR114 retains immutable aggregate-matrix leaves in private buffer frames.
 // IR115 adds a borrowed packed source range to selected unsigned-buffer calls.
 // IR116 adds independently rederived read-only numeric leaf/view/carrier proofs.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 116;
+// IR117 adds current-version proofs, fixed private unsigned writes and prepaid publication.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 117;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -409,7 +410,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 116;
 // Policy91 admits numeric views once per invocation and prices native leaf bodies
 // with the existing finite conservative closed-tail envelopes. Elided frame and
 // library transactions no longer debit their physical canonical construction.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 91;
+// Policy92 funds fixed-shape publication before entry, charges store comparisons,
+// and settles/reopens the same account only at a first changed write.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 92;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

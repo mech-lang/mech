@@ -193,6 +193,15 @@ impl Layout {
                         .checked_add(32)
                         .ok_or("Tail comparison work overflow")?;
                 }
+                if numeric
+                    .as_ref()
+                    .and_then(|p| p.action(site as usize))
+                    .is_some_and(|a| matches!(a, super::readonly_numeric::Operation::Write { .. }))
+                {
+                    comparison = comparison
+                        .checked_add(1)
+                        .ok_or("Tail store comparison work overflow")?;
+                }
             }
             let index = layout.regions.len();
             for site in sites {

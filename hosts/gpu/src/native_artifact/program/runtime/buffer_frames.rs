@@ -10,11 +10,19 @@ pub(super) struct BufferFrames {
 }
 // Heap-owned only when selected; scalar-only callers retain their old layout.
 struct FrameLanes {
+    private: Option<PrivateNumeric>,
     owners: NativeTypedStorage<Option<Value>>,
     // Each scalar has a payload and a current-visit validity word. Its exact
     // kind and schema are immutable prepared metadata, never runtime tags.
     words: NativeWordStorage,
     nodes: mech_core::ManagedNodeReservation,
+    _reservation: mech_core::ManagedMemoryReservation,
+}
+struct PrivateNumeric {
+    region: usize,
+    arrays: Vec<Option<mech_core::snapshot::PrivateUnsignedMatrix>>,
+    publication: Option<crate::native_artifact::values::PreparedValuePut>,
+    _nodes: mech_core::ManagedNodeReservation,
     _reservation: mech_core::ManagedMemoryReservation,
 }
 pub(super) enum Field {
@@ -74,6 +82,7 @@ impl BufferFrames {
         let words = NativeWordStorage::new(Self::word_count(layout)?, limit, Some(memory))?;
         Ok(Self {
             inner: Some(Box::new(FrameLanes {
+                private: None,
                 owners,
                 words,
                 nodes,
@@ -96,7 +105,9 @@ impl BufferFrames {
         }
     }
     pub(super) fn retained_nodes(&self) -> u64 {
-        self.inner.as_ref().map_or(0, |inner| inner.nodes.nodes())
+        self.inner.as_ref().map_or(0, |inner| {
+            inner.nodes.nodes() + inner.private.as_ref().map_or(0, |p| p._nodes.nodes())
+        })
     }
     pub(super) fn pack(
         &mut self,
@@ -255,6 +266,100 @@ impl BufferFrames {
             .ok_or_else(|| invalid("numeric reconciliation has no lanes"))?;
         inner.words.values_mut()[at * 2] = bits;
         inner.words.values_mut()[at * 2 + 1] = 1;
+        Ok(())
+    }
+    pub(super) fn prepare_private(
+        &mut self,
+        region: usize,
+        count: usize,
+        publication: Option<crate::native_artifact::values::PreparedValuePut>,
+        memory: &ManagedMemoryBudget,
+    ) -> Result<bool, NativeProgramExecutionError> {
+        let inner = self
+            .inner
+            .as_mut()
+            .ok_or_else(|| invalid("private numeric frame lanes missing"))?;
+        if inner.private.is_some() {
+            return Err(invalid("overlapping private numeric owners"));
+        }
+        let bytes = amount(
+            count,
+            core::mem::size_of::<Option<mech_core::snapshot::PrivateUnsignedMatrix>>() as u64,
+            core::mem::size_of::<PrivateNumeric>() as u64,
+        )?;
+        let Ok(reservation) = memory.reserve_capacity(bytes) else {
+            return Ok(false);
+        };
+        let Ok(nodes) = memory.reserve_nodes(count as u64 + 1) else {
+            return Ok(false);
+        };
+        let mut arrays = Vec::new();
+        if arrays.try_reserve_exact(count).is_err() {
+            return Ok(false);
+        }
+        arrays.resize_with(count, || None);
+        inner.private = Some(PrivateNumeric {
+            region,
+            arrays,
+            publication,
+            _nodes: nodes,
+            _reservation: reservation,
+        });
+        Ok(true)
+    }
+    pub(super) fn private_array_mut(
+        &mut self,
+        region: usize,
+        array: usize,
+    ) -> Result<&mut Option<mech_core::snapshot::PrivateUnsignedMatrix>, NativeProgramExecutionError>
+    {
+        self.inner
+            .as_mut()
+            .and_then(|i| i.private.as_mut())
+            .filter(|p| p.region == region)
+            .and_then(|p| p.arrays.get_mut(array))
+            .ok_or_else(|| invalid("private numeric array outside active region"))
+    }
+    pub(super) fn finish_private(
+        &mut self,
+        region: usize,
+    ) -> Result<Option<crate::native_artifact::values::PreparedValuePut>, NativeProgramExecutionError>
+    {
+        let inner = self
+            .inner
+            .as_mut()
+            .ok_or_else(|| invalid("private numeric lanes missing"))?;
+        let state = inner
+            .private
+            .take()
+            .ok_or_else(|| invalid("private numeric owners missing"))?;
+        if state.region != region || state.arrays.iter().any(Option::is_some) {
+            return Err(invalid("private numeric owners not synchronized"));
+        }
+        Ok(state.publication)
+    }
+    pub(super) fn synchronize_managed(
+        &mut self,
+        layout: &Layout,
+        value: NativeMatchValue,
+        ordinal: usize,
+        owner: Value,
+    ) -> Result<(), NativeProgramExecutionError> {
+        let field = layout
+            .fields(value)
+            .and_then(|f| f.get(ordinal))
+            .ok_or_else(|| invalid("numeric managed reconciliation outside frame"))?;
+        let Lane::Managed { at } = field.lane() else {
+            return Err(invalid("numeric reconciliation is not managed"));
+        };
+        if field.schema() != owner.schema() {
+            return Err(invalid("numeric managed reconciliation type differs"));
+        }
+        self.inner
+            .as_mut()
+            .ok_or_else(|| invalid("numeric managed reconciliation has no lanes"))?
+            .owners
+            .values_mut()[at] = Some(owner);
         Ok(())
     }
     #[cfg(all(test, feature = "canonical-native-program"))]

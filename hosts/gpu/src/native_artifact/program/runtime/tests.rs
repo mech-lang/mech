@@ -1103,6 +1103,25 @@ unsafe extern "C" fn observe_numeric_fuel(
                     ordinal,
                 )
             }));
+            if let Some(proof) = &region.numeric
+                && proof.writes()
+            {
+                for array in &proof.arrays {
+                    let owner = ctx
+                        .state
+                        .buffer_frames
+                        .managed_owner(&metadata.buffer_frames, region.tail.carrier(), array.field)
+                        .unwrap();
+                    let ValueData::Matrix(matrix) = owner.data() else {
+                        panic!("numeric fuel owner is not a matrix")
+                    };
+                    let mech_core::snapshot::SequenceView::U32(words) = matrix.elements() else {
+                        panic!("numeric write fuel fixture is U32")
+                    };
+                    bits.push(words.len() as u64);
+                    bits.extend(words.iter().copied().map(u64::from));
+                }
+            }
             NUMERIC_FUEL_OBSERVATIONS.with(|rows| rows.borrow_mut().push(bits));
         }
     }

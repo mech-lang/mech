@@ -219,7 +219,10 @@ impl NativePreparedLibraryCall {
         source: &Value,
         memory: &mech_core::ManagedMemoryBudget,
     ) -> Option<[u64; 4]> {
-        if !(self.supports_unsigned_matrix_element() || self.supports_unsigned_matrix_length()) {
+        if !(self.supports_unsigned_matrix_element()
+            || self.supports_unsigned_matrix_length()
+            || self.supports_unsigned_matrix_replace())
+        {
             return None;
         }
         let mech_core::ResolvedOperationContract::Declared(contract) = self.template.contract()

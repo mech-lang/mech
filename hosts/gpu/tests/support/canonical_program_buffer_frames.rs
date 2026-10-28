@@ -645,7 +645,13 @@ fn restored_frame_type_slots_reject_misalignment_keys_and_definitions() {
 
 #[test]
 fn restored_numeric_leaf_rejects_stale_views_offsets_prices_and_factory_associations() {
-    for artifact in artifacts(super::numeric_tail_qualification::WEIGHTED).0 {
+    for artifact in [
+        super::numeric_tail_qualification::WEIGHTED,
+        super::numeric_write_qualification::WRITE,
+    ]
+    .into_iter()
+    .flat_map(|source| artifacts(source).0)
+    {
         let catalog = mech_stdlib::source_catalog();
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         let original: serde_json::Value =
@@ -655,6 +661,8 @@ fn restored_numeric_leaf_rejects_stale_views_offsets_prices_and_factory_associat
             "/numeric/arrays/0/field",
             "/numeric/arrays/0/width",
             "/numeric/arrays/0/witness",
+            "/numeric/arrays/0/writable",
+            "/numeric/returned_array",
             "/numeric/words",
             "/numeric/scalar_words",
             "/words",
@@ -663,7 +671,11 @@ fn restored_numeric_leaf_rejects_stale_views_offsets_prices_and_factory_associat
         ] {
             let mut changed = original.clone();
             let field = changed.pointer_mut(&format!("{root}{suffix}")).unwrap();
-            *field = (field.as_u64().unwrap() + 1).into();
+            *field = match field {
+                serde_json::Value::Bool(value) => serde_json::json!(!*value),
+                serde_json::Value::Null => serde_json::json!(0),
+                _ => serde_json::json!(field.as_u64().unwrap() + 1),
+            };
             let bytes = serde_json::to_vec(&changed).unwrap();
             // SAFETY: corrupt cached metadata is confined to rejection; no
             // restored descriptor or entry from this diagnostic may execute.
