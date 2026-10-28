@@ -1,0 +1,8 @@
+{
+  "source_pin": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "compiler_pin": "d99c7b838fb05bb1047eb0c18d4d06d0f86f345d",
+  "source_sha256": "b29ab3e1910948122405632435940ee9695aa01b763bac42cd7106042e176677",
+  "binary_sha256": "c503d479f3f3c9bff32de5e2ee5bc10761ee5e20d671d73f8c29aa1a00f39a7b",
+  "output": "out 114\nout 4\nout 204\nout 17\nbitbuf 0\nbitcount 4\n",
+  "case": "Two literal-A blocks, nonfinal then final, second begin=1; carry output, pending bits, sequences and all code tables through first result."
+}

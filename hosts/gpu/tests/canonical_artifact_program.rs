@@ -827,11 +827,17 @@ mod string_matrix_qualification;
 #[path = "support/canonical_program_selected_matrix.rs"]
 mod selected_matrix_qualification;
 
+#[path = "support/canonical_program_flush_block.rs"]
+mod flush_block_qualification;
+
 #[path = "support/canonical_program_selection.rs"]
 mod selection_qualification;
 
 #[path = "support/canonical_program_selected_record_axes.rs"]
 mod selected_record_axes_qualification;
+
+#[path = "support/canonical_program_compress.rs"]
+mod compress_qualification;
 
 #[path = "support/canonical_program_no_limits.rs"]
 mod no_limits_qualification;
