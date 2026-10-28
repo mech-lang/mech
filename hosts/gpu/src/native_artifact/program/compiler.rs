@@ -251,6 +251,9 @@ impl NativeProgramObject {
         metadata["compiled_loop_constants"] = serde_json::json!(&self.codegen.loop_constants);
         metadata["compiled_steady_loops"] = serde_json::json!(&self.codegen.steady_loops);
         metadata["compiled_join_map_copies"] = serde_json::json!(&self.codegen.join_map_copies);
+        metadata["readonly_numeric_regions"] = serde_json::json!(self.descriptor.metadata().closed_tails.regions.iter().filter_map(|r| r.numeric.as_ref().map(|p| serde_json::json!({"iteration":r.iteration,"parent":r.tail.parent(),"header":r.tail.header(),"compute_per_traversal":r.compute,"proof":p}))).collect::<Vec<_>>());
+        metadata["compiled_readonly_numeric_loops"] =
+            serde_json::json!(&self.codegen.readonly_numeric_loops);
         metadata["compiled_scalar_loops"] = serde_json::json!(&self.codegen.scalar_loops);
         metadata
     }

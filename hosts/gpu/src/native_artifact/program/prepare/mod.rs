@@ -82,6 +82,7 @@ impl PreparedNativeProgram {
         plan.validate_current_visits().map_err(str::to_owned)?;
         let facts = plan.facts();
         let scalar_aggregates = facts.scalar_aggregates();
+        let buffer_frames = facts.buffer_frames();
         let parallel =
             native::program::prepare::parallel::Layout::derive(&facts, &scalar_aggregates)
                 .map_err(str::to_owned)?;
@@ -149,25 +150,6 @@ impl PreparedNativeProgram {
             |site| native::program::prepare::map_owner::extra_work(&map_owner_words, site),
             "map owner visit work overflow",
         )?;
-        let closed_tails = native::program::prepare::tail::Layout::derive(
-            &plan,
-            &borrowed_strings,
-            &analysis_visits,
-            &scalar_aggregates,
-            &map_owner_words,
-        )?;
-        compose_work(
-            &mut analysis_visits,
-            &mut visits,
-            |site| Ok(closed_tails.extra_work(site)),
-            "closed Tail work overflow",
-        )?;
-        let map_admission = native::program::prepare::map_admission::Layout::derive(
-            &plan,
-            &map_owner_words,
-            &analysis_visits,
-        )?;
-        let visits = visits.into();
         let calls = plan
             .blocks()
             .iter()
@@ -262,6 +244,27 @@ impl PreparedNativeProgram {
             })
             .collect::<Result<Box<[_]>, _>>()?;
         query_stages::validate_query_stages(&plan, &calls).map_err(str::to_owned)?;
+        let closed_tails = native::program::prepare::tail::Layout::derive(
+            &plan,
+            &borrowed_strings,
+            &analysis_visits,
+            &scalar_aggregates,
+            &map_owner_words,
+            &buffer_frames,
+            &calls,
+        )?;
+        compose_work(
+            &mut analysis_visits,
+            &mut visits,
+            |site| Ok(closed_tails.extra_work(site)),
+            "closed Tail work overflow",
+        )?;
+        let map_admission = native::program::prepare::map_admission::Layout::derive(
+            &plan,
+            &map_owner_words,
+            &analysis_visits,
+        )?;
+        let visits = visits.into();
         let uniform_word_collections = facts.uniform_unsigned_collections().into_boxed_slice();
         let window_regions = plan.window_regions().into_boxed_slice();
         let occupied_frame =
@@ -301,6 +304,15 @@ impl PreparedNativeProgram {
                 map_owner_words
                     .as_ref()
                     .map_or(0, native::program::prepare::map_owner::initial_words),
+            )
+            .max(
+                closed_tails
+                    .regions
+                    .iter()
+                    .filter_map(|r| r.numeric.as_ref())
+                    .map(|p| p.words + 2)
+                    .max()
+                    .unwrap_or(0),
             )
             .max(usize::from(!parallel.regions.is_empty()))
             .max(if closed_tails.regions.is_empty() {
@@ -357,7 +369,6 @@ impl PreparedNativeProgram {
             .transpose()
             .map_err(str::to_owned)?
             .unwrap_or_default();
-        let buffer_frames = facts.buffer_frames();
         let call_routes =
             call_routes::derive(&plan, &buffer_frames, &unsigned_buffer_calls, &calls);
         let (scalar_aggregates, line_retention_frontiers) = facts.into_preparation_inventories();
@@ -490,6 +501,7 @@ pub(in crate::native_artifact) fn validate_type_slots(
     Ok(())
 }
 
+pub(in crate::native_artifact) mod readonly_numeric;
 pub(in crate::native_artifact) mod retirement;
 
 pub(in crate::native_artifact) fn constant_admission_total(bounds: &[u64]) -> Result<u64, String> {

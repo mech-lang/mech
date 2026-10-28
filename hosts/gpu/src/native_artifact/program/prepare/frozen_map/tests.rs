@@ -67,6 +67,8 @@ fn parts(
         &visits,
         &plan.scalar_aggregates(),
         &owners,
+        &plan.facts().buffer_frames(),
+        &[],
     )
     .unwrap();
     (plan, owners, closed)

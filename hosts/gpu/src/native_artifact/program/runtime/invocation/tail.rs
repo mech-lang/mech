@@ -37,7 +37,7 @@ impl Invocation<'_, '_, '_> {
         if args != [0; 3]
             || self.closed_tail.is_some()
             || self.window_region.is_some()
-            || (self.state.consumed && proof.map.is_none())
+            || (self.state.consumed && proof.map.is_none() && proof.numeric.is_none())
         {
             return Err(invalid("duplicate or malformed closed Tail entry"));
         }
@@ -47,6 +47,14 @@ impl Invocation<'_, '_, '_> {
             || self.progress[proof.iteration as usize * 2..][..2] != [0, 1]
         {
             return Err(invalid("closed Tail outside active invocation"));
+        }
+        if proof.numeric.is_some()
+            && proof
+                .tail
+                .parent()
+                .is_some_and(|parent| self.progress[parent as usize * 2 + 1] != 1)
+        {
+            return Err(invalid("numeric child has no suspended active parent"));
         }
         // Covers entry/exit metadata and all exceptional cleanup dispatch arms.
         self.state.control.work.charge(
@@ -64,6 +72,9 @@ impl Invocation<'_, '_, '_> {
         let Some(remaining) = self.state.library.unscoped_remaining() else {
             return Ok(Some(0));
         };
+        if proof.numeric.is_some() && !self.begin_numeric_views(region)? {
+            return Ok(Some(0));
+        }
         if proof.map.is_some() {
             let Some(words) = self.begin_closed_map(region)? else {
                 return Ok(Some(0));
@@ -110,6 +121,14 @@ impl Invocation<'_, '_, '_> {
             return Err(invalid(
                 "closed Tail account or entry changed during native execution",
             ));
+        }
+        if proof.numeric.is_some()
+            && proof
+                .tail
+                .parent()
+                .is_some_and(|parent| self.progress[parent as usize * 2 + 1] != 1)
+        {
+            return Err(invalid("numeric child's suspended parent changed"));
         }
         let (compute, comparison, traversals) = if proof.map.is_some() {
             if args[1] != 0 {
@@ -158,6 +177,7 @@ impl Invocation<'_, '_, '_> {
             2 | 3 if layout.sites.get(site).copied().flatten() == Some(state.region) => site as u32,
             _ => return Err(invalid("closed Tail exit outside its proved boundary")),
         };
+        self.synchronize_numeric_carrier(state.region, site, args[2])?;
         self.state
             .library
             .charge(compute, comparison)
@@ -171,7 +191,7 @@ impl Invocation<'_, '_, '_> {
         if proof.map.is_some() && args[2] == 0 {
             self.state.map_owners.closed_exit = Some((previous, proof.tail.exit()));
         }
-        self.state.consumed = false;
+        self.state.consumed = proof.numeric.is_some() && args[2] != 2;
         if args[2] == 3 {
             // Arithmetic/assertion/rejection exits have no leaf callback to consume the
             // owner loan. Drop it before the existing typed error is returned.

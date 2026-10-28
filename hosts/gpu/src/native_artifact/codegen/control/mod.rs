@@ -799,6 +799,10 @@ impl<'plan> CfgDefinition<'plan> {
                     error,
                     report,
                 )?;
+                crate::native_artifact::program::codegen::readonly_numeric::emit_entry(
+                    &controls, b, frame, locals, plan, &closed, index, hooks, &blocks, error,
+                    report,
+                )?;
                 let outlined = packed_functions
                     .iter()
                     .find(|(site, _, _, _)| *site == index)

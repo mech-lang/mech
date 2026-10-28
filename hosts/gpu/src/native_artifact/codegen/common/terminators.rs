@@ -41,6 +41,13 @@ pub(in crate::native_artifact) fn emit_source_terminator(
             };
             b.ins().brif(equal, target(yes), &[], target(no), &[]);
         }
+        Term::Scalar(Branch::IntegrityFailure) => {
+            let status = b.ins().iconst(
+                types::I64,
+                crate::native_artifact::abi::STATUS_INTEGRITY as i64,
+            );
+            b.ins().jump(fail_at, &[status.into()]);
+        }
         Term::Scalar(Branch::Reject) => {
             // Exhaustive source matches retain their fail-closed default
             // arm. Preserve its origin and unwind the owned frame/fuel.
