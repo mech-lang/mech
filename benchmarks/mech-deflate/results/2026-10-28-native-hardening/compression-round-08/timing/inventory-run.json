@@ -1,0 +1,8 @@
+{
+  "command": [
+    "/private/tmp/mech-mixed-scalar-state-round08-20261028/inventory",
+    "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc"
+  ],
+  "exit": 101,
+  "binary_sha256": "49aff8e2444c423c932b4cb6c7605a24b703a864db9a8ddc55abf421b28eb5f3"
+}

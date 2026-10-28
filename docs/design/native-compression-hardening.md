@@ -507,3 +507,41 @@ linked/application and full-input coverage stay unrefreshed; CI is cancelled.
 The profile removes most ordered schema precharge but still shows repeated
 runtime visits, memory admission and object transport. The remaining 495× gap
 requires larger reductions in real numeric-loop transactions. #973 stays draft.
+
+## Exact mixed scalar state and closed failure exits
+
+Protocol/test commits `37ba94f2812ea23f51401cbf7ba4a0346455e1c4` and
+`8d1792af42e412a25441d35c6773b9a96d9826ae` reproduce the I64-pair and U32/U64-enum
+eligibility miss independently. `7692a4453e1b67eba6609eb2f5295deaa565d69c` extends
+the existing flat native layout using shared exact scalar kinds and bits; whole-
+component escape, tags, 32-field bound and canonical public outputs remain.
+`803e2e83bc76d31d4d2a5d5dad7b28ba04ab9f8b` keeps restoration tests in the existing
+audited image harness. Actual source-derived private selection is 91 values /
+310 words, including eight optimal-path Tail carriers. All 20 measured mixed-state
+observations have zero allocation growth across zero to 64 visits.
+
+The first expanded run passes 94 tests and fails checked-state error handling.
+`c4681888b9d5e9a315842e5ec9a7d57cb81d1e9d` adds an all-U64 reproduction;
+`c465f1712fed87e116771a9785207054258ce9ba` routes source assertion/rejection exits
+through existing loan reconciliation, and `4af4662097dd570f0821fc105a1c4d9de4eb5d89`
+fixes a status namespace typo found by compilation. A retained hash-checked old
+executable proves the error-masking bug is inherited. The first parent attempt
+used reused Cargo paths and is explicitly not parent evidence. Every setup and
+qualification failure remains in the packet with its disposition.
+
+The [round 08 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-08/REPORT.md)
+records **490× → 455× Roc**, 0.139637125 s to 0.129644084 s against a fresh
+0.000285 s reference, or 7.16% less elapsed time. This is not the larger win being
+sought. The pinned source, artifact, tables, algorithm, allocation sites and timing
+boundary stay fixed. Complete logical work changes to 875610515844. All 109
+scoped Rust tests and protected scalar gates pass, including exact bits, fresh
+Boolean visits, failure precedence, prior publication, cleanup and retry. Static
+checks pass; release builds take 458.00 s (Engine) and 72.28 s (host-only repair),
+with all machine libraries reused. Broader linked/application and full-input
+coverage remains unrefreshed; #973 stays draft and CI is cancelled.
+
+The permanent default cost-table case still has about 44000 allocation requests
+for 544 independent updates. The next experiment will construct independent
+results directly, as a separate source revision/measurement. Preserve this
+compiler-only pinned-source result and do not combine its gain with a source
+rewrite or claim parity. No cancelled full-input campaign is restarted.

@@ -1,0 +1,28 @@
+{
+  "name": "round08-check",
+  "command": [
+    "cargo",
+    "check",
+    "--locked",
+    "--offline",
+    "-j1",
+    "--manifest-path",
+    "benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--bins"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "8d1792af42e412a25441d35c6773b9a96d9826ae",
+  "dirty": " M hosts/gpu/tests/support/canonical_program_scalar_state.rs\n M src/engine/src/native_artifact/scalar_aggregates.rs\n",
+  "exit": 0,
+  "seconds": 20.173185110092163,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round08-check.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}
