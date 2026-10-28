@@ -246,9 +246,9 @@ reverse-codeword(value<u64>, width<u64>) => (out<u32>) :=
       counted := #CountSymbols(freqs, n, counts)
       (cumulative, used) := #Cumulative(counted, n)
       (placed, next-lens, next-a) := #PlaceSymbols(freqs, n, cumulative, lens, a)
-      base := placed[n - 1u64]
-      size := placed[n] - base
-      sorted := #HeapSort(next-a, base, size)
+      base := ((used < 2u64)? | true => 0u64 | false => placed[n - 1u64])
+      size := ((used < 2u64)? | true => 0u64 | false => placed[n] - base)
+      sorted := ((used < 2u64)? | true => next-a | false => #HeapSort(next-a, base, size))
     } -> :Sorted(used, next-lens, sorted)
   :Sorted(used, lens, a)
     | used < 2u64 -> {

@@ -18,11 +18,29 @@ struct HuffmanCase {
 }
 #[test]
 fn deflate_huffman_kernel_matches_the_pinned_c_builder() {
-    let reference: Reference = serde_json::from_str(include_str!(
+    let mut reference: Reference = serde_json::from_str(include_str!(
         "../fixtures/native/deflate-huffman-reference.json"
     ))
     .unwrap();
     assert_eq!(reference.cases.len(), 19);
+    // The pinned C oracle itself underflows while sorting an empty n=2
+    // alphabet. Preserve its nineteen original cases. Its empty n=19 result
+    // independently establishes the two canonical fallback codes, which must
+    // also work when the available alphabet has exactly those two symbols.
+    let empty = reference
+        .cases
+        .iter()
+        .find(|case| case.name == "empty")
+        .unwrap();
+    let minimum = HuffmanCase {
+        name: "empty-two-symbols".into(),
+        num_symbols: 2,
+        max_len: 15,
+        frequencies: vec![0, 0],
+        lengths: empty.lengths.clone(),
+        codewords: empty.codewords.clone(),
+    };
+    reference.cases.push(minimum);
     let source = format!(
         "{KERNEL}\n#MakeHuffman(frequencies<words>, symbols<u64>, max-length<u64>, scratch-counts<counters>, scratch-lengths<lengths>, scratch-words<words>, scratch-code-lengths<length-counts>)\n"
     );
