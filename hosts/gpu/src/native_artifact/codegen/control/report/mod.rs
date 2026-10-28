@@ -25,6 +25,8 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub scalar_loops: Vec<ScalarLoop>,
     pub readonly_numeric_loops:
         Vec<crate::native_artifact::program::codegen::readonly_numeric::Report>,
+    pub numeric_write_loops:
+        Vec<crate::native_artifact::program::codegen::readonly_numeric::Report>,
     substitutions: usize,
     tag_records: usize,
     guarded_records: usize,

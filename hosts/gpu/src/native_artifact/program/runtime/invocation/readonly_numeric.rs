@@ -43,7 +43,24 @@ impl Invocation<'_, '_, '_> {
         let Some((remaining, _)) = self.state.library.unscoped_remaining() else {
             return Ok(false);
         };
-        if entry_work > remaining {
+        let publication_work = if let Some(array) = proof.returned_array {
+            self.state
+                .buffer_frames
+                .managed_owner(
+                    &metadata.buffer_frames,
+                    region.tail.carrier(),
+                    proof.arrays[array].field,
+                )
+                .and_then(|v| v.memory_budget_retained_bytes(&memory))
+                .and_then(|n| n.checked_mul(4))
+                .and_then(|n| n.checked_add(64))
+        } else {
+            Some(0)
+        };
+        if publication_work
+            .and_then(|n| n.checked_add(entry_work))
+            .is_none_or(|n| n > remaining)
+        {
             return Ok(false);
         }
         self.state.control.work.charge(
@@ -146,6 +163,41 @@ impl Invocation<'_, '_, '_> {
                 self.write_borrowed_word(2 + slot, value.to_bits())?;
             }
         }
+        if proof.writes() || proof.returned_array.is_some() {
+            let publication = if let Some(array) = proof.returned_array {
+                let owner = self
+                    .state
+                    .buffer_frames
+                    .managed_owner(
+                        &metadata.buffer_frames,
+                        region.tail.carrier(),
+                        proof.arrays[array].field,
+                    )
+                    .ok_or_else(|| invalid("numeric result lost owner"))?;
+                Some(self.state.arena.prepare_put(
+                    region.tail.returned().get(),
+                    owner,
+                    &mut self.state.control.work,
+                )?)
+            } else {
+                None
+            };
+            let id = metadata.closed_tails.sites[region.tail.header() as usize]
+                .ok_or_else(|| invalid("numeric region lost layout"))?;
+            if !self.state.buffer_frames.prepare_private(
+                id,
+                proof.arrays.len(),
+                publication,
+                &memory,
+            )? {
+                return Ok(false);
+            }
+        }
+        if proof.writes() {
+            for array in 0..proof.arrays.len() {
+                self.write_borrowed_word(2 + proof.private_flag(array), 0)?;
+            }
+        }
         Ok(true)
     }
     /// No allocation or new resource admission is needed to restore current
@@ -158,7 +210,8 @@ impl Invocation<'_, '_, '_> {
     ) -> Result<(), Error> {
         let descriptor = self.descriptor;
         let metadata = descriptor.metadata();
-        let region = &metadata.closed_tails.regions[region];
+        let id = region;
+        let region = &metadata.closed_tails.regions[id];
         let Some(proof) = &region.numeric else {
             return Ok(());
         };
@@ -178,10 +231,48 @@ impl Invocation<'_, '_, '_> {
                 )?;
             }
         }
+        if mode == 5 {
+            return Ok(());
+        }
+        if proof.writes() || proof.returned_array.is_some() {
+            for (at, array) in proof.arrays.iter().enumerate() {
+                if let Some(private) = self.state.buffer_frames.private_array_mut(id, at)?.take() {
+                    let owner = private.finish();
+                    self.state.buffer_frames.synchronize_managed(
+                        &metadata.buffer_frames,
+                        region.tail.carrier(),
+                        array.field,
+                        owner,
+                    )?;
+                }
+            }
+            let publication = self.state.buffer_frames.finish_private(id)?;
+            if mode == 0 {
+                if let Some(array) = proof.returned_array {
+                    let owner = self
+                        .state
+                        .buffer_frames
+                        .managed_owner(
+                            &metadata.buffer_frames,
+                            region.tail.carrier(),
+                            proof.arrays[array].field,
+                        )
+                        .ok_or_else(|| invalid("numeric result lost final owner"))?
+                        .clone();
+                    self.state.arena.put_prepared(
+                        publication
+                            .ok_or_else(|| invalid("numeric result lost publication admission"))?,
+                        owner,
+                    )?;
+                }
+            }
+        }
         if mode == 2 {
             // A native bounds miss executes the original selected operation at
             // its exact source position. Materialize only that cold operand.
-            let Some(Operation::Read { array, .. }) = proof.action(site) else {
+            let Some(Operation::Read { array, .. } | Operation::Write { array, .. }) =
+                proof.action(site)
+            else {
                 return Err(invalid("numeric bounds exit outside read"));
             };
             let Action::LibraryCall { operands, .. } = metadata.plan.blocks()[site].action() else {

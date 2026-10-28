@@ -27,6 +27,8 @@ pub(in crate::native_artifact) struct Report {
     pub parent: Option<u32>,
     pub source_sites: Vec<usize>,
     pub typed_loads: Vec<(usize, u8)>,
+    pub typed_stores: Vec<(usize, u8)>,
+    pub first_change_boundaries: Vec<usize>,
     pub length_sites: Vec<usize>,
     pub scalar_operations: usize,
     pub register_words: usize,
@@ -55,8 +57,16 @@ fn slots(code: CodePlan<'_>, proof: &Proof, base: usize) -> BTreeSet<usize> {
             }
             _ => {}
         }
-        if let Some(Operation::Read { index, .. }) = proof.action(site) {
-            slots.insert(*index as usize);
+        match proof.action(site) {
+            Some(Operation::Read { index, .. }) => {
+                slots.insert(*index as usize);
+            }
+            Some(Operation::Write {
+                index, incoming, ..
+            }) => {
+                slots.extend([*index as usize, *incoming as usize]);
+            }
+            _ => {}
         }
         if let CodePlan::Program(program) = code {
             if let Some(frame) = program.metadata().buffer_frames.action(site) {
@@ -157,6 +167,8 @@ pub(in crate::native_artifact) fn emit_entry(
         parent: region.tail.parent(),
         source_sites: proof.sites.clone(),
         typed_loads: Vec::new(),
+        typed_stores: Vec::new(),
+        first_change_boundaries: Vec::new(),
         length_sites: Vec::new(),
         scalar_operations: 0,
         register_words,
@@ -250,11 +262,10 @@ pub(in crate::native_artifact) fn emit_entry(
                 words.write(b, *output as usize, length);
                 report.length_sites.push(site);
             }
-            Some(Operation::Read {
-                array,
-                index,
-                output,
-            }) => {
+            Some(
+                operation @ (Operation::Read { array, index, .. }
+                | Operation::Write { array, index, .. }),
+            ) => {
                 let view = shadow + proof.view(*array);
                 let index = words.read(b, *index as usize);
                 let length = words.read(b, view + 1);
@@ -301,8 +312,99 @@ pub(in crate::native_artifact) fn emit_entry(
                 } else {
                     value
                 };
-                words.write(b, *output as usize, value);
                 report.typed_loads.push((site, width));
+                match operation {
+                    Operation::Read { output, .. } => words.write(b, *output as usize, value),
+                    Operation::Write { incoming, .. } => {
+                        let incoming = words.read(b, *incoming as usize);
+                        let changed = b.ins().icmp(IntCC::NotEqual, value, incoming);
+                        let update = b.create_block();
+                        let done = b.create_block();
+                        b.ins().brif(changed, update, &[], done, &[]);
+                        b.switch_to_block(update);
+                        let private = words.read(b, shadow + proof.private_flag(*array));
+                        let store = b.create_block();
+                        let materialize = b.create_block();
+                        b.set_cold_block(materialize);
+                        boundaries.insert(materialize);
+                        b.ins().brif(private, store, &[], materialize, &[]);
+                        b.switch_to_block(materialize);
+                        set_origin(b, frame, site as u64);
+                        words.spill_all(b, locals)?;
+                        let zero = b.ins().iconst(types::I64, 0);
+                        // No active generated loan survives a failed cold call.
+                        b.ins()
+                            .store(MemFlags::new(), zero, locals, offset(region.words)?);
+                        hooks.require_argument_words(b, proof.words + 4, error);
+                        for field in proof
+                            .fields(region.tail.carrier().get())
+                            .unwrap()
+                            .iter()
+                            .flatten()
+                        {
+                            let value = words.read(b, shadow + field);
+                            b.ins().store(
+                                MemFlags::new(),
+                                value,
+                                hooks.arguments,
+                                offset(2 + field)?,
+                            );
+                        }
+                        b.ins().store(
+                            MemFlags::new(),
+                            index,
+                            hooks.arguments,
+                            offset(2 + proof.words)?,
+                        );
+                        b.ins().store(
+                            MemFlags::new(),
+                            incoming,
+                            hooks.arguments,
+                            offset(3 + proof.words)?,
+                        );
+                        let compute = words.read(b, region.words + 1);
+                        let comparison = words.read(b, region.words + 2);
+                        hooks.call(b, site, crate::native_artifact::program::protocol::GlobalHelper::NumericWritePrepare, [compute, comparison, zero], error);
+                        for slot in [
+                            region.words + 1,
+                            region.words + 2,
+                            shadow + proof.view(*array),
+                            shadow + proof.private_flag(*array),
+                        ] {
+                            let argument = if slot == region.words + 1 {
+                                0
+                            } else if slot == region.words + 2 {
+                                1
+                            } else {
+                                2 + slot - shadow
+                            };
+                            let value = b.ins().load(
+                                types::I64,
+                                MemFlags::new(),
+                                hooks.arguments,
+                                offset(argument)?,
+                            );
+                            words.write(b, slot, value);
+                        }
+                        let one = b.ins().iconst(types::I64, 1);
+                        words.write(b, region.words, one);
+                        b.ins()
+                            .store(MemFlags::new(), one, locals, offset(region.words)?);
+                        b.ins().jump(done, &[]);
+                        b.switch_to_block(store);
+                        let narrowed = if width < 8 {
+                            b.ins().ireduce(ty, incoming)
+                        } else {
+                            incoming
+                        };
+                        b.ins().store(MemFlags::new(), narrowed, address, 0);
+                        b.ins().jump(done, &[]);
+                        b.switch_to_block(done);
+                        report.typed_stores.push((site, width));
+                        report.first_change_boundaries.push(site);
+                    }
+                    _ => unreachable!("selected numeric access"),
+                }
             }
             None => match code.blocks()[site].action() {
                 Action::Scalar(Scalar::None) => {}
@@ -393,7 +495,11 @@ pub(in crate::native_artifact) fn emit_entry(
     if report.successful_backedge_helpers != 0 {
         return Err(backend("numeric funded body contains a general call"));
     }
-    reports.readonly_numeric_loops.push(report);
+    if proof.writes() {
+        reports.numeric_write_loops.push(report);
+    } else {
+        reports.readonly_numeric_loops.push(report);
+    }
     b.switch_to_block(ordinary);
     Ok(())
 }

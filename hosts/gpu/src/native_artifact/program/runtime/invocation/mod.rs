@@ -8,6 +8,7 @@ use mech_core::{MemoryBudgetLimits, Value};
 use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeMatchValue};
 
 mod buffer_frames;
+mod numeric_writes;
 mod readonly_numeric;
 mod selected_calls;
 mod unsigned_buffers;
@@ -386,6 +387,11 @@ impl Invocation<'_, '_, '_> {
         if tag == GlobalHelper::ClosedTailEnd {
             let site = usize::try_from(site).map_err(|_| invalid("closed Tail site overflow"))?;
             return self.end_closed_tail(site, args);
+        }
+        if tag == GlobalHelper::NumericWritePrepare {
+            let site = usize::try_from(site)
+                .map_err(|_| invalid("numeric materialization site overflow"))?;
+            return self.prepare_numeric_write(site, args);
         }
         if self.closed_tail.is_some() {
             return Err(invalid(

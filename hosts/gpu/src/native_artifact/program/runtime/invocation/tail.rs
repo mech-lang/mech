@@ -11,6 +11,7 @@ pub(in crate::native_artifact::program::runtime) struct State {
     used: (u64, u64),
     remaining: (u64, u64),
     entry: u32,
+    partial: bool,
 }
 impl Invocation<'_, '_, '_> {
     pub(in crate::native_artifact::program::runtime) fn begin_closed_tail(
@@ -104,6 +105,7 @@ impl Invocation<'_, '_, '_> {
                 .control
                 .previous
                 .ok_or_else(|| invalid("closed Tail has no current predecessor"))?,
+            partial: false,
         });
         Ok(Some(1))
     }
@@ -166,11 +168,11 @@ impl Invocation<'_, '_, '_> {
             (compute, comparison, traversals)
         };
         let previous = match args[2] {
-            0 if site == proof.tail.exit() as usize && traversals > 0 => proof.tail.finish(),
+            0 if site == proof.tail.exit() as usize && (traversals > 0 || state.partial) => proof.tail.finish(),
             // No fuel for a complete body: reconcile before the ordinary header
             // admits any further instruction. No allowance is refilled.
             1 if site == proof.tail.header() as usize => {
-                if traversals == 0 {
+                if traversals == 0 && !state.partial {
                     state.entry
                 } else {
                     proof.tail.latch()
@@ -184,6 +186,7 @@ impl Invocation<'_, '_, '_> {
                 }
             }
             2 | 3 if layout.sites.get(site).copied().flatten() == Some(state.region) => site as u32,
+            5 if proof.numeric.as_ref().and_then(|p| p.action(site)).is_some_and(|a| matches!(a, crate::native_artifact::program::prepare::readonly_numeric::Operation::Write { .. })) => site as u32,
             _ => return Err(invalid("closed Tail exit outside its proved boundary")),
         };
         self.synchronize_numeric_carrier(state.region, site, args[2])?;
@@ -200,12 +203,42 @@ impl Invocation<'_, '_, '_> {
         if proof.map.is_some() && args[2] == 0 {
             self.state.map_owners.closed_exit = Some((previous, proof.tail.exit()));
         }
-        self.state.consumed = proof.numeric.is_some() && args[2] != 2;
+        self.state.consumed = proof.numeric.is_some() && !matches!(args[2], 2 | 5);
         if args[2] == 3 {
             // Arithmetic/assertion/rejection exits have no leaf callback to consume the
             // owner loan. Drop it before the existing typed error is returned.
             self.borrowed_strings = None;
         }
         Ok(None)
+    }
+
+    /// Continue the already prepaid traversal after its one-time fallible
+    /// materialization. The new loan is the SAME post-materialization account;
+    /// no source header/body allowance is renewed or charged twice.
+    pub(super) fn resume_numeric_after_write(
+        &mut self,
+        region: usize,
+        site: usize,
+    ) -> Result<(), Error> {
+        if self.closed_tail.is_some() || self.state.control.previous != Some(site as u32) {
+            return Err(invalid(
+                "numeric materialization resume outside settled site",
+            ));
+        }
+        let remaining = self
+            .state
+            .library
+            .unscoped_remaining()
+            .ok_or_else(|| invalid("numeric materialization changed account scope"))?;
+        self.write_borrowed_word(0, remaining.0)?;
+        self.write_borrowed_word(1, remaining.1)?;
+        self.closed_tail = Some(State {
+            region,
+            used: self.state.library.used(),
+            remaining,
+            entry: site as u32,
+            partial: true,
+        });
+        Ok(())
     }
 }

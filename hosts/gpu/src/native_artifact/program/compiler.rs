@@ -251,7 +251,8 @@ impl NativeProgramObject {
         metadata["compiled_loop_constants"] = serde_json::json!(&self.codegen.loop_constants);
         metadata["compiled_steady_loops"] = serde_json::json!(&self.codegen.steady_loops);
         metadata["compiled_join_map_copies"] = serde_json::json!(&self.codegen.join_map_copies);
-        metadata["readonly_numeric_regions"] = serde_json::json!(self.descriptor.metadata().closed_tails.regions.iter().filter_map(|r| r.numeric.as_ref().map(|p| serde_json::json!({"iteration":r.iteration,"parent":r.tail.parent(),"header":r.tail.header(),"compute_per_traversal":r.compute,"proof":p}))).collect::<Vec<_>>());
+        metadata["readonly_numeric_regions"] = serde_json::json!(self.descriptor.metadata().closed_tails.regions.iter().filter_map(|r| r.numeric.as_ref().filter(|p| !p.writes()).map(|p| serde_json::json!({"iteration":r.iteration,"parent":r.tail.parent(),"header":r.tail.header(),"compute_per_traversal":r.compute,"proof":p}))).collect::<Vec<_>>());
+        metadata["numeric_write_regions"] = serde_json::json!(self.descriptor.metadata().closed_tails.regions.iter().filter_map(|r| r.numeric.as_ref().filter(|p| p.writes()).map(|p| serde_json::json!({"iteration":r.iteration,"parent":r.tail.parent(),"header":r.tail.header(),"compute_per_traversal":r.compute,"proof":p}))).collect::<Vec<_>>());
         let prepared = self.descriptor.metadata();
         metadata["readonly_numeric_candidates"] = serde_json::json!(prepared.plan.iterations().iter().enumerate().filter_map(|(iteration, control)| {
             let mech_engine::native_artifact::NativeControlLoop::Tail(tail) = control else { return None };
@@ -261,6 +262,8 @@ impl NativeProgramObject {
         }).collect::<Vec<_>>());
         metadata["compiled_readonly_numeric_loops"] =
             serde_json::json!(&self.codegen.readonly_numeric_loops);
+        metadata["compiled_numeric_write_loops"] =
+            serde_json::json!(&self.codegen.numeric_write_loops);
         metadata["compiled_scalar_loops"] = serde_json::json!(&self.codegen.scalar_loops);
         metadata
     }

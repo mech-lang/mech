@@ -9,6 +9,8 @@ use mech_engine::native_artifact::{
     NativeProgramArtifactPlan as Plan, NativeProgramFacts, NativeScalarKind, NativeTailLoop,
 };
 use std::collections::{BTreeMap, BTreeSet};
+#[path = "numeric_versions.rs"]
+mod versions;
 
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -17,6 +19,7 @@ pub(in crate::native_artifact) struct Array {
     pub width: u8,
     /// Exact selected site whose original factory validates the entry view.
     pub witness: usize,
+    pub writable: bool,
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -40,6 +43,11 @@ pub(in crate::native_artifact) enum Operation {
         index: u32,
         output: u32,
     },
+    Write {
+        array: usize,
+        index: u32,
+        incoming: u32,
+    },
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -50,6 +58,7 @@ pub(in crate::native_artifact) struct Proof {
     pub sites: Vec<usize>,
     pub scalar_words: usize,
     pub words: usize,
+    pub returned_array: Option<usize>,
 }
 impl Proof {
     pub fn action(&self, site: usize) -> Option<&Operation> {
@@ -66,6 +75,12 @@ impl Proof {
     }
     pub fn view(&self, array: usize) -> usize {
         self.scalar_words + array * 4
+    }
+    pub fn writes(&self) -> bool {
+        self.arrays.iter().any(|array| array.writable)
+    }
+    pub fn private_flag(&self, array: usize) -> usize {
+        self.scalar_words + self.arrays.len() * 4 + array
     }
 }
 
@@ -96,6 +111,7 @@ struct Provenance<'a, 'p> {
     facts: &'a NativeProgramFacts<'p>,
     frames: &'a NativeBufferFrames,
     tail: &'a NativeTailLoop,
+    calls: &'a [Option<NativePreparedLibraryCall>],
     cache: BTreeMap<(u32, Option<usize>), Option<usize>>,
     active: BTreeSet<(u32, Option<usize>)>,
 }
@@ -157,6 +173,23 @@ impl Provenance<'_, '_> {
                     return None;
                 }
                 self.array(source.get(), None)?
+            } else if let (
+                Action::LibraryCall {
+                    operands, output, ..
+                },
+                None,
+            ) = (action, field)
+            {
+                if output.get() != value
+                    || !self
+                        .calls
+                        .get(site)?
+                        .as_ref()?
+                        .supports_unsigned_matrix_replace()
+                {
+                    return None;
+                }
+                self.array(operands.first()?.get(), None)?
             } else {
                 return None;
             };
@@ -178,12 +211,6 @@ pub(in crate::native_artifact) fn derive(
     let fields = frames
         .fields(tail.carrier())
         .ok_or("carrier escapes or lacks an exact private frame")?;
-    if plan.values()[tail.returned().get() as usize]
-        .scalar_kind()
-        .is_none()
-    {
-        return Err("leaf result is not a scalar");
-    }
     let iteration = plan
         .iterations()
         .iter()
@@ -218,6 +245,7 @@ pub(in crate::native_artifact) fn derive(
         facts: &facts,
         frames,
         tail,
+        calls,
         cache: BTreeMap::new(),
         active: BTreeSet::new(),
     };
@@ -231,12 +259,32 @@ pub(in crate::native_artifact) fn derive(
                 field: ordinal,
                 width: 0,
                 witness: usize::MAX,
+                writable: false,
             });
         }
     }
     if arrays.is_empty() {
         return Err("no invariant numeric arrays");
     }
+    let returned_array = if plan.values()[tail.returned().get() as usize]
+        .scalar_kind()
+        .is_some()
+    {
+        None
+    } else {
+        let field = provenance
+            .array(tail.returned().get(), None)
+            .ok_or("leaf result is not a scalar or a current numeric array")?;
+        if plan.values()[tail.returned().get() as usize].schema() != fields[field].schema() {
+            return Err("returned array requires a different schema binding");
+        }
+        Some(
+            arrays
+                .iter()
+                .position(|a| a.field == field)
+                .ok_or("returned array outside carrier")?,
+        )
+    };
     let mut actions = Vec::new();
     let mut frame_values = BTreeSet::from([tail.carrier().get()]);
     for &site in &sites {
@@ -297,7 +345,8 @@ pub(in crate::native_artifact) fn derive(
                 .ok_or("missing selected factory")?;
             let is_length = call.supports_unsigned_matrix_length();
             let is_read = call.supports_unsigned_matrix_element();
-            if !(is_length || is_read) {
+            let is_write = call.supports_unsigned_matrix_replace();
+            if !(is_length || is_read || is_write) {
                 return Err("unsupported selected library effect or operation");
             }
             let source = operands.first().ok_or("missing selected array")?;
@@ -318,10 +367,27 @@ pub(in crate::native_artifact) fn derive(
             }
             arrays[at].width = w;
             arrays[at].witness = arrays[at].witness.min(site);
+            arrays[at].writable |= is_write;
             if is_length {
                 Operation::Length {
                     array: at,
                     output: output.get(),
+                }
+            } else if is_write {
+                if operands.len() != 3
+                    || plan.values()[operands[2].get() as usize].scalar_kind()
+                        != Some(NativeScalarKind::U64)
+                    || plan.values()[operands[1].get() as usize]
+                        .scalar_kind()
+                        .and_then(|k| k.unsigned_maximum())
+                        .is_none()
+                {
+                    return Err("unsupported write operands");
+                }
+                Operation::Write {
+                    array: at,
+                    incoming: operands[1].get(),
+                    index: operands[2].get(),
                 }
             } else {
                 if operands.len() != 2
@@ -359,6 +425,16 @@ pub(in crate::native_artifact) fn derive(
     if arrays.iter().any(|array| array.witness == usize::MAX) {
         return Err("unwitnessed retained array");
     }
+    versions::validate(
+        plan,
+        tail,
+        frames,
+        &mut provenance,
+        &sites,
+        &actions,
+        &arrays,
+        returned_array,
+    )?;
     let mut scalar_words = 0;
     let frame_words = frame_values
         .into_iter()
@@ -404,6 +480,13 @@ pub(in crate::native_artifact) fn derive(
                 .checked_mul(4)
                 .ok_or("numeric view size overflows")?,
         )
+        .and_then(|n| {
+            n.checked_add(if arrays.iter().any(|a| a.writable) {
+                arrays.len()
+            } else {
+                0
+            })
+        })
         .ok_or("numeric word count overflows")?;
     Ok(Proof {
         arrays,
@@ -412,5 +495,6 @@ pub(in crate::native_artifact) fn derive(
         sites: sites.into_iter().collect(),
         scalar_words,
         words,
+        returned_array,
     })
 }

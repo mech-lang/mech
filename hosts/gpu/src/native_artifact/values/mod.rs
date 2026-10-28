@@ -23,6 +23,12 @@ pub struct NativeValueHandle {
     generation: u64,
 }
 
+#[cfg(feature = "canonical-native-program-runtime")]
+pub(in crate::native_artifact) struct PreparedValuePut {
+    handle: NativeValueHandle,
+    retained: u64,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum NativeValueError {
     Base(NativeExecutionError),
@@ -97,6 +103,72 @@ impl<'a> NativeValueArena<'a> {
             budget: budget.clone(),
             work_identity: work.identity(),
         })
+    }
+
+    /// Prepay one fixed-shape native producer's eventual slot installation.
+    /// The ticket binds this arena generation, exact type, same account and
+    /// retained bound. Installing it performs no new resource admission.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn prepare_put(
+        &self,
+        slot: u32,
+        example: &Value,
+        work: &mut NativeWorkMeter,
+    ) -> Result<PreparedValuePut, NativeValueError> {
+        self.check_work(work)?;
+        let index = slot as usize;
+        let ty = self.types.get(index).ok_or(NativeValueError::InvalidSlot)?;
+        if example.schema() != ty.schema || example.schema_key() != ty.key {
+            return Err(NativeValueError::TypeMismatch);
+        }
+        let retained = example
+            .memory_budget_retained_bytes(&self.budget)
+            .ok_or(NativeValueError::UnadmittedPayload)?;
+        let generation = self.generations.values()[index]
+            .checked_add(1)
+            .ok_or(NativeValueError::GenerationExhausted)?;
+        let retirement = retained
+            .checked_mul(4)
+            .and_then(|n| n.checked_add(64))
+            .ok_or(NativeExecutionError::Descriptor {
+                reason: "native value retirement work overflows",
+            })?;
+        work.charge(NativeExecutionPhase::Setup, retirement)?;
+        Ok(PreparedValuePut {
+            handle: NativeValueHandle {
+                domain: self.values.domain_id(),
+                slot,
+                generation,
+            },
+            retained,
+        })
+    }
+
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn put_prepared(
+        &mut self,
+        ticket: PreparedValuePut,
+        value: Value,
+    ) -> Result<(), NativeValueError> {
+        let index = ticket.handle.slot as usize;
+        let ty = self.types.get(index).ok_or(NativeValueError::InvalidSlot)?;
+        if ticket.handle.domain != self.values.domain_id()
+            || self.generations.values()[index].checked_add(1) != Some(ticket.handle.generation)
+        {
+            return Err(NativeValueError::StaleHandle);
+        }
+        if value.schema() != ty.schema || value.schema_key() != ty.key {
+            return Err(NativeValueError::TypeMismatch);
+        }
+        if !value
+            .memory_budget_retained_bytes(&self.budget)
+            .is_some_and(|bytes| bytes <= ticket.retained)
+        {
+            return Err(NativeValueError::UnadmittedPayload);
+        }
+        self.values.values_mut()[index] = Some(value);
+        self.generations.values_mut()[index] = ticket.handle.generation;
+        Ok(())
     }
 
     /// All fallible checks precede replacing an existing slot. No payload
