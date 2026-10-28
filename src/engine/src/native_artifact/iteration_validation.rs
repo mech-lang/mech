@@ -51,8 +51,8 @@ pub(crate) trait ControlPlan {
     fn lifecycle_barrier(&self, _block: usize) -> bool {
         false
     }
-    fn analysis_byte_limit(&self) -> u64 {
-        super::DEFAULT_NATIVE_ANALYSIS_BYTES
+    fn definition_table_byte_limit(&self) -> u64 {
+        super::DEFAULT_NATIVE_DEFINITION_TABLE_BYTES
     }
     fn cursor_cells(&self) -> usize {
         0
@@ -154,8 +154,8 @@ impl ControlPlan for NativeIterationArtifactPlan {
     }
 }
 impl ControlPlan for super::NativeProgramArtifactPlan {
-    fn analysis_byte_limit(&self) -> u64 {
-        self.analysis_byte_limit()
+    fn definition_table_byte_limit(&self) -> u64 {
+        self.definition_table_byte_limit()
     }
     common_plan_view!(super::NativeProgramArtifactPlan, super::NativeProgramType);
     fn collections(&self) -> &[super::NativeProgramCollection] {
@@ -278,14 +278,14 @@ const BAD: &str = "invalid counted-loop ownership or current-visit definitions";
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum ValidationError {
     Invalid(&'static str),
-    AnalysisLimit { required: u64, limit: u64 },
+    DefinitionTableLimit { required: u64, limit: u64 },
 }
 impl ValidationError {
     pub(crate) const fn reason(self) -> &'static str {
         match self {
             Self::Invalid(reason) => reason,
-            Self::AnalysisLimit { .. } => {
-                "current-visit analysis storage exceeds its configured byte limit"
+            Self::DefinitionTableLimit { .. } => {
+                "current-visit definition table exceeds its configured byte limit"
             }
         }
     }
@@ -486,13 +486,13 @@ pub(crate) fn validate_detailed(plan: &impl ControlPlan) -> Result<(), Validatio
     if plan.value_scopes().len() != count {
         return Err("current-visit scope count differs from value count".into());
     }
-    let analysis_bytes = DefinitionSet::storage_bytes(blocks.len(), cells)
-        .ok_or("current-visit analysis storage size overflow")?;
-    let required = u64::try_from(analysis_bytes)
-        .map_err(|_| "current-visit analysis storage size overflow")?;
-    let limit = plan.analysis_byte_limit();
+    let table_bytes = DefinitionSet::storage_bytes(blocks.len(), cells)
+        .ok_or("current-visit definition table size overflow")?;
+    let required = u64::try_from(table_bytes)
+        .map_err(|_| "current-visit definition table size overflow")?;
+    let limit = plan.definition_table_byte_limit();
     if required > limit {
-        return Err(ValidationError::AnalysisLimit { required, limit });
+        return Err(ValidationError::DefinitionTableLimit { required, limit });
     }
     let ty = |v: Value| plan.values().get(v.get() as usize).ok_or(BAD);
     let mut initial = DefinitionSet::new(cells).ok_or(BAD)?;

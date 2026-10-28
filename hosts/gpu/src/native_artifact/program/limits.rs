@@ -13,7 +13,7 @@ impl NativeProgramLimitMode {
     #[cfg(feature = "canonical-native-program")]
     pub const fn compilation(self) -> crate::native_artifact::NativeCompileLimits {
         crate::native_artifact::NativeCompileLimits {
-            max_analysis_bytes: u64::MAX,
+            max_definition_table_bytes: u64::MAX,
             max_nodes: u64::MAX,
             max_inputs: u64::MAX,
             max_outputs: u64::MAX,

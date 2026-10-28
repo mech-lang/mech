@@ -4,6 +4,57 @@ use mech_core::{ManagedMemoryBudget, ValueDataDraft as Data};
 use mech_gpu::native_artifact::{JitProgramArtifact, NativeCompileLimits};
 
 #[test]
+fn nested_current_visit_definition_tables_keep_exact_admission_diagnostics() {
+    use mech_engine::native_artifact::{
+        NativeArtifactLoweringError as Error,
+        lower_native_program_artifact_with_definition_table_limit as lower,
+    };
+    let source = "+> sequence\n[sequence/length([x + y | y <- values]) | x <- values<[u64]>]\n";
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in artifacts(source).0 {
+        let error = lower(&artifact, &catalog, 0).unwrap_err();
+        let Error::DefinitionTableLimit {
+            stage,
+            required,
+            limit: 0,
+        } = error
+        else {
+            panic!("{error:?}")
+        };
+        assert_eq!(stage, "current visits before lowering");
+        assert!(required > 0);
+        let plan = lower(&artifact, &catalog, required).unwrap();
+        assert!(plan.iterations().iter().any(|i| match i {
+            mech_engine::native_artifact::NativeControlLoop::Collection(i) => i.parent().is_some(),
+            _ => false,
+        }));
+        assert_eq!(plan.definition_table_byte_limit(), required);
+        assert_eq!(
+            lower(&artifact, &catalog, required - 1).unwrap_err(),
+            Error::DefinitionTableLimit {
+                stage,
+                required,
+                limit: required - 1
+            }
+        );
+        let mut compilation = NativeCompileLimits::default();
+        compilation.max_definition_table_bytes = required;
+        JitProgramArtifact::compile_with_limits(&artifact, &catalog, compilation).unwrap();
+        compilation.max_definition_table_bytes = required - 1;
+        let error = JitProgramArtifact::compile_with_limits(&artifact, &catalog, compilation)
+            .err()
+            .unwrap()
+            .to_string();
+        assert!(
+            error.contains("DefinitionTableLimit")
+                && error.contains(stage)
+                && error.contains(&required.to_string()),
+            "{error}"
+        );
+    }
+}
+
+#[test]
 fn sequential_recursive_calls_fit_compact_proof_rows_and_recover_after_denial() {
     let mut source = String::from(
         "walk(n<u64>) => <u64> | n => ((n > 0u64)? | true => walk(n - 1u64) | false => n).\n",

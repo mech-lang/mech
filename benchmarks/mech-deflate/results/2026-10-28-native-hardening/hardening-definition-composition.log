@@ -1,0 +1,9 @@
+
+running 2 tests
+test proof_storage_qualification::nested_current_visit_definition_tables_keep_exact_admission_diagnostics ... ok
+compact-proof blocks=6422 values=2890 old_dense_cells=18559580
+compact-proof blocks=6422 values=2890 old_dense_cells=18559580
+test proof_storage_qualification::sequential_recursive_calls_fit_compact_proof_rows_and_recover_after_denial ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 369 filtered out; finished in 22.26s
+

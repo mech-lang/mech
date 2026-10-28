@@ -1,0 +1,6 @@
+
+running 1 test
+test no_limits_qualification::no_limits_mode_admits_buffer_above_default_byte_budget_and_recovers ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 370 filtered out; finished in 5.74s
+

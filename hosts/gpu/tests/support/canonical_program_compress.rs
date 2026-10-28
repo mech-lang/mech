@@ -271,7 +271,7 @@ fn qualify_cases(
             cells.div_ceil(64) * 8 + std::mem::size_of::<usize>() + std::mem::size_of::<Vec<u64>>();
         println!(
             "{}",
-            serde_json::json!({"phase":"complete-native-accepted","artifact":form,"seconds":compile_start.elapsed().as_secs_f64(),"blocks":plan.blocks().len(),"values":plan.values().len(),"analysis_cells":cells,"estimated_definition_storage_bytes":row_bytes * plan.blocks().len(),"definition_storage_cap":plan.analysis_byte_limit()})
+            serde_json::json!({"phase":"complete-native-accepted","artifact":form,"seconds":compile_start.elapsed().as_secs_f64(),"blocks":plan.blocks().len(),"values":plan.values().len(),"analysis_cells":cells,"estimated_definition_storage_bytes":row_bytes * plan.blocks().len(),"definition_storage_cap":plan.definition_table_byte_limit()})
         );
         for case in cases {
             let memory = mode.memory_budget();

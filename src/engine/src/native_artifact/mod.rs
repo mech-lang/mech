@@ -58,7 +58,7 @@ mod program_image;
 pub(crate) mod program_image_proofs;
 pub(crate) mod program_image_read;
 pub use crate::resident::general::native_match_lowering::{
-    lower_native_program_artifact, lower_native_program_artifact_with_analysis_limit,
+    lower_native_program_artifact, lower_native_program_artifact_with_definition_table_limit,
 };
 pub use program::*;
 pub use program_image::encode_native_program_plan_image;
