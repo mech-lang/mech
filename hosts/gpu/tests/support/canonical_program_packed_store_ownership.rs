@@ -73,6 +73,7 @@ fn selected_unsigned_store_changed_bit_aliases_and_admission_are_exact() {
             } else {
                 (1u64 << width) - 1
             };
+            let start = work.used();
             let (first, changed) = call
                 .unsigned_matrix_replace(
                     original.clone(),
@@ -84,12 +85,92 @@ fn selected_unsigned_store_changed_bit_aliases_and_admission_are_exact() {
                     Default::default(),
                 )
                 .unwrap();
+            let cost = (work.used().0 - start.0, work.used().1 - start.1);
             assert!(changed);
             assert_ne!(
                 pointer(&first),
                 pointer(original),
                 "external alias requires a copy"
             );
+            // Independently price the retained source, one copied initialized
+            // payload, the prepared binding/schema envelope and one output.
+            let footprint = original.retained_footprint(artifact.schemas()).unwrap();
+            let payload = 6 * (width / 8) as u64;
+            let metadata = call.binding_metadata_bytes()
+                + artifact.schemas().clone_allocation_bound_bytes().unwrap()
+                + 4096;
+            let mut exact = policy;
+            exact.max_output_elements = Some(6);
+            exact.max_output_bytes = Some(footprint.retained_bytes);
+            exact.max_cloned_bytes = Some(payload);
+            exact.max_temporary_bytes =
+                Some(original.memory_budget_retained_bytes(&memory).unwrap() + metadata + payload);
+            exact.max_retained_nodes = Some(
+                original.memory_budget_retained_nodes(&memory).unwrap() + footprint.node_count + 8,
+            );
+            exact.max_compute_work = Some(cost.0);
+            exact.max_comparison_work = Some(cost.1);
+            drop(
+                call.unsigned_matrix_replace(
+                    original.clone(),
+                    2,
+                    high,
+                    true,
+                    exact,
+                    &work,
+                    Default::default(),
+                )
+                .unwrap(),
+            );
+            use mech_core::MemoryBudgetDimension as Dimension;
+            for dimension in [
+                Dimension::OutputElements,
+                Dimension::OutputBytes,
+                Dimension::ClonedBytes,
+                Dimension::TemporaryBytes,
+                Dimension::RetainedNodes,
+                Dimension::ComputeWork,
+                Dimension::ComparisonWork,
+            ] {
+                let mut short = exact;
+                let limit = match dimension {
+                    Dimension::OutputElements => &mut short.max_output_elements,
+                    Dimension::OutputBytes => &mut short.max_output_bytes,
+                    Dimension::ClonedBytes => &mut short.max_cloned_bytes,
+                    Dimension::TemporaryBytes => &mut short.max_temporary_bytes,
+                    Dimension::RetainedNodes => &mut short.max_retained_nodes,
+                    Dimension::ComputeWork => &mut short.max_compute_work,
+                    Dimension::ComparisonWork => &mut short.max_comparison_work,
+                    _ => unreachable!(),
+                };
+                *limit = Some(limit.unwrap() - 1);
+                let before = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                let error = call
+                    .unsigned_matrix_replace(
+                        original.clone(),
+                        2,
+                        high,
+                        true,
+                        short,
+                        &work,
+                        Default::default(),
+                    )
+                    .unwrap_err();
+                let denied = match error {
+                    mech_engine::native_artifact::NativeCollectionInvocationError::Plan(
+                        mech_core::MemoryPlanError::TargetLimitExceeded { violation },
+                    ) => violation.dimension,
+                    mech_engine::native_artifact::NativeCollectionInvocationError::Kernel(
+                        mech_core::ResidentKernelError::ResourceLimit { dimension, .. },
+                    ) => dimension,
+                    other => panic!("unexpected denial for {dimension:?}: {other:?}"),
+                };
+                assert_eq!(denied, dimension);
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    before
+                );
+            }
             let mut expected = (1..=6).map(word).collect::<Vec<_>>();
             expected[3] = word(high);
             assert_eq!(
