@@ -17,18 +17,11 @@ fn data(value: &serde_json::Value, width: u32) -> Data {
             .collect(),
     )
 }
-#[test]
-fn real_cost_model_updates_match_pinned_functions() {
+fn qualify_cost_models(header: &str, source_variant: &str) {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "../fixtures/native/deflate-costs-reference.json"
     ))
     .unwrap();
-    let header = concat!(
-        include_str!("../fixtures/native/deflate-huffman-level12.mec"),
-        "\n",
-        include_str!("../fixtures/native/deflate-optimal-costs.mec"),
-        "\n"
-    );
     for (mode, entry) in [
         (
             0,
@@ -90,7 +83,7 @@ fn real_cost_model_updates_match_pinned_functions() {
                 });
                 println!(
                     "{}",
-                    serde_json::json!({"witness":"real-cost-model-updates","artifact":form,"case":case["name"],"elapsed_seconds":start.elapsed().as_secs_f64(),"allocation_requests":requests,"requested_bytes":bytes,"result":format!("{result:?}")})
+                    serde_json::json!({"witness":"real-cost-model-updates","source_variant":source_variant,"artifact":form,"case":case["name"],"elapsed_seconds":start.elapsed().as_secs_f64(),"allocation_requests":requests,"requested_bytes":bytes,"result":format!("{result:?}")})
                 );
                 result.unwrap();
                 let Data::Record(fields) = output
@@ -126,4 +119,29 @@ fn real_cost_model_updates_match_pinned_functions() {
             }
         }
     }
+}
+
+#[path = "../../../../benchmarks/mech-deflate/source-variants/independent_tables.rs"]
+mod independent_tables;
+
+#[test]
+fn real_cost_model_updates_match_pinned_functions() {
+    let header = concat!(
+        include_str!("../fixtures/native/deflate-huffman-level12.mec"),
+        "\n",
+        include_str!("../fixtures/native/deflate-optimal-costs.mec"),
+        "\n"
+    );
+    qualify_cost_models(header, "pinned");
+}
+
+#[test]
+fn independently_constructed_cost_tables_match_unchanged_reference_cases() {
+    let header = concat!(
+        include_str!("../fixtures/native/deflate-huffman-level12.mec"),
+        "\n",
+        include_str!("../fixtures/native/deflate-optimal-costs.mec"),
+        "\n"
+    );
+    qualify_cost_models(&independent_tables::source(header), "independent-tables");
 }

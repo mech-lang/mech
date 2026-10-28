@@ -1,0 +1,69 @@
+// Source performance experiment: independent cost entries are constructed once.
+// Arithmetic, lookup tables and unchanged-prefix values match the pinned loops.
+// Other extents/starting positions use the retained original sequential helpers.
+optimal-default-literals(values<[u32]>, cost<u64>, i<u64>) => (out<[u32]>) :=
+  direct := (i == 0u64) && (sequence/length(values) == 256u64)
+  word := (direct? | true => huff-packed(cost) | false => 0u32)
+  out := (direct? | true => [word | j <- 0u64..=256u64, j < 256u64] | false => cost-table-as-row(optimal-default-literals-sequential(values, cost, i))).
+optimal-default-lengths(values<[u32]>, cost<u64>, i<u64>, slots<[u8]>, extras<[u8]>) => (out<[u32]>) :=
+  direct := (i == 3u64) && (sequence/length(values) == 259u64)
+  out := (direct?
+    | true => [((j < 3u64)? | true => huff-get32(values, j) | false => huff-packed(optimal-default-length-cost(j, cost, slots, extras))) | j <- 0u64..=259u64, j < 259u64]
+    | false => cost-table-as-row(optimal-default-lengths-sequential(values, cost, i, slots, extras))).
+optimal-default-offsets(values<[u32]>, i<u64>, extras<[u8]>) => (out<[u32]>) :=
+  direct := (i == 0u64) && (sequence/length(values) == 32u64)
+  out := (direct? | true => [huff-packed(optimal-default-offset-cost(j, extras)) | j <- 0u64..=32u64, j < 32u64] | false => cost-table-as-row(optimal-default-offsets-sequential(values, i, extras))).
+
+cost-table-code-literal(lens<[u8]>, i<u64>) => (out<u32>) :=
+  cost := optimal-cost-bits(huff-get8(lens, i), 13u64)
+  out := huff-packed(cost * 16u64).
+cost-table-code-length(lens<[u8]>, i<u64>, slots<[u8]>, extras<[u8]>) => (out<u32>) :=
+  slot<u64> := huff-get8(slots, i)
+  sym := 257u64 + slot
+  cost := optimal-cost-bits(huff-get8(lens, sym), 13u64)
+  extra<u64> := huff-get8(extras, slot)
+  total := cost + extra
+  out := huff-packed(total * 16u64).
+cost-table-code-offset(lens<[u8]>, i<u64>, extras<[u8]>) => (out<u32>) :=
+  cost := optimal-cost-bits(huff-get8(lens, i), 10u64)
+  extra<u64> := huff-get8(extras, i)
+  total := cost + extra
+  out := huff-packed(total * 16u64).
+optimal-code-literals(values<[u32]>, lens<[u8]>, i<u64>) => (out<[u32]>) :=
+  direct := (i == 0u64) && (sequence/length(values) == 256u64)
+  out := (direct? | true => [cost-table-code-literal(lens, j) | j <- 0u64..=256u64, j < 256u64] | false => cost-table-as-row(optimal-code-literals-sequential(values, lens, i))).
+optimal-code-lengths(values<[u32]>, lens<[u8]>, i<u64>, slots<[u8]>, extras<[u8]>) => (out<[u32]>) :=
+  direct := (i == 3u64) && (sequence/length(values) == 259u64)
+  out := (direct?
+    | true => [((j < 3u64)? | true => huff-get32(values, j) | false => cost-table-code-length(lens, j, slots, extras)) | j <- 0u64..=259u64, j < 259u64]
+    | false => cost-table-as-row(optimal-code-lengths-sequential(values, lens, i, slots, extras))).
+optimal-code-offsets(values<[u32]>, lens<[u8]>, i<u64>, extras<[u8]>) => (out<[u32]>) :=
+  direct := (i == 0u64) && (sequence/length(values) == 32u64)
+  out := (direct? | true => [cost-table-code-offset(lens, j, extras) | j <- 0u64..=32u64, j < 32u64] | false => cost-table-as-row(optimal-code-offsets-sequential(values, lens, i, extras))).
+
+cost-table-adjust-length(values<[u32]>, cost<u64>, change<u64>, i<u64>, slots<[u8]>, extras<[u8]>) => (out<u32>) :=
+  cur := huff-get32(values, i)
+  default-cost := optimal-default-length-cost(i, cost, slots, extras)
+  out := optimal-adjust-cost(cur, default-cost, change).
+cost-table-adjust-offset(values<[u32]>, change<u64>, i<u64>, extras<[u8]>) => (out<u32>) :=
+  cur := huff-get32(values, i)
+  default-cost := optimal-default-offset-cost(i, extras)
+  out := optimal-adjust-cost(cur, default-cost, change).
+optimal-adjust-literals(values<[u32]>, cost<u64>, change<u64>, i<u64>) => (out<[u32]>) :=
+  direct := (i == 0u64) && (sequence/length(values) == 256u64)
+  out := (direct? | true => [optimal-adjust-cost(huff-get32(values, j), cost, change) | j <- 0u64..=256u64, j < 256u64] | false => cost-table-as-row(optimal-adjust-literals-sequential(values, cost, change, i))).
+optimal-adjust-lengths(values<[u32]>, cost<u64>, change<u64>, i<u64>, slots<[u8]>, extras<[u8]>) => (out<[u32]>) :=
+  direct := (i == 3u64) && (sequence/length(values) == 259u64)
+  out := (direct?
+    | true => [((j < 3u64)? | true => huff-get32(values, j) | false => cost-table-adjust-length(values, cost, change, j, slots, extras)) | j <- 0u64..=259u64, j < 259u64]
+    | false => cost-table-as-row(optimal-adjust-lengths-sequential(values, cost, change, i, slots, extras))).
+optimal-adjust-offsets(values<[u32]>, change<u64>, i<u64>, extras<[u8]>) => (out<[u32]>) :=
+  direct := (i == 0u64) && (sequence/length(values) == 32u64)
+  out := (direct? | true => [cost-table-adjust-offset(values, change, j, extras) | j <- 0u64..=32u64, j < 32u64] | false => cost-table-as-row(optimal-adjust-offsets-sequential(values, change, i, extras))).
+
+// Cost arrays represent one-dimensional lists. The sequential fallback is
+// re-expressed as a row so both branches have the same exact source schema.
+// General multidimensional matrices are outside this benchmark variant.
+cost-table-as-row(values<[u32]>) => (out<[u32]>) :=
+  n := sequence/length(values)
+  out := [huff-get32(values, j) | j <- 0u64..=n, j < n].

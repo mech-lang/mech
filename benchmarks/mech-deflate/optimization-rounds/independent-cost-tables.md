@@ -20,7 +20,12 @@ comprehensions; the uniform literal default uses existing uniform construction.
 Preserve first-three length entries, all arithmetic/masks/order/tie behavior,
 lookup-table values and every non-table compressor function. For other input
 lengths or starting positions retain the original sequential helper, so malformed
-and suffix-call behavior remain available. Do not change tree/cache, search depth,
+and suffix-call behavior remain available for one-dimensional lists. Both
+branches must return an exact row schema: the successful sequential fallback is
+copied to a row, preserving vector contents while adding disclosed fallback
+allocation. Multidimensional matrices are outside this source experiment; the
+pinned compiler baseline retains their separately qualified semantics. Cost
+arrays in the actual compressor are one-dimensional lists throughout. Do not change tree/cache, search depth,
 nice/EOF limits, path/output reservation, clear/repetition or timing boundaries.
 No histogram reuse, dead-initializer removal, cache representation, writer or
 header optimization is bundled into this experiment.
@@ -41,3 +46,10 @@ allocation/accounting changes explicitly; they differ by design from the faithfu
 source baseline. Commit all results and failures before another optimization.
 Publish to draft #973, request review and cancel CI. Do not start larger inputs
 or any optional compiler project while this bounded experiment is unmeasured.
+
+Before primary timing, the direct/general matrix branch failed exact source-kind
+joining. A nominal-record join has the same restriction. The variant adapts its
+vector fallback to an explicit row with the existing comprehension constructs;
+no compiler/type-system change is made. Original/decoded reference cost cases
+and the unchanged pinned assembly test pass before complete timing. Preserve
+these failed source forms as setup evidence, not a new compiler work package.
