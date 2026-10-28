@@ -119,7 +119,19 @@ capability is assigned, not yet implemented.
 
 ## Current small timing
 
-The [latest eight-byte timing receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-08/REPORT.md)
+The [key-reuse packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-10/REPORT.md)
+measures **448.70× → 404.86× Roc**, 0.129673750 s to 0.117005125 s against a
+fresh 0.000289 s reference: **9.77% less elapsed time**. Managed projections reuse
+the existing prepared key after exact slot/schema/definition alignment checks in
+preparation and restoration. No new cache or mutable-geometry reuse is added.
+All 41 scoped Rust tests and twelve static checks pass; logical work is unchanged.
+The scalar allocation gates pass, but one scalar timing gate is unresolved:
+decoded U64 measures 1.0526× against the unchanged 1.05 limit. It is retained
+without rerunning for acceptance. This patch has no blanket scalar-latency pass.
+The assigned native numeric leaf feature remains pending; its baseline is not a
+claim of selection. Larger and deployed coverage is not refreshed.
+
+The [preceding mixed-state timing receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-08/REPORT.md)
 use the real tree/cache and unchanged 25 components. With **Roc = 1×**, mixed
 scalar state measures **490× → 455×**, 0.139637125 s to 0.129644084 s against a
 fresh 0.000285 s reference, or 7.16% less elapsed time. The existing private word

@@ -1,0 +1,25 @@
+{
+  "command": [
+    "/private/tmp/mech-projection-keys-round10-20261028/qualified/component-v2-tests",
+    "buffer_frame_qualification",
+    "argument_transport_qualification",
+    "shared_transport_qualification",
+    "scalar_state_qualification",
+    "closed_tail_qualification",
+    "costs_qualification",
+    "assembled_compressor_source_preserves_its_pinned_bytes",
+    "readonly_numeric_reduction_observes_real_allocation_and_transition_slopes",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 34.36725899996236,
+  "binary_sha256": "48d96ba6c74875dd2866b84c1553fea51219c182306b751d61b070bc6bc6222e",
+  "skipped": [
+    {
+      "module": "linked_qualification",
+      "source": "/private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_linked.rs",
+      "reason": "Linked Cargo subprocess qualification is separate from this existing component cohort."
+    }
+  ]
+}

@@ -568,3 +568,25 @@ fuel, owner lifetime and independently rederived image proofs. Selection must
 come from validated plans and original factories, never compressor identifiers.
 The existing true-cost loops and a generic weighted reduction are the acceptance
 witnesses. This next capability is not delivered by the source experiment.
+
+## Reuse exactly validated managed-projection keys
+
+Protocol/regression `618d60eaa99802b842618d27f258ac3bc1958ec5` and implementation
+`89a48f961a0905a83d81c3acd97a9e93fa40b691` reuse the existing prepared type-slot
+key. Both preparation and independent restoration establish exact index/schema/
+full-definition/table-key alignment. This fixes an inherited acceptance of two
+swapped, individually valid slots. Current owners, kinds, extents and finite
+admission stay fresh; no new cache or Engine type field is introduced.
+
+The [round 10 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-10/REPORT.md)
+records **448.70× → 404.86× Roc**, or **9.77% less elapsed time**, on the unchanged
+pinned eight-byte compressor. Exact bytes, inflation, aliases, reserve13 reuse,
+cleanup and logical work 875610515844 agree. There are 41 scoped Rust passes and
+twelve passing static checks. Seven of eight direct scalar timing gates pass;
+decoded U64 is 1.0526× and fails the unchanged 1.05 gate, with exact allocation
+counts/bytes. The cause is unresolved and the cohort is not rerun for acceptance.
+The Path-expression diagnostic setup failure is corrected and retained separately.
+Native-loop selection, broader linked/deployed tests and larger inputs remain
+pending; the optional source experiment stays separate. The next assignment
+continues the ordinary read-only numeric leaf capability, with private writes
+and growth excluded from the first slice. #973 remains draft; CI is cancelled.

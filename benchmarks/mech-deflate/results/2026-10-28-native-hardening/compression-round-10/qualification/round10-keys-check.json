@@ -1,0 +1,30 @@
+{
+  "name": "round10-keys-check",
+  "command": [
+    "cargo",
+    "check",
+    "--locked",
+    "--offline",
+    "--release",
+    "-j1",
+    "--manifest-path",
+    "benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--bins",
+    "--message-format=json"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "0a0dae3b5a3ffc319ce3d948063177194794c45f",
+  "dirty": " M hosts/gpu/src/native_artifact/program/image/wire/mod.rs\n M hosts/gpu/src/native_artifact/program/prepare/mod.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/buffer_frames.rs\n M hosts/gpu/tests/support/canonical_program_buffer_frames.rs\n?? benchmarks/mech-deflate/optimization-rounds/managed-projection-keys.md\n",
+  "exit": 0,
+  "seconds": 33.268887996673584,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round10-keys-check.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

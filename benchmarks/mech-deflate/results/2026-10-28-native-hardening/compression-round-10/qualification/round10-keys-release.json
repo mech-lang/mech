@@ -1,0 +1,30 @@
+{
+  "name": "round10-keys-release",
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--offline",
+    "--release",
+    "-j1",
+    "--manifest-path",
+    "benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--bins",
+    "--message-format=json"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "618d60eaa99802b842618d27f258ac3bc1958ec5",
+  "dirty": " M hosts/gpu/src/native_artifact/program/image/wire/mod.rs\n M hosts/gpu/src/native_artifact/program/prepare/mod.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/buffer_frames.rs\n",
+  "exit": 0,
+  "seconds": 452.1448919773102,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round10-keys-release.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}
