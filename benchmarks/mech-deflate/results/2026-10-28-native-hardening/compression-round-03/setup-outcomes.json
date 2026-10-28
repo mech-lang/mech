@@ -1,0 +1,33 @@
+{
+  "resolved_setup_failures": [
+    {
+      "command": "cargo metadata --offline --manifest-path benchmarks/mech-deflate/native-profile/Cargo.toml --format-version 1 (initial four-patch manifest)",
+      "failure": "Optional machine dependency resolution selected the published mech-combinatorics, which lacks native-plan.",
+      "resolution": "Retained all nine local machine patches; cargo tree confirms only four machine crates compile."
+    },
+    {
+      "command": "cargo fmt --manifest-path benchmarks/mech-deflate/native-profile/Cargo.toml --bin artifact_review",
+      "failure": "cargo fmt does not accept --bin.",
+      "resolution": "Used rustfmt for the new file, then cargo fmt --manifest-path ... --check passed."
+    },
+    {
+      "command": "round03-focused-release (first locked build)",
+      "failure": "Lockfile needed regeneration after adding the existing Core math_pow feature to preserve the prior Core configuration.",
+      "resolution": "Regenerated offline, then built with --locked; failed receipt retained."
+    },
+    {
+      "command": "initial focused-feature-check Python metadata walk",
+      "failure": "Cargo metadata includes optional dependency nodes; treating every resolved node as an active build overstates the machine set.",
+      "resolution": "Checked cargo tree -e normal and the actual compiler-artifact records instead; compiler feature equality checks passed."
+    },
+    {
+      "command": "initial analyze-profile.py allocation delta assertion",
+      "failure": "Expected one 16-byte schema header increment for an eight-store diagnostic. Actual delta was 128 bytes.",
+      "resolution": "Each reached store retains its own header. Check the 16-byte increment per store; preserve allocation requests and all original raw observations."
+    }
+  ],
+  "cancelled_build": {
+    "receipt": "round03-runtime-release.json",
+    "reason": "User requested avoiding unused math operations; full build deliberately terminated, not a compiler rejection."
+  }
+}

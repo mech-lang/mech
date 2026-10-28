@@ -1,0 +1,37 @@
+{
+  "name": "round03-memory-runtime-enabled",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-core",
+    "--no-default-features",
+    "--features",
+    "functions,u8,u64,f64,bool,string,matrixd",
+    "--test",
+    "memory_runtime",
+    "--test",
+    "memory_safety",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "1759737410073832f79848ae3588e55a20365859",
+  "dirty": " M src/core/src/schema/table.rs\n",
+  "exit": 0,
+  "seconds": 12.497771978378296,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round03-memory-runtime-enabled.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "compiler_implementation": "ef0e5d37a47c547a7c4a28f1bfae508f4d977cb8",
+  "schema_snapshot_tests": 96,
+  "memory_runtime_tests": 47,
+  "memory_safety_tests": 23,
+  "core_no_std": "passed",
+  "static_checks": 12,
+  "initial_memory_profile": "selected 0 tests, not counted; corrected enabled profile passed",
+  "release_build": "in progress",
+  "new_timing": "not collected",
+  "previous_publication": "fb9c64ab1500b165dc79c0ed4464ffad6467dbbf",
+  "previous_review": "https://github.com/mech-lang/mech/pull/973#issuecomment-6469200198",
+  "previous_ci_run": 40688965994,
+  "previous_ci_jobs_active": 0,
+  "previous_ci_jobs_total": 44
+}
