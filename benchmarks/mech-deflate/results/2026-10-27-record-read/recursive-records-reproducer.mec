@@ -1,0 +1,5 @@
++> sequence
+<entry> := <{length<u32> offset<u16> slot<u16>}>
+walk(entries<[entry]>, left<u64>) => (out<u64>) :=
+  out := ((left > 0u64)? | true => walk(entries, left - 1u64) | false => sequence/length(entries)).
+walk(entries<[entry]>, left<u64>)

@@ -295,6 +295,16 @@ pub(in crate::native_artifact) fn write_linked_application(
     let main = inputs
         .main
         .replace("@INSTALL_CANONICAL_FACTORIES@", &installation);
+    // A closed scalar Object can need no factories. Its empty catalog builder
+    // is consumed without mutation and must also compile with warnings denied.
+    let main = if installation.is_empty() {
+        main.replace(
+            "let mut builder = mech_core::FunctionCatalogBuilder::new();",
+            "let builder = mech_core::FunctionCatalogBuilder::new();",
+        )
+    } else {
+        main
+    };
     let factory_features = factory_feature_names
         .iter()
         .map(|feature| format!(", {}", json_string(feature)))

@@ -1,0 +1,12 @@
+{
+  "pr": "https://github.com/mech-lang/mech/pull/943",
+  "base": "1de0ee88e9bb882d5dddbfbc1ae4b864f51cddc7",
+  "reviewed_head": "6903862d4ef979c5ba7de9c4f331b1dba4f8cdb1",
+  "requested_comment_id": 6438858473,
+  "summary_comment_id": 6438863575,
+  "receipt_comment_id": 6438883696,
+  "review_completed_at": "2026-10-27T10:00:49.006992Z",
+  "has_any_findings": false,
+  "has_unresolved_findings": false,
+  "ci_cancel_requested": 40484947314
+}

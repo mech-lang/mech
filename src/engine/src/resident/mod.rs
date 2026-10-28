@@ -2,6 +2,8 @@ mod activation;
 mod arena;
 mod artifact;
 pub(crate) mod bench;
+#[cfg(all(feature = "resident-artifact", feature = "integer_bits"))]
+pub(crate) mod bits;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod budget;
 mod candidate;
@@ -19,7 +21,11 @@ pub(crate) mod map_ops;
 pub(crate) mod matrix_literal;
 #[cfg(all(
     feature = "resident-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 pub(crate) mod native_collection_semantics;
 #[cfg(feature = "resident-artifact")]
@@ -28,14 +34,20 @@ pub(crate) mod native_factory_linkage;
 pub(crate) mod native_semantics;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod numeric;
+#[cfg(feature = "resident-artifact")]
+mod packed_word_matrix;
 #[cfg(all(feature = "resident-artifact", feature = "pure_text"))]
 pub(crate) mod pure_text;
+#[cfg(all(feature = "resident-artifact", feature = "sequence_buffers"))]
+pub(crate) mod sequence_buffers;
 #[cfg(all(feature = "resident-artifact", feature = "sequence_sort"))]
 pub(crate) mod sequence_sort;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod set;
 #[cfg(all(feature = "resident-artifact", feature = "convert"))]
 pub(crate) mod set_conversion;
+#[cfg(any(feature = "resident-artifact", feature = "native-artifact"))]
+pub(crate) mod structural_values;
 #[cfg(all(feature = "resident-artifact", feature = "table"))]
 pub(crate) mod table;
 #[cfg(feature = "resident-artifact")]

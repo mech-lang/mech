@@ -1,0 +1,31 @@
+{
+  "name": "full-block-pinned-reference",
+  "command": [
+    "env",
+    "ROC_CACHE_DIR=/private/tmp/mech-word-reference-cache",
+    "python3",
+    "benchmarks/mech-deflate/matchfinder/generate_block_reference.py",
+    "/private/tmp/roc-deflate-repro-20261024/roc-deflate",
+    "--roc",
+    "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+    "--work-dir",
+    "/private/tmp/mech-stack-landscape-20261026/full-block-reference",
+    "--out",
+    "/private/tmp/mech-stack-landscape-20261026/full-block-reference/reference.json"
+  ],
+  "cwd": "/private/tmp/mech-deflate-reality-check",
+  "head": "96f59a9a22a100e7169bee8167d02cca07ac99ef",
+  "dirty": " M hosts/gpu/tests/canonical_artifact_program.rs\n?? benchmarks/mech-deflate/matchfinder/generate_block_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-block-heuristics.mec\n?? hosts/gpu/tests/fixtures/native/deflate-block-loop.mec\n?? hosts/gpu/tests/support/canonical_program_full_block.rs\n",
+  "exit": 0,
+  "seconds": 1.033193826675415,
+  "log": "/private/tmp/mech-stack-landscape-20261026/reality-check/full-block-pinned-reference.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

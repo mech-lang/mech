@@ -1,0 +1,29 @@
+{
+  "name": "reference-import-pin-tests",
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "scripts/tests",
+    "-p",
+    "test_deflate_block_reference_pin.py",
+    "-v"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "428436517187ab25ce19d6d2bd07cd9b01958aa2",
+  "dirty": " M benchmarks/mech-deflate/matchfinder/generate_block_reference.py\n?? scripts/tests/test_deflate_block_reference_pin.py\n",
+  "exit": 0,
+  "seconds": 0.7494521141052246,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/reference-import-pin-tests.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "base": "a82d50823e4140edd862886b0c6b5f813a81411c",
+  "production_compiler": "115188e17032e26341dd7983e0634589a9a490ab",
+  "compressor_components_revision": "566dfd1df2eb81eb95e2804d6b50a6334bdaca42",
+  "native_programs_changed": false,
+  "source_hashes": {
+    "run.py": "3fdc0583226e0a4e76fea75b8eae6df61848783f7c1e68399494f869433b06e2",
+    "README.md": "128036f957189c52d407ecc5f4bae2d8f46ccca4b65557ce43e36a494e438a3b",
+    "Bench.roc": "f468e1f38a467bc054d1cc9f2c3898ff550a593f7c5ed5a463910ebc1a0ed940",
+    "rust/Cargo.toml": "1b9af1a1c0b6bf33a5a87831f7da120889df3c2c1a59f6a56e0c397873490156",
+    "rust/Cargo.lock": "0b73c2295877b334a7d0591a4ced513e2acc020d32763b30591fe8e9b99ebc13",
+    "rust/build.rs": "59724e89a8b442d5524e038b674ed1b33a0d53f174abbde0ec0fcbb1de10452b",
+    "rust/src/main.rs": "c70984a3b378f0607909b91d27e60224dbc2ec6d51cc117a176b5c531f4a85bc",
+    "rust/src/pinned_allocator.rs": "050a1d160cc235d5321866a45840c76b5dadeaac30630cfed17eb19615ded1b6"
+  },
+  "selected_series": "deflate-library-comparison-isolated",
+  "validation": "1134 actual timed compressions,36 case/implementation groups; all exact self/reference checks and independent zlib decompression pass",
+  "fixture_inputs": "maintained nine-case fixture, two binary boundary fixtures, external pinned full-file corpus; generated input hashes in build.json",
+  "full_rust_streams": "Not checked in to avoid duplicating3.65MB. Output SHA256 and independently validated sizes retained; runner reproduces them.",
+  "timing_controls": "All builds finished; no matching compiler/compressor processes before or after; no parallel task work during selected series. Other user applications/normal system activity not isolated.",
+  "failure_disposition": {
+    "deflate-library-comparison": "Introduced outer-runner assertion rejected zero-duration observations below the reference clock1000ns resolution. Fixed to retain zeros and report below resolution; not a compressor failure.",
+    "deflate-library-comparison-final": "All final binaries built successfully. Pre-timing live-PID guard rejected a process that had just completed normally. No samples claimed; terminal completion verified before rerun without pause flag.",
+    "inherited_ci": "No production compiler/CI repair included; CI is canceled per user instruction."
+  }
+}

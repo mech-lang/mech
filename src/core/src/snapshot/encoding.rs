@@ -494,7 +494,14 @@ fn visit_sequence_work<E>(
     };
     if let Some((count, width)) = fixed {
         let bytes = work_bytes(count, width)?;
-        return visit_work_chunk(visitor, bytes, bytes, 1, count_encoded);
+        let retained = match values {
+            SequenceStorage::U8(values) => work_bytes(values.capacity(), width)?,
+            SequenceStorage::U16(values) => work_bytes(values.capacity(), width)?,
+            SequenceStorage::U32(values) => work_bytes(values.capacity(), width)?,
+            SequenceStorage::U64(values) => work_bytes(values.capacity(), width)?,
+            _ => bytes,
+        };
+        return visit_work_chunk(visitor, bytes, retained, 1, count_encoded);
     }
     match values {
         SequenceStorage::Unit(_) if matches!(schema, SchemaBody::Atom(_)) => {
@@ -915,18 +922,22 @@ fn retained_sequence_footprint(
     values: &SequenceStorage,
 ) -> Result<ValueFootprint, ValueFootprintError> {
     let (retained_bytes, node_count) = match values {
-        SequenceStorage::U8(values) => {
-            (checked_bytes(values.len(), core::mem::size_of::<u8>())?, 1)
-        }
-        SequenceStorage::U16(values) => {
-            (checked_bytes(values.len(), core::mem::size_of::<u16>())?, 1)
-        }
-        SequenceStorage::U32(values) => {
-            (checked_bytes(values.len(), core::mem::size_of::<u32>())?, 1)
-        }
-        SequenceStorage::U64(values) => {
-            (checked_bytes(values.len(), core::mem::size_of::<u64>())?, 1)
-        }
+        SequenceStorage::U8(values) => (
+            checked_bytes(values.capacity(), core::mem::size_of::<u8>())?,
+            1,
+        ),
+        SequenceStorage::U16(values) => (
+            checked_bytes(values.capacity(), core::mem::size_of::<u16>())?,
+            1,
+        ),
+        SequenceStorage::U32(values) => (
+            checked_bytes(values.capacity(), core::mem::size_of::<u32>())?,
+            1,
+        ),
+        SequenceStorage::U64(values) => (
+            checked_bytes(values.capacity(), core::mem::size_of::<u64>())?,
+            1,
+        ),
         SequenceStorage::U128(values) => (
             checked_bytes(values.len(), core::mem::size_of::<u128>())?,
             1,

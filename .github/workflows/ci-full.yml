@@ -387,6 +387,22 @@ jobs:
           cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --lib \
             snapshot::validation::tests::budget_registration_removal_and_same_owner_reuse_ignore_later_foreign_imports \
             -- --exact --test-threads=1
+      - name: Execute retained unsigned buffer ownership and allocation regressions
+        run: |
+          BUFFER_TESTS=$(cargo +nightly-2026-03-03 test --locked -p mech-core \
+            --all-features --test unsigned_buffer_capacity -- --list --exact \
+            retained_capacity_roundtrips_allocate_only_size_independent_snapshot_metadata)
+          test "$(printf '%s\n' "$BUFFER_TESTS" | awk '/^retained_capacity_roundtrips_allocate_only_size_independent_snapshot_metadata: test$/ { count += 1 } END { print count + 0 }')" -eq 1
+          cargo +nightly-2026-03-03 test --locked -p mech-core --all-features \
+            --test unsigned_buffer_capacity -- \
+            retained_capacity_roundtrips_allocate_only_size_independent_snapshot_metadata \
+            --exact --nocapture --test-threads=1
+          BUFFER_OWNERSHIP_TESTS=$(cargo +nightly-2026-03-03 test --locked -p mech-core \
+            --all-features --lib -- snapshot::validation::owned_unsigned_matrix::tests:: --list)
+          test "$(printf '%s\n' "$BUFFER_OWNERSHIP_TESTS" | awk '/^snapshot::validation::owned_unsigned_matrix::tests::.*: test$/ { count += 1 } END { print count + 0 }')" -eq 6
+          cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --lib -- \
+            snapshot::validation::owned_unsigned_matrix::tests:: \
+            snapshot::validation::owned_string::tests:: --test-threads=1
       - name: Execute the retained release-mode memory safety boundary
         run: |
           RUSTFLAGS="${RUSTFLAGS:-} -C debug-assertions=no" \
@@ -621,10 +637,21 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features full_source,native-artifact \
             --lib source_semantics::frontend::annotation_conversion_shape_tests:: -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features integer_bits \
+            --test integer_bits -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact \
+            --test program_artifact_contract committed_ -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features compiler,native-artifact \
+            --test matrix_block_legacy_fixtures \
+            retained_legacy_comprehension_bytes_and_revisions_remain_stable \
+            -- --exact --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native \
             --test canonical_artifact_native --test canonical_artifact_i64 --test canonical_artifact_f64 \
-            --test canonical_artifact_cast --test canonical_artifact_match \
+            --test canonical_artifact_cast --test canonical_artifact_bits --test canonical_artifact_match \
             --test canonical_artifact_iteration -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-program \
@@ -656,6 +683,9 @@ jobs:
             --lib resident::general::native_match_lowering::iteration_proof_tests -- --test-threads=1
           cargo +nightly-2026-03-03 check --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-runtime --lib
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features semantic-compiler,resident-artifact,sequence_buffers \
+            --test sequence_buffer_contract -- --test-threads=1
       - name: Execute secured canonical reference bytecode admission
         if: ${{ matrix.suite == 'cli' }}
         run: >-

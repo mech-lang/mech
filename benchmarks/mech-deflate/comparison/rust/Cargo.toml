@@ -1,0 +1,15 @@
+[package]
+name = "deflate-comparison"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+miniz_oxide = "=0.9.1"
+zlib-rs = { version = "=0.6.8", default-features = false, features = ["std"] }
+
+[profile.release]
+opt-level = 3
+

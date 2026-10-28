@@ -1,0 +1,286 @@
+{
+  "base": "23b53368273e32a985fe4d85629a66b6c83f6385",
+  "scope": "Canonical free-axis ordering only in function argument carriers; runtime, native code generation and canonical validation unchanged.",
+  "blocking_operation": {
+    "pinned_source": "671077457ff7ef3a3d44caf715a3fc595addf379",
+    "location": "package/BlockOut.roc:192-205",
+    "operation": "Append literal/length and offset code lengths into one U8 buffer reserved to their combined length, while retaining the independently shaped source buffer."
+  },
+  "minimal_reproducer": "+> sequence\ncopy(out<[u8]>, source<[u8]>, at<u64>) => <[u8]>\n  | (out, source, at) => ((at < sequence/length(source))? | true => copy(sequence/append(out, source[at + 1u64]), source, at + 1u64) | false => out).\ncopy(sequence/with-capacity(0u8, 320u64), source<[u8]>, 0u64)\n",
+  "diagnosis": {
+    "entry": "(U8[1,p0], U8[p1,p2], U64)",
+    "recursive_visit": "(U8[1,p2], U8[p0,p1], U64)",
+    "parameters": "Three independent unconstrained Turn axes. Projection marks the source axes Explicit; append creates an Inferred result axis. Canonical sorting then changes their order.",
+    "fix": "Make unconstrained Turn parameters local/Inferred when embedding each function argument. The canonicalizer then uses consistent first-use order. Preserve repeated-axis relationships, constants, bounds and lifetimes; do not weaken strict recursive schema validation."
+  },
+  "source_sha256": {
+    "src/engine/src/source_semantics/function_argument_shape.rs": "07a9bf675c449f50f0b15382be9a6f37a5f0dcb165274fc7686b331552a90845",
+    "src/engine/src/source_semantics/document_functions.rs": "48082d549c9931d73f2ed2dbec98b99c9fee7017b9a82f1e00b496f53e16c41a",
+    "src/engine/src/source_semantics/recursive_statement_functions.rs": "f7466f7befaa7a95ef63bfb0f16a933576664fd4f39764bcb683e3573a84505c",
+    "src/engine/src/source_semantics/frontend.rs": "2375127d6348210d4bdffda11d11cd36cd63ca57f33e095c07bcf9516f9ad9f4",
+    "hosts/gpu/tests/support/canonical_program_function_axes.rs": "e1bfb0d3b4177764331e692f503fb629d10bcc99f4e190c3ffc7fcf007587741",
+    "hosts/gpu/tests/canonical_artifact_program.rs": "d8390a69b980b97c0342b6edc617c9c19b93464c95efb4d761568b130999c183"
+  },
+  "maintained_tests": {
+    "engine_full_source_native_artifact_sequence_buffers": {
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0
+    },
+    "gpu_canonical_native_program": {
+      "passed": 17,
+      "failed": 0,
+      "ignored": 0
+    },
+    "coverage": "Pattern and statement recursion, original and decoded artifacts, resident/native agreement, selected load failure after partial append, prior publication and aliases, cleanup and retry; existing real buffer reservation, record transport and path qualification unchanged."
+  },
+  "static_checks": [
+    {
+      "command": [
+        "python3",
+        "scripts/check-production-resident-routing.py"
+      ],
+      "exit": 0,
+      "stdout": "Production resident-routing contract passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-source-catalog-entrypoints.py"
+      ],
+      "exit": 0,
+      "stdout": "Source catalog entry-point contract passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-native-host-catalog.py"
+      ],
+      "exit": 0,
+      "stdout": "native host catalog contract passed (five standard providers, six full providers, no actor migration linkages)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-native-build-analysis-layout.py"
+      ],
+      "exit": 0,
+      "stdout": "Native build analysis layout contract passed\n",
+      "stderr": ""
+    }
+  ],
+  "format": {
+    "command": "RUSTUP_TOOLCHAIN=nightly-2026-03-03 cargo fmt --all --check",
+    "exit": 0
+  },
+  "inventory": {
+    "command": "/private/tmp/mech-assertion-ci-python/bin/python: scripts/ci_test_inventory.inventory_gaps()",
+    "gaps": []
+  },
+  "receipts": [
+    {
+      "name": "function-axes-engine-qualification",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j1",
+        "-p",
+        "mech-engine",
+        "--no-default-features",
+        "--features",
+        "full_source,native-artifact,sequence_buffers",
+        "--lib",
+        "--",
+        "function_argument_shape",
+        "annotation_shape_identity",
+        "annotation_conversion_shape",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "23b53368273e32a985fe4d85629a66b6c83f6385",
+      "dirty": " M hosts/gpu/tests/canonical_artifact_program.rs\n M src/engine/src/source_semantics/document_functions.rs\n M src/engine/src/source_semantics/frontend.rs\n M src/engine/src/source_semantics/recursive_statement_functions.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/support/canonical_program_function_axes.rs\n?? hosts/gpu/tests/support/canonical_program_header.rs\n?? src/engine/src/source_semantics/function_argument_shape.rs\n",
+      "exit": 0,
+      "seconds": 66.83002305030823,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/function-axes-engine-qualification.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    {
+      "name": "function-axes-maintained-components",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j1",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_program",
+        "--",
+        "function_axes_qualification",
+        "buffer_frame_qualification",
+        "record_buffer_qualification",
+        "optimal_path_qualification",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "23b53368273e32a985fe4d85629a66b6c83f6385",
+      "dirty": " M hosts/gpu/tests/canonical_artifact_program.rs\n M src/engine/src/source_semantics/document_functions.rs\n M src/engine/src/source_semantics/frontend.rs\n M src/engine/src/source_semantics/recursive_statement_functions.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/support/canonical_program_function_axes.rs\n?? hosts/gpu/tests/support/canonical_program_header.rs\n?? src/engine/src/source_semantics/function_argument_shape.rs\n",
+      "exit": 0,
+      "seconds": 243.04202508926392,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/function-axes-maintained-components.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    {
+      "name": "dynamic-header-first-native",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j1",
+        "--manifest-path",
+        "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+        "header_qualification",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "23b53368273e32a985fe4d85629a66b6c83f6385",
+      "dirty": " M hosts/gpu/tests/canonical_artifact_program.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n",
+      "exit": 101,
+      "seconds": 50.14760494232178,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/dynamic-header-first-native.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    {
+      "name": "dynamic-header-reserved-copy-schema-diagnostic",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j1",
+        "--manifest-path",
+        "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+        "minimal_append_copy_schema",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "23b53368273e32a985fe4d85629a66b6c83f6385",
+      "dirty": " M hosts/gpu/tests/canonical_artifact_program.rs\n M src/engine/src/artifact/control.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n",
+      "exit": 101,
+      "seconds": 2.859468936920166,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/dynamic-header-reserved-copy-schema-diagnostic.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    {
+      "name": "dynamic-header-and-function-axes",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j1",
+        "--manifest-path",
+        "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+        "--",
+        "function_axes_qualification",
+        "header_qualification",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "23b53368273e32a985fe4d85629a66b6c83f6385",
+      "dirty": " M hosts/gpu/tests/canonical_artifact_program.rs\n M src/engine/src/source_semantics/document_functions.rs\n M src/engine/src/source_semantics/frontend.rs\n M src/engine/src/source_semantics/recursive_statement_functions.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/support/canonical_program_function_axes.rs\n?? hosts/gpu/tests/support/canonical_program_header.rs\n?? src/engine/src/source_semantics/function_argument_shape.rs\n",
+      "exit": 0,
+      "seconds": 110.42718696594238,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/dynamic-header-and-function-axes.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    }
+  ],
+  "unpublished_component_evidence": {
+    "header_cases": 8,
+    "precode_boundary_cases": 22,
+    "original_and_decoded": true,
+    "external_rust_tests": 4,
+    "note": "Header and cost port sources remain on the following work-in-progress component patch; not part of this compiler fix."
+  },
+  "dispositions": [
+    {
+      "failure": "Reserved-buffer recursive schema rejection",
+      "classification": "inherited at base",
+      "status": "fixed, covered by permanent regression"
+    },
+    {
+      "failure": "Header diagnostic requires 5562 control blocks; default allows 4096",
+      "classification": "expected finite admission",
+      "status": "new component diagnostic uses existing explicit 16384-block profile; defaults and existing test allowances unchanged"
+    },
+    {
+      "failure": "First exploratory copy accepted an arbitrary 2D destination then appended a row vector",
+      "classification": "inherited distinct shape-changing case",
+      "status": "outside required reserved-row operation; no generalized reshape claim"
+    },
+    {
+      "failure": "Initial multi-filter Cargo syntax error",
+      "classification": "development command error",
+      "status": "corrected; no tests counted from rejected invocation"
+    }
+  ],
+  "ci": "Remote CI is to be canceled as requested, not awaited; no remote-CI pass claimed.",
+  "remaining": "Complete optimizer decisions, block writer, compress_into, exact byte and decompression checks, then complete compression timing."
+}

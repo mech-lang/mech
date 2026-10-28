@@ -18,16 +18,75 @@ use mech_core::{
 };
 use std::sync::Arc;
 
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+fn composite_shape_from_children(template: &NativeProgramLibraryTemplate) -> bool {
+    matches!(
+        template.primitive(),
+        crate::resident::native_collection_semantics::NativeCollectionPrimitive::CompositePack(_)
+    ) && !template.output().dimension_parameters().is_empty()
+        && matches!(
+            template.output().body(),
+            mech_core::SchemaBody::Tuple(_) | mech_core::SchemaBody::Record(_)
+        )
+}
+
+fn buffer_shape_follows_input(template: &NativeProgramLibraryTemplate) -> bool {
+    #[cfg(feature = "sequence_buffers")]
+    return matches!(
+        template.primitive(),
+        crate::native_artifact::NativeCollectionPrimitive::SequenceReserve
+            | crate::native_artifact::NativeCollectionPrimitive::SequenceAppend
+            | crate::native_artifact::NativeCollectionPrimitive::SequenceAppendLeBytes
+            | crate::native_artifact::NativeCollectionPrimitive::SequenceAppendSublist
+    );
+    #[cfg(not(feature = "sequence_buffers"))]
+    {
+        let _ = template;
+        false
+    }
+}
+
+fn record_selector(
+    template: &NativeProgramLibraryTemplate,
+    inputs: &[Option<Value>],
+) -> Option<u64> {
+    if template.primitive() != crate::native_artifact::NativeCollectionPrimitive::RecordFieldAccess
+    {
+        return None;
+    }
+    match inputs.get(1)?.as_ref()?.data() {
+        mech_core::ValueData::Id(id) => Some(*id),
+        _ => None,
+    }
+}
+
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 #[path = "native_collection_prepared_image.rs"]
 mod image;
 
+#[cfg(feature = "sequence_buffers")]
+#[path = "native_collection_buffer_frames.rs"]
+mod buffer_frames;
 #[path = "native_collection_histogram.rs"]
 mod histogram;
+#[path = "native_collection_record_words.rs"]
+mod record_words;
 #[path = "native_collection_string_map_entry.rs"]
 mod string_map_entry;
 #[path = "native_collection_string_span.rs"]
 mod string_span;
+#[cfg(feature = "sequence_buffers")]
+#[path = "native_collection_unsigned_buffers.rs"]
+mod unsigned_buffers;
+#[cfg(feature = "pure_text")]
+#[path = "native_collection_unsigned_lengths.rs"]
+mod unsigned_lengths;
+#[path = "native_collection_word_reads.rs"]
+mod word_reads;
+
 pub use string_span::NativeSelectedStringSpanSelector;
 #[cfg(feature = "pure_text")]
 #[path = "native_collection_private_string.rs"]
@@ -176,8 +235,10 @@ pub fn prepare_native_program_library_call(
     // with the shared schema-depth/evidence bound below, before bind_values.
     // Numeric ranges, positional matrix selection and scalar-key map lookup
     // contain at most rank-two scalar matrices or two atomic map children;
-    // selector state has fixed metadata size. Shallow map/tuple/record packs
-    // add one atomic input port per child, already included in `ports`.
+    // selector state has fixed metadata size. Tuple/record packs add one input
+    // port per component. Their current-shape resolver closes component schema
+    // trees and stages dimension witnesses; these are bounded by the port-schema
+    // clone envelope below, independently of the buffers' element counts.
     // Build/NoAdditionalScratch ranges add no implementation scratch entries;
     // CanonicalFinalize String selection/matrix conversion uses the same output entry family.
     // Tests assert the actual NativeHost plan stays within this entry bound.
@@ -248,14 +309,16 @@ pub fn prepare_native_program_library_call(
         .and_then(|n| n.checked_add(parameters.checked_mul(16)?))
         .and_then(|n| n.checked_add(256))
         .ok_or_else(|| super::invalid(node))?;
-    let output_follows_input = matches!(
-        template.contract(),
-        mech_core::ResolvedOperationContract::Declared(contract)
-            if matches!(&contract.outputs[0].construction,
-                mech_core::OutputConstruction::FullWrite {
-                    shape: mech_core::ShapeRule::SameAsInput { .. }
-                })
-    );
+    let output_follows_input = composite_shape_from_children(&template)
+        || buffer_shape_follows_input(&template)
+        || matches!(
+            template.contract(),
+            mech_core::ResolvedOperationContract::Declared(contract)
+                if matches!(&contract.outputs[0].construction,
+                    mech_core::OutputConstruction::FullWrite {
+                        shape: mech_core::ShapeRule::SameAsInput { .. }
+                    } | mech_core::OutputConstruction::ReadModifyWrite { .. })
+        );
     let (span_selector_metadata_bytes, span_selector_work) =
         string_span::selector_geometry_bounds(&template).ok_or_else(|| super::invalid(node))?;
     #[cfg(feature = "pure_text")]
@@ -321,7 +384,11 @@ impl NativePreparedLibraryCall {
     /// strategy, NOT a kernel invocation or a materialized Matrix. The caller
     /// prepays binding_work and reserves binding_metadata_bytes on the SAME
     /// invocation account before this schema/shape traversal or allocation.
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     pub fn selected_u64_range_cardinality(&self, start: u64, end: u64) -> Result<u64, InvokeError> {
         let count = self.selected_u64_range_count(start, end)?;
         self.validate_selected_u64_range_shape(count)?;
@@ -330,7 +397,11 @@ impl NativePreparedLibraryCall {
 
     // Endpoint arithmetic remains fresh even when a constructor-private
     // selector carries an already checked shape for the same cardinality.
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     fn selected_u64_range_count(&self, start: u64, end: u64) -> Result<u64, InvokeError> {
         use crate::native_artifact::NativeCollectionPrimitive as Primitive;
         use mech_core::{IntegerWidth, SchemaBody, snapshot::ValueDataDraft};
@@ -362,7 +433,11 @@ impl NativePreparedLibraryCall {
             .map_err(|_| InvokeError::Kernel(mech_core::ResidentKernelError::InvalidShape))
     }
 
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     fn validate_selected_u64_range_shape(&self, count: u64) -> Result<(), InvokeError> {
         // Exactly the ordinary range's shape resolver, including parameter
         // bounds and fixed cardinality constraints. Never silently retag it.
@@ -458,11 +533,70 @@ impl NativePreparedLibraryCall {
             .collect::<Vec<_>>();
         let current_shape;
         let empty_shape;
-        let output_parameters = if let mech_core::OutputConstruction::FullWrite {
-            shape: mech_core::ShapeRule::SameAsInput { input },
-        } = &contract.outputs[0].construction
-        {
-            let index = usize::from(*input);
+        let shape_input = match &contract.outputs[0].construction {
+            mech_core::OutputConstruction::FullWrite {
+                shape: mech_core::ShapeRule::SameAsInput { input },
+            } => Some(*input),
+            mech_core::OutputConstruction::ReadModifyWrite { base_input, .. } => Some(*base_input),
+            _ => None,
+        };
+        let output_parameters = if buffer_shape_follows_input(&self.template) {
+            let source = inputs
+                .first()
+                .and_then(Option::as_ref)
+                .ok_or(InvokeError::InvalidInput)?;
+            let mech_core::ValueData::Matrix(matrix) = source.data() else {
+                return Err(InvokeError::InvalidInput);
+            };
+            let count = matrix.elements().len() as u64;
+            #[cfg(feature = "sequence_buffers")]
+            let count = match self.template.primitive() {
+                crate::native_artifact::NativeCollectionPrimitive::SequenceAppend => {
+                    count.checked_add(1).ok_or(InvokeError::InvalidInput)?
+                }
+                crate::native_artifact::NativeCollectionPrimitive::SequenceAppendSublist => count
+                    .checked_add(
+                        prepared_sublist_count(&self.template, inputs)
+                            .ok_or(InvokeError::InvalidInput)?,
+                    )
+                    .ok_or(InvokeError::InvalidInput)?,
+                crate::native_artifact::NativeCollectionPrimitive::SequenceAppendLeBytes => {
+                    let Some(mech_core::ValueData::U8(bytes @ 0..=8)) =
+                        inputs.get(2).and_then(Option::as_ref).map(Value::data)
+                    else {
+                        return Err(InvokeError::InvalidInput);
+                    };
+                    count
+                        .checked_add(u64::from(*bytes))
+                        .ok_or(InvokeError::InvalidInput)?
+                }
+                _ => count,
+            };
+            current_shape =
+                mech_core::shape_for_resolved_extents(self.template.output(), &[1, count])
+                    .map_err(|_| InvokeError::InvalidInput)?;
+            current_shape.parameter_values()
+        } else if composite_shape_from_children(&self.template) {
+            // Each child's parameter tape belongs to its own schema. Infer
+            // the aggregate's CURRENT shape before binding, including after a
+            // prior result with different extents. This runs inside the same
+            // prepaid schema/binding envelope as bind_current below.
+            let children = inputs
+                .iter()
+                .map(|value| {
+                    let value = value.as_ref().unwrap();
+                    (value.schema(), value.shape().clone())
+                })
+                .collect::<Vec<_>>();
+            current_shape = mech_core::snapshot::CompositeSnapshotConstructor::shape_for_children(
+                contract.outputs[0].schema,
+                &children,
+                &self.schemas,
+            )
+            .map_err(|_| InvokeError::InvalidInput)?;
+            current_shape.parameter_values()
+        } else if let Some(input) = shape_input {
+            let index = usize::from(input);
             let source = inputs
                 .get(index)
                 .and_then(Option::as_ref)
@@ -499,6 +633,7 @@ impl NativePreparedLibraryCall {
             self.factory,
             &parameters,
             output_parameters,
+            record_selector(&self.template, inputs),
             limits,
         )
         .map_err(InvokeError::Binding)
@@ -510,6 +645,72 @@ impl NativePreparedLibraryCall {
         inputs: &[Option<Value>],
         output: &Option<Value>,
     ) -> bool {
+        #[cfg(feature = "sequence_buffers")]
+        if self.template.primitive()
+            == crate::native_artifact::NativeCollectionPrimitive::SequenceAppendSublist
+        {
+            let Some(mech_core::ValueData::Matrix(source)) =
+                inputs.first().and_then(Option::as_ref).map(Value::data)
+            else {
+                return false;
+            };
+            let Some(count) = prepared_sublist_count(&self.template, inputs) else {
+                return false;
+            };
+            let mech_core::SchemaBody::Matrix { dimensions, .. } = self.template.output().body()
+            else {
+                return false;
+            };
+            if (source.elements().len() as u64).checked_add(count)
+                != call
+                    .output()
+                    .shape_instance
+                    .resolve_dimension(&dimensions[1])
+                    .ok()
+            {
+                return false;
+            }
+        }
+        #[cfg(feature = "sequence_buffers")]
+        if self.template.primitive()
+            == crate::native_artifact::NativeCollectionPrimitive::SequenceAppendLeBytes
+        {
+            let Some(mech_core::ValueData::Matrix(source)) =
+                inputs.first().and_then(Option::as_ref).map(Value::data)
+            else {
+                return false;
+            };
+            let Some(mech_core::ValueData::U8(count @ 0..=8)) =
+                inputs.get(2).and_then(Option::as_ref).map(Value::data)
+            else {
+                return false;
+            };
+            let mech_core::SchemaBody::Matrix { dimensions, .. } = self.template.output().body()
+            else {
+                return false;
+            };
+            let expected = (source.elements().len() as u64).checked_add(u64::from(*count));
+            if expected
+                != call
+                    .output()
+                    .shape_instance
+                    .resolve_dimension(&dimensions[1])
+                    .ok()
+            {
+                return false;
+            }
+        }
+        if self.template.primitive()
+            == crate::native_artifact::NativeCollectionPrimitive::RecordFieldAccess
+            && call
+                .inputs()
+                .get(1)
+                .and_then(|input| input.resolved_selector)
+                != record_selector(&self.template, inputs)
+                    .map(mech_core::ResidentResolvedSelector::Id)
+        {
+            return false;
+        }
         if inputs.len() != call.inputs().len()
             || !inputs
                 .iter()
@@ -582,6 +783,33 @@ impl NativePreparedLibraryCall {
                     .as_ref()
                     .and_then(|binding| binding.call.as_ref())
                     .is_some_and(|call| self.geometry_matches(call, inputs, output));
+                if !hit && cache.binding.is_none() {
+                    work.charge(512, 0)?;
+                    // Binding capacity is already subtracted from the nested
+                    // temporary allowance below. Their complete coexistence
+                    // bound is therefore the original finite allowance, plus
+                    // the two concrete scope owners. Prove that headroom
+                    // before retaining a new optional binding. No binder or
+                    // kernel runs while these probe bytes are held.
+                    let headroom = limits.max_temporary_bytes.unwrap().checked_add(
+                        crate::resident::budget::payload::native_scope_metadata_bytes(),
+                    );
+                    let fits = match headroom {
+                        Some(bytes) => match memory.reserve_capacity(bytes) {
+                            Ok(probe) => {
+                                drop(probe);
+                                true
+                            }
+                            Err(mech_core::MemoryRuntimeError::BudgetExceeded { .. }) => false,
+                            Err(error) => return Err(error.into()),
+                        },
+                        None => false,
+                    };
+                    if !fits {
+                        work.charge(self.binding_work, 0)?;
+                        return self.invoke_validated_current(inputs, output, limits, work);
+                    }
+                }
                 if !hit {
                     let owner_bytes = core::mem::size_of::<CachedBinding>() as u64;
                     let bytes = self
@@ -704,37 +932,70 @@ impl NativePreparedLibraryCall {
                 work.charge(self.binding_work, 0)?;
                 let memory = work.memory_budget();
                 self.validate_values(inputs, output, &memory)?;
-                live::check_measurement_with_limits(
-                    CurrentMemoryFootprint::default(),
-                    ResourceDemand {
-                        turn_peak_bytes: self.binding_bytes,
-                        retained_nodes: self.binding_nodes,
-                        ..ResourceDemand::default()
-                    },
-                    limits,
-                )?;
-                let _binding = memory.reserve_capacity(self.binding_bytes)?;
-                // This record remains live during invocation. Its reservation is
-                // therefore subtracted from the nested temporary allowance; a
-                // large invocation account cannot lift the original call policy.
-                let mut nested = limits;
-                nested.max_temporary_bytes = Some(
-                    limits
-                        .max_temporary_bytes
-                        .unwrap()
-                        .checked_sub(self.binding_bytes)
-                        .ok_or(MemoryPlanError::TargetAddressOverflow)?,
-                );
-                nested.max_retained_nodes = Some(
-                    limits
-                        .max_retained_nodes
-                        .unwrap()
-                        .checked_sub(self.binding_nodes)
-                        .ok_or(MemoryPlanError::TargetAddressOverflow)?,
-                );
-                let call = self.bind_values(inputs, output, nested)?;
-                call.invoke(inputs, output, work)
+                self.invoke_validated_current(inputs, output, limits, work)
             },
         )?
     }
+    // Both entry points already validated their exact operands and charged
+    // binding work inside the original enclosing call scope. Sharing this
+    // leaf path cannot renew that scope or change its publication boundary.
+    fn invoke_validated_current(
+        &self,
+        inputs: &[Option<Value>],
+        output: &mut Option<Value>,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+    ) -> Result<bool, InvokeError> {
+        let memory = work.memory_budget();
+        live::check_measurement_with_limits(
+            CurrentMemoryFootprint::default(),
+            ResourceDemand {
+                turn_peak_bytes: self.binding_bytes,
+                retained_nodes: self.binding_nodes,
+                ..ResourceDemand::default()
+            },
+            limits,
+        )?;
+        let _binding = memory.reserve_capacity(self.binding_bytes)?;
+        // This record remains live during invocation. Its reservation is
+        // therefore subtracted from the nested temporary allowance; a
+        // large invocation account cannot lift the original call policy.
+        let mut nested = limits;
+        nested.max_temporary_bytes = Some(
+            limits
+                .max_temporary_bytes
+                .unwrap()
+                .checked_sub(self.binding_bytes)
+                .ok_or(MemoryPlanError::TargetAddressOverflow)?,
+        );
+        nested.max_retained_nodes = Some(
+            limits
+                .max_retained_nodes
+                .unwrap()
+                .checked_sub(self.binding_nodes)
+                .ok_or(MemoryPlanError::TargetAddressOverflow)?,
+        );
+        let call = self.bind_values(inputs, output, nested)?;
+        call.invoke(inputs, output, work)
+    }
+}
+
+#[cfg(feature = "sequence_buffers")]
+fn prepared_sublist_count(
+    template: &NativeProgramLibraryTemplate,
+    inputs: &[Option<Value>],
+) -> Option<u64> {
+    use crate::intrinsics::sequence_buffers as buffers;
+    let source = inputs.get(1)?.as_ref()?;
+    let width = buffers::width(buffers::output_element(
+        buffers::Operation::AppendSublist,
+        template.output().body(),
+    )?)?;
+    let start = buffers::scalar_word(inputs.get(2)?.as_ref()?.data()).ok()?;
+    let count = buffers::scalar_word(inputs.get(3)?.as_ref()?.data()).ok()?;
+    Some(
+        buffers::sublist_range(source, width, start, count)
+            .ok()?
+            .len() as u64,
+    )
 }

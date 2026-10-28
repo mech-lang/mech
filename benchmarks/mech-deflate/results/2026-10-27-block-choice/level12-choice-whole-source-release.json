@@ -1,0 +1,23 @@
+{
+  "name": "level12-choice-whole-source-release",
+  "command": [
+    "env",
+    "MECH_DEFLATE_ARTIFACT=/private/tmp/mech-linear-restack-20261026/complete-compressor-choice-qualified.mbc",
+    "/private/tmp/mech-live-control-target/release/complete-reality"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "566dfd1df2eb81eb95e2804d6b50a6334bdaca42",
+  "dirty": " M hosts/gpu/tests/fixtures/native/deflate-compress-reference.json\n M hosts/gpu/tests/support/canonical_program_compress.rs\n",
+  "exit": 0,
+  "seconds": 371.624027967453,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/level12-choice-whole-source-release.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

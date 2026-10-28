@@ -1,0 +1,197 @@
+// Level-12 match collection from CompressOptimal.roc:753-970 and 1232-1273,
+// pinned at 671077457ff7ef3a3d44caf715a3fc595addf379.
+// Concatenate after matchfinder, binary-tree, prefix, statistics and heuristics.
+// Large buffers remain separate function arguments. The actual tree skip has
+// no cache argument: its caller writes each position's zero-match header.
+
+<optimal-sample> := <{fresh-frequencies<[u32]> fresh-observations<[u32]> number-fresh<u64> next-observation<u64>}>
+<optimal-sampled-position> := <{tables<[u16]> cache<[u32]> next-hash3<u64> next-hash4<u64> next-position<u64> cache-ptr<u64> base<u64> next-slide<u64> maximum<u64> nice<u64> skip<u64> fresh-frequencies<[u32]> fresh-observations<[u32]> number-fresh<u64> next-observation<u64>}>
+<optimal-block-decision> := <{frequencies<[u32]> fresh-frequencies<[u32]> observations<[u32]> fresh-observations<[u32]> number-observations<u64> number-fresh<u64> previous-check<u64> have-previous-check<u64> changed<u64> keep-going<bool>}>
+<optimal-collected-block> := <{tables<[u16]> cache<[u32]> next-hash3<u64> next-hash4<u64> next-position<u64> cache-ptr<u64> base<u64> next-slide<u64> maximum<u64> nice<u64> frequencies<[u32]> fresh-frequencies<[u32]> observations<[u32]> fresh-observations<[u32]> number-observations<u64> number-fresh<u64> block-begin<u64> block-end<u64> cache-end<u64> rewound<u64> is-final<u64> changed<u64> previous-check<u64> have-previous-check<u64>}>
+<optimal-carried-block> := <{cache<[u32]> cache-ptr<u64> frequencies<[u32]> fresh-frequencies<[u32]> observations<[u32]> fresh-observations<[u32]> number-observations<u64> number-fresh<u64> block-begin<u64>}>
+
+optimal-increment-counter(counters<[u32]>, index<u64>) => (out<[u32]>) :=
+  value := bt-narrow32(bits/wrapping-add(bt-word32(optimal-counter(counters, index)), 1u64))
+  ~next := counters
+  next[index + 1u64] = value
+  out := next.
+
+optimal-sample-match(frequencies<[u32]>, observations<[u32]>, number<u64>, position<u64>, best<u64>) => (out<optimal-sample>) :=
+  kind := 8u64 + ((best >= 9u64)? | true => 1u64 | false => 0u64)
+  fresh-observations := optimal-increment-counter(observations, kind)
+  next-number := bits/wrapping-add(number, 1u64)
+  next-observation := bits/wrapping-add(position, best)
+  fresh-frequencies := optimal-increment-counter(frequencies, best)
+  out := {fresh-frequencies: fresh-frequencies, fresh-observations: fresh-observations, number-fresh: next-number, next-observation: next-observation}.
+
+optimal-sample-literal(frequencies<[u32]>, observations<[u32]>, number<u64>, position<u64>, input<[u8]>) => (out<optimal-sample>) :=
+  literal := byte(input, position)
+  kind := bits/or(bits/and(bits/shift-right-wrap(literal, 5u64), 6u64), bits/and(literal, 1u64))
+  fresh := optimal-increment-counter(observations, kind)
+  out := {fresh-frequencies: frequencies, fresh-observations: fresh, number-fresh: bits/wrapping-add(number, 1u64), next-observation: bits/wrapping-add(position, 1u64)}.
+
+optimal-sample-position(frequencies<[u32]>, observations<[u32]>, number<u64>, next-observation<u64>, position<u64>, best<u64>, minimum<u64>, input<[u8]>) => (out<optimal-sample>) :=
+  out := ((position >= next-observation)?
+    | false => {fresh-frequencies: frequencies, fresh-observations: observations, number-fresh: number, next-observation: next-observation}
+    | true => ((best >= minimum)?
+        | true => optimal-sample-match(frequencies, observations, number, position, best)
+        | false => optimal-sample-literal(frequencies, observations, number, position, input))).
+
+optimal-search-position(tables<[u16]>, cache<[u32]>, hash3<u64>, hash4<u64>, input<[u8]>, position<u64>, base<u64>, next-slide<u64>, maximum<u64>, nice<u64>, pointer<u64>, frequencies<[u32]>, observations<[u32]>, number<u64>, next-observation<u64>, minimum<u64>) => (out<optimal-sampled-position>) :=
+  remaining := bits/wrapping-sub(sequence/length(input), position)
+  slide := position == next-slide
+  mf := (slide? | true => rebase-nodes(tables) | false => tables)
+  current-base := (slide? | true => position | false => base)
+  slide-at := (slide? | true => bits/wrapping-add(position, bt-minimum(remaining, 32768u64)) | false => next-slide)
+  max-length := ((remaining < 258u64)? | true => remaining | false => maximum)
+  nice-length := ((remaining < 258u64)? | true => bt-minimum(nice, max-length) | false => nice)
+  advanced := ((max-length >= 5u64)?
+    | true => bt-get-matches(mf, hash3, hash4, input, current-base, bits/wrapping-sub(position, current-base), max-length, nice-length, 300u64, cache, pointer)
+    | false => {tables: mf, next-hash3: hash3, next-hash4: hash4, cache: cache, cache-ptr: pointer})
+  next-tables := advanced.tables
+  next-cache := advanced.cache
+  next-hash3 := advanced.next-hash3
+  next-hash4 := advanced.next-hash4
+  next-pointer := advanced.cache-ptr
+  best := ((next-pointer > pointer)? | true => bits/and(bt-word32(next-cache[next-pointer]), 65535u64) | false => 0u64)
+  sampled := optimal-sample-position(frequencies, observations, number, next-observation, position, best, minimum, input)
+  fresh-frequencies := sampled.fresh-frequencies
+  fresh-observations := sampled.fresh-observations
+  number-fresh := sampled.number-fresh
+  observe-at := sampled.next-observation
+  with-header := bt-put-entry(next-cache, next-pointer, bits/wrapping-sub(next-pointer, pointer), byte(input, position))
+  skip := (((best >= 3u64) && (best >= nice-length))? | true => bits/wrapping-sub(best, 1u64) | false => 0u64)
+  out := {tables: next-tables, cache: with-header, next-hash3: next-hash3, next-hash4: next-hash4, next-position: bits/wrapping-add(position, 1u64), cache-ptr: bits/wrapping-add(next-pointer, 1u64), base: current-base, next-slide: slide-at, maximum: max-length, nice: nice-length, skip: skip, fresh-frequencies: fresh-frequencies, fresh-observations: fresh-observations, number-fresh: number-fresh, next-observation: observe-at}.
+
+optimal-skip-run(tables<[u16]>, cache<[u32]>, hash3<u64>, hash4<u64>, input<[u8]>, position<u64>, base<u64>, next-slide<u64>, maximum<u64>, nice<u64>, skip<u64>, pointer<u64>) => (out<optimal-position>) :=
+  next := ((skip != 0u64)?
+    | true => optimal-collect-position(tables, cache, hash3, hash4, input, position, base, next-slide, maximum, nice, skip, pointer)
+    | false => {tables: tables, cache: cache, next-hash3: hash3, next-hash4: hash4, next-position: position, cache-ptr: pointer, base: base, next-slide: next-slide, maximum: maximum, nice: nice, skip: skip})
+  next-tables := next.tables
+  next-cache := next.cache
+  next-hash3 := next.next-hash3
+  next-hash4 := next.next-hash4
+  next-position := next.next-position
+  next-base := next.base
+  slide-at := next.next-slide
+  max-length := next.maximum
+  nice-length := next.nice
+  next-skip := next.skip
+  next-pointer := next.cache-ptr
+  out := ((skip != 0u64)?
+    | true => optimal-skip-run(next-tables, next-cache, next-hash3, next-hash4, input, next-position, next-base, slide-at, max-length, nice-length, next-skip, next-pointer)
+    | false => {tables: next-tables, cache: next-cache, next-hash3: next-hash3, next-hash4: next-hash4, next-position: next-position, cache-ptr: next-pointer, base: next-base, next-slide: slide-at, maximum: max-length, nice: nice-length, skip: next-skip}).
+
+optimal-merge-checkpoint(frequencies<[u32]>, fresh-frequencies<[u32]>, observations<[u32]>, fresh-observations<[u32]>, number-observations<u64>, number-fresh<u64>, position<u64>) => (out<optimal-block-decision>) :=
+  ms := optimal-merge-observations(fresh-observations, 0u64, observations, number-fresh, number-observations)
+  merged := optimal-merge-frequencies(frequencies, fresh-frequencies)
+  out := {frequencies: merged.total, fresh-frequencies: merged.fresh, observations: ms.observations, fresh-observations: ms.new-observations, number-observations: ms.num-observations, number-fresh: ms.num-new-observations, previous-check: position, have-previous-check: 1u64, changed: 0u64, keep-going: true}.
+
+optimal-block-decision(frequencies<[u32]>, fresh-frequencies<[u32]>, observations<[u32]>, fresh-observations<[u32]>, number-observations<u64>, number-fresh<u64>, position<u64>, begin<u64>, maximum-end<u64>, pointer<u64>, end<u64>, previous-check<u64>, have-previous-check<u64>) => (out<optimal-block-decision>) :=
+  at-limit := (position >= maximum-end) || (pointer >= 1500000u64)
+  check := !at-limit && (number-fresh >= 512u64) && (bits/wrapping-sub(position, begin) >= 5000u64) && (bits/wrapping-sub(end, position) >= 5000u64)
+  changed := (check? | true => optimal-end-block-check(fresh-observations, observations, number-fresh, number-observations, bits/wrapping-sub(position, begin)) | false => 0u64)
+  out := ((check && (changed == 0u64))?
+    | true => optimal-merge-checkpoint(frequencies, fresh-frequencies, observations, fresh-observations, number-observations, number-fresh, position)
+    | false => {frequencies: frequencies, fresh-frequencies: fresh-frequencies, observations: observations, fresh-observations: fresh-observations, number-observations: number-observations, number-fresh: number-fresh, previous-check: previous-check, have-previous-check: have-previous-check, changed: changed, keep-going: !at-limit && (changed == 0u64)}).
+
+optimal-rewind-cache(cache<[u32]>, end<u64>, count<u64>) => (out<u64>) :=
+  header-at := ((count != 0u64)? | true => end - 1u64 | false => end)
+  previous := ((count != 0u64)? | true => header-at - bits/and(bt-word32(optimal-counter(cache, header-at)), 65535u64) | false => end)
+  out := ((count != 0u64)? | true => optimal-rewind-cache(cache, previous, count - 1u64) | false => previous).
+
+optimal-finish-block(tables<[u16]>, cache<[u32]>, hash3<u64>, hash4<u64>, position<u64>, pointer<u64>, base<u64>, next-slide<u64>, maximum<u64>, nice<u64>, frequencies<[u32]>, fresh-frequencies<[u32]>, observations<[u32]>, fresh-observations<[u32]>, number-observations<u64>, number-fresh<u64>, begin<u64>, end<u64>, previous-check<u64>, have-previous-check<u64>, changed<u64>) => (out<optimal-collected-block>) :=
+  rewind := (changed == 1u64) && (have-previous-check == 1u64)
+  block-end := (rewind? | true => previous-check | false => position)
+  cache-end := (rewind? | true => optimal-rewind-cache(cache, pointer, position - previous-check) | false => pointer)
+  rewound := (rewind? | true => pointer - cache-end | false => 0u64)
+  merged := (rewind? | true => {total: frequencies, fresh: fresh-frequencies} | false => optimal-merge-frequencies(frequencies, fresh-frequencies))
+  ms := (rewind?
+    | true => {new-observations: fresh-observations, observations: observations, num-new-observations: number-fresh, num-observations: number-observations}
+    | false => optimal-merge-observations(fresh-observations, 0u64, observations, number-fresh, number-observations))
+  final := ((!rewind && (position == end))? | true => 1u64 | false => 0u64)
+  out := {tables: tables, cache: cache, next-hash3: hash3, next-hash4: hash4, next-position: position, cache-ptr: pointer, base: base, next-slide: next-slide, maximum: maximum, nice: nice, frequencies: merged.total, fresh-frequencies: merged.fresh, observations: ms.observations, fresh-observations: ms.new-observations, number-observations: ms.num-observations, number-fresh: ms.num-new-observations, block-begin: begin, block-end: block-end, cache-end: cache-end, rewound: rewound, is-final: final, changed: changed, previous-check: previous-check, have-previous-check: have-previous-check}.
+
+optimal-block-loop(tables<[u16]>, cache<[u32]>, hash3<u64>, hash4<u64>, input<[u8]>, position<u64>, base<u64>, next-slide<u64>, maximum<u64>, nice<u64>, pointer<u64>, frequencies<[u32]>, fresh-frequencies<[u32]>, observations<[u32]>, fresh-observations<[u32]>, number-observations<u64>, number-fresh<u64>, next-observation<u64>, begin<u64>, maximum-end<u64>, minimum<u64>, previous-check<u64>, have-previous-check<u64>) => (out<optimal-collected-block>) :=
+  searched := optimal-search-position(tables, cache, hash3, hash4, input, position, base, next-slide, maximum, nice, pointer, fresh-frequencies, fresh-observations, number-fresh, next-observation, minimum)
+  mf := searched.tables
+  matches := searched.cache
+  nh3 := searched.next-hash3
+  nh4 := searched.next-hash4
+  at := searched.next-position
+  current-base := searched.base
+  slide-at := searched.next-slide
+  max-length := searched.maximum
+  nice-length := searched.nice
+  skip := searched.skip
+  ptr := searched.cache-ptr
+  new-frequencies := searched.fresh-frequencies
+  new-observations := searched.fresh-observations
+  new-number := searched.number-fresh
+  observe-at := searched.next-observation
+  advanced := optimal-skip-run(mf, matches, nh3, nh4, input, at, current-base, slide-at, max-length, nice-length, skip, ptr)
+  next-tables := advanced.tables
+  next-cache := advanced.cache
+  next-hash3 := advanced.next-hash3
+  next-hash4 := advanced.next-hash4
+  next-position := advanced.next-position
+  next-base := advanced.base
+  next-slide-at := advanced.next-slide
+  next-maximum := advanced.maximum
+  next-nice := advanced.nice
+  next-pointer := advanced.cache-ptr
+  decision := optimal-block-decision(frequencies, new-frequencies, observations, new-observations, number-observations, new-number, next-position, begin, maximum-end, next-pointer, sequence/length(input), previous-check, have-previous-check)
+  total-frequencies := decision.frequencies
+  fresh-freqs := decision.fresh-frequencies
+  total-observations := decision.observations
+  fresh-obs := decision.fresh-observations
+  num-total := decision.number-observations
+  num-fresh := decision.number-fresh
+  prev-check := decision.previous-check
+  have-prev := decision.have-previous-check
+  changed := decision.changed
+  out := (decision.keep-going?
+    | true => optimal-block-loop(next-tables, next-cache, next-hash3, next-hash4, input, next-position, next-base, next-slide-at, next-maximum, next-nice, next-pointer, total-frequencies, fresh-freqs, total-observations, fresh-obs, num-total, num-fresh, observe-at, begin, maximum-end, minimum, prev-check, have-prev)
+    | false => optimal-finish-block(next-tables, next-cache, next-hash3, next-hash4, next-position, next-pointer, next-base, next-slide-at, next-maximum, next-nice, total-frequencies, fresh-freqs, total-observations, fresh-obs, num-total, num-fresh, begin, sequence/length(input), prev-check, have-prev, changed)).
+
+optimal-collect-block(tables<[u16]>, cache<[u32]>, hash3<u64>, hash4<u64>, input<[u8]>, position<u64>, base<u64>, next-slide<u64>, maximum<u64>, nice<u64>, pointer<u64>, frequencies<[u32]>, fresh-frequencies<[u32]>, observations<[u32]>, fresh-observations<[u32]>, number-observations<u64>, number-fresh<u64>, begin<u64>, previous-only-literals<u64>) => (out<optimal-collected-block>) :=
+  maximum-end := optimal-maximum-block-end(begin, sequence/length(input))
+  minimum := ((previous-only-literals == 1u64)? | true => 259u64 | false => optimal-minimum-match(input, begin, maximum-end - begin))
+  out := optimal-block-loop(tables, cache, hash3, hash4, input, position, base, next-slide, maximum, nice, pointer, frequencies, fresh-frequencies, observations, fresh-observations, number-observations, number-fresh, position, begin, maximum-end, minimum, 0u64, 0u64).
+
+optimal-first-block(input<[u8]>) => (out<optimal-collected-block>) :=
+  tables := initial-nodes(262144u64)
+  cache := [0u32 | index <- 0u64..=1500513u64, index < 1500513u64]
+  frequencies := [0u32 | index <- 0u64..=259u64, index < 259u64]
+  fresh-frequencies := [0u32 | index <- 0u64..=259u64, index < 259u64]
+  observations := [0u32 | index <- 0u64..=10u64, index < 10u64]
+  fresh-observations := [0u32 | index <- 0u64..=10u64, index < 10u64]
+  out := optimal-collect-block(tables, cache, 0u64, 0u64, input, 0u64, 0u64, bt-minimum(sequence/length(input), 32768u64), 258u64, 258u64, 0u64, frequencies, fresh-frequencies, observations, fresh-observations, 0u64, 0u64, 0u64, 0u64).
+
+optimal-move-carry-entry(cache<[u32]>, index<u64>, value<u32>) => (out<[u32]>) :=
+  ~next := cache
+  next[index + 1u64] = value
+  out := next.
+
+optimal-move-carry(cache<[u32]>, source<u64>, count<u64>, index<u64>) => (out<[u32]>) :=
+  value := ((index < count)? | true => optimal-counter(cache, source + index) | false => 0u32)
+  next := ((index < count)? | true => optimal-move-carry-entry(cache, index, value) | false => cache)
+  out := ((index < count)? | true => optimal-move-carry(next, source, count, index + 1u64) | false => next).
+
+optimal-carry-rewound(cache<[u32]>, cache-end<u64>, rewound<u64>, fresh-frequencies<[u32]>, fresh-observations<[u32]>, number-fresh<u64>, block-end<u64>) => (out<optimal-carried-block>) :=
+  next-cache := optimal-move-carry(cache, cache-end, rewound, 0u64)
+  observations := [0u32 | index <- 0u64..=10u64, index < 10u64]
+  frequencies := [0u32 | index <- 0u64..=259u64, index < 259u64]
+  out := {cache: next-cache, cache-ptr: rewound, frequencies: frequencies, fresh-frequencies: fresh-frequencies, observations: observations, fresh-observations: fresh-observations, number-observations: 0u64, number-fresh: number-fresh, block-begin: block-end}.
+
+optimal-carry-reset(cache<[u32]>, position<u64>) => (out<optimal-carried-block>) :=
+  fresh-observations := [0u32 | index <- 0u64..=10u64, index < 10u64]
+  observations := [0u32 | index <- 0u64..=10u64, index < 10u64]
+  fresh-frequencies := [0u32 | index <- 0u64..=259u64, index < 259u64]
+  frequencies := [0u32 | index <- 0u64..=259u64, index < 259u64]
+  out := {cache: cache, cache-ptr: 0u64, frequencies: frequencies, fresh-frequencies: fresh-frequencies, observations: observations, fresh-observations: fresh-observations, number-observations: 0u64, number-fresh: 0u64, block-begin: position}.
+
+optimal-carry-block(cache<[u32]>, cache-end<u64>, rewound<u64>, changed<u64>, have-previous-check<u64>, fresh-frequencies<[u32]>, fresh-observations<[u32]>, number-fresh<u64>, position<u64>, block-end<u64>) => (out<optimal-carried-block>) :=
+  out := (((changed == 1u64) && (have-previous-check == 1u64))?
+    | true => optimal-carry-rewound(cache, cache-end, rewound, fresh-frequencies, fresh-observations, number-fresh, block-end)
+    | false => optimal-carry-reset(cache, position)).

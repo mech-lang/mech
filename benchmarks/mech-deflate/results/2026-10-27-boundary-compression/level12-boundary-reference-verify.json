@@ -1,0 +1,22 @@
+{
+  "name": "level12-boundary-reference-verify",
+  "command": [
+    "python3",
+    "/private/tmp/mech-linear-restack-20261026/boundary-reference/verify-boundaries.py"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "7fc6587fa6f9506908393566a05aeb9615a43633",
+  "dirty": "",
+  "exit": 0,
+  "seconds": 0.3553810119628906,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/level12-boundary-reference-verify.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

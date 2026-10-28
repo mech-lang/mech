@@ -18,7 +18,11 @@ use crate::memory_planner::{
 mod borrowed_metadata_scan_tests;
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 #[path = "native_turn_plan_cache.rs"]
 pub(crate) mod native_turn_plan_cache;
@@ -32,6 +36,10 @@ pub use workers::{
     NativeWorkDebitBatch, NativeWorkGroup, NativeWorkerBudgetError, NativeWorkerCreditStatistics,
     NativeWorkerWorkLoan,
 };
+
+#[path = "word_draft_expansion.rs"]
+mod word_drafts;
+pub(crate) use word_drafts::unsigned_word_draft_expansion;
 
 #[derive(Default)]
 struct DisplayByteCounter(usize);
@@ -290,7 +298,11 @@ impl NativeLibraryWorkBudget {
 
     /// Identity check for invocation-owned prepared metadata. Equal
     /// limits or an equal memory account cannot renew a different work ledger.
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     pub fn shares_account(&self, other: &Self) -> bool {
         std::rc::Rc::ptr_eq(&self.account, &other.account)
     }
@@ -341,7 +353,11 @@ impl NativeLibraryWorkBudget {
 
     /// A reusable measured summary requires a real paid native scope, not
     /// merely an account installed beside an absent or foreign observer.
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     pub(in crate::resident) fn has_matching_active_scope(&self) -> bool {
         CONTROL_WORK.with(|active| {
             active
@@ -858,7 +874,11 @@ mod native_library_work_tests {
         assert_eq!(fresh.used(), (0, 0));
     }
 
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     #[test]
     fn reusable_measurement_requires_matching_account_and_paid_observer_scope() {
         let memory = mech_core::ManagedMemoryBudget::new(4096);
@@ -1166,7 +1186,11 @@ pub(crate) fn with_payload_admission<T>(
 
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 pub(in crate::resident) fn record_native_index_memory_error(
     error: mech_core::MemoryRuntimeError,
@@ -1194,7 +1218,11 @@ fn admit_payload_plan(plan: &TurnMemoryPlan) -> Result<(), ResidentKernelError> 
                     .ok_or(ResidentKernelError::InvalidShape)?;
                 #[cfg(all(
                     feature = "native-artifact",
-                    any(feature = "pure_text", feature = "map_ops")
+                    any(
+                        feature = "pure_text",
+                        feature = "map_ops",
+                        feature = "sequence_buffers"
+                    )
                 ))]
                 {
                     // Cache capacity is independently reserved on this exact
@@ -1313,7 +1341,11 @@ pub(crate) fn with_resident_turn_plan<T>(
     let previous = with_active_turn_plan(|active| active.replace(plan.into()));
     #[cfg(all(
         feature = "native-artifact",
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     ))]
     let _cache_guard = native_turn_plan_cache::suspend();
     let _guard = ActiveTurnPlanGuard(previous);
@@ -1577,7 +1609,11 @@ impl KernelCostEstimate {
             }
             #[cfg(all(
                 feature = "native-artifact",
-                any(feature = "pure_text", feature = "map_ops")
+                any(
+                    feature = "pure_text",
+                    feature = "map_ops",
+                    feature = "sequence_buffers"
+                )
             ))]
             if !super::text_index::has_index_scope()
                 && index_growth(&active)? == (0, 0)
@@ -1899,7 +1935,11 @@ pub(crate) fn check_output_element_count(required: u64) -> Result<(), ResidentKe
 #[cfg(all(
     test,
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops"),
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ),
     any(feature = "full_source", feature = "full_compiler")
 ))]
 #[path = "snapshot_output_element_tests.rs"]
@@ -2566,7 +2606,11 @@ fn measure_borrowed_value_footprint(
     meter.charge_retained_nodes(1)?;
     #[cfg(all(
         feature = "native-artifact",
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     ))]
     if source_cache
         && let Some(data) =
@@ -2581,7 +2625,11 @@ fn measure_borrowed_value_footprint(
     }
     #[cfg(not(all(
         feature = "native-artifact",
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     )))]
     let _ = source_cache;
     let data =
@@ -2675,7 +2723,12 @@ impl ResidentBudgetMeter {
 
     #[cfg(all(
         feature = "native-artifact",
-        any(test, feature = "pure_text", feature = "map_ops")
+        any(
+            test,
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     ))]
     pub(crate) fn for_native_projection(
         work: &NativeLibraryWorkBudget,

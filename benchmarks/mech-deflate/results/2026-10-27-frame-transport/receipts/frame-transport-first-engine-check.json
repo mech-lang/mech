@@ -1,0 +1,31 @@
+{
+  "name": "frame-transport-first-engine-check",
+  "command": [
+    "cargo",
+    "check",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-engine",
+    "--no-default-features",
+    "--features",
+    "semantic-compiler,resident-artifact,native-artifact,sequence_buffers",
+    "--lib"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "851507304181308ddbadcd96bec24859e8deeed4",
+  "dirty": " M src/engine/src/native_artifact/mod.rs\n?? src/engine/src/native_artifact/buffer_frames.rs\n",
+  "exit": 101,
+  "seconds": 14.856734991073608,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/frame-transport-first-engine-check.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

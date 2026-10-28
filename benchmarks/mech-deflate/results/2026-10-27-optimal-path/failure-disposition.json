@@ -1,0 +1,77 @@
+{
+  "compact-proof-engine-configured-units": {
+    "exit": 101,
+    "disposition": "Inherited reduced unit-profile limitation: three existing unused test helpers under warnings-as-errors, reproduced on clean parent. Full-source proof profile passes without suppression.",
+    "log_sha256": "8ea2b7adb221c8a1f235c0de5bd75a260afbc7b65288701004b563907c5c618d"
+  },
+  "compact-proof-engine-units": {
+    "exit": 101,
+    "disposition": "Inherited reduced unit-profile limitation: existing assignment tests require String backing; reproduces as six identical errors on clean parent 851507304. Full-source proof profile passes.",
+    "log_sha256": "9fa6bf242286b761f65da7f1a13120a90456fba7beb11d4ddfb3fc48c744ded5"
+  },
+  "compact-proof-parent-text-unit-profile": {
+    "exit": 101,
+    "disposition": "Inherited reduced unit-profile limitation: three existing unused test helpers under warnings-as-errors, reproduced on clean parent. Full-source proof profile passes without suppression.",
+    "log_sha256": "0a0072eef6565277b76705f21f90b2c00fde52f9df47b35026336c34570d50fd"
+  },
+  "compact-proof-parent-thin-unit-profile": {
+    "exit": 101,
+    "disposition": "Inherited reduced unit-profile limitation: existing assignment tests require String backing; reproduces as six identical errors on clean parent 851507304. Full-source proof profile passes.",
+    "log_sha256": "dc8187507ec089d6ed8f695e05689c5564ef76fc3b99ead71da5c6d2e31f1506"
+  },
+  "huffman-integration-first-execution": {
+    "exit": 101,
+    "disposition": "Unqualified next-step source draft, outside #944: named FSM state payloads require closed kinds. Minimal rejection is reproduced; use ordinary recursive functions for variable-size buffer loops before integrating tally. Not counted as passing coverage.",
+    "log_sha256": "e4e6fcd37fdaf9a450e67641a40f2198a77deaf466cc3f78bf927c0e35337f9c"
+  },
+  "huffman-integration-minimal-state-rejection": {
+    "exit": 101,
+    "disposition": "Unqualified next-step source draft, outside #944: named FSM state payloads require closed kinds. Minimal rejection is reproduced; use ordinary recursive functions for variable-size buffer loops before integrating tally. Not counted as passing coverage.",
+    "log_sha256": "0fe659d6882787ba18f80144a1a87c435366e262ff95b7376373f5bf20d5c8c7"
+  },
+  "optimal-path-analysis-bound-minimal-red": {
+    "exit": 101,
+    "disposition": "Inherited compiler dense proof-storage preflight, precisely reproduced and fixed by b93fa92a3. Same connected artifact rejects on clean parent; connected source and 320-call acceptance pass after the compact representation.",
+    "log_sha256": "d2ee7bca2d3aa790a982803957608dcdc4e3e80e1c2cab657a054d55be44ad1c"
+  },
+  "optimal-path-connected-current-visit-location": {
+    "exit": 101,
+    "disposition": "Inherited compiler dense proof-storage preflight, precisely reproduced and fixed by b93fa92a3. Same connected artifact rejects on clean parent; connected source and 320-call acceptance pass after the compact representation.",
+    "log_sha256": "b225263c3d384ee4d847e0ed1e8de3684f1640b6665296509e11f0390bc41fab"
+  },
+  "optimal-path-connected-lowering-diagnostic": {
+    "exit": 101,
+    "disposition": "Inherited compiler dense proof-storage preflight, precisely reproduced and fixed by b93fa92a3. Same connected artifact rejects on clean parent; connected source and 320-call acceptance pass after the compact representation.",
+    "log_sha256": "756070dd73529e800291cd4ba67650b76efcf5b48201b85d6f3bf8aa20139127"
+  },
+  "optimal-path-correct-source-execution": {
+    "exit": 101,
+    "disposition": "Source-draft unsupported open composite capture; corrected using existing tuple destructuring to pass ordinary buffer/scalar arguments. No source-semantics change.",
+    "log_sha256": "da5d36aecb194f720ec9a4d494dd7ab180ae16038701b258d667da51e5404710"
+  },
+  "optimal-path-first-connected-execution": {
+    "exit": 101,
+    "disposition": "Inherited compiler dense proof-storage preflight, precisely reproduced and fixed by b93fa92a3. Same connected artifact rejects on clean parent; connected source and 320-call acceptance pass after the compact representation.",
+    "log_sha256": "6e78647e2cf83ddf6323fa19a8f9cf0a621c1622d4da6d26c90774ea064ae2d1"
+  },
+  "optimal-path-first-execution": {
+    "exit": 101,
+    "disposition": "Introduced source-draft syntax errors; corrected Boolean && and a regular checked helper in the final source. No parser/compiler syntax change.",
+    "log_sha256": "7068728af7779a7cf834e0012ca508dfb6c2a542651eefaef948e716cfdc5bf9"
+  },
+  "optimal-path-function-check-execution": {
+    "exit": 101,
+    "disposition": "Introduced source-draft syntax errors; corrected Boolean && and a regular checked helper in the final source. No parser/compiler syntax change.",
+    "log_sha256": "a16e6518f7b134c7d603650ad7945cb2a6cd8f656f8d6f3d0c043584302c9a60"
+  },
+  "optimal-path-pinned-reference-fixed": {
+    "exit": 1,
+    "disposition": "Environmental reference-compiler cache write denial; authorized build environment succeeds. Pinned algorithm sources unchanged.",
+    "log_sha256": "7b9336f6685b6b996a67718895cb8e6bb628ad589674fd2633c7b35905f07661"
+  },
+  "optimal-path-pinned-reference": {
+    "exit": 1,
+    "disposition": "Introduced prototype reference-wrapper syntax error (semicolon match arms), corrected in the permanent producer.",
+    "log_sha256": "94f3e508f275237ed48d25938f77b9d97106a9301be20808d160eae845f77ee3"
+  }
+}

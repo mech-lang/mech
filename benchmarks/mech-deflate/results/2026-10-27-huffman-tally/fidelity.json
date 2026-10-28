@@ -1,0 +1,61 @@
+{
+  "base": "95f8dc4c45fe9670315cedcdc8c4768b760cd3c2",
+  "source_head": "333683b40b6d42ce0ead91d0c1158762e99680fd",
+  "compiler_fix": "269fe951f183869e76b43091c61f1a6dac40e960",
+  "changed_paths": [
+    "benchmarks/mech-deflate/huffman/README.md",
+    "benchmarks/mech-deflate/huffman/generate_level12_reference.py",
+    "benchmarks/mech-deflate/matchfinder/generate_tally_reference.py",
+    "hosts/gpu/tests/canonical_artifact_program.rs",
+    "hosts/gpu/tests/fixtures/native/deflate-huffman-level12-reference.json",
+    "hosts/gpu/tests/fixtures/native/deflate-huffman-level12.mec",
+    "hosts/gpu/tests/fixtures/native/deflate-tally-reference.json",
+    "hosts/gpu/tests/fixtures/native/deflate-tally.mec",
+    "hosts/gpu/tests/support/canonical_program_level12_huffman.rs",
+    "hosts/gpu/tests/support/canonical_program_tally.rs",
+    "src/engine/src/source_semantics/annotation_shape_identity.rs",
+    "src/engine/src/source_semantics/frontend.rs"
+  ],
+  "old_native_fixture_count": 30,
+  "changed_old_native_fixtures": [],
+  "old_qualification_support_changes": [],
+  "patch_sha256": "cd2913cb074a30f74fffc95a93aa903d92db964a3a071f3e10e697ecfa59792a",
+  "source_sha256": {
+    "benchmarks/mech-deflate/huffman/README.md": "be9a1ffe4533897d0ddd86def58ddaf907e8698cfa7fe9b37ecad3914656cd92",
+    "benchmarks/mech-deflate/huffman/generate_level12_reference.py": "cc97ffac85afd3cfeaa339fc66d764a51aeaa93f537eff723079a2cfe4f2a92e",
+    "benchmarks/mech-deflate/matchfinder/generate_tally_reference.py": "6acdaacc128d391c4374b7e35d18d632313ef51eb6fb37c893b6b8fa7e2c8c5d",
+    "hosts/gpu/tests/canonical_artifact_program.rs": "a9f7ae9f875e9cf663fd4575aa3923554794fdd17c07160b6c59f9e0a251f5df",
+    "hosts/gpu/tests/fixtures/native/deflate-huffman-level12-reference.json": "5ddc55afdb8c4b9c4551ec8eeb8260cf4bb2eb7a417831b4bcb732a950df49df",
+    "hosts/gpu/tests/fixtures/native/deflate-huffman-level12.mec": "427008046cbb4e7ee9413f57e8b849db1e67b0cffff0a7b2a80b7f1cd94bb6cb",
+    "hosts/gpu/tests/fixtures/native/deflate-tally-reference.json": "4095df6f85830ffdcdbd15ce1f372edcfb3988c9e8a57de946a7e6fe53125edb",
+    "hosts/gpu/tests/fixtures/native/deflate-tally.mec": "a5a68c2e99f9705e15c582de55d4898d7be4919bb770c84517ba273071ca040f",
+    "hosts/gpu/tests/support/canonical_program_level12_huffman.rs": "daa05d264d0c916bef9e6abdebf7262b3453be9707b1399fbfaafcc9afc9f5e1",
+    "hosts/gpu/tests/support/canonical_program_tally.rs": "3b06828d489b6c3a84b9362fb035f0764cf4c866330a4f5b43c76ac1c48d5d31",
+    "src/engine/src/source_semantics/annotation_shape_identity.rs": "2e37dc860b574d48a2cb2dc54b2f0edc1d01f199f6db7e7a58a581b62fbbced3",
+    "src/engine/src/source_semantics/frontend.rs": "e000e14442b02021d49af0187bc3195a081816c3ae01a6638c74661fedfe9bc3"
+  },
+  "unchanged_runtime_and_native_codegen": true,
+  "unchanged_versions": {
+    "canonical_codec": 14,
+    "typed_ir": 109,
+    "public_abi": 35,
+    "native_work_policy": 90
+  },
+  "resident_baseline_executable": {
+    "path": "/private/tmp/mech-live-control-target/debug/mech-sequence-buffer-driver",
+    "sha256": "5c2b49fbd7104e6f59731bde91c5637105fa55129bb221cae00aef4194073e42",
+    "clean_build_receipt": "huffman-integration-minimal-state-rejection",
+    "built_source_head": "93a7be76e36a6e364152c50b1557cf6c49d07e0f",
+    "source_changes_to_base": [
+      "benchmarks/mech-deflate/results/2026-10-27-optimal-path/REPORT.md",
+      "benchmarks/mech-deflate/results/2026-10-27-optimal-path/failure-disposition.json",
+      "benchmarks/mech-deflate/results/2026-10-27-optimal-path/measurements.json",
+      "benchmarks/mech-deflate/results/2026-10-27-optimal-path/pending-dynamic-state.mec.txt",
+      "benchmarks/mech-deflate/results/2026-10-27-optimal-path/receipts.json",
+      "benchmarks/mech-deflate/results/2026-10-27-optimal-path/review.json",
+      "benchmarks/mech-deflate/results/2026-10-27-optimal-path/stack.json",
+      "benchmarks/mech-deflate/results/2026-10-27-optimal-path/unchanged-fixtures.json",
+      "benchmarks/mech-deflate/results/2026-10-27-optimal-path/validation-logs.json.gz"
+    ]
+  }
+}

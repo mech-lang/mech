@@ -23,6 +23,10 @@ pub enum ImplementationMemoryClass {
     /// construction, with the complete real workspace admitted by the kernel.
     /// Other source/output schemas/storage retain the canonical finalizer bound.
     PackedStringMatrixOrCanonicalFinalize,
+    /// Plain unsigned Matrix indexed updates copy one packed backing through
+    /// the checked typed constructor. Other output/storage kinds retain the
+    /// complete canonical draft/finalization bound.
+    PackedUnsignedMatrixUpdateOrCanonicalFinalize,
     CanonicalSortUnique,
 }
 

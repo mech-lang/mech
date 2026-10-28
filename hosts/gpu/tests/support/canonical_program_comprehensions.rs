@@ -15,6 +15,134 @@ fn numbers(values: &[u64]) -> ValueDataDraft {
 }
 
 #[test]
+fn large_unsigned_comprehension_initializes_a_real_buffer_and_recovers_after_denial() {
+    let source = "repeat(value<u32>, count<u64>) => (out<[u32]>) :=\n  out := [value | i <- 0u64..=count, i < count].\nrepeat(word<u32>, count<u64>)\n";
+    for (form, artifact) in ["original", "decoded"].into_iter().zip(artifacts(source).0) {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let mut policy = limits();
+        policy.library.max_output_elements = Some(1_500_513);
+        policy.library.max_compute_work = Some(10_000_000_000);
+        policy.library.max_comparison_work = Some(10_000_000_000);
+        policy.execution.max_work = 10_000_000_000;
+        let mut output = vec![None; artifact.outputs().len()];
+        for count in [0, 3, 1_500_513, 5] {
+            let args = inputs(
+                &artifact,
+                &[
+                    ("word", ValueDataDraft::U32(0xf0123456)),
+                    ("count", ValueDataDraft::U64(count)),
+                ],
+                &memory,
+            );
+            let retained = memory.used_bytes();
+            let start = std::time::Instant::now();
+            let (result, allocations, bytes) = super::allocation_probe::measured_with_bytes(|| {
+                jit.evaluate_into(&args, &mut output, policy, &memory)
+            });
+            let elapsed = start.elapsed().as_secs_f64();
+            if count == 1_500_513 {
+                println!(
+                    "{}",
+                    serde_json::json!({"witness":"large-u32-comprehension",
+                    "artifact":form, "count":count, "elapsed_seconds":elapsed,
+                    "allocation_requests":allocations, "requested_allocation_bytes":bytes,
+                    "result":format!("{result:?}")})
+                );
+            }
+            if result.is_err() {
+                assert_eq!(memory.used_bytes(), retained);
+            }
+            result.unwrap();
+            let mech_core::ValueData::Matrix(matrix) =
+                output.last().unwrap().as_ref().unwrap().data()
+            else {
+                panic!()
+            };
+            let mech_core::snapshot::SequenceView::U32(words) = matrix.elements() else {
+                panic!("packed U32 output")
+            };
+            assert_eq!(words.len(), count as usize);
+            assert!(words.iter().all(|word| *word == 0xf0123456));
+            if count <= 3 {
+                equal(&artifact, &output, &reference(&artifact, &args));
+            }
+            if count == 1_500_513 {
+                let prior = output.clone();
+                let retained = memory.used_bytes();
+                let mut denied = policy;
+                denied.library.max_output_bytes = Some(1);
+                assert!(
+                    jit.evaluate_into(&args, &mut output, denied, &memory)
+                        .is_err()
+                );
+                assert!(output.iter().zip(&prior).all(|(value, old)| {
+                    value
+                        .as_ref()
+                        .unwrap()
+                        .shares_frozen_storage(old.as_ref().unwrap())
+                }));
+                assert_eq!(memory.used_bytes(), retained);
+            }
+        }
+        drop(output);
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
+fn packed_word_collection_keeps_copy_limits_and_current_output_on_rejection() {
+    let source = "[7u32 | i <- 0u64..=count<u64>, i < count]\n";
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let args = inputs(&artifact, &[("count", ValueDataDraft::U64(3))], &memory);
+        let mut output = vec![None; artifact.outputs().len()];
+        let mut policy = limits();
+        // The cursor computes its words; the three output writes consume
+        // twelve bytes. Finalization transfers the packed buffer to its Value.
+        policy.library.max_cloned_bytes = Some(12);
+        jit.evaluate_into(&args, &mut output, policy, &memory)
+            .unwrap();
+        equal(&artifact, &output, &reference(&artifact, &args));
+        let prior = output.clone();
+        let before = memory.used_bytes();
+        policy.library.max_cloned_bytes = Some(11);
+        let error = jit
+            .evaluate_into(&args, &mut output, policy, &memory)
+            .unwrap_err();
+        assert!(
+            matches!(
+                error,
+                NativeProgramExecutionError::Collection {
+                    error: ResidentKernelError::ResourceLimit {
+                        dimension: Dimension::ClonedBytes,
+                        required: 12,
+                        limit: 11,
+                        ..
+                    },
+                    ..
+                }
+            ),
+            "{error:?}"
+        );
+        assert_eq!(memory.used_bytes(), before);
+        assert!(output.iter().zip(&prior).all(|(value, old)| {
+            value
+                .as_ref()
+                .unwrap()
+                .shares_frozen_storage(old.as_ref().unwrap())
+        }));
+        policy.library.max_cloned_bytes = Some(12);
+        jit.evaluate_into(&args, &mut output, policy, &memory)
+            .unwrap();
+        equal(&artifact, &output, &reference(&artifact, &args));
+        drop((args, output, prior));
+        assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
 fn generated_dynamic_ranges_feed_ordinary_comprehensions() {
     let (variants, _) = artifacts("[i + 1u64 | i <- 0u64..count<u64>]\n");
     for artifact in variants {

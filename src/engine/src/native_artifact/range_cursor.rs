@@ -4,7 +4,11 @@ use super::{
     NativeCollectionSource as Source, NativeControlLoop, NativeIterationAction as Action,
     NativeProgramArtifactPlan as Plan, NativeU64RangeCursor as Cursor,
 };
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 use super::{
     NativeIterationTerminator as Terminator, NativeMatchAction as Scalar,
     NativeMatchTerminator as Term,
@@ -16,7 +20,11 @@ fn uses(plan: &Plan) -> Result<Vec<usize>, &'static str> {
     super::guarded_histogram_query::semantic_use_counts(plan)
 }
 
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 fn candidate(plan: &Plan, id: usize, counts: &[usize]) -> Option<Cursor> {
     use super::{NativeCollectionPrimitive as Primitive, NativeScalarKind};
     use mech_core::{DimensionExpr, IntegerWidth, SchemaBody};
@@ -125,7 +133,11 @@ fn candidate(plan: &Plan, id: usize, counts: &[usize]) -> Option<Cursor> {
         before_collection_begin,
     })
 }
-#[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+#[cfg(not(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+)))]
 fn candidate(_: &Plan, _: usize, _: &[usize]) -> Option<Cursor> {
     None
 }
@@ -153,7 +165,11 @@ pub(crate) fn lower(plan: &mut Plan) -> Result<(), &'static str> {
     feature = "artifact-codec",
     feature = "semantic-compiler",
     feature = "resident-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 mod tests {
     use super::*;

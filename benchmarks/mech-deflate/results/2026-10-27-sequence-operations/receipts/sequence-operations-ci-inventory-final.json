@@ -1,0 +1,28 @@
+{
+  "name": "sequence-operations-ci-inventory-final",
+  "command": [
+    "/private/tmp/mech-assertion-ci-python/bin/python",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests/ci",
+    "-p",
+    "test_ci_test_inventory.py"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "ee32fbfa98b174d32a3b53788f70b1f965ac144c",
+  "dirty": "?? benchmarks/mech-deflate/results/2026-10-27-sequence-operations/\n",
+  "exit": 0,
+  "seconds": 9.317970991134644,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/sequence-operations-ci-inventory-final.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

@@ -1,0 +1,419 @@
+{
+  "base": "72ae21413293ce7fc7a8c4f9b0587377588d03d6",
+  "blocking_operation": "Construct a one-entry matrix of {U32,U16,U16} records and replace its first entry for the literal-only block choice. Preserve actual records rather than substituting packed integers.",
+  "before": "Resident succeeds. Native rejects matrix/horzcat with MissingSemanticWitness. After constructor registration, indexed-axis rejects the record element with WitnessTypeMismatch.",
+  "design": [
+    "Attach private native collection witnesses to the existing horizontal/vertical maintained factories; complete and linked catalogs use the same declarations.",
+    "Specialize constructor arity from its inputs and validate rank, exact element schema and maintained operation contract.",
+    "Admit scalar/record/tuple elements for maintained indexed replacement; exclude nested dynamic containers.",
+    "Reuse resident binders, canonical finalization, finite admission and transactional publication. No kernel, bytecode revision, compiler-default or algorithm change."
+  ],
+  "coverage": [
+    "Original and decoded resident/native equality for single- and multi-record values.",
+    "Horizontal and vertical construction; exact mixed-width field values.",
+    "Selected and unselected paths, invalid indexes, retained prior publication, aliases, cleanup and retry.",
+    "Actual linked executable reconstruction and success-rejection-success, preserving prior output."
+  ],
+  "failures": [
+    {
+      "classification": "inherited",
+      "command": "cargo check --locked --offline -j1 -p mech-engine --no-default-features --features native-artifact",
+      "error": "uniform_word_collection.rs:65 calls primitive() in a profile lacking the collection template implementation",
+      "clean_parent": "/private/tmp/mech-record-matrix-parent-20261027 is clean at the base SHA; the same command fails at the same line",
+      "disposition": "Outside this patch; needs feature gating in uniform_word_collection, introduced in 2450670f86a412abcd789e937740a3ce6e926ff0. The native-artifact,sequence_buffers profile passes."
+    }
+  ],
+  "receipts": {
+    "literal-sequence-record-diagnostic": {
+      "name": "literal-sequence-record-diagnostic",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j1",
+        "--manifest-path",
+        "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+        "literal_sequence_record_update_probe",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "72ae21413293ce7fc7a8c4f9b0587377588d03d6",
+      "dirty": "?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_literal_choice_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/fixtures/native/deflate-static-codes.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n?? hosts/gpu/tests/support/canonical_program_literal_choice.rs\n",
+      "exit": 101,
+      "seconds": 2.867244005203247,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/literal-sequence-record-diagnostic.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    "record-matrix-constructor-probe-bind": {
+      "name": "record-matrix-constructor-probe-bind",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+        "--offline",
+        "-j1",
+        "literal_sequence_record_update_probe",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "72ae21413293ce7fc7a8c4f9b0587377588d03d6",
+      "dirty": " M src/engine/src/resident/general/native_collection_template_image.rs\n M src/engine/src/resident/general/native_collection_templates.rs\n M src/engine/src/resident/native_collection_semantics.rs\n M src/engine/src/resident/numeric/linkage_factories.rs\n M src/engine/src/resident/numeric/mod.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_literal_choice_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/fixtures/native/deflate-static-codes.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n?? hosts/gpu/tests/support/canonical_program_literal_choice.rs\n",
+      "exit": 101,
+      "seconds": 45.349724769592285,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/record-matrix-constructor-probe-bind.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    "record-matrix-update-and-retry": {
+      "name": "record-matrix-update-and-retry",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+        "--offline",
+        "-j1",
+        "--",
+        "literal_sequence_record_update_probe",
+        "record_matrix_construction_and_update",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "72ae21413293ce7fc7a8c4f9b0587377588d03d6",
+      "dirty": " M hosts/gpu/tests/support/canonical_program_record_buffers.rs\n M src/engine/src/resident/general/native_collection_template_image.rs\n M src/engine/src/resident/general/native_collection_templates.rs\n M src/engine/src/resident/native_collection_semantics.rs\n M src/engine/src/resident/numeric/linkage_factories.rs\n M src/engine/src/resident/numeric/mod.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_literal_choice_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/fixtures/native/deflate-static-codes.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n?? hosts/gpu/tests/support/canonical_program_literal_choice.rs\n",
+      "exit": 0,
+      "seconds": 3.3708550930023193,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/record-matrix-update-and-retry.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    "record-matrix-selected": {
+      "name": "record-matrix-selected",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+        "--offline",
+        "-j1",
+        "--",
+        "record_matrix_update_only",
+        "record_matrix_construction",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "72ae21413293ce7fc7a8c4f9b0587377588d03d6",
+      "dirty": " M hosts/gpu/tests/support/canonical_program_linked.rs\n M hosts/gpu/tests/support/canonical_program_record_buffers.rs\n M src/engine/src/resident/general/native_collection_template_image.rs\n M src/engine/src/resident/general/native_collection_templates.rs\n M src/engine/src/resident/native_collection_semantics.rs\n M src/engine/src/resident/numeric/linkage_factories.rs\n M src/engine/src/resident/numeric/mod.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_literal_choice_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/fixtures/native/deflate-static-codes.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n?? hosts/gpu/tests/support/canonical_program_literal_choice.rs\n",
+      "exit": 0,
+      "seconds": 46.356988191604614,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/record-matrix-selected.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    "record-matrix-linked": {
+      "name": "record-matrix-linked",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j1",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_program",
+        "--",
+        "linked_record_matrix_constructor",
+        "record_matrix_",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "72ae21413293ce7fc7a8c4f9b0587377588d03d6",
+      "dirty": " M hosts/gpu/tests/support/canonical_program_linked.rs\n M hosts/gpu/tests/support/canonical_program_record_buffers.rs\n M src/engine/src/resident/general/native_collection_template_image.rs\n M src/engine/src/resident/general/native_collection_templates.rs\n M src/engine/src/resident/native_collection_semantics.rs\n M src/engine/src/resident/numeric/linkage_factories.rs\n M src/engine/src/resident/numeric/mod.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_literal_choice_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/fixtures/native/deflate-static-codes.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n?? hosts/gpu/tests/support/canonical_program_literal_choice.rs\n",
+      "exit": 0,
+      "seconds": 110.16626787185669,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/record-matrix-linked.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    "writer-tables-and-record-geometry": {
+      "name": "writer-tables-and-record-geometry",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+        "--offline",
+        "-j1",
+        "--",
+        "writer_packed_tables",
+        "record_matrix_horizontal",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "72ae21413293ce7fc7a8c4f9b0587377588d03d6",
+      "dirty": " M hosts/gpu/tests/support/canonical_program_linked.rs\n M hosts/gpu/tests/support/canonical_program_record_buffers.rs\n M src/engine/src/resident/general/native_collection_template_image.rs\n M src/engine/src/resident/general/native_collection_templates.rs\n M src/engine/src/resident/native_collection_semantics.rs\n M src/engine/src/resident/numeric/linkage_factories.rs\n M src/engine/src/resident/numeric/mod.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_literal_choice_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_writer_tables_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/fixtures/native/deflate-static-codes.mec\n?? hosts/gpu/tests/fixtures/native/deflate-writer-tables-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-writer-tables.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n?? hosts/gpu/tests/support/canonical_program_literal_choice.rs\n?? hosts/gpu/tests/support/canonical_program_writer_tables.rs\n",
+      "exit": 101,
+      "seconds": 12.900471925735474,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/writer-tables-and-record-geometry.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    "record-matrix-minimal-profile": {
+      "name": "record-matrix-minimal-profile",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-j1",
+        "-p",
+        "mech-engine",
+        "--no-default-features",
+        "--features",
+        "native-artifact"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "72ae21413293ce7fc7a8c4f9b0587377588d03d6",
+      "dirty": " M hosts/gpu/tests/support/canonical_program_linked.rs\n M hosts/gpu/tests/support/canonical_program_record_buffers.rs\n M src/engine/src/resident/general/native_collection_template_image.rs\n M src/engine/src/resident/general/native_collection_templates.rs\n M src/engine/src/resident/native_collection_semantics.rs\n M src/engine/src/resident/numeric/linkage_factories.rs\n M src/engine/src/resident/numeric/mod.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_literal_choice_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_writer_tables_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/fixtures/native/deflate-static-codes.mec\n?? hosts/gpu/tests/fixtures/native/deflate-writer-tables-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-writer-tables.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n?? hosts/gpu/tests/support/canonical_program_literal_choice.rs\n?? hosts/gpu/tests/support/canonical_program_writer_tables.rs\n",
+      "exit": 101,
+      "seconds": 6.335049152374268,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/record-matrix-minimal-profile.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    "record-matrix-minimal-clean-parent": {
+      "name": "record-matrix-minimal-clean-parent",
+      "command": [
+        "cargo",
+        "check",
+        "--manifest-path",
+        "/private/tmp/mech-record-matrix-parent-20261027/Cargo.toml",
+        "--locked",
+        "--offline",
+        "-j1",
+        "-p",
+        "mech-engine",
+        "--no-default-features",
+        "--features",
+        "native-artifact"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "72ae21413293ce7fc7a8c4f9b0587377588d03d6",
+      "dirty": " M hosts/gpu/tests/support/canonical_program_linked.rs\n M hosts/gpu/tests/support/canonical_program_record_buffers.rs\n M src/engine/src/resident/general/native_collection_template_image.rs\n M src/engine/src/resident/general/native_collection_templates.rs\n M src/engine/src/resident/native_collection_semantics.rs\n M src/engine/src/resident/numeric/linkage_factories.rs\n M src/engine/src/resident/numeric/mod.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_literal_choice_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_writer_tables_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/fixtures/native/deflate-static-codes.mec\n?? hosts/gpu/tests/fixtures/native/deflate-writer-tables-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-writer-tables.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n?? hosts/gpu/tests/support/canonical_program_literal_choice.rs\n?? hosts/gpu/tests/support/canonical_program_writer_tables.rs\n",
+      "exit": 101,
+      "seconds": 10.201171159744263,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/record-matrix-minimal-clean-parent.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    "record-matrix-sequence-profile": {
+      "name": "record-matrix-sequence-profile",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-j1",
+        "-p",
+        "mech-engine",
+        "--no-default-features",
+        "--features",
+        "native-artifact,sequence_buffers"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "72ae21413293ce7fc7a8c4f9b0587377588d03d6",
+      "dirty": " M hosts/gpu/tests/support/canonical_program_linked.rs\n M hosts/gpu/tests/support/canonical_program_record_buffers.rs\n M src/engine/src/resident/general/native_collection_template_image.rs\n M src/engine/src/resident/general/native_collection_templates.rs\n M src/engine/src/resident/native_collection_semantics.rs\n M src/engine/src/resident/numeric/linkage_factories.rs\n M src/engine/src/resident/numeric/mod.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_literal_choice_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_writer_tables_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/fixtures/native/deflate-static-codes.mec\n?? hosts/gpu/tests/fixtures/native/deflate-writer-tables-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-writer-tables.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n?? hosts/gpu/tests/support/canonical_program_literal_choice.rs\n?? hosts/gpu/tests/support/canonical_program_writer_tables.rs\n",
+      "exit": 0,
+      "seconds": 7.576551914215088,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/record-matrix-sequence-profile.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    "record-matrix-final-maintained": {
+      "name": "record-matrix-final-maintained",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j1",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_program",
+        "--",
+        "record_buffer_qualification",
+        "buffer_frame_qualification",
+        "function_axes_qualification",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "72ae21413293ce7fc7a8c4f9b0587377588d03d6",
+      "dirty": " M hosts/gpu/tests/support/canonical_program_linked.rs\n M hosts/gpu/tests/support/canonical_program_record_buffers.rs\n M src/engine/src/resident/general/native_collection_template_image.rs\n M src/engine/src/resident/general/native_collection_templates.rs\n M src/engine/src/resident/native_collection_semantics.rs\n M src/engine/src/resident/numeric/linkage_factories.rs\n M src/engine/src/resident/numeric/mod.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_literal_choice_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_writer_tables_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/fixtures/native/deflate-static-codes.mec\n?? hosts/gpu/tests/fixtures/native/deflate-writer-tables-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-writer-tables.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n?? hosts/gpu/tests/support/canonical_program_literal_choice.rs\n?? hosts/gpu/tests/support/canonical_program_writer_tables.rs\n",
+      "exit": 0,
+      "seconds": 33.33323693275452,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/record-matrix-final-maintained.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    }
+  },
+  "maintained_tests_passed": 19,
+  "static_checks": [
+    {
+      "command": [
+        "python3",
+        "scripts/check-production-resident-routing.py"
+      ],
+      "exit": 0,
+      "stdout": "Production resident-routing contract passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-source-catalog-entrypoints.py"
+      ],
+      "exit": 0,
+      "stdout": "Source catalog entry-point contract passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-native-host-catalog.py"
+      ],
+      "exit": 0,
+      "stdout": "native host catalog contract passed (five standard providers, six full providers, no actor migration linkages)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-native-build-analysis-layout.py"
+      ],
+      "exit": 0,
+      "stdout": "Native build analysis layout contract passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--check"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/private/tmp/mech-assertion-ci-python/bin/python",
+        "-c",
+        "import sys;sys.path.insert(0,\"scripts\");from ci_test_inventory import inventory_gaps;g=inventory_gaps();print(g);assert not g"
+      ],
+      "exit": 0,
+      "stdout": "[]\n",
+      "stderr": ""
+    }
+  ]
+}

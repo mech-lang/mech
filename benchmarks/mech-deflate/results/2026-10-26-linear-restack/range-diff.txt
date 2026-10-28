@@ -1,0 +1,1200 @@
+ 1:  0f215971b !  1:  a6ced5c6c test(runtime): keep live control flow independent of planning examples
+    @@ Metadata
+      ## Commit message ##
+         test(runtime): keep live control flow independent of planning examples
+     
+    +    (cherry picked from commit 0f215971ba2fe838d7f92f0642c9a2afe8aebfc3)
+    +
+      ## src/runtime/tests/source_acceptance.rs ##
+     @@
+      mod activation_facts;
+ 2:  488736018 !  2:  0b042eda4 feat(engine): add maintained U64 word operations and native lowering
+    @@ Metadata
+      ## Commit message ##
+         feat(engine): add maintained U64 word operations and native lowering
+     
+    +    (cherry picked from commit 488736018158fa19bbf766fe15ddef2e9cd74213)
+    +
+      ## .github/workflows/ci-full.yml ##
+     @@ .github/workflows/ci-full.yml: jobs:
+                cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+    @@ hosts/gpu/src/native_artifact/compiler/mod.rs: pub(in crate::native_artifact) fn
+                      U64Add => b.ins().uadd_overflow(a, c),
+     
+      ## hosts/gpu/src/native_artifact/control_identity/mod.rs ##
+    -@@ hosts/gpu/src/native_artifact/control_identity/mod.rs: fn bytes(hash: &mut Sha256, value: &[u8]) {
+    -     hash.update(value);
+    - }
+    +@@ hosts/gpu/src/native_artifact/control_identity/mod.rs: use mech_engine::native_artifact::NativeMatchArtifactPlan;
+    + use sha2::{Digest, Sha256};
+    + 
+      pub const NATIVE_MATCH_LINK_IDENTITY_BYTES: usize = 168;
+     -pub const NATIVE_MATCH_TYPED_IR_VERSION: u64 = 2;
+     +pub const NATIVE_MATCH_TYPED_IR_VERSION: u64 = 3;
+    @@ hosts/gpu/src/native_artifact/control_identity/mod.rs: fn bytes(hash: &mut Sha25
+      
+     
+      ## hosts/gpu/src/native_artifact/identity/mod.rs ##
+    -@@ hosts/gpu/src/native_artifact/identity/mod.rs: use sha2::{Digest, Sha256};
+    +@@ hosts/gpu/src/native_artifact/identity/mod.rs: use transcript::{bytes, scalar_type as ty, scalar_value, word};
+      
+      /// Fixed exported data size for the build-owned entry pairing record.
+      pub const NATIVE_LINK_IDENTITY_BYTES: usize = 152;
+    @@ hosts/gpu/src/native_artifact/identity/mod.rs: pub(in crate::native_artifact) fn
+              NativeScalarOp::U64Mul => 3,
+     
+      ## hosts/gpu/src/native_artifact/iteration_identity/mod.rs ##
+    -@@ hosts/gpu/src/native_artifact/iteration_identity/mod.rs: fn bytes(hash: &mut Sha256, value: &[u8]) {
+    -     hash.update(value);
+    - }
+    +@@ hosts/gpu/src/native_artifact/iteration_identity/mod.rs: use mech_engine::native_artifact::{
+    + use sha2::{Digest, Sha256};
+    + 
+      pub const NATIVE_ITERATION_LINK_IDENTITY_BYTES: usize = 176;
+     -pub const NATIVE_ITERATION_TYPED_IR_VERSION: u64 = 1;
+     +pub const NATIVE_ITERATION_TYPED_IR_VERSION: u64 = 2;
+ 3:  54d76b4c9 !  3:  8ebdc9acf feat(engine): select checked unsigned word conversions in native programs
+    @@ Metadata
+      ## Commit message ##
+         feat(engine): select checked unsigned word conversions in native programs
+     
+    +    (cherry picked from commit 54d76b4c9ebd348e3cd36528100337da42c56944)
+    +
+      ## hosts/gpu/src/native_artifact/program/image/identity.rs ##
+     @@ hosts/gpu/src/native_artifact/program/image/identity.rs: fn selected_template(
+      // IR94 reads the two initialized narrow-slot words together; wide slots retain
+ 4:  fdc88db69 !  4:  9a35ee78b Compile FSM-local buffer updates as pure versioned values
+    @@ Metadata
+      ## Commit message ##
+         Compile FSM-local buffer updates as pure versioned values
+     
+    +    (cherry picked from commit fdc88db693edf1603e32cf8ee8718ade9b8cedc9)
+    +
+      ## docs/design/native-application-builds.md ##
+     @@ docs/design/native-application-builds.md: legacy sequence/control/grid frontends or resident execution on rejection.
+      Raw `.mecb` inputs are canonically decoded against the current standard catalog
+ 5:  add9e0d97 !  5:  1d01829ce Compile tuple FSM kernels and qualify DEFLATE Huffman
+    @@ Metadata
+      ## Commit message ##
+         Compile tuple FSM kernels and qualify DEFLATE Huffman
+     
+    +    (cherry picked from commit add9e0d975bb486a3c7cca79bb58743173704752)
+    +
+      ## benchmarks/mech-deflate/huffman/README.md (new) ##
+     @@
+     +# DEFLATE Huffman kernel
+ 6:  667a0c609 !  6:  a8b5c7dd5 Keep selected U64 buffer reads in native scalar storage
+    @@ Metadata
+      ## Commit message ##
+         Keep selected U64 buffer reads in native scalar storage
+     
+    +    (cherry picked from commit 667a0c6096c98f36e39b1e4fceeebc8b844839e3)
+    +
+      ## benchmarks/mech-deflate/huffman/README.md ##
+     @@ benchmarks/mech-deflate/huffman/README.md: immutable. The current value-copy implementation and native call metadata are
+      expensive; the qualification uses an explicit 2 GiB memory account and larger
+ 7:  2698136fc !  7:  dfdd67159 Keep narrow unsigned values and checked casts in native words
+    @@ Metadata
+      ## Commit message ##
+         Keep narrow unsigned values and checked casts in native words
+     
+    +    (cherry picked from commit 2698136fc513e405584da95c6598d63e4f9f24b4)
+    +
+      ## benchmarks/mech-deflate/huffman/README.md ##
+     @@ benchmarks/mech-deflate/huffman/README.md: immutable. The current value-copy implementation and native call metadata are
+      expensive; the qualification uses an explicit 2 GiB memory account and larger
+    @@ hosts/gpu/src/native_artifact/control_compiler.rs: fn define<M: Module>(
+                      NativeScalarValue::F64(value) => value.bits(),
+     
+      ## hosts/gpu/src/native_artifact/control_identity/mod.rs ##
+    -@@ hosts/gpu/src/native_artifact/control_identity/mod.rs: fn bytes(hash: &mut Sha256, value: &[u8]) {
+    -     hash.update(value);
+    - }
+    +@@ hosts/gpu/src/native_artifact/control_identity/mod.rs: use mech_engine::native_artifact::NativeMatchArtifactPlan;
+    + use sha2::{Digest, Sha256};
+    + 
+      pub const NATIVE_MATCH_LINK_IDENTITY_BYTES: usize = 168;
+     -pub const NATIVE_MATCH_TYPED_IR_VERSION: u64 = 3;
+     +pub const NATIVE_MATCH_TYPED_IR_VERSION: u64 = 4;
+      pub const NATIVE_MATCH_WORK_POLICY_VERSION: u64 = 1;
+      const MAGIC: &[u8; 16] = b"MECHNATIVEMATCH\0";
+      
+    -@@ hosts/gpu/src/native_artifact/control_identity/mod.rs: pub(in crate::native_artifact) fn typed_ir_sha256(plan: &NativeMatchArtifactPlan
+    -             NativeScalarKind::U64 => 2,
+    -             NativeScalarKind::I64 => 3,
+    -             NativeScalarKind::F64 => 4,
+    -+            NativeScalarKind::U8 => 5,
+    -+            NativeScalarKind::U16 => 6,
+    -+            NativeScalarKind::U32 => 7,
+    -+
+    -         }]);
+    -         word(&mut hash, ty.schema().get() as u64);
+    -         hash.update(ty.schema_key().as_bytes());
+    -@@ hosts/gpu/src/native_artifact/control_identity/mod.rs: pub(in crate::native_artifact) fn typed_ir_sha256(plan: &NativeMatchArtifactPlan
+    -                 hash.update([3]);
+    -                 word(&mut hash, value as u64);
+    -             }
+    -+            NativeScalarValue::U8(value) => {
+    -+                hash.update([5]);
+    -+                word(&mut hash, u64::from(value));
+    -+            }
+    -+            NativeScalarValue::U16(value) => {
+    -+                hash.update([6]);
+    -+                word(&mut hash, u64::from(value));
+    -+            }
+    -+            NativeScalarValue::U32(value) => {
+    -+                hash.update([7]);
+    -+                word(&mut hash, u64::from(value));
+    -+            }
+    -             NativeScalarValue::F64(value) => {
+    -                 hash.update([4]);
+    -                 word(&mut hash, value.bits());
+     
+      ## hosts/gpu/src/native_artifact/control_runtime/mod.rs ##
+     @@ hosts/gpu/src/native_artifact/control_runtime/mod.rs: pub(in crate::native_artifact) fn execute<F: FnOnce(*mut Frame) -> u64>(
+    @@ hosts/gpu/src/native_artifact/control_runtime/tests.rs: fn setup_and_memory_deni
+                  NativeScalarKind::F64 => {
+     
+      ## hosts/gpu/src/native_artifact/identity/mod.rs ##
+    -@@ hosts/gpu/src/native_artifact/identity/mod.rs: use sha2::{Digest, Sha256};
+    +@@ hosts/gpu/src/native_artifact/identity/mod.rs: use transcript::{bytes, scalar_type as ty, scalar_value, word};
+      
+      /// Fixed exported data size for the build-owned entry pairing record.
+      pub const NATIVE_LINK_IDENTITY_BYTES: usize = 152;
+    @@ hosts/gpu/src/native_artifact/identity/mod.rs: use sha2::{Digest, Sha256};
+      pub const NATIVE_WORK_POLICY_VERSION: u64 = 1;
+      const MAGIC: &[u8; 16] = b"MECHNATIVEOBJv1\0";
+      
+    -@@ hosts/gpu/src/native_artifact/identity/mod.rs: pub(in crate::native_artifact) fn typed_ir_sha256(plan: &NativeArtifactPlan) ->
+    -             NativeScalarKind::U64 => 2,
+    -             NativeScalarKind::I64 => 3,
+    -             NativeScalarKind::F64 => 4,
+    -+            NativeScalarKind::U8 => 5,
+    -+            NativeScalarKind::U16 => 6,
+    -+            NativeScalarKind::U32 => 7,
+    -+
+    -         }]);
+    -         word(hash, u64::from(value.schema().get()));
+    -         hash.update(value.schema_key().as_bytes());
+    -@@ hosts/gpu/src/native_artifact/identity/mod.rs: pub(in crate::native_artifact) fn typed_ir_sha256(plan: &NativeArtifactPlan) ->
+    -                 hash.update([3]);
+    -                 word(&mut hash, v as u64);
+    -             }
+    -+            NativeScalarValue::U8(v) => {
+    -+                hash.update([5]);
+    -+                word(&mut hash, u64::from(v));
+    -+            }
+    -+            NativeScalarValue::U16(v) => {
+    -+                hash.update([6]);
+    -+                word(&mut hash, u64::from(v));
+    -+            }
+    -+            NativeScalarValue::U32(v) => {
+    -+                hash.update([7]);
+    -+                word(&mut hash, u64::from(v));
+    -+            }
+    -             NativeScalarValue::F64(v) => {
+    -                 hash.update([4]);
+    -                 word(&mut hash, v.bits());
+     @@ hosts/gpu/src/native_artifact/identity/mod.rs: pub(in crate::native_artifact) fn op_tag(op: NativeScalarOp) -> u8 {
+              NativeScalarOp::I64ToF64 => 45,
+              NativeScalarOp::F64ToU64 => 46,
+    @@ hosts/gpu/src/native_artifact/identity/mod.rs: pub(in crate::native_artifact) fn
+      }
+      
+     
+    - ## hosts/gpu/src/native_artifact/iteration_identity/mod.rs ##
+    -@@ hosts/gpu/src/native_artifact/iteration_identity/mod.rs: fn bytes(hash: &mut Sha256, value: &[u8]) {
+    -     hash.update(value);
+    + ## hosts/gpu/src/native_artifact/identity/transcript.rs ##
+    +@@ hosts/gpu/src/native_artifact/identity/transcript.rs: pub(in crate::native_artifact) fn scalar_kind(kind: NativeScalarKind) -> u8 {
+    +         NativeScalarKind::U64 => 2,
+    +         NativeScalarKind::I64 => 3,
+    +         NativeScalarKind::F64 => 4,
+    ++        NativeScalarKind::U8 => 5,
+    ++        NativeScalarKind::U16 => 6,
+    ++        NativeScalarKind::U32 => 7,
+    +     }
+      }
+    + 
+    +@@ hosts/gpu/src/native_artifact/identity/transcript.rs: pub(in crate::native_artifact) fn scalar_value(hash: &mut Sha256, value: NativeS
+    +         NativeScalarValue::U64(value) => (2, value),
+    +         NativeScalarValue::I64(value) => (3, value as u64),
+    +         NativeScalarValue::F64(value) => (4, value.bits()),
+    ++        NativeScalarValue::U8(value) => (5, u64::from(value)),
+    ++        NativeScalarValue::U16(value) => (6, u64::from(value)),
+    ++        NativeScalarValue::U32(value) => (7, u64::from(value)),
+    +     };
+    +     hash.update([tag]);
+    +     word(hash, bits);
+    +
+    + ## hosts/gpu/src/native_artifact/iteration_identity/mod.rs ##
+    +@@ hosts/gpu/src/native_artifact/iteration_identity/mod.rs: use mech_engine::native_artifact::{
+    + use sha2::{Digest, Sha256};
+    + 
+      pub const NATIVE_ITERATION_LINK_IDENTITY_BYTES: usize = 176;
+     -pub const NATIVE_ITERATION_TYPED_IR_VERSION: u64 = 2;
+     +pub const NATIVE_ITERATION_TYPED_IR_VERSION: u64 = 3;
+      pub const NATIVE_ITERATION_WORK_POLICY_VERSION: u64 = 1;
+      const MAGIC: &[u8; 16] = b"MECHNATIVEITER\0\0";
+      
+    -@@ hosts/gpu/src/native_artifact/iteration_identity/mod.rs: pub(in crate::native_artifact) fn typed_ir_sha256(plan: &NativeIterationArtifact
+    -             NativeScalarKind::U64 => 2,
+    -             NativeScalarKind::I64 => 3,
+    -             NativeScalarKind::F64 => 4,
+    -+            NativeScalarKind::U8 => 5,
+    -+            NativeScalarKind::U16 => 6,
+    -+            NativeScalarKind::U32 => 7,
+    -+
+    -         }]);
+    -         word(&mut hash, ty.schema().get() as u64);
+    -         hash.update(ty.schema_key().as_bytes());
+    -@@ hosts/gpu/src/native_artifact/iteration_identity/mod.rs: pub(in crate::native_artifact) fn typed_ir_sha256(plan: &NativeIterationArtifact
+    -                 hash.update([3]);
+    -                 word(&mut hash, value as u64);
+    -             }
+    -+            NativeScalarValue::U8(value) => {
+    -+                hash.update([5]);
+    -+                word(&mut hash, u64::from(value));
+    -+            }
+    -+            NativeScalarValue::U16(value) => {
+    -+                hash.update([6]);
+    -+                word(&mut hash, u64::from(value));
+    -+            }
+    -+            NativeScalarValue::U32(value) => {
+    -+                hash.update([7]);
+    -+                word(&mut hash, u64::from(value));
+    -+            }
+    -             NativeScalarValue::F64(value) => {
+    -                 hash.update([4]);
+    -                 word(&mut hash, value.bits());
+     
+      ## hosts/gpu/src/native_artifact/iteration_runtime/mod.rs ##
+     @@ hosts/gpu/src/native_artifact/iteration_runtime/mod.rs: pub(in crate::native_artifact) fn execute<F: FnOnce(*mut Frame) -> u64>(
+    @@ hosts/gpu/src/native_artifact/program/image/identity.rs: pub const NATIVE_PROGRA
+      pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
+      const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
+      #[derive(Clone, Debug)]
+    -@@ hosts/gpu/src/native_artifact/program/image/identity.rs: pub(in crate::native_artifact) fn typed_ir_sha256(
+    -             Some(NativeScalarKind::U64) => 2,
+    -             Some(NativeScalarKind::I64) => 3,
+    -             Some(NativeScalarKind::F64) => 4,
+    -+            Some(NativeScalarKind::U8) => 5,
+    -+            Some(NativeScalarKind::U16) => 6,
+    -+            Some(NativeScalarKind::U32) => 7,
+    -+
+    -         }]);
+    -         word(&mut hash, ty.schema().get() as u64);
+    -         hash.update(ty.schema_key().as_bytes());
+     
+      ## hosts/gpu/src/native_artifact/program/runtime/collections/data.rs ##
+     @@ hosts/gpu/src/native_artifact/program/runtime/collections/data.rs: pub(in crate::native_artifact::program::runtime::collections) enum Element<'a> {
+ 8:  bfae70ff2 !  8:  6b261d463 Enable unary matrix broadcasts and port DEFLATE matchfinder helpers
+    @@ Metadata
+      ## Commit message ##
+         Enable unary matrix broadcasts and port DEFLATE matchfinder helpers
+     
+    +    (cherry picked from commit bfae70ff24ab313b463a108da94fba2e032fb648)
+    +
+      ## benchmarks/mech-deflate/matchfinder/README.md (new) ##
+     @@
+     +# DEFLATE match-finder helpers
+ 9:  62f9d4eb2 !  9:  b2bdb9449 Support runtime-shaped unsigned buffer tuple construction
+    @@ Metadata
+      ## Commit message ##
+         Support runtime-shaped unsigned buffer tuple construction
+     
+    +    (cherry picked from commit 62f9d4eb2ef1ce5d725373d889e60d140639ee9f)
+    +
+      ## benchmarks/mech-deflate/matchfinder/README.md ##
+     @@ benchmarks/mech-deflate/matchfinder/README.md: The full binary-tree match finder, optimal parser, block writer, efficient buffe
+      ownership, and `reymont` compression timing remain outstanding. These component
+10:  57413880f ! 10:  e91466012 Exercise dynamic tuple binding across repeated generated visits
+    @@ Metadata
+      ## Commit message ##
+         Exercise dynamic tuple binding across repeated generated visits
+     
+    +    (cherry picked from commit 57413880f71bf2041aeca841dd0c8da51b459738)
+    +
+      ## hosts/gpu/tests/support/canonical_program_dynamic_buffers.rs ##
+     @@ hosts/gpu/tests/support/canonical_program_dynamic_buffers.rs: fn nested_dynamic_buffer_tuple_and_record_components_keep_separate_shapes() {
+          }
+11:  ed728c7e0 ! 11:  485a7b6a3 Compile ordinary tail recursion over runtime-shaped unsigned buffers
+    @@ Metadata
+      ## Commit message ##
+         Compile ordinary tail recursion over runtime-shaped unsigned buffers
+     
+    +    (cherry picked from commit ed728c7e0fe8ee5ceb68e7ac16f5f936f2e30f37)
+    +
+      ## benchmarks/mech-deflate/matchfinder/README.md ##
+     @@ benchmarks/mech-deflate/matchfinder/README.md: Runtime-shaped unsigned arrays can now be packed into ordinary tuple/record
+      outputs by the native compiler. The current child schemas determine their
+12:  7ae84827a ! 12:  cc164f997 Lower nested tail calls to their lexical native loop
+    @@ Metadata
+      ## Commit message ##
+         Lower nested tail calls to their lexical native loop
+     
+    +    (cherry picked from commit 7ae84827a973129265b27a71cad2ee885fe9face)
+    +
+      ## benchmarks/mech-deflate/matchfinder/README.md ##
+     @@ benchmarks/mech-deflate/matchfinder/README.md: candidate, excluded by the filter, so zero entries work without an empty numeric
+      range (which Mech rejects). Rebasing broadcasts a pure scalar statement-body
+13:  356bc0f83 ! 13:  384611b59 Support recursive statement functions and bounded deeper control
+    @@ Metadata
+      ## Commit message ##
+         Support recursive statement functions and bounded deeper control
+     
+    +    (cherry picked from commit 356bc0f83bc46b0c8effd8205b9af85edfc05f17)
+    +
+      ## docs/reference/function.mec ##
+     @@ docs/reference/function.mec: name(arg1: value1, arg2: value2)
+      - Branches are matched from top to bottom, selecting the first match.
+14:  1a17e725d ! 14:  e14bd7c78 Port pinned Roc binary-tree search and skip to Mech
+    @@ Metadata
+      ## Commit message ##
+         Port pinned Roc binary-tree search and skip to Mech
+     
+    +    (cherry picked from commit 1a17e725dc976459f22ec44f3761d60d992e8d20)
+    +
+      ## benchmarks/mech-deflate/matchfinder/README.md ##
+     @@
+     -# DEFLATE match-finder helpers
+15:  9feb4c06e ! 15:  b80a95e2a Preserve lexical invariants in checked function and control visits
+    @@ Metadata
+      ## Commit message ##
+         Preserve lexical invariants in checked function and control visits
+     
+    +    (cherry picked from commit 9feb4c06e85917510aece8902159d53bcf733fb0)
+    +
+      ## benchmarks/mech-deflate/matchfinder/README.md ##
+     @@ benchmarks/mech-deflate/matchfinder/README.md: one-based and checked. `lz-hash` requires 1–32 hash bits. As in the C function
+      both positions. The first `start` bytes are already matched. DEFLATE uses a
+    @@ hosts/gpu/src/native_artifact/control_compiler.rs: pub(in crate::native_artifact
+                      node: None,
+     
+      ## hosts/gpu/src/native_artifact/control_identity/mod.rs ##
+    -@@ hosts/gpu/src/native_artifact/control_identity/mod.rs: fn bytes(hash: &mut Sha256, value: &[u8]) {
+    -     hash.update(value);
+    - }
+    +@@ hosts/gpu/src/native_artifact/control_identity/mod.rs: use mech_engine::native_artifact::NativeMatchArtifactPlan;
+    + use sha2::{Digest, Sha256};
+    + 
+      pub const NATIVE_MATCH_LINK_IDENTITY_BYTES: usize = 168;
+     -pub const NATIVE_MATCH_TYPED_IR_VERSION: u64 = 4;
+     -pub const NATIVE_MATCH_WORK_POLICY_VERSION: u64 = 1;
+    @@ hosts/gpu/src/native_artifact/control_identity/mod.rs: fn bytes(hash: &mut Sha25
+      const MAGIC: &[u8; 16] = b"MECHNATIVEMATCH\0";
+      
+      /// Read-only same-Object metadata; only the checked emitter constructs it.
+    -@@ hosts/gpu/src/native_artifact/control_identity/mod.rs: pub(in crate::native_artifact) fn typed_ir_sha256(plan: &NativeMatchArtifactPlan
+    -             }
+    -             NativeMatchTerminator::Complete => hash.update([4]),
+    -             NativeMatchTerminator::Reject => hash.update([5]),
+    -+            NativeMatchTerminator::IntegrityFailure => hash.update([6]),
+    -         }
+    -     }
+    -     word(&mut hash, plan.outputs().len() as u64);
+     
+      ## hosts/gpu/src/native_artifact/control_runtime/mod.rs ##
+     @@ hosts/gpu/src/native_artifact/control_runtime/mod.rs: pub enum NativeMatchExecutionError {
+    @@ hosts/gpu/src/native_artifact/control_runtime/mod.rs: pub(in crate::native_artif
+                      origin: site.origin,
+                  });
+     
+    + ## hosts/gpu/src/native_artifact/identity/transcript.rs ##
+    +@@ hosts/gpu/src/native_artifact/identity/transcript.rs: pub(in crate::native_artifact) fn scalar_terminator(
+    +         }
+    +         NativeMatchTerminator::Complete => hash.update([4]),
+    +         NativeMatchTerminator::Reject => hash.update([5]),
+    ++        NativeMatchTerminator::IntegrityFailure => hash.update([6]),
+    +     }
+    + }
+    +
+      ## hosts/gpu/src/native_artifact/iteration_abi.rs ##
+     @@
+     -//! Structured counted-loop ABI. Frozen scalar ABI1 and Match ABI2 are separate.
+    @@ hosts/gpu/src/native_artifact/iteration_compiler.rs: impl JitIterationArtifact {
+              inputs: &[NativeScalarValue],
+     
+      ## hosts/gpu/src/native_artifact/iteration_identity/mod.rs ##
+    -@@ hosts/gpu/src/native_artifact/iteration_identity/mod.rs: fn bytes(hash: &mut Sha256, value: &[u8]) {
+    -     hash.update(value);
+    - }
+    +@@ hosts/gpu/src/native_artifact/iteration_identity/mod.rs: use mech_engine::native_artifact::{
+    + use sha2::{Digest, Sha256};
+    + 
+      pub const NATIVE_ITERATION_LINK_IDENTITY_BYTES: usize = 176;
+     -pub const NATIVE_ITERATION_TYPED_IR_VERSION: u64 = 3;
+     -pub const NATIVE_ITERATION_WORK_POLICY_VERSION: u64 = 1;
+    @@ hosts/gpu/src/native_artifact/iteration_identity/mod.rs: fn bytes(hash: &mut Sha
+      const MAGIC: &[u8; 16] = b"MECHNATIVEITER\0\0";
+      
+      /// Read-only same-Object metadata; only the checked emitter constructs it.
+    -@@ hosts/gpu/src/native_artifact/iteration_identity/mod.rs: pub(in crate::native_artifact) fn typed_ir_sha256(plan: &NativeIterationArtifact
+    -                     }
+    -                     NativeMatchTerminator::Complete => hash.update([4]),
+    -                     NativeMatchTerminator::Reject => hash.update([5]),
+    -+                    NativeMatchTerminator::IntegrityFailure => hash.update([6]),
+    -                 }
+    -             }
+    -             NativeIterationTerminator::Header {
+     
+      ## hosts/gpu/src/native_artifact/iteration_runtime/mod.rs ##
+     @@ hosts/gpu/src/native_artifact/iteration_runtime/mod.rs: pub enum NativeIterationExecutionError {
+    @@ hosts/gpu/src/native_artifact/mod.rs: pub use crate::native_artifact::values::{
+      pub use crate::native_artifact::work::NativeWorkMeter;
+      
+     +#[cfg(all(test, feature = "canonical-native-program"))]
+    -+#[path = "lexical_integrity_status_tests.rs"]
+     +mod lexical_integrity_status_tests;
+     +
+    - #[path = "control_abi.rs"]
+    - pub(in crate::native_artifact) mod control_abi;
+    + mod control_abi;
+      #[cfg(feature = "canonical-native")]
+    + mod control_application;
+     
+      ## hosts/gpu/src/native_artifact/program/compiler.rs ##
+     @@ hosts/gpu/src/native_artifact/program/compiler.rs: impl JitProgramArtifact {
+    @@ hosts/gpu/src/native_artifact/program/image/identity.rs: pub const NATIVE_PROGRA
+      pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
+      const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
+      #[derive(Clone, Debug)]
+    -@@ hosts/gpu/src/native_artifact/program/image/identity.rs: pub(in crate::native_artifact) fn typed_ir_sha256(
+    -                     }
+    -                     NativeMatchTerminator::Complete => hash.update([4]),
+    -                     NativeMatchTerminator::Reject => hash.update([5]),
+    -+                    NativeMatchTerminator::IntegrityFailure => hash.update([6]),
+    -                 }
+    -             }
+    -             NativeIterationTerminator::Header {
+     
+      ## hosts/gpu/src/native_artifact/program/image/wire/mod.rs ##
+     @@ hosts/gpu/src/native_artifact/program/image/wire/mod.rs: struct Visit {
+16:  c1519ba00 ! 16:  b2313e631 Keep transitive function checks in lexical invocation order
+    @@ Metadata
+      ## Commit message ##
+         Keep transitive function checks in lexical invocation order
+     
+    +    (cherry picked from commit c1519ba00e47bffa38a5063a2e3dd89f9145bc31)
+    +
+      ## benchmarks/mech-deflate/matchfinder/README.md ##
+     @@ benchmarks/mech-deflate/matchfinder/README.md: the cache pointer, and both next-position hashes are checked as well. The C
+      driver converts its signed nodes to Roc's biased U16 representation and table
+17:  aa9fa2a88 ! 17:  d9ab6927e Record lexical assertion failures in the resident coordinator
+    @@ Metadata
+      ## Commit message ##
+         Record lexical assertion failures in the resident coordinator
+     
+    +    (cherry picked from commit aa9fa2a88725ce1ea2f8f66b55975206bbdac221)
+    +
+      ## src/runtime/src/resident_recording.rs ##
+     @@ src/runtime/src/resident_recording.rs: fn rejected_artifact_record(
+          before_epoch: u64,
+18:  f93952893 ! 18:  fde688b98 Qualify recorded and linked lexical assertion recovery
+    @@ Metadata
+      ## Commit message ##
+         Qualify recorded and linked lexical assertion recovery
+     
+    +    (cherry picked from commit f93952893c8d24b0154d14b3b841513b8c20e84b)
+    +
+      ## hosts/gpu/tests/support/canonical_program_lexical_invariants.rs ##
+     @@ hosts/gpu/tests/support/canonical_program_lexical_invariants.rs: fn check_cases_with_policy(
+              let catalog = mech_stdlib::source_catalog();
+19:  3c4083b89 ! 19:  6e0d21e1b Regenerate executable fixtures for canonical graph revision 14
+    @@ Metadata
+      ## Commit message ##
+         Regenerate executable fixtures for canonical graph revision 14
+     
+    +    (cherry picked from commit 3c4083b89409a11653b9978ac4f16fbf77305929)
+    +
+      ## scripts/check-bytecode-v1-format.py ##
+     @@ scripts/check-bytecode-v1-format.py: from pathlib import Path
+      ROOT = Path(__file__).resolve().parents[1]
+20:  d3c86fa11 ! 20:  d0bca8814 Migrate remaining frozen graphs and qualify all fixture consumers
+    @@ Metadata
+      ## Commit message ##
+         Migrate remaining frozen graphs and qualify all fixture consumers
+     
+    +    (cherry picked from commit d3c86fa11eae50236e1a6d7d30d8cf6f34f83c15)
+    +
+      ## .github/workflows/ci-full.yml ##
+     @@ .github/workflows/ci-full.yml: jobs:
+                cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+21:  5ba98a0be ! 21:  c537893f0 Fix descriptor path in linked assertion qualification
+    @@ Metadata
+      ## Commit message ##
+         Fix descriptor path in linked assertion qualification
+     
+    +    (cherry picked from commit 5ba98a0be82878d622d1c15f48efb65f5f5633de)
+    +
+      ## hosts/gpu/tests/support/canonical_program_linked.rs ##
+     @@ hosts/gpu/tests/support/canonical_program_linked.rs: fn linked_assertion_rejection_preserves_publication_and_recovers() {
+          // reuses the maintained shell and the SAME pinned Object/descriptor, with
+22:  0cde60456 ! 22:  405f0a85b Keep ordinary checked argument kinds in lexical capture frames
+    @@ Metadata
+      ## Commit message ##
+         Keep ordinary checked argument kinds in lexical capture frames
+     
+    +    (cherry picked from commit 0cde60456476ff334862a8de3f35532589ab2782)
+    +
+      ## hosts/gpu/tests/support/canonical_program_lexical_argument_kinds.rs (new) ##
+     @@
+     +//! Checked ordinary calls retain the argument kinds of their unchecked forms.
+23:  80bd20bb3 ! 23:  2c64253f3 Reject native identities from either preceding compiler branch
+    @@ Metadata
+      ## Commit message ##
+         Reject native identities from either preceding compiler branch
+     
+    +    (cherry picked from commit 80bd20bb36cb72009bfcd6850b28fc9c186fe984)
+    +
+      ## hosts/gpu/src/native_artifact/program/image/identity.rs ##
+     @@ hosts/gpu/src/native_artifact/program/image/identity.rs: fn selected_template(
+      // no runtime frame, resource price or library/storage ABI changes.
+24:  30c1daab4 ! 24:  88dc7c33d Align collection and assignment factory feature gates
+    @@ Metadata
+      ## Commit message ##
+         Align collection and assignment factory feature gates
+     
+    +    (cherry picked from commit 30c1daab4fb2898a2dbdd080d1ea2c83c9d66dba)
+    +
+      ## src/engine/src/resident/native_collection_semantics.rs ##
+     @@ src/engine/src/resident/native_collection_semantics.rs: pub enum NativeCollectionPrimitive {
+          StringAllAccess,
+25:  bf0a26a4c ! 25:  ee5d15492 Keep canonical word codecs independent of wider integer features
+    @@ Metadata
+      ## Commit message ##
+         Keep canonical word codecs independent of wider integer features
+     
+    +    (cherry picked from commit bf0a26a4c8cc8bb47c6831bc28a502ef1d564a20)
+    +
+      ## src/core/src/cell_binding.rs ##
+     @@ src/core/src/cell_binding.rs: fn snapshot_managed_host_data_with_construction(
+              FunctionValueRepresentation::U16 => scalar!(u16, U16, |value| value),
+26:  cf401339e ! 26:  5a8c55dd2 Classify maintained word and map factories in catalog inventories
+    @@ Metadata
+      ## Commit message ##
+         Classify maintained word and map factories in catalog inventories
+     
+    +    (cherry picked from commit cf401339efcfc1efc671b4094a48ef6e610b0086)
+    +
+      ## src/engine/src/resident/general/mod.rs ##
+     @@ src/engine/src/resident/general/mod.rs: fn closed_producer_disposition(
+          {
+27:  b0839cb49 ! 27:  f4ea45b66 Format the published compiler stack with the pinned toolchain
+    @@ Metadata
+      ## Commit message ##
+         Format the published compiler stack with the pinned toolchain
+     
+    +    (cherry picked from commit b0839cb497e74d0ad9d2e2d79f15ebc900941112)
+    +
+      ## hosts/gpu/src/native_artifact/abi.rs ##
+     @@ hosts/gpu/src/native_artifact/abi.rs: pub(in crate::native_artifact) const fn primitive_work(op: NativeScalarOp) -> u6
+              | NativeScalarOp::U32ToU64
+    @@ hosts/gpu/src/native_artifact/control_compiler.rs: pub(in crate::native_artifact
+              }
+              NativeMatchTerminator::Complete => {
+     
+    - ## hosts/gpu/src/native_artifact/control_identity/mod.rs ##
+    -@@ hosts/gpu/src/native_artifact/control_identity/mod.rs: pub(in crate::native_artifact) fn typed_ir_sha256(plan: &NativeMatchArtifactPlan
+    -             NativeScalarKind::U8 => 5,
+    -             NativeScalarKind::U16 => 6,
+    -             NativeScalarKind::U32 => 7,
+    --
+    -         }]);
+    -         word(&mut hash, ty.schema().get() as u64);
+    -         hash.update(ty.schema_key().as_bytes());
+    -
+      ## hosts/gpu/src/native_artifact/identity/mod.rs ##
+    -@@ hosts/gpu/src/native_artifact/identity/mod.rs: pub(in crate::native_artifact) fn typed_ir_sha256(plan: &NativeArtifactPlan) ->
+    -             NativeScalarKind::U8 => 5,
+    -             NativeScalarKind::U16 => 6,
+    -             NativeScalarKind::U32 => 7,
+    --
+    -         }]);
+    -         word(hash, u64::from(value.schema().get()));
+    -         hash.update(value.schema_key().as_bytes());
+     @@ hosts/gpu/src/native_artifact/identity/mod.rs: pub(in crate::native_artifact) fn op_tag(op: NativeScalarOp) -> u8 {
+              NativeScalarOp::U64ToU8 => 68,
+              NativeScalarOp::U64ToU16 => 69,
+    @@ hosts/gpu/src/native_artifact/iteration_compiler.rs: impl JitIterationArtifact {
+              &self,
+              inputs: &[NativeScalarValue],
+     
+    - ## hosts/gpu/src/native_artifact/iteration_identity/mod.rs ##
+    -@@ hosts/gpu/src/native_artifact/iteration_identity/mod.rs: pub(in crate::native_artifact) fn typed_ir_sha256(plan: &NativeIterationArtifact
+    -             NativeScalarKind::U8 => 5,
+    -             NativeScalarKind::U16 => 6,
+    -             NativeScalarKind::U32 => 7,
+    --
+    -         }]);
+    -         word(&mut hash, ty.schema().get() as u64);
+    -         hash.update(ty.schema_key().as_bytes());
+    -
+    - ## hosts/gpu/src/native_artifact/program/image/identity.rs ##
+    -@@ hosts/gpu/src/native_artifact/program/image/identity.rs: pub(in crate::native_artifact) fn typed_ir_sha256(
+    -             Some(NativeScalarKind::U8) => 5,
+    -             Some(NativeScalarKind::U16) => 6,
+    -             Some(NativeScalarKind::U32) => 7,
+    --
+    -         }]);
+    -         word(&mut hash, ty.schema().get() as u64);
+    -         hash.update(ty.schema_key().as_bytes());
+    -
+      ## hosts/gpu/src/native_artifact/program/prepare/selected_join/tests.rs ##
+     @@ hosts/gpu/src/native_artifact/program/prepare/selected_join/tests.rs: fn compact_range_layout_and_identity_preserve_original_decoded_library_visits()
+                      .is_ok()
+28:  3d0994e64 ! 28:  a1447e785 Refresh distribution snapshots while preserving predecessor catalog identities
+    @@ Metadata
+      ## Commit message ##
+         Refresh distribution snapshots while preserving predecessor catalog identities
+     
+    +    (cherry picked from commit 3d0994e64db8368dce0ce12247f1c720d8665bcd)
+    +
+      ## scripts/check-distribution-contracts.py ##
+     @@ scripts/check-distribution-contracts.py: from __future__ import annotations
+      import argparse
+29:  e6d807bf0 ! 29:  ac4b502f5 Declare inherited native execution audit boundaries
+    @@ Metadata
+      ## Commit message ##
+         Declare inherited native execution audit boundaries
+     
+    +    (cherry picked from commit e6d807bf0f96c6a32bf1fa0fab153ae45e28a299)
+    +
+      ## scripts/unsafe-boundaries.allowlist ##
+     @@
+     +hosts/gpu/src/native_artifact/native_narrow_scalar_tests.rs|native-narrow-entry-test|mech-gpu|the retained JIT owns the exact entry ABI and disjoint live frames; malformed words and simulated output lanes stay inside the admitted test frame|narrow-width admission and atomic publication rejection probes
+30:  0186b68ae ! 30:  5c96b85d0 Update the inherited recursive function compilation contract
+    @@ Metadata
+      ## Commit message ##
+         Update the inherited recursive function compilation contract
+     
+    +    (cherry picked from commit 0186b68aec7ad204f8790eca73f732c35a375d95)
+    +
+      ## src/runtime/src/runtime/program/tests/mod.rs ##
+     @@ src/runtime/src/runtime/program/tests/mod.rs: fn canonical_document_functions_inline_typed_named_calls_without_leaking_binding
+          let recursive = canonical_planning_test_document(
+31:  276fc1084 ! 31:  8432cb25c Consolidate overlapping native safety inventory declarations
+    @@ Metadata
+      ## Commit message ##
+         Consolidate overlapping native safety inventory declarations
+     
+    +    (cherry picked from commit 276fc108438604ba2a39bb8a7d8cdb446f3c5bd1)
+    +
+      ## scripts/unsafe-boundaries.allowlist ##
+     @@
+      hosts/gpu/src/native_artifact/native_narrow_scalar_tests.rs|native-narrow-entry-test|mech-gpu|the retained JIT owns the exact entry ABI and disjoint live frames; malformed words and simulated output lanes stay inside the admitted test frame|narrow-width admission and atomic publication rejection probes
+32:  44e522c15 ! 32:  f80894350 Measure allocations in ordinary checked function argument frames
+    @@ Metadata
+      ## Commit message ##
+         Measure allocations in ordinary checked function argument frames
+     
+    +    (cherry picked from commit 44e522c1595a887d0bb9abf40802500d01813d88)
+    +
+      ## hosts/gpu/examples/argument_frame_transport.rs (new) ##
+     @@
+     +//! Allocation diagnostic for ordinary checked function argument transport.
+33:  385c8ac04 ! 33:  69cab8908 Borrow immutable arguments in nonrecursive checked function frames
+    @@ Metadata
+      ## Commit message ##
+         Borrow immutable arguments in nonrecursive checked function frames
+     
+    +    (cherry picked from commit 385c8ac045bc492538c6a2e1a37c44fa30844623)
+    +
+      ## benchmarks/mech-deflate/argument-transport/README.md (new) ##
+     @@
+     +# Ordinary function argument transport
+34:  c592f1eb9 ! 34:  cf5c55c42 Exercise assertion status regressions in the scalar native profile
+    @@ Metadata
+      ## Commit message ##
+         Exercise assertion status regressions in the scalar native profile
+     
+    +    (cherry picked from commit c592f1eb94a3ad0dabf713ad9f56f5e1a39e6219)
+    +
+      ## hosts/gpu/src/native_artifact/lexical_integrity_status_tests.rs ##
+     @@
+      //! A compiled arithmetic failure cannot be relabeled as a lexical assertion.
+    @@ hosts/gpu/src/native_artifact/mod.rs: pub use crate::native_artifact::values::{
+      
+     -#[cfg(all(test, feature = "canonical-native-program"))]
+     +#[cfg(all(test, feature = "canonical-native"))]
+    - #[path = "lexical_integrity_status_tests.rs"]
+      mod lexical_integrity_status_tests;
+      
+    + mod control_abi;
+35:  5b35a3510 ! 35:  21cb2b6a9 Preserve whole-word zero defaults in matchfinder reads
+    @@ Metadata
+      ## Commit message ##
+         Preserve whole-word zero defaults in matchfinder reads
+     
+    +    (cherry picked from commit 5b35a3510a9d371a91f3a9fdf2861a7aaae3b5e9)
+    +
+      ## benchmarks/mech-deflate/matchfinder/README.md ##
+     @@ benchmarks/mech-deflate/matchfinder/README.md: Nested tail calls preserve the exact lexical loop target; this does not imply
+      that the native compiler unrolls the first four comparisons into machine code.
+39:  b3e7d7586 ! 36:  3ed111065 Reproduce checked self-recursion through application stages
+    @@ Metadata
+      ## Commit message ##
+         Reproduce checked self-recursion through application stages
+     
+    +    (cherry picked from commit b3e7d75864f958e01407c0d30dbab1c4f2769085)
+    +
+      ## hosts/gpu/tests/support/canonical_program_recursive_statements.rs ##
+     @@ hosts/gpu/tests/support/canonical_program_recursive_statements.rs: fn recursive_statement_invariants_execute_on_the_current_visit() {
+              ],
+40:  62b2bcc66 ! 37:  f59cc2620 Allow normal setup work in the bounded Boolean regression
+    @@ Metadata
+      ## Commit message ##
+         Allow normal setup work in the bounded Boolean regression
+     
+    +    (cherry picked from commit 62b2bcc664f04c1eede29b3324244408520e4935)
+    +
+      ## hosts/gpu/tests/support/canonical_program_recursive_statements.rs ##
+     @@ hosts/gpu/tests/support/canonical_program_recursive_statements.rs: fn checked_boolean_self_recursion_uses_fresh_arguments_in_application_stages() {
+                          let mut policy = limits();
+41:  a2777fdb5 ! 38:  09c1a516c Recognize self-calls in application stages before binding function frames
+    @@ Metadata
+      ## Commit message ##
+         Recognize self-calls in application stages before binding function frames
+     
+    +    (cherry picked from commit a2777fdb598ad83fbc136e8fe3065a9fb54069f5)
+    +
+      ## src/engine/src/source_semantics/document_functions.rs ##
+     @@ src/engine/src/source_semantics/document_functions.rs: fn calls_function(node: &SyntaxNode, name: &str) -> Result<bool, SourceSemanticE
+          {
+36:  c4c2d333d ! 39:  4fa5faa42 Reproduce missing narrow comparison witnesses in native execution
+    @@ Metadata
+      ## Commit message ##
+         Reproduce missing narrow comparison witnesses in native execution
+     
+    +    (cherry picked from commit c4c2d333d209e8335e895297935fbc8ad71362ce)
+    +
+      ## hosts/gpu/tests/support/canonical_program_narrow_words.rs ##
+     @@ hosts/gpu/tests/support/canonical_program_narrow_words.rs: fn matrix(width: u32, values: &[u64]) -> Data {
+          )
+37:  363661e0d ! 40:  5fc195deb Compile exact-width unsigned comparisons through native execution
+    @@ Metadata
+      ## Commit message ##
+         Compile exact-width unsigned comparisons through native execution
+     
+    +    (cherry picked from commit 363661e0d694ae270e3aac0a70221f59109df6ac)
+    +
+      ## hosts/gpu/src/native_artifact/abi.rs ##
+     @@ hosts/gpu/src/native_artifact/abi.rs: pub(in crate::native_artifact) const fn primitive_work(op: NativeScalarOp) -> u6
+              | NativeScalarOp::U64Mul
+    @@ hosts/gpu/src/native_artifact/compiler/mod.rs: pub(in crate::native_artifact) fn
+                  let value = b.ins().icmp(cc, a, c);
+     
+      ## hosts/gpu/src/native_artifact/control_identity/mod.rs ##
+    -@@ hosts/gpu/src/native_artifact/control_identity/mod.rs: fn bytes(hash: &mut Sha256, value: &[u8]) {
+    -     hash.update(value);
+    - }
+    +@@ hosts/gpu/src/native_artifact/control_identity/mod.rs: use mech_engine::native_artifact::NativeMatchArtifactPlan;
+    + use sha2::{Digest, Sha256};
+    + 
+      pub const NATIVE_MATCH_LINK_IDENTITY_BYTES: usize = 168;
+     -pub const NATIVE_MATCH_TYPED_IR_VERSION: u64 = 5;
+     +// Exact-width unsigned comparison primitives retain their semantic kinds.
+    @@ hosts/gpu/src/native_artifact/control_identity/mod.rs: fn bytes(hash: &mut Sha25
+      
+     
+      ## hosts/gpu/src/native_artifact/identity/mod.rs ##
+    -@@ hosts/gpu/src/native_artifact/identity/mod.rs: use sha2::{Digest, Sha256};
+    +@@ hosts/gpu/src/native_artifact/identity/mod.rs: use transcript::{bytes, scalar_type as ty, scalar_value, word};
+      
+      /// Fixed exported data size for the build-owned entry pairing record.
+      pub const NATIVE_LINK_IDENTITY_BYTES: usize = 152;
+    @@ hosts/gpu/src/native_artifact/identity/mod.rs: pub(in crate::native_artifact) fn
+      
+     
+      ## hosts/gpu/src/native_artifact/iteration_identity/mod.rs ##
+    -@@ hosts/gpu/src/native_artifact/iteration_identity/mod.rs: fn bytes(hash: &mut Sha256, value: &[u8]) {
+    -     hash.update(value);
+    - }
+    +@@ hosts/gpu/src/native_artifact/iteration_identity/mod.rs: use mech_engine::native_artifact::{
+    + use sha2::{Digest, Sha256};
+    + 
+      pub const NATIVE_ITERATION_LINK_IDENTITY_BYTES: usize = 176;
+     -pub const NATIVE_ITERATION_TYPED_IR_VERSION: u64 = 4;
+     +// Exact-width unsigned comparison primitives retain their semantic kinds.
+38:  afda0145d ! 41:  eeaf64c5c Add a source-initialized real-buffer collector prefix witness
+    @@ Metadata
+      ## Commit message ##
+         Add a source-initialized real-buffer collector prefix witness
+     
+    +    (cherry picked from commit afda0145db4103e184a78a196db7c6cc5057cafd)
+    +
+      ## hosts/gpu/tests/canonical_artifact_program.rs ##
+     @@ hosts/gpu/tests/canonical_artifact_program.rs: mod nested_tail_qualification;
+      #[path = "support/canonical_program_binary_tree.rs"]
+42:  300008057 ! 42:  e5829c9b4 Reproduce recursive record returns from source-initialized buffers
+    @@ Metadata
+      ## Commit message ##
+         Reproduce recursive record returns from source-initialized buffers
+     
+    +    (cherry picked from commit 30000805717a0c0f242e675331ace06e922b1350)
+    +
+      ## hosts/gpu/tests/support/canonical_program_recursive_statements.rs ##
+     @@ hosts/gpu/tests/support/canonical_program_recursive_statements.rs: fn checked_boolean_self_recursion_uses_fresh_arguments_in_application_stages() {
+              }
+43:  4f5d30e4a ! 43:  ce33990fc Extract transition fields before selected collector work
+    @@ Metadata
+      ## Commit message ##
+         Extract transition fields before selected collector work
+     
+    +    (cherry picked from commit 4f5d30e4a06b82823a5794fabb9f21a0626c2f35)
+    +
+      ## hosts/gpu/tests/fixtures/native/deflate-collector.mec ##
+     @@ hosts/gpu/tests/fixtures/native/deflate-collector.mec: optimal-collect-position(tables<[u16]>, cache<[u32]>, hash3<u64>, hash4<u64>, in
+              | true => optimal-skip-position(mf, hash3, hash4, input, current-base, bits/wrapping-sub(position, current-base), nice-length, cache, pointer)
+44:  f88ed662a ! 44:  73deb38db Specialize dimensions of terminal recursive returns
+    @@ Metadata
+      ## Commit message ##
+         Specialize dimensions of terminal recursive returns
+     
+    +    (cherry picked from commit f88ed662a8d7ce8c06f79d6c542b9e1771f6ad78)
+    +
+      ## hosts/gpu/tests/support/canonical_program_recursive_statements.rs ##
+     @@ hosts/gpu/tests/support/canonical_program_recursive_statements.rs: fn checked_boolean_self_recursion_uses_fresh_arguments_in_application_stages() {
+      
+45:  17260d60d ! 45:  47f44599a Bind native record fields through the maintained selector
+    @@ Metadata
+      ## Commit message ##
+         Bind native record fields through the maintained selector
+     
+    +    (cherry picked from commit 17260d60dfadea0574b38974416ae897ec0b2968)
+    +
+      ## hosts/gpu/src/native_artifact/program/image/identity.rs ##
+     @@ hosts/gpu/src/native_artifact/program/image/identity.rs: fn selected_template(
+      // IR104 preserves lexical Assert operations as checked branches with distinct
+46:  2b3ca1f53 ! 46:  a1b3e9a79 Pin consecutive collector state and record initialization costs
+    @@ Metadata
+      ## Commit message ##
+         Pin consecutive collector state and record initialization costs
+     
+    +    (cherry picked from commit 2b3ca1f533401eba9c172289e932c5519947701b)
+    +
+      ## benchmarks/mech-deflate/matchfinder/README.md ##
+     @@ benchmarks/mech-deflate/matchfinder/README.md: The ordinary host profile retains its 65536-element cap. Work units include
+      admission and publication and are not machine instruction counts or timings.
+47:  2a41d2e9c ! 47:  3513a209c Reproduce full-size unsigned comprehension admission failure
+    @@ Metadata
+      ## Commit message ##
+         Reproduce full-size unsigned comprehension admission failure
+     
+    +    (cherry picked from commit 2a41d2e9c1dc58fd5f5b76fa7360464b278a919f)
+    +
+      ## hosts/gpu/tests/support/canonical_program_comprehensions.rs ##
+     @@ hosts/gpu/tests/support/canonical_program_comprehensions.rs: fn numbers(values: &[u64]) -> ValueDataDraft {
+          ValueDataDraft::Matrix(values.iter().copied().map(ValueDataDraft::U64).collect())
+48:  3e9f34897 ! 48:  215ccf72c Build unsigned comprehensions in packed storage
+    @@ Metadata
+      ## Commit message ##
+         Build unsigned comprehensions in packed storage
+     
+    +    (cherry picked from commit 3e9f348977c340120ec39a7e6d3bce19395bdb1d)
+    +
+      ## benchmarks/mech-deflate/matchfinder/README.md ##
+     @@ benchmarks/mech-deflate/matchfinder/README.md: U32 cells. Its actual execution requested 101445977 allocation bytes in 397
+      requests and took 3.51036625 seconds in the unoptimized Rust test profile. The
+49:  9d4eb1a9d ! 49:  1d562460b Reproduce recursive transport of full-size word buffers
+    @@ Metadata
+      ## Commit message ##
+         Reproduce recursive transport of full-size word buffers
+     
+    +    (cherry picked from commit 9d4eb1a9d8a413e4086e5d732ccc68c8a8cf7e1a)
+    +
+      ## hosts/gpu/tests/support/canonical_program_argument_transport.rs ##
+     @@ hosts/gpu/tests/support/canonical_program_argument_transport.rs: fn large_checked_arguments_keep_bounded_allocations_aliases_and_recovery() {
+          }
+50:  84b23cb66 ! 50:  a4690bdcd Project unsigned argument matrices without scalar drafts
+    @@ Metadata
+      ## Commit message ##
+         Project unsigned argument matrices without scalar drafts
+     
+    +    (cherry picked from commit 84b23cb6661ef2906db5c77441d4c1714b972fdc)
+    +
+      ## benchmarks/mech-deflate/argument-transport/README.md ##
+     @@ benchmarks/mech-deflate/argument-transport/README.md: This improvement does not remove recursive carrier copies, copies needed to
+      publish modified buffers, or other component costs. Algorithms, search limits,
+51:  7a2328b04 ! 51:  a195640d1 Reproduce full-size unsigned record field reads
+    @@ Metadata
+      ## Commit message ##
+         Reproduce full-size unsigned record field reads
+     
+    +    (cherry picked from commit 7a2328b04c6e27ad16222f567c74b0cbd4dced31)
+    +
+      ## hosts/gpu/tests/canonical_artifact_program.rs ##
+     @@ hosts/gpu/tests/canonical_artifact_program.rs: mod dynamic_buffer_qualification;
+      #[path = "support/canonical_program_dynamic_projections.rs"]
+52:  8c381fd7f ! 52:  b3e8e9a30 Keep unsigned aggregate field reads in packed storage
+    @@ Metadata
+      ## Commit message ##
+         Keep unsigned aggregate field reads in packed storage
+     
+    +    (cherry picked from commit 8c381fd7f7959f2dd0c7e183f2f8b7c1a6b6ca99)
+    +
+      ## benchmarks/mech-deflate/matchfinder/README.md ##
+     @@ benchmarks/mech-deflate/matchfinder/README.md: output rejection after success, unchanged published aliases, cleanup and retry.
+      The selected collection, recursion, assertion, projection and component run
+53:  ea9aae7c5 ! 53:  f4fdafd2b Require exact match schemas after recursive specialization
+    @@ Metadata
+      ## Commit message ##
+         Require exact match schemas after recursive specialization
+     
+    +    (cherry picked from commit ea9aae7c54df7a6852bd6237951b67c4a3ee6584)
+    +
+      ## src/engine/src/source_semantics/frontend.rs ##
+     @@ src/engine/src/source_semantics/frontend.rs: impl SemanticBuilder {
+                      // Selection drafts can retain unused source-axis declarations.
+54:  45385e06b ! 54:  bd929bdbf Reproduce indexed updates of the full-size U32 buffer
+    @@ Metadata
+      ## Commit message ##
+         Reproduce indexed updates of the full-size U32 buffer
+     
+    +    (cherry picked from commit 45385e06b34cdef44bee33d2fe137e9a265bd96a)
+    +
+      ## hosts/gpu/tests/canonical_artifact_program.rs ##
+     @@ hosts/gpu/tests/canonical_artifact_program.rs: mod dynamic_projection_qualification;
+      #[path = "support/canonical_program_packed_fields.rs"]
+55:  a3b6918bb ! 55:  3a5204dff Keep the precise resident budget error after packed field reads
+    @@ Metadata
+      ## Commit message ##
+         Keep the precise resident budget error after packed field reads
+     
+    +    (cherry picked from commit a3b6918bba84d1e73a8db217928a3f774dbe0814)
+    +
+      ## hosts/gpu/tests/support/canonical_program_huffman.rs ##
+     @@ hosts/gpu/tests/support/canonical_program_huffman.rs: fn full_huffman_resident_denial_preserves_the_real_resource_budget_error() {
+                      Ok(_) => panic!("the default resident whole-control budget must remain enforced"),
+56:  ad3a776ff ! 56:  03abb868f Keep plain unsigned matrix updates in packed storage
+    @@ Metadata
+      ## Commit message ##
+         Keep plain unsigned matrix updates in packed storage
+     
+    +    (cherry picked from commit ad3a776ffd2e6c1d498f5f0f5c7ecd111fc3e459)
+    +
+      ## benchmarks/mech-deflate/matchfinder/README.md ##
+     @@ benchmarks/mech-deflate/matchfinder/README.md: publication and recovery. Field reads with both real buffers take about 0.044
+      seconds and request 20384163 bytes across 9045 allocations in the unoptimized
+57:  79c6e2479 ! 57:  396adb8cf Align carried compiler contracts with consolidated native owners
+    @@ Metadata
+      ## Commit message ##
+         Align carried compiler contracts with consolidated native owners
+     
+    +    (cherry picked from commit 79c6e2479df1dee444c980ec5e738eaf793ffb11)
+    +
+      ## hosts/gpu/src/native_artifact/codegen/control/mod.rs ##
+     @@ hosts/gpu/src/native_artifact/codegen/control/mod.rs: impl<'plan> CfgDefinition<'plan> {
+                  let word = b
+58:  79186fb26 ! 58:  b200cfa3c Keep shared scalar layout checks exhaustive in every profile
+    @@ Metadata
+      ## Commit message ##
+         Keep shared scalar layout checks exhaustive in every profile
+     
+    +    (cherry picked from commit 79186fb26603eedf42725bb141e42089c3bb4781)
+    +
+      ## src/engine/src/resident/native_semantics.rs ##
+     @@ src/engine/src/resident/native_semantics.rs: fn scalar_port(
+          };
+59:  6ed376f81 ! 59:  c297a3e50 Gate narrow scalar vocabulary with its actual feature consumers
+    @@ Metadata
+      ## Commit message ##
+         Gate narrow scalar vocabulary with its actual feature consumers
+     
+    +    (cherry picked from commit 6ed376f8106d2eabbcba86009b06d46980dce72f)
+    +
+      ## src/engine/src/native_scalar.rs ##
+     @@ src/engine/src/native_scalar.rs: pub enum NativeScalarKind {
+          U64,
+60:  8a5380138 ! 60:  ae8464ae5 Follow consolidated native owners in carried unit contracts
+    @@ Metadata
+      ## Commit message ##
+         Follow consolidated native owners in carried unit contracts
+     
+    +    (cherry picked from commit 8a5380138bcb70d70cabb71f94decf995269eaff)
+    +
+      ## hosts/gpu/src/native_artifact/lexical_integrity_status_tests.rs ##
+     @@ hosts/gpu/src/native_artifact/lexical_integrity_status_tests.rs: fn program_integrity_status_cannot_replace_an_arithmetic_failure() {
+          let before = memory.used_bytes();
+61:  3923b1a79 ! 61:  169ad39e9 Reproduce retained binding pressure on ordinary record calls
+    @@ Metadata
+      ## Commit message ##
+         Reproduce retained binding pressure on ordinary record calls
+     
+    +    (cherry picked from commit 3923b1a79786af2414439a8d456b653216ad87d4)
+    +
+      ## hosts/gpu/tests/canonical_artifact_program.rs ##
+     @@ hosts/gpu/tests/canonical_artifact_program.rs: pub mod allocation_probe;
+      #[global_allocator]
+62:  a348856f1 ! 62:  af2ae95ad Leave mandatory call headroom before retaining optional bindings
+    @@ Metadata
+      ## Commit message ##
+         Leave mandatory call headroom before retaining optional bindings
+     
+    +    (cherry picked from commit a348856f191faa76b7d317d852c49171e6fa6a13)
+    +
+      ## hosts/gpu/src/native_artifact/program/image/identity.rs ##
+     @@ hosts/gpu/src/native_artifact/program/image/identity.rs: pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 106;
+      // access leaf, with unchanged selector/shape checks and copy admission.
+63:  70904278f ! 63:  706a53364 Include the existing node guard in plan cache accounting expectations
+    @@ Metadata
+      ## Commit message ##
+         Include the existing node guard in plan cache accounting expectations
+     
+    +    (cherry picked from commit 70904278fa2cb75d48be76d59d627de28825a0e0)
+    +
+      ## src/engine/src/resident/general/native_data_footprint_allocation_tests.rs ##
+     @@ src/engine/src/resident/general/native_data_footprint_allocation_tests.rs: fn oversized_memo_slots_fail_before_initialization_without_publication_or_refund
+                  + core::mem::size_of::<ResourceDemand>()
+64:  f6dca9108 ! 64:  fbd2566b0 Reuse prepaid immutable owners in generated arena copies
+    @@ Metadata
+      ## Commit message ##
+         Reuse prepaid immutable owners in generated arena copies
+     
+    +    (cherry picked from commit f6dca9108a7458611da3c1635d9bb62bf8a5d9b1)
+    +
+      ## hosts/gpu/src/native_artifact/program/image/identity.rs ##
+     @@ hosts/gpu/src/native_artifact/program/image/identity.rs: pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 106;
+      // the existing routing, bounds, finalization and publication admission.
+65:  fd790ca0f ! 65:  a577fc076 Measure real collector initialization and record the remaining construction gap
+    @@ Metadata
+      ## Commit message ##
+         Measure real collector initialization and record the remaining construction gap
+     
+    +    (cherry picked from commit fd790ca0fce74b8eb8563cc4442d3a0041672c70)
+    +
+      ## benchmarks/mech-deflate/matchfinder/README.md ##
+     @@ benchmarks/mech-deflate/matchfinder/README.md: output kinds keep the canonical finalizer bound. Updating either end of the real
+      the preceding publication and input aliases, and the next valid update succeeds.
+66:  6eac350f3 ! 66:  0eeed9256 bench: preserve the first optimized component baseline
+    @@ Metadata
+      ## Commit message ##
+         bench: preserve the first optimized component baseline
+     
+    +    (cherry picked from commit 6eac350f3209d8ddcec2217dcf3ba20d0279c27f)
+    +
+      ## benchmarks/mech-deflate/results/2026-10-26-fd790ca-reality-check/REPORT.md (new) ##
+     @@
+     +# First optimized component reality check
+67:  c7096ff33 ! 67:  1a7c57461 test: restore linked assertion retries after launcher extraction
+    @@ Metadata
+      ## Commit message ##
+         test: restore linked assertion retries after launcher extraction
+     
+    +    (cherry picked from commit c7096ff33984d80d3ea5a0a57bb8440a0ed7f1ea)
+    +
+      ## hosts/gpu/src/native_artifact/application/mod.rs ##
+     @@ hosts/gpu/src/native_artifact/application/mod.rs: pub(in crate::native_artifact) fn write_linked_application(
+          let main = inputs
+68:  f0d209a6f ! 68:  2450670f8 native: construct proven uniform unsigned collections in one fill
+    @@ Metadata
+      ## Commit message ##
+         native: construct proven uniform unsigned collections in one fill
+     
+    +    (cherry picked from commit f0d209a6f482266790cdb14dd8c0a0662c33beb1)
+    +
+      ## benchmarks/mech-deflate/matchfinder/README.md ##
+     @@ benchmarks/mech-deflate/matchfinder/README.md: recovery. Any bulk construction must derive eligibility through shared same-plan
+      facts, retain source error/effect order and finite resource admission, and reject
+    @@ hosts/gpu/src/native_artifact/program/runtime/collections/data.rs: impl Collecte
+     
+      ## hosts/gpu/src/native_artifact/program/runtime/collections/mod.rs ##
+     @@ hosts/gpu/src/native_artifact/program/runtime/collections/mod.rs: pub(in crate::native_artifact::program::runtime) fn admitted_capacity<T>(
+    +     allocation::exact_capacity(values, count, reason)
+      }
+    - #[path = "data.rs"]
+    - pub(in crate::native_artifact::program::runtime::collections) mod data;
+    -+#[path = "uniform_words.rs"]
+    + mod data;
+     +mod uniform_words;
+      pub(in crate::native_artifact::program::runtime) fn source_count(
+          value: &Value,
+69:  b7f3c611a ! 69:  15fd23779 bench: record constructor progress and the remaining collector blocker
+    @@ Metadata
+      ## Commit message ##
+         bench: record constructor progress and the remaining collector blocker
+     
+    +    (cherry picked from commit b7f3c611a5f8d635d9d113e203a7a2fadce3053f)
+    +
+      ## benchmarks/mech-deflate/results/2026-10-26-uniform-words/REPORT.md (new) ##
+     @@
+     +# Uniform-construction checkpoint
+70:  d93c41c08 ! 70:  f77977d51 native: read selected unsigned matrix length into its scalar lane
+    @@ Metadata
+      ## Commit message ##
+         native: read selected unsigned matrix length into its scalar lane
+     
+    +    (cherry picked from commit d93c41c08ffedbcbbf080bdc1a769af89b736e57)
+    +
+      ## benchmarks/mech-deflate/unsigned-length/README.md (new) ##
+     @@
+     +# Selected unsigned-buffer length
+71:  4a85f1d33 ! 71:  6e54b74e3 bench: preserve the completed real-buffer collector trace
+    @@ Metadata
+      ## Commit message ##
+         bench: preserve the completed real-buffer collector trace
+     
+    +    (cherry picked from commit 4a85f1d339832607147fae08d013e3aa60dd24a5)
+    +
+      ## benchmarks/mech-deflate/results/2026-10-26-selected-length/REPORT.md (new) ##
+     @@
+     +# Six-position collector completes
+72:  fb3f8f5d1 ! 72:  200f5ed0c native: certify and emit checked U32 scalar addition
+    @@ Metadata
+      ## Commit message ##
+         native: certify and emit checked U32 scalar addition
+     
+    +    (cherry picked from commit fb3f8f5d11690f239a48f8b1f2cdd619bb113a7f)
+    +
+      ## hosts/gpu/src/native_artifact/abi.rs ##
+     @@ hosts/gpu/src/native_artifact/abi.rs: pub(in crate::native_artifact) const STATUS_INTEGRITY: u64 = 9;
+      /// and from the adapter's conservative source scratch metadata.
+    @@ hosts/gpu/src/native_artifact/compiler/mod.rs: pub(in crate::native_artifact) fn
+                      U64Add => b.ins().uadd_overflow(a, c),
+     
+      ## hosts/gpu/src/native_artifact/identity/mod.rs ##
+    -@@ hosts/gpu/src/native_artifact/identity/mod.rs: use sha2::{Digest, Sha256};
+    +@@ hosts/gpu/src/native_artifact/identity/mod.rs: use transcript::{bytes, scalar_type as ty, scalar_value, word};
+      
+      /// Fixed exported data size for the build-owned entry pairing record.
+      pub const NATIVE_LINK_IDENTITY_BYTES: usize = 152;
+73:  799f26b37 ! 73:  50c0a663f bench: port checked block frequency and observation merges
+    @@ Metadata
+      ## Commit message ##
+         bench: port checked block frequency and observation merges
+     
+    +    (cherry picked from commit 799f26b3765e8b807775a627b2ba23e1eb010a7c)
+    +
+      ## benchmarks/mech-deflate/matchfinder/README.md ##
+     @@ benchmarks/mech-deflate/matchfinder/README.md: cargo test --locked --offline -j1 -p mech-gpu --no-default-features \
+        collector_qualification -- --test-threads=1 --nocapture
+74:  96f59a9a2 ! 74:  c7f0e3a7b bench: record the completed trace and block counter checkpoint
+    @@ Metadata
+      ## Commit message ##
+         bench: record the completed trace and block counter checkpoint
+     
+    +    (cherry picked from commit 96f59a9a22a100e7169bee8167d02cca07ac99ef)
+    +
+      ## benchmarks/mech-deflate/matchfinder/README.md ##
+     @@ benchmarks/mech-deflate/matchfinder/README.md: explicit; this correction does not claim native bulk-load or prefetch parity.
+      
+75:  faadb8539 ! 75:  114eef487 native: read selected scalar record fields without temporary values
+    @@ Metadata
+      ## Commit message ##
+         native: read selected scalar record fields without temporary values
+     
+    +    (cherry picked from commit faadb8539df0b05c84001709b86893967738e5fb)
+    +
+      ## benchmarks/mech-deflate/results/2026-10-26-record-fields/REPORT.md (new) ##
+     @@
+     +# Scalar record-field checkpoint
+76:  766ea7475 ! 76:  4ea406e00 bench: publish the full block collector and measured admission limits
+    @@ Metadata
+      ## Commit message ##
+         bench: publish the full block collector and measured admission limits
+     
+    +    (cherry picked from commit 766ea74758e9fdb8ba46882f220014df4a96258d)
+    +
+      ## benchmarks/mech-deflate/matchfinder/generate_block_reference.py (new) ##
+     @@
+     +#!/usr/bin/env python3

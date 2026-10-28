@@ -1,0 +1,30 @@
+{
+  "name": "byte-append-sequence-profile",
+  "command": [
+    "cargo",
+    "check",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-engine",
+    "--no-default-features",
+    "--features",
+    "native-artifact,sequence_buffers"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "3e262c87aac0c0ae49b689561cd53bcfa4b34eaa",
+  "dirty": "",
+  "exit": 0,
+  "seconds": 12.069824934005737,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/byte-append-sequence-profile.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

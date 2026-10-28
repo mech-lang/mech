@@ -35,7 +35,11 @@ pub mod native_artifact;
 #[cfg(feature = "native-artifact")]
 pub mod linked_factories {
     pub use crate::resident::matrix_literal::linkage_factories::*;
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     pub use crate::resident::native_collection_semantics::linkage_factories::*;
     pub use crate::resident::native_factory_linkage::{
         NativeFactoryLinkageProfile, NativeLinkedFactory,
@@ -117,6 +121,12 @@ pub mod __mech_native {
     };
     #[cfg(feature = "assign")]
     pub use crate::intrinsics::assign::catalog::__mech_native::*;
+    #[cfg(feature = "integer_bits")]
+    pub use crate::intrinsics::bits::{
+        install_bits_add, install_bits_and, install_bits_clz, install_bits_ctz, install_bits_mul,
+        install_bits_not, install_bits_or, install_bits_shl, install_bits_shr, install_bits_sub,
+        install_bits_xor,
+    };
     #[cfg(feature = "invariant_define")]
     pub use crate::intrinsics::catalog::install_integrity_constraint_marker;
     #[cfg(feature = "matrix_comprehensions")]
@@ -155,6 +165,11 @@ pub mod __mech_native {
     pub use crate::intrinsics::pure_text::{
         install_number_format_matrix, install_number_format_scalar, install_parse_u64,
         install_sequence_length,
+    };
+    #[cfg(feature = "sequence_buffers")]
+    pub use crate::intrinsics::sequence_buffers::{
+        install_sequence_append, install_sequence_append_le_bytes, install_sequence_append_sublist,
+        install_sequence_clear, install_sequence_reserve, install_sequence_with_capacity,
     };
     #[cfg(feature = "sequence_sort")]
     pub use crate::intrinsics::sequence_sort::install_sequence_sort_indices;

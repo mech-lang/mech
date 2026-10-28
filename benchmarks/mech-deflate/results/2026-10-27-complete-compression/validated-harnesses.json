@@ -1,0 +1,6 @@
+{
+  "hosts/gpu/tests/canonical_artifact_program.rs": "13f1ae8a47fbf5a1285314ef8ba26e8731bc7c07595f4710c0d8e16b529e6c87",
+  "hosts/gpu/tests/support/canonical_program_compress.rs": "606c324bef4e7349d846abaf8eb641ab0b769da073695440d550f20c01c9b7ee",
+  "hosts/gpu/tests/support/canonical_program_control_usage.rs": "b26ed03f6827ddbe77e7353a56b25927ed06c9cc5bed55c9b9f475d4980c6b95",
+  "hosts/gpu/tests/support/canonical_program_flush_block.rs": "241ea61348cd069de1e3c3834039d89ec4242d7a3562b2fa1a368d9c739bc85f"
+}

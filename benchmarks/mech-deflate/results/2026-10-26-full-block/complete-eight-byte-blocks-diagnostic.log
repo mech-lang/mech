@@ -1,0 +1,22 @@
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-reality-check/hosts/gpu)
+    Finished `test` profile [unoptimized] target(s) in 18.38s
+     Running tests/canonical_artifact_program.rs (/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-161b919374daec0a)
+
+running 1 test
+test full_block_qualification::real_buffer_complete_eight_byte_blocks_diagnostic ... {"allocation_requests":3066805,"artifact":"original","case":"eight-literals","compile_block_limit":16384,"compile_seconds":4.709022042,"elapsed_seconds":14.000032916,"input_bytes":8,"lowered_blocks":4916,"requested_allocation_bytes":1012910577,"result":"Ok(NativeProgramExecutionReport { work: 32189830448, comparison_work: 513951319, visits: 12543, transport_bytes: 514304, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })","retained_after":6615228,"retained_before":42780,"witness":"first-complete-block","work_limit":1000000000000}
+reference agreement: eight-literals original, all scalar fields and all six complete buffers
+{"allocation_requests":304221,"artifact":"original","case":"eight-overlap","compile_block_limit":16384,"compile_seconds":4.709022042,"elapsed_seconds":10.28671875,"input_bytes":8,"lowered_blocks":4916,"requested_allocation_bytes":384717606,"result":"Err(Library { origin: NativeMatchOrigin { node: NodeId(0), block: Some(442), local: Some(0) }, error: Memory(BudgetExceeded { operation: None, requested: 274943859, limit: 268435456 }) })","retained_after":42780,"retained_before":42780,"witness":"first-complete-block","work_limit":1000000000000}
+
+thread 'full_block_qualification::real_buffer_complete_eight_byte_blocks_diagnostic' (16184760) panicked at hosts/gpu/tests/support/canonical_program_full_block.rs:159:20:
+called `Result::unwrap()` on an `Err` value: Library { origin: NativeMatchOrigin { node: NodeId(0), block: Some(442), local: Some(0) }, error: Memory(BudgetExceeded { operation: None, requested: 274943859, limit: 268435456 }) }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    full_block_qualification::real_buffer_complete_eight_byte_blocks_diagnostic
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 270 filtered out; finished in 67.55s
+
+error: test failed, to rerun pass `-p mech-gpu --test canonical_artifact_program`

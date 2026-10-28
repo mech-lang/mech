@@ -1,0 +1,38 @@
+{
+  "name": "mixed-frame-and-writers",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "canonical-native-program",
+    "--test",
+    "canonical_artifact_program",
+    "--",
+    "linked_mixed_record_buffer_frames",
+    "pinned_path_writer",
+    "pinned_sequence_writer",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "88605b57230b5a76c36f58f3977b3261fdbe47c8",
+  "dirty": " M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/tests/canonical_artifact_program.rs\n M hosts/gpu/tests/support/canonical_program_linked.rs\n M hosts/gpu/tests/support/canonical_program_record_buffers.rs\n M src/engine/src/native_artifact/buffer_frames.rs\n?? benchmarks/mech-deflate/matchfinder/generate_path_writer_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_sequence_writer_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-path-writer-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-path-writer.mec\n?? hosts/gpu/tests/fixtures/native/deflate-sequence-writer-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-sequence-writer.mec\n?? hosts/gpu/tests/support/canonical_program_path_writer.rs\n?? hosts/gpu/tests/support/canonical_program_sequence_writer.rs\n",
+  "exit": 0,
+  "seconds": 182.00554823875427,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/mixed-frame-and-writers.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

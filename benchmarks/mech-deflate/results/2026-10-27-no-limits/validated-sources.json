@@ -1,0 +1,20 @@
+{
+  "hosts/gpu/src/native_artifact/compiler/mod.rs": "a8e23879656a4f063eb3a5b67fab56ee8387862c75a428e5dd1e6858dd824fe5",
+  "hosts/gpu/src/native_artifact/mod.rs": "20e5135ecc74e1a461dc5dae22b8aebe4146c391600748e5bb1e2bf3f6570780",
+  "hosts/gpu/src/native_artifact/program/compiler.rs": "5e678e011dc281137b9bb7eea8fa5907bad1c0ba8d92636b7703fbe63c175783",
+  "hosts/gpu/src/native_artifact/program/linked.rs": "5f5f6291e04b0d1ee203baf1f797e26050e8c67386a9d60b9ebb8022304d143b",
+  "hosts/gpu/src/native_artifact/program/limits.rs": "0dbe20d54cda0b27e8518d6a58d1ce752e927f8631963e688380365a3cfe06a7",
+  "hosts/gpu/src/native_artifact/program/mod.rs": "44d8c489a5e065b133aaff135f70c70e2724fa504852dac2020328157de497b0",
+  "hosts/gpu/tests/support/canonical_program_no_limits.rs": "6da6fdce1e0eb19dad05fb68143d767b2b4976a2a6d7181d5062d241f3ecf8e0",
+  "src/engine/src/native_artifact/iteration_validation.rs": "51f8b44de55fe2be6e0e8649c7553bfab307b3277eedd0d739de9e05a8e04d6c",
+  "src/engine/src/native_artifact/mod.rs": "07263f5f711820a2031efcc89ac9e9871b547071824583260b0a1f018cf78fe2",
+  "src/engine/src/native_artifact/program.rs": "2b0b8db1def88c500b632103107a4431bd9ca43af58593f62d906491ff8150d5",
+  "src/engine/src/native_artifact/program_image_plan.rs": "d25335fe342af82dcce17df4a235fd0bd1ba4f557506c791cbb48f56aaae3d49",
+  "src/engine/src/resident/general/native_lowering.rs": "55a815dbd397bf416a30a81456a2ea45a34bc6a82d73e48b1206a035109849bd",
+  "src/engine/src/resident/general/native_match_lowering.rs": "05a43199b6a4f8717fa614c1ad1467a5733c85dc9946cc16e6f29139dfb89431",
+  "hosts/gpu/tests/canonical_artifact_program.rs": {
+    "compiled_worktree_sha256": "13f1ae8a47fbf5a1285314ef8ba26e8731bc7c07595f4710c0d8e16b529e6c87",
+    "patch_registration_sha256": "13862db4a281bd3189296fd5be112076b6ccc813bc0fbe1b5c352e3cefcd5e4e",
+    "note": "Compiled harness also includes local compressor assembly modules; only NoLimits registration belongs to this patch. The filtered mode and image/linked cases are independent of those modules."
+  }
+}

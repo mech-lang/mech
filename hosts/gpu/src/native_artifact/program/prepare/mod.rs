@@ -31,6 +31,15 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     pub(in crate::native_artifact) max_library_inputs: usize,
     // Derived from this SAME immutable plan; callers cannot inject a region
     // from another artifact or rebind one to a different selected factory.
+    // Same-plan last-use candidates are recomputed on every image load. The
+    // runtime still checks exact current owners and exclusive core storage.
+    pub(in crate::native_artifact) buffer_frames: mech_engine::native_artifact::NativeBufferFrames,
+    pub(in crate::native_artifact) unsigned_buffer_calls:
+        Box<[Option<mech_engine::native_artifact::NativeUnsignedBufferCall>]>,
+    // Pure derived cache. Recomputed from the validated plan on image load;
+    // it is neither serialized authority nor another preparation pipeline.
+    pub(in crate::native_artifact) uniform_word_collections:
+        Box<[mech_engine::native_artifact::NativeUniformWordCollection]>,
     pub(in crate::native_artifact) window_regions:
         Box<[mech_engine::native_artifact::NativeWindowRegion]>,
     pub(in crate::native_artifact) string_map_regions:
@@ -82,6 +91,7 @@ impl PreparedNativeProgram {
         let borrowed_strings =
             native::program::prepare::borrowed::Layout::derive(&plan, &scalar_aggregates)?;
         let string_map_regions = plan.string_map_regions().into_boxed_slice();
+        let unsigned_buffer_calls = facts.unsigned_buffer_calls().into_boxed_slice();
         let selected_joins =
             native::program::prepare::selected_join::Layout::derive(&plan, &string_map_regions)?;
         let line_matrices = native::program::prepare::line_matrix::Layout::derive(&plan)?;
@@ -248,6 +258,7 @@ impl PreparedNativeProgram {
             })
             .collect::<Result<Box<[_]>, _>>()?;
         query_stages::validate_query_stages(&plan, &calls).map_err(str::to_owned)?;
+        let uniform_word_collections = facts.uniform_unsigned_collections().into_boxed_slice();
         let window_regions = plan.window_regions().into_boxed_slice();
         let occupied_frame =
             frame_prefix_words(&plan, &scalar_aggregates, &borrowed_strings, &closed_tails)
@@ -341,6 +352,7 @@ impl PreparedNativeProgram {
             .transpose()
             .map_err(str::to_owned)?
             .unwrap_or_default();
+        let buffer_frames = facts.buffer_frames();
         let (scalar_aggregates, line_retention_frontiers) = facts.into_preparation_inventories();
         let metadata = ProgramMetadata {
             plan,
@@ -354,6 +366,9 @@ impl PreparedNativeProgram {
             scalar_bytes,
             observation_schema_bytes,
             max_library_inputs,
+            uniform_word_collections,
+            unsigned_buffer_calls,
+            buffer_frames,
             window_regions,
             string_map_regions,
             scalar_aggregates,

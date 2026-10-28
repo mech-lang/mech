@@ -1,0 +1,5 @@
+<block-sequence> := <{litrunlen-and-length<u32> offset<u16> offset-slot<u16>}>
+writer-read(seqs<[block-sequence]>, at<u64>) => (out<u32>) :=
+  current := seqs[at + 1u64]
+  out := current.litrunlen-and-length.
+writer-read(seqs<[block-sequence]>, at<u64>)

@@ -1,0 +1,152 @@
+{
+  "recorded_at": "2026-10-26T22:37:47.264221+00:00",
+  "base": "4a85f1d339832607147fae08d013e3aa60dd24a5",
+  "compiler_fix": "fb3f8f5d11690f239a48f8b1f2cdd619bb113a7f",
+  "source_port": "799f26b3765e8b807775a627b2ba23e1eb010a7c",
+  "artifact_revision": 14,
+  "scalar_typed_ir": 8,
+  "program_typed_ir": 108,
+  "program_abi": 35,
+  "program_work_policy": 83,
+  "source_pin": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "pinned_original_files": {
+    "package/CompressOptimal.roc": {
+      "sha256": "76640a1c710d8392abd7902c7841a9e0b34cba2eb5acd857ae6acd65e7c11e61",
+      "unchanged_from_pin": true
+    },
+    "package/CompressLazy.roc": {
+      "sha256": "131bfdf5a737c5501706884186ef0fb9360686ae68540cb4ff49912b4c967607",
+      "unchanged_from_pin": true
+    }
+  },
+  "patch_files_sha256": {
+    "benchmarks/mech-deflate/matchfinder/README.md": "ebdc923a9965d07d22d6b63f3abd18c1fcf79a8971328df1d3de342927e6a716",
+    "benchmarks/mech-deflate/matchfinder/block-statistics-reference.roc": "55f820bf07b0f164b49b7d902b8ab95283c0d8b2ad19faa06b7d5406f4eea07a",
+    "hosts/gpu/src/native_artifact/abi.rs": "520e036427224ca29bea69b6f465f197fc21bbab80b53f16047cbc687720b822",
+    "hosts/gpu/src/native_artifact/compiler/mod.rs": "dd6064230a6e218e3b4aa8f2b436be35e9d121c1a3c41e3e229255572c5c1192",
+    "hosts/gpu/src/native_artifact/identity/mod.rs": "f57b4fb1a2e66243f9ad45ec569f94b4b69ba6a0a43367c5437e2fb114cf5273",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "a3a325bc28199dde0e904b6a92418f1f5ecf0930887e63cc4470f006f0b253a4",
+    "hosts/gpu/tests/canonical_artifact_program.rs": "486ddef0b9476599ff57baef8fa7f8315c2558d140bc3a8f2fe81ae2b38c7b23",
+    "hosts/gpu/tests/fixtures/native/deflate-block-collector.mec": "1a16469ff01b349c4bffebfaa63090facc9135a9069a8d8b163578f7f379d5d0",
+    "hosts/gpu/tests/support/canonical_program_block_statistics.rs": "c05ad9817f9ea1aee6c4099cf747bd077025129087976b9351011e24081d5c32",
+    "hosts/gpu/tests/support/canonical_program_linked.rs": "75e0eef3a3eca5b5c95c7eb27f466e827c13a203c09c5d18bb0a94ac7a9547b1",
+    "hosts/gpu/tests/support/canonical_program_narrow_words.rs": "c7e2d445dd4e9696ec5dc1bcbea90073e643864bb8a73df6c3cbf2c54a043b08",
+    "src/engine/src/native_artifact/program_image_read.rs": "855abd0c0d9de52429de2256f8d6d62aef788e2a04f96448fe6eda4cd34d0791",
+    "src/engine/src/native_scalar.rs": "633bcc708fbdbc0aef1a6f9373a2c10d65e90a539e80a6c9501690cbd3970b59",
+    "src/engine/src/resident/numeric/mod.rs": "5309527776ced3dd309f373f03214f64bcb19f85ee9c9fbdd243f94a41ecdacb"
+  },
+  "qualification_binary": "/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-161b919374daec0a",
+  "qualification_binary_sha256": "2ce70b642038bed29c4798e0055cf5e85cd7c3711a56b8a27c6a612d51c0ecab",
+  "receipts": {
+    "checked-u32-add-parent-witness.json": {
+      "source": "/private/tmp/mech-stack-landscape-20261026/reality-check/checked-u32-add-parent-witness.json",
+      "original_sha256": "ccec45b733c2db0b85b578f021822e235f1b7e272943b479eafd81aeb9345110",
+      "archived_sha256": "ccec45b733c2db0b85b578f021822e235f1b7e272943b479eafd81aeb9345110",
+      "trailing_whitespace_normalized": false
+    },
+    "checked-u32-add-parent-witness.log": {
+      "source": "/private/tmp/mech-stack-landscape-20261026/reality-check/checked-u32-add-parent-witness.log",
+      "original_sha256": "3fcefa8cd35cdc6e2ff451fda2fab63e93054f8b3f02a1ca4532fa80cc65ee39",
+      "archived_sha256": "b305133316b7540673a16cf9c16342b5d1db259d9cd0259c51805700cf27207d",
+      "trailing_whitespace_normalized": true
+    },
+    "checked-u32-add-focused.json": {
+      "source": "/private/tmp/mech-stack-landscape-20261026/reality-check/checked-u32-add-focused.json",
+      "original_sha256": "c6bf49454d1f24c5c613140564c9fcbe223a01a232c96f2f19dd7194cdf01462",
+      "archived_sha256": "c6bf49454d1f24c5c613140564c9fcbe223a01a232c96f2f19dd7194cdf01462",
+      "trailing_whitespace_normalized": false
+    },
+    "checked-u32-add-focused.log": {
+      "source": "/private/tmp/mech-stack-landscape-20261026/reality-check/checked-u32-add-focused.log",
+      "original_sha256": "f7e07f4a31560472d726690410c3aab38dd5bc19bb5436091d753dffc963e0ce",
+      "archived_sha256": "f7e07f4a31560472d726690410c3aab38dd5bc19bb5436091d753dffc963e0ce",
+      "trailing_whitespace_normalized": false
+    },
+    "checked-u32-block-statistics.json": {
+      "source": "/private/tmp/mech-stack-landscape-20261026/reality-check/checked-u32-block-statistics.json",
+      "original_sha256": "f31da6c1a59153aa3ed9fda21e1997507713aa9bf35df8105a8d70e9e4ed4e55",
+      "archived_sha256": "f31da6c1a59153aa3ed9fda21e1997507713aa9bf35df8105a8d70e9e4ed4e55",
+      "trailing_whitespace_normalized": false
+    },
+    "checked-u32-block-statistics.log": {
+      "source": "/private/tmp/mech-stack-landscape-20261026/reality-check/checked-u32-block-statistics.log",
+      "original_sha256": "a3f76de648fcb3d8337d6950c8bac6a03c68ae64cf00a487d19d97cd665187b8",
+      "archived_sha256": "a3f76de648fcb3d8337d6950c8bac6a03c68ae64cf00a487d19d97cd665187b8",
+      "trailing_whitespace_normalized": false
+    },
+    "checked-u32-statistics-final.json": {
+      "source": "/private/tmp/mech-stack-landscape-20261026/reality-check/checked-u32-statistics-final.json",
+      "original_sha256": "1a1153e148a45794d77b665ecebf0c09b91f2b25de840d3e452ab1ad1c718ac3",
+      "archived_sha256": "1a1153e148a45794d77b665ecebf0c09b91f2b25de840d3e452ab1ad1c718ac3",
+      "trailing_whitespace_normalized": false
+    },
+    "checked-u32-statistics-final.log": {
+      "source": "/private/tmp/mech-stack-landscape-20261026/reality-check/checked-u32-statistics-final.log",
+      "original_sha256": "89481c1741ca100e4ebf72e7526f3edfd30ad90ab42eb03b3ebcf62c190e0915",
+      "archived_sha256": "89481c1741ca100e4ebf72e7526f3edfd30ad90ab42eb03b3ebcf62c190e0915",
+      "trailing_whitespace_normalized": false
+    },
+    "checked-u32-statistics-corrected.json": {
+      "source": "/private/tmp/mech-stack-landscape-20261026/reality-check/checked-u32-statistics-corrected.json",
+      "original_sha256": "9aa434932cbfd12274034f1ff789dc01a06e03a07d511e069f72200a09befefa",
+      "archived_sha256": "9aa434932cbfd12274034f1ff789dc01a06e03a07d511e069f72200a09befefa",
+      "trailing_whitespace_normalized": false
+    },
+    "checked-u32-statistics-corrected.log": {
+      "source": "/private/tmp/mech-stack-landscape-20261026/reality-check/checked-u32-statistics-corrected.log",
+      "original_sha256": "b05c29784065fecb49ba0afbf4583d7d842cfa65bfda0e99eaa9a0036de9cbc9",
+      "archived_sha256": "b05c29784065fecb49ba0afbf4583d7d842cfa65bfda0e99eaa9a0036de9cbc9",
+      "trailing_whitespace_normalized": false
+    },
+    "checked-u32-linked-image.json": {
+      "source": "/private/tmp/mech-stack-landscape-20261026/reality-check/checked-u32-linked-image.json",
+      "original_sha256": "99d85b3533221fbe8796cf92325087d320658665e41622ee0e2aacfb0a03fd2a",
+      "archived_sha256": "99d85b3533221fbe8796cf92325087d320658665e41622ee0e2aacfb0a03fd2a",
+      "trailing_whitespace_normalized": false
+    },
+    "checked-u32-linked-image.log": {
+      "source": "/private/tmp/mech-stack-landscape-20261026/reality-check/checked-u32-linked-image.log",
+      "original_sha256": "39fb6e1f9f86040b33e3fa497c88fced5ccf7000be5745580b5ae610e38d38c3",
+      "archived_sha256": "39fb6e1f9f86040b33e3fa497c88fced5ccf7000be5745580b5ae610e38d38c3",
+      "trailing_whitespace_normalized": false
+    },
+    "checked-u32-static-contracts.json": {
+      "source": "/private/tmp/mech-stack-landscape-20261026/reality-check/checked-u32-static-contracts.json",
+      "original_sha256": "5345bb1fe640e06cbecbc864f9d5e4dd324533dac1dccf9785925df7341432d1",
+      "archived_sha256": "5345bb1fe640e06cbecbc864f9d5e4dd324533dac1dccf9785925df7341432d1",
+      "trailing_whitespace_normalized": false
+    },
+    "checked-u32-static-contracts.log": {
+      "source": "/private/tmp/mech-stack-landscape-20261026/reality-check/checked-u32-static-contracts.log",
+      "original_sha256": "a2cae8b23c651e522dc95e0d9589e8c060e685db449defcf01e05a5331e31344",
+      "archived_sha256": "a2cae8b23c651e522dc95e0d9589e8c060e685db449defcf01e05a5331e31344",
+      "trailing_whitespace_normalized": false
+    },
+    "pinned-block-statistics-reference.json": {
+      "source": "/private/tmp/mech-stack-landscape-20261026/reality-check/pinned-block-statistics-reference.json",
+      "original_sha256": "3d8753ffaafdfe24373975e20b1e6a756191d5da4c453ff6dd51b70112325d1f",
+      "archived_sha256": "3d8753ffaafdfe24373975e20b1e6a756191d5da4c453ff6dd51b70112325d1f",
+      "trailing_whitespace_normalized": false
+    },
+    "pinned-block-statistics-reference.log": {
+      "source": "/private/tmp/mech-stack-landscape-20261026/reality-check/pinned-block-statistics-reference.log",
+      "original_sha256": "90915610200f754f402dfad986c6043ad543e203bc92b19ba82efbff8fe53f49",
+      "archived_sha256": "90915610200f754f402dfad986c6043ad543e203bc92b19ba82efbff8fe53f49",
+      "trailing_whitespace_normalized": false
+    },
+    "checked-u32-final-real-collector.json": {
+      "source": "/private/tmp/mech-stack-landscape-20261026/reality-check/checked-u32-final-real-collector.json",
+      "original_sha256": "663f97fe3666c2c52a5b0a1481af61664f70125ea8d544de22808ffdae6fc6ac",
+      "archived_sha256": "663f97fe3666c2c52a5b0a1481af61664f70125ea8d544de22808ffdae6fc6ac",
+      "trailing_whitespace_normalized": false
+    },
+    "checked-u32-final-real-collector.log": {
+      "source": "/private/tmp/mech-stack-landscape-20261026/reality-check/checked-u32-final-real-collector.log",
+      "original_sha256": "e7c7a6911eae49dd4d943bf1a16b6a14c1c766903f8461f398a95c5bd9aabad0",
+      "archived_sha256": "e7c7a6911eae49dd4d943bf1a16b6a14c1c766903f8461f398a95c5bd9aabad0",
+      "trailing_whitespace_normalized": false
+    }
+  },
+  "ci_triggered": false,
+  "release_measurement_run": false
+}

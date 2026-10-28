@@ -1,0 +1,249 @@
+{
+  "number": 936,
+  "source_head_snapshot": "333683b40b6d42ce0ead91d0c1158762e99680fd",
+  "base": {
+    "ref": "integration/v0.4"
+  },
+  "pull_requests": [
+    {
+      "number": 934,
+      "base": "integration/v0.4",
+      "base_sha": "891816ee8e0d8cff08474613cf61993311f6b5b2",
+      "head": "codex/native-hashmap-window-lowering",
+      "head_sha": "a093aea452340a70c1e72a1f58bd831f1edef70f",
+      "draft": true
+    },
+    {
+      "number": 935,
+      "base": "codex/native-hashmap-window-lowering",
+      "base_sha": "a093aea452340a70c1e72a1f58bd831f1edef70f",
+      "head": "codex/native-architecture-consolidation",
+      "head_sha": "7543c56d5efc4df30d0b60961922024d74caa9d7",
+      "draft": true
+    },
+    {
+      "number": 939,
+      "base": "codex/native-architecture-consolidation",
+      "base_sha": "7543c56d5efc4df30d0b60961922024d74caa9d7",
+      "head": "codex/post-native-architecture-cleanup",
+      "head_sha": "a68fb2e60d7afbc59bc146f8878b17181e275645",
+      "draft": true
+    },
+    {
+      "number": 913,
+      "base": "codex/post-native-architecture-cleanup",
+      "base_sha": "a68fb2e60d7afbc59bc146f8878b17181e275645",
+      "head": "codex/preserve-live-control-flow",
+      "head_sha": "a6ced5c6cb8ca2d650af1dab66da4f916a9b8c66",
+      "draft": true
+    },
+    {
+      "number": 914,
+      "base": "codex/preserve-live-control-flow",
+      "base_sha": "a6ced5c6cb8ca2d650af1dab66da4f916a9b8c66",
+      "head": "codex/deflate-primitives",
+      "head_sha": "0b042eda4d9cd624dd01f31922c687dd8f375d17",
+      "draft": true
+    },
+    {
+      "number": 915,
+      "base": "codex/deflate-primitives",
+      "base_sha": "0b042eda4d9cd624dd01f31922c687dd8f375d17",
+      "head": "codex/native-unsigned-word-conversions",
+      "head_sha": "8ebdc9acf0989fe7ebd236f6aabf6fcb0ecfd64a",
+      "draft": true
+    },
+    {
+      "number": 916,
+      "base": "codex/native-unsigned-word-conversions",
+      "base_sha": "8ebdc9acf0989fe7ebd236f6aabf6fcb0ecfd64a",
+      "head": "codex/deflate-buffer-kernels",
+      "head_sha": "9a35ee78b4c4bc2956b9f03fbabf549d81c15d50",
+      "draft": true
+    },
+    {
+      "number": 917,
+      "base": "codex/deflate-buffer-kernels",
+      "base_sha": "9a35ee78b4c4bc2956b9f03fbabf549d81c15d50",
+      "head": "codex/deflate-huffman-kernel",
+      "head_sha": "1d01829ce43b2bbe9b19dca310cc7bed6b66122c",
+      "draft": true
+    },
+    {
+      "number": 918,
+      "base": "codex/deflate-huffman-kernel",
+      "base_sha": "1d01829ce43b2bbe9b19dca310cc7bed6b66122c",
+      "head": "codex/native-u64-buffer-reads",
+      "head_sha": "a8b5c7dd548f94232344488804ffffa24661e1e7",
+      "draft": true
+    },
+    {
+      "number": 919,
+      "base": "codex/native-u64-buffer-reads",
+      "base_sha": "a8b5c7dd548f94232344488804ffffa24661e1e7",
+      "head": "codex/native-narrow-unsigned-words",
+      "head_sha": "dfdd67159d1ce7220f3af2e0410ae5788dc881cf",
+      "draft": true
+    },
+    {
+      "number": 920,
+      "base": "codex/native-narrow-unsigned-words",
+      "base_sha": "dfdd67159d1ce7220f3af2e0410ae5788dc881cf",
+      "head": "codex/deflate-matchfinder-kernel",
+      "head_sha": "6b261d463596e1eff909ea760171cc694187bf97",
+      "draft": true
+    },
+    {
+      "number": 921,
+      "base": "codex/deflate-matchfinder-kernel",
+      "base_sha": "6b261d463596e1eff909ea760171cc694187bf97",
+      "head": "codex/native-dynamic-buffer-carriers",
+      "head_sha": "e91466012f72ac91e936a61307a81f2214fd0d13",
+      "draft": true
+    },
+    {
+      "number": 922,
+      "base": "codex/native-dynamic-buffer-carriers",
+      "base_sha": "e91466012f72ac91e936a61307a81f2214fd0d13",
+      "head": "codex/native-dynamic-buffer-projections",
+      "head_sha": "485a7b6a32eeacb188f51ba3a0eed9a020f986a6",
+      "draft": true
+    },
+    {
+      "number": 923,
+      "base": "codex/native-dynamic-buffer-projections",
+      "base_sha": "485a7b6a32eeacb188f51ba3a0eed9a020f986a6",
+      "head": "codex/native-nested-tail-calls",
+      "head_sha": "cc164f997c4534c9724c7a0892e39281021b81d5",
+      "draft": true
+    },
+    {
+      "number": 924,
+      "base": "codex/native-nested-tail-calls",
+      "base_sha": "cc164f997c4534c9724c7a0892e39281021b81d5",
+      "head": "codex/native-recursive-statement-functions",
+      "head_sha": "384611b59ad6b8d77146f0a72959ed1731376b2f",
+      "draft": true
+    },
+    {
+      "number": 925,
+      "base": "codex/native-recursive-statement-functions",
+      "base_sha": "384611b59ad6b8d77146f0a72959ed1731376b2f",
+      "head": "codex/deflate-binary-tree-walks",
+      "head_sha": "e14bd7c787e0fe9fa0889a969059ab4ad2de9d54",
+      "draft": true
+    },
+    {
+      "number": 926,
+      "base": "codex/deflate-binary-tree-walks",
+      "base_sha": "e14bd7c787e0fe9fa0889a969059ab4ad2de9d54",
+      "head": "codex/native-lexical-invariants",
+      "head_sha": "2c64253f303a7b0d895001449e07c6672a2fcf93",
+      "draft": true
+    },
+    {
+      "number": 927,
+      "base": "codex/native-lexical-invariants",
+      "base_sha": "2c64253f303a7b0d895001449e07c6672a2fcf93",
+      "head": "codex/assertion-baseline-ci",
+      "head_sha": "8432cb25cccee483a3cbbb1a10802da76a4a6dd4",
+      "draft": true
+    },
+    {
+      "number": 930,
+      "base": "codex/assertion-baseline-ci",
+      "base_sha": "8432cb25cccee483a3cbbb1a10802da76a4a6dd4",
+      "head": "codex/function-buffer-transport",
+      "head_sha": "69cab89082a2640469ac05946d7ae46ad2a84771",
+      "draft": true
+    },
+    {
+      "number": 931,
+      "base": "codex/function-buffer-transport",
+      "base_sha": "69cab89082a2640469ac05946d7ae46ad2a84771",
+      "head": "codex/scalar-native-profile-gates",
+      "head_sha": "cf5c55c42f8b39c4a53a4a0314ba948ac6c80cc2",
+      "draft": true
+    },
+    {
+      "number": 932,
+      "base": "codex/scalar-native-profile-gates",
+      "base_sha": "cf5c55c42f8b39c4a53a4a0314ba948ac6c80cc2",
+      "head": "codex/deflate-word-load-fidelity",
+      "head_sha": "21cb2b6a940e0e2b15721c3cc0aca7d3716c7570",
+      "draft": true
+    },
+    {
+      "number": 933,
+      "base": "codex/deflate-word-load-fidelity",
+      "base_sha": "21cb2b6a940e0e2b15721c3cc0aca7d3716c7570",
+      "head": "codex/piped-self-recursion",
+      "head_sha": "09c1a516c371eb4c58fc6e32ce367a82b261646a",
+      "draft": true
+    },
+    {
+      "number": 937,
+      "base": "codex/piped-self-recursion",
+      "base_sha": "09c1a516c371eb4c58fc6e32ce367a82b261646a",
+      "head": "codex/native-uniform-word-construction",
+      "head_sha": "114eef487c472f4a28cf7334550f433245588ecb",
+      "draft": true
+    },
+    {
+      "number": 938,
+      "base": "codex/native-uniform-word-construction",
+      "base_sha": "114eef487c472f4a28cf7334550f433245588ecb",
+      "head": "codex/deflate-block-collector-review",
+      "head_sha": "304a1382c1d41586bb49dc1d9e6e7120d7ebadae",
+      "draft": true
+    },
+    {
+      "number": 940,
+      "base": "codex/deflate-block-collector-review",
+      "base_sha": "304a1382c1d41586bb49dc1d9e6e7120d7ebadae",
+      "head": "codex/sequence-buffer-capacity",
+      "head_sha": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+      "draft": true
+    },
+    {
+      "number": 941,
+      "base": "codex/sequence-buffer-capacity",
+      "base_sha": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+      "head": "codex/sequence-buffer-operations",
+      "head_sha": "851507304181308ddbadcd96bec24859e8deeed4",
+      "draft": true
+    },
+    {
+      "number": 942,
+      "base": "codex/sequence-buffer-operations",
+      "base_sha": "851507304181308ddbadcd96bec24859e8deeed4",
+      "head": "codex/native-buffer-frame-transport",
+      "head_sha": "1de0ee88e9bb882d5dddbfbc1ae4b864f51cddc7",
+      "draft": true
+    },
+    {
+      "number": 943,
+      "base": "codex/native-buffer-frame-transport",
+      "base_sha": "1de0ee88e9bb882d5dddbfbc1ae4b864f51cddc7",
+      "head": "codex/native-record-buffer-transport",
+      "head_sha": "2a8ef64a83ed5cd36a87cca1485ced634082635a",
+      "draft": true
+    },
+    {
+      "number": 944,
+      "base": "codex/native-record-buffer-transport",
+      "base_sha": "2a8ef64a83ed5cd36a87cca1485ced634082635a",
+      "head": "codex/deflate-optimal-path",
+      "head_sha": "95f8dc4c45fe9670315cedcdc8c4768b760cd3c2",
+      "draft": true
+    },
+    {
+      "number": 945,
+      "base": "codex/deflate-optimal-path",
+      "base_sha": "95f8dc4c45fe9670315cedcdc8c4768b760cd3c2",
+      "head": "codex/deflate-huffman-integration",
+      "head_sha": "333683b40b6d42ce0ead91d0c1158762e99680fd",
+      "draft": true
+    }
+  ]
+}

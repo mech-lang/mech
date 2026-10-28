@@ -269,7 +269,11 @@ an executable.
 The `mech-gpu` scalar canonical native API consumes `ProgramArtifact` through
 `lower_pure_native_artifact`, using private semantic witnesses from the actual
 selected resident binders. Its immutable typed IR supports stateless Turn
-operations on `Bool`, `U64`, and `I64`. It rejects resources, constraints,
+transport for `Bool`, `U8`, `U16`, `U32`, `U64`, `I64`, and `F64`. Operations
+still require their selected binder's private semantic witness. All twelve
+distinct conversions among U8/U16/U32/U64 use the maintained checked integer
+conversion: widening preserves the value and narrowing rejects excess bits.
+Other narrow integer arithmetic remains outside this subset. It rejects resources, constraints,
 compute regions, retained state, computed Activation nodes, matches,
 comprehensions, counted applications, and FSMs. Direct constant output aliases
 are admitted only when their metadata identifies the same validated constant.
@@ -289,6 +293,39 @@ source-document owners as ordinary source compilation. It does not retry the
 legacy sequence/control/grid frontends or resident execution on rejection.
 Raw `.mecb` inputs are canonically decoded against the current standard catalog
 and explicitly marked **source-unpaired**; they acquire no claimed source owner.
+
+Within synchronous FSM transition blocks, an explicit mutable binding such as
+`~scratch := xs` followed by `scratch[index] = value` lowers to successive local
+values. Indexed updates use the maintained assignment kernel, with a fresh
+candidate seeded from the explicit base. Closed rank-two unsigned matrices can
+travel through structural state payloads; reconstruction admits the expanded
+draft and temporary canonical cells before allocation. These are value copies,
+so this support does not establish an in-place buffer throughput result.
+Document-level mutable bindings continue to allocate retained state, which the
+canonical native subset rejects.
+
+Transition blocks also support ordinary tuple destructuring. Each visit evaluates
+the whole right-hand side, including unused tuple fields, and nested synchronous
+FSM calls keep their local definition names separate from the caller's. A
+constant one-based tuple selector can lower to a checked structural projection
+when the maintained access factory certifies the exact schemas and contract.
+Dynamic tuple selection remains outside this native subset.
+
+Linear U8/U16/U32/U64 matrix reads with a scalar U64 selector can return the selected word
+directly into admitted native scalar storage. Selection still requires the
+maintained access factory's private evidence, the current same-account immutable
+source, and the shared one-based portable bounds check. Each read admits its
+source owner and active private buffers under call-scoped limits; the separate
+program memory account continues to cover all live roots. Logical one-element output
+limits and the selected width's one/two/four/eight-byte output limit remain enforced
+even though no selector/result snapshot
+is allocated. A later canonical use or publication constructs its real value.
+
+The [DEFLATE Huffman qualification](../../benchmarks/mech-deflate/huffman/README.md)
+exercises these operations against pinned C reference values. It uses explicit
+finite native work and memory allowances. The ordinary resident whole-control
+limits remain enforced; indexed updates preserve a resource-limit error rather
+than relabeling it as an invalid result.
 
 This opt-in requires `cranelift_build`, a local workspace dependency tree, native
 emit and the current supported host. Linked binary names must be 1–64 ASCII

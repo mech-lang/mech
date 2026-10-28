@@ -1,0 +1,37 @@
+{
+  "compiler": "115188e17032e26341dd7983e0634589a9a490ab",
+  "compressor_source_revision": "566dfd1df2eb81eb95e2804d6b50a6334bdaca42",
+  "source_sha256": "345324ce551aaa2485dcd0fe4262da96e660d6b31f5f772bff89b034e9b1997f",
+  "artifact": "saved-decoded",
+  "input_bytes": 16384,
+  "input_sha256": "56a7af3beee008d646c71c1dc13ee34eadb7c508ff7626ff013a6d6366c79631",
+  "raw_bytes": 11394,
+  "raw_sha256": "9009624c8f27451b6182f638b4b4d88875748fa47b718ea6255e062904021ff0",
+  "blocks": [
+    {
+      "begin_bit": 0,
+      "end_bit": 33177,
+      "kind": 2,
+      "final": 0,
+      "input_begin": 0,
+      "input_end": 8146
+    },
+    {
+      "begin_bit": 33177,
+      "end_bit": 91146,
+      "kind": 2,
+      "final": 1,
+      "input_begin": 8146,
+      "input_end": 16384
+    }
+  ],
+  "seconds": 3051.9263705,
+  "allocation_requests": 936184642,
+  "requested_bytes": 393211666296,
+  "limits": "All configurable compilation/analysis/execution/library/managed budgets maximum",
+  "exact_reference": true,
+  "independent_decompression": true,
+  "managed_cleanup": true,
+  "remaining": "33027-byte window case and full-file case pending; original/decoded manual boundary Rust test not completed",
+  "benchmark_limits": "System allocator, allocation probe, setup inside evaluation and concurrent investigations; not final matched timing."
+}

@@ -1,0 +1,38 @@
+{
+  "name": "complete-eight-byte-blocks-diagnostic",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "canonical-native-program",
+    "--test",
+    "canonical_artifact_program",
+    "--",
+    "full_block_qualification::real_buffer_complete_eight_byte_blocks_diagnostic",
+    "--ignored",
+    "--exact",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-reality-check",
+  "head": "96f59a9a22a100e7169bee8167d02cca07ac99ef",
+  "dirty": " M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/word_reads.rs\n M hosts/gpu/tests/canonical_artifact_program.rs\n M src/engine/src/resident/general/native_collection_prepared.rs\n M src/engine/src/resident/numeric/mod.rs\n?? benchmarks/mech-deflate/matchfinder/generate_block_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-block-heuristics.mec\n?? hosts/gpu/tests/fixtures/native/deflate-block-loop.mec\n?? hosts/gpu/tests/fixtures/native/deflate-block-reference.json\n?? hosts/gpu/tests/support/canonical_program_full_block.rs\n?? hosts/gpu/tests/support/canonical_program_record_words.rs\n?? src/engine/src/resident/general/native_collection_record_words.rs\n",
+  "exit": 101,
+  "seconds": 90.84209704399109,
+  "log": "/private/tmp/mech-stack-landscape-20261026/reality-check/complete-eight-byte-blocks-diagnostic.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

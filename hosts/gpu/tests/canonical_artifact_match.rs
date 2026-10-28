@@ -145,6 +145,10 @@ fn reference(
                 shape_values: Box::new([]),
                 data: match value {
                     NativeScalarValue::Bool(v) => ValueDataDraft::Bool(*v),
+                    NativeScalarValue::U8(v) => ValueDataDraft::U8(*v),
+                    NativeScalarValue::U16(v) => ValueDataDraft::U16(*v),
+                    NativeScalarValue::U32(v) => ValueDataDraft::U32(*v),
+
                     NativeScalarValue::U64(v) => ValueDataDraft::U64(*v),
                     NativeScalarValue::I64(v) => ValueDataDraft::I64(*v),
                     NativeScalarValue::F64(v) => ValueDataDraft::F64(*v),
@@ -178,6 +182,10 @@ fn reference(
         .map(
             |index| match instance.copied_output(index).unwrap().data() {
                 ValueData::Bool(v) => NativeScalarValue::Bool(*v),
+                ValueData::U8(v) => NativeScalarValue::U8(*v),
+                ValueData::U16(v) => NativeScalarValue::U16(*v),
+                ValueData::U32(v) => NativeScalarValue::U32(*v),
+
                 ValueData::U64(v) => NativeScalarValue::U64(*v),
                 ValueData::I64(v) => NativeScalarValue::I64(*v),
                 ValueData::F64(v) => NativeScalarValue::F64(*v),
@@ -505,7 +513,7 @@ fn signed_and_float_literals_use_language_equality_and_preserve_raw_values() {
 mod cast_cases;
 
 #[test]
-fn all_six_selected_casts_compose_with_match_and_keep_errors_atomic() {
+fn all_eighteen_selected_casts_compose_with_match_and_keep_errors_atomic() {
     use NativeScalarValue::{Bool, F64, I64, U64};
     use mech_core::snapshot::F64Bits;
     for cast in cast_cases::CASTS {
@@ -557,6 +565,9 @@ fn all_six_selected_casts_compose_with_match_and_keep_errors_atomic() {
             // Zero converts successfully in every direction after earlier
             // failed calls, using the same compiled entry and fresh staging.
             let zero = match cast.input {
+                mech_engine::native_artifact::NativeScalarKind::U8 => NativeScalarValue::U8(0),
+                mech_engine::native_artifact::NativeScalarKind::U16 => NativeScalarValue::U16(0),
+                mech_engine::native_artifact::NativeScalarKind::U32 => NativeScalarValue::U32(0),
                 mech_engine::native_artifact::NativeScalarKind::U64 => U64(0),
                 mech_engine::native_artifact::NativeScalarKind::I64 => I64(0),
                 mech_engine::native_artifact::NativeScalarKind::F64 => F64(F64Bits::from_bits(0)),

@@ -5,6 +5,9 @@ pub(super) mod comprehension_execution;
 #[path = "iteration_execution.rs"]
 mod iteration_execution;
 
+#[path = "lexical_assertion_execution.rs"]
+mod lexical_assertion_execution;
+
 pub(super) use comprehension_execution::StructuralProjectionTable;
 
 fn peak_structural_clone_depth(arms: &[super::ActivatedMatchArm]) -> u64 {
@@ -306,6 +309,11 @@ pub enum ResidentExecutionError {
     },
     Integrity {
         constraint: IntegrityConstraintId,
+    },
+    LexicalIntegrity {
+        node: NodeId,
+        block: crate::ControlBlockId,
+        local: u32,
     },
     InvalidWrite {
         node: NodeId,
@@ -1133,6 +1141,7 @@ impl ReactiveInstance {
             }
             let continuation = matches!(step, ActivatedTurnStep::Match(node) if node.continuation);
             let write = match step {
+                ActivatedTurnStep::Assert(node) => node.write,
                 ActivatedTurnStep::Kernel(node) => node.write,
                 ActivatedTurnStep::Iteration(node) => node.write,
                 ActivatedTurnStep::Comprehension(node) => node.write,
@@ -1614,6 +1623,7 @@ impl ReactiveInstance {
             .iter()
             .enumerate()
             .filter_map(|(index, step)| match step {
+                ActivatedTurnStep::Assert(_) => None,
                 ActivatedTurnStep::Kernel(node) => Some((index, node)),
                 ActivatedTurnStep::External(_)
                 | ActivatedTurnStep::Match(_)
@@ -1670,6 +1680,7 @@ impl ReactiveInstance {
                 continue;
             }
             let (scratch, effect) = match &self.plan.steps[index] {
+                ActivatedTurnStep::Assert(node) => (Some(node.write.region), None),
                 ActivatedTurnStep::Kernel(node) => (
                     (node.write.storage == ResidentStorageClass::Scratch)
                         .then_some(node.write.region),
@@ -2748,6 +2759,9 @@ impl ReactiveInstance {
             ActivatedTurnStep::Kernel(_)
         ) {
             budget::charge_planning_step()?;
+        }
+        if let ActivatedTurnStep::Assert(assertion) = self.plan.steps[node_index.get() as usize] {
+            return self.execute_lexical_assertion(assertion, working_epoch);
         }
         if matches!(
             self.plan.steps[node_index.get() as usize],

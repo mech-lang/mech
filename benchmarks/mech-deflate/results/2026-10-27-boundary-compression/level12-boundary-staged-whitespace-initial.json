@@ -1,0 +1,24 @@
+{
+  "name": "level12-boundary-staged-whitespace-initial",
+  "command": [
+    "git",
+    "diff",
+    "--cached",
+    "--check"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "7fc6587fa6f9506908393566a05aeb9615a43633",
+  "dirty": "A  benchmarks/mech-deflate/results/2026-10-27-boundary-compression/MechBoundaryOracle.roc\nA  benchmarks/mech-deflate/results/2026-10-27-boundary-compression/level12-boundary-checked-fixtures.json\nA  benchmarks/mech-deflate/results/2026-10-27-boundary-compression/level12-boundary-checked-fixtures.log.gz\nA  benchmarks/mech-deflate/results/2026-10-27-boundary-compression/level12-boundary-maintained-host-build.json\nA  benchmarks/mech-deflate/results/2026-10-27-boundary-compression/level12-boundary-maintained-host-build.log.gz\nA  benchmarks/mech-deflate/results/2026-10-27-boundary-compression/level12-boundary-reference-build.json\nA  benchmarks/mech-deflate/results/2026-10-27-boundary-compression/level12-boundary-reference-build.log.gz\nA  benchmarks/mech-deflate/results/2026-10-27-boundary-compression/level12-boundary-reference-verify.json\nA  benchmarks/mech-deflate/results/2026-10-27-boundary-compression/level12-boundary-reference-verify.log.gz\nA  benchmarks/mech-deflate/results/2026-10-27-boundary-compression/level12-boundary-release-build.json\nA  benchmarks/mech-deflate/results/2026-10-27-boundary-compression/level12-boundary-release-build.log.gz\nA  benchmarks/mech-deflate/results/2026-10-27-boundary-compression/level12-boundary-static.json\nA  benchmarks/mech-deflate/results/2026-10-27-boundary-compression/level12-boundary-static.log.gz\nA  benchmarks/mech-deflate/results/2026-10-27-boundary-compression/requirement.md\nA  benchmarks/mech-deflate/results/2026-10-27-boundary-compression/validated-sources.json\nA  benchmarks/mech-deflate/results/2026-10-27-boundary-compression/verify-fixtures.py\nA  hosts/gpu/tests/fixtures/native/deflate-boundary-16384-distribution-change.deflate\nA  hosts/gpu/tests/fixtures/native/deflate-boundary-16384-distribution-change.input\nA  hosts/gpu/tests/fixtures/native/deflate-boundary-33027-periodic-window.deflate\nA  hosts/gpu/tests/fixtures/native/deflate-boundary-33027-periodic-window.input\nA  hosts/gpu/tests/fixtures/native/deflate-boundary-reference.json\nM  hosts/gpu/tests/support/canonical_program_compress.rs\n",
+  "exit": 2,
+  "seconds": 0.01623702049255371,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/level12-boundary-staged-whitespace-initial.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

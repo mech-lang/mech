@@ -40,6 +40,10 @@ pub(super) fn program_type(
         .map(|scalar| {
             let kind = match (scalar.kind.as_str(), definition.body()) {
                 ("Bool", SchemaBody::Bool) => NativeScalarKind::Bool,
+                ("U8", SchemaBody::UnsignedInteger(IntegerWidth::W8)) => NativeScalarKind::U8,
+                ("U16", SchemaBody::UnsignedInteger(IntegerWidth::W16)) => NativeScalarKind::U16,
+                ("U32", SchemaBody::UnsignedInteger(IntegerWidth::W32)) => NativeScalarKind::U32,
+
                 ("U64", SchemaBody::UnsignedInteger(IntegerWidth::W64)) => NativeScalarKind::U64,
                 ("I64", SchemaBody::SignedInteger(IntegerWidth::W64)) => NativeScalarKind::I64,
                 ("F64", SchemaBody::FloatingPoint(FloatWidth::W64)) => NativeScalarKind::F64,

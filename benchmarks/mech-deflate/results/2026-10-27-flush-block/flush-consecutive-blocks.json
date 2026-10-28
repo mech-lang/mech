@@ -1,0 +1,36 @@
+{
+  "name": "flush-consecutive-blocks",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "canonical-native-program",
+    "--test",
+    "canonical_artifact_program",
+    "--",
+    "flush_block_qualification",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "3e13718d72c4921dcf74acb7b4960cd40ea3abf1",
+  "dirty": " M hosts/gpu/tests/canonical_artifact_program.rs\n?? benchmarks/mech-deflate/results/2026-10-27-flush-block/\n?? hosts/gpu/tests/fixtures/native/deflate-flush-block.mec\n?? hosts/gpu/tests/support/canonical_program_flush_block.rs\n",
+  "exit": 101,
+  "seconds": 129.90728998184204,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/flush-consecutive-blocks.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

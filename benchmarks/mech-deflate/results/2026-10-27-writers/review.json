@@ -1,0 +1,16 @@
+{
+  "compiler_base": "262ced8000170abdf1bf2b34e06230e951410d0b",
+  "reference_source": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "reference_compiler": "d99c7b838fb05bb1047eb0c18d4d06d0f86f345d",
+  "validation": "Four writer tests plus linked mixed-frame test passed;338 filtered;157.40s test execution. Original/decoded byte and bit-state equality in26 cases, and all26 cases with512/6633832 reservations for internal reuse, exact allocation delta and cleanup.",
+  "largest": "320-byte supplied path block;259-byte sequence input. Not a connected compressor.",
+  "reference_regeneration": "26 cases and all tables identical; package/generated source hashes identical. Only binary hashes differ across reference rebuilds. Initial reference build cache permission denial resolved by authorized execution.",
+  "publication": "Whole-record canonical publication trims nested spare capacity; internal return/clear/append qualification checks before that boundary.",
+  "next": "Connect block cost/type selection, headers, stored payload append, end-of-block and final drain; then integrate complete collector/parser/block controller into compress_into.",
+  "not_claimed": [
+    "Full compressor",
+    "Independent decompression of a complete stream",
+    "Full input timing",
+    "Green remote CI"
+  ]
+}

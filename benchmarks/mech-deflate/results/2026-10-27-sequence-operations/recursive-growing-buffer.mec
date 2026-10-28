@@ -1,0 +1,6 @@
++> sequence
+grow(words<[u64]>, left<u64>) => <[u64]>
+  | (words, left) => ((left > 0u64)?
+      | true => grow(sequence/append(words, left), left - 1u64)
+      | false => words).
+grow(sequence/with-capacity(0u64, capacity<u64>), steps<u64>)

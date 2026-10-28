@@ -349,6 +349,7 @@ fn output_cell_physical_storage_descriptor(
     if matches!(
         implementation_memory,
         ImplementationMemoryClass::CanonicalFinalize
+            | ImplementationMemoryClass::PackedUnsignedMatrixUpdateOrCanonicalFinalize
             | ImplementationMemoryClass::CanonicalSortUnique
             | ImplementationMemoryClass::CanonicalCloneInput { .. }
     ) && cell.has_managed_canonical_storage()?
