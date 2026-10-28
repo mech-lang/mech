@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-mixed-scalar-state-round08-20261028/final/component-v2-tests",
+    "collector_qualification",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 4.816613957984373,
+  "binary_sha256": "d16185cc9a117b9f2cbfc6155a86bf238a53817652350414d37958cb5bc0106a",
+  "expected_values_and_allowances": "unchanged"
+}

@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-mixed-scalar-state-round08-20261028/selected-bits-tests",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.9252896669786423,
+  "binary_sha256": "bbc106aa952e1680e8b90d4903a8f235c73e5c40e02d5011819bf68faa82e58f",
+  "skipped_coverage": null
+}

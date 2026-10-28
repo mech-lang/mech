@@ -96,14 +96,28 @@ separate JSON inputs; the public CLI also accepts `--native-compile-limits`.
 
 ## Current small timing
 
-The [latest eight-byte timing receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-07/REPORT.md)
-use the real tree/cache and unchanged 25 components. With **Roc = 1×**, successful
-native metadata precharge batching measures **574× → 495×**, 0.162907833 s to
-0.140640417 s against a fresh 0.000284 s reference. This is 13.67% less elapsed
-time; complete logical work remains 888390537256. Tight budgets and shared worker
-loans keep ordered incremental accounting. All 104 scoped Rust tests, static
-checks and protected scalar gates pass. The separate feature guard commit fixes
-an unused import introduced in the preceding round; no warning is suppressed.
+The [latest eight-byte timing receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-08/REPORT.md)
+use the real tree/cache and unchanged 25 components. With **Roc = 1×**, mixed
+scalar state measures **490× → 455×**, 0.139637125 s to 0.129644084 s against a
+fresh 0.000285 s reference, or 7.16% less elapsed time. The existing private word
+layout now carries exact Bool/U8/U16/U32/U64/I64/F64 tuple/enum leaves. The actual
+program selects 91 private values and eight mixed optimal-path Tail carriers.
+This is a modest gain, short of the larger reduction still needed.
+
+The same qualification exposed an inherited closed-Tail failure exit that
+returned before unwinding its fuel loan and masked an assertion error. The
+retained old executable reproduces it; the corrected shared exit returns the
+original error, preserves publication, cleans up and recovers. All 109 scoped
+Rust tests, static checks and protected scalar gates pass. Complete logical work
+is 875610515844, distinct from executed instructions. Unsupported nested state
+and escaping results keep canonical storage; source and artifact stay unchanged.
+
+The [preceding metadata round](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-07/REPORT.md)
+measures **574× → 495×**, or 13.67% less elapsed time. Successful scans prepay the
+same debit once; tight bounds and worker loans keep ordered incremental charging.
+The next substantial experiment will remove repeated independent cost-table
+construction transactions. Any source optimization remains a distinct revision
+and measured variant alongside this pinned-source compiler baseline.
 
 The [preceding consuming-store change](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-06/REPORT.md)
 measures **1626× → 574×**, 0.465164708 s to 0.164188708 s against its fresh

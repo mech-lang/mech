@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-mixed-scalar-state-round08-20261028/produce",
+    "/private/tmp/mech-mixed-scalar-state-round08-20261028/error-parent/source.mec",
+    "/private/tmp/mech-mixed-scalar-state-round08-20261028/error-parent/source.mbc"
+  ],
+  "exit": 0,
+  "producer_source_sha256": "d14ec6ce6c0355595c4ab8cc563719116639c04a4d1f1a75f9d853524e78d88d",
+  "artifact_sha256": "dce954e479a3925f9bc3746f480940093837121e031a2f6e9ecf5d8f9cd18cb2"
+}

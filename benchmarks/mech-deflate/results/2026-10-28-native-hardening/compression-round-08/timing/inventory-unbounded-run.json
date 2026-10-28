@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-mixed-scalar-state-round08-20261028/inventory-unbounded",
+    "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc"
+  ],
+  "exit": 0,
+  "binary_sha256": "97903b2bca30703b3c2ffee426c912bcf3d5185056d813582ca7ba814460deb5",
+  "definition_table_byte_limit": 18446744073709551615,
+  "timing_claim": false
+}
