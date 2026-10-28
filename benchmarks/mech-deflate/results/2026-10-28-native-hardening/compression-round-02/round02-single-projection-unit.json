@@ -1,0 +1,38 @@
+{
+  "name": "round02-single-projection-unit",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "--release",
+    "-j1",
+    "-p",
+    "mech-engine",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "mech-gpu/canonical-native-program",
+    "--lib",
+    "single_projection",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "e0b6b18c60ed6b244263227f97b6cbe0c2a9eeba",
+  "dirty": " M src/engine/src/resident/numeric/mod.rs\n M src/engine/src/resident/numeric/packed_indexed_assign.rs\n?? src/engine/src/resident/numeric/packed_indexed_assign/\n",
+  "exit": 0,
+  "seconds": 1082.404121875763,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round02-single-projection-unit.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}
