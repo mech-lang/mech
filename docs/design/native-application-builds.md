@@ -256,6 +256,7 @@ mech build <INPUTS...>
   --workspace-root <PATH>
   --keep-project
   --offline
+  --native-compile-limits <JSON>  # cranelift backend only
 ```
 
 The defaults are native output, release profile, current host target, and
@@ -273,7 +274,11 @@ transport for `Bool`, `U8`, `U16`, `U32`, `U64`, `I64`, and `F64`. Operations
 still require their selected binder's private semantic witness. All twelve
 distinct conversions among U8/U16/U32/U64 use the maintained checked integer
 conversion: widening preserves the value and narrowing rejects excess bits.
-Other narrow integer arithmetic remains outside this subset. It rejects resources, constraints,
+Selected U8 addition and U32 addition/subtraction also have native operations;
+each requires its selected binder witness. This is not support for arbitrary
+narrow arithmetic. The decoded U8-add witness limitation is recorded in
+[native-compression-status.md](native-compression-status.md). This scalar
+subset rejects resources, constraints,
 compute regions, retained state, computed Activation nodes, matches,
 comprehensions, counted applications, and FSMs. Direct constant output aliases
 are admitted only when their metadata identifies the same validated constant.
@@ -343,6 +348,11 @@ mech --no-config build program.mec --backend cranelift --name app \
 
 The launch JSON alone supplies grants and execution/resource/acquisition limits;
 compiler planning uses empty CLI grants and does not embed launch authority.
+`--native-compile-limits` supplies all six finite `NativeCompileLimits` fields
+as strict JSON; omission preserves ordinary compiler defaults. This policy
+only controls compilation. The complete-program public API example and its
+separate finite compilation/launch policies are documented in
+[the compression application instructions](../../benchmarks/mech-deflate/public-application/README.md).
 The same runtime admits original requirements, executes generated closed
 activation, captures provider inputs, resumes the same native session and
 validates/commits effects. There is no runtime parser, JIT or resident body.

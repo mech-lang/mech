@@ -204,6 +204,9 @@ Its requested review completed with no findings or unresolved threads. CI run
 
 ## Frame measurement checkpoint
 
+This section preserves the pre-change checkpoint; the completed cohort and its
+outcome are recorded under “Typed frame result” below.
+
 The probe and one-shot comparison driver are in `hosts/gpu/examples/native_frame_transport.rs`
 and `benchmarks/native-frame-transport/`. Before changing frame storage, an
 allocation diagnostic linked the current debug runtime libraries with an
@@ -299,3 +302,37 @@ the maintained semantic-compiler test features and failed in existing test
 imports; it also found a new test's missing Arc conversion, now corrected.
 The supported combined engine/GPU feature profile passes without suppressing
 warnings. Failed commands and their original output remain in the receipts.
+
+## Public finite-policy and current-state checkpoint
+
+`c24984b402a1228cccf934a478965143b539f611` adds explicit finite compile limits
+to the public managed and hosted application APIs and public CLI. Existing
+default entry points delegate with unchanged defaults. Strict compilation JSON
+and strict runtime launch JSON have separate owners and cannot grant each
+other's authority. The managed shell retains its numeric argument interface.
+The shared complete source, normal-main example, finite policy and commands are
+in [public-application](../../benchmarks/mech-deflate/public-application/README.md).
+
+Both original and decoded source-to-Object generations succeed on the normal
+process stack. Objects, descriptors and identities match byte for byte. Actual
+runtime-only Cargo artifact inventories exclude the parser, compiler and JIT.
+Both linked executables run the eight-literal input with exact bytes,
+independent decompression and complete managed cleanup under finite launch
+policy. This qualifies one deployed small case per form; it does not qualify
+the other eight small cases or final-head block/window/full-corpus execution.
+The [public-path report](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/public-application/REPORT.md)
+retains build/run commands, hashes, source-generation times, successful
+executions and failed attempts. No compiler stack fix was necessary for the
+tested public entry points.
+
+The [current-state document](native-compression-status.md) supplies the
+component/capability/owner map, recursion boundary, corrected narrow-operation
+scope and outstanding qualification gates. Historical receipts are preserved.
+
+Small complete-compression timing is recorded in
+[`af77b28409414b2d61e30ace29c98a37f152ff48`](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-01/REPORT.md).
+With Roc = 1×, the current matched-allocator, uninstrumented baseline is 5756×.
+The corrected matching-System/instrumentation before/after control in
+`3465e13cf3263a047b0c158eab7a9d3d15c99ebb` is 8659× → 6599×. Allocator and
+instrumentation changes are separate from the compiler comparison. All 25
+components remain byte-identical, and no long campaign was restarted.

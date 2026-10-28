@@ -1,0 +1,24 @@
+{
+  "name": "hardening-final-format",
+  "command": [
+    "cargo",
+    "fmt",
+    "--all",
+    "--check"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "381fbde33bee12aab73bbddf704b3247ed52285c",
+  "dirty": " M benchmarks/mech-deflate/matchfinder/README.md\n M benchmarks/mech-deflate/public-application/qualify.py\n M docs/design/native-application-builds.md\n M docs/design/native-compression-hardening.md\n?? benchmarks/mech-deflate/public-application/README.md\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/public-application/\n?? docs/design/native-compression-status.md\n",
+  "exit": 0,
+  "seconds": 7.931840181350708,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/hardening-final-format.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

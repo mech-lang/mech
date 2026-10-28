@@ -1,5 +1,10 @@
 # DEFLATE binary-tree match finder
 
+Current integration and qualification are described in
+[the compression status](../../../docs/design/native-compression-status.md).
+The component checkpoints below retain their original dates and scope; their
+statements that full integration was pending are historical.
+
 
 ## Executing stored-block writer
 

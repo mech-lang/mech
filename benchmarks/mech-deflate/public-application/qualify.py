@@ -32,11 +32,14 @@ def main():
     parser.add_argument("binary", type=Path)
     parser.add_argument("launch", type=Path)
     parser.add_argument("evidence", type=Path)
+    parser.add_argument("--case", action="append", default=[], help="Select named small cases; omitted means the complete nine-case corpus")
     args = parser.parse_args()
     for key in ["application", "binary", "launch"]:
         setattr(args, key, getattr(args, key).resolve(strict=True))
     args.evidence.mkdir(parents=True, exist_ok=False)
-    cases = json.loads((args.application / "cases.json").read_text())
+    corpus = json.loads((args.application / "cases.json").read_text())
+    assert set(args.case) <= {case["name"] for case in corpus}, "unknown selected case"
+    cases = [case for case in corpus if not args.case or case["name"] in args.case]
     receipts = []
     try:
         for case in cases:
@@ -63,7 +66,7 @@ def main():
     finally:
         (args.evidence / "results.json").write_text(json.dumps({"binary_sha256": digest(args.binary), "launch_sha256": digest(args.launch),
             "cases_sha256": digest(args.application / "cases.json"), "passed": len(receipts) == len(cases) and all(r["exact_bytes"] and r["independent_inflation"] for r in receipts),
-            "cases": receipts, "timing_boundary": "whole process including image restore, input import, native execution, canonical output export and cleanup; qualification, not compression-only benchmark"}, indent=2) + "\n")
+            "cases": receipts, "selected_cases": [case["name"] for case in cases], "total_corpus_cases": len(corpus), "complete_small_corpus": len(cases) == len(corpus), "timing_boundary": "whole process including image restore, input import, native execution, canonical output export and cleanup; qualification, not compression-only benchmark"}, indent=2) + "\n")
 
 
 if __name__ == "__main__":

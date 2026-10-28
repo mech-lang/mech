@@ -1,0 +1,30 @@
+{
+  "name": "hardening-final-program-focused",
+  "command": [
+    "/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-561ab00dcd3ceccb",
+    "buffer_frame_qualification",
+    "collection_qualification",
+    "sequence_capacity_qualification",
+    "proof_storage_qualification",
+    "uniform_words_qualification",
+    "no_limits_qualification",
+    "shared_assembly",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "3465e13cf3263a047b0c158eab7a9d3d15c99ebb",
+  "dirty": " M benchmarks/mech-deflate/matchfinder/README.md\n M benchmarks/mech-deflate/public-application/qualify.py\n M docs/design/native-application-builds.md\n?? benchmarks/mech-deflate/public-application/README.md\n?? docs/design/native-compression-status.md\n",
+  "exit": 0,
+  "seconds": 43.316506147384644,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/hardening-final-program-focused.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

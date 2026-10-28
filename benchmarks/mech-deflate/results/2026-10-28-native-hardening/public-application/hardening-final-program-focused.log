@@ -1,0 +1,108 @@
+
+running 49 tests
+test buffer_frame_qualification::build_owned_image_rederives_private_frame_metadata ... ok
+test buffer_frame_qualification::checked_frames_use_fresh_booleans_preserve_aliases_and_recover ... ok
+test buffer_frame_qualification::escaping_tuples_keep_canonical_storage_and_scalar_aggregates_stay_separate ... ok
+test buffer_frame_qualification::frame_shape_binding_admits_the_core_metadata_node_bound_before_construction ... ok
+test buffer_frame_qualification::frame_word_admission_rejects_invalid_width_without_retaining_a_visit ... ok
+test buffer_frame_qualification::native_frame_scalar_leaves_preserve_exact_kinds_bits_and_current_shapes ... ok
+test buffer_frame_qualification::nested_repeated_calls_keep_published_buffers_immutable_and_recover_from_denial ... ok
+test buffer_frame_qualification::real_recursive_arguments_keep_allocation_below_either_payload ... ok
+test buffer_frame_qualification::recursive_buffers_retain_real_reservations_without_payload_copies ... {"artifact":"original","capacity":16,"elapsed_seconds":0.000587791,"requested_bytes":34711,"requests":276,"steps":0,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":16,"elapsed_seconds":0.0002,"requested_bytes":36015,"requests":310,"steps":1,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":16,"elapsed_seconds":0.000280084,"requested_bytes":38623,"requests":378,"steps":3,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":305257,"elapsed_seconds":0.000173083,"requested_bytes":2476639,"requests":276,"steps":0,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":305257,"elapsed_seconds":0.000197458,"requested_bytes":2477943,"requests":310,"steps":1,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":305257,"elapsed_seconds":0.000287042,"requested_bytes":2480551,"requests":378,"steps":3,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":16,"elapsed_seconds":0.000152542,"requested_bytes":34711,"requests":276,"steps":0,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":16,"elapsed_seconds":0.000192792,"requested_bytes":36015,"requests":310,"steps":1,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":16,"elapsed_seconds":0.000277584,"requested_bytes":38623,"requests":378,"steps":3,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":305257,"elapsed_seconds":0.000152083,"requested_bytes":2476639,"requests":276,"steps":0,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":305257,"elapsed_seconds":0.00020125,"requested_bytes":2477943,"requests":310,"steps":1,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":305257,"elapsed_seconds":0.000283167,"requested_bytes":2480551,"requests":378,"steps":3,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":16,"elapsed_seconds":0.00018325,"requested_bytes":35335,"requests":282,"steps":0,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":16,"elapsed_seconds":0.000203,"requested_bytes":36639,"requests":316,"steps":1,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":16,"elapsed_seconds":0.000286125,"requested_bytes":39247,"requests":384,"steps":3,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":6633832,"elapsed_seconds":0.000178208,"requested_bytes":6669151,"requests":282,"steps":0,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":6633832,"elapsed_seconds":0.000216875,"requested_bytes":6670455,"requests":316,"steps":1,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":6633832,"elapsed_seconds":0.000306584,"requested_bytes":6673063,"requests":384,"steps":3,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":16,"elapsed_seconds":0.000158083,"requested_bytes":35335,"requests":282,"steps":0,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":16,"elapsed_seconds":0.000198125,"requested_bytes":36639,"requests":316,"steps":1,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":16,"elapsed_seconds":0.00028425,"requested_bytes":39247,"requests":384,"steps":3,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":6633832,"elapsed_seconds":0.000167666,"requested_bytes":6669151,"requests":282,"steps":0,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":6633832,"elapsed_seconds":0.000205208,"requested_bytes":6670455,"requests":316,"steps":1,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":6633832,"elapsed_seconds":0.000300458,"requested_bytes":6673063,"requests":384,"steps":3,"width":8,"witness":"recursive-reserved-buffer"}
+ok
+test collection_qualification::collection_dimension_denials_release_workspace_preserve_output_and_recover ... ok
+test collection_qualification::collection_publication_counts_a_body_string_while_its_yield_draft_is_copied ... ok
+test collection_qualification::collection_publication_retained_nodes_match_the_canonical_matrix_footprint ... ok
+test collection_qualification::completed_packed_collection_is_discarded_when_later_publication_fails ... ok
+test collection_qualification::filtered_string_visits_admit_the_old_and_new_element_coexistence_peak ... ok
+test collection_qualification::filtered_wildcard_visits_remain_cumulative_collection_compute ... ok
+test collection_qualification::general_mech_window_function_compiles_without_a_window_helper ... ok
+test collection_qualification::generated_dynamic_ranges_feed_ordinary_comprehensions ... ok
+test collection_qualification::generated_nested_generators_filters_wildcards_and_literal_loops_keep_their_scopes ... ok
+test collection_qualification::large_unsigned_comprehension_initializes_a_real_buffer_and_recovers_after_denial ... {"allocation_requests":156,"artifact":"original","count":1500513,"elapsed_seconds":0.011634208,"requested_allocation_bytes":6020977,"result":"Ok(NativeProgramExecutionReport { work: 633377892, comparison_work: 0, visits: 10, transport_bytes: 3056, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })","witness":"large-u32-comprehension"}
+{"allocation_requests":156,"artifact":"decoded","count":1500513,"elapsed_seconds":0.011612708,"requested_allocation_bytes":6020977,"result":"Ok(NativeProgramExecutionReport { work: 633377892, comparison_work: 0, visits: 10, transport_bytes: 3056, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })","witness":"large-u32-comprehension"}
+ok
+test collection_qualification::late_checked_error_discards_partial_collection_and_recovers_on_the_same_jit ... ok
+test collection_qualification::nonuniform_packed_collections_retain_admitted_capacity_and_recover ... ok
+test collection_qualification::one_compiled_pattern_lift_preserves_rows_columns_and_empty_axes_across_calls ... ok
+test collection_qualification::packed_word_collection_keeps_copy_limits_and_current_output_on_rejection ... ok
+test collection_qualification::scalar_matrix_and_ordered_set_sources_preserve_exact_element_kinds ... ok
+test collection_qualification::string_iteration_retirement_preserves_captures_yields_and_nested_results ... ok
+test collection_qualification::unicode_string_and_matrix_generators_keep_exact_canonical_elements ... ok
+test no_limits_qualification::no_limits_mode_admits_buffer_above_default_byte_budget_and_recovers ... ok
+test proof_storage_qualification::nested_current_visit_definition_tables_keep_exact_admission_diagnostics ... ok
+test proof_storage_qualification::public_application_limits_reach_object_emission_and_keep_default_identity ... ok
+test proof_storage_qualification::sequential_recursive_calls_fit_compact_proof_rows_and_recover_after_denial ... compact-proof blocks=6422 values=2890 old_dense_cells=18559580
+compact-proof blocks=6422 values=2890 old_dense_cells=18559580
+ok
+test sequence_capacity_qualification::append_sublist_clamps_ranges_preserves_capacity_aliases_and_recovers ... {"allocated_bytes":24658,"capacity":512,"requests":213,"width":8,"witness":"append-sublist"}
+{"allocated_bytes":6657978,"capacity":6633832,"requests":213,"width":8,"witness":"append-sublist"}
+{"allocated_bytes":24658,"capacity":512,"requests":213,"width":8,"witness":"append-sublist"}
+{"allocated_bytes":6657978,"capacity":6633832,"requests":213,"width":8,"witness":"append-sublist"}
+{"allocated_bytes":25170,"capacity":512,"requests":213,"width":16,"witness":"append-sublist"}
+{"allocated_bytes":25170,"capacity":512,"requests":213,"width":16,"witness":"append-sublist"}
+{"allocated_bytes":26194,"capacity":512,"requests":213,"width":32,"witness":"append-sublist"}
+{"allocated_bytes":26194,"capacity":512,"requests":213,"width":32,"witness":"append-sublist"}
+{"allocated_bytes":28242,"capacity":512,"requests":213,"width":64,"witness":"append-sublist"}
+{"allocated_bytes":28242,"capacity":512,"requests":213,"width":64,"witness":"append-sublist"}
+ok
+test sequence_capacity_qualification::append_sublist_copies_stored_block_boundaries_into_real_reservation ... {"allocated_bytes":6656594,"allocation_requests":183,"count":65535,"seconds":0.000407583,"start":0,"witness":"stored-range-append"}
+{"allocated_bytes":6656833,"allocation_requests":197,"count":65536,"seconds":0.000547333,"start":0,"witness":"stored-range-append"}
+{"allocated_bytes":6656833,"allocation_requests":197,"count":1,"seconds":0.000541,"start":65535,"witness":"stored-range-append"}
+{"allocated_bytes":6656328,"allocation_requests":201,"count":0,"seconds":0.000536334,"start":65536,"witness":"stored-range-append"}
+{"allocated_bytes":6656833,"allocation_requests":197,"count":65536,"seconds":0.000580167,"start":0,"witness":"stored-range-append"}
+{"allocated_bytes":6656594,"allocation_requests":183,"count":65535,"seconds":0.000361541,"start":0,"witness":"stored-range-append"}
+{"allocated_bytes":6656833,"allocation_requests":197,"count":65536,"seconds":0.000645666,"start":0,"witness":"stored-range-append"}
+{"allocated_bytes":6656833,"allocation_requests":197,"count":1,"seconds":0.000409125,"start":65535,"witness":"stored-range-append"}
+{"allocated_bytes":6656328,"allocation_requests":201,"count":0,"seconds":0.000469125,"start":65536,"witness":"stored-range-append"}
+{"allocated_bytes":6656833,"allocation_requests":197,"count":65536,"seconds":0.00044175,"start":0,"witness":"stored-range-append"}
+ok
+test sequence_capacity_qualification::append_sublist_self_alias_and_empty_ranges_keep_original_values ... ok
+test sequence_capacity_qualification::bulk_byte_append_generic_native_binding_tracks_count_and_retries ... ok
+test sequence_capacity_qualification::bulk_bytes_reuse_real_output_reservation_across_append_and_clear ... bulk-byte-append small=(264, 27861) real=(264, 6661677)
+bulk-byte-append small=(264, 27861) real=(264, 6661677)
+ok
+test sequence_capacity_qualification::consuming_growth_admits_full_old_backing_work_and_copy_quota ... ok
+test sequence_capacity_qualification::generic_buffer_parameters_check_current_rows_without_partial_publication ... ok
+test sequence_capacity_qualification::initial_append_growth_and_exact_reserve_keep_all_initialized_words ... ok
+test sequence_capacity_qualification::little_endian_byte_append_counts_aliases_rejection_and_recovery ... ok
+test sequence_capacity_qualification::real_reserved_path_and_output_buffers_allocate_the_payload_once_per_computation ... width=64 capacity=305257 small=(235, 26253) real=(235, 2468181)
+width=64 capacity=305257 small=(235, 26253) real=(235, 2468181)
+width=8 capacity=6633832 small=(235, 26141) real=(235, 6659957)
+width=8 capacity=6633832 small=(235, 26141) real=(235, 6659957)
+ok
+test sequence_capacity_qualification::reserve_append_clear_agrees_in_resident_and_native_original_and_decoded ... ok
+test sequence_capacity_qualification::scalar_recursion_keeps_fresh_buffers_and_immutable_outer_capture_reads ... ok
+test sequence_capacity_qualification::shared_buffer_append_preserves_aliases_and_failed_publication_then_retries ... ok
+test sequence_capacity_qualification::unselected_reservation_does_not_allocate_and_resource_denial_recovers ... ok
+test uniform_words_qualification::repeated_uniform_calls_read_the_current_word_and_count ... ok
+test uniform_words_qualification::uniform_constructor_keeps_range_overflow_before_output_rejection ... ok
+test uniform_words_qualification::uniform_optimizer_leaves_selected_assertions_in_the_ordinary_body ... ok
+test uniform_words_qualification::uniform_unsigned_values_keep_clone_quotas_prior_outputs_and_recovery ... ok
+test uniform_words_qualification::uniform_word_facts_keep_the_exact_region_and_reject_effects_or_varying_yields ... ok
+
+test result: ok. 49 passed; 0 failed; 0 ignored; 0 measured; 327 filtered out; finished in 43.30s
+

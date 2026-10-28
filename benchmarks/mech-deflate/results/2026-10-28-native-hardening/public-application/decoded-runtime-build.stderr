@@ -1,0 +1,14 @@
+warning: patch `mech-combinatorics v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/combinatorics)` was not used in the crate graph
+warning: patch `mech-compare v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/compare)` was not used in the crate graph
+warning: patch `mech-logic v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/logic)` was not used in the crate graph
+warning: patch `mech-math v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/math)` was not used in the crate graph
+warning: patch `mech-matrix v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/matrix)` was not used in the crate graph
+warning: patch `mech-range v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/range)` was not used in the crate graph
+warning: patch `mech-set v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/set)` was not used in the crate graph
+warning: patch `mech-stats v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/stats)` was not used in the crate graph
+warning: patch `mech-string v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/string)` was not used in the crate graph
+help: Check that the patched package version and available features are compatible
+      with the dependency requirements. If the patch has a different version from
+      what is locked in the Cargo.lock file, run `cargo update` to use the new
+      version. This may also occur with an optional dependency that is not enabled.
+    Finished `dev` profile [unoptimized] target(s) in 0.12s
