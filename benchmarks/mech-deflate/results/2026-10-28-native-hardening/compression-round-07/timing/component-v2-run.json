@@ -1,0 +1,26 @@
+{
+  "command": [
+    "/private/tmp/mech-native-precharge-round07-20261028/component-v2-tests",
+    "packed_update_qualification",
+    "buffer_frame_qualification",
+    "sequence_capacity_qualification",
+    "collection_qualification",
+    "uniform_words_qualification",
+    "word_read_qualification",
+    "narrow_word_qualification",
+    "matchfinder_qualification",
+    "assembled_compressor_source_preserves_its_pinned_bytes",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 9.101188750006258,
+  "binary_sha256": "dbc647fdd1b6fc26996f081ff2c5bcc6cc3d39f3447e26d72b310d93edf4cc7a",
+  "skipped": [
+    {
+      "module": "linked_qualification",
+      "source": "/private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_linked.rs",
+      "reason": "Linked Cargo subprocess qualification is separate from this existing component cohort."
+    }
+  ]
+}

@@ -96,22 +96,25 @@ separate JSON inputs; the public CLI also accepts `--native-compile-limits`.
 
 ## Current small timing
 
-The [latest eight-byte timing receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-06/REPORT.md)
-use the real tree/cache and unchanged 25 components. With **Roc = 1×**, consuming
-scalar indexed replacement measures **1626× → 574×**, 0.465164708 s to
-0.164188708 s against a fresh 0.000286 s reference. This is **2.833× faster**
-than the paired Mech baseline, or 64.70% less elapsed time. Native scalar operands,
-same-account ownership transfer and one-word changed detection avoid the old
-binding, payload-copy and full-equality path. A retained external alias still
-requires its first immutable copy; private chains reuse their backing.
+The [latest eight-byte timing receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-07/REPORT.md)
+use the real tree/cache and unchanged 25 components. With **Roc = 1×**, successful
+native metadata precharge batching measures **574× → 495×**, 0.162907833 s to
+0.140640417 s against a fresh 0.000284 s reference. This is 13.67% less elapsed
+time; complete logical work remains 888390537256. Tight budgets and shared worker
+loans keep ordered incremental accounting. All 104 scoped Rust tests, static
+checks and protected scalar gates pass. The separate feature guard commit fixes
+an unused import introduced in the preceding round; no warning is suppressed.
 
-The recursive real-buffer witness now requests one payload rather than one per
-store. In the actual six-position collector, requests fall from 25682 to 8362
-and requested bytes from 79457091 to 35045914. Some copies remain in that path.
-Exact data/state, aliases, finite admission, publication, cleanup and retry pass.
-Reported complete-compression work is 888390537256 logical units, distinct from
-executed instructions. The next target comes from the new profile's repeated
-budget, accounting and runtime transitions.
+The [preceding consuming-store change](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-06/REPORT.md)
+measures **1626× → 574×**, 0.465164708 s to 0.164188708 s against its fresh
+0.000286 s reference: **2.833× faster** than that paired Mech baseline. Native
+scalar operands, same-account ownership transfer and one-word changed detection
+avoid the old binding, payload-copy and full-equality path. External aliases keep
+their first necessary immutable copy; private recursive chains reuse backing.
+The actual six-position collector falls from 25682 to 8362 requests and 79457091
+to 35045914 requested bytes, with unchanged golden state and finite policy.
+Some copies remain. The next substantial target is repeated canonical object
+construction and runtime transitions in the real numeric loops. Parity is unmet.
 
 The [preceding length change](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-05/REPORT.md)
 measures **1727× → 1632×** against a different reference cohort. Numeric length

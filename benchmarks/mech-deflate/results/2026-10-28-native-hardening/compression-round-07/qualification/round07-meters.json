@@ -1,0 +1,37 @@
+{
+  "name": "round07-meters",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-engine",
+    "--no-default-features",
+    "--features",
+    "full_compiler,async,native-artifact",
+    "--lib",
+    "native_projection_meter_tests",
+    "borrowed_metadata_scan_tests",
+    "native_library_work_tests",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "03a6f6518d15e480e30270c1acbe9fa5cffb9e89",
+  "dirty": " M src/engine/src/resident/borrowed_metadata_scan_tests.rs\n M src/engine/src/resident/budget.rs\n M src/engine/src/resident/general/native_structural_projection.rs\n M src/engine/src/resident/native_projection_meter_tests.rs\n",
+  "exit": 1,
+  "seconds": 0.016191959381103516,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round07-meters.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

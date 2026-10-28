@@ -483,3 +483,27 @@ allocation failure are retained separately. Broader linked/generated application
 route unit-suite and full-input coverage remain explicit gaps; CI is cancelled
 and #973 remains draft. The new profile makes repeated budget/accounting and
 runtime visits the next measured target. Parity remains unmet.
+
+## Successful native metadata precharge
+
+Protocol `0a575edfce86deeedcd11e9b5ee5e2ec5b93c1a8` reproduces the missing native
+scope preview; `51eeb3f5fc5390b7b1b5213870b60ed3c577d182` enables pure preview
+and batches the existing immutable schema charge when the entire debit fits.
+Tight/overflow/foreign scopes and worker loans retain the incremental path.
+Independent metadata oracles verify identical errors, spent prefixes and cleanup.
+No account authority or resource allowance changes. Separate commit
+`03a6f6518d15e480e30270c1acbe9fa5cffb9e89` fixes an unused mapper import introduced
+by round 06 in a native-artifact profile without sequence_buffers.
+
+The [round 07 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-07/REPORT.md)
+records **574× → 495× Roc**, 0.162907833 s to 0.140640417 s against a fresh
+0.000284 s reference, or 13.67% less elapsed time. Source, artifact, allocations,
+complete logical work, bytes, aliases, capacity and cleanup remain unchanged.
+All 104 scoped Rust tests, alternate feature checking, twelve static checks and
+protected scalar gates pass. Release rebuild takes 447.89 seconds and reuses the
+machine libraries. The zero-test setup run, introduced import error, expected
+preview failure and invalid filter command are retained and classified. Broader
+linked/application and full-input coverage stay unrefreshed; CI is cancelled.
+The profile removes most ordered schema precharge but still shows repeated
+runtime visits, memory admission and object transport. The remaining 495× gap
+requires larger reductions in real numeric-loop transactions. #973 stays draft.

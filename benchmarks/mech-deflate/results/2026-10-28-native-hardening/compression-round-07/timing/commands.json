@@ -1,0 +1,39 @@
+[
+  {
+    "label": "word-updates",
+    "command": [
+      "/private/tmp/mech-native-precharge-round07-20261028/word-updates"
+    ],
+    "exit": 0,
+    "process_seconds": 1.057613749988377
+  },
+  {
+    "label": "roc",
+    "command": [
+      "/private/tmp/mech-deflate-profiling-20261028/roc-profile",
+      "12"
+    ],
+    "exit": 0,
+    "process_seconds": 5.89967399998568
+  },
+  {
+    "label": "before",
+    "command": [
+      "/private/tmp/mech-consuming-stores-round06-20261028/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 38.526246958062984
+  },
+  {
+    "label": "after",
+    "command": [
+      "/private/tmp/mech-native-precharge-round07-20261028/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 39.17779025004711
+  }
+]

@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-native-precharge-round07-20261028/selected-bits-tests",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.9358051660237834,
+  "binary_sha256": "8a9910844b3567135c7434c691296aafe95cb7f0ac98db6914c60e4853c00303",
+  "skipped_coverage": null
+}
