@@ -53,3 +53,16 @@ enter the primary median. Confirm the targeted walk leaves the hot path and
 record remaining costs. Commit this round's code and measurement before another
 production optimization. A regression is evidence to retain, not a reason to
 silently change the cohort or omit results.
+
+Protected scalar controls use the unchanged `native_frame_transport` example.
+The retained before executable is SHA-256
+`ce5244ec0b11a326f36900101cd0bb9657d5f5a79d5fab64f2de8dcbcf185c37`.
+For each original/decoded Bool/U64/I64/F64 case, use 10000 invocations per
+sample, one warmup and five retained samples. Use 100 invocations for the scalar
+loop at zero/64 visits. Execute one balanced before/after pair per case/form,
+alternating order by case. Preserve exact artifacts, native scalar operation
+counts, work, cleanup and all raw observations. The direct scalar controls must
+retain their allocation requests/bytes and show no median elapsed regression
+greater than 1.05; scalar-loop metadata changes must match the real table-size
+increase and cannot add a per-visit allocation slope. These focused diagnostics
+are separate from whole-compression timing and do not substitute for it.
