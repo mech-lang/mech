@@ -1,0 +1,26 @@
+{
+  "result": {
+    "allocation_requests": 930998102,
+    "artifact": "saved-decoded",
+    "case": "33027-periodic-window.input",
+    "elapsed_seconds": 5050.469946709,
+    "input_bytes": 33027,
+    "memory_after": 7203419,
+    "requested_bytes": 555900115910,
+    "result": "Ok(NativeProgramExecutionReport { work: 114294379950239, comparison_work: 859309371932, visits: 179640525, transport_bytes: 4984080, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+    "witness": "complete-compression"
+  },
+  "exact_reference": true,
+  "raw_bytes": 151,
+  "independent_decompression": true,
+  "aliases_unchanged": true,
+  "cleanup": {
+    "managed_bytes": 0,
+    "retained_nodes": 0
+  },
+  "form": "saved-decoded",
+  "all_configurable_limits": "maximum",
+  "timer_caveat": "Wall-clock elapsed includes approximately53seconds deliberately paused during the separately recorded reference/Rust comparison, plus a subsecond rejected comparison attempt. Never present this as a controlled timing result.",
+  "comparison_run": "/private/tmp/mech-deflate-comparison-20261028/run.json",
+  "full_file": "Terminated deliberately after9570.216899633seconds total; no complete full-file result."
+}
