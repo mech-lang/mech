@@ -47,15 +47,16 @@ fn independent_cost_vectors_keep_prefix_suffix_errors_aliases_and_recovery() {
                 policy.execution.max_work = 1_000_000_000_000;
                 policy.library.max_compute_work = Some(1_000_000_000_000);
                 policy.library.max_comparison_work = Some(1_000_000_000_000);
-                for (count, start, cost) in [
-                    (normal, begin, 109),
-                    (normal + 1, begin, 109),
-                    (normal, 255, 7),
-                    (0, 259, 7),
-                    (2, 259, 7),
-                    (normal - 1, begin, 109),
-                    (normal, begin, u64::MAX),
-                    (normal, begin, 83),
+                for (count, start, cost, empty_lookups) in [
+                    (normal, begin, 109, false),
+                    (normal + 1, begin, 109, false),
+                    (normal, 255, 7, false),
+                    (0, 259, 7, false),
+                    (2, 259, 7, false),
+                    (normal - 1, begin, 109, false),
+                    (normal, begin, u64::MAX, false),
+                    (normal, begin, 83, true),
+                    (normal, begin, 83, false),
                 ] {
                     let args = inputs(
                         &artifact,
@@ -63,10 +64,21 @@ fn independent_cost_vectors_keep_prefix_suffix_errors_aliases_and_recovery() {
                             ("values", vector(count)),
                             ("cost", Data::U64(cost)),
                             ("start", Data::U64(start)),
-                            ("slots", Data::Matrix(vec![Data::U8(1); 259].into())),
+                            (
+                                "slots",
+                                Data::Matrix(if empty_lookups {
+                                    Box::new([])
+                                } else {
+                                    vec![Data::U8(1); 259].into()
+                                }),
+                            ),
                             (
                                 "extras",
-                                Data::Matrix(vec![Data::U8(0), Data::U8(1)].into()),
+                                Data::Matrix(if empty_lookups {
+                                    Box::new([])
+                                } else {
+                                    vec![Data::U8(0), Data::U8(1)].into()
+                                }),
                             ),
                         ],
                         &memory,
