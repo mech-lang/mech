@@ -1,0 +1,36 @@
+
+running 7 tests
+test buffer_frame_qualification::build_owned_image_rederives_private_frame_metadata ... ok
+test buffer_frame_qualification::checked_frames_use_fresh_booleans_preserve_aliases_and_recover ... ok
+test buffer_frame_qualification::escaping_tuples_keep_canonical_storage_and_scalar_aggregates_stay_separate ... ok
+test buffer_frame_qualification::frame_shape_binding_admits_the_core_metadata_node_bound_before_construction ... ok
+test buffer_frame_qualification::nested_repeated_calls_keep_published_buffers_immutable_and_recover_from_denial ... ok
+test buffer_frame_qualification::real_recursive_arguments_keep_allocation_below_either_payload ... ok
+test buffer_frame_qualification::recursive_buffers_retain_real_reservations_without_payload_copies ... {"artifact":"original","capacity":16,"elapsed_seconds":0.000191834,"requested_bytes":34711,"requests":276,"steps":0,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":16,"elapsed_seconds":0.000195375,"requested_bytes":36015,"requests":310,"steps":1,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":16,"elapsed_seconds":0.000277959,"requested_bytes":38623,"requests":378,"steps":3,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":305257,"elapsed_seconds":0.000149375,"requested_bytes":2476639,"requests":276,"steps":0,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":305257,"elapsed_seconds":0.000195042,"requested_bytes":2477943,"requests":310,"steps":1,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":305257,"elapsed_seconds":0.000279208,"requested_bytes":2480551,"requests":378,"steps":3,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":16,"elapsed_seconds":0.000151541,"requested_bytes":34711,"requests":276,"steps":0,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":16,"elapsed_seconds":0.00019275,"requested_bytes":36015,"requests":310,"steps":1,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":16,"elapsed_seconds":0.000274959,"requested_bytes":38623,"requests":378,"steps":3,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":305257,"elapsed_seconds":0.000148625,"requested_bytes":2476639,"requests":276,"steps":0,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":305257,"elapsed_seconds":0.000195375,"requested_bytes":2477943,"requests":310,"steps":1,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":305257,"elapsed_seconds":0.000281334,"requested_bytes":2480551,"requests":378,"steps":3,"width":64,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":16,"elapsed_seconds":0.000175666,"requested_bytes":35335,"requests":282,"steps":0,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":16,"elapsed_seconds":0.000209416,"requested_bytes":36639,"requests":316,"steps":1,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":16,"elapsed_seconds":0.000290375,"requested_bytes":39247,"requests":384,"steps":3,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":6633832,"elapsed_seconds":0.000185583,"requested_bytes":6669151,"requests":282,"steps":0,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":6633832,"elapsed_seconds":0.000208875,"requested_bytes":6670455,"requests":316,"steps":1,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"original","capacity":6633832,"elapsed_seconds":0.000300417,"requested_bytes":6673063,"requests":384,"steps":3,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":16,"elapsed_seconds":0.000159375,"requested_bytes":35335,"requests":282,"steps":0,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":16,"elapsed_seconds":0.000196291,"requested_bytes":36639,"requests":316,"steps":1,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":16,"elapsed_seconds":0.000280791,"requested_bytes":39247,"requests":384,"steps":3,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":6633832,"elapsed_seconds":0.0001585,"requested_bytes":6669151,"requests":282,"steps":0,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":6633832,"elapsed_seconds":0.000199792,"requested_bytes":6670455,"requests":316,"steps":1,"width":8,"witness":"recursive-reserved-buffer"}
+{"artifact":"decoded","capacity":6633832,"elapsed_seconds":0.000291125,"requested_bytes":6673063,"requests":384,"steps":3,"width":8,"witness":"recursive-reserved-buffer"}
+ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 366 filtered out; finished in 7.41s
+

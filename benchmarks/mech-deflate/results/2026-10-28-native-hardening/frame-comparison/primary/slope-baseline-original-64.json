@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-frame-comparison-20261028/baseline/native_frame_transport",
+    "scalar-loop",
+    "original",
+    "64",
+    "1",
+    "1"
+  ],
+  "exit": 0
+}

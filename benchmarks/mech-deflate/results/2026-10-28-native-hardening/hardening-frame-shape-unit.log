@@ -1,0 +1,65 @@
+   Compiling mech-core v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/core)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/engine)
+error[E0433]: cannot find `test_support` in `crate`
+   --> src/engine/src/function/resolver.rs:551:24
+    |
+551 |                 crate::test_support::catalog::pure_test_operation_contract(2),
+    |                        ^^^^^^^^^^^^ could not find `test_support` in the crate root
+    |
+note: found an item that was configured out
+   --> src/engine/src/lib.rs:108:16
+    |
+106 | #[cfg(all(test, feature = "semantic-compiler", feature = "functions"))]
+    |                 ----------------------------- the item is gated behind the `semantic-compiler` feature
+107 | #[path = "../tests/support/mod.rs"]
+108 | pub(crate) mod test_support;
+    |                ^^^^^^^^^^^^
+
+error[E0433]: cannot find `test_support` in `crate`
+   --> src/engine/src/function/resolver.rs:647:24
+    |
+647 |                 crate::test_support::catalog::pure_test_operation_contract(1),
+    |                        ^^^^^^^^^^^^ could not find `test_support` in the crate root
+    |
+note: found an item that was configured out
+   --> src/engine/src/lib.rs:108:16
+    |
+106 | #[cfg(all(test, feature = "semantic-compiler", feature = "functions"))]
+    |                 ----------------------------- the item is gated behind the `semantic-compiler` feature
+107 | #[path = "../tests/support/mod.rs"]
+108 | pub(crate) mod test_support;
+    |                ^^^^^^^^^^^^
+
+error: unused import: `crate::resident::general::comprehension::ActivatedCollectionStep`
+    --> src/engine/src/resident/general/execution.rs:6752:9
+     |
+6752 |     use crate::resident::general::comprehension::ActivatedCollectionStep;
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = note: `-D unused-imports` implied by `-D warnings`
+     = help: to override `-D warnings` add `#[allow(unused_imports)]`
+
+error[E0308]: mismatched types
+    --> src/engine/src/resident/general/native_collection_frame_shape.rs:243:21
+     |
+ 239 |                 mech_core::snapshot::CompositeSnapshotConstructor::bind(
+     |                 ------------------------------------------------------- arguments to this function are incorrect
+...
+ 243 |                     built.table.clone(),
+     |                     ^^^^^^^^^^^^^^^^^^^ expected `Arc<SchemaTable>`, found `SchemaTable`
+     |
+     = note: expected struct `std::sync::Arc<mech_core::SchemaTable>`
+                found struct `mech_core::SchemaTable`
+note: associated function defined here
+    --> src/core/src/snapshot/validation.rs:3194:12
+     |
+3194 |     pub fn bind(
+     |            ^^^^
+help: call `Into::into` on this expression to convert `mech_core::SchemaTable` into `std::sync::Arc<mech_core::SchemaTable>`
+     |
+ 243 |                     built.table.clone().into(),
+     |                                        +++++++
+
+Some errors have detailed explanations: E0308, E0433.
+For more information about an error, try `rustc --explain E0308`.
+error: could not compile `mech-engine` (lib test) due to 4 previous errors
