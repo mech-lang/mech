@@ -1,0 +1,22 @@
+{
+  "compiler_head": "2b4adb7289cb81ffd0c37456ce1f968c9ed3d43d",
+  "executable_sha256": "3c34e2ff5a72f8981c7c23d57a04c13ca185cd63d73a14e91a72262c18cfb457",
+  "command": [
+    "/private/tmp/mech-frame-comparison-20261028/candidate/native_frame_transport",
+    "exclusive",
+    "original",
+    "64",
+    "1",
+    "30000"
+  ],
+  "exit": 0,
+  "sample_command": [
+    "sample",
+    "26216",
+    "3",
+    "-file",
+    "/private/tmp/mech-frame-comparison-20261028/profile-2b4adb72/sample.txt"
+  ],
+  "sample_exit": 0,
+  "classification": "post-change sampled diagnostic; not primary timing; includes warmup/repetitions and profiler overhead"
+}

@@ -1,0 +1,61 @@
+use mech_core::{ManagedMemoryBudget, Value, ValueData, ValueDataDraft as Data, snapshot::{SequenceView, SnapshotValidationContext, ValueDraft}};
+use mech_engine::{CanonicalSourceFrontend, ProgramArtifact};
+use mech_gpu::native_artifact::{JitProgramArtifact, NativeProgramLimitMode};
+use mech_syntax::document::{AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot, parse_canonical_document};
+use std::{sync::Arc, time::Instant};
+#[path = "/private/tmp/mech-linear-restack-20261026/complete-focused/src/pinned_allocator.rs"]
+mod pinned_allocator;
+#[global_allocator]
+static ALLOCATOR: pinned_allocator::PinnedMimalloc = pinned_allocator::PinnedMimalloc;
+fn source(text: &str) -> ProgramArtifact {
+ let parsed = parse_canonical_document(TextSnapshot::new(DocumentId(71), Revision(1), text).unwrap(), ParseConfig::default());
+ assert!(parsed.is_strictly_clean());
+ CanonicalSourceFrontend.compile_document_with_catalog(&DocumentSyntax::cast(parsed.syntax()).unwrap(), mech_stdlib::source_catalog()).unwrap().compile_artifact().unwrap()
+}
+fn words(value: &Value) -> &[u8] { let ValueData::Matrix(m) = value.data() else { panic!() }; let SequenceView::U8(bytes) = m.elements() else { panic!() }; bytes }
+fn capacity(value: &Value) -> usize { let ValueData::Matrix(m) = value.data() else { panic!() }; m.unsigned_buffer_capacity().unwrap() }
+fn import(artifact: &ProgramArtifact, input: &[(String, Data)], memory: &ManagedMemoryBudget) -> Vec<Value> {
+ let schemas=Arc::new(artifact.schemas().clone());
+ artifact.inputs().iter().map(|port| {
+  let name=mech_engine::decode_source_input_name(&port.name).unwrap();
+  let data=input.iter().find(|(n,_)| *n==name).unwrap().1.clone();
+  let shape_values: Box<[u64]>=if let Data::Matrix(values)=&data {mech_core::shape_for_resolved_extents(schemas.get(port.schema).unwrap(), &[1,values.len() as u64]).unwrap().parameter_values().into()} else {Box::new([])};
+  let v=ValueDraft{schema:port.schema,shape_values,data}.finalize(&SnapshotValidationContext::with_shared_schemas(&schemas)).unwrap();
+  let mut admission=memory.reserve_capacity(v.memory_budget_admission_bytes(memory).unwrap()).unwrap();v.into_memory_budget(&mut admission).unwrap()
+ }).collect()
+}
+fn rebind(v: &Value, a: &ProgramArtifact, schema: mech_core::SchemaId, memory: &ManagedMemoryBudget) -> Value {
+ let shape=mech_core::shape_for_resolved_extents(a.schemas().get(schema).unwrap(), &[1,words(v).len() as u64]).unwrap();
+ let x=v.rebind(schema, &shape,a.schemas()).unwrap();assert!(x.shares_frozen_storage(v));
+ let mut reserve=memory.reserve_capacity(x.memory_budget_admission_bytes(memory).unwrap()).unwrap();x.into_memory_budget(&mut reserve).unwrap()
+}
+fn main() {
+ let args=std::env::args().skip(1).collect::<Vec<_>>(); assert_eq!(args.len(), 2,"ARTIFACT SAMPLES"); let samples:usize=args[1].parse().unwrap();
+ let artifact=mech_engine::decode_program_artifact_bytecode_v1(&std::fs::read(&args[0]).unwrap()).unwrap();
+ let mode=NativeProgramLimitMode::NoLimits; let catalog=mech_stdlib::source_catalog();
+ let at=Instant::now();let jit=JitProgramArtifact::compile_with_limits(&artifact,&catalog,mode.compilation()).unwrap();
+ eprintln!("{}",serde_json::json!({"phase":"compiled","seconds":at.elapsed().as_secs_f64()}));
+ let seed=source("+> sequence\nsequence/with-capacity(0u8, 13u64)\n");
+ let clear=source("+> sequence\nsequence/clear(buffer<[u8]>)\n");
+ let sj=JitProgramArtifact::compile_with_limits(&seed,&catalog,mode.compilation()).unwrap();
+ let cj=JitProgramArtifact::compile_with_limits(&clear,&catalog,mode.compilation()).unwrap();
+ let memory=mode.memory_budget(); let mut result=vec![None;seed.outputs().len()];sj.evaluate_into(&[],&mut result,mode.execution(),&memory).unwrap();
+ let mut current=result.last_mut().unwrap().take().unwrap();drop(result);
+ let input=b"abcdefgh";let expected=[75,76,74,78,73,77,75,207,0,0];
+ let mut args=import(&artifact,&[("input".into(),Data::Matrix(input.iter().copied().map(Data::U8).collect())),("output".into(),Data::Matrix(vec![].into()))],&memory);
+ let out_index=artifact.inputs().iter().position(|p| mech_engine::decode_source_input_name(&p.name).unwrap()=="output").unwrap();
+ let in_index=1-out_index;let alias=args[in_index].clone();
+ let mut output=vec![None;artifact.outputs().len()];
+ for sample in 0..=samples + 1 {
+  let cleared_args=vec![rebind(&current,&clear,clear.inputs()[0].schema,&memory)];drop(current);
+  let mut cleared=vec![None;clear.outputs().len()];cj.evaluate_into(&cleared_args,&mut cleared,mode.execution(),&memory).unwrap();
+  let empty=cleared.last_mut().unwrap().take().unwrap();drop((cleared,cleared_args));assert_eq!(capacity(&empty),13);assert!(words(&empty).is_empty());
+  args[out_index]=rebind(&empty,&artifact,artifact.inputs()[out_index].schema,&memory);drop(empty);
+  output.fill(None);let before=words(&args[out_index]).as_ptr() as usize;
+  eprintln!("MEASURING {sample}");let start=Instant::now();let report=jit.evaluate_into(&args,&mut output,mode.execution(),&memory).unwrap();let seconds=start.elapsed().as_secs_f64();
+  current=output.last_mut().unwrap().take().unwrap();assert_eq!(words(&current),expected);assert_eq!(capacity(&current),13);
+  assert_eq!(miniz_oxide::inflate::decompress_to_vec(words(&current)).unwrap(),input);assert!(args[in_index].shares_frozen_storage(&alias));assert_eq!(words(&alias),input);assert!(words(&args[out_index]).is_empty());
+  println!("{}",serde_json::json!({"sample":sample,"warmup":sample==0,"profile":sample==samples+1,"seconds":seconds,"input_bytes":8,"raw_bytes":10,"capacity":13,"same_backing":before==words(&current).as_ptr() as usize,"exact_reference":true,"independent_inflation":true,"work":report.work,"allocator":"pinned mimalloc2.1.7; no allocation probe","boundary":"evaluate_into only; seed/clear/rebind/validation/drop/output slots excluded"}));
+ }
+ drop((args,output,current,alias));assert_eq!(memory.used_bytes(),0);assert_eq!(memory.retained_snapshot_nodes(),0);eprintln!("CLEANUP bytes=0 nodes=0");
+}
