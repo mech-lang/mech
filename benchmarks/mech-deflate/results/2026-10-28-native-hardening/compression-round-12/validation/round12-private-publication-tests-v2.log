@@ -1,0 +1,8 @@
+   Compiling mech-core v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/core)
+    Finished `test` profile [unoptimized] target(s) in 14.05s
+     Running unittests src/lib.rs (/private/tmp/mech-live-control-target/debug/deps/mech_core-8cc6a27eafb44e54)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 342 filtered out; finished in 0.00s
+

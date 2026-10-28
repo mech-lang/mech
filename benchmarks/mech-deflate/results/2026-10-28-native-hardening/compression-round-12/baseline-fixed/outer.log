@@ -1,0 +1,45 @@
+
+running 2 tests
+test numeric_write_qualification::numeric_write_baseline_observes_transport_in_generic_and_pinned_huffman_loops ... {"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.0000255,"form":"original","requested_bytes":34506,"requests":249,"steps":0,"visits":20,"witness":"generic","work":11699198}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000017625,"form":"original","requested_bytes":36466,"requests":265,"steps":1,"visits":38,"witness":"generic","work":44558180}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000037041,"form":"original","requested_bytes":43018,"requests":370,"steps":8,"visits":164,"witness":"generic","work":274513710}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000195917,"form":"original","requested_bytes":95434,"requests":1210,"steps":64,"visits":1172,"witness":"generic","work":2114157950}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000747375,"form":"original","requested_bytes":275146,"requests":4090,"steps":256,"visits":4628,"witness":"generic","work":8421509630}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.0000135,"form":"decoded","requested_bytes":34506,"requests":249,"steps":0,"visits":20,"witness":"generic","work":11699198}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000016625,"form":"decoded","requested_bytes":36466,"requests":265,"steps":1,"visits":38,"witness":"generic","work":44558180}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000036417,"form":"decoded","requested_bytes":43018,"requests":370,"steps":8,"visits":164,"witness":"generic","work":274513710}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000194167,"form":"decoded","requested_bytes":95434,"requests":1210,"steps":64,"visits":1172,"witness":"generic","work":2114157950}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000753167,"form":"decoded","requested_bytes":275146,"requests":4090,"steps":256,"visits":4628,"witness":"generic","work":8421509630}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000016708,"form":"original","requested_bytes":38882,"requests":253,"steps":0,"visits":22,"witness":"pinned-huffman-count","work":16967152}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000023333,"form":"original","requested_bytes":41962,"requests":274,"steps":1,"visits":76,"witness":"pinned-huffman-count","work":74467708}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000068,"form":"original","requested_bytes":63522,"requests":421,"steps":8,"visits":454,"witness":"pinned-huffman-count","work":476971600}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.00043925,"form":"original","requested_bytes":236002,"requests":1597,"steps":64,"visits":3478,"witness":"pinned-huffman-count","work":3697002736}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.001710083,"form":"original","requested_bytes":827362,"requests":5629,"steps":256,"visits":13846,"witness":"pinned-huffman-count","work":14737109488}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000015375,"form":"decoded","requested_bytes":38882,"requests":253,"steps":0,"visits":22,"witness":"pinned-huffman-count","work":16967152}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000023125,"form":"decoded","requested_bytes":41962,"requests":274,"steps":1,"visits":76,"witness":"pinned-huffman-count","work":74467708}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000067916,"form":"decoded","requested_bytes":63522,"requests":421,"steps":8,"visits":454,"witness":"pinned-huffman-count","work":476971600}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000439667,"form":"decoded","requested_bytes":236002,"requests":1597,"steps":64,"visits":3478,"witness":"pinned-huffman-count","work":3697002736}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.001716375,"form":"decoded","requested_bytes":827362,"requests":5629,"steps":256,"visits":13846,"witness":"pinned-huffman-count","work":14737109488}
+ok
+test numeric_write_qualification::numeric_write_recurrence_selects_native_frame_and_typed_store_execution ... FAILED
+
+failures:
+
+failures:
+    numeric_write_qualification::numeric_write_recurrence_selects_native_frame_and_typed_store_execution
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 383 filtered out; finished in 1.59s
+
+
+thread 'numeric_write_qualification::numeric_write_recurrence_selects_native_frame_and_typed_store_execution' (18809179) panicked at /private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_numeric_writes.rs:65:5:
+indexed-write recurrence still uses ordinary frame/store transactions: {"abi_version":35,"borrowed_string_regions":0,"closed_tail_regions":0,"code_bytes":2692,"compiled_bound_call_shim":null,"compiled_cfg_cleanup":{"after_blocks":105,"after_instructions":515,"before_blocks":105,"before_instructions":515,"constant_branches_removed":0,"enabled":true,"fixed_point":true,"pre_codegen_data_passes":0,"rounds":1},"compiled_count_value_loops":[],"compiled_frame_effects":{"complete":true,"regions":[]},"compiled_guarded_loops":{"complete":true,"regions":[]},"compiled_header_continuation_regions":0,"compiled_join_map_copies":[],"compiled_lookup_facts":{"complete":true,"regions":[]},"compiled_loop_constants":{"callers":[],"complete":true},"compiled_loop_invariants":[],"compiled_mutation_loops":[],"compiled_outlined_loops":[],"compiled_preserving_call_regions":[],"compiled_readonly_numeric_loops":[],"compiled_scalar_loops":[],"compiled_source_edge_facts":{"complete":true,"regions":[]},"compiled_steady_loops":[],"compiled_string_map_regions":0,"compiled_tag_threading":{"complete":true,"regions":[]},"compiled_window_accumulator":null,"compiled_window_histogram_regions":0,"compiled_window_query_regions":0,"effects":0,"entry_symbol":"mech_canonical_program_entry_v1","executed":false,"identity_symbol":"mech_canonical_program_identity_v1_1bc1947d887baaf0d2a161fe27df600309131c4d3f9794b6c4b8a90121108973","linked":false,"object_bytes":3424,"object_optimization":"speed","observations":0,"private_frozen_map_candidates":0,"private_line_matrix_regions":0,"program_revision":"03a8a47cb3d2abeb12f645fa1d5310ab159448dbf2de6455e5c98db8a5886ee2","readonly_numeric_candidates":[{"header":4,"iteration":0,"origin":{"block":null,"local":null,"node":1},"parent":null,"proof_eligible":false,"rejection":"leaf result is not a scalar","selected":false}],"readonly_numeric_regions":[],"requirements":0,"retained_map_scalar_admission_groups":0,"schema":"mech.canonical-managed-program-object.v1","selected_matrix_join_regions":0,"stack_bytes":96,"target_tag":[1,2,1,64,1,0,0,0],"timing_samples":0,"transport_inputs":2,"transport_outputs":1,"typed_ir_sha256":"1bc1947d887baaf0d2a161fe27df600309131c4d3f9794b6c4b8a90121108973","typed_ir_version":116,"unboxed_scalar_aggregate_values":0,"work_policy_version":91}
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+Traceback (most recent call last):
+  File "/private/tmp/mech-numeric-writes-round12-20261028/baseline-fixed/qualify.py", line 36, in <module>
+    (root/'component-v2-run.json').write_text(json.dumps({'command':cmd,'exit':r.returncode,'seconds':time.monotonic()-start,'binary_sha256':hashlib.sha256((root/'component-v2-tests').read_bytes()).hexdigest(),'skipped':skipped},indent=2)+'\n');print(r.stdout+r.stderr,flush=True);r.check_returncode()
+                                                                                                                                                                                                                                                                                         ~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 509, in check_returncode
+    raise CalledProcessError(self.returncode, self.args, self.stdout,
+                             self.stderr)
+subprocess.CalledProcessError: Command '['/private/tmp/mech-numeric-writes-round12-20261028/baseline-fixed/component-v2-tests', 'numeric_write_qualification', '--nocapture', '--test-threads=1']' returned non-zero exit status 101.
