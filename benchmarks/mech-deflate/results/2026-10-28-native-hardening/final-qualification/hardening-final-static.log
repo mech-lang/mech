@@ -1,0 +1,29 @@
+COMMAND ['python3', 'scripts/check-production-resident-routing.py']
+Production resident-routing contract passed
+COMMAND ['python3', 'scripts/check-source-catalog-entrypoints.py']
+Source catalog entry-point contract passed
+COMMAND ['python3', 'scripts/check-native-host-catalog.py']
+native host catalog contract passed (five standard providers, six full providers, no actor migration linkages)
+COMMAND ['python3', 'scripts/check-native-build-analysis-layout.py']
+Native build analysis layout contract passed
+COMMAND ['python3', 'scripts/check-rust-module-layout.py']
+Rust module layout contract passed
+COMMAND ['python3', 'scripts/check-runtime-factory-safety.py']
+runtime factory safety audit passed
+COMMAND ['python3', 'scripts/check-warning-policy.py']
+warning policy contract passed
+COMMAND ['python3', 'scripts/check-compiler-planning-quarantine.py']
+Compiler-planning quarantine passed
+COMMAND ['/private/tmp/mech-assertion-ci-python/bin/python', '-c', 'import sys;sys.path.insert(0,"scripts");from ci_test_inventory import inventory_gaps;g=inventory_gaps();print(g);assert not g']
+[]
+COMMAND ['sh', 'scripts/check-unsafe-boundaries.sh']
+unsafe boundary audit failed: prohibited code exists outside the exact allowlist: hosts/gpu/src/native_artifact/program/prepare/call_routes_tests.rs
+75:                unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }
+Traceback (most recent call last):
+  File "/private/tmp/mech-final-static-20261028.py", line 25, in <module>
+    subprocess.run(command, check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['sh', 'scripts/check-unsafe-boundaries.sh']' returned non-zero exit status 1.
