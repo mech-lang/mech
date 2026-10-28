@@ -423,3 +423,160 @@ fn frame_shape_binding_admits_the_core_metadata_node_bound_before_construction()
         assert_eq!(memory.used_bytes(), 0);
     }
 }
+
+#[test]
+fn native_frame_scalar_leaves_preserve_exact_kinds_bits_and_current_shapes() {
+    use mech_core::snapshot::F64Bits;
+    for (kind, values) in [
+        ("bool", vec![Data::Bool(false), Data::Bool(true)]),
+        ("u8", vec![Data::U8(0), Data::U8(u8::MAX)]),
+        ("u16", vec![Data::U16(0), Data::U16(u16::MAX)]),
+        ("u32", vec![Data::U32(0), Data::U32(u32::MAX)]),
+        ("u64", vec![Data::U64(0), Data::U64(u64::MAX)]),
+        ("i64", vec![Data::I64(i64::MIN), Data::I64(i64::MAX)]),
+        (
+            "f64",
+            vec![
+                Data::F64(F64Bits::from_bits(0x8000_0000_0000_0000)),
+                Data::F64(F64Bits::from_bits(0x7ff8_0000_0000_1234)),
+            ],
+        ),
+    ] {
+        let source = format!(
+            "keep(words<[u8]>, left<u64>, value<{kind}>) => <{kind}> | (words, left, value) => ((left > 0u64)? | true => keep(words, left - 1u64, value) | false => value).\nkeep(values<[u8]>, steps<u64>, payload<{kind}>)\n"
+        );
+        for artifact in artifacts(&source).0 {
+            let catalog = mech_stdlib::source_catalog();
+            let plan = lower_native_program_artifact(&artifact, &catalog).unwrap();
+            let frames = plan.facts().buffer_frames();
+            assert!(frames.scalar_fields() > 0);
+            assert!(frames.managed_fields() > 0);
+            assert_eq!(
+                frames.scalar_fields() + frames.managed_fields(),
+                frames.elements()
+            );
+            let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let image = jit.descriptor().encode_build_owned_image().unwrap();
+            // SAFETY: this build produced the unchanged image, confined here
+            // to independently restored metadata comparison.
+            let restored = unsafe {
+                mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
+                    &image, &catalog,
+                )
+            }
+            .unwrap();
+            assert_eq!(restored.encode_build_owned_image().unwrap(), image);
+            let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
+            let mut output = vec![None; artifact.outputs().len()];
+            for (length, payload) in [0, 5, 3].into_iter().zip(values.iter().cycle()) {
+                let args = inputs(
+                    &artifact,
+                    &[
+                        ("values", Data::Matrix(vec![Data::U8(19); length].into())),
+                        ("steps", Data::U64(3)),
+                        ("payload", payload.clone()),
+                    ],
+                    &memory,
+                );
+                let aliases = args.clone();
+                jit.evaluate_into(&args, &mut output, limits(), &memory)
+                    .unwrap();
+                let resident = reference_result(&artifact, &args).unwrap();
+                super::equal(&artifact, &output, &resident);
+                assert_eq!(
+                    output
+                        .last()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    *payload
+                );
+                assert!(
+                    args.iter()
+                        .zip(&aliases)
+                        .all(|(v, a)| v.shares_frozen_storage(a))
+                );
+            }
+            drop(output);
+            assert_eq!(memory.used_bytes(), 0);
+            assert_eq!(memory.retained_snapshot_nodes(), 0);
+        }
+    }
+}
+
+#[test]
+fn frame_word_admission_rejects_invalid_width_without_retaining_a_visit() {
+    use mech_engine::native_artifact::{
+        NativeCollectionPrimitive as Primitive, NativeIterationAction as Action,
+        NativeLibraryWorkBudget, prepare_native_program_library_call,
+    };
+    for (kind, maximum) in [
+        ("bool", 1),
+        ("u8", u8::MAX as u64),
+        ("u16", u16::MAX as u64),
+        ("u32", u32::MAX as u64),
+    ] {
+        let source = format!(
+            "keep(words<[u8]>, left<u64>, value<{kind}>) => <{kind}> | (words, left, value) => ((left > 0u64)? | true => keep(words, left - 1u64, value) | false => value).\nkeep(values<[u8]>, 2u64, payload<{kind}>)\n"
+        );
+        for artifact in artifacts(&source).0 {
+            let catalog = mech_stdlib::source_catalog();
+            let plan = lower_native_program_artifact(&artifact, &catalog).unwrap();
+            let template = plan
+                .blocks()
+                .iter()
+                .find_map(|b| match b.action() {
+                    Action::LibraryCall { template, .. }
+                        if template.primitive() == Primitive::CompositePack(3) =>
+                    {
+                        Some(template)
+                    }
+                    _ => None,
+                })
+                .unwrap();
+            let call = prepare_native_program_library_call(&artifact, template, &catalog).unwrap();
+            let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
+            let args = inputs(
+                &artifact,
+                &[
+                    ("values", Data::Matrix(vec![Data::U8(7); 5].into())),
+                    (
+                        "payload",
+                        match kind {
+                            "bool" => Data::Bool(true),
+                            "u8" => Data::U8(1),
+                            "u16" => Data::U16(1),
+                            _ => Data::U32(1),
+                        },
+                    ),
+                ],
+                &memory,
+            );
+            let buffer = args
+                .iter()
+                .find(|v| matches!(v.data(), ValueData::Matrix(_)))
+                .unwrap();
+            let current = [Some(buffer.clone()), None, None];
+            let work =
+                NativeLibraryWorkBudget::new(10_000_000_000, 10_000_000_000, &memory).unwrap();
+            for bits in [maximum, maximum + 1, 0] {
+                let before = memory.used_bytes();
+                let nodes = memory.retained_snapshot_nodes();
+                let result = call.admit_buffer_frame_words(
+                    &current,
+                    &[0, 2, bits],
+                    limits().library,
+                    &work,
+                    mech_core::ResourceDemand::default(),
+                );
+                assert_eq!(result.is_ok(), bits <= maximum, "{kind}: {result:?}");
+                assert_eq!(memory.used_bytes(), before);
+                assert_eq!(memory.retained_snapshot_nodes(), nodes);
+            }
+            drop((current, args, work));
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+}

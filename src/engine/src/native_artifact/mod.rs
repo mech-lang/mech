@@ -47,7 +47,10 @@ mod buffer_frames;
 mod phase_validation;
 mod program;
 #[cfg(feature = "sequence_buffers")]
-pub use buffer_frames::{NativeBufferFrameAction, NativeBufferFrameOperation, NativeBufferFrames};
+pub use buffer_frames::{
+    NativeBufferFrameAction, NativeBufferFrameField, NativeBufferFrameLane,
+    NativeBufferFrameOperation, NativeBufferFrames,
+};
 mod program_factory_linkage;
 mod program_image;
 #[cfg(any(

@@ -2637,6 +2637,37 @@ fn measure_borrowed_value_footprint(
     projected_canonical_value_footprint(data, shape_parameters)
 }
 
+/// Logical canonical footprint for an exact native scalar leaf, without
+/// allocating a canonical wrapper. Physical word storage has separate arena
+/// admission. Retain the same schema/data inspection and logical output fees.
+#[cfg(all(feature = "native-artifact", feature = "sequence_buffers"))]
+pub(crate) fn measure_native_scalar_frame_footprint(
+    meter: &mut ResidentBudgetMeter,
+    schema: &SchemaBody,
+    value: crate::native_artifact::NativeScalarValue,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    use crate::native_artifact::{NativeScalarKind, NativeScalarValue as Scalar};
+    if NativeScalarKind::from_schema_body(schema) != Some(value.kind()) {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let data = match value {
+        Scalar::Bool(v) => ValueData::Bool(v),
+        Scalar::U8(v) => ValueData::U8(v),
+        Scalar::U16(v) => ValueData::U16(v),
+        Scalar::U32(v) => ValueData::U32(v),
+        Scalar::U64(v) => ValueData::U64(v),
+        Scalar::I64(v) => ValueData::I64(v),
+        Scalar::F64(v) => ValueData::F64(v),
+    };
+    meter.charge_compute_work(BORROWED_FOOTPRINT_METADATA_WORK)?;
+    if !borrowed_footprint_schema_supported(meter, schema, 0)? {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    meter.charge_retained_nodes(1)?;
+    let data = measure_proven_borrowed_canonical_data_footprint(meter, schema, &data, true)?;
+    projected_canonical_value_footprint(data, 0)
+}
+
 /// Measures a borrowed value whose exact schema identity and supported body
 /// were already proven by an internal activation certificate and rechecked at
 /// this execution boundary. Concrete shape, retained nodes, and selected data

@@ -1,17 +1,55 @@
-//! Planned reference lanes for nonescaping tuple argument frames.
+//! Planned native words and managed-owner lanes for nonescaping argument frames.
 use super::*;
-use mech_engine::native_artifact::{NativeBufferFrames as Layout, NativeMatchValue};
+use mech_engine::native_artifact::{
+    NativeBufferFrameLane as Lane, NativeBufferFrames as Layout, NativeMatchValue,
+    NativeScalarValue,
+};
 
 pub(super) struct BufferFrames {
     inner: Option<Box<FrameLanes>>,
 }
-// Heap-owned only when selected; keep the existing scalar caller layout small.
+// Heap-owned only when selected; scalar-only callers retain their old layout.
 struct FrameLanes {
-    values: NativeTypedStorage<Option<Value>>,
+    owners: NativeTypedStorage<Option<Value>>,
+    // Each scalar has a payload and a current-visit validity word. Its exact
+    // kind and schema are immutable prepared metadata, never runtime tags.
+    words: NativeWordStorage,
     nodes: mech_core::ManagedNodeReservation,
     _reservation: mech_core::ManagedMemoryReservation,
 }
+pub(super) enum Field {
+    Scalar {
+        schema: mech_core::SchemaId,
+        value: NativeScalarValue,
+    },
+    Managed(Value),
+}
 impl BufferFrames {
+    fn word_count(layout: &Layout) -> Result<usize, NativeProgramExecutionError> {
+        layout
+            .scalar_fields()
+            .checked_mul(2)
+            .ok_or_else(|| invalid("private scalar frame size overflow"))
+    }
+    pub(super) fn raw_bytes(layout: &Layout) -> Result<u64, NativeProgramExecutionError> {
+        amount(
+            layout.managed_fields(),
+            core::mem::size_of::<Option<Value>>() as u64,
+            0,
+        )?
+        .checked_add(transport_bytes(Self::word_count(layout)?)?)
+        .ok_or_else(|| invalid("private frame storage overflow"))
+    }
+    pub(super) fn admission_bytes(layout: &Layout) -> Result<u64, NativeProgramExecutionError> {
+        if layout.elements() == 0 {
+            return Ok(0);
+        }
+        NativeTypedStorage::<Option<Value>>::admission_bytes(layout.managed_fields())?
+            .checked_add(NativeWordStorage::admission_bytes(Self::word_count(
+                layout,
+            )?)?)
+            .ok_or_else(|| invalid("private frame admission overflow"))
+    }
     pub(super) fn new(
         layout: &Layout,
         limit: u64,
@@ -32,10 +70,12 @@ impl BufferFrames {
         )?;
         let reservation = memory.reserve_capacity(Self::metadata_bytes(layout))?;
         let nodes = memory.reserve_nodes(Self::metadata_nodes(layout)?)?;
-        let values = NativeTypedStorage::new_values(count, limit, memory)?;
+        let owners = NativeTypedStorage::new_values(layout.managed_fields(), limit, memory)?;
+        let words = NativeWordStorage::new(Self::word_count(layout)?, limit, Some(memory))?;
         Ok(Self {
             inner: Some(Box::new(FrameLanes {
-                values,
+                owners,
+                words,
                 nodes,
                 _reservation: reservation,
             })),
@@ -63,22 +103,39 @@ impl BufferFrames {
         layout: &Layout,
         output: NativeMatchValue,
         inputs: &[Option<Value>],
+        bits: &[u64],
         work: &mut NativeWorkMeter,
     ) -> Result<(), NativeProgramExecutionError> {
-        let (at, count) = layout
-            .slot(output)
+        let fields = layout
+            .fields(output)
             .ok_or_else(|| invalid("private frame output has no lanes"))?;
-        if count != inputs.len() || inputs.iter().any(Option::is_none) {
+        if fields.len() != inputs.len() || bits.len() != inputs.len() {
             return Err(invalid("private frame input count differs"));
         }
-        work.charge(NativeExecutionPhase::Setup, amount(count, 64, 64)?)?;
-        let values = self
+        work.charge(NativeExecutionPhase::Setup, amount(fields.len(), 64, 64)?)?;
+        // Validate the complete pack before changing any previous frame owner.
+        for ((field, owner), word) in fields.iter().zip(inputs).zip(bits) {
+            match field.lane() {
+                Lane::Scalar { kind, .. } if owner.is_none() && kind.accepts_bits(*word) => {}
+                Lane::Managed { .. }
+                    if *word == 0
+                        && owner.as_ref().is_some_and(|v| v.schema() == field.schema()) => {}
+                _ => return Err(invalid("private frame field representation differs")),
+            }
+        }
+        let inner = self
             .inner
             .as_mut()
-            .map(|inner| &mut inner.values)
-            .ok_or_else(|| invalid("private frame lanes missing"))?
-            .values_mut();
-        values[at..at + count].clone_from_slice(inputs);
+            .ok_or_else(|| invalid("private frame lanes missing"))?;
+        for ((field, owner), word) in fields.iter().zip(inputs).zip(bits) {
+            match field.lane() {
+                Lane::Scalar { at, .. } => {
+                    inner.words.values_mut()[at * 2] = *word;
+                    inner.words.values_mut()[at * 2 + 1] = 1;
+                }
+                Lane::Managed { at } => inner.owners.values_mut()[at] = owner.clone(),
+            }
+        }
         Ok(())
     }
     pub(super) fn copy(
@@ -88,31 +145,46 @@ impl BufferFrames {
         output: NativeMatchValue,
         work: &mut NativeWorkMeter,
     ) -> Result<(), NativeProgramExecutionError> {
-        let (from, count) = layout
-            .slot(source)
+        let source = layout
+            .fields(source)
             .ok_or_else(|| invalid("private frame source has no lanes"))?;
-        let (to, output_count) = layout
-            .slot(output)
+        let target = layout
+            .fields(output)
             .ok_or_else(|| invalid("private frame target has no lanes"))?;
-        if count != output_count {
+        if source.len() != target.len() {
             return Err(invalid("private frame copy layouts differ"));
         }
-        work.charge(NativeExecutionPhase::Setup, amount(count, 64, 64)?)?;
-        let values = self
+        work.charge(NativeExecutionPhase::Setup, amount(source.len(), 64, 64)?)?;
+        let inner = self
             .inner
             .as_mut()
-            .map(|inner| &mut inner.values)
             .ok_or_else(|| invalid("private frame lanes missing"))?;
-        if values.values()[from..from + count]
-            .iter()
-            .any(Option::is_none)
-        {
-            return Err(invalid("private frame source is not current"));
+        for (from, to) in source.iter().zip(target) {
+            if from.schema() != to.schema() {
+                return Err(invalid("private frame copy schemas differ"));
+            }
+            match (from.lane(), to.lane()) {
+                (Lane::Scalar { at, kind }, Lane::Scalar { kind: other, .. })
+                    if kind == other
+                        && inner.words.values()[at * 2 + 1] == 1
+                        && kind.accepts_bits(inner.words.values()[at * 2]) => {}
+                (Lane::Managed { at }, Lane::Managed { .. })
+                    if inner.owners.values()[at].is_some() => {}
+                _ => return Err(invalid("private frame source is not current")),
+            }
         }
-        if from != to {
-            for index in 0..count {
-                let value = values.values()[from + index].clone();
-                values.values_mut()[to + index] = value;
+        for (from, to) in source.iter().zip(target) {
+            match (from.lane(), to.lane()) {
+                (Lane::Scalar { at: from, .. }, Lane::Scalar { at: to, .. }) => {
+                    let bits = inner.words.values()[from * 2];
+                    inner.words.values_mut()[to * 2] = bits;
+                    inner.words.values_mut()[to * 2 + 1] = 1;
+                }
+                (Lane::Managed { at: from }, Lane::Managed { at: to }) => {
+                    let value = inner.owners.values()[from].clone();
+                    inner.owners.values_mut()[to] = value;
+                }
+                _ => unreachable!("validated frame layout"),
             }
         }
         Ok(())
@@ -123,19 +195,31 @@ impl BufferFrames {
         source: NativeMatchValue,
         ordinal: usize,
         work: &mut NativeWorkMeter,
-    ) -> Result<Value, NativeProgramExecutionError> {
-        let (at, count) = layout
-            .slot(source)
-            .ok_or_else(|| invalid("private frame projection has no lanes"))?;
-        if ordinal >= count {
-            return Err(invalid("private frame field outside layout"));
-        }
+    ) -> Result<Field, NativeProgramExecutionError> {
+        let field = layout
+            .fields(source)
+            .and_then(|f| f.get(ordinal))
+            .ok_or_else(|| invalid("private frame field outside layout"))?;
         work.charge(NativeExecutionPhase::Setup, 64)?;
-        self.inner
+        let inner = self
+            .inner
             .as_ref()
-            .map(|inner| &inner.values)
-            .and_then(|v| v.values()[at + ordinal].clone())
-            .ok_or_else(|| invalid("private frame field is not current"))
+            .ok_or_else(|| invalid("private frame lanes missing"))?;
+        match field.lane() {
+            Lane::Scalar { at, kind } if inner.words.values()[at * 2 + 1] == 1 => {
+                let value = NativeScalarValue::from_bits(kind, inner.words.values()[at * 2])
+                    .ok_or_else(|| invalid("private scalar field has invalid bits"))?;
+                Ok(Field::Scalar {
+                    schema: field.schema(),
+                    value,
+                })
+            }
+            Lane::Managed { at } => inner.owners.values()[at]
+                .clone()
+                .map(Field::Managed)
+                .ok_or_else(|| invalid("private frame field is not current")),
+            _ => Err(invalid("private frame field is not current")),
+        }
     }
     pub(super) fn retire(
         &mut self,
@@ -143,18 +227,21 @@ impl BufferFrames {
         value: u32,
         work: &mut NativeWorkMeter,
     ) -> Result<bool, NativeProgramExecutionError> {
-        let Some((at, count)) = layout.slot_at(value as usize) else {
+        let Some(fields) = layout.fields_at(value as usize) else {
             return Ok(false);
         };
-        // Children were inserted from prepaid canonical arena/scalar owners.
-        // This transfers their retirement credit; it never creates fuel.
-        work.charge(NativeExecutionPhase::Setup, amount(count, 32, 32)?)?;
-        let values = self
+        // Retirement consumes existing owner credit and invalidates word visits.
+        work.charge(NativeExecutionPhase::Setup, amount(fields.len(), 32, 32)?)?;
+        let inner = self
             .inner
             .as_mut()
-            .map(|inner| &mut inner.values)
             .ok_or_else(|| invalid("private frame lanes missing"))?;
-        values.values_mut()[at..at + count].fill(None);
+        for field in fields {
+            match field.lane() {
+                Lane::Scalar { at, .. } => inner.words.values_mut()[at * 2..at * 2 + 2].fill(0),
+                Lane::Managed { at } => inner.owners.values_mut()[at] = None,
+            }
+        }
         Ok(true)
     }
 }
