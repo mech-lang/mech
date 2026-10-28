@@ -138,6 +138,7 @@ pub(in crate::native_artifact) fn emit_entry(
     let failed = b.create_block();
     b.append_block_param(failed, types::I64);
     b.set_cold_block(failed);
+    let mut boundaries = BTreeSet::from([exit, bailout, failed]);
     let blocks = proof
         .sites
         .iter()
@@ -169,6 +170,7 @@ pub(in crate::native_artifact) fn emit_entry(
         let fail = b.create_block();
         b.append_block_param(fail, types::I64);
         b.set_cold_block(fail);
+        boundaries.insert(fail);
         let before = b.func.dfg.num_insts();
         if site == region.tail.header() as usize {
             let compute = words.read(b, region.words + 1);
@@ -261,6 +263,7 @@ pub(in crate::native_artifact) fn emit_entry(
                 let good = b.create_block();
                 let bad = b.create_block();
                 b.set_cold_block(bad);
+                boundaries.insert(bad);
                 b.ins().brif(valid, good, &[], bad, &[]);
                 b.switch_to_block(bad);
                 set_origin(b, frame, site as u64);
@@ -369,6 +372,26 @@ pub(in crate::native_artifact) fn emit_entry(
     report.fixed_template_instructions = setup_work + b.func.dfg.num_insts() - boundary;
     if report.fixed_template_instructions > FIXED_OVERHEAD as usize {
         return Err(backend("numeric leaf exceeds finite boundary envelope"));
+    }
+    // Inspect the actual emitted graph, stopping at the admitted cold/exit
+    // boundaries. This is a structural check, not a fabricated runtime counter.
+    let cfg = cranelift_codegen::flowgraph::ControlFlowGraph::with_function(b.func);
+    let mut seen = BTreeSet::new();
+    let mut pending = vec![target(region.tail.header())];
+    while let Some(block) = pending.pop() {
+        if boundaries.contains(&block) || !seen.insert(block) {
+            continue;
+        }
+        report.successful_backedge_helpers += b
+            .func
+            .layout
+            .block_insts(block)
+            .filter(|inst| b.func.dfg.insts[*inst].opcode().is_call())
+            .count();
+        pending.extend(cfg.succ_iter(block));
+    }
+    if report.successful_backedge_helpers != 0 {
+        return Err(backend("numeric funded body contains a general call"));
     }
     reports.readonly_numeric_loops.push(report);
     b.switch_to_block(ordinary);
