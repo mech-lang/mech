@@ -243,3 +243,52 @@ fn metadata_scan_preview_cannot_create_turn_authority_or_overflow_a_meter() {
         assert_eq!(meter, before);
     }
 }
+
+#[cfg(feature = "native-artifact")]
+#[test]
+fn native_projection_metadata_scan_matches_incremental_accounting_and_denials() {
+    let (value, schemas) = string_matrix(&["", "é\0", "a\r\nb", "🧑‍🚀"], true);
+    let body = schemas.get(value.schema()).unwrap().body();
+    let execute = |legacy, retain, compute, nodes, account, call| {
+        let memory = mech_core::ManagedMemoryBudget::new(4096);
+        let work = NativeLibraryWorkBudget::new(account, 0, &memory).unwrap();
+        work.charge(11, 0).unwrap();
+        work.with_call_limits(call, 0, || {
+            let mut policy = mech_core::TargetMemoryProfile::current_resident_cpu()
+                .unwrap()
+                .limits;
+            policy.max_compute_work = Some(compute);
+            policy.max_comparison_work = Some(0);
+            policy.max_retained_nodes = Some(nodes);
+            let mut meter = ResidentBudgetMeter::for_native_projection(&work, policy).unwrap();
+            meter.charge_compute_work(17).unwrap();
+            let result = if legacy {
+                incremental(&mut meter, body, value.data(), retain)
+            } else {
+                measure_proven_borrowed_canonical_data_footprint(
+                    &mut meter,
+                    body,
+                    value.data(),
+                    retain,
+                )
+            };
+            (result, meter.estimate(), work.used())
+        })
+        .unwrap()
+    };
+    for retain in [false, true] {
+        for compute in [31, 384, 400, 401, 1000] {
+            for nodes in [0, 1, 3, 5, 6, 7] {
+                for account in [137, 411, 412, 1000] {
+                    for call in [95, 400, 401, 1000] {
+                        assert_eq!(
+                            execute(false, retain, compute, nodes, account, call),
+                            execute(true, retain, compute, nodes, account, call),
+                            "retain={retain}, compute={compute}, nodes={nodes}, account={account}, call={call}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+}

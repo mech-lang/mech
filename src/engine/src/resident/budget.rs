@@ -2691,6 +2691,29 @@ impl<P> AdmittedMutationPlan<P> {
 }
 
 impl ResidentBudgetMeter {
+    /// Immutable layout bytes are the complete ordered visitor's successful
+    /// debit. A missed preview keeps its original error and spent prefix.
+    #[cfg(feature = "native-artifact")]
+    pub(super) fn precharge_schema_layout(
+        &mut self,
+        schemas: &SchemaTable,
+    ) -> Result<u64, ResidentKernelError> {
+        if let Some(bytes) = schemas.clone_allocation_bound_bytes()
+            && self.can_charge_compute_and_nodes(bytes, 0)
+        {
+            self.charge_compute_work(bytes)?;
+            return Ok(bytes);
+        }
+        schemas
+            .clone_allocation_bound_bytes_with_precharge(|bytes| self.charge_compute_work(bytes))
+            .map_err(|error| match error {
+                mech_core::SchemaAllocationBoundError::Precharge(error) => error,
+                mech_core::SchemaAllocationBoundError::ArithmeticOverflow => {
+                    ResidentKernelError::InvalidShape
+                }
+            })
+    }
+
     /// Prepay a fixed-count metadata scan, never payload work, allocation or
     /// publication. The preview uses the same authorities as ordinary charges
     /// and is side-effect free; a rejected preview is only a fast-path miss.
@@ -2729,6 +2752,33 @@ impl ResidentBudgetMeter {
             next.check_analysis_limits().is_ok()
                 && next.compute_work() <= compute
                 && next.comparison_work() <= comparison
+        } else if let Some((limits, identity)) = self.native_projection_limits {
+            // Shared worker credit can change after preview. Keep its original
+            // incremental traversal rather than changing a denied paid prefix.
+            #[cfg(feature = "native-artifact")]
+            let serial = CONTROL_WORK_SCOPE.with(|scope| {
+                scope
+                    .borrow()
+                    .as_ref()
+                    .is_some_and(|scope| scope.total.borrow().worker.is_none())
+            });
+            #[cfg(not(feature = "native-artifact"))]
+            let serial = false;
+            serial
+                && self.check_native_projection_scope(identity).is_ok()
+                && preview_control_work(next.demand).is_ok()
+                && mech_core::evaluate_call_memory_budget(
+                    mech_core::MemoryObjectOwner::DirectCallPort {
+                        call: 0,
+                        direction: mech_core::PortDirection::Input,
+                        port: 0,
+                    },
+                    next.demand,
+                    0,
+                    0,
+                    limits,
+                )
+                .is_empty()
         } else {
             // A preview must not enter the detached test-only admission path,
             // which can observe work. Production scans require a real turn.

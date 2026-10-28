@@ -22,9 +22,11 @@ fn native_projection_meter_requires_its_live_work_scope() {
             ResidentBudgetMeter::for_native_projection(&work, limits()).unwrap()
         })
         .unwrap();
+    assert!(!escaped.can_charge_compute_and_nodes(1, 0));
     assert!(escaped.charge_compute_work(1).is_err());
     foreign
         .with_call_limits(1000, 1000, || {
+            assert!(!escaped.can_charge_compute_and_nodes(1, 0));
             assert!(escaped.charge_compute_work(1).is_err());
         })
         .unwrap();
@@ -163,4 +165,140 @@ fn denied_native_projection_preflight_keeps_spent_comparisons_on_retry() {
         assert!(spent > 0 && spent >= previous && spent <= 100);
         previous = spent;
     }
+}
+
+fn layout_fixture() -> SchemaTable {
+    let mut builder = mech_core::SchemaTableBuilder::new();
+    for body in [
+        SchemaBody::String,
+        SchemaBody::Tuple(
+            vec![
+                SchemaBody::Record(
+                    vec![mech_core::SchemaField {
+                        name: "unrelated-λ".into(),
+                        schema: SchemaBody::Option(Box::new(SchemaBody::Tuple(
+                            vec![SchemaBody::Bool; 32].into_boxed_slice(),
+                        ))),
+                    }]
+                    .into_boxed_slice(),
+                ),
+                SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W16)),
+                    dimensions: vec![mech_core::DimensionExpr::Constant(262_144)]
+                        .into_boxed_slice(),
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+    ] {
+        builder
+            .insert(
+                mech_core::SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body,
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+    }
+    builder.finish().unwrap().table
+}
+
+#[test]
+fn native_schema_precharge_matches_ordered_visitor_at_every_denial_boundary() {
+    let schemas = layout_fixture();
+    let mut contributions = Vec::new();
+    let full = schemas
+        .clone_allocation_bound_bytes_with_precharge(|bytes| {
+            contributions.push(bytes);
+            Ok::<_, ResidentKernelError>(())
+        })
+        .unwrap();
+    assert_eq!(Some(full), schemas.clone_allocation_bound_bytes());
+    let execute = |legacy, cap, account, call, base| {
+        let memory = mech_core::ManagedMemoryBudget::new(1 << 20);
+        let work = NativeLibraryWorkBudget::new(account, 1000, &memory).unwrap();
+        let answer = work
+            .with_call_limits(call, 1000, || {
+                let mut policy = limits();
+                policy.max_compute_work = Some(cap);
+                let mut meter = ResidentBudgetMeter::for_native_projection(&work, policy).unwrap();
+                meter.charge_compute_work(base).unwrap();
+                let result = if legacy {
+                    schemas
+                        .clone_allocation_bound_bytes_with_precharge(|bytes| {
+                            meter.charge_compute_work(bytes)
+                        })
+                        .map_err(|error| match error {
+                            mech_core::SchemaAllocationBoundError::Precharge(error) => error,
+                            mech_core::SchemaAllocationBoundError::ArithmeticOverflow => {
+                                ResidentKernelError::InvalidShape
+                            }
+                        })
+                } else {
+                    meter.precharge_schema_layout(&schemas)
+                };
+                (result, meter.estimate(), work.used())
+            })
+            .unwrap();
+        drop(work);
+        assert_eq!(memory.used_bytes(), 0);
+        answer
+    };
+    let base = 17;
+    let mut caps = vec![base, base + full - 1, base + full, base + full + 1];
+    let mut prefix = base;
+    for part in contributions {
+        if part > 0 {
+            caps.extend([prefix + part - 1, prefix + part]);
+        }
+        prefix += part;
+    }
+    for cap in caps {
+        assert_eq!(
+            execute(false, cap, base + full + 1, base + full + 1, base),
+            execute(true, cap, base + full + 1, base + full + 1, base),
+            "policy cap {cap}"
+        );
+        assert_eq!(
+            execute(false, base + full + 1, cap, base + full + 1, base),
+            execute(true, base + full + 1, cap, base + full + 1, base),
+            "account cap {cap}"
+        );
+        assert_eq!(
+            execute(false, base + full + 1, base + full + 1, cap, base),
+            execute(true, base + full + 1, base + full + 1, cap, base),
+            "call cap {cap}"
+        );
+    }
+    assert_eq!(
+        execute(false, u64::MAX, u64::MAX, u64::MAX, u64::MAX - 1),
+        execute(true, u64::MAX, u64::MAX, u64::MAX, u64::MAX - 1)
+    );
+}
+
+#[test]
+fn native_schema_precharge_keeps_shared_workers_incremental() {
+    let schemas = layout_fixture();
+    let full = schemas.clone_allocation_bound_bytes().unwrap();
+    let memory = mech_core::ManagedMemoryBudget::new(1 << 20);
+    let parent = NativeLibraryWorkBudget::new(full, 1000, &memory).unwrap();
+    let group = parent.reserve_worker_group(full, 1000).unwrap();
+    let worker = NativeLibraryWorkBudget::from_worker_loan(group.worker_loan().unwrap()).unwrap();
+    worker
+        .with_call_limits(full, 1000, || {
+            let mut policy = limits();
+            policy.max_compute_work = Some(full);
+            let mut meter = ResidentBudgetMeter::for_native_projection(&worker, policy).unwrap();
+            assert!(!meter.can_charge_compute_and_nodes(full, 0));
+            assert_eq!(meter.precharge_schema_layout(&schemas), Ok(full));
+        })
+        .unwrap();
+    assert_eq!(worker.used(), (full, 0));
+    drop(worker);
+    assert_eq!(group.finish().unwrap(), (full, 0));
+    assert_eq!(parent.used(), (full, 0));
+    drop(parent);
+    assert_eq!(memory.used_bytes(), 0);
 }
