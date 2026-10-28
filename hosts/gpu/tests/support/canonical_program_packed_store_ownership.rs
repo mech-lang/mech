@@ -3,6 +3,186 @@ use super::{allocation_probe, artifacts, inputs};
 use mech_core::{ManagedMemoryBudget, ValueData, ValueDataDraft as Data};
 use mech_gpu::native_artifact::{JitProgramArtifact, NativeProgramLimitMode};
 
+fn pointer(value: &mech_core::Value) -> usize {
+    let ValueData::Matrix(matrix) = value.data() else {
+        panic!("packed matrix")
+    };
+    match matrix.elements() {
+        mech_core::snapshot::SequenceView::U8(v) => v.as_ptr() as usize,
+        mech_core::snapshot::SequenceView::U16(v) => v.as_ptr() as usize,
+        mech_core::snapshot::SequenceView::U32(v) => v.as_ptr() as usize,
+        mech_core::snapshot::SequenceView::U64(v) => v.as_ptr() as usize,
+        _ => panic!("packed kind"),
+    }
+}
+
+#[test]
+fn selected_unsigned_store_changed_bit_aliases_and_admission_are_exact() {
+    use mech_engine::native_artifact::{
+        NativeCollectionPrimitive as Primitive, NativeIterationAction as Action,
+        NativeLibraryWorkBudget, lower_native_program_artifact,
+        prepare_native_program_library_call,
+    };
+    for width in [8, 16, 32, 64] {
+        let word = |n| match width {
+            8 => Data::U8(n as u8),
+            16 => Data::U16(n as u16),
+            32 => Data::U32(n as u32),
+            64 => Data::U64(n),
+            _ => unreachable!(),
+        };
+        let source = format!(
+            "<buffer> := <[u{width}]:2,3>\nreplace(xs<buffer>, at<u64>, word<u{width}>) => (out<buffer>) :=\n  ~next := xs\n  next[at] = word\n  out := next.\nreplace(input<buffer>, at<u64>, word<u{width}>)\n"
+        );
+        for artifact in artifacts(&source).0 {
+            let catalog = mech_stdlib::source_catalog();
+            let plan = lower_native_program_artifact(&artifact, &catalog).unwrap();
+            let template = plan
+                .blocks()
+                .iter()
+                .find_map(|b| match b.action() {
+                    Action::LibraryCall { template, .. }
+                        if template.primitive() == Primitive::MatrixIndexedReplace =>
+                    {
+                        Some(template)
+                    }
+                    _ => None,
+                })
+                .unwrap();
+            let call = prepare_native_program_library_call(&artifact, template, &catalog).unwrap();
+            assert!(call.supports_unsigned_matrix_replace());
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let args = inputs(
+                &artifact,
+                &[
+                    ("input", Data::Matrix((1..=6).map(word).collect())),
+                    ("at", Data::U64(2)),
+                    ("word", word(127)),
+                ],
+                &memory,
+            );
+            let original = &args[artifact
+                .inputs()
+                .iter()
+                .position(|p| mech_engine::decode_source_input_name(&p.name).unwrap() == "input")
+                .unwrap()];
+            let work = NativeLibraryWorkBudget::new(1 << 40, 1 << 32, &memory).unwrap();
+            let policy = super::limits().library;
+            let high = if width == 64 {
+                u64::MAX
+            } else {
+                (1u64 << width) - 1
+            };
+            let (first, changed) = call
+                .unsigned_matrix_replace(
+                    original.clone(),
+                    2,
+                    high,
+                    true,
+                    policy,
+                    &work,
+                    Default::default(),
+                )
+                .unwrap();
+            assert!(changed);
+            assert_ne!(
+                pointer(&first),
+                pointer(original),
+                "external alias requires a copy"
+            );
+            let mut expected = (1..=6).map(word).collect::<Vec<_>>();
+            expected[3] = word(high);
+            assert_eq!(
+                first.canonical_data_draft().unwrap(),
+                Data::Matrix(expected.clone().into())
+            );
+            let backing = pointer(&first);
+            let mut zero_copy = policy;
+            zero_copy.max_cloned_bytes = Some(0);
+            let (second, changed) = call
+                .unsigned_matrix_replace(first, 6, 99, true, zero_copy, &work, Default::default())
+                .unwrap();
+            assert!(changed);
+            assert_eq!(
+                pointer(&second),
+                backing,
+                "private update transfers its backing"
+            );
+            expected[5] = word(99);
+            assert_eq!(
+                second.canonical_data_draft().unwrap(),
+                Data::Matrix(expected.into())
+            );
+            let (same, changed) = call
+                .unsigned_matrix_replace(
+                    second.clone(),
+                    6,
+                    99,
+                    true,
+                    zero_copy,
+                    &work,
+                    Default::default(),
+                )
+                .unwrap();
+            assert!(!changed);
+            assert!(
+                same.shares_frozen_storage(&second),
+                "unchanged write keeps the exact immutable owner"
+            );
+            let before = (memory.used_bytes(), memory.retained_snapshot_nodes());
+            assert!(
+                call.unsigned_matrix_replace(
+                    original.clone(),
+                    1,
+                    high,
+                    true,
+                    zero_copy,
+                    &work,
+                    Default::default()
+                )
+                .is_err()
+            );
+            assert!(
+                call.unsigned_matrix_replace(
+                    second.clone(),
+                    7,
+                    high,
+                    true,
+                    policy,
+                    &work,
+                    Default::default()
+                )
+                .is_err()
+            );
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                before
+            );
+            drop(same);
+            let (recovered, changed) = call
+                .unsigned_matrix_replace(
+                    second,
+                    1,
+                    high,
+                    true,
+                    zero_copy,
+                    &work,
+                    Default::default(),
+                )
+                .unwrap();
+            assert!(changed);
+            assert_eq!(pointer(&recovered), backing);
+            assert_eq!(
+                original.canonical_data_draft().unwrap(),
+                Data::Matrix((1..=6).map(word).collect())
+            );
+            drop((args, recovered, work));
+            assert_eq!(memory.used_bytes(), 0);
+            assert_eq!(memory.retained_snapshot_nodes(), 0);
+        }
+    }
+}
+
 #[test]
 fn recursive_unsigned_updates_allocate_only_the_necessary_payload() {
     let mut comparisons = Vec::new();

@@ -89,6 +89,9 @@ mod unsigned_buffers;
 mod unsigned_lengths;
 #[path = "native_collection_word_reads.rs"]
 mod word_reads;
+#[cfg(feature = "sequence_buffers")]
+#[path = "native_collection_word_updates.rs"]
+mod word_updates;
 
 pub use string_span::NativeSelectedStringSpanSelector;
 #[cfg(feature = "pure_text")]

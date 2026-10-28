@@ -4,6 +4,7 @@ mod compact_string_access;
 pub mod linkage_factories;
 mod nested_assignment;
 mod packed_indexed_assign;
+pub(in crate::resident) use packed_indexed_assign::canonical_index as canonical_matrix_index;
 mod promoted_assignment;
 mod selected_string_footprint;
 #[cfg(all(feature = "native-artifact", feature = "pure_text"))]

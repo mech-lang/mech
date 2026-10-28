@@ -39,7 +39,7 @@ impl Facts<'_> {
         let facts = self;
         let plan = facts.plan();
         if !plan.blocks().iter().any(|block| matches!(block.action(), Action::LibraryCall { template, .. }
-            if matches!(template.primitive(), Primitive::SequenceWithCapacity | Primitive::SequenceReserve | Primitive::SequenceAppend | Primitive::SequenceAppendLeBytes | Primitive::SequenceAppendSublist | Primitive::SequenceClear))) {
+            if matches!(template.primitive(), Primitive::MatrixIndexedReplace | Primitive::SequenceWithCapacity | Primitive::SequenceReserve | Primitive::SequenceAppend | Primitive::SequenceAppendLeBytes | Primitive::SequenceAppendSublist | Primitive::SequenceClear))) {
             return Vec::new();
         }
         let Ok(actions) = facts.actions() else {
@@ -60,7 +60,8 @@ impl Facts<'_> {
                 };
                 let source = match template.primitive() {
                     Primitive::SequenceWithCapacity => None,
-                    Primitive::SequenceReserve
+                    Primitive::MatrixIndexedReplace
+                    | Primitive::SequenceReserve
                     | Primitive::SequenceAppend
                     | Primitive::SequenceAppendLeBytes
                     | Primitive::SequenceAppendSublist

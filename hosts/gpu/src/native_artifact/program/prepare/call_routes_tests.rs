@@ -22,6 +22,10 @@ fn prepared_selected_routes_are_rederived_from_actual_factories_on_image_restore
             Route::UnsignedMatrixElement,
         ),
         (
+            "replace(xs<[u32]>, at<u64>, word<u32>) => (out<[u32]>) :=\n  ~next := xs\n  next[at] = word\n  out := next.\nreplace(input<[u32]>, at<u64>, word<u32>)\n",
+            Route::UnsignedMatrixReplace,
+        ),
+        (
             "record := entry<{word<u32>}>\nrecord.word\n",
             Route::RecordScalarField,
         ),

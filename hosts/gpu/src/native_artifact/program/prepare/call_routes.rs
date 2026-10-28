@@ -12,6 +12,7 @@ pub(in crate::native_artifact) enum LibraryCallRoute {
     RecordScalarField,
     UnsignedMatrixLength,
     UnsignedMatrixElement,
+    UnsignedMatrixReplace,
 }
 
 pub(in crate::native_artifact) fn derive(
@@ -32,12 +33,17 @@ pub(in crate::native_artifact) fn derive(
             if frames.action(site).is_some() {
                 return LibraryCallRoute::BufferFrame;
             }
-            if buffers.get(site).is_some_and(Option::is_some) {
-                return LibraryCallRoute::UnsignedBuffer;
-            }
             let Some(call) = calls.get(site).and_then(Option::as_ref) else {
                 return LibraryCallRoute::Canonical;
             };
+            if buffers.get(site).is_some_and(Option::is_some) {
+                if call.supports_unsigned_matrix_replace() {
+                    return LibraryCallRoute::UnsignedMatrixReplace;
+                }
+                if call.supports_unsigned_buffer() {
+                    return LibraryCallRoute::UnsignedBuffer;
+                }
+            }
             if call.record_scalar_field_kind().is_some() {
                 LibraryCallRoute::RecordScalarField
             } else if call.supports_unsigned_matrix_length() {
