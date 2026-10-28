@@ -1,0 +1,21 @@
+{
+  "build_command": [
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+    "--edition=2024",
+    "-D",
+    "warnings",
+    "/private/tmp/mech-independent-tables-round09-20261028/transform.rs",
+    "-o",
+    "/private/tmp/mech-independent-tables-round09-20261028/transform-final"
+  ],
+  "transform_command": [
+    "/private/tmp/mech-independent-tables-round09-20261028/transform-final",
+    "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mec",
+    "/private/tmp/mech-independent-tables-round09-20261028/final-variant.mec"
+  ],
+  "same_full_source_after_declaration_filter_fix": true,
+  "source_sha256": "278c8bf6ec66d6406fb922fbce936f89a3917fa2b2c9f8099da1fa07ceda1e10",
+  "timed_artifact_sha256": "33168977b1d9a0c873a57d6c8e6bd2f87035847cd4619323277403549a14a358",
+  "compiler_libraries_match_retained_4af46620_receipt": true,
+  "compiler_binary_sha256": "0fa38254f8f5773f49749201a07ad2032356d38b5d7f47a44f4c581a6bdc6570"
+}

@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/private/tmp/mech-independent-tables-round09-20261028/row-fallback/component-v2-tests",
+    "costs_qualification",
+    "assembled_compressor_source_preserves_its_pinned_bytes",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 22.182684583007358,
+  "binary_sha256": "e9368f71982de374d5e439230cc4aa50241ef910244fe23d42d47262a2494d36",
+  "skipped": [
+    {
+      "module": "linked_qualification",
+      "source": "/private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_linked.rs",
+      "reason": "Linked Cargo subprocess qualification is separate from this existing component cohort."
+    }
+  ]
+}

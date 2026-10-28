@@ -545,3 +545,26 @@ for 544 independent updates. The next experiment will construct independent
 results directly, as a separate source revision/measurement. Preserve this
 compiler-only pinned-source result and do not combine its gain with a source
 rewrite or claim parity. No cancelled full-input campaign is restarted.
+
+## Optional independent cost-table source experiment
+
+The [round 09 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-09/REPORT.md)
+records a separate source variant, using the unchanged compiler executable:
+**448.75× → 421.53× Roc**, 0.130136250 s to 0.122244917 s, fresh 0.000290 s
+reference. This 6.06% gain does not meet the requested larger reduction. Six
+focused tests cover original/decoded reference costs and vector boundary/error/
+retry behavior with unchanged allowances. The default assembly and all source
+pins remain. The optional variant increases bytecode 8.32%, has an extra fallback
+row copy, and is not qualified for arbitrary multidimensional matrices. Setup
+schema-join, Rust-fixture and source-definition-filter failures are retained.
+The same executable/libraries do not require new scalar timing gates; no fresh
+linked/application or large-input coverage is claimed. Twelve static checks pass.
+
+Inclusive stack evidence places ordinary argument-frame handling in 600/1370
+pinned-profile samples (43.8%), still 656/1492 with the source experiment. The
+next assigned change is a general read-only unsigned-array leaf recurrence with
+scalar state, including ordinary suspended parents, native typed loads, finite
+fuel, owner lifetime and independently rederived image proofs. Selection must
+come from validated plans and original factories, never compressor identifiers.
+The existing true-cost loops and a generic weighted reduction are the acceptance
+witnesses. This next capability is not delivered by the source experiment.
