@@ -243,6 +243,29 @@ impl BufferFrames {
         };
         self.inner.as_ref()?.owners.values().get(at)?.as_ref()
     }
+    /// Transfer this invocation's carrier pin to its selected consuming store.
+    /// Other frame fields, arena roots and external aliases remain real owners;
+    /// core's exclusive handoff decides whether backing can actually be reused.
+    pub(super) fn take_managed_owner(
+        &mut self,
+        layout: &Layout,
+        value: NativeMatchValue,
+        ordinal: usize,
+    ) -> Result<Value, NativeProgramExecutionError> {
+        let Lane::Managed { at } = layout
+            .fields(value)
+            .and_then(|f| f.get(ordinal))
+            .ok_or_else(|| invalid("numeric handoff outside carrier"))?
+            .lane()
+        else {
+            return Err(invalid("numeric handoff has scalar field"));
+        };
+        self.inner
+            .as_mut()
+            .and_then(|i| i.owners.values_mut().get_mut(at))
+            .and_then(Option::take)
+            .ok_or_else(|| invalid("numeric handoff lost current carrier owner"))
+    }
     pub(super) fn synchronize_scalar(
         &mut self,
         layout: &Layout,
