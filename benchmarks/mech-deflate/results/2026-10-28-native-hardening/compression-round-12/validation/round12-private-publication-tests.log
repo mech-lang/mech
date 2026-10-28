@@ -1,0 +1,1 @@
+error: package `mech-core` cannot be tested because it requires dev-dependencies and is not a member of the workspace

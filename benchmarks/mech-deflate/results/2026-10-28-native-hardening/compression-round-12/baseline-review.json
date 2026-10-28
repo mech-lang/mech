@@ -1,0 +1,27 @@
+{
+  "pr": 973,
+  "head": "efa2ff81741362394553d5c7eae7d9dfc39766c4",
+  "comments": [
+    {
+      "id": 6460059935,
+      "url": "https://github.com/mech-lang/mech/pull/973#issuecomment-6460059935",
+      "body": "<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 {\"code_review\":{\"commit_sha\":\"efa2ff81741362394553d5c7eae7d9dfc39766c4\",\"has_any_findings\":false,\"has_unresolved_findings\":false,\"status\":\"completed\"},\"security_review\":{\"commit_sha\":null,\"has_any_findings\":null,\"has_unresolved_findings\":null,\"status\":null}} -->\n\n## Codex Review Summary\n\nThis comment shows the latest Codex review activity on this pull request.\n\n| Review | Status | Commit | Review trigger |\n| --- | --- | --- | --- |\n| 📝 **Code Review** | ✅ **Completed** <relative-time datetime=\"2026-10-28T22:40:48.196411Z\">2026-10-28T22:40:48.196411Z</relative-time> | `efa2ff8` | Manual request |\n\n\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\" or \"@codex security review\".\n\nCodex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.\n\n</details>",
+      "created_at": "2026-10-28T03:40:05Z",
+      "updated_at": "2026-10-28T22:40:49Z"
+    },
+    {
+      "id": 6482503831,
+      "url": "https://github.com/mech-lang/mech/pull/973#issuecomment-6482503831",
+      "body": "@codex review",
+      "created_at": "2026-10-28T22:38:49Z",
+      "updated_at": "2026-10-28T22:38:49Z"
+    },
+    {
+      "id": 6482543216,
+      "url": "https://github.com/mech-lang/mech/pull/973#issuecomment-6482543216",
+      "body": "<!-- codex-review-receipt:v1 -->\n\nCodex Review: Didn't find any major issues. Keep it up!\n\n**Reviewed commit:** `efa2ff8174`\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\".\n\nIf Codex has suggestions, it will comment; otherwise it will react with 👍.\n\n\n\n\nCodex can also answer questions or update the PR. Try commenting \"@codex address that feedback\".\n            \n</details>",
+      "created_at": "2026-10-28T22:40:46Z",
+      "updated_at": "2026-10-28T22:40:46Z"
+    }
+  ]
+}

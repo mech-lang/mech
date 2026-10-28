@@ -1,0 +1,8 @@
+{
+  "retained_test_binary": "/private/tmp/mech-numeric-writes-round12-20261028/core-publication-tests",
+  "sha256": "b16953f800d05a39dec3b6808fe0d7c042b3bcf1898097f55a895bbc71d34c6f",
+  "removed": "/private/tmp/mech-live-control-target/debug",
+  "reason": "inactive debug cache; release build and timing binaries retained",
+  "started": 1793229937.390357,
+  "finished": 1793229940.292022
+}

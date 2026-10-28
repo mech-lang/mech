@@ -1,0 +1,33 @@
+    Checking mech-syntax v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/syntax)
+    Checking mech-bytecode v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/bytecode)
+    Checking mech-engine v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/engine)
+    Checking mech-compute v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/compute)
+    Checking mech-logic v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/logic)
+    Checking mech-math v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/math)
+    Checking mech-compare v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/compare)
+    Checking mech-range v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/range)
+    Checking mech-gpu v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/gpu)
+error[E0631]: type mismatch in function arguments
+  --> /private/tmp/mech-deflate-linear-stack/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_writes.rs:37:115
+   |
+37 | ...ry_into_owned_unsigned_matrix(&memory).map_err(Error::Snapshot)? else { return Err(invalid("new numeric replacement is not exclus...
+   |                                           ------- ^^^^^^^^^^^^^^^ expected due to this
+   |                                           |
+   |                                           required by a bound introduced by this call
+   |
+  ::: /private/tmp/mech-deflate-linear-stack/hosts/gpu/src/native_artifact/program/runtime/mod.rs:56:5
+   |
+56 |     Snapshot(mech_core::snapshot::SnapshotValueError),
+   |     -------- found signature defined here
+   |
+   = note: expected function signature `fn(MemoryRuntimeError) -> _`
+              found function signature `fn(SnapshotValueError) -> _`
+note: required by a bound in `std::result::Result::<T, E>::map_err`
+  --> /rustc/ec818fda361ca216eb186f5cf45131bd9c776bb4/library/core/src/result.rs:962:4
+help: consider wrapping the function in a closure
+   |
+37 |         let UnsignedMatrixOwnershipTransfer::Owned(owned) = value.try_into_owned_unsigned_matrix(&memory).map_err(|arg0: MemoryRuntimeError| Error::Snapshot(/* SnapshotValueError */))? else { return Err(invalid("new numeric replacement is not exclusive")) };
+   |                                                                                                                   ++++++++++++++++++++++++++                ++++++++++++++++++++++++++
+
+For more information about this error, try `rustc --explain E0631`.
+error: could not compile `mech-gpu` (lib) due to 1 previous error

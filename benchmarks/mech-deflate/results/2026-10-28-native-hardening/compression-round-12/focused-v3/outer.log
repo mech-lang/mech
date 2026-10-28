@@ -1,0 +1,15 @@
+
+running 1 test
+test numeric_write_qualification::cases::numeric_writes_real_buffers_allocate_once_and_not_per_store ... {"count":262144,"requested_bytes":561530,"requests":276,"steps":1,"visits":6,"width":16,"witness":"private-real-buffer","work":50132626}
+{"count":262144,"requested_bytes":561530,"requests":276,"steps":8,"visits":6,"width":16,"witness":"private-real-buffer","work":50261090}
+{"count":262144,"requested_bytes":561530,"requests":276,"steps":1,"visits":6,"width":16,"witness":"private-real-buffer","work":50132626}
+{"count":262144,"requested_bytes":561530,"requests":276,"steps":8,"visits":6,"width":16,"witness":"private-real-buffer","work":50261090}
+{"count":1500513,"requested_bytes":6039294,"requests":276,"steps":1,"visits":6,"width":32,"witness":"private-real-buffer","work":225421074}
+{"count":1500513,"requested_bytes":6039294,"requests":276,"steps":8,"visits":6,"width":32,"witness":"private-real-buffer","work":225549538}
+{"count":1500513,"requested_bytes":6039294,"requests":276,"steps":1,"visits":6,"width":32,"witness":"private-real-buffer","work":225421074}
+{"count":1500513,"requested_bytes":6039294,"requests":276,"steps":8,"visits":6,"width":32,"witness":"private-real-buffer","work":225549538}
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 393 filtered out; finished in 0.50s
+
+

@@ -1,0 +1,394 @@
+{
+  "compiler_commit": "ed75406f3893e05070542dc523634251947a7fdc",
+  "baseline_commit": "efa2ff81741362394553d5c7eae7d9dfc39766c4",
+  "core_commit": "02fb501b3935d16f75b1eda4fbe049bdf1051465",
+  "source_correspondence": "Release build began on the dirty parent; clean ed75406f3 freshness build completed with every crate fresh. No production edits intervened. Timing harness and exact libraries have retained SHA-256 receipts.",
+  "qualification_status": "Focused correctness and traces established; broader component, actual finite-fuel, linked and scalar controls pending.",
+  "files": [
+    {
+      "path": "primary/build-outer.log",
+      "sha256": "d3c9caa1bdcd071e4dff99c0d3ad49d5b7e7076c3554ada149f8b295ae99a8b8",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/build-outer.log"
+    },
+    {
+      "path": "primary/after.stderr",
+      "sha256": "0a52e01efd353b2367cbee80a4b4abe821a05ff3e0a8c9aa2e036122d71fe2be",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/after.stderr"
+    },
+    {
+      "path": "primary/build.py",
+      "sha256": "b8e9085b61542eb91837aa8a842545fbbf4490a1901a0fab68d01a61130a1671",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/build.py"
+    },
+    {
+      "path": "primary/current-build.json",
+      "sha256": "20df93240511a9b2c35b3adaf7675a4c058fda5b33fb76473abe899b73fe5c2d",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/current-build.json"
+    },
+    {
+      "path": "primary/run.py",
+      "sha256": "077d15eafb570c38bc22c243be2baf88d1038df13c06b9fe5a334eb522b5e9a8",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/run.py"
+    },
+    {
+      "path": "primary/roc.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/roc.stderr"
+    },
+    {
+      "path": "primary/after.sample.txt.gz",
+      "sha256": "16cfcd286e0b4c56eeaeb0f5da12dfc0742bac658de631c5deb22b08ec271d72",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/after.sample.txt"
+    },
+    {
+      "path": "primary/after-inclusive-profile.json",
+      "sha256": "41556b0b78e647840df237d493d83d4b18b0b74707d7d795619d7857f8b5cdff",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/after-inclusive-profile.json"
+    },
+    {
+      "path": "primary/inclusive-profile.py",
+      "sha256": "6434432f47a40239849982bd6f916379fcf85ea195b608f134eac8234561f341",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/inclusive-profile.py"
+    },
+    {
+      "path": "primary/inclusive-summary.txt",
+      "sha256": "fb409ece7ffa00daba969fb7bec4d3e412bf7ea8ea895ed2c430d28de7952e70",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/inclusive-summary.txt"
+    },
+    {
+      "path": "primary/roc.stdout.gz",
+      "sha256": "264f29f18898ff48bd2b29be290d519fcd6a1ee590ff756b40269a4e2a72a05e",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/roc.stdout"
+    },
+    {
+      "path": "primary/results.json",
+      "sha256": "e865056f6d982232c8ab0ce88d280dfb08fe068fc4086ed95e1044964b45431f",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/results.json"
+    },
+    {
+      "path": "primary/current-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/current-build.log"
+    },
+    {
+      "path": "primary/qualify-selected.py",
+      "sha256": "ec4ae85da0dcc07cec6b8fab0a4d017a721851b39d1aef21ca51c0b2f7b7cda8",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/qualify-selected.py"
+    },
+    {
+      "path": "primary/frame-before.json",
+      "sha256": "eebdf8795bda72dac8f560f6c6b98cb6323aaa5f7302f93f20d146c93afb732f",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/frame-before.json"
+    },
+    {
+      "path": "primary/after.stdout",
+      "sha256": "9daeb6c8606850ea5a7486c58b42e9a34fd60d8b24ca6172e9156a9b0b54e6b9",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/after.stdout"
+    },
+    {
+      "path": "primary/commands.json",
+      "sha256": "fe6367121994d96a320bc9bf5d0cf84a51199320d421dc337f17de1d9819b7a1",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/commands.json"
+    },
+    {
+      "path": "primary/profile.stdout",
+      "sha256": "974d857349167cebc075b79f80e615d4c5b31a7302395f69768ccc789177a268",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/profile.stdout"
+    },
+    {
+      "path": "primary/before.stderr",
+      "sha256": "5a4d4fd76e51c955e1077f895da532fd4303b68f9d26b093726264574acef5c4",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/before.stderr"
+    },
+    {
+      "path": "primary/timing-outer.log",
+      "sha256": "7e446dfd38e321445fbc254531a8d059212bc8f6057f9dc802c75347337dd0f8",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/timing-outer.log"
+    },
+    {
+      "path": "primary/profile-command.json",
+      "sha256": "b4f8036b623cc412ad1fe578860358ee3cfa30d97881620b7e9eb7f9bf71bfc4",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/profile-command.json"
+    },
+    {
+      "path": "primary/scalar-controls.py",
+      "sha256": "bbd452952661afb485c4b61f41ca54f6b9d75eb8c9e0d9d480f6e35e0d4d202c",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/scalar-controls.py"
+    },
+    {
+      "path": "primary/frame-after.json",
+      "sha256": "d97cc5b04b855215667c2d83547b4ecc5be404fc2014e41218d1e61666a3e6fe",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/frame-after.json"
+    },
+    {
+      "path": "primary/before.stdout",
+      "sha256": "831631a77b182480587a36b37c17a9552101b198a23349ac10cfbe50f0e8ff4e",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/before.stdout"
+    },
+    {
+      "path": "primary/profile.stderr",
+      "sha256": "eddca9122c3ed87e4186131bec6dcb4db48e260969ceb04409789d9351451cb4",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/primary/profile.stderr"
+    },
+    {
+      "path": "baseline-fixed/current-build.json",
+      "sha256": "8455f8b154b6a98396c7745c96990a319abb8e9512383b20f20c8718a779a934",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/baseline-fixed/current-build.json"
+    },
+    {
+      "path": "baseline-fixed/component-v2-run.json",
+      "sha256": "8b496c0ec27e36cac816a4f8f775ec24c397c4bfedb353499ad84aab44ed101c",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/baseline-fixed/component-v2-run.json"
+    },
+    {
+      "path": "baseline-fixed/component-v2-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/baseline-fixed/component-v2-build.log"
+    },
+    {
+      "path": "baseline-fixed/component-v2-run.log",
+      "sha256": "9d8f85cbc02b4ca299164bddc18fde8e9a3803a87ee8f3aa2f23c2854e970ce5",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/baseline-fixed/component-v2-run.log"
+    },
+    {
+      "path": "baseline-fixed/component-v2-build.json",
+      "sha256": "09f380a7e15d8de0c5865255966f68d7a0ebcda2f6612d3ad33bd944d0dbf234",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/baseline-fixed/component-v2-build.json"
+    },
+    {
+      "path": "baseline-fixed/outer.log",
+      "sha256": "0ce7d620a24481e6a1f8b8c39344c8a8773668f3eeeb79b0b8bdaa2f75d1a039",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/baseline-fixed/outer.log"
+    },
+    {
+      "path": "baseline-fixed/qualify.py",
+      "sha256": "c608971b73fbbf8c74a7838979c1b5f94ed67647a37d0727e0742c7aa6257fc3",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/baseline-fixed/qualify.py"
+    },
+    {
+      "path": "focused/current-build.json",
+      "sha256": "20df93240511a9b2c35b3adaf7675a4c058fda5b33fb76473abe899b73fe5c2d",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused/current-build.json"
+    },
+    {
+      "path": "focused/component-v2-run.json",
+      "sha256": "edf404562253870e53015ecd361316b6aa6faf9de1c22276802a28eaa226c456",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused/component-v2-run.json"
+    },
+    {
+      "path": "focused/component-v2-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused/component-v2-build.log"
+    },
+    {
+      "path": "focused/component-v2-run.log",
+      "sha256": "2a553779949a8429e31eae6a1d63715ff7662558b2d22e062752987ad853fb66",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused/component-v2-run.log"
+    },
+    {
+      "path": "focused/component-v2-build.json",
+      "sha256": "48d1d152abf6e46d7078a92809048498c459dce8c9d12b2d2e55b36a64dd78ef",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused/component-v2-build.json"
+    },
+    {
+      "path": "focused/outer.log",
+      "sha256": "a6ffcc838038dce84ec5b886b51f7e632b24117e20187eb62b6b9e930c14c298",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused/outer.log"
+    },
+    {
+      "path": "focused/qualify.py",
+      "sha256": "c608971b73fbbf8c74a7838979c1b5f94ed67647a37d0727e0742c7aa6257fc3",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused/qualify.py"
+    },
+    {
+      "path": "focused-v2/current-build.json",
+      "sha256": "20df93240511a9b2c35b3adaf7675a4c058fda5b33fb76473abe899b73fe5c2d",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused-v2/current-build.json"
+    },
+    {
+      "path": "focused-v2/component-v2-run.json",
+      "sha256": "9efe89a841c31db14241a5af9995c2ca5e96291512b6663e276895d7d0ddb62b",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused-v2/component-v2-run.json"
+    },
+    {
+      "path": "focused-v2/component-v2-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused-v2/component-v2-build.log"
+    },
+    {
+      "path": "focused-v2/component-v2-run.log",
+      "sha256": "3eedc9a749f4b6167c579029721f635fc537471e7b32b4fad742630028c0dfa0",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused-v2/component-v2-run.log"
+    },
+    {
+      "path": "focused-v2/component-v2-build.json",
+      "sha256": "f0dc4a5c80bd55e564ee5916dbe9ac93e340b5f68080062a1391facb42b8a710",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused-v2/component-v2-build.json"
+    },
+    {
+      "path": "focused-v2/outer.log",
+      "sha256": "f408bf0f4b4ccc713af2f38b3b496858d09a196431a01ff4c5755912dcd59106",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused-v2/outer.log"
+    },
+    {
+      "path": "focused-v2/qualify.py",
+      "sha256": "c608971b73fbbf8c74a7838979c1b5f94ed67647a37d0727e0742c7aa6257fc3",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused-v2/qualify.py"
+    },
+    {
+      "path": "focused-v3/current-build.json",
+      "sha256": "20df93240511a9b2c35b3adaf7675a4c058fda5b33fb76473abe899b73fe5c2d",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused-v3/current-build.json"
+    },
+    {
+      "path": "focused-v3/component-v2-run.json",
+      "sha256": "f73bd40a73f476882096da25a1d7683d360f86b9b1a4a4df5201ce5019cb0d61",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused-v3/component-v2-run.json"
+    },
+    {
+      "path": "focused-v3/component-v2-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused-v3/component-v2-build.log"
+    },
+    {
+      "path": "focused-v3/component-v2-run.log",
+      "sha256": "f7b639038f3e04b88f4ef091b2a90efb0ec479002d03d51c44cc2cca9e15aa03",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused-v3/component-v2-run.log"
+    },
+    {
+      "path": "focused-v3/component-v2-build.json",
+      "sha256": "246aa8de308da00edef2bec6b36068dcbc2180870d653c096d3079d68d1e71e4",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused-v3/component-v2-build.json"
+    },
+    {
+      "path": "focused-v3/outer.log",
+      "sha256": "a784a09791adec6e6421ed920d23239019c7728be07e5a23a68b98d4104829ae",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused-v3/outer.log"
+    },
+    {
+      "path": "focused-v3/qualify.py",
+      "sha256": "6bf9137ea333c10f38b64b05bfe200f112fef1ffb9bbfa08eb9325f37ee7076d",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/focused-v3/qualify.py"
+    },
+    {
+      "path": "baseline-review.json",
+      "sha256": "f2787c4f4d575f98889d8a49e0027574ced3b7ddae54a26977be5f1216189699",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/baseline-review.json"
+    },
+    {
+      "path": "debug-cache-cleanup.json",
+      "sha256": "b6d6b9d205f4959f46faf5b580bdf3d7b37546e12942acfab28f8fd01a6374fe",
+      "source": "/private/tmp/mech-numeric-writes-round12-20261028/debug-cache-cleanup.json"
+    },
+    {
+      "path": "validation/round12-private-publication-check.json",
+      "sha256": "3bea82eadf834a3fcfce34770714f78326cafccc753cb19a524c0f4f83281aad",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-private-publication-check.json"
+    },
+    {
+      "path": "validation/round12-private-publication-check.log",
+      "sha256": "ac8877821d9061951eb64d80545a22a9ec7af642ce3a1f62cac53e4297c6499a",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-private-publication-check.log"
+    },
+    {
+      "path": "validation/round12-private-publication-check-v2.json",
+      "sha256": "5e44ace506668fb3a6f0263a6ea8a04f45a014a659fdaf120ce302528821e875",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-private-publication-check-v2.json"
+    },
+    {
+      "path": "validation/round12-private-publication-check-v2.log",
+      "sha256": "727c192e7ac1782c06a98a04e51f02378dca89580b0b0cf81afd954713f8ab5b",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-private-publication-check-v2.log"
+    },
+    {
+      "path": "validation/round12-private-publication-tests.json",
+      "sha256": "3bfe66da691e357d61f609b1f95f252c1388bd136da1174372e6851424b1d2b8",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-private-publication-tests.json"
+    },
+    {
+      "path": "validation/round12-private-publication-tests.log",
+      "sha256": "5cfa99f09c6322cdc2167a27e71f8d7beb1a06149aaa497855d78c4562a0f5ae",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-private-publication-tests.log"
+    },
+    {
+      "path": "validation/round12-private-publication-tests-v2.json",
+      "sha256": "9013495eb4cee4431571c5e5314c7b44714e9634e791018717026f1b0162a69c",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-private-publication-tests-v2.json"
+    },
+    {
+      "path": "validation/round12-private-publication-tests-v2.log",
+      "sha256": "2a6efadd5deafe59c808b7e0545537d72a6d7e7f05c8d24275d6c12e6314047b",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-private-publication-tests-v2.log"
+    },
+    {
+      "path": "validation/round12-private-publication-tests-v3.json",
+      "sha256": "9181a30957342bed3d7228f5603756d62e61a7cb1b994d3976cd914909b187d9",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-private-publication-tests-v3.json"
+    },
+    {
+      "path": "validation/round12-private-publication-tests-v3.log",
+      "sha256": "a5ad5f79a9c5cd8811c8449f3b2915e58ca0d4775600e8c77cf92543e30d948d",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-private-publication-tests-v3.log"
+    },
+    {
+      "path": "validation/round12-core-snapshot-cohort.json",
+      "sha256": "30ffcd8c9554041ddaa779bb3ad58ba487285a5f0b5b1024688fe6b990175d24",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-core-snapshot-cohort.json"
+    },
+    {
+      "path": "validation/round12-core-snapshot-cohort.log",
+      "sha256": "f39c9518684bad382718c2b1c3dc46c81dd35f10ac36d05ba305701599d10dcc",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-core-snapshot-cohort.log"
+    },
+    {
+      "path": "validation/round12-native-writes-check.json",
+      "sha256": "b2baa5678b524022b10a33e17c485f5ee71c6ebe86d1ab7301e9be7c51d3277a",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-native-writes-check.json"
+    },
+    {
+      "path": "validation/round12-native-writes-check.log",
+      "sha256": "327519362feba295e00ce9753d01876e21f76910521781347deddb853387e19d",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-native-writes-check.log"
+    },
+    {
+      "path": "validation/round12-native-writes-check-v2.json",
+      "sha256": "e88b10980619aa76340599964863e61e7331ec4892668f9bc471c136ce282a02",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-native-writes-check-v2.json"
+    },
+    {
+      "path": "validation/round12-native-writes-check-v2.log",
+      "sha256": "c1b6fb9ea7ebb2a5607c3e24708c02981b36b14d32becb7811785ab8565bfa31",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-native-writes-check-v2.log"
+    },
+    {
+      "path": "validation/round12-native-writes-release.json",
+      "sha256": "dd7eca74c20ebc469f143f4baa14afeb5264ea46bf6fd0522f7293350d67030a",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-native-writes-release.json"
+    },
+    {
+      "path": "validation/round12-native-writes-release.log.gz",
+      "sha256": "2f142580fcb6944a3ef9e28b2630351492241384583896c8de3cda3b27ab8262",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-native-writes-release.log"
+    },
+    {
+      "path": "validation/round12-native-writes-release-freshness.json",
+      "sha256": "8106236a8e610698e59493512a99c0dca25374a85c1d4b14703d40eb55f0bbeb",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-native-writes-release-freshness.json"
+    },
+    {
+      "path": "validation/round12-native-writes-release-freshness.log.gz",
+      "sha256": "2408e4c50699a6e88c533fe901cad8549144c898e960bc3f27c4508f4c59b613",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-native-writes-release-freshness.log"
+    },
+    {
+      "path": "validation/round12-native-writes-static.json",
+      "sha256": "1ebbee6fc5f620359dbb3774d3e2081c8749ccd5669d17fa07e211ad62aef635",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-native-writes-static.json"
+    },
+    {
+      "path": "validation/round12-native-writes-static.log",
+      "sha256": "75b1751819541410219c7a9b1d0f08927cc9fe85402394a6354ed111408edfb3",
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round12-native-writes-static.log"
+    }
+  ]
+}

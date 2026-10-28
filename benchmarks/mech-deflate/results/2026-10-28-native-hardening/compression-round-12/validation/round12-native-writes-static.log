@@ -1,0 +1,59 @@
+COMMAND ['python3', 'scripts/check-production-resident-routing.py']
+Production resident-routing contract passed
+COMMAND ['python3', 'scripts/check-source-catalog-entrypoints.py']
+Source catalog entry-point contract passed
+COMMAND ['python3', 'scripts/check-native-host-catalog.py']
+native host catalog contract passed (five standard providers, six full providers, no actor migration linkages)
+COMMAND ['python3', 'scripts/check-native-build-analysis-layout.py']
+Native build analysis layout contract passed
+COMMAND ['python3', 'scripts/check-rust-module-layout.py']
+Rust module layout contract passed
+COMMAND ['python3', 'scripts/check-runtime-factory-safety.py']
+runtime factory safety audit passed
+COMMAND ['python3', 'scripts/check-warning-policy.py']
+warning policy contract passed
+COMMAND ['python3', 'scripts/check-compiler-planning-quarantine.py']
+Compiler-planning quarantine passed
+COMMAND ['/private/tmp/mech-assertion-ci-python/bin/python', '-c', 'import sys;sys.path.insert(0,"scripts");from ci_test_inventory import inventory_gaps;g=inventory_gaps();print(g);assert not g']
+[]
+COMMAND ['sh', 'scripts/check-unsafe-boundaries.sh']
+unsafe boundary audit passed
+COMMAND ['cargo', 'fmt', '--all', '--check']
+Diff in /private/tmp/mech-deflate-linear-stack/hosts/gpu/src/native_artifact/program/compiler.rs:262:
+         }).collect::<Vec<_>>());
+         metadata["compiled_readonly_numeric_loops"] =
+             serde_json::json!(&self.codegen.readonly_numeric_loops);
+-        metadata["compiled_numeric_write_loops"] = serde_json::json!(&self.codegen.numeric_write_loops);
++        metadata["compiled_numeric_write_loops"] =
++            serde_json::json!(&self.codegen.numeric_write_loops);
+         metadata["compiled_scalar_loops"] = serde_json::json!(&self.codegen.scalar_loops);
+         metadata
+     }
+Diff in /private/tmp/mech-deflate-linear-stack/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs:8:
+ use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeMatchValue};
+ 
+ mod buffer_frames;
+-mod readonly_numeric;
+ mod numeric_writes;
++mod readonly_numeric;
+ mod selected_calls;
+ mod unsigned_buffers;
+ mod word_reads;
+Diff in /private/tmp/mech-deflate-linear-stack/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs:389:
+             return self.end_closed_tail(site, args);
+         }
+         if tag == GlobalHelper::NumericWritePrepare {
+-            let site = usize::try_from(site).map_err(|_| invalid("numeric materialization site overflow"))?;
++            let site = usize::try_from(site)
++                .map_err(|_| invalid("numeric materialization site overflow"))?;
+             return self.prepare_numeric_write(site, args);
+         }
+         if self.closed_tail.is_some() {
+Traceback (most recent call last):
+  File "/private/tmp/mech-final-static-20261028.py", line 25, in <module>
+    subprocess.run(command, check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['cargo', 'fmt', '--all', '--check']' returned non-zero exit status 1.
