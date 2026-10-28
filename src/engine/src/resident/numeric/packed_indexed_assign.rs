@@ -81,7 +81,7 @@ pub(super) struct Plan<'a> {
     pub source_columns: usize,
 }
 
-fn canonical_index(
+pub(in crate::resident) fn canonical_index(
     position: usize,
     rows: usize,
     columns: usize,

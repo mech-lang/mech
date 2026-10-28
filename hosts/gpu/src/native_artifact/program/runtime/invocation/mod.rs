@@ -11,6 +11,7 @@ mod buffer_frames;
 mod selected_calls;
 mod unsigned_buffers;
 mod word_reads;
+mod word_updates;
 
 /// A synchronous reborrow with a map-specific surface, not execution authority.
 /// The enclosing invocation still owns phase validation and terminal handling.
