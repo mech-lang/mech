@@ -133,7 +133,7 @@ pub fn plan_turn_memory(
                     .unwrap_or_default()
             })
             .collect::<Vec<_>>();
-        let resolved_call = derive_turn_call(&template, &resolved, Some(&published))?;
+        let resolved_call = derive_turn_call(&mut template, &resolved, Some(&published))?;
         refresh_turn_allocations(&mut allocations, call, &resolved_call, node, facts)?;
         demand = checked_demand_add(demand, resolved_call.demand)?;
         transactions.extend(call_transactions.iter().copied());
@@ -461,7 +461,7 @@ pub(crate) fn apply_observed_turn_demand(
     observed: ResourceDemand,
     final_output: Option<CurrentMemoryFootprint>,
 ) -> Result<TurnMemoryPlan, MemoryPlanError> {
-    if let Some(call) = plan.call.clone() {
+    if let Some(mut call) = plan.call.clone() {
         if call.outputs.len() == 1
             && (observed.persistent_bytes != 0
                 || observed.output_elements != 0
@@ -520,7 +520,7 @@ pub(crate) fn apply_observed_turn_demand(
                         .unwrap_or_default()
                 })
                 .collect::<Vec<_>>();
-            let complete = derive_turn_call(&call, &resolved, Some(&published))?;
+            let complete = derive_turn_call(&mut call, &resolved, Some(&published))?;
             refresh_turn_allocations(
                 &mut plan.allocations,
                 &call,
@@ -606,18 +606,17 @@ pub(crate) fn plan_current_resident_turn(
 /// distinct published output footprints. Publication comparison is therefore
 /// derived once by the core planner rather than patched through subtraction.
 fn derive_turn_call(
-    template: &mech_core::CallMemoryPlan,
+    template: &mut mech_core::CallMemoryPlan,
     resolved: &BTreeMap<(PortDirection, u16), CurrentMemoryFootprint>,
     published: Option<&[CurrentMemoryFootprint]>,
 ) -> Result<mech_core::CallMemoryPlan, MemoryPlanError> {
-    let mut derivation = template.clone();
-    derivation.target.limits = MemoryBudgetLimits::default();
-    let mut call = mech_core::resolve_current_call_memory(
-        &derivation,
-        &derivation.bound_call,
-        resolved,
-        published,
-    )?;
+    // Both callers already own a local template. Restore its limits on errors
+    // as well as success, before the caller can reuse it for scoping.
+    let limits = std::mem::take(&mut template.target.limits);
+    let result =
+        mech_core::resolve_current_call_memory(template, &template.bound_call, resolved, published);
+    template.target.limits = limits;
+    let mut call = result?;
     call.target = template.target.clone();
     Ok(call)
 }
@@ -924,3 +923,7 @@ fn transaction_key(transaction: &TransactionRequirement) -> (u8, u32, u32) {
         TransactionRequirement::DoubleBuffer { current, next } => (3, current.get(), next.get()),
     }
 }
+
+#[cfg(all(test, feature = "string"))]
+#[path = "turn_tests.rs"]
+mod tests;
