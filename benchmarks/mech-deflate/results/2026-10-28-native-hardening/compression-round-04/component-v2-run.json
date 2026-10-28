@@ -1,0 +1,24 @@
+{
+  "command": [
+    "/private/tmp/mech-owned-turn-round04-20261028/component-v2-tests",
+    "packed_update_qualification",
+    "buffer_frame_qualification",
+    "sequence_capacity_qualification",
+    "collection_qualification",
+    "uniform_words_qualification",
+    "word_read_qualification",
+    "assembled_compressor_source_preserves_its_pinned_bytes",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 3.403728124918416,
+  "binary_sha256": "1e27f0268d5df544d3c8443822c6e213fe632864827edc6528be74bb420c0c3b",
+  "skipped": [
+    {
+      "module": "linked_qualification",
+      "source": "/private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_linked.rs",
+      "reason": "Linked Cargo subprocess qualification is separate from this existing component cohort."
+    }
+  ]
+}

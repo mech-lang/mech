@@ -1,0 +1,35 @@
+{
+  "name": "round04-owned-template-unit",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-engine",
+    "--no-default-features",
+    "--features",
+    "full_compiler,async,native-artifact,sequence_buffers",
+    "--lib",
+    "owned_turn_template",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "e4da27073c953ffc0aa50a758718117aae4a02f8",
+  "dirty": " M src/engine/src/memory_planner/turn.rs\n?? src/engine/src/memory_planner/turn_tests.rs\n",
+  "exit": 0,
+  "seconds": 84.58980298042297,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round04-owned-template-unit.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}
