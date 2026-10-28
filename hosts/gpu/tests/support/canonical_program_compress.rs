@@ -123,6 +123,48 @@ fn complete_level12_compression_matches_pinned_bytes() {
     });
 }
 
+#[test]
+#[ignore = "long-running qualification with full-size buffers and boundary inputs"]
+fn complete_level12_compression_crosses_block_and_window_boundaries() {
+    with_compiler_stack(|| {
+        let source = complete_source();
+        let cases = [
+            CompleteCase {
+                name: "16384-distribution-change".into(),
+                input: include_bytes!(
+                    "../fixtures/native/deflate-boundary-16384-distribution-change.input"
+                )
+                .to_vec(),
+                prefix: vec![],
+                expected: include_bytes!(
+                    "../fixtures/native/deflate-boundary-16384-distribution-change.deflate"
+                )
+                .to_vec(),
+                first_block_kind: Some(2),
+            },
+            CompleteCase {
+                name: "33027-periodic-window".into(),
+                input: include_bytes!(
+                    "../fixtures/native/deflate-boundary-33027-periodic-window.input"
+                )
+                .to_vec(),
+                prefix: vec![],
+                expected: include_bytes!(
+                    "../fixtures/native/deflate-boundary-33027-periodic-window.deflate"
+                )
+                .to_vec(),
+                first_block_kind: Some(2),
+            },
+        ];
+        qualify_cases(
+            ["original", "decoded"]
+                .into_iter()
+                .zip(complete_artifacts(&source)),
+            &cases,
+        );
+    });
+}
+
 // The source frontend traverses the entire assembled compressor. Reserve the
 // same host-thread stack used by its release qualification instead of relying
 // on the test runner's smaller platform default. This is outside evaluation.
@@ -172,15 +214,23 @@ fn qualify_complete(
     if allow_full {
         if let Some(input) = std::env::var_os("MECH_DEFLATE_FULL_INPUT") {
             let expected = std::env::var_os("MECH_DEFLATE_FULL_REFERENCE").unwrap();
-            cases.push(CompleteCase {
-                name: "full-reymont".into(),
-                input: std::fs::read(input).unwrap(),
+            let input = std::path::PathBuf::from(input);
+            cases = vec![CompleteCase {
+                name: input.file_name().unwrap().to_string_lossy().into_owned(),
+                input: std::fs::read(&input).unwrap(),
                 prefix: vec![],
                 expected: std::fs::read(expected).unwrap(),
                 first_block_kind: None,
-            });
+            }];
         }
     }
+    qualify_cases(artifacts, &cases);
+}
+
+fn qualify_cases(
+    artifacts: impl IntoIterator<Item = (&'static str, ProgramArtifact)>,
+    cases: &[CompleteCase],
+) {
     let mode = NativeProgramLimitMode::NoLimits;
     for (form, artifact) in artifacts {
         let compile_start = std::time::Instant::now();
@@ -214,7 +264,7 @@ fn qualify_complete(
             "{}",
             serde_json::json!({"phase":"complete-native-accepted","artifact":form,"seconds":compile_start.elapsed().as_secs_f64(),"blocks":plan.blocks().len(),"values":plan.values().len(),"analysis_cells":cells,"estimated_definition_storage_bytes":row_bytes * plan.blocks().len(),"definition_storage_cap":plan.analysis_byte_limit()})
         );
-        for case in &cases {
+        for case in cases {
             let memory = mode.memory_budget();
             let args = inputs(
                 &artifact,

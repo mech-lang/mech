@@ -1,0 +1,59 @@
+{
+  "observed_utc": "2026-10-28T00:56:30.547704+00:00",
+  "runs": [
+    {
+      "name": "level12-boundary-multiple-block-native",
+      "session": 93807,
+      "status": "evaluation started, result pending",
+      "records": [
+        {
+          "analysis_cells": 23158,
+          "artifact": "saved-decoded",
+          "blocks": 41042,
+          "definition_storage_cap": 18446744073709551615,
+          "estimated_definition_storage_bytes": 120170976,
+          "phase": "complete-native-accepted",
+          "seconds": 73.369509875,
+          "values": 22464
+        },
+        {
+          "artifact": "saved-decoded",
+          "case": "16384-distribution-change.input",
+          "input_bytes": 16384,
+          "limit_mode": "NO_LIMITS",
+          "managed_memory_limit": 18446744073709551615,
+          "memory_before": 374096,
+          "phase": "complete-compression-start",
+          "policy": "NativeProgramExecutionLimits { execution: NativeExecutionLimits { max_work: 18446744073709551615, max_transport_bytes: 18446744073709551615, max_native_stack_bytes: 18446744073709551615 }, library: MemoryBudgetLimits { max_output_elements: Some(18446744073709551615), max_output_bytes: Some(18446744073709551615), max_temporary_bytes: Some(18446744073709551615), max_cloned_bytes: Some(18446744073709551615), max_retained_nodes: Some(18446744073709551615), max_comparison_work: Some(18446744073709551615), max_compute_work: Some(18446744073709551615), max_scalar_instructions: Some(18446744073709551615), max_transfer_bytes: Some(18446744073709551615), max_storage_buffer_bytes: Some(18446744073709551615), max_storage_bindings: Some(4294967295) } }"
+        }
+      ]
+    },
+    {
+      "name": "level12-boundary-window-native",
+      "session": 51572,
+      "status": "evaluation started, result pending",
+      "records": [
+        {
+          "analysis_cells": 23158,
+          "artifact": "saved-decoded",
+          "blocks": 41042,
+          "definition_storage_cap": 18446744073709551615,
+          "estimated_definition_storage_bytes": 120170976,
+          "phase": "complete-native-accepted",
+          "seconds": 73.436914084,
+          "values": 22464
+        },
+        {
+          "artifact": "saved-decoded",
+          "case": "33027-periodic-window.input",
+          "input_bytes": 33027,
+          "limit_mode": "NO_LIMITS",
+          "managed_memory_limit": 18446744073709551615,
+          "memory_before": 390739,
+          "phase": "complete-compression-start",
+          "policy": "NativeProgramExecutionLimits { execution: NativeExecutionLimits { max_work: 18446744073709551615, max_transport_bytes: 18446744073709551615, max_native_stack_bytes: 18446744073709551615 }, library: MemoryBudgetLimits { max_output_elements: Some(18446744073709551615), max_output_bytes: Some(18446744073709551615), max_temporary_bytes: Some(18446744073709551615), max_cloned_bytes: Some(18446744073709551615), max_retained_nodes: Some(18446744073709551615), max_comparison_work: Some(18446744073709551615), max_compute_work: Some(18446744073709551615), max_scalar_instructions: Some(18446744073709551615), max_transfer_bytes: Some(18446744073709551615), max_storage_buffer_bytes: Some(18446744073709551615), max_storage_bindings: Some(4294967295) } }"
+        }
+      ]
+    }
+  ]
+}

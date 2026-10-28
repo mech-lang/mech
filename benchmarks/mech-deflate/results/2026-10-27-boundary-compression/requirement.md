@@ -1,0 +1,22 @@
+# Complete-stream block and window boundaries
+
+Base: `7fc6587fa6f9506908393566a05aeb9615a43633` (#969). Compiler: `115188e17032e26341dd7983e0634589a9a490ab` (#967). The compressor source and its 4140067-byte canonical artifact are unchanged from #968/#969. Source SHA256 remains `345324ce551aaa2485dcd0fe4262da96e660d6b31f5f772bff89b034e9b1997f`.
+
+The nine small cases established complete stored, static and dynamic streams but did not establish a block transition or a window slide. Preserve two larger inputs and the pinned reference's exact streams:
+
+- 16384 bytes change distribution halfway through: a deterministic LCG, seed `0x5eed1234`, recurrence `(1664525 * state + 1013904223) & 0xffffffff`; the first 8192 bytes use `(state >> 24) & 15`, and the rest use `128 + ((state >> 24) & 127)`. The reference emits two dynamic blocks, ending at input offsets 8146 and 16384, totaling 11394 compressed bytes.
+- 33027 bytes repeat `Mech faithful level twelve window state\n`, truncated to length. This reaches the 32768-byte window slide and leaves 259 bytes across that boundary. The reference emits a 151-byte dynamic stream.
+
+`deflate-boundary-reference.json` records hashes, source/compiler pins and independent block boundaries. The producer calls the original level-12 `compress_into`. All fourteen pinned implementation source hashes were checked unchanged. To reproduce the producer, copy the input fixtures into the pinned package under the two `.qualification-input` names imported by the preserved wrapper, then use the recorded compiler/build command. Both Python raw zlib inflation and the system zlib `Z_BLOCK` consumer independently verify the checked-in streams; `verify-fixtures.py` reruns those checks on macOS.
+
+The new explicit manual Rust test compiles the complete source and evaluates both inputs in original and decoded form through the existing exact-byte, independent-decompression, alias and managed-cleanup verifier. It is ignored in ordinary test runs because execution with the real buffers is slow. The existing nine-case test remains ordinary and unchanged. An explicitly supplied saved-artifact/input investigation now runs only that input and names it from its filename, avoiding repeating the small corpus on every larger-input witness.
+
+The manual test command is `cargo test --release --locked --offline -j1 -p mech-gpu --no-default-features --features canonical-native-program --test canonical_artifact_program compress_qualification::complete_level12_compression_crosses_block_and_window_boundaries -- --ignored --exact --nocapture --test-threads=1`. It has not completed and is not included in the passing-test count.
+
+Completed checks: pinned producer builds with zero errors/warnings; both reference streams pass independent inflation and boundary checks; the maintained `canonical-native-program` Rust test binary compiles; routing, source/host catalogs, native analysis layout, CI inventory, formatting and diff checks pass. This packet contains exact commands, profiles and receipts.
+
+Native execution is **pending**. Two focused saved-decoded runs have accepted the unchanged complete artifact with `NativeProgramLimitMode::NoLimits`, including maximum analysis/compilation/execution/library/managed budgets, and started compression of these exact fixtures. No completed boundary execution or passing manual Rust test is claimed. The separate full-file investigation is also incomplete. Preserve those running baselines rather than restarting them. Preliminary elapsed times will not establish matched benchmark timing: the previously disclosed caller setup, System allocator and concurrent investigations still differ from final benchmark conditions.
+
+No production compiler or compressor source changes, algorithm shortcuts, smaller buffers, changed tables, search/nice limits, reduced passes or optional optimization. CI remains cancelled at the user's request, and the review remains draft until its required evidence is available.
+
+The first staged whitespace check rejected the final partial line of the periodic input: truncation at exactly 33027 bytes leaves a trailing space. Preserve that input and its expected stream byte-for-byte. The fixture patterns are explicitly binary in `.gitattributes`; no text normalization or whitespace edit may change them. The initial failing receipt is retained, followed by the corrected staged check. This was introduced fixture metadata, not a compiler/compressor failure.
