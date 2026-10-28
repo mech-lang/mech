@@ -134,14 +134,7 @@ pub fn native_project_structural_value(
         // Ownership import retains the complete schema arena. The same
         // prepaid traversal also bounds shape closure before any schema tree
         // or dimension witness is cloned below.
-        let schema_bytes = schemas
-            .clone_allocation_bound_bytes_with_precharge(|bytes| meter.charge_compute_work(bytes))
-            .map_err(|error| match error {
-                mech_core::SchemaAllocationBoundError::Precharge(error) => error,
-                mech_core::SchemaAllocationBoundError::ArithmeticOverflow => {
-                    ResidentKernelError::InvalidShape
-                }
-            })?;
+        let schema_bytes = meter.precharge_schema_layout(schemas)?;
         let shape_bytes = if target.dimension_parameters().is_empty() && target.body() == body {
             0
         } else {
