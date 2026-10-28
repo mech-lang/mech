@@ -12,6 +12,8 @@ impl DefinitionSet {
         len.checked_add(63).map(|n| n / 64)
     }
 
+    /// One dense table's row owners and packed payload. Scratch clones,
+    /// graph worklists and nested tables are deliberately outside this estimate.
     pub(super) fn storage_bytes(rows: usize, cells: usize) -> Option<usize> {
         Self::words(cells)?
             .checked_mul(std::mem::size_of::<u64>())?

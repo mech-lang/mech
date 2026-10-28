@@ -475,13 +475,15 @@ impl NativeProgramLibraryTemplate {
     }
 }
 
-pub const DEFAULT_NATIVE_ANALYSIS_BYTES: u64 = 64 * 1024 * 1024;
+/// Default allowance for the conservative size of one definition table, not
+/// total compiler memory or simultaneously live nested analysis scratch.
+pub const DEFAULT_NATIVE_DEFINITION_TABLE_BYTES: u64 = 64 * 1024 * 1024;
 
 #[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeProgramArtifactPlan {
     // Compiler admission policy is not part of program semantics or image identity.
     #[serde(skip)]
-    pub(crate) analysis_byte_limit: u64,
+    pub(crate) definition_table_byte_limit: u64,
     pub(crate) revision: ProgramRevision,
     pub(crate) resource_requirements: Box<[ExecutionResourceRequest]>,
     pub(crate) observations: Box<[NativeProgramObservation]>,
@@ -500,8 +502,9 @@ pub struct NativeProgramArtifactPlan {
     pub(crate) activation_boundary: Option<u32>,
 }
 impl NativeProgramArtifactPlan {
-    pub const fn analysis_byte_limit(&self) -> u64 {
-        self.analysis_byte_limit
+    /// Compiler-only per-table estimate allowance; excluded from image identity.
+    pub const fn definition_table_byte_limit(&self) -> u64 {
+        self.definition_table_byte_limit
     }
 
     pub const fn program_revision(&self) -> ProgramRevision {

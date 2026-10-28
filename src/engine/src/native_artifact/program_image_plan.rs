@@ -152,7 +152,7 @@ fn restore(
     let plan = NativeProgramArtifactPlan {
         // An image contains semantic selection, not its producer's budget.
         // Shape/ownership proofs and same-Object binding still run on load.
-        analysis_byte_limit: u64::MAX,
+        definition_table_byte_limit: u64::MAX,
         revision: w.revision,
         resource_requirements,
         observations,

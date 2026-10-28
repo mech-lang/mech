@@ -1134,7 +1134,7 @@ fn lower_scalar_control_artifact(
         catalog,
         allow_iteration,
         false,
-        crate::native_artifact::DEFAULT_NATIVE_ANALYSIS_BYTES,
+        crate::native_artifact::DEFAULT_NATIVE_DEFINITION_TABLE_BYTES,
     )?)
 }
 
@@ -1148,20 +1148,24 @@ pub fn lower_native_program_artifact(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramArtifactPlan, Error> {
-    lower_native_program_artifact_with_analysis_limit(
+    lower_native_program_artifact_with_definition_table_limit(
         artifact,
         catalog,
-        crate::native_artifact::DEFAULT_NATIVE_ANALYSIS_BYTES,
+        crate::native_artifact::DEFAULT_NATIVE_DEFINITION_TABLE_BYTES,
     )
 }
 
-/// Uses the caller's explicit compiler-memory budget for every proof pass.
-pub fn lower_native_program_artifact_with_analysis_limit(
+/// Uses the caller's explicit current-visit definition-table allowance.
+/// Each validation estimates one table using all plan blocks and definition
+/// cells before allocating its rows. This is not a phase-wide memory budget:
+/// graph inventories, queues, row clones and coexisting nested scope tables
+/// are not included. It grants no runtime memory or execution authority.
+pub fn lower_native_program_artifact_with_definition_table_limit(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
-    analysis_byte_limit: u64,
+    definition_table_byte_limit: u64,
 ) -> Result<NativeProgramArtifactPlan, Error> {
-    lower_control_artifact(artifact, catalog, true, true, analysis_byte_limit)
+    lower_control_artifact(artifact, catalog, true, true, definition_table_byte_limit)
 }
 
 // Keep the validator's reason at the public lowering boundary. These checks
@@ -1177,7 +1181,7 @@ fn checked_visit_step(
     use crate::native_artifact::iteration_validation::ValidationError;
     result.map_err(|error| match error {
         ValidationError::Invalid(reason) => Error::InvalidPlan { stage, reason },
-        ValidationError::AnalysisLimit { required, limit } => Error::AnalysisLimit {
+        ValidationError::DefinitionTableLimit { required, limit } => Error::DefinitionTableLimit {
             stage,
             required,
             limit,
@@ -1190,7 +1194,7 @@ fn lower_control_artifact(
     catalog: &FunctionCatalog,
     allow_iteration: bool,
     allow_collections: bool,
-    analysis_byte_limit: u64,
+    definition_table_byte_limit: u64,
 ) -> Result<NativeProgramArtifactPlan, Error> {
     if !allow_collections && !artifact.requirements().is_empty() {
         return Err(Error::UnsupportedProgram {
@@ -1467,7 +1471,7 @@ fn lower_control_artifact(
         })?;
     }
     let mut plan = NativeProgramArtifactPlan {
-        analysis_byte_limit,
+        definition_table_byte_limit,
         revision: artifact.revision(),
         resource_requirements,
         observations: observations.into(),
@@ -1613,7 +1617,7 @@ mod iteration_proof_tests {
         oversized.values = vec![oversized.values[0].clone(); 131072].into();
         oversized.value_scopes =
             vec![NativeIterationValueScope::Immutable { iteration: None }; 131072].into();
-        let reason = "current-visit analysis storage exceeds its configured byte limit";
+        let reason = "current-visit definition table exceeds its configured byte limit";
         assert_eq!(
             crate::native_artifact::iteration_validation::validate(&oversized),
             Err(reason)
@@ -1623,7 +1627,7 @@ mod iteration_proof_tests {
                 "current visits before lowering",
                 crate::native_artifact::iteration_validation::validate_detailed(&oversized)
             ),
-            Err(Error::AnalysisLimit {
+            Err(Error::DefinitionTableLimit {
                 stage: "current visits before lowering",
                 required: 67_239_936,
                 limit: 67_108_864,
@@ -1673,11 +1677,11 @@ mod iteration_proof_tests {
         assert!(matches!(
             valid.validate_current_visits_detailed(),
             Err(
-                crate::native_artifact::iteration_validation::ValidationError::AnalysisLimit { .. }
+                crate::native_artifact::iteration_validation::ValidationError::DefinitionTableLimit { .. }
             )
         ));
         let bounded_image = serde_json::to_vec(&valid).unwrap();
-        valid.analysis_byte_limit = u64::MAX;
+        valid.definition_table_byte_limit = u64::MAX;
         // Resource policy does not change the selected semantic image.
         assert_eq!(serde_json::to_vec(&valid).unwrap(), bounded_image);
         valid.validate_current_visits().unwrap();

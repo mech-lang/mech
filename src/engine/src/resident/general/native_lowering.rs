@@ -69,7 +69,9 @@ pub enum NativeArtifactLoweringError {
         stage: &'static str,
         reason: &'static str,
     },
-    AnalysisLimit {
+    /// A conservative current-visit table estimate exceeded its allowance.
+    /// This does not describe a total compiler-memory limit.
+    DefinitionTableLimit {
         stage: &'static str,
         required: u64,
         limit: u64,

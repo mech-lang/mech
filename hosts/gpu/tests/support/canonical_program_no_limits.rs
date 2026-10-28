@@ -10,7 +10,7 @@ fn no_limits_mode_admits_buffer_above_default_byte_budget_and_recovers() {
             &artifact,
             &mech_stdlib::source_catalog(),
             NativeCompileLimits {
-                max_analysis_bytes: 0,
+                max_definition_table_bytes: 0,
                 ..mode.compilation()
             },
         )
@@ -18,7 +18,7 @@ fn no_limits_mode_admits_buffer_above_default_byte_budget_and_recovers() {
         .expect("explicit zero-byte compiler budget must reject");
         let reason = rejected.to_string();
         assert!(
-            reason.contains("AnalysisLimit") && reason.contains("limit: 0"),
+            reason.contains("DefinitionTableLimit") && reason.contains("limit: 0"),
             "{reason}"
         );
         let jit = JitProgramArtifact::compile_with_limits(

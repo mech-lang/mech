@@ -126,3 +126,23 @@ separate compiler limitation. Test-authoring errors (wrong accessor, omitted
 source-read copy debit, and assuming an unrequested binding was published)
 were corrected; their failed attempts remain visible. `python` is unavailable
 in this environment; receipt commands use `python3`.
+
+## Definition-table allowance checkpoint
+
+The reviewed implementation is a conservative **per-table estimate**, not a
+total analysis-memory budget. The public compilation field is now
+`max_definition_table_bytes`; engine lowering exposes
+`lower_native_program_artifact_with_definition_table_limit`, and rejection is
+`DefinitionTableLimit { stage, required, limit }`. The 64 MiB default, estimate,
+check order, semantic plan image, and diagnostic unrestricted mode are unchanged.
+The estimate covers one dense table's row owners and packed definitions; graph
+inventories, worklists, cloned rows, and simultaneously live nested tables are
+explicitly outside its scope. Admission precedes definition-set and scope-table
+construction. This work does not claim to impose a phase-wide memory bound.
+
+The exact and one-byte-short nested-scope test passes for original/decoded
+artifacts through engine lowering and JIT compilation. Both proof-storage
+tests pass, including 321 composed recursive calls and failure/retry; the
+explicit unrestricted-mode regression also passes. Receipts are in the same
+hardening evidence directory. Existing engine proof tests retain the malformed
+oversized-table preflight and arithmetic-overflow cases with the precise name.
