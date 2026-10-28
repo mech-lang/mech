@@ -316,20 +316,22 @@ fn nested_repeated_calls_keep_published_buffers_immutable_and_recover_from_denia
 }
 
 #[test]
-fn build_owned_image_rederives_private_frame_metadata() {
-    for artifact in artifacts(GROW).0 {
-        let catalog = mech_stdlib::source_catalog();
-        let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-        let bytes = jit.descriptor().encode_build_owned_image().unwrap();
-        // SAFETY: this checked build produced these bytes. The restored
-        // metadata remains confined to comparison and cannot execute code.
-        let restored = unsafe {
-            mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
-                &bytes, &catalog,
-            )
+fn build_owned_image_rederives_private_frame_and_scalar_metadata() {
+    for source in [GROW, super::scalar_state_qualification::ALL_KINDS] {
+        for artifact in artifacts(source).0 {
+            let catalog = mech_stdlib::source_catalog();
+            let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let bytes = jit.descriptor().encode_build_owned_image().unwrap();
+            // SAFETY: this checked build produced these bytes. The restored
+            // metadata remains confined to comparison and cannot execute code.
+            let restored = unsafe {
+                mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
+                    &bytes, &catalog,
+                )
+            }
+            .unwrap();
+            assert_eq!(restored.encode_build_owned_image().unwrap(), bytes);
         }
-        .unwrap();
-        assert_eq!(restored.encode_build_owned_image().unwrap(), bytes);
     }
 }
 

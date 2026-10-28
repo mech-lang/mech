@@ -80,10 +80,10 @@ fn mixed_enum_loop_selects_existing_native_word_storage() {
     check_scalar_loop(MIXED_ENUM, false);
 }
 
-const ALL_KINDS: &str = "#Carry(n<u64>, flag<bool>, byte<u8>, half<u16>, word<u32>, wide<u64>, signed<i64>, fraction<f64>) => <(bool,u8,u16,u32,u64,i64,f64)>\n  | :Try(left<u64>, flag<bool>, byte<u8>, half<u16>, word<u32>, wide<u64>, signed<i64>, fraction<f64>)\n  | :Done(flag<bool>, byte<u8>, half<u16>, word<u32>, wide<u64>, signed<i64>, fraction<f64>).\n#Carry(n, flag, byte, half, word, wide, signed, fraction) -> :Try(n, flag, byte, half, word, wide, signed, fraction)\n  :Try(left, flag, byte, half, word, wide, signed, fraction)\n    | left > 0u64 -> :Try(left - 1u64, flag == false, byte, half, word, wide, signed, fraction)\n    | * -> :Done(flag, byte, half, word, wide, signed, fraction)\n  :Done(flag, byte, half, word, wide, signed, fraction) => (flag, byte, half, word, wide, signed, fraction).\n#Carry(steps<u64>, flag<bool>, byte<u8>, half<u16>, word<u32>, wide<u64>, signed<i64>, fraction<f64>)\n";
+pub(super) const ALL_KINDS: &str = "#Carry(n<u64>, flag<bool>, byte<u8>, half<u16>, word<u32>, wide<u64>, signed<i64>, fraction<f64>) => <(bool,u8,u16,u32,u64,i64,f64)>\n  | :Try(left<u64>, flag<bool>, byte<u8>, half<u16>, word<u32>, wide<u64>, signed<i64>, fraction<f64>)\n  | :Done(flag<bool>, byte<u8>, half<u16>, word<u32>, wide<u64>, signed<i64>, fraction<f64>).\n#Carry(n, flag, byte, half, word, wide, signed, fraction) -> :Try(n, flag, byte, half, word, wide, signed, fraction)\n  :Try(left, flag, byte, half, word, wide, signed, fraction)\n    | left > 0u64 -> :Try(left - 1u64, flag == false, byte, half, word, wide, signed, fraction)\n    | * -> :Done(flag, byte, half, word, wide, signed, fraction)\n  :Done(flag, byte, half, word, wide, signed, fraction) => (flag, byte, half, word, wide, signed, fraction).\n#Carry(steps<u64>, flag<bool>, byte<u8>, half<u16>, word<u32>, wide<u64>, signed<i64>, fraction<f64>)\n";
 
 #[test]
-fn mixed_scalar_state_preserves_bits_fresh_flags_images_and_zero_allocation_slope() {
+fn mixed_scalar_state_preserves_bits_fresh_flags_and_zero_allocation_slope() {
     use mech_core::snapshot::F64Bits;
     for (form, artifact) in ["original", "decoded"]
         .into_iter()
@@ -102,16 +102,6 @@ fn mixed_scalar_state_preserves_bits_fresh_flags_images_and_zero_allocation_slop
             object.descriptor().typed_ir_sha256(),
             jit.descriptor().typed_ir_sha256()
         );
-        let bytes = jit.descriptor().encode_build_owned_image().unwrap();
-        // SAFETY: these bytes came from this checked build. Restored metadata
-        // stays confined to equality checks and does not execute native code.
-        let restored = unsafe {
-            mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
-                &bytes, &catalog,
-            )
-        }
-        .unwrap();
-        assert_eq!(restored.encode_build_owned_image().unwrap(), bytes);
         for (signed, bits) in [
             (i64::MIN, 0x8000_0000_0000_0000),
             (i64::MAX, 0x7ff8_0000_0000_0042),
