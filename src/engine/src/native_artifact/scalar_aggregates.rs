@@ -1,10 +1,11 @@
-//! Escape analysis for private, fixed-width U64 tuples and enum state.
+//! Escape analysis for private, fixed-width scalar tuples and enum state.
 //! Canonical types/selected operations remain authoritative. Only an entire
 //! connected nonescaping storage component may become native words.
 use super::{
     NativeCollectionPrimitive as Primitive, NativeControlLoop, NativeIterationAction as Action,
     NativeMatchAction as Scalar, NativeMatchValue as Value, NativeProgramArtifactPlan as Plan,
-    NativeStructuralObservation as Observation, NativeStructuralStep as Step,
+    NativeScalarKind as Kind, NativeScalarValue, NativeStructuralObservation as Observation,
+    NativeStructuralStep as Step,
 };
 use mech_core::{IntegerWidth, SchemaBody as Schema, ValueData};
 
@@ -93,13 +94,11 @@ impl NativeScalarAggregates {
 }
 fn payload_words(schema: &Schema) -> Option<usize> {
     match schema {
-        Schema::UnsignedInteger(IntegerWidth::W64) => Some(1),
+        scalar if Kind::from_schema_body(scalar).is_some() => Some(1),
         Schema::Tuple(items)
             if !items.is_empty()
                 && items.len() <= 32
-                && items
-                    .iter()
-                    .all(|s| *s == Schema::UnsignedInteger(IntegerWidth::W64)) =>
+                && items.iter().all(|s| Kind::from_schema_body(s).is_some()) =>
         {
             Some(items.len())
         }
@@ -120,18 +119,29 @@ fn words(schema: &Schema) -> Option<usize> {
     }
 }
 fn constant_words(data: &ValueData, count: usize) -> Option<Box<[u64]>> {
+    fn scalar(data: &ValueData) -> Option<u64> {
+        Some(
+            match data {
+                ValueData::Bool(v) => NativeScalarValue::Bool(*v),
+                ValueData::U8(v) => NativeScalarValue::U8(*v),
+                ValueData::U16(v) => NativeScalarValue::U16(*v),
+                ValueData::U32(v) => NativeScalarValue::U32(*v),
+                ValueData::U64(v) => NativeScalarValue::U64(*v),
+                ValueData::I64(v) => NativeScalarValue::I64(*v),
+                ValueData::F64(v) => NativeScalarValue::F64(*v),
+                _ => return None,
+            }
+            .to_bits(),
+        )
+    }
     fn payload(data: &ValueData, result: &mut Vec<u64>) -> Option<()> {
         match data {
-            ValueData::U64(value) => result.push(*value),
             ValueData::Tuple(items) => {
                 for item in items.iter() {
-                    let ValueData::U64(value) = item else {
-                        return None;
-                    };
-                    result.push(*value);
+                    result.push(scalar(item)?);
                 }
             }
-            _ => return None,
+            value => result.push(scalar(value)?),
         }
         Some(())
     }
@@ -166,9 +176,8 @@ fn pack(plan: &Plan, action: &Action) -> Option<(Value, Box<[NativeAggregateWord
         (Primitive::CompositePack(arity), Schema::Tuple(items))
             if arity == items.len()
                 && operands.len() == arity
-                && operands.iter().all(|v| {
-                    plan.values()[v.get() as usize].scalar_kind()
-                        == Some(super::NativeScalarKind::U64)
+                && operands.iter().zip(items).all(|(v, schema)| {
+                    plan.values()[v.get() as usize].scalar_kind() == Kind::from_schema_body(schema)
                 }) =>
         {
             Some((
@@ -245,6 +254,13 @@ fn observation(plan: &Plan, action: &Action) -> Option<NativeScalarAggregateActi
     }
     let ordinal = match (observation, schema) {
         (Observation::U64, Schema::UnsignedInteger(IntegerWidth::W64)) => None,
+        (Observation::CanonicalValue, schema)
+            if plan.values()[output.get() as usize]
+                .scalar_kind()
+                .is_some_and(|kind| Some(kind) == Kind::from_schema_body(schema)) =>
+        {
+            None
+        }
         (Observation::EnumOrdinal { ordinal }, Schema::Enum { .. }) => Some(*ordinal),
         _ => return None,
     };
