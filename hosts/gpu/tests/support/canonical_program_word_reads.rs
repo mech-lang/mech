@@ -339,16 +339,132 @@ fn u64_reads_use_linear_column_major_order_and_already_admitted_scalar_storage()
                     value.into_memory_budget(&mut reservation).unwrap()
                 })
                 .collect::<Vec<_>>();
+            let expected = reference(&artifact, &args);
             jit.evaluate_into(&args, &mut output, policy, &memory)
                 .unwrap();
+            equal(&artifact, &output, &expected);
             assert_eq!(
                 output[last]
                     .as_ref()
                     .unwrap()
                     .canonical_data_draft()
                     .unwrap(),
-                Data::U64(values[position as usize - 1])
+                Data::U64([u64::MAX, 4, 2, 5, 1 << 63, 6][position as usize - 1])
             );
+        }
+    }
+}
+
+#[test]
+fn unsigned_linear_reads_match_resident_current_shapes_and_recover() {
+    for width in [8, 16, 32, 64] {
+        let word = |value| match width {
+            8 => Data::U8(value as u8),
+            16 => Data::U16(value as u16),
+            32 => Data::U32(value as u32),
+            _ => Data::U64(value),
+        };
+        for source in [
+            format!("xs := values<[u{width}]>\nxs[position<u64>]\n"),
+            format!(
+                "read(xs<[u{width}]>, at<u64>) => (out<u{width}>) :=\n  out := xs[at].\nread(values<[u{width}]>, position<u64>)\n"
+            ),
+        ] {
+            for artifact in artifacts(&source).0 {
+                let jit =
+                    JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+                let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                let mut output: Vec<Option<mech_core::Value>> =
+                    vec![None; artifact.outputs().len()];
+                let mut policy = limits();
+                policy.library.max_cloned_bytes = Some(0);
+                policy.library.max_output_bytes = Some(width / 8);
+                for (rows, columns) in [(2, 3), (3, 2), (1, 6), (6, 1), (2, 2), (0, 3), (3, 0)] {
+                    let count = rows * columns;
+                    let values = (0..count)
+                        .map(|index| {
+                            word(if index == 0 {
+                                1u64 << (width - 1)
+                            } else {
+                                index + 1
+                            })
+                        })
+                        .collect::<Vec<_>>();
+                    for position in [2, 0, count + 1, u64::MAX, 1, count, 3] {
+                        let args = artifact
+                            .inputs()
+                            .iter()
+                            .map(|input| {
+                                let matrix = mech_engine::decode_source_input_name(&input.name)
+                                    .unwrap()
+                                    == "values";
+                                let shape_values: Box<[u64]> = if matrix {
+                                    mech_core::shape_for_resolved_extents(
+                                        artifact.schemas().get(input.schema).unwrap(),
+                                        &[rows, columns],
+                                    )
+                                    .unwrap()
+                                    .parameter_values()
+                                    .into()
+                                } else {
+                                    Box::new([])
+                                };
+                                let value = mech_core::ValueDraft {
+                                    schema: input.schema,
+                                    shape_values,
+                                    data: if matrix {
+                                        Data::Matrix(values.clone().into())
+                                    } else {
+                                        Data::U64(position)
+                                    },
+                                }
+                                .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+                                    artifact.schemas(),
+                                ))
+                                .unwrap();
+                                let mut reservation = memory
+                                    .reserve_capacity(
+                                        value.memory_budget_admission_bytes(&memory).unwrap(),
+                                    )
+                                    .unwrap();
+                                value.into_memory_budget(&mut reservation).unwrap()
+                            })
+                            .collect::<Vec<_>>();
+                        let aliases = args.clone();
+                        if position == 0 || position > count {
+                            assert!(reference_result(&artifact, &args).is_err());
+                            let previous = output.clone();
+                            let retained = memory.used_bytes();
+                            assert!(
+                                jit.evaluate_into(&args, &mut output, policy, &memory)
+                                    .is_err()
+                            );
+                            assert_eq!(memory.used_bytes(), retained);
+                            for (actual, previous) in output.iter().zip(&previous) {
+                                assert!(
+                                    actual
+                                        .as_ref()
+                                        .unwrap()
+                                        .shares_frozen_storage(previous.as_ref().unwrap())
+                                );
+                            }
+                        } else {
+                            let expected = reference(&artifact, &args);
+                            jit.evaluate_into(&args, &mut output, policy, &memory)
+                                .unwrap();
+                            equal(&artifact, &output, &expected);
+                        }
+                        assert!(
+                            args.iter()
+                                .zip(&aliases)
+                                .all(|(value, alias)| value.shares_frozen_storage(alias))
+                        );
+                    }
+                }
+                drop(output);
+                assert_eq!(memory.used_bytes(), 0);
+                assert_eq!(memory.retained_snapshot_nodes(), 0);
+            }
         }
     }
 }
