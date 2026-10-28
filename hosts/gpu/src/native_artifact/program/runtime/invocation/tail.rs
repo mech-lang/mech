@@ -69,11 +69,20 @@ impl Invocation<'_, '_, '_> {
         }) {
             return Ok(Some(0));
         }
-        let Some(remaining) = self.state.library.unscoped_remaining() else {
+        let Some(mut remaining) = self.state.library.unscoped_remaining() else {
             return Ok(Some(0));
         };
-        if proof.numeric.is_some() && !self.begin_numeric_views(region)? {
-            return Ok(Some(0));
+        if proof.numeric.is_some() {
+            if !self.begin_numeric_views(region)? {
+                return Ok(Some(0));
+            }
+            // Entry validation spent on this SAME ledger. Fund the native body
+            // from the post-entry remainder, never the earlier preview.
+            remaining = self
+                .state
+                .library
+                .unscoped_remaining()
+                .ok_or_else(|| invalid("numeric entry changed account scope"))?;
         }
         if proof.map.is_some() {
             let Some(words) = self.begin_closed_map(region)? else {
