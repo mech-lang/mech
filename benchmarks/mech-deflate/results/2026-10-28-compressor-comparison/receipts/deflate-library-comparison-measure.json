@@ -1,0 +1,22 @@
+{
+  "name": "deflate-library-comparison-measure",
+  "command": [
+    "python3",
+    "/private/tmp/mech-deflate-comparison-20261028/measure-built.py"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "5b34c8f69c1df7b433c3176f510d5c3d5005a795",
+  "dirty": "?? benchmarks/mech-deflate/comparison/\n",
+  "exit": 0,
+  "seconds": 53.47431683540344,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/deflate-library-comparison-measure.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}
