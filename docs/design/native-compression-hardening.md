@@ -98,3 +98,31 @@ All regression checks retain original/decoded artifacts, aliases, current
 dynamic extents, lexical error order, publication atomicity, finite admission,
 cleanup and recovery. Warnings remain errors. An ignored or cancelled test is
 never a passing qualification.
+
+## Packed completion checkpoint
+
+The new nonuniform regression reproduced the reviewed issue: a three-element
+U8 result shrank its admitted capacity from four to three. Unsigned completion
+now transfers its Vec through `UnsignedMatrixBuffer`, preserving the allocation
+and capacity. Both growth preflight and completion price the capacity that the
+result retains. Uniform fill retains its separate exact-capacity path. Draft
+collection behavior and the existing completion coexistence envelope remain.
+
+Focused `canonical-native-program` checks on nightly-2026-03-03 pass: 17
+collection tests, five uniform-construction tests, and one owner test covering
+pointer identity, capacity, and exact/one-short managed admission at lengths
+three and five for all four unsigned widths. Regressions also cover exact copy
+and output caps, unchanged prior publication, failure after completed collection
+construction, input aliases, retry, and zero managed bytes/nodes after cleanup.
+Commands, complete output, and unsuccessful development attempts are preserved
+in [the hardening receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/).
+
+An initial test used narrow addition unnecessarily. Its decoded artifact lacks
+a lowering witness (`MissingSemanticWitness`); the collection-runtime changes
+cannot affect that earlier compiler stage. The nonuniform ownership test uses
+varying input words directly so it tests collection finalization independently.
+The narrow-addition reproducer is retained with the receipts as an inherited,
+separate compiler limitation. Test-authoring errors (wrong accessor, omitted
+source-read copy debit, and assuming an unrequested binding was published)
+were corrected; their failed attempts remain visible. `python` is unavailable
+in this environment; receipt commands use `python3`.

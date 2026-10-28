@@ -1,0 +1,21 @@
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/gpu)
+    Finished `test` profile [unoptimized] target(s) in 19.43s
+     Running tests/canonical_artifact_program.rs (/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-561ab00dcd3ceccb)
+
+running 1 test
+
+thread 'collection_qualification::nonuniform_packed_collections_retain_admitted_capacity_and_recover' (17339577) panicked at hosts/gpu/tests/support/canonical_program_comprehensions.rs:181:17:
+assertion `left == right` failed: u8/3
+  left: Some(3)
+ right: Some(4)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test collection_qualification::nonuniform_packed_collections_retain_admitted_capacity_and_recover ... FAILED
+
+failures:
+
+failures:
+    collection_qualification::nonuniform_packed_collections_retain_admitted_capacity_and_recover
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 368 filtered out; finished in 5.41s
+
+error: test failed, to rerun pass `-p mech-gpu --test canonical_artifact_program`

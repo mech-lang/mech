@@ -1,0 +1,10 @@
+
+running 5 tests
+test uniform_words_qualification::uniform_optimizer_leaves_selected_assertions_in_the_ordinary_body ... ok
+test uniform_words_qualification::uniform_constructor_keeps_range_overflow_before_output_rejection ... ok
+test uniform_words_qualification::repeated_uniform_calls_read_the_current_word_and_count ... ok
+test uniform_words_qualification::uniform_unsigned_values_keep_clone_quotas_prior_outputs_and_recovery ... ok
+test uniform_words_qualification::uniform_word_facts_keep_the_exact_region_and_reject_effects_or_varying_yields ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 365 filtered out; finished in 5.90s
+
