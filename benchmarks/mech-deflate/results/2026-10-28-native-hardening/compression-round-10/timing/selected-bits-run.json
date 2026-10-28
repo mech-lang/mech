@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-projection-keys-round10-20261028/selected-bits-tests",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.9343507499434054,
+  "binary_sha256": "5ca1dee66a68b3385eb0a307d8faacf1755c14a6522a3b6b51d798a97f793c48",
+  "skipped_coverage": null
+}
