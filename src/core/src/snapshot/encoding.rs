@@ -10,6 +10,10 @@ use std::{boxed::Box, vec, vec::Vec};
 
 pub(super) trait SnapshotByteSink {
     fn write(&mut self, bytes: &[u8]);
+
+    fn write_sequence(&mut self, schema: &SchemaBody, values: &SequenceStorage) {
+        encode_sequence_elements(schema, values, self);
+    }
 }
 
 struct VecSnapshotSink {
@@ -49,9 +53,41 @@ struct LengthSnapshotSink {
     len: usize,
 }
 
+impl LengthSnapshotSink {
+    fn add_fixed_width(&mut self, count: usize, width: usize) {
+        self.len = self.len.saturating_add(count.saturating_mul(width));
+    }
+}
+
 impl SnapshotByteSink for LengthSnapshotSink {
     fn write(&mut self, bytes: &[u8]) {
         self.len = self.len.saturating_add(bytes.len());
+    }
+
+    fn write_sequence(&mut self, schema: &SchemaBody, values: &SequenceStorage) {
+        let width = match values {
+            SequenceStorage::U8(_) | SequenceStorage::I8(_) | SequenceStorage::Bool(_) => Some(1),
+            SequenceStorage::U16(_) | SequenceStorage::I16(_) => Some(2),
+            SequenceStorage::U32(_) | SequenceStorage::I32(_) | SequenceStorage::F32(_) => Some(4),
+            SequenceStorage::U64(_)
+            | SequenceStorage::I64(_)
+            | SequenceStorage::F64(_)
+            | SequenceStorage::Complex32(_)
+            | SequenceStorage::Id(_)
+            | SequenceStorage::Index(_) => Some(8),
+            SequenceStorage::U128(_)
+            | SequenceStorage::I128(_)
+            | SequenceStorage::Complex64(_)
+            | SequenceStorage::Rational64(_) => Some(16),
+            SequenceStorage::String(_) | SequenceStorage::Unit(_) | SequenceStorage::Values(_) => {
+                None
+            }
+        };
+        if let Some(width) = width {
+            self.add_fixed_width(values.view().len(), width);
+        } else {
+            encode_sequence_elements(schema, values, self);
+        }
     }
 }
 
@@ -1306,6 +1342,14 @@ pub(super) fn encode_data<S: SnapshotByteSink + ?Sized>(
 }
 
 fn encode_sequence<S: SnapshotByteSink + ?Sized>(
+    schema: &SchemaBody,
+    values: &SequenceStorage,
+    sink: &mut S,
+) {
+    sink.write_sequence(schema, values);
+}
+
+fn encode_sequence_elements<S: SnapshotByteSink + ?Sized>(
     schema: &SchemaBody,
     values: &SequenceStorage,
     sink: &mut S,
