@@ -1,0 +1,39 @@
+{
+  "compiler": "115188e17032e26341dd7983e0634589a9a490ab",
+  "source_base": "566dfd1df2eb81eb95e2804d6b50a6334bdaca42",
+  "source_bytes": 160992,
+  "source_sha256": "345324ce551aaa2485dcd0fe4262da96e660d6b31f5f772bff89b034e9b1997f",
+  "cases": 9,
+  "complete_evaluations": 18,
+  "bytecode_identical": true,
+  "new_case_measurements": [
+    {
+      "artifact": "original",
+      "case": "128-biased-dynamic",
+      "elapsed_seconds": 22.032386084,
+      "allocation_requests": 17682684,
+      "requested_bytes": 3973130071
+    },
+    {
+      "artifact": "original",
+      "case": "32-high-entropy-stored",
+      "elapsed_seconds": 6.525426583,
+      "allocation_requests": 18964320,
+      "requested_bytes": 2385438830
+    },
+    {
+      "artifact": "decoded",
+      "case": "128-biased-dynamic",
+      "elapsed_seconds": 21.890540666,
+      "allocation_requests": 17682684,
+      "requested_bytes": 3973130071
+    },
+    {
+      "artifact": "decoded",
+      "case": "32-high-entropy-stored",
+      "elapsed_seconds": 6.535923125,
+      "allocation_requests": 18964320,
+      "requested_bytes": 2385438830
+    }
+  ]
+}

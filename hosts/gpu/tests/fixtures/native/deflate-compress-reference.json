@@ -23,6 +23,23 @@
     "binary_sha256": "369146c024cb83e21311f326d7eb9b810f3c3846d0f3602fe4bf9c2d26516e23",
     "command": ["/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc", "build", "--opt=speed", "--output=/private/tmp/mech-linear-restack-20261026/compress-reference/compress-reference", "/private/tmp/roc-deflate-repro-20261024/roc-deflate/package/MechCompressOracle.roc"]
   },
+  "additional_references": {
+    "block_choices": {
+      "source_pin": "671077457ff7ef3a3d44caf715a3fc595addf379",
+      "compiler_pin": "d99c7b838fb05bb1047eb0c18d4d06d0f86f345d",
+      "package_source_hashes": "reference.package_source_sha256",
+      "generated_source_sha256": "0cf3f64b9a2738b6d9e30de05e8e13a8141bed57086eec4c4126197d7dccfc12",
+      "binary_sha256": "63937fcbf4fa1156992127b8678a38c69ac2480260e834002ed32024974e486f",
+      "input_fixture_sha256": "de63f4f8d66209db8e3dc00fc5b79f8cede672d73ff89fc86eb9f0eed1797e20",
+      "command": [
+        "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "build",
+        "--opt=speed",
+        "--output=/private/tmp/mech-linear-restack-20261026/block-choice-reference/block-choice-reference",
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate/package/MechCompressChoiceOracle.roc"
+      ]
+    }
+  },
   "cases": [
     {
       "name": "empty",
@@ -72,6 +89,24 @@
       "prefix": [7, 8],
       "expected": [7, 8, 75, 76, 74, 78, 73, 77, 75, 207, 0, 0],
       "expected_sha256": "9b1d17364323aebfd45654d0eceb4fe2a30e93f9493e8f87080b2e35497719fb"
+    },
+    {
+      "name": "128-biased-dynamic",
+      "input": [102, 102, 102, 100, 101, 99, 99, 99, 103, 98, 97, 104, 100, 101, 99, 103, 100, 99, 98, 101, 100, 103, 104, 98, 101, 102, 98, 102, 103, 100, 103, 100, 104, 98, 102, 103, 99, 97, 100, 98, 100, 103, 99, 98, 101, 100, 104, 101, 103, 100, 99, 104, 102, 101, 101, 99, 103, 104, 97, 101, 99, 99, 99, 101, 103, 99, 103, 104, 98, 98, 100, 103, 104, 100, 97, 97, 103, 100, 97, 99, 102, 104, 97, 104, 98, 100, 101, 102, 98, 102, 102, 98, 104, 103, 100, 100, 101, 97, 100, 98, 99, 97, 101, 100, 102, 102, 102, 101, 100, 100, 104, 97, 104, 103, 104, 99, 98, 97, 99, 100, 98, 102, 98, 97, 98, 98, 101, 97],
+      "prefix": [],
+      "expected": [5, 193, 7, 1, 0, 0, 8, 3, 160, 172, 238, 247, 79, 32, 36, 145, 73, 22, 55, 153, 21, 97, 117, 112, 144, 170, 26, 82, 158, 160, 18, 214, 92, 113, 177, 217, 157, 73, 186, 236, 0, 117, 186, 171, 142, 217, 13, 114, 144, 96, 149, 124, 2, 207, 74, 98, 105, 183, 142, 56, 10, 193, 1, 190, 7],
+      "expected_sha256": "07464b0b86c69f07cf0abc2dcc3b7d6ed5937475ed4b1995c55ea083dcdefe78",
+      "first_block_kind": 2,
+      "reference_group": "block_choices"
+    },
+    {
+      "name": "32-high-entropy-stored",
+      "input": [144, 147, 150, 153, 156, 159, 162, 165, 168, 171, 174, 177, 180, 183, 186, 189, 192, 195, 198, 201, 204, 207, 210, 213, 216, 219, 222, 225, 228, 231, 234, 237],
+      "prefix": [],
+      "expected": [1, 32, 0, 223, 255, 144, 147, 150, 153, 156, 159, 162, 165, 168, 171, 174, 177, 180, 183, 186, 189, 192, 195, 198, 201, 204, 207, 210, 213, 216, 219, 222, 225, 228, 231, 234, 237],
+      "expected_sha256": "c24339ee99eb1eeaf503662ec12aa6821cf81783191109ddb03a14abfc69fd54",
+      "first_block_kind": 0,
+      "reference_group": "block_choices"
     }
   ]
 }

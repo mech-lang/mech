@@ -74,6 +74,8 @@ struct CompleteCase {
     input: Vec<u8>,
     prefix: Vec<u8>,
     expected: Vec<u8>,
+    #[serde(default)]
+    first_block_kind: Option<u8>,
 }
 
 fn complete_artifacts(source: &str) -> [ProgramArtifact; 2] {
@@ -175,6 +177,7 @@ fn qualify_complete(
                 input: std::fs::read(input).unwrap(),
                 prefix: vec![],
                 expected: std::fs::read(expected).unwrap(),
+                first_block_kind: None,
             });
         }
     }
@@ -255,6 +258,14 @@ fn qualify_complete(
                     _ => panic!("compressed byte kind"),
                 })
                 .collect();
+            if let Some(kind) = case.first_block_kind {
+                assert_eq!(
+                    (raw[case.prefix.len()] >> 1) & 3,
+                    kind,
+                    "{} {form} first block kind",
+                    case.name
+                );
+            }
             let inflated =
                 miniz_oxide::inflate::decompress_to_vec(&raw[case.prefix.len()..]).unwrap();
             assert_eq!(inflated, case.input, "{} {form}", case.name);
