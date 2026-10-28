@@ -2,7 +2,6 @@
 //! validation/copy/error ordering. The rest of the recurrence uses native cells.
 use super::{Error, Invocation, invalid};
 use crate::native_artifact::program::prepare::readonly_numeric::Operation;
-use crate::native_artifact::program::runtime::buffer_frames::Field;
 use mech_core::snapshot::{UnsignedMatrixOwnershipTransfer, UnsignedMatrixViewMut};
 use mech_engine::native_artifact::NativeIterationAction as Action;
 
@@ -48,22 +47,22 @@ impl Invocation<'_, '_, '_> {
         let call = metadata.calls[site]
             .as_ref()
             .ok_or_else(|| invalid("numeric write lost selected factory"))?;
-        let Field::Managed(source) = self.state.buffer_frames.project(
+        self.state
+            .control
+            .work
+            .charge(crate::native_artifact::NativeExecutionPhase::Setup, 64)?;
+        let source = self.state.buffer_frames.take_managed_owner(
             &metadata.buffer_frames,
             region.tail.carrier(),
             proof.arrays[*array].field,
-            &mut self.state.control.work,
-        )?
-        else {
-            return Err(invalid("numeric write lost source owner"));
-        };
+        )?;
         let coexistence = self.selected_join_coexistence(None)?;
         let (value, changed) = call
             .unsigned_matrix_replace(
                 source,
                 index,
                 incoming,
-                false,
+                true,
                 self.limits,
                 &self.state.library,
                 coexistence,
