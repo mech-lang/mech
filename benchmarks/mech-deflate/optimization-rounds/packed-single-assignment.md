@@ -47,6 +47,9 @@ using the same eight-byte artifact and unchanged timing harness. Each process
 has one warmup, three retained compression calls and one excluded profile call.
 Run alone, with no local compiler or old compressor active. Keep every sample,
 setup failure and raw profile. Refresh the pinned reference's 20000 samples.
+If a single excluded call is too short for sampling, use a separate post-primary
+profile process with enough repetitions for about four seconds of compression,
+chosen from the primary median. Its observations never enter the primary median.
 Report all elapsed times divided by that reference (Roc = 1x); also retain the
 round-01 5756.19x anchor. This is a small diagnostic, not a statistical campaign.
 The complete program's reported logical work must remain 939091080723 and all
@@ -56,3 +59,9 @@ those contracts fails acceptance even if it runs faster.
 Commit implementation, raw measurements, executable/source/allocator hashes and
 the post-change profile before another optimization round. Do not run a large
 input or full corpus during this round. The goal remains verified 1x parity.
+
+The optimized engine unit build completes in 1082.404 seconds; its three tests
+execute in 0.01 seconds. All finite-prefix and live-ledger comparisons pass.
+The combined profile also builds the GPU unit target but selects zero tests
+there; that zero selection is not counted as qualification. Native component,
+linked and complete eight-byte checks follow before broader qualification.

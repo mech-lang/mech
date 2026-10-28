@@ -4,6 +4,87 @@ use mech_core::{ManagedMemoryBudget, ValueDataDraft as Data};
 use mech_gpu::native_artifact::JitProgramArtifact;
 
 #[test]
+fn single_cell_matrix_updates_keep_aliases_publication_and_finite_denials() {
+    let source = "<buffer> := <[u32]:2,3>\nreplace(xs<buffer>, at<u64>, incoming<[u32]>) => (out<buffer>) :=\n  ~next := xs\n  next[at] = incoming\n  out := next.\nreplace(input<buffer>, at<u64>, incoming<[u32]>)\n";
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        for (at, incoming, denied_copy) in [
+            (4, vec![Data::U32(17)], false),
+            (6, vec![Data::U32(19), Data::U32(23)], false),
+            (1, vec![Data::U32(31)], true),
+            (6, vec![Data::U32(127)], false),
+        ] {
+            let args = inputs(
+                &artifact,
+                &[
+                    ("input", Data::Matrix((1..=6).map(Data::U32).collect())),
+                    ("at", Data::U64(at)),
+                    ("incoming", Data::Matrix(incoming.clone().into())),
+                ],
+                &memory,
+            );
+            let aliases = args.clone();
+            let prior = output.clone();
+            let before = (memory.used_bytes(), memory.retained_snapshot_nodes());
+            let mut policy = limits();
+            if denied_copy {
+                policy.library.max_cloned_bytes = Some(0);
+            }
+            let result = jit.evaluate_into(&args, &mut output, policy, &memory);
+            if incoming.len() != 1 || denied_copy {
+                assert!(result.is_err());
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    before
+                );
+                assert!(output.iter().zip(&prior).all(|(now, old)| {
+                    now.as_ref()
+                        .unwrap()
+                        .shares_frozen_storage(old.as_ref().unwrap())
+                }));
+            } else {
+                result.unwrap();
+                equal(&artifact, &output, &reference(&artifact, &args));
+                let mut expected = (1..=6).map(Data::U32).collect::<Vec<_>>();
+                expected[[0, 3, 1, 4, 2, 5][at as usize - 1]] = incoming[0].clone();
+                assert_eq!(
+                    output
+                        .last()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    Data::Matrix(expected.into())
+                );
+            }
+            assert!(
+                args.iter()
+                    .zip(&aliases)
+                    .all(|(arg, alias)| arg.shares_frozen_storage(alias))
+            );
+            assert_eq!(
+                args.iter()
+                    .find_map(|arg| match arg.canonical_data_draft().unwrap() {
+                        Data::Matrix(words) if words.len() == 6 => Some(words),
+                        _ => None,
+                    })
+                    .unwrap(),
+                (1..=6)
+                    .map(Data::U32)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice()
+            );
+        }
+        drop(output);
+        assert_eq!(memory.used_bytes(), 0);
+        assert_eq!(memory.retained_snapshot_nodes(), 0);
+    }
+}
+
+#[test]
 fn unsigned_updates_preserve_linear_indexing_of_rectangular_matrices() {
     for width in [8, 16, 32, 64] {
         let word = |value: u64| match width {

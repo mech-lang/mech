@@ -218,6 +218,7 @@ fn projected_snapshot_matrix_output(
     source_schema: &SchemaBody,
     source_data: &ValueData,
     output_len: usize,
+    single_source_scan_work: Option<u64>,
     mut selected_source: impl FnMut(
         usize,
         &mut super::budget::ResidentBudgetMeter,
@@ -233,6 +234,18 @@ fn projected_snapshot_matrix_output(
     }
     let mut finalization_work =
         snapshot_data_finalization_work(meter, current_schema, current_data)?;
+    if let Some(scan_work) = single_source_scan_work
+        && packed_indexed_assign::try_project_single_source(
+            meter,
+            element,
+            current_matrix.elements(),
+            source_schema,
+            source_data,
+            scan_work,
+        )?
+    {
+        return Ok((current_footprint, finalization_work));
+    }
     match current_matrix.elements() {
         SequenceView::Values(current_values) => {
             let mut current_elements = ValueFootprint::zero();
@@ -9472,6 +9485,18 @@ fn indexed_assign_snapshot(
         row * source_columns + column
     };
     let mut execution_clone_footprint = ValueFootprint::zero();
+    // Validation above proves one reached destination and source element.
+    // Overflow or a tight preview retains the incremental planning path.
+    let single_source_scan_work = if positions.len() == 1
+        && source_len == 1
+        && kernel.retained_state::<SemanticArithmetic>().is_none()
+    {
+        u64::try_from(output_len)
+            .ok()
+            .and_then(|count| count.checked_mul(u64::try_from(positions.traversal_len()).ok()?))
+    } else {
+        None
+    };
     let (final_output_footprint, finalization_work) = projected_snapshot_matrix_output(
         &mut footprint_meter,
         current_schema.body(),
@@ -9480,6 +9505,7 @@ fn indexed_assign_snapshot(
         source_schema.body(),
         source.data(),
         output_len,
+        single_source_scan_work,
         |canonical_destination, meter| {
             meter.charge_compute_work(super::budget::checked_u64(positions.traversal_len())?)?;
             let row = canonical_destination / columns;
@@ -10414,6 +10440,7 @@ fn indexed_assign_matrix_selection(
                 source_schema.body(),
                 source.data(),
                 output_len,
+                None,
                 |destination, meter| {
                     matrix_selection_last_source(plan, inputs, destination, true, meter)
                 },
