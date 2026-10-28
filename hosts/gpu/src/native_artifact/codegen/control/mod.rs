@@ -1437,7 +1437,7 @@ impl<'plan> CfgDefinition<'plan> {
                             // closed-region fuel/owner loan before returning.
                             let status = match terminator {
                                 NativeMatchTerminator::Reject => {
-                                    crate::native_artifact::abi::STATUS_REJECT
+                                    crate::native_artifact::control_abi::STATUS_REJECT
                                 }
                                 _ => crate::native_artifact::abi::STATUS_INTEGRITY,
                             };
