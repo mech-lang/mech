@@ -277,10 +277,24 @@ mod tests {
                 }
             }
             let mut builder = SchemaTableBuilder::new();
+            let input = builder
+                .insert(
+                    SchemaDraft {
+                        body: matrix(vec![
+                            DimensionExpr::Constant(1),
+                            DimensionExpr::Parameter(Id::new(0)),
+                        ]),
+                        dimension_parameters: parameters(1),
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap();
             let result = builder.insert(draft.finalize().unwrap()).unwrap();
             let built = builder.finish().unwrap();
             let result = built.resolve(result).unwrap();
-            assert!(FrameShapeRecipe::derive(result, &[], &built.table).is_none());
+            let input = built.resolve(input).unwrap();
+            assert!(FrameShapeRecipe::derive(result, &[input, input], &built.table).is_none());
         }
     }
 }
