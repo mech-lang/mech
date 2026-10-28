@@ -38,3 +38,13 @@ available and unchanged. A first build may rebuild dependencies because Cargo's
 feature graph changed; reuse this profile for subsequent iterations. Build time
 is separate from compression runtime, and switching profiles must be disclosed
 in before/after comparisons.
+
+The nondefault `linked-qualification` feature adds `mech-build` and its process
+supervision for the maintained linked/Object tests. It can change transitive
+dependency features and rebuild compiler libraries. Run it separately, record its
+Cargo artifacts, then restore the default profile before primary timing and
+scalar controls. It is not part of the timing feature configuration.
+
+`unit-qualification` additionally enables the runtime's compiler interface needed
+by existing GPU unit-test helpers. It retains the selected operation catalog;
+it does not activate the GPU package's full-catalog dev dependencies.

@@ -1044,3 +1044,102 @@ fn worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
         core::mem::size_of::<NativeEntryFrame>() + 64
     );
 }
+
+#[path = "numeric_fuel_tests.rs"]
+mod numeric_fuel;
+
+thread_local! {
+    static NUMERIC_FUEL_OBSERVATIONS: std::cell::RefCell<Vec<Vec<u64>>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+// Observe the real cold reconciliation without changing fuel, source execution,
+// arguments, or the account. Unsafe access stays in this existing audited owner.
+unsafe extern "C" fn observe_numeric_fuel(
+    context: *mut c_void,
+    site: u64,
+    operation: u64,
+    first: u64,
+    second: u64,
+    third: u64,
+    result: *mut u64,
+) -> u64 {
+    let cold =
+        operation == crate::native_artifact::program::protocol::abi::CLOSED_TAIL_END && third == 1;
+    // SAFETY: live execute-owned context; this read ends before helper borrows it.
+    let before = cold.then(|| {
+        unsafe { &*context.cast::<Invocation<'_, '_, '_>>() }
+            .state
+            .library
+            .used()
+            .0
+    });
+    // SAFETY: identical synchronous context and words from the generated entry.
+    let status =
+        unsafe { super::hooks::helper(context, site, operation, first, second, third, result) };
+    if let Some(before) = before
+        && status == STATUS_OK
+    {
+        // SAFETY: the production helper returned; its exclusive borrow ended.
+        let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        let metadata = ctx.descriptor.metadata();
+        if let Some(id) = metadata
+            .closed_tails
+            .sites
+            .get(site as usize)
+            .copied()
+            .flatten()
+            && let Some(region) = metadata.closed_tails.regions.get(id)
+            && region.numeric.is_some()
+            && let Some(fields) = metadata.buffer_frames.fields(region.tail.carrier())
+        {
+            let mut bits = vec![
+                ctx.state.library.used().0 - before,
+                region.compute,
+                u64::from(ctx.closed_tail.is_none()),
+            ];
+            bits.extend(fields.iter().enumerate().filter_map(|(ordinal, _)| {
+                ctx.state.buffer_frames.test_scalar_bits(
+                    &metadata.buffer_frames,
+                    region.tail.carrier(),
+                    ordinal,
+                )
+            }));
+            NUMERIC_FUEL_OBSERVATIONS.with(|rows| rows.borrow_mut().push(bits));
+        }
+    }
+    status
+}
+fn execute_observed_numeric_fuel(
+    jit: &crate::native_artifact::JitProgramArtifact,
+    args: &[Value],
+    outputs: &mut [Option<Value>],
+    caps: NativeProgramExecutionLimits,
+    memory: &ManagedMemoryBudget,
+) -> (
+    Result<NativeProgramExecutionReport, NativeProgramExecutionError>,
+    Vec<Vec<u64>>,
+) {
+    NUMERIC_FUEL_OBSERVATIONS.with(|rows| rows.borrow_mut().clear());
+    let entry = jit.test_checked_entry();
+    let outcome = execute(
+        jit.descriptor(),
+        |raw| {
+            // SAFETY: exact retained JIT entry and live execute-owned frame. The
+            // observer forwards every helper unchanged, then restores the wire.
+            let original = unsafe { (*raw).helper };
+            unsafe {
+                (*raw).helper = observe_numeric_fuel;
+            }
+            let status = unsafe { entry(raw) };
+            unsafe {
+                (*raw).helper = original;
+            }
+            status
+        },
+        args,
+        outputs,
+        caps,
+        memory,
+    );
+    let rows = NUMERIC_FUEL_OBSERVATIONS.with(|rows| core::mem::take(&mut *rows.borrow_mut()));
+    (outcome, rows)
+}

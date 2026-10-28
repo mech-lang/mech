@@ -257,6 +257,19 @@ impl BufferFrames {
         inner.words.values_mut()[at * 2 + 1] = 1;
         Ok(())
     }
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    pub(super) fn test_scalar_bits(
+        &self,
+        layout: &Layout,
+        value: NativeMatchValue,
+        ordinal: usize,
+    ) -> Option<u64> {
+        let Lane::Scalar { at, kind } = layout.fields(value)?.get(ordinal)?.lane() else {
+            return None;
+        };
+        let words = self.inner.as_ref()?.words.values();
+        (words[at * 2 + 1] == 1 && kind.accepts_bits(words[at * 2])).then_some(words[at * 2])
+    }
     pub(super) fn retire(
         &mut self,
         layout: &Layout,

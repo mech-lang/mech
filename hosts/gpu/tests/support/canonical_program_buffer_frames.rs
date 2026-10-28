@@ -317,7 +317,11 @@ fn nested_repeated_calls_keep_published_buffers_immutable_and_recover_from_denia
 
 #[test]
 fn build_owned_image_rederives_private_frame_and_scalar_metadata() {
-    for source in [GROW, super::scalar_state_qualification::ALL_KINDS] {
+    for source in [
+        GROW,
+        super::scalar_state_qualification::ALL_KINDS,
+        super::numeric_tail_qualification::WEIGHTED,
+    ] {
         for artifact in artifacts(source).0 {
             let catalog = mech_stdlib::source_catalog();
             let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
@@ -585,7 +589,11 @@ fn frame_word_admission_rejects_invalid_width_without_retaining_a_visit() {
 
 #[test]
 fn restored_frame_type_slots_reject_misalignment_keys_and_definitions() {
-    for source in [GROW, super::scalar_state_qualification::ALL_KINDS] {
+    for source in [
+        GROW,
+        super::scalar_state_qualification::ALL_KINDS,
+        super::numeric_tail_qualification::WEIGHTED,
+    ] {
         for artifact in artifacts(source).0 {
             let catalog = mech_stdlib::source_catalog();
             let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
@@ -632,5 +640,81 @@ fn restored_frame_type_slots_reject_misalignment_keys_and_definitions() {
                 assert!(result.is_err(), "corruption accepted: {corruption}");
             }
         }
+    }
+}
+
+#[test]
+fn restored_numeric_leaf_rejects_stale_views_offsets_prices_and_factory_associations() {
+    for artifact in artifacts(super::numeric_tail_qualification::WEIGHTED).0 {
+        let catalog = mech_stdlib::source_catalog();
+        let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let original: serde_json::Value =
+            serde_json::from_slice(&jit.descriptor().encode_build_owned_image().unwrap()).unwrap();
+        let root = "/descriptor/closed_tails/regions/0";
+        for suffix in [
+            "/numeric/arrays/0/field",
+            "/numeric/arrays/0/width",
+            "/numeric/arrays/0/witness",
+            "/numeric/words",
+            "/numeric/scalar_words",
+            "/words",
+            "/compute",
+            "/comparison",
+        ] {
+            let mut changed = original.clone();
+            let field = changed.pointer_mut(&format!("{root}{suffix}")).unwrap();
+            *field = (field.as_u64().unwrap() + 1).into();
+            let bytes = serde_json::to_vec(&changed).unwrap();
+            // SAFETY: corrupt cached metadata is confined to rejection; no
+            // restored descriptor or entry from this diagnostic may execute.
+            assert!(
+                unsafe {
+                    mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
+                        &bytes, &catalog,
+                    )
+                }
+                .is_err(),
+                "accepted {suffix}"
+            );
+        }
+        let mut changed = original.clone();
+        *changed.pointer_mut(&format!("{root}/numeric")).unwrap() = serde_json::Value::Null;
+        let bytes = serde_json::to_vec(&changed).unwrap();
+        // SAFETY: removing the proof stays confined to rejection.
+        assert!(
+            unsafe {
+                mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
+                    &bytes, &catalog,
+                )
+            }
+            .is_err()
+        );
+        let witness = original
+            .pointer(&format!("{root}/numeric/arrays/0/witness"))
+            .unwrap()
+            .as_u64()
+            .unwrap() as usize;
+        let calls = original["descriptor"]["calls"].as_array().unwrap();
+        let other = calls
+            .iter()
+            .enumerate()
+            .find(|(site, call)| *site != witness && !call.is_null() && *call != &calls[witness])
+            .unwrap()
+            .0;
+        let mut changed = original.clone();
+        changed["descriptor"]["calls"]
+            .as_array_mut()
+            .unwrap()
+            .swap(witness, other);
+        let bytes = serde_json::to_vec(&changed).unwrap();
+        // SAFETY: independently valid but misassociated factories may not escape.
+        assert!(
+            unsafe {
+                mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
+                    &bytes, &catalog,
+                )
+            }
+            .is_err()
+        );
     }
 }

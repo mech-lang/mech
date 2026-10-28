@@ -284,7 +284,7 @@ fn linked_assertion_retry_with_oracle(
     let args = inputs(&artifact, &[("input", input_word(3))], &memory);
     let input = input_file(directory, "checked", &args);
     let result = bounded(
-        Command::new(binary)
+        Command::new(&binary)
             .args(policy(
                 1_000_000_000,
                 256 * 1024 * 1024,
@@ -315,6 +315,10 @@ fn linked_assertion_retry_with_oracle(
     for (relative, expected) in generated.pins() {
         assert_eq!(&pin(&generated.root().join(relative)), expected);
     }
+    println!(
+        "{}",
+        json!({"qualification":"linked-assertion-retry", "source_sha256":hash(source.as_bytes()), "binary_sha256":pin(&binary), "generated":generated.metadata(), "compiled_units":units, "valid_invalid_valid":[3,0,2], "assertion_before_division":true, "prior_publication_preserved":true, "cleanup_and_recovery":true, "timing_samples":0})
+    );
 }
 
 fn collection_source() -> String {
@@ -1014,4 +1018,22 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
     }
     clean(&evidence, &commit, "after");
     fs::write(evidence.join("qualification.json"), serde_json::to_vec_pretty(&json!({"schema":"mech.canonical-program-linked-qualification.v1","source_commit":commit,"programs":receipts,"scope":"managed root and lexical calls, scalar control and native String matrix comprehensions in real linked Objects; no resource-host/full-workload/performance claim","benchmark_measurements":0})).unwrap()).unwrap();
+}
+
+#[test]
+fn linked_readonly_numeric_child_restores_and_recovers() {
+    let source = "leaf(words<[u32]>, left<u64>, divisor<u64>) => (out<u64>) :=\n  positive! := divisor > 0u64\n  value<u64> := words[1u64]\n  out := ((left > 0u64)? | true => leaf(words, left - 1u64, divisor) | false => value / divisor).\nouter(words<[u32]>, left<u64>, divisor<u64>) => (out<u64>) :=\n  value := leaf(words, 2u64, divisor)\n  out := ((left > 0u64)? | true => outer(words, left - 1u64, divisor) | false => value).\nchecked(n<u64>) => (out<u64>) :=\n  out := outer([12u32], 1u64, n).\nchecked(input<u64>)\n";
+    let artifact = super::artifacts(source).0.into_iter().next().unwrap();
+    let object =
+        mech_gpu::native_artifact::emit_program_object(&artifact, &mech_stdlib::source_catalog())
+            .unwrap();
+    let metadata = object.metadata();
+    assert!(
+        metadata["compiled_readonly_numeric_loops"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|r| r["parent"].is_number() && !r["typed_loads"].as_array().unwrap().is_empty())
+    );
+    linked_assertion_retry(source, ValueDataDraft::U64);
 }
