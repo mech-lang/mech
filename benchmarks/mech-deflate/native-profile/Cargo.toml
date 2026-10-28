@@ -7,7 +7,13 @@ publish = false
 # An ordinary consumer does not activate mech-gpu's full-catalog dev dependencies.
 [workspace]
 
+[features]
+linked-qualification = ["dep:mech-build"]
+unit-qualification = ["linked-qualification", "dep:mech-runtime"]
+
 [dependencies]
+mech-build = { path = "../../../src/build", default-features = false, features = ["process-supervision"], optional = true }
+mech-runtime = { path = "../../../src/runtime", default-features = false, features = ["compiler", "resident-routing-source"], optional = true }
 # Retain the established compiler/value configuration while selecting only the
 # machine operations needed by compression and the scalar regression controls.
 mech-core = { path = "../../../src/core", default-features = false, features = ["full", "math_pow"] }

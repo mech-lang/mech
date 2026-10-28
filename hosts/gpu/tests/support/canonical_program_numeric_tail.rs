@@ -22,6 +22,7 @@ fn readonly_numeric_reduction_observes_real_allocation_and_transition_slopes() {
     {
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let mut observations = Vec::new();
         for steps in [0, 1, 8, 64, 256] {
             let args = inputs(
                 &artifact,
@@ -48,6 +49,7 @@ fn readonly_numeric_reduction_observes_real_allocation_and_transition_slopes() {
                 jit.evaluate_into(&args, &mut output, witness_limits(), &memory)
             });
             let report = result.unwrap();
+            observations.push((steps, requests, bytes, report.visits, report.work));
             if let Some(expected) = expected {
                 equal(&artifact, &output, &expected);
             }
@@ -75,6 +77,16 @@ fn readonly_numeric_reduction_observes_real_allocation_and_transition_slopes() {
                 serde_json::json!({"witness":"readonly-weighted","artifact":form,"steps":steps,"requests":requests,"requested_bytes":bytes,"report":format!("{report:?}")})
             );
         }
+        assert!(
+            observations.iter().all(|row| (row.1, row.2, row.3)
+                == (observations[0].1, observations[0].2, observations[0].3)),
+            "funded iterations must not allocate or visit the runtime: {observations:?}"
+        );
+        let per_iteration = observations[1].4 - observations[0].4;
+        assert!(per_iteration > 0);
+        for row in &observations {
+            assert_eq!(row.4, observations[0].4 + row.0 * per_iteration);
+        }
         assert_eq!(memory.used_bytes(), 0);
         assert_eq!(memory.retained_snapshot_nodes(), 0);
     }
@@ -96,3 +108,9 @@ fn readonly_numeric_reduction_selects_a_native_leaf_region() {
         "mixed carrier and array operations must run in a native leaf: {metadata}"
     );
 }
+
+#[path = "canonical_program_numeric_tail_cases.rs"]
+mod cases;
+
+#[path = "canonical_program_numeric_tail_resources.rs"]
+mod resources;

@@ -75,6 +75,7 @@ fn main() {
         let current = [value.into_memory_budget(&mut reservation).unwrap()];
         let prior = outputs.clone();
         let before = memory.used_bytes();
+        let before_nodes = memory.retained_snapshot_nodes();
         let result = linked.evaluate_into(&current, &mut outputs, limits, &memory);
         if let Some(expected) = expected {
             assert!(result.unwrap().visits > 0);
@@ -96,6 +97,7 @@ fn main() {
                 assert!(actual.shares_frozen_storage(old));
             }
             assert_eq!(memory.used_bytes(), before);
+            assert_eq!(memory.retained_snapshot_nodes(), before_nodes);
         }
     }
     for value in &outputs {
@@ -114,4 +116,5 @@ fn main() {
     }
     drop((outputs, inputs));
     assert_eq!(memory.used_bytes(), 0);
+    assert_eq!(memory.retained_snapshot_nodes(), 0);
 }
