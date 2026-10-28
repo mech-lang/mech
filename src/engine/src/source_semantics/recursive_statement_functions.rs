@@ -104,12 +104,24 @@ impl SemanticBuilder {
                 format!("function {name} requires supported canonical argument bindings"),
             ));
         }
-        // A nonrecursive checked call needs lexical ordering, not recursive
-        // pattern bindings. Capture its arguments directly so the frame retains
-        // their immutable snapshots instead of copying their payloads into a
-        // composite and projecting them back out. Recursive calls still need
-        // the structural carrier that supplies each fresh invocation's bindings.
-        let capture_arguments = !recursive;
+        // Capture eligible arguments directly to retain their immutable roots.
+        // A turn-shaped tuple may be a valid structural carrier without being
+        // a valid lexical capture. Keep its existing structural binding path.
+        // Check each argument, rather than the synthetic multi-argument tuple,
+        // so ordinary buffer/scalar calls retain the direct capture path.
+        let mut capture_arguments = !recursive;
+        if capture_arguments && supported_carrier {
+            for argument in arguments {
+                if !self
+                    .schema_draft_of(*argument)?
+                    .finalize()
+                    .is_ok_and(|schema| crate::is_control_capture_schema(&schema))
+                {
+                    capture_arguments = false;
+                    break;
+                }
+            }
+        }
         let scrutinee = if capture_arguments {
             self.constant(BuiltinSchema::Bool, ValueDataDraft::Bool(true))
         } else if let [argument] = arguments {
