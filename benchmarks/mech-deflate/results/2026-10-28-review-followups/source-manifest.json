@@ -1,0 +1,147 @@
+{
+  "base": "8bbfa71d8b3e32fa9772a0e64c4cb3674dc93814",
+  "code_head": "c049059017b114134789bc02a6ae7c2e82566bb4",
+  "production_compressor_source_revision": "566dfd1df2eb81eb95e2804d6b50a6334bdaca42",
+  "commits": {
+    "inventory": "90320acbeb2562672fce2b35505e1c2921b0c9a2",
+    "checked_tuple": "fce2c2c9c3ff9752460375e31c2e6c68225f84b0",
+    "minimum_huffman": "c049059017b114134789bc02a6ae7c2e82566bb4"
+  },
+  "changed_files": [
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-huffman.mec",
+      "sha256": "bccc2d9643049f97d7df7802998e4689d7dd640d1445c71f5e79a14a00bc5ce9"
+    },
+    {
+      "path": "hosts/gpu/tests/support/canonical_program_huffman.rs",
+      "sha256": "c3f75dbbf2cbecdf3401e988fc6befbb3e8926fb1378037a49f86e3006dc2536"
+    },
+    {
+      "path": "hosts/gpu/tests/support/canonical_program_lexical_argument_kinds.rs",
+      "sha256": "3436cc406b8199603dee6d36d669241a9b5c24764533ce519263bd914e4fb440"
+    },
+    {
+      "path": "scripts/unsafe-boundaries.allowlist",
+      "sha256": "81772dae1681345d075508eedfc38e396e3ee71082b29cd5b27b2f1fc88cd44f"
+    },
+    {
+      "path": "src/engine/src/source_semantics/recursive_statement_functions.rs",
+      "sha256": "fdc0fe80a5f0fdd7a4b4bba2429f1099e9268fbebc30c41db4a204d9f8a75b8d"
+    }
+  ],
+  "unchanged_compressor_components_generator_and_goldens": [
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-matchfinder.mec",
+      "sha256": "c0b1504fac74da69953c822597b0b135d363fe76efd96b3a92b5de9931bcba93"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-binary-tree.mec",
+      "sha256": "dd60cc6210256a75dff97a9df2c3b5f9d073220836a8edc8787422a8ded2518c"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-collector.mec",
+      "sha256": "6efeaf50c93c8d5abc008c82203a655828cefac06dda2bdfb125764472375075"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-block-collector.mec",
+      "sha256": "1a16469ff01b349c4bffebfaa63090facc9135a9069a8d8b163578f7f379d5d0"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-block-heuristics.mec",
+      "sha256": "4f4491dc7d100373788bf777e6798fdb03251ae6ea81874be00721910c2c12d8"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-block-loop.mec",
+      "sha256": "c2a35cff5cb4437fc077f68ebd320efe1dbf48e3373697e3bc7a509333c61694"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-optimal-path.mec",
+      "sha256": "9ba96d49f96993cc870fdbc5a1a76c897a26ac92d8c857a0d4adb837e39c670e"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-huffman-level12.mec",
+      "sha256": "427008046cbb4e7ee9413f57e8b849db1e67b0cffff0a7b2a80b7f1cd94bb6cb"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-tally.mec",
+      "sha256": "a5a68c2e99f9705e15c582de55d4898d7be4919bb770c84517ba273071ca040f"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec",
+      "sha256": "4c2966e802d4e8dd4bff9f84a0a58c779a300175920884aad25746b17d2eee4e"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-header.mec",
+      "sha256": "3b9986b2955c5c54652da271f3e2fb7484f3920c89a7b2bb06915e0869599161"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-optimize.mec",
+      "sha256": "1dc1dabd4c94412c1ccb191030eac2ab2a20e244e800c0b91ffb1c60073bf0a2"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-literal-choice.mec",
+      "sha256": "b279986adf2f8727e5163e835ceade500207c11d52b11ae3963dbe869728b787"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-static-codes.mec",
+      "sha256": "07f462f51b2dfb49ddcb7a15f0e40ddafc201cbd6c4c862a7f9d6833d560c61d"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-writer-tables.mec",
+      "sha256": "090083ece256f8c7ea6b588a4b942ed856f92af42ab002840baddea26691fef9"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-path-writer.mec",
+      "sha256": "a580428b40395445d723c73bf70132bcc882227c724b64ef9b9a94dfa6b27d90"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-sequence-writer.mec",
+      "sha256": "e77b6260ba89d026c17825d859bbdcb46deb29727835b692e1dd2ac4d1272100"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-block-choice.mec",
+      "sha256": "10198fea57405c2bcd501779b2e46277af0a72b59b412290da66631ee46cf2a7"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-block-header-writer.mec",
+      "sha256": "e87996bb661492b047df1c5f9ac51c8b8272b350ce0c7ed719d8b80ac8b0d1e7"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-stored-writer.mec",
+      "sha256": "450768eba97cd33672bf8d716e9929b3756640722f5ea48ef17edd0c2d081f7f"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-flush-block.mec",
+      "sha256": "5b53d2bbd2280f85ad002d9dc0d59df916a9a2a8954c11ddb3e0551c6173a54b"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-select-path.mec",
+      "sha256": "e5ce271ef508d41881b50c9a05465806d83e6452659780ab75ca9e18c918eb13"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-plan-block.mec",
+      "sha256": "9f71ddeb8219821b6e3ea6ef2773747db5aa609ff9ab1ad2969761f67eea9b31"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-level12-tables.mec",
+      "sha256": "1e2e5c7cfda1c8b8ab7559e7aa793bea36225da1a1a985cc9f4673737dff243f"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-compress-controller.mec",
+      "sha256": "7f940c5354a2ba404efaa23a1f460ee7ffc15b29be13c2e9a496cc1d54f76900"
+    },
+    {
+      "path": "benchmarks/mech-deflate/huffman/generate_reference.py",
+      "sha256": "f42ab66bfd82444c89b752e80a16ac5587557cde0c98f871caa69393b55f5ffd"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/native/deflate-huffman-reference.json",
+      "sha256": "78ceedb88f20ac0558d42297580df582c568d24cd5a03be8efb5ecb3a515644a"
+    }
+  ],
+  "source_bytes": 160992,
+  "source_sha256": "345324ce551aaa2485dcd0fe4262da96e660d6b31f5f772bff89b034e9b1997f",
+  "canonical_artifact_bytes": 4140067,
+  "canonical_artifact_sha256": "a2daaaf746d6bcc8668c5439f84a782ecea2aff376546566c01d4fc0f8c6f585",
+  "compression_executed_for_this_check": false
+}

@@ -1,0 +1,23 @@
+{
+  "name": "review-artifact-stability",
+  "command": [
+    "/private/tmp/mech-live-control-target/release/artifact-review",
+    "/private/tmp/mech-linear-restack-20261026/review-current-compressor.mec",
+    "/private/tmp/mech-linear-restack-20261026/complete-compressor-choice-qualified.mbc"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "fce2c2c9c3ff9752460375e31c2e6c68225f84b0",
+  "dirty": " M hosts/gpu/tests/fixtures/native/deflate-huffman.mec\n M hosts/gpu/tests/support/canonical_program_huffman.rs\n",
+  "exit": 0,
+  "seconds": 59.376431941986084,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/review-artifact-stability.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}
