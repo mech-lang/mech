@@ -1,0 +1,35 @@
+{
+  "name": "range-append-engine-contract",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-engine",
+    "--no-default-features",
+    "--features",
+    "full_source,native-artifact,sequence_buffers",
+    "--test",
+    "sequence_buffer_contract",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "d441c97caa2dcf116d335d9cb8a384f49953fa51",
+  "dirty": " M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/unsigned_buffers.rs\n M hosts/gpu/tests/support/canonical_program_linked.rs\n M hosts/gpu/tests/support/canonical_program_sequence_capacity.rs\n M src/core/src/operation_contract/maintained.rs\n M src/core/src/type_system/scheme.rs\n M src/engine/src/intrinsics/sequence_buffers.rs\n M src/engine/src/lib.rs\n M src/engine/src/native_artifact/unsigned_buffer_call.rs\n M src/engine/src/resident/general/native_collection_invocation.rs\n M src/engine/src/resident/general/native_collection_prepared.rs\n M src/engine/src/resident/general/native_collection_templates.rs\n M src/engine/src/resident/general/native_collection_unsigned_buffers.rs\n M src/engine/src/resident/native_collection_semantics.rs\n M src/engine/src/resident/sequence_buffers.rs\n M src/engine/tests/sequence_buffer_contract.rs\n",
+  "exit": 0,
+  "seconds": 77.50770807266235,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/range-append-engine-contract.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

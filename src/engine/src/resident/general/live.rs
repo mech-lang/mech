@@ -68,7 +68,11 @@ pub(super) fn footprint_with_check(
 
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 pub(super) fn footprint_with_data_check(
     value: ResidentValueRef<'_>,
@@ -97,7 +101,11 @@ enum InputDataMemo<'a> {
     None,
     #[cfg(all(
         feature = "native-artifact",
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     ))]
     Borrowed {
         transaction:
@@ -109,7 +117,11 @@ enum InputDataMemo<'a> {
     // disabled; it does not enable any native-cache module in those profiles.
     #[cfg(not(all(
         feature = "native-artifact",
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     )))]
     _Lifetime(core::marker::PhantomData<&'a ()>),
 }
@@ -119,7 +131,11 @@ impl InputDataMemo<'_> {
         match self {
             #[cfg(all(
                 feature = "native-artifact",
-                any(feature = "pure_text", feature = "map_ops")
+                any(
+                    feature = "pure_text",
+                    feature = "map_ops",
+                    feature = "sequence_buffers"
+                )
             ))]
             Self::Borrowed {
                 transaction,
@@ -138,7 +154,11 @@ impl InputDataMemo<'_> {
     ) -> Result<(), MemoryPlanError> {
         #[cfg(all(
             feature = "native-artifact",
-            any(feature = "pure_text", feature = "map_ops")
+            any(
+                feature = "pure_text",
+                feature = "map_ops",
+                feature = "sequence_buffers"
+            )
         ))]
         if let Self::Borrowed {
             transaction,

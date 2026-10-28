@@ -498,6 +498,16 @@ fn execute_parse_u64(
     publish_u64(kernel, output, value, work)
 }
 
+pub(in crate::resident) fn matrix_length(
+    rows: usize,
+    columns: usize,
+) -> Result<u64, ResidentKernelError> {
+    let count = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    super::budget::checked_u64(count)
+}
+
 fn execute_length(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -525,10 +535,7 @@ fn execute_length(
         )
     } else {
         let (rows, columns) = source.geometry(input)?;
-        let count = rows
-            .checked_mul(columns)
-            .ok_or(ResidentKernelError::InvalidShape)?;
-        (super::budget::checked_u64(count)?, 1)
+        (matrix_length(rows, columns)?, 1)
     };
     publish_u64(kernel, output, value, work)
 }

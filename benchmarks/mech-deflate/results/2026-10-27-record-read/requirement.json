@@ -1,0 +1,18 @@
+{
+  "base": "27bdd8b2c5b1ad35590121653589d06251ae5161",
+  "blocking_source": "BlockOut.roc:389 sequence lookup in write_sequences",
+  "reference_pin": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "operation": "Select one record from a sequence, then read U32 and U16 fields",
+  "minimal_reproducer": "writer-record-read-repro.mec",
+  "native_result": "WitnessTypeMismatch { node: NodeId(1) }",
+  "path": "Maintained access/scalar factory -> MatrixScalarAccess -> is_shallow_matrix rejects fixed-schema record elements",
+  "proposed_change": "Use the existing is_value_matrix eligibility already qualified for fixed-schema record/tuple matrix construction and indexed replacement; retain exact element/output matching, selectors, resident kernel and finite budgets. Native program IR 112.",
+  "acceptance": [
+    "Original/decoded source, resident/native/linked agreement on selected record and each field",
+    "Zero, out-of-range and overflow index errors preserve prior publication and aliases; success after failure",
+    "Unselected bad read does not execute",
+    "Nested fixed tuple/record elements, selector ordering and exact output schema; dynamic child containers remain outside the admitted subset",
+    "Work/output-byte quota denial cleans up; existing scalar and record-buffer qualification remains unchanged"
+  ],
+  "reachability": "Deflate.roc:92-93 selects CompressOptimal at level >=10; CompressOptimal.roc:1109-1137 chooses all literals and sets use_items=0; BlockOut.roc:748-753 then calls write_sequences"
+}

@@ -1,0 +1,30 @@
+{
+  "name": "writer-byte-append-missing",
+  "command": [
+    "cargo",
+    "test",
+    "--manifest-path",
+    "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+    "--offline",
+    "-j1",
+    "--",
+    "writer_byte_append_source_probe",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "c7213b63f568dac2881eb514f025723a24bf6fd6",
+  "dirty": " M benchmarks/mech-deflate/matchfinder/README.md\n M hosts/gpu/tests/canonical_artifact_program.rs\n?? benchmarks/mech-deflate/matchfinder/generate_costs_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_default_costs_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_literal_choice_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_writer_tables_reference.py\n?? benchmarks/mech-deflate/results/2026-10-27-component-promotion/\n?? hosts/gpu/tests/fixtures/native/deflate-costs-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-default-costs-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/fixtures/native/deflate-static-codes.mec\n?? hosts/gpu/tests/fixtures/native/deflate-writer-tables-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-writer-tables.mec\n?? hosts/gpu/tests/support/canonical_program_costs.rs\n?? hosts/gpu/tests/support/canonical_program_default_costs.rs\n?? hosts/gpu/tests/support/canonical_program_header.rs\n?? hosts/gpu/tests/support/canonical_program_literal_choice.rs\n?? hosts/gpu/tests/support/canonical_program_optimization.rs\n?? hosts/gpu/tests/support/canonical_program_writer_tables.rs\n",
+  "exit": 101,
+  "seconds": 46.16033101081848,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/writer-byte-append-missing.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

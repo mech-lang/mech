@@ -1,0 +1,182 @@
+[
+  {
+    "allocation_requests": 109844,
+    "artifact": "original",
+    "cache_words": 1500513,
+    "case": "eight-literals",
+    "depth": 300,
+    "elapsed_seconds": 11.702835499999999,
+    "input_bytes": 8,
+    "nice": 258,
+    "nodes_reservation": 305257,
+    "requested_bytes": 97481234,
+    "result": "Ok(NativeProgramExecutionReport { work: 29638212368, comparison_work: 175545612, visits: 17469, transport_bytes: 661496, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+    "tree_entries": 262144,
+    "witness": "connected-collector-and-path"
+  },
+  {
+    "allocation_requests": 134586,
+    "artifact": "original",
+    "cache_words": 1500513,
+    "case": "eight-overlap",
+    "depth": 300,
+    "elapsed_seconds": 13.719033416,
+    "input_bytes": 8,
+    "nice": 258,
+    "nodes_reservation": 305257,
+    "requested_bytes": 112684492,
+    "result": "Ok(NativeProgramExecutionReport { work: 29182969417, comparison_work: 211554992, visits: 18052, transport_bytes: 661496, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+    "tree_entries": 262144,
+    "witness": "connected-collector-and-path"
+  },
+  {
+    "allocation_requests": 109843,
+    "artifact": "decoded",
+    "cache_words": 1500513,
+    "case": "eight-literals",
+    "depth": 300,
+    "elapsed_seconds": 11.693782083,
+    "input_bytes": 8,
+    "nice": 258,
+    "nodes_reservation": 305257,
+    "requested_bytes": 97481170,
+    "result": "Ok(NativeProgramExecutionReport { work: 29638212368, comparison_work: 175545612, visits: 17469, transport_bytes: 661496, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+    "tree_entries": 262144,
+    "witness": "connected-collector-and-path"
+  },
+  {
+    "allocation_requests": 134586,
+    "artifact": "decoded",
+    "cache_words": 1500513,
+    "case": "eight-overlap",
+    "depth": 300,
+    "elapsed_seconds": 13.718365166,
+    "input_bytes": 8,
+    "nice": 258,
+    "nodes_reservation": 305257,
+    "requested_bytes": 112684492,
+    "result": "Ok(NativeProgramExecutionReport { work: 29182969417, comparison_work: 211554992, visits: 18052, transport_bytes: 661496, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+    "tree_entries": 262144,
+    "witness": "connected-collector-and-path"
+  },
+  {
+    "allocation_requests": 22088,
+    "artifact": "original",
+    "block_length": 0,
+    "case": "empty",
+    "elapsed_seconds": 0.022524209,
+    "requested_bytes": 6226737,
+    "result": "Ok(NativeProgramExecutionReport { work: 13098882031, comparison_work: 7, visits: 3668, transport_bytes: 53640, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+    "witness": "pinned-min-cost-path"
+  },
+  {
+    "allocation_requests": 35951,
+    "artifact": "original",
+    "block_length": 8,
+    "case": "eight-literals",
+    "elapsed_seconds": 0.03559225,
+    "requested_bytes": 27086036,
+    "result": "Ok(NativeProgramExecutionReport { work: 14946874169, comparison_work: 759, visits: 4924, transport_bytes: 53640, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+    "witness": "pinned-min-cost-path"
+  },
+  {
+    "allocation_requests": 48158,
+    "artifact": "original",
+    "block_length": 8,
+    "case": "eight-overlap",
+    "elapsed_seconds": 0.042758834,
+    "requested_bytes": 28789926,
+    "result": "Ok(NativeProgramExecutionReport { work: 15386617227, comparison_work: 1113, visits: 5496, transport_bytes: 53640, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+    "witness": "pinned-min-cost-path"
+  },
+  {
+    "allocation_requests": 514062,
+    "artifact": "original",
+    "block_length": 320,
+    "case": "320-overlap",
+    "elapsed_seconds": 0.569475,
+    "requested_bytes": 818236008,
+    "result": "Ok(NativeProgramExecutionReport { work: 95043452499, comparison_work: 39669, visits: 78614, transport_bytes: 53640, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+    "witness": "pinned-min-cost-path"
+  },
+  {
+    "allocation_requests": 514062,
+    "artifact": "original",
+    "block_length": 320,
+    "case": "320-tied-costs",
+    "elapsed_seconds": 0.568664333,
+    "requested_bytes": 818236008,
+    "result": "Ok(NativeProgramExecutionReport { work: 95042769235, comparison_work: 39669, visits: 77044, transport_bytes: 53640, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+    "witness": "pinned-min-cost-path"
+  },
+  {
+    "allocation_requests": 35950,
+    "artifact": "original",
+    "block_length": 8,
+    "case": "eight-wrapping-costs",
+    "elapsed_seconds": 0.035263958,
+    "requested_bytes": 27085972,
+    "result": "Ok(NativeProgramExecutionReport { work: 14946874169, comparison_work: 759, visits: 4924, transport_bytes: 53640, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+    "witness": "pinned-min-cost-path"
+  },
+  {
+    "allocation_requests": 22088,
+    "artifact": "decoded",
+    "block_length": 0,
+    "case": "empty",
+    "elapsed_seconds": 0.022470375,
+    "requested_bytes": 6226737,
+    "result": "Ok(NativeProgramExecutionReport { work: 13098882031, comparison_work: 7, visits: 3668, transport_bytes: 53640, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+    "witness": "pinned-min-cost-path"
+  },
+  {
+    "allocation_requests": 35950,
+    "artifact": "decoded",
+    "block_length": 8,
+    "case": "eight-literals",
+    "elapsed_seconds": 0.035432208,
+    "requested_bytes": 27085972,
+    "result": "Ok(NativeProgramExecutionReport { work: 14946874169, comparison_work: 759, visits: 4924, transport_bytes: 53640, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+    "witness": "pinned-min-cost-path"
+  },
+  {
+    "allocation_requests": 48158,
+    "artifact": "decoded",
+    "block_length": 8,
+    "case": "eight-overlap",
+    "elapsed_seconds": 0.042717,
+    "requested_bytes": 28789926,
+    "result": "Ok(NativeProgramExecutionReport { work: 15386617227, comparison_work: 1113, visits: 5496, transport_bytes: 53640, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+    "witness": "pinned-min-cost-path"
+  },
+  {
+    "allocation_requests": 514062,
+    "artifact": "decoded",
+    "block_length": 320,
+    "case": "320-overlap",
+    "elapsed_seconds": 0.569207,
+    "requested_bytes": 818236008,
+    "result": "Ok(NativeProgramExecutionReport { work: 95043452499, comparison_work: 39669, visits: 78614, transport_bytes: 53640, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+    "witness": "pinned-min-cost-path"
+  },
+  {
+    "allocation_requests": 514062,
+    "artifact": "decoded",
+    "block_length": 320,
+    "case": "320-tied-costs",
+    "elapsed_seconds": 0.569723708,
+    "requested_bytes": 818236008,
+    "result": "Ok(NativeProgramExecutionReport { work: 95042769235, comparison_work: 39669, visits: 77044, transport_bytes: 53640, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+    "witness": "pinned-min-cost-path"
+  },
+  {
+    "allocation_requests": 35950,
+    "artifact": "decoded",
+    "block_length": 8,
+    "case": "eight-wrapping-costs",
+    "elapsed_seconds": 0.035114333,
+    "requested_bytes": 27085972,
+    "result": "Ok(NativeProgramExecutionReport { work: 14946874169, comparison_work: 759, visits: 4924, transport_bytes: 53640, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+    "witness": "pinned-min-cost-path"
+  }
+]

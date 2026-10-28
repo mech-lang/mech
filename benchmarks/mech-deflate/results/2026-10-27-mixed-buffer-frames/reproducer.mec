@@ -1,0 +1,6 @@
++> sequence
+<entry> := <{length<u32> offset<u16> slot<u16>}>
+walk(bytes<[u8]>, entries<[entry]>, at<u64>) => (out<{bytes<[u8]>}>) :=
+  out := ((at < sequence/length(entries))? | true => walk(bytes, entries, at + 1u64) | false => {bytes: bytes}).
+written := walk(sequence/with-capacity(0u8, capacity<u64>), entries<[entry]>, 0u64)
+sequence/append(sequence/clear(written.bytes), 17u8)

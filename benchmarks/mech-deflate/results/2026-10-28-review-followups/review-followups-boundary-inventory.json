@@ -1,0 +1,22 @@
+{
+  "name": "review-followups-boundary-inventory",
+  "command": [
+    "sh",
+    "scripts/check-unsafe-boundaries.sh"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "8bbfa71d8b3e32fa9772a0e64c4cb3674dc93814",
+  "dirty": " M scripts/unsafe-boundaries.allowlist\n",
+  "exit": 0,
+  "seconds": 36.73170304298401,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/review-followups-boundary-inventory.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

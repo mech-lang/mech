@@ -1,0 +1,6 @@
+{
+  "src/engine/src/native_artifact/buffer_frames.rs": "20757e91994717a0cdb896e4ddea330dabad0bc43d4e6317888e3e0329b0c41d",
+  "hosts/gpu/src/native_artifact/program/image/identity.rs": "3d471f7b3664e6774a050ff3ebd94b8cb24bf126dd29ea24011277e37f5e562a",
+  "hosts/gpu/tests/support/canonical_program_record_buffers.rs": "93bf072bd4cff31993e72b04a8bac991f29ac18043434d610469b20fefaab088",
+  "hosts/gpu/tests/support/canonical_program_linked.rs": "59cc5ec705ce72d678bfecf4763666b547f42bb869f68e3a0b1486962d4c54cc"
+}

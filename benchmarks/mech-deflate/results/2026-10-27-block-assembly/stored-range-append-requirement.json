@@ -1,0 +1,14 @@
+{
+  "reference_pin": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "operation": "BlockOut.roc:603 List.append_sublist($out, input, { start: $in_next, len }) in stored-block path",
+  "observed_inventory": "Source admission rejects sequence/append-sublist with source-semantics/unknown-function. Existing sequence buffer catalog has no range append. See stored-range-append-admission.log.gz.",
+  "acceptance": [
+    "append source interval into existing destination reservation, preserving prefix and source aliases",
+    "real6633832 output reservation, sizes0/1/65535 and stored-block boundary65536",
+    "checked range arithmetic before mutation; explicit failure precedence; failure leaves prior published output unchanged",
+    "success-failure-retry and cleanup on same memory account",
+    "original/decoded resident/native plus linked agreement",
+    "allocation proof excludes a new whole output buffer or intermediate copied source slice on each append"
+  ],
+  "scope": "Generic range append only if executable witness confirms missing operation; no compressor-specific dispatch."
+}

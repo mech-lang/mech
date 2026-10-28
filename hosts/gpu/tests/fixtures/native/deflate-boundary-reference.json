@@ -1,0 +1,56 @@
+{
+  "cases": [
+    {
+      "name": "16384-distribution-change",
+      "input_bytes": 16384,
+      "input_sha256": "56a7af3beee008d646c71c1dc13ee34eadb7c508ff7626ff013a6d6366c79631",
+      "raw_bytes": 11394,
+      "raw_sha256": "9009624c8f27451b6182f638b4b4d88875748fa47b718ea6255e062904021ff0",
+      "blocks": [
+        {
+          "begin_bit": 0,
+          "end_bit": 33177,
+          "kind": 2,
+          "final": 0,
+          "input_begin": 0,
+          "input_end": 8146
+        },
+        {
+          "begin_bit": 33177,
+          "end_bit": 91146,
+          "kind": 2,
+          "final": 1,
+          "input_begin": 8146,
+          "input_end": 16384
+        }
+      ],
+      "input_fixture": "deflate-boundary-16384-distribution-change.input",
+      "deflate_fixture": "deflate-boundary-16384-distribution-change.deflate"
+    },
+    {
+      "name": "33027-periodic-window",
+      "input_bytes": 33027,
+      "input_sha256": "ba410bfa1c0373c33eaf835f083206f39f141fac72f721908dd6a191a5895d89",
+      "raw_bytes": 151,
+      "raw_sha256": "dbcf27a94a41ae084f5816f026fdda1df4e3c2dc67dc559d5ae1f7ee75fecdee",
+      "blocks": [
+        {
+          "begin_bit": 0,
+          "end_bit": 1204,
+          "kind": 2,
+          "final": 1,
+          "input_begin": 0,
+          "input_end": 33027
+        }
+      ],
+      "input_fixture": "deflate-boundary-33027-periodic-window.input",
+      "deflate_fixture": "deflate-boundary-33027-periodic-window.deflate"
+    }
+  ],
+  "producer_source_sha256": "6b527b326211955cf16933affb6a6457b77f3be0fc7f0cf099a3417c4fd063d2",
+  "binary_sha256": "4ebbf03927b820a02444e9e32e20a872ec8939b6bd92dba7efe5d1ca29248191",
+  "independent_decompression": "Python zlib raw inflate and system zlib Z_BLOCK",
+  "source_pin": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "compiler_pin": "d99c7b838fb05bb1047eb0c18d4d06d0f86f345d",
+  "source_hashes": "deflate-compress-reference.json:reference.package_source_sha256"
+}

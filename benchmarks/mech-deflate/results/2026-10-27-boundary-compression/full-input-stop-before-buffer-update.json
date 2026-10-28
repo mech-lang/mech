@@ -1,0 +1,8 @@
+{
+  "observed_utc": "2026-10-28T02:02:15Z",
+  "process": "53691 53680 02:39:30 159:11.04 143952  99.1 /private/tmp/mech-live-control-target/release/complete-reality",
+  "reason": "Stop impractical full-file attempt after measured16384-byte baseline3051.9263705seconds. Preserve baseline and logs; address measured generic packed indexed-update scanning/copying cost before retry. No complete full-file result claimed.",
+  "signal": "SIGTERM",
+  "protected_window_pid": 63344,
+  "previous_head": "5b34c8f69c1df7b433c3176f510d5c3d5005a795"
+}

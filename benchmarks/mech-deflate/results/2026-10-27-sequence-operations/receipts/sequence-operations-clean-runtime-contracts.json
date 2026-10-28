@@ -1,0 +1,35 @@
+{
+  "name": "sequence-operations-clean-runtime-contracts",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-engine",
+    "--no-default-features",
+    "--features",
+    "semantic-compiler,resident-artifact,sequence_buffers",
+    "--test",
+    "sequence_buffer_contract",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "2771d1c23109bcd480ec4fa16daa67bd0d2809fe",
+  "dirty": "",
+  "exit": 0,
+  "seconds": 0.8571481704711914,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/sequence-operations-clean-runtime-contracts.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

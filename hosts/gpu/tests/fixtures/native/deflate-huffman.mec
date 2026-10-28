@@ -1,0 +1,271 @@
+// Length-limited canonical Huffman construction for DEFLATE.
+// Port of libdeflate b122c8be1d78b19f6d0a6efc5bb79bfcbb30dd51,
+// following roc-deflate 671077457ff7ef3a3d44caf715a3fc595addf379.
+// Copyright 2016 Eric Biggers (MIT); Copyright 2024 Niclas Åhdén (Apache-2.0).
+// This Mech translation retains the counting sort, packed tree, tie breaking,
+// length limiting, and reversed canonical codewords. See deflate-huffman-LICENSES.md.
++> bits
+<words> := <[u32]:1,288>
+<lengths> := <[u8]:1,288>
+<counters> := <[u64]:1,288>
+<length-counts> := <[u64]:1,17>
+
+word(value<u32>) => (out<u64>) :=
+  out<u64> := value.
+packed(value<u64>) => (out<u32>) :=
+  out<u32> := bits/and(value, 4294967295u64).
+length-byte(value<u64>) => (out<u8>) :=
+  out<u8> := value.
+minimum(a<u64>, b<u64>) => (out<u64>) :=
+  out := ((a < b)? | true => a | false => b).
+tree-frequency(a<words>, at<u64>) => (out<u64>) :=
+  out := ((at < 288u64)? | true => bits/and(word(a[at + 1u64]), 4294966272u64) | false => 0u64).
+reverse-byte(value<u64>) => (out<u64>) :=
+  a := bits/or(bits/shift-right-wrap(value, 4u64), bits/and(bits/shift-left-wrap(value, 4u64), 255u64))
+  b := bits/or(bits/shift-right-wrap(bits/and(a, 204u64), 2u64), bits/shift-left-wrap(bits/and(a, 51u64), 2u64))
+  out := bits/or(bits/shift-right-wrap(bits/and(b, 170u64), 1u64), bits/shift-left-wrap(bits/and(b, 85u64), 1u64)).
+reverse-codeword(value<u64>, width<u64>) => (out<u32>) :=
+  low := reverse-byte(bits/and(value, 255u64))
+  high := reverse-byte(bits/shift-right-wrap(value, 8u64))
+  out := packed(bits/shift-right-wrap(bits/or(bits/shift-left-wrap(low, 8u64), high), 16u64 - width)).
+
+#CountSymbols(freqs<words>, n<u64>, counts<counters>) => <counters>
+  | :Loop(i<u64>, counts<counters>)
+  | :Done(counts<counters>).
+#CountSymbols(freqs, n, counts) -> :Loop(0u64, counts)
+  :Loop(i, counts)
+    | i < n -> {
+        slot := minimum(word(freqs[i + 1u64]), n - 1u64)
+        ~next := counts
+        next[slot + 1u64] = counts[slot + 1u64] + 1u64
+      } -> :Loop(i + 1u64, next)
+    | * -> :Done(counts)
+  :Done(counts) => counts.
+
+#Cumulative(counts<counters>, n<u64>) => <(counters,u64)>
+  | :Loop(i<u64>, used<u64>, counts<counters>)
+  | :Done(counts<counters>, used<u64>).
+#Cumulative(counts, n) -> :Loop(1u64, 0u64, counts)
+  :Loop(i, used, counts)
+    | i < n -> {
+        count := counts[i + 1u64]
+        ~next := counts
+        next[i + 1u64] = used
+      } -> :Loop(i + 1u64, used + count, next)
+    | * -> :Done(counts, used)
+  :Done(counts, used) => (counts, used).
+
+#PlaceSymbols(freqs<words>, n<u64>, counts<counters>, lens<lengths>, a<words>) => <(counters,lengths,words)>
+  | :Loop(i<u64>, counts<counters>, lens<lengths>, a<words>)
+  | :Done(counts<counters>, lens<lengths>, a<words>).
+#PlaceSymbols(freqs, n, counts, lens, a) -> :Loop(0u64, counts, lens, a)
+  :Loop(i, counts, lens, a)
+    | i >= n -> :Done(counts, lens, a)
+    | word(freqs[i + 1u64]) == 0u64 -> {
+        ~next-lens := lens
+        next-lens[i + 1u64] = 0u8
+      } -> :Loop(i + 1u64, counts, next-lens, a)
+    | * -> {
+        freq := word(freqs[i + 1u64])
+        slot := minimum(freq, n - 1u64)
+        at := counts[slot + 1u64]
+        ~next-counts := counts
+        ~next-a := a
+        next-counts[slot + 1u64] = at + 1u64
+        next-a[at + 1u64] = packed(bits/or(i, bits/shift-left-wrap(freq, 10u64)))
+      } -> :Loop(i + 1u64, next-counts, lens, next-a)
+  :Done(counts, lens, a) => (counts, lens, a).
+
+#Sift(a<words>, base<u64>, size<u64>, root<u64>) => <words>
+  | :Loop(a<words>, parent<u64>, value<u64>)
+  | :Compare(a<words>, parent<u64>, child<u64>, value<u64>)
+  | :Done(a<words>).
+#Sift(a, base, size, root) -> :Loop(a, root, word(a[base + root]))
+  :Loop(a, parent, value)
+    | parent * 2u64 > size -> {
+        ~next := a
+        next[base + parent] = packed(value)
+      } -> :Done(next)
+    | parent * 2u64 < size -> {
+        child := (word(a[base + parent * 2u64 + 1u64]) > word(a[base + parent * 2u64]))?
+          | true => parent * 2u64 + 1u64
+          | false => parent * 2u64.
+      } -> :Compare(a, parent, child, value)
+    | * -> :Compare(a, parent, parent * 2u64, value)
+  :Compare(a, parent, child, value)
+    | value >= word(a[base + child]) -> {
+        ~next := a
+        next[base + parent] = packed(value)
+      } -> :Done(next)
+    | * -> {
+        ~next := a
+        next[base + parent] = a[base + child]
+      } -> :Loop(next, child, value)
+  :Done(a) => a.
+
+#HeapBuild(a<words>, base<u64>, size<u64>) => <words>
+  | :Loop(a<words>, root<u64>)
+  | :Done(a<words>).
+#HeapBuild(a, base, size) -> :Loop(a, size / 2u64)
+  :Loop(a, root)
+    | root > 0u64 -> :Loop(#Sift(a, base, size, root), root - 1u64)
+    | * -> :Done(a)
+  :Done(a) => a.
+
+#HeapSort(a<words>, base<u64>, size<u64>) => <words>
+  | :Loop(a<words>, left<u64>)
+  | :Done(a<words>).
+#HeapSort(a, base, size) -> :Loop(#HeapBuild(a, base, size), size)
+  :Loop(a, left)
+    | left >= 2u64 -> {
+        first := a[base + 1u64]
+        last := a[base + left]
+        ~next := a
+        next[base + left] = first
+        next[base + 1u64] = last
+      } -> :Loop(#Sift(next, base, left - 1u64, 1u64), left - 1u64)
+    | * -> :Done(a)
+  :Done(a) => a.
+
+#BuildTree(a<words>, used<u64>) => <words>
+  | :Loop(a<words>, leaf<u64>, branch<u64>, built<u64>)
+  | :Choose(a<words>, leaf<u64>, branch<u64>, built<u64>, fi<u64>, fi1<u64>, fb<u64>, fb1<u64>)
+  | :Done(a<words>).
+#BuildTree(a, used) -> :Loop(a, 0u64, 0u64, 0u64)
+  :Loop(a, leaf, branch, built)
+    | built >= used - 1u64 -> :Done(a)
+    | * -> :Choose(a, leaf, branch, built, tree-frequency(a, leaf), tree-frequency(a, leaf + 1u64), tree-frequency(a, branch), tree-frequency(a, branch + 1u64))
+  :Choose(a, leaf, branch, built, fi, fi1, fb, fb1)
+    | leaf + 1u64 <= used - 1u64 && (branch == built || fi1 <= fb) -> {
+        ~next := a
+        next[built + 1u64] = packed(bits/or(bits/and(word(a[built + 1u64]), 1023u64), bits/and(fi + fi1, 4294967295u64)))
+      } -> :Loop(next, leaf + 2u64, branch, built + 1u64)
+    | branch + 2u64 <= built && (leaf > used - 1u64 || fb1 < fi) -> {
+        parent := bits/shift-left-wrap(built, 10u64)
+        ~next := a
+        next[branch + 1u64] = packed(bits/or(parent, bits/and(word(a[branch + 1u64]), 1023u64)))
+        next[branch + 2u64] = packed(bits/or(parent, bits/and(word(a[branch + 2u64]), 1023u64)))
+        next[built + 1u64] = packed(bits/or(bits/and(word(a[built + 1u64]), 1023u64), bits/and(fb + fb1, 4294967295u64)))
+      } -> :Loop(next, leaf, branch + 2u64, built + 1u64)
+    | * -> {
+        parent := bits/shift-left-wrap(built, 10u64)
+        ~next := a
+        next[branch + 1u64] = packed(bits/or(parent, bits/and(word(a[branch + 1u64]), 1023u64)))
+        next[built + 1u64] = packed(bits/or(bits/and(word(a[built + 1u64]), 1023u64), bits/and(fi + fb, 4294967295u64)))
+      } -> :Loop(next, leaf + 1u64, branch + 1u64, built + 1u64)
+  :Done(a) => a.
+
+#ClampDepth(counts<length-counts>, depth<u64>) => <u64>
+  | :Loop(depth<u64>)
+  | :Done(depth<u64>).
+#ClampDepth(counts, depth) -> :Loop(depth - 1u64)
+  :Loop(depth)
+    | counts[depth + 1u64] != 0u64 -> :Done(depth)
+    | * -> :Loop(depth - 1u64)
+  :Done(depth) => depth.
+
+#LengthCounts(a<words>, root<u64>, maximum<u64>, counts<length-counts>) => <(words,length-counts)>
+  | :Start(a<words>, counts<length-counts>)
+  | :Loop(a<words>, counts<length-counts>, node-plus-one<u64>)
+  | :Done(a<words>, counts<length-counts>).
+#LengthCounts(a, root, maximum, counts) -> :Start(a, counts)
+  :Start(a, counts) -> {
+      ~next-a := a
+      ~next-counts := counts
+      next-a[root + 1u64] = packed(bits/and(word(a[root + 1u64]), 1023u64))
+      next-counts[2u64] = 2u64
+    } -> :Loop(next-a, next-counts, root)
+  :Loop(a, counts, node-plus-one)
+    | node-plus-one == 0u64 -> :Done(a, counts)
+    | * -> {
+        entry := word(a[node-plus-one])
+        parent := bits/shift-right-wrap(entry, 10u64)
+        depth := bits/shift-right-wrap(word(a[parent + 1u64]), 10u64) + 1u64
+        effective := (depth >= maximum)?
+          | true => #ClampDepth(counts, maximum)
+          | false => depth.
+        ~next-a := a
+        ~next-counts := counts
+        next-a[node-plus-one] = packed(bits/or(bits/and(entry, 1023u64), bits/shift-left-wrap(depth, 10u64)))
+        next-counts[effective + 1u64] = counts[effective + 1u64] - 1u64
+        next-counts[effective + 2u64] = counts[effective + 2u64] + 2u64
+      } -> :Loop(next-a, next-counts, node-plus-one - 1u64)
+  :Done(a, counts) => (a, counts).
+
+#AssignLengths(a<words>, lens<lengths>, counts<length-counts>, maximum<u64>) => <lengths>
+  | :Length(lens<lengths>, width<u64>, i<u64>)
+  | :Symbols(lens<lengths>, width<u64>, i<u64>, left<u64>)
+  | :Done(lens<lengths>).
+#AssignLengths(a, lens, counts, maximum) -> :Length(lens, maximum, 0u64)
+  :Length(lens, width, i)
+    | width == 0u64 -> :Done(lens)
+    | * -> :Symbols(lens, width, i, counts[width + 1u64])
+  :Symbols(lens, width, i, left)
+    | left == 0u64 -> :Length(lens, width - 1u64, i)
+    | * -> {
+        sym := bits/and(word(a[i + 1u64]), 1023u64)
+        ~next := lens
+        next[sym + 1u64] = length-byte(width)
+      } -> :Symbols(next, width, i + 1u64, left - 1u64)
+  :Done(lens) => lens.
+
+#NextCodes(counts<length-counts>, maximum<u64>, codes<length-counts>) => <length-counts>
+  | :Loop(codes<length-counts>, width<u64>)
+  | :Done(codes<length-counts>).
+#NextCodes(counts, maximum, codes) -> :Loop(codes, 2u64)
+  :Loop(codes, width)
+    | width > maximum -> :Done(codes)
+    | * -> {
+        ~next := codes
+        next[width + 1u64] = bits/shift-left-wrap(codes[width] + counts[width], 1u64)
+      } -> :Loop(next, width + 1u64)
+  :Done(codes) => codes.
+
+#GenerateCodes(a<words>, lens<lengths>, codes<length-counts>, n<u64>) => <words>
+  | :Loop(a<words>, codes<length-counts>, sym<u64>)
+  | :Done(a<words>).
+#GenerateCodes(a, lens, codes, n) -> :Loop(a, codes, 0u64)
+  :Loop(a, codes, sym)
+    | sym >= n -> :Done(a)
+    | * -> {
+        width<u64> := lens[sym + 1u64]
+        code := codes[width + 1u64]
+        ~next-a := a
+        ~next-codes := codes
+        next-a[sym + 1u64] = reverse-codeword(code, width)
+        next-codes[width + 1u64] = code + 1u64
+      } -> :Loop(next-a, next-codes, sym + 1u64)
+  :Done(a) => a.
+
+#MakeHuffman(freqs<words>, n<u64>, maximum<u64>, counts<counters>, lens<lengths>, a<words>, lengths-zero<length-counts>) => <(lengths,words)>
+  | :Start(counts<counters>, lens<lengths>, a<words>)
+  | :Sorted(used<u64>, lens<lengths>, a<words>)
+  | :Done(lens<lengths>, a<words>).
+#MakeHuffman(freqs, n, maximum, counts, lens, a, lengths-zero) -> :Start(counts, lens, a)
+  :Start(counts, lens, a) -> {
+      counted := #CountSymbols(freqs, n, counts)
+      (cumulative, used) := #Cumulative(counted, n)
+      (placed, next-lens, next-a) := #PlaceSymbols(freqs, n, cumulative, lens, a)
+      base := ((used < 2u64)? | true => 0u64 | false => placed[n - 1u64])
+      size := ((used < 2u64)? | true => 0u64 | false => placed[n] - base)
+      sorted := ((used < 2u64)? | true => next-a | false => #HeapSort(next-a, base, size))
+    } -> :Sorted(used, next-lens, sorted)
+  :Sorted(used, lens, a)
+    | used < 2u64 -> {
+        sym := (used == 1u64)? | true => bits/and(word(a[1u64]), 1023u64) | false => 0u64.
+        nonzero := (sym == 0u64)? | true => 1u64 | false => sym.
+        ~next-a := a
+        ~next-lens := lens
+        next-a[1u64] = 0u32
+        next-lens[1u64] = 1u8
+        next-a[nonzero + 1u64] = 1u32
+        next-lens[nonzero + 1u64] = 1u8
+      } -> :Done(next-lens, next-a)
+    | * -> {
+        tree := #BuildTree(a, used)
+        (depths, length-counts) := #LengthCounts(tree, used - 2u64, maximum, lengths-zero)
+        next-lens := #AssignLengths(depths, lens, length-counts, maximum)
+        codes := #NextCodes(length-counts, maximum, lengths-zero)
+        next-a := #GenerateCodes(depths, next-lens, codes, n)
+      } -> :Done(next-lens, next-a)
+  :Done(lens, a) => (lens, a).

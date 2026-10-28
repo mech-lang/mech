@@ -1,0 +1,23 @@
+{
+  "name": "deflate-comparison-static",
+  "command": [
+    "python3",
+    "-c",
+    "import pathlib,subprocess,py_compile; root=pathlib.Path(\"benchmarks/mech-deflate/comparison\"); py_compile.compile(str(root/\"run.py\"),doraise=True); subprocess.run([\"cargo\",\"fmt\",\"--manifest-path\",str(root/\"rust/Cargo.toml\"),\"--\",\"--check\"],check=True); subprocess.run([\"git\",\"diff\",\"--check\"],check=True); print(\"Python syntax, standalone Rust formatting, and diff checks pass\")"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "a82d50823e4140edd862886b0c6b5f813a81411c",
+  "dirty": "?? benchmarks/mech-deflate/comparison/\n?? benchmarks/mech-deflate/results/2026-10-28-compressor-comparison/\n",
+  "exit": 0,
+  "seconds": 0.1002197265625,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/deflate-comparison-static.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

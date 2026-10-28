@@ -1,0 +1,37 @@
+{
+  "name": "full-block-first-eight",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "canonical-native-program",
+    "--test",
+    "canonical_artifact_program",
+    "--",
+    "full_block_qualification::real_buffer_first_block_collects_all_eight_literals",
+    "--exact",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-reality-check",
+  "head": "96f59a9a22a100e7169bee8167d02cca07ac99ef",
+  "dirty": " M hosts/gpu/tests/canonical_artifact_program.rs\n?? hosts/gpu/tests/fixtures/native/deflate-block-heuristics.mec\n?? hosts/gpu/tests/fixtures/native/deflate-block-loop.mec\n?? hosts/gpu/tests/support/canonical_program_full_block.rs\n",
+  "exit": 101,
+  "seconds": 63.31345820426941,
+  "log": "/private/tmp/mech-stack-landscape-20261026/reality-check/full-block-first-eight.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

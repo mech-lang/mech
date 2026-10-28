@@ -13,7 +13,11 @@ use std::{cell::RefCell, rc::Rc};
 
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 #[path = "text_index_snapshot.rs"]
 pub(in crate::resident) mod snapshot;
@@ -504,7 +508,11 @@ pub(super) fn prepared_snapshot(value: &mech_core::Value) -> Result<IndexUse, Re
     };
     #[cfg(all(
         feature = "native-artifact",
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     ))]
     if let Some(result) = budget::native_turn_plan_cache::prepared_snapshot_index(value) {
         return result;

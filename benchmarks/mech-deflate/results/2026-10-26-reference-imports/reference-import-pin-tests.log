@@ -1,0 +1,8 @@
+test_all_pinned_sources_are_returned_and_generated_apps_are_not_inputs (test_deflate_block_reference_pin.BlockReferencePinTests.test_all_pinned_sources_are_returned_and_generated_apps_are_not_inputs) ... ok
+test_missing_transitive_dependency_is_rejected (test_deflate_block_reference_pin.BlockReferencePinTests.test_missing_transitive_dependency_is_rejected) ... ok
+test_primary_and_transitive_dependency_changes_are_rejected (test_deflate_block_reference_pin.BlockReferencePinTests.test_primary_and_transitive_dependency_changes_are_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.657s
+
+OK

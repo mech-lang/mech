@@ -11,6 +11,49 @@ pub enum NativeScalarValue {
     U64(u64),
     I64(i64),
     F64(mech_core::snapshot::F64Bits),
+    U8(u8),
+    U16(u16),
+    U32(u32),
+}
+
+impl NativeScalarValue {
+    pub const fn kind(self) -> NativeScalarKind {
+        match self {
+            Self::Bool(_) => NativeScalarKind::Bool,
+            Self::U8(_) => NativeScalarKind::U8,
+            Self::U16(_) => NativeScalarKind::U16,
+            Self::U32(_) => NativeScalarKind::U32,
+            Self::U64(_) => NativeScalarKind::U64,
+            Self::I64(_) => NativeScalarKind::I64,
+            Self::F64(_) => NativeScalarKind::F64,
+        }
+    }
+    pub const fn to_bits(self) -> u64 {
+        match self {
+            Self::Bool(value) => value as u64,
+            Self::U8(value) => value as u64,
+            Self::U16(value) => value as u64,
+            Self::U32(value) => value as u64,
+            Self::U64(value) => value,
+            Self::I64(value) => value as u64,
+            Self::F64(value) => value.bits(),
+        }
+    }
+    /// Reject out-of-range transport words instead of truncating them.
+    pub fn from_bits(kind: NativeScalarKind, bits: u64) -> Option<Self> {
+        if !kind.accepts_bits(bits) {
+            return None;
+        }
+        Some(match kind {
+            NativeScalarKind::Bool => Self::Bool(bits != 0),
+            NativeScalarKind::U8 => Self::U8(bits as u8),
+            NativeScalarKind::U16 => Self::U16(bits as u16),
+            NativeScalarKind::U32 => Self::U32(bits as u32),
+            NativeScalarKind::U64 => Self::U64(bits),
+            NativeScalarKind::I64 => Self::I64(bits as i64),
+            NativeScalarKind::F64 => Self::F64(mech_core::snapshot::F64Bits::from_bits(bits)),
+        })
+    }
 }
 
 /// An artifact value identity. A local is evaluated by its one ordered Let;

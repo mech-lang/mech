@@ -1,0 +1,14 @@
+{
+  "observed_utc": "2026-10-28T02:18:13Z",
+  "jobs": [
+    {
+      "pid": 53691,
+      "status": "not_running"
+    },
+    {
+      "pid": 63344,
+      "status": "not_running"
+    }
+  ],
+  "remaining_native_compression_jobs": []
+}

@@ -1,0 +1,7 @@
+{
+  "hosts/gpu/tests/fixtures/native/deflate-block-heuristics.mec": "4f4491dc7d100373788bf777e6798fdb03251ae6ea81874be00721910c2c12d8",
+  "hosts/gpu/tests/fixtures/native/deflate-block-loop.mec": "c2a35cff5cb4437fc077f68ebd320efe1dbf48e3373697e3bc7a509333c61694",
+  "hosts/gpu/tests/fixtures/native/deflate-block-reference.json": "642384b8b423e4846ee25f027b7412f656957bbe5b909ad5bb94ab933de40411",
+  "hosts/gpu/tests/support/canonical_program_full_block.rs": "701068bff3fa1130eee664861bb2dc82afd598346046812ea13e1e7a4eba084b",
+  "benchmarks/mech-deflate/matchfinder/generate_block_reference.py": "fd920fa51fcc9deb709b602c834e46fb8763d0c8afddd27a0583f9c2ee2a738e"
+}

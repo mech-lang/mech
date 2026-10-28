@@ -1,0 +1,6 @@
+{
+  "hosts/gpu/tests/fixtures/native/deflate-stored-writer.mec": "450768eba97cd33672bf8d716e9929b3756640722f5ea48ef17edd0c2d081f7f",
+  "hosts/gpu/tests/fixtures/native/deflate-stored-writer-reference.json": "ec74a4f15b94ca1119630fd94f120ab2e2188c0e9f654d5b53f1c1d622322e3e",
+  "hosts/gpu/tests/support/canonical_program_stored_writer.rs": "b6917cb2c20ea5cd1ec2828749e7ab603f4e1a838e08a74481b6728bc0a65eb2",
+  "benchmarks/mech-deflate/matchfinder/generate_stored_writer_reference.py": "3dbfe353158fa890a1673c3194183fa576e018d5698759443a3bafff8509bc66"
+}

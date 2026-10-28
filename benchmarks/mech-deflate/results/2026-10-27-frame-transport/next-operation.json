@@ -1,0 +1,39 @@
+{
+  "source_revision": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "file": "package/CompressOptimal.roc",
+  "requirement": "PathResult returns the reserved U64 node buffer in a record; the caller reuses that same capacity across parsing passes and blocks.",
+  "lines": {
+    "PathResult": 394,
+    "clear_nodes_at_entry": 429,
+    "return_record": 506,
+    "reserve_once": 720,
+    "reuse": [
+      1000,
+      1062,
+      1158,
+      1182
+    ]
+  },
+  "reproducer": "record-return-capacity.mec",
+  "native_observation": {
+    "capacity_in": 305257,
+    "capacity_out": 8,
+    "contents": [
+      17
+    ]
+  },
+  "clean_parent_reproduction": {
+    "head": "851507304181308ddbadcd96bec24859e8deeed4",
+    "tracked_clean": true,
+    "receipt": "frame-transport-parent-record-return-negative",
+    "cases": 4,
+    "expected_rejections": {
+      "u64_capacity_in": 305257,
+      "u64_capacity_out": 8,
+      "u8_capacity_in": 6633832,
+      "u8_capacity_out": 64
+    },
+    "all_contents_and_cleanup_pass": true
+  },
+  "classification": "inherited; identical native values, lost capacities and allocation totals on clean parent and current code"
+}

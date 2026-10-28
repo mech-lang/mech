@@ -1,0 +1,47 @@
+{
+  "base": "d441c97caa2dcf116d335d9cb8a384f49953fa51",
+  "native_program_ir": 115,
+  "design": {
+    "contract": "Four inputs: packed unsigned destination/source of identical element kind plus U64 start/count. Source and artifact validation share the maintained declaration.",
+    "range": "Clamp start then count; check destination length/capacity before allocation. Empty range preserves matching destination owner.",
+    "resident": "Borrow and measure source range, admit destination and coexistence, construct a staged candidate and publish only after success.",
+    "native": "Same-plan ownership proof names destination and borrowed input. Borrow source before retiring eligible destination slots. Existing uniqueness check chooses reuse or immutable copy. Charge source bytes actually copied; reserve destination once; one contiguous extend.",
+    "linkage": "Maintained four-argument runtime factory and selected resident factory; typed IR115 invalidates prior native images."
+  },
+  "validation": {
+    "engine": "9 passed,0filtered,1.17s tests,77.51s including build; full_source,native-artifact,sequence_buffers",
+    "native_witness": "3 passed,.58s execution; original/decoded all4 unsigned widths,clamping,U64MAX,self alias,empty identity,real reservation,65535/65536 copies,denial/publication/retry/cleanup",
+    "static": "Four architecture/catalog checks pass;CI inventory[];format and diff pass",
+    "host_and_linked": "15 passed,335 filtered,88.37s tests,573.05s including rebuild;canonical-native-program. Includes real-reservation linked valid\u2192invalid\u2192valid assertion/publication/recovery.",
+    "unique_maintained_tests": 24
+  },
+  "measurements": {
+    "small_reservation": 512,
+    "real_reservation": 6633832,
+    "requests_both_sizes": 213,
+    "bytes_small": 24570,
+    "bytes_real": 6657890,
+    "difference": 6633320,
+    "range65536_seconds": [
+      0.000285833,
+      0.000233959,
+      0.000275834,
+      0.000255292
+    ],
+    "timing_boundary": "Unoptimized JIT evaluate_into including creation of output reservation; excludes input setup, compilation and checking. Not compression timing."
+  },
+  "failures": {
+    "parent": "Acceptance rejects source unknown-function, fixed by maintained operation registration.",
+    "incomplete_initial_patch": "Exhaustive matches/missing new variant and unused compatibility wrapper caught during check; completed or removed without weakening warnings-as-errors.",
+    "native_first_execution": "Introduced missing resident catalog install caused MissingSemanticWitness; added concrete factory install, no witness bypass.",
+    "process_inspection": "Read-only ps denied in restricted execution, succeeded with authorized escalation; compiler was using97.5%CPU, not stalled.",
+    "minimal_native_artifact_feature_profile": "Previously assigned inherited uniform_word_collection.rs primitive feature-gate failure; untouched and not rerun."
+  },
+  "not_claimed": [
+    "Complete compressor",
+    "Complete stream bytes/decompression",
+    "Compression benchmark",
+    "Green remote CI",
+    "Full workspace suite"
+  ]
+}

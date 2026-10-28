@@ -1,0 +1,9 @@
+{
+  "maintained_file": "hosts/gpu/tests/support/canonical_program_argument_transport.rs",
+  "prefix_ends_before": "unused_unsigned_buffer_argument_keeps_its_check_before_caller_arithmetic",
+  "sha256": "d72e19a7facf59bac03aede99a94258d3abf013c4f3d70fce7c3d61d2a7aa297",
+  "exact_bytes_match": true,
+  "permanent_full_qualification_executes_all_original_tests": true,
+  "saved_exact_source": "development-consumer-argument-test.rs.txt.gz",
+  "compressed_sha256": "c39544d4cb1fa5c761ea2607533ad81bb4015570db7dee84be35cf33db461272"
+}

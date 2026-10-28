@@ -1,0 +1,8 @@
+{
+  "hosts/gpu/tests/fixtures/native/deflate-path-writer-reference.json": "c36aa3596824951edc552273fcd5ff2a7e017d85baaae3a33597b70a6af0b7c1",
+  "hosts/gpu/tests/fixtures/native/deflate-path-writer.mec": "a580428b40395445d723c73bf70132bcc882227c724b64ef9b9a94dfa6b27d90",
+  "hosts/gpu/tests/fixtures/native/deflate-sequence-writer-reference.json": "8418d45df72ea76f2639bf83ceb13ea1679ec2db74388c62c8653f960c4cffca",
+  "hosts/gpu/tests/fixtures/native/deflate-sequence-writer.mec": "e77b6260ba89d026c17825d859bbdcb46deb29727835b692e1dd2ac4d1272100",
+  "hosts/gpu/tests/support/canonical_program_path_writer.rs": "d6201a247c69eddef9e95a6903e1d63ba0ef67b29ec03fcd733c6f5e4a78f3a7",
+  "hosts/gpu/tests/support/canonical_program_sequence_writer.rs": "91664313d220eeb983e77f20ac339b75b01943e53011d209e3b3fc2268c7b695"
+}

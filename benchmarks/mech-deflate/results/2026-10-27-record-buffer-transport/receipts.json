@@ -1,0 +1,695 @@
+[
+  {
+    "name": "record-transport-ci-inventory-configured",
+    "command": [
+      "/private/tmp/mech-assertion-ci-python/bin/python",
+      "-c",
+      "import sys; sys.path.insert(0,\"scripts\"); from ci_test_inventory import inventory_gaps; gaps=inventory_gaps(); print({\"gaps\":gaps,\"count\":len(gaps)}); assert not gaps"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "6903862d4ef979c5ba7de9c4f331b1dba4f8cdb1",
+    "dirty": "?? benchmarks/mech-deflate/results/2026-10-27-record-buffer-transport/\n",
+    "exit": 0,
+    "seconds": 8.722753763198853,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-ci-inventory-configured.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "68b90a7cb54582f944ba391600a3bb368bb9cc402fc3a9519831e5553b458d29"
+  },
+  {
+    "name": "record-transport-ci-inventory",
+    "command": [
+      "python3",
+      "-c",
+      "import sys; sys.path.insert(0,\"scripts\"); from ci_test_inventory import inventory_gaps; gaps=inventory_gaps(); print({\"gaps\":gaps,\"count\":len(gaps)}); assert not gaps"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "6903862d4ef979c5ba7de9c4f331b1dba4f8cdb1",
+    "dirty": "?? benchmarks/mech-deflate/results/2026-10-27-record-buffer-transport/\n",
+    "exit": 1,
+    "seconds": 0.054357051849365234,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-ci-inventory.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "eb326f70cc29601d8b8187395f82f531d3b9f7f04bc34fb294ea0bb59f3803fc"
+  },
+  {
+    "name": "record-transport-final-components-linked-layout",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "-j1",
+      "-p",
+      "mech-gpu",
+      "--no-default-features",
+      "--features",
+      "canonical-native-program",
+      "--lib",
+      "--test",
+      "canonical_artifact_program",
+      "--",
+      "collection_qualification",
+      "range_cursor_qualification",
+      "narrow_word_qualification",
+      "recursive_statement_qualification",
+      "dynamic_projection_qualification",
+      "argument_transport_qualification",
+      "nested_tail_qualification",
+      "local_buffer_qualification",
+      "dynamic_buffer_qualification",
+      "huffman_qualification",
+      "matchfinder_qualification",
+      "binary_tree_qualification",
+      "lexical_invariant_qualification",
+      "packed_field_qualification",
+      "packed_update_qualification",
+      "shared_transport_qualification",
+      "binding_pressure_qualification",
+      "uniform_words_qualification",
+      "unsigned_length_qualification",
+      "record_word_qualification",
+      "block_statistics_qualification",
+      "collector_qualification",
+      "word_read_qualification",
+      "function_broadcast_qualification",
+      "sequence_capacity_qualification",
+      "linked_buffer_lifecycle",
+      "buffer_frame_qualification",
+      "linked_recursive_buffer_frame",
+      "native_runtime_consolidation_preserves_the_charged_layout_envelope",
+      "record_buffer_qualification",
+      "linked_record_buffer_return",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "6903862d4ef979c5ba7de9c4f331b1dba4f8cdb1",
+    "dirty": "",
+    "exit": 0,
+    "seconds": 739.0000548362732,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-final-components-linked-layout.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "ad6d92513263bca485e11225965429d9421cdb89c41a33535f57b24a4a67cdc9"
+  },
+  {
+    "name": "record-transport-final-format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "1de0ee88e9bb882d5dddbfbc1ae4b864f51cddc7",
+    "dirty": " M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/buffer_frames.rs\n M hosts/gpu/tests/canonical_artifact_program.rs\n M hosts/gpu/tests/support/canonical_program_linked.rs\n M src/engine/src/native_artifact/buffer_frames.rs\n M src/engine/src/resident/general/native_collection_buffer_frames.rs\n?? hosts/gpu/tests/support/canonical_program_record_buffers.rs\n",
+    "exit": 0,
+    "seconds": 6.240466117858887,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-final-format.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "record-transport-first-acceptance-fixed",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "-j1",
+      "--manifest-path",
+      "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+      "pending_record_return",
+      "--",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "1de0ee88e9bb882d5dddbfbc1ae4b864f51cddc7",
+    "dirty": " M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/buffer_frames.rs\n M src/engine/src/native_artifact/buffer_frames.rs\n M src/engine/src/resident/general/native_collection_buffer_frames.rs\n",
+    "exit": 0,
+    "seconds": 12.025445938110352,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-first-acceptance-fixed.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "b00bf12d8254540c852f706c24ecfc072213658a1b495f507dff449c09fd603e"
+  },
+  {
+    "name": "record-transport-first-acceptance",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "-j1",
+      "--manifest-path",
+      "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+      "pending_record_return",
+      "--",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "1de0ee88e9bb882d5dddbfbc1ae4b864f51cddc7",
+    "dirty": " M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/buffer_frames.rs\n M src/engine/src/native_artifact/buffer_frames.rs\n M src/engine/src/resident/general/native_collection_buffer_frames.rs\n",
+    "exit": 101,
+    "seconds": 36.00647187232971,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-first-acceptance.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "6e1e686c68f382de819eb609d46bd198165cd485428566b6e1eeb9b30a17712e"
+  },
+  {
+    "name": "record-transport-format-check",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "6903862d4ef979c5ba7de9c4f331b1dba4f8cdb1",
+    "dirty": "?? benchmarks/mech-deflate/results/2026-10-27-record-buffer-transport/\n",
+    "exit": 0,
+    "seconds": 6.514143943786621,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-format-check.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "record-transport-format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "1de0ee88e9bb882d5dddbfbc1ae4b864f51cddc7",
+    "dirty": " M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/buffer_frames.rs\n M hosts/gpu/tests/canonical_artifact_program.rs\n M hosts/gpu/tests/support/canonical_program_linked.rs\n M src/engine/src/native_artifact/buffer_frames.rs\n M src/engine/src/resident/general/native_collection_buffer_frames.rs\n?? hosts/gpu/tests/support/canonical_program_record_buffers.rs\n",
+    "exit": 0,
+    "seconds": 6.450337648391724,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-format.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "record-transport-host-catalog",
+    "command": [
+      "python3",
+      "scripts/check-native-host-catalog.py"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "6903862d4ef979c5ba7de9c4f331b1dba4f8cdb1",
+    "dirty": "",
+    "exit": 0,
+    "seconds": 0.5625059604644775,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-host-catalog.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "135d8d7c62321d33d72c4738d1dc093d1285a57b9b0664c36d98d3adec3f1324"
+  },
+  {
+    "name": "record-transport-minimal-plan",
+    "command": [
+      "env",
+      "MECH_DUMP_PLAN=1",
+      "cargo",
+      "run",
+      "--locked",
+      "--offline",
+      "-j1",
+      "--manifest-path",
+      "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+      "--",
+      "benchmarks/mech-deflate/results/2026-10-27-frame-transport/record-return-capacity.mec"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "1de0ee88e9bb882d5dddbfbc1ae4b864f51cddc7",
+    "dirty": "",
+    "exit": 0,
+    "seconds": 2.4382882118225098,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-minimal-plan.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "5478c585d75c5da86d23128525245cdefe23c97134d2a5be5214ff61535d9583"
+  },
+  {
+    "name": "record-transport-native-analysis-layout",
+    "command": [
+      "python3",
+      "scripts/check-native-build-analysis-layout.py"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "6903862d4ef979c5ba7de9c4f331b1dba4f8cdb1",
+    "dirty": "",
+    "exit": 0,
+    "seconds": 0.026182889938354492,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-native-analysis-layout.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "00649b86acc05f7f89cf4e669f080956be7078f8be25671a44ef1482476ccef9"
+  },
+  {
+    "name": "record-transport-native-only-engine",
+    "command": [
+      "cargo",
+      "check",
+      "--locked",
+      "--offline",
+      "-j1",
+      "-p",
+      "mech-engine",
+      "--no-default-features",
+      "--features",
+      "native-artifact,sequence_buffers",
+      "--lib"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "6903862d4ef979c5ba7de9c4f331b1dba4f8cdb1",
+    "dirty": "",
+    "exit": 0,
+    "seconds": 7.812056064605713,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-native-only-engine.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "d079e0e1b647717698d65ab87b36eb7a136941bde78a6e858a8d6c81622c235e"
+  },
+  {
+    "name": "record-transport-recursive-and-real-trace",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "-j1",
+      "--manifest-path",
+      "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+      "--",
+      "record_buffer_qualification",
+      "real_buffer_collector_prefix_carries",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "1de0ee88e9bb882d5dddbfbc1ae4b864f51cddc7",
+    "dirty": " M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/buffer_frames.rs\n M hosts/gpu/tests/canonical_artifact_program.rs\n M src/engine/src/native_artifact/buffer_frames.rs\n M src/engine/src/resident/general/native_collection_buffer_frames.rs\n?? hosts/gpu/tests/support/canonical_program_record_buffers.rs\n",
+    "exit": 0,
+    "seconds": 88.20057392120361,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-recursive-and-real-trace.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "060bc4df8a16d5a204564a54856b7dde39aba4dae3ac71c799dd2a8d6e54796a"
+  },
+  {
+    "name": "record-transport-recursive-first",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "-j1",
+      "--manifest-path",
+      "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+      "record_buffer_qualification",
+      "--",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "1de0ee88e9bb882d5dddbfbc1ae4b864f51cddc7",
+    "dirty": " M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/buffer_frames.rs\n M hosts/gpu/tests/canonical_artifact_program.rs\n M src/engine/src/native_artifact/buffer_frames.rs\n M src/engine/src/resident/general/native_collection_buffer_frames.rs\n?? hosts/gpu/tests/support/canonical_program_record_buffers.rs\n",
+    "exit": 101,
+    "seconds": 2.47514009475708,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-recursive-first.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "376fbb69f0dae836cb04a321be4b164bcd075e3b9ccf979dbdecb605549b1b17"
+  },
+  {
+    "name": "record-transport-recursive-fixed-and-real-trace",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "-j1",
+      "--manifest-path",
+      "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+      "record_buffer_qualification",
+      "real_buffer_collector_prefix_carries",
+      "--",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "1de0ee88e9bb882d5dddbfbc1ae4b864f51cddc7",
+    "dirty": " M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/buffer_frames.rs\n M hosts/gpu/tests/canonical_artifact_program.rs\n M src/engine/src/native_artifact/buffer_frames.rs\n M src/engine/src/resident/general/native_collection_buffer_frames.rs\n?? hosts/gpu/tests/support/canonical_program_record_buffers.rs\n",
+    "exit": 1,
+    "seconds": 0.01717686653137207,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-recursive-fixed-and-real-trace.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "d1fe9604ad43e2da44d78cdefbd9bdbdf34bf61526c6d4a82f71bfcb5ff6c3e5"
+  },
+  {
+    "name": "record-transport-recursive-plan",
+    "command": [
+      "env",
+      "MECH_DUMP_PLAN=1",
+      "cargo",
+      "run",
+      "--locked",
+      "--offline",
+      "-j1",
+      "--manifest-path",
+      "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+      "--",
+      "/private/tmp/mech-linear-restack-20261026/record-recursive-capacity.mec",
+      "305257",
+      "--native-only"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "1de0ee88e9bb882d5dddbfbc1ae4b864f51cddc7",
+    "dirty": " M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/buffer_frames.rs\n M hosts/gpu/tests/canonical_artifact_program.rs\n M src/engine/src/native_artifact/buffer_frames.rs\n M src/engine/src/resident/general/native_collection_buffer_frames.rs\n?? hosts/gpu/tests/support/canonical_program_record_buffers.rs\n",
+    "exit": 0,
+    "seconds": 2.064232349395752,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-recursive-plan.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "65ce3a2de5930d2bef4884762f16c64ef26b19b6357f033e85f7d3a5554ddd5a"
+  },
+  {
+    "name": "record-transport-resident-routing",
+    "command": [
+      "python3",
+      "scripts/check-production-resident-routing.py"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "6903862d4ef979c5ba7de9c4f331b1dba4f8cdb1",
+    "dirty": "",
+    "exit": 0,
+    "seconds": 0.24650311470031738,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-resident-routing.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "6037dec83ee3d62591bdad44e790f830bb52fd5648a265e477742eb2439ede74"
+  },
+  {
+    "name": "record-transport-runtime-only-engine",
+    "command": [
+      "cargo",
+      "check",
+      "--locked",
+      "--offline",
+      "-j1",
+      "-p",
+      "mech-engine",
+      "--no-default-features",
+      "--features",
+      "sequence_buffers",
+      "--lib"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "6903862d4ef979c5ba7de9c4f331b1dba4f8cdb1",
+    "dirty": "?? benchmarks/mech-deflate/results/2026-10-27-record-buffer-transport/\n",
+    "exit": 0,
+    "seconds": 0.18317103385925293,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-runtime-only-engine.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "40108eb5c2e432741fc7f36afdf5c793ec02b19e7b1ce5e51bdd2ba377bd26cb"
+  },
+  {
+    "name": "record-transport-runtime-only-gpu",
+    "command": [
+      "cargo",
+      "check",
+      "--locked",
+      "--offline",
+      "-j1",
+      "-p",
+      "mech-gpu",
+      "--no-default-features",
+      "--features",
+      "canonical-native-program-runtime",
+      "--lib"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "6903862d4ef979c5ba7de9c4f331b1dba4f8cdb1",
+    "dirty": "?? benchmarks/mech-deflate/results/2026-10-27-record-buffer-transport/\n",
+    "exit": 0,
+    "seconds": 11.248199224472046,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-runtime-only-gpu.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "ce07f589ea8f2d122cf765e24615940fb5408d9359994578fe91c618056ed87a"
+  },
+  {
+    "name": "record-transport-rust-module-layout",
+    "command": [
+      "python3",
+      "scripts/check-rust-module-layout.py"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "6903862d4ef979c5ba7de9c4f331b1dba4f8cdb1",
+    "dirty": "?? benchmarks/mech-deflate/results/2026-10-27-record-buffer-transport/\n",
+    "exit": 0,
+    "seconds": 0.12677001953125,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-rust-module-layout.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "243ddf51bdf2d99ebab694699c135100a4696d18b46232d5da12776160724464"
+  },
+  {
+    "name": "record-transport-selected-field-admission",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "-j1",
+      "--manifest-path",
+      "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+      "record_field_retention_keeps",
+      "--",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "1de0ee88e9bb882d5dddbfbc1ae4b864f51cddc7",
+    "dirty": " M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/buffer_frames.rs\n M hosts/gpu/tests/canonical_artifact_program.rs\n M hosts/gpu/tests/support/canonical_program_linked.rs\n M src/engine/src/native_artifact/buffer_frames.rs\n M src/engine/src/resident/general/native_collection_buffer_frames.rs\n?? hosts/gpu/tests/support/canonical_program_record_buffers.rs\n",
+    "exit": 0,
+    "seconds": 2.2495837211608887,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-selected-field-admission.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "088dba7e276a2731a6648d95e9953072a1ac114f6d93a84e6c87e6765d5f375d"
+  },
+  {
+    "name": "record-transport-semantics",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "-j1",
+      "--manifest-path",
+      "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+      "--",
+      "record_buffer_qualification",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "1de0ee88e9bb882d5dddbfbc1ae4b864f51cddc7",
+    "dirty": " M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/buffer_frames.rs\n M hosts/gpu/tests/canonical_artifact_program.rs\n M hosts/gpu/tests/support/canonical_program_linked.rs\n M src/engine/src/native_artifact/buffer_frames.rs\n M src/engine/src/resident/general/native_collection_buffer_frames.rs\n?? hosts/gpu/tests/support/canonical_program_record_buffers.rs\n",
+    "exit": 0,
+    "seconds": 3.1995041370391846,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-semantics.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "a6af05efa7e1d2f39ddb027948683ce1afc45bdd6292410766ae920bb170b5e0"
+  },
+  {
+    "name": "record-transport-source-catalog",
+    "command": [
+      "python3",
+      "scripts/check-source-catalog-entrypoints.py"
+    ],
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "head": "6903862d4ef979c5ba7de9c4f331b1dba4f8cdb1",
+    "dirty": "",
+    "exit": 0,
+    "seconds": 0.0745689868927002,
+    "log": "/private/tmp/mech-linear-restack-20261026/validation/record-transport-source-catalog.log",
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+    },
+    "raw_log_sha256": "8bc17d6a7f0ce36f1ae422bb0f75b3cdf86b347e9d5dd7925988bbaa2667d23b"
+  }
+]

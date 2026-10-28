@@ -1,0 +1,23 @@
+{
+  "name": "sequence-operations-layout-and-host-catalog",
+  "command": [
+    "python3",
+    "-c",
+    "import subprocess; [subprocess.run([\"python3\", path],check=True) for path in [\"scripts/check-rust-module-layout.py\",\"scripts/check-native-host-catalog.py\"]]"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "ee32fbfa98b174d32a3b53788f70b1f965ac144c",
+  "dirty": "?? benchmarks/mech-deflate/results/2026-10-27-sequence-operations/\n",
+  "exit": 0,
+  "seconds": 0.41230225563049316,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/sequence-operations-layout-and-host-catalog.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

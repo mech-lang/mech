@@ -1,0 +1,12 @@
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-reality-check/hosts/gpu)
+    Finished `test` profile [unoptimized] target(s) in 17.63s
+     Running tests/canonical_artifact_program.rs (/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-161b919374daec0a)
+
+running 4 tests
+test linked_qualification::linked_uniform_words_restore_the_same_plan_fact_and_recover ... ok
+test unsigned_length_qualification::native_unsigned_length_reads_fresh_buffers_preserves_assertions_and_recovers ... ok
+test unsigned_length_qualification::selected_unsigned_lengths_keep_call_limits_admission_and_zero_allocations ... ok
+test unsigned_length_qualification::unsigned_length_requires_its_factory_and_keeps_string_graphemes ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 257 filtered out; finished in 86.34s
+

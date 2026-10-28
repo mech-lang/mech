@@ -1,0 +1,6 @@
+<pair> := <{first<[u64]> second<[u32]>}>
+pack(xs<[u64]>, ys<[u32]>) => (out<pair>) :=
+  out := {first: [x | x <- xs], second: [y | y <- ys]}.
+ys := [y | y <- narrow<[u32]>]
+xs := [x | x <- wide<[u64]>]
+[(flag<bool>? | true => pack(xs, item.second) | false => {first: xs, second: item.second}) | item <- [{second: ys}]]

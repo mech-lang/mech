@@ -1,0 +1,68 @@
+{
+  "release-build": {
+    "exit": -15,
+    "seconds": 1747.7177248001099,
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "--locked",
+      "--offline",
+      "-j1",
+      "-p",
+      "mech-gpu",
+      "--no-default-features",
+      "--features",
+      "canonical-native-program",
+      "--test",
+      "canonical_artifact_program",
+      "--no-run"
+    ],
+    "log": "/private/tmp/mech-stack-landscape-20261026/reality-check/release-build.log"
+  },
+  "focused-release-build": {
+    "exit": -15,
+    "seconds": 36.25667405128479,
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "--locked",
+      "--offline",
+      "-j1",
+      "--manifest-path",
+      "/private/tmp/mech-stack-landscape-20261026/reality-check/focused/Cargo.toml"
+    ],
+    "log": "/private/tmp/mech-stack-landscape-20261026/reality-check/focused-release-build.log"
+  },
+  "focused-release-build-locked": {
+    "exit": 101,
+    "seconds": 546.6943409442902,
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "--locked",
+      "--offline",
+      "-j1",
+      "--manifest-path",
+      "/private/tmp/mech-stack-landscape-20261026/reality-check/focused/Cargo.toml"
+    ],
+    "log": "/private/tmp/mech-stack-landscape-20261026/reality-check/focused-release-build-locked.log"
+  },
+  "focused-release-dynamic-shapes": {
+    "exit": 0,
+    "seconds": 192.67525506019592,
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "--locked",
+      "--offline",
+      "-j1",
+      "--manifest-path",
+      "/private/tmp/mech-stack-landscape-20261026/reality-check/focused/Cargo.toml"
+    ],
+    "log": "/private/tmp/mech-stack-landscape-20261026/reality-check/focused-release-dynamic-shapes.log"
+  }
+}

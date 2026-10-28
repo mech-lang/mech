@@ -1,0 +1,23 @@
+{
+  "name": "unsigned-buffer-exact-ci-step",
+  "command": [
+    "python3",
+    "-c",
+    "import os,subprocess; from pathlib import Path; s=Path(\".github/workflows/ci-full.yml\").read_text(); block=s.split(\"      - name: Execute retained unsigned buffer ownership and allocation regressions\\n        run: |\\n\",1)[1].split(\"      - name:\",1)[0]; command=\"\\n\".join(line[10:] for line in block.splitlines()); subprocess.run([\"bash\",\"--noprofile\",\"--norc\",\"-euo\",\"pipefail\",\"-c\",command],check=True)"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "d0271b90ae51db78630cda2a76c01c61a75719da",
+  "dirty": "",
+  "exit": 0,
+  "seconds": 37.86600208282471,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/unsigned-buffer-exact-ci-step.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

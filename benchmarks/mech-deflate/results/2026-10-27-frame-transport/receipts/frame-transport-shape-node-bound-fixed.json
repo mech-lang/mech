@@ -1,0 +1,31 @@
+{
+  "name": "frame-transport-shape-node-bound-fixed",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "--manifest-path",
+    "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+    "buffer_frame_qualification",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "356e7275cc7e852aeea9713a4f533e8540983b9d",
+  "dirty": " M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/tests/support/canonical_program_buffer_frames.rs\n M src/engine/src/resident/general/native_collection_buffer_frames.rs\n",
+  "exit": 101,
+  "seconds": 46.50564503669739,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/frame-transport-shape-node-bound-fixed.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

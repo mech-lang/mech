@@ -1,0 +1,25 @@
+{
+  "name": "checked-u32-final-real-collector",
+  "command": [
+    "/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-161b919374daec0a",
+    "collector_qualification::real_buffer_collector_prefix_carries_consecutive_search_and_skip_updates",
+    "--exact",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-reality-check",
+  "head": "799f26b3765e8b807775a627b2ba23e1eb010a7c",
+  "dirty": "",
+  "exit": 0,
+  "seconds": 50.34703588485718,
+  "log": "/private/tmp/mech-stack-landscape-20261026/reality-check/checked-u32-final-real-collector.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

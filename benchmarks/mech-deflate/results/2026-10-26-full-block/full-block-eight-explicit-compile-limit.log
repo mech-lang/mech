@@ -1,0 +1,20 @@
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-reality-check/hosts/gpu)
+    Finished `test` profile [unoptimized] target(s) in 18.61s
+     Running tests/canonical_artifact_program.rs (/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-161b919374daec0a)
+
+running 1 test
+test full_block_qualification::real_buffer_first_block_collects_all_eight_literals ... {"allocation_requests":831965,"artifact":"original","elapsed_seconds":8.601872542,"input_bytes":8,"requested_allocation_bytes":499592547,"result":"Err(Value(Base(WorkLimit { phase: Setup, required: 10003837600, limit: 10000000000 })))","retained_after":42780,"retained_before":42780,"witness":"first-complete-block"}
+
+thread 'full_block_qualification::real_buffer_first_block_collects_all_eight_literals' (16163002) panicked at hosts/gpu/tests/support/canonical_program_full_block.rs:76:16:
+called `Result::unwrap()` on an `Err` value: Value(Base(WorkLimit { phase: Setup, required: 10003837600, limit: 10000000000 }))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    full_block_qualification::real_buffer_first_block_collects_all_eight_literals
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 265 filtered out; finished in 51.89s
+
+error: test failed, to rerun pass `-p mech-gpu --test canonical_artifact_program`

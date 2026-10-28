@@ -96,6 +96,7 @@ impl Layout {
             if (!native && !helper)
                 || visit.complete
                 || visit.reject
+                || visit.integrity
                 || plan.activation_boundary() == Some(site as u32)
                 || matches!(visit.progress, Progress::Initialize(_) | Progress::Exit(_))
             {

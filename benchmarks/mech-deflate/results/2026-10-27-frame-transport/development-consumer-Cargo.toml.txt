@@ -1,0 +1,17 @@
+[package]
+name = "mech-sequence-buffer-driver"
+version = "0.0.0"
+edition = "2024"
+[workspace]
+[dependencies]
+serde_json = "=1.0.151"
+mech-core = {path = "/private/tmp/mech-deflate-linear-stack/src/core", default-features = false}
+mech-engine = {path = "/private/tmp/mech-deflate-linear-stack/src/engine", default-features = false, features = ["semantic-compiler", "sequence_buffers"]}
+mech-syntax = {path = "/private/tmp/mech-deflate-linear-stack/src/syntax", default-features = false, features = ["semantic-compiler", "invariant_define"]}
+mech-gpu = {path = "/private/tmp/mech-deflate-linear-stack/hosts/gpu", default-features = false, features = ["canonical-native-program"]}
+[profile.dev]
+debug = 0
+strip = "symbols"
+[profile.test]
+debug = 0
+strip = "symbols"

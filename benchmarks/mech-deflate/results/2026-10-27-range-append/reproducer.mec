@@ -1,0 +1,2 @@
++> sequence
+sequence/append-sublist(sequence/with-capacity(0u8, 6633832u64), [10u8 20u8 30u8], 1u64, 2u64)

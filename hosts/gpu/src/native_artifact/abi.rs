@@ -10,6 +10,7 @@ pub(in crate::native_artifact) const STATUS_OK: u64 = 0;
 pub(in crate::native_artifact) const STATUS_ARITHMETIC: u64 = 1;
 pub(in crate::native_artifact) const STATUS_ADMISSION: u64 = 2;
 pub(in crate::native_artifact) const STATUS_ABI: u64 = 3;
+pub(in crate::native_artifact) const STATUS_INTEGRITY: u64 = 9;
 
 /// Checked primitive work in conservative logical units. One unit bounds one
 /// explicit scalar/guard/load/store bookkeeping action, not machine cycles.
@@ -20,11 +21,43 @@ pub(in crate::native_artifact) const STATUS_ABI: u64 = 3;
 /// and from the adapter's conservative source scratch metadata.
 pub(in crate::native_artifact) const fn primitive_work(op: NativeScalarOp) -> u64 {
     match op {
-        NativeScalarOp::U64Add
+        NativeScalarOp::U8Add
+        | NativeScalarOp::U32Sub
+        | NativeScalarOp::U32Add
+        | NativeScalarOp::U64Add
+        | NativeScalarOp::U64BitAnd
+        | NativeScalarOp::U64BitOr
+        | NativeScalarOp::U64BitXor
+        | NativeScalarOp::U64BitNot
+        | NativeScalarOp::U64ShlWrap
+        | NativeScalarOp::U64ShrWrap
+        | NativeScalarOp::U64Clz
+        | NativeScalarOp::U64Ctz
+        | NativeScalarOp::U64WrappingAdd
+        | NativeScalarOp::U64WrappingSub
+        | NativeScalarOp::U64WrappingMul
         | NativeScalarOp::U64Sub
         | NativeScalarOp::U64Mul
         | NativeScalarOp::U64Div
         | NativeScalarOp::U64Rem
+        | NativeScalarOp::U8Eq
+        | NativeScalarOp::U8Ne
+        | NativeScalarOp::U8Lt
+        | NativeScalarOp::U8Le
+        | NativeScalarOp::U8Gt
+        | NativeScalarOp::U8Ge
+        | NativeScalarOp::U16Eq
+        | NativeScalarOp::U16Ne
+        | NativeScalarOp::U16Lt
+        | NativeScalarOp::U16Le
+        | NativeScalarOp::U16Gt
+        | NativeScalarOp::U16Ge
+        | NativeScalarOp::U32Eq
+        | NativeScalarOp::U32Ne
+        | NativeScalarOp::U32Lt
+        | NativeScalarOp::U32Le
+        | NativeScalarOp::U32Gt
+        | NativeScalarOp::U32Ge
         | NativeScalarOp::U64Eq
         | NativeScalarOp::U64Ne
         | NativeScalarOp::U64Lt
@@ -66,7 +99,19 @@ pub(in crate::native_artifact) const fn primitive_work(op: NativeScalarOp) -> u6
         | NativeScalarOp::U64ToF64
         | NativeScalarOp::I64ToF64
         | NativeScalarOp::F64ToU64
-        | NativeScalarOp::F64ToI64 => 256,
+        | NativeScalarOp::F64ToI64
+        | NativeScalarOp::U8ToU16
+        | NativeScalarOp::U8ToU32
+        | NativeScalarOp::U8ToU64
+        | NativeScalarOp::U16ToU8
+        | NativeScalarOp::U16ToU32
+        | NativeScalarOp::U16ToU64
+        | NativeScalarOp::U32ToU8
+        | NativeScalarOp::U32ToU16
+        | NativeScalarOp::U32ToU64
+        | NativeScalarOp::U64ToU8
+        | NativeScalarOp::U64ToU16
+        | NativeScalarOp::U64ToU32 => 256,
     }
 }
 

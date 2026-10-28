@@ -108,6 +108,7 @@ impl Invocation<'_, '_, '_> {
         // Fixed invocation/frame/transport roots. This bound excludes variable
         // payload backing, so a long String is never priced as one node/byte.
         let mut nodes = fixed_nodes()?;
+        nodes = add(nodes, self.state.buffer_frames.retained_nodes())?;
         if let Some(collections) = &self.state.collections {
             nodes = add(
                 nodes,

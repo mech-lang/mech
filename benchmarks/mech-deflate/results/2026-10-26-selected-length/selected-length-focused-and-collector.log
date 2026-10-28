@@ -1,0 +1,34 @@
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-deflate-reality-check/src/engine)
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-deflate-reality-check/src/compute)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-deflate-reality-check/src/runtime)
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-reality-check/hosts/gpu)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-deflate-reality-check/src/stdlib)
+   Compiling mech-build v0.3.5 (/private/tmp/mech-deflate-reality-check/src/build)
+    Finished `test` profile [unoptimized] target(s) in 1m 38s
+     Running tests/canonical_artifact_program.rs (/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-161b919374daec0a)
+
+running 5 tests
+test collector_qualification::real_buffer_collector_initialization_keeps_its_full_zeroed_state ... {"allocation_requests":43132,"artifact":"original","elapsed_seconds":0.09450475,"requested_allocation_bytes":43735387,"result":"Ok(NativeProgramExecutionReport { work: 1281716483, comparison_work: 13053603, visits: 76, transport_bytes: 265888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })","witness":"real-buffer-collector-initialization"}
+{"allocation_requests":43131,"artifact":"decoded","elapsed_seconds":0.094240791,"requested_allocation_bytes":43735323,"result":"Ok(NativeProgramExecutionReport { work: 1281716483, comparison_work: 13053603, visits: 76, transport_bytes: 265888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })","witness":"real-buffer-collector-initialization"}
+ok
+test collector_qualification::real_buffer_collector_prefix_carries_consecutive_search_and_skip_updates ... {"allocation_requests":617047,"artifact":"original","cache_u32_words":1500513,"compile_seconds":1.955238292,"completed_prefix_positions":6,"depth":300,"elapsed_seconds":14.531305291,"failing_binding":null,"failing_operation":null,"input_bytes":320,"nice":258,"requested_allocation_bytes":478106375,"requested_positions":6,"result":"Ok(NativeProgramExecutionReport { work: 9793861508, comparison_work: 357598325, visits: 19781, transport_bytes: 265888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })","retained_after":6565306,"retained_before":19379,"success":true,"table_u16_entries":262144,"witness":"real-buffer-collector-prefix"}
+{"allocation_requests":617046,"artifact":"decoded","cache_u32_words":1500513,"compile_seconds":1.961361167,"completed_prefix_positions":6,"depth":300,"elapsed_seconds":14.535073416,"failing_binding":null,"failing_operation":null,"input_bytes":320,"nice":258,"requested_allocation_bytes":478106311,"requested_positions":6,"result":"Ok(NativeProgramExecutionReport { work: 9793861508, comparison_work: 357598325, visits: 19781, transport_bytes: 265888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })","retained_after":6565306,"retained_before":19379,"success":true,"table_u16_entries":262144,"witness":"real-buffer-collector-prefix"}
+ok
+test unsigned_length_qualification::native_unsigned_length_reads_fresh_buffers_preserves_assertions_and_recovers ... ok
+test unsigned_length_qualification::selected_unsigned_lengths_keep_call_limits_admission_and_zero_allocations ...
+thread 'unsigned_length_qualification::selected_unsigned_lengths_keep_call_limits_admission_and_zero_allocations' (16082776) panicked at hosts/gpu/tests/support/canonical_program_unsigned_lengths.rs:151:13:
+assertion `left == right` failed
+  left: 200
+ right: 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+test unsigned_length_qualification::unsigned_length_requires_its_factory_and_keeps_string_graphemes ... ok
+
+failures:
+
+failures:
+    unsigned_length_qualification::selected_unsigned_lengths_keep_call_limits_admission_and_zero_allocations
+
+test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 256 filtered out; finished in 67.76s
+
+error: test failed, to rerun pass `-p mech-gpu --test canonical_artifact_program`

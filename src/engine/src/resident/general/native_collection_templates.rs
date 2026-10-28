@@ -127,14 +127,19 @@ impl NativeCollectionPrimitive {
     pub const fn name(self) -> &'static str {
         match self {
             Self::CompositePack(_) => "core/composite-pack",
+            Self::MatrixHorizontal(_) => "matrix/horzcat",
+            Self::MatrixVertical(_) => "matrix/vertcat",
             Self::EnumPack => "core/enum-pack",
             Self::RangeExclusive => "range/exclusive",
             Self::RangeInclusive => "range/inclusive",
             Self::RangeIncrementExclusive => "range/exclusive-increment",
             Self::RangeIncrementInclusive => "range/inclusive-increment",
-            Self::StringScalarAccess | Self::MatrixScalarAccess | Self::MapKeyAccess => {
-                "access/scalar"
-            }
+            Self::StringScalarAccess
+            | Self::MatrixScalarAccess
+            | Self::TupleScalarProjection
+            | Self::MapKeyAccess => "access/scalar",
+            Self::RecordFieldAccess => "access/column",
+            Self::MatrixIndexedReplace => "core/assign/indexed-axis",
             Self::SetContains => "set/element-of",
             Self::SetNotContains => "set/not-element-of",
             Self::StringEqual => "compare/eq",
@@ -144,11 +149,23 @@ impl NativeCollectionPrimitive {
             Self::SumRows => "stats/sum/row",
             #[cfg(feature = "sequence_sort")]
             Self::SortIndices => "sequence/sort-indices",
+            #[cfg(feature = "sequence_buffers")]
+            Self::SequenceWithCapacity => "sequence/with-capacity",
+            #[cfg(feature = "sequence_buffers")]
+            Self::SequenceReserve => "sequence/reserve",
+            #[cfg(feature = "sequence_buffers")]
+            Self::SequenceAppend => "sequence/append",
+            #[cfg(feature = "sequence_buffers")]
+            Self::SequenceAppendLeBytes => "sequence/append-le-bytes",
+            #[cfg(feature = "sequence_buffers")]
+            Self::SequenceAppendSublist => "sequence/append-sublist",
+            #[cfg(feature = "sequence_buffers")]
+            Self::SequenceClear => "sequence/clear",
             Self::StringRangeAccess | Self::StringAllAccess | Self::MatrixRangeAccess => {
                 "access/range"
             }
             #[cfg(feature = "convert")]
-            Self::MatrixConversion => "convert/kind",
+            Self::MatrixConversion | Self::UnsignedWordConversion => "convert/kind",
             #[cfg(feature = "convert")]
             Self::MatrixToSetConversion => "convert/set",
             #[cfg(feature = "pure_text")]
@@ -175,7 +192,14 @@ impl NativeCollectionPrimitive {
     }
     pub const fn arity(self) -> usize {
         match self {
-            Self::CompositePack(arity) => arity,
+            Self::CompositePack(arity)
+            | Self::MatrixHorizontal(arity)
+            | Self::MatrixVertical(arity) => arity,
+            Self::MatrixIndexedReplace => 3,
+            #[cfg(feature = "sequence_buffers")]
+            Self::SequenceAppendLeBytes => 3,
+            #[cfg(feature = "sequence_buffers")]
+            Self::SequenceAppendSublist => 4,
             #[cfg(feature = "map_ops")]
             Self::MapNew => 0,
             #[cfg(feature = "map_ops")]
@@ -190,6 +214,8 @@ impl NativeCollectionPrimitive {
             | Self::RangeInclusive
             | Self::StringScalarAccess
             | Self::MatrixScalarAccess
+            | Self::TupleScalarProjection
+            | Self::RecordFieldAccess
             | Self::MapKeyAccess
             | Self::SetContains
             | Self::SetNotContains
@@ -200,6 +226,8 @@ impl NativeCollectionPrimitive {
             | Self::StringRangeAccess => 2,
             #[cfg(feature = "pure_text")]
             Self::TextJoin | Self::NumberFormat => 2,
+            #[cfg(feature = "sequence_buffers")]
+            Self::SequenceWithCapacity | Self::SequenceReserve | Self::SequenceAppend => 2,
             _ => 1,
         }
     }
@@ -231,13 +259,38 @@ fn source_schema_id(artifact: &ProgramArtifact, source: ArtifactSource) -> Resul
 fn is_matrix(body: &SchemaBody) -> bool {
     matches!(body, SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2)
 }
+#[cfg(any(feature = "pure_text", feature = "map_ops"))]
 fn is_string_matrix(body: &SchemaBody, row: bool) -> bool {
     matches!(body, SchemaBody::Matrix { element, dimensions }
         if element.as_ref() == &SchemaBody::String && dimensions.len() == 2
         && (!row || dimensions[0] == mech_core::DimensionExpr::Constant(1)))
 }
+#[cfg(any(feature = "pure_text", feature = "map_ops", feature = "convert"))]
 fn is_u64(body: &SchemaBody) -> bool {
     body == &SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)
+}
+
+#[cfg(feature = "convert")]
+fn is_unsigned_word_conversion(inputs: &[Schema], output: &Schema) -> bool {
+    fn word(body: &SchemaBody) -> bool {
+        matches!(
+            body,
+            SchemaBody::UnsignedInteger(
+                mech_core::IntegerWidth::W8
+                    | mech_core::IntegerWidth::W16
+                    | mech_core::IntegerWidth::W32
+                    | mech_core::IntegerWidth::W64
+            )
+        )
+    }
+    let [input] = inputs else {
+        return false;
+    };
+    input.dimension_parameters().is_empty()
+        && output.dimension_parameters().is_empty()
+        && input.body() != output.body()
+        && word(input.body())
+        && word(output.body())
 }
 fn is_shallow_atomic(body: &SchemaBody) -> bool {
     matches!(
@@ -254,16 +307,35 @@ fn is_shallow_matrix(body: &SchemaBody) -> bool {
     matches!(body, SchemaBody::Matrix { element, dimensions }
         if dimensions.len() == 2 && is_shallow_atomic(element))
 }
+// Fixed-schema aggregate elements use the maintained snapshot constructor and
+// scalar selection and indexed replacement. Dynamic child containers are not
+// admitted by this path.
+fn is_matrix_value_element(body: &SchemaBody) -> bool {
+    is_shallow_atomic(body)
+        || match body {
+            SchemaBody::Record(fields) => fields
+                .iter()
+                .all(|field| is_matrix_value_element(&field.schema)),
+            SchemaBody::Tuple(items) => items.iter().all(is_matrix_value_element),
+            _ => false,
+        }
+}
+fn is_value_matrix(body: &SchemaBody) -> bool {
+    matches!(body, SchemaBody::Matrix { element, dimensions }
+        if dimensions.len() == 2 && is_matrix_value_element(element))
+}
 #[cfg(feature = "map_ops")]
 fn is_count_map(body: &SchemaBody) -> bool {
     crate::intrinsics::map_ops::is_count_map(body)
 }
 
-// Canonical state carriers may combine scalar fields with ordinary maps.
+// Canonical carriers may combine scalar fields with ordinary maps and word
+// buffers. Tuple/record constructors resolve dynamic child dimensions at bind.
 // This only selects the existing composite/enum constructors: their binders
 // still validate exact child schemas and admit recursive payload copies.
 fn is_native_state_carrier(body: &SchemaBody) -> bool {
     is_shallow_atomic(body)
+        || crate::native_artifact::structural_values::carrier_matrix(body)
         || match body {
             SchemaBody::Map { key, value, .. } => {
                 is_shallow_atomic(key) && is_shallow_atomic(value)
@@ -296,7 +368,6 @@ fn validate_schemas(
     {
         return false;
     }
-    #[cfg(feature = "convert")]
     let declared_output = output;
     let output = output.body();
     if let NativeCollectionPrimitive::CompositePack(_) = primitive {
@@ -312,17 +383,36 @@ fn validate_schemas(
             SchemaBody::Tuple(elements) => {
                 elements.len() == inputs.len()
                     && elements.iter().zip(inputs).all(|(element, input)| {
-                        is_native_state_carrier(element) && element == input.body()
+                        is_native_state_carrier(element)
+                            && crate::native_artifact::structural_values::carrier_component_matches(
+                                element,
+                                input.body(),
+                            )
                     })
             }
             SchemaBody::Record(fields) => {
                 fields.len() == inputs.len()
                     && fields.iter().zip(inputs).all(|(field, input)| {
-                        is_native_state_carrier(&field.schema) && &field.schema == input.body()
+                        is_native_state_carrier(&field.schema)
+                            && crate::native_artifact::structural_values::carrier_component_matches(
+                                &field.schema,
+                                input.body(),
+                            )
                     })
             }
             _ => false,
         };
+    }
+    if matches!(
+        primitive,
+        NativeCollectionPrimitive::MatrixHorizontal(_)
+            | NativeCollectionPrimitive::MatrixVertical(_)
+    ) {
+        return matches!(output, SchemaBody::Matrix { element, dimensions }
+            if dimensions.len() == 2 && is_matrix_value_element(element)
+                && inputs.iter().all(|input| input.body() == element.as_ref()
+                    || matches!(input.body(), SchemaBody::Matrix { element: child, dimensions }
+                        if dimensions.len() == 2 && child == element)));
     }
     #[cfg(feature = "map_ops")]
     if primitive == NativeCollectionPrimitive::MapNew {
@@ -338,7 +428,9 @@ fn validate_schemas(
         return false;
     };
     match primitive {
-        NativeCollectionPrimitive::CompositePack(_) => unreachable!("validated above"),
+        NativeCollectionPrimitive::CompositePack(_)
+        | NativeCollectionPrimitive::MatrixHorizontal(_)
+        | NativeCollectionPrimitive::MatrixVertical(_) => unreachable!("validated above"),
         #[cfg(feature = "map_ops")]
         NativeCollectionPrimitive::MapNew => unreachable!("validated above"),
         #[cfg(feature = "map_ops")]
@@ -369,17 +461,45 @@ fn validate_schemas(
             is_shallow_matrix(first) && is_shallow_matrix(output)
         }
         #[cfg(feature = "convert")]
+        NativeCollectionPrimitive::UnsignedWordConversion => {
+            is_unsigned_word_conversion(inputs, declared_output)
+        }
+        #[cfg(feature = "convert")]
         NativeCollectionPrimitive::MatrixToSetConversion => {
             crate::resident::set_conversion::conversion_plan(&inputs[0], declared_output).is_ok()
+        }
+        NativeCollectionPrimitive::TupleScalarProjection => {
+            mech_core::is_positional_selector_schema(inputs[1].body())
+                && crate::native_artifact::structural_values::supported(output)
+                && matches!(first, SchemaBody::Tuple(fields) if fields.iter().any(|field|
+                    crate::native_artifact::structural_values::carrier_component_matches(output, field)))
+        }
+        NativeCollectionPrimitive::RecordFieldAccess => {
+            inputs[1].body() == &SchemaBody::Id
+                && is_native_state_carrier(output)
+                && matches!(first, SchemaBody::Record(fields) if fields.iter().any(|field|
+                    crate::native_artifact::structural_values::carrier_component_matches(output, &field.schema)))
         }
         NativeCollectionPrimitive::MatrixScalarAccess => {
             let selector = inputs[1].body();
             let positional = mech_core::is_positional_selector_schema(selector)
                 || matches!(selector, SchemaBody::Matrix { element, dimensions }
                     if dimensions.len() == 2 && mech_core::is_positional_selector_schema(element));
-            is_shallow_matrix(first)
+            is_value_matrix(first)
                 && positional
                 && matches!(first, SchemaBody::Matrix { element, .. } if element.as_ref() == output)
+        }
+        NativeCollectionPrimitive::MatrixIndexedReplace => {
+            is_value_matrix(first)
+                && inputs[0] == *declared_output
+                && inputs[1].dimension_parameters().is_empty()
+                && inputs[2].dimension_parameters().is_empty()
+                && matches!(
+                    inputs[2].body(),
+                    SchemaBody::Index | SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)
+                )
+                && matches!(first, SchemaBody::Matrix { element, .. }
+                    if element.as_ref() == inputs[1].body())
         }
         NativeCollectionPrimitive::MatrixRangeAccess => {
             let selector = inputs[1].body();
@@ -484,6 +604,32 @@ fn validate_schemas(
             is_string_matrix(first, false)
                 && inputs[1].body() == &SchemaBody::String
                 && output == &SchemaBody::String
+        }
+        #[cfg(feature = "sequence_buffers")]
+        kind @ (NativeCollectionPrimitive::SequenceWithCapacity
+        | NativeCollectionPrimitive::SequenceReserve
+        | NativeCollectionPrimitive::SequenceAppend
+        | NativeCollectionPrimitive::SequenceAppendLeBytes
+        | NativeCollectionPrimitive::SequenceAppendSublist
+        | NativeCollectionPrimitive::SequenceClear) => {
+            use crate::intrinsics::sequence_buffers::{self as buffers, Operation as O};
+            let operation = match kind {
+                NativeCollectionPrimitive::SequenceWithCapacity => O::WithCapacity,
+                NativeCollectionPrimitive::SequenceReserve => O::Reserve,
+                NativeCollectionPrimitive::SequenceAppend => O::Append,
+                NativeCollectionPrimitive::SequenceAppendLeBytes => O::AppendLeBytes,
+                NativeCollectionPrimitive::SequenceAppendSublist => O::AppendSublist,
+                NativeCollectionPrimitive::SequenceClear => O::Clear,
+                _ => unreachable!(),
+            };
+            buffers::schemas_supported(
+                operation,
+                &inputs
+                    .iter()
+                    .map(|schema| schema.body().clone())
+                    .collect::<Vec<_>>(),
+                output,
+            )
         }
         #[cfg(feature = "pure_text")]
         NativeCollectionPrimitive::SequenceLength => {
@@ -593,7 +739,7 @@ fn select_leaf(
     // These are branches of the SAME maintained access factories, not new
     // kernels. Specialize only after private factory provenance is established;
     // the exact selected schemas/arity/contract still have to validate below.
-    let primitive = image::specialize_primitive(primitive, &inputs);
+    let primitive = image::specialize_primitive(primitive, &inputs, &output);
     if !validate_schemas(primitive, &inputs, &output) {
         return Err(Error::WitnessTypeMismatch { node });
     }
@@ -703,6 +849,7 @@ fn push_children<'a>(
         crate::ControlOperationBody::Operation { .. }
         | crate::ControlOperationBody::Recur(_)
         | crate::ControlOperationBody::Suspend
+        | crate::ControlOperationBody::Assert
         | crate::ControlOperationBody::Publish => {}
     }
 }

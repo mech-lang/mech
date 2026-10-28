@@ -29,6 +29,8 @@ pub(in crate::native_artifact::program::runtime) struct ExecutionState<'plan> {
         Option<crate::native_artifact::program::runtime::collections::State>,
     pub(in crate::native_artifact::program::runtime) line_matrices:
         crate::native_artifact::program::runtime::lines::State,
+    pub(in crate::native_artifact::program::runtime) buffer_frames:
+        super::buffer_frames::BufferFrames,
     pub(in crate::native_artifact::program::runtime) arena: NativeValueArena<'plan>,
     pub(in crate::native_artifact::program::runtime) call_inputs: NativeTypedStorage<Option<Value>>,
     pub(in crate::native_artifact::program::runtime) call_caches: session::CallCacheLane,

@@ -1,0 +1,713 @@
+[
+  {
+    "receipt": "receipts/sequence-buffers-complete-runtime-contract.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 0,
+    "seconds": 37.342844009399414,
+    "rust_results": [
+      {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-buffers-direct-final-canonical-inputs.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 37.15554904937744,
+    "rust_results": [
+      {
+        "passed": 2,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-buffers-direct-runtime-contract.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 0.4215202331542969,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-buffers-direct-runtime-final.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 37.249598264694214,
+    "rust_results": [
+      {
+        "passed": 2,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-buffers-engine-check.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 0,
+    "seconds": 2.432003974914551,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-buffers-first-engine-check.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 14.373911619186401,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-buffers-first-source-execution.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 473.9777657985687,
+    "rust_results": [
+      {
+        "passed": 0,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 273
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-buffers-focused-native-contracts-corrected.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 2.3425281047821045,
+    "rust_results": [
+      {
+        "passed": 2,
+        "failed": 3,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-buffers-focused-native-contracts-tail.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 2.783400774002075,
+    "rust_results": [
+      {
+        "passed": 4,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-buffers-focused-native-contracts-warm.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 2.6608309745788574,
+    "rust_results": [
+      {
+        "passed": 3,
+        "failed": 2,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-buffers-focused-native-contracts.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 0.2776181697845459,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-buffers-focused-native-final.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 2.8661439418792725,
+    "rust_results": [
+      {
+        "passed": 4,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-buffers-isolated-resident-check.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 9.048444986343384,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-buffers-minimal-native-driver.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 72.8198881149292,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-buffers-minimal-native-with-assertion-syntax.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 58.935539960861206,
+    "rust_results": [
+      {
+        "passed": 5,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-buffers-native-engine-check.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 0,
+    "seconds": 9.29197096824646,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-buffers-permanent-tests-in-minimal-consumer.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 2.9692609310150146,
+    "rust_results": [
+      {
+        "passed": 4,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-buffers-real-native-trace.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 0,
+    "seconds": 2.347357988357544,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-buffers-recursive-input-trace.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 1.8898842334747314,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-buffers-recursive-source-trace.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 0.9304649829864502,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-buffers-resident-contract-corrected.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 0,
+    "seconds": 22.807422876358032,
+    "rust_results": [
+      {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-buffers-resident-contract-expanded.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 0,
+    "seconds": 23.49574089050293,
+    "rust_results": [
+      {
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-buffers-resident-contract.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 37.41880917549133,
+    "rust_results": [
+      {
+        "passed": 0,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-buffers-resident-engine-check.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 16.725642919540405,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-buffers-resident-order-probe.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 22.827865839004517,
+    "rust_results": [
+      {
+        "passed": 0,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-buffers-six-native-contracts.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 0,
+    "seconds": 3.350440263748169,
+    "rust_results": [
+      {
+        "passed": 6,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-buffers-turn-shaped-recursion.json",
+    "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+    "exit": 101,
+    "seconds": 58.27182984352112,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-ci-contract-tests.json",
+    "head": "2771d1c23109bcd480ec4fa16daa67bd0d2809fe",
+    "exit": 1,
+    "seconds": 6.205295085906982,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-ci-contracts-corrected.json",
+    "head": "2771d1c23109bcd480ec4fa16daa67bd0d2809fe",
+    "exit": 1,
+    "seconds": 4.0323662757873535,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-ci-inventory-final.json",
+    "head": "ee32fbfa98b174d32a3b53788f70b1f965ac144c",
+    "exit": 0,
+    "seconds": 9.317970991134644,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-ci-inventory-tests.json",
+    "head": "2771d1c23109bcd480ec4fa16daa67bd0d2809fe",
+    "exit": 1,
+    "seconds": 10.286801099777222,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-ci-workflow-final.json",
+    "head": "2771d1c23109bcd480ec4fa16daa67bd0d2809fe",
+    "exit": 0,
+    "seconds": 4.171748161315918,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-clean-runtime-contracts.json",
+    "head": "2771d1c23109bcd480ec4fa16daa67bd0d2809fe",
+    "exit": 0,
+    "seconds": 0.8571481704711914,
+    "rust_results": [
+      {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-operations-core-no-std.json",
+    "head": "ee32fbfa98b174d32a3b53788f70b1f965ac144c",
+    "exit": 0,
+    "seconds": 2.1301350593566895,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-distribution-static.json",
+    "head": "ee32fbfa98b174d32a3b53788f70b1f965ac144c",
+    "exit": 0,
+    "seconds": 123.57409405708313,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-final-native-components-linked.json",
+    "head": "1a22b9698ecf359d3e2da959addf000631f5143e",
+    "exit": 0,
+    "seconds": 906.3022310733795,
+    "rust_results": [
+      {
+        "passed": 151,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 129
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-operations-generic-row-runtime.json",
+    "head": "ee32fbfa98b174d32a3b53788f70b1f965ac144c",
+    "exit": 0,
+    "seconds": 37.61839008331299,
+    "rust_results": [
+      {
+        "passed": 4,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-operations-layout-and-host-catalog.json",
+    "head": "ee32fbfa98b174d32a3b53788f70b1f965ac144c",
+    "exit": 0,
+    "seconds": 0.41230225563049316,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-live-inventory-corrected.json",
+    "head": "2771d1c23109bcd480ec4fa16daa67bd0d2809fe",
+    "exit": 1,
+    "seconds": 9.066218137741089,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-live-inventory-final.json",
+    "head": "2771d1c23109bcd480ec4fa16daa67bd0d2809fe",
+    "exit": 0,
+    "seconds": 9.434478282928467,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-live-inventory.json",
+    "head": "2771d1c23109bcd480ec4fa16daa67bd0d2809fe",
+    "exit": 1,
+    "seconds": 9.970523118972778,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-native-components-linked.json",
+    "head": "2771d1c23109bcd480ec4fa16daa67bd0d2809fe",
+    "exit": 0,
+    "seconds": 924.2696919441223,
+    "rust_results": [
+      {
+        "passed": 150,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 129
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-operations-native-only-engine.json",
+    "head": "ee32fbfa98b174d32a3b53788f70b1f965ac144c",
+    "exit": 0,
+    "seconds": 11.744224071502686,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-planning-and-layout.json",
+    "head": "ee32fbfa98b174d32a3b53788f70b1f965ac144c",
+    "exit": 0,
+    "seconds": 122.87329721450806,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-recursive-capacity-negative.json",
+    "head": "ee32fbfa98b174d32a3b53788f70b1f965ac144c",
+    "exit": 101,
+    "seconds": 58.2973268032074,
+    "rust_results": [
+      {
+        "passed": 0,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 6
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-operations-review-capacity-propagation-fixed.json",
+    "head": "1a22b9698ecf359d3e2da959addf000631f5143e",
+    "exit": 0,
+    "seconds": 23.947099924087524,
+    "rust_results": [
+      {
+        "passed": 5,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-operations-review-capacity-propagation-red.json",
+    "head": "1a22b9698ecf359d3e2da959addf000631f5143e",
+    "exit": 101,
+    "seconds": 1.7674801349639893,
+    "rust_results": [
+      {
+        "passed": 0,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 4
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-operations-review-eight-native-final.json",
+    "head": "1a22b9698ecf359d3e2da959addf000631f5143e",
+    "exit": 0,
+    "seconds": 1.829146146774292,
+    "rust_results": [
+      {
+        "passed": 8,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 1
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-operations-review-growth-accounting-fixed.json",
+    "head": "1a22b9698ecf359d3e2da959addf000631f5143e",
+    "exit": 101,
+    "seconds": 45.621729135513306,
+    "rust_results": [
+      {
+        "passed": 7,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 1
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-operations-review-growth-accounting-red.json",
+    "head": "1a22b9698ecf359d3e2da959addf000631f5143e",
+    "exit": 101,
+    "seconds": 2.297322988510132,
+    "rust_results": [
+      {
+        "passed": 0,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 8
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-operations-review-growth-controls-fixed.json",
+    "head": "1a22b9698ecf359d3e2da959addf000631f5143e",
+    "exit": 101,
+    "seconds": 12.94411587715149,
+    "rust_results": [
+      {
+        "passed": 7,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 1
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-operations-review-growth-quota-corrected.json",
+    "head": "1a22b9698ecf359d3e2da959addf000631f5143e",
+    "exit": 101,
+    "seconds": 45.43846797943115,
+    "rust_results": [
+      {
+        "passed": 7,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 1
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-operations-review-growth-relative-call-fixed.json",
+    "head": "1a22b9698ecf359d3e2da959addf000631f5143e",
+    "exit": 0,
+    "seconds": 2.0697531700134277,
+    "rust_results": [
+      {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 8
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-operations-reviewed-core-no-std.json",
+    "head": "aad1f6528dd49815be930bf42f044296968fa38e",
+    "exit": 0,
+    "seconds": 2.143831729888916,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-reviewed-native-components-linked.json",
+    "head": "aad1f6528dd49815be930bf42f044296968fa38e",
+    "exit": 0,
+    "seconds": 544.5361897945404,
+    "rust_results": [
+      {
+        "passed": 152,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 129
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-operations-reviewed-native-only-engine.json",
+    "head": "aad1f6528dd49815be930bf42f044296968fa38e",
+    "exit": 0,
+    "seconds": 11.842252254486084,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-reviewed-recursive-capacity-negative.json",
+    "head": "aad1f6528dd49815be930bf42f044296968fa38e",
+    "exit": 101,
+    "seconds": 0.5142390727996826,
+    "rust_results": [
+      {
+        "passed": 0,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 8
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-operations-reviewed-runtime-contracts.json",
+    "head": "aad1f6528dd49815be930bf42f044296968fa38e",
+    "exit": 0,
+    "seconds": 1.0440778732299805,
+    "rust_results": [
+      {
+        "passed": 5,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-operations-reviewed-runtime-only-engine.json",
+    "head": "aad1f6528dd49815be930bf42f044296968fa38e",
+    "exit": 0,
+    "seconds": 2.914422035217285,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-reviewed-runtime-only-host.json",
+    "head": "aad1f6528dd49815be930bf42f044296968fa38e",
+    "exit": 0,
+    "seconds": 15.438659906387329,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-reviewed-static-contracts.json",
+    "head": "aad1f6528dd49815be930bf42f044296968fa38e",
+    "exit": 0,
+    "seconds": 20.137627124786377,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-runtime-only-engine.json",
+    "head": "ee32fbfa98b174d32a3b53788f70b1f965ac144c",
+    "exit": 0,
+    "seconds": 5.0502941608428955,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-runtime-only-host.json",
+    "head": "ee32fbfa98b174d32a3b53788f70b1f965ac144c",
+    "exit": 0,
+    "seconds": 15.332905292510986,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/sequence-operations-seven-native-row-contracts.json",
+    "head": "ee32fbfa98b174d32a3b53788f70b1f965ac144c",
+    "exit": 0,
+    "seconds": 59.55076479911804,
+    "rust_results": [
+      {
+        "passed": 7,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 1
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/sequence-operations-static-contracts.json",
+    "head": "2771d1c23109bcd480ec4fa16daa67bd0d2809fe",
+    "exit": 0,
+    "seconds": 21.930311918258667,
+    "rust_results": []
+  }
+]

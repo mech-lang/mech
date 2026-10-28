@@ -1,0 +1,4 @@
+PASS: ../roc-deflate-repro-20261024/roc-deflate/package/BlockStatisticsWitness.roc:9
+PASS: ../roc-deflate-repro-20261024/roc-deflate/package/BlockStatisticsWitness.roc:17
+PASS: ../roc-deflate-repro-20261024/roc-deflate/package/CompressLazy.roc:1790
+All (3) tests passed in 623.8 ms.

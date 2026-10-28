@@ -1,0 +1,96 @@
+{"engine": "roc-0", "round": 0, "command": ["/private/tmp/mech-stack-landscape-20261026/reality-check/roc-components", "0"], "returncode": 0, "wall_seconds": 0.009154167026281357, "raw": "roc-0-round-0.log"}
+{"engine": "roc-1", "round": 0, "command": ["/private/tmp/mech-stack-landscape-20261026/reality-check/roc-components", "1"], "returncode": 0, "wall_seconds": 0.017199042020365596, "raw": "roc-1-round-0.log"}
+{"engine": "roc-2", "round": 0, "command": ["/private/tmp/mech-stack-landscape-20261026/reality-check/roc-components", "2"], "returncode": 0, "wall_seconds": 0.006061541964299977, "raw": "roc-2-round-0.log"}
+{"engine": "roc-3", "round": 0, "command": ["/private/tmp/mech-stack-landscape-20261026/reality-check/roc-components", "3"], "returncode": 0, "wall_seconds": 0.016848083003424108, "raw": "roc-3-round-0.log"}
+{"engine": "rust", "round": 0, "command": ["/private/tmp/mech-stack-landscape-20261026/reality-check/rust-init", "262144", "1500513"], "returncode": 0, "wall_seconds": 0.010736208059825003, "raw": "rust-round-0.log"}
+{"engine": "mech", "round": 0, "command": ["/private/tmp/mech-live-control-target/release/component-reality"], "returncode": 0, "wall_seconds": 21.710116042057052, "raw": "mech-round-0.log"}
+{"engine": "mech", "round": 1, "command": ["/private/tmp/mech-live-control-target/release/component-reality"], "returncode": 0, "wall_seconds": 21.522210291936062, "raw": "mech-round-1.log"}
+{"engine": "roc-3", "round": 1, "command": ["/private/tmp/mech-stack-landscape-20261026/reality-check/roc-components", "3"], "returncode": 0, "wall_seconds": 0.01724691700655967, "raw": "roc-3-round-1.log"}
+{"engine": "roc-2", "round": 1, "command": ["/private/tmp/mech-stack-landscape-20261026/reality-check/roc-components", "2"], "returncode": 0, "wall_seconds": 0.006082833977416158, "raw": "roc-2-round-1.log"}
+{"engine": "roc-1", "round": 1, "command": ["/private/tmp/mech-stack-landscape-20261026/reality-check/roc-components", "1"], "returncode": 0, "wall_seconds": 0.017190667102113366, "raw": "roc-1-round-1.log"}
+{"engine": "roc-0", "round": 1, "command": ["/private/tmp/mech-stack-landscape-20261026/reality-check/roc-components", "0"], "returncode": 0, "wall_seconds": 0.008875458035618067, "raw": "roc-0-round-1.log"}
+{"engine": "rust", "round": 1, "command": ["/private/tmp/mech-stack-landscape-20261026/reality-check/rust-init", "262144", "1500513"], "returncode": 0, "wall_seconds": 0.009543250082060695, "raw": "rust-round-1.log"}
+[
+  {
+    "engine": "mech",
+    "case": "initialization",
+    "samples": 10,
+    "median_ns": 657147812.5,
+    "min_ns": 656422500,
+    "max_ns": 660864750,
+    "median_allocations": 44665.0,
+    "median_requested_bytes": 61183945.0
+  },
+  {
+    "engine": "mech",
+    "case": "search",
+    "samples": 10,
+    "median_ns": 230664833.5,
+    "min_ns": 230364917,
+    "max_ns": 231060458,
+    "median_allocations": 48515.0,
+    "median_requested_bytes": 64879268.0
+  },
+  {
+    "engine": "mech",
+    "case": "six-position",
+    "samples": 10,
+    "median_ns": 1280158854.5,
+    "min_ns": 1267266250,
+    "max_ns": 1295607958,
+    "median_allocations": 294030.0,
+    "median_requested_bytes": 285477792.0
+  },
+  {
+    "engine": "mech",
+    "case": "skip",
+    "samples": 10,
+    "median_ns": 68674167.0,
+    "min_ns": 68586334,
+    "max_ns": 69027417,
+    "median_allocations": 39497.0,
+    "median_requested_bytes": 9873930.0
+  },
+  {
+    "engine": "roc",
+    "case": "initialization",
+    "samples": 14,
+    "median_ns": 36000.0,
+    "min_ns": 35000,
+    "max_ns": 37000
+  },
+  {
+    "engine": "roc",
+    "case": "search",
+    "samples": 14,
+    "median_ns": 99000.0,
+    "min_ns": 92000,
+    "max_ns": 104000
+  },
+  {
+    "engine": "roc",
+    "case": "six-position",
+    "samples": 14,
+    "median_ns": 36000.0,
+    "min_ns": 35000,
+    "max_ns": 36000
+  },
+  {
+    "engine": "roc",
+    "case": "skip",
+    "samples": 14,
+    "median_ns": 11000.0,
+    "min_ns": 10000,
+    "max_ns": 12000
+  },
+  {
+    "engine": "rust",
+    "case": "raw-buffer-initialization",
+    "samples": 14,
+    "median_ns": 232854.0,
+    "min_ns": 228125,
+    "max_ns": 299500,
+    "median_allocations": 2.0,
+    "median_requested_bytes": 6526340.0
+  }
+]

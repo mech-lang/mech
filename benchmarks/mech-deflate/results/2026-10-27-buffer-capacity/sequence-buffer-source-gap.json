@@ -1,0 +1,37 @@
+{
+  "name": "sequence-buffer-source-gap",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "canonical-native-program",
+    "--test",
+    "canonical_artifact_program",
+    "--",
+    "sequence_capacity_qualification::reserve_append_clear_keeps_sequence_values_and_input_aliases",
+    "--exact",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "304a1382c1d41586bb49dc1d9e6e7120d7ebadae",
+  "dirty": " M hosts/gpu/tests/canonical_artifact_program.rs\n?? hosts/gpu/tests/support/canonical_program_sequence_capacity.rs\n",
+  "exit": 101,
+  "seconds": 2.34299373626709,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/sequence-buffer-source-gap.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

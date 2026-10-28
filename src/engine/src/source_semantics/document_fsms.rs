@@ -547,6 +547,10 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(instance.syntax()),
             })?;
         let saved_bindings = self.bindings.clone();
+        let saved_definitions = std::mem::replace(
+            &mut self.scope_definitions,
+            machine.implementation_parameters.iter().cloned().collect(),
+        );
         for (parameter, value) in machine.implementation_parameters.iter().zip(selected) {
             // Invocation arguments are lexical values. A direct read of the
             // same external input inside the FSM remains live on resume.
@@ -570,6 +574,7 @@ impl SemanticBuilder {
         })();
         self.active_fsms.pop();
         self.bindings = saved_bindings;
+        self.scope_definitions = saved_definitions;
         result.map(Some)
     }
 
@@ -1200,11 +1205,14 @@ impl SemanticBuilder {
                     &mut inputs,
                     &mut captures,
                     |builder| {
-                        builder.lower_synchronous_fsm_transitions(
+                        builder.local_mutation_depth += 1;
+                        let result = builder.lower_synchronous_fsm_transitions(
                             machine,
                             &transitions,
                             &arm.syntax,
-                        )
+                        );
+                        builder.local_mutation_depth -= 1;
+                        result
                     },
                 )?;
                 if schema != machine.output {
@@ -1492,6 +1500,9 @@ impl SemanticBuilder {
                     &mech_syntax::document::VariableDefineSyntax::cast(item.clone()).unwrap(),
                 )?
                 .0
+            }
+            mech_syntax::document::SyntaxKind::TupleDestructure => {
+                self.document_tuple_destructure(item)?.0
             }
             mech_syntax::document::SyntaxKind::Expression => {
                 self.expression(

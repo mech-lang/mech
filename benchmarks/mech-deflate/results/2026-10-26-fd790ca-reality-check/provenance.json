@@ -1,0 +1,58 @@
+{
+  "utc": "2026-10-26T19:40:03.983529+00:00",
+  "machine": {
+    "system": "Darwin",
+    "node": "Macmini.ht.home",
+    "release": "24.6.0",
+    "version": "Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:34 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8103",
+    "machine": "arm64",
+    "processor": "arm"
+  },
+  "compiler_checkpoint": "fd790ca0fce74b8eb8563cc4442d3a0041672c70",
+  "production_diff": "",
+  "roc_deflate": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "roc_compiler": "Roc compiler version release-fast-d99c7b83",
+  "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+  "hashes": {
+    "/private/tmp/mech-deflate-reality-check/hosts/gpu/tests/fixtures/native/deflate-matchfinder.mec": "c0b1504fac74da69953c822597b0b135d363fe76efd96b3a92b5de9931bcba93",
+    "/private/tmp/mech-deflate-reality-check/hosts/gpu/tests/fixtures/native/deflate-binary-tree.mec": "dd60cc6210256a75dff97a9df2c3b5f9d073220836a8edc8787422a8ded2518c",
+    "/private/tmp/mech-deflate-reality-check/hosts/gpu/tests/fixtures/native/deflate-collector.mec": "6efeaf50c93c8d5abc008c82203a655828cefac06dda2bdfb125764472375075",
+    "/private/tmp/mech-stack-landscape-20261026/reality-check/RealityCheck.roc": "51ddca476d00d3f91bac91efae4677217b05207ea328e08c803f3cd95c11b316",
+    "/private/tmp/mech-stack-landscape-20261026/reality-check/rust-init.rs": "fc2e06c8dc9ce452f8ca55751e7471e8e4bb1ced93acaaba38f0753e020e6d2e",
+    "/private/tmp/mech-deflate-reality-check/hosts/gpu/tests/support/canonical_program_reality_check.rs": "fd3b9513d7edf0c281b10d547cb855c389c77f9e1f914dcadcebf954062dbf2f",
+    "/private/tmp/mech-stack-landscape-20261026/reality-check/focused/Cargo.toml": "e76c4d739ee7b789cd7787051fa60143347bcdf98a5e402e18719439d7fb02f1",
+    "/private/tmp/mech-stack-landscape-20261026/reality-check/focused/Cargo.lock": "f16bfd41cbf76d6884b306e5a938eb2e2f7a72c8f54f723cfda6218e81d2d820",
+    "/private/tmp/mech-stack-landscape-20261026/reality-check/focused/src/main.rs": "29eabfa3d8d5ec61ccb77ef8795d4618be025b6b7a1afb39bfcc7181067e7702",
+    "/private/tmp/mech-stack-landscape-20261026/reality-check/focused/src/measurement.rs": "06038efa4d18d17c686fa98df11b3f92bb8300d6f1500da17eb81725893d04a5",
+    "/private/tmp/mech-stack-landscape-20261026/reality-check/roc-components": "52b7270b1bd06e3c69db9f50931f129947074aabe4df434ab3c07552dec2fc65",
+    "/private/tmp/mech-stack-landscape-20261026/reality-check/rust-init": "09f4c315b2c5d12ee9f24177a216d51eaeb4f3a01008d8f37d01c0484d0f04ac",
+    "/private/tmp/mech-stack-landscape-20261026/reality-check/run-measurements.py": "4bd2dbf3d2ab81968443ab5a082d36ddcd144fb12bd1885a98a05160ac0da92b",
+    "/private/tmp/mech-stack-landscape-20261026/reality-check/focused/features.json": "dee8ba290de03bd91732a3a6cdbd7baf8bea3b3b8a678518883002302166c275"
+  },
+  "benchmark_only_tracked_patch": "",
+  "mech_build": {
+    "cargo_profile": "release",
+    "host_opt_level": 3,
+    "cranelift_opt_level": "speed",
+    "features": [
+      "canonical-native-program"
+    ],
+    "default_features": false,
+    "managed_memory_bytes": 268435456,
+    "temporary_bytes": 134217728,
+    "execution_work_limit": 10000000000,
+    "library_compute_and_comparison_limits": 10000000000,
+    "driver_manifest": "/private/tmp/mech-stack-landscape-20261026/reality-check/focused/Cargo.toml",
+    "standalone_driver_excludes_broad_integration_test_dependencies": true,
+    "successful_build_receipt": "focused-release-dynamic-shapes.json"
+  },
+  "checkout_status": "",
+  "dependency_version_changes": [],
+  "reference_build": {
+    "optimization": "speed",
+    "cache": false,
+    "compiler_revision": "d99c7b838fb05bb1047eb0c18d4d06d0f86f345d",
+    "allocator": "original mimalloc 2.1.7 platform",
+    "clock": "CLOCK_MONOTONIC, observed microsecond quantization"
+  }
+}

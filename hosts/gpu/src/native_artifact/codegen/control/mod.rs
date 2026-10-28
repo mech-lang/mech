@@ -13,7 +13,7 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{FuncId, Linkage, Module};
 use mech_engine::native_artifact::{
     NativeIterationAction, NativeIterationTerminator, NativeMatchAction, NativeMatchTerminator,
-    NativeMatchValue, NativeScalarKind,
+    NativeMatchValue,
 };
 fn successors(term: NativeIterationTerminator) -> [Option<u32>; 2] {
     match term {
@@ -561,8 +561,13 @@ impl<'plan> CfgDefinition<'plan> {
             let word = b
                 .ins()
                 .load(types::I64, MemFlags::new(), inputs, offset(index)?);
-            if plan.kind(value) == Some(NativeScalarKind::Bool) {
-                let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, word, 1);
+            if let Some(maximum) = plan
+                .kind(value)
+                .and_then(crate::native_artifact::compiler::word_upper_bound)
+            {
+                let valid = b
+                    .ins()
+                    .icmp_imm(IntCC::UnsignedLessThanOrEqual, word, maximum as i64);
                 guard(b, valid, error, STATUS_ABI);
             }
             b.ins()
@@ -908,6 +913,31 @@ impl<'plan> CfgDefinition<'plan> {
                 b.switch_to_block(joined);
             }
             #[cfg(feature = "canonical-native-program")]
+            if let crate::native_artifact::codegen::control::plan::CodePlan::Program(prepared) =
+                plan
+                && let NativeIterationTerminator::Header {
+                    iteration, exit, ..
+                } = block.terminator()
+                && let Some(region) = prepared
+                    .metadata()
+                    .uniform_word_collections
+                    .iter()
+                    .find(|region| region.iteration() == iteration)
+            {
+                hooks
+                    .as_ref()
+                    .ok_or_else(|| backend("uniform collection has no owner hooks"))?
+                    .uniform_words(
+                        b,
+                        index,
+                        region,
+                        locals,
+                        plan.value_count() + iteration as usize,
+                        blocks[exit as usize].expect("reachable collection exit"),
+                        error,
+                    )?;
+            }
+            #[cfg(feature = "canonical-native-program")]
             if let NativeIterationTerminator::Header {
                 iteration, exit, ..
             } = block.terminator()
@@ -1186,9 +1216,17 @@ impl<'plan> CfgDefinition<'plan> {
                             hooks.collection(b, index, [zero; 2], error)?;
                             b.ins().load(types::I64, MemFlags::new(), hooks.result, 0)
                         }
-                        mech_engine::native_artifact::NativeControlLoopRef::Tail(_) => {
+                        mech_engine::native_artifact::NativeControlLoopRef::Tail(tail) => {
                             let zero = b.ins().iconst(types::I64, 0);
-                            if !aggregate {
+                            if !aggregate && plan.kind(tail.carrier()).is_some() {
+                                let value = load(b, locals, tail.seed())?;
+                                b.ins().store(
+                                    MemFlags::new(),
+                                    value,
+                                    locals,
+                                    offset(tail.carrier().get() as usize)?,
+                                );
+                            } else if !aggregate {
                                 hooks
                                     .as_ref()
                                     .ok_or_else(|| backend("missing tail initializer hook"))?
@@ -1201,11 +1239,18 @@ impl<'plan> CfgDefinition<'plan> {
                     b.ins().store(MemFlags::new(), count, locals, offset(slot)?);
                 }
                 NativeIterationAction::Latch { iteration } => {
-                    if matches!(
-                        plan.iteration(*iteration as usize),
-                        mech_engine::native_artifact::NativeControlLoopRef::Tail(_)
-                    ) {
-                        if !aggregate {
+                    if let mech_engine::native_artifact::NativeControlLoopRef::Tail(tail) =
+                        plan.iteration(*iteration as usize)
+                    {
+                        if !aggregate && plan.kind(tail.carrier()).is_some() {
+                            let value = load(b, locals, tail.next())?;
+                            b.ins().store(
+                                MemFlags::new(),
+                                value,
+                                locals,
+                                offset(tail.carrier().get() as usize)?,
+                            );
+                        } else if !aggregate {
                             let hooks = hooks
                                 .as_ref()
                                 .ok_or_else(|| backend("missing tail latch hook"))?;

@@ -1,0 +1,50 @@
+[
+  {
+    "round": 0,
+    "case": "initialization",
+    "engine": "mech",
+    "source_and_jit_compile_seconds": 2.129629
+  },
+  {
+    "round": 0,
+    "case": "search",
+    "engine": "mech",
+    "source_and_jit_compile_seconds": 1.633444625
+  },
+  {
+    "round": 0,
+    "case": "skip",
+    "engine": "mech",
+    "source_and_jit_compile_seconds": 1.600612875
+  },
+  {
+    "round": 0,
+    "case": "six-position",
+    "engine": "mech",
+    "source_and_jit_compile_seconds": 2.128549042
+  },
+  {
+    "round": 1,
+    "case": "initialization",
+    "engine": "mech",
+    "source_and_jit_compile_seconds": 2.126120458
+  },
+  {
+    "round": 1,
+    "case": "search",
+    "engine": "mech",
+    "source_and_jit_compile_seconds": 1.616658459
+  },
+  {
+    "round": 1,
+    "case": "skip",
+    "engine": "mech",
+    "source_and_jit_compile_seconds": 1.6004041660000001
+  },
+  {
+    "round": 1,
+    "case": "six-position",
+    "engine": "mech",
+    "source_and_jit_compile_seconds": 2.112138125
+  }
+]

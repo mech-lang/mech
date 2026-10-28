@@ -13,6 +13,13 @@ Rules:
 - Invariants are checked at runtime and must stay true.
 - Invariants are not valid on the right-hand side of other expressions.
 
+Document invariants are retained constraints on a candidate publication. Inside
+a function or selected control body, an invariant checks that invocation at its
+lexical position. A false check stops the invocation before later operations
+and discards the candidate publication. An unselected branch or a loop with
+zero visits does not execute its local checks. Recursive calls check again on
+each visit.
+
 1. Examples
 -------------------------------------------------------------------------------
 

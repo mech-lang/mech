@@ -1,0 +1,115 @@
+{
+  "source_head": "333683b40b6d42ce0ead91d0c1158762e99680fd",
+  "failures": [
+    {
+      "name": "annotation-shape-identity-engine-tests",
+      "exit": 101,
+      "classification": "introduced unit fixture error",
+      "status": "corrected",
+      "detail": "The first schema witness incorrectly marked projection parameters Inferred, which canonicalized their order before the test. Structural projections reify Explicit parameter origins. Corrected the fixture to Explicit while retaining every positive and negative expected result. The final eight-test annotation selection passes."
+    },
+    {
+      "name": "connected-collector-path-tally-first-execution",
+      "exit": 101,
+      "classification": "expected explicit resource admission",
+      "status": "qualified with measured caller policy",
+      "detail": "The combined native transport requires 1103136 bytes, exceeding the unchanged 1048576-byte default. Rejected before allocation or execution. The new diagnostic declares a finite 2 MiB transport allowance and verifies success -> unchanged default denial -> success, zero rejection allocations, unchanged prior output owners, input aliases and cleanup. No earlier test allowance or compiler default was changed. The old diagnostic field completed_positions=8 denoted the intended case size; actual completed positions at this preflight rejection were zero. Passing final measurements use the corrected field."
+    },
+    {
+      "name": "huffman-integration-collection-diagnostic",
+      "exit": 101,
+      "classification": "inherited source annotation limitation",
+      "status": "fixed by 269fe951f183869e76b43091c61f1a6dac40e960",
+      "detail": "A valid record annotation numbered independent unconstrained word-buffer dimensions differently after projection. The producer emitted a redundant record conversion unsupported by native lowering. The focused bijection check removes that conversion. Clean tracked parent 95f8dc4c45fe9670315cedcdc8c4768b760cd3c2 rejects the final original-records port before this fix. Temporary diagnostic prints were removed."
+    },
+    {
+      "name": "huffman-integration-first-execution",
+      "exit": 101,
+      "classification": "inherited source restriction",
+      "status": "resolved for this port",
+      "detail": "Named global state payloads require closed kinds. The port uses ordinary recursive functions with the real dynamic buffers. No global-FSM feature expansion was made."
+    },
+    {
+      "name": "huffman-integration-minimal-state-rejection",
+      "exit": 101,
+      "classification": "inherited source restriction",
+      "status": "resolved for this port",
+      "detail": "Named global state payloads require closed kinds. The port uses ordinary recursive functions with the real dynamic buffers. No global-FSM feature expansion was made."
+    },
+    {
+      "name": "huffman-integration-original-records",
+      "exit": 101,
+      "classification": "inherited source annotation limitation",
+      "status": "fixed by 269fe951f183869e76b43091c61f1a6dac40e960",
+      "detail": "A valid record annotation numbered independent unconstrained word-buffer dimensions differently after projection. The producer emitted a redundant record conversion unsupported by native lowering. The focused bijection check removes that conversion. Clean tracked parent 95f8dc4c45fe9670315cedcdc8c4768b760cd3c2 rejects the final original-records port before this fix. Temporary diagnostic prints were removed."
+    },
+    {
+      "name": "huffman-integration-recursive-diagnostic",
+      "exit": 101,
+      "classification": "inherited source annotation limitation",
+      "status": "fixed by 269fe951f183869e76b43091c61f1a6dac40e960",
+      "detail": "A valid record annotation numbered independent unconstrained word-buffer dimensions differently after projection. The producer emitted a redundant record conversion unsupported by native lowering. The focused bijection check removes that conversion. Clean tracked parent 95f8dc4c45fe9670315cedcdc8c4768b760cd3c2 rejects the final original-records port before this fix. Temporary diagnostic prints were removed."
+    },
+    {
+      "name": "huffman-integration-recursive-execution",
+      "exit": 101,
+      "classification": "inherited source annotation limitation",
+      "status": "fixed by 269fe951f183869e76b43091c61f1a6dac40e960",
+      "detail": "A valid record annotation numbered independent unconstrained word-buffer dimensions differently after projection. The producer emitted a redundant record conversion unsupported by native lowering. The focused bijection check removes that conversion. Clean tracked parent 95f8dc4c45fe9670315cedcdc8c4768b760cd3c2 rejects the final original-records port before this fix. Temporary diagnostic prints were removed."
+    },
+    {
+      "name": "huffman-integration-witness-diagnostic",
+      "exit": 101,
+      "classification": "inherited source annotation limitation",
+      "status": "fixed by 269fe951f183869e76b43091c61f1a6dac40e960",
+      "detail": "A valid record annotation numbered independent unconstrained word-buffer dimensions differently after projection. The producer emitted a redundant record conversion unsupported by native lowering. The focused bijection check removes that conversion. Clean tracked parent 95f8dc4c45fe9670315cedcdc8c4768b760cd3c2 rejects the final original-records port before this fix. Temporary diagnostic prints were removed."
+    },
+    {
+      "name": "huffman-level12-expanded-pinned-reference",
+      "exit": 1,
+      "classification": "environmental",
+      "status": "resolved",
+      "detail": "The reference compiler could not write its cache under workspace restrictions. Authorized execution succeeded with no warnings; all fourteen tracked package modules were checked against the source pin."
+    },
+    {
+      "name": "huffman-level12-permanent-qualification",
+      "exit": 101,
+      "classification": "inherited minimal resident-harness behavior",
+      "status": "not native-blocking; not fixed here",
+      "detail": "An exploratory ordinary-resident attempt rejects reversal-table activation at NodeId(2). The retained executable built at clean 93a7be76e reproduces the same failure; that revision and the current base differ only in evidence files. The new component is qualified by exact executed pinned results and original/decoded native execution. No full new-component resident agreement is claimed. Earlier maintained resident resource-denial regressions still pass unchanged."
+    },
+    {
+      "name": "huffman-record-component-reduction",
+      "exit": 101,
+      "classification": "discarded diagnostic candidate",
+      "status": "not used",
+      "detail": "An isolated generic entry produced the existing incompatible-match-result-kind source diagnostic, so it was not a reduction of the final call context. The actual final entry compiles and executes after the annotation fix; the minimal accepted proof witness is the explicit-origin schema pair in the unit tests."
+    },
+    {
+      "name": "huffman-record-shape-minimal-before-fixed-harness",
+      "exit": 101,
+      "classification": "introduced external diagnostic policy error",
+      "status": "corrected; candidate discarded",
+      "detail": "A standalone record candidate required 1345330 bytes and was given only a 1 MiB managed account. This candidate did not reproduce the annotation failure. Its account was corrected to 64 MiB; no production default changed."
+    },
+    {
+      "name": "huffman-record-shape-minimal-before",
+      "exit": 101,
+      "classification": "introduced external test harness error",
+      "status": "corrected",
+      "detail": "Two Data::Matrix values were Vec rather than Box slices; corrected with into(). This diagnostic candidate was not published."
+    },
+    {
+      "name": "huffman-resident-baseline-reversal",
+      "exit": 101,
+      "classification": "inherited minimal resident-harness behavior",
+      "status": "not native-blocking; not fixed here",
+      "detail": "An exploratory ordinary-resident attempt rejects reversal-table activation at NodeId(2). The retained executable built at clean 93a7be76e reproduces the same failure; that revision and the current base differ only in evidence files. The new component is qualified by exact executed pinned results and original/decoded native execution. No full new-component resident agreement is claimed. Earlier maintained resident resource-denial regressions still pass unchanged."
+    }
+  ],
+  "other_development_corrections": [
+    "An initial rustfmt invocation exposed a misspelled fn in a new unit test; corrected before committing or compiling it.",
+    "The initial maintained command included an unmatched caller_layout filter and ran zero GPU lib tests. A separate exact-name caller-layout command executed one test; no empty selection is counted as a passed test."
+  ],
+  "inherited_baseline_profiles": "The two reduced engine unit-test profile failures retained in the #944 packet were not reopened or modified. This patch uses the maintained full_source annotation unit profile without warning suppression."
+}

@@ -31,6 +31,99 @@ fn compile(source: &str) -> CanonicalSourceProgram {
     CanonicalSourceFrontend.compile_expression(&syntax).unwrap()
 }
 
+#[test]
+fn lexical_assertion_signatures_are_validated_even_when_the_result_is_unused() {
+    let product = compile("signal<bool> ? | * => 1u64");
+    let mut graph = product.program().clone();
+    let boolean = graph.inputs[0].schema;
+    let scalar = graph.outputs[0].schema;
+    let SourceNodeBody::Match(root) = &mut graph.nodes[0].body else {
+        panic!()
+    };
+    let body = &mut root.arms[0].body;
+    let scalar_constant = body.yield_value;
+    root.arms[0].pattern = MatchPattern::Bind;
+    let body = &mut root.arms[0].body;
+    body.parameters = vec![ControlParameter {
+        source: ControlParameterSource::Scrutinee,
+        schema: boolean,
+    }]
+    .into();
+    let predicate = ControlValue::Parameter {
+        block: body.id,
+        ordinal: 0,
+    };
+    body.operations = vec![ControlOperation {
+        node: 0,
+        body: ControlOperationBody::Assert,
+        inputs: vec![predicate].into(),
+        schema: boolean,
+    }]
+    .into();
+    let rebuild = |graph: &SourceProgram| {
+        compile_source_program_with_control_contracts(
+            graph,
+            &mut ArtifactBuildContext::new(product.schemas(), product.constants()),
+            &[None],
+        )
+    };
+    let valid = rebuild(&graph).unwrap();
+    let sections = encode_program_artifact_sections(&valid).unwrap();
+    assert_eq!(
+        decode_program_artifact_sections(&sections)
+            .unwrap()
+            .revision(),
+        valid.revision()
+    );
+    for (inputs, output) in [
+        (vec![], boolean),
+        (vec![predicate, predicate], boolean),
+        (vec![scalar_constant], boolean),
+        (vec![predicate], scalar),
+    ] {
+        let mut bad = graph.clone();
+        let SourceNodeBody::Match(root) = &mut bad.nodes[0].body else {
+            panic!()
+        };
+        root.arms[0].body.operations[0].inputs = inputs.into();
+        root.arms[0].body.operations[0].schema = output;
+        assert!(
+            matches!(rebuild(&bad), Err(ArtifactBuildError::InvalidControl { reason, .. })
+            if reason == "lexical assertion requires one Bool input and Bool result")
+        );
+    }
+    let mut nodes: serde_json::Value = serde_json::from_slice(&sections.nodes).unwrap();
+    nodes["nodes"][0]["body"]["Match"]["arms"][0]["body"]["operations"][0]["schema"] =
+        serde_json::json!(scalar.get());
+    let mut bad = sections;
+    bad.nodes = serde_json::to_vec(&nodes).unwrap();
+    let error = decode_program_artifact_sections(&bad).unwrap_err();
+    assert!(
+        format!("{error:?}").contains("lexical assertion requires one Bool input and Bool result"),
+        "{error:?}"
+    );
+}
+
+#[test]
+fn function_local_assertions_reject_non_boolean_predicates_at_the_source() {
+    use mech_syntax::document::DocumentSyntax;
+    for predicate in ["n", "[true false]"] {
+        let source = format!(
+            "checked(n<u64>) => (out<u64>) :=\n  valid! := {predicate}\n  out := n.\nchecked(input<u64>)\n"
+        );
+        let parsed = mech_syntax::document::parse_canonical_document(
+            TextSnapshot::new(DocumentId(0xA55E28), Revision(1), source.as_str()).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
+        let error = CanonicalSourceFrontend
+            .compile_document(&DocumentSyntax::cast(parsed.syntax()).unwrap())
+            .err()
+            .expect("non-Boolean local predicate must be rejected");
+        assert_eq!(error.code, "source-semantics/non-boolean-invariant");
+    }
+}
+
 fn fixture() -> ProgramArtifactDraft {
     let base = compile("(flag<bool>, math/neg(11),22,true,false)")
         .compile_artifact()
@@ -2139,7 +2232,12 @@ fn nested_control_depth_is_bounded_before_artifact_mapping_and_wire_allocation()
         "source-semantics/control-depth-limit"
     );
     let mut sections = sections;
-    let mut graph: serde_json::Value = serde_json::from_slice(&sections.nodes).unwrap();
+    // This valid maximum-depth control tree exceeds serde_json's generic
+    // container depth. Production decoding has already preflighted its finite
+    // lexical and wire bounds above; this test now mutates that admitted tree.
+    let mut decoder = serde_json::Deserializer::from_slice(&sections.nodes);
+    decoder.disable_recursion_limit();
+    let mut graph = <serde_json::Value as serde::Deserialize>::deserialize(&mut decoder).unwrap();
     let repeated = graph["nodes"][0]["body"].clone();
     let mut deepest = &mut graph["nodes"][0]["body"];
     for _ in 1..MAX_CONTROL_DEPTH {

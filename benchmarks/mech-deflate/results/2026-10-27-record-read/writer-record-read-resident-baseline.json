@@ -1,0 +1,31 @@
+{
+  "name": "writer-record-read-resident-baseline",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "--manifest-path",
+    "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+    "writer_record_read_probe",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "27bdd8b2c5b1ad35590121653589d06251ae5161",
+  "dirty": "?? hosts/gpu/tests/fixtures/native/deflate-sequence-writer.mec\n",
+  "exit": 101,
+  "seconds": 3.0423760414123535,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/writer-record-read-resident-baseline.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

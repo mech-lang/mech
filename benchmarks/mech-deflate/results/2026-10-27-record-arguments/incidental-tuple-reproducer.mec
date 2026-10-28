@@ -1,0 +1,5 @@
+<state> := <{bytes<[u8]> count<u64>}>
+pair(bytes<[u8]>) => (out<(state,u64)>) :=
+  out := ({bytes: bytes, count: 0u64}, 0u64).
+(state, left) := pair(bytes<[u8]>)
+state.count

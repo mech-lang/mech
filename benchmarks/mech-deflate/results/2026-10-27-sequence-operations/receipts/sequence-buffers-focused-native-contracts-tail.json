@@ -1,0 +1,30 @@
+{
+  "name": "sequence-buffers-focused-native-contracts-tail",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "--manifest-path",
+    "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "28d137e68eb3dd5c29302e2ce15174ad0c0a98ba",
+  "dirty": " M hosts/gpu/Cargo.toml\n M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/src/native_artifact/program/image/wire/mod.rs\n M hosts/gpu/src/native_artifact/program/prepare/mod.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs\n M hosts/gpu/tests/canonical_artifact_program.rs\n M src/core/src/function/catalog.rs\n M src/core/src/operation_contract/maintained.rs\n M src/core/src/type_system/scheme.rs\n M src/engine/Cargo.toml\n M src/engine/src/function/catalog.rs\n M src/engine/src/intrinsics/catalog.rs\n M src/engine/src/intrinsics/mod.rs\n M src/engine/src/lib.rs\n M src/engine/src/native_artifact/map_owner_words.rs\n M src/engine/src/native_artifact/mod.rs\n M src/engine/src/native_artifact/program.rs\n M src/engine/src/native_artifact/program_facts.rs\n M src/engine/src/native_artifact/program_image_read.rs\n M src/engine/src/native_artifact/program_image_values.rs\n M src/engine/src/native_artifact/range_cursor.rs\n M src/engine/src/native_artifact/string_span_projection.rs\n M src/engine/src/resident/budget.rs\n M src/engine/src/resident/composite.rs\n M src/engine/src/resident/conversion.rs\n M src/engine/src/resident/general/live.rs\n M src/engine/src/resident/general/mod.rs\n M src/engine/src/resident/general/native_collection_prepared.rs\n M src/engine/src/resident/general/native_collection_templates.rs\n M src/engine/src/resident/general/native_collection_word_reads.rs\n M src/engine/src/resident/general/native_match_lowering.rs\n M src/engine/src/resident/mod.rs\n M src/engine/src/resident/native_collection_semantics.rs\n M src/engine/src/resident/native_factory_linkage.rs\n M src/engine/src/resident/numeric/linkage_factories.rs\n M src/engine/src/resident/numeric/mod.rs\n M src/engine/src/resident/numeric/selected_string_matrix.rs\n M src/engine/src/resident/numeric/string_map_access.rs\n M src/engine/src/resident/payload_budget.rs\n M src/engine/src/resident/sequence_sort.rs\n M src/engine/src/resident/set.rs\n M src/engine/src/resident/set_conversion.rs\n M src/engine/src/resident/set_conversion_budget.rs\n M src/engine/src/resident/text.rs\n M src/engine/src/resident/text_index.rs\n M src/engine/src/text_index.rs\n M src/stdlib/Cargo.toml\n?? hosts/gpu/src/native_artifact/program/runtime/invocation/unsigned_buffers.rs\n?? hosts/gpu/tests/support/canonical_program_sequence_capacity.rs\n?? src/engine/src/intrinsics/sequence_buffers.rs\n?? src/engine/src/native_artifact/unsigned_buffer_call.rs\n?? src/engine/src/resident/general/native_collection_unsigned_buffers.rs\n?? src/engine/src/resident/sequence_buffers.rs\n?? src/engine/tests/sequence_buffer_contract.rs\n",
+  "exit": 101,
+  "seconds": 2.783400774002075,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/sequence-buffers-focused-native-contracts-tail.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "name": "sequence-operations-generic-row-runtime",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-engine",
+    "--no-default-features",
+    "--features",
+    "semantic-compiler,resident-artifact,sequence_buffers",
+    "--test",
+    "sequence_buffer_contract",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "ee32fbfa98b174d32a3b53788f70b1f965ac144c",
+  "dirty": " M hosts/gpu/tests/support/canonical_program_sequence_capacity.rs\n M src/core/src/type_system/scheme.rs\n M src/engine/src/intrinsics/sequence_buffers.rs\n M src/engine/tests/sequence_buffer_contract.rs\n?? benchmarks/mech-deflate/results/2026-10-27-sequence-operations/\n",
+  "exit": 0,
+  "seconds": 37.61839008331299,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/sequence-operations-generic-row-runtime.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

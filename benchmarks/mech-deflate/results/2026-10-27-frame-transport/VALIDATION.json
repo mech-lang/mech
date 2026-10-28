@@ -1,0 +1,391 @@
+[
+  {
+    "receipt": "receipts/frame-transport-ci-inventory.json",
+    "head": "4b722986c7eaa47011c4e36562baec0e1fe87cf3",
+    "exit": 0,
+    "seconds": 8.825583219528198,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/frame-transport-clean-components-linked.json",
+    "head": "356e7275cc7e852aeea9713a4f533e8540983b9d",
+    "exit": 0,
+    "seconds": 626.5846583843231,
+    "rust_results": [
+      {
+        "passed": 159,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 129
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/frame-transport-engine-selection-check.json",
+    "head": "851507304181308ddbadcd96bec24859e8deeed4",
+    "exit": 101,
+    "seconds": 8.894344329833984,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/frame-transport-final-components-linked-layout.json",
+    "head": "4b722986c7eaa47011c4e36562baec0e1fe87cf3",
+    "exit": 0,
+    "seconds": 654.7303149700165,
+    "rust_results": [
+      {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 422
+      },
+      {
+        "passed": 160,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 129
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/frame-transport-final-geometry-regressions.json",
+    "head": "851507304181308ddbadcd96bec24859e8deeed4",
+    "exit": 0,
+    "seconds": 46.34685802459717,
+    "rust_results": [
+      {
+        "passed": 6,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 11
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/frame-transport-final-static.json",
+    "head": "4b722986c7eaa47011c4e36562baec0e1fe87cf3",
+    "exit": 0,
+    "seconds": 20.176665782928467,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/frame-transport-first-engine-check.json",
+    "head": "851507304181308ddbadcd96bec24859e8deeed4",
+    "exit": 101,
+    "seconds": 14.856734991073608,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/frame-transport-first-real-arguments-pinned-consumer.json",
+    "head": "851507304181308ddbadcd96bec24859e8deeed4",
+    "exit": 0,
+    "seconds": 2.9831347465515137,
+    "rust_results": [
+      {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 10
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/frame-transport-first-real-arguments.json",
+    "head": "851507304181308ddbadcd96bec24859e8deeed4",
+    "exit": 101,
+    "seconds": 0.3807101249694824,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/frame-transport-first-recursive-capacity.json",
+    "head": "851507304181308ddbadcd96bec24859e8deeed4",
+    "exit": 101,
+    "seconds": 44.38476014137268,
+    "rust_results": [
+      {
+        "passed": 0,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 8
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/frame-transport-growing-plan-compact.json",
+    "head": "851507304181308ddbadcd96bec24859e8deeed4",
+    "exit": 0,
+    "seconds": 1.9606599807739258,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/frame-transport-growing-plan.json",
+    "head": "851507304181308ddbadcd96bec24859e8deeed4",
+    "exit": 0,
+    "seconds": 2.4633841514587402,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/frame-transport-live-meter-recursive-capacity.json",
+    "head": "851507304181308ddbadcd96bec24859e8deeed4",
+    "exit": 0,
+    "seconds": 44.214035987854004,
+    "rust_results": [
+      {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 8
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/frame-transport-native-first-check.json",
+    "head": "851507304181308ddbadcd96bec24859e8deeed4",
+    "exit": 0,
+    "seconds": 11.325794219970703,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/frame-transport-native-only-engine.json",
+    "head": "4b722986c7eaa47011c4e36562baec0e1fe87cf3",
+    "exit": 0,
+    "seconds": 7.752314805984497,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/frame-transport-original-pending-capacity-now-passes.json",
+    "head": "4b722986c7eaa47011c4e36562baec0e1fe87cf3",
+    "exit": 0,
+    "seconds": 0.43752193450927734,
+    "rust_results": [
+      {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 19
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/frame-transport-parent-record-resident-default.json",
+    "head": "851507304181308ddbadcd96bec24859e8deeed4",
+    "exit": 101,
+    "seconds": 2.085015058517456,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/frame-transport-parent-record-return-negative.json",
+    "head": "851507304181308ddbadcd96bec24859e8deeed4",
+    "exit": 101,
+    "seconds": 58.52425980567932,
+    "rust_results": [
+      {
+        "passed": 0,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 9
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/frame-transport-permanent-regressions.json",
+    "head": "851507304181308ddbadcd96bec24859e8deeed4",
+    "exit": 0,
+    "seconds": 12.02265477180481,
+    "rust_results": [
+      {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 11
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/frame-transport-real-argument-plan.json",
+    "head": "851507304181308ddbadcd96bec24859e8deeed4",
+    "exit": 0,
+    "seconds": 1.0540452003479004,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/frame-transport-record-return-capacity-observation.json",
+    "head": "356e7275cc7e852aeea9713a4f533e8540983b9d",
+    "exit": 101,
+    "seconds": 1.9178040027618408,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/frame-transport-record-return-current-negative.json",
+    "head": "4b722986c7eaa47011c4e36562baec0e1fe87cf3",
+    "exit": 101,
+    "seconds": 2.853255033493042,
+    "rust_results": [
+      {
+        "passed": 0,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 18
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/frame-transport-record-return-native-observation.json",
+    "head": "356e7275cc7e852aeea9713a4f533e8540983b9d",
+    "exit": 0,
+    "seconds": 2.041337013244629,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/frame-transport-repeated-tuple-exit-probe.json",
+    "head": "4b722986c7eaa47011c4e36562baec0e1fe87cf3",
+    "exit": 101,
+    "seconds": 2.129349946975708,
+    "rust_results": [
+      {
+        "passed": 0,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 19
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/frame-transport-runtime-only-engine.json",
+    "head": "4b722986c7eaa47011c4e36562baec0e1fe87cf3",
+    "exit": 0,
+    "seconds": 0.27991819381713867,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/frame-transport-runtime-only-host.json",
+    "head": "4b722986c7eaa47011c4e36562baec0e1fe87cf3",
+    "exit": 0,
+    "seconds": 11.260396003723145,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/frame-transport-shape-node-bound-fixed.json",
+    "head": "356e7275cc7e852aeea9713a4f533e8540983b9d",
+    "exit": 101,
+    "seconds": 46.50564503669739,
+    "rust_results": [
+      {
+        "passed": 6,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 11
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/frame-transport-shape-node-bound-red.json",
+    "head": "356e7275cc7e852aeea9713a4f533e8540983b9d",
+    "exit": 101,
+    "seconds": 2.7908220291137695,
+    "rust_results": [
+      {
+        "passed": 0,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 17
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/frame-transport-shape-node-bound-same-default-policy.json",
+    "head": "356e7275cc7e852aeea9713a4f533e8540983b9d",
+    "exit": 0,
+    "seconds": 2.3033928871154785,
+    "rust_results": [
+      {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 17
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/frame-transport-six-regressions-corrected.json",
+    "head": "851507304181308ddbadcd96bec24859e8deeed4",
+    "exit": 101,
+    "seconds": 4.014090061187744,
+    "rust_results": [
+      {
+        "passed": 5,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 11
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/frame-transport-six-regressions-final.json",
+    "head": "851507304181308ddbadcd96bec24859e8deeed4",
+    "exit": 0,
+    "seconds": 46.24667000770569,
+    "rust_results": [
+      {
+        "passed": 6,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 11
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/frame-transport-six-regressions.json",
+    "head": "851507304181308ddbadcd96bec24859e8deeed4",
+    "exit": 101,
+    "seconds": 3.9960548877716064,
+    "rust_results": [
+      {
+        "passed": 5,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 11
+      }
+    ]
+  },
+  {
+    "receipt": "receipts/frame-transport-static-contracts.json",
+    "head": "356e7275cc7e852aeea9713a4f533e8540983b9d",
+    "exit": 0,
+    "seconds": 15.486127853393555,
+    "rust_results": []
+  },
+  {
+    "receipt": "receipts/frame-transport-unary-repeated-tuple-exit-probe.json",
+    "head": "4b722986c7eaa47011c4e36562baec0e1fe87cf3",
+    "exit": 101,
+    "seconds": 2.1344430446624756,
+    "rust_results": [
+      {
+        "passed": 0,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 19
+      }
+    ]
+  }
+]

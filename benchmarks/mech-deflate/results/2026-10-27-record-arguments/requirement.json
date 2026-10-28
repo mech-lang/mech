@@ -1,0 +1,25 @@
+{
+  "base": "610d5642100f35330512567591918a12fb393141",
+  "blocking_source": "BlockOut.roc:388-389 loops across List(Sequence); level-12 all-literal choice in CompressOptimal.roc:1109-1137 sets use_items=0",
+  "reference_pin": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "reproducer": "writer-recursive-records-repro.mec",
+  "gaps": [
+    "Source pattern/capture eligibility only admits scalar matrix elements",
+    "Symbolic independent-arena compatibility and native structural-carrier eligibility only admit unsigned matrices"
+  ],
+  "implementation": "Admit rank-two matrices of fixed record/tuple elements through existing turn-lifetime control gates and snapshot carrier/projection. Keep packed unsigned-copy classification separate. Preserve constant-extent agreement and exact element schemas. No change to immutable captures or recursion detection.",
+  "acceptance": [
+    "Original/decoded resident/native recursion with fresh numeric and Boolean fields",
+    "Vary input matrix dimensions across calls; aliases unchanged",
+    "Selected versus unselected failing read, index errors and overflow preserve prior publication then recover",
+    "Reject nested child containers and non-turn lifetimes for this extension",
+    "Existing record ownership qualification and linked execution pass",
+    "Repeat actual sequence writer witness with real 6633832 output reservation"
+  ],
+  "incidental_writer_gap": {
+    "operation": "TupleScalarProjection whose selected result is a record containing a buffer",
+    "status": "Not expanded: the port introduced this tuple; pinned source uses local loop variables. Writer helper now returns one state record; sequence records and algorithm unchanged.",
+    "diagnostic_receipt": "sequence-writer-lowering-diagnostic.json",
+    "reproducer": "writer-tuple-record-repro.mec"
+  }
+}

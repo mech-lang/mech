@@ -1,0 +1,13 @@
+{
+  "operation": "Carry the original sequence records through the block writer loop and selected branch",
+  "reference": "671077457ff7ef3a3d44caf715a3fc595addf379 package/BlockOut.roc:388-389",
+  "source_failure": "source-semantics/unsupported-recursive-argument",
+  "capture_failure": "source-semantics/unsupported-control-capture",
+  "scope": "Separate from scalar-selection native eligibility; not fixed in this patch",
+  "acceptance": [
+    "Original and decoded, resident and native recursive record-matrix arguments retain each visit\u2019s current data",
+    "Unselected paths avoid failing reads; selected failures preserve published output and aliases; retry succeeds",
+    "Do not widen child-container eligibility without evidence"
+  ],
+  "reproducer": "recursive-records-reproducer.mec"
+}

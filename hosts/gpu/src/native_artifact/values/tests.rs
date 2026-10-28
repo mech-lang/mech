@@ -3,6 +3,9 @@ use mech_core::snapshot::{MapEntryDraft, SnapshotValidationContext};
 use mech_core::{
     SchemaBody, SchemaDraft, SchemaTableBuilder, ValueData, ValueDataDraft, ValueDraft,
 };
+#[cfg(feature = "canonical-native-program-runtime")]
+#[path = "copy_tests.rs"]
+mod copy_tests;
 const TRANSPORT_LIMIT: u64 = 1024 * 1024;
 
 #[cfg(feature = "canonical-native-program-runtime")]

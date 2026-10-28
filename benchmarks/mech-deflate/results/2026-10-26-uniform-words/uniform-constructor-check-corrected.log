@@ -1,0 +1,4 @@
+    Checking mech-gpu v0.3.5 (/private/tmp/mech-deflate-reality-check/hosts/gpu)
+    Checking mech-stdlib v0.3.5 (/private/tmp/mech-deflate-reality-check/src/stdlib)
+    Checking component-reality v0.0.0 (/private/tmp/mech-stack-landscape-20261026/reality-check/focused)
+    Finished `release` profile [optimized] target(s) in 4.92s

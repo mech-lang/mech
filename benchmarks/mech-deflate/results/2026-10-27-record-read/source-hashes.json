@@ -1,0 +1,6 @@
+{
+  "src/engine/src/resident/general/native_collection_templates.rs": "1f7114503c7781b0a909904c832a57c5f82f2b007edbb40043e3f33b2342bae1",
+  "hosts/gpu/src/native_artifact/program/image/identity.rs": "936559ee11623cd178db76612074fb406795ee7d05aa95097866780d7c353313",
+  "hosts/gpu/tests/support/canonical_program_record_buffers.rs": "a6a9dd7ee11f1898635cfa8ff3ffde9cbfca5654fd36a06dbc4c566daf349e97",
+  "hosts/gpu/tests/support/canonical_program_linked.rs": "a4578f0425033405104fbe9ae02fa8b8e718674df23284e3229c531167259119"
+}

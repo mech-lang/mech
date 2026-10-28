@@ -1,0 +1,11 @@
+{
+  "hosts/gpu/tests/support/canonical_program_compress.rs": "3c591ef5166628729c186845083453ec92b31ae715ae5441dfa9a9253e2914e1",
+  "hosts/gpu/tests/fixtures/native/deflate-boundary-16384-distribution-change.deflate": "9009624c8f27451b6182f638b4b4d88875748fa47b718ea6255e062904021ff0",
+  "hosts/gpu/tests/fixtures/native/deflate-boundary-16384-distribution-change.input": "56a7af3beee008d646c71c1dc13ee34eadb7c508ff7626ff013a6d6366c79631",
+  "hosts/gpu/tests/fixtures/native/deflate-boundary-33027-periodic-window.deflate": "dbcf27a94a41ae084f5816f026fdda1df4e3c2dc67dc559d5ae1f7ee75fecdee",
+  "hosts/gpu/tests/fixtures/native/deflate-boundary-33027-periodic-window.input": "ba410bfa1c0373c33eaf835f083206f39f141fac72f721908dd6a191a5895d89",
+  "hosts/gpu/tests/fixtures/native/deflate-boundary-reference.json": "faeffa4f07690b8b75dabeaf857ec37b2493554511c689324fe2b1b11b045e6a",
+  "benchmarks/mech-deflate/results/2026-10-27-boundary-compression/MechBoundaryOracle.roc": "6b527b326211955cf16933affb6a6457b77f3be0fc7f0cf099a3417c4fd063d2",
+  "benchmarks/mech-deflate/results/2026-10-27-boundary-compression/verify-fixtures.py": "b3c9ba20cce3ac307139f61761fb9cb2fc19c1dc56fd016cd3ee8e8bf6ed0037",
+  ".gitattributes": "d7e486782dfb41c9ebb8aeac8f338f99f459e151b6a73e6030079fa0c0270964"
+}

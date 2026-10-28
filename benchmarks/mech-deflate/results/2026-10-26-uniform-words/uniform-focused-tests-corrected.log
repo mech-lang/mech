@@ -1,0 +1,23 @@
+   Compiling component-reality v0.0.0 (/private/tmp/mech-stack-landscape-20261026/reality-check/focused)
+    Finished `release` profile [optimized] target(s) in 5.09s
+     Running unittests src/main.rs (/private/tmp/mech-live-control-target/release/deps/component_reality-a88b25f743f7e87b)
+
+running 5 tests
+test uniform_qualification::repeated_uniform_calls_read_the_current_word_and_count ...
+thread 'uniform_qualification::repeated_uniform_calls_read_the_current_word_and_count' (15922430) panicked at /private/tmp/mech-deflate-reality-check/hosts/gpu/tests/support/canonical_program_uniform_words.rs:155:87:
+called `Result::unwrap()` on an `Err` value: Backend("canonical native artifact lowering: MissingSemanticWitness { node: NodeId(1) }")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+test uniform_qualification::uniform_constructor_keeps_range_overflow_before_output_rejection ... ok
+test uniform_qualification::uniform_optimizer_leaves_selected_assertions_in_the_ordinary_body ... ok
+test uniform_qualification::uniform_unsigned_values_keep_clone_quotas_prior_outputs_and_recovery ... ok
+test uniform_qualification::uniform_word_facts_keep_the_exact_region_and_reject_effects_or_varying_yields ... ok
+
+failures:
+
+failures:
+    uniform_qualification::repeated_uniform_calls_read_the_current_word_and_count
+
+test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+
+error: test failed, to rerun pass `--bin component-reality`

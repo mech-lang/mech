@@ -1,0 +1,13 @@
+import subprocess,os,json,time,sys
+from pathlib import Path
+p=Path('/private/tmp/mech-linear-restack-20261026/validation');w='/private/tmp/mech-deflate-linear-stack'
+p.mkdir(exist_ok=True)
+name=sys.argv[1];cmd=sys.argv[2:]
+env={**os.environ,'CARGO_INCREMENTAL':'0','CARGO_PROFILE_TEST_DEBUG':'0','CARGO_PROFILE_DEV_DEBUG':'0','CARGO_BUILD_JOBS':'1','CARGO_NET_OFFLINE':'true','CARGO_TARGET_DIR':os.environ.get('MECH_QUAL_TARGET','/private/tmp/mech-live-control-target'),'RUSTUP_TOOLCHAIN':'nightly-2026-03-03'}
+head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=w,text=True).strip();dirty=subprocess.check_output(['git','status','--porcelain'],cwd=w,text=True)
+start=time.time();print('START',name,head,flush=True)
+with (p/(name+'.log')).open('w') as f:r=subprocess.run(cmd,cwd=w,env=env,stdout=f,stderr=subprocess.STDOUT)
+d={'name':name,'command':cmd,'cwd':w,'head':head,'dirty':dirty,'exit':r.returncode,'seconds':time.time()-start,'log':str(p/(name+'.log')),'environment':{k:env[k] for k in ['CARGO_INCREMENTAL','CARGO_PROFILE_TEST_DEBUG','CARGO_PROFILE_DEV_DEBUG','CARGO_BUILD_JOBS','CARGO_NET_OFFLINE','CARGO_TARGET_DIR','RUSTUP_TOOLCHAIN']}}
+(p/(name+'.json')).write_text(json.dumps(d,indent=2)+'\n');print(json.dumps(d),flush=True)
+print('\n'.join((p/(name+'.log')).read_text().splitlines()[-35:]),flush=True)
+sys.exit(r.returncode)

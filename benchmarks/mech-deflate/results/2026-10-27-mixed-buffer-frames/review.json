@@ -1,0 +1,24 @@
+{
+  "base": "88605b57230b5a76c36f58f3977b3261fdbe47c8",
+  "native_program_ir": 114,
+  "design": "Admit immutable fixed aggregate matrix leaves beside unsigned buffers in existing private frames. Retain turn lifetime and connected-component gates; no new runtime lanes or packed aggregate classification.",
+  "baseline": "Requested capacities 512 and 6633832 both became 64 after a recursive mixed-frame return, clear and append.",
+  "fixed": "Original/decoded retain exact capacity; allocation requests 5842 at both sizes, bytes 475098 and 7108418, exact delta 6633320. Zero cloned-byte allowance, aliases, previous publication, failure cleanup and retry checked.",
+  "validation": {
+    "host": "18 passed in mixed-record-frame-maintained; linked comparison failed as described below",
+    "static": "Four architecture/catalog checks, inventory [], formatting and diff checks pass",
+    "linked_and_components": "5 passed;338 filtered;157.40s test time,182.01s including build. One linked mixed-frame regression and four writer tests (writer sources are separately committed).",
+    "unique_compiler_tests": 19
+  },
+  "failures": {
+    "linked_oracle": "Test-scaffolding failure: linked real-buffer executable passed but resident oracle required 53115358 compute work against 16777216. Oracle now uses same operations with capacity512; linked retains6633832. No limits raised.",
+    "resident_real_capacity": "Existing snapshot path requires33171230 temporary bytes against16777216. Native real-buffer execution succeeds; resident semantic comparison is at512.",
+    "minimal_native_artifact_profile": "Previously assigned inherited uniform_word_collection.rs primitive() feature gate; unchanged and not rerun."
+  },
+  "not_claimed": [
+    "Full compressor",
+    "Benchmark timing",
+    "Completed remote CI",
+    "Full workspace suite"
+  ]
+}

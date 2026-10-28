@@ -5,9 +5,12 @@ use super::comprehension::{
 };
 use super::*;
 use mech_syntax::document::{
-    ComprehensionQualifierSyntax, ComprehensionQualifierValueSyntax, FunctionCallSyntax,
-    MatchArmSyntax, MatrixComprehensionSyntax, SetComprehensionSyntax,
+    ApplicationExpressionSyntax, ComprehensionQualifierSyntax, ComprehensionQualifierValueSyntax,
+    FunctionCallSyntax, MatchArmSyntax, MatrixComprehensionSyntax, SetComprehensionSyntax,
 };
+
+#[path = "recursive_statement_functions.rs"]
+mod recursive_statements;
 
 enum DocumentFunctionBody {
     Expression(SyntaxNode),
@@ -35,8 +38,63 @@ fn calls_function(node: &SyntaxNode, name: &str) -> Result<bool, SourceSemanticE
     {
         return Ok(true);
     }
+    if let Some(application) = ApplicationExpressionSyntax::cast(node.clone()) {
+        for stage in application.stages() {
+            if let Some(function) = stage.function()
+                && node_text(function.syntax())? == name
+            {
+                return Ok(true);
+            }
+        }
+    }
     for child in node.children() {
         if calls_function(&child, name)? {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+fn contains_invariant(
+    node: &SyntaxNode,
+    functions: &BTreeMap<String, SyntaxNode>,
+    visited: &mut BTreeSet<String>,
+    depth: usize,
+) -> Result<bool, SourceSemanticError> {
+    if node.kind() == SyntaxKind::InvariantDefine {
+        return Ok(true);
+    }
+    let mut callees = Vec::new();
+    if let Some(call) = FunctionCallSyntax::cast(node.clone())
+        && let Some(function) = call.function()
+    {
+        callees.push(node_text(function.syntax())?);
+    }
+    if let Some(application) = ApplicationExpressionSyntax::cast(node.clone()) {
+        for stage in application.stages() {
+            if let Some(function) = stage.function() {
+                callees.push(node_text(function.syntax())?);
+            }
+        }
+    }
+    for name in callees {
+        if let Some(body) = functions.get(&name)
+            && visited.insert(name)
+        {
+            if depth >= crate::MAX_CONTROL_DEPTH as usize {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/function-expansion-depth",
+                    message: "function check analysis exceeds the lexical depth limit".to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(node),
+                });
+            }
+            if contains_invariant(body, functions, visited, depth + 1)? {
+                return Ok(true);
+            }
+        }
+    }
+    for child in node.children() {
+        if contains_invariant(&child, functions, visited, depth)? {
             return Ok(true);
         }
     }
@@ -286,7 +344,7 @@ impl SemanticBuilder {
         if let Some(function) = self.active_functions.last() {
             if matches!(
                 self.document_bindings.get(name),
-                Some(PendingBinding::MutableState(_))
+                Some(PendingBinding::MutableState(_) | PendingBinding::MutableLocal(_))
             ) {
                 return Err(SourceSemanticError {
                     code: "source-semantics/mutable-function-capture",
@@ -411,10 +469,12 @@ impl SemanticBuilder {
                     format!("function {name} forms an unsupported mutual recursion cycle"),
                 ));
             }
-            if !matches!(body, DocumentFunctionBody::Patterns(_)) {
+            if matches!(body, DocumentFunctionBody::Expression(_)) {
                 return Err(error(
-                    "source-semantics/recursive-statement-function",
-                    format!("function {name} requires a pattern body for canonical recursion"),
+                    "source-semantics/recursive-expression-function",
+                    format!(
+                        "function {name} requires a pattern or statement body for canonical recursion"
+                    ),
                 ));
             }
             let (expected, root_depth) = self
@@ -460,7 +520,7 @@ impl SemanticBuilder {
                 let elements = arguments
                     .iter()
                     .map(|argument| {
-                        embed_schema_draft(
+                        function_argument_shape::embed(
                             &self.schema_draft_of(*argument)?,
                             &mut dimensions,
                             SourceSemanticAnchor::for_node(call),
@@ -510,7 +570,7 @@ impl SemanticBuilder {
             .iter()
             .filter_map(|(name, binding)| match binding {
                 PendingBinding::Value(value) => Some((name.clone(), PendingBinding::Value(*value))),
-                PendingBinding::MutableState(_) => None,
+                PendingBinding::MutableState(_) | PendingBinding::MutableLocal(_) => None,
             })
             .collect::<BTreeMap<_, _>>();
         let mut parameter_names = BTreeSet::new();
@@ -524,8 +584,10 @@ impl SemanticBuilder {
                 ));
             }
             let actual = self.schema_draft_of(input)?;
+            // A unary scalar function maps matrix elements regardless of its
+            // body syntax. The lift retains the matrix shape and admits only
+            // pure element operations when its completed body is packaged.
             let matrix_lift = parameters.len() == 1
-                && matches!(&body, DocumentFunctionBody::Patterns(_))
                 && schema.dimension_parameters.is_empty()
                 && matches!(
                     &actual.body,
@@ -623,17 +685,61 @@ impl SemanticBuilder {
         if lifted_collection.is_some() {
             self.comprehension_depth += 1;
         }
+        // Function-local mutation versions local values. It must not allocate
+        // retained document state or make a pure call depend on its last visit.
+        self.local_mutation_depth += 1;
         let result = (|| match body {
             DocumentFunctionBody::Expression(body) => {
-                self.inline_expression_function_body(name, &body)
+                if self.control_depth == 0
+                    && contains_invariant(&body, &self.local_functions, &mut BTreeSet::new(), 0)?
+                {
+                    let expected = self.expression_function_schema(name, &body)?;
+                    self.inline_function_body_frame(
+                        name,
+                        &body,
+                        &parameters,
+                        &arguments,
+                        call,
+                        expected,
+                        &error,
+                        |builder| builder.inline_expression_function_body(name, &body),
+                    )
+                } else {
+                    self.inline_expression_function_body(name, &body)
+                }
             }
             DocumentFunctionBody::Statements(body) => {
-                self.inline_statement_function_body(name, &body, call, &error)
+                // Keep the complete invocation in one lexical frame. In
+                // particular, later closed expressions must not activate at
+                // document scope ahead of an input-dependent entry check.
+                // An existing selected body already orders all inlined work.
+                // Recursion still needs its own argument frame and loop target.
+                if calls_function(&body, name)?
+                    || (self.control_depth == 0
+                        && contains_invariant(
+                            &body,
+                            &self.local_functions,
+                            &mut BTreeSet::new(),
+                            0,
+                        )?)
+                {
+                    self.inline_recursive_statement_function_body(
+                        name,
+                        &body,
+                        &parameters,
+                        &arguments,
+                        call,
+                        &error,
+                    )
+                } else {
+                    self.inline_statement_function_body(name, &body, call, &error)
+                }
             }
             DocumentFunctionBody::Patterns(body) => {
                 self.inline_pattern_function_body(name, &body, &arguments, call)
             }
         })();
+        self.local_mutation_depth -= 1;
         let result = if let Some(lift) = lifted_collection {
             self.comprehension_depth -= 1;
             self.control_depth -= 1;
@@ -648,11 +754,11 @@ impl SemanticBuilder {
         result
     }
 
-    fn inline_expression_function_body(
+    fn expression_function_schema(
         &mut self,
         name: &str,
         body: &SyntaxNode,
-    ) -> Result<PendingValue, SourceSemanticError> {
+    ) -> Result<SchemaDraft, SourceSemanticError> {
         let annotation = body
             .children()
             .find_map(KindAnnotationSyntax::cast)
@@ -661,7 +767,15 @@ impl SemanticBuilder {
                 message: format!("function {name} has no output kind"),
                 anchor: SourceSemanticAnchor::for_node(body),
             })?;
-        let expected = self.annotation_schema_draft(&annotation)?;
+        self.annotation_schema_draft(&annotation)
+    }
+
+    fn inline_expression_function_body(
+        &mut self,
+        name: &str,
+        body: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let expected = self.expression_function_schema(name, body)?;
         let expression = body
             .children()
             .find_map(ExpressionSyntax::cast)
@@ -835,6 +949,9 @@ impl SemanticBuilder {
                 }
                 PendingNodeBody::Iteration(control) if node.state.is_none() => {
                     PendingControlOperationBody::Iteration(control)
+                }
+                PendingNodeBody::LocalAssert if node.state.is_none() => {
+                    PendingControlOperationBody::Assert
                 }
                 _ => {
                     return Err(SourceSemanticError {
@@ -1044,7 +1161,7 @@ impl SemanticBuilder {
             let elements = arguments
                 .iter()
                 .map(|argument| {
-                    embed_schema_draft(
+                    function_argument_shape::embed(
                         &self.schema_draft_of(*argument)?,
                         &mut dimensions,
                         SourceSemanticAnchor::for_node(call),

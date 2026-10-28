@@ -1,0 +1,33 @@
+//! Pending acceptance for the next record-return ownership change.
+//! This fails on the current compiler; it is not passing qualification.
+use super::{allocation_probe, artifacts, inputs, limits};
+use mech_core::{ManagedMemoryBudget, ValueData, ValueDataDraft as Data};
+use mech_gpu::native_artifact::JitProgramArtifact;
+
+#[test]
+fn pending_record_return_retains_reusable_path_and_output_capacity() {
+    let mut failures = Vec::new();
+    for (width,capacity) in [(64,305257),(8,6633832)] {
+        let source = include_str!("record-return-capacity.mec");
+        let source = if width==64 { source.to_owned() } else {
+            source.replace("[u64]","[u8]").replace("0u64, capacity","0u8, capacity").replace("17u64","17u8")
+        };
+        for (form,artifact) in artifacts(&source).0.into_iter().enumerate() {
+            let jit = JitProgramArtifact::compile(&artifact,&mech_stdlib::source_catalog()).unwrap();
+            let memory = ManagedMemoryBudget::new(128*1024*1024);
+            let args = inputs(&artifact,&[("capacity",Data::U64(capacity))],&memory);
+            let mut output = vec![None;artifact.outputs().len()];
+            let start = std::time::Instant::now();
+            let (result,requests,bytes) = allocation_probe::measured_with_bytes(||jit.evaluate_into(&args,&mut output,limits(),&memory));
+            result.unwrap();
+            let value = output.last().unwrap().as_ref().unwrap();
+            assert_eq!(value.canonical_data_draft().unwrap(),Data::Matrix(vec![if width==64 { Data::U64(17) } else { Data::U8(17) }].into()));
+            let ValueData::Matrix(matrix) = value.data() else { panic!() };
+            let actual = matrix.unsigned_buffer_capacity();
+            println!("record-return form={form} width={width} capacity={capacity} actual={actual:?} requests={requests} bytes={bytes} seconds={}",start.elapsed().as_secs_f64());
+            if actual != Some(capacity as usize) { failures.push((form,width,capacity,actual)); }
+            drop((args,output)); assert_eq!(memory.used_bytes(),0);
+        }
+    }
+    assert!(failures.is_empty(),"record return lost capacity: {failures:?}");
+}

@@ -1,0 +1,33 @@
+{
+  "name": "level12-boundary-maintained-host-build",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "canonical-native-program",
+    "--test",
+    "canonical_artifact_program",
+    "--no-run"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "7fc6587fa6f9506908393566a05aeb9615a43633",
+  "dirty": " M hosts/gpu/tests/support/canonical_program_compress.rs\n?? hosts/gpu/tests/fixtures/native/deflate-boundary-16384-distribution-change.deflate\n?? hosts/gpu/tests/fixtures/native/deflate-boundary-16384-distribution-change.input\n?? hosts/gpu/tests/fixtures/native/deflate-boundary-33027-periodic-window.deflate\n?? hosts/gpu/tests/fixtures/native/deflate-boundary-33027-periodic-window.input\n?? hosts/gpu/tests/fixtures/native/deflate-boundary-reference.json\n",
+  "exit": 0,
+  "seconds": 21.39010500907898,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/level12-boundary-maintained-host-build.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

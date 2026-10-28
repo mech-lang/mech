@@ -1,5 +1,14 @@
+#[path = "selected_matrix_result.rs"]
+mod selected_matrix_result;
+use selected_matrix_result::selected_matrix_result_schema;
+#[path = "function_argument_shape.rs"]
+mod function_argument_shape;
+
 #[path = "annotation_conversion_shape.rs"]
 mod annotation_conversion_shape;
+
+#[path = "annotation_shape_identity.rs"]
+mod annotation_shape_identity;
 
 #[cfg(all(
     test,
@@ -17,6 +26,9 @@ use application::{PendingIteration, resolve_iteration};
 
 #[path = "constant_binding.rs"]
 mod constant_binding;
+
+#[path = "lexical_invariants.rs"]
+mod lexical_invariants;
 
 #[path = "comprehension.rs"]
 mod comprehension;
@@ -2812,6 +2824,7 @@ fn unresolved_empty(anchor: SourceSemanticAnchor) -> SourceSemanticError {
 #[derive(Clone, Copy)]
 enum PendingBinding {
     Value(PendingValue),
+    MutableLocal(PendingValue),
     MutableState(u32),
 }
 
@@ -2842,6 +2855,7 @@ enum PendingNodeBody {
     Fsm(crate::FsmDeclaration),
     CollectionBinding,
     RecursiveCall(u8),
+    LocalAssert,
 
     Suspend,
     Publish,
@@ -2913,6 +2927,7 @@ impl PendingMatch {
                         PendingControlOperationBody::Operation { .. }
                         | PendingControlOperationBody::Recur(_)
                         | PendingControlOperationBody::Suspend
+                        | PendingControlOperationBody::Assert
                         | PendingControlOperationBody::Publish => {}
                     }
                 }
@@ -3321,6 +3336,7 @@ enum PendingControlOperationBody {
     Comprehension(PendingComprehension),
     Iteration(PendingIteration),
     Recur(u8),
+    Assert,
 
     Suspend,
     Publish,
@@ -3331,6 +3347,37 @@ struct PendingControlBlock {
     parameters: Vec<(crate::ControlParameterSource, SchemaDraft)>,
     operations: Vec<PendingControlOperation>,
     yield_value: PendingControlValue,
+}
+
+impl PendingControlBlock {
+    fn tail_recur_result(&self) -> bool {
+        matches!(self.yield_value, PendingControlValue::Local(index)
+            if index as usize + 1 == self.operations.len()
+                && matches!(self.operations[index as usize].body, PendingControlOperationBody::Recur(_)))
+    }
+
+    fn specialize_tail_recur_result(&mut self, result: &SchemaDraft, syntax: &SyntaxNode) -> bool {
+        if !self.tail_recur_result() {
+            return false;
+        }
+        let operation = self.operations.last_mut().unwrap();
+        // Recur transfers control and produces no intermediate value. Its
+        // declared return dimensions are placeholders until a returning arm
+        // supplies the function's actual result schema. Only specialize those
+        // dimensions; concrete values and scalar kinds retain exact matching.
+        let Ok(specialized) = specialize_annotation_dimensions(result, &operation.schema, syntax)
+        else {
+            return false;
+        };
+        // The solver can renumber independent free axes while resolving the
+        // return annotation. Reuse the existing bijective identity check;
+        // bounds, shared dimensions, and scalar kinds remain exact.
+        if !annotation_shape_identity::equivalent(&specialized, result) {
+            return false;
+        }
+        operation.schema = result.clone();
+        true
+    }
 }
 
 struct PendingNode {
@@ -3409,6 +3456,7 @@ struct SemanticBuilder {
     control_depth: usize,
     match_depth: usize,
     comprehension_depth: usize,
+    local_mutation_depth: usize,
     next_control_block: u32,
     anchor: SourceSemanticAnchor,
     constants: Vec<PendingConstant>,
@@ -3603,6 +3651,7 @@ impl SemanticBuilder {
             control_depth: 0,
             match_depth: 0,
             comprehension_depth: 0,
+            local_mutation_depth: 0,
             next_control_block: 0,
             anchor,
             constants: Vec::new(),
@@ -5273,7 +5322,9 @@ impl SemanticBuilder {
             )?;
         }
         value.resolved()?;
-        let bound = if definition.mutability_marker().is_some() {
+        let local_mutable =
+            definition.mutability_marker().is_some() && self.local_mutation_depth > 0;
+        let bound = if definition.mutability_marker().is_some() && !local_mutable {
             if self.external_definitions.contains(&name) {
                 return Err(SourceSemanticError {
                     code: "source-semantics/mutable-compute-input",
@@ -5311,7 +5362,7 @@ impl SemanticBuilder {
                 },
             });
             PendingValue::State(state)
-        } else if self.external_definitions.contains(&name) {
+        } else if self.external_definitions.contains(&name) && !local_mutable {
             let schema = self.schema_draft_of(value)?;
             // This projection retains the declared live port. Its default is
             // evaluated by the initialization projection, so initializer-only
@@ -5336,7 +5387,9 @@ impl SemanticBuilder {
             value
         };
         self.scope_definitions.insert(name.clone());
-        let binding = if definition.mutability_marker().is_some() {
+        let binding = if local_mutable {
+            PendingBinding::MutableLocal(bound)
+        } else if definition.mutability_marker().is_some() {
             let PendingValue::State(state) = bound else {
                 unreachable!("mutable definitions allocate a state slot")
             };
@@ -6584,10 +6637,10 @@ impl SemanticBuilder {
         Ok(self.emit_with_schema_draft(
             "core/composite-pack",
             inputs,
-            SchemaDraft {
+            annotation_shape_identity::fresh_record(SchemaDraft {
                 dimension_parameters: parameters.into_boxed_slice(),
                 body: SchemaBody::Record(fields.into_boxed_slice()),
-            },
+            }),
             record.syntax(),
             "record",
             Some(detail),
@@ -7716,6 +7769,9 @@ impl SemanticBuilder {
         if is_dynamic_schema_draft(expected)
             || actual == *expected
             || schema_annotation_accepts(&actual.body, &expected.body)
+            // Projection drafts may retain unused axes or independently
+            // number the same free axes. Neither requires a value conversion.
+            || annotation_shape_identity::equivalent(&actual, expected)
         {
             return Ok(value);
         }
@@ -8051,7 +8107,7 @@ impl SemanticBuilder {
             )
             .chain(self.states.iter().map(|state| state.initializer))
             .chain(self.bindings.values().map(|binding| match *binding {
-                PendingBinding::Value(value) => value,
+                PendingBinding::Value(value) | PendingBinding::MutableLocal(value) => value,
                 PendingBinding::MutableState(state) => PendingValue::State(state),
             }))
         {
@@ -8299,6 +8355,7 @@ impl SemanticBuilder {
                     }
                     PendingNodeBody::CollectionBinding
                     | PendingNodeBody::RecursiveCall(_)
+                    | PendingNodeBody::LocalAssert
                     | PendingNodeBody::Suspend
                     | PendingNodeBody::Publish => {
                         unreachable!("lexical bindings cannot escape collection lowering")
@@ -9753,6 +9810,227 @@ mod tests {
     use super::*;
 
     #[test]
+    fn selected_record_preserves_independent_axis_identity() {
+        fn find_expression(node: SyntaxNode) -> Option<ExpressionSyntax> {
+            ExpressionSyntax::cast(node.clone())
+                .or_else(|| node.children().find_map(find_expression))
+        }
+        let parsed = mech_syntax::document::parse_canonical_document(
+            mech_syntax::document::TextSnapshot::new(
+                DocumentId(86), Revision(1), "(flag<bool>? | true => {nodes: rebuilt.nodes, costs: rebuilt.costs} | false => {nodes: retained.nodes, costs: retained.costs})",
+            ).unwrap(),
+            mech_syntax::document::ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean());
+        let expression = find_expression(parsed.syntax()).unwrap();
+        let anchor = SourceSemanticAnchor::for_node(expression.syntax());
+        let mut builder = SemanticBuilder::new(anchor);
+        let record = |origin| SchemaDraft {
+            dimension_parameters: (0..2)
+                .map(|id| DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(id),
+                    origin,
+                    lifetime: DimensionLifetime::Turn,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: None,
+                })
+                .collect(),
+            body: SchemaBody::Record(Box::new([
+                SchemaField {
+                    name: "nodes".into(),
+                    schema: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+                        dimensions: Box::new([
+                            DimensionExpr::Constant(1),
+                            DimensionExpr::Parameter(DimensionParameterId::new(1)),
+                        ]),
+                    },
+                },
+                SchemaField {
+                    name: "costs".into(),
+                    schema: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W32)),
+                        dimensions: Box::new([
+                            DimensionExpr::Constant(1),
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                        ]),
+                    },
+                },
+            ])),
+        };
+        let rebuilt = record(DimensionParameterOrigin::Inferred);
+        let mut retained = record(DimensionParameterOrigin::Explicit);
+        retained.dimension_parameters[1].origin = DimensionParameterOrigin::Inferred;
+        assert_ne!(
+            rebuilt.clone().finalize().unwrap(),
+            retained.clone().finalize().unwrap()
+        );
+        assert!(annotation_shape_identity::equivalent(&rebuilt, &retained));
+        for (name, schema) in [("rebuilt", rebuilt), ("retained", retained)] {
+            let index = builder.inputs.len() as u32;
+            builder.inputs.push(PendingInput {
+                name: name.into(),
+                schema,
+                anchor,
+            });
+            builder.bindings.insert(
+                name.into(),
+                PendingBinding::Value(PendingValue::Input(index)),
+            );
+        }
+        builder.expression(&expression).unwrap();
+    }
+
+    #[test]
+    fn recursive_result_specialization_preserves_independent_axis_identity() {
+        let parsed = mech_syntax::document::parse_canonical_document(
+            mech_syntax::document::TextSnapshot::new(DocumentId(85), Revision(1), "true").unwrap(),
+            mech_syntax::document::ParseConfig::default(),
+        );
+        let parameter = |id, origin| DimensionParameterDeclaration {
+            id: DimensionParameterId::new(id),
+            origin,
+            lifetime: DimensionLifetime::Turn,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        };
+        let matrix = |dimensions: Vec<DimensionExpr>| SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W32)),
+            dimensions: dimensions.into_boxed_slice(),
+        };
+        let record = |a, b| {
+            SchemaBody::Record(Box::new([
+                SchemaField {
+                    name: "first".into(),
+                    schema: a,
+                },
+                SchemaField {
+                    name: "second".into(),
+                    schema: b,
+                },
+            ]))
+        };
+        let actual = SchemaDraft {
+            body: record(
+                matrix(vec![
+                    DimensionExpr::Constant(1),
+                    DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                ]),
+                matrix(vec![
+                    DimensionExpr::Constant(1),
+                    DimensionExpr::Parameter(DimensionParameterId::new(1)),
+                ]),
+            ),
+            dimension_parameters: Box::new([
+                parameter(0, DimensionParameterOrigin::Inferred),
+                parameter(1, DimensionParameterOrigin::Explicit),
+            ]),
+        };
+        let expected = SchemaDraft {
+            body: record(
+                matrix(vec![
+                    DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                    DimensionExpr::Parameter(DimensionParameterId::new(1)),
+                ]),
+                matrix(vec![
+                    DimensionExpr::Parameter(DimensionParameterId::new(2)),
+                    DimensionExpr::Parameter(DimensionParameterId::new(3)),
+                ]),
+            ),
+            dimension_parameters: (0..4)
+                .map(|id| parameter(id, DimensionParameterOrigin::Inferred))
+                .collect(),
+        };
+        let mut block = PendingControlBlock {
+            id: crate::ControlBlockId(0),
+            parameters: Vec::new(),
+            operations: vec![PendingControlOperation {
+                body: PendingControlOperationBody::Recur(0),
+                inputs: Vec::new(),
+                schema: expected,
+            }],
+            yield_value: PendingControlValue::Local(0),
+        };
+        assert!(block.specialize_tail_recur_result(&actual, &parsed.syntax()));
+        assert_eq!(block.operations[0].schema, actual);
+    }
+
+    #[test]
+    fn control_diagnostics_report_limit_and_result_separately() {
+        let parsed = mech_syntax::document::parse_canonical_document(
+            mech_syntax::document::TextSnapshot::new(DocumentId(83), Revision(1), "true").unwrap(),
+            mech_syntax::document::ParseConfig::default(),
+        );
+        let syntax = parsed.syntax();
+        let anchor = SourceSemanticAnchor::for_node(&syntax);
+        for (limit, body, expected) in [
+            (
+                crate::MAX_CONTROL_BLOCKS as u32,
+                SchemaBody::Bool,
+                "source-semantics/control-block-limit",
+            ),
+            (
+                0,
+                SchemaBody::Dynamic,
+                "source-semantics/unsupported-control-result",
+            ),
+        ] {
+            let mut builder = SemanticBuilder::new(anchor);
+            builder.next_control_block = limit;
+            builder.inputs.push(PendingInput {
+                name: "value".to_owned(),
+                schema: SchemaDraft {
+                    body,
+                    dimension_parameters: Box::new([]),
+                },
+                anchor,
+            });
+            let result = builder.control_block_with(
+                &syntax,
+                &crate::MatchPattern::Bind,
+                &BTreeMap::new(),
+                PendingValue::Input(0),
+                &mut Vec::new(),
+                &mut Vec::new(),
+                |_| Ok(PendingValue::Input(0)),
+            );
+            let error = result.err().expect("must reject unsupported block");
+            assert_eq!(error.code, expected);
+            assert_eq!(error.anchor, anchor);
+            if limit != 0 {
+                assert!(
+                    error
+                        .message
+                        .contains(&crate::MAX_CONTROL_BLOCKS.to_string())
+                );
+            } else {
+                assert!(error.message.contains("Dynamic"));
+            }
+        }
+    }
+
+    #[cfg(all(feature = "matrix", feature = "u8"))]
+    #[test]
+    fn control_record_buffer_capture_reaches_canonical_artifact() {
+        let source = "choose(flag<bool>, bytes<[u8]>) => (out<[u8]>) :=\n  record := {bytes: bytes}\n  out := (flag? | true => record.bytes | false => bytes).\nchoose(flag<bool>, bytes<[u8]>)\n";
+        let parsed = mech_syntax::document::parse_canonical_document(
+            mech_syntax::document::TextSnapshot::new(DocumentId(84), Revision(1), source).unwrap(),
+            mech_syntax::document::ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
+        let mut catalog = mech_core::FunctionCatalogBuilder::new();
+        crate::install_intrinsic_resident(&mut catalog).unwrap();
+        CanonicalSourceFrontend
+            .compile_document_with_catalog(
+                &DocumentSyntax::cast(parsed.syntax()).unwrap(),
+                Arc::new(catalog.build().unwrap()),
+            )
+            .unwrap()
+            .compile_artifact()
+            .unwrap();
+    }
+
+    #[test]
     fn mixed_control_schema_walk_visits_each_nested_declaration_once() {
         let schema = |body| SchemaDraft {
             body,
@@ -10233,11 +10511,11 @@ impl SemanticBuilder {
         })?;
         let mut inputs = vec![scrutinee];
         let mut captures = Vec::new();
-        let mut lowered = Vec::new();
+        let mut lowered = Vec::<PendingMatchArm>::new();
         let mut coverage =
             StructuralPatternCoverage::new(structural_coverage_space(&scrutinee_schema));
-        let mut result_schema = None;
-        let mut result_schema_identity = None;
+        let mut result_schema = None::<SchemaDraft>;
+        let mut result_schema_identity = None::<mech_core::Schema>;
         for arm in arms {
             if activation && coverage.is_complete() {
                 return Err(SourceSemanticError {
@@ -10416,10 +10694,10 @@ impl SemanticBuilder {
                     && !scrutinee_schema
                         .clone()
                         .finalize()
-                        .is_ok_and(|schema| crate::is_control_value_schema(&schema))
+                        .is_ok_and(|schema| crate::is_control_pattern_schema(&schema))
                 {
                     return Err(error(
-                        "match bindings require a closed value schema",
+                        "match bindings require a supported value schema",
                         syntax,
                     ));
                 }
@@ -10444,7 +10722,7 @@ impl SemanticBuilder {
                 } else {
                     None
                 };
-                let (body, schema) = match &arm.body {
+                let (mut body, mut schema) = match &arm.body {
                     SourceMatchBody::Expression(result) => self.control_block(
                         result,
                         &pattern,
@@ -10512,6 +10790,85 @@ impl SemanticBuilder {
                 // Selection drafts can retain unused source-axis declarations.
                 // Match results require the exact canonical schema later used
                 // by the artifact, rather than an identical draft environment.
+                let candidate_identity = schema.clone().finalize().map_err(|error| {
+                    internal(
+                        SourceSemanticAnchor::for_node(&arm.syntax),
+                        format!("unable to finalize match result schema: {error:?}"),
+                    )
+                })?;
+                if result_schema_identity
+                    .as_ref()
+                    .is_some_and(|expected| expected != &candidate_identity)
+                {
+                    let expected = result_schema.as_ref().unwrap();
+                    if body.specialize_tail_recur_result(expected, &arm.syntax) {
+                        schema = expected.clone();
+                    } else if lowered.iter().all(|arm| arm.body.tail_recur_result())
+                        && lowered
+                            .iter_mut()
+                            .all(|arm| arm.body.specialize_tail_recur_result(&schema, syntax))
+                    {
+                        result_schema = Some(schema.clone());
+                        result_schema_identity = Some(candidate_identity);
+                    }
+                }
+                // Preserve already-valid matches exactly. Reify computed
+                // extents only when otherwise-incompatible result schemas can
+                // meet at the same unconstrained matrix result boundary.
+                if !activation
+                    && !body.tail_recur_result()
+                    && lowered.iter().all(|arm| !arm.body.tail_recur_result())
+                    && result_schema_identity.as_ref().is_some_and(|expected| {
+                        expected
+                            != &schema
+                                .clone()
+                                .finalize()
+                                .expect("validated candidate schema")
+                    })
+                {
+                    let expected = result_schema.as_ref().unwrap();
+                    let common =
+                        selected_matrix_result_schema(expected).unwrap_or_else(|| expected.clone());
+                    let candidate =
+                        selected_matrix_result_schema(&schema).unwrap_or_else(|| schema.clone());
+                    let common_identity = common.clone().finalize().map_err(|error| {
+                        internal(
+                            SourceSemanticAnchor::for_node(&arm.syntax),
+                            format!("invalid selected matrix schema: {error:?}"),
+                        )
+                    })?;
+                    let candidate_identity = candidate.clone().finalize().map_err(|error| {
+                        internal(
+                            SourceSemanticAnchor::for_node(&arm.syntax),
+                            format!("invalid selected matrix schema: {error:?}"),
+                        )
+                    })?;
+                    if common_identity == candidate_identity {
+                        if result_schema_identity.as_ref() != Some(&common_identity) {
+                            for prior in &mut lowered {
+                                self.reify_selected_matrix_result(
+                                    &mut prior.body,
+                                    &common,
+                                    &arm.syntax,
+                                )?;
+                            }
+                        }
+                        if schema
+                            .clone()
+                            .finalize()
+                            .expect("validated candidate schema")
+                            != common_identity
+                        {
+                            self.reify_selected_matrix_result(&mut body, &common, &arm.syntax)?;
+                        }
+                        schema = common.clone();
+                        result_schema = Some(common);
+                        result_schema_identity = Some(common_identity);
+                    }
+                }
+                // Dimension specialization supplies the concrete schema for
+                // terminal recursion; every arm still passes this exact final
+                // semantic check before it enters the canonical artifact.
                 let schema_identity = schema.clone().finalize().map_err(|error| {
                     internal(
                         SourceSemanticAnchor::for_node(&arm.syntax),
@@ -10524,7 +10881,11 @@ impl SemanticBuilder {
                 {
                     return Err(SourceSemanticError {
                         code: "source-semantics/incompatible-match-result-kind",
-                        message: "match arms require one exact result schema".to_owned(),
+                        message: format!(
+                            "match arms require one exact result schema; expected {:?}, found {:?}",
+                            result_schema_identity.as_ref().map(|schema| schema.body()),
+                            schema_identity.body(),
+                        ),
                         anchor: SourceSemanticAnchor::for_node(&arm.syntax),
                     });
                 }
@@ -10626,6 +10987,38 @@ impl SemanticBuilder {
         Ok(PendingValue::Node(index))
     }
 
+    fn reify_selected_matrix_result(
+        &self,
+        body: &mut PendingControlBlock,
+        selected: &SchemaDraft,
+        syntax: &SyntaxNode,
+    ) -> Result<(), SourceSemanticError> {
+        let contract = self
+            .source_operation_contract("convert/kind", 1, selected)
+            .ok_or_else(|| {
+                internal(
+                    SourceSemanticAnchor::for_node(syntax),
+                    "missing selected matrix conversion contract".to_owned(),
+                )
+            })?;
+        let index = u32::try_from(body.operations.len()).map_err(|_| {
+            internal(
+                SourceSemanticAnchor::for_node(syntax),
+                "selected block operation count overflow".to_owned(),
+            )
+        })?;
+        body.operations.push(PendingControlOperation {
+            body: PendingControlOperationBody::Operation {
+                operation: operation_reference("convert/kind"),
+                contract,
+            },
+            inputs: vec![body.yield_value],
+            schema: selected.clone(),
+        });
+        body.yield_value = PendingControlValue::Local(index);
+        Ok(())
+    }
+
     fn control_block(
         &mut self,
         expression: &ExpressionSyntax,
@@ -10668,18 +11061,24 @@ impl SemanticBuilder {
         captures: &mut Vec<(u16, SchemaDraft, bool)>,
         build: impl FnOnce(&mut Self) -> Result<PendingValue, SourceSemanticError>,
     ) -> Result<(PendingControlBlock, SchemaDraft), SourceSemanticError> {
-        let unsupported = || SourceSemanticError {
-            code: "source-semantics/unsupported-match-block",
-            message:
-                "match blocks require pure maintained operations and supported final value schemas"
-                    .to_owned(),
+        let rejected = |code, message: String| SourceSemanticError {
+            code,
+            message,
             anchor: SourceSemanticAnchor::for_node(syntax),
         };
         let id = self.next_control_block;
         self.next_control_block = id
             .checked_add(1)
             .filter(|id| *id as usize <= crate::MAX_CONTROL_BLOCKS)
-            .ok_or_else(unsupported)?;
+            .ok_or_else(|| {
+                rejected(
+                    "source-semantics/control-block-limit",
+                    format!(
+                        "cannot allocate control block {id}: maximum control block count is {}",
+                        crate::MAX_CONTROL_BLOCKS
+                    ),
+                )
+            })?;
         let start = self.nodes.len();
         self.control_depth += 1;
         let result =
@@ -10700,7 +11099,13 @@ impl SemanticBuilder {
                 .is_ok_and(|schema| !matches!(schema.body(), SchemaBody::Dynamic))
         };
         if !result_value(&schema) {
-            return Err(unsupported());
+            return Err(rejected(
+                "source-semantics/unsupported-control-result",
+                format!(
+                    "selected block result has unsupported schema: {:?}",
+                    schema.body
+                ),
+            ));
         }
         let mut parameters = Vec::<(crate::ControlParameterSource, SchemaDraft)>::new();
         let mut parameter_values = Vec::new();
@@ -10711,7 +11116,10 @@ impl SemanticBuilder {
                     PendingValue::Node(index) if index as usize >= start => {
                         Ok(PendingControlValue::Local(index - start as u32))
                     }
-                    PendingValue::UnresolvedEmpty(_) => Err(unsupported()),
+                    PendingValue::UnresolvedEmpty(_) => Err(rejected(
+                        "source-semantics/unresolved-control-value",
+                        "selected block uses an empty value whose type is unresolved".to_owned(),
+                    )),
                     _ => {
                         if let Some(index) = parameter_values
                             .iter()
@@ -10735,42 +11143,49 @@ impl SemanticBuilder {
                                 .finalize()
                                 .is_ok_and(|schema| crate::is_control_capture_schema(&schema))
                         {
-                            return Err(unsupported());
+                            return Err(rejected(
+                                "source-semantics/unsupported-control-capture",
+                                format!(
+                                    "selected block captures a value with unsupported schema: {:?}",
+                                    schema.body
+                                ),
+                            ));
                         }
-                        let source =
-                            if matches!(pattern, crate::MatchPattern::Bind) && value == scrutinee {
-                                crate::ControlParameterSource::Scrutinee
-                            } else if let Some(local) = pattern_binding {
-                                crate::ControlParameterSource::PatternBinding(local)
-                            } else {
-                                let input =
-                                    match inputs.iter().position(|existing| *existing == value) {
-                                        Some(index) => index,
-                                        None => {
-                                            inputs.push(value);
-                                            inputs.len() - 1
-                                        }
-                                    };
-                                let input = u16::try_from(input).map_err(|_| unsupported())?;
-                                let capture = match captures
-                                    .iter()
-                                    .position(|(existing, _, _)| *existing == input)
-                                {
-                                    Some(index) => index,
-                                    None => {
-                                        captures.push((
-                                            input,
-                                            schema.clone(),
-                                            !matches!(value, PendingValue::Input(_)),
-                                        ));
-                                        captures.len() - 1
-                                    }
-                                };
-                                crate::ControlParameterSource::Capture(
-                                    u16::try_from(capture).map_err(|_| unsupported())?,
-                                )
+                        let source = if matches!(pattern, crate::MatchPattern::Bind)
+                            && value == scrutinee
+                        {
+                            crate::ControlParameterSource::Scrutinee
+                        } else if let Some(local) = pattern_binding {
+                            crate::ControlParameterSource::PatternBinding(local)
+                        } else {
+                            let input = match inputs.iter().position(|existing| *existing == value)
+                            {
+                                Some(index) => index,
+                                None => {
+                                    inputs.push(value);
+                                    inputs.len() - 1
+                                }
                             };
-                        let ordinal = u16::try_from(parameters.len()).map_err(|_| unsupported())?;
+                            let input = u16::try_from(input).map_err(|_| rejected("source-semantics/control-parameter-limit", "selected block exceeds the representable input, capture, or parameter count (65536)".to_owned()))?;
+                            let capture = match captures
+                                .iter()
+                                .position(|(existing, _, _)| *existing == input)
+                            {
+                                Some(index) => index,
+                                None => {
+                                    captures.push((
+                                        input,
+                                        schema.clone(),
+                                        !matches!(value, PendingValue::Input(_)),
+                                    ));
+                                    captures.len() - 1
+                                }
+                            };
+                            crate::ControlParameterSource::Capture(
+                                    u16::try_from(capture).map_err(|_| rejected("source-semantics/control-parameter-limit", "selected block exceeds the representable input, capture, or parameter count (65536)".to_owned()))?,
+                                )
+                        };
+                        let ordinal = u16::try_from(parameters.len()).map_err(|_| rejected("source-semantics/control-parameter-limit", "selected block exceeds the representable input, capture, or parameter count (65536)".to_owned()))?;
                         parameter_values.push(value);
                         parameters.push((source, schema));
                         Ok(PendingControlValue::Parameter(ordinal))
@@ -10782,11 +11197,22 @@ impl SemanticBuilder {
             // Intermediate results may carry per-turn dimensions through
             // pure operations. Only the selected block's final yield must be
             // an admitted control result with its actual snapshot shape.
-            if node.state.is_some()
-                || (!intermediate_value(&node.schema)
-                    && !matches!(&node.body, PendingNodeBody::Comprehension(_)))
+            if node.state.is_some() {
+                return Err(rejected(
+                    "source-semantics/stateful-control-operation",
+                    "selected block contains a state-bearing operation".to_owned(),
+                ));
+            }
+            if !intermediate_value(&node.schema)
+                && !matches!(&node.body, PendingNodeBody::Comprehension(_))
             {
-                return Err(unsupported());
+                return Err(rejected(
+                    "source-semantics/unsupported-control-intermediate",
+                    format!(
+                        "selected block operation has unsupported intermediate schema: {:?}",
+                        node.schema.body
+                    ),
+                ));
             }
             let body = match node.body {
                 PendingNodeBody::Operation {
@@ -10809,10 +11235,36 @@ impl SemanticBuilder {
                 PendingNodeBody::RecursiveCall(ancestor) => {
                     PendingControlOperationBody::Recur(ancestor)
                 }
+                PendingNodeBody::LocalAssert => PendingControlOperationBody::Assert,
 
                 PendingNodeBody::Suspend => PendingControlOperationBody::Suspend,
                 PendingNodeBody::Publish => PendingControlOperationBody::Publish,
-                _ => return Err(unsupported()),
+                body => {
+                    let reason = match body {
+                        PendingNodeBody::Operation { contract: None, .. } => {
+                            "operation has no maintained contract"
+                        }
+                        PendingNodeBody::Operation {
+                            requirement: Some(_),
+                            ..
+                        } => "operation has an unresolved application requirement",
+                        PendingNodeBody::Operation { .. } => "operation is not pure",
+                        PendingNodeBody::Activation(_) => {
+                            "activation operation is unsupported in a selected block"
+                        }
+                        PendingNodeBody::Fsm(_) => {
+                            "state machine operation is unsupported in a selected block"
+                        }
+                        PendingNodeBody::CollectionBinding => {
+                            "collection binding is unsupported in a selected block"
+                        }
+                        _ => unreachable!("supported control operations were handled above"),
+                    };
+                    return Err(rejected(
+                        "source-semantics/unsupported-control-operation",
+                        reason.to_owned(),
+                    ));
+                }
             };
             operations.push(PendingControlOperation {
                 body,
@@ -10907,6 +11359,7 @@ fn resolve_pending_control_block(
                     PendingControlOperationBody::Recur(ancestor) => {
                         crate::ControlOperationBody::Recur(*ancestor)
                     }
+                    PendingControlOperationBody::Assert => crate::ControlOperationBody::Assert,
                     PendingControlOperationBody::Suspend => crate::ControlOperationBody::Suspend,
                     PendingControlOperationBody::Publish => crate::ControlOperationBody::Publish,
                 },

@@ -1,0 +1,5 @@
++> sequence
+reserved := sequence/reserve(input<[u64]>, 305257u64)
+first := sequence/append(reserved, word<u64>)
+empty := sequence/clear(first)
+sequence/append(empty, word)

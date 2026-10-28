@@ -1,0 +1,401 @@
+{
+  "base": "e0c042e7a343962eb98426d504acd3eda6a1c648",
+  "source_commit": "04199f36868e70a2e25f694605391222debef9d6",
+  "source_sha256": {
+    "src/engine/src/source_semantics/frontend.rs": "6c21f94e7729123ddb8f6707756f7f069ce148cff0d0b8bd47298f002f8fc686",
+    "hosts/gpu/tests/fixtures/native/deflate-optimize.mec": "1dc1dabd4c94412c1ccb191030eac2ab2a20e244e800c0b91ffb1c60073bf0a2",
+    "hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec": "4c2966e802d4e8dd4bff9f84a0a58c779a300175920884aad25746b17d2eee4e",
+    "hosts/gpu/tests/fixtures/native/deflate-header.mec": "3b9986b2955c5c54652da271f3e2fb7484f3920c89a7b2bb06915e0869599161",
+    "hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json": "337fb9c12e2f148c053ece555516059d0295c85b087bacf20bb7feebf36f3794",
+    "/private/tmp/mech-linear-restack-20261026/cost-models/optimization_acceptance.rs": "ffea66d17df56f312f4ea7a6282b970d89bace8ade2cae0d0e5b910223af65ea"
+  },
+  "reference_source": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "reference_compiler": "d99c7b838fb05bb1047eb0c18d4d06d0f86f345d",
+  "design": "The existing annotation solver specializes a recursive return placeholder to the returning branch. Its independent free axes may be renumbered. Reuse the maintained bijective identity check after specialization, then assign the actual result schema to the tail transfer. Canonical validation, scalar kinds, dimension relationships/bounds, runtime/codegen, codec revision, and resource defaults remain unchanged. Match result errors now display expected and actual bodies.",
+  "receipts": [
+    {
+      "name": "recursive-result-unit-before",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j1",
+        "-p",
+        "mech-engine",
+        "--no-default-features",
+        "--features",
+        "full_source,native-artifact,sequence_buffers",
+        "--lib",
+        "--",
+        "recursive_result_specialization",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "e0c042e7a343962eb98426d504acd3eda6a1c648",
+      "dirty": " M src/engine/src/source_semantics/frontend.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n",
+      "exit": 101,
+      "seconds": 66.01398396492004,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/recursive-result-unit-before.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    {
+      "name": "recursive-result-engine-qualified",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j1",
+        "-p",
+        "mech-engine",
+        "--no-default-features",
+        "--features",
+        "full_source,native-artifact,sequence_buffers",
+        "--lib",
+        "--",
+        "recursive_result_specialization",
+        "annotation_shape_identity",
+        "function_argument_shape",
+        "control_diagnostics",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "e0c042e7a343962eb98426d504acd3eda6a1c648",
+      "dirty": " M src/engine/src/source_semantics/frontend.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n",
+      "exit": 0,
+      "seconds": 66.82991600036621,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/recursive-result-engine-qualified.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    {
+      "name": "recursive-result-maintained",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j1",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_program",
+        "--",
+        "record_buffer_qualification",
+        "buffer_frame_qualification",
+        "function_axes_qualification",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "e0c042e7a343962eb98426d504acd3eda6a1c648",
+      "dirty": " M src/engine/src/source_semantics/frontend.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-literal-choice.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n",
+      "exit": 0,
+      "seconds": 114.47355484962463,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/recursive-result-maintained.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    {
+      "name": "recursive-result-shapes",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j1",
+        "--manifest-path",
+        "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+        "--",
+        "recursive_result_reduction",
+        "optimization_costs",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "e0c042e7a343962eb98426d504acd3eda6a1c648",
+      "dirty": " M src/engine/src/source_semantics/frontend.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n",
+      "exit": 101,
+      "seconds": 93.8593008518219,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/recursive-result-shapes.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    },
+    {
+      "name": "optimization-recursive-axis-identity",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j1",
+        "--manifest-path",
+        "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+        "--",
+        "recursive_result_reduction",
+        "optimization_costs",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "head": "e0c042e7a343962eb98426d504acd3eda6a1c648",
+      "dirty": " M src/engine/src/source_semantics/frontend.rs\n?? benchmarks/mech-deflate/matchfinder/generate_header_reference.py\n?? benchmarks/mech-deflate/matchfinder/generate_optimization_reference.py\n?? hosts/gpu/tests/fixtures/native/deflate-header-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-header.mec\n?? hosts/gpu/tests/fixtures/native/deflate-initial-pass.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimal-costs.mec\n?? hosts/gpu/tests/fixtures/native/deflate-optimization-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-optimize.mec\n?? hosts/gpu/tests/support/canonical_program_header.rs\n",
+      "exit": 0,
+      "seconds": 342.4946868419647,
+      "log": "/private/tmp/mech-linear-restack-20261026/validation/optimization-recursive-axis-identity.log",
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      }
+    }
+  ],
+  "maintained_tests": 24,
+  "exploratory_tests": 2,
+  "optimizer_executions": 12,
+  "measurements": [
+    {
+      "allocation_requests": 2008198,
+      "artifact": "original",
+      "case": "eight-literals",
+      "collected": false,
+      "completed_positions": 8,
+      "elapsed_seconds": 3.894040833,
+      "requested_bytes": 174007123,
+      "result": "Ok(NativeProgramExecutionReport { work: 394588707282, comparison_work: 14986180, visits: 344748, transport_bytes: 988904, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "optimization-loop"
+    },
+    {
+      "allocation_requests": 1968725,
+      "artifact": "original",
+      "case": "eight-overlap",
+      "collected": false,
+      "completed_positions": 8,
+      "elapsed_seconds": 3.818136041,
+      "requested_bytes": 171615691,
+      "result": "Ok(NativeProgramExecutionReport { work: 388158641268, comparison_work: 14635116, visits: 338055, transport_bytes: 988904, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "optimization-loop"
+    },
+    {
+      "allocation_requests": 3025829,
+      "artifact": "original",
+      "case": "320-overlap",
+      "collected": false,
+      "completed_positions": 320,
+      "elapsed_seconds": 6.460838917,
+      "requested_bytes": 1759117082,
+      "result": "Ok(NativeProgramExecutionReport { work: 617533426588, comparison_work: 15800348, visits: 505276, transport_bytes: 988904, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "optimization-loop"
+    },
+    {
+      "allocation_requests": 1259096,
+      "artifact": "original",
+      "case": "one-pass-cap",
+      "collected": false,
+      "completed_positions": 8,
+      "elapsed_seconds": 2.4351515,
+      "requested_bytes": 106509655,
+      "result": "Ok(NativeProgramExecutionReport { work: 236749189215, comparison_work: 9156259, visits: 212928, transport_bytes: 988904, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "optimization-loop"
+    },
+    {
+      "allocation_requests": 2008197,
+      "artifact": "decoded",
+      "case": "eight-literals",
+      "collected": false,
+      "completed_positions": 8,
+      "elapsed_seconds": 3.8983353750000003,
+      "requested_bytes": 174007059,
+      "result": "Ok(NativeProgramExecutionReport { work: 394588707282, comparison_work: 14986180, visits: 344748, transport_bytes: 988904, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "optimization-loop"
+    },
+    {
+      "allocation_requests": 1968725,
+      "artifact": "decoded",
+      "case": "eight-overlap",
+      "collected": false,
+      "completed_positions": 8,
+      "elapsed_seconds": 3.815982541,
+      "requested_bytes": 171615691,
+      "result": "Ok(NativeProgramExecutionReport { work: 388158641268, comparison_work: 14635116, visits: 338055, transport_bytes: 988904, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "optimization-loop"
+    },
+    {
+      "allocation_requests": 3025829,
+      "artifact": "decoded",
+      "case": "320-overlap",
+      "collected": false,
+      "completed_positions": 320,
+      "elapsed_seconds": 6.459438042,
+      "requested_bytes": 1759117082,
+      "result": "Ok(NativeProgramExecutionReport { work: 617533426588, comparison_work: 15800348, visits: 505276, transport_bytes: 988904, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "optimization-loop"
+    },
+    {
+      "allocation_requests": 1259096,
+      "artifact": "decoded",
+      "case": "one-pass-cap",
+      "collected": false,
+      "completed_positions": 8,
+      "elapsed_seconds": 2.42885125,
+      "requested_bytes": 106509655,
+      "result": "Ok(NativeProgramExecutionReport { work: 236749189215, comparison_work: 9156259, visits: 212928, transport_bytes: 988904, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "optimization-loop"
+    },
+    {
+      "allocation_requests": 2080415,
+      "artifact": "original",
+      "case": "eight-literals",
+      "collected": true,
+      "completed_positions": 8,
+      "elapsed_seconds": 16.765504458,
+      "requested_bytes": 244249547,
+      "result": "Ok(NativeProgramExecutionReport { work: 466744540047, comparison_work: 190531300, visits: 357295, transport_bytes: 1593824, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "optimization-loop"
+    },
+    {
+      "allocation_requests": 2053521,
+      "artifact": "original",
+      "case": "eight-overlap",
+      "collected": true,
+      "completed_positions": 8,
+      "elapsed_seconds": 18.790509125,
+      "requested_bytes": 255360299,
+      "result": "Ok(NativeProgramExecutionReport { work: 457952058064, comparison_work: 226189262, visits: 350613, transport_bytes: 1593824, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "optimization-loop"
+    },
+    {
+      "allocation_requests": 2080415,
+      "artifact": "decoded",
+      "case": "eight-literals",
+      "collected": true,
+      "completed_positions": 8,
+      "elapsed_seconds": 16.800471542,
+      "requested_bytes": 244249547,
+      "result": "Ok(NativeProgramExecutionReport { work: 466744540047, comparison_work: 190531300, visits: 357295, transport_bytes: 1593824, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "optimization-loop"
+    },
+    {
+      "allocation_requests": 2053521,
+      "artifact": "decoded",
+      "case": "eight-overlap",
+      "collected": true,
+      "completed_positions": 8,
+      "elapsed_seconds": 18.794824625,
+      "requested_bytes": 255360299,
+      "result": "Ok(NativeProgramExecutionReport { work: 457952058064, comparison_work: 226189262, visits: 350613, transport_bytes: 1593824, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "optimization-loop"
+    }
+  ],
+  "static_checks": [
+    {
+      "command": [
+        "python3",
+        "scripts/check-production-resident-routing.py"
+      ],
+      "exit": 0,
+      "stdout": "Production resident-routing contract passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-source-catalog-entrypoints.py"
+      ],
+      "exit": 0,
+      "stdout": "Source catalog entry-point contract passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-native-host-catalog.py"
+      ],
+      "exit": 0,
+      "stdout": "native host catalog contract passed (five standard providers, six full providers, no actor migration linkages)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-native-build-analysis-layout.py"
+      ],
+      "exit": 0,
+      "stdout": "Native build analysis layout contract passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/private/tmp/mech-assertion-ci-python/bin/python",
+        "-c",
+        "import sys;sys.path.insert(0,\"scripts\");from ci_test_inventory import inventory_gaps;g=inventory_gaps();print(g);assert not g"
+      ],
+      "exit": 0,
+      "stdout": "[]\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "format": "cargo fmt --all --check passed",
+  "limitations": [
+    "Optimizer harness and component ports remain work in progress outside this compiler PR; hashes identify the tested local sources.",
+    "These are unoptimized component diagnostic timings, not complete compression timings.",
+    "320-byte optimizer cases use supplied reference caches; own-collector cases are eight bytes.",
+    "Complete block choices, block writer, compress_into, byte agreement/decompression and full input timing remain unfinished.",
+    "Full-suite/source-free profiles not rerun; CI is canceled per request."
+  ],
+  "failure_disposition": {
+    "recursive_result_unit_before": "Expected regression failure before the fix; now passes.",
+    "recursive_result_shapes": "Real optimizer failed at recursive return type identity before the fix; all 12 original/decoded executions now match the reference.",
+    "source_reductions": "Smaller source-only attempts compiled before the fix; not claimed as failing reproductions. Focused compiler specialization test is the minimal failing witness.",
+    "resource_denials": "None in the successful real optimizer run; existing explicit 16384-block, 2MiB transport, 1GiB memory, and 1e12 work/comparison allowances unchanged."
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "recorded_at": "2026-10-26T21:56:58.040627+00:00",
+  "base": "fd790ca0fce74b8eb8563cc4442d3a0041672c70",
+  "compiler_head": "f0d209a6f482266790cdb14dd8c0a0662c33beb1",
+  "branch": "codex/native-uniform-word-construction",
+  "commits": {
+    "baseline": "6eac350f3209d8ddcec2217dcf3ba20d0279c27f",
+    "linked_harness_and_empty_catalog": "c7096ff33984d80d3ea5a0a57bb8440a0ed7f1ea",
+    "uniform_constructor": "f0d209a6f482266790cdb14dd8c0a0662c33beb1"
+  },
+  "pinned_source_revision": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "program_typed_ir": 107,
+  "program_abi": 35,
+  "work_policy": 82,
+  "artifact_revision": 14,
+  "compiler_files_sha256": {
+    "hosts/gpu/src/native_artifact/application/mod.rs": "a19573c3cc265b2e1012b42fb67df2539dcd301a87a15354e4a31c1997d6a47d",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "55c22267ca0030cbcf714ab0d4f7f6f78c4b50f1fa39d24c41bef91a80d0bca9",
+    "hosts/gpu/src/native_artifact/program/codegen/hooks/mod.rs": "2e4d096cbbbf153ee01f891b6fefa8137bd067cb23c4755ad2670aa82c57517c",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "f01d91e7e621c5c097229a1fd183af7bc27e4cd64dc680e8119c4e0a43ba2d83",
+    "hosts/gpu/src/native_artifact/program/image/wire/mod.rs": "557ec4ce2a36256f206694f8376c6b33f5ec886de4b08fb73e0da0f377f4d98f",
+    "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "98e71fcab1f4ab33259e56f365be9980a5b9c1989d542aa841ecf200f209dbe4",
+    "hosts/gpu/src/native_artifact/program/protocol/abi.rs": "15d60c947fb8ca2d3baf928526701f83015e20421873b06c88286951c89ff0bd",
+    "hosts/gpu/src/native_artifact/program/runtime/collections/data.rs": "17bc71a7821ec46ad32733a1fcdf456504b36439fe24d022d9470fe0de67e35a",
+    "hosts/gpu/src/native_artifact/program/runtime/collections/mod.rs": "f00fca064dd8a71d66ec60efa7ba46ff4c41446d442a6e9b6571b8d8f48c910e",
+    "hosts/gpu/src/native_artifact/program/runtime/collections/uniform_words.rs": "b099fc1c9f4750972edc8bd099c47f855e11c075221373dba908abfa045b1b49",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs": "7208d6638f20300e96291ca103115e7854339b811f292b464d29a3e9f62abd22",
+    "hosts/gpu/tests/canonical_artifact_program.rs": "237f3604869d5204b7798d4a0c2b26099ee2d4de382fdad4c51cc797b7ca7c9a",
+    "hosts/gpu/tests/support/canonical_program_linked.rs": "9c99e9f9b3a9a8d7c73b8f875ddc38c1101d1efd3dcb6adbfbd026d625227878",
+    "hosts/gpu/tests/support/canonical_program_uniform_words.rs": "0e5ea3ef66271d4715c9b7c108e24d1810c4f108357908a9851bf4fbef9d43c9",
+    "hosts/gpu/tests/support/linked_assertion_retry.rs.in": "73b1ede475465172744ce94a78f11781bbf0a9e2d0be451734fafd14ba3221f8",
+    "src/engine/src/native_artifact/fusion_semantics.rs": "c0c66e11dd36990375b7a057850f9578b91917da19502b4dfe4ddd3e5d303b55",
+    "src/engine/src/native_artifact/mod.rs": "e4d05155a9ca8f63eabcb44e8cafc068cf1d44c6887ffcb69ce9331339ba679d",
+    "src/engine/src/native_artifact/program_facts.rs": "67b539615aa064f597c649aeb9ea91b91f67f36679baf7f6a8427cab857da3c1",
+    "src/engine/src/native_artifact/uniform_word_collection.rs": "f27499738652d797580c96eb2da7847f97de6508e4d2d172a81dade55eb5c2ce"
+  },
+  "fixtures": {
+    "hosts/gpu/tests/fixtures/native/deflate-matchfinder.mec": {
+      "sha256": "c0b1504fac74da69953c822597b0b135d363fe76efd96b3a92b5de9931bcba93",
+      "unchanged_from_base": true
+    },
+    "hosts/gpu/tests/fixtures/native/deflate-binary-tree.mec": {
+      "sha256": "dd60cc6210256a75dff97a9df2c3b5f9d073220836a8edc8787422a8ded2518c",
+      "unchanged_from_base": true
+    },
+    "hosts/gpu/tests/fixtures/native/deflate-collector.mec": {
+      "sha256": "6efeaf50c93c8d5abc008c82203a655828cefac06dda2bdfb125764472375075",
+      "unchanged_from_base": true
+    }
+  },
+  "debug_qualification_binary": "/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-161b919374daec0a",
+  "debug_qualification_binary_sha256": "7c006d1b95c5bb52e2cb55b13868134781c1f3a644d80c32de4ba8debb5be74f",
+  "release_measurement_of_committed_head_run": false,
+  "ci_triggered": false,
+  "pr_created": false
+}

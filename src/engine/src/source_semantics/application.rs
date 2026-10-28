@@ -53,6 +53,7 @@ impl PendingIteration {
                 PendingControlOperationBody::Operation { .. }
                 | PendingControlOperationBody::Recur(_)
                 | PendingControlOperationBody::Suspend
+                | PendingControlOperationBody::Assert
                 | PendingControlOperationBody::Publish => {}
             }
         }
@@ -387,6 +388,7 @@ impl SemanticBuilder {
                 return Err(error());
             }
             let body = match node.body {
+                PendingNodeBody::LocalAssert => PendingControlOperationBody::Assert,
                 PendingNodeBody::Operation {
                     operation,
                     contract: Some(contract),

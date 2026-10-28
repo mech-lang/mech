@@ -1,0 +1,4 @@
+{
+  "hosts/gpu/tests/support/canonical_program_compress.rs": "c50360fffcd8fbee1208eff861c12fb8302c750ad01aacb81ccf817768a49013",
+  "hosts/gpu/tests/fixtures/native/deflate-compress-reference.json": "1f8a9901516d38071a6249a1395d32521d16400a8147470b95cea9d1f679bdb4"
+}

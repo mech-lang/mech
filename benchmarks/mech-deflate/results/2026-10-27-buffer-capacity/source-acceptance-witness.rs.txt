@@ -1,0 +1,29 @@
+//! Minimal source requirement for growable path-node and output buffers.
+use super::{artifacts, inputs, limits, reference_result};
+use mech_core::{ManagedMemoryBudget, ValueDataDraft as Data};
+use mech_gpu::native_artifact::JitProgramArtifact;
+
+#[test]
+fn reserve_append_clear_keeps_sequence_values_and_input_aliases() {
+    for width in [8, 64] {
+        let source = format!(
+            "+> sequence\nreserved := sequence/reserve(input<[u{width}]>, 305257u64)\nfirst := sequence/append(reserved, word<u{width}>)\nempty := sequence/clear(first)\nsequence/append(empty, word)\n"
+        );
+        let (forms, last) = artifacts(&source);
+        for artifact in forms {
+            let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
+            let word = if width == 8 { Data::U8(129) } else { Data::U64(0x80000000) };
+            let args = inputs(&artifact, &[("input", Data::Matrix(vec![word.clone()].into())), ("word", word.clone())], &memory);
+            let alias = args.clone();
+            let expected = Data::Matrix(vec![word].into());
+            assert_eq!(reference_result(&artifact, &args).unwrap()[last].canonical_data_draft().unwrap(), expected);
+            let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let mut outputs = vec![None; artifact.outputs().len()];
+            jit.evaluate_into(&args, &mut outputs, limits(), &memory).unwrap();
+            assert_eq!(outputs[last].as_ref().unwrap().canonical_data_draft().unwrap(), expected);
+            assert!(args.iter().zip(&alias).all(|(value, alias)| value.shares_frozen_storage(alias)));
+            drop((outputs, args, alias));
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+}

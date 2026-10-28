@@ -1,7 +1,9 @@
+mod aggregate_access;
 mod compact_range;
 mod compact_string_access;
 pub mod linkage_factories;
 mod nested_assignment;
+mod packed_indexed_assign;
 mod promoted_assignment;
 mod selected_string_footprint;
 #[cfg(all(feature = "native-artifact", feature = "pure_text"))]
@@ -28,6 +30,21 @@ use mech_core::{
     ValueData,
 };
 use std::sync::Arc;
+
+#[cfg(all(
+    feature = "native-artifact",
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
+))]
+pub(in crate::resident) fn available_scalar_index(
+    index: u64,
+    available: usize,
+) -> Result<usize, ResidentKernelError> {
+    access_index(&ValueData::U64(index), available)
+}
 
 const MAX_MATRIX_SOLVE_WORK: usize = 16_777_216;
 
@@ -809,9 +826,17 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     linkage_factories::NUMERIC_LOGIC_NOT.install(builder)?;
     // The entry witness describes only the exact String branch. Numeric
     // scalar binders keep their separate finished-kernel semantic seals.
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     super::native_collection_semantics::register_string_comparisons(builder)?;
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     {
         linkage_factories::NUMERIC_COMPARE_EQ.install(builder)?;
         linkage_factories::NUMERIC_COMPARE_NEQ.install(builder)?;
@@ -822,17 +847,44 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     linkage_factories::NUMERIC_COMPARE_GTE.install(builder)?;
     linkage_factories::NUMERIC_COMPARE_SEQ.install(builder)?;
     linkage_factories::NUMERIC_COMPARE_SNEQ.install(builder)?;
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     super::native_collection_semantics::register_access(builder, true)?;
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     linkage_factories::NUMERIC_ACCESS_SCALAR.install(builder)?;
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
+    super::native_collection_semantics::register_column_access(builder)?;
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     linkage_factories::NUMERIC_ACCESS_COLUMN.install(builder)?;
     linkage_factories::NUMERIC_ACCESS_ROWS.install(builder)?;
     linkage_factories::NUMERIC_ACCESS_COLUMNS.install(builder)?;
     linkage_factories::NUMERIC_ACCESS_INDEX.install(builder)?;
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     super::native_collection_semantics::register_access(builder, false)?;
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     linkage_factories::NUMERIC_ACCESS_RANGE.install(builder)?;
     linkage_factories::NUMERIC_ACCESS_RECTANGLE.install(builder)?;
     linkage_factories::NUMERIC_MATRIX_HORZCAT.install(builder)?;
@@ -847,6 +899,17 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     linkage_factories::NUMERIC_MATRIX_TRANSPOSE.install(builder)?;
     linkage_factories::NUMERIC_CORE_ASSIGN.install(builder)?;
     linkage_factories::NUMERIC_CORE_ASSIGN_WHOLE_VALUE.install(builder)?;
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
+    super::native_collection_semantics::register_indexed_assignment(builder)?;
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     linkage_factories::NUMERIC_CORE_ASSIGN_INDEXED_AXIS.install(builder)?;
     linkage_factories::NUMERIC_CORE_ASSIGN_INDEXED_ROWS.install(builder)?;
     linkage_factories::NUMERIC_CORE_ASSIGN_INDEXED_COLUMNS.install(builder)?;
@@ -899,9 +962,17 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     nested_selection!("mul", 2);
     nested_selection!("div", 3);
     nested_selection!("pow", 5);
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     super::native_collection_semantics::register_ranges(builder)?;
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     {
         linkage_factories::NUMERIC_RANGE_EXCLUSIVE.install(builder)?;
         linkage_factories::NUMERIC_RANGE_EXCLUSIVE_INCREMENT.install(builder)?;
@@ -909,9 +980,17 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         linkage_factories::NUMERIC_RANGE_INCLUSIVE_INCREMENT.install(builder)?;
     }
     linkage_factories::NUMERIC_COMBINATORICS_N_CHOOSE_K.install(builder)?;
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     super::native_collection_semantics::register_sums(builder)?;
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     {
         linkage_factories::NUMERIC_STATS_SUM_COLUMN.install(builder)?;
         linkage_factories::NUMERIC_STATS_SUM_ROW.install(builder)?;
@@ -1015,7 +1094,7 @@ fn validate_contract(
     Ok(())
 }
 
-fn validate_full_write(
+pub(super) fn validate_full_write(
     request: &ResidentKernelBindRequest<'_>,
     input_count: usize,
     shape: ShapeRule,
@@ -2360,22 +2439,58 @@ fn bind_snapshot_comparison(
     } else {
         kernel
     };
-    let op = match (
-        left_element == &SchemaBody::SignedInteger(IntegerWidth::W64),
-        comparison,
-    ) {
-        (false, SemanticComparison::Equal) => super::native_semantics::NativeScalarOp::U64Eq,
-        (false, SemanticComparison::NotEqual) => super::native_semantics::NativeScalarOp::U64Ne,
-        (false, SemanticComparison::Less) => super::native_semantics::NativeScalarOp::U64Lt,
-        (false, SemanticComparison::LessEqual) => super::native_semantics::NativeScalarOp::U64Le,
-        (false, SemanticComparison::Greater) => super::native_semantics::NativeScalarOp::U64Gt,
-        (false, SemanticComparison::GreaterEqual) => super::native_semantics::NativeScalarOp::U64Ge,
-        (true, SemanticComparison::Equal) => super::native_semantics::NativeScalarOp::I64Eq,
-        (true, SemanticComparison::NotEqual) => super::native_semantics::NativeScalarOp::I64Ne,
-        (true, SemanticComparison::Less) => super::native_semantics::NativeScalarOp::I64Lt,
-        (true, SemanticComparison::LessEqual) => super::native_semantics::NativeScalarOp::I64Le,
-        (true, SemanticComparison::Greater) => super::native_semantics::NativeScalarOp::I64Gt,
-        (true, SemanticComparison::GreaterEqual) => super::native_semantics::NativeScalarOp::I64Ge,
+    use super::native_semantics::NativeScalarOp as Op;
+    use SemanticComparison as C;
+    let op = match (left_element, comparison) {
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W8), C::Equal) => Op::U8Eq,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W8), C::NotEqual) => Op::U8Ne,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W8), C::Less) => Op::U8Lt,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W8), C::LessEqual) => Op::U8Le,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W8), C::Greater) => Op::U8Gt,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W8), C::GreaterEqual) => Op::U8Ge,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W16), C::Equal) => Op::U16Eq,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W16), C::NotEqual) => Op::U16Ne,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W16), C::Less) => Op::U16Lt,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W16), C::LessEqual) => Op::U16Le,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W16), C::Greater) => Op::U16Gt,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W16), C::GreaterEqual) => Op::U16Ge,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W32), C::Equal) => Op::U32Eq,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W32), C::NotEqual) => Op::U32Ne,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W32), C::Less) => Op::U32Lt,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W32), C::LessEqual) => Op::U32Le,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W32), C::Greater) => Op::U32Gt,
+        #[cfg(feature = "convert")]
+        (SchemaBody::UnsignedInteger(IntegerWidth::W32), C::GreaterEqual) => Op::U32Ge,
+        (SchemaBody::UnsignedInteger(IntegerWidth::W64), C::Equal) => Op::U64Eq,
+        (SchemaBody::UnsignedInteger(IntegerWidth::W64), C::NotEqual) => Op::U64Ne,
+        (SchemaBody::UnsignedInteger(IntegerWidth::W64), C::Less) => Op::U64Lt,
+        (SchemaBody::UnsignedInteger(IntegerWidth::W64), C::LessEqual) => Op::U64Le,
+        (SchemaBody::UnsignedInteger(IntegerWidth::W64), C::Greater) => Op::U64Gt,
+        (SchemaBody::UnsignedInteger(IntegerWidth::W64), C::GreaterEqual) => Op::U64Ge,
+        (SchemaBody::SignedInteger(IntegerWidth::W64), C::Equal) => Op::I64Eq,
+        (SchemaBody::SignedInteger(IntegerWidth::W64), C::NotEqual) => Op::I64Ne,
+        (SchemaBody::SignedInteger(IntegerWidth::W64), C::Less) => Op::I64Lt,
+        (SchemaBody::SignedInteger(IntegerWidth::W64), C::LessEqual) => Op::I64Le,
+        (SchemaBody::SignedInteger(IntegerWidth::W64), C::Greater) => Op::I64Gt,
+        (SchemaBody::SignedInteger(IntegerWidth::W64), C::GreaterEqual) => Op::I64Ge,
+        _ => return Ok(kernel),
     };
     Ok(super::native_semantics::certify(request, kernel, op))
 }
@@ -3296,6 +3411,27 @@ fn bind_snapshot_numeric_binary(
     } else {
         kernel
     };
+    // Certify the exact checked widths needed by counters and code lengths.
+    // The certificate still rejects non-scalar layouts and mismatched inputs.
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    {
+        use super::native_semantics::NativeScalarOp;
+        let narrow = match (output_element, arithmetic) {
+            (SchemaBody::UnsignedInteger(IntegerWidth::W32), SemanticArithmetic::Add) => {
+                Some(NativeScalarOp::U32Add)
+            }
+            (SchemaBody::UnsignedInteger(IntegerWidth::W32), SemanticArithmetic::Subtract) => {
+                Some(NativeScalarOp::U32Sub)
+            }
+            (SchemaBody::UnsignedInteger(IntegerWidth::W8), SemanticArithmetic::Add) => {
+                Some(NativeScalarOp::U8Add)
+            }
+            _ => None,
+        };
+        if let Some(op) = narrow {
+            return Ok(super::native_semantics::certify(request, kernel, op));
+        }
+    }
     let op = match (
         output_element == &SchemaBody::SignedInteger(IntegerWidth::W64),
         arithmetic,
@@ -3799,7 +3935,7 @@ fn bind_snapshot_sum(
     }
 }
 
-fn bind_horizontal(
+pub(super) fn bind_horizontal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_build(
@@ -4191,7 +4327,7 @@ fn compound_f64(arithmetic: SemanticArithmetic, left: f64, right: f64) -> f64 {
     }
 }
 
-fn bind_indexed_assign(
+pub(super) fn bind_indexed_assign(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_indexed_assign_with_region(request, RegionPolicy::IndexedAxis { axis: 0 })
@@ -5419,7 +5555,7 @@ fn is_snapshot_index_assign_element(body: &SchemaBody) -> bool {
     )
 }
 
-fn bind_vertical(
+pub(super) fn bind_vertical(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_build(
@@ -6254,7 +6390,7 @@ fn bind_semantic_columns_access(
         .or_else(|_| bind_snapshot_access_mode(request, Some(ResolvedSelectionMode::Columns)))
 }
 
-fn bind_snapshot_access(
+pub(super) fn bind_snapshot_access(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_snapshot_access_mode(request, None)
@@ -6462,16 +6598,26 @@ fn bind_snapshot_access_mode(
                 };
                 let selected_matches = ordinal
                     .and_then(|ordinal| elements.get(ordinal))
-                    .is_some_and(|element| element == output_schema.body());
+                    .is_some_and(|element| {
+                        aggregate_access::component_supported(
+                            request,
+                            element,
+                            output_schema.body(),
+                        )
+                    });
                 (
                     None,
                     None,
                     None,
                     (!homogeneous).then_some(ordinal).flatten(),
                     if homogeneous {
-                        elements
-                            .first()
-                            .is_some_and(|element| element == output_schema.body())
+                        elements.first().is_some_and(|element| {
+                            aggregate_access::component_supported(
+                                request,
+                                element,
+                                output_schema.body(),
+                            )
+                        })
                     } else {
                         selected_matches
                     },
@@ -6487,18 +6633,29 @@ fn bind_snapshot_access_mode(
                         .position(|field| mech_core::hash_str(&field.name) == id),
                     _ => None,
                 };
-                let selected_matches = ordinal
-                    .and_then(|ordinal| fields.get(ordinal))
-                    .is_some_and(|field| &field.schema == output_schema.body());
+                let selected_matches =
+                    ordinal
+                        .and_then(|ordinal| fields.get(ordinal))
+                        .is_some_and(|field| {
+                            aggregate_access::component_supported(
+                                request,
+                                &field.schema,
+                                output_schema.body(),
+                            )
+                        });
                 (
                     None,
                     None,
                     None,
                     (!homogeneous).then_some(ordinal).flatten(),
                     if homogeneous {
-                        fields
-                            .first()
-                            .is_some_and(|field| &field.schema == output_schema.body())
+                        fields.first().is_some_and(|field| {
+                            aggregate_access::component_supported(
+                                request,
+                                &field.schema,
+                                output_schema.body(),
+                            )
+                        })
                     } else {
                         selected_matches
                     },
@@ -9299,7 +9456,10 @@ fn indexed_assign_snapshot(
     let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
     let current_footprint =
         super::budget::measure_canonical_value_footprint(&mut footprint_meter, current, schemas)
-            .map_err(|_| ResidentKernelError::InvalidOutput)?;
+            .map_err(|error| match error {
+                ResidentKernelError::ResourceLimit { .. } => error,
+                _ => ResidentKernelError::InvalidOutput,
+            })?;
     let source_footprint =
         super::budget::measure_canonical_value_footprint(&mut footprint_meter, source, schemas)?;
     let current_bytes = current_footprint.retained_bytes;
@@ -9357,12 +9517,18 @@ fn indexed_assign_snapshot(
         .checked_add(source_bytes)
         .and_then(|bytes| bytes.checked_add(execution_clone_footprint.retained_bytes))
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let container_bytes = super::budget::checked_u64(
-        output_len
-            .checked_add(source_len)
-            .and_then(|count| count.checked_mul(core::mem::size_of::<ValueDataDraft>()))
-            .ok_or(ResidentKernelError::InvalidShape)?,
-    )?;
+    let packed = kernel.retained_state::<SemanticArithmetic>().is_none()
+        && super::structural_values::word_matrix(current_schema.body());
+    let container_bytes = if packed {
+        0
+    } else {
+        super::budget::checked_u64(
+            output_len
+                .checked_add(source_len)
+                .and_then(|count| count.checked_mul(core::mem::size_of::<ValueDataDraft>()))
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )?
+    };
     let footprint_work = footprint_meter.estimate();
     let metadata = kernel
         .snapshot_output()
@@ -9421,6 +9587,26 @@ fn indexed_assign_snapshot(
     )?
     .admit()?
     .into_plan();
+    if packed {
+        let next = packed_indexed_assign::construct(
+            kernel,
+            current,
+            source,
+            packed_indexed_assign::Plan {
+                positions,
+                routing: source_routing,
+                rows,
+                columns,
+                source_rows,
+                source_columns,
+            },
+        )?;
+        let changed = !current
+            .snapshot_eq(schemas, &next, schemas)
+            .map_err(|_| ResidentKernelError::InvalidOutput)?;
+        *target = Some(next);
+        return Ok(changed);
+    }
     let ValueDataDraft::Matrix(mut next) = current
         .canonical_data_draft()
         .map_err(|_| ResidentKernelError::InvalidOutput)?
@@ -16579,8 +16765,18 @@ fn named_schema_ordinal_with_meter<'a>(
     selected: u64,
     meter: &mut super::budget::ResidentBudgetMeter,
 ) -> Result<usize, ResidentKernelError> {
+    named_schema_ordinal(names, selected, |bytes| meter.charge_comparison_work(bytes))
+}
+
+// Both the maintained selector and its selected native scalar projection use
+// this exact first-match name interpretation. Admission precedes each hash.
+pub(in crate::resident) fn named_schema_ordinal<'a>(
+    names: impl IntoIterator<Item = &'a str>,
+    selected: u64,
+    mut charge: impl FnMut(u64) -> Result<(), ResidentKernelError>,
+) -> Result<usize, ResidentKernelError> {
     for (ordinal, name) in names.into_iter().enumerate() {
-        meter.charge_comparison_work(super::budget::checked_u64(name.len().max(1))?)?;
+        charge(super::budget::checked_u64(name.len().max(1))?)?;
         if mech_core::hash_str(name) == selected {
             return Ok(ordinal);
         }
@@ -17666,9 +17862,12 @@ fn snapshot_access_from_source(
             )?,
         )?;
     }
+    let (closed_source, source_metadata_bytes) =
+        aggregate_access::closed_source(kernel, source, source_schema)?;
+    let source_body = closed_source.as_ref().unwrap_or(source_schema.body());
     let output_cost = snapshot_access_output_cost(
         source,
-        source_schema.body(),
+        source_body,
         plan,
         inputs,
         &mut footprint_meter,
@@ -17681,6 +17880,33 @@ fn snapshot_access_from_source(
         .output_dimensions
         .map(|(rows, columns)| resolved_snapshot_output_shape(kernel, rows, columns))
         .transpose()?;
+    let component = aggregate_access::selected_component(
+        source_body,
+        source.data(),
+        output_cost.selected_ordinal,
+    );
+    let (component_shape, component_metadata_bytes) = if snapshot_output {
+        aggregate_access::current_shape(
+            kernel,
+            component.map(|(body, _)| body),
+            source_metadata_bytes != 0,
+        )?
+    } else {
+        (None, 0)
+    };
+    let resolved_output_shape = component_shape.or(resolved_output_shape);
+    let packed_component = snapshot_output
+        && component.is_some_and(|(body, _)| super::structural_values::word_matrix(body));
+    let component_expansion = if packed_component {
+        0
+    } else {
+        component
+            .map(|(body, data)| {
+                super::budget::unsigned_word_draft_expansion(&mut footprint_meter, body, data)
+            })
+            .transpose()?
+            .unwrap_or(0)
+    };
     let footprint_work = footprint_meter.estimate();
     let publication_equality_work = match prior_output_footprint {
         Some(prior) => prior_schema_comparison_work
@@ -17725,7 +17951,9 @@ fn snapshot_access_from_source(
     let compact_strings = snapshot_output && compact_string_access::supports(kernel, source, plan);
     let output_draft_bytes = output_cost
         .count
-        .checked_mul(if compact_strings {
+        .checked_mul(if packed_component {
+            0
+        } else if compact_strings {
             core::mem::size_of::<Box<str>>()
         } else {
             core::mem::size_of::<ValueDataDraft>()
@@ -17780,10 +18008,14 @@ fn snapshot_access_from_source(
                 .checked_add(super::budget::checked_u64(output_cost.count)?)
                 .and_then(|work| work.checked_add(footprint_work.compute_work()))
                 .and_then(|work| work.checked_add(publication_work))
+                .and_then(|work| work.checked_add(component_expansion.checked_mul(8)?))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             temporary_bytes: output_retained_bytes
                 .checked_mul(2)
                 .and_then(|bytes| bytes.checked_add(source_temporary_bytes))
+                .and_then(|bytes| bytes.checked_add(component_metadata_bytes))
+                .and_then(|bytes| bytes.checked_add(source_metadata_bytes))
+                .and_then(|bytes| bytes.checked_add(component_expansion))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             cloned_bytes,
             container_bytes: output_draft_bytes
@@ -17799,6 +18031,41 @@ fn snapshot_access_from_source(
     )?
     .admit()?
     .into_plan();
+    if packed_component {
+        // The live selector and independent component shape were validated
+        // above. Keep unsigned buffers packed through this same access leaf;
+        // admission still covers the payload copy, owners and publication.
+        let (_, data) = component.ok_or(ResidentKernelError::InvalidInput)?;
+        let declared = kernel
+            .snapshot_output()
+            .ok_or(ResidentKernelError::InvalidOutput)?;
+        let shape = resolved_output_shape.as_ref().unwrap_or(&declared.shape);
+        let next = super::packed_word_matrix::copy(
+            plan.output_schema,
+            shape.clone(),
+            data,
+            Arc::clone(
+                kernel
+                    .shared_snapshot_schemas()
+                    .ok_or(ResidentKernelError::InvalidOutput)?,
+            ),
+        )?;
+        let ResidentValueMut::Snapshot([target]) = output else {
+            return Err(ResidentKernelError::InvalidOutput);
+        };
+        let changed = target
+            .as_ref()
+            .map(|previous| {
+                previous
+                    .snapshot_eq(schemas, &next, schemas)
+                    .map(|same| !same)
+            })
+            .transpose()
+            .map_err(|_| ResidentKernelError::InvalidOutput)?
+            .unwrap_or(true);
+        *target = Some(next);
+        return Ok(changed);
+    }
     if compact_strings {
         let selectors = plan
             .selectors
@@ -17817,7 +18084,7 @@ fn snapshot_access_from_source(
         let next = compact_string_access::construct(
             kernel,
             source,
-            source_schema.body(),
+            source_body,
             &selectors,
             plan,
             &output_cost,
@@ -17883,14 +18150,7 @@ fn snapshot_access_from_source(
             )
         })
         .collect::<Result<Vec<_>, _>>()?;
-    let data = snapshot_access_data(
-        source,
-        source_schema.body(),
-        &selectors,
-        plan,
-        &output_cost,
-        schemas,
-    )?;
+    let data = snapshot_access_data(source, source_body, &selectors, plan, &output_cost, schemas)?;
     write_access_output(
         kernel,
         plan,
@@ -18370,7 +18630,11 @@ fn snapshot_arithmetic_storage_geometry(
 
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 pub(super) fn canonical_u64_range_selector_representation(
     count: u64,

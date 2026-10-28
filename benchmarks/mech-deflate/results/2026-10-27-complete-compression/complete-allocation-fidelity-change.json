@@ -1,0 +1,42 @@
+{
+  "time": "2026-10-27T22:57:54.897634+00:00",
+  "operation": "Restore six original Huffman workspace initialization sites before optimization passes",
+  "reference": "CompressOptimal.roc:1040-1045 at671077457ff7ef3a3d44caf715a3fc595addf379",
+  "source": "/private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/fixtures/native/deflate-plan-block.mec",
+  "before_sha256": "3d3ffe2c1904eb275990ac670093e9c1f7631f3b8a12340902508f0acce7ed4c",
+  "after_sha256": "9f71ddeb8219821b6e3ea6ef2773747db5aa609ff9ab1ad2969761f67eea9b31",
+  "initializations": [
+    {
+      "kind": "U32",
+      "length": 288,
+      "purpose": "literal/length frequencies"
+    },
+    {
+      "kind": "U32",
+      "length": 32,
+      "purpose": "offset frequencies"
+    },
+    {
+      "kind": "U8",
+      "length": 288,
+      "purpose": "literal/length code lengths"
+    },
+    {
+      "kind": "U32",
+      "length": 288,
+      "purpose": "literal/length codewords"
+    },
+    {
+      "kind": "U8",
+      "length": 32,
+      "purpose": "offset code lengths"
+    },
+    {
+      "kind": "U32",
+      "length": 32,
+      "purpose": "offset codewords"
+    }
+  ],
+  "validation": "Pending fresh source-derived original/decoded complete qualification; expected bytes unchanged",
+  "live_run": "session2076 executes the previously built source snapshot and cached artifact; this edit does not affect that running binary or its measurements"
+}

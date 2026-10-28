@@ -1,0 +1,8 @@
+{
+  "hosts/gpu/tests/fixtures/native/deflate-block-choice-reference.json": "16566e0b050136e81a9a19922c8eca634d05ccced04a92e62cd7dbd96dc7eb6a",
+  "hosts/gpu/tests/fixtures/native/deflate-block-choice.mec": "10198fea57405c2bcd501779b2e46277af0a72b59b412290da66631ee46cf2a7",
+  "hosts/gpu/tests/fixtures/native/deflate-block-header-writer-reference.json": "07303b95a594406c650ca1e6559308c7ff8c0e9e3f7a487de17eae4ad80f6596",
+  "hosts/gpu/tests/fixtures/native/deflate-block-header-writer.mec": "e87996bb661492b047df1c5f9ac51c8b8272b350ce0c7ed719d8b80ac8b0d1e7",
+  "hosts/gpu/tests/support/canonical_program_block_choice.rs": "64949d27e7dbb20419d25535d19c6de2400611ac3f41590fe4949735ebc6a84d",
+  "hosts/gpu/tests/support/canonical_program_block_header_writer.rs": "33c31c46068d374543e44981cb0c255aa87fcea50855aaccfae54c539155716f"
+}

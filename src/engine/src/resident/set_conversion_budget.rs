@@ -179,7 +179,11 @@ pub(super) fn prepare(
         test,
         feature = "native-artifact",
         any(feature = "full_source", feature = "full_compiler"),
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     ))]
     super::output_tests::record(
         output_bytes,

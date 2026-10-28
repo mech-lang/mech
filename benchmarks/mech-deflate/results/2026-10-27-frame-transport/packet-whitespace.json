@@ -1,0 +1,12 @@
+{
+  "command": [
+    "git",
+    "diff",
+    "--cached",
+    "--check"
+  ],
+  "diagnostic": "development-consumer-argument-test.rs.txt:200: new blank line at EOF.",
+  "exit": "not captured separately from the subsequent stat command",
+  "classification": "introduced documentation whitespace",
+  "disposition": "Preserve the exact raw source prefix in gzip, as for terminal logs; decoded bytes unchanged. Final staged whitespace check passes."
+}

@@ -102,12 +102,7 @@ pub(in crate::resident) fn scalar_index(
 
 /// The maintained one-based conversion for an already available physical
 /// cell. This does not establish a language Matrix shape or execute a visit.
-pub(in crate::resident) fn available_scalar_index(
-    index: u64,
-    available: usize,
-) -> Result<usize, ResidentKernelError> {
-    access_index(&ValueData::U64(index), available)
-}
+pub(in crate::resident) use super::available_scalar_index;
 
 /// Uses the SAME bound access plan, positional conversion and shape resolver
 /// as ordinary snapshot_access. No Matrix result or index vector is built.

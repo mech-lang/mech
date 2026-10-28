@@ -1,6 +1,11 @@
 //! Canonical data reconstruction for the private build-image loader.
 //! Unlike selected compiler proofs, these values use ordinary safe finalizers.
-#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    test,
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 use mech_core::snapshot::SnapshotValidationContext;
 use mech_core::*;
 use serde::Deserialize;
@@ -94,7 +99,12 @@ pub fn schemas(image: &Json) -> Result<SchemaTable, String> {
     Ok(build.table)
 }
 
-#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    test,
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 pub(super) fn descriptor(image: &Json) -> Result<ResolvedValueDescriptor, String> {
     let (definition, parameters) =
         <(Json, Box<[u64]>)>::deserialize(image).map_err(|e| e.to_string())?;
@@ -114,7 +124,12 @@ pub(super) fn constant(image: &Json, schemas: &SchemaTable) -> Result<Value, Str
         .map_err(|e| format!("image constant: {e:?}"))
 }
 
-#[cfg(any(test, feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    test,
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 pub(super) fn constant_bytes(bytes: &[u8], schemas: &SchemaTable) -> Result<Value, String> {
     let draft: ValueDraft = super::raw_json::decode(bytes)?;
     draft

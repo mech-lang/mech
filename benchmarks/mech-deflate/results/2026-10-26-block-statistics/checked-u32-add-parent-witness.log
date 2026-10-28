@@ -1,0 +1,19 @@
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-reality-check/hosts/gpu)
+    Finished `test` profile [unoptimized] target(s) in 17.79s
+     Running tests/canonical_artifact_program.rs (/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-161b919374daec0a)
+
+running 1 test
+test narrow_word_qualification::checked_u32_add_keeps_frequency_width_overflow_and_recovery ...
+thread 'narrow_word_qualification::checked_u32_add_keeps_frequency_width_overflow_and_recovery' (16090453) panicked at hosts/gpu/tests/support/canonical_program_narrow_words.rs:64:18:
+checked U32 frequency addition must have its own native witness: Backend("canonical native artifact lowering: MissingSemanticWitness { node: NodeId(0) }")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    narrow_word_qualification::checked_u32_add_keeps_frequency_width_overflow_and_recovery
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 261 filtered out; finished in 5.38s
+
+error: test failed, to rerun pass `-p mech-gpu --test canonical_artifact_program`

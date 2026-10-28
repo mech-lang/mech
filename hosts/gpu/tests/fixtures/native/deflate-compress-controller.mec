@@ -1,0 +1,92 @@
+// Level-12 stream control from CompressOptimal.roc:694-1281 and Deflate.roc:81-116,
+// pinned at 671077457ff7ef3a3d44caf715a3fc595addf379.
+// Include the qualified collector, planner, selector and block writer components,
+// and the pinned immutable deflate-table-* definitions before this file.
+// Large mutable buffers remain separate function arguments.
+// See deflate-huffman-LICENSES.md for attribution and licenses.
+
+deflate-compress-bound(length<u64>) => (out<u64>) :=
+  blocks := (length + 4999u64) / 5000u64
+  nonzero := ((blocks == 0u64)? | true => 1u64 | false => blocks)
+  out := 5u64 * nonzero + length.
+
+optimal-compress-blocks(input<[u8]>, bytes<[u8]>, bitbuf<u64>, bitcount<u64>, tables<[u16]>, cache<[u32]>, nodes<[u64]>, hash3<u64>, hash4<u64>, position<u64>, begin<u64>, base<u64>, next-slide<u64>, maximum<u64>, nice<u64>, pointer<u64>, literal<[u32]>, length-costs<[u32]>, offset-costs<[u32]>, saved-literal<[u32]>, saved-length<[u32]>, saved-offset<[u32]>, frequencies<[u32]>, fresh-frequencies<[u32]>, previous-observations<[u32]>, previous-number<u64>, observations<[u32]>, fresh-observations<[u32]>, number-observations<u64>, number-fresh<u64>, seqs<[block-sequence]>, previous-only-literals<u64>, static-litlen-lens<[u8]>, static-litlen-words<[u32]>, static-offset-lens<[u8]>, static-offset-words<[u32]>) => (out<path-written>) :=
+  collected := optimal-collect-block(tables, cache, hash3, hash4, input, position, base, next-slide, maximum, nice, pointer, frequencies, fresh-frequencies, observations, fresh-observations, number-observations, number-fresh, begin, previous-only-literals)
+  block-length := collected.block-end - collected.block-begin
+  first := ((collected.block-begin == 0u64)? | true => 1u64 | false => 0u64)
+  planned := optimal-plan-block(input, collected.block-begin, block-length, first, collected.frequencies, collected.cache, collected.cache-end, nodes, literal, length-costs, offset-costs, saved-literal, saved-length, saved-offset, previous-observations, previous-number, collected.observations, collected.number-observations, seqs, static-litlen-lens, static-offset-lens, deflate-table-length-slots, deflate-table-length-extra, deflate-table-offset-extra, deflate-table-offset-slots, deflate-table-default0, deflate-table-default1, deflate-table-default2, deflate-table-symbol-costs, deflate-table-permutation, deflate-table-precode-extra, deflate-table-reversed)
+  selected := planned.selected
+  tallied := selected.tallied
+  flushed := block-flush(bytes, bitbuf, bitcount, input, collected.block-begin, block-length, selected.seqs, tallied.freqs-litlen, tallied.freqs-offset, tallied.litlen-lens, tallied.litlen-codewords, tallied.offset-lens, tallied.offset-codewords, static-litlen-lens, static-litlen-words, static-offset-lens, static-offset-words, selected.nodes, selected.use-items, collected.is-final, deflate-table-permutation, deflate-table-reversed, deflate-table-precode-extra, deflate-table-length-slots, deflate-table-length-bases, deflate-table-length-extra, deflate-table-offset-slots, deflate-table-offset-bases, deflate-table-offset-extra)
+  carried := optimal-carry-block(collected.cache, collected.cache-end, collected.rewound, collected.changed, collected.have-previous-check, collected.fresh-frequencies, collected.fresh-observations, collected.number-fresh, collected.next-position, collected.block-end)
+  next-tables := collected.tables
+  next-cache := carried.cache
+  next-nodes := flushed.items
+  next-hash3 := collected.next-hash3
+  next-hash4 := collected.next-hash4
+  next-position := collected.next-position
+  next-begin := carried.block-begin
+  next-base := collected.base
+  next-slide-at := collected.next-slide
+  next-maximum := collected.maximum
+  next-nice := collected.nice
+  next-pointer := carried.cache-ptr
+  next-literal := selected.costs.literal
+  next-length := selected.costs.length
+  next-offset := selected.costs.offset-slot
+  next-saved-literal := planned.saved.literal
+  next-saved-length := planned.saved.length
+  next-saved-offset := planned.saved.offset-slot
+  next-frequencies := carried.frequencies
+  next-fresh-frequencies := carried.fresh-frequencies
+  next-previous := collected.observations
+  next-previous-number := collected.number-observations
+  next-observations := carried.observations
+  next-fresh-observations := carried.fresh-observations
+  next-number := carried.number-observations
+  next-fresh-number := carried.number-fresh
+  next-seqs := flushed.seqs
+  next-only-literals := selected.used-only-literals
+  next-bytes := flushed.bytes
+  next-bitbuf := flushed.bitbuf
+  next-bitcount := flushed.bitcount
+  next-static-litlen-lens := flushed.static-litlen-lens
+  next-static-litlen-words := flushed.static-litlen-codewords
+  next-static-offset-lens := flushed.static-offset-lens
+  next-static-offset-words := flushed.static-offset-codewords
+  out := ((next-position == sequence/length(input))?
+    | true => {bytes: next-bytes, bitbuf: next-bitbuf, bitcount: next-bitcount}
+    | false => optimal-compress-blocks(input, next-bytes, next-bitbuf, next-bitcount, next-tables, next-cache, next-nodes, next-hash3, next-hash4, next-position, next-begin, next-base, next-slide-at, next-maximum, next-nice, next-pointer, next-literal, next-length, next-offset, next-saved-literal, next-saved-length, next-saved-offset, next-frequencies, next-fresh-frequencies, next-previous, next-previous-number, next-observations, next-fresh-observations, next-number, next-fresh-number, next-seqs, next-only-literals, next-static-litlen-lens, next-static-litlen-words, next-static-offset-lens, next-static-offset-words)).
+
+optimal-compress(input<[u8]>, output<[u8]>) => (out<[u8]>) :=
+  n := sequence/length(input)
+  static := block-build-static-codes(deflate-table-reversed)
+  bytes := sequence/reserve(output, deflate-compress-bound(n))
+  tables := initial-nodes(262144u64)
+  cache := [0u32 | i <- 0u64..=1500513u64, i < 1500513u64]
+  nodes := sequence/with-capacity(0u64, 305257u64)
+  literal := [0u32 | i <- 0u64..=256u64, i < 256u64]
+  length-costs := [0u32 | i <- 0u64..=259u64, i < 259u64]
+  offset-costs := [0u32 | i <- 0u64..=32u64, i < 32u64]
+  saved-literal := [0u32 | i <- 0u64..=256u64, i < 256u64]
+  saved-length := [0u32 | i <- 0u64..=259u64, i < 259u64]
+  saved-offset := [0u32 | i <- 0u64..=32u64, i < 32u64]
+  frequencies := [0u32 | i <- 0u64..=259u64, i < 259u64]
+  fresh-frequencies := [0u32 | i <- 0u64..=259u64, i < 259u64]
+  previous-observations := [0u32 | i <- 0u64..=10u64, i < 10u64]
+  fresh-observations := [0u32 | i <- 0u64..=10u64, i < 10u64]
+  observations := [0u32 | i <- 0u64..=10u64, i < 10u64]
+  seqs := [{litrunlen-and-length: 0u32, offset: 0u16, offset-slot: 0u16}]
+  stream := optimal-compress-blocks(input, bytes, 0u64, 0u64, tables, cache, nodes, 0u64, 0u64, 0u64, 0u64, 0u64, bt-minimum(n, 32768u64), 258u64, 258u64, 0u64, literal, length-costs, offset-costs, saved-literal, saved-length, saved-offset, frequencies, fresh-frequencies, previous-observations, 0u64, observations, fresh-observations, 0u64, 0u64, seqs, 0u64, static.litlen-lens, static.litlen-codewords, static.offset-lens, static.offset-codewords)
+  out := ((stream.bitcount > 0u64)? | true => sequence/append(stream.bytes, huff-byte(stream.bitbuf)) | false => stream.bytes).
+
+deflate-store-uncompressed(input<[u8]>, output<[u8]>) => (out<[u8]>) :=
+  n := sequence/length(input)
+  bytes := sequence/reserve(output, n + 5u64 * (n / 65535u64 + 1u64))
+  stored := ((n == 0u64)?
+    | true => {bytes: sequence/append-le-bytes(sequence/append(bytes, 1u8), 4294901760u64, 4u8), bitbuf: 0u64, bitcount: 0u64}
+    | false => block-write-stored(bytes, 0u64, 0u64, input, 0u64, n, 1u64))
+  out := stored.bytes.
+
+deflate-compress-into(input<[u8]>, output<[u8]>) => (out<[u8]>) :=
+  out := ((sequence/length(input) <= 7u64)? | true => deflate-store-uncompressed(input, output) | false => optimal-compress(input, output)).

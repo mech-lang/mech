@@ -1,0 +1,37 @@
+{
+  "name": "byte-append-host-release-checkpoint",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "canonical-native-program",
+    "--test",
+    "canonical_artifact_program",
+    "--",
+    "sequence_capacity_qualification",
+    "linked_bulk_byte_append",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "3e262c87aac0c0ae49b689561cd53bcfa4b34eaa",
+  "dirty": "",
+  "exit": 0,
+  "seconds": 554.4206719398499,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/byte-append-host-release-checkpoint.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

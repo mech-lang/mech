@@ -82,6 +82,7 @@ struct Visit {
     complete: bool,
     arithmetic: bool,
     reject: bool,
+    integrity: bool,
     work: u64,
 }
 impl From<Visit> for native::iteration_abi::NativeIterationVisit {
@@ -94,6 +95,7 @@ impl From<Visit> for native::iteration_abi::NativeIterationVisit {
             complete: w.complete,
             arithmetic: w.arithmetic,
             reject: w.reject,
+            integrity: w.integrity,
             work: w.work,
         }
     }
@@ -218,6 +220,12 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
     if selected_joins.maps != w.selected_joins.maps {
         return Err("selected-join map proof differs from its complete source uses".into());
     }
+    let uniform_word_collections = plan
+        .facts()
+        .uniform_unsigned_collections()
+        .into_boxed_slice();
+    let unsigned_buffer_calls = plan.unsigned_buffer_calls().into_boxed_slice();
+    let buffer_frames = plan.facts().buffer_frames();
     let descriptor = NativeProgramDescriptor {
         metadata: native::program::prepare::ProgramMetadata {
             plan,
@@ -234,6 +242,9 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
             scalar_bytes: w.scalar_bytes,
             observation_schema_bytes: w.observation_schema_bytes,
             max_library_inputs: w.max_library_inputs,
+            uniform_word_collections,
+            unsigned_buffer_calls,
+            buffer_frames,
             window_regions: w.window_regions,
             string_map_regions: w.string_map_regions,
             scalar_aggregates: w.scalar_aggregates,

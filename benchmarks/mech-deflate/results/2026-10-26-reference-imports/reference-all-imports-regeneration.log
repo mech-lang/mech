@@ -1,0 +1,20 @@
+warning: Roc cache writes are failing; compilation will continue without updating the cache. Run with --verbose for details.
+── ✗ unreported error ──────────────────────────────────────────────────────────
+
+The compiler stopped with the error PermissionDenied but did not say why.
+
+This is a bug in the compiler: whatever failed should have explained itself.
+Please report it at https://github.com/roc-lang/roc/issues, including the
+command you ran.
+
+Traceback (most recent call last):
+  File "/private/tmp/mech-deflate-linear-stack/benchmarks/mech-deflate/matchfinder/generate_block_reference.py", line 151, in <module>
+    main()
+    ~~~~^^
+  File "/private/tmp/mech-deflate-linear-stack/benchmarks/mech-deflate/matchfinder/generate_block_reference.py", line 127, in main
+    subprocess.run(command, check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc', 'build', '--opt=speed', '--output=/private/tmp/mech-linear-restack-20261026/full-block-reference/full-block-oracle', '/private/tmp/roc-deflate-repro-20261024/roc-deflate/package/MechFullBlockOracle.roc']' returned non-zero exit status 1.

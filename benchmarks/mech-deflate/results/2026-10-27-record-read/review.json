@@ -1,0 +1,24 @@
+{
+  "base": "27bdd8b2c5b1ad35590121653589d06251ae5161",
+  "implementation": "See the commit containing this receipt and source-hashes.json",
+  "native_program_ir": 112,
+  "tests": {
+    "maintained": {
+      "passed": 15,
+      "failed": 0,
+      "filtered": 318,
+      "test_seconds": 89.12,
+      "wall_seconds": 195.0295
+    },
+    "static": "four architecture/catalog checks, empty CI inventory gaps, formatting and diff checks pass"
+  },
+  "failures": {
+    "original_native_record_selection": "Inherited from clean production parent; fixed in this patch",
+    "record_matrix_control_capture": "Inherited source restriction; separate next compiler task",
+    "recursive_record_argument": "Inherited source restriction; minimal statement-function reproducer rejects before execution",
+    "native_artifact_only_feature_profile": "Previously assigned inherited uniform_word_collection.rs primitive() feature gating; unchanged, not rerun",
+    "initial_test_source": "Corrected invalid typed-input indexing syntax; control-capture test separated from direct native-read tests"
+  },
+  "skipped": "Full workspace suite and remote CI not awaited; no compressor timing or completed writer result",
+  "unchanged": "Compression algorithms, source tables, buffers, allocation and timing boundaries; no writer draft included"
+}

@@ -1,0 +1,6 @@
+{
+  "src/engine/src/source_semantics/frontend.rs": "f29d39306352509d1a817f4d8bc3b3a511677111d695a074afb9b4ea657e236d",
+  "src/engine/src/source_semantics/selected_matrix_result.rs": "b813e0ebc630e69170019103e6442a8446c97173e51ed57b8b5e2cc6db386a1b",
+  "src/engine/src/resident/conversion.rs": "c269cfc6625992e3c0f39577870549016c336b6b30e8192d4a65d1372544a516",
+  "hosts/gpu/tests/support/canonical_program_selected_matrix.rs": "b6b06e05ace99f2a681701f12aab74f1b1d1325956b2e056e859e4d76691d1b0"
+}

@@ -12,6 +12,9 @@ pub(super) fn fixtures() -> Vec<(String, String)> {
     ];
     result.extend(match_cast_cases::CASTS.iter().map(|cast| {
         let zero = match cast.output {
+            NativeScalarKind::U8 => "0u8",
+            NativeScalarKind::U16 => "0u16",
+            NativeScalarKind::U32 => "0u32",
             NativeScalarKind::U64 => "0u64",
             NativeScalarKind::I64 => "0i64",
             NativeScalarKind::F64 => "0.0",
@@ -21,7 +24,14 @@ pub(super) fn fixtures() -> Vec<(String, String)> {
             cast.name.replace("canonical-linked", "canonical-match"),
             cast.source.replace(
                 "\nresult\n",
-                &format!("\n(enabled<bool>? | true => result | false => result + {zero})\n"),
+                &if matches!(
+                    cast.output,
+                    NativeScalarKind::U8 | NativeScalarKind::U16 | NativeScalarKind::U32
+                ) {
+                    "\n(enabled<bool>? | true => result | false => result)\n".to_owned()
+                } else {
+                    format!("\n(enabled<bool>? | true => result | false => result + {zero})\n")
+                },
             ),
         )
     }));
@@ -109,6 +119,9 @@ pub(super) fn reference_cases(name: &str, artifacts: &[ProgramArtifact; 2]) -> V
                 })
                 .collect();
             let zero = match cast.input {
+                NativeScalarKind::U8 => NativeScalarValue::U8(0),
+                NativeScalarKind::U16 => NativeScalarValue::U16(0),
+                NativeScalarKind::U32 => NativeScalarValue::U32(0),
                 NativeScalarKind::U64 => U64(0),
                 NativeScalarKind::I64 => I64(0),
                 NativeScalarKind::F64 => F64(F64Bits::from_bits(0)),
@@ -225,6 +238,9 @@ pub(super) fn reference_cases(name: &str, artifacts: &[ProgramArtifact; 2]) -> V
     for (ordinal, ty) in plans[0].inputs().iter().enumerate() {
         let (invalid, diagnostic) = match ty.declaration().ty().kind() {
             NativeScalarKind::Bool => ("TRUE", "invalid Bool argument"),
+            NativeScalarKind::U8 => ("256", "invalid U8 argument"),
+            NativeScalarKind::U16 => ("65536", "invalid U16 argument"),
+            NativeScalarKind::U32 => ("4294967296", "invalid U32 argument"),
             NativeScalarKind::U64 => ("18446744073709551616", "invalid U64 argument"),
             NativeScalarKind::I64 => ("9223372036854775808", "invalid I64 argument"),
             NativeScalarKind::F64 => ("f64:000000000000000g", "invalid F64 bit argument"),

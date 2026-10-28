@@ -1,0 +1,246 @@
+{
+  "compiler_head": "aad1f6528dd49815be930bf42f044296968fa38e",
+  "source": "recursive-growing-buffer.mec",
+  "observations": [
+    {
+      "artifact": "original",
+      "width": 64,
+      "initial_capacity": 16,
+      "completed_appends": 0,
+      "result_capacity": 0,
+      "elapsed_seconds": 0.002860833,
+      "allocation_requests": 1630,
+      "requested_allocation_bytes": 157344
+    },
+    {
+      "artifact": "original",
+      "width": 64,
+      "initial_capacity": 16,
+      "completed_appends": 1,
+      "result_capacity": 1,
+      "elapsed_seconds": 0.000995792,
+      "allocation_requests": 3098,
+      "requested_allocation_bytes": 291048
+    },
+    {
+      "artifact": "original",
+      "width": 64,
+      "initial_capacity": 16,
+      "completed_appends": 3,
+      "result_capacity": 3,
+      "elapsed_seconds": 0.00182675,
+      "allocation_requests": 6044,
+      "requested_allocation_bytes": 559064
+    },
+    {
+      "artifact": "original",
+      "width": 64,
+      "initial_capacity": 305257,
+      "completed_appends": 0,
+      "result_capacity": 0,
+      "elapsed_seconds": 0.000514333,
+      "allocation_requests": 1625,
+      "requested_allocation_bytes": 2598952
+    },
+    {
+      "artifact": "original",
+      "width": 64,
+      "initial_capacity": 305257,
+      "completed_appends": 1,
+      "result_capacity": 1,
+      "elapsed_seconds": 0.000940792,
+      "allocation_requests": 3098,
+      "requested_allocation_bytes": 2732976
+    },
+    {
+      "artifact": "original",
+      "width": 64,
+      "initial_capacity": 305257,
+      "completed_appends": 3,
+      "result_capacity": 3,
+      "elapsed_seconds": 0.00179175,
+      "allocation_requests": 6044,
+      "requested_allocation_bytes": 3000992
+    },
+    {
+      "artifact": "decoded",
+      "width": 64,
+      "initial_capacity": 16,
+      "completed_appends": 0,
+      "result_capacity": 0,
+      "elapsed_seconds": 0.0005757089999999999,
+      "allocation_requests": 1629,
+      "requested_allocation_bytes": 157280
+    },
+    {
+      "artifact": "decoded",
+      "width": 64,
+      "initial_capacity": 16,
+      "completed_appends": 1,
+      "result_capacity": 1,
+      "elapsed_seconds": 0.000965292,
+      "allocation_requests": 3098,
+      "requested_allocation_bytes": 291048
+    },
+    {
+      "artifact": "decoded",
+      "width": 64,
+      "initial_capacity": 16,
+      "completed_appends": 3,
+      "result_capacity": 3,
+      "elapsed_seconds": 0.0018065420000000002,
+      "allocation_requests": 6044,
+      "requested_allocation_bytes": 559064
+    },
+    {
+      "artifact": "decoded",
+      "width": 64,
+      "initial_capacity": 305257,
+      "completed_appends": 0,
+      "result_capacity": 0,
+      "elapsed_seconds": 0.00051075,
+      "allocation_requests": 1625,
+      "requested_allocation_bytes": 2598952
+    },
+    {
+      "artifact": "decoded",
+      "width": 64,
+      "initial_capacity": 305257,
+      "completed_appends": 1,
+      "result_capacity": 1,
+      "elapsed_seconds": 0.000935417,
+      "allocation_requests": 3098,
+      "requested_allocation_bytes": 2732976
+    },
+    {
+      "artifact": "decoded",
+      "width": 64,
+      "initial_capacity": 305257,
+      "completed_appends": 3,
+      "result_capacity": 3,
+      "elapsed_seconds": 0.0017795410000000002,
+      "allocation_requests": 6044,
+      "requested_allocation_bytes": 3000992
+    },
+    {
+      "artifact": "original",
+      "width": 8,
+      "initial_capacity": 16,
+      "completed_appends": 0,
+      "result_capacity": 0,
+      "elapsed_seconds": 0.0007732910000000001,
+      "allocation_requests": 1679,
+      "requested_allocation_bytes": 159426
+    },
+    {
+      "artifact": "original",
+      "width": 8,
+      "initial_capacity": 16,
+      "completed_appends": 1,
+      "result_capacity": 1,
+      "elapsed_seconds": 0.001028375,
+      "allocation_requests": 3188,
+      "requested_allocation_bytes": 294462
+    },
+    {
+      "artifact": "original",
+      "width": 8,
+      "initial_capacity": 16,
+      "completed_appends": 3,
+      "result_capacity": 3,
+      "elapsed_seconds": 0.001855,
+      "allocation_requests": 6218,
+      "requested_allocation_bytes": 565186
+    },
+    {
+      "artifact": "original",
+      "width": 8,
+      "initial_capacity": 6633832,
+      "completed_appends": 0,
+      "result_capacity": 0,
+      "elapsed_seconds": 0.0005685829999999999,
+      "allocation_requests": 1673,
+      "requested_allocation_bytes": 6792858
+    },
+    {
+      "artifact": "original",
+      "width": 8,
+      "initial_capacity": 6633832,
+      "completed_appends": 1,
+      "result_capacity": 1,
+      "elapsed_seconds": 0.0009824999999999999,
+      "allocation_requests": 3188,
+      "requested_allocation_bytes": 6928278
+    },
+    {
+      "artifact": "original",
+      "width": 8,
+      "initial_capacity": 6633832,
+      "completed_appends": 3,
+      "result_capacity": 3,
+      "elapsed_seconds": 0.001826166,
+      "allocation_requests": 6218,
+      "requested_allocation_bytes": 7199002
+    },
+    {
+      "artifact": "decoded",
+      "width": 8,
+      "initial_capacity": 16,
+      "completed_appends": 0,
+      "result_capacity": 0,
+      "elapsed_seconds": 0.00057925,
+      "allocation_requests": 1679,
+      "requested_allocation_bytes": 159426
+    },
+    {
+      "artifact": "decoded",
+      "width": 8,
+      "initial_capacity": 16,
+      "completed_appends": 1,
+      "result_capacity": 1,
+      "elapsed_seconds": 0.00097825,
+      "allocation_requests": 3188,
+      "requested_allocation_bytes": 294462
+    },
+    {
+      "artifact": "decoded",
+      "width": 8,
+      "initial_capacity": 16,
+      "completed_appends": 3,
+      "result_capacity": 3,
+      "elapsed_seconds": 0.001854625,
+      "allocation_requests": 6218,
+      "requested_allocation_bytes": 565186
+    },
+    {
+      "artifact": "decoded",
+      "width": 8,
+      "initial_capacity": 6633832,
+      "completed_appends": 0,
+      "result_capacity": 0,
+      "elapsed_seconds": 0.0005299589999999999,
+      "allocation_requests": 1673,
+      "requested_allocation_bytes": 6792858
+    },
+    {
+      "artifact": "decoded",
+      "width": 8,
+      "initial_capacity": 6633832,
+      "completed_appends": 1,
+      "result_capacity": 1,
+      "elapsed_seconds": 0.000961083,
+      "allocation_requests": 3188,
+      "requested_allocation_bytes": 6928278
+    },
+    {
+      "artifact": "decoded",
+      "width": 8,
+      "initial_capacity": 6633832,
+      "completed_appends": 3,
+      "result_capacity": 3,
+      "elapsed_seconds": 0.001819791,
+      "allocation_requests": 6218,
+      "requested_allocation_bytes": 7199002
+    }
+  ]
+}

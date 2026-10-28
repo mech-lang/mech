@@ -1,0 +1,64 @@
+{
+  "recorded_at": "2026-10-26T22:23:40.899272+00:00",
+  "base": "b7f3c611a5f8d635d9d113e203a7a2fadce3053f",
+  "compiler_head": "d93c41c08ffedbcbbf080bdc1a769af89b736e57",
+  "pinned_source": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "artifact_revision": 14,
+  "program_abi": 35,
+  "typed_ir": 107,
+  "work_policy": 83,
+  "fixtures": {
+    "hosts/gpu/tests/fixtures/native/deflate-matchfinder.mec": {
+      "sha256": "c0b1504fac74da69953c822597b0b135d363fe76efd96b3a92b5de9931bcba93",
+      "unchanged_from_base": true
+    },
+    "hosts/gpu/tests/fixtures/native/deflate-binary-tree.mec": {
+      "sha256": "dd60cc6210256a75dff97a9df2c3b5f9d073220836a8edc8787422a8ded2518c",
+      "unchanged_from_base": true
+    },
+    "hosts/gpu/tests/fixtures/native/deflate-collector.mec": {
+      "sha256": "6efeaf50c93c8d5abc008c82203a655828cefac06dda2bdfb125764472375075",
+      "unchanged_from_base": true
+    }
+  },
+  "receipts": {
+    "selected-length-real-collector.json": {
+      "original_path": "/private/tmp/mech-stack-landscape-20261026/reality-check/selected-length-real-collector.json",
+      "original_sha256": "4714d17374cd1993a1d4f002128ac7be3f58ca8200bc9e4d2dca96844dc27ec2",
+      "archived_sha256": "4714d17374cd1993a1d4f002128ac7be3f58ca8200bc9e4d2dca96844dc27ec2",
+      "trailing_whitespace_normalized": false
+    },
+    "selected-length-real-collector.log": {
+      "original_path": "/private/tmp/mech-stack-landscape-20261026/reality-check/selected-length-real-collector.log",
+      "original_sha256": "faaaf2bfadd53fc2017c1ea059ae10080f126d65d0a76e3a24c3938f19d000e4",
+      "archived_sha256": "faaaf2bfadd53fc2017c1ea059ae10080f126d65d0a76e3a24c3938f19d000e4",
+      "trailing_whitespace_normalized": false
+    },
+    "selected-length-focused-and-collector.json": {
+      "original_path": "/private/tmp/mech-stack-landscape-20261026/reality-check/selected-length-focused-and-collector.json",
+      "original_sha256": "8170a31d31f56b91be3770f87cd95318746be48d5e294a4b01e80d806329e567",
+      "archived_sha256": "8170a31d31f56b91be3770f87cd95318746be48d5e294a4b01e80d806329e567",
+      "trailing_whitespace_normalized": false
+    },
+    "selected-length-focused-and-collector.log": {
+      "original_path": "/private/tmp/mech-stack-landscape-20261026/reality-check/selected-length-focused-and-collector.log",
+      "original_sha256": "a0378ca5ec1d4565482677b45e288c46fc28a8ce99d1303ef0578b8b36c5f2b1",
+      "archived_sha256": "611655a300868633993c9e76cac2302b1318e92e18d28cd2da3476f245206810",
+      "trailing_whitespace_normalized": true
+    },
+    "selected-length-final-focused.json": {
+      "original_path": "/private/tmp/mech-stack-landscape-20261026/reality-check/selected-length-final-focused.json",
+      "original_sha256": "cbf399aaf9d9eec5e64ccf73c1e12624f978e8f2cb588da77aa0a49879d2a3f8",
+      "archived_sha256": "cbf399aaf9d9eec5e64ccf73c1e12624f978e8f2cb588da77aa0a49879d2a3f8",
+      "trailing_whitespace_normalized": false
+    },
+    "selected-length-final-focused.log": {
+      "original_path": "/private/tmp/mech-stack-landscape-20261026/reality-check/selected-length-final-focused.log",
+      "original_sha256": "b6ed9a14f6cc6f09881f07e4ce0483ed1a5d86831bd19bd9554f342d89f23a51",
+      "archived_sha256": "b6ed9a14f6cc6f09881f07e4ce0483ed1a5d86831bd19bd9554f342d89f23a51",
+      "trailing_whitespace_normalized": false
+    }
+  },
+  "ci_triggered": false,
+  "release_measurement_run": false
+}

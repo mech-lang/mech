@@ -1,0 +1,23 @@
+{
+  "name": "review-huffman-reference",
+  "command": [
+    "python3",
+    "benchmarks/mech-deflate/huffman/generate_reference.py",
+    "/private/tmp/roc-deflate-repro-20261024/libdeflate"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "8bbfa71d8b3e32fa9772a0e64c4cb3674dc93814",
+  "dirty": " M benchmarks/mech-deflate/huffman/generate_reference.py\n M hosts/gpu/tests/support/canonical_program_huffman.rs\n M hosts/gpu/tests/support/canonical_program_lexical_argument_kinds.rs\n M scripts/unsafe-boundaries.allowlist\n",
+  "exit": 1,
+  "seconds": 1.2693169116973877,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/review-huffman-reference.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

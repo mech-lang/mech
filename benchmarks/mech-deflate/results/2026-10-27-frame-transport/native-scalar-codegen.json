@@ -1,0 +1,11 @@
+{
+  "base": "851507304181308ddbadcd96bec24859e8deeed4",
+  "code_head": "4b722986c7eaa47011c4e36562baec0e1fe87cf3",
+  "changed_files": [],
+  "emission_source_unchanged": true,
+  "layout_test": "native_artifact::program::runtime::native_runtime_consolidation_preserves_the_charged_layout_envelope",
+  "persistent_bytes": 1112,
+  "invocation_bytes": 1288,
+  "charged_fixed_nodes": 2704,
+  "existing_envelope_unchanged": true
+}

@@ -1,0 +1,8 @@
+{
+  "source_pin": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "compiler_pin": "d99c7b838fb05bb1047eb0c18d4d06d0f86f345d",
+  "source": "/private/tmp/roc-deflate-repro-20261024/roc-deflate/package/MechFlushFirstOracle.roc",
+  "source_sha256": "792591b8b973f9ebe32f277f1b00de99d5d122a3aee00ad380c148199bb6e82b",
+  "binary_sha256": "5e810bb92bb03d13950a66babc445c6926902d2b1ca4b65624d7e1e7a8150835",
+  "output": "out 115\nout 4\nbitbuf 0\nbitcount 2\n"
+}

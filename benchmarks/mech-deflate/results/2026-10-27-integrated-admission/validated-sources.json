@@ -1,0 +1,5 @@
+{
+  "src/engine/src/native_artifact/iteration_validation.rs": "42eeac70f73059b7ef753461cfca077538885ca9a372ac296aab2dba3e59d845",
+  "src/engine/src/native_artifact/map_write_uses.rs": "599ff68f5b7915512abc8b5c4d588cbc473590d1c3402654dd0dafdf08417d4f",
+  "src/engine/src/resident/general/native_match_lowering.rs": "56ef1f5ae3fa3b5cb35c7ab3e49cd9eabebec513d79f2f41c8ad538ae7147168"
+}

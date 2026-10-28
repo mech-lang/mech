@@ -1,0 +1,23 @@
+{
+  "name": "sequence-operations-reviewed-static-contracts",
+  "command": [
+    "python3",
+    "-c",
+    "import subprocess; commands=[[\"rustup\",\"run\",\"nightly-2026-03-03\",\"cargo\",\"fmt\",\"--all\",\"--\",\"--check\"],[\"python3\",\"scripts/check-native-build-analysis-layout.py\"],[\"python3\",\"scripts/check-warning-policy.py\"],[\"python3\",\"scripts/check-production-resident-routing.py\"],[\"python3\",\"scripts/check-source-catalog-entrypoints.py\"],[\"python3\",\"scripts/check-rust-module-layout.py\"],[\"python3\",\"scripts/check-native-host-catalog.py\"],[\"git\",\"diff\",\"--check\"]]; [subprocess.run(command,check=True) for command in commands]"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "aad1f6528dd49815be930bf42f044296968fa38e",
+  "dirty": "?? benchmarks/mech-deflate/results/2026-10-27-sequence-operations/\n",
+  "exit": 0,
+  "seconds": 20.137627124786377,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/sequence-operations-reviewed-static-contracts.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

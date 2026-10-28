@@ -1,0 +1,53 @@
+[
+  {
+    "command": [
+      "uname",
+      "-m"
+    ],
+    "exit": 0,
+    "output": "arm64",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "sw_vers",
+      "-productVersion"
+    ],
+    "exit": 0,
+    "output": "15.6.1",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "sysctl",
+      "-n",
+      "machdep.cpu.brand_string"
+    ],
+    "exit": 1,
+    "output": "",
+    "stderr": "sysctl: sysctl fmt -1 1024 1: Operation not permitted"
+  },
+  {
+    "command": [
+      "rustup",
+      "run",
+      "nightly-2026-03-03",
+      "rustc",
+      "-Vv"
+    ],
+    "exit": 0,
+    "output": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "sysctl",
+      "-n",
+      "machdep.cpu.brand_string"
+    ],
+    "exit": 0,
+    "output": "Apple M1",
+    "stderr": "",
+    "context": "processor-name read outside filesystem restriction"
+  }
+]

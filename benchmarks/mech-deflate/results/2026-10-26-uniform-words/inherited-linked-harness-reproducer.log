@@ -1,0 +1,16 @@
+
+running 1 test
+test linked_qualification::linked_assertion_rejection_preserves_publication_and_recovers ...
+thread 'linked_qualification::linked_assertion_rejection_preserves_publication_and_recovers' (15993879) panicked at hosts/gpu/tests/support/canonical_program_linked.rs:133:5:
+assertion `left == right` failed
+  left: 0
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    linked_qualification::linked_assertion_rejection_preserves_publication_and_recovers
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 257 filtered out; finished in 5.35s

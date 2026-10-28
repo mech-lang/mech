@@ -1,4 +1,4 @@
-//! Managed ABI16 invocation. This boundary never evaluates a graph: generated
+//! Managed mixed-value invocation. This boundary never evaluates a graph: generated
 //! blocks choose every successor and run every scalar/counter instruction.
 use crate::native_artifact::abi::{
     NO_NODE, NativeEntryFrame, STATUS_ABI, STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK,
@@ -148,6 +148,9 @@ fn amount(count: usize, scale: u64, base: u64) -> Result<u64, NativeProgramExecu
 fn bits(value: &Value, kind: NativeScalarKind) -> Result<u64, NativeProgramExecutionError> {
     match (kind, value.data()) {
         (NativeScalarKind::Bool, ValueData::Bool(v)) => Ok(u64::from(*v)),
+        (NativeScalarKind::U8, ValueData::U8(v)) => Ok(u64::from(*v)),
+        (NativeScalarKind::U16, ValueData::U16(v)) => Ok(u64::from(*v)),
+        (NativeScalarKind::U32, ValueData::U32(v)) => Ok(u64::from(*v)),
         (NativeScalarKind::U64, ValueData::U64(v)) => Ok(*v),
         (NativeScalarKind::I64, ValueData::I64(v)) => Ok(*v as u64),
         (NativeScalarKind::F64, ValueData::F64(v)) => Ok(v.bits()),
@@ -313,3 +316,5 @@ mod state;
 use self::hooks::{admit, helper};
 use self::invocation::Invocation;
 use self::state::{ExecutionState, RuntimeStats};
+
+mod buffer_frames;

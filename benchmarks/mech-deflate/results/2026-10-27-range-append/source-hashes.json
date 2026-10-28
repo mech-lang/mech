@@ -1,0 +1,18 @@
+{
+  "hosts/gpu/src/native_artifact/program/image/identity.rs": "a61439fb6e11a827cc2e08dd81c5cb157b5d43697c63bc41901e4e3472753b62",
+  "hosts/gpu/src/native_artifact/program/runtime/invocation/unsigned_buffers.rs": "d7d09b3497655c0129ced0c5ac99b05fa3eaa4a495ba9edc17bc5e8abe31822d",
+  "hosts/gpu/tests/support/canonical_program_linked.rs": "efe45bb1a239da1c71d20ae7e73cc3f71c4c40a79b572c03547cca75d9a761c7",
+  "hosts/gpu/tests/support/canonical_program_sequence_capacity.rs": "558a25c716874de5974705e54d693ec6a7deb16cb3361ab4a5b654e138cb1e69",
+  "src/core/src/operation_contract/maintained.rs": "114dfc5c53dae4ade4d83e494dbad8c9da2032672858987cb962064cec3a627d",
+  "src/core/src/type_system/scheme.rs": "4a77de9855d70bc480573b731ec25ae7c5a4c4bcc1d9505ca10dd5d3e932b3aa",
+  "src/engine/src/intrinsics/sequence_buffers.rs": "b83e1c8c522f73560a93cd672b1fec9c07df2ff27d3dff738c815ab1959f0606",
+  "src/engine/src/lib.rs": "cfb9f5171c907967a59c63538b39b263a42c161782aa2d935092bb08e380846d",
+  "src/engine/src/native_artifact/unsigned_buffer_call.rs": "11e2a5d2b6bf74ebb4df06656c62d9b01177ff728935ea57f75f9283077dc6fa",
+  "src/engine/src/resident/general/native_collection_invocation.rs": "131239b5bd81f01391d3656bb653dad9bd58646a89ab808d79f653ae2a6acc83",
+  "src/engine/src/resident/general/native_collection_prepared.rs": "63f63dfd9760345df20f7def8168223937787f83cac791174d323b39c64c9d19",
+  "src/engine/src/resident/general/native_collection_templates.rs": "469136574798ca3f5c24c22452a1a7edd7f53d26034aaec551a853dd16fed0f3",
+  "src/engine/src/resident/general/native_collection_unsigned_buffers.rs": "4e6afa48145b3f20362fefbd85b7d033df8d84929aee050cbc82eff34a7599af",
+  "src/engine/src/resident/native_collection_semantics.rs": "1620c039dc2009ce6621fd202a29ff6a1cd90cf062dde073836b917cb9c09485",
+  "src/engine/src/resident/sequence_buffers.rs": "5857b86ba801b7e3e96b9d409f9828147b3eae5f03fbc86ed996ebc790e58f39",
+  "src/engine/tests/sequence_buffer_contract.rs": "188410d4ea64eafc9b037aba60f7f530932e342db3f70d99b06fb6f0b749cfb6"
+}

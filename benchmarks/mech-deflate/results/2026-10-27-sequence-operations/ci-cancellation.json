@@ -1,0 +1,50 @@
+{
+  "observed": [
+    {
+      "conclusion": "",
+      "databaseId": 40466158359,
+      "headSha": "aad1f6528dd49815be930bf42f044296968fa38e",
+      "status": "in_progress",
+      "url": "https://github.com/mech-lang/mech/actions/runs/40466158359",
+      "workflowName": "CI"
+    },
+    {
+      "conclusion": "cancelled",
+      "databaseId": 40462075362,
+      "headSha": "1a22b9698ecf359d3e2da959addf000631f5143e",
+      "status": "completed",
+      "url": "https://github.com/mech-lang/mech/actions/runs/40462075362",
+      "workflowName": "CI"
+    },
+    {
+      "conclusion": "cancelled",
+      "databaseId": 40458104876,
+      "headSha": "ee32fbfa98b174d32a3b53788f70b1f965ac144c",
+      "status": "completed",
+      "url": "https://github.com/mech-lang/mech/actions/runs/40458104876",
+      "workflowName": "CI"
+    },
+    {
+      "conclusion": "cancelled",
+      "databaseId": 40457972790,
+      "headSha": "2771d1c23109bcd480ec4fa16daa67bd0d2809fe",
+      "status": "completed",
+      "url": "https://github.com/mech-lang/mech/actions/runs/40457972790",
+      "workflowName": "CI"
+    }
+  ],
+  "actions": [
+    {
+      "run": {
+        "conclusion": "",
+        "databaseId": 40466158359,
+        "headSha": "aad1f6528dd49815be930bf42f044296968fa38e",
+        "status": "in_progress",
+        "url": "https://github.com/mech-lang/mech/actions/runs/40466158359",
+        "workflowName": "CI"
+      },
+      "exit": 0,
+      "output": "\u2713 Request to cancel workflow 40466158359 submitted.\n"
+    }
+  ]
+}

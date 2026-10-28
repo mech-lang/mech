@@ -185,6 +185,9 @@ fn arguments(values: &[NativeScalarValue]) -> Vec<String> {
         .iter()
         .map(|value| match value {
             NativeScalarValue::Bool(value) => value.to_string(),
+            NativeScalarValue::U8(value) => value.to_string(),
+            NativeScalarValue::U16(value) => value.to_string(),
+            NativeScalarValue::U32(value) => value.to_string(),
             NativeScalarValue::U64(value) => value.to_string(),
             NativeScalarValue::I64(value) => value.to_string(),
             NativeScalarValue::F64(value) => format!("f64:{:016x}", value.bits()),
@@ -219,6 +222,9 @@ fn resident(
                 shape_values: Box::new([]),
                 data: match value {
                     NativeScalarValue::Bool(value) => ValueDataDraft::Bool(*value),
+                    NativeScalarValue::U8(value) => ValueDataDraft::U8(*value),
+                    NativeScalarValue::U16(value) => ValueDataDraft::U16(*value),
+                    NativeScalarValue::U32(value) => ValueDataDraft::U32(*value),
                     NativeScalarValue::U64(value) => ValueDataDraft::U64(*value),
                     NativeScalarValue::I64(value) => ValueDataDraft::I64(*value),
                     NativeScalarValue::F64(value) => ValueDataDraft::F64(*value),
@@ -252,6 +258,9 @@ fn resident(
         .map(
             |index| match instance.copied_output(index).unwrap().data() {
                 ValueData::Bool(value) => NativeScalarValue::Bool(*value),
+                ValueData::U8(value) => NativeScalarValue::U8(*value),
+                ValueData::U16(value) => NativeScalarValue::U16(*value),
+                ValueData::U32(value) => NativeScalarValue::U32(*value),
                 ValueData::U64(value) => NativeScalarValue::U64(*value),
                 ValueData::I64(value) => NativeScalarValue::I64(*value),
                 ValueData::F64(value) => NativeScalarValue::F64(*value),

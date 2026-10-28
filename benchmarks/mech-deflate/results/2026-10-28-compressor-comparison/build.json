@@ -1,0 +1,298 @@
+{
+  "mech_comparison_base": "5b34c8f69c1df7b433c3176f510d5c3d5005a795",
+  "reference_source_revision": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "reference_compiler_revision": "d99c7b838fb05bb1047eb0c18d4d06d0f86f345d",
+  "reference_package_sha256": {
+    "package/BlockOut.roc": "3964b066eda11a4d99123255809615ed4caec7636085f5ec7f76804b640187a2",
+    "package/BtMatchfinder.roc": "4970b6d3e93bb46e511c2db3071e7619f0d1d9cc02402cbaea1af0c98c7542d3",
+    "package/CompressFast.roc": "03df18d51b7014aa3f41770a8a79809bfd16178f765f212c6a7d2256aef3bdf1",
+    "package/CompressLazy.roc": "131bfdf5a737c5501706884186ef0fb9360686ae68540cb4ff49912b4c967607",
+    "package/CompressOptimal.roc": "76640a1c710d8392abd7902c7841a9e0b34cba2eb5acd857ae6acd65e7c11e61",
+    "package/Deflate.roc": "37dc76638190df2af21dc4a7bee33a79a525bfec796045ce09086ae7ba956c51",
+    "package/DeflateTables.roc": "34683f82623b438f71e7048ee8d8e402ea8e0121e3fd6b97d1c351db5b05368b",
+    "package/HcMatchfinder.roc": "260e5d1fc6283df821813e013823e3f76325b81915f8591dfc8d81c28c018ae2",
+    "package/HcTables.roc": "f93e3a245e1947c0d02a7341ac97245b27d744fce97677e5cf107a44238a58f2",
+    "package/HtMatchfinder.roc": "6ad20f55f3185fc46b6b46ff15ffdfdbd987a7d74d9f804f3eb369aa0652d983",
+    "package/HuffmanEncode.roc": "b1a40d5343fc1ab50c6c33fc62cc0c97cc1f3eff0523d94200603960b6ac8746",
+    "package/Inflate.roc": "cbc9ecb2be67bef20e28bf0b0addafef08a71ed7152e48d412e1ad1a17524781",
+    "package/Matchfinder.roc": "f1ed36d2b1b7695908a5a7e0362e5bb3b8190c2cd5507f67768df0a3ad33c172",
+    "package/main.roc": "efe101d86a5ad8d07f643246222d69ac26df9cc5e8feafe1a473d6510a4b17bb"
+  },
+  "roc_compiler_sha256": "fdd590c62a2783295c7bfe7e8e5a19e83de508418a95b48373ab5b189f87ff94",
+  "roc_version": "Roc compiler version release-fast-d99c7b83",
+  "rustc_version": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0\n",
+  "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "cpu": "Apple M1",
+  "allocator_object_sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874",
+  "allocator_revision": "8c532c32c3c96e5ba1f2283e032f69ead8add00f",
+  "warmup_min_ns": 200000000,
+  "reference_clock_resolution_ns": 1000,
+  "zero_elapsed_policy": "retain zero observations as below clock resolution; never replace them with a positive duration",
+  "harness_sha256": {
+    "Bench.roc": "f468e1f38a467bc054d1cc9f2c3898ff550a593f7c5ed5a463910ebc1a0ed940",
+    "rust/Cargo.toml": "1b9af1a1c0b6bf33a5a87831f7da120889df3c2c1a59f6a56e0c397873490156",
+    "rust/build.rs": "59724e89a8b442d5524e038b674ed1b33a0d53f174abbde0ec0fcbb1de10452b",
+    "rust/src/main.rs": "c70984a3b378f0607909b91d27e60224dbc2ec6d51cc117a176b5c531f4a85bc",
+    "rust/src/pinned_allocator.rs": "050a1d160cc235d5321866a45840c76b5dadeaac30630cfed17eb19615ded1b6"
+  },
+  "timing_boundary": "compress_into only; clear/prefix, output reservation, warmup, validation, logging outside; compressor scratch initialization/destruction inside",
+  "rust": {
+    "miniz-oxide": {
+      "crate": "miniz_oxide",
+      "version": "0.9.1",
+      "level": 10
+    },
+    "zlib-rs": {
+      "crate": "zlib-rs",
+      "version": "0.6.8",
+      "level": 9,
+      "features": [
+        "std"
+      ],
+      "default_features": false
+    }
+  },
+  "roc_level": 12,
+  "cases": [
+    {
+      "name": "empty",
+      "input_bytes": 0,
+      "prefix_bytes": 0,
+      "reference_raw_bytes": 5,
+      "input_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_sha256": "f067985d352d2da6dfaef4844a66d06c5371ecbd9530a4d195ac599fef8b3427",
+      "repetitions": 11,
+      "roc_executable_sha256": "37b4e68cb26dd8c4c9d83a00cf76851b08b6e13cdc88a6090141a57ea23f5768",
+      "roc_build_seconds": 6.105185666005127,
+      "roc_build_command": [
+        "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "build",
+        "--no-cache",
+        "--opt=speed",
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/.build/mech-comparison/empty/app.roc",
+        "--output=/private/tmp/mech-deflate-comparison-final-20261028/empty/rocbench"
+      ]
+    },
+    {
+      "name": "one-stored",
+      "input_bytes": 1,
+      "prefix_bytes": 0,
+      "reference_raw_bytes": 6,
+      "input_sha256": "559aead08264d5795d3909718cdd05abd49572e84fe55590eef31a88a08fdffd",
+      "reference_sha256": "347fd581892eff18f1849acf7d6b75e3a0f0ab3915d2ff304368ccf6202d9393",
+      "repetitions": 11,
+      "roc_executable_sha256": "52f15edc9ede203b134bd047c146ed62b5e7e27694bf251c27d96b8467d68411",
+      "roc_build_seconds": 6.101452416041866,
+      "roc_build_command": [
+        "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "build",
+        "--no-cache",
+        "--opt=speed",
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/.build/mech-comparison/one-stored/app.roc",
+        "--output=/private/tmp/mech-deflate-comparison-final-20261028/one-stored/rocbench"
+      ]
+    },
+    {
+      "name": "seven-stored-prefix",
+      "input_bytes": 7,
+      "prefix_bytes": 2,
+      "reference_raw_bytes": 12,
+      "input_sha256": "7d1a54127b222502f5b79b5fb0803061152a44f92b37e23c6527baf665d4da9a",
+      "reference_sha256": "2ea34ef1886bb2f7b656dafa34e521b7a57515c1641e79c3462246298d874081",
+      "repetitions": 11,
+      "roc_executable_sha256": "ce7c0cb5d403dac1ec159cb0bbd8108d5a418e67e89d0ead08d118f93f3e3c8c",
+      "roc_build_seconds": 6.118995207943954,
+      "roc_build_command": [
+        "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "build",
+        "--no-cache",
+        "--opt=speed",
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/.build/mech-comparison/seven-stored-prefix/app.roc",
+        "--output=/private/tmp/mech-deflate-comparison-final-20261028/seven-stored-prefix/rocbench"
+      ]
+    },
+    {
+      "name": "eight-literals",
+      "input_bytes": 8,
+      "prefix_bytes": 0,
+      "reference_raw_bytes": 10,
+      "input_sha256": "9c56cc51b374c3ba189210d5b6d4bf57790d351c96c47c02190ecf1e430635ab",
+      "reference_sha256": "a7f1a85abba17147bbb424a67b37785d1ffd34316bad83b83c27ef6c2349b09a",
+      "repetitions": 11,
+      "roc_executable_sha256": "1951bd3eb08a4c8b87b896e16c4dc268a8309e971d90565e9979551b9c5cf1a3",
+      "roc_build_seconds": 6.128544625011273,
+      "roc_build_command": [
+        "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "build",
+        "--no-cache",
+        "--opt=speed",
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/.build/mech-comparison/eight-literals/app.roc",
+        "--output=/private/tmp/mech-deflate-comparison-final-20261028/eight-literals/rocbench"
+      ]
+    },
+    {
+      "name": "eight-overlap",
+      "input_bytes": 8,
+      "prefix_bytes": 0,
+      "reference_raw_bytes": 5,
+      "input_sha256": "1f3ce40415a2081fa3eee75fc39fff8e56c22270d1a978a7249b592dcebd20b4",
+      "reference_sha256": "03d160becd57986f32ab2c934e63d452afe2e8d0550385fcbbf2268740300128",
+      "repetitions": 11,
+      "roc_executable_sha256": "5fd8328b0cb6b8f5339afdd1704c93c30fb30c7f73e5593147de01619d1195af",
+      "roc_build_seconds": 6.159774292027578,
+      "roc_build_command": [
+        "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "build",
+        "--no-cache",
+        "--opt=speed",
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/.build/mech-comparison/eight-overlap/app.roc",
+        "--output=/private/tmp/mech-deflate-comparison-final-20261028/eight-overlap/rocbench"
+      ]
+    },
+    {
+      "name": "320-overlap",
+      "input_bytes": 320,
+      "prefix_bytes": 0,
+      "reference_raw_bytes": 7,
+      "input_sha256": "fee1a848cb6763c3088a0e523541b46ac171af2677b062178a9116c4612b352f",
+      "reference_sha256": "cca7ccc706b591a5e0bd44ba23191e7f13593264492fc348e8ab31eb04dc978f",
+      "repetitions": 11,
+      "roc_executable_sha256": "da5a6bdef70a52b4b3b1625ef9b76b71cce2f39931da0087036910894b51b28d",
+      "roc_build_seconds": 6.111686500022188,
+      "roc_build_command": [
+        "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "build",
+        "--no-cache",
+        "--opt=speed",
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/.build/mech-comparison/320-overlap/app.roc",
+        "--output=/private/tmp/mech-deflate-comparison-final-20261028/320-overlap/rocbench"
+      ]
+    },
+    {
+      "name": "eight-literals-prefix",
+      "input_bytes": 8,
+      "prefix_bytes": 2,
+      "reference_raw_bytes": 10,
+      "input_sha256": "9c56cc51b374c3ba189210d5b6d4bf57790d351c96c47c02190ecf1e430635ab",
+      "reference_sha256": "9b1d17364323aebfd45654d0eceb4fe2a30e93f9493e8f87080b2e35497719fb",
+      "repetitions": 11,
+      "roc_executable_sha256": "e7c24c1d7092ffa5431085b70acd58bd83b526d9e50764786d428ab58666a42d",
+      "roc_build_seconds": 6.132730084005743,
+      "roc_build_command": [
+        "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "build",
+        "--no-cache",
+        "--opt=speed",
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/.build/mech-comparison/eight-literals-prefix/app.roc",
+        "--output=/private/tmp/mech-deflate-comparison-final-20261028/eight-literals-prefix/rocbench"
+      ]
+    },
+    {
+      "name": "128-biased-dynamic",
+      "input_bytes": 128,
+      "prefix_bytes": 0,
+      "reference_raw_bytes": 65,
+      "input_sha256": "21bcbcd0058c1fec1c8ae53f17e01d5703bd15b098b28af7549e8d94a99462a3",
+      "reference_sha256": "07464b0b86c69f07cf0abc2dcc3b7d6ed5937475ed4b1995c55ea083dcdefe78",
+      "repetitions": 11,
+      "roc_executable_sha256": "8d38a58b75b62977d0fb01a6d02758c67a482bf555a55672b8b1df58b5ad13a9",
+      "roc_build_seconds": 6.109116915962659,
+      "roc_build_command": [
+        "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "build",
+        "--no-cache",
+        "--opt=speed",
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/.build/mech-comparison/128-biased-dynamic/app.roc",
+        "--output=/private/tmp/mech-deflate-comparison-final-20261028/128-biased-dynamic/rocbench"
+      ]
+    },
+    {
+      "name": "32-high-entropy-stored",
+      "input_bytes": 32,
+      "prefix_bytes": 0,
+      "reference_raw_bytes": 37,
+      "input_sha256": "abd42a7f326b3f1f842aad9a6fd948710b899c011c10b6b2ae2bd8a0460242bd",
+      "reference_sha256": "c24339ee99eb1eeaf503662ec12aa6821cf81783191109ddb03a14abfc69fd54",
+      "repetitions": 11,
+      "roc_executable_sha256": "7be6b27b69363c51d690e30fd3bc6ceeb935e3e166f8f378f27d729f36e999fc",
+      "roc_build_seconds": 6.223798666964285,
+      "roc_build_command": [
+        "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "build",
+        "--no-cache",
+        "--opt=speed",
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/.build/mech-comparison/32-high-entropy-stored/app.roc",
+        "--output=/private/tmp/mech-deflate-comparison-final-20261028/32-high-entropy-stored/rocbench"
+      ]
+    },
+    {
+      "name": "16384-distribution-change",
+      "input_bytes": 16384,
+      "prefix_bytes": 0,
+      "reference_raw_bytes": 11394,
+      "input_sha256": "56a7af3beee008d646c71c1dc13ee34eadb7c508ff7626ff013a6d6366c79631",
+      "reference_sha256": "9009624c8f27451b6182f638b4b4d88875748fa47b718ea6255e062904021ff0",
+      "repetitions": 11,
+      "roc_executable_sha256": "1ffdedf781b99ac2f12ff5e020577e4e44c389e3807dd7e857bbc8f17353853b",
+      "roc_build_seconds": 6.1477217089850456,
+      "roc_build_command": [
+        "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "build",
+        "--no-cache",
+        "--opt=speed",
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/.build/mech-comparison/16384-distribution-change/app.roc",
+        "--output=/private/tmp/mech-deflate-comparison-final-20261028/16384-distribution-change/rocbench"
+      ]
+    },
+    {
+      "name": "33027-periodic-window",
+      "input_bytes": 33027,
+      "prefix_bytes": 0,
+      "reference_raw_bytes": 151,
+      "input_sha256": "ba410bfa1c0373c33eaf835f083206f39f141fac72f721908dd6a191a5895d89",
+      "reference_sha256": "dbcf27a94a41ae084f5816f026fdda1df4e3c2dc67dc559d5ae1f7ee75fecdee",
+      "repetitions": 11,
+      "roc_executable_sha256": "42ccee58b26f0bc071553ff4f84159642856cb95c2231c74a396282500a44531",
+      "roc_build_seconds": 6.120506124920212,
+      "roc_build_command": [
+        "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "build",
+        "--no-cache",
+        "--opt=speed",
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/.build/mech-comparison/33027-periodic-window/app.roc",
+        "--output=/private/tmp/mech-deflate-comparison-final-20261028/33027-periodic-window/rocbench"
+      ]
+    },
+    {
+      "name": "full-reymont",
+      "input_bytes": 6627202,
+      "prefix_bytes": 0,
+      "reference_raw_bytes": 1696488,
+      "input_sha256": "0eac0114a3dfe6e2ee1f345a0f79d653cb26c3bc9f0ed79238af4933422b7578",
+      "reference_sha256": "e94512f0a11fffd64dbff8d3db270104554f02648a56ee3c4496afd12af5e0c5",
+      "repetitions": 5,
+      "roc_executable_sha256": "6e767f9020938444f597d84ca4f465c1763dbf55a248a638c89d607ae26f8d40",
+      "roc_build_seconds": 6.433704458991997,
+      "roc_build_command": [
+        "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "build",
+        "--no-cache",
+        "--opt=speed",
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/.build/mech-comparison/full-reymont/app.roc",
+        "--output=/private/tmp/mech-deflate-comparison-final-20261028/full-reymont/rocbench"
+      ]
+    }
+  ],
+  "rust_executable_sha256": "08a787b1aebfe45a96418fd75302c1ee06b644791ee13b9c5189926050455806",
+  "rust_lock_sha256": "0b73c2295877b334a7d0591a4ced513e2acc020d32763b30591fe8e9b99ebc13",
+  "rust_build_command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--offline",
+    "--release",
+    "--manifest-path",
+    "/private/tmp/mech-deflate-linear-stack/benchmarks/mech-deflate/comparison/rust/Cargo.toml"
+  ],
+  "rust_features": "deflate-comparison v0.1.0 (/private/tmp/mech-deflate-linear-stack/benchmarks/mech-deflate/comparison/rust)\n\u251c\u2500\u2500 miniz_oxide feature \"default\"\n\u2502   \u251c\u2500\u2500 miniz_oxide v0.9.1\n\u2502   \u2502   \u2514\u2500\u2500 adler2 v2.0.1\n\u2502   \u2514\u2500\u2500 miniz_oxide feature \"with-alloc\"\n\u2502       \u2514\u2500\u2500 miniz_oxide v0.9.1 (*)\n\u2514\u2500\u2500 zlib-rs feature \"std\"\n    \u251c\u2500\u2500 zlib-rs v0.6.8\n    \u2514\u2500\u2500 zlib-rs feature \"rust-allocator\"\n        \u2514\u2500\u2500 zlib-rs v0.6.8\n"
+}

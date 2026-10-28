@@ -1,0 +1,33 @@
+{
+  "name": "deflate-library-comparison-isolated",
+  "command": [
+    "python3",
+    "benchmarks/mech-deflate/comparison/run.py",
+    "--reference",
+    "/private/tmp/roc-deflate-repro-20261024/roc-deflate",
+    "--roc",
+    "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+    "--corpus",
+    "/private/tmp/roc-deflate-repro-20261024/corpus/reymont",
+    "--full-reference",
+    "/private/tmp/roc-deflate-repro-20261024/results/reymont/level-12.deflate",
+    "--out",
+    "/private/tmp/mech-deflate-comparison-isolated-20261028",
+    "--measure-only"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "a82d50823e4140edd862886b0c6b5f813a81411c",
+  "dirty": "?? benchmarks/mech-deflate/comparison/\n",
+  "exit": 0,
+  "seconds": 53.93713188171387,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/deflate-library-comparison-isolated.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

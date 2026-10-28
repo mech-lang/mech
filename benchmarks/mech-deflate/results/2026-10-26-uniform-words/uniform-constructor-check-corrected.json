@@ -1,0 +1,28 @@
+{
+  "name": "uniform-constructor-check-corrected",
+  "command": [
+    "cargo",
+    "check",
+    "--release",
+    "--locked",
+    "--offline",
+    "-j1",
+    "--manifest-path",
+    "/private/tmp/mech-stack-landscape-20261026/reality-check/focused/Cargo.toml"
+  ],
+  "cwd": "/private/tmp/mech-deflate-reality-check",
+  "head": "fd790ca0fce74b8eb8563cc4442d3a0041672c70",
+  "dirty": " M hosts/gpu/src/native_artifact/codegen/control/mod.rs\n M hosts/gpu/src/native_artifact/program/codegen/hooks/mod.rs\n M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/src/native_artifact/program/image/wire/mod.rs\n M hosts/gpu/src/native_artifact/program/prepare/mod.rs\n M hosts/gpu/src/native_artifact/program/protocol/abi.rs\n M hosts/gpu/src/native_artifact/program/runtime/collections/data.rs\n M hosts/gpu/src/native_artifact/program/runtime/collections/mod.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs\n M hosts/gpu/tests/canonical_artifact_program.rs\n M src/engine/src/native_artifact/fusion_semantics.rs\n M src/engine/src/native_artifact/mod.rs\n M src/engine/src/native_artifact/program_facts.rs\n?? hosts/gpu/src/native_artifact/program/runtime/collections/uniform_words.rs\n?? hosts/gpu/tests/support/canonical_program_uniform_words.rs\n?? src/engine/src/native_artifact/uniform_word_collection.rs\n",
+  "exit": 0,
+  "seconds": 4.9755918979644775,
+  "log": "/private/tmp/mech-stack-landscape-20261026/reality-check/uniform-constructor-check-corrected.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

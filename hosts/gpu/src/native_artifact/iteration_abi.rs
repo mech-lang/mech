@@ -1,11 +1,11 @@
-//! Structured counted-loop ABI. Frozen scalar ABI1 and Match ABI2 are separate.
+//! Structured counted-loop ABI, separate from frozen scalar and Match entries.
 use mech_core::ProgramRevision;
 use mech_engine::native_artifact::{
     NativeIterationAction as Action, NativeIterationArtifactPlan as Plan, NativeIterationLoop,
     NativeIterationTerminator as Terminator, NativeMatchAction as Scalar, NativeMatchOrigin,
     NativeMatchTerminator as Term, NativeScalarType,
 };
-pub(in crate::native_artifact) const VERSION: u64 = 3;
+pub(in crate::native_artifact) const VERSION: u64 = 4;
 #[cfg(feature = "canonical-native")]
 pub(in crate::native_artifact) const ENTRY: &str = "mech_canonical_scalar_iteration_entry_v1";
 pub(in crate::native_artifact) const STATUS_REJECT: u64 = 4;
@@ -28,6 +28,7 @@ pub struct NativeIterationVisit {
     pub(in crate::native_artifact) complete: bool,
     pub(in crate::native_artifact) arithmetic: bool,
     pub(in crate::native_artifact) reject: bool,
+    pub(in crate::native_artifact) integrity: bool,
     pub(in crate::native_artifact) work: u64,
 }
 impl NativeIterationVisit {
@@ -146,7 +147,7 @@ pub(in crate::native_artifact) fn control_visits<'a>(
             Terminator::Header { body, exit, .. } => ([Some(body), Some(exit)], false),
             Terminator::TailHeader { body, .. } => ([Some(body), None], false),
             Terminator::Scalar(Term::Complete) => ([None, None], true),
-            Terminator::Scalar(Term::Reject) => ([None, None], false),
+            Terminator::Scalar(Term::Reject | Term::IntegrityFailure) => ([None, None], false),
         };
         let progress = match (block.action(), block.terminator()) {
             (Action::Initialize { iteration }, _) => Progress::Initialize(*iteration),
@@ -183,6 +184,7 @@ pub(in crate::native_artifact) fn control_visits<'a>(
             complete,
             arithmetic,
             reject: block.terminator() == Terminator::Scalar(Term::Reject),
+            integrity: block.terminator() == Terminator::Scalar(Term::IntegrityFailure),
             work,
         });
     }

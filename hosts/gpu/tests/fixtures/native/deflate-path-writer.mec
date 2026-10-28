@@ -1,0 +1,47 @@
+// BlockOut.flush_block's path-node loop, pinned at
+// 671077457ff7ef3a3d44caf715a3fc595addf379 (lines 711–746).
+// Include deflate-huffman-level12.mec and deflate-optimal-path.mec first.
+// See deflate-huffman-LICENSES.md for source attribution and licenses.
+<path-written> := <{bytes<[u8]> bitbuf<u64> bitcount<u64>}>
+
+path-write-flush(bytes<[u8]>, bitbuf<u64>, bitcount<u64>) => (out<path-written>) :=
+  n := bits/shift-right-wrap(bitcount, 3u64)
+  count<u8> := bits/and(n, 255u64)
+  written := sequence/append-le-bytes(bytes, bitbuf, count)
+  out := {bytes: written, bitbuf: bits/shift-right-wrap(bitbuf, bits/and(bits/shift-left-wrap(n, 3u64), 255u64)), bitcount: bits/and(bitcount, 7u64)}.
+
+path-write-literal(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, payload<u64>, litlen-words<[u32]>, litlen-lens<[u8]>) => (out<path-written>) :=
+  word<u64> := huff-get32(litlen-words, payload)
+  buf := bits/or(bitbuf, bits/shift-left-wrap(word, bits/and(bitcount, 255u64)))
+  size<u64> := huff-get8(litlen-lens, payload)
+  count := bits/wrapping-add(bitcount, size)
+  out := path-write-flush(bytes, buf, count).
+
+path-write-match(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, length<u64>, payload<u64>, full-words<[u32]>, full-lens<[u8]>, offset-words<[u32]>, offset-lens<[u8]>, offset-slots<[u8]>, offset-bases<[u32]>, offset-extra<[u8]>) => (out<path-written>) :=
+  slot := optimal-offset-slot(payload, offset-slots)
+  length-word<u64> := huff-get32(full-words, length)
+  buf0 := bits/or(bitbuf, bits/shift-left-wrap(length-word, bits/and(bitcount, 255u64)))
+  length-size<u64> := huff-get8(full-lens, length)
+  count0 := bits/wrapping-add(bitcount, length-size)
+  offset-word<u64> := huff-get32(offset-words, slot)
+  buf1 := bits/or(buf0, bits/shift-left-wrap(offset-word, bits/and(count0, 255u64)))
+  offset-size<u64> := huff-get8(offset-lens, slot)
+  count1 := bits/wrapping-add(count0, offset-size)
+  base<u64> := huff-get32(offset-bases, slot)
+  buf2 := bits/or(buf1, bits/shift-left-wrap(bits/wrapping-sub(payload, base), bits/and(count1, 255u64)))
+  extra<u64> := huff-get8(offset-extra, slot)
+  count2 := bits/wrapping-add(count1, extra)
+  out := path-write-flush(bytes, buf2, count2).
+
+path-write-at(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, items<[u64]>, top<u64>, at<u64>, block-length<u64>, litlen-words<[u32]>, litlen-lens<[u8]>, full-words<[u32]>, full-lens<[u8]>, offset-words<[u32]>, offset-lens<[u8]>, offset-slots<[u8]>, offset-bases<[u32]>, offset-extra<[u8]>) => (out<path-written>) :=
+  more := at != block-length
+  word := (more? | true => huff-get64(items, bits/wrapping-sub(top, at)) | false => 0u64)
+  item := bits/and(bits/shift-right-wrap(word, 32u64), 4294967295u64)
+  length := bits/and(item, 511u64)
+  payload := bits/shift-right-wrap(item, 9u64)
+  step := (more? | true => ((length == 1u64)? | true => path-write-literal(bytes, bitbuf, bitcount, payload, litlen-words, litlen-lens) | false => path-write-match(bytes, bitbuf, bitcount, length, payload, full-words, full-lens, offset-words, offset-lens, offset-slots, offset-bases, offset-extra)) | false => {bytes: bytes, bitbuf: bitbuf, bitcount: bitcount})
+  out := (more? | true => path-write-at(step.bytes, step.bitbuf, step.bitcount, items, top, bits/wrapping-add(at, length), block-length, litlen-words, litlen-lens, full-words, full-lens, offset-words, offset-lens, offset-slots, offset-bases, offset-extra) | false => step).
+
+path-write-items(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, items<[u64]>, block-length<u64>, litlen-words<[u32]>, litlen-lens<[u8]>, full-words<[u32]>, full-lens<[u8]>, offset-words<[u32]>, offset-lens<[u8]>, offset-slots<[u8]>, offset-bases<[u32]>, offset-extra<[u8]>) => (out<path-written>) :=
+  top := bits/wrapping-sub(sequence/length(items), 1u64)
+  out := path-write-at(bytes, bitbuf, bitcount, items, top, 0u64, block-length, litlen-words, litlen-lens, full-words, full-lens, offset-words, offset-lens, offset-slots, offset-bases, offset-extra).

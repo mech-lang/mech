@@ -1,0 +1,35 @@
+{
+  "name": "unsigned-buffer-parent-runtime-profile-tests",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-core",
+    "--no-default-features",
+    "--features",
+    "program functions string u8 u16 u32 u64",
+    "--lib",
+    "--",
+    "snapshot::",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-capacity-parent-20261027",
+  "head": "304a1382c1d41586bb49dc1d9e6e7120d7ebadae",
+  "dirty": "",
+  "exit": 101,
+  "seconds": 4.163789987564087,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/unsigned-buffer-parent-runtime-profile-tests.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

@@ -75,6 +75,24 @@ pub(in crate::native_artifact::launch) fn scalar_argument(
 ) -> Result<NativeScalarValue, String> {
     let text = argument.to_str().ok_or("argument is not Unicode")?;
     Ok(match kind {
+        NativeScalarKind::U8 => NativeScalarValue::U8(
+            unsigned(text)
+                .ok()
+                .and_then(|value| u8::try_from(value).ok())
+                .ok_or("invalid U8 argument")?,
+        ),
+        NativeScalarKind::U16 => NativeScalarValue::U16(
+            unsigned(text)
+                .ok()
+                .and_then(|value| u16::try_from(value).ok())
+                .ok_or("invalid U16 argument")?,
+        ),
+        NativeScalarKind::U32 => NativeScalarValue::U32(
+            unsigned(text)
+                .ok()
+                .and_then(|value| u32::try_from(value).ok())
+                .ok_or("invalid U32 argument")?,
+        ),
         NativeScalarKind::U64 => NativeScalarValue::U64(unsigned(text)?),
         NativeScalarKind::I64 => NativeScalarValue::I64(signed(text)?),
         NativeScalarKind::F64 => NativeScalarValue::F64(floating_bits(text)?),
@@ -92,6 +110,9 @@ pub(in crate::native_artifact::launch) fn append_scalar(
     use std::fmt::Write;
     match value {
         NativeScalarValue::Bool(v) => writeln!(result, "{v}"),
+        NativeScalarValue::U8(v) => writeln!(result, "{v}"),
+        NativeScalarValue::U16(v) => writeln!(result, "{v}"),
+        NativeScalarValue::U32(v) => writeln!(result, "{v}"),
         NativeScalarValue::U64(v) => writeln!(result, "{v}"),
         NativeScalarValue::I64(v) => writeln!(result, "{v}"),
         NativeScalarValue::F64(v) => writeln!(result, "f64:{:016x}", v.bits()),

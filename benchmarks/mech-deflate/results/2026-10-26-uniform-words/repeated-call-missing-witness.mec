@@ -1,0 +1,4 @@
+repeat(word<u32>, count<u64>) => (out<[u32]>) :=
+  out := [word | i <- 0u64..=count, i < count].
+first := repeat(word<u32>, count<u64>)
+second := repeat(word + 1u32, count + 1u64)

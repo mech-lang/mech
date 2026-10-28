@@ -1,0 +1,282 @@
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-deflate-reality-check/src/engine)
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-deflate-reality-check/src/compute)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-deflate-reality-check/src/runtime)
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-reality-check/hosts/gpu)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-deflate-reality-check/src/stdlib)
+   Compiling mech-build v0.3.5 (/private/tmp/mech-deflate-reality-check/src/build)
+    Finished `test` profile [unoptimized] target(s) in 1m 36s
+     Running tests/canonical_artifact_program.rs (/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-161b919374daec0a)
+
+running 3 tests
+test linked_qualification::linked_assertion_rejection_preserves_publication_and_recovers ...
+thread 'linked_qualification::linked_assertion_rejection_preserves_publication_and_recovers' (15995869) panicked at hosts/gpu/tests/support/canonical_program_linked.rs:176:5:
+warning: patch `mech-combinatorics v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/combinatorics)` was not used in the crate graph
+warning: patch `mech-compare v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/compare)` was not used in the crate graph
+warning: patch `mech-logic v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/logic)` was not used in the crate graph
+warning: patch `mech-math v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/math)` was not used in the crate graph
+warning: patch `mech-matrix v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/matrix)` was not used in the crate graph
+warning: patch `mech-range v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/range)` was not used in the crate graph
+warning: patch `mech-set v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/set)` was not used in the crate graph
+warning: patch `mech-stats v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/stats)` was not used in the crate graph
+warning: patch `mech-string v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/string)` was not used in the crate graph
+help: Check that the patched package version and available features are compatible
+      with the dependency requirements. If the patch has a different version from
+      what is locked in the Cargo.lock file, run `cargo update` to use the new
+      version. This may also occur with an optional dependency that is not enabled.
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.24
+   Compiling syn v2.0.119
+   Compiling typenum v1.20.1
+   Compiling synstructure v0.13.2
+   Compiling autocfg v1.5.1
+   Compiling zerofrom-derive v0.1.7
+   Compiling zerofrom v0.1.8
+   Compiling yoke-derive v0.8.2
+   Compiling stable_deref_trait v1.2.1
+   Compiling libm v0.2.16
+   Compiling yoke v0.8.3
+   Compiling num-traits v0.2.19
+   Compiling hybrid-array v0.4.14
+   Compiling zerovec-derive v0.11.3
+   Compiling zerovec v0.11.6
+   Compiling displaydoc v0.2.6
+   Compiling libc v0.2.189
+   Compiling cfg-if v1.0.4
+   Compiling zmij v1.0.23
+   Compiling version_check v0.9.5
+   Compiling serde_core v1.0.229
+   Compiling generic-array v0.14.7
+   Compiling crypto-common v0.2.2
+   Compiling block-buffer v0.12.1
+   Compiling digest v0.11.3
+   Compiling itoa v1.0.18
+   Compiling bytemuck v1.25.2
+   Compiling paste v1.0.15
+   Compiling memchr v2.8.3
+   Compiling safe_arch v0.7.4
+   Compiling tinystr v0.8.3
+   Compiling matrixmultiply v0.3.11
+   Compiling syn v3.0.3
+   Compiling writeable v0.6.3
+   Compiling alloc-no-stdlib v2.0.4
+   Compiling litemap v0.8.2
+   Compiling serde v1.0.229
+   Compiling icu_properties_data v2.2.0
+   Compiling icu_locale_core v2.2.0
+   Compiling alloc-stdlib v0.2.4
+   Compiling serde_derive v1.0.229
+   Compiling wide v0.7.33
+   Compiling zerotrie v0.2.4
+   Compiling approx v0.5.1
+   Compiling num-integer v0.1.46
+   Compiling num-complex v0.4.6
+   Compiling potential_utf v0.1.5
+   Compiling virtue v0.0.18
+   Compiling equivalent v1.0.2
+   Compiling crc32fast v1.5.0
+   Compiling utf8_iter v1.0.4
+   Compiling serde_json v1.0.151
+   Compiling rawpointer v0.2.1
+   Compiling tinyvec_macros v0.1.1
+   Compiling tinyvec v1.12.0
+   Compiling icu_collections v2.2.0
+   Compiling bincode_derive v2.0.1
+   Compiling simba v0.9.1
+   Compiling num-rational v0.4.2
+   Compiling icu_provider v2.2.0
+   Compiling brotli-decompressor v5.0.3
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling cpufeatures v0.3.0
+   Compiling nalgebra-macros v0.3.0
+   Compiling unty v0.0.4
+   Compiling hashbrown v0.17.1
+   Compiling unicode-segmentation v1.13.3
+   Compiling grapheme_macro v2.0.0
+   Compiling indexmap v2.14.0
+   Compiling bincode v2.0.1
+   Compiling nalgebra v0.34.2
+   Compiling sha2 v0.11.0
+   Compiling digest v0.10.7
+   Compiling icu_properties v2.2.0
+   Compiling brotli v8.0.4
+   Compiling unicode-normalization v0.1.25
+   Compiling cpufeatures v0.2.17
+   Compiling smallvec v1.15.2
+   Compiling base64 v0.22.1
+   Compiling byteorder v1.5.0
+   Compiling seahash v4.1.0
+   Compiling mech-core v0.3.5 (/private/tmp/mech-deflate-reality-check/src/core)
+   Compiling grapheme v1.3.0
+   Compiling sha2 v0.10.9
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-deflate-reality-check/src/engine)
+   Compiling allocator-api2 v0.2.21
+   Compiling adler2 v2.0.1
+   Compiling foldhash v0.1.5
+   Compiling hashbrown v0.15.5
+   Compiling miniz_oxide v0.8.9
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-deflate-reality-check/src/compute)
+   Compiling checked-assertion v0.0.0 (/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpmlWIOF/project)
+   Compiling web-time v1.1.0
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-reality-check/hosts/gpu)
+error: variable does not need to be mutable
+  --> src/bin/lexical-retry.rs:12:9
+   |
+12 |     let mut builder = mech_core::FunctionCatalogBuilder::new();
+   |         ----^^^^^^^
+   |         |
+   |         help: remove this `mut`
+   |
+note: the lint level is defined here
+  --> src/bin/lexical-retry.rs:1:9
+   |
+ 1 | #![deny(warnings)]
+   |         ^^^^^^^^
+   = note: `#[deny(unused_mut)]` implied by `#[deny(warnings)]`
+
+error: could not compile `checked-assertion` (bin "lexical-retry") due to 1 previous error
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+test linked_qualification::linked_narrow_comparison_assertion_preserves_publication_and_recovers ...
+thread 'linked_qualification::linked_narrow_comparison_assertion_preserves_publication_and_recovers' (15998832) panicked at hosts/gpu/tests/support/canonical_program_linked.rs:176:5:
+warning: patch `mech-combinatorics v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/combinatorics)` was not used in the crate graph
+warning: patch `mech-compare v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/compare)` was not used in the crate graph
+warning: patch `mech-logic v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/logic)` was not used in the crate graph
+warning: patch `mech-math v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/math)` was not used in the crate graph
+warning: patch `mech-matrix v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/matrix)` was not used in the crate graph
+warning: patch `mech-range v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/range)` was not used in the crate graph
+warning: patch `mech-set v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/set)` was not used in the crate graph
+warning: patch `mech-stats v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/stats)` was not used in the crate graph
+warning: patch `mech-string v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/string)` was not used in the crate graph
+help: Check that the patched package version and available features are compatible
+      with the dependency requirements. If the patch has a different version from
+      what is locked in the Cargo.lock file, run `cargo update` to use the new
+      version. This may also occur with an optional dependency that is not enabled.
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.24
+   Compiling syn v2.0.119
+   Compiling typenum v1.20.1
+   Compiling synstructure v0.13.2
+   Compiling autocfg v1.5.1
+   Compiling zerofrom-derive v0.1.7
+   Compiling zerofrom v0.1.8
+   Compiling yoke-derive v0.8.2
+   Compiling libm v0.2.16
+   Compiling stable_deref_trait v1.2.1
+   Compiling yoke v0.8.3
+   Compiling num-traits v0.2.19
+   Compiling hybrid-array v0.4.14
+   Compiling zerovec-derive v0.11.3
+   Compiling zerovec v0.11.6
+   Compiling displaydoc v0.2.6
+   Compiling version_check v0.9.5
+   Compiling zmij v1.0.23
+   Compiling serde_core v1.0.229
+   Compiling cfg-if v1.0.4
+   Compiling libc v0.2.189
+   Compiling generic-array v0.14.7
+   Compiling block-buffer v0.12.1
+   Compiling crypto-common v0.2.2
+   Compiling digest v0.11.3
+   Compiling paste v1.0.15
+   Compiling memchr v2.8.3
+   Compiling bytemuck v1.25.2
+   Compiling itoa v1.0.18
+   Compiling safe_arch v0.7.4
+   Compiling tinystr v0.8.3
+   Compiling matrixmultiply v0.3.11
+   Compiling syn v3.0.3
+   Compiling litemap v0.8.2
+   Compiling icu_properties_data v2.2.0
+   Compiling writeable v0.6.3
+   Compiling alloc-no-stdlib v2.0.4
+   Compiling serde v1.0.229
+   Compiling alloc-stdlib v0.2.4
+   Compiling icu_locale_core v2.2.0
+   Compiling serde_derive v1.0.229
+   Compiling wide v0.7.33
+   Compiling zerotrie v0.2.4
+   Compiling num-complex v0.4.6
+   Compiling approx v0.5.1
+   Compiling num-integer v0.1.46
+   Compiling potential_utf v0.1.5
+   Compiling crc32fast v1.5.0
+   Compiling equivalent v1.0.2
+   Compiling rawpointer v0.2.1
+   Compiling virtue v0.0.18
+   Compiling utf8_iter v1.0.4
+   Compiling serde_json v1.0.151
+   Compiling tinyvec_macros v0.1.1
+   Compiling tinyvec v1.12.0
+   Compiling icu_collections v2.2.0
+   Compiling bincode_derive v2.0.1
+   Compiling num-rational v0.4.2
+   Compiling simba v0.9.1
+   Compiling icu_provider v2.2.0
+   Compiling brotli-decompressor v5.0.3
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling cpufeatures v0.3.0
+   Compiling nalgebra-macros v0.3.0
+   Compiling unicode-segmentation v1.13.3
+   Compiling hashbrown v0.17.1
+   Compiling unty v0.0.4
+   Compiling bincode v2.0.1
+   Compiling indexmap v2.14.0
+   Compiling grapheme_macro v2.0.0
+   Compiling nalgebra v0.34.2
+   Compiling sha2 v0.11.0
+   Compiling digest v0.10.7
+   Compiling brotli v8.0.4
+   Compiling icu_properties v2.2.0
+   Compiling unicode-normalization v0.1.25
+   Compiling cpufeatures v0.2.17
+   Compiling seahash v4.1.0
+   Compiling smallvec v1.15.2
+   Compiling base64 v0.22.1
+   Compiling byteorder v1.5.0
+   Compiling mech-core v0.3.5 (/private/tmp/mech-deflate-reality-check/src/core)
+   Compiling grapheme v1.3.0
+   Compiling sha2 v0.10.9
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-deflate-reality-check/src/engine)
+   Compiling allocator-api2 v0.2.21
+   Compiling adler2 v2.0.1
+   Compiling foldhash v0.1.5
+   Compiling hashbrown v0.15.5
+   Compiling miniz_oxide v0.8.9
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-deflate-reality-check/src/compute)
+   Compiling checked-assertion v0.0.0 (/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpKr4tbO/project)
+   Compiling web-time v1.1.0
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-reality-check/hosts/gpu)
+error: variable does not need to be mutable
+  --> src/bin/lexical-retry.rs:12:9
+   |
+12 |     let mut builder = mech_core::FunctionCatalogBuilder::new();
+   |         ----^^^^^^^
+   |         |
+   |         help: remove this `mut`
+   |
+note: the lint level is defined here
+  --> src/bin/lexical-retry.rs:1:9
+   |
+ 1 | #![deny(warnings)]
+   |         ^^^^^^^^
+   = note: `#[deny(unused_mut)]` implied by `#[deny(warnings)]`
+
+error: could not compile `checked-assertion` (bin "lexical-retry") due to 1 previous error
+
+FAILED
+test linked_qualification::linked_uniform_words_restore_the_same_plan_fact_and_recover ... ok
+
+failures:
+
+failures:
+    linked_qualification::linked_assertion_rejection_preserves_publication_and_recovers
+    linked_qualification::linked_narrow_comparison_assertion_preserves_publication_and_recovers
+
+test result: FAILED. 1 passed; 2 failed; 0 ignored; 0 measured; 255 filtered out; finished in 243.05s
+
+error: test failed, to rerun pass `-p mech-gpu --test canonical_artifact_program`

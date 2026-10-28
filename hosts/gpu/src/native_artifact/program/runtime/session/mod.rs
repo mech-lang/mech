@@ -1,6 +1,7 @@
 //! Owning two-phase state for ONE generated CFG invocation. Raw frame pointers
 //! are reconstructed from admitted owned backing for each synchronous entry;
 //! neither caller pointers nor self-referential borrowed state are retained.
+use crate::native_artifact::abi::STATUS_INTEGRITY;
 use crate::native_artifact::program::protocol::abi::{
     PHASE_ACTIVATION, PHASE_CAPTURE_TAIL, PHASE_PREFIX, PHASE_TURN, PHASE_WORKER, STATUS_ACTIVATED,
     STATUS_INPUT_PENDING, STATUS_INPUT_SCANNED, STATUS_WORKER_RESULT,
@@ -387,7 +388,12 @@ impl<'a> Prepared<'a> {
             )?;
         let call_caches = CallCacheLane::metadata_bytes(descriptor.metadata().plan.blocks().len())?;
         let line_matrices = u64::from(!descriptor.metadata().line_matrices.regions.is_empty());
+        let frames = super::buffer_frames::BufferFrames::metadata_nodes(
+            &descriptor.metadata().buffer_frames,
+        )?;
         let total = fixed
+            .checked_add(frames)
+            .ok_or_else(|| invalid("worker frame node count overflow"))?
             .checked_add(collections)
             .and_then(|n| n.checked_add(call_caches))
             .and_then(|n| n.checked_add(line_matrices))
@@ -438,6 +444,22 @@ impl<'a> Prepared<'a> {
                 .and_then(|bytes| bytes.checked_add(admitted))
                 .ok_or_else(|| invalid("worker fixed backing admission overflow"))?;
         }
+        let frame_elements = descriptor.metadata().buffer_frames.elements();
+        if frame_elements != 0 {
+            bytes = bytes
+                .checked_sub(amount(
+                    frame_elements,
+                    size_of::<Option<Value>>() as u64,
+                    0,
+                )?)
+                .and_then(|n| {
+                    n.checked_add(
+                        NativeTypedStorage::<Option<Value>>::admission_bytes(frame_elements)
+                            .ok()?,
+                    )
+                })
+                .ok_or_else(|| invalid("private frame admission overflow"))?;
+        }
         // This immutable sum is established at prepare/decode time, so a
         // repeated dispatch never performs an unfunded constants-table scan.
         bytes
@@ -464,7 +486,19 @@ impl<'a> Prepared<'a> {
             .and_then(|n| n.checked_add(descriptor.metadata().max_library_inputs.max(1)))
             .and_then(|n| n.checked_add(descriptor.metadata().retirements.words().len()))
             .ok_or_else(|| invalid("transport count overflow"))?;
-        let bytes = transport_bytes(words)?
+        let word_and_frame_bytes = transport_bytes(words)?
+            .checked_add(amount(
+                descriptor.metadata().buffer_frames.elements(),
+                size_of::<Option<Value>>() as u64,
+                0,
+            )?)
+            .ok_or_else(|| invalid("private frame transport overflow"))?;
+        let word_and_frame_bytes = word_and_frame_bytes
+            .checked_add(super::buffer_frames::BufferFrames::metadata_bytes(
+                &descriptor.metadata().buffer_frames,
+            ))
+            .ok_or_else(|| invalid("private frame metadata overflow"))?;
+        let bytes = word_and_frame_bytes
             .checked_add(amount(
                 descriptor.metadata().types.len(),
                 (core::mem::size_of::<Option<Value>>() + 8) as u64,
@@ -606,6 +640,12 @@ impl<'a> Prepared<'a> {
             memory,
             &mut work,
         )?;
+        let buffer_frames = super::buffer_frames::BufferFrames::new(
+            &descriptor.metadata().buffer_frames,
+            limits.execution.max_transport_bytes,
+            memory,
+            &mut work,
+        )?;
         let call_inputs = NativeTypedStorage::new_values(
             descriptor.metadata().max_library_inputs,
             limits.execution.max_transport_bytes,
@@ -670,6 +710,7 @@ impl<'a> Prepared<'a> {
                 line_matrices,
                 arena,
                 call_inputs,
+                buffer_frames,
                 call_caches,
                 library,
                 control: ControlState::new(work),
@@ -748,8 +789,8 @@ impl<'a> Prepared<'a> {
                     let kind = descriptor.metadata().plan.values()[slot as usize]
                         .scalar_kind()
                         .ok_or_else(|| invalid("worker scalar capture type"))?;
-                    if kind == NativeScalarKind::Bool && word > 1 {
-                        return Err(invalid("worker Bool capture"));
+                    if !kind.accepts_bits(word) {
+                        return Err(invalid("worker scalar capture exceeds its type"));
                     }
                     prepared.storage.values_mut()[locals_start + slot as usize] = word;
                 }
@@ -1356,11 +1397,16 @@ impl<'a> Prepared<'a> {
                     )?;
                     self.paused = Some(site);
                 }
-                STATUS_ARITHMETIC | STATUS_REJECT => {
+                STATUS_ARITHMETIC | STATUS_REJECT | STATUS_INTEGRITY => {
                     let id = context.failure_site(f.error_node)?;
                     let site = &descriptor.metadata().visits[id as usize];
                     return Err(if status == STATUS_ARITHMETIC && site.arithmetic {
                         NativeIterationExecutionError::Arithmetic {
+                            origin: site.origin,
+                        }
+                        .into()
+                    } else if status == STATUS_INTEGRITY && site.integrity {
+                        NativeIterationExecutionError::Integrity {
                             origin: site.origin,
                         }
                         .into()

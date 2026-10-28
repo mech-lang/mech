@@ -1,0 +1,8 @@
+{"engine":"rust","case":"raw-buffer-initialization","rep":0,"nanoseconds":365334,"allocations":2,"requested_bytes":6526340}
+{"engine":"rust","case":"raw-buffer-initialization","rep":1,"nanoseconds":257458,"allocations":2,"requested_bytes":6526340}
+{"engine":"rust","case":"raw-buffer-initialization","rep":2,"nanoseconds":239417,"allocations":2,"requested_bytes":6526340}
+{"engine":"rust","case":"raw-buffer-initialization","rep":3,"nanoseconds":228125,"allocations":2,"requested_bytes":6526340}
+{"engine":"rust","case":"raw-buffer-initialization","rep":4,"nanoseconds":247792,"allocations":2,"requested_bytes":6526340}
+{"engine":"rust","case":"raw-buffer-initialization","rep":5,"nanoseconds":231709,"allocations":2,"requested_bytes":6526340}
+{"engine":"rust","case":"raw-buffer-initialization","rep":6,"nanoseconds":231875,"allocations":2,"requested_bytes":6526340}
+{"engine":"rust","case":"raw-buffer-initialization","rep":7,"nanoseconds":231417,"allocations":2,"requested_bytes":6526340}

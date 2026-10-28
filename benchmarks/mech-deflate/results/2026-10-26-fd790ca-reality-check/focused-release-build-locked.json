@@ -1,0 +1,28 @@
+{
+  "name": "focused-release-build-locked",
+  "command": [
+    "cargo",
+    "build",
+    "--release",
+    "--locked",
+    "--offline",
+    "-j1",
+    "--manifest-path",
+    "/private/tmp/mech-stack-landscape-20261026/reality-check/focused/Cargo.toml"
+  ],
+  "cwd": "/private/tmp/mech-deflate-reality-check",
+  "head": "fd790ca0fce74b8eb8563cc4442d3a0041672c70",
+  "dirty": " M hosts/gpu/tests/canonical_artifact_program.rs\n?? hosts/gpu/tests/support/canonical_program_reality_check.rs\n",
+  "exit": 101,
+  "seconds": 546.6943409442902,
+  "log": "/private/tmp/mech-stack-landscape-20261026/reality-check/focused-release-build-locked.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

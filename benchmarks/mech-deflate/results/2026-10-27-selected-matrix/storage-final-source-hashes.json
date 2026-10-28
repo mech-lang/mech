@@ -1,0 +1,6 @@
+{
+  "src/core/src/snapshot/validation.rs": "5762104f9ab7f27ede7aa88d1e16a0aad6f746c50d933b8bc383ff5956f52342",
+  "src/core/src/snapshot/resident_token_tests.rs": "79efd7e824c018cd3b5e3b6c8c2dc46a9f1c3d9d4d2795359aae066bd76af49b",
+  "src/engine/src/resident/conversion.rs": "9cb6025963009892f30756fd5251f79b6a50b1017c9e97fa103f9fffb01c3649",
+  "hosts/gpu/tests/support/canonical_program_selected_matrix.rs": "3e8d762f20146ab509a0a03d6d8cc887130757e3ff10c5d8318de53d3e337713"
+}

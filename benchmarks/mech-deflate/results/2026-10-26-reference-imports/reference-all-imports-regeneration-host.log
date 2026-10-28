@@ -1,0 +1,4 @@
+0 errors and 0 warnings found in 703ms while successfully building:
+
+    ../mech-linear-restack-20261026/full-block-reference/full-block-oracle
+{"cases": 3, "output": "/private/tmp/mech-linear-restack-20261026/verified-block-reference.json", "source_pin": "671077457ff7ef3a3d44caf715a3fc595addf379"}

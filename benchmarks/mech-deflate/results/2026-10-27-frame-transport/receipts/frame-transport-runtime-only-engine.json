@@ -1,0 +1,31 @@
+{
+  "name": "frame-transport-runtime-only-engine",
+  "command": [
+    "cargo",
+    "check",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-engine",
+    "--no-default-features",
+    "--features",
+    "sequence_buffers",
+    "--lib"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "4b722986c7eaa47011c4e36562baec0e1fe87cf3",
+  "dirty": "?? benchmarks/mech-deflate/results/2026-10-27-frame-transport/\n",
+  "exit": 0,
+  "seconds": 0.27991819381713867,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/frame-transport-runtime-only-engine.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

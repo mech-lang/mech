@@ -1,0 +1,28 @@
+{
+  "name": "unsigned-buffer-ci-inventory-tests-with-dependencies",
+  "command": [
+    "/private/tmp/mech-assertion-ci-python/bin/python",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests/ci",
+    "-p",
+    "test_ci_test_inventory.py"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "d0271b90ae51db78630cda2a76c01c61a75719da",
+  "dirty": "",
+  "exit": 0,
+  "seconds": 9.334197044372559,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/unsigned-buffer-ci-inventory-tests-with-dependencies.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

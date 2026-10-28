@@ -1,0 +1,9 @@
+{
+  "base": "1de0ee88e9bb882d5dddbfbc1ae4b864f51cddc7",
+  "head": "6903862d4ef979c5ba7de9c4f331b1dba4f8cdb1",
+  "existing_native_fixtures": 28,
+  "changed_native_fixtures": [],
+  "scalar_codegen_or_syntax_changes": [],
+  "all_gpu_fixtures": 28,
+  "changed_all_gpu_fixtures": []
+}

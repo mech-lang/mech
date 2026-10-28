@@ -8,7 +8,7 @@ fn cases() -> Vec<(SchemaBody, SequenceStorage)> {
         ($kind:ident, $width:ident, $storage:ident, $ty:ty) => {
             cases.push((
                 SchemaBody::$kind(IntegerWidth::$width),
-                SequenceStorage::$storage(vec![<$ty>::MIN, 0, 1, <$ty>::MAX].into_boxed_slice()),
+                SequenceStorage::$storage(vec![<$ty>::MIN, 0, 1, <$ty>::MAX].into()),
             ));
         };
     }
@@ -151,7 +151,7 @@ fn concrete_length_sink_preserves_saturation_and_empty_sequences() {
     for (schema, sequence) in [
         (
             SchemaBody::UnsignedInteger(IntegerWidth::W64),
-            SequenceStorage::U64(Box::new([])),
+            SequenceStorage::U64(Vec::new()),
         ),
         (SchemaBody::String, SequenceStorage::String(Box::new([]))),
         (

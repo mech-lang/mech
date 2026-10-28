@@ -1,0 +1,251 @@
+// Length-limited canonical Huffman construction for DEFLATE.
+// Port of libdeflate b122c8be1d78b19f6d0a6efc5bb79bfcbb30dd51,
+// following roc-deflate 671077457ff7ef3a3d44caf715a3fc595addf379.
+// Copyright 2016 Eric Biggers (MIT); Copyright 2024 Niclas Åhdén (Apache-2.0).
+// See deflate-huffman-LICENSES.md for attribution and licenses.
++> bits
++> sequence
+<huff-code> := <{lens<[u8]> codewords<[u32]>}>
+<huff-sorted> := <{symout<[u32]> lens<[u8]> num-used-syms<u64>}>
+<huff-counted> := <{a<[u32]> len-counts<[u64]>}>
+<huff-generated> := <{a<[u32]> lens<[u8]>}>
+
+huff-word(value<u32>) => (out<u64>) :=
+  out<u64> := value.
+huff-packed(value<u64>) => (out<u32>) :=
+  out<u32> := bits/and(value, 4294967295u64).
+huff-byte(value<u64>) => (out<u8>) :=
+  out<u8> := bits/and(value, 255u64).
+huff-minimum(a<u64>, b<u64>) => (out<u64>) :=
+  out := ((a < b)? | true => a | false => b).
+huff-get8(values<[u8]>, at<u64>) => <u8>
+  | (values, at) => ((at < sequence/length(values))? | true => values[bits/wrapping-add(at, 1u64)] | false => 0u8).
+huff-get32(values<[u32]>, at<u64>) => <u32>
+  | (values, at) => ((at < sequence/length(values))? | true => values[bits/wrapping-add(at, 1u64)] | false => 0u32).
+huff-get64(values<[u64]>, at<u64>) => <u64>
+  | (values, at) => ((at < sequence/length(values))? | true => values[bits/wrapping-add(at, 1u64)] | false => 0u64).
+huff-set8(values<[u8]>, at<u64>, value<u8>) => (out<[u8]>) :=
+  ~next := values
+  next[bits/wrapping-add(at, 1u64)] = value
+  out := next.
+huff-set32(values<[u32]>, at<u64>, value<u32>) => (out<[u32]>) :=
+  ~next := values
+  next[bits/wrapping-add(at, 1u64)] = value
+  out := next.
+huff-set64(values<[u64]>, at<u64>, value<u64>) => (out<[u64]>) :=
+  ~next := values
+  next[bits/wrapping-add(at, 1u64)] = value
+  out := next.
+huff-add-wrap32(a<u32>, b<u32>) => (out<u32>) :=
+  out := huff-packed(bits/wrapping-add(huff-word(a), huff-word(b))).
+huff-tree-frequency(a<[u32]>, at<u64>) => (out<u64>) :=
+  out := bits/and(huff-word(huff-get32(a, at)), 4294966272u64).
+huff-reverse-byte(value<u64>) => (out<u64>) :=
+  a := bits/or(bits/shift-right-wrap(value, 4u64), bits/and(bits/shift-left-wrap(value, 4u64), 255u64))
+  b := bits/or(bits/shift-right-wrap(bits/and(a, 204u64), 2u64), bits/shift-left-wrap(bits/and(a, 51u64), 2u64))
+  out := bits/or(bits/shift-right-wrap(bits/and(b, 170u64), 1u64), bits/shift-left-wrap(bits/and(b, 85u64), 1u64)).
+huff-reverse-codeword(value<u32>, width<u64>, reversed<[u8]>) => (out<u32>) :=
+  wide := huff-word(value)
+  low<u64> := huff-get8(reversed, bits/and(wide, 255u64))
+  high<u64> := huff-get8(reversed, bits/shift-right-wrap(wide, 8u64))
+  out := huff-packed(bits/shift-right-wrap(bits/or(bits/shift-left-wrap(low, 8u64), high), 16u64 - width)).
+huff-build-reversal-at(table<[u8]>, i<u64>) => <[u8]>
+  | (table, i) => ((i < 256u64)? | true => huff-build-reversal-at(sequence/append(table, huff-byte(huff-reverse-byte(i))), i + 1u64) | false => table).
+huff-build-reversal() => (out<[u8]>) :=
+  out := huff-build-reversal-at(sequence/with-capacity(0u8, 256u64), 0u64).
+
+huff-count-step(freqs<[u32]>, counts<[u64]>, sym<u64>, top<u64>) => (out<[u64]>) :=
+  slot := huff-minimum(huff-word(huff-get32(freqs, sym)), top)
+  count := huff-get64(counts, slot) + 1u64
+  out := huff-set64(counts, slot, count).
+huff-count-symbols(freqs<[u32]>, n<u64>, counts<[u64]>, sym<u64>, top<u64>) => <[u64]>
+  | (freqs, n, counts, sym, top) => ((sym < n)? | true => huff-count-symbols(freqs, n, huff-count-step(freqs, counts, sym, top), sym + 1u64, top) | false => counts).
+huff-cumulative-step(counts<[u64]>, used<u64>, i<u64>) => (out<([u64],u64)>) :=
+  count := huff-get64(counts, i)
+  next := huff-set64(counts, i, used)
+  out := (next, used + count).
+huff-cumulative(counts<[u64]>, n<u64>, used<u64>, i<u64>) => (out<([u64],u64)>) :=
+  more := i < n
+  step := (more? | true => huff-cumulative-step(counts, used, i) | false => (counts, used))
+  (next, next-used) := step
+  out := (more? | true => huff-cumulative(next, n, next-used, i + 1u64) | false => (counts, used)).
+huff-place-nonzero(counts<[u64]>, lens<[u8]>, a<[u32]>, freq<u32>, sym<u64>, top<u64>) => (out<([u64],[u8],[u32])>) :=
+  slot := huff-minimum(huff-word(freq), top)
+  at := huff-get64(counts, slot)
+  next-counts := huff-set64(counts, slot, at + 1u64)
+  packed := huff-packed(bits/or(huff-word(huff-packed(sym)), bits/shift-left-wrap(huff-word(freq), 10u64)))
+  next-a := huff-set32(a, at, packed)
+  out := (next-counts, lens, next-a).
+huff-place-step(freqs<[u32]>, counts<[u64]>, lens<[u8]>, a<[u32]>, sym<u64>, top<u64>) => (out<([u64],[u8],[u32])>) :=
+  freq := huff-get32(freqs, sym)
+  out := ((freq != 0u32)? | true => huff-place-nonzero(counts, lens, a, freq, sym, top) | false => (counts, huff-set8(lens, sym, 0u8), a)).
+huff-place-symbols(freqs<[u32]>, n<u64>, counts<[u64]>, lens<[u8]>, a<[u32]>, sym<u64>, top<u64>) => (out<([u64],[u8],[u32])>) :=
+  more := sym < n
+  step := (more? | true => huff-place-step(freqs, counts, lens, a, sym, top) | false => (counts, lens, a))
+  (next-counts, next-lens, next-a) := step
+  out := (more? | true => huff-place-symbols(freqs, n, next-counts, next-lens, next-a, sym + 1u64, top) | false => (counts, lens, a)).
+
+huff-sift-child(a<[u32]>, base<u64>, size<u64>, child<u64>) => (out<u64>) :=
+  out := ((child < size && huff-get32(a, base + child) > huff-get32(a, base + child - 1u64))? | true => child + 1u64 | false => child).
+huff-sift-descend(a<[u32]>, base<u64>, size<u64>, parent<u64>, child0<u64>, value<u32>) => (out<([u32],u64,bool)>) :=
+  child := huff-sift-child(a, base, size, child0)
+  child-value := huff-get32(a, base + child - 1u64)
+  more := value < child-value
+  next := (more? | true => huff-set32(a, base + parent - 1u64, child-value) | false => a)
+  next-parent := (more? | true => child | false => parent)
+  out := (next, next-parent, more).
+huff-sift-loop(a<[u32]>, base<u64>, size<u64>, parent<u64>, value<u32>) => (out<[u32]>) :=
+  child0 := parent * 2u64
+  step := ((child0 > size)? | true => (a, parent, false) | false => huff-sift-descend(a, base, size, parent, child0, value))
+  (next, next-parent, more) := step
+  out := (more? | true => huff-sift-loop(next, base, size, next-parent, value) | false => huff-set32(next, base + next-parent - 1u64, value)).
+huff-heapify(a<[u32]>, base<u64>, size<u64>, root<u64>) => (out<[u32]>) :=
+  value := huff-get32(a, base + root - 1u64)
+  out := huff-sift-loop(a, base, size, root, value).
+huff-heap-build(a<[u32]>, base<u64>, size<u64>, root<u64>) => <[u32]>
+  | (a, base, size, root) => ((root >= 1u64)? | true => huff-heap-build(huff-heapify(a, base, size, root), base, size, root - 1u64) | false => a).
+huff-heap-sort-step(a<[u32]>, base<u64>, left<u64>) => (out<([u32],u64)>) :=
+  last := huff-get32(a, base + left - 1u64)
+  first := huff-get32(a, base)
+  moved := huff-set32(a, base + left - 1u64, first)
+  swapped := huff-set32(moved, base, last)
+  shrunk := left - 1u64
+  out := (huff-heapify(swapped, base, shrunk, 1u64), shrunk).
+huff-heap-sort-loop(a<[u32]>, base<u64>, left<u64>) => (out<[u32]>) :=
+  more := left >= 2u64
+  step := (more? | true => huff-heap-sort-step(a, base, left) | false => (a, left))
+  (next, next-left) := step
+  out := (more? | true => huff-heap-sort-loop(next, base, next-left) | false => a).
+huff-heap-sort(a<[u32]>, base<u64>, size<u64>) => (out<[u32]>) :=
+  built := huff-heap-build(a, base, size, size / 2u64)
+  out := huff-heap-sort-loop(built, base, size).
+huff-sort-symbols(n<u64>, freqs<[u32]>, lens0<[u8]>, words0<[u32]>) => (out<huff-sorted>) :=
+  top := n - 1u64
+  counters := [0u64 | i <- 0u64..=n, i < n]
+  counted := huff-count-symbols(freqs, n, counters, 0u64, top)
+  (cumulative, used) := huff-cumulative(counted, n, 0u64, 1u64)
+  (placed, lens, words) := huff-place-symbols(freqs, n, cumulative, lens0, words0, 0u64, top)
+  base := huff-get64(placed, n - 2u64)
+  size := huff-get64(placed, top) - base
+  sorted := huff-heap-sort(words, base, size)
+  out := {symout: sorted, lens: lens, num-used-syms: used}.
+
+huff-tree-two-branches(a<[u32]>, leaf<u64>, branch<u64>, parent<u64>, fb<u64>, fb1<u64>) => (out<([u32],u64,u64,u32)>) :=
+  sym-b := bits/and(huff-word(huff-get32(a, branch)), 1023u64)
+  sym-b1 := bits/and(huff-word(huff-get32(a, branch + 1u64)), 1023u64)
+  first := huff-set32(a, branch, huff-packed(bits/or(parent, sym-b)))
+  second := huff-set32(first, branch + 1u64, huff-packed(bits/or(parent, sym-b1)))
+  out := (second, leaf, branch + 2u64, huff-packed(bits/wrapping-add(fb, fb1))).
+huff-tree-mixed(a<[u32]>, leaf<u64>, branch<u64>, parent<u64>, fi<u64>, fb<u64>) => (out<([u32],u64,u64,u32)>) :=
+  sym-b := bits/and(huff-word(huff-get32(a, branch)), 1023u64)
+  next := huff-set32(a, branch, huff-packed(bits/or(parent, sym-b)))
+  out := (next, leaf + 1u64, branch + 1u64, huff-packed(bits/wrapping-add(fi, fb))).
+huff-tree-choose(a<[u32]>, leaf<u64>, branch<u64>, built<u64>, last<u64>, fi<u64>, fi1<u64>, fb<u64>, fb1<u64>) => (out<([u32],u64,u64,u32)>) :=
+  parent := huff-word(huff-packed(bits/shift-left-wrap(huff-word(huff-packed(built)), 10u64)))
+  out := ((leaf + 1u64 <= last && (branch == built || fi1 <= fb))?
+    | true => (a, leaf + 2u64, branch, huff-packed(bits/wrapping-add(fi, fi1)))
+    | false => ((branch + 2u64 <= built && (leaf > last || fb1 < fi))? | true => huff-tree-two-branches(a, leaf, branch, parent, fb, fb1) | false => huff-tree-mixed(a, leaf, branch, parent, fi, fb))).
+huff-tree-step(a<[u32]>, leaf<u64>, branch<u64>, built<u64>, last<u64>) => (out<([u32],u64,u64,u64)>) :=
+  fi := huff-tree-frequency(a, leaf)
+  fi1 := huff-tree-frequency(a, leaf + 1u64)
+  fb := huff-tree-frequency(a, branch)
+  fb1 := huff-tree-frequency(a, branch + 1u64)
+  (updated, next-leaf, next-branch, frequency) := huff-tree-choose(a, leaf, branch, built, last, fi, fi1, fb, fb1)
+  sym-e := bits/and(huff-word(huff-get32(updated, built)), 1023u64)
+  next := huff-set32(updated, built, huff-packed(bits/or(huff-word(frequency), sym-e)))
+  out := (next, next-leaf, next-branch, built + 1u64).
+huff-build-tree-loop(a<[u32]>, leaf<u64>, branch<u64>, built<u64>, last<u64>) => (out<[u32]>) :=
+  more := built < last
+  step := (more? | true => huff-tree-step(a, leaf, branch, built, last) | false => (a, leaf, branch, built))
+  (next, next-leaf, next-branch, next-built) := step
+  out := (more? | true => huff-build-tree-loop(next, next-leaf, next-branch, next-built, last) | false => a).
+huff-build-tree(a<[u32]>, used<u64>) => (out<[u32]>) :=
+  out := huff-build-tree-loop(a, 0u64, 0u64, 0u64, used - 1u64).
+
+huff-clamp-depth(counts<[u64]>, depth<u64>) => <u64>
+  | (counts, depth) => (((huff-get64(counts, depth - 1u64)) != 0u64)? | true => depth - 1u64 | false => huff-clamp-depth(counts, depth - 1u64)).
+huff-length-count-step(a<[u32]>, counts<[u64]>, node-plus-one<u64>, maximum<u64>) => (out<([u32],[u64],u64)>) :=
+  node := node-plus-one - 1u64
+  entry := huff-word(huff-get32(a, node))
+  parent := bits/shift-right-wrap(entry, 10u64)
+  parent-depth := bits/shift-right-wrap(huff-word(huff-get32(a, parent)), 10u64)
+  depth := parent-depth + 1u64
+  next-a := huff-set32(a, node, huff-packed(bits/or(bits/and(entry, 1023u64), bits/shift-left-wrap(huff-word(huff-packed(depth)), 10u64))))
+  effective := ((depth >= maximum)? | true => huff-clamp-depth(counts, maximum) | false => depth)
+  minus := huff-get64(counts, effective) - 1u64
+  decremented := huff-set64(counts, effective, minus)
+  plus := huff-get64(decremented, effective + 1u64) + 2u64
+  next-counts := huff-set64(decremented, effective + 1u64, plus)
+  out := (next-a, next-counts, node).
+huff-length-count-loop(a<[u32]>, counts<[u64]>, node-plus-one<u64>, maximum<u64>) => (out<([u32],[u64])>) :=
+  more := node-plus-one >= 1u64
+  step := (more? | true => huff-length-count-step(a, counts, node-plus-one, maximum) | false => (a, counts, node-plus-one))
+  (next-a, next-counts, next-node) := step
+  out := (more? | true => huff-length-count-loop(next-a, next-counts, next-node, maximum) | false => (a, counts)).
+huff-compute-length-counts(a<[u32]>, root<u64>, maximum<u64>) => (out<huff-counted>) :=
+  size := maximum + 2u64
+  zero := [0u64 | i <- 0u64..=size, i < size]
+  counts := huff-set64(zero, 1u64, 2u64)
+  root-sym := bits/and(huff-word(huff-get32(a, root)), 1023u64)
+  rooted := huff-set32(a, root, huff-packed(root-sym))
+  (depths, lengths) := huff-length-count-loop(rooted, counts, root, maximum)
+  out := {a: depths, len-counts: lengths}.
+
+huff-assign-one(a<[u32]>, lens<[u8]>, width<u64>, i<u64>) => (out<[u8]>) :=
+  sym := bits/and(huff-word(huff-get32(a, i)), 1023u64)
+  out := huff-set8(lens, sym, huff-byte(width)).
+huff-assign-symbols(a<[u32]>, lens<[u8]>, width<u64>, i<u64>, left<u64>) => <([u8],u64)>
+  | (a, lens, width, i, left) => ((left > 0u64)? | true => huff-assign-symbols(a, huff-assign-one(a, lens, width, i), width, i + 1u64, left - 1u64) | false => (lens, i)).
+huff-assign-lengths(a<[u32]>, lens<[u8]>, counts<[u64]>, width<u64>, i<u64>) => (out<[u8]>) :=
+  more := width >= 1u64
+  step := (more? | true => huff-assign-symbols(a, lens, width, i, huff-get64(counts, width)) | false => (lens, i))
+  (next, next-i) := step
+  out := (more? | true => huff-assign-lengths(a, next, counts, width - 1u64, next-i) | false => lens).
+huff-next-code-step(counts<[u64]>, codes<[u32]>, width<u64>) => (out<[u32]>) :=
+  previous := huff-get32(codes, width - 1u64)
+  previous-count := huff-packed(huff-get64(counts, width - 1u64))
+  sum := huff-add-wrap32(previous, previous-count)
+  out := huff-set32(codes, width, huff-packed(bits/shift-left-wrap(huff-word(sum), 1u64))).
+huff-next-codes(counts<[u64]>, codes<[u32]>, maximum<u64>, width<u64>) => <[u32]>
+  | (counts, codes, maximum, width) => ((width <= maximum)? | true => huff-next-codes(counts, huff-next-code-step(counts, codes, width), maximum, width + 1u64) | false => codes).
+huff-generate-step(a<[u32]>, lens<[u8]>, codes<[u32]>, sym<u64>, reversed<[u8]>) => (out<([u32],[u32])>) :=
+  width<u64> := huff-get8(lens, sym)
+  code := huff-get32(codes, width)
+  next-codes := huff-set32(codes, width, code + 1u32)
+  next-a := huff-set32(a, sym, huff-reverse-codeword(code, width, reversed))
+  out := (next-a, next-codes).
+huff-generate-loop(a<[u32]>, lens<[u8]>, codes<[u32]>, n<u64>, sym<u64>, reversed<[u8]>) => (out<[u32]>) :=
+  more := sym < n
+  step := (more? | true => huff-generate-step(a, lens, codes, sym, reversed) | false => (a, codes))
+  (next-a, next-codes) := step
+  out := (more? | true => huff-generate-loop(next-a, lens, next-codes, n, sym + 1u64, reversed) | false => a).
+huff-gen-codewords(a<[u32]>, lens<[u8]>, counts<[u64]>, maximum<u64>, n<u64>, reversed<[u8]>) => (out<huff-generated>) :=
+  next-lens := huff-assign-lengths(a, lens, counts, maximum, 0u64)
+  zero := [0u32 | i <- 0u64..=17u64, i < 17u64]
+  next-codes := huff-next-codes(counts, zero, maximum, 2u64)
+  words := huff-generate-loop(a, next-lens, next-codes, n, 0u64, reversed)
+  out := {a: words, lens: next-lens}.
+
+huff-degenerate-code(used<u64>, lens<[u8]>, words<[u32]>) => (out<huff-code>) :=
+  sym := ((used == 1u64)? | true => bits/and(huff-word(huff-get32(words, 0u64)), 1023u64) | false => 0u64)
+  nonzero := ((sym != 0u64)? | true => sym | false => 1u64)
+  words-first := huff-set32(words, 0u64, 0u32)
+  lens-first := huff-set8(lens, 0u64, 1u8)
+  words-second := huff-set32(words-first, nonzero, 1u32)
+  lens-second := huff-set8(lens-first, nonzero, 1u8)
+  out := {lens: lens-second, codewords: words-second}.
+huff-normal-code(used<u64>, lens<[u8]>, words<[u32]>, maximum<u64>, n<u64>, reversed<[u8]>) => (out<huff-code>) :=
+  tree := huff-build-tree(words, used)
+  counted := huff-compute-length-counts(tree, used - 2u64, maximum)
+  depths := counted.a
+  lengths := counted.len-counts
+  generated := huff-gen-codewords(depths, lens, lengths, maximum, n, reversed)
+  out := {lens: generated.lens, codewords: generated.a}.
+huff-make-code(n<u64>, maximum<u64>, freqs<[u32]>, lens0<[u8]>, words0<[u32]>, reversed<[u8]>) => (out<huff-code>) :=
+  sorted := huff-sort-symbols(n, freqs, lens0, words0)
+  used := sorted.num-used-syms
+  lens := sorted.lens
+  words := sorted.symout
+  out := ((used < 2u64)? | true => huff-degenerate-code(used, lens, words) | false => huff-normal-code(used, lens, words, maximum, n, reversed)).
+
+huff-build-reversal()

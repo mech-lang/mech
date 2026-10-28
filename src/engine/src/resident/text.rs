@@ -11,9 +11,17 @@ use mech_core::{
 mod snapshot_selection;
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     super::native_collection_semantics::register_string_concat(builder)?;
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     builder.insert_resident_factory(
         ["string"],
         "concat",
@@ -710,7 +718,11 @@ fn canonical_string_selector_byte_range(
 // The result is bytes in a caller-pinned real String, never a canonical Value.
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 pub(in crate::resident) fn selected_u64_string_span(
     kernel: &BoundResidentKernel,
@@ -741,7 +753,11 @@ pub(in crate::resident) fn selected_u64_string_span(
 
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 pub(in crate::resident) fn validate_selected_u64_string_span_geometry(
     kernel: &BoundResidentKernel,
@@ -767,7 +783,11 @@ pub(in crate::resident) fn validate_selected_u64_string_span_geometry(
     test,
     all(
         feature = "native-artifact",
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     )
 ))]
 fn selected_u64_string_span_endpoints(

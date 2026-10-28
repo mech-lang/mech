@@ -1,0 +1,23 @@
+{
+  "status": "Implemented and qualified at 3e262c87aac0c0ae49b689561cd53bcfa4b34eaa; original diagnostic below predates implementation.",
+  "compiler_base": "c7213b63f568dac2881eb514f025723a24bf6fd6",
+  "blocking_requirement": "BlockOut.write_sequences and flush_block append 0..8 low bytes of a U64 into the existing U8 output buffer. count > 8 rejects before modifying output.",
+  "reference_builtin": "src/build/roc/Builtin.roc:12658; src/builtins/list.zig:1055 listAppendLeBytes",
+  "reference_sha256": "1702d06e7fcf66cb5f06d2078c85121491d8d5340e2bc0c3b1227a201286a2b7",
+  "observed_reference_behavior": [
+    "count=0 returns original list",
+    "unique list with >=8 spare bytes writes one little-endian word and advances length by count",
+    "other cases reserve once for the complete count, preserve aliases, and append low bytes"
+  ],
+  "current_catalog": "src/engine/src/intrinsics/sequence_buffers.rs exposes WithCapacity, Reserve, Append, Clear; no bulk byte append",
+  "candidate_operation": "sequence/append-le-bytes([u8],u64,u8) -> [u8]",
+  "acceptance": [
+    "Counts 0..8 match exact bytes for empty/prefixed buffers and U64 boundaries.",
+    "count 9 rejects; success-failure-retry preserves prior publication and aliases.",
+    "Unique real 6633832-byte reserved buffer retains capacity with no additional payload allocation for repeated appends.",
+    "Shared alias copies at most once per operation; capacity growth matches the existing append policy applied to the total count.",
+    "Original/decoded resident/native and linked execution agree; work and memory denial cleans up."
+  ],
+  "fidelity": "No fresh output buffer per repetition, no whole-buffer concatenation per append, no hidden host compression.",
+  "reproducer_receipt": "writer-byte-append-missing.json"
+}

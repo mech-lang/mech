@@ -1,0 +1,166 @@
+{
+  "time": "2026-10-27T23:40:39.834967+00:00",
+  "measurements": [
+    {
+      "allocation_requests": 2334,
+      "artifact": "original",
+      "case": "empty",
+      "elapsed_seconds": 0.004196291,
+      "input_bytes": 0,
+      "memory_after": 7170392,
+      "requested_bytes": 11185483,
+      "result": "Ok(NativeProgramExecutionReport { work: 1441745047, comparison_work: 8, visits: 31, transport_bytes: 4984080, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "complete-compression"
+    },
+    {
+      "allocation_requests": 2003,
+      "artifact": "original",
+      "case": "one-stored",
+      "elapsed_seconds": 0.003771,
+      "input_bytes": 1,
+      "memory_after": 7170393,
+      "requested_bytes": 11165040,
+      "result": "Ok(NativeProgramExecutionReport { work: 1625278090, comparison_work: 8, visits: 79, transport_bytes: 4984080, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "complete-compression"
+    },
+    {
+      "allocation_requests": 1999,
+      "artifact": "original",
+      "case": "seven-stored-prefix",
+      "elapsed_seconds": 0.003779667,
+      "input_bytes": 7,
+      "memory_after": 7170401,
+      "requested_bytes": 11165545,
+      "result": "Ok(NativeProgramExecutionReport { work: 1625278210, comparison_work: 8, visits: 79, transport_bytes: 4984080, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "complete-compression"
+    },
+    {
+      "allocation_requests": 16658008,
+      "artifact": "original",
+      "case": "eight-literals",
+      "elapsed_seconds": 2.620550167,
+      "input_bytes": 8,
+      "memory_after": 7170400,
+      "requested_bytes": 1760488725,
+      "result": "Ok(NativeProgramExecutionReport { work: 1283436840135, comparison_work: 207865972, visits: 740126, transport_bytes: 4984080, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "complete-compression"
+    },
+    {
+      "allocation_requests": 16332763,
+      "artifact": "original",
+      "case": "eight-overlap",
+      "elapsed_seconds": 2.742674542,
+      "input_bytes": 8,
+      "memory_after": 7170400,
+      "requested_bytes": 1743599597,
+      "result": "Ok(NativeProgramExecutionReport { work: 1261164720430, comparison_work: 243181736, visits: 727732, transport_bytes: 4984080, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "complete-compression"
+    },
+    {
+      "allocation_requests": 28801269,
+      "artifact": "original",
+      "case": "320-overlap",
+      "elapsed_seconds": 47.960433416,
+      "input_bytes": 320,
+      "memory_after": 7170712,
+      "requested_bytes": 8286259411,
+      "result": "Ok(NativeProgramExecutionReport { work: 2514601263145, comparison_work: 8353601580, visits: 2023949, transport_bytes: 4984080, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "complete-compression"
+    },
+    {
+      "allocation_requests": 16658003,
+      "artifact": "original",
+      "case": "eight-literals-prefix",
+      "elapsed_seconds": 2.6045724999999997,
+      "input_bytes": 8,
+      "memory_after": 7170402,
+      "requested_bytes": 1760489166,
+      "result": "Ok(NativeProgramExecutionReport { work: 1283436840159, comparison_work: 207865972, visits: 740126, transport_bytes: 4984080, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "complete-compression"
+    },
+    {
+      "allocation_requests": 2334,
+      "artifact": "decoded",
+      "case": "empty",
+      "elapsed_seconds": 0.003923959,
+      "input_bytes": 0,
+      "memory_after": 7170392,
+      "requested_bytes": 11185483,
+      "result": "Ok(NativeProgramExecutionReport { work: 1441745047, comparison_work: 8, visits: 31, transport_bytes: 4984080, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "complete-compression"
+    },
+    {
+      "allocation_requests": 2003,
+      "artifact": "decoded",
+      "case": "one-stored",
+      "elapsed_seconds": 0.003377666,
+      "input_bytes": 1,
+      "memory_after": 7170393,
+      "requested_bytes": 11165040,
+      "result": "Ok(NativeProgramExecutionReport { work: 1625278090, comparison_work: 8, visits: 79, transport_bytes: 4984080, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "complete-compression"
+    },
+    {
+      "allocation_requests": 1999,
+      "artifact": "decoded",
+      "case": "seven-stored-prefix",
+      "elapsed_seconds": 0.003221916,
+      "input_bytes": 7,
+      "memory_after": 7170401,
+      "requested_bytes": 11165545,
+      "result": "Ok(NativeProgramExecutionReport { work: 1625278210, comparison_work: 8, visits: 79, transport_bytes: 4984080, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "complete-compression"
+    },
+    {
+      "allocation_requests": 16658007,
+      "artifact": "decoded",
+      "case": "eight-literals",
+      "elapsed_seconds": 2.582384125,
+      "input_bytes": 8,
+      "memory_after": 7170400,
+      "requested_bytes": 1760488661,
+      "result": "Ok(NativeProgramExecutionReport { work: 1283436840135, comparison_work: 207865972, visits: 740126, transport_bytes: 4984080, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "complete-compression"
+    },
+    {
+      "allocation_requests": 16332763,
+      "artifact": "decoded",
+      "case": "eight-overlap",
+      "elapsed_seconds": 2.697404875,
+      "input_bytes": 8,
+      "memory_after": 7170400,
+      "requested_bytes": 1743599597,
+      "result": "Ok(NativeProgramExecutionReport { work: 1261164720430, comparison_work: 243181736, visits: 727732, transport_bytes: 4984080, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "complete-compression"
+    },
+    {
+      "allocation_requests": 28801269,
+      "artifact": "decoded",
+      "case": "320-overlap",
+      "elapsed_seconds": 47.887294375,
+      "input_bytes": 320,
+      "memory_after": 7170712,
+      "requested_bytes": 8286259411,
+      "result": "Ok(NativeProgramExecutionReport { work: 2514601263145, comparison_work: 8353601580, visits: 2023949, transport_bytes: 4984080, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "complete-compression"
+    },
+    {
+      "allocation_requests": 16658003,
+      "artifact": "decoded",
+      "case": "eight-literals-prefix",
+      "elapsed_seconds": 2.636327417,
+      "input_bytes": 8,
+      "memory_after": 7170402,
+      "requested_bytes": 1760489166,
+      "result": "Ok(NativeProgramExecutionReport { work: 1283436840159, comparison_work: 207865972, visits: 740126, transport_bytes: 4984080, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "witness": "complete-compression"
+    }
+  ],
+  "phase": "Full input active; no full completion claimed",
+  "source": {
+    "bytes": 160992,
+    "sha256": "345324ce551aaa2485dcd0fe4262da96e660d6b31f5f772bff89b034e9b1997f",
+    "pinned_reference": "671077457ff7ef3a3d44caf715a3fc595addf379"
+  },
+  "native_compiler_note": "This running binary predates the final configurable analysis-budget API; it admitted this fixed graph under the experimental512MiB bound. All dynamic execution/library/memory budgets in the run are maximum. Updated API independently validates explicit compiler budget vsNoLimits."
+}

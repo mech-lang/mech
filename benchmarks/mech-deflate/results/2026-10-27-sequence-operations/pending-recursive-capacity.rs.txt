@@ -1,0 +1,44 @@
+//! Executable negative witness for the next ownership patch, not passing coverage.
+//! Included by the standalone development consumer; reuse the maintained helpers.
+use super::{allocation_probe, artifacts, inputs, limits};
+use mech_core::{ManagedMemoryBudget, ValueData, ValueDataDraft as Data};
+use mech_gpu::native_artifact::JitProgramArtifact;
+
+#[test]
+fn recursive_growing_buffers_retain_the_original_capacity() {
+    let mut failures = Vec::new();
+    for (width, real_capacity) in [(64, 305257), (8, 6633832)] {
+        let template = include_str!("recursive-growing-buffer.mec");
+        let source = if width == 64 { template.to_owned() } else {
+            template.replace("[u64]", "[u8]").replace("append(words, left)", "append(words, 129u8)").replace("0u64, capacity", "0u8, capacity")
+        };
+        let (forms, last) = artifacts(&source);
+        for (form, artifact) in forms.into_iter().enumerate() {
+            let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            for capacity in [16, real_capacity] {
+                for steps in [0, 1, 3] {
+                    let memory = ManagedMemoryBudget::new(128 * 1024 * 1024);
+                    let args = inputs(&artifact, &[("capacity", Data::U64(capacity)), ("steps", Data::U64(steps))], &memory);
+                    let mut output = vec![None; artifact.outputs().len()];
+                    let mut policy = limits();
+                    policy.execution.max_work = 1_000_000_000_000;
+                    policy.library.max_compute_work = Some(1_000_000_000_000);
+                    let start = std::time::Instant::now();
+                    let (result, requests, bytes) = allocation_probe::measured_with_bytes(|| jit.evaluate_into(&args, &mut output, policy, &memory));
+                    let elapsed = start.elapsed();
+                    result.unwrap();
+                    let value = output[last].as_ref().unwrap();
+                    let expected = Data::Matrix((1..=steps).rev().map(|n| if width == 64 { Data::U64(n) } else { Data::U8(129) }).collect());
+                    assert_eq!(value.canonical_data_draft().unwrap(), expected);
+                    let ValueData::Matrix(matrix) = value.data() else { panic!() };
+                    let actual = matrix.unsigned_buffer_capacity();
+                    println!("form={form} width={width} capacity={capacity} steps={steps} result_capacity={actual:?} elapsed={elapsed:?} requests={requests} requested_bytes={bytes}");
+                    if actual != Some(capacity as usize) { failures.push((form, width, capacity, steps, actual)); }
+                    drop((args, output));
+                    assert_eq!(memory.used_bytes(), 0);
+                }
+            }
+        }
+    }
+    assert!(failures.is_empty(), "reserved capacity lost in frame/composite transport: {failures:?}");
+}

@@ -1,0 +1,19 @@
+{
+  "observed_after_cancellation": [
+    {
+      "conclusion": "cancelled",
+      "databaseId": 40475629298,
+      "headSha": "4b722986c7eaa47011c4e36562baec0e1fe87cf3",
+      "status": "completed",
+      "url": "https://github.com/mech-lang/mech/actions/runs/40475629298"
+    },
+    {
+      "conclusion": "cancelled",
+      "databaseId": 40472639124,
+      "headSha": "356e7275cc7e852aeea9713a4f533e8540983b9d",
+      "status": "completed",
+      "url": "https://github.com/mech-lang/mech/actions/runs/40472639124"
+    }
+  ],
+  "all_currently_completed_and_canceled": true
+}

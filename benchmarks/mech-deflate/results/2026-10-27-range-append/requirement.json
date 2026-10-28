@@ -1,0 +1,20 @@
+{
+  "base": "d441c97caa2dcf116d335d9cb8a384f49953fa51",
+  "source_pin": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "compiler_pin": "d99c7b838fb05bb1047eb0c18d4d06d0f86f345d",
+  "required_operation": "BlockOut.roc:603 List.append_sublist into the existing output reservation for stored blocks",
+  "verified_range_rule": "Builtin.roc:4354\u20134358 clamps start to source length, then count to remaining length; no start+count overflow. This supersedes the preliminary assumption of range rejection in the prior checkpoint.",
+  "allocation_rule": "list.zig:970\u20131019 borrows the source and reserves destination once before one contiguous copy; no intermediate slice allocation.",
+  "reference_runtime_hashes": {
+    "src/build/roc/Builtin.roc": "b485533f69d9c3cb1d1ee57c08ff8f2b2fb017249f5baa66b841a84facf3dcfe",
+    "src/builtins/list.zig": "1702d06e7fcf66cb5f06d2078c85121491d8d5340e2bc0c3b1227a201286a2b7"
+  },
+  "acceptance_tests": [
+    "append_sublist_clamps_ranges_preserves_capacity_aliases_and_recovers",
+    "append_sublist_self_alias_and_empty_ranges_keep_original_values",
+    "append_sublist_copies_stored_block_boundaries_into_real_reservation",
+    "native_sublist_append_cached_ranges_rebind_and_recover",
+    "linked_sublist_append_preserves_publication_and_recovers"
+  ],
+  "scope": "Generic packed unsigned rows U8/U16/U32/U64; source/artifact contract, managed runtime, resident execution, derived native ownership witness and linked code generation. Existing finite admission and scalar lowering retained."
+}

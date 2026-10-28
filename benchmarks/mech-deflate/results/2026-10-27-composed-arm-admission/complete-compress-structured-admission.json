@@ -1,0 +1,38 @@
+{
+  "name": "complete-compress-structured-admission",
+  "command": [
+    "env",
+    "RUST_MIN_STACK=33554432",
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "canonical-native-program",
+    "--test",
+    "canonical_artifact_program",
+    "--",
+    "complete_level12_compression_matches_pinned_bytes",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "04de04a8537e3ee64330a01b0dea645c81d51392",
+  "dirty": " M hosts/gpu/tests/canonical_artifact_program.rs\n?? benchmarks/mech-deflate/results/2026-10-27-flush-block/\n?? hosts/gpu/tests/fixtures/native/deflate-compress-controller.mec\n?? hosts/gpu/tests/fixtures/native/deflate-compress-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-flush-block.mec\n?? hosts/gpu/tests/fixtures/native/deflate-flush-dynamic-reference.json\n?? hosts/gpu/tests/fixtures/native/deflate-level12-tables.mec\n?? hosts/gpu/tests/fixtures/native/deflate-plan-block.mec\n?? hosts/gpu/tests/support/canonical_program_compress.rs\n?? hosts/gpu/tests/support/canonical_program_flush_block.rs\n",
+  "exit": 101,
+  "seconds": 804.0832240581512,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/complete-compress-structured-admission.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

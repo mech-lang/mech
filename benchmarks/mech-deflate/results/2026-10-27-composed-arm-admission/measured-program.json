@@ -1,0 +1,16 @@
+{
+  "compiler_revision": "04de04a8537e3ee64330a01b0dea645c81d51392",
+  "pinned_source_revision": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "source_bytes": 160598,
+  "source_sha256": "cdfdeb47fdc88b49a025cd88a5efb4a2dfa0531d1e50aa8161295153055f6570",
+  "source_node": 3,
+  "arms": 4867,
+  "blocks": 4991,
+  "operations": 18121,
+  "operands": 60897,
+  "local_slots": 21270,
+  "depth": 20,
+  "source_check_seconds": 398.7903365,
+  "native_positions_executed": 0,
+  "source_fixture_status": "Full controller qualification remains local assembly work; no complete-compressor success or performance claim."
+}

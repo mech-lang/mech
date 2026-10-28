@@ -1,0 +1,178 @@
+// Binary-tree DEFLATE matching, translated from roc-deflate
+// 671077457ff7ef3a3d44caf715a3fc595addf379, BtMatchfinder.roc.
+// Concatenate after deflate-matchfinder.mec. See deflate-huffman-LICENSES.md.
+// Positions are zero-based; checked Mech matrix selectors are one-based.
+// Known parity work before timing: unaligned LE loads,
+// prefetch hints, wrapping narrow casts, and physical buffer ownership.
+
+<bt-advanced> := <{tables<[u16]> next-hash3<u64> next-hash4<u64> cache<[u32]> cache-ptr<u64>}>
+<bt-state> := <{tables<[u16]> next-hash3<u64> next-hash4<u64>}>
+<bt-descent> := <([u16],u64,u64,u16,u64,u64,u64,u64,bool)>
+<bt-search-turn> := <([u16],[u32],u64,u64,u64,u16,u64,u64,u64,u64,u64,bool)>
+
+bt-word16(value<u16>) => (out<u64>) :=
+  out<u64> := value.
+bt-word32(value<u32>) => (out<u64>) :=
+  out<u64> := value.
+bt-narrow16(value<u64>) => (out<u16>) :=
+  out<u16> := bits/and(value, 65535u64).
+bt-narrow32(value<u64>) => (out<u32>) :=
+  out<u32> := bits/and(value, 4294967295u64).
+bt-minimum(a<u64>, b<u64>) => (out<u64>) :=
+  out := ((a < b)? | true => a | false => b).
+bt-saturating-sub(a<u64>, b<u64>) => (out<u64>) :=
+  out := ((a < b)? | true => 0u64 | false => a - b).
+bt-pack-entry(low<u64>, high<u64>) => (out<u32>) :=
+  out := bt-narrow32(bits/or(bits/and(low, 65535u64), bits/shift-left-wrap(high, 16u64))).
+bt-put-entry(cache<[u32]>, ptr<u64>, length<u64>, offset<u64>) => (out<[u32]>) :=
+  ~next := cache
+  next[bits/wrapping-add(ptr, 1u64)] = bt-pack-entry(length, offset)
+  out := next.
+bt-child-slot(node<u64>) => (out<u64>) :=
+  out := bits/wrapping-mul(bits/and(node, 32767u64), 2u64).
+bt-clear(tables<[u16]>, pending-lt<u64>, pending-gt<u64>) => (out<[u16]>) :=
+  ~next := tables
+  next[bits/wrapping-add(pending-lt, 1u64)] = 0u16
+  next[bits/wrapping-add(pending-gt, 1u64)] = 0u16
+  out := next.
+bt-attach(tables<[u16]>, pending-lt<u64>, pending-gt<u64>, node<u16>) => (out<[u16]>) :=
+  ns := bt-child-slot(bt-word16(node))
+  node-lt := tables[bits/wrapping-add(ns, 1u64)]
+  node-gt := tables[bits/wrapping-add(ns, 2u64)]
+  ~next := tables
+  next[bits/wrapping-add(pending-lt, 1u64)] = node-lt
+  next[bits/wrapping-add(pending-gt, 1u64)] = node-gt
+  out := next.
+
+// The same branch and prefix-bound updates are used in both compiled walks.
+bt-descend-left(tables<[u16]>, pending-lt<u64>, pending-gt<u64>, node<u16>, best-gt<u64>, length<u64>) => (out<([u16],u64,u64,u16,u64,u64,u64)>) :=
+  ns := bt-child-slot(bt-word16(node))
+  ~next := tables
+  next[bits/wrapping-add(pending-lt, 1u64)] = node
+  new-lt := bits/wrapping-add(ns, 1u64)
+  new-node := next[bits/wrapping-add(new-lt, 1u64)]
+  out := (next, new-lt, pending-gt, new-node, length, best-gt, bt-minimum(best-gt, length)).
+bt-descend-right(tables<[u16]>, pending-lt<u64>, pending-gt<u64>, node<u16>, best-lt<u64>, length<u64>) => (out<([u16],u64,u64,u16,u64,u64,u64)>) :=
+  ns := bt-child-slot(bt-word16(node))
+  ~next := tables
+  next[bits/wrapping-add(pending-gt, 1u64)] = node
+  new-node := next[bits/wrapping-add(ns, 1u64)]
+  out := (next, pending-lt, ns, new-node, best-lt, length, bt-minimum(best-lt, length)).
+bt-descend(tables<[u16]>, input<[u8]>, in-next<u64>, match-at<u64>, cur-pos<u64>, pending-lt<u64>, pending-gt<u64>, node<u16>, depth<u64>, best-lt<u64>, best-gt<u64>, length<u64>) => (out<bt-descent>) :=
+  lesser := byte(input, bits/wrapping-add(match-at, length)) < byte(input, bits/wrapping-add(in-next, length))
+  (mf, lt, gt, next-node, new-best-lt, new-best-gt, new-length) := (lesser?
+    | true => bt-descend-left(tables, pending-lt, pending-gt, node, best-gt, length)
+    | false => bt-descend-right(tables, pending-lt, pending-gt, node, best-lt, length))
+  new-depth := bits/wrapping-sub(depth, 1u64)
+  stopped := (bt-word16(next-node) <= cur-pos) || (new-depth == 0u64)
+  next := (stopped? | true => bt-clear(mf, lt, gt) | false => mf)
+  out := (next, lt, gt, next-node, new-depth, new-best-lt, new-best-gt, new-length, !stopped).
+
+bt-search-after(tables<[u16]>, cache<[u32]>, cache-ptr<u64>, input<[u8]>, in-next<u64>, match-at<u64>, cur-pos<u64>, pending-lt<u64>, pending-gt<u64>, node<u16>, depth<u64>, best-lt<u64>, best-gt<u64>, length<u64>, best-length<u64>) => (out<bt-search-turn>) :=
+  (mf, lt, gt, new-node, new-depth, new-best-lt, new-best-gt, new-length, walking) := bt-descend(tables, input, in-next, match-at, cur-pos, pending-lt, pending-gt, node, depth, best-lt, best-gt, length)
+  out := (mf, cache, cache-ptr, lt, gt, new-node, new-depth, new-best-lt, new-best-gt, new-length, best-length, walking).
+bt-search-step(tables<[u16]>, cache<[u32]>, cache-ptr<u64>, input<[u8]>, in-next<u64>, cur-pos<u64>, maximum<u64>, nice<u64>, pending-lt<u64>, pending-gt<u64>, node<u16>, depth<u64>, best-lt<u64>, best-gt<u64>, length<u64>, best-length<u64>) => (out<bt-search-turn>) :=
+  distance := bits/and(bits/wrapping-sub(bits/wrapping-add(cur-pos, 32768u64), bt-word16(node)), 32767u64)
+  match-at := bt-saturating-sub(in-next, distance)
+  matched := byte(input, bits/wrapping-add(match-at, length)) == byte(input, bits/wrapping-add(in-next, length))
+  extended := (matched? | true => extend-length(input, in-next, match-at, bits/wrapping-add(length, 1u64), maximum) | false => length)
+  record := matched && (extended > best-length)
+  next-cache := (record? | true => bt-put-entry(cache, cache-ptr, extended, bits/wrapping-sub(in-next, match-at)) | false => cache)
+  next-ptr := (record? | true => bits/wrapping-add(cache-ptr, 1u64) | false => cache-ptr)
+  new-best := (record? | true => extended | false => best-length)
+  stopped := record && (extended >= nice)
+  out := (stopped?
+    | true => (bt-attach(tables, pending-lt, pending-gt, node), next-cache, next-ptr, pending-lt, pending-gt, node, depth, best-lt, best-gt, extended, new-best, false)
+    | false => bt-search-after(tables, next-cache, next-ptr, input, in-next, match-at, cur-pos, pending-lt, pending-gt, node, depth, best-lt, best-gt, extended, new-best)).
+
+bt-search-loop(tables<[u16]>, cache<[u32]>, cache-ptr<u64>, input<[u8]>, in-next<u64>, cur-pos<u64>, maximum<u64>, nice<u64>, out-hash3<u64>, out-hash4<u64>, pending-lt<u64>, pending-gt<u64>, node<u16>, depth<u64>, best-lt<u64>, best-gt<u64>, length<u64>, best-length<u64>) => (out<bt-advanced>) :=
+  (mf, next-cache, next-ptr, lt, gt, next-node, next-depth, next-best-lt, next-best-gt, next-length, next-best, walking) := ((length < maximum)?
+    | true => bt-search-step(tables, cache, cache-ptr, input, in-next, cur-pos, maximum, nice, pending-lt, pending-gt, node, depth, best-lt, best-gt, length, best-length)
+    | false => (tables, cache, cache-ptr, pending-lt, pending-gt, node, depth, best-lt, best-gt, length, best-length, false))
+  out := (walking?
+    | true => bt-search-loop(mf, next-cache, next-ptr, input, in-next, cur-pos, maximum, nice, out-hash3, out-hash4, lt, gt, next-node, next-depth, next-best-lt, next-best-gt, next-length, next-best)
+    | false => {tables: mf, next-hash3: out-hash3, next-hash4: out-hash4, cache: next-cache, cache-ptr: next-ptr}).
+
+bt-short-candidates(input<[u8]>, in-next<u64>, in-base<u64>, cur-pos<u64>, node<u16>, older<u16>) => (out<u64>) :=
+  seq3 := bits/and(bt-word32(load-prefix(input, in-next)), 16777215u64)
+  out := ((seq3 == bits/and(bt-word32(load-prefix(input, node-index(in-base, node))), 16777215u64))?
+        | true => bits/wrapping-sub(in-next, node-index(in-base, node))
+        | false => ((bt-word16(older) > cur-pos)?
+            | false => 0u64
+            | true => ((seq3 == bits/and(bt-word32(load-prefix(input, node-index(in-base, older))), 16777215u64))?
+                | true => bits/wrapping-sub(in-next, node-index(in-base, older))
+                | false => 0u64))).
+bt-short-distance(input<[u8]>, in-next<u64>, in-base<u64>, cur-pos<u64>, node<u16>, older<u16>) => (out<u64>) :=
+  out := ((bt-word16(node) > cur-pos)?
+    | false => 0u64
+    | true => bt-short-candidates(input, in-next, in-base, cur-pos, node, older)).
+bt-short-record(cache<[u32]>, cache-ptr<u64>, input<[u8]>, in-next<u64>, in-base<u64>, cur-pos<u64>, node<u16>, older<u16>) => (out<([u32],u64)>) :=
+  distance := bt-short-distance(input, in-next, in-base, cur-pos, node, older)
+  next := ((distance > 0u64)? | true => bt-put-entry(cache, cache-ptr, 3u64, distance) | false => cache)
+  ptr := ((distance > 0u64)? | true => bits/wrapping-add(cache-ptr, 1u64) | false => cache-ptr)
+  out := (next, ptr).
+
+bt-get-matches(tables<[u16]>, hash3<u64>, hash4<u64>, input<[u8]>, in-base<u64>, cur-pos<u64>, maximum<u64>, nice<u64>, search-depth<u64>, cache<[u32]>, cache-ptr<u64>) => (out<bt-advanced>) :=
+  table-size! := sequence/length(tables) >= 262144u64
+  in-next := bits/wrapping-add(in-base, cur-pos)
+  window! := in-next + maximum <= sequence/length(input)
+  next-sequence := load-prefix(input, bits/wrapping-add(in-next, 1u64))
+  seq3 := bt-narrow32(bits/and(bt-word32(next-sequence), 16777215u64))
+  next-hash3 := lz-hash(seq3, 16u64)
+  next-hash4 := lz-hash(next-sequence, 16u64)
+  pos := bt-narrow16(bits/wrapping-add(cur-pos, 32768u64))
+  slot3 := bits/wrapping-add(131072u64, bits/wrapping-mul(bits/and(hash3, 65535u64), 2u64))
+  node3 := tables[bits/wrapping-add(slot3, 1u64)]
+  older := tables[bits/wrapping-add(slot3, 2u64)]
+  ~mf := tables
+  mf[bits/wrapping-add(slot3, 1u64)] = pos
+  mf[bits/wrapping-add(slot3, 2u64)] = node3
+  (next-cache, next-ptr) := bt-short-record(cache, cache-ptr, input, in-next, in-base, cur-pos, node3, older)
+  slot4 := bits/wrapping-add(65536u64, bits/and(hash4, 65535u64))
+  node4 := mf[bits/wrapping-add(slot4, 1u64)]
+  mf[bits/wrapping-add(slot4, 1u64)] = pos
+  lt := bt-child-slot(cur-pos)
+  gt := bits/wrapping-add(lt, 1u64)
+  out := ((bt-word16(node4) <= cur-pos)?
+    | true => {tables: bt-clear(mf, lt, gt), next-hash3: next-hash3, next-hash4: next-hash4, cache: next-cache, cache-ptr: next-ptr}
+    | false => bt-search-loop(mf, next-cache, next-ptr, input, in-next, cur-pos, maximum, nice, next-hash3, next-hash4, lt, gt, node4, search-depth, 0u64, 0u64, 0u64, 3u64)).
+
+// Skip has its own walk, with no cache, recording branch, or best-length state.
+bt-skip-step(tables<[u16]>, input<[u8]>, in-next<u64>, cur-pos<u64>, nice<u64>, pending-lt<u64>, pending-gt<u64>, node<u16>, depth<u64>, best-lt<u64>, best-gt<u64>, length<u64>) => (out<bt-descent>) :=
+  distance := bits/and(bits/wrapping-sub(bits/wrapping-add(cur-pos, 32768u64), bt-word16(node)), 32767u64)
+  match-at := bt-saturating-sub(in-next, distance)
+  matched := byte(input, bits/wrapping-add(match-at, length)) == byte(input, bits/wrapping-add(in-next, length))
+  extended := (matched? | true => extend-length(input, in-next, match-at, bits/wrapping-add(length, 1u64), nice) | false => length)
+  stopped := matched && (extended >= nice)
+  out := (stopped?
+    | true => (bt-attach(tables, pending-lt, pending-gt, node), pending-lt, pending-gt, node, depth, best-lt, best-gt, extended, false)
+    | false => bt-descend(tables, input, in-next, match-at, cur-pos, pending-lt, pending-gt, node, depth, best-lt, best-gt, extended)).
+bt-skip-loop(tables<[u16]>, input<[u8]>, in-next<u64>, cur-pos<u64>, nice<u64>, out-hash3<u64>, out-hash4<u64>, pending-lt<u64>, pending-gt<u64>, node<u16>, depth<u64>, best-lt<u64>, best-gt<u64>, length<u64>) => (out<bt-state>) :=
+  (mf, lt, gt, next-node, next-depth, next-best-lt, next-best-gt, next-length, walking) := ((length < nice)?
+    | true => bt-skip-step(tables, input, in-next, cur-pos, nice, pending-lt, pending-gt, node, depth, best-lt, best-gt, length)
+    | false => (tables, pending-lt, pending-gt, node, depth, best-lt, best-gt, length, false))
+  out := (walking?
+    | true => bt-skip-loop(mf, input, in-next, cur-pos, nice, out-hash3, out-hash4, lt, gt, next-node, next-depth, next-best-lt, next-best-gt, next-length)
+    | false => {tables: mf, next-hash3: out-hash3, next-hash4: out-hash4}).
+bt-skip-byte(tables<[u16]>, hash3<u64>, hash4<u64>, input<[u8]>, in-base<u64>, cur-pos<u64>, nice<u64>, search-depth<u64>) => (out<bt-state>) :=
+  table-size! := sequence/length(tables) >= 262144u64
+  in-next := bits/wrapping-add(in-base, cur-pos)
+  window! := in-next + nice <= sequence/length(input)
+  next-sequence := load-prefix(input, bits/wrapping-add(in-next, 1u64))
+  seq3 := bt-narrow32(bits/and(bt-word32(next-sequence), 16777215u64))
+  next-hash3 := lz-hash(seq3, 16u64)
+  next-hash4 := lz-hash(next-sequence, 16u64)
+  pos := bt-narrow16(bits/wrapping-add(cur-pos, 32768u64))
+  slot3 := bits/wrapping-add(131072u64, bits/wrapping-mul(bits/and(hash3, 65535u64), 2u64))
+  node3 := tables[bits/wrapping-add(slot3, 1u64)]
+  ~mf := tables
+  mf[bits/wrapping-add(slot3, 1u64)] = pos
+  mf[bits/wrapping-add(slot3, 2u64)] = node3
+  slot4 := bits/wrapping-add(65536u64, bits/and(hash4, 65535u64))
+  node4 := mf[bits/wrapping-add(slot4, 1u64)]
+  mf[bits/wrapping-add(slot4, 1u64)] = pos
+  lt := bt-child-slot(cur-pos)
+  gt := bits/wrapping-add(lt, 1u64)
+  out := ((bt-word16(node4) <= cur-pos)?
+    | true => {tables: bt-clear(mf, lt, gt), next-hash3: next-hash3, next-hash4: next-hash4}
+    | false => bt-skip-loop(mf, input, in-next, cur-pos, nice, next-hash3, next-hash4, lt, gt, node4, search-depth, 0u64, 0u64, 0u64)).

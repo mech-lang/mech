@@ -1,0 +1,26 @@
+{
+  "name": "level12-boundary-multiple-block-native",
+  "command": [
+    "env",
+    "MECH_DEFLATE_USE_SAVED=1",
+    "MECH_DEFLATE_ARTIFACT=/private/tmp/mech-linear-restack-20261026/complete-compressor-choice-qualified.mbc",
+    "MECH_DEFLATE_FULL_INPUT=/private/tmp/mech-linear-restack-20261026/boundary-reference/16384-distribution-change.input",
+    "MECH_DEFLATE_FULL_REFERENCE=/private/tmp/mech-linear-restack-20261026/boundary-reference/16384-distribution-change.deflate",
+    "/private/tmp/mech-live-control-target/release/complete-reality"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "7fc6587fa6f9506908393566a05aeb9615a43633",
+  "dirty": " M hosts/gpu/tests/support/canonical_program_compress.rs\n",
+  "exit": 0,
+  "seconds": 3126.067244052887,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/level12-boundary-multiple-block-native.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

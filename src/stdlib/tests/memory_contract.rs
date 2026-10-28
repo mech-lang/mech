@@ -19,6 +19,7 @@ fn every_maintained_runtime_entry_declares_one_closed_memory_class() {
             | ImplementationMemoryClass::MatrixSolve
             | ImplementationMemoryClass::CanonicalFinalize
             | ImplementationMemoryClass::PackedStringMatrixOrCanonicalFinalize
+            | ImplementationMemoryClass::PackedUnsignedMatrixUpdateOrCanonicalFinalize
             | ImplementationMemoryClass::CanonicalSortUnique => {}
         }
     }

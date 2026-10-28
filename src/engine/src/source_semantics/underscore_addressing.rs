@@ -27,7 +27,7 @@ impl SemanticBuilder {
     ) -> Result<Option<(AddressBase, SchemaDraft)>, SourceSemanticError> {
         if let Some(binding) = self.bindings.get(name).copied() {
             let value = match binding {
-                PendingBinding::Value(value) => value,
+                PendingBinding::Value(value) | PendingBinding::MutableLocal(value) => value,
                 PendingBinding::MutableState(state) => self.current_state_value(state),
             };
             return Ok(Some((

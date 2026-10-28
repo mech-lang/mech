@@ -1,0 +1,38 @@
+{
+  "name": "complete-eight-blocks-large-account",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "canonical-native-program",
+    "--test",
+    "canonical_artifact_program",
+    "--",
+    "full_block_qualification::real_buffer_complete_eight_byte_blocks_large_account_diagnostic",
+    "--ignored",
+    "--exact",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "428436517187ab25ce19d6d2bd07cd9b01958aa2",
+  "dirty": " M benchmarks/mech-deflate/matchfinder/generate_block_reference.py\n M hosts/gpu/tests/fixtures/native/deflate-block-reference.json\n M hosts/gpu/tests/support/canonical_program_full_block.rs\n?? scripts/tests/test_deflate_block_reference_pin.py\n",
+  "exit": 0,
+  "seconds": 127.93737125396729,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/complete-eight-blocks-large-account.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

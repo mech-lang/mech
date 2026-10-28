@@ -1,0 +1,29 @@
+{
+  "name": "reference-import-pin-clean-parent-environment",
+  "command": [
+    "python3",
+    "/private/tmp/mech-deflate-reality-check/benchmarks/mech-deflate/matchfinder/generate_block_reference.py",
+    "/private/tmp/roc-deflate-repro-20261024/roc-deflate",
+    "--roc",
+    "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+    "--work-dir",
+    "/private/tmp/mech-linear-restack-20261026/parent-reference-probe",
+    "--out",
+    "/private/tmp/mech-linear-restack-20261026/parent-reference-probe.json"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "428436517187ab25ce19d6d2bd07cd9b01958aa2",
+  "dirty": " M benchmarks/mech-deflate/matchfinder/generate_block_reference.py\n?? scripts/tests/test_deflate_block_reference_pin.py\n",
+  "exit": 1,
+  "seconds": 0.396226167678833,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/reference-import-pin-clean-parent-environment.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

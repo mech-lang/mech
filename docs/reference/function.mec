@@ -40,7 +40,13 @@ name(arg1: value1, arg2: value2)
 - Branches are matched from top to bottom, selecting the first match.
 - A statement body binds each output declared in its signature.
 - Functions can call themselves recursively.
+- A recursive statement body retains its named locals and outputs. Each visit
+  rebinds parameters to that call's arguments; mutable locals are initialized
+  again on each visit.
 - Calls are expressions, so they can be nested in formulas and broadcast over vectors/matrices.
+- A mutable binding declared inside a function is a local value, initialized on
+  each call. Updating it does not allocate retained document state or change an
+  input value. A mutable binding declared at document scope retains its state.
 
 3. Defining Functions
 -------------------------------------------------------------------------------
@@ -63,6 +69,17 @@ factorial(n<u64>) => <u64>
   └ n => n * factorial(n - 1u64).
 
 factorial(10u64)
+```
+
+Recursive statement bodies can end in a conditional tail call:
+
+```mech:ex 3.2.1
+triangular(n<u64>, total<u64>) => (result<u64>) :=
+  more := n > 0u64
+  left := (more? | true => n - 1u64 | false => 0u64)
+  result := (more? | true => triangular(left, total + n) | false => total).
+
+triangular(10u64, 0u64)
 ```
 
 (3.3) Recursive Fibonacci
@@ -102,3 +119,19 @@ fib(n<u64>) => <u64>
 xs := 0u64..=10u64
 fib(xs)
 ```
+
+A pure unary function declared for one scalar can also be applied element by
+element to a matrix. This applies to expression, statement, and pattern bodies.
+The result retains both matrix axes, including empty dimensions. Each element
+uses the function's declared input and output kinds; a checked error prevents
+publication of a partial result.
+
+```
+double(x<u64>) => (out<u64>) :=
+  out := x + x.
+
+double([1u64 2u64; 3u64 4u64])
+-- Result: [2u64 4u64; 6u64 8u64]
+```
+
+A function declared to accept a matrix consumes that matrix as its argument.

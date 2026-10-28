@@ -1,0 +1,15 @@
+{
+  "binary": "/private/tmp/mech-live-control-target/release/component-reality",
+  "sha256": "0a846e666f3d6cae88dd18e892349114b011066c45d6a3e96a54d468dd1ea7b0",
+  "command": [
+    "sample",
+    "92853",
+    "3",
+    "1"
+  ],
+  "sample_exit": 0,
+  "sample_stdout": "",
+  "sample_stderr": "Sampling process 92853 for 3 seconds with 1 millisecond of run time between samples\nSampling completed, processing symbols...\nSample analysis of process 92853 written to file /private/tmp/mech-stack-landscape-20261026/profiling/initialization-baseline.sample.txt\n",
+  "target_exit": 0,
+  "target_log": "/private/tmp/mech-stack-landscape-20261026/profiling/initialization-baseline.log"
+}

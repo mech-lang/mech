@@ -1,0 +1,1880 @@
+[
+  {
+    "name": "adler2",
+    "version": "2.0.1",
+    "features": []
+  },
+  {
+    "name": "alloc-no-stdlib",
+    "version": "2.0.4",
+    "features": []
+  },
+  {
+    "name": "alloc-stdlib",
+    "version": "0.2.4",
+    "features": []
+  },
+  {
+    "name": "allocator-api2",
+    "version": "0.2.21",
+    "features": [
+      "alloc"
+    ]
+  },
+  {
+    "name": "anyhow",
+    "version": "1.0.104",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "approx",
+    "version": "0.5.1",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "arbitrary",
+    "version": "1.4.2",
+    "features": []
+  },
+  {
+    "name": "autocfg",
+    "version": "1.5.1",
+    "features": []
+  },
+  {
+    "name": "base64",
+    "version": "0.22.1",
+    "features": [
+      "alloc",
+      "default",
+      "std"
+    ]
+  },
+  {
+    "name": "bincode",
+    "version": "2.0.1",
+    "features": [
+      "alloc",
+      "bincode_derive",
+      "default",
+      "derive",
+      "serde",
+      "std"
+    ]
+  },
+  {
+    "name": "bincode_derive",
+    "version": "2.0.1",
+    "features": []
+  },
+  {
+    "name": "bitflags",
+    "version": "1.3.2",
+    "features": [
+      "default"
+    ]
+  },
+  {
+    "name": "block-buffer",
+    "version": "0.10.4",
+    "features": []
+  },
+  {
+    "name": "block-buffer",
+    "version": "0.12.1",
+    "features": []
+  },
+  {
+    "name": "brotli",
+    "version": "8.0.4",
+    "features": [
+      "alloc-stdlib",
+      "default",
+      "std"
+    ]
+  },
+  {
+    "name": "brotli-decompressor",
+    "version": "5.0.3",
+    "features": [
+      "alloc-stdlib",
+      "std"
+    ]
+  },
+  {
+    "name": "bumpalo",
+    "version": "3.20.3",
+    "features": [
+      "allocator-api2",
+      "default"
+    ]
+  },
+  {
+    "name": "bytecount",
+    "version": "0.6.9",
+    "features": []
+  },
+  {
+    "name": "bytemuck",
+    "version": "1.25.2",
+    "features": []
+  },
+  {
+    "name": "byteorder",
+    "version": "1.5.0",
+    "features": [
+      "default",
+      "std"
+    ]
+  },
+  {
+    "name": "cfg-if",
+    "version": "1.0.4",
+    "features": []
+  },
+  {
+    "name": "colored",
+    "version": "3.1.1",
+    "features": []
+  },
+  {
+    "name": "component-reality",
+    "version": "0.0.0",
+    "features": []
+  },
+  {
+    "name": "cpufeatures",
+    "version": "0.2.17",
+    "features": []
+  },
+  {
+    "name": "cpufeatures",
+    "version": "0.3.0",
+    "features": []
+  },
+  {
+    "name": "cranelift-assembler-x64",
+    "version": "0.131.3",
+    "features": []
+  },
+  {
+    "name": "cranelift-assembler-x64-meta",
+    "version": "0.131.3",
+    "features": []
+  },
+  {
+    "name": "cranelift-bforest",
+    "version": "0.131.3",
+    "features": []
+  },
+  {
+    "name": "cranelift-bitset",
+    "version": "0.131.3",
+    "features": []
+  },
+  {
+    "name": "cranelift-codegen",
+    "version": "0.131.3",
+    "features": [
+      "default",
+      "gimli",
+      "host-arch",
+      "std",
+      "timing",
+      "unwind"
+    ]
+  },
+  {
+    "name": "cranelift-codegen-meta",
+    "version": "0.131.3",
+    "features": []
+  },
+  {
+    "name": "cranelift-codegen-shared",
+    "version": "0.131.3",
+    "features": []
+  },
+  {
+    "name": "cranelift-control",
+    "version": "0.131.3",
+    "features": [
+      "fuzz"
+    ]
+  },
+  {
+    "name": "cranelift-entity",
+    "version": "0.131.3",
+    "features": []
+  },
+  {
+    "name": "cranelift-frontend",
+    "version": "0.131.3",
+    "features": [
+      "default",
+      "std"
+    ]
+  },
+  {
+    "name": "cranelift-isle",
+    "version": "0.131.3",
+    "features": [
+      "default"
+    ]
+  },
+  {
+    "name": "cranelift-jit",
+    "version": "0.131.3",
+    "features": [
+      "default"
+    ]
+  },
+  {
+    "name": "cranelift-module",
+    "version": "0.131.3",
+    "features": [
+      "default",
+      "std"
+    ]
+  },
+  {
+    "name": "cranelift-native",
+    "version": "0.131.3",
+    "features": [
+      "default",
+      "std"
+    ]
+  },
+  {
+    "name": "cranelift-object",
+    "version": "0.131.3",
+    "features": []
+  },
+  {
+    "name": "cranelift-srcgen",
+    "version": "0.131.3",
+    "features": []
+  },
+  {
+    "name": "crc32fast",
+    "version": "1.5.0",
+    "features": [
+      "default",
+      "std"
+    ]
+  },
+  {
+    "name": "crypto-common",
+    "version": "0.1.7",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "crypto-common",
+    "version": "0.2.2",
+    "features": []
+  },
+  {
+    "name": "digest",
+    "version": "0.10.7",
+    "features": [
+      "alloc",
+      "block-buffer",
+      "core-api",
+      "default",
+      "std"
+    ]
+  },
+  {
+    "name": "digest",
+    "version": "0.11.3",
+    "features": [
+      "block-api",
+      "default"
+    ]
+  },
+  {
+    "name": "displaydoc",
+    "version": "0.2.6",
+    "features": []
+  },
+  {
+    "name": "equivalent",
+    "version": "1.0.2",
+    "features": []
+  },
+  {
+    "name": "fnv",
+    "version": "1.0.7",
+    "features": [
+      "default",
+      "std"
+    ]
+  },
+  {
+    "name": "foldhash",
+    "version": "0.1.5",
+    "features": []
+  },
+  {
+    "name": "foldhash",
+    "version": "0.2.0",
+    "features": []
+  },
+  {
+    "name": "futures-core",
+    "version": "0.3.33",
+    "features": [
+      "alloc",
+      "std"
+    ]
+  },
+  {
+    "name": "futures-task",
+    "version": "0.3.33",
+    "features": [
+      "alloc",
+      "std"
+    ]
+  },
+  {
+    "name": "futures-util",
+    "version": "0.3.33",
+    "features": [
+      "alloc",
+      "slab",
+      "std"
+    ]
+  },
+  {
+    "name": "generic-array",
+    "version": "0.14.7",
+    "features": [
+      "more_lengths"
+    ]
+  },
+  {
+    "name": "gimli",
+    "version": "0.33.0",
+    "features": [
+      "read",
+      "read-core",
+      "std",
+      "write"
+    ]
+  },
+  {
+    "name": "glam",
+    "version": "0.14.0",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "glam",
+    "version": "0.15.2",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "glam",
+    "version": "0.16.0",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "glam",
+    "version": "0.17.3",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "glam",
+    "version": "0.18.0",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "glam",
+    "version": "0.19.0",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "glam",
+    "version": "0.20.5",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "glam",
+    "version": "0.21.3",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "glam",
+    "version": "0.22.0",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "glam",
+    "version": "0.23.0",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "glam",
+    "version": "0.24.2",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "glam",
+    "version": "0.25.0",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "glam",
+    "version": "0.27.0",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "glam",
+    "version": "0.28.0",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "glam",
+    "version": "0.29.3",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "glam",
+    "version": "0.30.10",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "glam",
+    "version": "0.31.1",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "glam",
+    "version": "0.32.1",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "grapheme",
+    "version": "1.3.0",
+    "features": []
+  },
+  {
+    "name": "grapheme_macro",
+    "version": "2.0.0",
+    "features": []
+  },
+  {
+    "name": "hashbrown",
+    "version": "0.15.5",
+    "features": [
+      "allocator-api2",
+      "default",
+      "default-hasher",
+      "equivalent",
+      "inline-more",
+      "raw-entry"
+    ]
+  },
+  {
+    "name": "hashbrown",
+    "version": "0.16.1",
+    "features": [
+      "default-hasher"
+    ]
+  },
+  {
+    "name": "hashbrown",
+    "version": "0.17.1",
+    "features": [
+      "default-hasher"
+    ]
+  },
+  {
+    "name": "heck",
+    "version": "0.5.0",
+    "features": []
+  },
+  {
+    "name": "hybrid-array",
+    "version": "0.4.14",
+    "features": []
+  },
+  {
+    "name": "icu_collections",
+    "version": "2.2.0",
+    "features": []
+  },
+  {
+    "name": "icu_locale_core",
+    "version": "2.2.0",
+    "features": [
+      "zerovec"
+    ]
+  },
+  {
+    "name": "icu_properties",
+    "version": "2.2.0",
+    "features": [
+      "compiled_data",
+      "default"
+    ]
+  },
+  {
+    "name": "icu_properties_data",
+    "version": "2.2.0",
+    "features": []
+  },
+  {
+    "name": "icu_provider",
+    "version": "2.2.0",
+    "features": [
+      "baked"
+    ]
+  },
+  {
+    "name": "indexmap",
+    "version": "2.14.0",
+    "features": [
+      "default",
+      "serde",
+      "std"
+    ]
+  },
+  {
+    "name": "itoa",
+    "version": "1.0.18",
+    "features": []
+  },
+  {
+    "name": "js-sys",
+    "version": "0.3.103",
+    "features": [
+      "default",
+      "std",
+      "unsafe-eval"
+    ]
+  },
+  {
+    "name": "libc",
+    "version": "0.2.189",
+    "features": [
+      "default",
+      "std"
+    ]
+  },
+  {
+    "name": "libloading",
+    "version": "0.8.9",
+    "features": []
+  },
+  {
+    "name": "libm",
+    "version": "0.2.16",
+    "features": [
+      "arch",
+      "default"
+    ]
+  },
+  {
+    "name": "litemap",
+    "version": "0.8.2",
+    "features": []
+  },
+  {
+    "name": "log",
+    "version": "0.4.33",
+    "features": []
+  },
+  {
+    "name": "mach2",
+    "version": "0.4.3",
+    "features": [
+      "default"
+    ]
+  },
+  {
+    "name": "matrixmultiply",
+    "version": "0.3.11",
+    "features": [
+      "avx512",
+      "default",
+      "std"
+    ]
+  },
+  {
+    "name": "mech-bytecode",
+    "version": "0.3.5",
+    "features": []
+  },
+  {
+    "name": "mech-combinatorics",
+    "version": "0.3.5",
+    "features": [
+      "compiler",
+      "matrix",
+      "matrixd",
+      "nalgebra",
+      "native-plan",
+      "numbers",
+      "row_vectord",
+      "runtime",
+      "semantic-compiler",
+      "source",
+      "u16",
+      "u32",
+      "u64",
+      "u8",
+      "unsigned_ints",
+      "vectord"
+    ]
+  },
+  {
+    "name": "mech-compare",
+    "version": "0.3.5",
+    "features": [
+      "bool",
+      "compare",
+      "compiler",
+      "eq",
+      "gt",
+      "gte",
+      "lt",
+      "lte",
+      "matrix",
+      "matrixd",
+      "nalgebra",
+      "native-plan",
+      "neq",
+      "numbers",
+      "record",
+      "row_vectord",
+      "runtime",
+      "semantic-compiler",
+      "source",
+      "tuple",
+      "u16",
+      "u32",
+      "u64",
+      "u8",
+      "unsigned_ints",
+      "vectord"
+    ]
+  },
+  {
+    "name": "mech-compute",
+    "version": "0.3.5",
+    "features": [
+      "default",
+      "runtime-values"
+    ]
+  },
+  {
+    "name": "mech-core",
+    "version": "0.3.5",
+    "features": [
+      "atom",
+      "base64",
+      "baselib",
+      "bincode",
+      "bool",
+      "brotli",
+      "byteorder",
+      "c64",
+      "compiler",
+      "complex",
+      "crc32fast",
+      "dot_indexing",
+      "enum",
+      "f32",
+      "f64",
+      "floats",
+      "formulas",
+      "full",
+      "functions",
+      "i128",
+      "i16",
+      "i32",
+      "i64",
+      "i8",
+      "indexmap",
+      "invariant_define",
+      "kind_annotation",
+      "kind_define",
+      "libm",
+      "logical_indexing",
+      "map",
+      "math_pow",
+      "matrix",
+      "matrixd",
+      "mika",
+      "nalgebra",
+      "native-plan",
+      "num-rational",
+      "num-traits",
+      "numbers",
+      "pretty_print",
+      "program",
+      "r64",
+      "range",
+      "rational",
+      "record",
+      "resident-execution",
+      "row_vectord",
+      "semantic-compiler",
+      "serde",
+      "serde_derive",
+      "serde_json",
+      "set",
+      "signed_ints",
+      "statements",
+      "statements_default",
+      "std",
+      "string",
+      "subscript",
+      "subscript_default",
+      "subscript_formula",
+      "subscript_range",
+      "subscript_slice",
+      "swizzle",
+      "symbol_table",
+      "table",
+      "tabled",
+      "tuple",
+      "u128",
+      "u16",
+      "u32",
+      "u64",
+      "u8",
+      "unsigned_ints",
+      "variable_assign",
+      "variable_define",
+      "variables",
+      "vectord"
+    ]
+  },
+  {
+    "name": "mech-engine",
+    "version": "0.3.5",
+    "features": [
+      "access",
+      "artifact-codec",
+      "assign",
+      "async",
+      "atom",
+      "bool",
+      "c64",
+      "combinatorics_default",
+      "combinatorics_n_choose_k",
+      "compare_default",
+      "compare_eq",
+      "compare_gt",
+      "compare_gte",
+      "compare_lt",
+      "compare_lte",
+      "compare_neq",
+      "compare_seq",
+      "compare_sneq",
+      "compiler",
+      "compiler_default",
+      "complex",
+      "convert",
+      "dot_indexing",
+      "enum",
+      "f32",
+      "f64",
+      "floats",
+      "formulas",
+      "full_compiler",
+      "functions",
+      "i128",
+      "i16",
+      "i32",
+      "i64",
+      "i8",
+      "indexmap",
+      "integer_bits",
+      "invariant_define",
+      "kind_annotation",
+      "kind_define",
+      "logic_and",
+      "logic_default",
+      "logic_not",
+      "logic_or",
+      "logic_xor",
+      "logical_indexing",
+      "map",
+      "map_ops",
+      "math_acos",
+      "math_acosh",
+      "math_acot",
+      "math_acsc",
+      "math_add",
+      "math_add_assign",
+      "math_asec",
+      "math_asin",
+      "math_asinh",
+      "math_atan",
+      "math_atan2",
+      "math_atanh",
+      "math_cos",
+      "math_cosh",
+      "math_cot",
+      "math_csc",
+      "math_default",
+      "math_div",
+      "math_div_assign",
+      "math_mod",
+      "math_mul",
+      "math_mul_assign",
+      "math_neg",
+      "math_ops_assign_default",
+      "math_ops_default",
+      "math_pow",
+      "math_root_default",
+      "math_sec",
+      "math_sin",
+      "math_sinh",
+      "math_sqrt",
+      "math_sub",
+      "math_sub_assign",
+      "math_tan",
+      "math_tanh",
+      "math_trig_default",
+      "matrix",
+      "matrix_comprehensions",
+      "matrix_default",
+      "matrix_dot",
+      "matrix_horzcat",
+      "matrix_matmul",
+      "matrix_solve",
+      "matrix_transpose",
+      "matrix_vertcat",
+      "matrixd",
+      "mika",
+      "nalgebra",
+      "native-artifact",
+      "native-capture-pages",
+      "native-plan",
+      "numbers",
+      "pretty_print",
+      "program",
+      "pure_text",
+      "r64",
+      "range_default",
+      "range_exclusive",
+      "range_exclusive_increment",
+      "range_inclusive",
+      "range_inclusive_increment",
+      "rational",
+      "record",
+      "resident-artifact",
+      "resident-ekf",
+      "row_vectord",
+      "runtime",
+      "runtime_default",
+      "semantic-compiler",
+      "sequence_sort",
+      "serde",
+      "set",
+      "set_cartesian_product",
+      "set_comprehensions",
+      "set_default",
+      "set_difference",
+      "set_disjoint",
+      "set_element_of",
+      "set_equals",
+      "set_insert",
+      "set_intersection",
+      "set_membership_default",
+      "set_modify_default",
+      "set_not_element_of",
+      "set_not_equals",
+      "set_operations_default",
+      "set_powerset",
+      "set_proper_subset",
+      "set_proper_superset",
+      "set_relations_default",
+      "set_remove",
+      "set_setdata_default",
+      "set_size",
+      "set_subset",
+      "set_superset",
+      "set_symmetric_difference",
+      "set_union",
+      "signed_ints",
+      "source",
+      "source_default",
+      "state_machines",
+      "statements",
+      "statements_default",
+      "stats_default",
+      "stats_sum",
+      "std",
+      "string",
+      "string_concat",
+      "string_default",
+      "subscript",
+      "subscript_default",
+      "subscript_formula",
+      "subscript_range",
+      "subscript_slice",
+      "swizzle",
+      "symbol_table",
+      "table",
+      "trace",
+      "tuple",
+      "u128",
+      "u16",
+      "u32",
+      "u64",
+      "u8",
+      "unsigned_ints",
+      "variable_assign",
+      "variable_define",
+      "variables",
+      "vectord"
+    ]
+  },
+  {
+    "name": "mech-gpu",
+    "version": "0.3.5",
+    "features": [
+      "aot",
+      "canonical-native",
+      "canonical-native-program",
+      "canonical-native-program-runtime",
+      "canonical-native-runtime",
+      "jit"
+    ]
+  },
+  {
+    "name": "mech-logic",
+    "version": "0.3.5",
+    "features": [
+      "and",
+      "bool",
+      "compiler",
+      "logic",
+      "matrix",
+      "matrixd",
+      "nalgebra",
+      "native-plan",
+      "or",
+      "row_vectord",
+      "runtime",
+      "semantic-compiler",
+      "source",
+      "vectord"
+    ]
+  },
+  {
+    "name": "mech-math",
+    "version": "0.3.5",
+    "features": [
+      "add",
+      "bool",
+      "compiler",
+      "math",
+      "matrix",
+      "matrixd",
+      "mul",
+      "nalgebra",
+      "native-plan",
+      "numbers",
+      "ops",
+      "row_vectord",
+      "runtime",
+      "semantic-compiler",
+      "source",
+      "sub",
+      "u16",
+      "u32",
+      "u64",
+      "u8",
+      "unsigned_ints",
+      "vectord"
+    ]
+  },
+  {
+    "name": "mech-matrix",
+    "version": "0.3.5",
+    "features": [
+      "bool",
+      "compiler",
+      "matrix",
+      "matrixd",
+      "native-plan",
+      "numbers",
+      "row_vectord",
+      "runtime",
+      "semantic-compiler",
+      "source",
+      "u16",
+      "u32",
+      "u64",
+      "u8",
+      "unsigned_ints",
+      "vectord"
+    ]
+  },
+  {
+    "name": "mech-range",
+    "version": "0.3.5",
+    "features": [
+      "compiler",
+      "inclusive",
+      "matrix",
+      "matrixd",
+      "nalgebra",
+      "native-plan",
+      "numbers",
+      "range",
+      "row_vectord",
+      "runtime",
+      "semantic-compiler",
+      "source",
+      "u16",
+      "u32",
+      "u64",
+      "u8",
+      "unsigned_ints"
+    ]
+  },
+  {
+    "name": "mech-set",
+    "version": "0.3.5",
+    "features": [
+      "bool",
+      "compiler",
+      "matrix",
+      "matrixd",
+      "native-plan",
+      "numbers",
+      "record",
+      "row_vectord",
+      "runtime",
+      "semantic-compiler",
+      "source",
+      "tuple",
+      "u16",
+      "u32",
+      "u64",
+      "u8",
+      "unsigned_ints",
+      "vectord"
+    ]
+  },
+  {
+    "name": "mech-stats",
+    "version": "0.3.5",
+    "features": [
+      "compiler",
+      "matrix",
+      "matrixd",
+      "nalgebra",
+      "native-plan",
+      "numbers",
+      "row_vectord",
+      "runtime",
+      "semantic-compiler",
+      "source",
+      "u16",
+      "u32",
+      "u64",
+      "u8",
+      "unsigned_ints",
+      "vectord"
+    ]
+  },
+  {
+    "name": "mech-stdlib",
+    "version": "0.3.5",
+    "features": [
+      "access",
+      "assign",
+      "bool",
+      "compare_eq",
+      "compare_gt",
+      "compare_gte",
+      "compare_lt",
+      "compare_lte",
+      "compare_neq",
+      "compiler",
+      "convert",
+      "integer_bits",
+      "invariant_define",
+      "logic_and",
+      "logic_or",
+      "math_add",
+      "math_mul",
+      "math_sub",
+      "matrix_comprehensions",
+      "matrixd",
+      "mech-compare",
+      "mech-logic",
+      "mech-math",
+      "mech-range",
+      "native-plan",
+      "range_inclusive",
+      "record",
+      "row_vectord",
+      "runtime",
+      "semantic-compiler",
+      "source",
+      "u16",
+      "u32",
+      "u64",
+      "u8",
+      "variable_define",
+      "variables",
+      "vectord"
+    ]
+  },
+  {
+    "name": "mech-string",
+    "version": "0.3.5",
+    "features": [
+      "compiler",
+      "matrix",
+      "matrixd",
+      "nalgebra",
+      "native-plan",
+      "row_vectord",
+      "runtime",
+      "semantic-compiler",
+      "source",
+      "vectord"
+    ]
+  },
+  {
+    "name": "mech-syntax",
+    "version": "0.3.5",
+    "features": [
+      "atom",
+      "baselib",
+      "bool",
+      "c64",
+      "compiler",
+      "complex",
+      "dot_indexing",
+      "enum",
+      "f32",
+      "f64",
+      "floats",
+      "formulas",
+      "full",
+      "functions",
+      "i128",
+      "i16",
+      "i32",
+      "i64",
+      "i8",
+      "invariant_define",
+      "kind_annotation",
+      "kind_define",
+      "logical_indexing",
+      "map",
+      "matrix",
+      "matrix_horzcat",
+      "matrix_vertcat",
+      "matrixd",
+      "mika",
+      "numbers",
+      "pretty_print",
+      "program",
+      "r64",
+      "rational",
+      "record",
+      "row_vectord",
+      "semantic-compiler",
+      "serde",
+      "set",
+      "signed_ints",
+      "statements",
+      "statements_default",
+      "string",
+      "subscript",
+      "subscript_default",
+      "subscript_formula",
+      "subscript_range",
+      "subscript_slice",
+      "swizzle",
+      "symbol_table",
+      "table",
+      "tuple",
+      "u128",
+      "u16",
+      "u32",
+      "u64",
+      "u8",
+      "unsigned_ints",
+      "variable_assign",
+      "variable_define",
+      "variables",
+      "vectord"
+    ]
+  },
+  {
+    "name": "memchr",
+    "version": "2.8.3",
+    "features": [
+      "alloc",
+      "std"
+    ]
+  },
+  {
+    "name": "miniz_oxide",
+    "version": "0.8.9",
+    "features": [
+      "default",
+      "with-alloc"
+    ]
+  },
+  {
+    "name": "nalgebra",
+    "version": "0.34.2",
+    "features": [
+      "default",
+      "macros",
+      "matrixmultiply",
+      "nalgebra-macros",
+      "std"
+    ]
+  },
+  {
+    "name": "nalgebra-macros",
+    "version": "0.3.0",
+    "features": []
+  },
+  {
+    "name": "num-bigint",
+    "version": "0.4.8",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "num-complex",
+    "version": "0.4.6",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "num-integer",
+    "version": "0.1.46",
+    "features": [
+      "i128",
+      "std"
+    ]
+  },
+  {
+    "name": "num-rational",
+    "version": "0.4.2",
+    "features": [
+      "default",
+      "num-bigint",
+      "std"
+    ]
+  },
+  {
+    "name": "num-traits",
+    "version": "0.2.19",
+    "features": [
+      "i128",
+      "libm",
+      "std"
+    ]
+  },
+  {
+    "name": "object",
+    "version": "0.39.1",
+    "features": [
+      "coff",
+      "elf",
+      "macho",
+      "pe",
+      "read_core",
+      "std",
+      "write",
+      "write_core",
+      "write_std",
+      "xcoff"
+    ]
+  },
+  {
+    "name": "once_cell",
+    "version": "1.21.4",
+    "features": []
+  },
+  {
+    "name": "papergrid",
+    "version": "0.17.0",
+    "features": [
+      "fnv",
+      "std"
+    ]
+  },
+  {
+    "name": "paste",
+    "version": "1.0.15",
+    "features": []
+  },
+  {
+    "name": "pin-project-lite",
+    "version": "0.2.17",
+    "features": []
+  },
+  {
+    "name": "potential_utf",
+    "version": "0.1.5",
+    "features": [
+      "zerovec"
+    ]
+  },
+  {
+    "name": "proc-macro2",
+    "version": "1.0.107",
+    "features": [
+      "default",
+      "proc-macro"
+    ]
+  },
+  {
+    "name": "quote",
+    "version": "1.0.47",
+    "features": [
+      "default",
+      "proc-macro"
+    ]
+  },
+  {
+    "name": "rawpointer",
+    "version": "0.2.1",
+    "features": []
+  },
+  {
+    "name": "regalloc2",
+    "version": "0.15.2",
+    "features": [
+      "checker",
+      "default",
+      "std"
+    ]
+  },
+  {
+    "name": "region",
+    "version": "3.0.2",
+    "features": []
+  },
+  {
+    "name": "rustc-hash",
+    "version": "2.1.3",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "rustversion",
+    "version": "1.0.23",
+    "features": []
+  },
+  {
+    "name": "safe_arch",
+    "version": "0.7.4",
+    "features": [
+      "bytemuck",
+      "default"
+    ]
+  },
+  {
+    "name": "seahash",
+    "version": "4.1.0",
+    "features": [
+      "default"
+    ]
+  },
+  {
+    "name": "serde",
+    "version": "1.0.229",
+    "features": [
+      "alloc",
+      "default",
+      "derive",
+      "serde_derive",
+      "std"
+    ]
+  },
+  {
+    "name": "serde_core",
+    "version": "1.0.229",
+    "features": [
+      "alloc",
+      "result",
+      "std"
+    ]
+  },
+  {
+    "name": "serde_derive",
+    "version": "1.0.229",
+    "features": [
+      "default"
+    ]
+  },
+  {
+    "name": "serde_json",
+    "version": "1.0.151",
+    "features": [
+      "alloc",
+      "default",
+      "raw_value",
+      "std",
+      "unbounded_depth"
+    ]
+  },
+  {
+    "name": "sha2",
+    "version": "0.10.9",
+    "features": [
+      "default",
+      "std"
+    ]
+  },
+  {
+    "name": "sha2",
+    "version": "0.11.0",
+    "features": []
+  },
+  {
+    "name": "simba",
+    "version": "0.9.1",
+    "features": [
+      "std",
+      "wide"
+    ]
+  },
+  {
+    "name": "slab",
+    "version": "0.4.12",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "smallvec",
+    "version": "1.15.2",
+    "features": [
+      "union"
+    ]
+  },
+  {
+    "name": "stable_deref_trait",
+    "version": "1.2.1",
+    "features": [
+      "alloc",
+      "std"
+    ]
+  },
+  {
+    "name": "syn",
+    "version": "2.0.119",
+    "features": [
+      "clone-impls",
+      "default",
+      "derive",
+      "extra-traits",
+      "fold",
+      "full",
+      "parsing",
+      "printing",
+      "proc-macro",
+      "visit",
+      "visit-mut"
+    ]
+  },
+  {
+    "name": "syn",
+    "version": "3.0.3",
+    "features": [
+      "clone-impls",
+      "derive",
+      "parsing",
+      "printing",
+      "proc-macro"
+    ]
+  },
+  {
+    "name": "synstructure",
+    "version": "0.13.2",
+    "features": [
+      "default",
+      "proc-macro"
+    ]
+  },
+  {
+    "name": "tabled",
+    "version": "0.20.0",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "target-lexicon",
+    "version": "0.13.5",
+    "features": [
+      "default"
+    ]
+  },
+  {
+    "name": "testing_table",
+    "version": "0.3.0",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "tinystr",
+    "version": "0.8.3",
+    "features": [
+      "zerovec"
+    ]
+  },
+  {
+    "name": "tinyvec",
+    "version": "1.12.0",
+    "features": [
+      "alloc",
+      "default",
+      "tinyvec_macros"
+    ]
+  },
+  {
+    "name": "tinyvec_macros",
+    "version": "0.1.1",
+    "features": []
+  },
+  {
+    "name": "toml_datetime",
+    "version": "0.7.5+spec-1.1.0",
+    "features": [
+      "alloc",
+      "default",
+      "std"
+    ]
+  },
+  {
+    "name": "toml_edit",
+    "version": "0.23.10+spec-1.0.0",
+    "features": [
+      "default",
+      "display",
+      "parse"
+    ]
+  },
+  {
+    "name": "toml_parser",
+    "version": "1.1.2+spec-1.1.0",
+    "features": [
+      "alloc",
+      "default",
+      "std"
+    ]
+  },
+  {
+    "name": "toml_writer",
+    "version": "1.1.2+spec-1.1.0",
+    "features": [
+      "alloc",
+      "default",
+      "std"
+    ]
+  },
+  {
+    "name": "typenum",
+    "version": "1.20.1",
+    "features": [
+      "const-generics"
+    ]
+  },
+  {
+    "name": "unicode-ident",
+    "version": "1.0.24",
+    "features": []
+  },
+  {
+    "name": "unicode-normalization",
+    "version": "0.1.25",
+    "features": [
+      "default",
+      "std"
+    ]
+  },
+  {
+    "name": "unicode-segmentation",
+    "version": "1.13.3",
+    "features": []
+  },
+  {
+    "name": "unicode-width",
+    "version": "0.2.2",
+    "features": [
+      "cjk",
+      "default"
+    ]
+  },
+  {
+    "name": "unty",
+    "version": "0.0.4",
+    "features": []
+  },
+  {
+    "name": "utf8_iter",
+    "version": "1.0.4",
+    "features": []
+  },
+  {
+    "name": "version_check",
+    "version": "0.9.5",
+    "features": []
+  },
+  {
+    "name": "virtue",
+    "version": "0.0.18",
+    "features": []
+  },
+  {
+    "name": "wasm-bindgen",
+    "version": "0.2.126",
+    "features": [
+      "std"
+    ]
+  },
+  {
+    "name": "wasm-bindgen-macro",
+    "version": "0.2.126",
+    "features": []
+  },
+  {
+    "name": "wasm-bindgen-macro-support",
+    "version": "0.2.126",
+    "features": []
+  },
+  {
+    "name": "wasm-bindgen-shared",
+    "version": "0.2.126",
+    "features": []
+  },
+  {
+    "name": "wasmtime-internal-core",
+    "version": "44.0.3",
+    "features": []
+  },
+  {
+    "name": "wasmtime-internal-jit-icache-coherence",
+    "version": "44.0.3",
+    "features": []
+  },
+  {
+    "name": "web-time",
+    "version": "1.1.0",
+    "features": []
+  },
+  {
+    "name": "wide",
+    "version": "0.7.33",
+    "features": [
+      "default",
+      "std"
+    ]
+  },
+  {
+    "name": "windows-link",
+    "version": "0.2.1",
+    "features": []
+  },
+  {
+    "name": "windows-sys",
+    "version": "0.52.0",
+    "features": [
+      "Win32",
+      "Win32_Foundation",
+      "Win32_System",
+      "Win32_System_Diagnostics",
+      "Win32_System_Diagnostics_Debug",
+      "Win32_System_Memory",
+      "Win32_System_SystemInformation",
+      "default"
+    ]
+  },
+  {
+    "name": "windows-sys",
+    "version": "0.61.2",
+    "features": [
+      "Win32",
+      "Win32_Foundation",
+      "Win32_System",
+      "Win32_System_Console",
+      "Win32_System_Diagnostics",
+      "Win32_System_Diagnostics_Debug",
+      "Win32_System_LibraryLoader",
+      "Win32_System_Memory",
+      "Win32_System_Threading",
+      "default"
+    ]
+  },
+  {
+    "name": "windows-targets",
+    "version": "0.52.6",
+    "features": []
+  },
+  {
+    "name": "windows_aarch64_gnullvm",
+    "version": "0.52.6",
+    "features": []
+  },
+  {
+    "name": "windows_aarch64_msvc",
+    "version": "0.52.6",
+    "features": []
+  },
+  {
+    "name": "windows_i686_gnu",
+    "version": "0.52.6",
+    "features": []
+  },
+  {
+    "name": "windows_i686_gnullvm",
+    "version": "0.52.6",
+    "features": []
+  },
+  {
+    "name": "windows_i686_msvc",
+    "version": "0.52.6",
+    "features": []
+  },
+  {
+    "name": "windows_x86_64_gnu",
+    "version": "0.52.6",
+    "features": []
+  },
+  {
+    "name": "windows_x86_64_gnullvm",
+    "version": "0.52.6",
+    "features": []
+  },
+  {
+    "name": "windows_x86_64_msvc",
+    "version": "0.52.6",
+    "features": []
+  },
+  {
+    "name": "winnow",
+    "version": "0.7.15",
+    "features": [
+      "alloc",
+      "default",
+      "std"
+    ]
+  },
+  {
+    "name": "winnow",
+    "version": "1.0.4",
+    "features": []
+  },
+  {
+    "name": "writeable",
+    "version": "0.6.3",
+    "features": []
+  },
+  {
+    "name": "yoke",
+    "version": "0.8.3",
+    "features": [
+      "derive",
+      "zerofrom"
+    ]
+  },
+  {
+    "name": "yoke-derive",
+    "version": "0.8.2",
+    "features": []
+  },
+  {
+    "name": "zerofrom",
+    "version": "0.1.8",
+    "features": [
+      "derive"
+    ]
+  },
+  {
+    "name": "zerofrom-derive",
+    "version": "0.1.7",
+    "features": []
+  },
+  {
+    "name": "zerotrie",
+    "version": "0.2.4",
+    "features": [
+      "yoke",
+      "zerofrom"
+    ]
+  },
+  {
+    "name": "zerovec",
+    "version": "0.11.6",
+    "features": [
+      "derive",
+      "yoke"
+    ]
+  },
+  {
+    "name": "zerovec-derive",
+    "version": "0.11.3",
+    "features": []
+  },
+  {
+    "name": "zmij",
+    "version": "1.0.23",
+    "features": []
+  }
+]

@@ -1,0 +1,24 @@
+{
+  "name": "review-checked-tuple-red",
+  "command": [
+    "/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-561ab00dcd3ceccb",
+    "lexical_invariant_qualification::argument_kinds::checked_tuple_argument",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "90320acbeb2562672fce2b35505e1c2921b0c9a2",
+  "dirty": " M hosts/gpu/tests/support/canonical_program_huffman.rs\n M hosts/gpu/tests/support/canonical_program_lexical_argument_kinds.rs\n",
+  "exit": 101,
+  "seconds": 10.548668146133423,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/review-checked-tuple-red.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

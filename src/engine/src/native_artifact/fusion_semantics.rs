@@ -128,6 +128,7 @@ impl<'a, P: ControlPlan> ValidationInputs<'a, P> {
 mod facts;
 pub use facts::{
     NativeProgramDefinition, NativeProgramFacts, NativeProgramProducerRole, NativeProgramReadRole,
+    NativeUniformWordCollection,
 };
 
 /// Reconstruct semantic actions only; never construct missing language Values.
