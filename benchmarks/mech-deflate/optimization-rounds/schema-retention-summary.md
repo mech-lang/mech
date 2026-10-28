@@ -66,3 +66,19 @@ retain their allocation requests/bytes and show no median elapsed regression
 greater than 1.05; scalar-loop metadata changes must match the real table-size
 increase and cannot add a per-visit allocation slope. These focused diagnostics
 are separate from whole-compression timing and do not substitute for it.
+
+Build-profile amendment, before collecting round 03 timing: the user requested
+that local builds omit unused operations. The full `mech-gpu` example build was
+stopped after 1376.43 seconds while compiling `mech-math`. Use the ordinary
+consumer in `../native-profile` instead. It retains exactly the resolved Core,
+Engine and Syntax features, but selects only the compressor/control operation
+catalog. Verify fresh source compilation against the pinned artifact before
+timing. Retain the same timing harness and allocator object.
+
+The retained before executable still uses the full catalog. Therefore this
+cohort measures the combined schema-summary and build-profile change, not an
+isolated schema-summary effect. Report that distinction with the timings and
+retain both images. A source/artifact match establishes executable fidelity,
+not identical machine-code layout or an isolated performance attribution.
+Build elapsed time is a separate observation; do not describe a warm build as
+a clean-build speedup.
