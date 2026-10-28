@@ -398,3 +398,27 @@ it does not isolate a schema-summary effect. Exact source/artifact identity,
 cleanup pass. Full GPU component/linked and generated runtime-only application
 qualification has not been rerun for this change. Only small timing ran; the
 full corpus remains stopped.
+
+## Owned turn templates and unsigned read ordering
+
+`1e0f5ea48aa4fc0fdff456cf8b113f4a065ef8cb` removes the second whole call-plan
+copy from current turn derivation. The already-owned local template is reused;
+its limits are restored before returning success or error. The core planner,
+current arguments, region/publication checks and logical charges are unchanged.
+The [round 04 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-04/REPORT.md)
+records 120 passing scoped Rust tests and **1796× → 1702× Roc**, or 5.23% less
+elapsed time on the unchanged eight-byte case. Real-buffer stores eliminate
+1080 allocation requests and 124608 requested bytes per eight stores.
+
+Review then exposed an existing multi-row unsigned read defect. Test commit
+`57abc1daf9c2c1223e6aed15f21f22094ec195a2` corrects the U64 expectation against
+the resident oracle and adds all-width current-shape/recovery coverage. Two
+tests fail before production changes. `d19532830206dc51df584c1f39b5d42724305c34`
+reuses the numeric dimension owner and translates the selected ordinal into
+canonical storage order. All 80 final scoped Rust tests pass, including the
+69-test component cohort. The [repair packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/matrix-read-order/REPORT.md)
+records **1695× → 1693× Roc** (0.16% elapsed difference, not a speedup claim).
+Both cohorts retain exact bytes, work, aliases, capacity and cleanup; protected
+scalar controls pass. Each iteration reuses all machine libraries and rebuilds
+in about 7.5 minutes. Broader linked/application and full-input qualification
+remain unrefreshed; #973 remains draft.

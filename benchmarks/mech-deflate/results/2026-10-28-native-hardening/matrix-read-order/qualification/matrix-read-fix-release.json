@@ -1,0 +1,30 @@
+{
+  "name": "matrix-read-fix-release",
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--offline",
+    "--release",
+    "-j1",
+    "--manifest-path",
+    "benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--bins",
+    "--message-format=json"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "d19532830206dc51df584c1f39b5d42724305c34",
+  "dirty": "",
+  "exit": 0,
+  "seconds": 449.30543398857117,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/matrix-read-fix-release.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

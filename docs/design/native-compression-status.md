@@ -96,32 +96,31 @@ separate JSON inputs; the public CLI also accepts `--native-compile-limits`.
 
 ## Current small timing
 
-The [latest eight-byte timing receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-03/REPORT.md)
+The [latest eight-byte timing receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/matrix-read-order/REPORT.md)
 use the real tree/cache and unchanged 25 components. With **Roc = 1×**, the
-matched-allocator, uninstrumented comparison improves from **2753×**
-(0.757143375 s) to **1904×** (0.523613000 s), against a fresh 0.000275 s reference.
-This combines an immutable schema-size summary with a selected-operation build
-profile; it does not isolate their individual effects. The summary's real
-16-byte metadata increase remains charged, raising reported work from
-939091080723 to 941491317987. Copies, aliases and finite-denial behavior remain
-qualified by the recorded tests. There are three retained observations per
-Mech executable; this is a small diagnostic, not a full-corpus result.
-Preparation and verification are outside the compression timer.
+matrix-read correctness repair measures **1695× → 1693×**, 0.491693208 s to
+0.490911542 s against a fresh 0.000290 s reference. The 0.16% difference does
+not establish a performance improvement. The repair makes all four unsigned
+widths agree with resident column-major linear selection over canonical storage.
 
-The [previous round](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-02/REPORT.md)
-was 2494× using a 0.000305 s reference; its denominator differs from this fresh
-comparison. The new profile no longer shows the repeated no-callback schema
-walk. Ordered precharge walks, ownership accounting, allocation, copying and
-resource checks remain. No next optimization is presumed.
+The [preceding performance change](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-04/REPORT.md)
+removes a redundant full call-template clone. That isolated comparison improves
+**1796× → 1702×**, 0.517336500 s to 0.490266166 s, with a 0.000288 s reference
+and the same reduced catalog on both sides: 5.23% less elapsed time. Eight real
+buffer stores use 8833 rather than 9913 allocation requests. Reported logical
+work remains 941491317987. The prior 1904× anchor used a different denominator.
+There are three retained observations per subject. Preparation and verification
+remain outside the timer; only the eight-byte complete case was timed.
 
 The [focused build](../../benchmarks/mech-deflate/native-profile/README.md)
-selects only the required machine operations through the ordinary catalog.
-It avoids the full-library dev-dependencies pulled in by GPU examples. The
-first selected release build took 990.50 seconds; the prior broad build was
-stopped unfinished at 1376.43 seconds. These are build receipts, not a clean
-build comparison. Exact source/artifact identity, 177 Rust tests and protected
-scalar controls pass. Full GPU component/linked and generated runtime-only
-application qualification has not been refreshed for this runtime change.
+uses the existing catalog feature gates. These two iteration rebuilds took
+450.57 and 449.31 seconds, reusing every machine library, including math.
+All 120 scoped Rust tests pass at the metadata change; 80 pass at the later
+correctness repair. These overlapping selections retain their own revisions.
+Protected scalar gates, exact source/artifact agreement, real-buffer witnesses,
+and architecture checks pass. Linked subprocess and generated runtime-only
+application qualification has not been refreshed for these changes. The PR
+remains draft pending fresh review; CI is cancelled by request.
 
 A separate matching-System-allocator, matching-instrumentation compiler control
 improves from **8659×** to **6599×**. That comparison spans the intervening

@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-matrix-read-fix-20261028/timing/selected-bits-tests",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.9311722919810563,
+  "binary_sha256": "be62107b4ec6e0502ce4a39690972ea8811c15003200768b494629931f5f9e2d",
+  "skipped_coverage": null
+}
