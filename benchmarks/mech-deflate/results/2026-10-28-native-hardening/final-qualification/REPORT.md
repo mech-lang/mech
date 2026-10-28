@@ -46,7 +46,7 @@ Python checker, and the exact test-boundary inventory.
 | Actual linked runtime-only complete program | Eight-literal case passes in each form: exact bytes, independent inflation, zero final managed bytes/nodes |
 | Runtime-only closure | Actual Cargo artifacts exclude parser, source compiler, bytecode producer, Cranelift and JIT |
 | Architecture guards | Routing, catalogs, build-analysis layout, module layout, factory safety, warnings, planning quarantine, CI inventory pass; boundary omission fixed and full audit passes |
-| Formatting / whitespace | Formatting and final whitespace checks pass |
+| Formatting / whitespace | Formatting and the hardening diff against 48911f96 pass; inherited whole-PR findings are listed below |
 
 These selections execute **62 tests**, with zero failed or ignored selections.
 The two public complete-program launches are additional process qualifications.
@@ -92,6 +92,18 @@ features. Supported profiles now execute the intended tests. The initial CLI
 filename filter selected zero tests; the corrected module filter executes six.
 Do not count the zero selection as qualification or claim a clean-parent
 minimal-feature build that was not run.
+
+The final staged whitespace check found trailing blank lines in 35 newly added
+test logs. Their exact original bytes are now stored as gzip; the
+`compressed-receipts.json` manifest preserves original paths, byte counts and
+hashes. The first staged check was mistakenly followed by a receipt commit;
+this packaging correction fixes the complete hardening diff, without editing
+test output. A whole-PR check against eacb00fc still has **146 inherited
+findings in 16 files**, reproduced directly at the clean reviewed 48911f96
+baseline. They are historical logs/diff receipts and one comparison Cargo
+manifest's trailing blank line. `inherited-whitespace.txt.gz` records them.
+They are assigned to a separate historical-evidence packaging follow-up; this
+pass does not claim the full consolidated PR is whitespace-clean.
 
 The decoded U8-add `MissingSemanticWitness` reproducer remains a separate,
 pre-runtime compiler limitation; it is not caused by packed completion or frame

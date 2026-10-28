@@ -1,0 +1,285 @@
+{
+  "reason": "Preserve exact original test stdout, including trailing blank lines, while keeping the hardening patch whitespace-clean. Original external receipt log paths remain unchanged; packaged files use the recorded .gz path.",
+  "files": [
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/final-qualification/hardening-final-cli-six.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/final-qualification/hardening-final-cli-six.log.gz",
+      "raw_bytes": 840,
+      "raw_sha256": "4436eaa31fa99b081fa7040c9df451b8cd09d7fac46731d03523030b93c1dd84",
+      "compressed_bytes": 375,
+      "compressed_sha256": "94d5d82adee19bf00d156ca9fc3dfe3cc02d00e211ad2197c9fc9efac4ec0b9a"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/final-qualification/hardening-final-linked-recovery.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/final-qualification/hardening-final-linked-recovery.log.gz",
+      "raw_bytes": 314,
+      "raw_sha256": "0f4c80d02666b8b914e9d4e3379137a54ce904d9e878fa3d34de2af63bc58bb9",
+      "compressed_bytes": 190,
+      "compressed_sha256": "a67fb1853d2186e8d92c33913ca8ae02542678ea25d40f07e6f502fdeb01c098"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/final-qualification/hardening-final-program-focused.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/final-qualification/hardening-final-program-focused.log.gz",
+      "raw_bytes": 13739,
+      "raw_sha256": "a1086b23884e4bde05fe4c0278ca2b74d805816e337b49897d8d7be0814309a7",
+      "compressed_bytes": 2789,
+      "compressed_sha256": "be9e0b49c1ee7757062778e5dfb45b5db25b7675146a1658964900b0c2da050f"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/final-qualification/hardening-final-recipe-unit.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/final-qualification/hardening-final-recipe-unit.log.gz",
+      "raw_bytes": 1351,
+      "raw_sha256": "f4326c652440fe6a60eee1bf8cba2e37b62e521782ffe726280a8199a37946b5",
+      "compressed_bytes": 498,
+      "compressed_sha256": "c900ce3f8130254401c09ed553c9a4b2b588d91f19d134af532e641fd6692029"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/final-qualification/hardening-final-route-and-launch-unit.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/final-qualification/hardening-final-route-and-launch-unit.log.gz",
+      "raw_bytes": 374,
+      "raw_sha256": "03708e2a9642bbf0a80fceadf858058545b17b5f1b8df8cd53543cc3a33298fc",
+      "compressed_bytes": 236,
+      "compressed_sha256": "0cd3adb67b6f5cbfd7e146ee1b72ceaefe3265e73be604d6f6804677085a1c77"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/final-qualification/hardening-final-source-pin.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/final-qualification/hardening-final-source-pin.log.gz",
+      "raw_bytes": 222,
+      "raw_sha256": "58d55a83a9c81de09969d1bdfb71612c513f7b9346cfca695558757327e89374",
+      "compressed_bytes": 169,
+      "compressed_sha256": "8f95f6230aebf786364734dcbdb36f0f255a35585186d64abdab4cb94cc4e631"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-buffer-liveness.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-buffer-liveness.log.gz",
+      "raw_bytes": 4345,
+      "raw_sha256": "ad421cbe688c3feacfc8e99d6f88bfbfebbc18f225d479848629a3c3f7c5e081",
+      "compressed_bytes": 1036,
+      "compressed_sha256": "f30c299b19a24c5d85ef2d571a53fdba760aec7a6cadd826b1cb5a81b4e0af8a"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-caller-inventory.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-caller-inventory.log.gz",
+      "raw_bytes": 425,
+      "raw_sha256": "c9698ced26fe41b7e9cd1ad5d816ebaee79592cfc2895e67b368fc1892abd61b",
+      "compressed_bytes": 232,
+      "compressed_sha256": "b17322d5677b9d249475c02e83044775b26b1cb37668d1bd383837cd46df76e2"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-definition-composition.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-definition-composition.log.gz",
+      "raw_bytes": 471,
+      "raw_sha256": "e211776439316242404840fdb6c926f80c9b129ad5f69fb2ab068677e308441f",
+      "compressed_bytes": 273,
+      "compressed_sha256": "05194fa676302914e42208478adf5ac127b7c97762f6e9951c0045d75a663979"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-definition-table.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-definition-table.log.gz",
+      "raw_bytes": 935,
+      "raw_sha256": "a8924225cc7eac2b8c201e4d06ad281bfb49bd7d965fc2d91eb9a474ea110822",
+      "compressed_bytes": 396,
+      "compressed_sha256": "6b08b20e06cb68540436024f008361fdd9e1fcc4be9796869ef669643bb447ac"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-explicit-unrestricted.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-explicit-unrestricted.log.gz",
+      "raw_bytes": 219,
+      "raw_sha256": "3b1bd3037c448bff11e9ebd581a16d9b346b81b1ffb3d45c787c99a40e079655",
+      "compressed_bytes": 169,
+      "compressed_sha256": "4ea24ee581479e89e4516e46a390ce1572e110fffa6ee23f24b30457d2181cd0"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-frame-liveness.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-frame-liveness.log.gz",
+      "raw_bytes": 5185,
+      "raw_sha256": "9cdf6207ccf2cc21659a4b5a4cf86effafc94f0b19a89c9a614c3c71e311cfe4",
+      "compressed_bytes": 1013,
+      "compressed_sha256": "934d896d8f7b32e07b0e3d967b3852939fde5f0ee7825728eb038d2b2943eb49"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-frame-shape-supported.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-frame-shape-supported.log.gz",
+      "raw_bytes": 1334,
+      "raw_sha256": "038865299540a2899f6f141e0643aa32b64813fd77a448b1bb96ea4f9839cac7",
+      "compressed_bytes": 491,
+      "compressed_sha256": "40d59df0993ede27f22f7e91cb4dacfe68054ed1548684b89dc5ca387ac221ad"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-mixed-record-shapes.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-mixed-record-shapes.log.gz",
+      "raw_bytes": 520,
+      "raw_sha256": "e650f3221c603b7dc02156e0d36fb499a987d53e0f6d97af3c93935060ed1ebe",
+      "compressed_bytes": 340,
+      "compressed_sha256": "14703c4f78bf2f80e3e612e3475ffb76ab95532552d5be084da5f3d71cd761c2"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-old-value-query.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-old-value-query.log.gz",
+      "raw_bytes": 1297,
+      "raw_sha256": "5bbc5062e8a549da4fc8d3a6a21bf66065ed4c4041aa761dd83830ac55359c9b",
+      "compressed_bytes": 469,
+      "compressed_sha256": "510ca4dc5469db65683d4a1ec71eb1fa09c0a57a508e5d52f1c868fc913990f5"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-packed-final.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-packed-final.log.gz",
+      "raw_bytes": 3685,
+      "raw_sha256": "ce3fafa9918b4c45711ac29ae0ddbde27827b02eb8a1b58f6ef38eae1f66e774",
+      "compressed_bytes": 1213,
+      "compressed_sha256": "1ca7a1c227c9e46224b94c8e4563f31b9aa5ab63557558035cde30daab7ee4f3"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-packed-green-values.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-packed-green-values.log.gz",
+      "raw_bytes": 3574,
+      "raw_sha256": "50767f5c1946edb20095b591215773f0e37d241e934b78541f492baaf06dc681",
+      "compressed_bytes": 1191,
+      "compressed_sha256": "457d1c52db674019e3123319d2b6facb416a2d147678dc729bb08c186eb24e52"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-packed-owner.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-packed-owner.log.gz",
+      "raw_bytes": 510,
+      "raw_sha256": "b7fd16779f95469f4975e42114be00365bcd7eb73c11a001557249f43bfca6f7",
+      "compressed_bytes": 353,
+      "compressed_sha256": "d505d96b58bea2433b02ceacf15388cd40653eae14ee658d0001ccdc4350665e"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-prepared-routes.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-prepared-routes.log.gz",
+      "raw_bytes": 512,
+      "raw_sha256": "24ead0f97ef7873a4ae827a7e58d1b0498d1eca7755eabe65816c1c59cf82ff5",
+      "compressed_bytes": 345,
+      "compressed_sha256": "e5e07a1bf1564515c145c4d5d8f07f7fd0ce6f00bd45f23b7752e6288366ba16"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-routed-buffers.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-routed-buffers.log.gz",
+      "raw_bytes": 4347,
+      "raw_sha256": "ac715674a959008f9da4050c8204ae70cdbb6e95a24c8795f9aeb275dc577885",
+      "compressed_bytes": 1026,
+      "compressed_sha256": "4ca2ae9cf5e7dbb3f3def9fbb03a0d326bba35ceff155587812c392fb8a809bf"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-routed-frames.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-routed-frames.log.gz",
+      "raw_bytes": 5183,
+      "raw_sha256": "9bc09adf50e745f5cf3dbd8eba26f67899cdb90e7933a4f73145a0a27bf1dfc2",
+      "compressed_bytes": 1013,
+      "compressed_sha256": "20bc8a63f97d0d867fdb9211965490e7a73f157e1ecd60964c580954913fba8a"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-routed-lengths.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-routed-lengths.log.gz",
+      "raw_bytes": 459,
+      "raw_sha256": "269769d367fc1ce877955e94a118bb9b33162862fd3e2bbf466bc88107fd52f8",
+      "compressed_bytes": 245,
+      "compressed_sha256": "286caafab202203f5fe44b93162984bd0d6020604bd9bd18382ea33d2a87e9e7"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-routed-record-words.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-routed-record-words.log.gz",
+      "raw_bytes": 735,
+      "raw_sha256": "baec9fd5e0c037b077070e6e049a6dcb7003fd566da65b75e4661f8e979c8c40",
+      "compressed_bytes": 347,
+      "compressed_sha256": "fbd2a7ecfca53d3c6fb300cf58bf2f75c5465aa530c72d990c5d4aa72e2111ae"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-routed-word-reads.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-routed-word-reads.log.gz",
+      "raw_bytes": 635,
+      "raw_sha256": "517c0d4524801c26b555b429e2fff5492e29f1269af13d688ae5dcd28f951799",
+      "compressed_bytes": 311,
+      "compressed_sha256": "93a5be17bd692a67edae90891bcd770475f82843d7133d2ece9d956320af710d"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-shape-relations.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-shape-relations.log.gz",
+      "raw_bytes": 643,
+      "raw_sha256": "ab0a85dc2c8c92ec1d71360f850ba7f38c5e7bc208c42df6284dfe8314ad2d94",
+      "compressed_bytes": 390,
+      "compressed_sha256": "9cf68128d4f2c638676b25d3dcdca8fcd46b475ef8ee8c91e41a7fd7840afddf"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-shared-source-pin.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-shared-source-pin.log.gz",
+      "raw_bytes": 508,
+      "raw_sha256": "f7a5883a5fc18f2e07dce5cba8c31a3add10aa9d235e1e4693a176e35ebc43cb",
+      "compressed_bytes": 332,
+      "compressed_sha256": "113cc78d5d3d19573b6ca30d2ad2f554a864e9c6f8b3512568f829e2186e9e56"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-source-shape-policies.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-source-shape-policies.log.gz",
+      "raw_bytes": 8699,
+      "raw_sha256": "35d216d8ad3615d26a31097dbc07425ed04ccff3e88d30970a6d8e04738a1738",
+      "compressed_bytes": 2098,
+      "compressed_sha256": "fcb4bf5630bb94e04b9def350984a6fda9b6e9427cd10d3b169a929b968518fd"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-typed-frame-existing.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-typed-frame-existing.log.gz",
+      "raw_bytes": 4902,
+      "raw_sha256": "bc253d3b15a9fe4a4006862bdc26333f45f4245d25f3967277c73eabecabd07a",
+      "compressed_bytes": 831,
+      "compressed_sha256": "33b8fddbb54e4a74952a04b03b0e31dc2a8b49c4df136fdc8a2006cc5cd3ed4d"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-typed-frame-first.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-typed-frame-first.log.gz",
+      "raw_bytes": 1565,
+      "raw_sha256": "d6058364302e7c061d731dab919e1f4aca1adee3996d2c8587966ac283a26de0",
+      "compressed_bytes": 527,
+      "compressed_sha256": "68f16b410024f9ec0fee8b020959df09825eb84e221bfa8c9fe004a9a9409471"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-typed-frame-leaves.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-typed-frame-leaves.log.gz",
+      "raw_bytes": 5827,
+      "raw_sha256": "14e2649fe28e1262ae23e55fd0717a03a55fc19be7c3c72b687d98f41dc489cb",
+      "compressed_bytes": 1117,
+      "compressed_sha256": "f8c2f574fbdee48e326b5f16934fb875d34aba6b8170be9e2ceaffa9d03925ac"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-uniform.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-uniform.log.gz",
+      "raw_bytes": 653,
+      "raw_sha256": "393d6f802582f9e78d4255c2bf01a138a53e2a86107765a003a8d7d13c72c604",
+      "compressed_bytes": 316,
+      "compressed_sha256": "9d4cf80d4e39f980600dc718518876866bc31f0d8e09e0d1b5d2b4cb52577e5f"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/public-application/hardening-cli-policy-supported.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/public-application/hardening-cli-policy-supported.log.gz",
+      "raw_bytes": 2739,
+      "raw_sha256": "15f7fa5d97827ff418903cd0097e14aeb8ac67055b834f4daab3c6c8f80d2ff7",
+      "compressed_bytes": 600,
+      "compressed_sha256": "d685006869dbd504c5be5d9340ac1d27cc3ef352a3ae096335c7ad338d82f773"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/public-application/hardening-final-cli-six.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/public-application/hardening-final-cli-six.log.gz",
+      "raw_bytes": 840,
+      "raw_sha256": "4436eaa31fa99b081fa7040c9df451b8cd09d7fac46731d03523030b93c1dd84",
+      "compressed_bytes": 375,
+      "compressed_sha256": "94d5d82adee19bf00d156ca9fc3dfe3cc02d00e211ad2197c9fc9efac4ec0b9a"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/public-application/hardening-final-program-focused.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/public-application/hardening-final-program-focused.log.gz",
+      "raw_bytes": 13739,
+      "raw_sha256": "a1086b23884e4bde05fe4c0278ca2b74d805816e337b49897d8d7be0814309a7",
+      "compressed_bytes": 2789,
+      "compressed_sha256": "be9e0b49c1ee7757062778e5dfb45b5db25b7675146a1658964900b0c2da050f"
+    },
+    {
+      "original_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/public-application/hardening-public-api-tests.log",
+      "compressed_path": "benchmarks/mech-deflate/results/2026-10-28-native-hardening/public-application/hardening-public-api-tests.log.gz",
+      "raw_bytes": 937,
+      "raw_sha256": "1d8a584f19b3599b9a726f8ea67a5a92d7bba80580d40b0e6d7c6e72579b5c73",
+      "compressed_bytes": 399,
+      "compressed_sha256": "ec2babbcf0dd54656cae222bac6546dc08318f619113605de19470bc6b54640e"
+    }
+  ]
+}
