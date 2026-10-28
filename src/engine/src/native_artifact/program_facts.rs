@@ -10,6 +10,10 @@ use crate::native_artifact::{
 };
 use std::{borrow::Cow, cell::OnceCell};
 
+#[cfg(feature = "sequence_buffers")]
+#[path = "old_value_reads.rs"]
+mod old_value_reads;
+
 #[path = "uniform_word_collection.rs"]
 mod uniform_words;
 pub use uniform_words::NativeUniformWordCollection;

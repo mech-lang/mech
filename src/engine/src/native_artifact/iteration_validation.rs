@@ -488,8 +488,8 @@ pub(crate) fn validate_detailed(plan: &impl ControlPlan) -> Result<(), Validatio
     }
     let table_bytes = DefinitionSet::storage_bytes(blocks.len(), cells)
         .ok_or("current-visit definition table size overflow")?;
-    let required = u64::try_from(table_bytes)
-        .map_err(|_| "current-visit definition table size overflow")?;
+    let required =
+        u64::try_from(table_bytes).map_err(|_| "current-visit definition table size overflow")?;
     let limit = plan.definition_table_byte_limit();
     if required > limit {
         return Err(ValidationError::DefinitionTableLimit { required, limit });
