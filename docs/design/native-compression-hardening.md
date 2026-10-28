@@ -146,3 +146,18 @@ tests pass, including 321 composed recursive calls and failure/retry; the
 explicit unrestricted-mode regression also passes. Receipts are in the same
 hardening evidence directory. Existing engine proof tests retain the malformed
 oversized-table preflight and arithmetic-overflow cases with the precise name.
+
+## Shared liveness checkpoint
+
+`NativeProgramFacts` now owns the common graph walk for an old-value read before
+a redefining write. Actions read before writes; a write kills the previous
+owner before the terminator. The frontier terminator, branches, and backedges
+remain visible. Invalid graph metadata rejects the optimization.
+
+Frame eligibility still maps exact loop seed/latch/return reads to their
+existing positions and declines opaque uses. Selected unsigned-buffer calls
+still reject collection captures, loop roles, publication and effects at their
+independent ownership boundaries. Neither traversal sharing nor a static proof
+replaces runtime account/exclusivity checks. The two query unit tests and all
+seven existing private-frame regressions pass, including independent image
+rederivation, aliases, current Booleans, nested calls, finite denial and retry.

@@ -256,36 +256,14 @@ fn last_use(facts: &Facts<'_>, value: Value, frontier: u32) -> bool {
     else {
         return false;
     };
-    if reads.contains(&(frontier, true)) {
-        return false;
-    }
-    let Ok(definitions) = facts.definition_sites(value.get()) else {
-        return false;
-    };
-    let Ok(next) = facts.successors(frontier) else {
-        return false;
-    };
-    let mut pending = next.into_iter().flatten().collect::<Vec<_>>();
-    let mut seen = vec![false; facts.plan().blocks().len()];
-    while let Some(site) = pending.pop() {
-        if core::mem::replace(&mut seen[site as usize], true) {
-            continue;
-        }
-        if reads.contains(&(site, false)) {
-            return false;
-        }
-        if definitions.iter().any(|d| d.site() == Some(site)) {
-            continue;
-        }
-        if reads.contains(&(site, true)) {
-            return false;
-        }
-        let Ok(next) = facts.successors(site) else {
-            return false;
-        };
-        pending.extend(next.into_iter().flatten());
-    }
-    true
+    !facts
+        .old_value_read_before_redefinition(
+            value,
+            frontier,
+            |site| reads.contains(&(site, false)),
+            |site| reads.contains(&(site, true)),
+        )
+        .unwrap_or(true)
 }
 
 impl Facts<'_> {

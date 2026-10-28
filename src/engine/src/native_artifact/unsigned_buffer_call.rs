@@ -121,40 +121,12 @@ fn can_retire(facts: &Facts<'_>, reads: &[Vec<Read>], value: Value, frontier: u3
     }) {
         return false;
     }
-    let Ok(definitions) = facts.definition_sites(value.get()) else {
-        return false;
-    };
-    let mut seen = vec![false; facts.plan().blocks().len()];
-    let Ok(next) = facts.successors(frontier) else {
-        return false;
-    };
-    let mut pending = next.into_iter().flatten().collect::<Vec<_>>();
-    while let Some(site) = pending.pop() {
-        let Some(seen) = seen.get_mut(site as usize) else {
-            return false;
-        };
-        if core::mem::replace(seen, true) {
-            continue;
-        }
-        // An action reads its operands before replacing its result. A later
-        // definition then kills this OLD owner before any terminator/future
-        // read, including fresh visits reached through loop back edges.
-        if reads.contains(&Read::Action(site)) {
-            return false;
-        }
-        if definitions
-            .iter()
-            .any(|definition| definition.site() == Some(site))
-        {
-            continue;
-        }
-        if reads.contains(&Read::Terminator(site)) {
-            return false;
-        }
-        let Ok(next) = facts.successors(site) else {
-            return false;
-        };
-        pending.extend(next.into_iter().flatten());
-    }
-    true
+    !facts
+        .old_value_read_before_redefinition(
+            value,
+            frontier,
+            |site| reads.contains(&Read::Action(site)),
+            |site| reads.contains(&Read::Terminator(site)),
+        )
+        .unwrap_or(true)
 }
