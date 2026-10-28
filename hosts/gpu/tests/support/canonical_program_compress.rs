@@ -11,6 +11,9 @@ use mech_syntax::document::{
 #[path = "canonical_program_control_usage.rs"]
 mod control_usage;
 
+#[path = "canonical_program_repeated_output.rs"]
+mod repeated_output;
+
 const COMPONENTS: &str = concat!(
     include_str!("../fixtures/native/deflate-matchfinder.mec"),
     "\n",
@@ -121,6 +124,12 @@ fn complete_level12_compression_matches_pinned_bytes() {
             false,
         );
     });
+}
+
+#[test]
+#[ignore = "long-running complete-compressor output-reservation qualification"]
+fn complete_level12_repetitions_retain_the_output_reservation() {
+    with_compiler_stack(repeated_output::run);
 }
 
 #[test]

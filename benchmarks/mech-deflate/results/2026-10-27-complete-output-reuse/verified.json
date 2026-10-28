@@ -1,0 +1,71 @@
+{
+  "base": "c1d20645d7b58f6b21847f51bfbf37225b6e6679",
+  "compiler": "115188e17032e26341dd7983e0634589a9a490ab",
+  "compressor_source_revision": "566dfd1df2eb81eb95e2804d6b50a6334bdaca42",
+  "component_files": 25,
+  "source_bytes": 161137,
+  "source_sha256": "a1b28e6ff28a3a677a0e409b8917bfcf5c4d5dd237acd31ad56df370f9baad2b",
+  "native_evaluations": 18,
+  "measured_evaluations": 12,
+  "descriptor_warmups": 6,
+  "complete_compressor_calls": 18,
+  "allocation_checks": [
+    {
+      "allocation_requests_real": 1791,
+      "allocation_requests_small": 1791,
+      "artifact": "original",
+      "extra_requested_bytes": 6633816,
+      "one_initial_reservation": 6633816,
+      "phase": "repeated-source-capacity-difference",
+      "rounds": 0
+    },
+    {
+      "allocation_requests_real": 16658182,
+      "allocation_requests_small": 16658182,
+      "artifact": "original",
+      "extra_requested_bytes": 6633816,
+      "one_initial_reservation": 6633816,
+      "phase": "repeated-source-capacity-difference",
+      "rounds": 1
+    },
+    {
+      "allocation_requests_real": 33314661,
+      "allocation_requests_small": 33314661,
+      "artifact": "original",
+      "extra_requested_bytes": 6633816,
+      "one_initial_reservation": 6633816,
+      "phase": "repeated-source-capacity-difference",
+      "rounds": 2
+    },
+    {
+      "allocation_requests_real": 1791,
+      "allocation_requests_small": 1791,
+      "artifact": "decoded",
+      "extra_requested_bytes": 6633816,
+      "one_initial_reservation": 6633816,
+      "phase": "repeated-source-capacity-difference",
+      "rounds": 0
+    },
+    {
+      "allocation_requests_real": 16658182,
+      "allocation_requests_small": 16658182,
+      "artifact": "decoded",
+      "extra_requested_bytes": 6633816,
+      "one_initial_reservation": 6633816,
+      "phase": "repeated-source-capacity-difference",
+      "rounds": 1
+    },
+    {
+      "allocation_requests_real": 33314661,
+      "allocation_requests_small": 33314661,
+      "artifact": "decoded",
+      "extra_requested_bytes": 6633816,
+      "one_initial_reservation": 6633816,
+      "phase": "repeated-source-capacity-difference",
+      "rounds": 2
+    }
+  ],
+  "managed_cleanup": "Every evaluation asserted used_bytes==0 and retained_snapshot_nodes==0 after releasing arguments, aliases and outputs.",
+  "limits": "All configurable budgets maximum via NativeProgramLimitMode::NoLimits",
+  "timing": "System allocator, allocation probe, concurrent investigations; these are correctness/allocation witnesses, not final matched benchmark timing."
+}
