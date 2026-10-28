@@ -191,3 +191,7 @@ required-features = ["canonical-native-program"]
 [[test]]
 name = "canonical_hosted_artifact"
 required-features = ["canonical-native-program-host"]
+
+[[example]]
+name = "compression_application"
+required-features = ["canonical-native-program"]

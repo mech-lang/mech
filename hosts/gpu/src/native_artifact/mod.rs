@@ -112,9 +112,14 @@ pub use crate::native_artifact::iteration_runtime::{
 #[cfg(feature = "canonical-native-benchmark-policy")]
 pub use crate::native_artifact::program::application::generate_linked_benchmark_program_application;
 #[cfg(feature = "canonical-native-program-host")]
-pub use crate::native_artifact::program::application::generate_linked_hosted_program_application;
+pub use crate::native_artifact::program::application::{
+    generate_linked_hosted_program_application,
+    generate_linked_hosted_program_application_with_limits,
+};
 #[cfg(feature = "canonical-native-program")]
-pub use crate::native_artifact::program::application::generate_linked_program_application;
+pub use crate::native_artifact::program::application::{
+    generate_linked_program_application, generate_linked_program_application_with_limits,
+};
 #[cfg(feature = "canonical-native-program")]
 pub use crate::native_artifact::program::compiler::{
     JitProgramArtifact, NativeProgramObject, emit_program_object, emit_program_object_with_limits,

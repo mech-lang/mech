@@ -22,7 +22,8 @@ use std::collections::BTreeMap;
 #[path = "narrow_scalar_tests.rs"]
 mod narrow_scalar_tests;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct NativeCompileLimits {
     /// Conservative size allowance for one current-visit definition table.
     /// This is not a bound on total compiler or proof-pass memory: graph

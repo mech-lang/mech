@@ -5,6 +5,7 @@ fn options(path: &Path) -> BuildOptions {
         paths: vec![path.to_string_lossy().into_owned()],
         emit: BuildEmit::Native,
         cranelift: true,
+        native_compile_limits: None,
         native_scalar: false,
         native_loop_fma: false,
         name: Some("canonical-cli-test".into()),
@@ -87,6 +88,7 @@ fn retained_source_bundle_survives_deletion_and_bytecode_is_explicitly_unpaired(
         workspace,
         &temporary.path().join("paired"),
         "paired",
+        NativeCompileLimits::default(),
     )
     .unwrap();
     assert_eq!(
@@ -109,6 +111,7 @@ fn retained_source_bundle_survives_deletion_and_bytecode_is_explicitly_unpaired(
         workspace,
         &temporary.path().join("decoded"),
         "decoded",
+        NativeCompileLimits::default(),
     )
     .unwrap();
     let bundle: Json =
@@ -126,7 +129,16 @@ fn retained_source_bundle_survives_deletion_and_bytecode_is_explicitly_unpaired(
     );
     let invalid = PreparedBuildInput::source_unpaired_bytecode(b"not an artifact".to_vec());
     let destination = temporary.path().join("invalid");
-    assert!(generate(&invalid, workspace, &destination, "invalid").is_err());
+    assert!(
+        generate(
+            &invalid,
+            workspace,
+            &destination,
+            "invalid",
+            NativeCompileLimits::default()
+        )
+        .is_err()
+    );
     assert!(
         !destination.exists(),
         "invalid bytecode must not enter another frontend"
@@ -187,6 +199,7 @@ fn ordinary_turn_inputs_are_rejected_without_another_execution_route() {
         Path::new(env!("CARGO_MANIFEST_DIR")),
         &destination,
         "input-test",
+        NativeCompileLimits::default(),
     ) {
         Err(error) => error,
         Ok(_) => panic!("ordinary input unexpectedly acquired a native resource binding"),
@@ -197,4 +210,29 @@ fn ordinary_turn_inputs_are_rejected_without_another_execution_route() {
             .contains("bind its application inputs through resources")
     );
     assert!(!destination.exists());
+}
+
+#[test]
+fn explicit_compile_policy_is_strict_and_separate_from_launch_authority() {
+    assert_eq!(
+        compile_limits(None).unwrap(),
+        NativeCompileLimits::default()
+    );
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("compile.json");
+    let limits = NativeCompileLimits {
+        max_nodes: 12345,
+        max_definition_table_bytes: 128 * 1024 * 1024,
+        ..Default::default()
+    };
+    fs::write(&path, serde_json::to_vec(&limits).unwrap()).unwrap();
+    assert_eq!(compile_limits(Some(&path)).unwrap(), limits);
+    for invalid in [
+        r#"{"max_nodes":1}"#,
+        r#"{"runtime_grants":[]}"#,
+        r#"{"max_nodes":-1}"#,
+    ] {
+        fs::write(&path, invalid).unwrap();
+        assert!(compile_limits(Some(&path)).is_err());
+    }
 }

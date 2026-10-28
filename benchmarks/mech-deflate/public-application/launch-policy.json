@@ -1,0 +1,15 @@
+{
+  "memory_bytes": 536870912,
+  "work": 10000000000000000,
+  "transport_bytes": 134217728,
+  "native_stack_bytes": 1048576,
+  "library": {
+    "output_elements": 16777216,
+    "output_bytes": 134217728,
+    "temporary_bytes": 536870912,
+    "cloned_bytes": 8589934592,
+    "retained_nodes": 8388608,
+    "compute_work": 10000000000000000,
+    "comparison_work": 100000000000000
+  }
+}
