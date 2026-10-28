@@ -3,6 +3,9 @@ use super::{allocation_probe, artifacts, equal, inputs, limits, reference};
 use mech_core::{ManagedMemoryBudget, ValueDataDraft as Data};
 use mech_gpu::native_artifact::JitProgramArtifact;
 
+#[path = "canonical_program_packed_store_ownership.rs"]
+mod ownership;
+
 #[test]
 fn single_word_updates_keep_aliases_publication_and_finite_denials() {
     let source = "<buffer> := <[u32]:2,3>\nreplace(xs<buffer>, at<u64>, incoming<u32>) => (out<buffer>) :=\n  ~next := xs\n  next[at] = incoming\n  out := next.\nreplace(input<buffer>, at<u64>, incoming<u32>)\n";
