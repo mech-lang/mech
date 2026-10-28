@@ -1,0 +1,41 @@
+   Compiling nalgebra v0.34.2
+   Compiling mech-core v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/core)
+   Compiling wasm-bindgen-shared v0.2.126
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/syntax)
+   Compiling mech-bytecode v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/bytecode)
+   Compiling rustversion v1.0.23
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/engine)
+   Compiling bumpalo v3.20.3
+   Compiling wasm-bindgen-macro-support v0.2.126
+   Compiling wasm-bindgen v0.2.126
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/runtime)
+   Compiling wasm-bindgen-macro v0.2.126
+   Compiling js-sys v0.3.103
+   Compiling web-sys v0.3.103
+   Compiling mech-terminal v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/terminal)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/stdlib)
+   Compiling mech v0.3.6 (/private/tmp/mech-deflate-linear-stack)
+   Compiling mech-time v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/time)
+   Compiling mech-combinatorics v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/combinatorics)
+   Compiling mech-console v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/console)
+   Compiling mech-timer v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/timer)
+   Compiling mech-scene v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/scene)
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/compute)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/math)
+   Compiling mech-set v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/set)
+   Compiling mech-range v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/range)
+   Compiling mech-matrix v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/matrix)
+   Compiling mech-logic v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/logic)
+   Compiling mech-stats v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/stats)
+   Compiling mech-compare v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/compare)
+   Compiling mech-string v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/string)
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/gpu)
+   Compiling mech-build v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/build)
+   Compiling mech-browser v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/browser)
+    Finished `test` profile [unoptimized] target(s) in 3m 39s
+     Running unittests src/lib.rs (/private/tmp/mech-live-control-target/debug/deps/mech-823e615960f87ae7)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 452 filtered out; finished in 0.00s
+

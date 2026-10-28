@@ -1,0 +1,62 @@
+[
+  {
+    "form": "original",
+    "command": [
+      "cargo",
+      "generate-lockfile",
+      "--offline",
+      "--manifest-path",
+      "/private/tmp/mech-public-finite-20261028/original/Cargo.toml"
+    ],
+    "exit": 0,
+    "seconds": 0.3537900447845459
+  },
+  {
+    "form": "original",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--offline",
+      "--frozen",
+      "-j1",
+      "--manifest-path",
+      "/private/tmp/mech-public-finite-20261028/original/Cargo.toml",
+      "--target-dir",
+      "/private/tmp/mech-live-control-target",
+      "--message-format=json"
+    ],
+    "exit": 0,
+    "seconds": 74.55748581886292
+  },
+  {
+    "form": "decoded",
+    "command": [
+      "cargo",
+      "generate-lockfile",
+      "--offline",
+      "--manifest-path",
+      "/private/tmp/mech-public-finite-20261028/decoded/Cargo.toml"
+    ],
+    "exit": 0,
+    "seconds": 0.18349814414978027
+  },
+  {
+    "form": "decoded",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--offline",
+      "--frozen",
+      "-j1",
+      "--manifest-path",
+      "/private/tmp/mech-public-finite-20261028/decoded/Cargo.toml",
+      "--target-dir",
+      "/private/tmp/mech-live-control-target",
+      "--message-format=json"
+    ],
+    "exit": 0,
+    "seconds": 0.14931082725524902
+  }
+]

@@ -1,0 +1,21 @@
+   Compiling mech-combinatorics v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/combinatorics)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/math)
+   Compiling mech-set v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/set)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/stdlib)
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/gpu)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/engine)
+    Finished `test` profile [unoptimized] target(s) in 7m 41s
+     Running unittests src/lib.rs (/private/tmp/mech-live-control-target/debug/deps/mech_engine-057b5d4a93106420)
+
+running 2 tests
+test resident::general::native_collection_calls::prepared::frame_shape::tests::frame_recipe_declines_bounded_persistent_and_computed_output_relations ... ok
+test resident::general::native_collection_calls::prepared::frame_shape::tests::frame_recipe_agrees_with_constructor_for_fresh_fixed_and_repeated_axes ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1108 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (/private/tmp/mech-live-control-target/debug/deps/mech_gpu-2678607daf86f560)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 426 filtered out; finished in 0.00s
+

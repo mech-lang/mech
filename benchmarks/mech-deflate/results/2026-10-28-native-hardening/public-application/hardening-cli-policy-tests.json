@@ -1,0 +1,34 @@
+{
+  "name": "hardening-cli-policy-tests",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech",
+    "--no-default-features",
+    "--features",
+    "cranelift_build",
+    "--lib",
+    "build_cranelift",
+    "--",
+    "--nocapture"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "af77b28409414b2d61e30ace29c98a37f152ff48",
+  "dirty": " M benchmarks/mech-deflate/matchfinder/README.md\n M benchmarks/mech-deflate/public-application/qualify.py\n M docs/design/native-application-builds.md\n?? docs/design/native-compression-status.md\n",
+  "exit": 101,
+  "seconds": 196.52086305618286,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/hardening-cli-policy-tests.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

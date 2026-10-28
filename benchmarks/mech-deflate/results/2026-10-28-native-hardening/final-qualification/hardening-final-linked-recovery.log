@@ -1,0 +1,7 @@
+
+running 2 tests
+test linked_qualification::linked_assertion_rejection_preserves_publication_and_recovers ... ok
+test linked_qualification::linked_mixed_record_buffer_frames_preserve_publication_and_recover ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 374 filtered out; finished in 189.93s
+

@@ -1,0 +1,11 @@
+
+running 6 tests
+test cli::commands::build::cranelift::tests::canonical_options_reject_unsupported_modes_before_reading_inputs ... ok
+test cli::commands::build::cranelift::tests::discovered_runtime_configuration_is_not_native_launch_authority ... ok
+test cli::commands::build::cranelift::tests::exact_linked_name_grammar_rejects_before_compilation_without_sanitizing ... ok
+test cli::commands::build::cranelift::tests::explicit_compile_policy_is_strict_and_separate_from_launch_authority ... ok
+test cli::commands::build::cranelift::tests::ordinary_turn_inputs_are_rejected_without_another_execution_route ... ok
+test cli::commands::build::cranelift::tests::retained_source_bundle_survives_deletion_and_bytecode_is_explicitly_unpaired ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 446 filtered out; finished in 0.53s
+

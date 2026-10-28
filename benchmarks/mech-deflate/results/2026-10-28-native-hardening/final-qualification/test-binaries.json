@@ -1,0 +1,18 @@
+[
+  {
+    "path": "/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-561ab00dcd3ceccb",
+    "sha256": "9208948ba2a07719d2f9fd777da9680363a023370b263938f1152905111223d1"
+  },
+  {
+    "path": "/private/tmp/mech-live-control-target/debug/deps/mech-823e615960f87ae7",
+    "sha256": "f72ae0d7fb3abc32c78bb1e09f80339dc99128a593191063252c040ace8effa2"
+  },
+  {
+    "path": "/private/tmp/mech-live-control-target/debug/deps/mech_gpu-2678607daf86f560",
+    "sha256": "cf76cfd0536b13aa0d97de780fc6e3752e5f7737e9f0b901b620e7b7567dc4a2"
+  },
+  {
+    "path": "/private/tmp/mech-live-control-target/debug/deps/mech_engine-057b5d4a93106420",
+    "sha256": "4875fdf98ff61c067e2eb6bb4b6179eae846721c5ff6dc0f1c9e69bc3071870c"
+  }
+]

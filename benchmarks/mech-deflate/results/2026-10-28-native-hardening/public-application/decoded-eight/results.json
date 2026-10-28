@@ -1,0 +1,29 @@
+{
+  "binary_sha256": "bc20be6ea0ae1f00d3273974002ec99dc3a714589952cfb58b48833de17abb13",
+  "launch_sha256": "fc0b49564e4340cdfd12411defd8da6b821af19388c0e2656c9a8e07dc06c164",
+  "cases_sha256": "2b8798377fa525410181f0ede45259177a38ad48d64cceda6dc5afcd5b17e620",
+  "passed": true,
+  "cases": [
+    {
+      "name": "eight-literals",
+      "command": [
+        "/private/tmp/mech-public-finite-20261028/decoded/compression-application",
+        "--policy",
+        "/private/tmp/mech-deflate-linear-stack/benchmarks/mech-deflate/public-application/launch-policy.json",
+        "--",
+        "/private/tmp/mech-public-finite-20261028/decoded/cases/eight-literals.json"
+      ],
+      "exit": 0,
+      "process_seconds": 63.35846724989824,
+      "input_bytes": 8,
+      "exact_bytes": true,
+      "independent_inflation": true
+    }
+  ],
+  "selected_cases": [
+    "eight-literals"
+  ],
+  "total_corpus_cases": 9,
+  "complete_small_corpus": false,
+  "timing_boundary": "whole process including image restore, input import, native execution, canonical output export and cleanup; qualification, not compression-only benchmark"
+}

@@ -1,0 +1,35 @@
+{
+  "name": "hardening-public-api-tests",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "canonical-native-program",
+    "--test",
+    "canonical_artifact_program",
+    "public_application_limits",
+    "--",
+    "--nocapture"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "2b4adb7289cb81ffd0c37456ce1f968c9ed3d43d",
+  "dirty": " M benchmarks/mech-deflate/matchfinder/README.md\n M docs/design/native-application-builds.md\n M hosts/gpu/Cargo.toml\n M hosts/gpu/src/native_artifact/compiler/mod.rs\n M hosts/gpu/src/native_artifact/launch/hosted/mod.rs\n M hosts/gpu/src/native_artifact/launch/managed.rs\n M hosts/gpu/src/native_artifact/launch/mod.rs\n M hosts/gpu/src/native_artifact/mod.rs\n M hosts/gpu/src/native_artifact/program/application.rs\n M hosts/gpu/tests/support/canonical_program_proof_storage.rs\n M src/cli/app/tests/mod.rs\n M src/cli/commands/build.rs\n M src/cli/commands/build_cranelift.rs\n M src/cli/commands/build_cranelift_tests.rs\n M src/engine/src/resident/general/native_collection_frame_shape.rs\n?? benchmarks/mech-deflate/public-application/\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/frame-comparison/\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-frame-candidate-build.json\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-frame-candidate-build.log\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-frame-shape-supported.json\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-frame-shape-supported.log\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-frame-shape-unit.json\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-frame-shape-unit.log\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-shared-source-pin.json\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-shared-source-pin.log\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-typed-frame-existing.json\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-typed-frame-existing.log\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-typed-frame-first.json\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-typed-frame-first.log\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-typed-frame-leaves.json\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-typed-frame-leaves.log\n?? docs/design/native-compression-status.md\n?? hosts/gpu/examples/compression_application.rs\n?? hosts/gpu/src/native_artifact/launch/policy.rs\n",
+  "exit": 0,
+  "seconds": 111.49184608459473,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/hardening-public-api-tests.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

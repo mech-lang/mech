@@ -1,0 +1,19 @@
+{
+  "RUSTFLAGS": null,
+  "RUSTDOCFLAGS": null,
+  "RUSTUP_TOOLCHAIN": null,
+  "CARGO_TARGET_DIR": null,
+  "effective_warning_policy": {
+    "source": ".cargo/config.toml",
+    "sha256": "f2c72f8592e13d3f2e86bfc17b9ea314dbfdf35e3d831c5c357a05c0345e9d84",
+    "rustflags": [
+      "-D",
+      "warnings"
+    ],
+    "rustdocflags": [
+      "-D",
+      "warnings"
+    ],
+    "note": "Environment overrides are absent; Cargo inherits the repository configuration from the recorded working directory."
+  }
+}

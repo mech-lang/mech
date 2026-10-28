@@ -1,0 +1,8 @@
+{
+  "hosts/gpu/src/native_artifact/launch/managed.rs": "c303eb7a1e282ec27cae1ef7529e3850bf057a0532c4b6307776f41e5243ded1",
+  "hosts/gpu/src/native_artifact/launch/policy.rs": "b2754db3481846ce9885032fadd6848450586d51a014b34a74df8fd43734e8bd",
+  "hosts/gpu/src/native_artifact/launch/hosted/mod.rs": "7d27183f99a9655fefed4a15810ad500070a6bb52a9b793503729ab18a2771d3",
+  "hosts/gpu/src/native_artifact/program/application.rs": "7d2abc8cf7ac0f6d26f3c3953ddb3459f8faf83721b73573ecf36b9786a43577",
+  "hosts/gpu/examples/compression_application.rs": "aa10cf638861b6a96894cb37d5ae83dfd7001c7e803dfeee27ec41ebddf721f3",
+  "hosts/gpu/tests/fixtures/native/deflate_assembly.rs": "12991a5b11a588d257a52d193c1a783b955170c6c1d1bbd0d04b99b6ef7fcca6"
+}

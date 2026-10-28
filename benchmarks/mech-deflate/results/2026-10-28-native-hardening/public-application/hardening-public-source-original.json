@@ -1,0 +1,24 @@
+{
+  "name": "hardening-public-source-original",
+  "command": [
+    "/private/tmp/mech-live-control-target/release/examples/compression_application",
+    "/private/tmp/mech-public-finite-20261028/original",
+    "/private/tmp/mech-deflate-linear-stack/benchmarks/mech-deflate/public-application/compiler-policy.json",
+    "original"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "2b4adb7289cb81ffd0c37456ce1f968c9ed3d43d",
+  "dirty": " M benchmarks/mech-deflate/matchfinder/README.md\n M docs/design/native-application-builds.md\n M hosts/gpu/Cargo.toml\n M hosts/gpu/src/native_artifact/compiler/mod.rs\n M hosts/gpu/src/native_artifact/launch/hosted/mod.rs\n M hosts/gpu/src/native_artifact/launch/managed.rs\n M hosts/gpu/src/native_artifact/launch/mod.rs\n M hosts/gpu/src/native_artifact/mod.rs\n M hosts/gpu/src/native_artifact/program/application.rs\n M hosts/gpu/tests/support/canonical_program_proof_storage.rs\n M src/cli/app/tests/mod.rs\n M src/cli/commands/build.rs\n M src/cli/commands/build_cranelift.rs\n M src/cli/commands/build_cranelift_tests.rs\n?? benchmarks/mech-deflate/public-application/\n?? docs/design/native-compression-status.md\n?? hosts/gpu/examples/compression_application.rs\n?? hosts/gpu/src/native_artifact/launch/policy.rs\n",
+  "exit": 0,
+  "seconds": 96.30449795722961,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/hardening-public-source-original.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

@@ -1,0 +1,26 @@
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/gpu)
+error[E0277]: the trait bound `Arc<str>: From<&std::string::String>` is not satisfied
+   --> hosts/gpu/examples/compression_application.rs:118:64
+    |
+118 |         TextSnapshot::new(DocumentId(0x50524f47), Revision(1), &source).unwrap(),
+    |         -----------------                                      ^^^^^^^ the trait `From<&std::string::String>` is not implemented for `Arc<str>`
+    |         |
+    |         required by a bound introduced by this call
+    |
+    = help: consider casting the `&std::string::String` value to `&str`
+    = note: required for `&std::string::String` to implement `Into<Arc<str>>`
+note: required by a bound in `TextSnapshot::new`
+   --> src/syntax/src/document/source.rs:67:22
+    |
+ 64 |     pub fn new(
+    |            --- required by a bound in this associated function
+...
+ 67 |         source: impl Into<Arc<str>>,
+    |                      ^^^^^^^^^^^^^^ required by this bound in `TextSnapshot::new`
+help: consider dereferencing here
+    |
+118 |         TextSnapshot::new(DocumentId(0x50524f47), Revision(1), &*source).unwrap(),
+    |                                                                 +
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `mech-gpu` (example "compression_application") due to 1 previous error
