@@ -21,6 +21,12 @@ pub fn source(pinned: &str) -> String {
         let starts = source
             .match_indices(&call)
             .filter(|(at, _)| *at == 0 || source.as_bytes()[*at - 1] == b'\n')
+            .filter(|(at, _)| {
+                source[*at..]
+                    .lines()
+                    .next()
+                    .is_some_and(|line| line.contains("=>"))
+            })
             .map(|(at, _)| at)
             .collect::<Vec<_>>();
         assert_eq!(starts.len(), 1, "expected the pinned definition of {name}");

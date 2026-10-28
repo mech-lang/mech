@@ -145,3 +145,6 @@ fn independently_constructed_cost_tables_match_unchanged_reference_cases() {
     );
     qualify_cost_models(&independent_tables::source(header), "independent-tables");
 }
+
+#[path = "canonical_program_cost_variant_bounds.rs"]
+mod variant_bounds;
