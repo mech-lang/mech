@@ -1,0 +1,40 @@
+use std::alloc::{GlobalAlloc, Layout};
+
+pub struct PinnedMimalloc;
+
+unsafe extern "C" {
+    fn mi_malloc(size: usize) -> *mut u8;
+    fn mi_malloc_aligned(size: usize, alignment: usize) -> *mut u8;
+    fn mi_zalloc(size: usize) -> *mut u8;
+    fn mi_zalloc_aligned(size: usize, alignment: usize) -> *mut u8;
+    fn mi_realloc(pointer: *mut u8, size: usize) -> *mut u8;
+    fn mi_realloc_aligned(pointer: *mut u8, size: usize, alignment: usize) -> *mut u8;
+    fn mi_free(pointer: *mut u8);
+}
+
+// SAFETY: use the exact mimalloc object linked by the pinned reference host.
+// The ordinary/aligned split matches that host's macOS max_align_t boundary;
+// allocation, reallocation and deallocation always use the same allocator.
+unsafe impl GlobalAlloc for PinnedMimalloc {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        unsafe {
+            if layout.align() <= 16 { mi_malloc(layout.size().max(1)) }
+            else { mi_malloc_aligned(layout.size().max(1), layout.align()) }
+        }
+    }
+    unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
+        unsafe {
+            if layout.align() <= 16 { mi_zalloc(layout.size().max(1)) }
+            else { mi_zalloc_aligned(layout.size().max(1), layout.align()) }
+        }
+    }
+    unsafe fn realloc(&self, pointer: *mut u8, layout: Layout, size: usize) -> *mut u8 {
+        unsafe {
+            if layout.align() <= 16 { mi_realloc(pointer, size.max(1)) }
+            else { mi_realloc_aligned(pointer, size.max(1), layout.align()) }
+        }
+    }
+    unsafe fn dealloc(&self, pointer: *mut u8, _layout: Layout) {
+        unsafe { mi_free(pointer) }
+    }
+}

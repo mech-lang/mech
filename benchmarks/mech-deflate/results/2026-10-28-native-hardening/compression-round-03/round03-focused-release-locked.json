@@ -1,0 +1,30 @@
+{
+  "name": "round03-focused-release-locked",
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--offline",
+    "--release",
+    "-j1",
+    "--manifest-path",
+    "benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--bins",
+    "--message-format=json"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "4cff7bfd53f4471f9a8fe0194c5a3a961d1be88e",
+  "dirty": "?? benchmarks/mech-deflate/native-profile/\n",
+  "exit": 0,
+  "seconds": 990.496246099472,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round03-focused-release-locked.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

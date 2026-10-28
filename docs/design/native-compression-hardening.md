@@ -369,6 +369,32 @@ architecture/catalog/routing/inventory/warning/boundary/format checks pass.
 
 The post-change profile no longer has the full destination planning walk as its
 dominant visible stack. Schema-size and ownership accounting, call setup,
-resource checks and managed transport remain visible costs. Resolving the
-sample's deduplicated symbols and measuring one specific mechanism are the next
-bounded steps. The 1× target remains unmet and #973 remains draft.
+resource checks and managed transport remain visible costs. Follow-up symbol
+resolution identified repeated schema allocation-bound traversal; the next
+recorded round addresses that mechanism. The 1× target remains unmet and #973
+remains draft.
+
+## Schema summary and selected-operation build
+
+Runtime commit `ef0e5d37a47c547a7c4a28f1bfae508f4d977cb8` derives a private
+checked size summary for each immutable schema entry arena. Clones retain it;
+new arenas derive it. The no-callback query uses it while the ordered precharge
+visitor remains unchanged. Its real 16-byte inline cost is included in memory
+and logical-work accounting; canonical identity and wire bytes do not change.
+
+Build commit `ac96b275d23c1219bb3c8c8067f4e05d19a44b47` adds an ordinary
+consumer using existing standard-library feature gates. Only five arithmetic
+operations, six comparisons, and/or and inclusive ranges are selected. It
+avoids GPU example dev-dependencies that select the full math library, while
+retaining the compiler/runtime feature configuration and scalar controls.
+The first selected build completes in 990.50 seconds; the full build was
+stopped unfinished at 1376.43 seconds. Neither is a clean-build comparison.
+
+The [round 03 report](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-03/REPORT.md)
+records **2753× → 1904× Roc**, 0.757143375 s → 0.523613000 s on the unchanged
+eight-byte input and matched allocator. This comparison includes both changes;
+it does not isolate a schema-summary effect. Exact source/artifact identity,
+177 distinct Rust tests, protected scalar timing/allocation gates, aliases and
+cleanup pass. Full GPU component/linked and generated runtime-only application
+qualification has not been rerun for this change. Only small timing ran; the
+full corpus remains stopped.

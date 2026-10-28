@@ -1,0 +1,34 @@
+{
+  "name": "round03-core-schema-snapshot",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-core",
+    "--no-default-features",
+    "--lib",
+    "--",
+    "schema::table::tests",
+    "snapshot::",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "1759737410073832f79848ae3588e55a20365859",
+  "dirty": " M src/core/src/schema/table.rs\n",
+  "exit": 0,
+  "seconds": 7.176305770874023,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round03-core-schema-snapshot.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

@@ -96,21 +96,32 @@ separate JSON inputs; the public CLI also accepts `--native-compile-limits`.
 
 ## Current small timing
 
-The [latest eight-byte timing receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-02/REPORT.md)
+The [latest eight-byte timing receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-03/REPORT.md)
 use the real tree/cache and unchanged 25 components. With **Roc = 1×**, the
-matched-allocator, uninstrumented compiler comparison improves from **5496×**
-(1.676382750 s) to **2494×** (0.760682250 s), against a fresh 0.000305 s reference.
-The compiler prepays a proven single packed assignment's planning work instead
-of walking the complete destination. Logical resource charges, copies, aliases
-and failure behavior remain unchanged. There are three retained observations
-per Mech executable; this is a small diagnostic, not a full-corpus result.
+matched-allocator, uninstrumented comparison improves from **2753×**
+(0.757143375 s) to **1904×** (0.523613000 s), against a fresh 0.000275 s reference.
+This combines an immutable schema-size summary with a selected-operation build
+profile; it does not isolate their individual effects. The summary's real
+16-byte metadata increase remains charged, raising reported work from
+939091080723 to 941491317987. Copies, aliases and finite-denial behavior remain
+qualified by the recorded tests. There are three retained observations per
+Mech executable; this is a small diagnostic, not a full-corpus result.
 Preparation and verification are outside the compression timer.
 
-The [previous baseline](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-01/REPORT.md)
-was 5756× using a 0.000290 s reference; its denominator differs from the fresh
-matched comparison above. The new profile points to schema-bound and ownership
-accounting, call setup, resource checks and managed transport. Exact attribution
-of deduplicated samples remains pending. No next optimization is presumed.
+The [previous round](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-02/REPORT.md)
+was 2494× using a 0.000305 s reference; its denominator differs from this fresh
+comparison. The new profile no longer shows the repeated no-callback schema
+walk. Ordered precharge walks, ownership accounting, allocation, copying and
+resource checks remain. No next optimization is presumed.
+
+The [focused build](../../benchmarks/mech-deflate/native-profile/README.md)
+selects only the required machine operations through the ordinary catalog.
+It avoids the full-library dev-dependencies pulled in by GPU examples. The
+first selected release build took 990.50 seconds; the prior broad build was
+stopped unfinished at 1376.43 seconds. These are build receipts, not a clean
+build comparison. Exact source/artifact identity, 177 Rust tests and protected
+scalar controls pass. Full GPU component/linked and generated runtime-only
+application qualification has not been refreshed for this runtime change.
 
 A separate matching-System-allocator, matching-instrumentation compiler control
 improves from **8659×** to **6599×**. That comparison spans the intervening

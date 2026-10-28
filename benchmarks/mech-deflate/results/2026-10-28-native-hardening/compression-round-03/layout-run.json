@@ -1,0 +1,9 @@
+{
+  "command": [
+    "/private/tmp/mech-schema-bound-round03-20261028/layout"
+  ],
+  "exit": 0,
+  "stdout": "schema_table_bytes=32 schema_table_align=8 entries=1 bound=190 contributions=[176, 14, 0]\n",
+  "stderr": "",
+  "sha256": "3339944d1ce9e499a417dae09ca974b356480cf719f7232a9d46277299a05ed6"
+}

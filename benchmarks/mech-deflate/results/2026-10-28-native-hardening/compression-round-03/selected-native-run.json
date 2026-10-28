@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-schema-bound-round03-20261028/selected-native-tests",
+    "--nocapture",
+    "--test-threads=1",
+    "--skip",
+    "all_certified_scalar_primitives_match_ordinary_resident_original_and_decoded"
+  ],
+  "exit": 0,
+  "seconds": 0.9457500409334898,
+  "binary_sha256": "bd8b5ec40365a181ccd211fa0add18a43b477bf40bb92d43185da6f11b68a109",
+  "skipped_coverage": "The all-primitives test needs not/xor, which this selected catalog deliberately omits."
+}

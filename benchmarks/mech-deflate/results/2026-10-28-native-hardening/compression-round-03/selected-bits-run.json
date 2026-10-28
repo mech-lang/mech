@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-schema-bound-round03-20261028/selected-bits-tests",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 1.157757499953732,
+  "binary_sha256": "7d1cae241e80c38564423f26e0cf89dffe4b7793c3eea6891aba5bf42b55fe8e",
+  "skipped_coverage": null
+}
