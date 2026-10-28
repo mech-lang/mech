@@ -116,6 +116,10 @@ path = "examples/compute_backend_benchmark.rs"
 required-features = ["native"]
 
 [[example]]
+name = "native_frame_transport"
+required-features = ["canonical-native-program"]
+
+[[example]]
 name = "parallel_ekf_benchmark"
 path = "examples/parallel_ekf_benchmark.rs"
 required-features = ["native", "jit"]

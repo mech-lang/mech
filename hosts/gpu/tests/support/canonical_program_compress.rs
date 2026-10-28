@@ -14,58 +14,9 @@ mod control_usage;
 #[path = "canonical_program_repeated_output.rs"]
 mod repeated_output;
 
-const COMPONENTS: &str = concat!(
-    include_str!("../fixtures/native/deflate-matchfinder.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-binary-tree.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-collector.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-block-collector.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-block-heuristics.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-block-loop.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-optimal-path.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-huffman-level12.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-tally.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-optimal-costs.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-header.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-optimize.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-literal-choice.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-static-codes.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-writer-tables.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-path-writer.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-sequence-writer.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-block-choice.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-block-header-writer.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-stored-writer.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-flush-block.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-select-path.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-plan-block.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-level12-tables.mec"),
-    "\n",
-    include_str!("../fixtures/native/deflate-compress-controller.mec"),
-    "\n",
-);
+#[path = "../fixtures/native/deflate_assembly.rs"]
+mod assembly;
+use assembly::COMPONENTS;
 
 fn matrix(value: &[u8]) -> Data {
     Data::Matrix(value.iter().copied().map(Data::U8).collect())
@@ -188,9 +139,7 @@ fn with_compiler_stack(run: fn()) {
 }
 
 fn complete_source() -> String {
-    format!(
-        "{COMPONENTS}buffer := sequence/with-capacity(0u8, 6633832u64)\nprefixed := sequence/append-sublist(buffer, prefix<[u8]>, 0u64, sequence/length(prefix))\ndeflate-compress-into(input<[u8]>, prefixed)\n"
-    )
+    assembly::complete_source()
 }
 
 // An explicitly requested local investigation reuses normal validated bytecode,

@@ -1,0 +1,65 @@
+   Compiling mech-core v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/core)
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/syntax)
+   Compiling mech-bytecode v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/bytecode)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/engine)
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/compute)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/stdlib)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/runtime)
+   Compiling mech-combinatorics v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/combinatorics)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/math)
+   Compiling mech-set v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/set)
+   Compiling mech-matrix v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/matrix)
+   Compiling mech-stats v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/stats)
+   Compiling mech-compare v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/compare)
+   Compiling mech-logic v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/logic)
+   Compiling mech-string v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/string)
+   Compiling mech-range v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/range)
+   Compiling once_cell v1.21.4
+   Compiling fastrand v2.5.0
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/gpu)
+   Compiling tempfile v3.27.0
+   Compiling mech-build v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/build)
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>>: LowerHex` is not satisfied
+   --> hosts/gpu/examples/native_frame_transport.rs:118:32
+    |
+118 |     let hash = format!("{:x}", Sha256::digest(&encoded));
+    |                         ----   ^^^^^^^^^^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>, ...>>`
+    |                         |
+    |                         required by this formatting parameter
+    |
+    = help: the following other types implement trait `LowerHex`:
+              &T
+              &mut T
+              Saturating<T>
+              Wrapping<T>
+              brotli::enc::input_pair::InputPair<'a>
+              cranelift_assembler_x64::mem::AmodeOffset
+              cranelift_assembler_x64::mem::AmodeOffsetPlusKnownOffset
+              generic_array::GenericArray<u8, T>
+            and 44 others
+    = note: the full name for the type has been written to '/private/tmp/mech-live-control-target/release/examples/native_frame_transport-459313ffabab4a4f.long-type-2586520612644618712.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>>: LowerHex` is not satisfied
+   --> hosts/gpu/examples/native_frame_transport.rs:210:9
+    |
+209 |         "{:x}",
+    |          ---- required by this formatting parameter
+210 |         Sha256::digest(mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap())
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>, ...>>`
+    |
+    = help: the following other types implement trait `LowerHex`:
+              &T
+              &mut T
+              Saturating<T>
+              Wrapping<T>
+              brotli::enc::input_pair::InputPair<'a>
+              cranelift_assembler_x64::mem::AmodeOffset
+              cranelift_assembler_x64::mem::AmodeOffsetPlusKnownOffset
+              generic_array::GenericArray<u8, T>
+            and 44 others
+    = note: the full name for the type has been written to '/private/tmp/mech-live-control-target/release/examples/native_frame_transport-459313ffabab4a4f.long-type-2586520612644618712.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `mech-gpu` (example "native_frame_transport") due to 2 previous errors

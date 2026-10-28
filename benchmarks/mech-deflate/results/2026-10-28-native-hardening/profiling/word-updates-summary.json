@@ -1,0 +1,74 @@
+[
+  {
+    "kind": "u16",
+    "words": 288,
+    "stores": 1,
+    "seconds": 0.000107459,
+    "allocations": 1366,
+    "requested_bytes": 156520,
+    "work": 11962072
+  },
+  {
+    "kind": "u16",
+    "words": 288,
+    "stores": 8,
+    "seconds": 0.000561042,
+    "allocations": 9913,
+    "requested_bytes": 1112688,
+    "work": 95167068
+  },
+  {
+    "kind": "u16",
+    "words": 262144,
+    "stores": 1,
+    "seconds": 0.0134735,
+    "allocations": 1366,
+    "requested_bytes": 680232,
+    "work": 20603320
+  },
+  {
+    "kind": "u16",
+    "words": 262144,
+    "stores": 8,
+    "seconds": 0.105309292,
+    "allocations": 9913,
+    "requested_bytes": 5302384,
+    "work": 134969180
+  },
+  {
+    "kind": "u32",
+    "words": 288,
+    "stores": 1,
+    "seconds": 8.7083e-05,
+    "allocations": 1366,
+    "requested_bytes": 157096,
+    "work": 11971294
+  },
+  {
+    "kind": "u32",
+    "words": 288,
+    "stores": 8,
+    "seconds": 0.000535916,
+    "allocations": 9913,
+    "requested_bytes": 1117296,
+    "work": 95208588
+  },
+  {
+    "kind": "u32",
+    "words": 1500513,
+    "stores": 1,
+    "seconds": 0.07529025,
+    "allocations": 1366,
+    "requested_bytes": 6157996,
+    "work": 109485919
+  },
+  {
+    "kind": "u32",
+    "words": 1500513,
+    "stores": 8,
+    "seconds": 0.590805334,
+    "allocations": 9913,
+    "requested_bytes": 49124496,
+    "work": 539275188
+  }
+]

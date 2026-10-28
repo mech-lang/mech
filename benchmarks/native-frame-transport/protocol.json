@@ -1,0 +1,34 @@
+{
+  "compiler_baseline": "39442acb64ed47500ec26d5c4037cc37d0015ebe",
+  "steps": 64,
+  "rounds": 3,
+  "retained_observations_per_round": 10,
+  "warmup_observations_per_process": 1,
+  "repetitions_per_observation": {
+    "exclusive": 1,
+    "aliased": 1,
+    "scalar-loop": 100,
+    "scalar-u64": 10000,
+    "scalar-i64": 10000,
+    "scalar-f64": 10000,
+    "scalar-bool": 10000
+  },
+  "artifact_forms": [
+    "original",
+    "decoded"
+  ],
+  "mixed_gates": {
+    "allocation_request_ratio_max": 0.7,
+    "requested_byte_ratio_max": 0.7,
+    "paired_median_time_ratio_strictly_below": 1
+  },
+  "scalar_gates": {
+    "no_per_visit_allocation": true,
+    "allocation_ratio_max": 1,
+    "paired_median_time_ratio_max": 1.05
+  },
+  "probe_source_sha256": "976dcb60204b2830e08bdac334fce46678f1dbcc326d1de554aa8a5f9807e351",
+  "primary_observations_started": false,
+  "diagnostic_runtime": "debug libraries with optimized wrapper; not acceptance data",
+  "unchanged_failed_cohort_reruns_allowed": false
+}

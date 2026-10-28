@@ -1,0 +1,33 @@
+{
+  "name": "hardening-frame-probe-build",
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "canonical-native-program",
+    "--example",
+    "native_frame_transport",
+    "--release"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "39442acb64ed47500ec26d5c4037cc37d0015ebe",
+  "dirty": " M hosts/gpu/Cargo.toml\n?? hosts/gpu/examples/native_frame_transport.rs\n",
+  "exit": 101,
+  "seconds": 3016.2025079727173,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/hardening-frame-probe-build.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

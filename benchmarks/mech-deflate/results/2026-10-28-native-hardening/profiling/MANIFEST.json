@@ -1,0 +1,117 @@
+{
+  "hardware": "Apple M1",
+  "os": "macOS 15.6.1 (24G90)",
+  "profiling_not_controlled_comparison": true,
+  "files": {
+    "input": {
+      "bytes": 8,
+      "sha256": "9c56cc51b374c3ba189210d5b6d4bf57790d351c96c47c02190ecf1e430635ab"
+    },
+    "expected.deflate": {
+      "bytes": 10,
+      "sha256": "a7f1a85abba17147bbb424a67b37785d1ffd34316bad83b83c27ef6c2349b09a"
+    },
+    "mech-baseline.log": {
+      "bytes": 2102,
+      "sha256": "030ac3156d5ebf43e1908d61e0d9c95c7ff1437028f684f79ae7d4b07dcf2fef"
+    },
+    "mech-process.json": {
+      "bytes": 419,
+      "sha256": "a258f22a09ca3b4449ba7f1c8dcaa39fbfd68661f84adaca777dc70c7e278516"
+    },
+    "mech-profile-receipt.json": {
+      "bytes": 255,
+      "sha256": "591b6ed5c0bc96779edf34e787da5575f1e141f4fe9f10ba2f390d668d17d692"
+    },
+    "mech-sample-command.log": {
+      "bytes": 245,
+      "sha256": "71d40fb146168ed96fd14a52fce9f137c1c713905c7525963c55b618d215e370"
+    },
+    "roc-profile-receipt.json": {
+      "bytes": 407,
+      "sha256": "3370ac16e1eb8edf6c649201fdff409203cf259d4789278345b14f95d5375997"
+    },
+    "roc-sample-command.log": {
+      "bytes": 330,
+      "sha256": "2a5b01290e651e5013cb176568b418a2a18a71e310de235e607371e21224cb17"
+    },
+    "roc-build.log": {
+      "bytes": 119,
+      "sha256": "b44c8cc609b937d0cb9fe61a5daf1be4c5c1e237f98842727c20d0449a1e08c0"
+    },
+    "word-updates.rs": {
+      "bytes": 4588,
+      "sha256": "9cd5813c7391cba525ee483ea981c470361421c6028949cb4b45af2ab749b1f0"
+    },
+    "word-updates.jsonl": {
+      "bytes": 3986,
+      "sha256": "8ca775772151768dc066e13b50f44b3af749c4ff00a6e24bbc06b8430692b166"
+    },
+    "word-updates-summary.json": {
+      "bytes": 1366,
+      "sha256": "b0326999e87e9cf60d731919a63ca28a0f69bf70bbcb5c1d9538156bbf0cd5cb"
+    },
+    "word-updates-build-command.json": {
+      "bytes": 962,
+      "sha256": "a14ba7df5314dc768d4e0eb6f0637f636cf0e8a46d94b5a8271c5adc91294efa"
+    },
+    "word-updates-stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "object-inspect.rs": {
+      "bytes": 1015,
+      "sha256": "97cdc21bb77b3dc375e6fb1d2082563c07e5e4ca8b95ce4aecf21cc1d6d7400d"
+    },
+    "profile-mech.py": {
+      "bytes": 2316,
+      "sha256": "4d9fcfa40930533ed03f3095ceb0fa497329d20a98f129e293decd7a380e10e4"
+    },
+    "mech-object-metadata.json": {
+      "bytes": 1975,
+      "sha256": "a7798d514e3d04130e8b8bade69c801233dde03f715c0e7420610cd21f570702"
+    },
+    "mech-instruction-summary.json": {
+      "bytes": 441,
+      "sha256": "6b673a9b803552ee6eb63d3dedba707020c2c3446ade83cd06c5799f6a467f65"
+    },
+    "mech-helper-call-excerpts.s": {
+      "bytes": 1857,
+      "sha256": "0d66648fcb429e8f03343a29c30134f03eb47ed09a7ad944be9902a65badfab7"
+    },
+    "mech-baseline.sample.txt.gz": {
+      "bytes": 127504,
+      "sha256": "5b6dd4989717db2a2d4c60d5931f0459fa574fe45498a3758cf79d2b56f0b585",
+      "uncompressed_bytes": 1856307,
+      "uncompressed_sha256": "36a3f1ba34ac85c47204bbe9d696e61289784be1488abccd7a8383d72de90797"
+    },
+    "roc-profile.sample.txt.gz": {
+      "bytes": 3389,
+      "sha256": "0455d8ef96159ada2edadc6c02c4e326c33240545d53ec78bf50fad8f2bbde2e",
+      "uncompressed_bytes": 19460,
+      "uncompressed_sha256": "b0815ff56005e112e12f92ff9312c861cb12ed0d964d0c78f37f6a61d952f75b"
+    },
+    "roc-profile.log.gz": {
+      "bytes": 72510,
+      "sha256": "e2ccf7f30f3ffa8e8cc030defc4ff3a70ad68ee77f5b9be3d6f36be0e209596a",
+      "uncompressed_bytes": 628893,
+      "uncompressed_sha256": "c8a02861338f392eb79115851c45783eda6d4df898629d7b148ae82dea3b0c30"
+    },
+    "roc-stage/app.roc": {
+      "bytes": 383,
+      "sha256": "bc983321eacf418428d5f8063d3eaeb90105eab8c2063f3d9c4bf973eab4033c"
+    },
+    "roc-stage/Bench.roc": {
+      "bytes": 1606,
+      "sha256": "f468e1f38a467bc054d1cc9f2c3898ff550a593f7c5ed5a463910ebc1a0ed940"
+    },
+    "roc-stage/input": {
+      "bytes": 8,
+      "sha256": "9c56cc51b374c3ba189210d5b6d4bf57790d351c96c47c02190ecf1e430635ab"
+    },
+    "roc-stage/prefix": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

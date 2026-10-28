@@ -1,0 +1,23 @@
+[
+  "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+  "--edition=2024",
+  "-C",
+  "opt-level=3",
+  "-D",
+  "warnings",
+  "-L",
+  "dependency=/private/tmp/mech-live-control-target/release/deps",
+  "--extern",
+  "mech_gpu=/private/tmp/mech-live-control-target/release/deps/libmech_gpu-7fa2845c539b987a.rlib",
+  "--extern",
+  "mech_engine=/private/tmp/mech-live-control-target/release/deps/libmech_engine-0d214f77bb5acf15.rlib",
+  "--extern",
+  "mech_stdlib=/private/tmp/mech-live-control-target/release/deps/libmech_stdlib-0ce0772bdec500ff.rlib",
+  "--extern",
+  "mech_core=/private/tmp/mech-live-control-target/release/deps/libmech_core-4ff4856784490a86.rlib",
+  "--extern",
+  "mech_syntax=/private/tmp/mech-live-control-target/release/deps/libmech_syntax-99fe397930ae7109.rlib",
+  "/private/tmp/mech-deflate-profiling-20261028/word-updates.rs",
+  "-o",
+  "/private/tmp/mech-deflate-profiling-20261028/word-updates"
+]

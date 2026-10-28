@@ -1,0 +1,14 @@
+{
+  "head": "39442acb64ed47500ec26d5c4037cc37d0015ebe",
+  "runs": [
+    {
+      "databaseId": 40635783224,
+      "status": "queued",
+      "url": "https://github.com/mech-lang/mech/actions/runs/40635783224",
+      "workflowName": "CI",
+      "cancel_exit": 0,
+      "cancel_result": "\u2713 Request to cancel workflow 40635783224 submitted.\n"
+    }
+  ],
+  "policy": "Cancel new head CI; do not wait for completion or rerun cancelled campaigns."
+}

@@ -1,0 +1,25 @@
+{
+  "instruction_count": 749785,
+  "indirect_call_sites": 52189,
+  "direct_call_sites": 0,
+  "mnemonics": {
+    "mov": 185344,
+    "ldr": 112494,
+    "b": 79325,
+    "str": 69978,
+    "cmp": 66136,
+    "stur": 60035,
+    "blr": 52189,
+    "b.ne": 38763,
+    "movk": 25243,
+    "b.eq": 20470,
+    "ldp": 11370,
+    "ldur": 5749,
+    "cset": 3775,
+    "uxtb": 3775,
+    "add": 3599,
+    "b.hs": 2219,
+    "retab": 1895,
+    "b.hi": 1367
+  }
+}
