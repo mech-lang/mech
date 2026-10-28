@@ -7,6 +7,57 @@ use mech_gpu::native_artifact::JitProgramArtifact;
 const PACK: &str = "+> sequence\npack(nodes<[u64]>) => (out<{nodes<[u64]>}>) :=\n  out := {nodes: nodes}.\nreturned := pack(sequence/with-capacity(0u64, capacity<u64>))\nsequence/append(returned.nodes, 17u64)\n";
 
 #[test]
+fn record_annotation_renaming_keeps_signed_float_siblings_and_independent_buffers() {
+    let source = "pack(words<[u16]>, bytes<[u8]>, signed<i64>, real<f64>) => (out<{bytes<[u8]> words<[u16]> signed<i64> real<f64>}>) :=\n  out := {bytes: bytes, words: words, signed: signed, real: real}.\npack(words<[u16]>, bytes<[u8]>, signed<i64>, real<f64>)\n";
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        for (bytes, words, real) in [
+            (3, 5, 0x8000000000000000),
+            (0, 2, 0x7ff8000000000042),
+            (5, 1, 0),
+        ] {
+            let args = inputs(
+                &artifact,
+                &[
+                    (
+                        "bytes",
+                        Data::Matrix((0..bytes).map(|i| Data::U8(i as u8)).collect()),
+                    ),
+                    (
+                        "words",
+                        Data::Matrix((0..words).map(|i| Data::U16(i as u16 + 257)).collect()),
+                    ),
+                    ("signed", Data::I64(i64::MIN)),
+                    (
+                        "real",
+                        Data::F64(mech_core::snapshot::F64Bits::from_bits(real)),
+                    ),
+                ],
+                &memory,
+            );
+            let aliases = args.clone();
+            jit.evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            super::equal(
+                &artifact,
+                &output,
+                &reference_result(&artifact, &args).unwrap(),
+            );
+            assert!(
+                args.iter()
+                    .zip(&aliases)
+                    .all(|(a, b)| a.shares_frozen_storage(b))
+            );
+        }
+        drop(output);
+        assert_eq!(memory.used_bytes(), 0);
+        assert_eq!(memory.retained_snapshot_nodes(), 0);
+    }
+}
+
+#[test]
 fn private_record_return_preserves_real_path_and_output_reservations() {
     for (width, real) in [(64, 305257), (8, 6633832)] {
         let source = if width == 64 {

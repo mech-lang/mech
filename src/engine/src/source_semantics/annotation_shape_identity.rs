@@ -1,23 +1,17 @@
-//! Identity annotations can independently number the same free buffer axes.
-//! This does not admit reshapes, coupled axes, bounds, or element conversion.
-use mech_core::{DimensionExpr, DimensionLifetime, SchemaBody, SchemaDraft};
+//! Identity annotations retain exact geometry under an admitted parameter renaming.
+use mech_core::{SchemaBody, SchemaDraft};
 
-/// A fresh record constructor binds its result dimensions from its fields.
-/// Unlike an existing snapshot, it has no positional shape to preserve yet.
-/// Give independent free axes occurrence order, keeping every field's geometry
-/// and shared-axis relationships. Bounded or persistent axes retain their order.
-pub(super) fn fresh_record(mut draft: SchemaDraft) -> SchemaDraft {
+pub(super) fn fresh_record(draft: SchemaDraft) -> SchemaDraft {
     if !matches!(draft.body, SchemaBody::Record(_)) {
         return draft;
     }
-    let original = draft.clone();
-    for parameter in draft.dimension_parameters.iter_mut() {
-        parameter.origin = mech_core::DimensionParameterOrigin::Inferred;
-    }
-    if equivalent(&original, &draft) {
-        draft
+    let inferred = draft
+        .clone()
+        .with_dimension_origin_policy(mech_core::DimensionOriginPolicy::InferFreeTurnAxes);
+    if equivalent(&draft, &inferred) {
+        inferred
     } else {
-        original
+        draft
     }
 }
 
@@ -26,114 +20,20 @@ pub(super) fn equivalent(actual: &SchemaDraft, expected: &SchemaDraft) -> bool {
     else {
         return false;
     };
-    if actual == expected {
-        return true;
-    }
-    let count = actual.dimension_parameters().len();
-    if count == 0 || count != expected.dimension_parameters().len() {
-        return false;
-    }
-    // Only unconstrained turn-local axes can be renamed here. All other
-    // annotation checks continue through the maintained conversion planner.
-    if actual
-        .dimension_parameters()
-        .iter()
-        .chain(expected.dimension_parameters())
-        .any(|p| {
-            p.lifetime() != DimensionLifetime::Turn
-                || p.lower_bound() != &DimensionExpr::Constant(0)
-                || p.upper_bound().is_some()
-        })
-    {
-        return false;
-    }
-    let mut forward = vec![None; count];
-    let mut reverse = vec![None; count];
-    same_body(actual.body(), expected.body(), &mut forward, &mut reverse)
-        && forward.iter().all(Option::is_some)
-        && reverse.iter().all(Option::is_some)
-}
-
-fn same_body(
-    actual: &SchemaBody,
-    expected: &SchemaBody,
-    forward: &mut [Option<usize>],
-    reverse: &mut [Option<usize>],
-) -> bool {
-    match (actual, expected) {
-        // Closed matrix fields (including fixed arrays of scalar records)
-        // carry no free axes that participate in this renaming.
-        (
-            SchemaBody::Matrix {
-                element: a,
-                dimensions: ad,
-            },
-            SchemaBody::Matrix {
-                element: b,
-                dimensions: bd,
-            },
-        ) if a == b
-            && ad == bd
-            && ad.iter().all(|d| matches!(d, DimensionExpr::Constant(_)))
-            && (SchemaDraft {
-                body: a.as_ref().clone(),
-                dimension_parameters: Box::new([]),
-            })
-            .finalize()
-            .is_ok() =>
-        {
-            true
-        }
-        (
-            SchemaBody::Matrix {
-                element: a,
-                dimensions: ad,
-            },
-            SchemaBody::Matrix {
-                element: b,
-                dimensions: bd,
-            },
-        ) if a == b && matches!(a.as_ref(), SchemaBody::UnsignedInteger(_)) => {
-            ad.len() == bd.len()
-                && ad.iter().zip(bd).all(|(a, b)| match (a, b) {
-                    (DimensionExpr::Constant(a), DimensionExpr::Constant(b)) => a == b,
-                    (DimensionExpr::Parameter(a), DimensionExpr::Parameter(b)) => {
-                        let (a, b) = (a.get() as usize, b.get() as usize);
-                        if forward[a].is_some_and(|value| value != b)
-                            || reverse[b].is_some_and(|value| value != a)
-                        {
-                            return false;
-                        }
-                        forward[a] = Some(b);
-                        reverse[b] = Some(a);
-                        true
-                    }
-                    _ => false,
-                })
-        }
-        (SchemaBody::Tuple(a), SchemaBody::Tuple(b)) => {
-            a.len() == b.len()
-                && a.iter()
-                    .zip(b)
-                    .all(|(a, b)| same_body(a, b, forward, reverse))
-        }
-        (SchemaBody::Record(a), SchemaBody::Record(b)) => {
-            a.len() == b.len()
-                && a.iter().zip(b).all(|(a, b)| {
-                    a.name == b.name && same_body(&a.schema, &b.schema, forward, reverse)
-                })
-        }
-        (SchemaBody::Bool | SchemaBody::UnsignedInteger(_), _) => actual == expected,
-        _ => false,
-    }
+    mech_core::schema_dimension_parameter_mapping(
+        &actual,
+        &expected,
+        mech_core::SchemaDimensionRelation::FreeTurnUnsignedAxes,
+    )
+    .is_some()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use mech_core::{
-        DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin,
-        IntegerWidth, SchemaField,
+        DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+        DimensionParameterOrigin, IntegerWidth, SchemaField,
     };
 
     fn buffers(lens: u32, words: u32) -> SchemaDraft {

@@ -1,78 +1,8 @@
-//! Reify computed, unconstrained turn-local matrix extents at selection boundaries.
+//! Selected results generalize computed axes, separately from identity renaming.
 use super::*;
 
 pub(super) fn selected_matrix_result_schema(source: &SchemaDraft) -> Option<SchemaDraft> {
-    let SchemaBody::Matrix {
-        element,
-        dimensions,
-    } = &source.body
-    else {
-        return None;
-    };
-    if !source.dimension_parameters.iter().all(|p| {
-        p.lifetime == DimensionLifetime::Turn
-            && p.lower_bound == DimensionExpr::Constant(0)
-            && p.upper_bound.is_none()
-    }) {
-        return None;
-    }
-    fn has_parameter(d: &DimensionExpr) -> bool {
-        match d {
-            DimensionExpr::Parameter(_) => true,
-            DimensionExpr::Add(xs)
-            | DimensionExpr::Multiply(xs)
-            | DimensionExpr::Min(xs)
-            | DimensionExpr::Max(xs) => xs.iter().any(has_parameter),
-            _ => false,
-        }
-    }
-    fn computed(d: &DimensionExpr) -> bool {
-        !matches!(d, DimensionExpr::Parameter(_)) && has_parameter(d)
-    }
-    if !dimensions.iter().any(computed) {
-        return None;
-    }
-    // Do not erase relationships in nested element schemas.
-    if !matches!(
-        element.as_ref(),
-        SchemaBody::UnsignedInteger(_)
-            | SchemaBody::SignedInteger(_)
-            | SchemaBody::FloatingPoint(_)
-            | SchemaBody::Bool
-    ) {
-        return None;
-    }
-    let mut parameters = source.dimension_parameters.to_vec();
-    let mut mapped = Vec::<(DimensionExpr, DimensionExpr)>::new();
-    let dimensions = dimensions
-        .iter()
-        .map(|d| {
-            if !computed(d) {
-                return d.clone();
-            }
-            if let Some((_, result)) = mapped.iter().find(|(old, _)| old == d) {
-                return result.clone();
-            }
-            let id = DimensionParameterId::new(parameters.len() as u32);
-            parameters.push(DimensionParameterDeclaration {
-                id,
-                origin: DimensionParameterOrigin::Inferred,
-                lifetime: DimensionLifetime::Turn,
-                lower_bound: DimensionExpr::Constant(0),
-                upper_bound: None,
-            });
-            let result = DimensionExpr::Parameter(id);
-            mapped.push((d.clone(), result.clone()));
-            result
-        })
-        .collect();
-    Some(SchemaDraft {
-        body: SchemaBody::Matrix {
-            element: element.clone(),
-            dimensions,
-        },
-        dimension_parameters: parameters.into_boxed_slice(),
-    })
+    mech_core::generalize_computed_matrix_axes(source)
 }
 
 #[cfg(test)]

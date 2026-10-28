@@ -1,0 +1,36 @@
+{
+  "name": "hardening-mixed-record-shapes",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "canonical-native-program",
+    "--test",
+    "canonical_artifact_program",
+    "record_buffer_qualification::record_annotation_renaming_keeps_signed_float_siblings_and_independent_buffers",
+    "--",
+    "--exact",
+    "--nocapture"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "de72b7dc8763acfcc01dfe9342befe661c0a08de",
+  "dirty": " M hosts/gpu/tests/support/canonical_program_record_buffers.rs\n M src/core/src/schema/mod.rs\n M src/engine/src/source_semantics/annotation_shape_identity.rs\n M src/engine/src/source_semantics/function_argument_shape.rs\n M src/engine/src/source_semantics/selected_matrix_result.rs\n?? hosts/gpu/src/native_artifact/program/prepare/call_routes.rs\n?? hosts/gpu/src/native_artifact/program/runtime/invocation/selected_calls.rs\n?? src/core/src/schema/dimension_relations.rs\n?? src/core/tests/schema_dimension_relations.rs\n",
+  "exit": 0,
+  "seconds": 38.48219394683838,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/hardening-mixed-record-shapes.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

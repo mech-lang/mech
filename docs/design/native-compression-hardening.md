@@ -161,3 +161,21 @@ independent ownership boundaries. Neither traversal sharing nor a static proof
 replaces runtime account/exclusivity checks. The two query unit tests and all
 seven existing private-frame regressions pass, including independent image
 rederivation, aliases, current Booleans, nested calls, finite denial and retry.
+The 14 selected-buffer capacity regressions also pass after the shared walk.
+
+## Shared dimension relations checkpoint
+
+Schema-owned dimension relations now provide an explicit exact/free-Turn-axis
+policy and a bijective parameter map. Origin freshening is a separate policy;
+computed-axis generalization is a separate operation with an expression map.
+The source annotation, function-argument and selected-result owners call these
+mechanics while retaining their own selection boundaries. Fresh embedding still
+assigns per-use IDs. Unsigned matrix eligibility, fixed and repeated axes,
+element kinds, and the constrained/persistent conversion path remain intact.
+
+Unchanged I64/F64 scalar siblings no longer prevent an otherwise harmless
+parameter renaming. Three core relation tests, 53 selected frontend tests
+(including the existing 12 relation-policy tests), and a new original/decoded
+resident/JIT mixed-record test pass. The latter changes both buffer lengths and
+retains I64 minimum, signed zero, NaN bits, and input aliases. No compressor
+component, allocation site, source fixture or expected output changed.
