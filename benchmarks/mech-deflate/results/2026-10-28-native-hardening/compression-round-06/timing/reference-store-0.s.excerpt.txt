@@ -1,0 +1,59 @@
+10001e384: 72a00048    	movk	w8, #0x2, lsl #16
+10001e388: 91002100    	add	x0, x8, #0x8
+10001e38c: 52800101    	mov	w1, #0x8                ; =8
+10001e390: 97ff913c    	bl	0x100002880 <_roc_alloc>
+10001e394: aa0003f7    	mov	x23, x0
+10001e398: 78008eff    	strh	wzr, [x23, #0x8]!
+10001e39c: 52800028    	mov	w8, #0x1                ; =1
+10001e3a0: f9000008    	str	x8, [x0]
+10001e3a4: f94002e9    	ldr	x9, [x23]
+
+10001e7ac: f90193f8    	str	x24, [sp, #0x320]
+10001e7b0: 1400000a    	b	0x10001e7d8 <_roc__p5794f552e2e0fcba87a322629fdca7c0.fast+0x540>
+10001e7b4: 39400148    	ldrb	w8, [x10]
+10001e7b8: b8687ac9    	ldr	w9, [x22, x8, lsl #2]
+10001e7bc: 11000529    	add	w9, w9, #0x1
+10001e7c0: b8287ac9    	str	w9, [x22, x8, lsl #2]
+10001e7c4: eb18027f    	cmp	x19, x24
+10001e7c8: 54009502    	b.hs	0x10001fa68 <_roc__p5794f552e2e0fcba87a322629fdca7c0.fast+0x17d0>
+10001e7cc: aa1303fa    	mov	x26, x19
+
+10001e8e4: b100051f    	cmn	x8, #0x1
+10001e8e8: 5405f000    	b.eq	0x10002a6e8 <_roc__p5794f552e2e0fcba87a322629fdca7c0.fast+0xc450>
+10001e8ec: 78e87ae9    	ldrsh	w9, [x23, x8, lsl #1]
+10001e8f0: 5211012a    	eor	w10, w9, #0x8000
+10001e8f4: 0a493d49    	and	w9, w10, w9, lsr #15
+10001e8f8: 78287a69    	strh	w9, [x19, x8, lsl #1]
+10001e8fc: 91000508    	add	x8, x8, #0x1
+10001e900: f140411f    	cmp	x8, #0x10, lsl #12      ; =0x10000
+10001e904: 54ffff01    	b.ne	0x10001e8e4 <_roc__p5794f552e2e0fcba87a322629fdca7c0.fast+0x64c>
+
+10001e9a4: aa0e03ec    	mov	x12, x14
+10001e9a8: 5280000f    	mov	w15, #0x0               ; =0
+10001e9ac: 3873684e    	ldrb	w14, [x2, x19]
+10001e9b0: b86e7ad0    	ldr	w16, [x22, x14, lsl #2]
+10001e9b4: 11000610    	add	w16, w16, #0x1
+10001e9b8: b82e7ad0    	str	w16, [x22, x14, lsl #2]
+10001e9bc: aa0d03f3    	mov	x19, x13
+10001e9c0: eb0a027f    	cmp	x19, x10
+10001e9c4: 540009c2    	b.hs	0x10001eafc <_roc__p5794f552e2e0fcba87a322629fdca7c0.fast+0x864>
+
+10001e9f0: 7940000e    	ldrh	w14, [x0]
+10001e9f4: 79400410    	ldrh	w16, [x0, #0x2]
+10001e9f8: cb140271    	sub	x17, x19, x20
+10001e9fc: eb0e023f    	cmp	x17, x14
+10001ea00: 52110227    	eor	w7, w17, #0x8000
+10001ea04: 79000007    	strh	w7, [x0]
+10001ea08: 7900040e    	strh	w14, [x0, #0x2]
+10001ea0c: 54fffce2    	b.hs	0x10001e9a8 <_roc__p5794f552e2e0fcba87a322629fdca7c0.fast+0x710>
+10001ea10: 8b0e0168    	add	x8, x11, x14
+
+10001e9f4: 79400410    	ldrh	w16, [x0, #0x2]
+10001e9f8: cb140271    	sub	x17, x19, x20
+10001e9fc: eb0e023f    	cmp	x17, x14
+10001ea00: 52110227    	eor	w7, w17, #0x8000
+10001ea04: 79000007    	strh	w7, [x0]
+10001ea08: 7900040e    	strh	w14, [x0, #0x2]
+10001ea0c: 54fffce2    	b.hs	0x10001e9a8 <_roc__p5794f552e2e0fcba87a322629fdca7c0.fast+0x710>
+10001ea10: 8b0e0168    	add	x8, x11, x14
+10001ea14: eb05011f    	cmp	x8, x5

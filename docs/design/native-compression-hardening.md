@@ -449,3 +449,37 @@ stores to avoid repeated payload copies, external aliases to remain immutable,
 and success/failure/retry to preserve publication and cleanup. Keep application
 rewrites as separate source revisions and measurements. Do not substitute
 further small metadata patches for this ownership work.
+
+## Consuming scalar indexed replacement
+
+Protocol/regression `dfaa03115656ba0e2ed4bf84db024dffa2cd8e5a` and its corrected
+fixture `151d5a0b5507b57b0f7cad0aee8784788a9b9bfe` establish the old recursive
+eight-payload allocation slope before production changes. Runtime implementation
+`5929c0bff0a7e1b4b14aec2f684b0b8c634975ad` adds the narrow prepared unsigned
+store route; `5bd4cb352ba01e0dfb34982dc98d035b3473fffb` checks exact and every
+one-short resource dimension. The constructor-private original factory, shared
+preparation/image derivation, existing owner transfer, scalar transport, index
+mapping and publication boundary remain. No new opcode or source rewrite is used.
+
+The [round 06 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-06/REPORT.md)
+records **1626× → 574× Roc**, 0.465164708 s to 0.164188708 s against a fresh
+0.000286 s reference: **2.833× faster** than the paired Mech baseline. All
+bytes, inflation, aliases, capacity and cleanup checks pass. Work changes to
+888390537256 logical units; the report discloses both increasing and decreasing
+component charges rather than confusing them with instructions or time.
+
+All 48 recursive real-buffer observations now have exactly one payload-size
+allocation slope, including retained external aliases and internal initialization.
+The existing frame retirement suffices for that witness; no capture/loop exception
+was added. Actual search/skip collection also benefits: six-position traffic falls
+from 79457091 to 35045914 bytes and 25682 to 8362 requests with unchanged golden
+state and finite policy. It still has additional copies. The unchanged straight-
+line eight-store witness falls from 8833 to 274 allocation requests.
+
+All 84 scoped Rust tests, selected checking/build, static checks and protected
+scalar gates pass. Machine libraries are reused and release rebuild takes
+454.37 seconds. The corrected Rust fixture macro failure and expected red
+allocation failure are retained separately. Broader linked/generated application,
+route unit-suite and full-input coverage remain explicit gaps; CI is cancelled
+and #973 remains draft. The new profile makes repeated budget/accounting and
+runtime visits the next measured target. Parity remains unmet.

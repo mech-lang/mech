@@ -96,14 +96,27 @@ separate JSON inputs; the public CLI also accepts `--native-compile-limits`.
 
 ## Current small timing
 
-The [latest eight-byte timing receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-05/REPORT.md)
-use the real tree/cache and unchanged 25 components. With **Roc = 1×**, counting
-fixed-width packed payload lengths from metadata measures **1727× → 1632×**,
-0.492213292 s to 0.464984292 s against a fresh 0.000285 s reference: 5.53% less
-elapsed time. The binary's numeric length path uses a saturated multiply/add;
-actual byte/hash encoding and ordered resource accounting remain unchanged.
-Stores still make physical copies. The next priority is consuming indexed
-replacement and ownership through the real recursive tree/cache carriers.
+The [latest eight-byte timing receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-06/REPORT.md)
+use the real tree/cache and unchanged 25 components. With **Roc = 1×**, consuming
+scalar indexed replacement measures **1626× → 574×**, 0.465164708 s to
+0.164188708 s against a fresh 0.000286 s reference. This is **2.833× faster**
+than the paired Mech baseline, or 64.70% less elapsed time. Native scalar operands,
+same-account ownership transfer and one-word changed detection avoid the old
+binding, payload-copy and full-equality path. A retained external alias still
+requires its first immutable copy; private chains reuse their backing.
+
+The recursive real-buffer witness now requests one payload rather than one per
+store. In the actual six-position collector, requests fall from 25682 to 8362
+and requested bytes from 79457091 to 35045914. Some copies remain in that path.
+Exact data/state, aliases, finite admission, publication, cleanup and retry pass.
+Reported complete-compression work is 888390537256 logical units, distinct from
+executed instructions. The next target comes from the new profile's repeated
+budget, accounting and runtime transitions.
+
+The [preceding length change](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-05/REPORT.md)
+measures **1727× → 1632×** against a different reference cohort. Numeric length
+counting now uses saturated multiplication; bytes/hashes and ordered work retain
+their paths. Its scoped core snapshot/memory tests remain separately recorded.
 
 The [preceding matrix-read repair](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/matrix-read-order/REPORT.md)
 measures **1695× → 1693×** against a different reference cohort. Its 0.16%
@@ -122,9 +135,9 @@ remain outside the timer; only the eight-byte complete case was timed.
 The [focused build](../../benchmarks/mech-deflate/native-profile/README.md)
 uses the existing catalog feature gates. The length change's rebuild takes
 1007.38 seconds and rebuilds the machine libraries because core changed;
-the preceding two engine iterations took about 450 seconds and reused them.
-All 248 scoped Rust tests pass at the length change, plus no_std. The preceding
-120- and 80-test selections retain their own revisions.
+the store change takes 454.37 seconds and reuses them. All 84 scoped native,
+component and collector tests pass at the store change. The length change's
+248 tests and no_std check retain their own revision, as do earlier selections.
 Protected scalar gates, exact source/artifact agreement, real-buffer witnesses,
 and architecture checks pass. Linked subprocess and generated runtime-only
 application qualification has not been refreshed for these changes. The PR

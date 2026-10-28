@@ -1,0 +1,6 @@
+0000000101584904 t <mech_gpu::native_artifact::program::runtime::invocation::Invocation>::unsigned_matrix_replace_call::{closure#2}
+0000000101584968 t <mech_gpu::native_artifact::program::runtime::invocation::Invocation>::unsigned_matrix_replace_call::{closure#6}
+000000010260eaf4 T <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::unsigned_matrix_replace
+000000010260ed14 t <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::unsigned_matrix_replace_width
+000000010260ee9c T <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::supports_unsigned_matrix_replace
+00000001026974d8 t <mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits::<core::result::Result<(mech_core::snapshot::validation::Value, bool), mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::unsigned_matrix_replace::{closure#0}>

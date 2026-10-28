@@ -1,0 +1,38 @@
+[
+  {
+    "kind": "u16",
+    "words": 262144,
+    "stores": 8,
+    "before": {
+      "median_seconds": 0.0006362914999999999,
+      "allocations": 8833,
+      "requested_bytes": 5177904,
+      "work": 135348380
+    },
+    "after": {
+      "median_seconds": 2.84165e-05,
+      "allocations": 274,
+      "requested_bytes": 555312,
+      "work": 197639484
+    },
+    "logical_work_delta": 62291104
+  },
+  {
+    "kind": "u32",
+    "words": 1500513,
+    "stores": 8,
+    "before": {
+      "median_seconds": 0.0032487505,
+      "allocations": 8833,
+      "requested_bytes": 49000016,
+      "work": 539654388
+    },
+    "after": {
+      "median_seconds": 0.00034695799999999997,
+      "allocations": 274,
+      "requested_bytes": 6033076,
+      "work": 460572156
+    },
+    "logical_work_delta": -79082232
+  }
+]
