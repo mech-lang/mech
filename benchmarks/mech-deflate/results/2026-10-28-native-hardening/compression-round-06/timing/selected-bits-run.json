@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-consuming-stores-round06-20261028/selected-bits-tests",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.9476997500751168,
+  "binary_sha256": "aabaf255bfbbf768f5922a0e30655c75e804ee89819c439d8009acf624bdd54f",
+  "skipped_coverage": null
+}

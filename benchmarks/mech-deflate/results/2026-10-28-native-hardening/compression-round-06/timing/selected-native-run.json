@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-consuming-stores-round06-20261028/selected-native-tests",
+    "--nocapture",
+    "--test-threads=1",
+    "--skip",
+    "all_certified_scalar_primitives_match_ordinary_resident_original_and_decoded"
+  ],
+  "exit": 0,
+  "seconds": 0.918347833910957,
+  "binary_sha256": "698f68d3fbd8fd4c6242b2dd081ec0edb2ef56d163efbaca6ce1fd3b2cb6e5a1",
+  "skipped_coverage": "The all-primitives test needs not/xor, which this selected catalog deliberately omits."
+}

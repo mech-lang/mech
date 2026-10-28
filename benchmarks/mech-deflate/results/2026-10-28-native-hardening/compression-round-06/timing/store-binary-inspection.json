@@ -1,0 +1,248 @@
+{
+  "reference": {
+    "binary": "/private/tmp/mech-deflate-profiling-20261028/roc-profile",
+    "sha256": "3941ef59b2c9343d0493cc6b6d14ca4803e6bd27acfe520b1fb59d9b63026324",
+    "symbols_command": [
+      "/opt/homebrew/opt/llvm/bin/llvm-nm",
+      "--numeric-sort",
+      "--demangle",
+      "/private/tmp/mech-deflate-profiling-20261028/roc-profile"
+    ],
+    "candidates": [
+      "000000010001e298 t _roc__p5794f552e2e0fcba87a322629fdca7c0.fast"
+    ],
+    "disassembly": [
+      {
+        "symbol": "000000010001e298 t _roc__p5794f552e2e0fcba87a322629fdca7c0.fast",
+        "command": [
+          "/opt/homebrew/opt/llvm/bin/llvm-objdump",
+          "--disassemble",
+          "--start-address=0x10001e298",
+          "--stop-address=0x10002e748",
+          "/private/tmp/mech-deflate-profiling-20261028/roc-profile"
+        ],
+        "file": "reference-store-0.s",
+        "indexed_word_store_lines": [
+          "10001e398: 78008eff    \tstrh\twzr, [x23, #0x8]!",
+          "10001e7c0: b8287ac9    \tstr\tw9, [x22, x8, lsl #2]",
+          "10001e8f8: 78287a69    \tstrh\tw9, [x19, x8, lsl #1]",
+          "10001e9b8: b82e7ad0    \tstr\tw16, [x22, x14, lsl #2]",
+          "10001ea04: 79000007    \tstrh\tw7, [x0]",
+          "10001ea08: 7900040e    \tstrh\tw14, [x0, #0x2]",
+          "10001ec60: 78286a69    \tstrh\tw9, [x19, x8]",
+          "10001ede4: 78286ae9    \tstrh\tw9, [x23, x8]",
+          "10001edf8: 7900050f    \tstrh\tw15, [x8, #0x2]",
+          "10001f5b8: b82b78e8    \tstr\tw8, [x7, x11, lsl #2]",
+          "10001f638: 7900018b    \tstrh\tw11, [x12]",
+          "10001f644: 7900058a    \tstrh\tw10, [x12, #0x2]",
+          "10001f73c: 7900056c    \tstrh\tw12, [x11, #0x2]",
+          "10001f740: 7900016a    \tstrh\tw10, [x11]",
+          "10001f7e0: 78286b09    \tstrh\tw9, [x24, x8]",
+          "10001f8b4: 7900052a    \tstrh\tw10, [x9, #0x2]",
+          "10001f8b8: 7900013c    \tstrh\tw28, [x9]",
+          "100020410: 78008d3f    \tstrh\twzr, [x9, #0x8]!",
+          "100020480: 78008d7f    \tstrh\twzr, [x11, #0x8]!",
+          "1000204ec: 78008edf    \tstrh\twzr, [x22, #0x8]!",
+          "100020be4: 78347a6a    \tstrh\tw10, [x19, x20, lsl #1]",
+          "100020d08: 78287989    \tstrh\tw9, [x12, x8, lsl #1]",
+          "100020db8: 78347b0a    \tstrh\tw10, [x24, x20, lsl #1]",
+          "100020ecc: 78287b09    \tstrh\tw9, [x24, x8, lsl #1]",
+          "100020f84: 783c7a8a    \tstrh\tw10, [x20, x28, lsl #1]",
+          "1000210d0: 78287ac9    \tstrh\tw9, [x22, x8, lsl #1]",
+          "1000211a0: 782d7990    \tstrh\tw16, [x12, x13, lsl #1]",
+          "1000211a4: 782f7b10    \tstrh\tw16, [x24, x15, lsl #1]",
+          "1000211b4: 782d7ad1    \tstrh\tw17, [x22, x13, lsl #1]",
+          "1000215f0: b82f7ab0    \tstr\tw16, [x21, x15, lsl #2]",
+          "10002188c: b8297948    \tstr\tw8, [x10, x9, lsl #2]",
+          "100021be4: 782e7acb    \tstrh\tw11, [x22, x14, lsl #1]",
+          "100021bf8: 78257aab    \tstrh\tw11, [x21, x5, lsl #1]",
+          "100021c00: 783e798b    \tstrh\tw11, [x12, x30, lsl #1]",
+          "100021c80: 78257a0b    \tstrh\tw11, [x16, x5, lsl #1]",
+          "100021c88: 782d6acc    \tstrh\tw12, [x22, x13]",
+          "100021c8c: 783e79cb    \tstrh\tw11, [x14, x30, lsl #1]",
+          "100022844: 78008d1f    \tstrh\twzr, [x8, #0x8]!",
+          "100023028: 78287aa9    \tstrh\tw9, [x21, x8, lsl #1]",
+          "100023150: 782f690c    \tstrh\tw12, [x8, x15]",
+          "100023154: 7830690e    \tstrh\tw14, [x8, x16]",
+          "1000231e8: b83b79a8    \tstr\tw8, [x13, x27, lsl #2]",
+          "10002324c: 782e69ac    \tstrh\tw12, [x13, x14]",
+          "100023280: 782d78f0    \tstrh\tw16, [x7, x13, lsl #1]",
+          "1000233c0: b8287823    \tstr\tw3, [x1, x8, lsl #2]",
+          "100023424: 782c78f0    \tstrh\tw16, [x7, x12, lsl #1]",
+          "1000234b4: 782c78eb    \tstrh\tw11, [x7, x12, lsl #1]",
+          "1000234b8: 782d78ee    \tstrh\tw14, [x7, x13, lsl #1]",
+          "100023548: b829794d    \tstr\tw13, [x10, x9, lsl #2]",
+          "100023590: b8287949    \tstr\tw9, [x10, x8, lsl #2]",
+          "1000236cc: 78287ac9    \tstrh\tw9, [x22, x8, lsl #1]",
+          "1000237c4: 782c694b    \tstrh\tw11, [x10, x12]",
+          "1000237e4: 782e694d    \tstrh\tw13, [x10, x14]",
+          "1000237e8: 782f696d    \tstrh\tw13, [x11, x15]",
+          "100023824: 782b78f1    \tstrh\tw17, [x7, x11, lsl #1]",
+          "1000239bc: 782a78f1    \tstrh\tw17, [x7, x10, lsl #1]",
+          "100023a18: 782a78ec    \tstrh\tw12, [x7, x10, lsl #1]",
+          "100023a1c: 782b78ed    \tstrh\tw13, [x7, x11, lsl #1]",
+          "100023a50: b83b7928    \tstr\tw8, [x9, x27, lsl #2]",
+          "10002404c: b8287969    \tstr\tw9, [x11, x8, lsl #2]",
+          "100024054: b828793f    \tstr\twzr, [x9, x8, lsl #2]",
+          "10002406c: 782c78eb    \tstrh\tw11, [x7, x12, lsl #1]",
+          "100024070: 782d78ee    \tstrh\tw14, [x7, x13, lsl #1]",
+          "100024204: b8287969    \tstr\tw9, [x11, x8, lsl #2]",
+          "10002420c: b828793f    \tstr\twzr, [x9, x8, lsl #2]",
+          "100025ef8: b8287949    \tstr\tw9, [x10, x8, lsl #2]",
+          "1000268f4: 782d7988    \tstrh\tw8, [x12, x13, lsl #1]",
+          "100026d04: 78008ebf    \tstrh\twzr, [x21, #0x8]!",
+          "100026d70: 78008f3f    \tstrh\twzr, [x25, #0x8]!",
+          "100026dd4: 78008f1f    \tstrh\twzr, [x24, #0x8]!",
+          "100027508: 78287ac9    \tstrh\tw9, [x22, x8, lsl #1]",
+          "1000275f4: 78287aa9    \tstrh\tw9, [x21, x8, lsl #1]",
+          "1000276e4: 78287aa9    \tstrh\tw9, [x21, x8, lsl #1]",
+          "1000277e0: 78287b29    \tstrh\tw9, [x25, x8, lsl #1]",
+          "1000278d4: 78287a89    \tstrh\tw9, [x20, x8, lsl #1]",
+          "1000279c4: 78287b09    \tstrh\tw9, [x24, x8, lsl #1]",
+          "100027a70: 78297aad    \tstrh\tw13, [x21, x9, lsl #1]",
+          "100027a74: 782a7b2d    \tstrh\tw13, [x25, x10, lsl #1]",
+          "100027a84: 78297b0b    \tstrh\tw11, [x24, x9, lsl #1]",
+          "100027e28: b8287a69    \tstr\tw9, [x19, x8, lsl #2]",
+          "100027fc8: 78287ac9    \tstrh\tw9, [x22, x8, lsl #1]",
+          "1000280b4: 78287aa9    \tstrh\tw9, [x21, x8, lsl #1]",
+          "1000281a4: 78287aa9    \tstrh\tw9, [x21, x8, lsl #1]",
+          "1000282a0: 78287b29    \tstrh\tw9, [x25, x8, lsl #1]",
+          "100028394: 78287a89    \tstrh\tw9, [x20, x8, lsl #1]",
+          "100028484: 78287b09    \tstrh\tw9, [x24, x8, lsl #1]",
+          "100028530: 78297aac    \tstrh\tw12, [x21, x9, lsl #1]",
+          "100028534: 782a7b2c    \tstrh\tw12, [x25, x10, lsl #1]",
+          "100028544: 78297b0b    \tstrh\tw11, [x24, x9, lsl #1]",
+          "100028a48: 78287aca    \tstrh\tw10, [x22, x8, lsl #1]",
+          "100028b90: 78287aa9    \tstrh\tw9, [x21, x8, lsl #1]",
+          "100028c9c: 78287aea    \tstrh\tw10, [x23, x8, lsl #1]",
+          "100028da0: 78287b29    \tstrh\tw9, [x25, x8, lsl #1]",
+          "100028ea8: 78287a8a    \tstrh\tw10, [x20, x8, lsl #1]",
+          "100028f9c: 78287b09    \tstrh\tw9, [x24, x8, lsl #1]",
+          "100029038: 78297aad    \tstrh\tw13, [x21, x9, lsl #1]",
+          "10002903c: 782a7b2d    \tstrh\tw13, [x25, x10, lsl #1]",
+          "10002904c: 78297b0b    \tstrh\tw11, [x24, x9, lsl #1]",
+          "100029414: b8297a6a    \tstr\tw10, [x19, x9, lsl #2]",
+          "10002945c: b82b7a6d    \tstr\tw13, [x19, x11, lsl #2]",
+          "100029798: b82a7968    \tstr\tw8, [x11, x10, lsl #2]",
+          "100029880: 78257aa9    \tstrh\tw9, [x21, x5, lsl #1]",
+          "100029888: 782d6b0c    \tstrh\tw12, [x24, x13]",
+          "10002988c: 782e7b29    \tstrh\tw9, [x25, x14, lsl #1]",
+          "10002b380: 78297aa8    \tstrh\tw8, [x21, x9, lsl #1]",
+          "10002b85c: 78297aa8    \tstrh\tw8, [x21, x9, lsl #1]",
+          "10002bd88: 78297aa8    \tstrh\tw8, [x21, x9, lsl #1]"
+        ],
+        "interpretation": "Typed store pattern only; the reference opaque symbol is not independently source mapped."
+      }
+    ]
+  },
+  "after": {
+    "binary": "/private/tmp/mech-consuming-stores-round06-20261028/current",
+    "sha256": "8b2a5b0c09ee3f2af07232c930b61d741b47db03eafed1f3597629298adebf33",
+    "symbols_command": [
+      "/opt/homebrew/opt/llvm/bin/llvm-nm",
+      "--numeric-sort",
+      "--demangle",
+      "/private/tmp/mech-consuming-stores-round06-20261028/current"
+    ],
+    "candidates": [
+      "0000000101584904 t <mech_gpu::native_artifact::program::runtime::invocation::Invocation>::unsigned_matrix_replace_call::{closure#2}",
+      "0000000101584968 t <mech_gpu::native_artifact::program::runtime::invocation::Invocation>::unsigned_matrix_replace_call::{closure#6}",
+      "000000010260eaf4 T <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::unsigned_matrix_replace",
+      "000000010260ed14 t <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::unsigned_matrix_replace_width",
+      "000000010260ee9c T <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::supports_unsigned_matrix_replace",
+      "00000001026974d8 t <mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits::<core::result::Result<(mech_core::snapshot::validation::Value, bool), mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::unsigned_matrix_replace::{closure#0}>"
+    ],
+    "disassembly": [
+      {
+        "symbol": "0000000101584904 t <mech_gpu::native_artifact::program::runtime::invocation::Invocation>::unsigned_matrix_replace_call::{closure#2}",
+        "command": [
+          "/opt/homebrew/opt/llvm/bin/llvm-objdump",
+          "--disassemble",
+          "--start-address=0x101584904",
+          "--stop-address=0x101584968",
+          "/private/tmp/mech-consuming-stores-round06-20261028/current"
+        ],
+        "file": "after-store-0.s",
+        "indexed_word_store_lines": [],
+        "interpretation": "Typed store pattern only; the reference opaque symbol is not independently source mapped."
+      },
+      {
+        "symbol": "0000000101584968 t <mech_gpu::native_artifact::program::runtime::invocation::Invocation>::unsigned_matrix_replace_call::{closure#6}",
+        "command": [
+          "/opt/homebrew/opt/llvm/bin/llvm-objdump",
+          "--disassemble",
+          "--start-address=0x101584968",
+          "--stop-address=0x1015849fc",
+          "/private/tmp/mech-consuming-stores-round06-20261028/current"
+        ],
+        "file": "after-store-1.s",
+        "indexed_word_store_lines": [],
+        "interpretation": "Typed store pattern only; the reference opaque symbol is not independently source mapped."
+      },
+      {
+        "symbol": "000000010260eaf4 T <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::unsigned_matrix_replace",
+        "command": [
+          "/opt/homebrew/opt/llvm/bin/llvm-objdump",
+          "--disassemble",
+          "--start-address=0x10260eaf4",
+          "--stop-address=0x10260ed14",
+          "/private/tmp/mech-consuming-stores-round06-20261028/current"
+        ],
+        "file": "after-store-2.s",
+        "indexed_word_store_lines": [],
+        "interpretation": "Typed store pattern only; the reference opaque symbol is not independently source mapped."
+      },
+      {
+        "symbol": "000000010260ed14 t <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::unsigned_matrix_replace_width",
+        "command": [
+          "/opt/homebrew/opt/llvm/bin/llvm-objdump",
+          "--disassemble",
+          "--start-address=0x10260ed14",
+          "--stop-address=0x10260ee9c",
+          "/private/tmp/mech-consuming-stores-round06-20261028/current"
+        ],
+        "file": "after-store-3.s",
+        "indexed_word_store_lines": [],
+        "interpretation": "Typed store pattern only; the reference opaque symbol is not independently source mapped."
+      },
+      {
+        "symbol": "000000010260ee9c T <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::supports_unsigned_matrix_replace",
+        "command": [
+          "/opt/homebrew/opt/llvm/bin/llvm-objdump",
+          "--disassemble",
+          "--start-address=0x10260ee9c",
+          "--stop-address=0x10260eeb8",
+          "/private/tmp/mech-consuming-stores-round06-20261028/current"
+        ],
+        "file": "after-store-4.s",
+        "indexed_word_store_lines": [],
+        "interpretation": "Typed store in the selected prepared update implementation."
+      },
+      {
+        "symbol": "00000001026974d8 t <mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits::<core::result::Result<(mech_core::snapshot::validation::Value, bool), mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::unsigned_matrix_replace::{closure#0}>",
+        "command": [
+          "/opt/homebrew/opt/llvm/bin/llvm-objdump",
+          "--disassemble",
+          "--start-address=0x1026974d8",
+          "--stop-address=0x102698e20",
+          "/private/tmp/mech-consuming-stores-round06-20261028/current"
+        ],
+        "file": "after-store-5.s",
+        "indexed_word_store_lines": [],
+        "interpretation": "Typed store in the selected prepared update implementation."
+      }
+    ],
+    "typed_store_helper": {
+      "symbol": "000000010244e32c t mech_engine::resident::general::native_collection_calls::prepared::word_updates::replace",
+      "command": [
+        "/opt/homebrew/opt/llvm/bin/llvm-objdump",
+        "--disassemble",
+        "--start-address=0x10244e32c",
+        "--stop-address=0x10244e434",
+        "/private/tmp/mech-consuming-stores-round06-20261028/current"
+      ],
+      "file": "after-typed-store.s",
+      "contains_loop_or_copy_call": false
+    }
+  }
+}
