@@ -173,7 +173,7 @@ impl Invocation<'_, '_, '_> {
         }
         self.state.consumed = false;
         if args[2] == 3 {
-            // Arithmetic/rejection exits have no leaf callback to consume the
+            // Arithmetic/assertion/rejection exits have no leaf callback to consume the
             // owner loan. Drop it before the existing typed error is returned.
             self.borrowed_strings = None;
         }

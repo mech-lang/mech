@@ -1429,7 +1429,21 @@ impl<'plan> CfgDefinition<'plan> {
                     }
                     #[cfg(feature = "canonical-native-program")]
                     crate::native_artifact::codegen::control::plan::CodePlan::Program(_) => {
-                        if terminator == NativeMatchTerminator::Complete {
+                        if matches!(
+                            terminator,
+                            NativeMatchTerminator::Reject | NativeMatchTerminator::IntegrityFailure
+                        ) {
+                            // A checked source failure must unwind any active
+                            // closed-region fuel/owner loan before returning.
+                            let status = match terminator {
+                                NativeMatchTerminator::Reject => {
+                                    crate::native_artifact::abi::STATUS_REJECT
+                                }
+                                _ => crate::native_artifact::abi::STATUS_INTEGRITY,
+                            };
+                            let status = b.ins().iconst(types::I64, status as i64);
+                            b.ins().jump(error, &[status.into()]);
+                        } else if terminator == NativeMatchTerminator::Complete {
                             let hooks = hooks
                                 .as_ref()
                                 .ok_or_else(|| backend("missing typed completion hook"))?;
