@@ -40,6 +40,9 @@ mod sequence_capacity_qualification;
 #[path = "support/canonical_program_buffer_frames.rs"]
 mod buffer_frame_qualification;
 
+#[path = "support/canonical_program_scalar_state.rs"]
+mod scalar_state_qualification;
+
 #[path = "support/canonical_program_record_buffers.rs"]
 mod record_buffer_qualification;
 
