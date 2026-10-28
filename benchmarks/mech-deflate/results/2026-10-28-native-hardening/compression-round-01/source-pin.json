@@ -1,0 +1,11 @@
+{
+  "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+  "artifact_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+  "component_count": 25,
+  "entry": "deflate-compress-into(input<[u8]>, output<[u8]>)",
+  "output_reservation": 13,
+  "compiler_head": "c24984b402a1228cccf934a478965143b539f611",
+  "current_executable_sha256": "f3d665c649ebe49442f56fd13d04edf808b5b32bbb4eae81e41bd9e862a0c74b",
+  "source_characters": 160847,
+  "source_utf8_bytes": 160857
+}

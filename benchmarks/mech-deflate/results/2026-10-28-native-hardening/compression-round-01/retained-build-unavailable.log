@@ -1,0 +1,15 @@
+error[E0460]: found possibly newer version of crate `mech_math` which `mech_stdlib` depends on
+  --> /private/tmp/mech-timing-round.rs:13:105
+   |
+13 |  CanonicalSourceFrontend.compile_document_with_catalog(&DocumentSyntax::cast(parsed.syntax()).unwrap(), mech_stdlib::source_catalog(...
+   |                                                                                                         ^^^^^^^^^^^
+   |
+   = note: perhaps that crate needs to be recompiled?
+   = note: the following crate versions were found:
+           crate `mech_math`: /private/tmp/mech-live-control-target/release/deps/libmech_math.rlib
+           crate `mech_math`: /private/tmp/mech-live-control-target/release/deps/libmech_math-362acc368286e980.rmeta
+           crate `mech_stdlib`: /private/tmp/mech-live-control-target/release/deps/libmech_stdlib-0ce0772bdec500ff.rlib
+
+error: aborting due to 1 previous error
+
+For more information about this error, try `rustc --explain E0460`.
