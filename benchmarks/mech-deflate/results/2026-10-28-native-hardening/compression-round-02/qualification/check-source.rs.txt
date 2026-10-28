@@ -1,0 +1,16 @@
+use mech_engine::CanonicalSourceFrontend;
+use mech_syntax::document::{AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot, parse_canonical_document};
+fn main() {
+    for path in std::env::args().skip(1) {
+        let source = std::fs::read_to_string(&path).unwrap();
+        let parsed = parse_canonical_document(TextSnapshot::new(DocumentId(1), Revision(1), source.as_str()).unwrap(), ParseConfig::default());
+        assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
+        match CanonicalSourceFrontend.compile_document_with_catalog(&DocumentSyntax::cast(parsed.syntax()).unwrap(), mech_stdlib::source_catalog()) {
+            Ok(product) => {
+                let artifact = product.compile_artifact().unwrap();
+                println!("{path}: native={:?}", mech_gpu::native_artifact::JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).map(|_| "accepted"));
+            }
+            Err(error) => println!("{path}: source={error:?}"),
+        }
+    }
+}

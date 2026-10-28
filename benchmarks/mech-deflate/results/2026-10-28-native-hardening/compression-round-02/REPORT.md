@@ -55,8 +55,11 @@ different destinations and selector traversal costs. Live work-ledger tests
 compare exact errors and spent prefixes. Unsupported kinds and overflowing
 summaries decline without spending. The build took 1082.404 seconds; those
 tests ran in 0.01 seconds. The GPU unit filter selects zero and is not counted.
-Permanent source/decoded and linked regressions are committed with the change;
-their wider execution receipts follow this first reality check.
+The [qualification follow-up](qualification/REPORT.md) records 58 distinct
+passing tests including source/decoded recovery and linked assertion ordering.
+It preserves two failed new-fixture attempts, their correction to the actual
+scalar write, and a corrected test-file layout violation. Matrix-source caller
+forms remain separately unqualified; no compressor operation depends on them.
 
 The unchanged real-buffer witness also passes all 24 observations. At the real
 sizes, eight stores take about 3.776 ms for U16 and 21.320 ms for U32. Its
@@ -70,7 +73,7 @@ This witness uses System plus tracking and is separate from goal timings.
 After all primary observations, a separate process performs six repetitions
 (plus warmup and the harness's extra call). All are excluded from primary
 statistics. A two-second sample captures 1138 main-thread samples and actual
-native execution. Its physical peak is 774.1 MiB, including preparation/JIT;
+native execution. Its physical peak is reported by sample as 774.1M, including preparation/JIT;
 that is not a managed-runtime peak. The former full destination walk is no
 longer the dominant visible stack. Remaining samples include schema clone-bound
 walks, ownership witnesses, call planning/binding, resource checks and managed

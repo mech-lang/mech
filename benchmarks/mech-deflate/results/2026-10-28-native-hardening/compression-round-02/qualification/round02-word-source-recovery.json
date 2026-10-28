@@ -1,0 +1,37 @@
+{
+  "name": "round02-word-source-recovery",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "--release",
+    "-j1",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "canonical-native-program",
+    "--test",
+    "canonical_artifact_program",
+    "single_word_updates_keep_aliases_publication_and_finite_denials",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "0c2ed38dd037bd23aed8fc2f5d78a42b7d3f562b",
+  "dirty": " M hosts/gpu/tests/support/canonical_program_packed_updates.rs\n",
+  "exit": 0,
+  "seconds": 62.83241605758667,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round02-word-source-recovery.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

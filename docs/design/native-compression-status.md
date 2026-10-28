@@ -96,11 +96,21 @@ separate JSON inputs; the public CLI also accepts `--native-compile-limits`.
 
 ## Current small timing
 
-The [eight-byte timing receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-01/REPORT.md)
+The [latest eight-byte timing receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-02/REPORT.md)
 use the real tree/cache and unchanged 25 components. With **Roc = 1×**, the
-matched-allocator, uninstrumented Mech median is **5756×** (1.669296125 s versus
-0.000290 s). This is an initial three-observation baseline, not a full-corpus
-result. Preparation and verification are outside the compression timer.
+matched-allocator, uninstrumented compiler comparison improves from **5496×**
+(1.676382750 s) to **2494×** (0.760682250 s), against a fresh 0.000305 s reference.
+The compiler prepays a proven single packed assignment's planning work instead
+of walking the complete destination. Logical resource charges, copies, aliases
+and failure behavior remain unchanged. There are three retained observations
+per Mech executable; this is a small diagnostic, not a full-corpus result.
+Preparation and verification are outside the compression timer.
+
+The [previous baseline](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-01/REPORT.md)
+was 5756× using a 0.000290 s reference; its denominator differs from the fresh
+matched comparison above. The new profile points to schema-bound and ownership
+accounting, call setup, resource checks and managed transport. Exact attribution
+of deduplicated samples remains pending. No next optimization is presumed.
 
 A separate matching-System-allocator, matching-instrumentation compiler control
 improves from **8659×** to **6599×**. That comparison spans the intervening

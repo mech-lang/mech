@@ -331,8 +331,44 @@ scope and outstanding qualification gates. Historical receipts are preserved.
 
 Small complete-compression timing is recorded in
 [`af77b28409414b2d61e30ace29c98a37f152ff48`](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-01/REPORT.md).
-With Roc = 1×, the current matched-allocator, uninstrumented baseline is 5756×.
+With Roc = 1×, that matched-allocator, uninstrumented baseline is 5756×.
 The corrected matching-System/instrumentation before/after control in
 `3465e13cf3263a047b0c158eab7a9d3d15c99ebb` is 8659× → 6599×. Allocator and
 instrumentation changes are separate from the compiler comparison. All 25
 components remain byte-identical, and no long campaign was restarted.
+
+## Packed assignment planning result
+
+Protocol `e0b6b18c60ed6b244263227f97b6cbe0c2a9eeba` precedes implementation
+`335de1c16743343fa6745d7ed2e638f6f1626fa9`; timing and profile were committed
+as `0c2ed38dd037bd23aed8fc2f5d78a42b7d3f562b`. The
+[round 02 report](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-02/REPORT.md)
+retains exact executable/source/allocator hashes and all observations.
+
+A proven single-destination, single-source packed unsigned assignment can
+prepay its unchanged planning charge. The existing meter previews fit; tight
+budgets retain the incremental traversal, exact first denial and spent prefix.
+Copy admission/construction, alias ownership and publication remain unchanged.
+No source component, artifact or compiler architecture boundary changes.
+
+Fresh matched-allocator eight-byte medians improve **5496× → 2494× Roc**,
+1.676382750 s → 0.760682250 s against a 0.000305 s reference. Reported work
+remains 939091080723, output matches exactly, independent inflation succeeds,
+and managed cleanup is complete. The real-buffer witness preserves allocation
+counts/bytes; its faster stores still make physical copies. Only small inputs
+were measured and no cancelled campaign was restarted.
+
+The qualification follow-up records 58 distinct passing tests and all failed
+attempts. The newly introduced matrix-valued source fixture rejected before
+runtime; correcting it to the actual scalar-store operation passes for original
+and decoded artifacts, finite denials, aliases and recovery. Engine units still
+cover scalar and one-cell packed data. Four unsupported caller forms are saved
+as separate reproducers without claiming clean-parent validation. A flat,
+byte-identical engine test-file relocation fixes the module-layout guard; all
+architecture/catalog/routing/inventory/warning/boundary/format checks pass.
+
+The post-change profile no longer has the full destination planning walk as its
+dominant visible stack. Schema-size and ownership accounting, call setup,
+resource checks and managed transport remain visible costs. Resolving the
+sample's deduplicated symbols and measuring one specific mechanism are the next
+bounded steps. The 1× target remains unmet and #973 remains draft.

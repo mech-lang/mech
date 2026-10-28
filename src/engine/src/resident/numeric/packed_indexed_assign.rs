@@ -2,6 +2,7 @@
 use super::*;
 
 #[cfg(test)]
+#[path = "packed_indexed_assign_tests.rs"]
 mod tests;
 
 /// The caller has already validated one selected destination and one source

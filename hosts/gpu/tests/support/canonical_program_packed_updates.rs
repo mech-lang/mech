@@ -4,24 +4,24 @@ use mech_core::{ManagedMemoryBudget, ValueDataDraft as Data};
 use mech_gpu::native_artifact::JitProgramArtifact;
 
 #[test]
-fn single_cell_matrix_updates_keep_aliases_publication_and_finite_denials() {
-    let source = "<buffer> := <[u32]:2,3>\nreplace(xs<buffer>, at<u64>, incoming<[u32]>) => (out<buffer>) :=\n  ~next := xs\n  next[at] = incoming\n  out := next.\nreplace(input<buffer>, at<u64>, incoming<[u32]>)\n";
+fn single_word_updates_keep_aliases_publication_and_finite_denials() {
+    let source = "<buffer> := <[u32]:2,3>\nreplace(xs<buffer>, at<u64>, incoming<u32>) => (out<buffer>) :=\n  ~next := xs\n  next[at] = incoming\n  out := next.\nreplace(input<buffer>, at<u64>, incoming<u32>)\n";
     for artifact in artifacts(source).0 {
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
         let mut output = vec![None; artifact.outputs().len()];
         for (at, incoming, denied_copy) in [
-            (4, vec![Data::U32(17)], false),
-            (6, vec![Data::U32(19), Data::U32(23)], false),
-            (1, vec![Data::U32(31)], true),
-            (6, vec![Data::U32(127)], false),
+            (4, 17, false),
+            (7, 23, false),
+            (1, 31, true),
+            (6, 127, false),
         ] {
             let args = inputs(
                 &artifact,
                 &[
                     ("input", Data::Matrix((1..=6).map(Data::U32).collect())),
                     ("at", Data::U64(at)),
-                    ("incoming", Data::Matrix(incoming.clone().into())),
+                    ("incoming", Data::U32(incoming)),
                 ],
                 &memory,
             );
@@ -33,7 +33,7 @@ fn single_cell_matrix_updates_keep_aliases_publication_and_finite_denials() {
                 policy.library.max_cloned_bytes = Some(0);
             }
             let result = jit.evaluate_into(&args, &mut output, policy, &memory);
-            if incoming.len() != 1 || denied_copy {
+            if at > 6 || denied_copy {
                 assert!(result.is_err());
                 assert_eq!(
                     (memory.used_bytes(), memory.retained_snapshot_nodes()),
@@ -48,7 +48,7 @@ fn single_cell_matrix_updates_keep_aliases_publication_and_finite_denials() {
                 result.unwrap();
                 equal(&artifact, &output, &reference(&artifact, &args));
                 let mut expected = (1..=6).map(Data::U32).collect::<Vec<_>>();
-                expected[[0, 3, 1, 4, 2, 5][at as usize - 1]] = incoming[0].clone();
+                expected[[0, 3, 1, 4, 2, 5][at as usize - 1]] = Data::U32(incoming);
                 assert_eq!(
                     output
                         .last()
