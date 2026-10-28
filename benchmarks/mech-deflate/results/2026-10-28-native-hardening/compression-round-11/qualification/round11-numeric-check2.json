@@ -1,0 +1,30 @@
+{
+  "name": "round11-numeric-check2",
+  "command": [
+    "cargo",
+    "check",
+    "--locked",
+    "--offline",
+    "--release",
+    "-j1",
+    "--manifest-path",
+    "benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--bins",
+    "--message-format=json"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "1fb6b06dea1a20b0976f0a42f66288b48ec7e312",
+  "dirty": " M hosts/gpu/src/native_artifact/codegen/common/terminators.rs\n M hosts/gpu/src/native_artifact/codegen/control/mod.rs\n M hosts/gpu/src/native_artifact/codegen/control/report/mod.rs\n M hosts/gpu/src/native_artifact/program/codegen/mod.rs\n M hosts/gpu/src/native_artifact/program/codegen/tail.rs\n M hosts/gpu/src/native_artifact/program/compiler.rs\n M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/src/native_artifact/program/image/wire/layouts.rs\n M hosts/gpu/src/native_artifact/program/image/wire/mod.rs\n M hosts/gpu/src/native_artifact/program/prepare/mod.rs\n M hosts/gpu/src/native_artifact/program/prepare/tail.rs\n M hosts/gpu/src/native_artifact/program/runtime/buffer_frames.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/tail.rs\n M src/engine/src/resident/general/native_collection_word_reads.rs\n?? hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs\n?? hosts/gpu/src/native_artifact/program/prepare/readonly_numeric.rs\n?? hosts/gpu/src/native_artifact/program/runtime/invocation/readonly_numeric.rs\n",
+  "exit": 0,
+  "seconds": 4.378834962844849,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round11-numeric-check2.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

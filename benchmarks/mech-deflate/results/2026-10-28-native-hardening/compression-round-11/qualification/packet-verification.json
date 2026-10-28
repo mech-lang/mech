@@ -1,0 +1,9 @@
+{
+  "packet_files_verified": 288,
+  "measured_commit_files_verified": 33,
+  "compiler_revision": "06885e0d9a1466ba477d642ee9fd9fd8510b06f2",
+  "post_measurement_documentation": [
+    "benchmarks/mech-deflate/optimization-rounds/readonly-numeric-tails.md"
+  ],
+  "initial_verification": "Working-tree hash comparison encountered the deliberately updated protocol Markdown. Final verification uses measured commit blobs and requires all production/test/config files to match."
+}

@@ -107,19 +107,48 @@ perform an additional row copy. General multidimensional use is not qualified.
 No larger input, new scalar gate, or deployed application was run for this
 same-executable experiment. All failed attempts and actual coverage are retained.
 
-The next compiler slice is general read-only packed unsigned array leaf loops
-with scalar state, extending existing closed-tail machinery. The unchanged
-true-cost literal/extra recurrences and an independent weighted reduction must
-qualify, including a leaf under an ordinary suspended parent. Prove invariant
-owners across backedges, refresh views each invocation, preserve finite resource
-and failure behavior, and rederive image proofs. Successful hot loops must use
-native loads/arithmetic without per-element runtime/frame transactions. Private
-writes, append/growth and arbitrary nested regions remain later work. This
-capability is assigned, not yet implemented.
+The read-only packed unsigned leaf slice is implemented at compiler
+`06885e0d9a1466ba477d642ee9fd9fd8510b06f2` through the existing canonical
+Program, scalar emitter and closed-tail account. All-edge provenance retains
+invariant owners; per-invocation views and native scalar state support an ordinary
+suspended parent. Native loads preserve current matrix geometry, checked errors
+and short-input guards. Independent restoration rederives proofs and prices.
+The full Object selects 45 parented regions with 72 typed load sites and zero
+calls on successful hot backedges. Private writes, growth and arbitrary nesting
+remain separate follow-on work.
 
 ## Current small timing
 
-The [key-reuse packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-10/REPORT.md)
+The [round 11 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-11/REPORT.md)
+measures **408.21× → 346.11× Roc**, with **Roc = 1×**: 0.117155000 s to
+0.099332833 s against a fresh 0.000287 s reference. This is **15.21% less elapsed
+time**, using the unchanged eight-byte source, artifact, allocator and timing
+boundary. All retained calls produce exact raw bytes and independent inflation,
+preserve input aliases and finish with zero managed bytes/nodes. Logical work
+changes 875610515844 → 789930572624 under explicit native work policy 91/IR116.
+
+The caller retains capacity 13 and clears/rebinds the previous result outside
+timing. However, `same_backing` is **false on every before/after call**: compression
+copies the backing across the immutable public argument boundary. This overhead
+is timed; physical output-backing reuse is not established.
+
+There are **128 scoped Rust passes**, twelve passing static contracts and four
+late changed-file checks. Original/decoded weighted reductions have fixed
+245 requests/40715 bytes/six ordinary visits over 0/1/8/64/256 elements. A real
+U16/U32-buffer diagnostic completes eight positions in about 0.83 ms; its exported
+tuple and System/probe allocator are separate from compressor timing. Ten observed
+finite-fuel exits restore the current scalar carrier, release the loan, preserve
+publication on rejection and retry. A real runtime-only linked executable passes
+valid → invalid → valid, preserving assertion-before-division and cleanup.
+
+Fresh direct scalar timing/allocation gates pass (slowest ratio 1.020 against
+1.05), with exact request/byte counts and zero scalar-loop allocation slope. The
+historical round-10 decoded-U64 failure remains unresolved; its failed cohort is
+retained. Larger inputs and broader deployed coverage are not refreshed. The new
+profile still places ordinary frame admission and loop visits prominently; the
+next measured compiler slice is private indexed-write recurrences.
+
+The preceding [key-reuse packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-10/REPORT.md)
 measures **448.70× → 404.86× Roc**, 0.129673750 s to 0.117005125 s against a
 fresh 0.000289 s reference: **9.77% less elapsed time**. Managed projections reuse
 the existing prepared key after exact slot/schema/definition alignment checks in
@@ -128,8 +157,8 @@ All 41 scoped Rust tests and twelve static checks pass; logical work is unchange
 The scalar allocation gates pass, but one scalar timing gate is unresolved:
 decoded U64 measures 1.0526× against the unchanged 1.05 limit. It is retained
 without rerunning for acceptance. This patch has no blanket scalar-latency pass.
-The assigned native numeric leaf feature remains pending; its baseline is not a
-claim of selection. Larger and deployed coverage is not refreshed.
+The round-10 receipt predates native numeric selection; its coverage remains
+separate from the completed round-11 slice above.
 
 The [preceding mixed-state timing receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-08/REPORT.md)
 use the real tree/cache and unchanged 25 components. With **Roc = 1×**, mixed

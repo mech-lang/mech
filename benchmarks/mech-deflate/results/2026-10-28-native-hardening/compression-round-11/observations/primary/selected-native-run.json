@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-readonly-numeric-round11-20261028/primary/selected-native-tests",
+    "--nocapture",
+    "--test-threads=1",
+    "--skip",
+    "all_certified_scalar_primitives_match_ordinary_resident_original_and_decoded"
+  ],
+  "exit": 0,
+  "seconds": 0.9163278340129182,
+  "binary_sha256": "6831078ad6e7ea47dfb223eb20e70ab8fe65ec5bb657c1266d7fbb682a6b679c",
+  "skipped_coverage": "The all-primitives test needs not/xor, which this selected catalog deliberately omits."
+}

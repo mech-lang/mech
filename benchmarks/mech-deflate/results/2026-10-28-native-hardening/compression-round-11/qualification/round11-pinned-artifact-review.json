@@ -1,0 +1,23 @@
+{
+  "name": "round11-pinned-artifact-review",
+  "command": [
+    "/private/tmp/mech-live-control-target/release/artifact_review",
+    "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mec",
+    "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "06885e0d9a1466ba477d642ee9fd9fd8510b06f2",
+  "dirty": "",
+  "exit": 0,
+  "seconds": 56.64020013809204,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round11-pinned-artifact-review.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}
