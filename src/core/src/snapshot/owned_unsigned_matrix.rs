@@ -19,6 +19,23 @@ pub enum UnsignedMatrixOwnershipTransfer {
 }
 
 impl OwnedSnapshotUnsignedMatrix {
+    /// Prepare one private, fixed-shape update phase and its final frozen owner.
+    /// Every fallible allocation/admission finishes before mutable cells escape.
+    /// The result is not an immutable Value until it is consumed by `finish`.
+    pub fn into_private_updates(
+        self,
+        shape: ShapeInstance,
+    ) -> Result<super::PrivateUnsignedMatrix, SnapshotValueError> {
+        let Self {
+            words,
+            schemas,
+            reservation,
+            schema,
+            ..
+        } = self;
+        super::PrivateUnsignedMatrix::prepare(schema, shape, words, schemas, reservation)
+    }
+
     pub fn elements(&self) -> super::super::SequenceView<'_> {
         self.words.elements()
     }

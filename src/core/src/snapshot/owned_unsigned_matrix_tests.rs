@@ -369,3 +369,114 @@ fn reserved_buffer_construction_rejects_wrong_element_kinds_and_logical_extents(
         .is_err()
     );
 }
+
+#[test]
+fn private_fixed_shape_updates_publish_fresh_identity_without_new_admission() {
+    macro_rules! check {
+        ($variant:ident, $width:ident, $count:expr, $word:expr) => {{
+            let (id, table) = schema(IntegerWidth::$width);
+            let count = $count;
+            let mut words = Vec::with_capacity(count + 11);
+            words.resize(count, $word);
+            let pointer = words.as_ptr();
+            let geometry = shape(id, &table, count);
+            let budget = crate::ManagedMemoryBudget::new(32 * 1024 * 1024);
+            let value = admit(
+                Value::from_unsigned_matrix_buffer(
+                    id,
+                    geometry.clone(),
+                    UnsignedMatrixBuffer::$variant(words),
+                    table.clone(),
+                )
+                .unwrap(),
+                &budget,
+            );
+            let old_identity = value.frozen_storage_identity();
+            let old_token = value.resident_token();
+            let old_charge = budget.used_bytes();
+            let UnsignedMatrixOwnershipTransfer::Owned(owned) =
+                value.try_into_owned_unsigned_matrix(&budget).unwrap()
+            else {
+                panic!()
+            };
+            let mut private = owned.into_private_updates(geometry).unwrap();
+            assert_eq!(budget.used_bytes(), old_charge);
+            let UnsignedMatrixViewMut::$variant(words) = private.elements_mut() else {
+                panic!()
+            };
+            assert_eq!(words.as_ptr(), pointer);
+            words[count - 1] = $word + 1;
+            // Freeze must work even when no new byte claim can be admitted and
+            // the next fallible snapshot-import allocation is armed to fail.
+            let rest = budget
+                .reserve_capacity(budget.limit_bytes() - budget.used_bytes())
+                .unwrap();
+            budget.inject_snapshot_import_failure_after(0);
+            let frozen = private.finish();
+            assert!(!old_identity.matches(&frozen));
+            assert_eq!(old_identity.data.strong_count(), 0);
+            assert_ne!(frozen.resident_token(), old_token);
+            let ValueData::Matrix(matrix) = frozen.data() else {
+                panic!()
+            };
+            let SequenceView::$variant(words) = matrix.elements() else {
+                panic!()
+            };
+            assert_eq!(words.as_ptr(), pointer);
+            assert_eq!(words[count - 1], $word + 1);
+            assert!(
+                budget.check_snapshot_import_allocation(1, 1).is_err(),
+                "finish consumed the allocation-failure sentinel"
+            );
+            drop(rest);
+            assert_eq!(budget.used_bytes(), old_charge);
+            // Subsequent ordinary imports/aliases remain immutable and retain
+            // this publication; a new exclusive phase waits for their release.
+            let alias = frozen.clone();
+            let frozen = unavailable(frozen.try_into_owned_unsigned_matrix(&budget).unwrap());
+            assert!(frozen.shares_frozen_storage(&alias));
+            drop(alias);
+            let UnsignedMatrixOwnershipTransfer::Owned(owned) =
+                frozen.try_into_owned_unsigned_matrix(&budget).unwrap()
+            else {
+                panic!()
+            };
+            drop(
+                owned
+                    .into_private_updates(shape(id, &table, count))
+                    .unwrap(),
+            );
+            assert_eq!(budget.used_bytes(), 0);
+            assert_eq!(budget.retained_snapshot_nodes(), 0);
+        }};
+    }
+    check!(U8, W8, 3, 129u8);
+    check!(U16, W16, 262144, 32769u16);
+    check!(U32, W32, 1500513, 0x80000000u32);
+    check!(U64, W64, 3, 0x8000000000000000u64);
+}
+
+#[test]
+fn private_update_preparation_rejects_geometry_and_allocation_without_leaking() {
+    for wrong_geometry in [true, false] {
+        let budget = crate::ManagedMemoryBudget::new(32 * 1024 * 1024);
+        let value = admit(u64_value(305257), &budget);
+        let table = value.schemas().unwrap();
+        let id = value.schema();
+        let UnsignedMatrixOwnershipTransfer::Owned(owned) =
+            value.try_into_owned_unsigned_matrix(&budget).unwrap()
+        else {
+            panic!()
+        };
+        if !wrong_geometry {
+            budget.inject_snapshot_import_failure_after(0);
+        }
+        assert!(
+            owned
+                .into_private_updates(shape(id, &table, if wrong_geometry { 4 } else { 3 }))
+                .is_err()
+        );
+        assert_eq!(budget.used_bytes(), 0);
+        assert_eq!(budget.retained_snapshot_nodes(), 0);
+    }
+}
