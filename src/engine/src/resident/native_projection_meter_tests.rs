@@ -82,6 +82,32 @@ fn native_projection_meter_checks_current_node_and_byte_limits() {
 }
 
 #[test]
+fn native_projection_whole_metadata_preview_uses_its_scope_without_spending() {
+    let memory = mech_core::ManagedMemoryBudget::new(1024 * 1024);
+    let work = NativeLibraryWorkBudget::new(1000, 1000, &memory).unwrap();
+    work.with_call_limits(200, 100, || {
+        let mut policy = limits();
+        policy.max_retained_nodes = Some(3);
+        let mut meter = ResidentBudgetMeter::for_native_projection(&work, policy).unwrap();
+        meter.charge_compute_work(17).unwrap();
+        let before = (meter, work.used());
+        assert!(meter.can_charge_compute_and_nodes(128, 2));
+        assert!(!meter.can_charge_compute_and_nodes(184, 2));
+        assert!(!meter.can_charge_compute_and_nodes(128, 4));
+        assert!(!meter.can_charge_compute_and_nodes(u64::MAX, 0));
+        assert_eq!((meter, work.used()), before);
+        assert!(meter.try_charge_borrowed_metadata_scan(2, true).unwrap());
+        assert_eq!(work.used(), (145, 0));
+        assert_eq!(meter.estimate().retained_nodes(), 2);
+        assert!(!meter.try_charge_borrowed_metadata_scan(1, true).unwrap());
+        assert_eq!(work.used(), (145, 0));
+    })
+    .unwrap();
+    drop(work);
+    assert_eq!(memory.used_bytes(), 0);
+}
+
+#[test]
 fn denied_native_projection_preflight_keeps_spent_comparisons_on_retry() {
     let body = SchemaBody::Map {
         key: Box::new(SchemaBody::String),
