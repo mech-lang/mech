@@ -1,0 +1,36 @@
+{
+  "stack": 936,
+  "tip": 971,
+  "count": 55,
+  "parent": {
+    "pr": 970,
+    "head": "a82d50823e4140edd862886b0c6b5f813a81411c"
+  },
+  "comparison": {
+    "pr": 971,
+    "base": "a82d50823e4140edd862886b0c6b5f813a81411c",
+    "harness_commit": "a4206253dc3eefdd94cc323d15462a8867020969",
+    "result_commit": "424d66201bffe224fce83780f334d288c0f5b0ef"
+  },
+  "adjacency_errors": [],
+  "ci": [
+    {
+      "head": "a82d50823e4140edd862886b0c6b5f813a81411c",
+      "id": 40620093327,
+      "status": "in_progress",
+      "conclusion": null,
+      "cancel_requested": true
+    },
+    {
+      "head": "424d66201bffe224fce83780f334d288c0f5b0ef",
+      "id": 40620734080,
+      "status": "in_progress",
+      "conclusion": null,
+      "cancel_requested": true
+    }
+  ],
+  "review_requested": {
+    "970": 6458844649,
+    "971": 6458949959
+  }
+}
