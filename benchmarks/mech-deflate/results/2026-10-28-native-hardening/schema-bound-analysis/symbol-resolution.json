@@ -1,0 +1,114 @@
+{
+  "binary": "/private/tmp/mech-compression-round02-20261028/current",
+  "sha256": "a98a68366c1d3f807f5ab0ff78a105b72244d3a14f1da8bbcf7aa8ab0e484e6f",
+  "command": [
+    "/opt/homebrew/opt/llvm/bin/llvm-nm",
+    "--numeric-sort",
+    "--demangle",
+    "/private/tmp/mech-compression-round02-20261028/current"
+  ],
+  "slide": "0x2ec0000",
+  "candidates": [
+    {
+      "address": "0x1065367a8",
+      "tree_line_appearances": 2,
+      "symbols": [
+        "00000001065367a8 t <mech_engine::resident::budget::PreparedKernel<usize>>::admit",
+        "00000001065367a8 t <mech_engine::resident::budget::PreparedKernel<u64>>::admit"
+      ]
+    },
+    {
+      "address": "0x1067a2118",
+      "tree_line_appearances": 1,
+      "symbols": [
+        "00000001067a2118 t <alloc::collections::btree::map::IntoIter<mech_core::memory_plan::model::MemoryObjectId, &mech_core::memory_plan::model::AllocationPlan>>::dying_next",
+        "00000001067a2118 t <alloc::collections::btree::map::IntoIter<(mech_core::memory_plan::model::MemorySpace, mech_core::memory_plan::model::ArenaBackingKind), alloc::collections::btree::set_val::SetValZST>>::dying_next"
+      ]
+    },
+    {
+      "address": "0x1067b4bfc",
+      "tree_line_appearances": 1,
+      "symbols": [
+        "00000001067b4bfc t <alloc::collections::btree::map::Iter<mech_core::memory_plan::model::MemoryObjectOwner, mech_core::memory_plan::model::CurrentMemoryFootprint> as core::iter::traits::iterator::Iterator>::next",
+        "00000001067b4bfc t <alloc::collections::btree::map::Iter<(mech_core::semantic_identity::NodeId, mech_core::operation_contract::validation::PortDirection, u16), mech_core::memory_plan::model::CurrentMemoryFootprint> as core::iter::traits::iterator::Iterator>::next"
+      ]
+    },
+    {
+      "address": "0x1067f4304",
+      "tree_line_appearances": 1,
+      "symbols": [
+        "00000001067f4304 t <alloc::vec::Vec<((mech_core::operation_contract::validation::PortDirection, u16), mech_core::memory_plan::model::CurrentMemoryFootprint)> as alloc::vec::spec_from_iter::SpecFromIter<((mech_core::operation_contract::validation::PortDirection, u16), mech_core::memory_plan::model::CurrentMemoryFootprint), core::iter::adapters::filter_map::FilterMap<alloc::collections::btree::map::Iter<(mech_core::semantic_identity::NodeId, mech_core::operation_contract::validation::PortDirection, u16), mech_core::memory_plan::model::CurrentMemoryFootprint>, mech_engine::memory_planner::turn::plan_turn_memory::{closure#11}>>>::from_iter",
+        "00000001067f4304 t <alloc::vec::Vec<((mech_core::operation_contract::validation::PortDirection, u16), mech_core::memory_plan::model::CurrentMemoryFootprint)> as alloc::vec::spec_from_iter::SpecFromIter<((mech_core::operation_contract::validation::PortDirection, u16), mech_core::memory_plan::model::CurrentMemoryFootprint), core::iter::adapters::filter_map::FilterMap<alloc::collections::btree::map::Iter<(mech_core::semantic_identity::NodeId, mech_core::operation_contract::validation::PortDirection, u16), mech_core::memory_plan::model::CurrentMemoryFootprint>, mech_engine::memory_planner::turn::apply_observed_turn_demand::{closure#3}>>>::from_iter"
+      ]
+    },
+    {
+      "address": "0x106df3008",
+      "tree_line_appearances": 2,
+      "symbols": [
+        "0000000106df3008 t <alloc::collections::btree::node::Handle<alloc::collections::btree::node::NodeRef<alloc::collections::btree::node::marker::Mut, mech_core::memory_plan::model::MemoryArenaId, u64, alloc::collections::btree::node::marker::Leaf>, alloc::collections::btree::node::marker::Edge>>::insert_recursing::<alloc::alloc::Global, <alloc::collections::btree::map::entry::VacantEntry<mech_core::memory_plan::model::MemoryArenaId, u64>>::insert_entry::{closure#0}>",
+        "0000000106df3008 t <alloc::collections::btree::node::Handle<alloc::collections::btree::node::NodeRef<alloc::collections::btree::node::marker::Mut, u32, usize, alloc::collections::btree::node::marker::Leaf>, alloc::collections::btree::node::marker::Edge>>::insert_recursing::<alloc::alloc::Global, <alloc::collections::btree::map::entry::VacantEntry<u32, usize>>::insert_entry::{closure#0}>"
+      ]
+    },
+    {
+      "address": "0x106e07e44",
+      "tree_line_appearances": 1,
+      "symbols": [
+        "0000000106e07e44 t <alloc::vec::Vec<mech_core::memory_plan::model::MemoryLifetime>>::into_boxed_slice",
+        "0000000106e07e44 t <alloc::vec::Vec<mech_core::memory_plan::model::TransactionRequirement>>::into_boxed_slice"
+      ]
+    },
+    {
+      "address": "0x106e0d8f8",
+      "tree_line_appearances": 1,
+      "symbols": [
+        "0000000106e0d8f8 t <alloc::vec::Vec<mech_core::dimension::DimensionExpr> as alloc::vec::spec_from_iter::SpecFromIter<mech_core::dimension::DimensionExpr, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_core::dimension::DimensionExpr>, mech_core::dimension::rewrite_children::{closure#0}>, core::result::Result<core::convert::Infallible, mech_core::semantic_error::SemanticModelError>>>>::from_iter",
+        "0000000106e0d8f8 t <alloc::vec::Vec<mech_core::dimension::DimensionExpr> as alloc::vec::spec_from_iter::SpecFromIter<mech_core::dimension::DimensionExpr, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_core::dimension::DimensionExpr>, mech_core::kind_expr::rewrite_kind_dimensions::{closure#0}>, core::result::Result<core::convert::Infallible, mech_core::semantic_error::SemanticModelError>>>>::from_iter",
+        "0000000106e0d8f8 t <alloc::vec::Vec<mech_core::dimension::DimensionExpr> as alloc::vec::spec_from_iter::SpecFromIter<mech_core::dimension::DimensionExpr, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_core::dimension::DimensionExpr>, mech_core::type_system::resolved_value::resolved_schema_body::{closure#1}>, core::result::Result<core::convert::Infallible, mech_core::semantic_error::SemanticModelError>>>>::from_iter",
+        "0000000106e0d8f8 t <alloc::vec::Vec<mech_core::dimension::DimensionExpr> as alloc::vec::spec_from_iter::SpecFromIter<mech_core::dimension::DimensionExpr, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_core::dimension::DimensionExpr>, mech_core::schema::validation::rewrite_body_dimensions::{closure#2}>, core::result::Result<core::convert::Infallible, mech_core::semantic_error::SemanticModelError>>>>::from_iter"
+      ]
+    },
+    {
+      "address": "0x106e0df7c",
+      "tree_line_appearances": 8,
+      "symbols": [
+        "0000000106e0df7c t <alloc::vec::Vec<mech_core::dimension::DimensionExpr> as alloc::vec::spec_from_iter::SpecFromIter<mech_core::dimension::DimensionExpr, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_core::dimension::DimensionExpr>, mech_core::kind_expr::normalize_kind_dimensions::{closure#0}>, core::result::Result<core::convert::Infallible, mech_core::semantic_error::SemanticModelError>>>>::from_iter",
+        "0000000106e0df7c t <alloc::vec::Vec<mech_core::dimension::DimensionExpr> as alloc::vec::spec_from_iter::SpecFromIter<mech_core::dimension::DimensionExpr, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_core::dimension::DimensionExpr>, mech_core::schema::validation::normalize_body_dimensions::{closure#2}>, core::result::Result<core::convert::Infallible, mech_core::semantic_error::SemanticModelError>>>>::from_iter"
+      ]
+    },
+    {
+      "address": "0x106e1da90",
+      "tree_line_appearances": 1,
+      "symbols": [
+        "0000000106e1da90 t <alloc::vec::Vec<mech_core::memory_plan::model::MemoryLifetime> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<mech_core::memory_plan::model::MemoryLifetime, core::iter::adapters::map::Map<core::slice::iter::Iter<mech_core::memory_plan::model::PhysicalStorageDescriptor>, mech_core::memory_plan::derive::plan_call_memory::{closure#8}>>>::from_iter",
+        "0000000106e1da90 t <alloc::vec::Vec<mech_core::memory_plan::model::MemoryLifetime> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<mech_core::memory_plan::model::MemoryLifetime, core::iter::adapters::map::Map<core::slice::iter::Iter<mech_core::memory_plan::model::PhysicalStorageDescriptor>, mech_core::memory_plan::derive::plan_call_memory::{closure#9}>>>::from_iter"
+      ]
+    },
+    {
+      "address": "0x106e89e5c",
+      "tree_line_appearances": 452,
+      "symbols": [
+        "0000000106e89e5c t mech_core::schema::table::body_clone_heap_bytes_with::<<mech_core::schema::table::SchemaTable>::clone_allocation_bound_bytes_with_precharge<core::convert::Infallible, <mech_core::schema::table::SchemaTable>::clone_allocation_bound_bytes::{closure#0}>::{closure#0}>",
+        "0000000106e89e5c t mech_core::schema::table::body_clone_heap_bytes_with::<mech_core::schema::table::body_clone_heap_bytes::{closure#0}>",
+        "0000000106e89e5c t mech_core::schema::table::body_clone_heap_bytes_with::<mech_core::schema::table::schema_clone_heap_bytes::{closure#0}>"
+      ]
+    },
+    {
+      "address": "0x106e8a210",
+      "tree_line_appearances": 30,
+      "symbols": [
+        "0000000106e8a210 t mech_core::schema::table::dimension_clone_heap_bytes_with::<<mech_core::schema::table::SchemaTable>::clone_allocation_bound_bytes_with_precharge<core::convert::Infallible, <mech_core::schema::table::SchemaTable>::clone_allocation_bound_bytes::{closure#0}>::{closure#0}>",
+        "0000000106e8a210 t mech_core::schema::table::dimension_clone_heap_bytes_with::<mech_core::schema::table::schema_clone_heap_bytes::{closure#0}>"
+      ]
+    },
+    {
+      "address": "0x106e9d584",
+      "tree_line_appearances": 1,
+      "symbols": [
+        "0000000106e9d584 t <alloc::collections::btree::map::BTreeMap<mech_core::semantic_identity::DimensionParameterId, mech_core::type_system::solver::RigidDimensionOrigin> as core::ops::drop::Drop>::drop",
+        "0000000106e9d584 t <alloc::collections::btree::map::BTreeMap<mech_core::memory_plan::model::MemoryArenaId, u64> as core::ops::drop::Drop>::drop",
+        "0000000106e9d584 t <alloc::collections::btree::map::BTreeMap<u32, usize> as core::ops::drop::Drop>::drop",
+        "0000000106e9d584 t <alloc::collections::btree::map::BTreeMap<u64, u32> as core::ops::drop::Drop>::drop"
+      ]
+    }
+  ]
+}
