@@ -1,0 +1,12 @@
+{
+  "exit": 0,
+  "wall_seconds": 7.044150916975923,
+  "input_bytes": 8,
+  "level": 12,
+  "verified_repetitions": 20000,
+  "binary_sha256": "3941ef59b2c9343d0493cc6b6d14ca4803e6bd27acfe520b1fb59d9b63026324",
+  "sample_exit": 0,
+  "timings_are_profiled": true,
+  "source_compiler_revision": "d99c7b838fb05bb1047eb0c18d4d06d0f86f345d",
+  "source_package_revision": "671077457ff7ef3a3d44caf715a3fc595addf379"
+}

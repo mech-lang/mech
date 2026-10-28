@@ -197,3 +197,59 @@ record-word, three unsigned-length, 14 capacity, and two caller-inventory tests.
 These functional runs were concurrent; their incidental timings are not a
 performance comparison. No per-operation allocation or interpreted dispatch
 was introduced, and direct scalar emission is unchanged.
+
+The published checkpoint is `39442acb64ed47500ec26d5c4037cc37d0015ebe`.
+Its requested review completed with no findings or unresolved threads. CI run
+40635783224 was cancelled by request; it is not passing CI evidence.
+
+## Frame measurement checkpoint
+
+The probe and one-shot comparison driver are in `hosts/gpu/examples/native_frame_transport.rs`
+and `benchmarks/native-frame-transport/`. Before changing frame storage, an
+allocation diagnostic linked the current debug runtime libraries with an
+optimized wrapper. Its source, commands, first type-inference error/fix and all
+warmup/retained observations are preserved. The task compiler was paused while
+measuring and resumed afterwards. This is not the optimized acceptance cohort.
+
+Exclusive-buffer visits add exactly 67 requests and 3966 requested bytes each;
+aliased-buffer visits add 70 requests and 4234 bytes each. At 64 visits, warmed
+counts are 4578/289771 bytes and 4750/305254 bytes respectively; measured debug
+times are about 3.4 ms. The scalar-only loop uses 164 requests/24048 bytes at
+both zero and 64 visits, with a generated scalar loop and no private frame.
+
+The primary comparison is now frozen at 64 visits. Its committed protocol adds
+original/decoded forms, direct Bool/U64/I64/F64 controls, and exact scalar
+allocation-slope checks. It retains every sample, balances execution order,
+requires the same artifact hash across compilers, and refuses concurrent local
+compilation. No primary observations have started. The optimized baseline build
+must finish before its executable is saved and frame implementation changes
+are wired into the maintained pipeline.
+
+The maintained compressor assembly is now shared under the fixture owner.
+Its 25 components plus entry are byte-identical to the saved source: 160992
+bytes, SHA-256 `345324ce551aaa2485dcd0fe4262da96e660d6b31f5f772bff89b034e9b1997f`.
+The pin has an ordinary Rust regression as well as the recorded byte comparison.
+Public finite-policy execution remains pending.
+
+The earlier [native profiles](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/profiling/REPORT.md)
+are retained separately from fresh compiler qualification and the declared
+frame comparison. They establish generic indexed-copy and budget-traversal
+costs without assigning all complete-compressor cost to frames.
+
+The optimized baseline executable is now saved independently of Cargo output:
+SHA-256 `9528eafd738edf78e46d78f926b67dd2ef62e06894039415bf2f0d4b1ce33cda`.
+Its production sources match `39442acb64ed47500ec26d5c4037cc37d0015ebe`; the
+probe source and complete production-source manifest accompany its receipts.
+The full dependency rebuild took about 50 minutes, including a deliberate
+diagnostic pause. Probe-only hash formatting failed with sha2 0.11's output
+type, then passed after portable byte formatting (6.212-second rebuild).
+This was build time, not Mech execution time. All failed attempts remain.
+
+Optimized diagnostic runs of all seven cases in original/decoded form pass
+verification and cleanup. At 64 visits, mixed frames retain the same request
+and byte counts above and take about 0.31 ms; the scalar loop takes about 9 µs.
+Direct Bool/U64/I64/F64 controls take about 1.06–1.09 ms per 1000 invocations
+(36 requests and 4804 requested bytes per invocation, including their existing
+public entry setup). These are diagnostic observations, not the balanced
+acceptance comparison. The immutable baseline executable is preserved before
+wiring any frame-storage change.

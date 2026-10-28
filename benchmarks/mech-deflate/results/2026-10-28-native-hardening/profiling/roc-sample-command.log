@@ -1,0 +1,5 @@
+Sampling process 12710 for 8 seconds with 1 millisecond of run time between samples
+Couldn't find _sigtramp symbol in expected dylibs
+Found _sigtramp symbol after 6 tries
+Sampling completed, processing symbols...
+Sample analysis of process 12710 written to file /private/tmp/mech-deflate-profiling-20261028/roc-profile.sample.txt
