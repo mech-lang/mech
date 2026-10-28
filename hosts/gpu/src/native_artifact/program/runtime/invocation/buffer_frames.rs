@@ -29,27 +29,31 @@ impl Invocation<'_, '_, '_> {
                     return Err(invalid("private frame pack operands differ"));
                 }
                 for (index, operand) in operands.iter().enumerate() {
-                    let value = if descriptor.metadata().plan.values()[operand.get() as usize]
-                        .scalar_kind()
-                        .is_some()
+                    self.state.call_inputs.values_mut()[index] = if let Some(kind) =
+                        descriptor.metadata().plan.values()[operand.get() as usize].scalar_kind()
                     {
-                        self.scalar(*operand, words[index])?
+                        if !kind.accepts_bits(words[index]) {
+                            return Err(invalid("private frame scalar word exceeds its type"));
+                        }
+                        None
                     } else {
                         if words[index] != 0 {
                             return Err(invalid("private frame managed input has native bits"));
                         }
-                        self.state
-                            .arena
-                            .copy_current(operand.get(), &mut self.state.control.work)?
+                        Some(
+                            self.state
+                                .arena
+                                .copy_current(operand.get(), &mut self.state.control.work)?,
+                        )
                     };
-                    self.state.call_inputs.values_mut()[index] = Some(value);
                 }
                 let call = descriptor.metadata().calls[site]
                     .as_ref()
                     .ok_or_else(|| invalid("private frame lost selected factory"))?;
                 let coexistence = self.selected_join_coexistence(None)?;
-                let outcome = call.admit_buffer_frame(
+                let outcome = call.admit_buffer_frame_words(
                     &self.state.call_inputs.values()[..words.len()],
+                    words,
                     self.limits,
                     &self.state.library,
                     coexistence,
@@ -61,13 +65,15 @@ impl Invocation<'_, '_, '_> {
                         error,
                     });
                 }
-                self.state.buffer_frames.pack(
+                let packed = self.state.buffer_frames.pack(
                     layout,
                     *output,
                     &self.state.call_inputs.values()[..words.len()],
+                    words,
                     &mut self.state.control.work,
-                )?;
+                );
                 self.state.call_inputs.values_mut()[..words.len()].fill(None);
+                packed?;
             }
             Operation::Copy { source, output } if tag == GlobalHelper::Move && words.is_empty() => {
                 let expected = self
@@ -126,29 +132,51 @@ impl Invocation<'_, '_, '_> {
                         .as_ref()
                         .ok_or_else(|| invalid("private record field lost selected factory"))?;
                     let coexistence = self.selected_join_coexistence(None)?;
-                    call.admit_buffer_record_field(
-                        &selector,
-                        *ordinal,
-                        &value,
-                        self.limits,
-                        &self.state.library,
-                        coexistence,
-                    )
+                    match &value {
+                        super::super::buffer_frames::Field::Managed(value) => call
+                            .admit_buffer_record_field(
+                                &selector,
+                                *ordinal,
+                                value,
+                                self.limits,
+                                &self.state.library,
+                                coexistence,
+                            ),
+                        super::super::buffer_frames::Field::Scalar { schema, value } => call
+                            .admit_buffer_record_word(
+                                &selector,
+                                *ordinal,
+                                *schema,
+                                *value,
+                                self.limits,
+                                &self.state.library,
+                                coexistence,
+                            ),
+                    }
                     .map_err(|error| Error::Library {
                         origin: descriptor.metadata().plan.blocks()[site].origin(),
                         error,
                     })?;
                 }
                 let ty = &descriptor.metadata().plan.values()[output.get() as usize];
-                if value.schema() != ty.schema() || value.schema_key() != ty.schema_key() {
-                    return Err(invalid("private frame field schema differs"));
-                }
-                if let Some(kind) = ty.scalar_kind() {
-                    result = Some(bits(&value, kind)?);
-                } else {
-                    self.state
-                        .arena
-                        .put(output.get(), &value, &mut self.state.control.work)?;
+                match value {
+                    super::super::buffer_frames::Field::Scalar { schema, value } => {
+                        if schema != ty.schema() || ty.scalar_kind() != Some(value.kind()) {
+                            return Err(invalid("private frame scalar field schema differs"));
+                        }
+                        result = Some(value.to_bits());
+                    }
+                    super::super::buffer_frames::Field::Managed(value) => {
+                        if value.schema() != ty.schema()
+                            || value.schema_key() != ty.schema_key()
+                            || ty.scalar_kind().is_some()
+                        {
+                            return Err(invalid("private frame managed field schema differs"));
+                        }
+                        self.state
+                            .arena
+                            .put(output.get(), &value, &mut self.state.control.work)?;
+                    }
                 }
             }
             _ => {

@@ -1,4 +1,4 @@
-//! Private tuple/record frames whose leaves remain admitted immutable Values.
+//! Private tuple/record frames with native scalar leaves and admitted managed owners.
 //! The complete connected component must have only pack/copy/project uses.
 use super::{
     NativeCollectionPrimitive as Primitive, NativeControlLoop as Loop,
@@ -37,11 +37,38 @@ impl NativeBufferFrameAction {
         &self.retire
     }
 }
+/// An immutable field recipe derived from exact same-component leaf schemas.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NativeBufferFrameLane {
+    Scalar {
+        at: usize,
+        kind: super::NativeScalarKind,
+    },
+    Managed {
+        at: usize,
+    },
+}
+#[derive(Clone, Copy, Debug)]
+pub struct NativeBufferFrameField {
+    schema: SchemaId,
+    lane: NativeBufferFrameLane,
+}
+impl NativeBufferFrameField {
+    pub fn schema(&self) -> SchemaId {
+        self.schema
+    }
+    pub fn lane(&self) -> NativeBufferFrameLane {
+        self.lane
+    }
+}
 #[derive(Clone, Debug, Default)]
 pub struct NativeBufferFrames {
     slots: Box<[Option<(usize, usize)>]>,
     actions: Box<[Option<NativeBufferFrameAction>]>,
     elements: usize,
+    fields: Box<[NativeBufferFrameField]>,
+    scalar_fields: usize,
+    managed_fields: usize,
 }
 impl NativeBufferFrames {
     pub fn slot(&self, value: Value) -> Option<(usize, usize)> {
@@ -55,6 +82,20 @@ impl NativeBufferFrames {
     }
     pub fn elements(&self) -> usize {
         self.elements
+    }
+    pub fn scalar_fields(&self) -> usize {
+        self.scalar_fields
+    }
+    pub fn managed_fields(&self) -> usize {
+        self.managed_fields
+    }
+    pub fn fields(&self, value: Value) -> Option<&[NativeBufferFrameField]> {
+        let (at, count) = self.slot(value)?;
+        self.fields.get(at..at + count)
+    }
+    pub fn fields_at(&self, value: usize) -> Option<&[NativeBufferFrameField]> {
+        let (at, count) = self.slot_at(value)?;
+        self.fields.get(at..at + count)
     }
 }
 
@@ -400,6 +441,34 @@ impl Facts<'_> {
                 Some((start, n))
             })
             .collect::<Box<[_]>>();
+        let kinds = plan
+            .values()
+            .iter()
+            .map(|ty| (ty.schema(), ty.scalar_kind()))
+            .collect::<std::collections::BTreeMap<_, _>>();
+        let mut scalar_fields = 0;
+        let mut managed_fields = 0;
+        let mut field_layout = Vec::with_capacity(elements);
+        for (i, slot) in slots.iter().enumerate() {
+            if slot.is_none() {
+                continue;
+            }
+            for schema in schemas[i].as_ref().unwrap() {
+                let lane = if let Some(kind) = kinds[schema] {
+                    let at = scalar_fields;
+                    scalar_fields += 1;
+                    NativeBufferFrameLane::Scalar { at, kind }
+                } else {
+                    let at = managed_fields;
+                    managed_fields += 1;
+                    NativeBufferFrameLane::Managed { at }
+                };
+                field_layout.push(NativeBufferFrameField {
+                    schema: *schema,
+                    lane,
+                });
+            }
+        }
         let selected = |value: Value| slots[value.get() as usize].is_some();
         let actions = plan
             .blocks()
@@ -455,6 +524,9 @@ impl Facts<'_> {
             slots,
             actions,
             elements,
+            fields: field_layout.into(),
+            scalar_fields,
+            managed_fields,
         }
     }
 }

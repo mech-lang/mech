@@ -16,6 +16,20 @@ pub enum NativeScalarKind {
 
 #[cfg(feature = "native-artifact")]
 impl NativeScalarKind {
+    /// Exact native leaf vocabulary. Aggregate eligibility remains consumer-owned.
+    pub fn from_schema_body(body: &mech_core::SchemaBody) -> Option<Self> {
+        use mech_core::{FloatWidth, IntegerWidth, SchemaBody};
+        Some(match body {
+            SchemaBody::Bool => Self::Bool,
+            SchemaBody::UnsignedInteger(IntegerWidth::W8) => Self::U8,
+            SchemaBody::UnsignedInteger(IntegerWidth::W16) => Self::U16,
+            SchemaBody::UnsignedInteger(IntegerWidth::W32) => Self::U32,
+            SchemaBody::UnsignedInteger(IntegerWidth::W64) => Self::U64,
+            SchemaBody::SignedInteger(IntegerWidth::W64) => Self::I64,
+            SchemaBody::FloatingPoint(FloatWidth::W64) => Self::F64,
+            _ => return None,
+        })
+    }
     /// Maximum canonical unsigned payload; other kinds preserve their own bits.
     pub const fn unsigned_maximum(self) -> Option<u64> {
         match self {

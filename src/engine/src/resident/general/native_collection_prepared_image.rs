@@ -67,6 +67,9 @@ impl NativePreparedLibraryCall {
             .resident_factory(&key.module_path, &key.operation_name)
             .ok_or("prepared image factory is not linked")?
             .factory();
+        #[cfg(feature = "sequence_buffers")]
+        let frame_geometry =
+            super::buffer_frames::FrameGeometry::derive(&template, &schemas, wire.binding_bytes);
         let call = Self {
             template,
             schemas,
@@ -80,6 +83,8 @@ impl NativePreparedLibraryCall {
             lookup_work: wire.lookup_work,
             output_follows_input: wire.output_follows_input,
             cache_identity: Arc::new(()),
+            #[cfg(feature = "sequence_buffers")]
+            frame_geometry,
             span_selector_metadata_bytes: wire.span_selector_metadata_bytes,
             span_selector_work: wire.span_selector_work,
             #[cfg(feature = "pure_text")]

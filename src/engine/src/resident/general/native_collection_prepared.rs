@@ -70,6 +70,9 @@ mod image;
 #[cfg(feature = "sequence_buffers")]
 #[path = "native_collection_buffer_frames.rs"]
 mod buffer_frames;
+#[cfg(feature = "sequence_buffers")]
+#[path = "native_collection_frame_shape.rs"]
+mod frame_shape;
 #[path = "native_collection_histogram.rs"]
 mod histogram;
 #[path = "native_collection_record_words.rs"]
@@ -130,6 +133,9 @@ pub struct NativePreparedLibraryCall {
     output_follows_input: bool,
     #[serde(skip)]
     cache_identity: Arc<()>,
+    #[cfg(feature = "sequence_buffers")]
+    #[serde(skip)]
+    frame_geometry: Option<Box<buffer_frames::FrameGeometry>>,
     span_selector_metadata_bytes: u64,
     span_selector_work: u64,
     #[cfg(feature = "pure_text")]
@@ -347,6 +353,9 @@ pub fn prepare_native_program_library_call(
     } else {
         (0, 0)
     };
+    #[cfg(feature = "sequence_buffers")]
+    let frame_geometry =
+        buffer_frames::FrameGeometry::derive(&template, artifact.schemas(), binding_bytes);
     Ok(NativePreparedLibraryCall {
         template,
         schemas: Arc::new(artifact.schemas().clone()),
@@ -360,6 +369,8 @@ pub fn prepare_native_program_library_call(
         lookup_work,
         output_follows_input,
         cache_identity: Arc::new(()),
+        #[cfg(feature = "sequence_buffers")]
+        frame_geometry,
         span_selector_metadata_bytes,
         span_selector_work,
         #[cfg(feature = "pure_text")]

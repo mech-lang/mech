@@ -444,19 +444,12 @@ impl<'a> Prepared<'a> {
                 .and_then(|bytes| bytes.checked_add(admitted))
                 .ok_or_else(|| invalid("worker fixed backing admission overflow"))?;
         }
-        let frame_elements = descriptor.metadata().buffer_frames.elements();
-        if frame_elements != 0 {
+        let frames = &descriptor.metadata().buffer_frames;
+        if frames.elements() != 0 {
             bytes = bytes
-                .checked_sub(amount(
-                    frame_elements,
-                    size_of::<Option<Value>>() as u64,
-                    0,
-                )?)
+                .checked_sub(super::buffer_frames::BufferFrames::raw_bytes(frames)?)
                 .and_then(|n| {
-                    n.checked_add(
-                        NativeTypedStorage::<Option<Value>>::admission_bytes(frame_elements)
-                            .ok()?,
-                    )
+                    n.checked_add(super::buffer_frames::BufferFrames::admission_bytes(frames).ok()?)
                 })
                 .ok_or_else(|| invalid("private frame admission overflow"))?;
         }
@@ -487,10 +480,8 @@ impl<'a> Prepared<'a> {
             .and_then(|n| n.checked_add(descriptor.metadata().retirements.words().len()))
             .ok_or_else(|| invalid("transport count overflow"))?;
         let word_and_frame_bytes = transport_bytes(words)?
-            .checked_add(amount(
-                descriptor.metadata().buffer_frames.elements(),
-                size_of::<Option<Value>>() as u64,
-                0,
+            .checked_add(super::buffer_frames::BufferFrames::raw_bytes(
+                &descriptor.metadata().buffer_frames,
             )?)
             .ok_or_else(|| invalid("private frame transport overflow"))?;
         let word_and_frame_bytes = word_and_frame_bytes
