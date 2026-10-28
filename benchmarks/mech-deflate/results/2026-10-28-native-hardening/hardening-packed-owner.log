@@ -1,0 +1,9 @@
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/gpu)
+    Finished `test` profile [unoptimized] target(s) in 28.85s
+     Running unittests src/lib.rs (/private/tmp/mech-live-control-target/debug/deps/mech_gpu-2678607daf86f560)
+
+running 1 test
+test native_artifact::program::runtime::collections::data::tests::unsigned_completion_transfers_the_same_allocation_with_spare_capacity ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 423 filtered out; finished in 0.00s
+

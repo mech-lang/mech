@@ -855,6 +855,7 @@ impl State {
                     builder.values.output_bytes(
                         payload_bytes,
                         count as u64,
+                        capacity,
                         plan.values()
                             [plan.collections()[*collection as usize].output().get() as usize]
                             .definition()
@@ -1006,6 +1007,7 @@ impl State {
         let output_bytes = builder.values.output_bytes(
             payload,
             count,
+            builder.values.capacity(),
             output.definition().dimension_parameters().len(),
         )?;
         let envelope = add(

@@ -1,11 +1,15 @@
 //! Borrowed sequence reads and typed unsigned collection storage.
 use super::{Error, invalid};
-use mech_core::{Value, ValueData, snapshot::SequenceView};
+use mech_core::{
+    Value, ValueData,
+    snapshot::{SequenceView, UnsignedMatrixBuffer},
+};
 use mech_engine::native_artifact::NativeScalarKind;
 
 // The collected word stays in its exact storage width. Finalization transfers
 // that allocation to the ordinary canonical Matrix constructor, without an
-// intermediate draft array or a per-element repacking pass.
+// intermediate draft array, shrinking reallocation or per-element repacking.
+// Spare capacity is retained and included in output admission.
 pub(super) enum CollectedValues {
     U8(Vec<u8>),
     U16(Vec<u16>),
@@ -75,6 +79,7 @@ impl CollectedValues {
         &self,
         payload: u64,
         count: u64,
+        capacity: usize,
         shape_parameters: usize,
     ) -> Result<u64, Error> {
         let metadata = if self.packed_width().is_some() {
@@ -85,7 +90,12 @@ impl CollectedValues {
         } else {
             super::add(super::mul(count, 32)?, 256)?
         };
-        super::add(payload, metadata)
+        let retained_payload = if self.packed_width().is_some() {
+            self.backing_bytes(capacity, payload)?
+        } else {
+            payload
+        };
+        super::add(retained_payload, metadata)
     }
     pub(super) fn retained_nodes(&self) -> Result<u64, Error> {
         super::add(
@@ -170,10 +180,30 @@ impl CollectedValues {
         schemas: std::sync::Arc<mech_core::SchemaTable>,
     ) -> Result<Value, Error> {
         match self {
-            Self::U8(v) => Value::from_u8_matrix(schema, shape, v.into_boxed_slice(), schemas),
-            Self::U16(v) => Value::from_u16_matrix(schema, shape, v.into_boxed_slice(), schemas),
-            Self::U32(v) => Value::from_u32_matrix(schema, shape, v.into_boxed_slice(), schemas),
-            Self::U64(v) => Value::from_u64_matrix(schema, shape, v.into_boxed_slice(), schemas),
+            Self::U8(v) => Value::from_unsigned_matrix_buffer(
+                schema,
+                shape,
+                UnsignedMatrixBuffer::U8(v),
+                schemas,
+            ),
+            Self::U16(v) => Value::from_unsigned_matrix_buffer(
+                schema,
+                shape,
+                UnsignedMatrixBuffer::U16(v),
+                schemas,
+            ),
+            Self::U32(v) => Value::from_unsigned_matrix_buffer(
+                schema,
+                shape,
+                UnsignedMatrixBuffer::U32(v),
+                schemas,
+            ),
+            Self::U64(v) => Value::from_unsigned_matrix_buffer(
+                schema,
+                shape,
+                UnsignedMatrixBuffer::U64(v),
+                schemas,
+            ),
             Self::Draft(v) => mech_core::ValueDraft {
                 schema,
                 shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
@@ -186,6 +216,10 @@ impl CollectedValues {
         .map_err(Error::Snapshot)
     }
 }
+
+#[cfg(test)]
+#[path = "data_tests.rs"]
+mod tests;
 
 pub(super) fn output_nodes(schema: &mech_core::SchemaBody, count: u64) -> Result<u64, Error> {
     let mech_core::SchemaBody::Matrix { element, .. } = schema else {

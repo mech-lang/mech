@@ -1,0 +1,11 @@
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/gpu)
+error[E0599]: no method named `schema` found for reference `&OutputDeclaration` in the current scope
+   --> hosts/gpu/tests/support/canonical_program_comprehensions.rs:168:88
+    |
+168 |                 let schema = artifact.schemas().get(artifact.outputs().last().unwrap().schema()).unwrap();
+    |                                                                                        ^^^^^^-- help: remove the arguments
+    |                                                                                        |
+    |                                                                                        field, not a method
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `mech-gpu` (test "canonical_artifact_program") due to 1 previous error

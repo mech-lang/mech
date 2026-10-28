@@ -99,6 +99,7 @@ impl State {
                 .output_bytes(
                     bytes,
                     count,
+                    host_count,
                     output.definition().dimension_parameters().len(),
                 )
                 .ok()?;
