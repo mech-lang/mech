@@ -1,6 +1,76 @@
 //! Packed construction after the ordinary indexed-assignment checks/admission.
 use super::*;
 
+#[cfg(test)]
+mod tests;
+
+/// The caller has already validated one selected destination and one source
+/// element. A packed unsigned replacement cannot change the result footprint.
+/// Prepay the SAME planning work only when the existing meter proves it fits;
+/// a miss retains the ordinary traversal and its first-denied work prefix.
+pub(super) fn try_project_single_source(
+    meter: &mut super::super::budget::ResidentBudgetMeter,
+    element: &SchemaBody,
+    current: SequenceView<'_>,
+    source_schema: &SchemaBody,
+    source: &ValueData,
+    scan_work: u64,
+) -> Result<bool, ResidentKernelError> {
+    macro_rules! source_kind {
+        ($kind:ident) => {
+                match (source_schema, source) {
+                    (body, ValueData::$kind(_)) if body == element => true,
+                    (SchemaBody::Matrix { element: source_element, .. }, ValueData::Matrix(matrix))
+                        if source_element.as_ref() == element
+                            && matches!(matrix.elements(), SequenceView::$kind(words) if words.len() == 1) => false,
+                    _ => return Ok(false),
+                }
+        };
+    }
+    let scalar = match (element, current) {
+        (SchemaBody::UnsignedInteger(IntegerWidth::W8), SequenceView::U8(_)) => source_kind!(U8),
+        (SchemaBody::UnsignedInteger(IntegerWidth::W16), SequenceView::U16(_)) => source_kind!(U16),
+        (SchemaBody::UnsignedInteger(IntegerWidth::W32), SequenceView::U32(_)) => source_kind!(U32),
+        (SchemaBody::UnsignedInteger(IntegerWidth::W64), SequenceView::U64(_)) => source_kind!(U64),
+        (SchemaBody::UnsignedInteger(IntegerWidth::W128), SequenceView::U128(_)) => {
+            source_kind!(U128)
+        }
+        _ => return Ok(false),
+    };
+    let source_work = if scalar {
+        // Bounded primitive metadata only: use the maintained finalization
+        // visitor to derive its exact fee without spending the live ledger.
+        // Unsupported/non-compute charges decline this optimization.
+        let mut probe =
+            super::super::budget::ResidentBudgetMeter::for_closed_analysis(u64::MAX, u64::MAX);
+        if snapshot_element_finalization_work(&mut probe, source_schema, source, 0) != Ok(0) {
+            return Ok(false);
+        }
+        let cost = probe.estimate();
+        if cost
+            != super::super::budget::resident_cost! {
+                compute_work: cost.compute_work(),
+                ..super::super::budget::KernelCostEstimate::default()
+            }
+        {
+            return Ok(false);
+        }
+        cost.compute_work()
+    } else {
+        // Packed sequence elements already have zero finalization work and
+        // the actual one-cell source above establishes index-zero validity.
+        0
+    };
+    let Some(work) = scan_work.checked_add(source_work) else {
+        return Ok(false);
+    };
+    if !meter.can_charge_compute_and_nodes(work, 0) {
+        return Ok(false);
+    }
+    meter.charge_compute_work(work)?;
+    Ok(true)
+}
+
 pub(super) struct Plan<'a> {
     pub positions: ValidatedPositions<'a>,
     pub routing: ResolvedSourceRouting,
