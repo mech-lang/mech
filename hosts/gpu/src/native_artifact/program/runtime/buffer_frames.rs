@@ -221,6 +221,42 @@ impl BufferFrames {
             _ => Err(invalid("private frame field is not current")),
         }
     }
+    pub(super) fn managed_owner(
+        &self,
+        layout: &Layout,
+        value: NativeMatchValue,
+        ordinal: usize,
+    ) -> Option<&Value> {
+        let Lane::Managed { at } = layout.fields(value)?.get(ordinal)?.lane() else {
+            return None;
+        };
+        self.inner.as_ref()?.owners.values().get(at)?.as_ref()
+    }
+    pub(super) fn synchronize_scalar(
+        &mut self,
+        layout: &Layout,
+        value: NativeMatchValue,
+        ordinal: usize,
+        bits: u64,
+    ) -> Result<(), NativeProgramExecutionError> {
+        let field = layout
+            .fields(value)
+            .and_then(|fields| fields.get(ordinal))
+            .ok_or_else(|| invalid("numeric reconciliation outside frame"))?;
+        let Lane::Scalar { at, kind } = field.lane() else {
+            return Err(invalid("numeric reconciliation is not scalar"));
+        };
+        if !kind.accepts_bits(bits) {
+            return Err(invalid("numeric reconciliation has invalid scalar bits"));
+        }
+        let inner = self
+            .inner
+            .as_mut()
+            .ok_or_else(|| invalid("numeric reconciliation has no lanes"))?;
+        inner.words.values_mut()[at * 2] = bits;
+        inner.words.values_mut()[at * 2 + 1] = 1;
+        Ok(())
+    }
     pub(super) fn retire(
         &mut self,
         layout: &Layout,

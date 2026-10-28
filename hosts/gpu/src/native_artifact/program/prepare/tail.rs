@@ -20,6 +20,7 @@ pub(in crate::native_artifact) struct Region {
     /// Exclusive retained-map owner. Its private storage callbacks may debit
     /// the same account; scalar body work is prepaid in bounded batches.
     pub map: Option<usize>,
+    pub numeric: Option<super::readonly_numeric::Proof>,
     /// Invariant key width only; actual packed storage requires runtime entry.
     pub packed: Option<crate::native_artifact::program::prepare::packed_map::Proof>,
     // Emission and checkpoint validation use the identical admitted word lane.
@@ -43,6 +44,8 @@ impl Layout {
         visits: &[NativeIterationVisit],
         aggregates: &mech_engine::native_artifact::NativeScalarAggregates,
         owners: &mech_engine::native_artifact::NativeMapOwnerWords,
+        frames: &mech_engine::native_artifact::NativeBufferFrames,
+        calls: &[Option<mech_engine::native_artifact::NativePreparedLibraryCall>],
     ) -> Result<Self, &'static str> {
         let mut layout = Self {
             sites: vec![None; plan.blocks().len()],
@@ -82,8 +85,15 @@ impl Layout {
             // A closed map body may run inside an ordinary comprehension.
             // Its own body must still contain no child loop; the parent is
             // suspended until this private owner publishes at the Tail exit.
-            if (tail.parent().is_some() && map.is_none())
-                || (map.is_none() && aggregates.action(tail.initialize() as usize).is_none())
+            let numeric = if map.is_none() && frames.action(tail.initialize() as usize).is_some() {
+                super::readonly_numeric::derive(plan, tail, frames, calls).ok()
+            } else {
+                None
+            };
+            if (tail.parent().is_some() && map.is_none() && numeric.is_none())
+                || (map.is_none()
+                    && numeric.is_none()
+                    && aggregates.action(tail.initialize() as usize).is_none())
             {
                 continue;
             }
@@ -97,7 +107,10 @@ impl Layout {
                 }
                 seen[site as usize] = true;
                 let block = &plan.blocks()[site as usize];
-                let native = aggregates.action(site as usize).is_some()
+                let native = numeric
+                    .as_ref()
+                    .is_some_and(|p| p.action(site as usize).is_some())
+                    || aggregates.action(site as usize).is_some()
                     || borrowed.action(site as usize).is_some()
                     || map.is_some_and(|owner| {
                         owners.action_region(site as usize) == Some(owner)
@@ -202,13 +215,21 @@ impl Layout {
                         plan, &owners, owner, visits,
                     )
                 }),
+                numeric,
                 words: _word_offset,
                 compute,
                 comparison,
             });
             layout.words = layout
                 .words
-                .checked_add(if map.is_some() { 5 } else { 3 })
+                .checked_add(
+                    if map.is_some() { 5 } else { 3 }
+                        + layout
+                            .regions
+                            .last()
+                            .and_then(|r| r.numeric.as_ref())
+                            .map_or(0, |p| p.words),
+                )
                 .ok_or("Tail words overflow")?;
         }
         Ok(layout)
@@ -223,4 +244,62 @@ impl Layout {
             0
         }
     }
+}
+
+/// Independently reconstruct all raw-view offsets, carrier/factory proofs,
+/// boundaries and finite body prices from the validated plan. Deserialized
+/// closed-tail metadata never grants new numeric access authority.
+pub(in crate::native_artifact) fn validate_image(
+    plan: &NativeProgramArtifactPlan,
+    frames: &mech_engine::native_artifact::NativeBufferFrames,
+    calls: &[Option<mech_engine::native_artifact::NativePreparedLibraryCall>],
+    serialized: &Layout,
+) -> Result<(), String> {
+    let facts = plan.facts();
+    let aggregates = facts.scalar_aggregates();
+    let borrowed = super::borrowed::Layout::derive(plan, &aggregates)?;
+    let selected = super::selected_join::Layout::derive(plan, &plan.string_map_regions())?;
+    let mut visits = crate::native_artifact::iteration_abi::control_visits(
+        plan.blocks(),
+        plan.iterations().iter().map(Into::into),
+        0,
+    )
+    .map_err(str::to_owned)?;
+    selected
+        .fund_visit_checks(&mut visits)
+        .map_err(str::to_owned)?;
+    let prefix = super::prefix::derive_with_frontiers(
+        plan,
+        &borrowed,
+        &visits,
+        &aggregates,
+        &facts.text_line_retention_frontiers(),
+    )?;
+    let owners = facts.map_owner_words().map_err(str::to_owned)?;
+    for (site, visit) in visits.iter_mut().enumerate() {
+        visit.work = visit
+            .work
+            .checked_add(borrowed.extra_work(site)?)
+            .and_then(|n| n.checked_add(super::prefix::extra_work(prefix.as_ref(), site)))
+            .and_then(|n| n.checked_add(super::map_owner::extra_work(&owners, site).ok()?))
+            .ok_or("restored closed-tail price overflows")?;
+    }
+    let proved = Layout::derive(
+        plan,
+        &borrowed,
+        &visits,
+        &aggregates,
+        &owners,
+        frames,
+        calls,
+    )?;
+    if serde_json::to_vec(&proved).map_err(|e| e.to_string())?
+        != serde_json::to_vec(serialized).map_err(|e| e.to_string())?
+    {
+        return Err(
+            "closed-tail proof differs from independently validated source dataflow and prices"
+                .into(),
+        );
+    }
+    Ok(())
 }

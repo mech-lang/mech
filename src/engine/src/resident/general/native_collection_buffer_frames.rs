@@ -438,3 +438,14 @@ impl NativePreparedLibraryCall {
         )?
     }
 }
+
+impl NativePreparedLibraryCall {
+    /// Static elision eligibility only. Current owners and logical output
+    /// limits remain the selecting region's invocation-bound responsibility.
+    pub fn supports_invariant_buffer_frame(&self) -> bool {
+        self.frame_geometry
+            .as_ref()
+            .and_then(|geometry| geometry.shape.as_ref())
+            .is_some_and(|recipe| recipe.is_identity_forwarding())
+    }
+}

@@ -201,7 +201,9 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
     }
     native::program::prepare::validate_type_slots(&plan, &schemas, &types)
         .map_err(str::to_owned)?;
-    let closed_tails = w.closed_tails.into();
+    let closed_tails: native::program::prepare::tail::Layout = w.closed_tails.into();
+    let buffer_frames = plan.facts().buffer_frames();
+    native::program::prepare::tail::validate_image(&plan, &buffer_frames, &calls, &closed_tails)?;
     let frozen_maps = w
         .map_owner_words
         .as_ref()
@@ -224,7 +226,6 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
         .uniform_unsigned_collections()
         .into_boxed_slice();
     let unsigned_buffer_calls = plan.unsigned_buffer_calls().into_boxed_slice();
-    let buffer_frames = plan.facts().buffer_frames();
     let call_routes = native::program::prepare::call_routes::derive(
         &plan,
         &buffer_frames,

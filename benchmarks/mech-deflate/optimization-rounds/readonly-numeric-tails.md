@@ -38,3 +38,22 @@ Only then repeat the pinned eight-byte primary comparison and separate profile,
 with pinned allocator, unchanged artifact, all samples/errors and linked-library
 identities retained. Commit the packet before another optimization. No cancelled
 large-input campaign, private writes, append/growth or arbitrary nesting here.
+
+The later brief requires the isolated projection-key change first. It is recorded
+at `1fb6b06dea1a20b0976f0a42f66288b48ec7e312`: unchanged-source 9.77% less elapsed
+(448.70× → 404.86× reference), with one unresolved scalar timing gate (1.0526×
+decoded U64 against 1.05). Do not erase or rerun that failed unchanged cohort.
+This native-region round starts from that compiler and uses a fresh paired cohort.
+
+Initial representation: same-account immutable carrier owners stay in admitted
+frame lanes while native SSA words carry changing scalar fields. Entry refreshes
+packed views; existing finite closed-tail fuel bounds each traversal. The scalar
+carrier is synchronized into already admitted lanes at fallback/error/exit. The
+ordinary Tail exit retires owners before the parent resumes. Static identity
+shape recipes and per-frame logical output preflight retain pack constraints.
+IR116 and work policy91 explicitly identify this representation/pricing. Entry
+schema/view validation is funded once; elided canonical frame/read transactions
+no longer incur their old physical construction and comparison charges. Numeric
+body work uses the existing conservative source-site plus fixed Tail envelopes.
+Shared-worker/foreign active scopes retain the ordinary path. Independent image
+restoration rederives complete closed layouts, offsets, boundaries and prices.

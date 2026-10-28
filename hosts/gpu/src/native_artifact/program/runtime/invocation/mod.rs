@@ -8,6 +8,7 @@ use mech_core::{MemoryBudgetLimits, Value};
 use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeMatchValue};
 
 mod buffer_frames;
+mod readonly_numeric;
 mod selected_calls;
 mod unsigned_buffers;
 mod word_reads;
@@ -207,6 +208,17 @@ impl Invocation<'_, '_, '_> {
             *self.arguments.add(index) = word;
         }
         Ok(())
+    }
+    pub(in crate::native_artifact::program::runtime) fn read_borrowed_word(
+        &self,
+        index: usize,
+    ) -> Result<u64, NativeProgramExecutionError> {
+        if self.arguments.is_null() || index >= self.argument_capacity {
+            return Err(invalid("native reconciliation word outside admitted lane"));
+        }
+        // SAFETY: the owning session registers this exact admitted lane. The
+        // generated entry is suspended and no Rust reference crosses execution.
+        Ok(unsafe { *self.arguments.add(index) })
     }
     pub(in crate::native_artifact::program::runtime) fn write_window_arguments(
         &mut self,

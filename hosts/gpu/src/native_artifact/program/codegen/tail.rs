@@ -41,7 +41,7 @@ fn store(
         .store(flags(options, region), value, locals, offset(word)?);
     Ok(())
 }
-fn leave(
+pub(in crate::native_artifact) fn leave(
     options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
@@ -61,6 +61,19 @@ fn leave(
     let comparison = load(options, b, locals, region, region.words + 2)?;
     let zero = b.ins().iconst(types::I64, 0);
     store(options, b, locals, region, region.words, zero)?;
+    if let Some(proof) = &region.numeric {
+        hooks.require_argument_words(b, proof.words + 2, error);
+        for slot in proof
+            .fields(region.tail.carrier().get())
+            .unwrap()
+            .iter()
+            .flatten()
+        {
+            let value = load(options, b, locals, region, region.words + 3 + slot)?;
+            b.ins()
+                .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
+        }
+    }
     let mode = b.ins().iconst(types::I64, mode);
     hooks.call_at(
         b,
@@ -124,6 +137,11 @@ pub(in crate::native_artifact) fn prepare(
         return Ok(());
     };
     let region = &layout.regions[region];
+    if region.numeric.is_some()
+        && !options.enabled(crate::native_artifact::codegen::options::OptimizationPass::ScalarLoops)
+    {
+        return Ok(());
+    }
     prepare_region(
         options,
         b,
@@ -218,7 +236,11 @@ fn prepare_region(
     hooks.call(b, site, GlobalHelper::decode(operation), [zero; 3], error);
     let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
     store(options, b, locals, region, region.words, ready)?;
-    for i in 0..if region.map.is_some() { 4 } else { 2 } {
+    for i in 0..if region.map.is_some() {
+        4
+    } else {
+        2 + region.numeric.as_ref().map_or(0, |p| p.words)
+    } {
         let word = b
             .ins()
             .load(types::I64, MemFlags::new(), hooks.arguments, offset(i)?);

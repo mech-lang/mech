@@ -298,3 +298,27 @@ mod tests {
         }
     }
 }
+
+impl FrameShapeRecipe {
+    /// Every dynamic output axis is a distinct unconstrained Turn parameter;
+    /// constant axes already agree statically. No current-value relation can
+    /// fail when an invariant, previously validated child is forwarded.
+    pub(super) fn is_identity_forwarding(&self) -> bool {
+        let mut seen = vec![false; self.parameters];
+        for axis in &self.axes {
+            match axis.expected {
+                DimensionExpr::Constant(_) if axis.expected == axis.actual => {}
+                DimensionExpr::Parameter(id) => {
+                    let Some(slot) = seen.get_mut(id.get() as usize) else {
+                        return false;
+                    };
+                    if core::mem::replace(slot, true) {
+                        return false;
+                    }
+                }
+                _ => return false,
+            }
+        }
+        seen.iter().all(|seen| *seen)
+    }
+}

@@ -207,3 +207,51 @@ impl NativePreparedLibraryCall {
         )?
     }
 }
+
+impl NativePreparedLibraryCall {
+    /// Derive a borrowed packed view only from this original selected read/length
+    /// factory and an immutable value admitted to the caller's SAME account.
+    /// No execution permit is granted. The synchronous caller must retain the
+    /// value, forbid mutation/callbacks while loading, and discard the view on
+    /// every invocation exit. Nonpacked storage conservatively keeps its route.
+    pub fn unsigned_matrix_native_view(
+        &self,
+        source: &Value,
+        memory: &mech_core::ManagedMemoryBudget,
+    ) -> Option<[u64; 4]> {
+        if !(self.supports_unsigned_matrix_element() || self.supports_unsigned_matrix_length()) {
+            return None;
+        }
+        let mech_core::ResolvedOperationContract::Declared(contract) = self.template.contract()
+        else {
+            return None;
+        };
+        if source.schema() != contract.inputs[0].schema
+            || source.schema_key() != self.input_keys[0]
+            || source.shape().parameter_values().len()
+                != self.template.inputs()[0].dimension_parameters().len()
+        {
+            return None;
+        }
+        source.validate_against(&self.schemas).ok()?;
+        source.memory_budget_retained_bytes(memory)?;
+        source.memory_budget_retained_nodes(memory)?;
+        let ValueData::Matrix(matrix) = source.data() else {
+            return None;
+        };
+        let (rows, columns) = crate::resident::numeric::snapshot_matrix_dimensions(
+            source,
+            self.template.inputs()[0].body(),
+        )
+        .ok()?;
+        let cells = matrix.elements();
+        let address = match cells {
+            SequenceView::U8(values) => values.as_ptr() as u64,
+            SequenceView::U16(values) => values.as_ptr() as u64,
+            SequenceView::U32(values) => values.as_ptr() as u64,
+            SequenceView::U64(values) => values.as_ptr() as u64,
+            _ => return None,
+        };
+        Some([address, cells.len() as u64, rows as u64, columns as u64])
+    }
+}
