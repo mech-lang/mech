@@ -179,3 +179,21 @@ parameter renaming. Three core relation tests, 53 selected frontend tests
 resident/JIT mixed-record test pass. The latter changes both buffer lengths and
 retains I64 minimum, signed zero, NaN bits, and input aliases. No compressor
 component, allocation site, source fixture or expected output changed.
+
+## Prepared selected-call checkpoint
+
+Each selected library site now has one immutable prepared strategy: private
+frame, unsigned buffer, scalar record field, unsigned length/element, or the
+ordinary canonical path. The original frame-first priority remains. Live loan,
+owner, extent, account and exclusivity checks still run inside the selected
+consumer at their original positions. A shared private-owner inventory replaces
+five identical exclusions without extending any consumer's eligibility.
+
+The strategy is derived again from independently validated plans and actual
+factories during image restoration; it is absent from serialized authority.
+One new test covers all six routes for original/decoded artifacts and restored
+images. Existing runtime regressions pass: seven frame, five word-read, three
+record-word, three unsigned-length, 14 capacity, and two caller-inventory tests.
+These functional runs were concurrent; their incidental timings are not a
+performance comparison. No per-operation allocation or interpreted dispatch
+was introduced, and direct scalar emission is unchanged.

@@ -226,11 +226,18 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
         .into_boxed_slice();
     let unsigned_buffer_calls = plan.unsigned_buffer_calls().into_boxed_slice();
     let buffer_frames = plan.facts().buffer_frames();
+    let call_routes = native::program::prepare::call_routes::derive(
+        &plan,
+        &buffer_frames,
+        &unsigned_buffer_calls,
+        &calls,
+    );
     let descriptor = NativeProgramDescriptor {
         metadata: native::program::prepare::ProgramMetadata {
             plan,
             schemas,
             calls,
+            call_routes,
             types,
             visits: w.visits.into_vec().into_iter().map(Into::into).collect(),
             retirements: w.retirements,

@@ -1,0 +1,45 @@
+
+running 14 tests
+{"allocated_bytes":24658,"capacity":512,"requests":213,"width":8,"witness":"append-sublist"}
+bulk-byte-append small=(264, 27861) real=(264, 6661677)
+{"allocated_bytes":6656594,"allocation_requests":183,"count":65535,"seconds":0.000573083,"start":0,"witness":"stored-range-append"}
+test sequence_capacity_qualification::consuming_growth_admits_full_old_backing_work_and_copy_quota ... ok
+bulk-byte-append small=(264, 27861) real=(264, 6661677)
+{"allocated_bytes":6657978,"capacity":6633832,"requests":213,"width":8,"witness":"append-sublist"}
+{"allocated_bytes":6656833,"allocation_requests":197,"count":65536,"seconds":0.000170792,"start":0,"witness":"stored-range-append"}
+test sequence_capacity_qualification::bulk_bytes_reuse_real_output_reservation_across_append_and_clear ... ok
+test sequence_capacity_qualification::bulk_byte_append_generic_native_binding_tracks_count_and_retries ... ok
+test sequence_capacity_qualification::append_sublist_self_alias_and_empty_ranges_keep_original_values ... ok
+{"allocated_bytes":6656833,"allocation_requests":197,"count":1,"seconds":0.000319541,"start":65535,"witness":"stored-range-append"}
+{"allocated_bytes":6656328,"allocation_requests":201,"count":0,"seconds":0.000310416,"start":65536,"witness":"stored-range-append"}
+{"allocated_bytes":6656833,"allocation_requests":197,"count":65536,"seconds":0.000288083,"start":0,"witness":"stored-range-append"}
+{"allocated_bytes":24658,"capacity":512,"requests":213,"width":8,"witness":"append-sublist"}
+{"allocated_bytes":6657978,"capacity":6633832,"requests":213,"width":8,"witness":"append-sublist"}
+{"allocated_bytes":6656594,"allocation_requests":183,"count":65535,"seconds":0.000576167,"start":0,"witness":"stored-range-append"}
+{"allocated_bytes":6656833,"allocation_requests":197,"count":65536,"seconds":0.000312125,"start":0,"witness":"stored-range-append"}
+{"allocated_bytes":6656833,"allocation_requests":197,"count":1,"seconds":0.000317167,"start":65535,"witness":"stored-range-append"}
+{"allocated_bytes":6656328,"allocation_requests":201,"count":0,"seconds":0.000273709,"start":65536,"witness":"stored-range-append"}
+{"allocated_bytes":6656833,"allocation_requests":197,"count":65536,"seconds":0.000246416,"start":0,"witness":"stored-range-append"}
+test sequence_capacity_qualification::append_sublist_copies_stored_block_boundaries_into_real_reservation ... ok
+width=64 capacity=305257 small=(235, 26253) real=(235, 2468181)
+width=64 capacity=305257 small=(235, 26253) real=(235, 2468181)
+{"allocated_bytes":25170,"capacity":512,"requests":213,"width":16,"witness":"append-sublist"}
+{"allocated_bytes":25170,"capacity":512,"requests":213,"width":16,"witness":"append-sublist"}
+width=8 capacity=6633832 small=(235, 26141) real=(235, 6659957)
+width=8 capacity=6633832 small=(235, 26141) real=(235, 6659957)
+test sequence_capacity_qualification::real_reserved_path_and_output_buffers_allocate_the_payload_once_per_computation ... ok
+{"allocated_bytes":26194,"capacity":512,"requests":213,"width":32,"witness":"append-sublist"}
+test sequence_capacity_qualification::shared_buffer_append_preserves_aliases_and_failed_publication_then_retries ... ok
+{"allocated_bytes":26194,"capacity":512,"requests":213,"width":32,"witness":"append-sublist"}
+test sequence_capacity_qualification::little_endian_byte_append_counts_aliases_rejection_and_recovery ... ok
+test sequence_capacity_qualification::unselected_reservation_does_not_allocate_and_resource_denial_recovers ... ok
+test sequence_capacity_qualification::initial_append_growth_and_exact_reserve_keep_all_initialized_words ... ok
+test sequence_capacity_qualification::generic_buffer_parameters_check_current_rows_without_partial_publication ... ok
+{"allocated_bytes":28242,"capacity":512,"requests":213,"width":64,"witness":"append-sublist"}
+{"allocated_bytes":28242,"capacity":512,"requests":213,"width":64,"witness":"append-sublist"}
+test sequence_capacity_qualification::append_sublist_clamps_ranges_preserves_capacity_aliases_and_recovers ... ok
+test sequence_capacity_qualification::reserve_append_clear_agrees_in_resident_and_native_original_and_decoded ... ok
+test sequence_capacity_qualification::scalar_recursion_keeps_fresh_buffers_and_immutable_outer_capture_reads ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 358 filtered out; finished in 9.41s
+
