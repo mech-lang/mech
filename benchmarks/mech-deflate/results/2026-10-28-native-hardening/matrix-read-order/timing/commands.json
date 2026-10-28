@@ -1,0 +1,39 @@
+[
+  {
+    "label": "word-updates",
+    "command": [
+      "/private/tmp/mech-matrix-read-fix-20261028/timing/word-updates"
+    ],
+    "exit": 0,
+    "process_seconds": 1.2502877499209717
+  },
+  {
+    "label": "roc",
+    "command": [
+      "/private/tmp/mech-deflate-profiling-20261028/roc-profile",
+      "12"
+    ],
+    "exit": 0,
+    "process_seconds": 6.025895709055476
+  },
+  {
+    "label": "before",
+    "command": [
+      "/private/tmp/mech-owned-turn-round04-20261028/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 46.74286429199856
+  },
+  {
+    "label": "after",
+    "command": [
+      "/private/tmp/mech-matrix-read-fix-20261028/timing/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 40.27691595896613
+  }
+]
