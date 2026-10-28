@@ -1,0 +1,8 @@
+
+running 3 tests
+test unsigned_length_qualification::unsigned_length_requires_its_factory_and_keeps_string_graphemes ... ok
+test unsigned_length_qualification::selected_unsigned_lengths_keep_call_limits_admission_and_zero_allocations ... ok
+test unsigned_length_qualification::native_unsigned_length_reads_fresh_buffers_preserves_assertions_and_recovers ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 369 filtered out; finished in 9.43s
+

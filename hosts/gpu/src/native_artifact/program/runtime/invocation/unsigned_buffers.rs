@@ -46,12 +46,7 @@ impl Invocation<'_, '_, '_> {
                 return Err(invalid("buffer scalar operand kind differs"));
             }
         }
-        if self.line_window.is_some()
-            || self.window_region.is_some()
-            || self.window_hashes.is_some()
-            || self.closed_tail.is_some()
-            || self.prefix.as_ref().is_some_and(|prefix| !prefix.input.eof)
-        {
+        if self.has_uninventoried_private_owners() {
             return Ok(false);
         }
         let coexistence = self.selected_join_coexistence(None)?;

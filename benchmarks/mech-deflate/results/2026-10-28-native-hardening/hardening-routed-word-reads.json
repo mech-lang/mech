@@ -1,0 +1,23 @@
+{
+  "name": "hardening-routed-word-reads",
+  "command": [
+    "/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-561ab00dcd3ceccb",
+    "word_read_qualification::",
+    "--nocapture"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "a04db530d09213a6a6ab9241d80b7fd49067e2d2",
+  "dirty": " M hosts/gpu/src/native_artifact/program/image/wire/mod.rs\n M hosts/gpu/src/native_artifact/program/prepare/mod.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/unsigned_buffers.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/word_reads.rs\n?? hosts/gpu/src/native_artifact/program/prepare/call_routes.rs\n?? hosts/gpu/src/native_artifact/program/prepare/call_routes_tests.rs\n?? hosts/gpu/src/native_artifact/program/runtime/invocation/selected_calls.rs\n",
+  "exit": 0,
+  "seconds": 8.794430255889893,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/hardening-routed-word-reads.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

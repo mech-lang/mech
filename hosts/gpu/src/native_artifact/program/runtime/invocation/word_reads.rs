@@ -33,12 +33,7 @@ impl Invocation<'_, '_, '_> {
         {
             return Err(invalid("record scalar native transport differs"));
         }
-        if self.line_window.is_some()
-            || self.window_region.is_some()
-            || self.window_hashes.is_some()
-            || self.closed_tail.is_some()
-            || self.prefix.as_ref().is_some_and(|prefix| !prefix.input.eof)
-        {
+        if self.has_uninventoried_private_owners() {
             return Ok(None);
         }
         let coexistence = self.selected_join_coexistence(None)?;
@@ -93,12 +88,7 @@ impl Invocation<'_, '_, '_> {
         {
             return Err(invalid("matrix length native transport differs"));
         }
-        if self.line_window.is_some()
-            || self.window_region.is_some()
-            || self.window_hashes.is_some()
-            || self.closed_tail.is_some()
-            || self.prefix.as_ref().is_some_and(|prefix| !prefix.input.eof)
-        {
+        if self.has_uninventoried_private_owners() {
             return Ok(None);
         }
         let coexistence = self.selected_join_coexistence(None)?;
@@ -149,12 +139,7 @@ impl Invocation<'_, '_, '_> {
         }
         // Private windows/loans need their own owner census. Keep their existing
         // canonical route until this read strategy has the corresponding proof.
-        if self.line_window.is_some()
-            || self.window_region.is_some()
-            || self.window_hashes.is_some()
-            || self.closed_tail.is_some()
-            || self.prefix.as_ref().is_some_and(|prefix| !prefix.input.eof)
-        {
+        if self.has_uninventoried_private_owners() {
             return Ok(None);
         }
         let coexistence = self.selected_join_coexistence(None)?;

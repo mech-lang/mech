@@ -23,6 +23,15 @@ pub(in crate::native_artifact::program::runtime) fn fixed_nodes() -> Result<u64,
 }
 
 impl Invocation<'_, '_, '_> {
+    /// These private loans have no ordinary canonical-owner census yet.
+    /// Every selecting consumer retains its own check order and fallback.
+    pub(super) fn has_uninventoried_private_owners(&self) -> bool {
+        self.line_window.is_some()
+            || self.window_region.is_some()
+            || self.window_hashes.is_some()
+            || self.closed_tail.is_some()
+            || self.prefix.as_ref().is_some_and(|prefix| !prefix.input.eof)
+    }
     pub(in crate::native_artifact::program::runtime) fn retained_caller_dynamic_nodes(
         &self,
         site: usize,
@@ -91,12 +100,7 @@ impl Invocation<'_, '_, '_> {
         // A source/window loan needs its own live-owner witness. Decline this
         // view instead of treating borrowed producer storage as empty. Ordinary
         // canonical execution remains available to the future selecting caller.
-        if self.line_window.is_some()
-            || self.window_region.is_some()
-            || self.window_hashes.is_some()
-            || self.closed_tail.is_some()
-            || self.prefix.as_ref().is_some_and(|prefix| !prefix.input.eof)
-        {
+        if self.has_uninventoried_private_owners() {
             return Ok(None);
         }
         let memory = self.state.library.memory_budget();

@@ -8,6 +8,7 @@ use mech_core::{MemoryBudgetLimits, Value};
 use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeMatchValue};
 
 mod buffer_frames;
+mod selected_calls;
 mod unsigned_buffers;
 mod word_reads;
 
@@ -625,25 +626,9 @@ impl Invocation<'_, '_, '_> {
             // the synchronous entry. Native code is suspended in this callback;
             // no Rust reference to the lane survives across native writes.
             let words = unsafe { core::slice::from_raw_parts(self.arguments, operands.len()) };
-            if let Some(result) = self.buffer_frame_action(site, tag, words)? {
+            if let Some(result) = self.prepared_library_call(site, words)? {
                 self.state.consumed = true;
                 return Ok(result);
-            }
-            if self.unsigned_buffer_call(site, words)? {
-                self.state.consumed = true;
-                return Ok(None);
-            }
-            if let Some(word) = self.record_scalar_field_call(site, words)? {
-                self.state.consumed = true;
-                return Ok(Some(word));
-            }
-            if let Some(word) = self.unsigned_matrix_length_call(site, words)? {
-                self.state.consumed = true;
-                return Ok(Some(word));
-            }
-            if let Some(word) = self.unsigned_matrix_element_call(site, words)? {
-                self.state.consumed = true;
-                return Ok(Some(word));
             }
             if let Some(result) = self.line_matrix_call(site, words)? {
                 self.state.consumed = true;
