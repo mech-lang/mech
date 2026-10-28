@@ -1,0 +1,84 @@
+   Compiling mech-core v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/core)
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/syntax)
+   Compiling mech-bytecode v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/bytecode)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/engine)
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/compute)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/runtime)
+   Compiling mech-combinatorics v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/combinatorics)
+   Compiling mech-set v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/set)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/math)
+   Compiling mech-compare v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/compare)
+   Compiling mech-range v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/range)
+   Compiling mech-matrix v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/matrix)
+   Compiling mech-stats v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/stats)
+   Compiling mech-logic v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/logic)
+   Compiling mech-string v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/string)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/stdlib)
+   Compiling mech-build v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/build)
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/gpu)
+    Finished `test` profile [unoptimized] target(s) in 8m 56s
+     Running unittests src/lib.rs (/private/tmp/mech-live-control-target/debug/deps/mech_engine-057b5d4a93106420)
+
+running 53 tests
+test source_semantics::frontend::annotation_shape_identity::tests::independent_axes_cannot_become_coupled_or_change_constants_or_elements ... ok
+test source_semantics::frontend::annotation_shape_identity::tests::bounded_and_persistent_axes_keep_the_conversion_path ... ok
+test source_semantics::frontend::annotation_shape_identity::tests::fixed_record_array_fields_must_really_be_closed ... ok
+test source_semantics::frontend::annotation_shape_identity::tests::fresh_record_uses_field_order_without_changing_axis_relationships ... ok
+test source_semantics::frontend::annotation_shape_identity::tests::fresh_record_retains_bounded_and_persistent_axes ... ok
+test source_semantics::frontend::annotation_conversion_shape_tests::fresh_source_axis_variables_preserve_dependent_target_bounds ... ok
+test source_semantics::frontend::annotation_shape_identity::tests::independent_buffer_axes_are_identity_under_a_bijection ... ok
+test source_semantics::frontend::annotation_shape_identity::tests::unused_projection_axes_keep_existing_identity_behavior ... ok
+test source_semantics::frontend::annotation_shape_identity::tests::repeated_axes_must_keep_the_same_relationship ... ok
+test source_semantics::frontend::comprehension::tests::lexical_collection_codec_enforces_pattern_population_and_exact_depth ... ok
+test source_semantics::frontend::annotation_conversion_shape_tests::inferred_matrix_set_key_axes_survive_independent_arenas_and_current_updates ... ok
+test source_semantics::frontend::comprehension::tests::lexical_collection_checks_repeated_annotations_and_pattern_scope ... ok
+test source_semantics::frontend::annotation_conversion_shape_tests::inferred_key_axes_do_not_bind_set_size_or_waive_declared_cast_constraints ... ok
+test source_semantics::frontend::comprehension::tests::lexical_collection_rejects_malformed_executable_declarations ... ok
+test source_semantics::frontend::comprehension::tests::lexical_collection_aggregate_step_limits_match_default_decode ... ok
+test source_semantics::frontend::function_argument_shape::tests::constrained_or_persistent_arguments_keep_their_declarations ... ok
+test source_semantics::frontend::function_argument_shape::tests::fresh_and_projected_arguments_have_the_same_free_axis_order ... ok
+test source_semantics::frontend::lexical_invariants::tests::checked_ordinary_functions_preserve_turn_shaped_f64_arguments ... ok
+test source_semantics::frontend::document_lowering::document_functions::recursive_capture_tests::nested_binders_only_shadow_their_own_scopes ... ok
+test source_semantics::frontend::comprehension::tests::lexical_collection_accumulates_inner_kernel_work_without_output_growth ... ok
+test source_semantics::frontend::comprehension::tests::lexical_collection_projects_borrowed_structures_and_repeated_bindings ... ok
+test source_semantics::frontend::mask_review_tests::logical_selection_schema_tracks_population_instead_of_mask_length ... ok
+test source_semantics::frontend::mask_review_tests::live_masks_revalidate_population_and_preserve_outputs_after_rejection ... ok
+test source_semantics::frontend::output_projection::requirement_projection_tests::retained_nodes_prune_and_remap_application_requirements ... ok
+test source_semantics::frontend::review_tests::complex_decoder_preserves_decimal_exponent_signs_and_based_component_separators ... ok
+test source_semantics::frontend::comprehension::tests::lexical_collection_artifacts_own_generators_patterns_filters_and_yields ... ok
+test source_semantics::frontend::comprehension::tests::lexical_collection_executes_live_generators_filters_joins_and_normalization ... ok
+test source_semantics::frontend::mask_review_tests::rectangle_masks_validate_each_axis_even_when_total_cardinality_is_unchanged ... ok
+test source_semantics::frontend::review_tests::field_selections_activate_heterogeneous_records_and_table_columns ... ok
+test source_semantics::frontend::review_tests::maintained_underscore_set_relation_infers_both_operand_positions ... ok
+test source_semantics::frontend::review_tests::optional_runtime_inputs_states_and_computed_values_preserve_present_payloads ... ok
+test source_semantics::frontend::review_tests::optional_runtime_peers_preserve_existing_layers_and_box_dynamic_payloads ... ok
+test source_semantics::frontend::review_tests::optional_sets_activate_with_present_and_absent_keys ... ok
+test source_semantics::frontend::review_tests::review_swizzles_use_field_ids_and_preserve_heterogeneous_order ... ok
+test source_semantics::frontend::review_tests::select_all_derives_its_shape_from_a_symbolic_selected_source ... ok
+test source_semantics::frontend::mask_review_tests::masks_must_cover_the_selected_source_axis ... ok
+test source_semantics::frontend::selected_matrix_result::tests::equal_computed_axes_remain_equal_and_constant_axes_remain_fixed ... ok
+test source_semantics::frontend::selected_matrix_result::tests::fixed_bounded_and_persistent_axes_are_not_generalized ... ok
+test source_semantics::frontend::tests::control_diagnostics_report_limit_and_result_separately ... ok
+test source_semantics::frontend::review_tests::latest_review_selection_rejects_nonpositional_and_mismatched_map_keys ... ok
+test source_semantics::frontend::tests::mixed_control_schema_walk_visits_each_nested_declaration_once ... ok
+test source_semantics::frontend::tests::recursive_result_specialization_preserves_independent_axis_identity ... ok
+test source_semantics::frontend::tests::retained_components_follow_the_finalized_parent_parameter_order ... ok
+test source_semantics::frontend::tests::control_record_buffer_capture_reaches_canonical_artifact ... ok
+test source_semantics::frontend::tests::table_conformance_allocates_a_distinct_constant ... ok
+test source_semantics::frontend::tests::unresolved_source_never_allocates_placeholder_nodes_or_constants ... ok
+test source_semantics::frontend::tests::selected_record_preserves_independent_axis_identity ... ok
+test source_semantics::frontend::mask_review_tests::literal_masks_execute_true_cardinality_in_linear_and_rectangle_selection ... ok
+test source_semantics::frontend::review_tests::latest_review_select_all_roundtrips_linear_order_and_zero_extents ... ok
+test source_semantics::frontend::comprehension::tests::lexical_collection_admission_failure_preserves_publication_and_recovers ... ok
+test source_semantics::frontend::review_tests::selection_semantics_preserve_element_geometry_and_chaining ... ok
+test source_semantics::frontend::review_tests::selections_activate_and_return_selected_values ... ok
+test source_semantics::frontend::comprehension::tests::lexical_collection_set_sorting_admits_comparison_work_before_publication ... ok
+
+test result: ok. 53 passed; 0 failed; 0 ignored; 0 measured; 1055 filtered out; finished in 3.76s
+
+     Running unittests src/lib.rs (/private/tmp/mech-live-control-target/debug/deps/mech_gpu-2678607daf86f560)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 424 filtered out; finished in 0.00s
+

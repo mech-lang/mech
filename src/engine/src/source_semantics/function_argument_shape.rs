@@ -6,22 +6,11 @@ pub(super) fn embed(
     output: &mut Vec<DimensionParameterDeclaration>,
     anchor: SourceSemanticAnchor,
 ) -> Result<SchemaBody, SourceSemanticError> {
-    let mut local = draft.clone();
-    // Projection reifies axes as Explicit, while append creates an Inferred
-    // axis. Carrying both otherwise renumbers the unchanged argument ahead of
-    // the updated argument on a recursive back-edge. These axes are anonymous
-    // within the function carrier; preserve their relationships, but let the
-    // canonicalizer order them by use in both the entry and recursive tuple.
-    // Bounds and persistent dimensions retain the existing embedding path.
-    if local.dimension_parameters.iter().all(|parameter| {
-        parameter.lifetime == DimensionLifetime::Turn
-            && parameter.lower_bound == DimensionExpr::Constant(0)
-            && parameter.upper_bound.is_none()
-    }) {
-        for parameter in local.dimension_parameters.iter_mut() {
-            parameter.origin = DimensionParameterOrigin::Inferred;
-        }
-    }
+    // Fresh embedding keeps a per-use parameter map; only free Turn axes
+    // receive first-use ordering. Bounded/persistent axes keep their policy.
+    let local = draft
+        .clone()
+        .with_dimension_origin_policy(mech_core::DimensionOriginPolicy::InferFreeTurnAxes);
     embed_schema_draft(&local, output, anchor)
 }
 

@@ -1,0 +1,11 @@
+   Compiling mech-core v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/core)
+    Finished `test` profile [unoptimized] target(s) in 6.30s
+     Running tests/schema_dimension_relations.rs (/private/tmp/mech-live-control-target/debug/deps/schema_dimension_relations-e041c4b03f78b208)
+
+running 3 tests
+test generalization_is_distinct_from_renaming_and_keeps_expression_relationships ... ok
+test renaming_preserves_nested_mixed_scalars_buffers_and_repeated_axes ... ok
+test bounds_and_persistent_axes_keep_their_declared_origin_and_identity ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
