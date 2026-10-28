@@ -1,0 +1,120 @@
+{
+  "leaf_samples": 1355,
+  "roots": [
+    [
+      "Thread_17928783   DispatchQueue_1: com.apple.main-thread  (serial)",
+      1355
+    ]
+  ],
+  "no_callback_bound_inclusive_samples": 0,
+  "ordered_precharge_inclusive_samples": 84,
+  "top_exclusive": [
+    [
+      "_tlv_get_addr",
+      127
+    ],
+    [
+      "mi_free",
+      81
+    ],
+    [
+      "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+      66
+    ],
+    [
+      "_RINvNtNtCskIfnrfrMWVM_9mech_core8snapshot8encoding15encode_sequenceNtB2_18LengthSnapshotSinkEB6_",
+      61
+    ],
+    [
+      "_platform_memmove",
+      55
+    ],
+    [
+      "mi_malloc",
+      23
+    ],
+    [
+      "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget20observe_control_work",
+      23
+    ],
+    [
+      "_RNvMsa_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_19ResidentBudgetMeter19charge_compute_work",
+      22
+    ],
+    [
+      "<deduplicated_symbol>",
+      20
+    ],
+    [
+      "_RINvNtNtCskIfnrfrMWVM_9mech_core6schema5table26body_clone_heap_bytes_withNCINvMs0_B2_NtB2_11SchemaTable43clone_allocation_bound_bytes_with_prechargeNtNtNtB6_8function8resident19ResidentKernelErrorNCNCNvNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general28native_structural_projection31native_project_structural_values0_0s_0E0EB3k_",
+      20
+    ],
+    [
+      "_mi_heap_realloc_zero",
+      17
+    ],
+    [
+      "_RNvXs4_NtNtCskIfnrfrMWVM_9mech_core11type_system14resolved_valueNtB5_23ResolvedValueDescriptorNtNtCsgDHHaSskbIF_4core5clone5Clone5clone",
+      15
+    ],
+    [
+      "_RNvNtNtCs1qJAwyMG1lC_11mech_engine14memory_planner7program17place_allocations",
+      13
+    ],
+    [
+      "_RNvMs3_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+      13
+    ],
+    [
+      "_RNvNtNtCskIfnrfrMWVM_9mech_core6schema5shape18evaluate_dimension",
+      12
+    ],
+    [
+      "_RNvNtNtCs1qJAwyMG1lC_11mech_engine14memory_planner4turn24refresh_turn_allocations",
+      12
+    ],
+    [
+      "_RNvCsfBzVIH1HIC6_7___rustc12___rust_alloc",
+      12
+    ],
+    [
+      "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks5admit",
+      12
+    ],
+    [
+      "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+      12
+    ],
+    [
+      "_RNvXNtCskIfnrfrMWVM_9mech_core9kind_exprNtB2_8KindExprNtNtCsgDHHaSskbIF_4core5clone5Clone5clone",
+      11
+    ],
+    [
+      "_RNvNtCskIfnrfrMWVM_9mech_core9kind_expr23rewrite_kind_dimensions",
+      11
+    ],
+    [
+      "_RNvNtNtCskIfnrfrMWVM_9mech_core6schema5shape21evaluate_body_extents",
+      11
+    ],
+    [
+      "_RNvXse_NtCsgKscDXrlV49_5alloc5boxedINtB5_3BoxSNtNtNtCskIfnrfrMWVM_9mech_core11type_system8resolved21KindPredicateEvidenceENtNtCsgDHHaSskbIF_4core5clone5Clone5cloneCs1qJAwyMG1lC_11mech_engine",
+      10
+    ],
+    [
+      "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+      9
+    ],
+    [
+      "mi_find_page",
+      9
+    ]
+  ],
+  "note": "Named-symbol attribution only; no unsupported resolution of deduplicated or JIT addresses. Sampling is diagnostic, not a timing fraction.",
+  "inclusive_families": {
+    "plan_turn_memory": 185,
+    "12plan_current": 236,
+    "CallMemoryPlan": 117,
+    "ResolvedValueDescriptor": 332
+  }
+}

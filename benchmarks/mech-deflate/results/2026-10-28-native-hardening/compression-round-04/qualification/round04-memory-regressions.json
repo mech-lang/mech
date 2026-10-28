@@ -1,0 +1,39 @@
+{
+  "name": "round04-memory-regressions",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-engine",
+    "--no-default-features",
+    "--features",
+    "full_compiler,async,native-artifact,sequence_buffers",
+    "--test",
+    "memory_plan",
+    "--test",
+    "memory_runtime",
+    "--test",
+    "resident_activation_contract",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "1e0f5ea48aa4fc0fdff456cf8b113f4a065ef8cb",
+  "dirty": "",
+  "exit": 0,
+  "seconds": 63.19912791252136,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round04-memory-regressions.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-owned-turn-round04-20261028/selected-bits-tests",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.9263306660577655,
+  "binary_sha256": "903a8a672ddeaaefe330fb66519c093bfd1526efeaea7a703d0055fe706b93b8",
+  "skipped_coverage": null
+}

@@ -1,0 +1,39 @@
+[
+  {
+    "label": "word-updates",
+    "command": [
+      "/private/tmp/mech-owned-turn-round04-20261028/word-updates"
+    ],
+    "exit": 0,
+    "process_seconds": 1.2525594589533284
+  },
+  {
+    "label": "roc",
+    "command": [
+      "/private/tmp/mech-deflate-profiling-20261028/roc-profile",
+      "12"
+    ],
+    "exit": 0,
+    "process_seconds": 6.029684999957681
+  },
+  {
+    "label": "before",
+    "command": [
+      "/private/tmp/mech-schema-bound-round03-20261028/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 40.36839637509547
+  },
+  {
+    "label": "after",
+    "command": [
+      "/private/tmp/mech-owned-turn-round04-20261028/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 44.70349004201125
+  }
+]
