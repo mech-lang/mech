@@ -582,3 +582,55 @@ fn frame_word_admission_rejects_invalid_width_without_retaining_a_visit() {
         }
     }
 }
+
+#[test]
+fn restored_frame_type_slots_reject_misalignment_keys_and_definitions() {
+    for source in [GROW, super::scalar_state_qualification::ALL_KINDS] {
+        for artifact in artifacts(source).0 {
+            let catalog = mech_stdlib::source_catalog();
+            let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let original: serde_json::Value =
+                serde_json::from_slice(&jit.descriptor().encode_build_owned_image().unwrap())
+                    .unwrap();
+            let types = original["descriptor"]["types"].as_array().unwrap();
+            let first = 0;
+            let other = types
+                .iter()
+                .position(|slot| slot["schema"] != types[first]["schema"])
+                .unwrap();
+            for corruption in ["slots", "key", "definition"] {
+                let mut changed = original.clone();
+                match corruption {
+                    // Both entries remain individually valid for their schemas.
+                    // The missing relationship is their exact position in plan.
+                    "slots" => changed["descriptor"]["types"]
+                        .as_array_mut()
+                        .unwrap()
+                        .swap(first, other),
+                    "key" => {
+                        changed["descriptor"]["types"][first]["key"] = types[other]["key"].clone()
+                    }
+                    "definition" => {
+                        let values = original["descriptor"]["plan"]["values"].as_array().unwrap();
+                        let other = values
+                            .iter()
+                            .position(|ty| ty["definition"] != values[first]["definition"])
+                            .unwrap();
+                        changed["descriptor"]["plan"]["values"][first]["definition"] =
+                            values[other]["definition"].clone();
+                    }
+                    _ => unreachable!(),
+                }
+                let bytes = serde_json::to_vec(&changed).unwrap();
+                // SAFETY: this deliberately corrupt checked-build image stays
+                // confined to rejection. No restored entry is executed.
+                let result = unsafe {
+                    mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
+                        &bytes, &catalog,
+                    )
+                };
+                assert!(result.is_err(), "corruption accepted: {corruption}");
+            }
+        }
+    }
+}
