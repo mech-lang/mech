@@ -1,0 +1,20 @@
+[
+  {
+    "label": "retained",
+    "command": [
+      "/private/tmp/mech-live-control-target/release/complete-reality"
+    ],
+    "exit": 0,
+    "process_seconds": 157.4129297733307
+  },
+  {
+    "label": "current",
+    "command": [
+      "/private/tmp/mech-compression-round-20261028/current-system",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 50.35050296783447
+  }
+]
