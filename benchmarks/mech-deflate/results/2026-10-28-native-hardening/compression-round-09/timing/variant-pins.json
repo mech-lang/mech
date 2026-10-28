@@ -1,0 +1,10 @@
+{
+  "independent-cost-tables.mec": {
+    "bytes": 166317,
+    "sha256": "278c8bf6ec66d6406fb922fbce936f89a3917fa2b2c9f8099da1fa07ceda1e10"
+  },
+  "independent-cost-tables.mbc": {
+    "bytes": 4482787,
+    "sha256": "33168977b1d9a0c873a57d6c8e6bd2f87035847cd4619323277403549a14a358"
+  }
+}

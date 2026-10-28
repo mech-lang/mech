@@ -94,6 +94,29 @@ a total compiler-memory bound and confers no runtime launch authority. Existing
 generic defaults remain unchanged. Compilation and launch policies are strict,
 separate JSON inputs; the public CLI also accepts `--native-compile-limits`.
 
+## Separate source experiment and next compiler slice
+
+The [round 09 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-09/REPORT.md)
+uses exactly the same compiler executable with an optional one-dimensional
+cost-table source variant. Its fresh paired eight-byte result is **448.75× →
+421.53× Roc**, 0.130136250 s to 0.122244917 s against 0.000290 s: **6.06% less
+elapsed time**. This is a source improvement, not a compiler improvement. The
+pinned 25 components remain the default. Original/decoded vector tests and six
+focused Rust tests pass; bytecode grows 8.32% and nonstandard vector fallbacks
+perform an additional row copy. General multidimensional use is not qualified.
+No larger input, new scalar gate, or deployed application was run for this
+same-executable experiment. All failed attempts and actual coverage are retained.
+
+The next compiler slice is general read-only packed unsigned array leaf loops
+with scalar state, extending existing closed-tail machinery. The unchanged
+true-cost literal/extra recurrences and an independent weighted reduction must
+qualify, including a leaf under an ordinary suspended parent. Prove invariant
+owners across backedges, refresh views each invocation, preserve finite resource
+and failure behavior, and rederive image proofs. Successful hot loops must use
+native loads/arithmetic without per-element runtime/frame transactions. Private
+writes, append/growth and arbitrary nested regions remain later work. This
+capability is assigned, not yet implemented.
+
 ## Current small timing
 
 The [latest eight-byte timing receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-08/REPORT.md)
@@ -115,9 +138,7 @@ and escaping results keep canonical storage; source and artifact stay unchanged.
 The [preceding metadata round](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-07/REPORT.md)
 measures **574× → 495×**, or 13.67% less elapsed time. Successful scans prepay the
 same debit once; tight bounds and worker loans keep ordered incremental charging.
-The next substantial experiment will remove repeated independent cost-table
-construction transactions. Any source optimization remains a distinct revision
-and measured variant alongside this pinned-source compiler baseline.
+The separate table experiment below retains this pinned-source compiler baseline.
 
 The [preceding consuming-store change](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-06/REPORT.md)
 measures **1626× → 574×**, 0.465164708 s to 0.164188708 s against its fresh

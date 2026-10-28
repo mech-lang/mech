@@ -1,0 +1,9 @@
+{
+  "command": [
+    "/private/tmp/mech-mixed-scalar-state-round08-20261028/produce",
+    "/private/tmp/mech-independent-tables-round09-20261028/record-join.mec",
+    "/private/tmp/mech-independent-tables-round09-20261028/record-join.mbc"
+  ],
+  "exit": 101,
+  "expected_failure": "source-semantics/incompatible-match-result-kind"
+}
