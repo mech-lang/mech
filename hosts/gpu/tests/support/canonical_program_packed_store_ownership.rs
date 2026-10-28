@@ -68,12 +68,12 @@ fn recursive_unsigned_updates_allocate_only_the_necessary_payload() {
                             panic!("packed output")
                         };
                         macro_rules! check {
-                            ($words:expr) => {
+                            ($words:expr) => {{
                                 assert_eq!($words.len(), count);
                                 assert!($words.iter().enumerate().all(
                                     |(i, &word)| word == if i < steps as usize { 7 } else { 0 }
                                 ));
-                            };
+                            }};
                         }
                         match matrix.elements() {
                             mech_core::snapshot::SequenceView::U16(words) => check!(words),
