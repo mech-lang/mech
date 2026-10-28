@@ -23,6 +23,10 @@ pub use numeric_matrix::UnsignedMatrixBuffer;
 mod owned_unsigned_matrix;
 pub use owned_unsigned_matrix::{OwnedSnapshotUnsignedMatrix, UnsignedMatrixOwnershipTransfer};
 
+#[path = "private_unsigned_matrix.rs"]
+mod private_unsigned_matrix;
+pub use private_unsigned_matrix::{PrivateUnsignedMatrix, UnsignedMatrixViewMut};
+
 #[cfg(test)]
 #[path = "frozen_identity_tests.rs"]
 mod frozen_identity_tests;
