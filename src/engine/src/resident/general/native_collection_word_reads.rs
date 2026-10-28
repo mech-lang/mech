@@ -163,6 +163,17 @@ impl NativePreparedLibraryCall {
                 // Reuse the maintained linear scalar selector's one-based check
                 // and error, including zero, empty input, and oversized ordinals.
                 let ordinal = crate::resident::numeric::available_scalar_index(index, cells.len())?;
+                let (rows, columns) = crate::resident::numeric::snapshot_matrix_dimensions(
+                    source,
+                    self.template.inputs()[0].body(),
+                )?;
+                // Linear selection is column-major; canonical cells are row-major.
+                // The index check and validated dimensions ensure nonempty axes.
+                let ordinal = if rows == 1 || columns == 1 {
+                    ordinal
+                } else {
+                    (ordinal % rows) * columns + ordinal / rows
+                };
                 match (width, cells) {
                     (IntegerWidth::W8, SequenceView::U8(values)) => values
                         .get(ordinal)

@@ -13989,7 +13989,7 @@ fn concatenate_vertical(
     }
 }
 
-fn snapshot_matrix_dimensions(
+pub(in crate::resident) fn snapshot_matrix_dimensions(
     value: &mech_core::Value,
     schema: &SchemaBody,
 ) -> Result<(usize, usize), ResidentKernelError> {
