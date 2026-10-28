@@ -1,7 +1,0 @@
-
-running 2 tests
-test native_artifact::program::runtime::invocation::caller_geometry::tests::generated_caller_geometry_includes_prior_roots_without_payload_dependent_work ... ok
-test native_artifact::program::runtime::invocation::caller_geometry::tests::generated_caller_geometry_covers_live_collection_builder_families ... ok
-
-test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 423 filtered out; finished in 9.04s
-

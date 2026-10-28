@@ -1,7 +1,0 @@
-
-running 2 tests
-test native_artifact::launch::managed::tests::managed_launch_policy_requires_all_finite_runtime_dimensions ... ok
-test native_artifact::program::prepare::call_routes::tests::prepared_selected_routes_are_rederived_from_actual_factories_on_image_restore ... ok
-
-test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 424 filtered out; finished in 9.43s
-

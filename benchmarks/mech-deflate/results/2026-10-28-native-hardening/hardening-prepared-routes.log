@@ -1,9 +1,0 @@
-   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/gpu)
-    Finished `test` profile [unoptimized] target(s) in 25.83s
-     Running unittests src/lib.rs (/private/tmp/mech-live-control-target/debug/deps/mech_gpu-2678607daf86f560)
-
-running 1 test
-test native_artifact::program::prepare::call_routes::tests::prepared_selected_routes_are_rederived_from_actual_factories_on_image_restore ... ok
-
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 424 filtered out; finished in 5.67s
-
