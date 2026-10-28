@@ -167,8 +167,11 @@ impl Invocation<'_, '_, '_> {
                         result = Some(value.to_bits());
                     }
                     super::super::buffer_frames::Field::Managed(value) => {
-                        if value.schema() != ty.schema()
-                            || value.schema_key() != ty.schema_key()
+                        // This exact value index/schema/definition/key relation
+                        // is checked at preparation and independent restoration.
+                        let slot = &descriptor.metadata().types[output.get() as usize];
+                        if value.schema() != slot.schema
+                            || value.schema_key() != slot.key
                             || ty.scalar_kind().is_some()
                         {
                             return Err(invalid("private frame managed field schema differs"));

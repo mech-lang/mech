@@ -308,7 +308,7 @@ impl PreparedNativeProgram {
             } else {
                 4
             });
-        let types = plan
+        let types: Box<[_]> = plan
             .values()
             .iter()
             .chain(
@@ -319,6 +319,7 @@ impl PreparedNativeProgram {
                 key: ty.schema_key(),
             })
             .collect();
+        validate_type_slots(&plan, artifact.schemas(), &types).map_err(str::to_owned)?;
         let constant_bytes = plan
             .constants()
             .iter()
@@ -457,6 +458,36 @@ impl ProgramMetadata {
             .as_ref()
             .map_or(Ok(prefix), native::program::prepare::map_owner::local_words)
     }
+}
+
+/// Bind each retained key to this exact value index, complete definition and
+/// authoritative schema-table entry. Preparation and independent image loading
+/// share this check; a key valid elsewhere in the table grants no slot authority.
+pub(in crate::native_artifact) fn validate_type_slots(
+    plan: &NativeProgramArtifactPlan,
+    schemas: &SchemaTable,
+    slots: &[NativeValueSlot],
+) -> Result<(), &'static str> {
+    if slots.len() != plan.values().len() + plan.transport_output_count() {
+        return Err("native type-slot count differs from plan");
+    }
+    for (ty, slot) in plan
+        .values()
+        .iter()
+        .chain((0..plan.transport_output_count()).map(|i| plan.transport_output_type(i)))
+        .zip(slots)
+    {
+        let entry = schemas
+            .entry(ty.schema())
+            .ok_or("native plan type lacks schema entry")?;
+        if slot.schema != ty.schema()
+            || slot.key != entry.key()
+            || ty.definition() != entry.schema()
+        {
+            return Err("native type slot differs from exact plan definition and schema key");
+        }
+    }
+    Ok(())
 }
 
 pub(in crate::native_artifact) mod retirement;

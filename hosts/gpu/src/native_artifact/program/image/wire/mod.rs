@@ -196,12 +196,11 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
         || calls.len() != plan.blocks().len()
         || types.len() != plan.values().len() + plan.transport_output_count()
         || w.constant_bytes.len() != plan.constants().len()
-        || types
-            .iter()
-            .any(|t| schemas.get(t.schema).is_none_or(|s| s.key() != t.key))
     {
         return Err("descriptor image inventory differs from its plan".into());
     }
+    native::program::prepare::validate_type_slots(&plan, &schemas, &types)
+        .map_err(str::to_owned)?;
     let closed_tails = w.closed_tails.into();
     let frozen_maps = w
         .map_owner_words
