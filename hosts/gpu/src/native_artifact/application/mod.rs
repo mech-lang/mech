@@ -9,8 +9,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-#[path = "value_features/mod.rs"]
-pub(in crate::native_artifact::application) mod value_features;
+mod value_features;
 
 #[derive(Debug)]
 pub enum NativeApplicationError {

@@ -489,5 +489,4 @@ impl FrameState {
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::codegen::packed_map::frame_state) mod tests;
+mod tests;

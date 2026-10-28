@@ -2,17 +2,15 @@ use crate::native_artifact::abi::{
     ABI_VERSION, NATIVE_ARTIFACT_ENTRY_SYMBOL, NO_NODE, NativeAbiDescriptor, NativeEntryFrame,
     RawEntry, STATUS_ABI, STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK,
 };
+use crate::native_artifact::codegen::backend as codegen_backend;
 use crate::native_artifact::runtime::{
     NativeExecutionError, NativeExecutionLimits, NativeExecutionReport,
 };
 use cranelift_codegen::ir::condcodes::{FloatCC, IntCC};
 use cranelift_codegen::ir::{AbiParam, Block, InstBuilder, MemFlags, Value, types};
 use cranelift_codegen::isa::unwind::UnwindInst;
-use cranelift_codegen::settings;
-use cranelift_codegen::settings::Configurable;
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
-use cranelift_module::{DataDescription, FuncId, Linkage, Module, default_libcall_names};
-use cranelift_object::{ObjectBuilder, ObjectModule};
+use cranelift_module::{DataDescription, FuncId, Linkage, Module};
 use mech_core::{ConstantId, InputId, ManagedMemoryBudget, NodeId};
 use mech_engine::native_artifact::{
     NativeArtifactPlan, NativeScalarKind, NativeScalarOp, NativeScalarValue, NativeValueRef,
@@ -106,18 +104,7 @@ impl JitArtifact {
         limits: NativeCompileLimits,
     ) -> Result<Self, NativeCompileError> {
         host_supported()?;
-        let builder = cranelift_jit::JITBuilder::with_flags(
-            &[
-                ("opt_level", "none"),
-                ("enable_nan_canonicalization", "false"),
-                ("is_pic", "true"),
-                ("preserve_frame_pointers", "true"),
-                ("unwind_info", "true"),
-            ],
-            default_libcall_names(),
-        )
-        .map_err(backend)?;
-        let mut module = cranelift_jit::JITModule::new(builder);
+        let mut module = codegen_backend::jit(codegen_backend::SCALAR_FLAGS)?;
         let (function, descriptor) = define(plan, &mut module, limits)?;
         module.finalize_definitions().map_err(backend)?;
         // SAFETY: define emits this one private repr(C) ABI; module owns its
@@ -207,24 +194,8 @@ pub fn emit_object_with_limits(
     limits: NativeCompileLimits,
 ) -> Result<NativeObject, NativeCompileError> {
     host_supported()?;
-    let mut flags = settings::builder();
-    for (name, value) in [
-        ("opt_level", "none"),
-        ("enable_nan_canonicalization", "false"),
-        ("is_pic", "true"),
-        ("preserve_frame_pointers", "true"),
-        ("unwind_info", "true"),
-    ] {
-        flags.set(name, value).map_err(backend)?;
-    }
-    let isa = cranelift_native::builder()
-        .map_err(backend)?
-        .finish(settings::Flags::new(flags))
-        .map_err(backend)?;
-    let mut module = ObjectModule::new(
-        ObjectBuilder::new(isa, "mech_canonical_scalar", default_libcall_names())
-            .map_err(backend)?,
-    );
+    let mut module =
+        codegen_backend::object("mech_canonical_scalar", codegen_backend::SCALAR_FLAGS)?;
     let (_, descriptor) = define(plan, &mut module, limits)?;
     let identity =
         crate::native_artifact::identity::NativeObjectIdentity::from_descriptor(&descriptor)
@@ -884,5 +855,4 @@ pub(in crate::native_artifact) fn compiled_stack_bytes(
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::compiler) mod tests;
+mod tests;

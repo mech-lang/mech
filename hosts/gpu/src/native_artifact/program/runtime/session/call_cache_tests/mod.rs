@@ -452,5 +452,4 @@ fn preserved_control_checkpoint_edges_cannot_replay_root_sites() {
     }
 }
 
-#[path = "allocation_tests.rs"]
-pub(in crate::native_artifact::program::runtime::session::call_cache_tests) mod allocation_tests;
+mod allocation_tests;

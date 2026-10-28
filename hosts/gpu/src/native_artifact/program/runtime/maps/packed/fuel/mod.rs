@@ -1,7 +1,7 @@
 //! Prepare a common full-batch quote before entering the worker escrow lock.
 //! The original division path remains authoritative near limits/overflow.
+use crate::native_artifact::program::runtime::maps::admission::Error;
 use crate::native_artifact::program::runtime::maps::packed::{BATCH, Price, add, mul};
-use crate::native_artifact::program::runtime::maps::string::Error;
 
 pub(in crate::native_artifact::program::runtime::maps::packed) struct Prepared {
     unit: Price,
@@ -70,5 +70,4 @@ impl Prepared {
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::runtime::maps::packed::fuel) mod tests;
+mod tests;

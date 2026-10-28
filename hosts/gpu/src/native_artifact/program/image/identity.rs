@@ -1,8 +1,11 @@
 //! Explicit program IR/ABI identity. No Debug or pointer serialization.
+use crate::native_artifact::identity::transcript::{
+    self, optional_index, origin, scalar_action, scalar_kind, scalar_terminator,
+};
 use mech_engine::native_artifact::{
-    NativeIterationAction, NativeIterationTerminator, NativeIterationValueScope, NativeMatchAction,
-    NativeMatchTerminator, NativeProgramArtifactPlan, NativeScalarKind, NativeSelectedTextJoin,
-    NativeTextLineMatrixRegion, NativeTextLineRetentionFrontier,
+    NativeIterationAction, NativeIterationTerminator, NativeIterationValueScope,
+    NativeProgramArtifactPlan, NativeSelectedTextJoin, NativeTextLineMatrixRegion,
+    NativeTextLineRetentionFrontier,
 };
 use sha2::{Digest, Sha256};
 // Identity construction runs once per descriptor, outside generated execution.
@@ -10,13 +13,13 @@ use sha2::{Digest, Sha256};
 // this shares code without changing a single byte of the identity transcript.
 #[inline(never)]
 fn word(hash: &mut Sha256, value: u64) {
-    hash.update(value.to_le_bytes());
+    transcript::word(hash, value);
 }
 #[inline(never)]
 fn bytes(hash: &mut Sha256, value: &[u8]) {
-    word(hash, value.len() as u64);
-    hash.update(value);
+    transcript::bytes(hash, value);
 }
+
 fn selected_template(
     hash: &mut Sha256,
     template: &mech_engine::native_artifact::NativeProgramLibraryTemplate,
@@ -469,13 +472,7 @@ pub(in crate::native_artifact) fn typed_ir_sha256(
     word(&mut hash, plan.entry() as u64);
     word(&mut hash, plan.values().len() as u64);
     for ty in plan.values() {
-        hash.update([match ty.scalar_kind() {
-            None => 0,
-            Some(NativeScalarKind::Bool) => 1,
-            Some(NativeScalarKind::U64) => 2,
-            Some(NativeScalarKind::I64) => 3,
-            Some(NativeScalarKind::F64) => 4,
-        }]);
+        hash.update([ty.scalar_kind().map_or(0, scalar_kind)]);
         word(&mut hash, ty.schema().get() as u64);
         hash.update(ty.schema_key().as_bytes());
     }
@@ -582,24 +579,8 @@ pub(in crate::native_artifact) fn typed_ir_sha256(
 
     word(&mut hash, plan.blocks().len() as u64);
     for block in plan.blocks() {
-        let at = block.origin();
-        word(&mut hash, at.node().get() as u64);
-        for id in [at.block(), at.local()] {
-            match id {
-                Some(id) => {
-                    hash.update([1]);
-                    word(&mut hash, id as u64);
-                }
-                None => hash.update([0]),
-            }
-        }
-        match block.iteration() {
-            Some(id) => {
-                hash.update([1]);
-                word(&mut hash, id as u64);
-            }
-            None => hash.update([0]),
-        }
+        origin(&mut hash, block.origin());
+        optional_index(&mut hash, block.iteration());
         match block.action() {
             NativeIterationAction::PrepareStringSpanSelector { collection } => {
                 hash.update([14]);
@@ -714,27 +695,7 @@ pub(in crate::native_artifact) fn typed_ir_sha256(
             }
             NativeIterationAction::Scalar(action) => {
                 hash.update([0]);
-                match action {
-                    NativeMatchAction::None => hash.update([0]),
-                    NativeMatchAction::Primitive {
-                        op,
-                        operands,
-                        output,
-                        ..
-                    } => {
-                        hash.update([1, crate::native_artifact::identity::op_tag(*op)]);
-                        word(&mut hash, output.get() as u64);
-                        word(&mut hash, operands.len() as u64);
-                        for operand in operands {
-                            word(&mut hash, operand.get() as u64);
-                        }
-                    }
-                    NativeMatchAction::Copy { source, output } => {
-                        hash.update([2]);
-                        word(&mut hash, source.get() as u64);
-                        word(&mut hash, output.get() as u64);
-                    }
-                }
+                scalar_action(&mut hash, action);
             }
             NativeIterationAction::Initialize { iteration } => {
                 hash.update([1]);
@@ -770,31 +731,7 @@ pub(in crate::native_artifact) fn typed_ir_sha256(
             }
             NativeIterationTerminator::Scalar(terminator) => {
                 hash.update([0]);
-                match terminator {
-                    NativeMatchTerminator::Jump(next) => {
-                        hash.update([1]);
-                        word(&mut hash, next as u64);
-                    }
-                    NativeMatchTerminator::Branch { condition, yes, no } => {
-                        hash.update([2]);
-                        word(&mut hash, condition.get() as u64);
-                        word(&mut hash, yes as u64);
-                        word(&mut hash, no as u64);
-                    }
-                    NativeMatchTerminator::LiteralBranch {
-                        left,
-                        right,
-                        yes,
-                        no,
-                    } => {
-                        hash.update([3]);
-                        for value in [left.get(), right.get(), yes, no] {
-                            word(&mut hash, value as u64);
-                        }
-                    }
-                    NativeMatchTerminator::Complete => hash.update([4]),
-                    NativeMatchTerminator::Reject => hash.update([5]),
-                }
+                scalar_terminator(&mut hash, terminator);
             }
             NativeIterationTerminator::Header {
                 iteration,
@@ -813,13 +750,7 @@ pub(in crate::native_artifact) fn typed_ir_sha256(
         match scope {
             NativeIterationValueScope::Immutable { iteration } => {
                 hash.update([0]);
-                match iteration {
-                    Some(id) => {
-                        hash.update([1]);
-                        word(&mut hash, *id as u64);
-                    }
-                    None => hash.update([0]),
-                }
+                optional_index(&mut hash, *iteration);
             }
             NativeIterationValueScope::Carrier { iteration } => {
                 hash.update([1]);
@@ -836,13 +767,7 @@ pub(in crate::native_artifact) fn typed_ir_sha256(
             iteration.origin().local(),
             iteration.parent(),
         ] {
-            match id {
-                Some(id) => {
-                    hash.update([1]);
-                    word(&mut hash, id as u64);
-                }
-                None => hash.update([0]),
-            }
+            optional_index(&mut hash, id);
         }
         match iteration {
             mech_engine::native_artifact::NativeControlLoopRef::Iteration(fold) => {
@@ -940,13 +865,7 @@ pub(in crate::native_artifact) fn typed_ir_sha256(
             collection.parent(),
             collection.parent_collection(),
         ] {
-            match id {
-                Some(id) => {
-                    hash.update([1]);
-                    word(&mut hash, id as u64);
-                }
-                None => hash.update([0]),
-            }
+            optional_index(&mut hash, id);
         }
         match collection.kind() {
             mech_engine::ComprehensionKind::Matrix => hash.update([0]),

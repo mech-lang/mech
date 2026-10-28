@@ -30,14 +30,11 @@ use mech_engine::native_artifact::{
 };
 use std::ffi::c_void;
 
-#[path = "collections/mod.rs"]
-pub(in crate::native_artifact::program::runtime) mod collections;
+mod collections;
 
-#[path = "lines/mod.rs"]
-pub(in crate::native_artifact::program::runtime) mod lines;
+mod lines;
 
-#[path = "session/mod.rs"]
-pub(in crate::native_artifact::program::runtime) mod session;
+mod session;
 #[cfg(feature = "canonical-native-program-host-runtime")]
 pub(in crate::native_artifact) use crate::native_artifact::program::runtime::session::CheckedEntry;
 #[cfg(feature = "canonical-native-program-host-runtime")]
@@ -278,24 +275,22 @@ fn execute_prepared<F: FnMut(*mut Frame) -> u64>(
 }
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "histogram_query_observation_tests.rs"]
-pub(in crate::native_artifact::program::runtime) mod histogram_query_observation_tests;
+mod test_support;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "histogram_observation_tests.rs"]
-pub(in crate::native_artifact::program::runtime) mod histogram_observation_tests;
+mod histogram_query_observation_tests;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "text_join_observation_tests.rs"]
-pub(in crate::native_artifact::program::runtime) mod text_join_observation_tests;
+mod histogram_observation_tests;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::runtime) mod tests;
+mod text_join_observation_tests;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "structural_projection_tests.rs"]
-pub(in crate::native_artifact::program::runtime) mod structural_projection_tests;
+mod tests;
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod structural_projection_tests;
 
 #[test]
 fn native_runtime_consolidation_preserves_the_charged_layout_envelope() {
@@ -309,7 +304,6 @@ fn native_runtime_consolidation_preserves_the_charged_layout_envelope() {
     assert_eq!(core::mem::size_of::<Frame>(), 144);
 }
 
-#[path = "maps/mod.rs"]
 pub(in crate::native_artifact) mod maps;
 
 mod invocation;

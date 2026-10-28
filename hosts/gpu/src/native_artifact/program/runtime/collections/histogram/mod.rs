@@ -7,19 +7,16 @@ use core::mem::size_of;
 use mech_core::{ManagedMemoryReservation, MemoryBudgetDimension as Dimension};
 use mech_engine::native_artifact::{NativeCollectionResult, NativeHistogramSink, NativeMatchValue};
 
-#[path = "finish/mod.rs"]
-pub(in crate::native_artifact::program::runtime::collections::histogram) mod finish;
+mod finish;
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "observation.rs"]
-pub(in crate::native_artifact::program::runtime::collections::histogram) mod observation;
-#[path = "window/mod.rs"]
-pub(in crate::native_artifact::program::runtime::collections::histogram) mod window;
+mod observation;
+mod window;
 #[cfg(all(test, feature = "canonical-native-program"))]
-pub(in crate::native_artifact) use crate::native_artifact::program::runtime::collections::histogram::observation::HistogramDemand;
-#[cfg(all(test, feature = "canonical-native-program"))]
-pub(in crate::native_artifact) use crate::native_artifact::program::runtime::collections::histogram::observation::HistogramStage;
-#[cfg(all(test, feature = "canonical-native-program"))]
-pub(in crate::native_artifact) use crate::native_artifact::program::runtime::collections::histogram::observation::HistogramVisit;
+pub(in crate::native_artifact) use crate::native_artifact::program::runtime::collections::histogram::observation::{
+    HistogramDemand,
+    HistogramStage,
+    HistogramVisit,
+};
 
 struct Entry {
     key: String,

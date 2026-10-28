@@ -170,5 +170,4 @@ impl<T: PlannedArenaElement> NativeTypedStorage<T> {
 }
 
 #[cfg(test)]
-#[path = "admission_tests.rs"]
-pub(in crate::native_artifact::memory) mod admission_tests;
+mod admission_tests;

@@ -59,18 +59,12 @@ impl Pass {
     }
 }
 
-#[path = "cold_recipe_tests.rs"]
-pub(in crate::native_artifact::program::runtime::maps::closed_tests::edge_facts) mod cold_recipe_tests;
-#[path = "constant_tests.rs"]
-pub(in crate::native_artifact::program::runtime::maps::closed_tests::edge_facts) mod constant_tests;
-#[path = "count_bound_tests.rs"]
-pub(in crate::native_artifact::program::runtime::maps::closed_tests::edge_facts) mod count_bound_tests;
-#[path = "loop_bounds_tests.rs"]
-pub(in crate::native_artifact::program::runtime::maps::closed_tests::edge_facts) mod loop_bounds_tests;
-#[path = "mutation_tests.rs"]
-pub(in crate::native_artifact::program::runtime::maps::closed_tests::edge_facts) mod mutation_tests;
-#[path = "steady_tests.rs"]
-pub(in crate::native_artifact::program::runtime::maps::closed_tests::edge_facts) mod steady_tests;
+mod cold_recipe_tests;
+mod constant_tests;
+mod count_bound_tests;
+mod loop_bounds_tests;
+mod mutation_tests;
+mod steady_tests;
 
 type PublicationFrontier = (u64, u64, u64, (u64, u64));
 thread_local! {

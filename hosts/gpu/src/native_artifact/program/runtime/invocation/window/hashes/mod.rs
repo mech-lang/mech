@@ -326,5 +326,4 @@ pub(in crate::native_artifact::program::runtime::invocation::window) unsafe exte
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::runtime::invocation::window::hashes) mod tests;
+mod tests;

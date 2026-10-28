@@ -9,8 +9,7 @@ use cranelift_codegen::ir::{AbiParam, FuncRef, Opcode, StackSlot, StackSlotData,
 use cranelift_frontend::{FunctionBuilderContext, Switch, Variable};
 use cranelift_module::{FuncId, Linkage, Module};
 use mech_engine::native_artifact::NativeScalarOp as Op;
-#[path = "cold_recipes/mod.rs"]
-pub(in crate::native_artifact::program::codegen::packed_loop::steady) mod cold_recipes;
+mod cold_recipes;
 
 pub(in crate::native_artifact::program::codegen::packed_loop) struct Proof {
     graph: crate::native_artifact::program::codegen::tag_threading::Graph,

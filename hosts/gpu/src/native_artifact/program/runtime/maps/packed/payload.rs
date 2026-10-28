@@ -1,9 +1,9 @@
 //! Explicit payload layouts shared by runtime storage and generated probes.
 //! The source-derived packing domain decides the layout for every width this
 //! entry accepts; runtime input values never select a different payload ABI.
+use crate::native_artifact::program::runtime::maps::admission::Error;
 use crate::native_artifact::program::runtime::maps::key_domain::Domain;
 use crate::native_artifact::program::runtime::maps::packed::{MAX_WIDTH, Slot};
-use crate::native_artifact::program::runtime::maps::string::Error;
 
 #[repr(C)]
 #[derive(Clone, Copy, Default, Debug)]

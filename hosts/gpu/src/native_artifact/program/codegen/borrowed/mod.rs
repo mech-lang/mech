@@ -12,8 +12,7 @@ use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{NativeBorrowedStringAction as Action, NativeMatchValue};
 
-#[path = "line.rs"]
-pub(in crate::native_artifact::program::codegen::borrowed) mod line;
+mod line;
 
 fn word(
     b: &mut FunctionBuilder,

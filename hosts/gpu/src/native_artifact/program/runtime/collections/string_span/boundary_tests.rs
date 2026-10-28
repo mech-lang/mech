@@ -4,6 +4,7 @@
 //! account, replaces a helper, allocates, formats, or asserts across C.
 use crate::native_artifact::program::runtime::NativeProgramExecutionError as Error;
 use crate::native_artifact::program::runtime::collections::string_span::Visit;
+use crate::native_artifact::program::runtime::test_support::snapshot_outputs as snapshot;
 use crate::native_artifact::program::runtime::tests::{artifact_source, limits};
 use crate::native_artifact::{
     JitProgramArtifact, NativeExecutionError, NativeProgramExecutionLimits,
@@ -86,18 +87,6 @@ fn observed(
     RECORD.with(|cell| cell.set(None));
     let result = jit.evaluate_into(args, outputs, caps, memory);
     (result, RECORD.with(core::cell::Cell::get))
-}
-fn snapshot(artifact: &ProgramArtifact, outputs: &[Option<Value>]) -> Vec<Box<[u8]>> {
-    outputs
-        .iter()
-        .map(|value| {
-            value
-                .as_ref()
-                .unwrap()
-                .canonical_snapshot_bytes(artifact.schemas())
-                .unwrap()
-        })
-        .collect()
 }
 fn target(jit: &JitProgramArtifact) -> (u32, u32, mech_engine::native_artifact::NativeMatchOrigin) {
     let projections = jit

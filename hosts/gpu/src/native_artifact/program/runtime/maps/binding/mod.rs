@@ -1,8 +1,11 @@
 //! Invocation-local storage binding, not a current-visit or publication permit.
 //! The checked native caller must associate this borrowed plan/region pair with
 //! its exact descriptor, frame and current site, and supply complete geometry.
+use crate::native_artifact::program::runtime::maps::admission::{
+    Error, Limits, add, check, finite, mul,
+};
 use crate::native_artifact::program::runtime::maps::string::{
-    Error, Limits, OwnedStringMap, PublicationGeometry as Geometry,
+    OwnedStringMap, PublicationGeometry as Geometry,
 };
 use mech_core::{
     ManagedMemoryReservation, ManagedNodeReservation, MemoryBudgetLimits, SchemaBody, SchemaTable,
@@ -33,39 +36,8 @@ impl<'a> From<&'a Value> for Key<'a> {
         Self::Canonical(value)
     }
 }
-fn add(a: u64, b: u64) -> Result<u64, Error> {
-    a.checked_add(b).ok_or(Error::Overflow)
-}
-fn mul(a: u64, b: u64) -> Result<u64, Error> {
-    a.checked_mul(b).ok_or(Error::Overflow)
-}
 fn cap(value: Option<u64>) -> Result<u64, Error> {
     value.ok_or(Error::Binding("unbounded call dimension"))
-}
-fn check(required: u64, limit: u64, field: &'static str) -> Result<(), Error> {
-    if required > limit {
-        Err(Error::Limit {
-            required,
-            limit,
-            field,
-        })
-    } else {
-        Ok(())
-    }
-}
-fn finite(limits: MemoryBudgetLimits) -> Result<(), Error> {
-    for limit in [
-        limits.max_output_elements,
-        limits.max_output_bytes,
-        limits.max_temporary_bytes,
-        limits.max_cloned_bytes,
-        limits.max_retained_nodes,
-        limits.max_compute_work,
-        limits.max_comparison_work,
-    ] {
-        cap(limit)?;
-    }
-    Ok(())
 }
 // Global uniqueness rejects references from another region/invocation. Each
 // CAS attempt is prepaid on the SAME finite account; contention cannot create
@@ -200,7 +172,7 @@ impl<'plan> Binding<'plan> {
         geometry: Geometry,
         limits: MemoryBudgetLimits,
     ) -> Result<(Self, InitialWords), Error> {
-        finite(limits)?;
+        finite(limits, cap)?;
         if plan.program_revision() != region.program_revision() {
             return Err(Error::Binding("foreign program revision"));
         }
@@ -460,7 +432,7 @@ impl<'plan> Binding<'plan> {
         payload: u64,
         cloned: u64,
     ) -> Result<Limits, Error> {
-        finite(limits)?;
+        finite(limits, cap)?;
         let map = self.current(token)?;
         if geometry.live_bytes < self.retained_bytes()?
             || geometry.live_nodes < add(map.len() as u64, 3)?
@@ -740,5 +712,4 @@ impl<'plan> Binding<'plan> {
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::runtime::maps::binding) mod tests;
+mod tests;

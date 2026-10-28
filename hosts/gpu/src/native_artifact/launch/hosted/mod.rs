@@ -538,5 +538,4 @@ fn run<P: LaunchPolicy>(
     Ok(())
 }
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::launch::hosted) mod tests;
+mod tests;

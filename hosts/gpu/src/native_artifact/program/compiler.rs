@@ -1,4 +1,5 @@
 //! ABI16 facade over the SAME canonical iteration CFG definition pass.
+use crate::native_artifact::codegen::backend as codegen_backend;
 use crate::native_artifact::codegen::control::plan::CodePlan;
 use crate::native_artifact::compiler::{backend, host_supported};
 use crate::native_artifact::program::image::NativeCodeFootprint;
@@ -8,10 +9,7 @@ use crate::native_artifact::{
     NativeCompileError, NativeCompileLimits, NativeProgramDescriptor, NativeProgramExecutionError,
     NativeProgramExecutionLimits, NativeProgramExecutionReport, NativeProgramObjectIdentity,
 };
-use cranelift_codegen::settings;
-use cranelift_codegen::settings::Configurable;
-use cranelift_module::{DataDescription, Linkage, Module, default_libcall_names};
-use cranelift_object::{ObjectBuilder, ObjectModule};
+use cranelift_module::{DataDescription, Linkage, Module};
 use mech_core::{FunctionCatalog, ManagedMemoryBudget, Value};
 use mech_engine::ProgramArtifact;
 use mech_engine::native_artifact::lower_native_program_artifact;
@@ -89,10 +87,7 @@ impl JitProgramArtifact {
     ) -> Result<Self, NativeCompileError> {
         host_supported()?;
         let plan = lower_native_program_artifact(artifact, catalog).map_err(backend)?;
-        let builder =
-            cranelift_jit::JITBuilder::with_flags(PROGRAM_CODEGEN_FLAGS, default_libcall_names())
-                .map_err(backend)?;
-        let mut module = cranelift_jit::JITModule::new(builder);
+        let mut module = codegen_backend::jit(PROGRAM_CODEGEN_FLAGS)?;
         preflight(&plan, &module, limits)?;
         let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
         let (function, stack, code, _codegen) =
@@ -281,18 +276,7 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
 ) -> Result<NativeProgramObject, NativeCompileError> {
     host_supported()?;
     let plan = lower_native_program_artifact(artifact, catalog).map_err(backend)?;
-    let mut flags = settings::builder();
-    for &(key, value) in PROGRAM_CODEGEN_FLAGS {
-        flags.set(key, value).map_err(backend)?;
-    }
-    let isa = cranelift_native::builder()
-        .map_err(backend)?
-        .finish(settings::Flags::new(flags))
-        .map_err(backend)?;
-    let mut module = ObjectModule::new(
-        ObjectBuilder::new(isa, "mech_canonical_program", default_libcall_names())
-            .map_err(backend)?,
-    );
+    let mut module = codegen_backend::object("mech_canonical_program", PROGRAM_CODEGEN_FLAGS)?;
     preflight(&plan, &module, limits)?;
     let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
     let (_, stack, code, codegen) = crate::native_artifact::codegen::control::define_cfg(

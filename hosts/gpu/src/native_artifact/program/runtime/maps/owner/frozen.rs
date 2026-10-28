@@ -182,13 +182,13 @@ impl State<'_> {
                             "frozen read retained nodes",
                         )?;
                         work.charge(add(footprint.encoded_bytes, 256)?, 0)
-                            .map_err(|error| storage_error(crate::native_artifact::program::runtime::maps::string::Error::Work(error)))?;
+                            .map_err(|error| storage_error(crate::native_artifact::program::runtime::maps::admission::Error::Work(error)))?;
                         let value = ctx.scalar(*output, word)?;
                         ctx.arena_put(output.get(), &value)?;
                         Ok(word)
                     },
                 )
-                .map_err(|error| storage_error(crate::native_artifact::program::runtime::maps::string::Error::Work(error)))??
+                .map_err(|error| storage_error(crate::native_artifact::program::runtime::maps::admission::Error::Work(error)))??
             }
             _ => return Err(invalid("frozen-map helper differs from original action")),
         };

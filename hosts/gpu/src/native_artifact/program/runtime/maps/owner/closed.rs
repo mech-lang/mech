@@ -124,7 +124,7 @@ impl Owner<'_> {
                 .ok_or_else(|| invalid("closed map body prepayment overflow"))?;
             self.work
                 .charge(price, 0)
-                .map_err(crate::native_artifact::program::runtime::maps::string::Error::Work)
+                .map_err(crate::native_artifact::program::runtime::maps::admission::Error::Work)
                 .map_err(storage_error)?;
             self.funded = add(self.funded, count)?;
             self.selector_current = false;
@@ -188,7 +188,7 @@ impl Owner<'_> {
                         self.work
                             .charge(self.range.selected_u64_string_span_selector_work(), 0)
                             .map_err(
-                                crate::native_artifact::program::runtime::maps::string::Error::Work,
+                                crate::native_artifact::program::runtime::maps::admission::Error::Work,
                             )
                             .map_err(storage_error)?;
                         self.range
@@ -203,7 +203,7 @@ impl Owner<'_> {
                             })
                     },
                 )
-                .map_err(crate::native_artifact::program::runtime::maps::string::Error::Work)
+                .map_err(crate::native_artifact::program::runtime::maps::admission::Error::Work)
                 .map_err(storage_error)??;
             self.selector = Some(selector);
             self.selector_current = true;
@@ -453,11 +453,11 @@ impl<'plan> State<'plan> {
                             },
                         )
                         .map_err(
-                            crate::native_artifact::program::runtime::maps::string::Error::Work,
+                            crate::native_artifact::program::runtime::maps::admission::Error::Work,
                         )
                         .map_err(storage_error)?
                         .map_err(
-                            crate::native_artifact::program::runtime::maps::string::Error::Work,
+                            crate::native_artifact::program::runtime::maps::admission::Error::Work,
                         )
                         .map_err(storage_error)?
                 } else {

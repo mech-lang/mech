@@ -1,14 +1,12 @@
 //! Canonical scalar CFG definition shared by JIT and Object emission.
+use crate::native_artifact::codegen::backend as codegen_backend;
 use crate::native_artifact::compiler::{backend, host_supported};
 use crate::native_artifact::iteration_abi::{ENTRY, Entry, NativeIterationDescriptor, VERSION};
 use crate::native_artifact::iteration_runtime::{
     NativeIterationExecutionError, NativeIterationExecutionReport,
 };
 use crate::native_artifact::{NativeCompileError, NativeCompileLimits, NativeExecutionLimits};
-use cranelift_codegen::settings;
-use cranelift_codegen::settings::Configurable;
-use cranelift_module::{DataDescription, FuncId, Linkage, Module, default_libcall_names};
-use cranelift_object::{ObjectBuilder, ObjectModule};
+use cranelift_module::{DataDescription, FuncId, Linkage, Module};
 use mech_core::ManagedMemoryBudget;
 use mech_engine::native_artifact::{
     NativeIterationAction, NativeIterationArtifactPlan, NativeMatchAction, NativeMatchValue,
@@ -29,17 +27,7 @@ impl JitIterationArtifact {
         limits: NativeCompileLimits,
     ) -> Result<Self, NativeCompileError> {
         host_supported()?;
-        let builder = cranelift_jit::JITBuilder::with_flags(
-            &[
-                ("opt_level", "none"),
-                ("is_pic", "true"),
-                ("preserve_frame_pointers", "true"),
-                ("unwind_info", "true"),
-            ],
-            default_libcall_names(),
-        )
-        .map_err(backend)?;
-        let mut module = cranelift_jit::JITModule::new(builder);
+        let mut module = codegen_backend::jit(codegen_backend::CONTROL_FLAGS)?;
         let (function, descriptor) = define(plan, &mut module, limits)?;
         module.finalize_definitions().map_err(backend)?;
         // SAFETY: the one checked definition emits the private repr(C) ABI;
@@ -118,27 +106,10 @@ pub fn emit_iteration_object_with_limits(
     limits: NativeCompileLimits,
 ) -> Result<NativeIterationObject, NativeCompileError> {
     host_supported()?;
-    let mut flags = settings::builder();
-    for (key, value) in [
-        ("opt_level", "none"),
-        ("is_pic", "true"),
-        ("preserve_frame_pointers", "true"),
-        ("unwind_info", "true"),
-    ] {
-        flags.set(key, value).map_err(backend)?;
-    }
-    let isa = cranelift_native::builder()
-        .map_err(backend)?
-        .finish(settings::Flags::new(flags))
-        .map_err(backend)?;
-    let mut module = ObjectModule::new(
-        ObjectBuilder::new(
-            isa,
-            "mech_canonical_scalar_iteration",
-            default_libcall_names(),
-        )
-        .map_err(backend)?,
-    );
+    let mut module = codegen_backend::object(
+        "mech_canonical_scalar_iteration",
+        codegen_backend::CONTROL_FLAGS,
+    )?;
     let (_, descriptor) = define(plan, &mut module, limits)?;
     let identity =
         crate::native_artifact::iteration_identity::NativeIterationObjectIdentity::from_descriptor(

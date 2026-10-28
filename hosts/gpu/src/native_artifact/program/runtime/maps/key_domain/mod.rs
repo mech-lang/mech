@@ -208,5 +208,4 @@ pub(in crate::native_artifact) fn derive(plan: &Plan, source: Value) -> Option<D
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::runtime::maps::key_domain) mod tests;
+mod tests;

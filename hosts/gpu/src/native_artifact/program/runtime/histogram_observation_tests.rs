@@ -3,6 +3,7 @@
 use crate::native_artifact::program::runtime::collections::{
     HistogramDemand as Demand, HistogramStage as Stage, HistogramVisit as Visit,
 };
+use crate::native_artifact::program::runtime::test_support::snapshot_outputs as snapshot;
 use crate::native_artifact::program::runtime::*;
 use mech_core::{MemoryBudgetDimension as Dimension, ResidentKernelError, ResidentResourcePhase};
 use mech_syntax::document::{
@@ -236,18 +237,6 @@ fn args(
                 .reserve_capacity(value.memory_budget_admission_bytes(memory).unwrap())
                 .unwrap();
             value.into_memory_budget(&mut token).unwrap()
-        })
-        .collect()
-}
-fn snapshot(artifact: &mech_engine::ProgramArtifact, outputs: &[Option<Value>]) -> Vec<Box<[u8]>> {
-    outputs
-        .iter()
-        .map(|value| {
-            value
-                .as_ref()
-                .unwrap()
-                .canonical_snapshot_bytes(artifact.schemas())
-                .unwrap()
         })
         .collect()
 }

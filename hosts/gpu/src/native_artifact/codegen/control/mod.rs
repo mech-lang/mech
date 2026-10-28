@@ -39,29 +39,10 @@ fn load(
 #[path = "report/mod.rs"]
 pub(in crate::native_artifact::codegen::control) mod codegen_report;
 #[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) use crate::native_artifact::codegen::control::codegen_report::BoundCallShim;
-#[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) use crate::native_artifact::codegen::control::codegen_report::CfgCleanup;
-#[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) use crate::native_artifact::codegen::control::codegen_report::CodegenReport;
-#[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) use crate::native_artifact::codegen::control::codegen_report::ColdSnapshot;
-#[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) use crate::native_artifact::codegen::control::codegen_report::CountValueLoop;
-#[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) use crate::native_artifact::codegen::control::codegen_report::InvariantLoop;
-#[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) use crate::native_artifact::codegen::control::codegen_report::MutationLoop;
-#[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) use crate::native_artifact::codegen::control::codegen_report::OutlinedLoop;
-#[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) use crate::native_artifact::codegen::control::codegen_report::PreservingCallRegion;
-#[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) use crate::native_artifact::codegen::control::codegen_report::RegionToken;
-#[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) use crate::native_artifact::codegen::control::codegen_report::ScalarLoop;
-#[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) use crate::native_artifact::codegen::control::codegen_report::SteadyLoop;
+pub(in crate::native_artifact) use crate::native_artifact::codegen::control::codegen_report::{
+    BoundCallShim, CfgCleanup, CodegenReport, ColdSnapshot, CountValueLoop, InvariantLoop,
+    MutationLoop, OutlinedLoop, PreservingCallRegion, RegionToken, ScalarLoop, SteadyLoop,
+};
 
 #[cfg(not(feature = "canonical-native-program"))]
 pub(in crate::native_artifact) struct CodegenReport;
@@ -1622,5 +1603,4 @@ fn emission_template_bound(
 }
 
 #[cfg(feature = "canonical-native")]
-#[path = "plan.rs"]
 pub(in crate::native_artifact) mod plan;

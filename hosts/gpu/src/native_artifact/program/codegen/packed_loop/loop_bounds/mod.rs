@@ -1019,5 +1019,4 @@ pub(in crate::native_artifact::program::codegen::packed_loop) fn derive(
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::codegen::packed_loop::loop_bounds) mod tests;
+mod tests;

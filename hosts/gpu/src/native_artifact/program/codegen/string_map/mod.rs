@@ -10,11 +10,9 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{FuncId, Linkage, Module};
 use mech_engine::native_artifact::NativeStringMapRegion;
 
-#[path = "batches.rs"]
-pub(in crate::native_artifact::program::codegen::string_map) mod batches;
+mod batches;
 
-#[path = "simd.rs"]
-pub(in crate::native_artifact::program::codegen::string_map) mod simd;
+mod simd;
 
 pub(in crate::native_artifact) fn define<M: Module>(
     module: &mut M,
@@ -117,5 +115,4 @@ fn define_leaf<M: Module>(
 }
 
 #[cfg(all(test, feature = "canonical-native-program-host"))]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::codegen::string_map) mod tests;
+mod tests;

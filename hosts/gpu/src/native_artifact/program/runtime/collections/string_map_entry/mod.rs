@@ -10,8 +10,7 @@ use crate::native_artifact::program::runtime::{NativeProgramExecutionError as Er
 use mech_core::{MemoryBudgetDimension as Dimension, ResourceDemand, Value, ValueData, WorkDemand};
 use mech_engine::native_artifact::{NativeControlLoop, NativeMatchValue};
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "tests/mod.rs"]
-pub(in crate::native_artifact::program::runtime::collections::string_map_entry) mod tests;
+mod tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 pub(in crate::native_artifact::program::runtime::collections) use crate::native_artifact::program::runtime::collections::string_map_entry::tests::before_stage;
 

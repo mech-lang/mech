@@ -54,5 +54,4 @@ impl Cache {
 }
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::runtime::collections::ascii_facts) mod tests;
+mod tests;

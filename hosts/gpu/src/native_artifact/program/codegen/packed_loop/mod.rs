@@ -29,24 +29,15 @@ use mech_engine::native_artifact::{
     NativeScalarAggregates, NativeScalarKind,
 };
 use std::collections::{BTreeMap, BTreeSet};
-#[path = "count_bounds.rs"]
-pub(in crate::native_artifact::program::codegen::packed_loop) mod count_bounds;
-#[path = "edge_facts/mod.rs"]
-pub(in crate::native_artifact::program::codegen::packed_loop) mod edge_facts;
-#[path = "invariants.rs"]
-pub(in crate::native_artifact::program::codegen::packed_loop) mod invariants;
-#[path = "lookup_facts/mod.rs"]
-pub(in crate::native_artifact::program::codegen::packed_loop) mod lookup_facts;
-#[path = "loop_bounds/mod.rs"]
-pub(in crate::native_artifact::program::codegen::packed_loop) mod loop_bounds;
-#[path = "loop_constants.rs"]
-pub(in crate::native_artifact::program::codegen::packed_loop) mod loop_constants;
-#[path = "mutation_facts.rs"]
-pub(in crate::native_artifact::program::codegen::packed_loop) mod mutation_facts;
-#[path = "outlined.rs"]
-pub(in crate::native_artifact::program::codegen::packed_loop) mod outlined;
-#[path = "steady/mod.rs"]
-pub(in crate::native_artifact::program::codegen::packed_loop) mod steady;
+mod count_bounds;
+mod edge_facts;
+mod invariants;
+mod lookup_facts;
+mod loop_bounds;
+mod loop_constants;
+mod mutation_facts;
+mod outlined;
+mod steady;
 use crate::native_artifact::program::codegen::tag_threading;
 
 pub(in crate::native_artifact) use crate::native_artifact::program::codegen::packed_loop::outlined::define_functions;

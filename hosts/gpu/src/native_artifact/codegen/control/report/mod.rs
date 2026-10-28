@@ -541,7 +541,6 @@ impl CodegenReport {
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
 pub(in crate::native_artifact::codegen::control::codegen_report) mod tests;
 
 #[cfg(all(test, feature = "canonical-native-program"))]

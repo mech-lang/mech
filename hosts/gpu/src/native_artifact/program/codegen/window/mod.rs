@@ -14,14 +14,11 @@ use mech_engine::native_artifact::NativeWindowRegion;
 use cranelift_codegen::ir::Endianness;
 
 #[cfg(all(test, feature = "canonical-native-program-host"))]
-#[path = "histogram.rs"]
-pub(in crate::native_artifact::program::codegen::window) mod histogram;
+mod histogram;
 
-#[path = "hashes.rs"]
-pub(in crate::native_artifact::program::codegen::window) mod hashes;
+mod hashes;
 #[cfg(all(test, feature = "canonical-native-program-host"))]
-#[path = "query/mod.rs"]
-pub(in crate::native_artifact::program::codegen::window) mod query;
+mod query;
 
 // (source pointer, source bytes, accumulator owner, library update callback, width) -> completed.
 // Caller must prove that source is ASCII without CRLF grapheme pairs. Then
@@ -81,5 +78,4 @@ fn define_with<M: Module>(
 }
 
 #[cfg(all(test, feature = "canonical-native-program-host"))]
-#[path = "tests/mod.rs"]
-pub(in crate::native_artifact::program::codegen::window) mod tests;
+mod tests;

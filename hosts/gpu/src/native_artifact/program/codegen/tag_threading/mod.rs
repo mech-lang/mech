@@ -559,5 +559,4 @@ fn derive_from(
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::codegen::tag_threading) mod tests;
+mod tests;

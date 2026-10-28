@@ -443,6 +443,10 @@ jobs:
             --no-default-features --features native-build --lib sequence::runtime::matrix_tests -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features native-build --lib native_build::tests -- --test-threads=1
+      - name: Execute native sequence effect regressions
+        timeout-minutes: 25
+        run: |
+          # The engine has a separate test build after the GPU cold build.
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features full_compiler,resident-artifact,native-sequence \
             --lib native_sequence -- --test-threads=1

@@ -269,5 +269,4 @@ fn stale_carrier_arc_cannot_authorize_a_removed_or_replaced_capability() {
     assert!(kernel.preview_check(&denied).is_err());
 }
 
-#[path = "storage.rs"]
-pub(in crate::native_artifact::benchmark_policy::tests) mod storage;
+mod storage;

@@ -1,10 +1,10 @@
 //! Versioned executable-IR identity. No Debug/serde representation is hashed.
 use crate::native_artifact::abi::{ABI_VERSION, NativeAbiDescriptor};
-use mech_engine::native_artifact::{
-    NativeArtifactPlan, NativeScalarKind, NativeScalarOp, NativeScalarType, NativeScalarValue,
-    NativeValueRef,
-};
+use mech_engine::native_artifact::{NativeArtifactPlan, NativeScalarOp, NativeValueRef};
 use sha2::{Digest, Sha256};
+
+pub(in crate::native_artifact) mod transcript;
+use transcript::{bytes, scalar_type as ty, scalar_value, word};
 
 /// Fixed exported data size for the build-owned entry pairing record.
 pub const NATIVE_LINK_IDENTITY_BYTES: usize = 152;
@@ -142,23 +142,6 @@ pub(in crate::native_artifact) fn hex(bytes: &[u8]) -> String {
 /// still binds their originating artifact. This encoding must be versioned
 /// whenever its field set, operation tags, or checked ABI semantics change.
 pub(in crate::native_artifact) fn typed_ir_sha256(plan: &NativeArtifactPlan) -> [u8; 32] {
-    fn word(hash: &mut Sha256, value: u64) {
-        hash.update(value.to_le_bytes());
-    }
-    fn bytes(hash: &mut Sha256, value: &[u8]) {
-        word(hash, value.len() as u64);
-        hash.update(value);
-    }
-    fn ty(hash: &mut Sha256, value: &NativeScalarType) {
-        hash.update([match value.kind() {
-            NativeScalarKind::Bool => 1,
-            NativeScalarKind::U64 => 2,
-            NativeScalarKind::I64 => 3,
-            NativeScalarKind::F64 => 4,
-        }]);
-        word(hash, u64::from(value.schema().get()));
-        hash.update(value.schema_key().as_bytes());
-    }
     fn reference(hash: &mut Sha256, value: NativeValueRef) {
         let (tag, id) = match value {
             NativeValueRef::Constant(id) => (1, id.get()),
@@ -185,24 +168,7 @@ pub(in crate::native_artifact) fn typed_ir_sha256(plan: &NativeArtifactPlan) -> 
     for constant in plan.constants() {
         word(&mut hash, u64::from(constant.constant().get()));
         ty(&mut hash, constant.ty());
-        match constant.value() {
-            NativeScalarValue::Bool(v) => {
-                hash.update([1]);
-                word(&mut hash, u64::from(v));
-            }
-            NativeScalarValue::U64(v) => {
-                hash.update([2]);
-                word(&mut hash, v);
-            }
-            NativeScalarValue::I64(v) => {
-                hash.update([3]);
-                word(&mut hash, v as u64);
-            }
-            NativeScalarValue::F64(v) => {
-                hash.update([4]);
-                word(&mut hash, v.bits());
-            }
-        }
+        scalar_value(&mut hash, constant.value());
     }
     word(&mut hash, plan.lets().len() as u64);
     for node in plan.lets() {
@@ -278,5 +244,4 @@ pub(in crate::native_artifact) fn op_tag(op: NativeScalarOp) -> u8 {
 }
 
 #[cfg(all(test, feature = "canonical-native"))]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::identity) mod tests;
+mod tests;

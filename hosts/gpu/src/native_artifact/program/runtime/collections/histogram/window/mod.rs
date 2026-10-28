@@ -334,5 +334,4 @@ impl State {
 }
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::runtime::collections::histogram::window) mod tests;
+mod tests;

@@ -13,8 +13,7 @@ use mech_engine::native_artifact::{
 use std::rc::Rc;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::runtime::lines) mod tests;
+mod tests;
 
 pub(in crate::native_artifact::program::runtime) struct State {
     pub views: Box<[Option<Rc<NativeTextLineMatrix>>]>,

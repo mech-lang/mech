@@ -1,8 +1,11 @@
 //! Private fixed-width ASCII String/U64 storage for generated map operations.
 //! Generated Mech code owns iteration, branches, lookup and replacement values.
 //! Rust owns admission, distinct-key insertion, growth and final publication.
+use crate::native_artifact::program::runtime::maps::admission::{
+    Error, Limits, add, check, finite, mul,
+};
 use crate::native_artifact::program::runtime::maps::key_domain::Domain;
-use crate::native_artifact::program::runtime::maps::string::{Error, Limits, OwnedStringMap};
+use crate::native_artifact::program::runtime::maps::string::OwnedStringMap;
 use mech_core::{
     ManagedMemoryReservation, ManagedNodeReservation, MemoryBudgetLimits, Value, ValueData,
 };
@@ -49,22 +52,21 @@ pub(in crate::native_artifact) struct Slot {
     pub value: u64,
 }
 
-#[path = "payload.rs"]
-pub(in crate::native_artifact::program::runtime::maps::packed) mod payload;
+mod payload;
 #[cfg(test)]
 pub(in crate::native_artifact) use crate::native_artifact::program::runtime::maps::packed::payload::NarrowSlot;
 use crate::native_artifact::program::runtime::maps::packed::payload::Slots;
 #[cfg(any(test, feature = "canonical-native-program"))]
 pub(in crate::native_artifact) use crate::native_artifact::program::runtime::maps::packed::payload::value_offset;
-pub(in crate::native_artifact) use crate::native_artifact::program::runtime::maps::packed::payload::narrow;
-pub(in crate::native_artifact) use crate::native_artifact::program::runtime::maps::packed::payload::slot_bytes;
+pub(in crate::native_artifact) use crate::native_artifact::program::runtime::maps::packed::payload::{
+    narrow,
+    slot_bytes,
+};
 
-#[path = "frozen.rs"]
-pub(in crate::native_artifact::program::runtime::maps::packed) mod frozen;
+mod frozen;
 pub(in crate::native_artifact) use crate::native_artifact::program::runtime::maps::packed::frozen::FrozenPackedMap;
 
-#[path = "lookup.rs"]
-pub(in crate::native_artifact::program::runtime::maps::packed) mod lookup;
+mod lookup;
 use crate::native_artifact::program::runtime::maps::packed::lookup::LookupCache;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) use crate::native_artifact::program::runtime::maps::packed::lookup::lookup_cache_entries;
@@ -84,8 +86,7 @@ struct Price {
     comparison: u64,
 }
 
-#[path = "fuel/mod.rs"]
-pub(in crate::native_artifact::program::runtime::maps::packed) mod fuel;
+mod fuel;
 
 pub(in crate::native_artifact) struct PackedMap {
     // Actual allocations retire before their reservations. The boxed frame
@@ -109,41 +110,9 @@ pub(in crate::native_artifact) struct PackedMap {
     funded: u64,
 }
 
-fn add(a: u64, b: u64) -> Result<u64, Error> {
-    a.checked_add(b).ok_or(Error::Overflow)
-}
-fn mul(a: u64, b: u64) -> Result<u64, Error> {
-    a.checked_mul(b).ok_or(Error::Overflow)
-}
 fn cap(limit: Option<u64>) -> Result<u64, Error> {
     limit.ok_or(Error::Binding("unbounded packed-map dimension"))
 }
-fn check(required: u64, limit: u64, field: &'static str) -> Result<(), Error> {
-    if required > limit {
-        Err(Error::Limit {
-            required,
-            limit,
-            field,
-        })
-    } else {
-        Ok(())
-    }
-}
-fn finite(limits: MemoryBudgetLimits) -> Result<(), Error> {
-    for limit in [
-        limits.max_output_elements,
-        limits.max_output_bytes,
-        limits.max_temporary_bytes,
-        limits.max_cloned_bytes,
-        limits.max_retained_nodes,
-        limits.max_compute_work,
-        limits.max_comparison_work,
-    ] {
-        cap(limit)?;
-    }
-    Ok(())
-}
-
 /// Emit this exact wrapping mix in generated lookup. The table also bounds
 /// complete collisions; hashing quality confers no work-budget exemption.
 pub(in crate::native_artifact) fn hash(low: u64, high: u64) -> u64 {
@@ -203,7 +172,7 @@ impl PackedMap {
         outside_nodes: u64,
         domain: Domain,
     ) -> Result<Self, Error> {
-        finite(limits)?;
+        finite(limits, cap)?;
         if width > MAX_WIDTH || body.writes == 0 {
             return Err(Error::Binding("unsupported packed-map source proof"));
         }
@@ -868,5 +837,4 @@ impl PackedMap {
 }
 
 #[cfg(test)]
-#[path = "tests/mod.rs"]
-pub(in crate::native_artifact::program::runtime::maps::packed) mod tests;
+mod tests;

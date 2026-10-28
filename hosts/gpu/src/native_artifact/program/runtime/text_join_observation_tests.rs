@@ -1,6 +1,7 @@
 //! Observe actual emitted append/finalize calls without replacing their work.
 //! The observer never changes a policy, payload, visit, operation, or argument.
 use crate::native_artifact::program::runtime::collections::{TextJoinDemand, TextJoinStage};
+use crate::native_artifact::program::runtime::test_support::snapshot_outputs as snapshot;
 use crate::native_artifact::program::runtime::*;
 use mech_core::{MemoryBudgetDimension as Dimension, ResidentKernelError, ResidentResourcePhase};
 use mech_syntax::document::{
@@ -245,18 +246,6 @@ fn args(artifact: &mech_engine::ProgramArtifact, memory: &ManagedMemoryBudget) -
                 .reserve_capacity(value.memory_budget_admission_bytes(memory).unwrap())
                 .unwrap();
             value.into_memory_budget(&mut reservation).unwrap()
-        })
-        .collect()
-}
-fn snapshot(artifact: &mech_engine::ProgramArtifact, outputs: &[Option<Value>]) -> Vec<Box<[u8]>> {
-    outputs
-        .iter()
-        .map(|value| {
-            value
-                .as_ref()
-                .unwrap()
-                .canonical_snapshot_bytes(artifact.schemas())
-                .unwrap()
         })
         .collect()
 }

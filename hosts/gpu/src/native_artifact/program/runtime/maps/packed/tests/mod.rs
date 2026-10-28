@@ -29,16 +29,11 @@ pub(super) const SLOT_LOW: usize = 0;
 pub(super) const SLOT_HIGH: usize = 1;
 pub(super) const SLOT_VALUE: usize = 2;
 
-#[path = "domain_validation_tests.rs"]
-pub(in crate::native_artifact::program::runtime::maps::packed::tests) mod domain_validation_tests;
-#[path = "frozen_tests.rs"]
-pub(in crate::native_artifact::program::runtime::maps::packed::tests) mod frozen_tests;
-#[path = "lookup_cache_tests.rs"]
-pub(in crate::native_artifact::program::runtime::maps::packed::tests) mod lookup_cache_tests;
-#[path = "narrow_tests.rs"]
-pub(in crate::native_artifact::program::runtime::maps::packed::tests) mod narrow_tests;
-#[path = "probe_group_tests.rs"]
-pub(in crate::native_artifact::program::runtime::maps::packed::tests) mod probe_group_tests;
+mod domain_validation_tests;
+mod frozen_tests;
+mod lookup_cache_tests;
+mod narrow_tests;
+mod probe_group_tests;
 
 fn limits() -> MemoryBudgetLimits {
     MemoryBudgetLimits {

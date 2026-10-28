@@ -9,6 +9,36 @@ use super::{
 };
 use std::{borrow::Cow, cell::OnceCell};
 const BAD: &str = "invalid native fusion semantic read inventory";
+/// Shared linear-path/barrier predicate; sink-specific eligibility stays with each consumer.
+pub(super) fn collection_consumer_adjacent(
+    plan: &impl ControlPlan,
+    collection: &super::NativeProgramCollection,
+    consumer: u32,
+) -> bool {
+    let mut next = collection.finish() as usize;
+    for _ in 0..plan.blocks().len() {
+        let Some(block) = plan.blocks().get(next) else {
+            return false;
+        };
+        if block.iteration() != collection.parent() || plan.lifecycle_barrier(next) {
+            return false;
+        }
+        if next == consumer as usize {
+            return true;
+        }
+        if next != collection.finish() as usize
+            && !matches!(block.action(), Action::Scalar(Scalar::None))
+        {
+            return false;
+        }
+        let Terminator::Scalar(Term::Jump(target)) = block.terminator() else {
+            return false;
+        };
+        next = target as usize;
+    }
+    false
+}
+
 /// An immutable semantic view. Ordinary instructions stay borrowed while
 /// virtual consumers own their checked expansion. Mutating passes explicitly
 /// detach an owned snapshot before rewriting their plan.

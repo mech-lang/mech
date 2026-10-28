@@ -1,6 +1,7 @@
 //! Safe protocol faults and fixed observations around the SAME actual JIT helper.
 //! No replacement leaf, prices, quotas, allocator probes, assertions or unwind in C.
 use crate::native_artifact::program::runtime::collections::string_map_entry::*;
+use crate::native_artifact::program::runtime::test_support::snapshot_outputs as bytes;
 use crate::native_artifact::program::runtime::tests::{artifact_source, limits};
 use crate::native_artifact::{JitProgramArtifact, NativeValueError};
 use mech_core::snapshot::{MapEntryDraft, SnapshotValidationContext, ValueDraft};
@@ -65,8 +66,7 @@ pub(in crate::native_artifact::program::runtime::collections::string_map_entry) 
     });
 }
 
-#[path = "faults.rs"]
-pub(in crate::native_artifact::program::runtime::collections::string_map_entry::tests) mod faults;
+mod faults;
 pub(in super::super) use crate::native_artifact::program::runtime::collections::string_map_entry::tests::faults::before_stage;
 struct Reset;
 impl Drop for Reset {
@@ -125,18 +125,6 @@ fn variants(source: &str) -> [mech_engine::ProgramArtifact; 2] {
     )
     .unwrap();
     [original, decoded]
-}
-fn bytes(artifact: &mech_engine::ProgramArtifact, output: &[Option<Value>]) -> Vec<Box<[u8]>> {
-    output
-        .iter()
-        .map(|value| {
-            value
-                .as_ref()
-                .unwrap()
-                .canonical_snapshot_bytes(artifact.schemas())
-                .unwrap()
-        })
-        .collect()
 }
 
 #[test]

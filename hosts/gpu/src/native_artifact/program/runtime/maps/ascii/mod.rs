@@ -97,5 +97,4 @@ pub(in crate::native_artifact) fn test_table(cells: &[u16; 128]) -> [u8; BYTES] 
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::runtime::maps::ascii) mod tests;
+mod tests;

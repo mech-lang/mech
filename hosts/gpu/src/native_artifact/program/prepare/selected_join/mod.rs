@@ -1,6 +1,5 @@
 //! Immutable site associations derived only from the canonical complete-use proof.
 use mech_engine::native_artifact::{NativeProgramArtifactPlan, NativeSelectedTextJoin};
-#[path = "mapped.rs"]
 pub(in crate::native_artifact) mod mapped;
 
 #[derive(Clone, Copy, Debug, serde::Serialize, serde::Deserialize)]
@@ -77,5 +76,4 @@ impl Layout {
 }
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::prepare::selected_join) mod tests;
+mod tests;

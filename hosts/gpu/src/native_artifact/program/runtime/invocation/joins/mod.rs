@@ -18,24 +18,18 @@ use mech_engine::native_artifact::{
 };
 use std::rc::Rc;
 
-#[path = "mapped/mod.rs"]
-pub(in crate::native_artifact::program::runtime::invocation::joins) mod mapped;
+mod mapped;
 #[cfg(all(test, feature = "canonical-native-program-host"))]
-pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::invocation::joins::mapped::faults::Control as JoinMapControl;
-#[cfg(all(test, feature = "canonical-native-program-host"))]
-pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::invocation::joins::mapped::faults::Fault as JoinMapFault;
-#[cfg(all(test, feature = "canonical-native-program-host"))]
-pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::invocation::joins::mapped::faults::Limit as JoinMapLimit;
-#[cfg(all(test, feature = "canonical-native-program-host"))]
-pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::invocation::joins::mapped::faults::demand as join_map_demand;
-#[cfg(all(test, feature = "canonical-native-program-host"))]
-pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::invocation::joins::mapped::faults::fired as join_map_fault_fired;
-#[cfg(all(test, feature = "canonical-native-program-host"))]
-pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::invocation::joins::mapped::faults::started as join_map_started;
-#[cfg(all(test, feature = "canonical-native-program-host"))]
-pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::invocation::joins::mapped::faults::with_control as with_join_map_control;
-#[path = "range.rs"]
-pub(in crate::native_artifact::program::runtime::invocation::joins) mod range;
+pub(in crate::native_artifact::program::runtime) use crate::native_artifact::program::runtime::invocation::joins::mapped::faults::{
+    Control as JoinMapControl,
+    Fault as JoinMapFault,
+    Limit as JoinMapLimit,
+    demand as join_map_demand,
+    fired as join_map_fault_fired,
+    started as join_map_started,
+    with_control as with_join_map_control,
+};
+mod range;
 
 enum Phase {
     Range {
@@ -631,11 +625,9 @@ impl Invocation<'_, '_, '_> {
 }
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::runtime::invocation::joins) mod tests;
+mod tests;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "range_tests.rs"]
-pub(in crate::native_artifact::program::runtime::invocation::joins) mod range_tests;
+mod range_tests;
 
 pub(in crate::native_artifact::program::runtime) use mapped::Mapped;

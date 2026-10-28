@@ -139,5 +139,4 @@ mod observation {
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
 pub(in crate::native_artifact::program::runtime::session::call_cache_allocation) mod tests;

@@ -293,5 +293,4 @@ pub(in crate::native_artifact) fn derive(
 }
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::prepare::packed_map) mod tests;
+mod tests;

@@ -4,39 +4,10 @@
 use super::iteration_validation::{ControlPlan, ControlType};
 use super::{
     NativeCollectionResult as ResultKind, NativeHistogramSink as Sink,
-    NativeIterationAction as Action, NativeIterationTerminator as Terminator,
-    NativeMatchAction as Scalar, NativeMatchTerminator as Term, NativeProgramArtifactPlan as Plan,
+    NativeIterationAction as Action, NativeProgramArtifactPlan as Plan,
 };
 const BAD: &str = "invalid selected native full Histogram sink";
 
-fn adjacent(
-    plan: &impl ControlPlan,
-    collection: &super::NativeProgramCollection,
-    consumer: u32,
-) -> bool {
-    let mut next = collection.finish() as usize;
-    for _ in 0..plan.blocks().len() {
-        let Some(block) = plan.blocks().get(next) else {
-            return false;
-        };
-        if block.iteration() != collection.parent() || plan.lifecycle_barrier(next) {
-            return false;
-        }
-        if next == consumer as usize {
-            return true;
-        }
-        if next != collection.finish() as usize
-            && !matches!(block.action(), Action::Scalar(Scalar::None))
-        {
-            return false;
-        }
-        let Terminator::Scalar(Term::Jump(target)) = block.terminator() else {
-            return false;
-        };
-        next = target as usize;
-    }
-    false
-}
 #[cfg(feature = "map_ops")]
 fn selected(template: &super::NativeProgramLibraryTemplate) -> bool {
     template.primitive() == super::NativeCollectionPrimitive::StringHistogram
@@ -96,7 +67,11 @@ pub(super) fn validate(
         if collection.kind() != crate::ComprehensionKind::Matrix
             || uses.get(collection.output().get() as usize) != Some(&1)
             || !selected(sink.template())
-            || !adjacent(plan, collection, sink.consumer())
+            || !super::fusion_semantics::collection_consumer_adjacent(
+                plan,
+                collection,
+                sink.consumer(),
+            )
             || !matches!(consumer.action(),Action::HistogramFinish{collection}if *collection as usize==id)
         {
             return Err(BAD);
@@ -148,7 +123,11 @@ pub(crate) fn lower(plan: &mut Plan) -> Result<(), &'static str> {
             if operands.len() != 1
                 || operands[0] != collection.output()
                 || !selected(template)
-                || !adjacent(plan, collection, site as u32)
+                || !super::fusion_semantics::collection_consumer_adjacent(
+                    plan,
+                    collection,
+                    site as u32,
+                )
             {
                 return None;
             }
@@ -186,6 +165,10 @@ pub(crate) fn lower(plan: &mut Plan) -> Result<(), &'static str> {
 ))]
 mod tests {
     use super::*;
+    use crate::native_artifact::{
+        NativeIterationTerminator as Terminator, NativeMatchAction as Scalar,
+        NativeMatchTerminator as Term,
+    };
     use mech_syntax::document::{
         AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
         parse_canonical_document,

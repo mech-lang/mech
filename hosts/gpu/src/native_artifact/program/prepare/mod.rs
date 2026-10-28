@@ -437,7 +437,6 @@ impl ProgramMetadata {
     }
 }
 
-#[path = "retirement/mod.rs"]
 pub(in crate::native_artifact) mod retirement;
 
 pub(in crate::native_artifact) fn constant_admission_total(bounds: &[u64]) -> Result<u64, String> {
@@ -447,38 +446,16 @@ pub(in crate::native_artifact) fn constant_admission_total(bounds: &[u64]) -> Re
         .ok_or_else(|| "constant admission total overflows".to_owned())
 }
 
-#[cfg(feature = "canonical-native-program-runtime")]
-#[path = "borrowed.rs"]
 pub(in crate::native_artifact) mod borrowed;
-#[cfg(feature = "canonical-native-program-runtime")]
-#[path = "frozen_map/mod.rs"]
 pub(in crate::native_artifact) mod frozen_map;
-#[cfg(feature = "canonical-native-program-runtime")]
-#[path = "line_matrix.rs"]
 pub(in crate::native_artifact) mod line_matrix;
-#[cfg(feature = "canonical-native-program-runtime")]
-#[path = "map_admission.rs"]
 pub(in crate::native_artifact) mod map_admission;
-#[cfg(feature = "canonical-native-program-runtime")]
-#[path = "map_owner.rs"]
 pub(in crate::native_artifact) mod map_owner;
-#[cfg(feature = "canonical-native-program-runtime")]
-#[path = "packed_map/mod.rs"]
 pub(in crate::native_artifact) mod packed_map;
-#[cfg(feature = "canonical-native-program-runtime")]
-#[path = "parallel.rs"]
 pub(in crate::native_artifact) mod parallel;
-#[cfg(feature = "canonical-native-program-runtime")]
-#[path = "prefix.rs"]
 pub(in crate::native_artifact) mod prefix;
-#[cfg(feature = "canonical-native-program-runtime")]
-#[path = "selected_join/mod.rs"]
 pub(in crate::native_artifact) mod selected_join;
-#[cfg(feature = "canonical-native-program-runtime")]
-#[path = "tail.rs"]
 pub(in crate::native_artifact) mod tail;
-#[cfg(feature = "canonical-native-program-runtime")]
-#[path = "window_histogram/mod.rs"]
 pub(in crate::native_artifact) mod window_histogram;
 
 pub(in crate::native_artifact) mod query_stages;

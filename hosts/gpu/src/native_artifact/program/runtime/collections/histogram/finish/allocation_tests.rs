@@ -3,6 +3,7 @@ use crate::native_artifact::program::runtime::collections::histogram::finish::al
     HistogramAllocationSite, observation,
 };
 use crate::native_artifact::program::runtime::collections::histogram::finish::{allocation, *};
+use crate::native_artifact::program::runtime::test_support::snapshot_outputs as snapshots;
 use crate::native_artifact::program::runtime::tests::{artifact_source, limits};
 use crate::native_artifact::{JitProgramArtifact, NativeExecutionError};
 use mech_core::{ManagedMemoryBudget, Value, ValueDataDraft as Data};
@@ -147,19 +148,6 @@ fn input(artifact: &mech_engine::ProgramArtifact, memory: &ManagedMemoryBudget) 
         .reserve_capacity(value.memory_budget_admission_bytes(memory).unwrap())
         .unwrap();
     value.into_memory_budget(&mut reservation).unwrap()
-}
-
-fn snapshots(artifact: &mech_engine::ProgramArtifact, output: &[Option<Value>]) -> Vec<Box<[u8]>> {
-    output
-        .iter()
-        .map(|value| {
-            value
-                .as_ref()
-                .unwrap()
-                .canonical_snapshot_bytes(artifact.schemas())
-                .unwrap()
-        })
-        .collect()
 }
 
 #[test]

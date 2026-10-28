@@ -1,5 +1,6 @@
 //! Canonical scalar CFG definition shared by JIT and Object emission.
 use crate::native_artifact::abi::{NO_NODE, NativeEntryFrame as Frame, STATUS_ABI, STATUS_OK};
+use crate::native_artifact::codegen::backend as codegen_backend;
 use crate::native_artifact::compiler::{
     admit, backend, compiled_stack_bytes, frame_load, guard, host_supported, limit, offset,
     primitive, set_origin,
@@ -13,11 +14,8 @@ use crate::native_artifact::control_runtime::{
 use crate::native_artifact::{NativeCompileError, NativeCompileLimits, NativeExecutionLimits};
 use cranelift_codegen::ir::condcodes::{FloatCC, IntCC};
 use cranelift_codegen::ir::{AbiParam, InstBuilder, MemFlags, Value, types};
-use cranelift_codegen::settings;
-use cranelift_codegen::settings::Configurable;
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
-use cranelift_module::{DataDescription, FuncId, Linkage, Module, default_libcall_names};
-use cranelift_object::{ObjectBuilder, ObjectModule};
+use cranelift_module::{DataDescription, FuncId, Linkage, Module};
 use mech_core::ManagedMemoryBudget;
 use mech_engine::native_artifact::{
     NativeMatchAction, NativeMatchArtifactPlan, NativeMatchTerminator, NativeMatchValue,
@@ -39,17 +37,7 @@ impl JitMatchArtifact {
         limits: NativeCompileLimits,
     ) -> Result<Self, NativeCompileError> {
         host_supported()?;
-        let builder = cranelift_jit::JITBuilder::with_flags(
-            &[
-                ("opt_level", "none"),
-                ("is_pic", "true"),
-                ("preserve_frame_pointers", "true"),
-                ("unwind_info", "true"),
-            ],
-            default_libcall_names(),
-        )
-        .map_err(backend)?;
-        let mut module = cranelift_jit::JITModule::new(builder);
+        let mut module = codegen_backend::jit(codegen_backend::CONTROL_FLAGS)?;
         let (function, descriptor) = define(plan, &mut module, limits)?;
         module.finalize_definitions().map_err(backend)?;
         // SAFETY: the one checked definition emits the private repr(C) ABI;
@@ -126,23 +114,10 @@ pub fn emit_match_object_with_limits(
     limits: NativeCompileLimits,
 ) -> Result<NativeMatchObject, NativeCompileError> {
     host_supported()?;
-    let mut flags = settings::builder();
-    for (key, value) in [
-        ("opt_level", "none"),
-        ("is_pic", "true"),
-        ("preserve_frame_pointers", "true"),
-        ("unwind_info", "true"),
-    ] {
-        flags.set(key, value).map_err(backend)?;
-    }
-    let isa = cranelift_native::builder()
-        .map_err(backend)?
-        .finish(settings::Flags::new(flags))
-        .map_err(backend)?;
-    let mut module = ObjectModule::new(
-        ObjectBuilder::new(isa, "mech_canonical_scalar_match", default_libcall_names())
-            .map_err(backend)?,
-    );
+    let mut module = codegen_backend::object(
+        "mech_canonical_scalar_match",
+        codegen_backend::CONTROL_FLAGS,
+    )?;
     let (_, descriptor) = define(plan, &mut module, limits)?;
     let identity =
         crate::native_artifact::control_identity::NativeMatchObjectIdentity::from_descriptor(

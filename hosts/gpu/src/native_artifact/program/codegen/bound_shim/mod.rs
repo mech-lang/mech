@@ -106,5 +106,4 @@ pub(in crate::native_artifact) fn define<M: Module>(
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::codegen::bound_shim) mod tests;
+mod tests;

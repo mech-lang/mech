@@ -381,5 +381,4 @@ pub(in crate::native_artifact::program::codegen::packed_loop::steady) fn derive(
 }
 
 #[cfg(test)]
-#[path = "tests.rs"]
-pub(in crate::native_artifact::program::codegen::packed_loop::steady::cold_recipes) mod tests;
+mod tests;

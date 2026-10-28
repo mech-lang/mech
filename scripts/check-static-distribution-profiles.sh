@@ -569,6 +569,9 @@ check_full_source() {
     --features full_source \
     --test profile_contracts \
     --target-dir "$scratch/full-source-target"
+  # The independent consumer has a different Cargo graph. Retire the completed
+  # profile-test products before building another full copy of the libraries.
+  rm -rf "$scratch/full-source-target"
   CARGO_PROFILE_DEV_DEBUG=0 cargo_nightly run \
     --manifest-path "$manifest" \
     --target-dir "$scratch/full-source-target"
@@ -592,12 +595,16 @@ check_full_compiler() {
     --features full_compiler \
     --test profile_contracts \
     --target-dir "$scratch/full-compiler-target"
+  # The independent producer rebuilds the full libraries with its own graph.
+  rm -rf "$scratch/full-compiler-target"
 
   output="$scratch/compiler-produced-scalar-add.mecb"
   CARGO_PROFILE_DEV_DEBUG=0 cargo_nightly run \
     --manifest-path "$producer_manifest" \
     --target-dir "$scratch/full-compiler-target" \
     -- "$output"
+  # Keep the bytecode outside the retired producer target for the consumer.
+  rm -rf "$scratch/full-compiler-target"
   CARGO_PROFILE_DEV_DEBUG=0 cargo_nightly run \
     --manifest-path "$consumer_manifest" \
     --target-dir "$scratch/compiler-runtime-target" \
