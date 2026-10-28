@@ -50,6 +50,18 @@ impl Invocation<'_, '_, '_> {
             crate::native_artifact::NativeExecutionPhase::Setup,
             entry_work,
         )?;
+        // Temporary validation metadata is separately admitted once. A capacity
+        // miss declines optimization and retains the original source boundary.
+        let temporary = metadata
+            .observation_schema_bytes
+            .checked_mul(proof.arrays.len() as u64)
+            .and_then(|n| n.checked_add(proof.words as u64 * 8 + 1024));
+        let Some(temporary) = temporary else {
+            return Ok(false);
+        };
+        let Ok(_temporary) = memory.reserve_capacity(temporary) else {
+            return Ok(false);
+        };
         for (at, array) in proof.arrays.iter().enumerate() {
             let owner = self
                 .state
