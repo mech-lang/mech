@@ -1,0 +1,27 @@
+
+running 3 tests
+test nested_frame_qualification::nested_current_fields_preserve_errors_publication_aliases_and_retry ... FAILED
+test nested_frame_qualification::nested_private_path_and_output_buffers_keep_the_real_reservation ... FAILED
+test nested_frame_qualification::private_nested_pack_return_and_projection_select_the_complete_component ... FAILED
+
+failures:
+
+failures:
+    nested_frame_qualification::nested_current_fields_preserve_errors_publication_aliases_and_retry
+    nested_frame_qualification::nested_private_path_and_output_buffers_keep_the_real_reservation
+    nested_frame_qualification::private_nested_pack_return_and_projection_select_the_complete_component
+
+test result: FAILED. 0 passed; 3 failed; 0 ignored; 0 measured; 429 filtered out; finished in 0.25s
+
+
+thread 'nested_frame_qualification::nested_current_fields_preserve_errors_publication_aliases_and_retry' (19970579) panicked at /private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_nested_frames.rs:99:21:
+assertion `left == right` failed
+  left: Some(8)
+ right: Some(16)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'nested_frame_qualification::nested_private_path_and_output_buffers_keep_the_real_reservation' (19970581) panicked at /private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_nested_frames.rs:145:18:
+called `Result::unwrap()` on an `Err` value: Library { origin: NativeMatchOrigin { node: NodeId(1), block: None, local: None }, error: Kernel(ResourceLimit { phase: Admission, dimension: ClonedBytes, required: 3943, limit: 0 }) }
+
+thread 'nested_frame_qualification::private_nested_pack_return_and_projection_select_the_complete_component' (19970582) panicked at /private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_nested_frames.rs:33:17:
+pack site 7
