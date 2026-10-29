@@ -1,4 +1,4 @@
-//! One cold first-change boundary per array. Original selected replacement owns
+//! One cold first-change boundary per array. Original selected operation owns
 //! validation/copy/error ordering. The rest of the recurrence uses native cells.
 use super::{Error, Invocation, invalid};
 use crate::native_artifact::program::prepare::readonly_numeric::Operation;
@@ -24,7 +24,9 @@ impl Invocation<'_, '_, '_> {
             .numeric
             .as_ref()
             .ok_or_else(|| invalid("numeric materialization lacks proof"))?;
-        let Some(Operation::Write { array, .. }) = proof.action(site) else {
+        let Some(operation @ (Operation::Write { array, .. } | Operation::Append { array, .. })) =
+            proof.action(site)
+        else {
             return Err(invalid("numeric materialization outside selected write"));
         };
         if args[2] != 0
@@ -57,8 +59,18 @@ impl Invocation<'_, '_, '_> {
             proof.arrays[*array].field,
         )?;
         let coexistence = self.selected_join_coexistence(None)?;
-        let (value, changed) = call
-            .unsigned_matrix_replace(
+        let result = if matches!(operation, Operation::Append { .. }) {
+            call.unsigned_buffer(
+                Some(source),
+                incoming,
+                true,
+                self.limits,
+                &self.state.library,
+                coexistence,
+            )
+            .map(|value| (value, true))
+        } else {
+            call.unsigned_matrix_replace(
                 source,
                 index,
                 incoming,
@@ -67,10 +79,11 @@ impl Invocation<'_, '_, '_> {
                 &self.state.library,
                 coexistence,
             )
-            .map_err(|error| Error::Library {
-                origin: metadata.plan.blocks()[site].origin(),
-                error,
-            })?;
+        };
+        let (value, changed) = result.map_err(|error| Error::Library {
+            origin: metadata.plan.blocks()[site].origin(),
+            error,
+        })?;
         if !changed {
             return Err(invalid("numeric materialization did not change a cell"));
         }
@@ -92,18 +105,52 @@ impl Invocation<'_, '_, '_> {
         else {
             return Err(invalid("new numeric replacement is not exclusive"));
         };
-        let mut private = owned.into_private_updates(shape).map_err(Error::Snapshot)?;
+        let mut private = if proof.arrays[*array].appends {
+            let preparation = self
+                .state
+                .buffer_frames
+                .append_preparation_mut(id, *array)?
+                .take()
+                .ok_or_else(|| invalid("numeric append lost its admitted preparation"))?;
+            owned.into_private_appends(shape, preparation)
+        } else {
+            owned.into_private_updates(shape)
+        }
+        .map_err(Error::Snapshot)?;
         let address = match private.elements_mut() {
             UnsignedMatrixViewMut::U8(cells) => cells.as_mut_ptr() as u64,
             UnsignedMatrixViewMut::U16(cells) => cells.as_mut_ptr() as u64,
             UnsignedMatrixViewMut::U32(cells) => cells.as_mut_ptr() as u64,
             UnsignedMatrixViewMut::U64(cells) => cells.as_mut_ptr() as u64,
         };
+        if let Some(capacity) = proof.capacity(*array) {
+            let length = private.elements().len() as u64;
+            self.write_borrowed_word(2 + proof.view(*array) + 1, length)?;
+            self.write_borrowed_word(2 + proof.view(*array) + 2, 1)?;
+            self.write_borrowed_word(2 + proof.view(*array) + 3, length)?;
+            self.write_borrowed_word(2 + capacity, private.capacity_elements() as u64)?;
+        }
         // Moving this owner moves only metadata; the allocated cells stay put.
         *self.state.buffer_frames.private_array_mut(id, *array)? = Some(private);
         self.write_borrowed_word(2 + proof.view(*array), address)?;
         self.write_borrowed_word(2 + proof.private_flag(*array), 1)?;
         self.resume_numeric_after_write(id, site)?;
         Ok(None)
+    }
+
+    pub(super) fn finish_numeric_array(
+        mut private: mech_core::snapshot::PrivateUnsignedMatrix,
+        length: Option<u64>,
+    ) -> Result<mech_core::Value, Error> {
+        if let Some(length) = length {
+            let length =
+                usize::try_from(length).map_err(|_| invalid("numeric append length overflows"))?;
+            // SAFETY: this same-plan region's sealed emitter admits capacity
+            // before a traversal and advances the live length only after its
+            // typed store. No borrow survives the closed-tail reconciliation.
+            // Core additionally rejects shrinking or exceeding actual capacity.
+            unsafe { private.assume_initialized_prefix(length) }.map_err(Error::Snapshot)?;
+        }
+        Ok(private.finish())
     }
 }

@@ -23,6 +23,7 @@ pub(in crate::native_artifact) struct Array {
     /// Exact selected site whose original factory validates the entry view.
     pub witness: usize,
     pub writable: bool,
+    pub appends: bool,
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -49,6 +50,10 @@ pub(in crate::native_artifact) enum Operation {
     Write {
         array: usize,
         index: u32,
+        incoming: u32,
+    },
+    Append {
+        array: usize,
         incoming: u32,
     },
 }
@@ -84,6 +89,13 @@ impl Proof {
     }
     pub fn private_flag(&self, array: usize) -> usize {
         self.scalar_words + self.arrays.len() * 4 + array
+    }
+    pub fn capacity(&self, array: usize) -> Option<usize> {
+        self.arrays[array].appends.then(|| {
+            self.scalar_words
+                + self.arrays.len() * 5
+                + self.arrays[..array].iter().filter(|a| a.appends).count()
+        })
     }
 }
 
@@ -183,12 +195,10 @@ impl Provenance<'_, '_> {
                 None,
             ) = (action, field)
             {
+                let call = self.calls.get(site)?.as_ref()?;
                 if output.get() != value
-                    || !self
-                        .calls
-                        .get(site)?
-                        .as_ref()?
-                        .supports_unsigned_matrix_replace()
+                    || !(call.supports_unsigned_matrix_replace()
+                        || call.supports_unsigned_matrix_append())
                 {
                     return None;
                 }
@@ -269,6 +279,7 @@ pub(in crate::native_artifact) fn derive(
                 width: 0,
                 witness: usize::MAX,
                 writable: false,
+                appends: false,
             });
         }
     }
@@ -346,7 +357,8 @@ pub(in crate::native_artifact) fn derive(
             let is_length = call.supports_unsigned_matrix_length();
             let is_read = call.supports_unsigned_matrix_element();
             let is_write = call.supports_unsigned_matrix_replace();
-            if !(is_length || is_read || is_write) {
+            let is_append = call.supports_unsigned_matrix_append();
+            if !(is_length || is_read || is_write || is_append) {
                 return Err("unsupported selected library effect or operation");
             }
             let source = operands.first().ok_or("missing selected array")?;
@@ -367,11 +379,31 @@ pub(in crate::native_artifact) fn derive(
             }
             arrays[at].width = w;
             arrays[at].witness = arrays[at].witness.min(site);
-            arrays[at].writable |= is_write;
+            arrays[at].writable |= is_write || is_append;
+            arrays[at].appends |= is_append;
             if is_length {
                 Operation::Length {
                     array: at,
                     output: output.get(),
+                }
+            } else if is_append {
+                if operands.len() != 2
+                    || plan.values()[operands[1].get() as usize]
+                        .scalar_kind()
+                        .and_then(|kind| kind.unsigned_maximum())
+                        != Some(match w {
+                            1 => u8::MAX as u64,
+                            2 => u16::MAX as u64,
+                            4 => u32::MAX as u64,
+                            8 => u64::MAX,
+                            _ => unreachable!(),
+                        })
+                {
+                    return Err("unsupported append element kind");
+                }
+                Operation::Append {
+                    array: at,
+                    incoming: operands[1].get(),
                 }
             } else if is_write {
                 if operands.len() != 3
@@ -488,6 +520,7 @@ pub(in crate::native_artifact) fn derive(
                 0
             })
         })
+        .and_then(|n| n.checked_add(arrays.iter().filter(|a| a.appends).count()))
         .ok_or("numeric word count overflows")?;
     Ok(Proof {
         arrays,

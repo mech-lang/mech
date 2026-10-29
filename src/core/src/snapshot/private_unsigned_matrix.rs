@@ -3,6 +3,9 @@
 //! identity, or import registration escapes before the private phase ends.
 use super::*;
 use crate::snapshot::SequenceView;
+#[path = "private_unsigned_append.rs"]
+mod appends;
+pub use appends::PrivateUnsignedAppendPreparation;
 
 /// Mutable initialized cells; this surface cannot grow, truncate or change kind.
 #[derive(Debug)]
@@ -19,6 +22,7 @@ pub enum UnsignedMatrixViewMut<'a> {
 pub struct PrivateUnsignedMatrix {
     value: Value,
     ownership: SnapshotBudgetOwnership,
+    append: Option<PrivateUnsignedAppendPreparation>,
 }
 
 impl PrivateUnsignedMatrix {
@@ -67,6 +71,7 @@ impl PrivateUnsignedMatrix {
         let reservation = reservation.split_capacity(admitted_bytes)?;
         Ok(Self {
             value,
+            append: None,
             ownership: SnapshotBudgetOwnership {
                 registration,
                 schemas,
@@ -105,15 +110,18 @@ impl PrivateUnsignedMatrix {
 
     pub fn retained_capacity_bytes(&self) -> u64 {
         self.ownership.reservation.capacity_bytes()
+            + self.append.as_ref().map_or(0, |a| a.retained_bytes())
     }
 
     /// Publish exactly once after all private borrows end. All storage, node
     /// and byte claims already exist. Fresh identities/import links are exposed
     /// only after the initialized cells have become immutable.
-    pub fn finish(self) -> Value {
+    pub fn finish(mut self) -> Value {
+        self.finish_append_shape();
         let Self {
             mut value,
             ownership,
+            append: _,
         } = self;
         let registration = ownership.registration.clone();
         Arc::get_mut(&mut value.root)

@@ -20,6 +20,8 @@ use mech_engine::native_artifact::{
     NativeMatchTerminator as Branch,
 };
 use std::collections::{BTreeMap, BTreeSet};
+#[path = "numeric_boundary.rs"]
+mod boundary;
 
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct Report {
@@ -30,6 +32,8 @@ pub(in crate::native_artifact) struct Report {
     pub typed_stores: Vec<(usize, u8)>,
     pub first_change_boundaries: Vec<usize>,
     pub length_sites: Vec<usize>,
+    pub append_sites: Vec<(usize, u8)>,
+    pub capacity_guards: Vec<(usize, usize)>,
     pub scalar_operations: usize,
     pub register_words: usize,
     pub successful_backedge_helpers: usize,
@@ -65,6 +69,9 @@ fn slots(code: CodePlan<'_>, proof: &Proof, base: usize) -> BTreeSet<usize> {
                 index, incoming, ..
             }) => {
                 slots.extend([*index as usize, *incoming as usize]);
+            }
+            Some(Operation::Append { incoming, .. }) => {
+                slots.insert(*incoming as usize);
             }
             _ => {}
         }
@@ -170,6 +177,8 @@ pub(in crate::native_artifact) fn emit_entry(
         typed_stores: Vec::new(),
         first_change_boundaries: Vec::new(),
         length_sites: Vec::new(),
+        append_sites: Vec::new(),
+        capacity_guards: Vec::new(),
         scalar_operations: 0,
         register_words,
         successful_backedge_helpers: 0,
@@ -197,7 +206,32 @@ pub(in crate::native_artifact) fn emit_entry(
                 comparison,
                 region.comparison as i64,
             );
-            let enough = b.ins().band(a, c);
+            let mut enough = b.ins().band(a, c);
+            // Capacity is checked before ANY source operation in this visit.
+            // Count all append sites: a conservative DAG traversal bound, even
+            // if a branch would skip some. A miss uses the existing header exit.
+            for (array, _) in proof.arrays.iter().enumerate().filter(|(_, a)| a.appends) {
+                let count = proof
+                    .actions
+                    .iter()
+                    .filter(|(_, op)| {
+                        matches!(op,
+                    Operation::Append { array: at, .. } if *at == array)
+                    })
+                    .count();
+                let length = words.read(b, shadow + proof.view(array) + 1);
+                let capacity = words.read(b, shadow + proof.capacity(array).unwrap());
+                let valid = b
+                    .ins()
+                    .icmp(IntCC::UnsignedLessThanOrEqual, length, capacity);
+                let spare = b.ins().isub(capacity, length);
+                let fits = b
+                    .ins()
+                    .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, spare, count as i64);
+                let fits = b.ins().band(valid, fits);
+                enough = b.ins().band(enough, fits);
+                report.capacity_guards.push((array, count));
+            }
             let funded = b.create_block();
             b.ins().brif(enough, funded, &[], bailout, &[]);
             b.switch_to_block(funded);
@@ -261,6 +295,53 @@ pub(in crate::native_artifact) fn emit_entry(
                 let length = words.read(b, shadow + proof.view(*array) + 1);
                 words.write(b, *output as usize, length);
                 report.length_sites.push(site);
+            }
+            Some(Operation::Append { array, incoming }) => {
+                let view = shadow + proof.view(*array);
+                let length = words.read(b, view + 1);
+                let incoming = words.read(b, *incoming as usize);
+                let private = words.read(b, shadow + proof.private_flag(*array));
+                let store = b.create_block();
+                let materialize = b.create_block();
+                let done = b.create_block();
+                b.set_cold_block(materialize);
+                boundaries.insert(materialize);
+                b.ins().brif(private, store, &[], materialize, &[]);
+                b.switch_to_block(materialize);
+                let index = b.ins().iadd_imm(length, 1);
+                boundary::materialize(
+                    b, &words, region, proof, *array, site, frame, locals, index, incoming, hooks,
+                    error,
+                )?;
+                b.ins().jump(done, &[]);
+                b.switch_to_block(store);
+                let width = proof.arrays[*array].width;
+                let base = words.read(b, view);
+                let at = b.ins().imul_imm(length, i64::from(width));
+                let address = b.ins().iadd(base, at);
+                let ty = match width {
+                    1 => types::I8,
+                    2 => types::I16,
+                    4 => types::I32,
+                    8 => types::I64,
+                    _ => return Err(backend("numeric append width differs")),
+                };
+                let value = if width < 8 {
+                    b.ins().ireduce(ty, incoming)
+                } else {
+                    incoming
+                };
+                // The admitted header proves spare cells for this complete
+                // traversal. Advance logical length only after initialization.
+                b.ins().store(MemFlags::new(), value, address, 0);
+                let length = b.ins().iadd_imm(length, 1);
+                words.write(b, view + 1, length);
+                words.write(b, view + 3, length);
+                b.ins().jump(done, &[]);
+                b.switch_to_block(done);
+                report.typed_stores.push((site, width));
+                report.append_sites.push((site, width));
+                report.first_change_boundaries.push(site);
             }
             Some(
                 operation @ (Operation::Read { array, index, .. }
@@ -329,67 +410,10 @@ pub(in crate::native_artifact) fn emit_entry(
                         boundaries.insert(materialize);
                         b.ins().brif(private, store, &[], materialize, &[]);
                         b.switch_to_block(materialize);
-                        set_origin(b, frame, site as u64);
-                        words.spill_all(b, locals)?;
-                        let zero = b.ins().iconst(types::I64, 0);
-                        // No active generated loan survives a failed cold call.
-                        b.ins()
-                            .store(MemFlags::new(), zero, locals, offset(region.words)?);
-                        hooks.require_argument_words(b, proof.words + 4, error);
-                        for field in proof
-                            .fields(region.tail.carrier().get())
-                            .unwrap()
-                            .iter()
-                            .flatten()
-                        {
-                            let value = words.read(b, shadow + field);
-                            b.ins().store(
-                                MemFlags::new(),
-                                value,
-                                hooks.arguments,
-                                offset(2 + field)?,
-                            );
-                        }
-                        b.ins().store(
-                            MemFlags::new(),
-                            index,
-                            hooks.arguments,
-                            offset(2 + proof.words)?,
-                        );
-                        b.ins().store(
-                            MemFlags::new(),
-                            incoming,
-                            hooks.arguments,
-                            offset(3 + proof.words)?,
-                        );
-                        let compute = words.read(b, region.words + 1);
-                        let comparison = words.read(b, region.words + 2);
-                        hooks.call(b, site, crate::native_artifact::program::protocol::GlobalHelper::NumericWritePrepare, [compute, comparison, zero], error);
-                        for slot in [
-                            region.words + 1,
-                            region.words + 2,
-                            shadow + proof.view(*array),
-                            shadow + proof.private_flag(*array),
-                        ] {
-                            let argument = if slot == region.words + 1 {
-                                0
-                            } else if slot == region.words + 2 {
-                                1
-                            } else {
-                                2 + slot - shadow
-                            };
-                            let value = b.ins().load(
-                                types::I64,
-                                MemFlags::new(),
-                                hooks.arguments,
-                                offset(argument)?,
-                            );
-                            words.write(b, slot, value);
-                        }
-                        let one = b.ins().iconst(types::I64, 1);
-                        words.write(b, region.words, one);
-                        b.ins()
-                            .store(MemFlags::new(), one, locals, offset(region.words)?);
+                        boundary::materialize(
+                            b, &words, region, proof, *array, site, frame, locals, index, incoming,
+                            hooks, error,
+                        )?;
                         b.ins().jump(done, &[]);
                         b.switch_to_block(store);
                         let narrowed = if width < 8 {
