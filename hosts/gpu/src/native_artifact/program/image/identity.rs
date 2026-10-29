@@ -248,7 +248,9 @@ fn selected_template(
 // header capacity fallback and final initialized-prefix reconciliation.
 // IR128 derives dead canonical alias candidates through structural transport;
 // original last-use barriers, runtime identity and Core exclusivity remain.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 128;
+// IR129 composes exact private flat scalar aggregate results and their shared
+// word-bank actions with numeric leaves. The restored plan rederives selection.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 129;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

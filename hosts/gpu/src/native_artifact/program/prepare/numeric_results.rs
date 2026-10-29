@@ -1,11 +1,16 @@
-//! Exact private return recipes. Field lanes remain owned by BufferFrames.
+//! Exact private return recipes in their existing scalar/owner word banks.
 use super::*;
-use mech_engine::native_artifact::NativeBufferFrameField;
+use mech_engine::native_artifact::{
+    NativeBufferFrameField, NativeMatchValue, NativeScalarAggregates,
+};
 
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) enum ResultRecipe {
     Scalar,
+    Aggregate {
+        value: u32,
+    },
     Array {
         array: usize,
     },
@@ -15,6 +20,40 @@ pub(in crate::native_artifact) enum ResultRecipe {
         /// Repeated roots are valid aliases, but each field must be current.
         arrays: Vec<(usize, usize)>,
     },
+}
+
+/// Reuse the connected private-use proof and its exact scalar word count.
+/// Numeric leaves initially compose only flat tuples/records, not enum tags or
+/// nested fields. Their ordinary shared aggregate emitter owns bit semantics.
+pub(super) fn scalar_aggregate(
+    plan: &Plan,
+    aggregates: &NativeScalarAggregates,
+    value: NativeMatchValue,
+) -> bool {
+    let ty = &plan.values()[value.get() as usize];
+    if !ty.definition().dimension_parameters().is_empty() {
+        return false;
+    }
+    let count = match ty.definition().body() {
+        SchemaBody::Tuple(fields)
+            if fields
+                .iter()
+                .all(|s| NativeScalarKind::from_schema_body(s).is_some()) =>
+        {
+            fields.len()
+        }
+        SchemaBody::Record(fields)
+            if fields
+                .iter()
+                .all(|f| NativeScalarKind::from_schema_body(&f.schema).is_some()) =>
+        {
+            fields.len()
+        }
+        _ => return false,
+    };
+    aggregates
+        .slot(value)
+        .is_some_and(|(_, words)| words == count)
 }
 impl ResultRecipe {
     pub fn direct_array(&self) -> Option<usize> {
@@ -35,6 +74,7 @@ pub(super) fn derive(
     plan: &Plan,
     tail: &NativeTailLoop,
     frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
     carrier: &[NativeBufferFrameField],
     arrays: &[Array],
     provenance: &mut Provenance<'_, '_>,
@@ -43,6 +83,9 @@ pub(super) fn derive(
     let ty = &plan.values()[value.get() as usize];
     if ty.scalar_kind().is_some() {
         return Ok(ResultRecipe::Scalar);
+    }
+    if scalar_aggregate(plan, aggregates, value) {
+        return Ok(ResultRecipe::Aggregate { value: value.get() });
     }
     let mut root = |ordinal: Option<usize>, schema| {
         let field = provenance

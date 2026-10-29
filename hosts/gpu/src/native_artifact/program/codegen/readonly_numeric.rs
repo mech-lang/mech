@@ -1,7 +1,9 @@
 //! Register-backed numeric leaf. The funded successful body contains only
 //! native words, typed loads/stores, arithmetic and source branches. Boundary and
 //! original bounds-error calls are cold and reconcile the existing account.
-use crate::native_artifact::codegen::common::{ssa_words::Words, terminators};
+use crate::native_artifact::codegen::common::{
+    aggregates, ssa_words::Words, terminators, word_access::SsaWords,
+};
 use crate::native_artifact::codegen::control::{CodegenReport, plan::CodePlan};
 use crate::native_artifact::codegen::options::{CompilationControls, OptimizationPass};
 use crate::native_artifact::compiler::{backend, offset, primitive, set_origin};
@@ -41,7 +43,11 @@ pub(in crate::native_artifact) struct Report {
     pub fixed_template_instructions: usize,
 }
 
-fn slots(code: CodePlan<'_>, proof: &Proof, base: usize) -> BTreeSet<usize> {
+fn slots(
+    code: CodePlan<'_>,
+    proof: &Proof,
+    base: usize,
+) -> Result<BTreeSet<usize>, NativeCompileError> {
     let mut slots = BTreeSet::from_iter(base..base + 3 + proof.words);
     for &site in &proof.sites {
         match code.blocks()[site].action() {
@@ -76,6 +82,14 @@ fn slots(code: CodePlan<'_>, proof: &Proof, base: usize) -> BTreeSet<usize> {
             _ => {}
         }
         if let CodePlan::Program(program) = code {
+            if let Some(action) = program.metadata().scalar_aggregates.action(site) {
+                aggregates::aggregate_words(
+                    &program.metadata().scalar_aggregates,
+                    action,
+                    &mut slots,
+                )
+                .ok_or_else(|| backend("numeric aggregate lost exact word lanes"))?;
+            }
             if let Some(frame) = program.metadata().buffer_frames.action(site) {
                 match frame.operation() {
                     Frame::Pack { .. } => {
@@ -105,7 +119,7 @@ fn slots(code: CodePlan<'_>, proof: &Proof, base: usize) -> BTreeSet<usize> {
             _ => {}
         }
     }
-    slots
+    Ok(slots)
 }
 
 pub(in crate::native_artifact) fn emit_entry(
@@ -146,7 +160,7 @@ pub(in crate::native_artifact) fn emit_entry(
     let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
     b.ins().brif(ready, selected, &[], ordinary, &[]);
     b.switch_to_block(selected);
-    let slots = slots(code, proof, region.words);
+    let slots = slots(code, proof, region.words)?;
     let register_words = slots.len();
     let words = Words::new(b, locals, code, slots)?;
     let setup_work = b.func.dfg.num_insts() - setup_start;
@@ -242,6 +256,20 @@ pub(in crate::native_artifact) fn emit_entry(
             words.write(b, region.words + 2, comparison);
         }
         match proof.action(site) {
+            Some(Operation::Aggregate) => {
+                let layout = &program.metadata().scalar_aggregates;
+                let action = layout
+                    .action(site)
+                    .ok_or_else(|| backend("numeric aggregate lost its shared action"))?;
+                aggregates::emit(
+                    b,
+                    &mut SsaWords(&words),
+                    layout,
+                    action,
+                    fail,
+                    &mut aggregates::CheckedGuards,
+                )?;
+            }
             Some(Operation::Frame) => {
                 let operation = program
                     .metadata()
