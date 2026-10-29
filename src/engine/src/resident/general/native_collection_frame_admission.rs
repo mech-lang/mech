@@ -1,6 +1,6 @@
 //! A successful-path recipe for ONE private flat frame. No retained arguments,
 //! extents, debit, permit, owner pin or previous-visit result is cached here.
-use super::{NativePreparedLibraryCall, frame_shape::FrameShapeRecipe};
+use super::NativePreparedLibraryCall;
 use crate::{
     native_artifact::{NativeScalarKind, NativeScalarValue as Scalar},
     resident::budget::{
@@ -86,7 +86,6 @@ impl FrameAdmissionRecipe {
         call: &NativePreparedLibraryCall,
         inputs: &[Option<Value>],
         words: Option<&[u64]>,
-        shape: &FrameShapeRecipe,
         memory: &ManagedMemoryBudget,
         meter: &mut ResidentBudgetMeter,
     ) -> Result<Option<u64>, ResidentKernelError> {
@@ -97,9 +96,6 @@ impl FrameAdmissionRecipe {
         let Some((logical, work, nodes)) = self.measure(call, inputs, words, memory) else {
             return Ok(None);
         };
-        if !shape.matches_current(|i| inputs[i].as_ref().map(Value::shape)) {
-            return Ok(None);
-        }
         if !meter.try_charge_borrowed_footprint(work, nodes)? {
             return Ok(None);
         }
