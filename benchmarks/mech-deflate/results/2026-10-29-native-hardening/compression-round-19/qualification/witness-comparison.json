@@ -1,0 +1,209 @@
+{
+  "scope": "Identical opt3 System/probe source, same cases and exact errors; diagnostic only, not primary timing",
+  "rows": [
+    {
+      "form": "original",
+      "case": 0,
+      "before_requests": 862,
+      "after_requests": 189,
+      "before_bytes": 134303,
+      "after_bytes": 34328,
+      "before_work_visits": [
+        12824106,
+        56
+      ],
+      "after_work_visits": [
+        1132452,
+        19
+      ],
+      "same_error": true,
+      "private_record_values": 7
+    },
+    {
+      "form": "original",
+      "case": 1,
+      "before_requests": 855,
+      "after_requests": 183,
+      "before_bytes": 133634,
+      "after_bytes": 33723,
+      "before_work_visits": [
+        12843294,
+        73
+      ],
+      "after_work_visits": [
+        1178168,
+        19
+      ],
+      "same_error": true,
+      "private_record_values": 7
+    },
+    {
+      "form": "original",
+      "case": 2,
+      "before_requests": 855,
+      "after_requests": 183,
+      "before_bytes": 133634,
+      "after_bytes": 33723,
+      "before_work_visits": [
+        12838606,
+        57
+      ],
+      "after_work_visits": [
+        1146952,
+        20
+      ],
+      "same_error": true,
+      "private_record_values": 7
+    },
+    {
+      "form": "original",
+      "case": 3,
+      "before_requests": 855,
+      "after_requests": 183,
+      "before_bytes": 133634,
+      "after_bytes": 33723,
+      "before_work_visits": [
+        12848238,
+        90
+      ],
+      "after_work_visits": [
+        1209640,
+        19
+      ],
+      "same_error": true,
+      "private_record_values": 7
+    },
+    {
+      "form": "original",
+      "case": 4,
+      "before_requests": 176,
+      "after_requests": 176,
+      "before_bytes": 32883,
+      "after_bytes": 33075,
+      "before_work_visits": null,
+      "after_work_visits": null,
+      "same_error": true,
+      "private_record_values": 7
+    },
+    {
+      "form": "original",
+      "case": 5,
+      "before_requests": 855,
+      "after_requests": 183,
+      "before_bytes": 133634,
+      "after_bytes": 33723,
+      "before_work_visits": [
+        13154766,
+        1144
+      ],
+      "after_work_visits": [
+        3160904,
+        19
+      ],
+      "same_error": true,
+      "private_record_values": 7
+    },
+    {
+      "form": "decoded",
+      "case": 0,
+      "before_requests": 861,
+      "after_requests": 189,
+      "before_bytes": 134239,
+      "after_bytes": 34328,
+      "before_work_visits": [
+        12824106,
+        56
+      ],
+      "after_work_visits": [
+        1132452,
+        19
+      ],
+      "same_error": true,
+      "private_record_values": 7
+    },
+    {
+      "form": "decoded",
+      "case": 1,
+      "before_requests": 855,
+      "after_requests": 183,
+      "before_bytes": 133634,
+      "after_bytes": 33723,
+      "before_work_visits": [
+        12843294,
+        73
+      ],
+      "after_work_visits": [
+        1178168,
+        19
+      ],
+      "same_error": true,
+      "private_record_values": 7
+    },
+    {
+      "form": "decoded",
+      "case": 2,
+      "before_requests": 855,
+      "after_requests": 183,
+      "before_bytes": 133634,
+      "after_bytes": 33723,
+      "before_work_visits": [
+        12838606,
+        57
+      ],
+      "after_work_visits": [
+        1146952,
+        20
+      ],
+      "same_error": true,
+      "private_record_values": 7
+    },
+    {
+      "form": "decoded",
+      "case": 3,
+      "before_requests": 855,
+      "after_requests": 183,
+      "before_bytes": 133634,
+      "after_bytes": 33723,
+      "before_work_visits": [
+        12848238,
+        90
+      ],
+      "after_work_visits": [
+        1209640,
+        19
+      ],
+      "same_error": true,
+      "private_record_values": 7
+    },
+    {
+      "form": "decoded",
+      "case": 4,
+      "before_requests": 176,
+      "after_requests": 176,
+      "before_bytes": 32883,
+      "after_bytes": 33075,
+      "before_work_visits": null,
+      "after_work_visits": null,
+      "same_error": true,
+      "private_record_values": 7
+    },
+    {
+      "form": "decoded",
+      "case": 5,
+      "before_requests": 855,
+      "after_requests": 183,
+      "before_bytes": 133634,
+      "after_bytes": 33723,
+      "before_work_visits": [
+        13154766,
+        1144
+      ],
+      "after_work_visits": [
+        3160904,
+        19
+      ],
+      "same_error": true,
+      "private_record_values": 7
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-scalar-records-round19-20261029/primary/selected-native-tests",
+    "--nocapture",
+    "--test-threads=1",
+    "--skip",
+    "all_certified_scalar_primitives_match_ordinary_resident_original_and_decoded"
+  ],
+  "exit": 0,
+  "seconds": 0.9135322908405215,
+  "binary_sha256": "2f0d4756a4f96f0ad8526477305546aff59b7e1ca464cc523b8d450d96f1a5c8",
+  "skipped_coverage": "The all-primitives test needs not/xor, which this selected catalog deliberately omits."
+}

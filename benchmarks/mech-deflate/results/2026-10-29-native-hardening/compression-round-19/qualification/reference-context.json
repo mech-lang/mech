@@ -1,0 +1,13 @@
+{
+  "binary_sha256": "3941ef59b2c9343d0493cc6b6d14ca4803e6bd27acfe520b1fb59d9b63026324",
+  "reexamined_archived_full_disassembly_sha256": "00e63ff90be8de25e58982c72fbb80e174982221ddff96de2877bb233857ff88",
+  "original_disassembly_command": [
+    "otool",
+    "-tvV",
+    "/private/tmp/mech-deflate-profiling-20261028/roc-profile"
+  ],
+  "fresh_disassembly_run": false,
+  "excerpt_sha256": "a23bed2f08d03fb6db18ccc072ef4ee87d9b34e6dea7d1fa0baec0e814407fde",
+  "interpretation": "Archived checked ARM64 loads/stores, allocation and direct arithmetic/backedges reexamined. General native-code pattern only, no named source-to-hashed-procedure or new per-function reference timing claim. This slice uses the existing native aggregate field loads and copies in place of runtime canonical record construction/inspection.",
+  "reexamined_in_round19": true
+}
