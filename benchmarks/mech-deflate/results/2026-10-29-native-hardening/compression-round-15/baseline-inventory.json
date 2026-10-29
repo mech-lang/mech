@@ -1,0 +1,42 @@
+{
+  "baseline/current-build.json": {
+    "sha256": "bfeecf2d52a1b36f5388b884e8a5074ea6889724632e326c79d0030b5edac9b0",
+    "bytes": 3459
+  },
+  "baseline/selection-red.log.gz": {
+    "sha256": "fae3b9b5105eef06b41bde12cad2e6e1739b9ce6657b4a832fed9345e53efa68",
+    "bytes": 597
+  },
+  "baseline/component-v2-run.json": {
+    "sha256": "e39fa7ad87f49474456fe6bcdf15ead1780c42e52721b58265b9839b5297c32a",
+    "bytes": 638
+  },
+  "baseline/source-test.rs.gz": {
+    "sha256": "e8f37748aa0fe8810f3917be96f9f59712e84a4e320e3f130037322bff76fd1e",
+    "bytes": 1959
+  },
+  "baseline/selection-red.json": {
+    "sha256": "4a7e15535a2bcaac9cf645758d838da38af90b4c9cff72f77e7b206eb18375c4",
+    "bytes": 404
+  },
+  "baseline/component-qualification-v2.rs.gz": {
+    "sha256": "644603e3151efce8e00f5958e16fe8a43ab85eb7c9117333cd3c147d2cc1eda6",
+    "bytes": 6280
+  },
+  "baseline/component-v2-build.json": {
+    "sha256": "b6c69fec1611fe77ad5e143fff4b5c3d699cd7f9714562e7972fb30ad183c2d3",
+    "bytes": 4458
+  },
+  "baseline/component-v2-run.log.gz": {
+    "sha256": "754233a28601a32f3bc98fc14b7454c9ef34ba3f2d04e80fa2aacc75148d186f",
+    "bytes": 943
+  },
+  "baseline/component-v2-build.log.gz": {
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "bytes": 20
+  },
+  "baseline/qualify.py": {
+    "sha256": "5f9941efae07dc3c80bac310d45d37ed8b4573fcaaf03ee1518c57cf6aea0fab",
+    "bytes": 3511
+  }
+}
