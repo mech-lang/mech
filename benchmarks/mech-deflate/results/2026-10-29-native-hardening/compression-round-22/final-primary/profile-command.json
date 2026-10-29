@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/current",
+    "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+    "207"
+  ],
+  "repetitions": 207,
+  "sample_command": [
+    "sample",
+    "15803",
+    "2",
+    "-file",
+    "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/after.sample.txt"
+  ],
+  "sample_exit": 0,
+  "output": "Sampling process 15803 for 2 seconds with 1 millisecond of run time between samples\nSampling completed, processing symbols...\nSample analysis of process 15803 written to file /private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/after.sample.txt\n",
+  "all_observations_excluded_from_primary": true
+}
