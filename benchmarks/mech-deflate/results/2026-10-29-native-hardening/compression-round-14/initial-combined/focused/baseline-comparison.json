@@ -1,0 +1,6 @@
+{
+  "baseline": "/private/tmp/mech-frame-admission-round14-20261029/baseline-v3/component-v2-run.log",
+  "after": "/private/tmp/mech-frame-admission-round14-20261029/focused/component-v2-run.log",
+  "cases": 120,
+  "exact_current_shapes_work_error_and_recovery_agreement": true
+}
