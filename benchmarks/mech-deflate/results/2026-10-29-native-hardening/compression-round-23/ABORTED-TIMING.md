@@ -1,0 +1,5 @@
+# Reference-only attempt: copied executable mode error
+
+After the passing production build and797 scoped tests, the first timing attempt measured20000 pinned reference observations (median0.284ms), then failed before spawning the frozen Mech before executable: PermissionError errno13. The copy step had preserved bytes but lost executable mode(0644). No Mech process or Mech timing observation ran. This is an introduced harness setup error, not a compiler failure, resource-policy denial or timing regression. The reference-only data,commands and exact modes/hashes remain in aborted-permissions. They do not supply the denominator for the completed experiment.
+
+Keep that folder and the original private primary folder intact. Create final-primary with executable modes preserved and a separately captured build/freeze receipt; run a fresh common reference and the same four balanced pairs. No production/source/allowance/timing-boundary change or failed sample replacement. This failed experiment is committed immediately before the new timing.
