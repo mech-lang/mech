@@ -254,22 +254,18 @@ fn shared_boolean_edge_facts_keep_literal_polarity_and_unique_copies() {
                 .boolean_branch_edges(site as u32, predicate)
                 .is_none()
         );
-        let (copy, source, output) = plan
-            .blocks()
-            .iter()
-            .enumerate()
-            .find_map(|(site, b)| match b.action() {
-                Action::Scalar(Scalar::Copy { source, output })
-                    if plan.values()[output.get() as usize].scalar_kind()
-                        == Some(NativeScalarKind::Bool) =>
-                {
-                    Some((site, *source, *output))
-                }
-                _ => None,
-            })
-            .unwrap();
-        assert_eq!(facts.unique_identity_copy(output), Some(source));
-        let mut redefined = plan.clone();
+        // Source aliases are normally eliminated. Exercise the actual Copy
+        // fact by replacing the unique producer in this descriptive test plan.
+        let [definition] = facts.definition_sites(predicate.get()).unwrap() else {
+            panic!("the comparison must have one current definition")
+        };
+        let copy = definition.site().unwrap() as usize;
+        let source = literal(true);
+        let output = predicate;
+        let mut copied = plan.clone();
+        copied.blocks[copy].action = Action::Scalar(Scalar::Copy { source, output });
+        assert_eq!(copied.facts().unique_identity_copy(output), Some(source));
+        let mut redefined = copied;
         let other = plan
             .blocks()
             .iter()
