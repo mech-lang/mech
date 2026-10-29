@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/private/tmp/mech-frame-admission-round14-20261029/footprint-focused/component-v2-tests",
+    "buffer_frame_qualification",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 2.9839824999216944,
+  "binary_sha256": "0dab1c6a56e3102bc4b2e91092ce74c0e75f98954c72eddc3cf039abb6f30365",
+  "skipped": [
+    {
+      "module": "linked_qualification",
+      "source": "/private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_linked.rs",
+      "reason": "Linked Cargo subprocess qualification is separate from this existing component cohort."
+    }
+  ]
+}

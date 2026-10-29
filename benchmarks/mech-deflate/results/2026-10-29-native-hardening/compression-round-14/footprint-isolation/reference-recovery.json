@@ -1,0 +1,77 @@
+{
+  "cause": "Original temporary checkout lost its source files and HEAD/config while object database and executable hashes remain intact. Exact deletion cause not established. Preflight failed before any measurement.",
+  "source_revision": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "mechanism": "Read exact pinned blobs from surviving Git object database, verify every preexisting SHA256, write a new private source-pin directory. No reference rebuild, source edit or measurement substitution.",
+  "files": [
+    {
+      "path": "package/BlockOut.roc",
+      "bytes": 32133,
+      "sha256": "3964b066eda11a4d99123255809615ed4caec7636085f5ec7f76804b640187a2"
+    },
+    {
+      "path": "package/BtMatchfinder.roc",
+      "bytes": 16948,
+      "sha256": "4970b6d3e93bb46e511c2db3071e7619f0d1d9cc02402cbaea1af0c98c7542d3"
+    },
+    {
+      "path": "package/CompressFast.roc",
+      "bytes": 16375,
+      "sha256": "03df18d51b7014aa3f41770a8a79809bfd16178f765f212c6a7d2256aef3bdf1"
+    },
+    {
+      "path": "package/CompressLazy.roc",
+      "bytes": 75024,
+      "sha256": "131bfdf5a737c5501706884186ef0fb9360686ae68540cb4ff49912b4c967607"
+    },
+    {
+      "path": "package/CompressOptimal.roc",
+      "bytes": 52281,
+      "sha256": "76640a1c710d8392abd7902c7841a9e0b34cba2eb5acd857ae6acd65e7c11e61"
+    },
+    {
+      "path": "package/Deflate.roc",
+      "bytes": 12304,
+      "sha256": "37dc76638190df2af21dc4a7bee33a79a525bfec796045ce09086ae7ba956c51"
+    },
+    {
+      "path": "package/DeflateTables.roc",
+      "bytes": 6598,
+      "sha256": "34683f82623b438f71e7048ee8d8e402ea8e0121e3fd6b97d1c351db5b05368b"
+    },
+    {
+      "path": "package/HcMatchfinder.roc",
+      "bytes": 250,
+      "sha256": "260e5d1fc6283df821813e013823e3f76325b81915f8591dfc8d81c28c018ae2"
+    },
+    {
+      "path": "package/HcTables.roc",
+      "bytes": 3071,
+      "sha256": "f93e3a245e1947c0d02a7341ac97245b27d744fce97677e5cf107a44238a58f2"
+    },
+    {
+      "path": "package/HtMatchfinder.roc",
+      "bytes": 7947,
+      "sha256": "6ad20f55f3185fc46b6b46ff15ffdfdbd987a7d74d9f804f3eb369aa0652d983"
+    },
+    {
+      "path": "package/HuffmanEncode.roc",
+      "bytes": 16526,
+      "sha256": "b1a40d5343fc1ab50c6c33fc62cc0c97cc1f3eff0523d94200603960b6ac8746"
+    },
+    {
+      "path": "package/Inflate.roc",
+      "bytes": 39436,
+      "sha256": "cbc9ecb2be67bef20e28bf0b0addafef08a71ed7152e48d412e1ad1a17524781"
+    },
+    {
+      "path": "package/Matchfinder.roc",
+      "bytes": 4010,
+      "sha256": "f1ed36d2b1b7695908a5a7e0362e5bb3b8190c2cd5507f67768df0a3ad33c172"
+    },
+    {
+      "path": "package/main.roc",
+      "bytes": 21,
+      "sha256": "efe101d86a5ad8d07f643246222d69ac26df9cc5e8feafe1a473d6510a4b17bb"
+    }
+  ]
+}
