@@ -1,0 +1,30 @@
+{
+  "counts": {
+    "CompositePack(3)": 38,
+    "MatrixHorizontal(1)": 1,
+    "CompositePack(2)": 2,
+    "CompositePack(6)": 4,
+    "RecordFieldAccess": 53,
+    "CompositePack(7)": 1,
+    "CompositePack(4)": 1
+  },
+  "sites": {
+    "CompositePack(3)": 9,
+    "MatrixHorizontal(1)": 1,
+    "CompositePack(2)": 2,
+    "CompositePack(6)": 3,
+    "RecordFieldAccess": 43,
+    "CompositePack(7)": 1,
+    "CompositePack(4)": 1
+  },
+  "fully_fixed_geometry_calls": {
+    "CompositePack(3)": 33,
+    "MatrixHorizontal(1)": 1,
+    "CompositePack(2)": 1,
+    "CompositePack(4)": 1
+  },
+  "total_calls": 100,
+  "diagnostic_only": true,
+  "source_work": 303735923752,
+  "source_visits": 213929
+}
