@@ -245,10 +245,9 @@ fn fields(plan: &Plan, value: Value) -> Option<usize> {
             {
                 eligible = true
             }
-            // Compound siblings remain opaque canonical Values in the same
-            // admitted managed-owner lanes. The component's unchanged use
-            // checks keep a child consumed by another pack canonical; no
-            // nested private frame or payload flattening is introduced here.
+            // Candidate compound siblings may remain opaque canonical Values.
+            // The complete shape/use proof below selects structural spans only
+            // when the child can stay private through every composition edge.
             SchemaBody::Tuple(_) | SchemaBody::Record(_) => eligible = true,
             // A fixed aggregate matrix remains an admitted immutable Value.
             // It is not a packed buffer, but must not force sibling buffers

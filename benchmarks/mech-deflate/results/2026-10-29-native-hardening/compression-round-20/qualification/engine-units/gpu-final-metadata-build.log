@@ -1,0 +1,27 @@
+error[E0463]: can't find crate for `mech_compute`
+  --> /private/tmp/mech-deflate-linear-stack/hosts/gpu/src/lib.rs:11:5
+   |
+11 | use mech_compute::{
+   |     ^^^^^^^^^^^^ can't find crate
+
+error[E0432]: unresolved imports `super::BinaryOperation`, `super::ElementwiseOperation`, `super::GpuAdmissionError`, `super::GpuDiagnostic`, `super::GpuDiagnosticCode`, `super::UnaryOperation`, `super::display_operation`, `super::turn_required_nodes`, `super::BinaryOperation`, `super::ComparisonOperation`, `super::ElementwiseOperation`, `super::LogicOperation`, `super::ScalarComputation`, `super::ScalarOperand`, `super::ScalarPredicate`, `super::UnaryOperation`
+  --> /private/tmp/mech-deflate-linear-stack/hosts/gpu/src/batched/mod.rs:25:5
+   |
+25 |     BinaryOperation, ElementwiseOperation, GpuAdmissionError, GpuDiagnostic, GpuDiagnosticCode,
+   |     ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^
+26 |     UnaryOperation, WORKGROUP_SIZE, display_operation, turn_required_nodes,
+   |     ^^^^^^^^^^^^^^                  ^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^
+   |
+  ::: /private/tmp/mech-deflate-linear-stack/hosts/gpu/src/batched/jit.rs:15:73
+   |
+15 |     BatchedExecutionError, BatchedFaultRecorder, BatchedIntegrityFault, BinaryOperation,
+   |                                                                         ^^^^^^^^^^^^^^^
+16 |     ComparisonOperation, ElementwiseOperation, FixedShapeKernel, LogicOperation, ScalarComputation,
+   |     ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^                    ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^
+17 |     ScalarOperand, ScalarPredicate, UnaryOperation,
+   |     ^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^
+
+error: aborting due to 2 previous errors
+
+Some errors have detailed explanations: E0432, E0463.
+For more information about an error, try `rustc --explain E0432`.

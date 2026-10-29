@@ -1,0 +1,32 @@
+{
+  "before": "/private/tmp/mech-scalar-records-round19-20261029/object-audit/complete-object.o",
+  "after": "/private/tmp/mech-nested-frames-round20-20261029/fixed-object-audit/complete-object.o",
+  "sections": {
+    "__TEXT,__text": {
+      "before": {
+        "bytes": 10843932,
+        "sha256": "36e3f9f6487dfc38f728dc0a0a8c28b329a7e6ab4b41c5c5db88d424b9e064fb",
+        "offset": 368
+      },
+      "after": {
+        "bytes": 10843932,
+        "sha256": "36e3f9f6487dfc38f728dc0a0a8c28b329a7e6ab4b41c5c5db88d424b9e064fb",
+        "offset": 368
+      },
+      "identical": true
+    },
+    "__TEXT,__const": {
+      "before": {
+        "bytes": 192,
+        "sha256": "ba612023973fae0c82bb13c5efbdad4c8e430cd4bf0bbc24305980ab2e6c353a",
+        "offset": 10844304
+      },
+      "after": {
+        "bytes": 192,
+        "sha256": "93561986a0c6112a0449417fbc3eb4333047bc887e9428006e4e35b270c3b315",
+        "offset": 10844304
+      },
+      "identical": false
+    }
+  }
+}
