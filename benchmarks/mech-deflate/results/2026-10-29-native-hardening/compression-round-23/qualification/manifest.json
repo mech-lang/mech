@@ -1,0 +1,507 @@
+{
+  "base": "545e17bf065028512c93a2bdc8677fbc3728a3fa",
+  "production": "299c70f4ce21eb3cba94dcb47e4d37106cc14b29",
+  "timing": "2ad6e5021cdd35e60b7a16c7615dfdf9d276721b",
+  "archive": "receipts.tar.gz",
+  "archive_sha256": "d331a0d5afb4271640686f69ad8b786669ce23be44ba5fdc8e83ce30a8428e5a",
+  "entries": [
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/components/nested-component-build.json",
+      "archive_member": "components/nested-component-build.json",
+      "bytes": 4460,
+      "sha256": "ea6f86eeba162f8f7ac9d49e7da0a93850479e6a196092d2a914b6c24c0fa3d6"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/components/nested-component-build.log",
+      "archive_member": "components/nested-component-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/components/nested-component-qualification.rs",
+      "archive_member": "components/nested-component-qualification.rs",
+      "bytes": 36255,
+      "sha256": "d98ef68322b64ddbe5e5e2cd5a7ce0ad969fda6dae6bbbdd5bb6461faef5c060"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/components/qualify.py",
+      "archive_member": "components/qualify.py",
+      "bytes": 3171,
+      "sha256": "e1e63a62a2b704e8494e92960f2b50bbeb7f4eb09c490a9ee19590230119f2ca"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/engine-units/build.json",
+      "archive_member": "engine-units/build.json",
+      "bytes": 16545,
+      "sha256": "cec26cd6d23635cafbd7e4b5f1f5cdbd3332b56cb1d8d6e80f1ec16b03f4b3fe"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/engine-units/build.log",
+      "archive_member": "engine-units/build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/engine-units/build.py",
+      "archive_member": "engine-units/build.py",
+      "bytes": 3380,
+      "sha256": "c19da4a395c4d3472b842d739a357524687e848392c41fd4bb6b931bbf58310d"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/engine-units/nonnative-build.json",
+      "archive_member": "engine-units/nonnative-build.json",
+      "bytes": 16379,
+      "sha256": "8f0e15b83b6258e972ada54d8e973ce2d81770db2bdc8f3bacea170e836129a1"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/engine-units/nonnative-build.log",
+      "archive_member": "engine-units/nonnative-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/engine-units/nonnative-check.py",
+      "archive_member": "engine-units/nonnative-check.py",
+      "bytes": 2710,
+      "sha256": "56fb5947a3458d7503718b015e20ad4e87b8264d33b3b25e7860f23714c0535f"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/engine-units/run.json",
+      "archive_member": "engine-units/run.json",
+      "bytes": 464,
+      "sha256": "3e6eaa04302722410235c68b94e4442e07373a115746b1539c19612805cecfa8"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/engine-units/run.log",
+      "archive_member": "engine-units/run.log",
+      "bytes": 34495,
+      "sha256": "f0a0d99908c3f985a1c251c0729a1cf4bcf896a23b946481b25df72342e833cc"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/binary-evidence/after-projection-check.txt",
+      "archive_member": "binary-evidence/after-projection-check.txt",
+      "bytes": 5081,
+      "sha256": "60574db898a97f60b058a51fd284012741d07e7de6d7c597c4aa1b3bcaa38535"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/binary-evidence/before-projection-check.txt",
+      "archive_member": "binary-evidence/before-projection-check.txt",
+      "bytes": 3571,
+      "sha256": "9b831f87a4806430a213cc8d78fb2c14af66f6087f21692004f24333377d15db"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/binary-evidence/comparison.json",
+      "archive_member": "binary-evidence/comparison.json",
+      "bytes": 1630,
+      "sha256": "6bf33178b938f1154ffc96ec02d12497540a453ad29b76ad27ef191ab42fafc6"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/primary/selected-bits-build.json",
+      "archive_member": "primary/selected-bits-build.json",
+      "bytes": 3339,
+      "sha256": "535db58d67b1d58db4d00ea5c9a83b0c088eaf2da45fd44883f38b4983f02f8c"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/primary/selected-bits-build.log",
+      "archive_member": "primary/selected-bits-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/primary/selected-bits-run.json",
+      "archive_member": "primary/selected-bits-run.json",
+      "bytes": 310,
+      "sha256": "b571e525139bc29e240c0ee2e479684066e21596d5ebd2b79dee088d81e989e7"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/primary/selected-bits-run.log",
+      "archive_member": "primary/selected-bits-run.log",
+      "bytes": 347,
+      "sha256": "371dd81df813f56cfae097202c1912cdf89e3559a6057eaf59cda6edcc4a6532"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/primary/selected-native-build.json",
+      "archive_member": "primary/selected-native-build.json",
+      "bytes": 3343,
+      "sha256": "66e1e9850cf4cf95140167e9581055575cd58569489d584f9de03fb9a20f5492"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/primary/selected-native-build.log",
+      "archive_member": "primary/selected-native-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/primary/selected-native-run.json",
+      "archive_member": "primary/selected-native-run.json",
+      "bytes": 494,
+      "sha256": "611f16c06df891c0a95ecf0ee559a76030c1bdcefeb3b0c37c6573c7773a0367"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/primary/selected-native-run.log",
+      "archive_member": "primary/selected-native-run.log",
+      "bytes": 782,
+      "sha256": "f28abeca9d118ed020ce207689c1476258d3e5c94fae517923707678ca6a23f8"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-commands.json",
+      "archive_member": "final-primary/scalar-commands.json",
+      "bytes": 4923,
+      "sha256": "f0acc1d8bbf44855bdfd85b15451a664efdf52f04c52d8ebe57eb13fddc2e459"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-results.json",
+      "archive_member": "final-primary/scalar-results.json",
+      "bytes": 73012,
+      "sha256": "8d8b675264c6b38541d04f7ed1415e9d1e04082584ab6094d6d7aab15ae3de27"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-bool-0-decoded-after.stderr",
+      "archive_member": "final-primary/scalar-scalar-bool-0-decoded-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-bool-0-decoded-after.stdout",
+      "archive_member": "final-primary/scalar-scalar-bool-0-decoded-after.stdout",
+      "bytes": 1624,
+      "sha256": "9e088a0ef388b124b516f076f59bdff53b5159c6e89f7e88a61ef704328b4a4e"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-bool-0-decoded-before.stderr",
+      "archive_member": "final-primary/scalar-scalar-bool-0-decoded-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-bool-0-decoded-before.stdout",
+      "archive_member": "final-primary/scalar-scalar-bool-0-decoded-before.stdout",
+      "bytes": 1621,
+      "sha256": "f1d10455b4f975c63b3d5a07704e153e71e3deece13fd97a4f74cc61618abd7c"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-bool-0-original-after.stderr",
+      "archive_member": "final-primary/scalar-scalar-bool-0-original-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-bool-0-original-after.stdout",
+      "archive_member": "final-primary/scalar-scalar-bool-0-original-after.stdout",
+      "bytes": 1629,
+      "sha256": "9846fb2b74d80021f3b0123b7d9f5f3f81bf5cf4f88e4d9ffc8c9cbebedafc9f"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-bool-0-original-before.stderr",
+      "archive_member": "final-primary/scalar-scalar-bool-0-original-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-bool-0-original-before.stdout",
+      "archive_member": "final-primary/scalar-scalar-bool-0-original-before.stdout",
+      "bytes": 1629,
+      "sha256": "7bc88d4f289baaf76ac7f4797e3ea89f553f608a42e4d7ef4177e542f4f1eee5"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-f64-0-decoded-after.stderr",
+      "archive_member": "final-primary/scalar-scalar-f64-0-decoded-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-f64-0-decoded-after.stdout",
+      "archive_member": "final-primary/scalar-scalar-f64-0-decoded-after.stdout",
+      "bytes": 1615,
+      "sha256": "537169f7c26af3fd55315b8c37ac2c48e0ca9017d2720d2a23372062cd551971"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-f64-0-decoded-before.stderr",
+      "archive_member": "final-primary/scalar-scalar-f64-0-decoded-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-f64-0-decoded-before.stdout",
+      "archive_member": "final-primary/scalar-scalar-f64-0-decoded-before.stdout",
+      "bytes": 1619,
+      "sha256": "e7fe6e475c6a0e6fc7ae874469a8ead3a730ac3dae3c139203f0c6c2e8863911"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-f64-0-original-after.stderr",
+      "archive_member": "final-primary/scalar-scalar-f64-0-original-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-f64-0-original-after.stdout",
+      "archive_member": "final-primary/scalar-scalar-f64-0-original-after.stdout",
+      "bytes": 1622,
+      "sha256": "90406740b34dcae8f3da993170ceec5dfad8e045d1d50fc5e31fe746e6405147"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-f64-0-original-before.stderr",
+      "archive_member": "final-primary/scalar-scalar-f64-0-original-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-f64-0-original-before.stdout",
+      "archive_member": "final-primary/scalar-scalar-f64-0-original-before.stdout",
+      "bytes": 1617,
+      "sha256": "c78933188af0d693f63159351b02a0df27757e6326323cb95538bd3e52d4bbb1"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-i64-0-decoded-after.stderr",
+      "archive_member": "final-primary/scalar-scalar-i64-0-decoded-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-i64-0-decoded-after.stdout",
+      "archive_member": "final-primary/scalar-scalar-i64-0-decoded-after.stdout",
+      "bytes": 1619,
+      "sha256": "fc304cf7fbf9171252e2059a0890c7c0c0048a85d3b8809b953d497ff4dbee48"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-i64-0-decoded-before.stderr",
+      "archive_member": "final-primary/scalar-scalar-i64-0-decoded-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-i64-0-decoded-before.stdout",
+      "archive_member": "final-primary/scalar-scalar-i64-0-decoded-before.stdout",
+      "bytes": 1619,
+      "sha256": "ffe654e19ddd9396d28bffcfce8a47a02c00d0280d927da5e6394624029ca2af"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-i64-0-original-after.stderr",
+      "archive_member": "final-primary/scalar-scalar-i64-0-original-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-i64-0-original-after.stdout",
+      "archive_member": "final-primary/scalar-scalar-i64-0-original-after.stdout",
+      "bytes": 1624,
+      "sha256": "70cceeefbe27bf26b556a54709303b17f601ca67c879077f33e573700d69c7bc"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-i64-0-original-before.stderr",
+      "archive_member": "final-primary/scalar-scalar-i64-0-original-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-i64-0-original-before.stdout",
+      "archive_member": "final-primary/scalar-scalar-i64-0-original-before.stdout",
+      "bytes": 1623,
+      "sha256": "53641f22a3bf401fc8011bcd6be24060320cbefcc055b3bd931f97a21cfbbfc2"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-loop-0-decoded-after.stderr",
+      "archive_member": "final-primary/scalar-scalar-loop-0-decoded-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-loop-0-decoded-after.stdout",
+      "archive_member": "final-primary/scalar-scalar-loop-0-decoded-after.stdout",
+      "bytes": 2006,
+      "sha256": "1ea59e2cb1cd4ae76c02271bc7d5be57df244019043ddbec5c86beeae5661936"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-loop-0-decoded-before.stderr",
+      "archive_member": "final-primary/scalar-scalar-loop-0-decoded-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-loop-0-decoded-before.stdout",
+      "archive_member": "final-primary/scalar-scalar-loop-0-decoded-before.stdout",
+      "bytes": 2009,
+      "sha256": "7a9b62c0a7772b4160ebe67bcbbcfe1c9d74c23047547df8c9850380d0cd7419"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-loop-0-original-after.stderr",
+      "archive_member": "final-primary/scalar-scalar-loop-0-original-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-loop-0-original-after.stdout",
+      "archive_member": "final-primary/scalar-scalar-loop-0-original-after.stdout",
+      "bytes": 2011,
+      "sha256": "702622bc691d132976cfd27e867afe940749822da5e7f986434946ba3d1143c9"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-loop-0-original-before.stderr",
+      "archive_member": "final-primary/scalar-scalar-loop-0-original-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-loop-0-original-before.stdout",
+      "archive_member": "final-primary/scalar-scalar-loop-0-original-before.stdout",
+      "bytes": 2015,
+      "sha256": "613540d705e7ed0f9603758997e7e9832b5fef555fbbf479abacdfa0d4eeff40"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-loop-64-decoded-after.stderr",
+      "archive_member": "final-primary/scalar-scalar-loop-64-decoded-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-loop-64-decoded-after.stdout",
+      "archive_member": "final-primary/scalar-scalar-loop-64-decoded-after.stdout",
+      "bytes": 2018,
+      "sha256": "06f7a528805e3123f9246872927faa12f942540c795d9e665ff2878ed8128198"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-loop-64-decoded-before.stderr",
+      "archive_member": "final-primary/scalar-scalar-loop-64-decoded-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-loop-64-decoded-before.stdout",
+      "archive_member": "final-primary/scalar-scalar-loop-64-decoded-before.stdout",
+      "bytes": 2018,
+      "sha256": "f8d6f4d86ebd9b4d074551bc24e5f44679e14f45ce9bd4378a8258231e24685f"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-loop-64-original-after.stderr",
+      "archive_member": "final-primary/scalar-scalar-loop-64-original-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-loop-64-original-after.stdout",
+      "archive_member": "final-primary/scalar-scalar-loop-64-original-after.stdout",
+      "bytes": 2026,
+      "sha256": "c2c0c50d34adb4997a613a676a1d3a2cc9012e468535755343050c5cc4090f3e"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-loop-64-original-before.stderr",
+      "archive_member": "final-primary/scalar-scalar-loop-64-original-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-loop-64-original-before.stdout",
+      "archive_member": "final-primary/scalar-scalar-loop-64-original-before.stdout",
+      "bytes": 2025,
+      "sha256": "0a68283ab26755a535c5c02cb517da9e911ec88a7268d6b6c1e2d8b120e355f1"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-u64-0-decoded-after.stderr",
+      "archive_member": "final-primary/scalar-scalar-u64-0-decoded-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-u64-0-decoded-after.stdout",
+      "archive_member": "final-primary/scalar-scalar-u64-0-decoded-after.stdout",
+      "bytes": 1618,
+      "sha256": "6f8de314bbb474f7fd99b65e7d20a3a7e8e1c088bcd1c2c4735af6b34277a7d5"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-u64-0-decoded-before.stderr",
+      "archive_member": "final-primary/scalar-scalar-u64-0-decoded-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-u64-0-decoded-before.stdout",
+      "archive_member": "final-primary/scalar-scalar-u64-0-decoded-before.stdout",
+      "bytes": 1618,
+      "sha256": "5875a02292e4f84be639fe828a5d06ccbe89e0b2a4d085e4d90234ce037a1fd3"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-u64-0-original-after.stderr",
+      "archive_member": "final-primary/scalar-scalar-u64-0-original-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-u64-0-original-after.stdout",
+      "archive_member": "final-primary/scalar-scalar-u64-0-original-after.stdout",
+      "bytes": 1625,
+      "sha256": "386a7f01928a27c2de6ded837447d777f68db87824c5bc1f712baa998c5cbc5a"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-u64-0-original-before.stderr",
+      "archive_member": "final-primary/scalar-scalar-u64-0-original-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-scalar-u64-0-original-before.stdout",
+      "archive_member": "final-primary/scalar-scalar-u64-0-original-before.stdout",
+      "bytes": 1625,
+      "sha256": "36754d22ecdb5e6943e076458886739ccbca2480d26683a5a000a9d320715440"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/full-components.py",
+      "archive_member": "full-components.py",
+      "bytes": 1951,
+      "sha256": "5649915f8bfe148f68b0ca6f34929cb4bedf29dd4209b9fb6fc7d388d9a481b7"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/full-components.json",
+      "archive_member": "full-components.json",
+      "bytes": 1698,
+      "sha256": "3d80bb86088c639c787ba3cece7eda6eda6c19998eac60c27fa6e059e616b366"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/full-components.log",
+      "archive_member": "full-components.log",
+      "bytes": 240700,
+      "sha256": "b262680df85a075989703dd6be937d3b45b952709c66035d32cdc52ee045c970"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/production-profile-inventory.json",
+      "archive_member": "production-profile-inventory.json",
+      "bytes": 8297,
+      "sha256": "c3717b6ed64cb782224fd49c359a6f643422a651498c84e93cfe0f9f7d4fc6e5"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round23-first-budget-release.json",
+      "archive_member": "validation/round23-first-budget-release.json",
+      "bytes": 891,
+      "sha256": "0725a1cc44cfe12725e0e9ec3bdd1e1f1e51e9cbf6c4762b11a69f5f4b3f0c8e"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round23-first-budget-release.log",
+      "archive_member": "validation/round23-first-budget-release.log",
+      "bytes": 158901,
+      "sha256": "197466e416b6bfcd69be7ed69a4d36a6fb8817ef8177b6c3aba08513fe730873"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round23-first-budget-static.json",
+      "archive_member": "validation/round23-first-budget-static.json",
+      "bytes": 690,
+      "sha256": "f87876006e3d6bd2fec61bea98aa0ed188b83da49bc78d0ffcb817d46688b907"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round23-first-budget-static.log",
+      "archive_member": "validation/round23-first-budget-static.log",
+      "bytes": 1252,
+      "sha256": "a181eff42c0d2aca60b13e3315172ed155d2ad49121875c15322638a179abd1e"
+    },
+    {
+      "source": "/private/tmp/mech-final-static-20261028.py",
+      "archive_member": "orchestration/mech-final-static-20261028.py",
+      "bytes": 888,
+      "sha256": "5305c8f3221a1692942d3a94d1acd2d300c5fa4ee0a53d9aed625b43dfa33e83"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/run-check.py",
+      "archive_member": "orchestration/run-check.py",
+      "bytes": 1349,
+      "sha256": "346dda5dabc7183f4701a3ed533db907402c8a8545d869765f2a923fc0fd329c"
+    }
+  ]
+}
