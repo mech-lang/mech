@@ -1299,6 +1299,7 @@ impl<'a> Prepared<'a> {
             return Err(invalid("program entry changed immutable frame"));
         }
         if phase == PHASE_ACTIVATION && status == STATUS_ACTIVATED {
+            let previous = context.admission_predecessor(u64::from(boundary))?;
             if f.error_node != u64::from(boundary)
                 || context.state.control.completed
                 || context.state.control.current.is_some()
@@ -1309,7 +1310,7 @@ impl<'a> Prepared<'a> {
                     .collections
                     .as_ref()
                     .is_some_and(|state| !state.is_complete())
-                || context.state.control.previous.is_none_or(|previous| {
+                || previous.is_none_or(|previous| {
                     !descriptor.metadata().visits[previous as usize]
                         .successors()
                         .contains(&Some(boundary))

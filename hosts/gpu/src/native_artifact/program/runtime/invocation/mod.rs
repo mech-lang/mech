@@ -851,32 +851,7 @@ impl Invocation<'_, '_, '_> {
         {
             return Err(invalid("entry omitted current required helper"));
         }
-        let previous = if let Some((from, to)) = self.state.map_owners.closed_exit {
-            if self.state.control.previous != Some(from) || site != u64::from(to) {
-                return Err(invalid("visit outside closed map exit frontier"));
-            }
-            Some(from)
-        } else if let Some(previous) = self.state.control.previous
-            && let Some(group) = self
-                .descriptor
-                .metadata()
-                .map_admission
-                .group(previous as usize)
-            && self.admission_active(group)
-        {
-            if previous != group.start() {
-                return Err(invalid("native path lost its entry"));
-            }
-            Some(
-                group
-                    .predecessor(
-                        u32::try_from(site).map_err(|_| invalid("map path frontier overflow"))?,
-                    )
-                    .ok_or_else(|| invalid("visit outside prepaid native path frontier"))?,
-            )
-        } else {
-            self.state.control.previous
-        };
+        let previous = self.admission_predecessor(site)?;
         // A native scalar/aggregate latch has no managed move callback. Retire the
         // OTHER managed loop locals after that generated copy, before the next
         // visit, exactly as the managed latch used to do. Aggregate words own
@@ -1036,6 +1011,44 @@ impl Invocation<'_, '_, '_> {
         // this prepaid path's exact frontier; interior failures retain their
         // original source sites. No synthetic per-instruction visits occur.
         Ok(())
+    }
+
+    /// Read the same proved predecessor at visits and phase checkpoints.
+    /// A paid entry remains stored until the next boundary is actually visited.
+    #[inline]
+    pub(in crate::native_artifact::program::runtime) fn admission_predecessor(
+        &self,
+        site: u64,
+    ) -> Result<Option<u32>, NativeProgramExecutionError> {
+        Ok(
+            if let Some((from, to)) = self.state.map_owners.closed_exit {
+                if self.state.control.previous != Some(from) || site != u64::from(to) {
+                    return Err(invalid("visit outside closed map exit frontier"));
+                }
+                Some(from)
+            } else if let Some(previous) = self.state.control.previous
+                && let Some(group) = self
+                    .descriptor
+                    .metadata()
+                    .map_admission
+                    .group(previous as usize)
+                && self.admission_active(group)
+            {
+                if previous != group.start() {
+                    return Err(invalid("native path lost its entry"));
+                }
+                Some(
+                    group
+                        .predecessor(
+                            u32::try_from(site)
+                                .map_err(|_| invalid("map path frontier overflow"))?,
+                        )
+                        .ok_or_else(|| invalid("visit outside prepaid native path frontier"))?,
+                )
+            } else {
+                self.state.control.previous
+            },
+        )
     }
 
     fn admission_active(
