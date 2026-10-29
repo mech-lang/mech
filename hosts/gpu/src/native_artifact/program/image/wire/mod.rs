@@ -158,7 +158,7 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
     // reader; it retains all metadata until exact checked-build provenance holds.
     let plan =
         unsafe { decode_build_owned_native_plan_body(w.plan.get().as_bytes(), &schemas, catalog)? };
-    let calls = w
+    let mut calls = w
         .calls
         .iter()
         .map(|image| {
@@ -203,6 +203,7 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
         .map_err(str::to_owned)?;
     let closed_tails: native::program::prepare::tail::Layout = w.closed_tails.into();
     let buffer_frames = plan.facts().buffer_frames();
+    native::program::prepare::prepare_frame_composition(&plan, &buffer_frames, &mut calls)?;
     native::program::prepare::tail::validate_image(&plan, &buffer_frames, &calls, &closed_tails)?;
     let frozen_maps = w
         .map_owner_words

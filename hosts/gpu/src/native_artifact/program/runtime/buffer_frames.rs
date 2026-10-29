@@ -1,8 +1,8 @@
 //! Planned native words and managed-owner lanes for nonescaping argument frames.
 use super::*;
 use mech_engine::native_artifact::{
-    NativeBufferFrameLane as Lane, NativeBufferFrames as Layout, NativeMatchValue,
-    NativeScalarValue,
+    NativeBufferFrameField as FrameField, NativeBufferFrameLane as Lane,
+    NativeBufferFrames as Layout, NativeMatchValue, NativeScalarValue,
 };
 
 pub(super) struct BufferFrames {
@@ -113,6 +113,7 @@ impl BufferFrames {
         &mut self,
         layout: &Layout,
         output: NativeMatchValue,
+        operands: &[NativeMatchValue],
         inputs: &[Option<Value>],
         bits: &[u64],
         work: &mut NativeWorkMeter,
@@ -120,31 +121,132 @@ impl BufferFrames {
         let fields = layout
             .fields(output)
             .ok_or_else(|| invalid("private frame output has no lanes"))?;
-        if fields.len() != inputs.len() || bits.len() != inputs.len() {
+        if fields.len() != inputs.len()
+            || bits.len() != inputs.len()
+            || operands.len() != inputs.len()
+        {
             return Err(invalid("private frame input count differs"));
         }
-        work.charge(NativeExecutionPhase::Setup, amount(fields.len(), 64, 64)?)?;
+        work.charge(
+            NativeExecutionPhase::Setup,
+            amount(Self::field_count(layout, fields), 64, 64)?,
+        )?;
         // Validate the complete pack before changing any previous frame owner.
-        for ((field, owner), word) in fields.iter().zip(inputs).zip(bits) {
+        for (index, ((field, owner), word)) in fields.iter().zip(inputs).zip(bits).enumerate() {
             match field.lane() {
                 Lane::Scalar { kind, .. } if owner.is_none() && kind.accepts_bits(*word) => {}
                 Lane::Managed { .. }
                     if *word == 0
                         && owner.as_ref().is_some_and(|v| v.schema() == field.schema()) => {}
+                Lane::Composite { .. } if owner.is_none() && *word == 0 => {
+                    self.check_copy(
+                        layout,
+                        layout
+                            .fields(operands[index])
+                            .ok_or_else(|| invalid("private child has no source lanes"))?,
+                        layout.children(*field).unwrap(),
+                    )?;
+                }
                 _ => return Err(invalid("private frame field representation differs")),
             }
         }
-        let inner = self
-            .inner
-            .as_mut()
-            .ok_or_else(|| invalid("private frame lanes missing"))?;
-        for ((field, owner), word) in fields.iter().zip(inputs).zip(bits) {
+        for (index, ((field, owner), word)) in fields.iter().zip(inputs).zip(bits).enumerate() {
+            if let Some(children) = layout.children(*field) {
+                self.copy_fields(layout, layout.fields(operands[index]).unwrap(), children)?;
+                continue;
+            }
+            let inner = self
+                .inner
+                .as_mut()
+                .ok_or_else(|| invalid("private frame lanes missing"))?;
             match field.lane() {
                 Lane::Scalar { at, .. } => {
                     inner.words.values_mut()[at * 2] = *word;
                     inner.words.values_mut()[at * 2 + 1] = 1;
                 }
                 Lane::Managed { at } => inner.owners.values_mut()[at] = owner.clone(),
+                Lane::Composite { .. } => unreachable!("handled child span"),
+            }
+        }
+        Ok(())
+    }
+    fn field_count(layout: &Layout, fields: &[FrameField]) -> usize {
+        fields
+            .iter()
+            .map(|f| {
+                1 + layout
+                    .children(*f)
+                    .map_or(0, |children| Self::field_count(layout, children))
+            })
+            .sum()
+    }
+    pub(super) fn current_leaf(&self, field: FrameField) -> Option<(Option<&Value>, u64)> {
+        let inner = self.inner.as_ref()?;
+        match field.lane() {
+            Lane::Scalar { at, kind }
+                if inner.words.values()[at * 2 + 1] == 1
+                    && kind.accepts_bits(inner.words.values()[at * 2]) =>
+            {
+                Some((None, inner.words.values()[at * 2]))
+            }
+            Lane::Managed { at } => Some((Some(inner.owners.values()[at].as_ref()?), 0)),
+            _ => None,
+        }
+    }
+    fn check_copy(
+        &self,
+        layout: &Layout,
+        source: &[FrameField],
+        target: &[FrameField],
+    ) -> Result<(), NativeProgramExecutionError> {
+        if source.len() != target.len() {
+            return Err(invalid("private frame copy layouts differ"));
+        }
+        for (from, to) in source.iter().zip(target) {
+            if from.schema() != to.schema() {
+                return Err(invalid("private frame copy schemas differ"));
+            }
+            match (layout.children(*from), layout.children(*to)) {
+                (Some(a), Some(b)) => self.check_copy(layout, a, b)?,
+                (None, None) => {
+                    let same = match (from.lane(), to.lane()) {
+                        (Lane::Scalar { kind: a, .. }, Lane::Scalar { kind: b, .. }) => a == b,
+                        (Lane::Managed { .. }, Lane::Managed { .. }) => true,
+                        _ => false,
+                    };
+                    if !same || self.current_leaf(*from).is_none() {
+                        return Err(invalid("private frame source is not current"));
+                    }
+                }
+                _ => return Err(invalid("private frame source is not current")),
+            }
+        }
+        Ok(())
+    }
+    fn copy_fields(
+        &mut self,
+        layout: &Layout,
+        source: &[FrameField],
+        target: &[FrameField],
+    ) -> Result<(), NativeProgramExecutionError> {
+        for (from, to) in source.iter().zip(target) {
+            if let (Some(a), Some(b)) = (layout.children(*from), layout.children(*to)) {
+                self.copy_fields(layout, a, b)?;
+                continue;
+            }
+            let inner = self
+                .inner
+                .as_mut()
+                .ok_or_else(|| invalid("private frame lanes missing"))?;
+            match (from.lane(), to.lane()) {
+                (Lane::Scalar { at: from, .. }, Lane::Scalar { at: to, .. }) => {
+                    inner.words.values_mut()[to * 2] = inner.words.values()[from * 2];
+                    inner.words.values_mut()[to * 2 + 1] = 1;
+                }
+                (Lane::Managed { at: from }, Lane::Managed { at: to }) => {
+                    inner.owners.values_mut()[to] = inner.owners.values()[from].clone();
+                }
+                _ => return Err(invalid("private frame copy lanes differ")),
             }
         }
         Ok(())
@@ -165,40 +267,35 @@ impl BufferFrames {
         if source.len() != target.len() {
             return Err(invalid("private frame copy layouts differ"));
         }
-        work.charge(NativeExecutionPhase::Setup, amount(source.len(), 64, 64)?)?;
-        let inner = self
-            .inner
-            .as_mut()
-            .ok_or_else(|| invalid("private frame lanes missing"))?;
-        for (from, to) in source.iter().zip(target) {
-            if from.schema() != to.schema() {
-                return Err(invalid("private frame copy schemas differ"));
-            }
-            match (from.lane(), to.lane()) {
-                (Lane::Scalar { at, kind }, Lane::Scalar { kind: other, .. })
-                    if kind == other
-                        && inner.words.values()[at * 2 + 1] == 1
-                        && kind.accepts_bits(inner.words.values()[at * 2]) => {}
-                (Lane::Managed { at }, Lane::Managed { .. })
-                    if inner.owners.values()[at].is_some() => {}
-                _ => return Err(invalid("private frame source is not current")),
-            }
-        }
-        for (from, to) in source.iter().zip(target) {
-            match (from.lane(), to.lane()) {
-                (Lane::Scalar { at: from, .. }, Lane::Scalar { at: to, .. }) => {
-                    let bits = inner.words.values()[from * 2];
-                    inner.words.values_mut()[to * 2] = bits;
-                    inner.words.values_mut()[to * 2 + 1] = 1;
-                }
-                (Lane::Managed { at: from }, Lane::Managed { at: to }) => {
-                    let value = inner.owners.values()[from].clone();
-                    inner.owners.values_mut()[to] = value;
-                }
-                _ => unreachable!("validated frame layout"),
-            }
-        }
-        Ok(())
+        work.charge(
+            NativeExecutionPhase::Setup,
+            amount(Self::field_count(layout, source), 64, 64)?,
+        )?;
+        self.check_copy(layout, source, target)?;
+        self.copy_fields(layout, source, target)
+    }
+    pub(super) fn project_composite(
+        &mut self,
+        layout: &Layout,
+        source: NativeMatchValue,
+        ordinal: usize,
+        output: NativeMatchValue,
+        work: &mut NativeWorkMeter,
+    ) -> Result<(), NativeProgramExecutionError> {
+        let source = layout
+            .fields(source)
+            .and_then(|f| f.get(ordinal))
+            .and_then(|f| layout.children(*f))
+            .ok_or_else(|| invalid("private projection lacks child span"))?;
+        let target = layout
+            .fields(output)
+            .ok_or_else(|| invalid("private child output lacks lanes"))?;
+        work.charge(
+            NativeExecutionPhase::Setup,
+            amount(Self::field_count(layout, source), 64, 64)?,
+        )?;
+        self.check_copy(layout, source, target)?;
+        self.copy_fields(layout, source, target)
     }
     pub(super) fn project(
         &self,
@@ -408,17 +505,26 @@ impl BufferFrames {
             return Ok(false);
         };
         // Retirement consumes existing owner credit and invalidates word visits.
-        work.charge(NativeExecutionPhase::Setup, amount(fields.len(), 32, 32)?)?;
+        work.charge(
+            NativeExecutionPhase::Setup,
+            amount(Self::field_count(layout, fields), 32, 32)?,
+        )?;
         let inner = self
             .inner
             .as_mut()
             .ok_or_else(|| invalid("private frame lanes missing"))?;
+        Self::retire_fields(inner, layout, fields);
+        Ok(true)
+    }
+    fn retire_fields(inner: &mut FrameLanes, layout: &Layout, fields: &[FrameField]) {
         for field in fields {
             match field.lane() {
                 Lane::Scalar { at, .. } => inner.words.values_mut()[at * 2..at * 2 + 2].fill(0),
                 Lane::Managed { at } => inner.owners.values_mut()[at] = None,
+                Lane::Composite { .. } => {
+                    Self::retire_fields(inner, layout, layout.children(*field).unwrap())
+                }
             }
         }
-        Ok(true)
     }
 }

@@ -68,6 +68,12 @@ pub(super) fn derive(
     let fields = frames
         .fields(value)
         .ok_or("numeric result tuple escapes or lacks exact private fields")?;
+    if fields
+        .iter()
+        .any(|f| matches!(f.lane(), Lane::Composite { .. }))
+    {
+        return Err("numeric result requires flat fields");
+    }
     let managed = fields
         .iter()
         .enumerate()
