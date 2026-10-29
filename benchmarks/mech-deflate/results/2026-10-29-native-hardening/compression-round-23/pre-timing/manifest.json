@@ -1,0 +1,101 @@
+{
+  "production": "299c70f4ce21eb3cba94dcb47e4d37106cc14b29",
+  "entries": [
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/core-units/build.json",
+      "archive": "core-units-build.json",
+      "bytes": 11245,
+      "sha256": "ce55396e3e4443d30edd0efa0855a6521f018991b636ed7152dc1b4aa3dac195"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/core-units/build.log",
+      "archive": "core-units-build.log",
+      "bytes": 1424,
+      "sha256": "79b9144d52e6b56889345eb00bb0764fb6aa34da0d5867ad3a4f201695224708"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/core-units-corrected/build.json",
+      "archive": "core-units-corrected-build.json",
+      "bytes": 11255,
+      "sha256": "06299786a484684821d0a868f89d7068afca12dcb30e0c58a053a9ee577bc87d"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/core-units-corrected/build.log",
+      "archive": "core-units-corrected-build.log",
+      "bytes": 1543,
+      "sha256": "b996f592f40ab6a096f77a15cf4371e11b506b499022a86be66bff48114c2bb3"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/core-units-final/all-core.json",
+      "archive": "core-units-final-all-core.json",
+      "bytes": 287,
+      "sha256": "29df75e4572d5f1ca7519399568dee72ba9279b057c6ee625e2f03ead5938855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/core-units-final/all-core.log",
+      "archive": "core-units-final-all-core.log.gz",
+      "bytes": 36055,
+      "sha256": "69c96322c53d33348a51b4afb537eac11b084d84a1fe5e89a792432151eba078"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/core-units-final/build.json",
+      "archive": "core-units-final-build.json",
+      "bytes": 11251,
+      "sha256": "8d82348f6473099424009a80104d4575441c21607bf35032f9cadc6a09704674"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/core-units-final/build.log",
+      "archive": "core-units-final-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/core-units-final/run.json",
+      "archive": "core-units-final-run.json",
+      "bytes": 323,
+      "sha256": "f625beca079dc794b32bfe18f2f81d086610f4a3f458395fcac68d4630375a34"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/core-units-final/run.log",
+      "archive": "core-units-final-run.log",
+      "bytes": 527,
+      "sha256": "bc3239c5277f318b71f400238a4eef48583199acc1801c62ad4a5bc6d6e9597d"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/codegen-pattern/budget-pattern-c.s",
+      "archive": "codegen-pattern-budget-pattern-c.s.gz",
+      "bytes": 480,
+      "sha256": "b8323e27188fcdadca2f82918311e766ffa9120b706205d78ba305039e4ca2bd"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/codegen-pattern/budget-pattern-rust.s",
+      "archive": "codegen-pattern-budget-pattern-rust.s.gz",
+      "bytes": 1616,
+      "sha256": "7d8d3cd662ffbf5f16fa138d89934b80ad6fd7a64a053fbe5c4480066d954914"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/codegen-pattern/budget-pattern.c",
+      "archive": "codegen-pattern-budget-pattern.c.gz",
+      "bytes": 176,
+      "sha256": "07c94116f30ce70030bd0902b8c4ecb046aeacada5098a72942b37f1ae8144a3"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/codegen-pattern/budget-pattern.rs",
+      "archive": "codegen-pattern-budget-pattern.rs.gz",
+      "bytes": 1022,
+      "sha256": "6b747db1bf273bffe59e35add79e696802c1001595a8d6b4d67ad1f6e8948f43"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/codegen-pattern/commands.json",
+      "archive": "codegen-pattern-commands.json",
+      "bytes": 1407,
+      "sha256": "ff273b37d3d7cb5eb8ad4ba4760f443d8d3b61b0d66c674c6d52ff6fb388d5aa"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/codegen-pattern/comparison.json",
+      "archive": "codegen-pattern-comparison.json",
+      "bytes": 567,
+      "sha256": "1c59865fd8cd695d1350656ffcc64d51887a415fa162f6a8e8e10df23f7aa099"
+    }
+  ]
+}
