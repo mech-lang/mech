@@ -1,0 +1,66 @@
+{
+  "schema": "mech.optimization.failure-dispositions.v1",
+  "attempts": [
+    {
+      "attempt": "red",
+      "classification": "inherited policy denial/test setup",
+      "disposition": "Default resident ComputeWork19575586 exceeds16777216 at real path capacity. Preserve policy; compare small0/1 resident cases and exact full literal."
+    },
+    {
+      "attempt": "red-corrected",
+      "classification": "inherited policy denial/test setup",
+      "disposition": "Default resident ComparisonWork66277 exceeds65536 at257 small appends. Preserve allowance and require exact native sentinel output."
+    },
+    {
+      "attempt": "red-final",
+      "classification": "expected parent missing-optimization witness",
+      "disposition": "Parent completes real source with correct result but fails required native Append selection."
+    },
+    {
+      "attempt": "core-initial",
+      "classification": "introduced test build error, fixed",
+      "disposition": "U64 try_from cannot fail; avoid irrefutable let-else in test macro while keeping -Dwarnings."
+    },
+    {
+      "attempt": "components",
+      "classification": "introduced test build error, fixed",
+      "disposition": "Use actual MemoryBudgetLimits.max_retained_nodes field, not nonexistent max_node_count."
+    },
+    {
+      "attempt": "components-corrected",
+      "classification": "introduced integration defect and invalid test geometry, fixed",
+      "disposition": "Mode5 cold boundary now permits sealed Write|Append. Generic caller uses sequence/reserve to establish same rank2 row as append result; pinned source untouched."
+    },
+    {
+      "attempt": "components-fixed",
+      "classification": "introduced test assumption, corrected; alternate lowering failure proven inherited",
+      "disposition": "Use compute1 for real finite denial; half total report work is not the library budget. Both frozen clean-parent and current binaries reject alternate.mec native lowering with WitnessTypeMismatch node5 before measurement. Required stale-length qualification uses the otherwise-valid guarded recurrence and passes; the inherited alternate remains archived and is outside this compiler patch."
+    },
+    {
+      "attempt": "components-final",
+      "classification": "introduced positive test configuration error, corrected",
+      "disposition": "Use existing component limits for positive finite case; arbitrary1MB temporary cap was below required1171662. Existing production/component allowances unchanged."
+    },
+    {
+      "attempt": "primary-fixed",
+      "classification": "provisional timing; pointer contract repair required",
+      "disposition": "Preserve all samples; slice-derived address did not establish access to spare Vec cells. Core reserved_native_view obtains allocation directly and forms no cell slice during loan. Added real all-width empty/nonempty raw producer regression; qualified repeat required."
+    },
+    {
+      "attempt": "core-reserved-view / core-reserved-view-final",
+      "classification": "test-selector coverage omission, corrected",
+      "disposition": "Both runs passed11 existing owned-buffer tests with342 filtered, so they did not exercise the newly added raw native-view test. The subsequent actual full-Core run executes and passes all353, including that new test."
+    },
+    {
+      "attempt": "full-components-final:220 pass,2 fail",
+      "classification": "introduced obsolete route assumptions, corrected in d9dbae9ba467c23b7613f4b43b2c6d707f185799",
+      "disposition": "Reversal exact256 bytes unchanged; require new native append scalar/stores/guards/zero-helper proof instead of now-subsumed ordinary scalar group. Ordinary frame payload accounting compared native small vs fallback real reservation; tighten max_output_elements to3 for both, preserving0/1/3 results and exact one-payload delta. No allowance raised and no compiler/source change. Focused2 pass; full222 rerun passes."
+    },
+    {
+      "attempt": "host-config sysctl first attempt",
+      "classification": "environmental sandbox denial, resolved",
+      "disposition": "Read-only CPU query denied in sandbox; permitted host query succeeds Apple M1. Both receipts retained. No benchmark overlap or configuration change."
+    }
+  ],
+  "unrelated_inherited": "Resident public nested record NodeId2 InvalidInput established at round20; not reopened."
+}

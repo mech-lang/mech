@@ -1,0 +1,168 @@
+{
+  "before": {
+    "admits": 67665,
+    "helpers": 39927
+  },
+  "after": {
+    "admits": 33497,
+    "helpers": 19255
+  },
+  "new_regions": [
+    {
+      "header": 9215,
+      "iteration": 96,
+      "before": {
+        "admits": 5665,
+        "helpers": 3347
+      },
+      "after": {
+        "admits": 0,
+        "helpers": 1
+      }
+    },
+    {
+      "header": 9261,
+      "iteration": 97,
+      "before": {
+        "admits": 55,
+        "helpers": 32
+      },
+      "after": {
+        "admits": 15,
+        "helpers": 8
+      }
+    },
+    {
+      "header": 12388,
+      "iteration": 135,
+      "before": {
+        "admits": 2837,
+        "helpers": 1804
+      },
+      "after": {
+        "admits": 0,
+        "helpers": 1
+      }
+    },
+    {
+      "header": 15265,
+      "iteration": 169,
+      "before": {
+        "admits": 5674,
+        "helpers": 3608
+      },
+      "after": {
+        "admits": 0,
+        "helpers": 2
+      }
+    },
+    {
+      "header": 19545,
+      "iteration": 216,
+      "before": {
+        "admits": 11330,
+        "helpers": 6694
+      },
+      "after": {
+        "admits": 0,
+        "helpers": 2
+      }
+    },
+    {
+      "header": 19591,
+      "iteration": 217,
+      "before": {
+        "admits": 110,
+        "helpers": 64
+      },
+      "after": {
+        "admits": 30,
+        "helpers": 16
+      }
+    },
+    {
+      "header": 26864,
+      "iteration": 299,
+      "before": {
+        "admits": 2837,
+        "helpers": 1804
+      },
+      "after": {
+        "admits": 0,
+        "helpers": 1
+      }
+    },
+    {
+      "header": 31055,
+      "iteration": 344,
+      "before": {
+        "admits": 0,
+        "helpers": 0
+      },
+      "after": {
+        "admits": 0,
+        "helpers": 0
+      }
+    },
+    {
+      "header": 35609,
+      "iteration": 394,
+      "before": {
+        "admits": 5665,
+        "helpers": 3347
+      },
+      "after": {
+        "admits": 0,
+        "helpers": 1
+      }
+    },
+    {
+      "header": 35655,
+      "iteration": 395,
+      "before": {
+        "admits": 55,
+        "helpers": 32
+      },
+      "after": {
+        "admits": 15,
+        "helpers": 8
+      }
+    },
+    {
+      "header": 39702,
+      "iteration": 435,
+      "before": {
+        "admits": 0,
+        "helpers": 0
+      },
+      "after": {
+        "admits": 0,
+        "helpers": 0
+      }
+    },
+    {
+      "header": 39801,
+      "iteration": 437,
+      "before": {
+        "admits": 0,
+        "helpers": 0
+      },
+      "after": {
+        "admits": 0,
+        "helpers": 0
+      }
+    },
+    {
+      "header": 39900,
+      "iteration": 439,
+      "before": {
+        "admits": 0,
+        "helpers": 0
+      },
+      "after": {
+        "admits": 0,
+        "helpers": 0
+      }
+    }
+  ]
+}

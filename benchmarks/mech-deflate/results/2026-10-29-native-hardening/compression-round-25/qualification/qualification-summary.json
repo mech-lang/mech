@@ -1,0 +1,160 @@
+{
+  "production_head": "4056f93118f499515048dac61d9d52558ef03aef",
+  "qualified_source_head": "d9dbae9ba467c23b7613f4b43b2c6d707f185799",
+  "rust_tests": 1116,
+  "suites": [
+    {
+      "suite": "Core",
+      "tests": 353,
+      "failed": 0,
+      "filtered": 0,
+      "receipt": "core-final-full/run.json",
+      "command": [
+        "/private/tmp/mech-append-loops-round25-20261029/core-final-full/core-unit-tests",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "seconds": 1.187299916986376
+    },
+    {
+      "suite": "Engine",
+      "tests": 227,
+      "failed": 0,
+      "filtered": 900,
+      "receipt": "engine-units/run.json",
+      "command": [
+        "/private/tmp/mech-append-loops-round25-20261029/engine-units/engine-tests",
+        "resident::budget::",
+        "native_projection_meter_tests",
+        "frame_recipe",
+        "text_line_",
+        "shared_boolean_edge_facts",
+        "native_collection_",
+        "native_text_line_",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "seconds": 7.567200290970504
+    },
+    {
+      "suite": "GPU runtime",
+      "tests": 301,
+      "failed": 0,
+      "filtered": 131,
+      "receipt": "runtime-census/runtime-cohort.json",
+      "command": [
+        "/private/tmp/mech-append-loops-round25-20261029/runtime-census/gpu-unit-tests",
+        "native_artifact::program::runtime::",
+        "--skip",
+        "complete_unchanged_knucleotide_body_uses_the_owned_emitted_map",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "seconds": 39.54791433294304
+    },
+    {
+      "suite": "GPU memory admission",
+      "tests": 1,
+      "failed": 0,
+      "filtered": 431,
+      "receipt": "runtime-census/memory-admission.json",
+      "command": [
+        "/private/tmp/mech-append-loops-round25-20261029/runtime-census/gpu-unit-tests",
+        "native_artifact::memory::admission_tests::typed_transport_admission_includes_exact_initialization_metadata",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "seconds": 0.008247458143159747
+    },
+    {
+      "suite": "GPU closed-tail funding",
+      "tests": 1,
+      "failed": 0,
+      "filtered": 431,
+      "receipt": "runtime-census/closed-tail-fuel.json",
+      "command": [
+        "/private/tmp/mech-append-loops-round25-20261029/runtime-census/gpu-unit-tests",
+        "native_artifact::work::tests::closed_tail_fuel_observes_the_same_spent_account_and_declines_nested_scopes",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "seconds": 0.007722624810412526
+    },
+    {
+      "suite": "components",
+      "tests": 222,
+      "failed": 0,
+      "filtered": 238,
+      "receipt": "full-components-qualified.json",
+      "command": [
+        "/private/tmp/mech-append-loops-round25-20261029/components-route-corrected/nested-component-tests",
+        "scalar_path_qualification",
+        "multi_result_qualification",
+        "nested_frame_qualification",
+        "scalar_record_qualification",
+        "record_buffer_qualification",
+        "packed_update_qualification",
+        "buffer_frame_qualification",
+        "sequence_capacity_qualification",
+        "collection_qualification",
+        "uniform_words_qualification",
+        "word_read_qualification",
+        "narrow_word_qualification",
+        "matchfinder_qualification",
+        "assembled_compressor_source_preserves_its_pinned_bytes",
+        "scalar_state_qualification",
+        "tail_qualification",
+        "costs_qualification",
+        "default_costs_qualification",
+        "pinned_min_cost_paths_keep_exact_nodes_and_real_reservation",
+        "path_checks_preserve_entry_order_publication_aliases_and_recovery",
+        "argument_transport_qualification",
+        "shared_transport_qualification",
+        "numeric_write_qualification",
+        "numeric_tail_qualification",
+        "numeric_result_qualification",
+        "numeric_predicate_qualification",
+        "dynamic_projection_qualification",
+        "binding_pressure_qualification",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "seconds": 84.65562637499534
+    },
+    {
+      "suite": "selected scalar",
+      "tests": 8,
+      "failed": 0,
+      "filtered": 1,
+      "receipt": "final-primary/selected-native-run.json",
+      "command": [
+        "/private/tmp/mech-append-loops-round25-20261029/final-primary/selected-native-tests",
+        "--nocapture",
+        "--test-threads=1",
+        "--skip",
+        "all_certified_scalar_primitives_match_ordinary_resident_original_and_decoded"
+      ],
+      "seconds": 0.9701775829307735
+    },
+    {
+      "suite": "bits",
+      "tests": 3,
+      "failed": 0,
+      "filtered": 0,
+      "receipt": "final-primary/selected-bits-run.json",
+      "command": [
+        "/private/tmp/mech-append-loops-round25-20261029/final-primary/selected-bits-tests",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "seconds": 0.9500368749722838
+    }
+  ],
+  "diagnostic_census_tests": 1,
+  "scalar_controls": 12,
+  "architecture_checks": 12,
+  "post_test_update_checks": 3,
+  "failed_attempts": "failure-dispositions.json"
+}
