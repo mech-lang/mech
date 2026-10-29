@@ -699,6 +699,17 @@ fn ordinary_frame_admission_keeps_exact_work_prefixes_and_current_owners() {
             let (result, used) = observe("output-limit", &[0, 0, 3, 1], policy);
             assert!(result.is_err());
             assert_eq!(used, success);
+            policy.max_compute_work = Some(success.0 - 1);
+            let (result, used) = observe("compute-before-output", &[0, 0, 3, 1], policy);
+            assert!(format!("{:?}", result.unwrap_err()).contains("ComputeWork"));
+            assert_eq!(used, (success.0 - 64, 0));
+            let (result, used) = observe("bad-scalar-before-output", &[0, 0, 3, 2], policy);
+            assert_eq!(format!("{:?}", result.unwrap_err()), "InvalidInput");
+            assert_eq!(used, (success.0 - 192, 0));
+            policy.max_compute_work = Some(success.0 - 193);
+            let (result, used) = observe("compute-before-bad-scalar", &[0, 0, 3, 2], policy);
+            assert!(format!("{:?}", result.unwrap_err()).contains("ComputeWork"));
+            assert_eq!(used, (success.0 - 256, 0));
             observe("retry", &[0, 0, 5, 0], limits().library).0.unwrap();
             assert_eq!(
                 (memory.used_bytes(), memory.retained_snapshot_nodes()),

@@ -16,6 +16,11 @@ use crate::memory_planner::{
 #[cfg(test)]
 #[path = "borrowed_metadata_scan_tests.rs"]
 mod borrowed_metadata_scan_tests;
+#[cfg(all(feature = "native-artifact", feature = "sequence_buffers"))]
+#[path = "native_frame_footprint.rs"]
+mod frame_footprint;
+#[cfg(all(feature = "native-artifact", feature = "sequence_buffers"))]
+pub(crate) use frame_footprint::PreparedNativeFrameFootprint;
 #[cfg(all(
     feature = "native-artifact",
     any(
@@ -2355,7 +2360,7 @@ pub(crate) fn measure_canonical_value_footprint(
 // These are logical metadata-inspection units, not a serialized-byte scan or
 // machine instruction count. Each schema node and data chunk needs a bounded
 // number of variant, slice-length, checked-size and child-selection operations.
-pub(super) const BORROWED_FOOTPRINT_METADATA_WORK: u64 = 64;
+const BORROWED_FOOTPRINT_METADATA_WORK: u64 = 64;
 // This is only a fast-path eligibility cutoff. Deeper schemas keep the existing
 // full measurement path; the cutoff does not make a value ineligible to execute.
 const BORROWED_FOOTPRINT_SCHEMA_DEPTH: usize = 32;
@@ -2646,19 +2651,11 @@ pub(crate) fn measure_native_scalar_frame_footprint(
     schema: &SchemaBody,
     value: crate::native_artifact::NativeScalarValue,
 ) -> Result<ValueFootprint, ResidentKernelError> {
-    use crate::native_artifact::{NativeScalarKind, NativeScalarValue as Scalar};
+    use crate::native_artifact::NativeScalarKind;
     if NativeScalarKind::from_schema_body(schema) != Some(value.kind()) {
         return Err(ResidentKernelError::InvalidInput);
     }
-    let data = match value {
-        Scalar::Bool(v) => ValueData::Bool(v),
-        Scalar::U8(v) => ValueData::U8(v),
-        Scalar::U16(v) => ValueData::U16(v),
-        Scalar::U32(v) => ValueData::U32(v),
-        Scalar::U64(v) => ValueData::U64(v),
-        Scalar::I64(v) => ValueData::I64(v),
-        Scalar::F64(v) => ValueData::F64(v),
-    };
+    let data = native_scalar_frame_data(value);
     meter.charge_compute_work(BORROWED_FOOTPRINT_METADATA_WORK)?;
     if !borrowed_footprint_schema_supported(meter, schema, 0)? {
         return Err(ResidentKernelError::InvalidInput);
@@ -2666,6 +2663,20 @@ pub(crate) fn measure_native_scalar_frame_footprint(
     meter.charge_retained_nodes(1)?;
     let data = measure_proven_borrowed_canonical_data_footprint(meter, schema, &data, true)?;
     projected_canonical_value_footprint(data, 0)
+}
+
+#[cfg(all(feature = "native-artifact", feature = "sequence_buffers"))]
+fn native_scalar_frame_data(value: crate::native_artifact::NativeScalarValue) -> ValueData {
+    use crate::native_artifact::NativeScalarValue as Scalar;
+    match value {
+        Scalar::Bool(v) => ValueData::Bool(v),
+        Scalar::U8(v) => ValueData::U8(v),
+        Scalar::U16(v) => ValueData::U16(v),
+        Scalar::U32(v) => ValueData::U32(v),
+        Scalar::U64(v) => ValueData::U64(v),
+        Scalar::I64(v) => ValueData::I64(v),
+        Scalar::F64(v) => ValueData::F64(v),
+    }
 }
 
 /// Measures a borrowed value whose exact schema identity and supported body
