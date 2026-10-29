@@ -797,6 +797,7 @@ fn restored_numeric_leaf_rejects_stale_views_offsets_prices_and_factory_associat
         super::numeric_write_qualification::WRITE,
         super::numeric_result_qualification::GENERIC,
         super::multi_result_qualification::SOURCE,
+        super::multi_result_qualification::RECORD_SOURCE,
     ]
     .into_iter()
     .flat_map(|source| artifacts(source).0)
