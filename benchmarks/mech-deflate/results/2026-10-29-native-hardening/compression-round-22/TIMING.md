@@ -1,4 +1,6 @@
-# Ordinary scalar-path admission: protected complete compression
+# Initial scalar-path timing: activation validation repair still required
+
+The compiler in this initial series later fails the unchanged independent cost-table activation qualification. All observations are retained with their original compiler. The corrected compiler requires its own paired timing/profile; this initial series must not be relabeled as that result.
 
 Base4857600c48a97c83b51f97535232cb6a12f224a6; productionc8700e178ab42682b3b7b79d306510e6f50dbf67; qualification/head3d1796ab9ea7b69333c41364b37f93b91c4b54d3. IR125/work93/ABI36/bytecode14. Default selected-operation release71.373s(see exact receipt); no production change during build or timing. Five focused original/decoded tests and30 actual internal GPU admission/phase/fuel tests pass before primary. No compiler,test orother benchmark overlaps protected primary or its separate profile.
 
