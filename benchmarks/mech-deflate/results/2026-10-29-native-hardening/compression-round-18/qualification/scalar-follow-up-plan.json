@@ -1,0 +1,6 @@
+{
+  "condition": "Only if a fresh initial protected scalar pair exceeds unchanged 1.05 timing guard; allocation checks must still pass.",
+  "scope": "Exactly the affected case/steps, both original and decoded forms, retained unchanged before/after binaries.",
+  "fixed_design": "Eight alternating-order paired process measurements per form, five measured samples each and unchanged invocation counts. Save every row and command. No compiler/source/limit changes or selective rerolls.",
+  "interpretation": "Keep initial exceedance explicit. Report every follow-up pair plus pooled and median-paired ratios; do not relabel initial suite all green. A persistent >5% observation remains unresolved."
+}

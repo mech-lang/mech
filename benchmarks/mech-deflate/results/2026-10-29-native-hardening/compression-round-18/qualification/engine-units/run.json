@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/private/tmp/mech-record-boundaries-round18-20261029/engine-units/engine-tests",
+    "resident::budget::",
+    "native_projection_meter_tests",
+    "frame_recipe",
+    "text_line_",
+    "shared_boolean_edge_facts",
+    "native_collection_",
+    "native_text_line_",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 7.179073791950941,
+  "binary_sha256": "c043c5bea5098db422a0bcf9274c137fa33fc85b1467136dc709aef8e1c1c2f4"
+}

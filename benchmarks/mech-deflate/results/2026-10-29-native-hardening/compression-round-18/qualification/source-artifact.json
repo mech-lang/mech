@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-live-control-target/release/artifact_review",
+    "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mec",
+    "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc"
+  ],
+  "exit": 0,
+  "seconds": 56.730767000000924,
+  "binary_sha256": "b178d6a52fa5ac25676d3874bb6c0074ce2792193556efad95fffcb8f10c08e3",
+  "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+  "artifact_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+  "compression_executed": false
+}
