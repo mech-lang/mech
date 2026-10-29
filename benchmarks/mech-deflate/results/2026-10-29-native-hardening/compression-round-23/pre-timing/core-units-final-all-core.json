@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-budget-checks-round23-20261029/core-units-final/core-unit-tests",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.8828825410455465,
+  "binary_sha256": "970ffd2200712d6e1a199d387d0959c3b94f619a7d7899b266b41c8e354bc796"
+}

@@ -1,0 +1,22 @@
+{
+  "rust_first_instructions": [
+    "mov\tw8, #7",
+    "cmp\tx1, x3",
+    "csel\tx8, x8, xzr, hi",
+    "cmp\tx0, x2",
+    "csinc\tx0, x8, xzr, ls",
+    "ret"
+  ],
+  "clang_instructions": [
+    "mov\tw8, #7",
+    "cmp\tx1, x3",
+    "csel\tx8, x8, xzr, hi",
+    "cmp\tx0, x2",
+    "csinc\tx0, x8, xzr, ls",
+    "ret"
+  ],
+  "identical_instructions": true,
+  "first_stack_bytes": 0,
+  "full_wrapper_stack_bytes": 304,
+  "scope": "Two-dimension optimized API code-generation witness only, not a compressor timing or claim that every hot call has this exact assembly."
+}

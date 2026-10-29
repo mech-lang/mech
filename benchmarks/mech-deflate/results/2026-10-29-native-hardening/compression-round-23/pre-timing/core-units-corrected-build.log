@@ -1,0 +1,33 @@
+error[E0277]: can't compare `u16` with `i32`
+   --> /private/tmp/mech-deflate-linear-stack/src/core/src/memory_plan/budget.rs:269:53
+    |
+269 |             let limit = |bit| (mask & (1u16 << bit) != 0).then_some(0);
+    |                                                     ^^ no implementation for `u16 == i32`
+    |
+    = help: the trait `PartialEq<i32>` is not implemented for `u16`
+help: the following other types implement trait `PartialEq<Rhs>`
+   --> /rustc/ec818fda361ca216eb186f5cf45131bd9c776bb4/library/core/src/cmp.rs:1876:12
+    |
+    = note: `u16` implements `PartialEq`
+   ::: /rustc/ec818fda361ca216eb186f5cf45131bd9c776bb4/library/core/src/cmp.rs:1900:5
+    |
+    = note: in this macro invocation
+    |
+   ::: /Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.151/src/value/partial_eq.rs:76:13
+    |
+ 76 |               impl PartialEq<Value> for $ty {
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `u16` implements `PartialEq<serde_json::Value>`
+...
+ 97 | / partialeq_numeric! {
+ 98 | |     eq_i64[i8 i16 i32 i64 isize]
+ 99 | |     eq_u64[u8 u16 u32 u64 usize]
+100 | |     eq_f32[f32]
+101 | |     eq_f64[f64]
+102 | |     eq_bool[bool]
+103 | | }
+    | |_- in this macro invocation
+    = note: this error originates in the macro `partial_eq_impl` which comes from the expansion of the macro `partialeq_numeric` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: aborting due to 1 previous error
+
+For more information about this error, try `rustc --explain E0277`.
