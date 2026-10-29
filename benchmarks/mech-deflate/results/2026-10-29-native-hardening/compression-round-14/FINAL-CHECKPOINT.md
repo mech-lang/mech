@@ -1,0 +1,11 @@
+# Direct current-shape checks after prepared admission
+
+Base: `d840ea83797e8a47ebf16dbaf86816b0bc86710a`, which commits the separately measured shared-proof footprint implementation.
+
+The same `FrameShapeRecipe` now stores each output parameter's last binding axis, derived in one linear pass. Only after the current flat scalar/packed-field recipe has validated every input and successfully admitted the unchanged complete footprint debit may the call compare current axes directly. Constants, distinct parameters and repeated-parameter equalities are checked in current input parameter arenas. Every output matrix has the same extents and checked element-count product as its validated child; output parameters are already proven unconstrained Turn parameters. No current shape, argument or successful admission is retained.
+
+Any miss uses the unchanged original constructor. Unsupported layouts and denied footprint previews also keep the constructor path. Metadata fees, normalization envelope reservations, current logical output bounds and work/error ordering remain unchanged. No public shape API, ABI, IR, work price or bytecode identity changes. No compressor source, allocation site, timing boundary, table, limit or policy changes.
+
+Validation before timing: optimized selected-operation release build passes; 101 actual Engine budget/worker/projection/shape tests pass with warnings denied. The additional constructor-parity test covers changing 2×3/3×2 shapes, zero products with unequal extents, repeated parameters and a valid u64::MAX×0 shape. Existing constant/repeated-axis parity and unsupported bounded/persistent/computed relations remain covered. All twelve static contracts pass.
+
+All 12 maintained frame tests pass. Their 144 cases retain exact agreement with all 120 original baseline observations plus 24 competing-error cases. Both artifact forms, fresh owners, alias identity, real table sizes, finite work prefixes, cleanup and retry remain intact. The forthcoming protected campaign compares the final compiler with the round13 baseline and the prepared-footprint-only control, using the unchanged eight-byte harness and pinned allocator. Full component/scalar qualification follows; no further optimization starts before this timing packet is committed.
