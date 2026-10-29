@@ -1,0 +1,42 @@
+{
+  "head": "2427adf7b52e9957ea2b50a24e3a52ed872aa731",
+  "ci": {
+    "workflow_runs": [
+      {
+        "id": 40817963310,
+        "name": "CI",
+        "status": "completed",
+        "conclusion": "cancelled",
+        "run_number": 6320,
+        "jobs_url": "https://api.github.com/repos/mech-lang/mech/actions/runs/40817963310/jobs",
+        "logs_url": "https://api.github.com/repos/mech-lang/mech/actions/runs/40817963310/logs",
+        "workflow_id": 253085548
+      }
+    ]
+  },
+  "clean_review_url": "https://github.com/mech-lang/mech/pull/973#issuecomment-6487999056",
+  "review_comment": [
+    {
+      "url": "https://github.com/mech-lang/mech/pull/973#issuecomment-6487999056",
+      "body": "<!-- codex-review-receipt:v1 -->\n\nCodex Review: Didn't find any major issues. :+1:\n\n**Reviewed commit:** `2427adf7b5`\n\n<details> <summary>\u2139\ufe0f About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\".\n\nIf Codex has suggestions, it will comment; otherwise it will react with \ud83d\udc4d.\n\n\n\n\nCodex can also answer questions or update the PR. Try commenting \"@codex address that feedback\".\n            \n</details>",
+      "user": {
+        "login": "chatgpt-codex-connector[bot]",
+        "name": "chatgpt-codex-connector[bot]",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+        "id": 199175422
+      },
+      "id": 6487999056,
+      "pull_request_review_id": null,
+      "in_reply_to_id": null,
+      "created_at": "2026-10-29T04:31:54Z",
+      "updated_at": "2026-10-29T04:31:54Z",
+      "review": null,
+      "side": null,
+      "line": null,
+      "start_line": null,
+      "path": null,
+      "body_html": "\n<p dir=\"auto\">Codex Review: Didn't find any major issues. \ud83d\udc4d</p>\n<p dir=\"auto\"><strong>Reviewed commit:</strong> <code class=\"notranslate\">2427adf7b5</code></p>\n<details> <summary>\u2139\ufe0f About Codex in GitHub</summary>\n<br>\n<p dir=\"auto\"><a href=\"https://chatgpt.com/codex/cloud/settings/general\" rel=\"nofollow\">Your team has set up Codex to review pull requests in this repo</a>. Reviews are triggered when you</p>\n<ul dir=\"auto\">\n<li>Open a pull request for review</li>\n<li>Mark a draft as ready</li>\n<li>Comment \"<a class=\"user-mention notranslate\" data-hovercard-type=\"user\" data-hovercard-url=\"/users/codex/hovercard\" data-octo-click=\"hovercard-link-click\" data-octo-dimensions=\"link_type:self\" href=\"https://github.com/codex\">@codex</a> review\".</li>\n</ul>\n<p dir=\"auto\">If Codex has suggestions, it will comment; otherwise it will react with \ud83d\udc4d.</p>\n<p dir=\"auto\">Codex can also answer questions or update the PR. Try commenting \"<a class=\"user-mention notranslate\" data-hovercard-type=\"user\" data-hovercard-url=\"/users/codex/hovercard\" data-octo-click=\"hovercard-link-click\" data-octo-dimensions=\"link_type:self\" href=\"https://github.com/codex\">@codex</a> address that feedback\".</p>\n</details>"
+    }
+  ]
+}

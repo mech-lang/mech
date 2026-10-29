@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-frame-admission-round14-20261029/final-primary/selected-bits-tests",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.9324954161420465,
+  "binary_sha256": "9ab39874e4c1a2be1a9c00aedb214ea8aeba488548b6c2204d470c62dfbe51ff",
+  "skipped_coverage": null
+}

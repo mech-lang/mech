@@ -1,0 +1,1 @@
+The completed round 14 review packet is [CLOSURE.md](CLOSURE.md). The final paired result is **254.34× → 212.54× Roc** (Roc = 1×), **16.43% less elapsed time** on the unchanged eight-byte full-compression case. Earlier phase reports are immutable checkpoints; the closure supersedes their pending qualification lists. The parity goal remains open.

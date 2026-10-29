@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-frame-admission-round14-20261029/object-audit/object-evidence",
+    "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+    "/private/tmp/mech-frame-admission-round14-20261029/object-audit/complete-object"
+  ],
+  "exit": 0,
+  "seconds": 21.833850082941353,
+  "binary_sha256": "a1179f4d969751f078f31e831af9527d3f5ac001fb6d99adba4898ea025ca3df"
+}
