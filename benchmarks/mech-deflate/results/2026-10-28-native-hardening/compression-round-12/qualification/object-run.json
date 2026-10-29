@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-numeric-writes-round12-20261028/object-evidence",
+    "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+    "/private/tmp/mech-numeric-writes-round12-20261028/complete-object"
+  ],
+  "exit": 0,
+  "seconds": 21.848413207917474,
+  "binary_sha256": "354846c798979024aca6f2b53b351040c4c11991877052f1041204c693c01d5a"
+}

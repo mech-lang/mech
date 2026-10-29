@@ -1,0 +1,31 @@
+{
+  "command": [
+    "/private/tmp/mech-numeric-writes-round12-20261028/noop-bound-check/component-v2-tests",
+    "packed_update_qualification",
+    "buffer_frame_qualification",
+    "sequence_capacity_qualification",
+    "collection_qualification",
+    "uniform_words_qualification",
+    "word_read_qualification",
+    "narrow_word_qualification",
+    "matchfinder_qualification",
+    "assembled_compressor_source_preserves_its_pinned_bytes",
+    "scalar_state_qualification",
+    "tail_qualification",
+    "costs_qualification",
+    "default_costs_qualification",
+    "pinned_min_cost_paths_keep_exact_nodes_and_real_reservation",
+    "path_checks_preserve_entry_order_publication_aliases_and_recovery",
+    "argument_transport_qualification",
+    "shared_transport_qualification",
+    "numeric_write_qualification",
+    "numeric_tail_qualification",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 55.459158750018105,
+  "binary_sha256": "c9d3d986b1bc518a17b317a94cd358954070a8bc403311d3e039bc6bc77bf8b6",
+  "compiler_commit": "d105f884bc79d464a205b3022da4abdc00da41aa",
+  "configuration": "default selected-operation Cargo release libraries; maintained test root opt1; linked module excluded for separate qualification"
+}
