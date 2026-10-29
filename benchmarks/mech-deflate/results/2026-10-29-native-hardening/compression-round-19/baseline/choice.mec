@@ -1,0 +1,12 @@
+#Pick(n<u64>, best<u32>, item<u32>, cp<u64>) => <{best<u32> item<u32> cache-ptr<u64>}>
+  | :Try(left<u64>, best<u32>, item<u32>, cp<u64>)
+  | :Done(best<u32>, item<u32>, cp<u64>).
+#Pick(n, best, item, cp) -> :Try(n, best, item, cp)
+  :Try(left, best, item, cp)
+    | left > 0u64 -> :Try(left - 1u64, item, best, cp + 1u64)
+    | * -> :Done(best, item, cp)
+  :Done(best, item, cp) => {best: best, item: item, cache-ptr: cp}.
+choice := (branch<bool>? | true => #Pick(steps<u64>, best<u32>, item<u32>, cp<u64>) | false => #Pick(0u64, best<u32>, item<u32>, cp<u64>))
+left<u64> := choice.best
+right<u64> := choice.item
+left * 65537u64 + right + choice.cache-ptr

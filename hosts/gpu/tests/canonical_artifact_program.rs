@@ -55,6 +55,9 @@ mod numeric_predicate_qualification;
 #[path = "support/canonical_program_scalar_state.rs"]
 mod scalar_state_qualification;
 
+#[path = "support/canonical_program_scalar_records.rs"]
+mod scalar_record_qualification;
+
 #[path = "support/canonical_program_record_buffers.rs"]
 mod record_buffer_qualification;
 
