@@ -163,7 +163,7 @@ fn scalar_paths_keep_current_branches_errors_publication_and_recovery() {
 }
 
 #[test]
-fn scalar_paths_group_pinned_huffman_reversal_without_changing_its_table() {
+fn pinned_huffman_reversal_uses_native_scalar_operations_inside_append_loop() {
     let source = format!(
         "{}\nhuff-build-reversal()\n",
         include_str!("../fixtures/native/deflate-huffman-level12.mec")
@@ -195,7 +195,27 @@ fn scalar_paths_group_pinned_huffman_reversal_without_changing_its_table() {
             "{}",
             serde_json::json!({"witness":"pinned-huffman-reversal-paths","form":form,"requests":requests,"requested_bytes":bytes,"visits":report.visits,"work":report.work})
         );
-        selected(&artifact);
+        let metadata = emit_program_object(&artifact, &mech_stdlib::source_catalog())
+            .unwrap()
+            .metadata();
+        // The complete recurrence now subsumes its former ordinary scalar
+        // groups. Keep the exact table above and require native scalar work
+        // plus capacity-guarded byte stores with no backedge helper calls.
+        assert!(
+            metadata["compiled_numeric_write_loops"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|region| region["scalar_operations"].as_u64().unwrap() > 0
+                    && region["successful_backedge_helpers"] == 0
+                    && region["capacity_guards"].as_array().unwrap().len() == 1
+                    && region["append_sites"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .any(|site| site[1] == 1)),
+            "{metadata}"
+        );
         drop(out);
         assert_eq!(
             (memory.used_bytes(), memory.retained_snapshot_nodes()),

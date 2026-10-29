@@ -44,6 +44,11 @@ fn recursive_buffers_retain_real_reservations_without_payload_copies() {
                     // Same finite diagnostic policy as the saved red acceptance.
                     policy.execution.max_work = 1_000_000_000_000;
                     policy.library.max_compute_work = Some(1_000_000_000_000);
+                    // All results have at most three elements. Keep this
+                    // ordinary-frame witness on the same route at both
+                    // capacities: the append specialization declines when the
+                    // reserved capacity exceeds this stricter output bound.
+                    policy.library.max_output_elements = Some(3);
                     // Warm immutable metadata and the allocator probe equally.
                     allocation_probe::measured_with_bytes(|| {
                         jit.evaluate_into(&args, &mut output, policy, &memory)
