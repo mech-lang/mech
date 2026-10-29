@@ -1,0 +1,207 @@
+{
+  "compiler_commit": "d105f884bc79d464a205b3022da4abdc00da41aa",
+  "fix": "Pure entry eligibility declines a writable view above its selected output element ceiling; original call retains lexical rejection/unselected-path behavior.",
+  "qualification": "15 focused write cases pass; prior corrected compiler has 128 broad component passes. Final broad, linked/fuel and protected scalar qualification pending.",
+  "files": [
+    {
+      "path": "validated-primary/build-outer.log",
+      "sha256": "c59a2f2f2bf6a3420c8a94e96604df08d2b4478487f39a5e42aec87a8ee6d677"
+    },
+    {
+      "path": "validated-primary/after.stderr",
+      "sha256": "080103a44c938bef2557d5657c3c41d1c7272bf47f605c096e95e0c24434aeac"
+    },
+    {
+      "path": "validated-primary/build.py",
+      "sha256": "6307d1d8a745b178726f4443a32ba58febb214c7c916ca6b3c9f42a2916ef5af"
+    },
+    {
+      "path": "validated-primary/current-build.json",
+      "sha256": "108035cacd5172745d7783c94cbda9055586661124e3b612e0a7f28d886f8e5b"
+    },
+    {
+      "path": "validated-primary/run.py",
+      "sha256": "077d15eafb570c38bc22c243be2baf88d1038df13c06b9fe5a334eb522b5e9a8"
+    },
+    {
+      "path": "validated-primary/roc.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "validated-primary/after.sample.txt.gz",
+      "sha256": "4236ef936d7fd3838d7784cc85611d28fc0dcc14737dd778b7f80a0bf698bf0e"
+    },
+    {
+      "path": "validated-primary/after-inclusive-profile.json",
+      "sha256": "c13446433c8ddd863d240c1abce1feeca3d89b2ca2bf41cade3959c1d7f3fd7c"
+    },
+    {
+      "path": "validated-primary/inclusive-profile.py",
+      "sha256": "6434432f47a40239849982bd6f916379fcf85ea195b608f134eac8234561f341"
+    },
+    {
+      "path": "validated-primary/inclusive-summary.txt",
+      "sha256": "0473e8f3354193a7f0e43c42b23b24ebc07bbd65ede169998dfcbf7849c16f5d"
+    },
+    {
+      "path": "validated-primary/roc.stdout.gz",
+      "sha256": "5d02864be31b3643b659947d0aade9030e28ad4961809f651bd826e7e04d93b5"
+    },
+    {
+      "path": "validated-primary/results.json",
+      "sha256": "69a5e3ffbd3d992926d7f289ffd0b3c9b351f8460c909057c9841527a14ed0f4"
+    },
+    {
+      "path": "validated-primary/current-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "validated-primary/qualify-selected.py",
+      "sha256": "ec4ae85da0dcc07cec6b8fab0a4d017a721851b39d1aef21ca51c0b2f7b7cda8"
+    },
+    {
+      "path": "validated-primary/frame-before.json",
+      "sha256": "eebdf8795bda72dac8f560f6c6b98cb6323aaa5f7302f93f20d146c93afb732f"
+    },
+    {
+      "path": "validated-primary/after.stdout",
+      "sha256": "e8cc4efeaf042bd162b01957c8d2ecbd706a816568b3a24720b8c170c5269025"
+    },
+    {
+      "path": "validated-primary/commands.json",
+      "sha256": "41d6700402e2742f24bd7a4c846611482c220b7fec8fb610e5374828380f75f2"
+    },
+    {
+      "path": "validated-primary/profile.stdout",
+      "sha256": "d0fd73372b7d53ec9de0d2615506bed96e1c90b2a73d130b09b10c3eb690306e"
+    },
+    {
+      "path": "validated-primary/before.stderr",
+      "sha256": "e1f7dc792786b7aa2e5acfff04fcbdafdcb8739acef8eb47dfd9fca74c771152"
+    },
+    {
+      "path": "validated-primary/timing-outer.log",
+      "sha256": "4da2264a6527bbc017fefcb36c12560686a889bbc44b55d78b9fb7a11865e64b"
+    },
+    {
+      "path": "validated-primary/profile-command.json",
+      "sha256": "27bd79f8063c763c78e41a16962e0304e11023de368633f872bfd7ec4f3da197"
+    },
+    {
+      "path": "validated-primary/scalar-controls.py",
+      "sha256": "bbd452952661afb485c4b61f41ca54f6b9d75eb8c9e0d9d480f6e35e0d4d202c"
+    },
+    {
+      "path": "validated-primary/frame-after.json",
+      "sha256": "392fa397a5ca4bd3766fe7c3cd706f1f44e560c0a83cd52458b386a565e22d78"
+    },
+    {
+      "path": "validated-primary/before.stdout",
+      "sha256": "0f635c1b905e46ae815096e20450c69a8c6f7ee03c257e46422f6e9344b0e8e9"
+    },
+    {
+      "path": "validated-primary/profile.stderr",
+      "sha256": "00be4f8e852fe9e3f7e406a5276ecacb3d10331f84a4ed0f917bf4460ca24b59"
+    },
+    {
+      "path": "noop-limit-red/current-build.json",
+      "sha256": "abd31345240bf8d0e14ae41825a74791a8a903f9043beab31298bdaabfa098bc"
+    },
+    {
+      "path": "noop-limit-red/component-v2-run.json",
+      "sha256": "238cb64f8b48c2205aa796d1672b0d007567059eab2302cc40510245e63ea754"
+    },
+    {
+      "path": "noop-limit-red/component-v2-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "noop-limit-red/component-v2-run.log",
+      "sha256": "db3c31d4b8b52f525d00e6f45699d5f793955f37ccd8b036432c934686bf5051"
+    },
+    {
+      "path": "noop-limit-red/component-v2-build.json",
+      "sha256": "a8f885ebdcedc117082b896b50e117e23235b566a5ed2eabf84c6d257d38d668"
+    },
+    {
+      "path": "noop-limit-red/outer.log",
+      "sha256": "b5761870c17a6efb5421e5399066b6675e131158deaf394ae0ce7c4797a057e9"
+    },
+    {
+      "path": "noop-limit-red/qualify.py",
+      "sha256": "2c73f81e69581917986f715ea584e5c174b430404bb88caabf4b8df7da046d3e"
+    },
+    {
+      "path": "noop-bound-check/current-build.json",
+      "sha256": "108035cacd5172745d7783c94cbda9055586661124e3b612e0a7f28d886f8e5b"
+    },
+    {
+      "path": "noop-bound-check/component-v2-run.json",
+      "sha256": "bfd713408c04054e112829fe200c96ae256602c631906986bcfd8f5abd14d431"
+    },
+    {
+      "path": "noop-bound-check/component-v2-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "noop-bound-check/component-v2-run.log",
+      "sha256": "c516ba4c129ecf85506a6b95480102c222acdb248efb4fbcebbf832568922299"
+    },
+    {
+      "path": "noop-bound-check/component-v2-build.json",
+      "sha256": "d7a5b889485cdc6b88cf5957b576e02fac9ee71be959451d2e3cfd78a8e26f2a"
+    },
+    {
+      "path": "noop-bound-check/outer.log",
+      "sha256": "5f832cc4074cd0aca56039b20b464d3a998f1336436869fa57dd78cf7aa1ad30"
+    },
+    {
+      "path": "noop-bound-check/qualify.py",
+      "sha256": "cd658c46b71af4cb3bbba8562fd5d880ffc57a8354c7d7824c1367194ace8f59"
+    },
+    {
+      "path": "final-components/current-build.json",
+      "sha256": "abd31345240bf8d0e14ae41825a74791a8a903f9043beab31298bdaabfa098bc"
+    },
+    {
+      "path": "final-components/component-v2-run.json",
+      "sha256": "5a1f401e3281373fb5a7b55b32f6f2cfad80c937e3e4bb916ff4cce6bf6f4b1a"
+    },
+    {
+      "path": "final-components/component-v2-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-components/component-v2-run.log.gz",
+      "sha256": "f68fbe1419257b728113ce9a6ebb9e2da0f77256b6cc4db3eee31102c70f9a13"
+    },
+    {
+      "path": "final-components/component-v2-build.json",
+      "sha256": "f2692f102ffca07a0fdb1b175d16ae5f4fef3b432f240bd7c6f66dcad7bfa785"
+    },
+    {
+      "path": "final-components/outer.log.gz",
+      "sha256": "2f4ada475f72e0d5da80865ae6b4ccd23dd3272ee7fa51aff9733d7816f261c9"
+    },
+    {
+      "path": "final-components/qualify.py",
+      "sha256": "d3dc175de14f6eff99cbf8f17f93df573f7caa066c395e11fed7816107db8831"
+    },
+    {
+      "path": "validation/round12-noop-bound-release.json",
+      "sha256": "02db05d279cfebaf6becca162f642dbf0a995a6be0c97bdd6b3789128e3180c8"
+    },
+    {
+      "path": "validation/round12-noop-bound-release.log.gz",
+      "sha256": "b4fae2efa78e64efc166c0b89499df71b1eeda9762f75654b2686dbaac880b37"
+    },
+    {
+      "path": "validation/round12-noop-release-freshness.json",
+      "sha256": "565d46e212640eae8e6cb66732b250a020763d17397a24828e448548b7c783d6"
+    },
+    {
+      "path": "validation/round12-noop-release-freshness.log.gz",
+      "sha256": "44c5601b1106b57b376f394d64fd613174bfedb042141335437a26245c35e86d"
+    }
+  ]
+}

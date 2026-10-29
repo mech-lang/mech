@@ -1,0 +1,28 @@
+{
+  "name": "round12-noop-release-freshness",
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--offline",
+    "--release",
+    "--manifest-path",
+    "benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--message-format=json"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "d105f884bc79d464a205b3022da4abdc00da41aa",
+  "dirty": "",
+  "exit": 0,
+  "seconds": 0.2747490406036377,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round12-noop-release-freshness.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}
