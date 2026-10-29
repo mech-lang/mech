@@ -28,6 +28,36 @@ fn selected(artifact: &mech_engine::ProgramArtifact) {
     );
 }
 
+fn grouped_diamond(jit: &JitProgramArtifact) {
+    use mech_engine::native_artifact::{
+        NativeIterationTerminator as Terminator, NativeMatchTerminator as Term,
+    };
+    let image: serde_json::Value =
+        serde_json::from_slice(&jit.descriptor().encode_build_owned_image().unwrap()).unwrap();
+    let groups = image["descriptor"]["map_admission"]["groups"]
+        .as_array()
+        .unwrap();
+    assert!(
+        groups.iter().filter(|g| g["owner"].is_null()).any(|group| {
+            let sites = group["sites"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_u64().unwrap() as u32)
+                .collect::<Vec<_>>();
+            sites.iter().any(|&site| {
+                match jit.descriptor().plan().blocks()[site as usize].terminator() {
+                    Terminator::Scalar(
+                        Term::Branch { yes, no, .. } | Term::LiteralBranch { yes, no, .. },
+                    ) => sites.contains(&yes) && sites.contains(&no),
+                    _ => false,
+                }
+            })
+        }),
+        "fixture must fund both arms of one source branch, not merely a linear prelude"
+    );
+}
+
 #[test]
 fn scalar_paths_keep_current_branches_errors_publication_and_recovery() {
     for arithmetic_first in [false, true] {
@@ -121,6 +151,7 @@ fn scalar_paths_keep_current_branches_errors_publication_and_recovery() {
                 );
             }
             selected(&artifact);
+            grouped_diamond(&jit);
             super::record_buffer_qualification::assert_build_owned_image_round_trip(&jit);
             drop(out);
             assert_eq!(
@@ -238,7 +269,7 @@ fn scalar_paths_repeated_pure_calls_and_finite_rejections_use_fresh_arguments() 
 #[test]
 fn scalar_paths_keep_signed_float_and_boolean_lanes_exact() {
     use mech_core::snapshot::F64Bits;
-    let source = "calculate(signed<i64>, real<f64>, flag<bool>) => (out<(i64,f64,bool)>) :=\n  advanced := signed + 1i64\n  chosen := (flag? | true => advanced | false => advanced - 2i64)\n  number := real * 1.0f64\n  out := (chosen,number,flag == false).\n(a,b,c) := calculate(signed<i64>,real<f64>,flag<bool>)\n(a,b,c)\n";
+    let source = "calculate(signed<i64>, real<f64>, flag<bool>) => (out<(i64,f64,bool)>) :=\n  advanced := signed + 1i64\n  chosen := (flag? | true => advanced | false => advanced - 2i64)\n  number := real * 1.0\n  out := (chosen,number,flag == false).\n(a,b,c) := calculate(signed<i64>,real<f64>,flag<bool>)\n(a,b,c)\n";
     for artifact in artifacts(source).0 {
         let mode = NativeProgramLimitMode::NoLimits;
         let memory = mode.memory_budget();

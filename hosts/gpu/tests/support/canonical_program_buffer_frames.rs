@@ -924,3 +924,58 @@ fn restored_numeric_leaf_rejects_stale_views_offsets_prices_and_factory_associat
         );
     }
 }
+
+#[test]
+fn restored_scalar_paths_reject_changed_entries_frontiers_prices_and_owner_claims() {
+    for artifact in artifacts(super::scalar_path_qualification::SOURCE).0 {
+        let catalog = mech_stdlib::source_catalog();
+        let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let original: serde_json::Value =
+            serde_json::from_slice(&jit.descriptor().encode_build_owned_image().unwrap()).unwrap();
+        let groups = original["descriptor"]["map_admission"]["groups"]
+            .as_array()
+            .unwrap();
+        let index = groups
+            .iter()
+            .position(|g| g["owner"].is_null() && !g["frontier"].as_array().unwrap().is_empty())
+            .unwrap();
+        let site = groups[index]["sites"][0].as_u64().unwrap();
+        let root = format!("/descriptor/map_admission/groups/{index}");
+        for suffix in [
+            "owner",
+            "work",
+            "sites/0",
+            "frontier/0/site",
+            "frontier/0/previous",
+        ] {
+            let mut changed = original.clone();
+            let value = changed.pointer_mut(&format!("{root}/{suffix}")).unwrap();
+            *value = serde_json::json!(value.as_u64().map_or(0, |v| v + 1));
+            let bytes = serde_json::to_vec(&changed).unwrap();
+            // SAFETY: corrupted build-owned metadata remains confined to
+            // rejection; no altered descriptor is installed or executed.
+            assert!(
+                unsafe {
+                    mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
+                        &bytes, &catalog,
+                    )
+                }
+                .is_err(),
+                "accepted {suffix}"
+            );
+        }
+        let mut changed = original.clone();
+        changed["descriptor"]["map_admission"]["sites"][site as usize] =
+            serde_json::json!(groups.len());
+        let bytes = serde_json::to_vec(&changed).unwrap();
+        // SAFETY: same rejection-only corruption of this checked build.
+        assert!(
+            unsafe {
+                mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
+                    &bytes, &catalog,
+                )
+            }
+            .is_err()
+        );
+    }
+}
