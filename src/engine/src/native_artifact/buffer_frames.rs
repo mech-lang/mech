@@ -154,6 +154,59 @@ fn composable(plan: &Plan, value: Value) -> bool {
     visit(definition.body(), &mut bound) && bound.iter().all(|b| *b)
 }
 
+/// The leaf shape recipe cannot resolve parameters hidden in an opaque
+/// canonical record. Keep that complete use component on the constructor
+/// path. Structural descent also checks names and matrix ranks before a
+/// private child can become a span; preparation is not allowed to reject a
+/// valid program merely because this optional specialization is unsupported.
+fn composition_shape_matches(
+    expected: &SchemaBody,
+    actual: SchemaId,
+    definitions: &std::collections::BTreeMap<SchemaId, &mech_core::Schema>,
+    layouts: &std::collections::BTreeMap<SchemaId, Vec<SchemaId>>,
+    candidates: &std::collections::BTreeSet<SchemaId>,
+) -> bool {
+    let Some(definition) = definitions.get(&actual) else {
+        return false;
+    };
+    if candidates.contains(&actual) {
+        let expected = match (expected, definition.body()) {
+            (SchemaBody::Tuple(a), SchemaBody::Tuple(b)) if a.len() == b.len() => {
+                a.iter().collect::<Vec<_>>()
+            }
+            (SchemaBody::Record(a), SchemaBody::Record(b))
+                if a.len() == b.len() && a.iter().zip(b).all(|(a, b)| a.name == b.name) =>
+            {
+                a.iter().map(|f| &f.schema).collect()
+            }
+            _ => return false,
+        };
+        let Some(children) = layouts.get(&actual) else {
+            return false;
+        };
+        return children.len() == expected.len()
+            && expected
+                .into_iter()
+                .zip(children)
+                .all(|(expected, actual)| {
+                    composition_shape_matches(expected, *actual, definitions, layouts, candidates)
+                });
+    }
+    match (expected, definition.body()) {
+        (
+            SchemaBody::Matrix {
+                element: a,
+                dimensions: ad,
+            },
+            SchemaBody::Matrix {
+                element: b,
+                dimensions: bd,
+            },
+        ) => a == b && ad.len() == bd.len(),
+        _ => definition.dimension_parameters().is_empty() && expected == definition.body(),
+    }
+}
+
 fn fields(plan: &Plan, value: Value) -> Option<usize> {
     // Activation shape histories retain their ordinary bound-factory owner.
     // A private frame carries only fixed or freshly resolved Turn geometry.
@@ -399,9 +452,29 @@ impl Facts<'_> {
                 *layout = by_schema.get(&plan.values()[i].schema()).cloned();
             }
         }
-        let composable = (0..count)
+        let mut composable = (0..count)
             .map(|i| !bad[i] && composable(plan, Value(i as u32)))
             .collect::<Vec<_>>();
+        let definitions = plan
+            .values()
+            .iter()
+            .map(|ty| (ty.schema(), ty.definition()))
+            .collect::<std::collections::BTreeMap<_, _>>();
+        let candidates = (0..count)
+            .filter(|&i| composable[i])
+            .map(|i| plan.values()[i].schema())
+            .filter(|schema| by_schema.contains_key(schema))
+            .collect::<std::collections::BTreeSet<_>>();
+        for (i, composable) in composable.iter_mut().enumerate() {
+            let ty = &plan.values()[i];
+            *composable &= composition_shape_matches(
+                ty.definition().body(),
+                ty.schema(),
+                &definitions,
+                &by_schema,
+                &candidates,
+            );
+        }
         let mut composition = vec![Vec::new(); count];
         let mut link = |parent: Value, child: Value| {
             let (a, b) = (parent.get() as usize, child.get() as usize);
