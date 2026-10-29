@@ -238,7 +238,9 @@ fn selected_template(
 // version proof. Images rederive the eligibility from the restored plan.
 // IR120 admits opaque canonical tuple/record siblings in the existing private
 // managed-owner frame. The unchanged component use checks remain authoritative.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 120;
+// IR121 derives private flat scalar records and constant named observations
+// through the existing scalar aggregate storage, escape proof and emitter.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 121;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

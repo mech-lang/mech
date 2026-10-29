@@ -105,6 +105,12 @@ pub use string_map_region::NativeStringMapRegion;
     feature = "map_ops",
     feature = "sequence_buffers"
 ))]
+mod record_projection;
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 mod scalar_aggregates;
 #[cfg(any(
     feature = "pure_text",
