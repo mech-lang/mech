@@ -1,0 +1,79 @@
+{
+  "compiler_head": "9fa5dfb3dc780672dbe33139f870780fc4d1682a",
+  "archive": "receipts.tar.gz",
+  "archive_sha256": "c9ca8a75aac27ec51a1c665764882c60f7de9feb069597dd715c172b52fbe191",
+  "entries": [
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/red-components/nested-component-build.json",
+      "archive_member": "red-components/nested-component-build.json",
+      "bytes": 4464,
+      "sha256": "141172f8a27e23506a51d035779d438bd3df92dcf6772186141762582b9a8598"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/red-components/nested-component-build.log",
+      "archive_member": "red-components/nested-component-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/red-components/nested-component-qualification.rs",
+      "archive_member": "red-components/nested-component-qualification.rs",
+      "bytes": 36255,
+      "sha256": "d98ef68322b64ddbe5e5e2cd5a7ce0ad969fda6dae6bbbdd5bb6461faef5c060"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/red-components/qualify.py",
+      "archive_member": "red-components/qualify.py",
+      "bytes": 3803,
+      "sha256": "e311793a2ffbca552b681654e6ce3c78d3d4df02480803c76df2243cc8a589b8"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/red-components/run.json",
+      "archive_member": "red-components/run.json",
+      "bytes": 591,
+      "sha256": "1055bc31de06dc712c0ac0b5dd1183b9d2e15de4e0458cea22c2d5492530d32d"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/red-components/run.log",
+      "archive_member": "red-components/run.log",
+      "bytes": 4675,
+      "sha256": "128299b6e1554077d94341030416d800a7fb2a532541270a8d6689cf0a9afd59"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/red-components-corrected/nested-component-build.json",
+      "archive_member": "red-components-corrected/nested-component-build.json",
+      "bytes": 4484,
+      "sha256": "b8bcb7942aef1f12a124755e68d2c632470ab88a70ae783e66fe6d36348e2eec"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/red-components-corrected/nested-component-build.log",
+      "archive_member": "red-components-corrected/nested-component-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/red-components-corrected/nested-component-qualification.rs",
+      "archive_member": "red-components-corrected/nested-component-qualification.rs",
+      "bytes": 36255,
+      "sha256": "d98ef68322b64ddbe5e5e2cd5a7ce0ad969fda6dae6bbbdd5bb6461faef5c060"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/red-components-corrected/qualify.py",
+      "archive_member": "red-components-corrected/qualify.py",
+      "bytes": 3803,
+      "sha256": "e311793a2ffbca552b681654e6ce3c78d3d4df02480803c76df2243cc8a589b8"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/red-components-corrected/run.json",
+      "archive_member": "red-components-corrected/run.json",
+      "bytes": 600,
+      "sha256": "31b064e6d988ad67c270381bea4a44971c061fe12605d5c7f2e865d90f2bff91"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/red-components-corrected/run.log",
+      "archive_member": "red-components-corrected/run.log",
+      "bytes": 6797,
+      "sha256": "9a282207247ae51e84e6597540d3e93bbdb623b3299bef444653553aada6fb1b"
+    }
+  ]
+}

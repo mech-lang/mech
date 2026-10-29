@@ -1,0 +1,176 @@
+{
+  "head": "9fa5dfb3dc780672dbe33139f870780fc4d1682a",
+  "performance_observations": 0,
+  "archive": "receipts.tar.gz",
+  "archive_sha256": "e8b9eea74660f7943df46aae8182c47c329e9d165f49b082110a2e3b5c089a38",
+  "entries": [
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/census/build.json",
+      "archive_member": "census/build.json",
+      "bytes": 3692,
+      "sha256": "792e54eae690bbfdb78b9a215da94ffa22a7a69ceb4d12de620d817e9a9124a6"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/census/build.log",
+      "archive_member": "census/build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/census/census.rs",
+      "archive_member": "census/census.rs",
+      "bytes": 6851,
+      "sha256": "8e0f514c2cbf9d12df02b9c9c1b9d99c4220779dc99aed7456da120e4233c77f"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/census/census_hooks.py",
+      "archive_member": "census/census_hooks.py",
+      "bytes": 2824,
+      "sha256": "52e735a0076d21ea8c8ab36e55c3d95ef0e20e4dffbe616208817a003e9a5d39"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/census/debugger.json",
+      "archive_member": "census/debugger.json",
+      "bytes": 769,
+      "sha256": "34afd7cd53a9ed5583c0cd5e502db09e3ddbab4f66bd7f92d97ab806a171b3bd"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/census/debugger.stderr",
+      "archive_member": "census/debugger.stderr",
+      "bytes": 664,
+      "sha256": "d2b62ebcef04616d56a8e9a66b25de44839112a792fc89749f3cda2119653838"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/census/debugger.stdout",
+      "archive_member": "census/debugger.stdout",
+      "bytes": 466,
+      "sha256": "894d2c5869256dc9271d9d931072340e958a2c985c4c5a29e2cc82f9e00167c1"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/census/run.py",
+      "archive_member": "census/run.py",
+      "bytes": 1867,
+      "sha256": "fc45fec59a2c8ef2766cb435278172b125b86ddcfb5cee93c8934c2e5523bd92"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/unit-census/counts.json",
+      "archive_member": "unit-census/counts.json",
+      "bytes": 2229039,
+      "sha256": "4d62c2082885852805261d143ca90bc3d91d8b37182255c87705aeebc667a53a"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/unit-census/lib.rs",
+      "archive_member": "unit-census/lib.rs",
+      "bytes": 81977,
+      "sha256": "5a3033623327c1895da86b138983360af32b9e39dd75655757d4dd2ec7038a96"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/unit-census/native_artifact.rs",
+      "archive_member": "unit-census/native_artifact.rs",
+      "bytes": 8569,
+      "sha256": "87d31533d815e6eb62194e2131f1c2fa8a807cb61fbbd49c410dd1aa30932502"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/unit-census/probe.rs",
+      "archive_member": "unit-census/probe.rs",
+      "bytes": 9494,
+      "sha256": "0928439c60a81667af4b041e626091c9714e840bceb03bbed90f94dcaf29a7f3"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/unit-census/source-adapter.json",
+      "archive_member": "unit-census/source-adapter.json",
+      "bytes": 1037,
+      "sha256": "aa3e06d5dd3c18fe3dd2a718916a9177491a67691f5abee573131c3eb07cc9ae"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/census-units/build.json",
+      "archive_member": "census-units/build.json",
+      "bytes": 8964,
+      "sha256": "782207ab9aca61bd38fa5b7d6f1c7a6defaf59e1fdca110fa1c0850c3bf9fe13"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/census-units/build.log",
+      "archive_member": "census-units/build.log",
+      "bytes": 470,
+      "sha256": "75fa0fdd34220702e1e4bff1e93808a92df1e864cbd3b591f0ac2dc9bc5ed392"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/census-units-corrected/build.json",
+      "archive_member": "census-units-corrected/build.json",
+      "bytes": 9101,
+      "sha256": "8b76ebfc2ec9acc56c5a1ab0146f5032ca49a5bca548cac5d651394f6c118070"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/census-units-corrected/build.log",
+      "archive_member": "census-units-corrected/build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/census-units-corrected/run.json",
+      "archive_member": "census-units-corrected/run.json",
+      "bytes": 338,
+      "sha256": "71511849778c78fc6fb4f53e66a883de964153b4075246e5d4ba5d53bb9661de"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/census-units-corrected/run.log",
+      "archive_member": "census-units-corrected/run.log",
+      "bytes": 218,
+      "sha256": "9bff069081e5f87fa23725cbfd3ec04a6d2f92c1d2b721bd7eb7f1c6199e8048"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/prepare-unit-census.py",
+      "archive_member": "prepare-unit-census.py",
+      "bytes": 7779,
+      "sha256": "2c26768587f19ad8a045ed9cf8a01d8e6d59d4df32efb49769f39878a2b8aea7"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/unit-build.py",
+      "archive_member": "unit-build.py",
+      "bytes": 4025,
+      "sha256": "cacdadb46539012e5a36eacefb8d9c08ee5849605a83c649acfd8e4ad9657c80"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/result-types.rs",
+      "archive_member": "result-types.rs",
+      "bytes": 1536,
+      "sha256": "fe3a5757b3a27d446f5643288da5683ae57a07005a49d328e9e78d65e86de8c3"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/result-types.json",
+      "archive_member": "result-types.json",
+      "bytes": 6544797,
+      "sha256": "7c1b35460dce59fe44634ce57fe0e050ee9e799849fd9e5b13be5b3c4310f87c"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/result-types-build.json",
+      "archive_member": "result-types-build.json",
+      "bytes": 3152,
+      "sha256": "e8c845ba1cc258e94b621e03ccf12f436a6a1599ee31d4605e9399edc1772ac5"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/result-types-build.log",
+      "archive_member": "result-types-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-frame-loops-round24-20261029/result-types-run.json",
+      "archive_member": "result-types-run.json",
+      "bytes": 228,
+      "sha256": "ed6b934ebf04fa8523b83eb13b1b6e9cb6035c09d20a0019b20abe862b5140f3"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round24-census-unit-dependencies.log",
+      "archive_member": "validation/round24-census-unit-dependencies.log",
+      "bytes": 167632,
+      "sha256": "dc58419b74542ea190f48465669e0046f2f83f0e11e2b113435b6b3244a55c56"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round24-census-unit-dependencies.json",
+      "archive_member": "validation/round24-census-unit-dependencies.json",
+      "bytes": 945,
+      "sha256": "bbf206e5d76dfff1759095b199aeffe08aedc6141f445a4757c7baaff4a7373b"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-//! Current owners for every field of a private numeric tuple return.
+//! Current owners for every field of a private numeric tuple/record return.
 use super::{allocation_probe, artifacts, equal, inputs, reference_result};
 use mech_core::{Value, ValueDataDraft as Data};
 use mech_gpu::native_artifact::{JitProgramArtifact, NativeProgramLimitMode, emit_program_object};
@@ -28,6 +28,8 @@ walk(a<[u16]>, b<[u32]>, c<[u8]>, i<u64>, left<u64>, permit<bool>, divisor<u64>)
 (a,i,b,c) := walk(first<[u16]>, second<[u32]>, third<[u8]>, 0u64, steps<u64>, permit<bool>, divisor<u64>)
 (a, i + 0u64, b, c)
 "#;
+
+pub(super) const RECORD_SOURCE: &str = include_str!("../fixtures/native/private-record-return.mec");
 
 fn matrix(words: impl IntoIterator<Item = Data>) -> Data {
     Data::Matrix(words.into_iter().collect())
@@ -65,9 +67,8 @@ fn selected(artifact: &mech_engine::ProgramArtifact, count: usize) {
     }
 }
 
-#[test]
-fn multi_array_results_restore_all_current_owners_and_recover_after_late_failure() {
-    for (form, artifact) in ["original", "decoded"].into_iter().zip(artifacts(SOURCE).0) {
+fn check_current_owners(source: &str, variant: &str) {
+    for (form, artifact) in ["original", "decoded"].into_iter().zip(artifacts(source).0) {
         let mode = NativeProgramLimitMode::NoLimits;
         let memory = mode.memory_budget();
         let jit = JitProgramArtifact::compile_with_limits(
@@ -142,7 +143,7 @@ fn multi_array_results_restore_all_current_owners_and_recover_after_late_failure
                 rows.push((steps, requests, bytes, report.visits));
                 println!(
                     "{}",
-                    serde_json::json!({"witness":"multi-array-current-return","form":form,"steps":steps,"requests":requests,"requested_bytes":bytes,"visits":report.visits,"work":report.work})
+                    serde_json::json!({"witness":"multi-array-current-return","variant":variant,"form":form,"steps":steps,"requests":requests,"requested_bytes":bytes,"visits":report.visits,"work":report.work})
                 );
             } else {
                 let error = format!("{:?}", run.unwrap_err());
@@ -246,21 +247,9 @@ fn multi_array_results_select_pinned_huffman_placement_and_keep_branch_versions(
     }
 }
 
-#[test]
-fn multi_array_results_check_freshness_of_each_returned_field() {
+fn check_stale_return(source: &str) {
     // Only the second returned root is stale. Returning a root of the right
     // kind is insufficient after an earlier write invalidated that version.
-    let source = r#"put(xs<[u32]>) => (out<[u32]>) :=
-  ~next := xs
-  next[1u64] = 9u32
-  out := next.
-walk(a<[u32]>, b<[u32]>, left<u64>) => (out<([u32],[u32])>) :=
-  next-a := put(a)
-  next-b := put(b)
-  out := ((left > 0u64)? | true => walk(next-a,next-b,left - 1u64) | false => (next-a,b)).
-(a,b) := walk(first<[u32]>,second<[u32]>,0u64)
-(a,b)
-"#;
     for artifact in artifacts(source).0 {
         let metadata = emit_program_object(&artifact, &mech_stdlib::source_catalog())
             .unwrap()
@@ -303,9 +292,8 @@ walk(a<[u32]>, b<[u32]>, left<u64>) => (out<([u32],[u32])>) :=
     }
 }
 
-#[test]
-fn multi_array_results_shared_input_backing_stays_immutable_for_each_root() {
-    let source = SOURCE.replace("u16", "u32").replace("u8", "u32");
+fn check_shared_input_backing(source: &str) {
+    let source = source.replace("u16", "u32").replace("u8", "u32");
     for artifact in artifacts(&source).0 {
         selected(&artifact, 3);
         let mode = NativeProgramLimitMode::NoLimits;
@@ -372,9 +360,8 @@ fn multi_array_results_shared_input_backing_stays_immutable_for_each_root() {
     }
 }
 
-#[test]
-fn multi_array_results_finite_rejections_keep_prior_publication_and_retry() {
-    for artifact in artifacts(SOURCE).0 {
+fn check_finite_rejections(source: &str) {
+    for artifact in artifacts(source).0 {
         let mode = NativeProgramLimitMode::NoLimits;
         let memory = mode.memory_budget();
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
@@ -437,18 +424,16 @@ fn multi_array_results_finite_rejections_keep_prior_publication_and_retry() {
     }
 }
 
-#[test]
-fn multi_array_results_real_tree_and_cache_keep_one_initial_payload_each() {
+fn check_real_payloads(body: &str, binding: &str) {
     use mech_core::ValueData;
-    let body = SOURCE.split("(a,i,b,c) :=").next().unwrap();
     let published_source = format!(
-        "{body}\nrun(n16<u64>,n32<u64>,steps<u64>) => (out<([u16],u64,[u32],[u8])>) :=\n  first := [0u16 | i <- 0u64..=n16, i < n16]\n  second := [0u32 | i <- 0u64..=n32, i < n32]\n  third := [0u8 | i <- 0u64..=8u64, i < 8u64]\n  (a,i,b,c) := walk(first,second,third,0u64,steps,true,1u64)\n  out := (a,i + 0u64,b,c).\nrun(n16<u64>,n32<u64>,steps<u64>)\n"
+        "{body}\nrun(n16<u64>,n32<u64>,steps<u64>) => (out<([u16],u64,[u32],[u8])>) :=\n  first := [0u16 | i <- 0u64..=n16, i < n16]\n  second := [0u32 | i <- 0u64..=n32, i < n32]\n  third := [0u8 | i <- 0u64..=8u64, i < 8u64]\n  {binding}\n  out := (a,i + 0u64,b,c).\nrun(n16<u64>,n32<u64>,steps<u64>)\n"
     );
     // Public canonical tuple materialization has its own payload copy. Compare
     // it with a caller that consumes every returned buffer inside Mech, as the
     // compressor does, to isolate transport from public construction.
     let consumed_source = format!(
-        "+> sequence\n{body}\nrun(n16<u64>,n32<u64>,steps<u64>) => (out<u64>) :=\n  first := [0u16 | i <- 0u64..=n16, i < n16]\n  second := [0u32 | i <- 0u64..=n32, i < n32]\n  third := [0u8 | i <- 0u64..=8u64, i < 8u64]\n  (a,i,b,c) := walk(first,second,third,0u64,steps,true,1u64)\n  x<u64> := a[1u64]\n  y<u64> := b[1u64]\n  z<u64> := c[1u64]\n  changed := steps > 0u64\n  ex := (changed? | true => 8u64 | false => 0u64)\n  ey := (changed? | true => 1u64 | false => 0u64)\n  ez := (changed? | true => 18u64 | false => 0u64)\n  current! := x == ex && y == ey && z == ez\n  last-a<u64> := a[sequence/length(a)]\n  last-b<u64> := b[sequence/length(b)]\n  untouched! := last-a == 0u64 && last-b == 0u64\n  out := i + sequence/length(a) + sequence/length(b) + sequence/length(c) + x + y + z.\nrun(n16<u64>,n32<u64>,steps<u64>)\n"
+        "+> sequence\n{body}\nrun(n16<u64>,n32<u64>,steps<u64>) => (out<u64>) :=\n  first := [0u16 | i <- 0u64..=n16, i < n16]\n  second := [0u32 | i <- 0u64..=n32, i < n32]\n  third := [0u8 | i <- 0u64..=8u64, i < 8u64]\n  {binding}\n  x<u64> := a[1u64]\n  y<u64> := b[1u64]\n  z<u64> := c[1u64]\n  changed := steps > 0u64\n  ex := (changed? | true => 8u64 | false => 0u64)\n  ey := (changed? | true => 1u64 | false => 0u64)\n  ez := (changed? | true => 18u64 | false => 0u64)\n  current! := x == ex && y == ey && z == ez\n  last-a<u64> := a[sequence/length(a)]\n  last-b<u64> := b[sequence/length(b)]\n  untouched! := last-a == 0u64 && last-b == 0u64\n  out := i + sequence/length(a) + sequence/length(b) + sequence/length(c) + x + y + z.\nrun(n16<u64>,n32<u64>,steps<u64>)\n"
     );
     for (published, source, payloads) in [(true, published_source, 2), (false, consumed_source, 1)]
     {
@@ -554,5 +539,221 @@ fn multi_array_results_real_tree_and_cache_keep_one_initial_payload_each() {
                 );
             }
         }
+    }
+}
+
+#[test]
+fn multi_array_results_restore_all_current_owners_and_recover_after_late_failure() {
+    check_current_owners(SOURCE, "tuple");
+}
+
+#[test]
+fn multi_record_results_restore_all_current_owners_and_recover_after_late_failure() {
+    check_current_owners(RECORD_SOURCE, "record");
+}
+
+#[test]
+fn multi_array_results_shared_input_backing_stays_immutable_for_each_root() {
+    check_shared_input_backing(SOURCE);
+}
+
+#[test]
+fn multi_record_results_shared_input_backing_stays_immutable_for_each_root() {
+    check_shared_input_backing(RECORD_SOURCE);
+}
+
+#[test]
+fn multi_array_results_finite_rejections_keep_prior_publication_and_retry() {
+    check_finite_rejections(SOURCE);
+}
+
+#[test]
+fn multi_record_results_finite_rejections_keep_prior_publication_and_retry() {
+    check_finite_rejections(RECORD_SOURCE);
+}
+
+#[test]
+fn multi_array_results_check_freshness_of_each_returned_field() {
+    check_stale_return(
+        r#"put(xs<[u32]>) => (out<[u32]>) :=
+  ~next := xs
+  next[1u64] = 9u32
+  out := next.
+walk(a<[u32]>, b<[u32]>, left<u64>) => (out<([u32],[u32])>) :=
+  next-a := put(a)
+  next-b := put(b)
+  out := ((left > 0u64)? | true => walk(next-a,next-b,left - 1u64) | false => (next-a,b)).
+(a,b) := walk(first<[u32]>,second<[u32]>,0u64)
+(a,b)
+"#,
+    );
+}
+
+#[test]
+fn multi_record_results_check_freshness_of_each_returned_field() {
+    check_stale_return(
+        r#"<stale-record> := <{changed<[u32]> stale<[u32]>}>
+put(xs<[u32]>) => (out<[u32]>) :=
+  ~next := xs
+  next[1u64] = 9u32
+  out := next.
+walk(a<[u32]>, b<[u32]>, left<u64>) => (out<stale-record>) :=
+  next-a := put(a)
+  next-b := put(b)
+  out := ((left > 0u64)? | true => walk(next-a,next-b,left - 1u64) | false => {changed: next-a, stale: b}).
+r := walk(first<[u32]>,second<[u32]>,0u64)
+changed := r.changed
+stale := r.stale
+(changed,stale)
+"#,
+    );
+}
+
+#[test]
+fn multi_array_results_real_tree_and_cache_keep_one_initial_payload_each() {
+    check_real_payloads(
+        SOURCE.split("(a,i,b,c) :=").next().unwrap(),
+        "(a,i,b,c) := walk(first,second,third,0u64,steps,true,1u64)",
+    );
+}
+
+#[test]
+fn multi_record_results_real_tree_and_cache_keep_one_initial_payload_each() {
+    check_real_payloads(
+        RECORD_SOURCE.split("r := walk").next().unwrap(),
+        "r := walk(first,second,third,0u64,steps,true,1u64)\n  a := r.first\n  i := r.position\n  b := r.second\n  c := r.third",
+    );
+}
+
+#[test]
+fn multi_record_results_select_the_unchanged_full_length_codeword_builder() {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../fixtures/native/deflate-writer-tables-reference.json"
+    ))
+    .unwrap();
+    let source = format!(
+        "{}\n{}\nr := block-compute-full-length-codewords(lens<[u8]>, words<[u32]>, slots<[u8]>, bases<[u32]>, extra<[u8]>)\nwords-result := r.codewords\nlens-result := r.lens\n(words-result,lens-result)\n",
+        include_str!("../fixtures/native/deflate-huffman-level12.mec"),
+        include_str!("../fixtures/native/deflate-writer-tables.mec")
+    );
+    let field = |values: &serde_json::Value, width| {
+        matrix(values.as_array().unwrap().iter().map(|v| match width {
+            8 => Data::U8(v.as_u64().unwrap() as u8),
+            32 => Data::U32(v.as_u64().unwrap() as u32),
+            _ => unreachable!(),
+        }))
+    };
+    for artifact in artifacts(&source).0 {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        super::record_buffer_qualification::assert_build_owned_image_round_trip(&jit);
+        for case in fixture["full_cases"].as_array().unwrap() {
+            let memory = mode.memory_budget();
+            let args = inputs(
+                &artifact,
+                &[
+                    ("lens", field(&case["lens"], 8)),
+                    ("words", field(&case["codewords"], 32)),
+                    ("slots", field(&fixture["length_slot_tab"], 8)),
+                    ("bases", field(&fixture["length_slot_base"], 32)),
+                    ("extra", field(&fixture["extra_length_bits"], 8)),
+                ],
+                &memory,
+            );
+            let aliases = args.clone();
+            let mut out = vec![None; artifact.outputs().len()];
+            jit.evaluate_into(&args, &mut out, mode.execution(), &memory)
+                .unwrap();
+            assert_eq!(
+                result(&out),
+                Data::Tuple(
+                    vec![
+                        field(&case["expected"]["codewords"], 32),
+                        field(&case["expected"]["lens"], 8)
+                    ]
+                    .into()
+                )
+            );
+            assert!(
+                args.iter()
+                    .zip(&aliases)
+                    .all(|(a, b)| a.shares_frozen_storage(b))
+            );
+            drop((args, aliases, out));
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
+        selected(&artifact, 2);
+    }
+}
+
+#[test]
+fn multi_record_results_public_escape_keeps_the_canonical_constructor() {
+    let body = RECORD_SOURCE.split("r := walk").next().unwrap();
+    let source =
+        format!("{body}walk(first<[u16]>,second<[u32]>,third<[u8]>,0u64,1u64,true,1u64)\n");
+    for artifact in artifacts(&source).0 {
+        let metadata = emit_program_object(&artifact, &mech_stdlib::source_catalog())
+            .unwrap()
+            .metadata();
+        assert!(
+            metadata["numeric_write_regions"]
+                .as_array()
+                .unwrap()
+                .is_empty(),
+            "{metadata}"
+        );
+        let mode = NativeProgramLimitMode::NoLimits;
+        let memory = mode.memory_budget();
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let args = inputs(
+            &artifact,
+            &[
+                ("first", matrix([Data::U16(7)])),
+                ("second", matrix([Data::U32(11)])),
+                ("third", matrix([Data::U8(17)])),
+            ],
+            &memory,
+        );
+        let aliases = args.clone();
+        let mut out = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&args, &mut out, mode.execution(), &memory)
+            .unwrap();
+        equal(
+            &artifact,
+            &out,
+            &reference_result(&artifact, &args).unwrap(),
+        );
+        let Data::Record(fields) = result(&out) else {
+            panic!()
+        };
+        for (name, expected) in [
+            ("first", matrix([Data::U16(8)])),
+            ("second", matrix([Data::U32(12)])),
+            ("third", matrix([Data::U8(18)])),
+            ("position", Data::U64(18)),
+        ] {
+            assert_eq!(
+                fields.iter().find(|f| f.name == name).unwrap().value,
+                expected
+            );
+        }
+        assert!(
+            args.iter()
+                .zip(&aliases)
+                .all(|(a, b)| a.shares_frozen_storage(b))
+        );
+        drop((args, aliases, out));
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
     }
 }
