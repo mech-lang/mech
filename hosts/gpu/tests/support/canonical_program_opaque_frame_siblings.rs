@@ -1,7 +1,7 @@
 //! Opaque canonical siblings must not discard a private buffer's reservation.
 use super::super::{artifacts, equal, inputs, limits, reference_result};
 use mech_core::{ManagedMemoryBudget, ValueData, ValueDataDraft as Data};
-use mech_gpu::native_artifact::{JitProgramArtifact, NativeProgramDescriptor};
+use mech_gpu::native_artifact::JitProgramArtifact;
 
 const RECORD: &str = "+> sequence\npack(nodes<[u64]>, costs<[u32]>) => (out<{nodes<[u64]> costs<{literal<[u32]>}>}>) :=\n  out := {nodes: nodes, costs: {literal: costs}}.\nreturned := pack(sequence/with-capacity(0u64, capacity<u64>), [7u32])\nsequence/append(returned.nodes, 17u64)\n";
 const TUPLE: &str = "+> sequence\npack(nodes<[u64]>, costs<[u32]>) => (out<([u64], ([u32], bool))>) :=\n  out := (nodes, (costs, true)).\nreturned := pack(sequence/with-capacity(0u64, capacity<u64>), [7u32])\nsequence/append(returned.1, 17u64)\n";
@@ -19,16 +19,7 @@ fn reservation(source: &str) {
         for artifact in artifacts(&source).0 {
             let jit =
                 JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
-            let image = jit.descriptor().encode_build_owned_image().unwrap();
-            // SAFETY: unchanged image of the same checked build, confined here.
-            let restored = unsafe {
-                NativeProgramDescriptor::decode_build_owned_image(
-                    &image,
-                    &mech_stdlib::source_catalog(),
-                )
-            }
-            .unwrap();
-            assert_eq!(restored.encode_build_owned_image().unwrap(), image);
+            super::assert_build_owned_image_round_trip(&jit);
             for capacity in [16, real] {
                 let memory = ManagedMemoryBudget::new(128 * 1024 * 1024);
                 let args = inputs(&artifact, &[("capacity", Data::U64(capacity))], &memory);

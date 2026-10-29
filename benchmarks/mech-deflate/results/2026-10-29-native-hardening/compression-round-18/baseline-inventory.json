@@ -114,8 +114,8 @@
     "source": "/private/tmp/mech-record-boundaries-round18-20261029/build-nested.py"
   },
   {
-    "path": "baseline/initial-opaque-frame-siblings.rs",
-    "sha256": "acdace2c77ddad025868443e2421bbc52cb5b80b48fd185f3aa6ee0a6edef96a",
+    "path": "baseline/initial-opaque-frame-siblings.rs.gz",
+    "sha256": "bc531bcb1f344c3bde6e8bc3b3af9d086b4b8eb1d4639dacbe834fb1752b4c42",
     "original_sha256": "acdace2c77ddad025868443e2421bbc52cb5b80b48fd185f3aa6ee0a6edef96a",
     "source": "/private/tmp/mech-record-boundaries-round18-20261029/initial-opaque-frame-siblings.rs"
   },
