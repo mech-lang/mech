@@ -1,0 +1,91 @@
+[
+  {
+    "label": "roc",
+    "command": [
+      "/private/tmp/mech-deflate-profiling-20261028/roc-profile",
+      "12"
+    ],
+    "exit": 0,
+    "process_seconds": 5.971536041004583
+  },
+  {
+    "label": "pair0-before",
+    "command": [
+      "/private/tmp/mech-multi-results-round21-20261029/primary/before",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 22.60486545902677
+  },
+  {
+    "label": "pair0-after",
+    "command": [
+      "/private/tmp/mech-multi-results-round21-20261029/primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 25.637563832802698
+  },
+  {
+    "label": "pair1-after",
+    "command": [
+      "/private/tmp/mech-multi-results-round21-20261029/primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 24.63213249994442
+  },
+  {
+    "label": "pair1-before",
+    "command": [
+      "/private/tmp/mech-multi-results-round21-20261029/primary/before",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 21.724377332953736
+  },
+  {
+    "label": "pair2-before",
+    "command": [
+      "/private/tmp/mech-multi-results-round21-20261029/primary/before",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 21.8030935828574
+  },
+  {
+    "label": "pair2-after",
+    "command": [
+      "/private/tmp/mech-multi-results-round21-20261029/primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 24.655525333015248
+  },
+  {
+    "label": "pair3-after",
+    "command": [
+      "/private/tmp/mech-multi-results-round21-20261029/primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 24.747642082860693
+  },
+  {
+    "label": "pair3-before",
+    "command": [
+      "/private/tmp/mech-multi-results-round21-20261029/primary/before",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 21.6999317498412
+  }
+]
