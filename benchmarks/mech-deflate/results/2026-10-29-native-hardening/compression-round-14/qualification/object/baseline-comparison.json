@@ -1,0 +1,14 @@
+{
+  "complete-object.o": {
+    "before_sha256": "eef36a03e58b00c5a85c3edff1cb0c67135bf908ec666690d395bb2ee6a488f2",
+    "after_sha256": "eef36a03e58b00c5a85c3edff1cb0c67135bf908ec666690d395bb2ee6a488f2",
+    "bytes": 7748568,
+    "identical": true
+  },
+  "complete-object.json": {
+    "before_sha256": "a545defa312f3557b046a8e0656b4aaf9e59f6cf27c724c5d0b8a21096906294",
+    "after_sha256": "a545defa312f3557b046a8e0656b4aaf9e59f6cf27c724c5d0b8a21096906294",
+    "bytes": 1145904,
+    "identical": true
+  }
+}
