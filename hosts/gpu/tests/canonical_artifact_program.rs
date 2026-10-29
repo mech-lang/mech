@@ -49,6 +49,9 @@ mod numeric_write_qualification;
 #[path = "support/canonical_program_numeric_results.rs"]
 mod numeric_result_qualification;
 
+#[path = "support/canonical_program_multi_results.rs"]
+mod multi_result_qualification;
+
 #[path = "support/canonical_program_numeric_predicates.rs"]
 mod numeric_predicate_qualification;
 
