@@ -305,7 +305,7 @@ impl NativePreparedLibraryCall {
                     .checked_sub(recipe.remove_wrappers)
                     .and_then(|n| n.checked_add(recipe.add_containers))
                     .ok_or(InvokeError::InvalidInput)?;
-                if let Some(violation) = mech_core::evaluate_call_memory_budget(
+                if let Some(violation) = mech_core::first_call_memory_budget_violation(
                     mech_core::MemoryObjectOwner::NodeOutput {
                         node: self.template.origin().node(),
                         port: 0,
@@ -317,13 +317,9 @@ impl NativePreparedLibraryCall {
                     logical,
                     0,
                     limits,
-                )
-                .first()
-                {
+                ) {
                     return Err(InvokeError::Plan(
-                        mech_core::MemoryPlanError::TargetLimitExceeded {
-                            violation: violation.clone(),
-                        },
+                        mech_core::MemoryPlanError::TargetLimitExceeded { violation },
                     ));
                 }
                 Ok(())

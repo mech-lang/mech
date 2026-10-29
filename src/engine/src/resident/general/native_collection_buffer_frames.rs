@@ -203,7 +203,7 @@ impl NativePreparedLibraryCall {
                         value,
                     )?,
                 };
-                if let Some(violation) = mech_core::evaluate_call_memory_budget(
+                if let Some(violation) = mech_core::first_call_memory_budget_violation(
                     mech_core::MemoryObjectOwner::NodeOutput {
                         node: self.template.origin().node(),
                         port: 0,
@@ -215,13 +215,9 @@ impl NativePreparedLibraryCall {
                     footprint.retained_bytes,
                     0,
                     limits,
-                )
-                .first()
-                {
+                ) {
                     return Err(InvokeError::Plan(
-                        mech_core::MemoryPlanError::TargetLimitExceeded {
-                            violation: violation.clone(),
-                        },
+                        mech_core::MemoryPlanError::TargetLimitExceeded { violation },
                     ));
                 }
                 Ok(())
@@ -442,7 +438,7 @@ impl NativePreparedLibraryCall {
                     .map_err(|_| InvokeError::InvalidInput)?;
                 }
                 // Retain the logical output bound even though no payload is copied.
-                if let Some(violation) = mech_core::evaluate_call_memory_budget(
+                if let Some(violation) = mech_core::first_call_memory_budget_violation(
                     mech_core::MemoryObjectOwner::NodeOutput {
                         node: self.template.origin().node(),
                         port: 0,
@@ -454,13 +450,9 @@ impl NativePreparedLibraryCall {
                     logical_bytes,
                     0,
                     limits,
-                )
-                .first()
-                {
+                ) {
                     return Err(InvokeError::Plan(
-                        mech_core::MemoryPlanError::TargetLimitExceeded {
-                            violation: violation.clone(),
-                        },
+                        mech_core::MemoryPlanError::TargetLimitExceeded { violation },
                     ));
                 }
                 Ok(())
