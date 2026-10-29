@@ -155,6 +155,7 @@ impl NativePreparedLibraryCall {
                     &self.schemas,
                     self.template.clone(),
                     self.factory,
+                    self.descriptor_templates.as_deref(),
                     &[lines.shape().parameter_values(), &[]],
                     &[],
                     None,

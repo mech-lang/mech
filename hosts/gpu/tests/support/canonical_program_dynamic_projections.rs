@@ -351,3 +351,6 @@ mod recursion;
 
 #[path = "canonical_program_dynamic_projection_admission.rs"]
 mod admission;
+
+#[path = "canonical_program_prepared_descriptors.rs"]
+mod prepared_descriptors;
