@@ -1,0 +1,12 @@
+{
+  "head": "4857600c48a97c83b51f97535232cb6a12f224a6",
+  "production": "337c0d307d370d0f278706d1d772739d1cafd174",
+  "frozen_binaries": {
+    "frame-before": "b801dce635b4c6e5f84565e9f878d2f162c638a30f2adaa9ca41435e07608014",
+    "before": "4a42717a687fa30552221149913ad41008d242da92f4338b96ac76f4bcf3afff"
+  },
+  "operation": "pinned huff-build-reversal repeatedly executes huff-reverse-byte scalar bit arithmetic before append; ordinary scalar native blocks currently require one control callback each",
+  "source": "hosts/gpu/tests/fixtures/native/deflate-huffman-level12.mec:39-51",
+  "profile": "round21 fresh executable:301/1307 disjoint ordinary-visit ancestry weights; no guaranteed removable time",
+  "proposal": "reuse existing acyclic native path/frontier admission for ordinary scalar copies, primitives and simple branch diamonds; full funding preview or original ordered visits; no owners/helpers/loops/publication hidden"
+}

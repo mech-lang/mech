@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/private/tmp/mech-scalar-paths-round22-20261029/red-second/nested-component-tests",
+    "scalar_path_qualification",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 101,
+  "seconds": 2.4866125830449164,
+  "binary_sha256": "d2a42bc710539e49e665039684b38f11e814558c232dd9fd610789861794409f",
+  "skipped": [
+    {
+      "module": "linked_qualification",
+      "source": "/private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_linked.rs",
+      "reason": "Linked Cargo subprocess qualification is separate from this existing component cohort."
+    }
+  ]
+}
