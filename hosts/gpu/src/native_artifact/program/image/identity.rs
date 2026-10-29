@@ -242,7 +242,9 @@ fn selected_template(
 // through the existing scalar aggregate storage, escape proof and emitter.
 // IR122 composes private structural spans in the existing scalar/owner lanes;
 // current leaf shape/admission recipes are rederived on image loading.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 122;
+// IR123 retains the constructor for dynamic opaque siblings or incompatible
+// structural bindings that the private leaf-shape recipe cannot represent.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 123;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
