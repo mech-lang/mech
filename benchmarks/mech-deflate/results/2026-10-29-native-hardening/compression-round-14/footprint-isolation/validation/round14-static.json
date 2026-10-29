@@ -1,0 +1,22 @@
+{
+  "name": "round14-static",
+  "command": [
+    "python3",
+    "/private/tmp/mech-final-static-20261028.py"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "aa93a9e3fbba56c54eb8c48648570d54c8da7500",
+  "dirty": " M src/engine/src/resident/general/native_collection_buffer_frames.rs\n M src/engine/src/resident/general/native_collection_frame_admission.rs\n M src/engine/src/resident/general/native_collection_frame_shape.rs\n",
+  "exit": 0,
+  "seconds": 190.10778379440308,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round14-static.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}
