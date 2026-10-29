@@ -293,23 +293,66 @@ fn scalar_record_checks_preserve_error_order_exact_work_publication_and_retry() 
                 let result = jit.evaluate_into(&args, &mut output, limits(), &memory);
                 let resident = reference_result(&artifact, &args);
                 if allowed && divisor != 0 && value != u64::MAX {
-                    let report = result.unwrap();
+                    result.unwrap();
                     equal(&artifact, &output, &resident.unwrap());
-                    let mut exact = limits();
-                    exact.execution.max_work = report.work;
-                    jit.evaluate_into(&args, &mut output, exact, &memory)
-                        .unwrap();
+                    // Spent work is not the conservative entry envelope. Keep
+                    // the same published owner for every isolated probe and
+                    // find the actual finite admission boundary, without
+                    // changing the existing successful policy.
                     let published = output.clone();
                     let before = (memory.used_bytes(), memory.retained_snapshot_nodes());
-                    let mut denied = exact;
-                    denied.execution.max_work -= 1;
-                    assert!(
-                        jit.evaluate_into(&args, &mut output, denied, &memory)
-                            .is_err()
-                    );
-                    assert_eq!(
-                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
-                        before
+                    let probe = |budget| {
+                        let mut policy = limits();
+                        policy.execution.max_work = budget;
+                        let mut candidate = published.clone();
+                        let result = jit.evaluate_into(&args, &mut candidate, policy, &memory);
+                        let succeeded = result.is_ok();
+                        if succeeded {
+                            assert_eq!(
+                                candidate
+                                    .last()
+                                    .unwrap()
+                                    .as_ref()
+                                    .unwrap()
+                                    .canonical_data_draft()
+                                    .unwrap(),
+                                published
+                                    .last()
+                                    .unwrap()
+                                    .as_ref()
+                                    .unwrap()
+                                    .canonical_data_draft()
+                                    .unwrap()
+                            );
+                        } else {
+                            assert!(candidate.iter().zip(&published).all(|(a, b)| {
+                                a.as_ref()
+                                    .unwrap()
+                                    .shares_frozen_storage(b.as_ref().unwrap())
+                            }));
+                        }
+                        drop(candidate);
+                        assert_eq!(
+                            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                            before
+                        );
+                        succeeded
+                    };
+                    let (mut low, mut high) = (0, limits().execution.max_work);
+                    assert!(!probe(low) && probe(high));
+                    while high - low > 1 {
+                        let middle = low + (high - low) / 2;
+                        if probe(middle) {
+                            high = middle;
+                        } else {
+                            low = middle;
+                        }
+                    }
+                    assert!(probe(high));
+                    assert!(!probe(high - 1));
+                    println!(
+                        "scalar-record-admission first={arithmetic_first} minimum={high} one-short={}",
+                        high - 1
                     );
                     assert!(output.iter().zip(&published).all(|(a, b)| {
                         a.as_ref()
