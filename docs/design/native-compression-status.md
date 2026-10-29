@@ -9,6 +9,26 @@ components and entry remain 160992 bytes with SHA-256
 `345324ce551aaa2485dcd0fe4262da96e660d6b31f5f772bff89b034e9b1997f`.
 The six deliberate Huffman initialization sites remain.
 
+The latest measured compiler is `d105f884bc79d464a205b3022da4abdc00da41aa`.
+The [round 12 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-12/REPORT.md)
+records **345.68× → 251.38× Roc**, or **27.28% less elapsed time**, for unchanged
+eight-byte level-12 compression. Native private unsigned indexed-write leaves
+now keep current array owners and scalar state across iterations, including
+execution under ordinary suspended parents. The first changed store retains
+selected-operation admission and dynamic ownership checks; subsequent private
+stores execute as typed native instructions. The application is unchanged.
+
+There are 231 scoped Rust passes, twelve static contracts and twelve passing
+fresh scalar timing/allocation pairs. Actual write-fuel exits and a runtime-only
+linked valid → invalid → valid application preserve publication, cleanup and
+recovery. The historical round-10 scalar ratio 1.0526036 against 1.05 remains
+unresolved. The caller retains capacity 13, but measured output backing changes
+on both compilers; physical output copies remain timed. Larger complete inputs
+and full deployed-compressor timing were not refreshed. The next bounded
+candidate is mixed array/scalar results, as used by `huff-cumulative`; this round
+admits only a scalar result or one numeric array. #973 remains draft, with CI
+cancelled by request.
+
 ## Components and required capabilities
 
 | Source responsibility | Permanent entry points | General compiler capabilities |

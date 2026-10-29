@@ -631,3 +631,48 @@ admission on 333 and ordinary visits on 245; these overlapping counts are not
 additive wall-time buckets. Private indexed-write recurrences are the next
 measured compiler slice. Larger inputs, general producers, growth and SIMD remain
 separate. #973 stays draft, review is requested and CI is cancelled by request.
+
+## Native private unsigned indexed-write completion
+
+The [round 12 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-12/REPORT.md)
+records final production compiler `d105f884bc79d464a205b3022da4abdc00da41aa`,
+based on `efa2ff81741362394553d5c7eae7d9dfc39766c4`. The unchanged eight-byte
+compression pair is **345.68× → 251.38× Roc**, 0.099901542 → 0.072649542 seconds
+against a fresh 0.000289-second reference: **27.28% less elapsed**. Earlier
+provisional and corrected-handoff cohorts remain separate, with failures and
+corrections retained. Source, bytecode, tables, real buffer sizes, allocation
+sites, mimalloc object and timing boundaries are unchanged. Physical output
+backing still changes on both sides despite retained capacity 13.
+
+Core pre-admits a future immutable owner for exclusive fixed-shape unsigned
+updates. The numeric-leaf proof derives current functional versions on every
+path; arrays retain owners separately from scalar SSA fields. At the first
+changed write, the original consuming factory decides exclusivity. Private
+initial backing is retained and shared backing copies once. The unchanged
+allocation contract caught an initial carrier-pin copy, corrected by
+`c0bef396bbc88cdd8dd94037053866b182b7a68d`. The final compiler also preserves
+selected output-element ceilings for no-op stores at their source position.
+IR117/work policy92 records current-version proof, prepaid publication and
+same-account cold resumption; canonical bytecode14 and ABI35 are unchanged.
+
+All 231 scoped Rust tests pass: 87 Core snapshot, 129 maintained component,
+8 scalar, 3 bits, 3 actual runtime units and 1 generated linked application.
+Sixteen actual write-fuel exits freeze current cells and arguments without
+renewing admission; ten read-only exits retain the earlier guarantee. Adversarial
+publication tests cover arena/generation/type/account/bound mismatches. The linked
+application executes 3 → 0 → 2, preserving assertion-before-division order,
+prior publication, cleanup and successful recovery after a private write.
+Qualification receipts and the test-only typed-work-error correction are
+`e7767697e1b1bdc6e8013a499a1cecbb80319a22`.
+
+All twelve static contracts and twelve fresh scalar pairs pass, with exact
+allocation equality and maximum direct ratio 1.0180374 against the unchanged
+1.05 gate. The historical round-10 1.0526036 failure remains unresolved. The full
+Object selects 91 write regions (88 parented), 117 typed stores and 315 loads;
+successful already-private CFGs have zero calls. These are static sites. The
+separate final profile still has frame handling on 446/1356 ancestries and frame
+admission on 318; overlapping ancestry is not additive time attribution.
+Mixed array/scalar results in the real cumulative Huffman loop are the next
+bounded candidate. No larger timing or new optimization is included here.
+#973 remains draft; the previous code review is clean, fresh review is requested
+for closure and CI is cancelled by request.
