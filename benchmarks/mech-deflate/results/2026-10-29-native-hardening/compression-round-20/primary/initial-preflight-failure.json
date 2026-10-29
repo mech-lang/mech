@@ -1,0 +1,7 @@
+{
+  "failure": "Reference package subdirectory had not been copied into round20.",
+  "class": "introduced measurement setup",
+  "timing_observations": 0,
+  "compiler_executions": 0,
+  "fix": "Copy every pinned subdirectory and retain the unchanged content-hash checks."
+}

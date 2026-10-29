@@ -1,0 +1,91 @@
+[
+  {
+    "label": "roc",
+    "command": [
+      "/private/tmp/mech-deflate-profiling-20261028/roc-profile",
+      "12"
+    ],
+    "exit": 0,
+    "process_seconds": 6.116071250056848
+  },
+  {
+    "label": "pair0-before",
+    "command": [
+      "/private/tmp/mech-nested-frames-round20-20261029/primary/before",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 22.902396542020142
+  },
+  {
+    "label": "pair0-after",
+    "command": [
+      "/private/tmp/mech-nested-frames-round20-20261029/primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 22.695026749977842
+  },
+  {
+    "label": "pair1-after",
+    "command": [
+      "/private/tmp/mech-nested-frames-round20-20261029/primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 21.64825858315453
+  },
+  {
+    "label": "pair1-before",
+    "command": [
+      "/private/tmp/mech-nested-frames-round20-20261029/primary/before",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 21.87321437499486
+  },
+  {
+    "label": "pair2-before",
+    "command": [
+      "/private/tmp/mech-nested-frames-round20-20261029/primary/before",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 21.79801091714762
+  },
+  {
+    "label": "pair2-after",
+    "command": [
+      "/private/tmp/mech-nested-frames-round20-20261029/primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 21.759493625024334
+  },
+  {
+    "label": "pair3-after",
+    "command": [
+      "/private/tmp/mech-nested-frames-round20-20261029/primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 21.785011624917388
+  },
+  {
+    "label": "pair3-before",
+    "command": [
+      "/private/tmp/mech-nested-frames-round20-20261029/primary/before",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 21.798262499971315
+  }
+]
