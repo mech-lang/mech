@@ -1,4 +1,4 @@
-//! Escape analysis for private, fixed-width scalar tuples and enum state.
+//! Escape analysis for private, fixed-width scalar tuples/records and enum state.
 //! Canonical types/selected operations remain authoritative. Only an entire
 //! connected nonescaping storage component may become native words.
 use super::{
@@ -108,6 +108,15 @@ fn payload_words(schema: &Schema) -> Option<usize> {
 fn words(schema: &Schema) -> Option<usize> {
     match schema {
         Schema::Tuple(_) => payload_words(schema),
+        Schema::Record(fields)
+            if !fields.is_empty()
+                && fields.len() <= 32
+                && fields
+                    .iter()
+                    .all(|f| Kind::from_schema_body(&f.schema).is_some()) =>
+        {
+            Some(fields.len())
+        }
         Schema::Enum { variants, .. } if !variants.is_empty() => variants
             .iter()
             .map(|v| payload_words(v.payload.as_ref()?))
@@ -139,6 +148,11 @@ fn constant_words(data: &ValueData, count: usize) -> Option<Box<[u64]>> {
             ValueData::Tuple(items) => {
                 for item in items.iter() {
                     result.push(scalar(item)?);
+                }
+            }
+            ValueData::Record(record) => {
+                for field in record.fields() {
+                    result.push(scalar(field)?);
                 }
             }
             value => result.push(scalar(value)?),
@@ -189,6 +203,23 @@ fn pack(plan: &Plan, action: &Action) -> Option<(Value, Box<[NativeAggregateWord
                     .collect(),
             ))
         }
+        (Primitive::CompositePack(arity), Schema::Record(fields))
+            if arity == fields.len()
+                && operands.len() == arity
+                && operands.iter().zip(fields).all(|(v, field)| {
+                    plan.values()[v.get() as usize].scalar_kind()
+                        == Kind::from_schema_body(&field.schema)
+                }) =>
+        {
+            Some((
+                *output,
+                operands
+                    .iter()
+                    .copied()
+                    .map(NativeAggregateWord::Scalar)
+                    .collect(),
+            ))
+        }
         (Primitive::EnumPack, Schema::Enum { variants, .. }) if operands.len() == 2 => {
             // EnumPack's selected ordinal is ONE-based, whereas canonical
             // Enum payloads/structural observations use ZERO-based ordinals.
@@ -225,6 +256,28 @@ fn pack(plan: &Plan, action: &Action) -> Option<(Value, Box<[NativeAggregateWord
     }
 }
 fn observation(plan: &Plan, action: &Action) -> Option<NativeScalarAggregateAction> {
+    if let Some((source, offset, output)) = super::record_projection::constant_field(plan, action) {
+        let definition = plan.values()[source.get() as usize].definition();
+        if !definition.dimension_parameters().is_empty() {
+            return None;
+        }
+        words(definition.body())?;
+        let Schema::Record(fields) = definition.body() else {
+            return None;
+        };
+        if plan.values()[output.get() as usize].scalar_kind()
+            != Kind::from_schema_body(&fields.get(offset)?.schema)
+        {
+            return None;
+        }
+        return Some(NativeScalarAggregateAction::Observe {
+            source,
+            offset,
+            ordinal: None,
+            guards: Box::new([]),
+            output,
+        });
+    }
     let Action::Structural {
         source,
         path,
@@ -335,7 +388,7 @@ pub(in crate::native_artifact) fn derive(
                             link(*source, *output, &mut edges);
                         }
                     }
-                } else {
+                } else if observation(plan, action).is_none() {
                     bad[output.get() as usize] = true;
                     for operand in operands {
                         bad[operand.get() as usize] = true;
@@ -442,6 +495,11 @@ pub(in crate::native_artifact) fn derive(
                 }
                 Action::Structural { source, .. } if selected(*source) => {
                     observation(plan, block.action())
+                }
+                Action::LibraryCall { .. } => {
+                    observation(plan, block.action()).filter(|action| {
+                        matches!(action, NativeScalarAggregateAction::Observe { source, .. } if selected(*source))
+                    })
                 }
                 Action::Initialize { iteration } | Action::Latch { iteration } => {
                     let init = matches!(block.action(), Action::Initialize { .. });
