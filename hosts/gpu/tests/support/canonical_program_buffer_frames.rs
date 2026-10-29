@@ -804,6 +804,7 @@ fn restored_numeric_leaf_rejects_stale_views_offsets_prices_and_factory_associat
         super::numeric_result_qualification::GENERIC,
         super::multi_result_qualification::SOURCE,
         super::multi_result_qualification::RECORD_SOURCE,
+        super::numeric_result_qualification::SCALAR_PAIR,
         &append,
     ]
     .into_iter()
@@ -881,6 +882,30 @@ fn restored_numeric_leaf_rejects_stale_views_offsets_prices_and_factory_associat
                     format!("/numeric/frames/{at}/arrays/{ordinal}"),
                 ]);
             }
+        }
+        if let Some(value) = original
+            .pointer(&format!("{root}/numeric/result/Aggregate/value"))
+            .and_then(serde_json::Value::as_u64)
+        {
+            suffixes.push("/numeric/result/Aggregate/value".to_owned());
+            // Keep the word count and total footprint plausible while changing
+            // the actual returned aggregate's global lane offset. The loader
+            // must compare its scalar bank with the independently derived bank.
+            let mut changed = original.clone();
+            let slot = changed
+                .pointer_mut(&format!("/descriptor/scalar_aggregates/slots/{value}/0"))
+                .unwrap();
+            *slot = serde_json::json!(slot.as_u64().unwrap() + 1);
+            // SAFETY: deliberately corrupted image stays confined to rejection.
+            assert!(
+                unsafe {
+                    mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
+                        &serde_json::to_vec(&changed).unwrap(),
+                        &catalog,
+                    )
+                }
+                .is_err()
+            );
         }
         for suffix in suffixes {
             let mut changed = original.clone();

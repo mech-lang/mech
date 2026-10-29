@@ -200,42 +200,10 @@ fn scalar_results_preserve_failure_order_private_cleanup_and_retry() {
 }
 
 #[test]
-fn scalar_results_keep_finite_work_and_rederive_image_lanes() {
-    use mech_gpu::native_artifact::NativeProgramDescriptor;
+fn scalar_results_keep_finite_work_publication_and_retry() {
     for artifact in artifacts(PAIR).0 {
         let catalog = mech_stdlib::source_catalog();
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-        let bytes = jit.descriptor().encode_build_owned_image().unwrap();
-        // SAFETY: same-process image of this exact maintained descriptor;
-        // restored metadata is only inspected, never given a different entry.
-        let restored =
-            unsafe { NativeProgramDescriptor::decode_build_owned_image(&bytes, &catalog) }.unwrap();
-        assert_eq!(restored.encode_build_owned_image().unwrap(), bytes);
-        let original: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-        for path in [
-            "/descriptor/closed_tails/regions/0/numeric/result/Aggregate/value",
-            "/descriptor/closed_tails/regions/0/numeric/actions",
-            "/descriptor/scalar_aggregates/slots",
-        ] {
-            let mut changed = original.clone();
-            let target = changed.pointer_mut(path).unwrap();
-            *target = if let Some(value) = target.as_u64() {
-                serde_json::json!(value + 1)
-            } else {
-                serde_json::json!([])
-            };
-            // SAFETY: deliberately corrupt metadata is confined to rejection.
-            assert!(
-                unsafe {
-                    NativeProgramDescriptor::decode_build_owned_image(
-                        &serde_json::to_vec(&changed).unwrap(),
-                        &catalog,
-                    )
-                }
-                .is_err(),
-                "accepted {path}"
-            );
-        }
         let mode = NativeProgramLimitMode::NoLimits;
         let memory = mode.memory_budget();
         let mut out = vec![None; artifact.outputs().len()];
@@ -315,6 +283,9 @@ fn scalar_results_select_tuple_and_named_record_numeric_leaves() {
     selected(PAIR);
     selected(&record_source());
 }
+
+#[path = "canonical_program_numeric_scalar_pinned.rs"]
+mod pinned;
 
 #[test]
 fn scalar_results_preserve_fresh_visits_without_transport_slope() {

@@ -148,6 +148,8 @@ mod ownership;
 #[path = "canonical_program_numeric_scalar_results.rs"]
 mod scalar_results;
 
+pub(super) const SCALAR_PAIR: &str = scalar_results::PAIR;
+
 #[test]
 fn numeric_results_select_generic_and_unchanged_assign_leaf_under_parent() {
     let mut observed = Vec::new();
