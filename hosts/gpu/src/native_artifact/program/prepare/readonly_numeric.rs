@@ -1,4 +1,4 @@
-//! Same-plan proof for a read-only packed numeric leaf under a suspended parent.
+//! Same-plan proof for a packed numeric leaf under a suspended parent.
 //! Exact frame recipes own the connected escape analysis. This adds identity
 //! provenance for every managed field, including every alternative definition.
 use mech_core::{IntegerWidth, SchemaBody};
@@ -9,8 +9,11 @@ use mech_engine::native_artifact::{
     NativeProgramArtifactPlan as Plan, NativeProgramFacts, NativeScalarKind, NativeTailLoop,
 };
 use std::collections::{BTreeMap, BTreeSet};
+#[path = "numeric_results.rs"]
+mod results;
 #[path = "numeric_versions.rs"]
 mod versions;
+pub(in crate::native_artifact) use results::ResultRecipe;
 
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -58,7 +61,7 @@ pub(in crate::native_artifact) struct Proof {
     pub sites: Vec<usize>,
     pub scalar_words: usize,
     pub words: usize,
-    pub returned_array: Option<usize>,
+    pub result: ResultRecipe,
 }
 impl Proof {
     pub fn action(&self, site: usize) -> Option<&Operation> {
@@ -266,27 +269,12 @@ pub(in crate::native_artifact) fn derive(
     if arrays.is_empty() {
         return Err("no invariant numeric arrays");
     }
-    let returned_array = if plan.values()[tail.returned().get() as usize]
-        .scalar_kind()
-        .is_some()
-    {
-        None
-    } else {
-        let field = provenance
-            .array(tail.returned().get(), None)
-            .ok_or("leaf result is not a scalar or a current numeric array")?;
-        if plan.values()[tail.returned().get() as usize].schema() != fields[field].schema() {
-            return Err("returned array requires a different schema binding");
-        }
-        Some(
-            arrays
-                .iter()
-                .position(|a| a.field == field)
-                .ok_or("returned array outside carrier")?,
-        )
-    };
+    let result = results::derive(plan, tail, frames, fields, &arrays, &mut provenance)?;
     let mut actions = Vec::new();
     let mut frame_values = BTreeSet::from([tail.carrier().get()]);
+    if let Some(value) = result.frame() {
+        frame_values.insert(value);
+    }
     for &site in &sites {
         let action = plan.blocks()[site].action();
         if let Action::LibraryCall { template, .. } = action {
@@ -433,7 +421,7 @@ pub(in crate::native_artifact) fn derive(
         &sites,
         &actions,
         &arrays,
-        returned_array,
+        &result,
     )?;
     let mut scalar_words = 0;
     let frame_words = frame_values
@@ -495,6 +483,6 @@ pub(in crate::native_artifact) fn derive(
         sites: sites.into_iter().collect(),
         scalar_words,
         words,
-        returned_array,
+        result,
     })
 }

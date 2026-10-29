@@ -124,6 +124,30 @@ fn numeric_fuel_exit_synchronizes_current_carrier_then_cleans_up_and_retries() {
 #[test]
 fn numeric_write_fuel_exit_freezes_current_cells_without_renewing_admission() {
     let source = "put(xs<[u32]>, at<u64>, word<u32>) => (out<[u32]>) :=\n  ~next := xs\n  next[at] = word\n  out := next.\nwalk(xs<[u32]>, i<u64>, end<u64>) => (out<[u32]>) :=\n  more := i < end\n  out := (more? | true => walk(put(xs, i + 1u64, xs[i + 1u64] + 1u32), i + 1u64, end) | false => xs).\nwalk(words<[u32]>, 0u64, 64u64)\n";
+    check_write_fuel(
+        source,
+        ValueDataDraft::Matrix(vec![ValueDataDraft::U32(1); 64].into()),
+        false,
+    );
+}
+
+#[test]
+fn numeric_mixed_result_fuel_exit_freezes_current_cells_and_terminal_frame() {
+    let source = "put(xs<[u32]>, at<u64>, word<u32>) => (out<[u32]>) :=\n  ~next := xs\n  next[at] = word\n  out := next.\nwalk(xs<[u32]>, i<u64>, end<u64>) => <([u32],u64)>\n  | (xs, i, end) => ((i < end)? | true => walk(put(xs, i + 1u64, xs[i + 1u64] + 1u32), i + 1u64, end) | false => (xs, i + 17u64)).\n(next, at) := walk(words<[u32]>, 0u64, 64u64)\n(next, at + 0u64)\n";
+    check_write_fuel(
+        source,
+        ValueDataDraft::Tuple(
+            vec![
+                ValueDataDraft::Matrix(vec![ValueDataDraft::U32(1); 64].into()),
+                ValueDataDraft::U64(81),
+            ]
+            .into(),
+        ),
+        true,
+    );
+}
+
+fn check_write_fuel(source: &str, expected: ValueDataDraft, mixed: bool) {
     let original = artifact_source(source);
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(
         &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap(),
@@ -142,7 +166,34 @@ fn numeric_write_fuel_exit_freezes_current_cells_without_renewing_admission() {
             .regions
             .iter()
             .find(|r| r.numeric.as_ref().is_some_and(|p| p.writes()))
-            .unwrap();
+            .unwrap_or_else(|| {
+                let metadata = jit.descriptor().metadata();
+                let reasons = metadata
+                    .plan
+                    .iterations()
+                    .iter()
+                    .filter_map(|control| {
+                        let mech_engine::native_artifact::NativeControlLoop::Tail(tail) = control
+                        else {
+                            return None;
+                        };
+                        Some(
+                            crate::native_artifact::program::prepare::readonly_numeric::derive(
+                                &metadata.plan,
+                                tail,
+                                &metadata.buffer_frames,
+                                &metadata.calls,
+                            )
+                            .err(),
+                        )
+                    })
+                    .collect::<Vec<_>>();
+                panic!("write leaf not selected: {reasons:?}");
+            });
+        assert_eq!(
+            region.numeric.as_ref().unwrap().result.frame().is_some(),
+            mixed
+        );
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
         assert_eq!(artifact.inputs().len(), 1);
         let schema = artifact.inputs()[0].schema;
@@ -164,15 +215,27 @@ fn numeric_write_fuel_exit_freezes_current_cells_without_renewing_admission() {
         let args = vec![value.into_memory_budget(&mut admission).unwrap()];
         drop(admission);
         let mut outputs = vec![None];
-        let full = jit
-            .evaluate_into(&args, &mut outputs, limits(), &memory)
-            .unwrap();
+        let full = if mixed {
+            execute_observed_numeric_fuel(&jit, &args, &mut outputs, limits(), &memory)
+                .0
+                .unwrap()
+        } else {
+            jit.evaluate_into(&args, &mut outputs, limits(), &memory)
+                .unwrap()
+        };
+        // A public output pack follows the private tuple. Force denial within
+        // the actual native phase, before that separate canonical construction.
+        let native_exit_work = if mixed {
+            NUMERIC_NORMAL_EXIT_WORK.with(|rows| *rows.borrow().last().unwrap())
+        } else {
+            full.work
+        };
         let prior = outputs.clone();
         let before = (memory.used_bytes(), memory.retained_snapshot_nodes());
         let mut observed = 0;
         for withheld in [1, 2, 4, 8, 16, 32, 48, 64] {
             let mut denied = limits();
-            denied.execution.max_work = full.work - withheld * region.compute;
+            denied.execution.max_work = native_exit_work - withheld * region.compute;
             let (run, rows) =
                 execute_observed_numeric_fuel(&jit, &args, &mut outputs, denied, &memory);
             let error = run.unwrap_err();
@@ -221,7 +284,7 @@ fn numeric_write_fuel_exit_freezes_current_cells_without_renewing_admission() {
             );
             println!(
                 "{}",
-                serde_json::json!({"witness":"actual-write-fuel-exit","full_work":full.work,"body_cost":region.compute,"denied_limit":denied.execution.max_work,"carriers_and_cells":rows,"error":format!("{error:?}")})
+                serde_json::json!({"witness":if mixed {"actual-mixed-result-fuel-exit"} else {"actual-write-fuel-exit"},"full_work":full.work,"native_exit_work":native_exit_work,"body_cost":region.compute,"denied_limit":denied.execution.max_work,"carriers_and_cells":rows,"error":format!("{error:?}")})
             );
         }
         assert!(observed > 0);
@@ -229,7 +292,7 @@ fn numeric_write_fuel_exit_freezes_current_cells_without_renewing_admission() {
             .unwrap();
         assert_eq!(
             outputs[0].as_ref().unwrap().canonical_data_draft().unwrap(),
-            ValueDataDraft::Matrix(vec![ValueDataDraft::U32(1); 64].into())
+            expected
         );
         drop((args, outputs, prior));
         assert_eq!(memory.used_bytes(), 0);

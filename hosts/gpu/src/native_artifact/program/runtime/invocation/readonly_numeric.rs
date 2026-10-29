@@ -43,7 +43,7 @@ impl Invocation<'_, '_, '_> {
         let Some((remaining, _)) = self.state.library.unscoped_remaining() else {
             return Ok(false);
         };
-        let publication_work = if let Some(array) = proof.returned_array {
+        let publication_work = if let Some(array) = proof.result.direct_array() {
             self.state
                 .buffer_frames
                 .managed_owner(
@@ -174,8 +174,8 @@ impl Invocation<'_, '_, '_> {
                 self.write_borrowed_word(2 + slot, value.to_bits())?;
             }
         }
-        if proof.writes() || proof.returned_array.is_some() {
-            let publication = if let Some(array) = proof.returned_array {
+        if proof.writes() || proof.result.direct_array().is_some() {
+            let publication = if let Some(array) = proof.result.direct_array() {
                 let owner = self
                     .state
                     .buffer_frames
@@ -245,7 +245,7 @@ impl Invocation<'_, '_, '_> {
         if mode == 5 {
             return Ok(());
         }
-        if proof.writes() || proof.returned_array.is_some() {
+        if proof.writes() || proof.result.direct_array().is_some() {
             for (at, array) in proof.arrays.iter().enumerate() {
                 if let Some(private) = self.state.buffer_frames.private_array_mut(id, at)?.take() {
                     let owner = private.finish();
@@ -259,7 +259,7 @@ impl Invocation<'_, '_, '_> {
             }
             let publication = self.state.buffer_frames.finish_private(id)?;
             if mode == 0 {
-                if let Some(array) = proof.returned_array {
+                if let Some(array) = proof.result.direct_array() {
                     let owner = self
                         .state
                         .buffer_frames
@@ -275,6 +275,49 @@ impl Invocation<'_, '_, '_> {
                             .ok_or_else(|| invalid("numeric result lost publication admission"))?,
                         owner,
                     )?;
+                }
+            }
+        }
+        if mode == 0 {
+            if let Some(value) = proof.result.frame() {
+                // The returned scalar need not equal a carrier scalar. Its
+                // exact terminal Pack/Copy lanes were spilled at the exit.
+                let frame = proof
+                    .frames
+                    .iter()
+                    .find(|f| f.value == value)
+                    .ok_or_else(|| invalid("numeric result lost exact frame lanes"))?;
+                for (ordinal, (slot, array)) in frame.fields.iter().zip(&frame.arrays).enumerate() {
+                    if let Some(slot) = slot {
+                        let bits = self.read_borrowed_word(2 + slot)?;
+                        self.state.buffer_frames.synchronize_scalar(
+                            &metadata.buffer_frames,
+                            region.tail.returned(),
+                            ordinal,
+                            bits,
+                        )?;
+                    } else if let Some(array) = array {
+                        // Clone only after private cells have frozen. No extra
+                        // entry pin can defeat the consuming first-write handoff.
+                        let owner = self
+                            .state
+                            .buffer_frames
+                            .managed_owner(
+                                &metadata.buffer_frames,
+                                region.tail.carrier(),
+                                proof.arrays[*array].field,
+                            )
+                            .ok_or_else(|| invalid("numeric result lost current array owner"))?
+                            .clone();
+                        self.state.buffer_frames.synchronize_managed(
+                            &metadata.buffer_frames,
+                            region.tail.returned(),
+                            ordinal,
+                            owner,
+                        )?;
+                    } else {
+                        return Err(invalid("numeric result field lacks a native lane"));
+                    }
                 }
             }
         }

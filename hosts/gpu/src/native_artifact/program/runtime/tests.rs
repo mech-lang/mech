@@ -1050,6 +1050,7 @@ mod numeric_fuel;
 
 thread_local! {
     static NUMERIC_FUEL_OBSERVATIONS: std::cell::RefCell<Vec<Vec<u64>>> = const { std::cell::RefCell::new(Vec::new()) };
+    static NUMERIC_NORMAL_EXIT_WORK: std::cell::RefCell<Vec<u64>> = const { std::cell::RefCell::new(Vec::new()) };
 }
 // Observe the real cold reconciliation without changing fuel, source execution,
 // arguments, or the account. Unsafe access stays in this existing audited owner.
@@ -1062,10 +1063,10 @@ unsafe extern "C" fn observe_numeric_fuel(
     third: u64,
     result: *mut u64,
 ) -> u64 {
-    let cold =
-        operation == crate::native_artifact::program::protocol::abi::CLOSED_TAIL_END && third == 1;
+    let closing = operation == crate::native_artifact::program::protocol::abi::CLOSED_TAIL_END
+        && matches!(third, 0 | 1);
     // SAFETY: live execute-owned context; this read ends before helper borrows it.
-    let before = cold.then(|| {
+    let before = closing.then(|| {
         unsafe { &*context.cast::<Invocation<'_, '_, '_>>() }
             .state
             .library
@@ -1080,6 +1081,11 @@ unsafe extern "C" fn observe_numeric_fuel(
     {
         // SAFETY: the production helper returned; its exclusive borrow ended.
         let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        if third == 0 {
+            NUMERIC_NORMAL_EXIT_WORK
+                .with(|rows| rows.borrow_mut().push(ctx.state.library.used().0));
+            return status;
+        }
         let metadata = ctx.descriptor.metadata();
         if let Some(id) = metadata
             .closed_tails
@@ -1138,6 +1144,7 @@ fn execute_observed_numeric_fuel(
     Vec<Vec<u64>>,
 ) {
     NUMERIC_FUEL_OBSERVATIONS.with(|rows| rows.borrow_mut().clear());
+    NUMERIC_NORMAL_EXIT_WORK.with(|rows| rows.borrow_mut().clear());
     let entry = jit.test_checked_entry();
     let outcome = execute(
         jit.descriptor(),

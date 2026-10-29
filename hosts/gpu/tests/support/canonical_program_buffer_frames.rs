@@ -648,6 +648,7 @@ fn restored_numeric_leaf_rejects_stale_views_offsets_prices_and_factory_associat
     for artifact in [
         super::numeric_tail_qualification::WEIGHTED,
         super::numeric_write_qualification::WRITE,
+        super::numeric_result_qualification::GENERIC,
     ]
     .into_iter()
     .flat_map(|source| artifacts(source).0)
@@ -657,24 +658,63 @@ fn restored_numeric_leaf_rejects_stale_views_offsets_prices_and_factory_associat
         let original: serde_json::Value =
             serde_json::from_slice(&jit.descriptor().encode_build_owned_image().unwrap()).unwrap();
         let root = "/descriptor/closed_tails/regions/0";
-        for suffix in [
+        let mut suffixes = vec![
             "/numeric/arrays/0/field",
             "/numeric/arrays/0/width",
             "/numeric/arrays/0/witness",
             "/numeric/arrays/0/writable",
-            "/numeric/returned_array",
+            "/numeric/result",
             "/numeric/words",
             "/numeric/scalar_words",
             "/words",
             "/compute",
             "/comparison",
-        ] {
+        ]
+        .into_iter()
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+        if original
+            .pointer(&format!("{root}/numeric/result/Frame"))
+            .is_some()
+        {
+            suffixes.extend(
+                [
+                    "/numeric/result/Frame/value",
+                    "/numeric/result/Frame/ordinal",
+                    "/numeric/result/Frame/array",
+                ]
+                .map(str::to_owned),
+            );
+            let proof = original.pointer(&format!("{root}/numeric")).unwrap();
+            let value = &proof["result"]["Frame"]["value"];
+            let ordinal = proof["result"]["Frame"]["ordinal"].as_u64().unwrap();
+            let at = proof["frames"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .position(|f| &f["value"] == value)
+                .unwrap();
+            let scalar = proof["frames"][at]["fields"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .position(|f| !f.is_null())
+                .unwrap();
+            suffixes.extend([
+                format!("/numeric/frames/{at}/value"),
+                format!("/numeric/frames/{at}/fields/{scalar}"),
+                format!("/numeric/frames/{at}/arrays/{ordinal}"),
+            ]);
+        }
+        for suffix in suffixes {
             let mut changed = original.clone();
             let field = changed.pointer_mut(&format!("{root}{suffix}")).unwrap();
             *field = match field {
                 serde_json::Value::Bool(value) => serde_json::json!(!*value),
                 serde_json::Value::Null => serde_json::json!(0),
-                _ => serde_json::json!(field.as_u64().unwrap() + 1),
+                serde_json::Value::Number(_) => serde_json::json!(field.as_u64().unwrap() + 1),
+                serde_json::Value::String(_) => serde_json::json!({"Array":{"array":0}}),
+                _ => serde_json::json!("Scalar"),
             };
             let bytes = serde_json::to_vec(&changed).unwrap();
             // SAFETY: corrupt cached metadata is confined to rejection; no
