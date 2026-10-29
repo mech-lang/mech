@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/private/tmp/mech-nested-frames-round20-20261029/final-primary/current",
+    "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+    "137"
+  ],
+  "repetitions": 137,
+  "sample_command": [
+    "sample",
+    "50336",
+    "2",
+    "-file",
+    "/private/tmp/mech-nested-frames-round20-20261029/final-primary/after.sample.txt"
+  ],
+  "sample_exit": 0,
+  "output": "Sampling process 50336 for 2 seconds with 1 millisecond of run time between samples\nSampling completed, processing symbols...\nSample analysis of process 50336 written to file /private/tmp/mech-nested-frames-round20-20261029/final-primary/after.sample.txt\n",
+  "all_observations_excluded_from_primary": true
+}
