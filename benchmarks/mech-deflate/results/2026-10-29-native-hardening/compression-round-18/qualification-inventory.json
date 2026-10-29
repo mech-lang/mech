@@ -1,0 +1,746 @@
+[
+  {
+    "path": "qualification/components/component-qualification-v2.rs.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/components/component-qualification-v2.rs",
+    "sha256": "644603e3151efce8e00f5958e16fe8a43ab85eb7c9117333cd3c147d2cc1eda6",
+    "original_sha256": "f04667c5a7a809d396b908d7bd9ffcda11a93f2f6aca73ac571b2b840a73ceef"
+  },
+  {
+    "path": "qualification/components/component-v2-run.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/components/component-v2-run.json",
+    "sha256": "b185db876b9f62c9ac26eade04d7aad15f1586b7ef55187e1ae093415467f928",
+    "original_sha256": "b185db876b9f62c9ac26eade04d7aad15f1586b7ef55187e1ae093415467f928"
+  },
+  {
+    "path": "qualification/components/component-v2-build.log.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/components/component-v2-build.log",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/components/component-v2-run.log.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/components/component-v2-run.log",
+    "sha256": "e1c6f818e8249620cacebf2a7ce7e083a4372e1270c4d2bfc46e846ada864caa",
+    "original_sha256": "98e8d1452c3b55f026b34fa629ecc194664acf9b8310fb5d73de9802fab84dcd"
+  },
+  {
+    "path": "qualification/components/component-v2-build.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/components/component-v2-build.json",
+    "sha256": "22100547718b66e47423aa9746e85b4adb4a06fba6748feb38f00f1cbfe0a5b5",
+    "original_sha256": "22100547718b66e47423aa9746e85b4adb4a06fba6748feb38f00f1cbfe0a5b5"
+  },
+  {
+    "path": "qualification/components/qualify.py",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/components/qualify.py",
+    "sha256": "a21dde02ff6565d2875fcc573a836836b5907d2094a5bf498c7c18270fa297da",
+    "original_sha256": "a21dde02ff6565d2875fcc573a836836b5907d2094a5bf498c7c18270fa297da"
+  },
+  {
+    "path": "qualification/engine-units/build.py",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/engine-units/build.py",
+    "sha256": "4eba460ee7a936ce24e9d9e8f7499ad8d6721f74b0373663e477d30799334aba",
+    "original_sha256": "4eba460ee7a936ce24e9d9e8f7499ad8d6721f74b0373663e477d30799334aba"
+  },
+  {
+    "path": "qualification/engine-units/nonnative-check.py",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/engine-units/nonnative-check.py",
+    "sha256": "13e56c3f519e5c94620d76c593309c549f14e7e9e050c37d27da102efed7c8bd",
+    "original_sha256": "13e56c3f519e5c94620d76c593309c549f14e7e9e050c37d27da102efed7c8bd"
+  },
+  {
+    "path": "qualification/engine-units/run.log.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/engine-units/run.log",
+    "sha256": "1f849ebc1d3a4c0df1a188d888b85dd509853c9080db105e1ec979c997156cf9",
+    "original_sha256": "bbe5e3e717285d9986dadbe023536bb5dba933b38345c2bf85dbaaac4346fa5f"
+  },
+  {
+    "path": "qualification/engine-units/nonnative-build.log.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/engine-units/nonnative-build.log",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/engine-units/run.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/engine-units/run.json",
+    "sha256": "9590786a02d7171dd4cb02aa27e371f71c06db90124bb286d9dc1a9821de7914",
+    "original_sha256": "9590786a02d7171dd4cb02aa27e371f71c06db90124bb286d9dc1a9821de7914"
+  },
+  {
+    "path": "qualification/engine-units/nonnative-build.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/engine-units/nonnative-build.json",
+    "sha256": "7b5df852665707684e3527a23029b5a3d7dd9b8a7f6faaa8caf246c3e0a1d060",
+    "original_sha256": "7b5df852665707684e3527a23029b5a3d7dd9b8a7f6faaa8caf246c3e0a1d060"
+  },
+  {
+    "path": "qualification/engine-units/build.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/engine-units/build.json",
+    "sha256": "e2191c1861394b0f32ee1169da6e1a593692bff840d461c80d660a2676345103",
+    "original_sha256": "e2191c1861394b0f32ee1169da6e1a593692bff840d461c80d660a2676345103"
+  },
+  {
+    "path": "qualification/engine-units/build.log.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/engine-units/build.log",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/object-audit/build.py",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/object-audit/build.py",
+    "sha256": "564998d6bfe0689bab8a0be9dc29069b90f55f2fea340c187f1de25efcd09d8c",
+    "original_sha256": "564998d6bfe0689bab8a0be9dc29069b90f55f2fea340c187f1de25efcd09d8c"
+  },
+  {
+    "path": "qualification/object-audit/sections.py",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/object-audit/sections.py",
+    "sha256": "26a37ae05368c0e3354fc4e9eb8eca05cbb6769cf5de54246a32a19e7c61ff32",
+    "original_sha256": "26a37ae05368c0e3354fc4e9eb8eca05cbb6769cf5de54246a32a19e7c61ff32"
+  },
+  {
+    "path": "qualification/object-audit/object-evidence.rs.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/object-audit/object-evidence.rs",
+    "sha256": "8e63deb48bbf3cfab53f597eba644c6f8476d21cec2257733088d47be6f173be",
+    "original_sha256": "a5ee5c96f9dedc3871737b9058a5201e1c4c5507f8434e00e8d5c468a60fdcb8"
+  },
+  {
+    "path": "qualification/object-audit/complete-object.json.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/object-audit/complete-object.json",
+    "sha256": "c82e05b43156cafad566cce71f978ff0ad9b6099d4f006a8cd7fde44ce92f96a",
+    "original_sha256": "2aaf255774b46fe2629a99b17e03c0bdc9af93dd25f4112b0abfce1e8c84bf15"
+  },
+  {
+    "path": "qualification/object-audit/object-build.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/object-audit/object-build.json",
+    "sha256": "bfc5434d3fdedad04e4dc7e3e7b10447a9590d6543ad58201029134d68cec936",
+    "original_sha256": "bfc5434d3fdedad04e4dc7e3e7b10447a9590d6543ad58201029134d68cec936"
+  },
+  {
+    "path": "qualification/object-audit/object-run.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/object-audit/object-run.json",
+    "sha256": "c6e7539bc7abec8c51cbccaad1266b67c6689371c686b927b98316fbdbc6b569",
+    "original_sha256": "c6e7539bc7abec8c51cbccaad1266b67c6689371c686b927b98316fbdbc6b569"
+  },
+  {
+    "path": "qualification/object-audit/object-build.log.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/object-audit/object-build.log",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/object-audit/identity.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/object-audit/identity.json",
+    "sha256": "f0af6d7cf61cc3144453a3b98dbe7bacb9542ec6db841659212fa0588f62570f",
+    "original_sha256": "f0af6d7cf61cc3144453a3b98dbe7bacb9542ec6db841659212fa0588f62570f"
+  },
+  {
+    "path": "qualification/object-audit/object-run.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/object-audit/object-run.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/object-audit/sections.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/object-audit/sections.json",
+    "sha256": "0fcdae1c016769b07898e9dbb5f9298a1087cf1cfbc1186ee3d77cf65128ed6a",
+    "original_sha256": "0fcdae1c016769b07898e9dbb5f9298a1087cf1cfbc1186ee3d77cf65128ed6a"
+  },
+  {
+    "path": "qualification/object-audit/object-run.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/object-audit/object-run.stdout",
+    "sha256": "25e5b2b92527623eb49430bd7a0ebcd7576933114152f99009b5f252d4a6af32",
+    "original_sha256": "b52b0c5e5da9bc96a00e976f36f4ccd0486d50ef11408a05fe2ef69e0b20b3ec"
+  },
+  {
+    "path": "qualification/after-witness/nested-reservation-run.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/after-witness/nested-reservation-run.json",
+    "sha256": "c4a4645b99c50e56f16e4de9357294d780f9a776682a2aa335f4a55655cf8796",
+    "original_sha256": "c4a4645b99c50e56f16e4de9357294d780f9a776682a2aa335f4a55655cf8796"
+  },
+  {
+    "path": "qualification/after-witness/audit.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/after-witness/audit.json",
+    "sha256": "b2f1f73a8c2fbb4c33f6fdfe3d2cc9a5fcbbd6fdea5e81b4ec1af1d347d56f65",
+    "original_sha256": "b2f1f73a8c2fbb4c33f6fdfe3d2cc9a5fcbbd6fdea5e81b4ec1af1d347d56f65"
+  },
+  {
+    "path": "qualification/after-witness/nested-reservation-build.log.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/after-witness/nested-reservation-build.log",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/after-witness/audit-build.log.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/after-witness/audit-build.log",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/after-witness/selection-comparison.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/after-witness/selection-comparison.json",
+    "sha256": "ece5f0bf0e4e2a25e90e45ab6319b2b6a9f7a40dacd1d66ae7406f03e50c82bb",
+    "original_sha256": "ece5f0bf0e4e2a25e90e45ab6319b2b6a9f7a40dacd1d66ae7406f03e50c82bb"
+  },
+  {
+    "path": "qualification/after-witness/audit-build.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/after-witness/audit-build.json",
+    "sha256": "86cc6665334e789686919c2eb3d9861a4140ef927eea1f4e9011b491f240b37d",
+    "original_sha256": "86cc6665334e789686919c2eb3d9861a4140ef927eea1f4e9011b491f240b37d"
+  },
+  {
+    "path": "qualification/after-witness/audit.rs.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/after-witness/audit.rs",
+    "sha256": "ca424fd1a0155edc3d81ceb2c1abf06a7ca61b0dc24dc4415ee77e397ac5c186",
+    "original_sha256": "73184aa3a9b709a6d72904125efaa6db378d13a8d3105c5bc43217f0da10406c"
+  },
+  {
+    "path": "qualification/after-witness/build-nested.py",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/after-witness/build-nested.py",
+    "sha256": "cdee86c7b1720cd0613dd541f8fe5ce76453be1f982a2b87f8b9fe73d5047879",
+    "original_sha256": "cdee86c7b1720cd0613dd541f8fe5ce76453be1f982a2b87f8b9fe73d5047879"
+  },
+  {
+    "path": "qualification/after-witness/nested-reservation.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/after-witness/nested-reservation.json",
+    "sha256": "68d6e3e65d7ccf15bfc123d42a74718201f0c71014310b2da577ae68a874dbb9",
+    "original_sha256": "68d6e3e65d7ccf15bfc123d42a74718201f0c71014310b2da577ae68a874dbb9"
+  },
+  {
+    "path": "qualification/after-witness/audit.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/after-witness/audit.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/after-witness/nested-reservation.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/after-witness/nested-reservation.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/after-witness/build-audit.py",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/after-witness/build-audit.py",
+    "sha256": "1ac0482b232b268abd0de385dd91e7763bb2630c1e68f6fea904bc5afe7382d5",
+    "original_sha256": "1ac0482b232b268abd0de385dd91e7763bb2630c1e68f6fea904bc5afe7382d5"
+  },
+  {
+    "path": "qualification/after-witness/audit-run.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/after-witness/audit-run.json",
+    "sha256": "95afa33d65161fa4c2c1d513e1e003927cf392b332f3ae3b9466fad116b8b36b",
+    "original_sha256": "95afa33d65161fa4c2c1d513e1e003927cf392b332f3ae3b9466fad116b8b36b"
+  },
+  {
+    "path": "qualification/after-witness/nested-reservation.rs.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/after-witness/nested-reservation.rs",
+    "sha256": "1097e308bc7a9a45ed7faff9cc689dc7643353e167cfaf332fa0165f8afa7587",
+    "original_sha256": "08d27ea1bf5da94ffff7aa47def5b8a5e5aed3140bfdefbf07b40f63fe065e5c"
+  },
+  {
+    "path": "qualification/after-witness/nested-reservation-build.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/after-witness/nested-reservation-build.json",
+    "sha256": "b8f15080d88a0c0f815117579a7665fbdb042010d351f4521f5aac006974b2d5",
+    "original_sha256": "b8f15080d88a0c0f815117579a7665fbdb042010d351f4521f5aac006974b2d5"
+  },
+  {
+    "path": "qualification/full-components.py",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/full-components.py",
+    "sha256": "0c5faa26be9242a38cfbd8b9448ca1940262155228e9c56dffe6f28b111c62df",
+    "original_sha256": "0c5faa26be9242a38cfbd8b9448ca1940262155228e9c56dffe6f28b111c62df"
+  },
+  {
+    "path": "qualification/full-components.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/full-components.json",
+    "sha256": "2819b32a83e101769e001054bf182418871d696a1a3f7be5e877382ca07ce8fc",
+    "original_sha256": "2819b32a83e101769e001054bf182418871d696a1a3f7be5e877382ca07ce8fc"
+  },
+  {
+    "path": "qualification/full-components.log.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/full-components.log",
+    "sha256": "0aae128f274fc99c723a152466a276219fc25809de35c63739fde25c2a5afb8d",
+    "original_sha256": "5470f69d27f481ab0febfe20a9efffeba2a2dfbdaf4da65ed52803bc3951ab63"
+  },
+  {
+    "path": "qualification/qualify-all.py",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/qualify-all.py",
+    "sha256": "471bd31307efb43268fade050796513d810bd2f09b68c158690e13734c51aa18",
+    "original_sha256": "471bd31307efb43268fade050796513d810bd2f09b68c158690e13734c51aa18"
+  },
+  {
+    "path": "qualification/qualify-all.log.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/qualify-all.log",
+    "sha256": "62b9a41c3242ee6c2b36d2c0d53a0916ba68378f2e4a213722c8cbf4ef3de0e5",
+    "original_sha256": "9d504e00a71f978c1693ae0b988a815fa2ba2aaa4443394bd0e15dc0b1952149"
+  },
+  {
+    "path": "qualification/partition-profile.py",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/partition-profile.py",
+    "sha256": "f9b7591419ec0f65963f5d95e211f77269e723f840224aa036cf6a28995c4998",
+    "original_sha256": "f9b7591419ec0f65963f5d95e211f77269e723f840224aa036cf6a28995c4998"
+  },
+  {
+    "path": "qualification/final-partitioned-profile.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/final-partitioned-profile.json",
+    "sha256": "6e8fb4b808fc772be01de02e40eb5ac7ccc3a4c5ddb9f3e7ac0d0188c555d7d3",
+    "original_sha256": "6e8fb4b808fc772be01de02e40eb5ac7ccc3a4c5ddb9f3e7ac0d0188c555d7d3"
+  },
+  {
+    "path": "qualification/reference-context.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/reference-context.json",
+    "sha256": "54a421a1a2dbbf91e79fd0c5b809d4258a4ef877cdfec816f4449ff2170a263b",
+    "original_sha256": "54a421a1a2dbbf91e79fd0c5b809d4258a4ef877cdfec816f4449ff2170a263b"
+  },
+  {
+    "path": "qualification/source-artifact.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/source-artifact.json",
+    "sha256": "e4896d14b59bc377688d8de95f289eda2247665a59f54f5e896a8755bcc614fc",
+    "original_sha256": "e4896d14b59bc377688d8de95f289eda2247665a59f54f5e896a8755bcc614fc"
+  },
+  {
+    "path": "qualification/source-artifact.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/source-artifact.stdout",
+    "sha256": "e3839a4d369dc81598af4e16ee620dba613286b151c0b997e8db0d4f7add99be",
+    "original_sha256": "9af8b9f1c359ad93d21b732f4f084b7edcc45797468fa55090e2332c204f05d4"
+  },
+  {
+    "path": "qualification/source-artifact.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/source-artifact.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/scalar-follow-up-plan.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/scalar-follow-up-plan.json",
+    "sha256": "554a6ea0f09d8083eb1d3c750bcffd606fc6e0b2555c00fa793d66bf24c0f124",
+    "original_sha256": "554a6ea0f09d8083eb1d3c750bcffd606fc6e0b2555c00fa793d66bf24c0f124"
+  },
+  {
+    "path": "qualification/first-result.py",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/first-result.py",
+    "sha256": "93b227ceb4a2820009428d1b9dc61c424e9c2052e00e55c87160a3324ae774e0",
+    "original_sha256": "93b227ceb4a2820009428d1b9dc61c424e9c2052e00e55c87160a3324ae774e0"
+  },
+  {
+    "path": "qualification/first-result.log.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/first-result.log",
+    "sha256": "3953e2ddc460c819f8194d2b1ce5e8f209dda8bd67abb62731430929255c8112",
+    "original_sha256": "d3198d39ef3aa735901d346ebc406b6b1d4dcf79c6ccbebb893b3c830c7e94f5"
+  },
+  {
+    "path": "qualification/first-result-v2.py",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/first-result-v2.py",
+    "sha256": "89f62db1cca8737901076d89118b2aba892b68fce35966f459c9d6b55df27547",
+    "original_sha256": "89f62db1cca8737901076d89118b2aba892b68fce35966f459c9d6b55df27547"
+  },
+  {
+    "path": "qualification/first-result-v2.log.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/first-result-v2.log",
+    "sha256": "2652d04e6d5aec69f6550e71911cb894d9bedf830bd67b872a995c444b5d3d2b",
+    "original_sha256": "7129b8fd55bf6c96683e7bf3d2f91368f657f1c3471088facb2bcf93bc6b242f"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-f64-0-decoded-after.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-f64-0-decoded-after.stdout",
+    "sha256": "1a7a4b3395b8c60ebbf844cba4d86add02da446a3ae47dd45bc11dc1bf2b9330",
+    "original_sha256": "f62eab2ec2859f2006ef1982d4c90cc394dd7fc01df35ae0bf2129bac788fe85"
+  },
+  {
+    "path": "qualification/primary/selected-bits-run.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/selected-bits-run.json",
+    "sha256": "149d4f4e072ecd72b5a8a8e48044cd24baabbec500ab139b7b4d3b1743f7a040",
+    "original_sha256": "149d4f4e072ecd72b5a8a8e48044cd24baabbec500ab139b7b4d3b1743f7a040"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-loop-64-original-before.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-loop-64-original-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-i64-0-decoded-before.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-i64-0-decoded-before.stdout",
+    "sha256": "bba868b47d06fea6bbdb2f99954f6f7e80e10d283bcc2e9645184b9b219c4db7",
+    "original_sha256": "f933ad426f83849b25adebcb3ee6f464ab11660bf5fdaeaa4152b9501492e293"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-loop-0-decoded-after.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-loop-0-decoded-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-commands.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-commands.json",
+    "sha256": "b8f35ee55de73f92914372223ee6c59accb02946e77176d6c02f4f1e1e1095af",
+    "original_sha256": "b8f35ee55de73f92914372223ee6c59accb02946e77176d6c02f4f1e1e1095af"
+  },
+  {
+    "path": "qualification/primary/selected-native-run.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/selected-native-run.json",
+    "sha256": "13809ae255ebd6ee0f7e289c308a8fce1c5455f2a637c4ae803c5dd3a029a86e",
+    "original_sha256": "13809ae255ebd6ee0f7e289c308a8fce1c5455f2a637c4ae803c5dd3a029a86e"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-loop-64-decoded-before.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-loop-64-decoded-before.stdout",
+    "sha256": "7a5ad131d341e4c2f16a4f7763c1d914cbd19ed135d98b683c72e29b459e9ba0",
+    "original_sha256": "2de0bdb90277059b4824416aaea15d2d8e8a15a708297f899d76abef89f71662"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-u64-0-decoded-before.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-u64-0-decoded-before.stdout",
+    "sha256": "6b91f844241b759acb9e775cfb18036cd2b17753fcc5962714c372318f940f59",
+    "original_sha256": "93978320910a40ebf98e5c5e102a1da6a435b2b465d424585ebd4dc5051bcc07"
+  },
+  {
+    "path": "qualification/primary/scalar-results.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-results.json",
+    "sha256": "07b870aefd06a6a39541064faf82ec0b1e55a1da0ae07a5c22b1fd8ed33a9b5f",
+    "original_sha256": "07b870aefd06a6a39541064faf82ec0b1e55a1da0ae07a5c22b1fd8ed33a9b5f"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-loop-64-decoded-after.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-loop-64-decoded-after.stdout",
+    "sha256": "e062f042ed8227dcb8ee66a05f30cecb9c30953f2c6060421769ee2a0659a9c4",
+    "original_sha256": "4d5a28f50acf9f6db8dc7705587005eaa94f114339008b8a22e817810a3f6b65"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-bool-0-decoded-before.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-bool-0-decoded-before.stdout",
+    "sha256": "1e59e251321370cfee739b2fa374b69737fa19bb774374086bebedf7d0442881",
+    "original_sha256": "2ad9718cfef8d2241948bf2e47194b87e2bd70babba122756512fc9be73faf1c"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-bool-0-decoded-after.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-bool-0-decoded-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-loop-0-decoded-before.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-loop-0-decoded-before.stdout",
+    "sha256": "8542528df726aae955bee486f494660b996b0d2a20a7cc114211c1a43eb6e954",
+    "original_sha256": "f677161e19ceee9483eb60324bf1296ceea9c4a449fb38863fbce23ab13e082c"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-f64-0-decoded-before.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-f64-0-decoded-before.stdout",
+    "sha256": "ee5c21abaee321581b35612bc6a6a1621d1f2f5167aa33082fe1cbf3acc2bc9b",
+    "original_sha256": "90f0c84589e90407784eab27225db7a8e0724a77e0dfa21b923146521be624f4"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-f64-0-original-before.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-f64-0-original-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-loop-0-decoded-before.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-loop-0-decoded-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-bool-0-decoded-after.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-bool-0-decoded-after.stdout",
+    "sha256": "c5b7231bfdc9f20002875ffc223f780e5de0cb4364c4ef7ef09cb3e2d32bf908",
+    "original_sha256": "dfcfffc9970f175203258840036103f07a38f7262bc0159a7833de5fcc5727f3"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-f64-0-decoded-before.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-f64-0-decoded-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-f64-0-original-before.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-f64-0-original-before.stdout",
+    "sha256": "2833f71e8d8456a305ef98ad24a3fd7b8e148eb56e99184effd2b593956b72ad",
+    "original_sha256": "feb36e2781bdf24b10460d720b2bcde519b33cfe648a22950309b949a2b55013"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-loop-64-decoded-after.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-loop-64-decoded-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-u64-0-decoded-before.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-u64-0-decoded-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-bool-0-decoded-before.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-bool-0-decoded-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/selected-bits-build.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/selected-bits-build.json",
+    "sha256": "29652dbde44d4119cfb7d9f11bd9c3096da2a67e4378b235452e384802e99abc",
+    "original_sha256": "29652dbde44d4119cfb7d9f11bd9c3096da2a67e4378b235452e384802e99abc"
+  },
+  {
+    "path": "qualification/primary/selected-native-build.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/selected-native-build.json",
+    "sha256": "02565a35241f6b95de91151e5f819acef5c4c519e90a71d2ef30146d39586995",
+    "original_sha256": "02565a35241f6b95de91151e5f819acef5c4c519e90a71d2ef30146d39586995"
+  },
+  {
+    "path": "qualification/primary/qualify-selected.py",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/qualify-selected.py",
+    "sha256": "ec4ae85da0dcc07cec6b8fab0a4d017a721851b39d1aef21ca51c0b2f7b7cda8",
+    "original_sha256": "ec4ae85da0dcc07cec6b8fab0a4d017a721851b39d1aef21ca51c0b2f7b7cda8"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-loop-64-decoded-before.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-loop-64-decoded-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/frame-before.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/frame-before.json",
+    "sha256": "f3e5b2791591c4d4aa0a3609eb3c29f24f66a8dafff72e10e1166715f0c475d5",
+    "original_sha256": "f3e5b2791591c4d4aa0a3609eb3c29f24f66a8dafff72e10e1166715f0c475d5"
+  },
+  {
+    "path": "qualification/primary/selected-native-run.log.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/selected-native-run.log",
+    "sha256": "4f521e03350e24c4e792cda495934dbe39c14f22c48ff737ffef1dc22bb3db4c",
+    "original_sha256": "f7d019108899ac1b14a566a597c87e3fced44edf58911c9b916707aa52ec3c66"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-f64-0-decoded-after.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-f64-0-decoded-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-loop-0-decoded-after.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-loop-0-decoded-after.stdout",
+    "sha256": "ea689efd5d34e10bb57ff7cc797ae1da1a9091ea1eaf0a5b6d3dd2458d3e0aa6",
+    "original_sha256": "e222aa4470aadbc568b900db84c6cf23dfa03d390a8ee312cbebe7da669d7431"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-i64-0-decoded-before.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-i64-0-decoded-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-loop-64-original-before.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-loop-64-original-before.stdout",
+    "sha256": "3ccc55e8f0c21f8f27eda8f6f601f68a2f2a87a6e86b7b6cd960305ea603115a",
+    "original_sha256": "93ac9f36666ca46e4c5421569ec9857cc2b648f2083b16166a6c14738fb195f8"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-bool-0-original-after.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-bool-0-original-after.stdout",
+    "sha256": "dfea4fbb2ad0366f92c2b98bb0066190b2e122242ec867e6ccaccbed227dd458",
+    "original_sha256": "d107a1216aaa6b1f3e0f3549a26504e9725eb2d9e36bd8456cabf38039793d75"
+  },
+  {
+    "path": "qualification/primary/selected-bits-run.log.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/selected-bits-run.log",
+    "sha256": "0183a9db6cff09d6a01f70613e08f96fba1f4c75a4f828ee0846a51a14ed6239",
+    "original_sha256": "7720252200d79d30480090f816956abb0e54a5fe33e74c4abb079dfdb72555bf"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-u64-0-original-after.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-u64-0-original-after.stdout",
+    "sha256": "0bb0e03dd78709364ec7116fd0c90d1e7dc5a86193d464913f471409fa24da9f",
+    "original_sha256": "ff0a2356a6579618b09cc9fc290ed48fe42b589765b17c3d762a009cf09fdd27"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-i64-0-original-before.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-i64-0-original-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/selected-native-build.log.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/selected-native-build.log",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-u64-0-decoded-after.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-u64-0-decoded-after.stdout",
+    "sha256": "a9f66df1877985d36dd4a8fddf5f97cee844e04dedfb6a539c76a2d805ce89c4",
+    "original_sha256": "10bc51d4fa3e10f38a767f0ed216a0d4d6308708f393d74089f09f3db4432b39"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-f64-0-original-after.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-f64-0-original-after.stdout",
+    "sha256": "167e7a8ea90ae778c1dbc3e98603b296bd52794077008321b9196ddf5047c4c8",
+    "original_sha256": "f933a2916532791bc51a9668e1590cae3ee5cf044be25494d22f28e99d053d48"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-loop-0-original-before.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-loop-0-original-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-loop-0-original-after.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-loop-0-original-after.stdout",
+    "sha256": "973396b2cd22843d6c51af3f0dbd489f611b3e5eb7507b2daebe7c02d6a97a40",
+    "original_sha256": "fb858f757a49ae7cedbf8769e7d3eef7333866bab68b235ab5f21b53c549a546"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-i64-0-original-after.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-i64-0-original-after.stdout",
+    "sha256": "f39023c917c64ec066aa8970a810ba10e316c5d78c283222a935648c83ebf27b",
+    "original_sha256": "07f4ba47d6f81e844c94eef59a5ba3270343f4a7eeea341a2153e80991cea5e3"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-i64-0-decoded-after.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-i64-0-decoded-after.stdout",
+    "sha256": "b9e0575fcc38564b9003427951437a763addeed0b80d5a2948a82035eb730a6b",
+    "original_sha256": "75ecc119cf390c905416b7a18d5e3704b446069649abb4879554377ede7c1fdf"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-loop-64-original-after.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-loop-64-original-after.stdout",
+    "sha256": "2a2faac326846f46162718d73b33cf8770b0179d31e781b13b3c2b27ceaf1285",
+    "original_sha256": "6cf575a04abda6df3dce05b5a999032db0b4c39eea09ff3258ca2e6d6811851f"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-u64-0-original-before.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-u64-0-original-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-bool-0-original-before.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-bool-0-original-before.stdout",
+    "sha256": "01439b4321349b3f860af1ac95e66a9c5e6278e23805e42e5877b8a85c2a164d",
+    "original_sha256": "72169af42a6c43531eeb4f922222d035db70cef2b05c24df83a492ba8c05a82a"
+  },
+  {
+    "path": "qualification/primary/selected-bits-build.log.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/selected-bits-build.log",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-loop-64-original-after.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-loop-64-original-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-u64-0-original-before.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-u64-0-original-before.stdout",
+    "sha256": "8eca2451d5a7af0db9fd0100c98b4ecfa5b68351e8348dca41225a040dce3f1a",
+    "original_sha256": "dbf291ccb0472689fcd39bb81c0c3934859dda851c5133008c894933ced69e7e"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-bool-0-original-before.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-bool-0-original-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-i64-0-original-after.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-i64-0-original-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-i64-0-decoded-after.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-i64-0-decoded-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-controls.py",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-controls.py",
+    "sha256": "bbd452952661afb485c4b61f41ca54f6b9d75eb8c9e0d9d480f6e35e0d4d202c",
+    "original_sha256": "bbd452952661afb485c4b61f41ca54f6b9d75eb8c9e0d9d480f6e35e0d4d202c"
+  },
+  {
+    "path": "qualification/primary/frame-after.json",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/frame-after.json",
+    "sha256": "e6e7fa6bb45dd2bfe9fcb716f551f9b7277934da4086c337831c168a03d0ce8d",
+    "original_sha256": "e6e7fa6bb45dd2bfe9fcb716f551f9b7277934da4086c337831c168a03d0ce8d"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-u64-0-decoded-after.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-u64-0-decoded-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-f64-0-original-after.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-f64-0-original-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-i64-0-original-before.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-i64-0-original-before.stdout",
+    "sha256": "8fb2a4c4476e6452e97bf4e2baf5cea29b58a66bc83a9666e90399b8eb8816bf",
+    "original_sha256": "2bf533286b5751ccedbf7e816a94edb3955828ef7709ccc1d0ed43cd2cd58c61"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-loop-0-original-before.stdout.gz",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-loop-0-original-before.stdout",
+    "sha256": "f2cb5602ecc37f069d51bd30459510a2719cc254c6aa9c06f7d98f506e1e12a2",
+    "original_sha256": "5d0bdb1542047f2f56bcc9bdfc70c2bc1f5d8c21fd3fc717bb95f9cebc5f23e7"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-loop-0-original-after.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-loop-0-original-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-bool-0-original-after.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-bool-0-original-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/primary/scalar-scalar-u64-0-original-after.stderr",
+    "source": "/private/tmp/mech-record-boundaries-round18-20261029/primary/scalar-scalar-u64-0-original-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "qualification/round18-opaque-siblings-release.json",
+    "source": "/private/tmp/mech-linear-restack-20261026/validation/round18-opaque-siblings-release.json",
+    "sha256": "6aeb87d2c28aba241caa4d9f246c16aa424d59ee43f5612efc356f6e767eb3db",
+    "original_sha256": "6aeb87d2c28aba241caa4d9f246c16aa424d59ee43f5612efc356f6e767eb3db"
+  },
+  {
+    "path": "qualification/round18-opaque-siblings-release.log.gz",
+    "source": "/private/tmp/mech-linear-restack-20261026/validation/round18-opaque-siblings-release.log",
+    "sha256": "80034dbac5b63d137de0d53cfd61074780ffdca8cd6869388d2eb3d37ebaf6c6",
+    "original_sha256": "69d5781dc522a57edacc43875f32813b3af641a03f45cfdee1c6f0dada43d6d3"
+  },
+  {
+    "path": "qualification/round18-static-architecture.json",
+    "source": "/private/tmp/mech-linear-restack-20261026/validation/round18-static-architecture.json",
+    "sha256": "b86d9a768a4c57c8c15efa14fe89ae9e1d1a3a504089e8efc1cba493cfdc645f",
+    "original_sha256": "b86d9a768a4c57c8c15efa14fe89ae9e1d1a3a504089e8efc1cba493cfdc645f"
+  },
+  {
+    "path": "qualification/round18-static-architecture.log.gz",
+    "source": "/private/tmp/mech-linear-restack-20261026/validation/round18-static-architecture.log",
+    "sha256": "117ccb4e62c3c9966c78492a4ace814a7dcb04551d712f65b9cb2a58ac34e4e8",
+    "original_sha256": "3a658afdabac90c5b896f61b04565e1db86e790ea90e2afcaa9477b77a51bbc1"
+  },
+  {
+    "path": "qualification/round18-static-architecture-final.json",
+    "source": "/private/tmp/mech-linear-restack-20261026/validation/round18-static-architecture-final.json",
+    "sha256": "a8c85488ffe3313d882dba8220542bde2ddd1ffcc3fc1c3a89ea25d37690efa5",
+    "original_sha256": "a8c85488ffe3313d882dba8220542bde2ddd1ffcc3fc1c3a89ea25d37690efa5"
+  },
+  {
+    "path": "qualification/round18-static-architecture-final.log.gz",
+    "source": "/private/tmp/mech-linear-restack-20261026/validation/round18-static-architecture-final.log",
+    "sha256": "5f05f6bda086f544f8deb0ecd499d028be5cd47792e65493d9ac2485d44ce88b",
+    "original_sha256": "a181eff42c0d2aca60b13e3315172ed155d2ad49121875c15322638a179abd1e"
+  }
+]

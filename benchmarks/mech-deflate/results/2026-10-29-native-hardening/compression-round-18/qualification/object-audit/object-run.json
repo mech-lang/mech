@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-record-boundaries-round18-20261029/object-audit/object-evidence",
+    "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+    "/private/tmp/mech-record-boundaries-round18-20261029/object-audit/complete-object"
+  ],
+  "exit": 0,
+  "seconds": 25.64846087503247,
+  "binary_sha256": "8e45308741a0407233f8b95f187482c1052d64e2811651d98166f29ec05aa98a"
+}

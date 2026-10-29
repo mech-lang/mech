@@ -1,0 +1,22 @@
+{
+  "name": "round18-static-architecture-final",
+  "command": [
+    "python3",
+    "/private/tmp/mech-final-static-20261028.py"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "8b04906ed35a52e1d7cc5766392dde00f2fb361b",
+  "dirty": "",
+  "exit": 0,
+  "seconds": 191.2135820388794,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round18-static-architecture-final.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

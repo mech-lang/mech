@@ -1,0 +1,67 @@
+{
+  "command": [
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+    "--edition=2024",
+    "-C",
+    "opt-level=3",
+    "-D",
+    "warnings",
+    "-L",
+    "dependency=/private/tmp/mech-live-control-target/release/deps",
+    "--extern",
+    "serde=/private/tmp/mech-live-control-target/release/deps/libserde-53e30a58b8778b4f.rlib",
+    "--extern",
+    "serde_json=/private/tmp/mech-live-control-target/release/deps/libserde_json-e0f8af30c3327a5b.rlib",
+    "--extern",
+    "mech_core=/private/tmp/mech-live-control-target/release/deps/libmech_core-4ff4856784490a86.rlib",
+    "--extern",
+    "mech_syntax=/private/tmp/mech-live-control-target/release/deps/libmech_syntax-99fe397930ae7109.rlib",
+    "--extern",
+    "mech_engine=/private/tmp/mech-live-control-target/release/deps/libmech_engine-0d214f77bb5acf15.rlib",
+    "--extern",
+    "miniz_oxide=/private/tmp/mech-live-control-target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+    "--extern",
+    "mech_gpu=/private/tmp/mech-live-control-target/release/deps/libmech_gpu-7fa2845c539b987a.rlib",
+    "--extern",
+    "mech_stdlib=/private/tmp/mech-live-control-target/release/deps/libmech_stdlib-6eec5c94a1151738.rlib",
+    "/private/tmp/mech-record-boundaries-round18-20261029/object-audit/object-evidence.rs",
+    "-o",
+    "/private/tmp/mech-record-boundaries-round18-20261029/object-audit/object-evidence"
+  ],
+  "exit": 0,
+  "seconds": 1.1132825419772416,
+  "libraries": {
+    "serde": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libserde-53e30a58b8778b4f.rlib",
+      "sha256": "719e178acfe69acea9a91cbc644b344e669197b324d9477b434961547a02a044"
+    },
+    "serde_json": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libserde_json-e0f8af30c3327a5b.rlib",
+      "sha256": "b5a1c2826c3cfddfb9efd7336afc4b43c7b2f031ac28c6433cee1fe3610c9779"
+    },
+    "mech_core": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libmech_core-4ff4856784490a86.rlib",
+      "sha256": "feb4c2084478f12d1173b7411bb465d9c154baf747cd78dd15db8f00b0b6b7c7"
+    },
+    "mech_syntax": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libmech_syntax-99fe397930ae7109.rlib",
+      "sha256": "6cff7aac0a7052cd33d595e13a9068ee9860f4e42a50bcc375fe973670f99969"
+    },
+    "mech_engine": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libmech_engine-0d214f77bb5acf15.rlib",
+      "sha256": "94ee9ab919788d18d8108acba77a37647b330d60aa8620f6ffb6c7da3b1279ff"
+    },
+    "miniz_oxide": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+      "sha256": "49a1806c0b276e1f9d2c6620467506ed4dd39bbc959a93f884ab4fa7aaba35a3"
+    },
+    "mech_gpu": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libmech_gpu-7fa2845c539b987a.rlib",
+      "sha256": "5ca956e38a1f95ff8d18bf0bbe82d2d68c84635253dbab925f21f785d42bc721"
+    },
+    "mech_stdlib": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libmech_stdlib-6eec5c94a1151738.rlib",
+      "sha256": "60bbee2cc70a43701df9aa3d1c375a5b7e387407038f941cafdfc28b51d6dc7e"
+    }
+  }
+}

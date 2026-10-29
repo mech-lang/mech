@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-record-boundaries-round18-20261029/primary/selected-bits-tests",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.938358583021909,
+  "binary_sha256": "619d2bc3114b9d6cb31ffcd15d17573e3068082733a871edf8d7da6ec13c619a",
+  "skipped_coverage": null
+}
