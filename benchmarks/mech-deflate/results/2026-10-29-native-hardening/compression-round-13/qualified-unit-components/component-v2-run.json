@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/private/tmp/mech-numeric-results-round13-20261029/qualified-unit-components/component-v2-tests",
+    "numeric_result_qualification",
+    "restored_numeric_leaf_rejects",
+    "linked_private_mixed_numeric_result",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 101,
+  "seconds": 90.5940418750979,
+  "binary_sha256": "61805c886e4acf389b92d5779fd365558a1009beaedffbacb563c68ad0003e90",
+  "skipped": []
+}

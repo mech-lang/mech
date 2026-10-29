@@ -203,6 +203,21 @@ impl Layout {
                         .ok_or("Tail store comparison work overflow")?;
                 }
             }
+            if let Some(fields) = numeric
+                .as_ref()
+                .and_then(|p| p.result.frame().and_then(|value| p.fields(value)))
+            {
+                // Current result fields synchronize once at exit, in the
+                // already admitted frame lanes. Conservatively fund that
+                // bounded work on every traversal, including the terminal one.
+                compute = compute
+                    .checked_add(
+                        (fields.len() as u64)
+                            .checked_mul(64)
+                            .ok_or("numeric result work overflow")?,
+                    )
+                    .ok_or("numeric result synchronization work overflow")?;
+            }
             let index = layout.regions.len();
             for site in sites {
                 layout.sites[site as usize] = Some(index);

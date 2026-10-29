@@ -45,6 +45,7 @@ fn numeric_results_observe_generic_and_pinned_assign_transport() {
             .unwrap();
             let memory = mode.memory_budget();
             let mut out = vec![None; artifact.outputs().len()];
+            let mut observations = Vec::new();
             for steps in [0, 1, 8, 64, 256] {
                 let generic = name == "generic-array-index";
                 let mut counts = vec![Data::U64(0); 17];
@@ -78,6 +79,7 @@ fn numeric_results_observe_generic_and_pinned_assign_transport() {
                     jit.evaluate_into(&args, &mut out, mode.execution(), &memory)
                 });
                 let report = run.unwrap();
+                observations.push((steps, requests, bytes, report.visits));
                 let expected = if generic {
                     let mut words = (0..288).collect::<Vec<u32>>();
                     for seed in [3, 4] {
@@ -125,12 +127,20 @@ fn numeric_results_observe_generic_and_pinned_assign_transport() {
                     serde_json::json!({"witness":"mixed-numeric-result","case":name,"form":form,"steps":steps,"requests":requests,"requested_bytes":bytes,"visits":report.visits,"work":report.work,"allocator":"System/probe; excluded from primary timing"})
                 );
             }
+            assert!(
+                observations[1..].iter().all(|r| (r.1, r.2, r.3)
+                    == (observations[1].1, observations[1].2, observations[1].3)),
+                "per-iteration result transport remains: {observations:?}"
+            );
             drop(out);
             assert_eq!(memory.used_bytes(), 0);
             assert_eq!(memory.retained_snapshot_nodes(), 0);
         }
     }
 }
+
+#[path = "canonical_program_numeric_result_cases.rs"]
+mod cases;
 
 #[test]
 fn numeric_results_select_generic_and_unchanged_assign_leaf_under_parent() {

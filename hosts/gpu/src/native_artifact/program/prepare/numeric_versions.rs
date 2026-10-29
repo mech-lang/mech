@@ -13,7 +13,7 @@ pub(super) fn validate(
     sites: &BTreeSet<usize>,
     actions: &[(usize, Operation)],
     arrays: &[Array],
-    returned: Option<usize>,
+    result: &ResultRecipe,
 ) -> Result<(), &'static str> {
     let successors = |site: usize| -> Vec<usize> {
         if site == tail.latch() as usize {
@@ -138,11 +138,15 @@ pub(super) fn validate(
                 }
             }
         }
-        if site == tail.finish() as usize
-            && returned.is_some()
-            && !fresh(&state, (tail.returned().get(), None))
-        {
-            return Err("leaf returns an older array version");
+        if site == tail.finish() as usize {
+            let key = match result {
+                ResultRecipe::Scalar => None,
+                ResultRecipe::Array { .. } => Some((tail.returned().get(), None)),
+                ResultRecipe::Frame { value, ordinal, .. } => Some((*value, Some(*ordinal))),
+            };
+            if key.is_some_and(|key| !fresh(&state, key)) {
+                return Err("leaf returns an older array version");
+            }
         }
         for next in successors(site) {
             if let Some(merged) = states.get_mut(&next) {

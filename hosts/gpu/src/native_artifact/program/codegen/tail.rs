@@ -63,10 +63,17 @@ pub(in crate::native_artifact) fn leave(
     store(options, b, locals, region, region.words, zero)?;
     if let Some(proof) = &region.numeric {
         hooks.require_argument_words(b, proof.words + 2, error);
+        let terminal = proof
+            .result
+            .frame()
+            .filter(|_| mode == 0)
+            .and_then(|value| proof.fields(value))
+            .unwrap_or(&[]);
         for slot in proof
             .fields(region.tail.carrier().get())
             .unwrap()
             .iter()
+            .chain(terminal.iter())
             .flatten()
         {
             let value = load(options, b, locals, region, region.words + 3 + slot)?;

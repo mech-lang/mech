@@ -1,0 +1,3535 @@
+{
+  "assertion_before_division": true,
+  "binary_sha256": "32067a42d7e205fa9e884d9988da6664ddc804611fe0c8529d41033f11a063bb",
+  "cleanup_and_recovery": true,
+  "compiled_units": [
+    {
+      "features": [
+        "default",
+        "proc-macro"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/build/proc-macro2-3a54baab57e31456/build-script-build"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.107",
+      "name": "proc-macro2",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "bin"
+        ],
+        "doc": false,
+        "doctest": false,
+        "edition": "2021",
+        "kind": [
+          "custom-build"
+        ],
+        "name": "build-script-build",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro2-1.0.107/build.rs",
+        "test": false
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libunicode_ident-7d827edfd7cac1ee.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libunicode_ident-7d827edfd7cac1ee.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#unicode-ident@1.0.24",
+      "name": "unicode-ident",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "unicode_ident",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-ident-1.0.24/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default",
+        "proc-macro"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/build/quote-e286141a8378ed1e/build-script-build"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.47",
+      "name": "quote",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "bin"
+        ],
+        "doc": false,
+        "doctest": false,
+        "edition": "2021",
+        "kind": [
+          "custom-build"
+        ],
+        "name": "build-script-build",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-1.0.47/build.rs",
+        "test": false
+      }
+    },
+    {
+      "features": [
+        "default",
+        "proc-macro"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libproc_macro2-01f7ac35006e4d4b.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libproc_macro2-01f7ac35006e4d4b.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.107",
+      "name": "proc-macro2",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "proc_macro2",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro2-1.0.107/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default",
+        "proc-macro"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libquote-266301afc9c176f9.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libquote-266301afc9c176f9.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.47",
+      "name": "quote",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "quote",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-1.0.47/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "clone-impls",
+        "default",
+        "derive",
+        "extra-traits",
+        "fold",
+        "full",
+        "parsing",
+        "printing",
+        "proc-macro",
+        "visit"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libsyn-c39360cd48673439.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libsyn-c39360cd48673439.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#syn@2.0.119",
+      "name": "syn",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "syn",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/syn-2.0.119/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "const-generics"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libtypenum-937034ed163dd497.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libtypenum-937034ed163dd497.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#typenum@1.20.1",
+      "name": "typenum",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "typenum",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/typenum-1.20.1/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default",
+        "proc-macro"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libsynstructure-73c264a3f24c6f95.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libsynstructure-73c264a3f24c6f95.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#synstructure@0.13.2",
+      "name": "synstructure",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "synstructure",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/synstructure-0.13.2/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libautocfg-2800dbb9a50e48d6.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libautocfg-2800dbb9a50e48d6.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#autocfg@1.5.1",
+      "name": "autocfg",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2015",
+        "kind": [
+          "lib"
+        ],
+        "name": "autocfg",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.1/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libzerofrom_derive-de067ef2f2bfa275.dylib"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#zerofrom-derive@0.1.7",
+      "name": "zerofrom-derive",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "proc-macro"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "proc-macro"
+        ],
+        "name": "zerofrom_derive",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zerofrom-derive-0.1.7/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "derive"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libzerofrom-328c0fcf915af0e8.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libzerofrom-328c0fcf915af0e8.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#zerofrom@0.1.8",
+      "name": "zerofrom",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "zerofrom",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zerofrom-0.1.8/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libyoke_derive-cc71a62620c434a3.dylib"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#yoke-derive@0.8.2",
+      "name": "yoke-derive",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "proc-macro"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "proc-macro"
+        ],
+        "name": "yoke_derive",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yoke-derive-0.8.2/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "arch",
+        "default"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/build/libm-91cd648a92c50e40/build-script-build"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#libm@0.2.16",
+      "name": "libm",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "bin"
+        ],
+        "doc": false,
+        "doctest": false,
+        "edition": "2021",
+        "kind": [
+          "custom-build"
+        ],
+        "name": "build-script-build",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libm-0.2.16/build.rs",
+        "test": false
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libstable_deref_trait-acfb673d8fce067d.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libstable_deref_trait-acfb673d8fce067d.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#stable_deref_trait@1.2.1",
+      "name": "stable_deref_trait",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2015",
+        "kind": [
+          "lib"
+        ],
+        "name": "stable_deref_trait",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/stable_deref_trait-1.2.1/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "derive",
+        "zerofrom"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libyoke-47c5b2fcaddc8487.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libyoke-47c5b2fcaddc8487.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#yoke@0.8.3",
+      "name": "yoke",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "yoke",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yoke-0.8.3/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "i128",
+        "libm",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/build/num-traits-5661cdb4541529e3/build-script-build"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#num-traits@0.2.19",
+      "name": "num-traits",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "bin"
+        ],
+        "doc": false,
+        "doctest": false,
+        "edition": "2021",
+        "kind": [
+          "custom-build"
+        ],
+        "name": "build-script-build",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num-traits-0.2.19/build.rs",
+        "test": false
+      }
+    },
+    {
+      "features": [
+        "arch",
+        "default"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/liblibm-b7cc58dc817dd1c2.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/liblibm-b7cc58dc817dd1c2.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#libm@0.2.16",
+      "name": "libm",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "libm",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libm-0.2.16/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libhybrid_array-87541476cede898f.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libhybrid_array-87541476cede898f.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#hybrid-array@0.4.14",
+      "name": "hybrid-array",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2024",
+        "kind": [
+          "lib"
+        ],
+        "name": "hybrid_array",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hybrid-array-0.4.14/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libzerovec_derive-5c59d05744936556.dylib"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#zerovec-derive@0.11.3",
+      "name": "zerovec-derive",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "proc-macro"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "proc-macro"
+        ],
+        "name": "zerovec_derive",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zerovec-derive-0.11.3/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "derive",
+        "yoke"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libzerovec-d6fd9b9a469caad0.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libzerovec-d6fd9b9a469caad0.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#zerovec@0.11.6",
+      "name": "zerovec",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "zerovec",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zerovec-0.11.6/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "i128",
+        "libm",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libnum_traits-2670c7433a463fb7.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libnum_traits-2670c7433a463fb7.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#num-traits@0.2.19",
+      "name": "num-traits",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "num_traits",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num-traits-0.2.19/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libdisplaydoc-8dfee88ddc803325.dylib"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#displaydoc@0.2.6",
+      "name": "displaydoc",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "proc-macro"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "proc-macro"
+        ],
+        "name": "displaydoc",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/displaydoc-0.2.6/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/build/zmij-f9e11050afc41197/build-script-build"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#zmij@1.0.23",
+      "name": "zmij",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "bin"
+        ],
+        "doc": false,
+        "doctest": false,
+        "edition": "2021",
+        "kind": [
+          "custom-build"
+        ],
+        "name": "build-script-build",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zmij-1.0.23/build.rs",
+        "test": false
+      }
+    },
+    {
+      "features": [
+        "alloc",
+        "result",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/build/serde_core-9cda1b57626b1e9e/build-script-build"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#serde_core@1.0.229",
+      "name": "serde_core",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "bin"
+        ],
+        "doc": false,
+        "doctest": false,
+        "edition": "2021",
+        "kind": [
+          "custom-build"
+        ],
+        "name": "build-script-build",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.229/build.rs",
+        "test": false
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libversion_check-23541719c3f2f417.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libversion_check-23541719c3f2f417.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#version_check@0.9.5",
+      "name": "version_check",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2015",
+        "kind": [
+          "lib"
+        ],
+        "name": "version_check",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/version_check-0.9.5/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libcfg_if-0a965ce5b33667b6.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libcfg_if-0a965ce5b33667b6.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.4",
+      "name": "cfg-if",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "cfg_if",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cfg-if-1.0.4/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/build/libc-b42738bc9a5a69e6/build-script-build"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.189",
+      "name": "libc",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "bin"
+        ],
+        "doc": false,
+        "doctest": false,
+        "edition": "2021",
+        "kind": [
+          "custom-build"
+        ],
+        "name": "build-script-build",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libc-0.2.189/build.rs",
+        "test": false
+      }
+    },
+    {
+      "features": [
+        "more_lengths"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/build/generic-array-c1b8d405d336586a/build-script-build"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#generic-array@0.14.7",
+      "name": "generic-array",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "bin"
+        ],
+        "doc": false,
+        "doctest": false,
+        "edition": "2015",
+        "kind": [
+          "custom-build"
+        ],
+        "name": "build-script-build",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generic-array-0.14.7/build.rs",
+        "test": false
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libblock_buffer-eca82e80275ab66c.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libblock_buffer-eca82e80275ab66c.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#block-buffer@0.12.1",
+      "name": "block-buffer",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2024",
+        "kind": [
+          "lib"
+        ],
+        "name": "block_buffer",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/block-buffer-0.12.1/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libcrypto_common-b75bc3b4273ec7f9.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libcrypto_common-b75bc3b4273ec7f9.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#crypto-common@0.2.2",
+      "name": "crypto-common",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2024",
+        "kind": [
+          "lib"
+        ],
+        "name": "crypto_common",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crypto-common-0.2.2/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "block-api",
+        "default"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libdigest-caa92495ec8a4fad.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libdigest-caa92495ec8a4fad.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#digest@0.11.3",
+      "name": "digest",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2024",
+        "kind": [
+          "lib"
+        ],
+        "name": "digest",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/digest-0.11.3/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libzmij-99d47f9e09315b58.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libzmij-99d47f9e09315b58.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#zmij@1.0.23",
+      "name": "zmij",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "zmij",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zmij-1.0.23/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "alloc",
+        "result",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libserde_core-79732d91e56b708b.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libserde_core-79732d91e56b708b.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#serde_core@1.0.229",
+      "name": "serde_core",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "serde_core",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.229/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/liblibc-813fbcccb35961c9.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/liblibc-813fbcccb35961c9.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.189",
+      "name": "libc",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "libc",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libc-0.2.189/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libbytemuck-8cfe10e279fca38f.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libbytemuck-8cfe10e279fca38f.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#bytemuck@1.25.2",
+      "name": "bytemuck",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "bytemuck",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bytemuck-1.25.2/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "alloc",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libmemchr-1077af418ed8405f.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libmemchr-1077af418ed8405f.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#memchr@2.8.3",
+      "name": "memchr",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "memchr",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memchr-2.8.3/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libitoa-ebeccaec68c884e1.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libitoa-ebeccaec68c884e1.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#itoa@1.0.18",
+      "name": "itoa",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "itoa",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/itoa-1.0.18/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/build/paste-dbb4e127c4b30cd0/build-script-build"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#paste@1.0.15",
+      "name": "paste",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "bin"
+        ],
+        "doc": false,
+        "doctest": false,
+        "edition": "2018",
+        "kind": [
+          "custom-build"
+        ],
+        "name": "build-script-build",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/paste-1.0.15/build.rs",
+        "test": false
+      }
+    },
+    {
+      "features": [
+        "bytemuck",
+        "default"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libsafe_arch-c9627ecc54df6529.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libsafe_arch-c9627ecc54df6529.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#safe_arch@0.7.4",
+      "name": "safe_arch",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "safe_arch",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/safe_arch-0.7.4/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "more_lengths"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libgeneric_array-6cb99c2ec48029c5.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libgeneric_array-6cb99c2ec48029c5.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#generic-array@0.14.7",
+      "name": "generic-array",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2015",
+        "kind": [
+          "lib"
+        ],
+        "name": "generic_array",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/generic-array-0.14.7/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "zerovec"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libtinystr-cd614960964bc988.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libtinystr-cd614960964bc988.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#tinystr@0.8.3",
+      "name": "tinystr",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "tinystr",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tinystr-0.8.3/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "avx512",
+        "default",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/build/matrixmultiply-7ffffa545ef7a6aa/build-script-build"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#matrixmultiply@0.3.11",
+      "name": "matrixmultiply",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "bin"
+        ],
+        "doc": false,
+        "doctest": false,
+        "edition": "2018",
+        "kind": [
+          "custom-build"
+        ],
+        "name": "build-script-build",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/matrixmultiply-0.3.11/build.rs",
+        "test": false
+      }
+    },
+    {
+      "features": [
+        "clone-impls",
+        "derive",
+        "parsing",
+        "printing",
+        "proc-macro"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libsyn-1e317630c9eaebe2.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libsyn-1e317630c9eaebe2.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#syn@3.0.3",
+      "name": "syn",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "syn",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/syn-3.0.3/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/build/icu_properties_data-cb2bda4faf0e44de/build-script-build"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#icu_properties_data@2.2.0",
+      "name": "icu_properties_data",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "bin"
+        ],
+        "doc": false,
+        "doctest": false,
+        "edition": "2021",
+        "kind": [
+          "custom-build"
+        ],
+        "name": "build-script-build",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_properties_data-2.2.0/build.rs",
+        "test": false
+      }
+    },
+    {
+      "features": [
+        "alloc",
+        "default",
+        "derive",
+        "serde_derive",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/build/serde-b2a37e860f3ccece/build-script-build"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#serde@1.0.229",
+      "name": "serde",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "bin"
+        ],
+        "doc": false,
+        "doctest": false,
+        "edition": "2021",
+        "kind": [
+          "custom-build"
+        ],
+        "name": "build-script-build",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/build.rs",
+        "test": false
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/liblitemap-bcce7df3701ccd7f.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/liblitemap-bcce7df3701ccd7f.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#litemap@0.8.2",
+      "name": "litemap",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "litemap",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/litemap-0.8.2/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/liballoc_no_stdlib-083c1e983a2031e1.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/liballoc_no_stdlib-083c1e983a2031e1.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#alloc-no-stdlib@2.0.4",
+      "name": "alloc-no-stdlib",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2015",
+        "kind": [
+          "lib"
+        ],
+        "name": "alloc_no_stdlib",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/alloc-no-stdlib-2.0.4/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libwriteable-e607116336ec9b0d.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libwriteable-e607116336ec9b0d.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#writeable@0.6.3",
+      "name": "writeable",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "writeable",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/writeable-0.6.3/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "zerovec"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libicu_locale_core-a83dd15b63d7d1f7.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libicu_locale_core-a83dd15b63d7d1f7.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#icu_locale_core@2.2.0",
+      "name": "icu_locale_core",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "icu_locale_core",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_locale_core-2.2.0/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/liballoc_stdlib-40459759392316a5.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/liballoc_stdlib-40459759392316a5.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#alloc-stdlib@0.2.4",
+      "name": "alloc-stdlib",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2015",
+        "kind": [
+          "lib"
+        ],
+        "name": "alloc_stdlib",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/alloc-stdlib-0.2.4/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libserde_derive-cc36b4457710dbd2.dylib"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#serde_derive@1.0.229",
+      "name": "serde_derive",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "proc-macro"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "proc-macro"
+        ],
+        "name": "serde_derive",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_derive-1.0.229/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libwide-1caadd2cbdf9f14a.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libwide-1caadd2cbdf9f14a.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#wide@0.7.33",
+      "name": "wide",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "wide",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wide-0.7.33/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libpaste-910cf773da2b446d.dylib"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#paste@1.0.15",
+      "name": "paste",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "proc-macro"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "proc-macro"
+        ],
+        "name": "paste",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/paste-1.0.15/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "yoke",
+        "zerofrom"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libzerotrie-f356497d23a4f84f.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libzerotrie-f356497d23a4f84f.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#zerotrie@0.2.4",
+      "name": "zerotrie",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "zerotrie",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zerotrie-0.2.4/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libnum_complex-1857cbdec4bccb87.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libnum_complex-1857cbdec4bccb87.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#num-complex@0.4.6",
+      "name": "num-complex",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "num_complex",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num-complex-0.4.6/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libapprox-7d2d3f8338585373.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libapprox-7d2d3f8338585373.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#approx@0.5.1",
+      "name": "approx",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2015",
+        "kind": [
+          "lib"
+        ],
+        "name": "approx",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/approx-0.5.1/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "i128",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libnum_integer-fd5f6818bd5ff042.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libnum_integer-fd5f6818bd5ff042.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#num-integer@0.1.46",
+      "name": "num-integer",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "num_integer",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num-integer-0.1.46/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "zerovec"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libpotential_utf-3d4e61e0b9d770bc.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libpotential_utf-3d4e61e0b9d770bc.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#potential_utf@0.1.5",
+      "name": "potential_utf",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "potential_utf",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.5/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/librawpointer-2f7caa854caff392.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/librawpointer-2f7caa854caff392.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#rawpointer@0.2.1",
+      "name": "rawpointer",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2015",
+        "kind": [
+          "lib"
+        ],
+        "name": "rawpointer",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rawpointer-0.2.1/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libutf8_iter-e8de9eff21715a71.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libutf8_iter-e8de9eff21715a71.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#utf8_iter@1.0.4",
+      "name": "utf8_iter",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "utf8_iter",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/utf8_iter-1.0.4/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libequivalent-0cdc0b3c545f198a.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libequivalent-0cdc0b3c545f198a.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#equivalent@1.0.2",
+      "name": "equivalent",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2015",
+        "kind": [
+          "lib"
+        ],
+        "name": "equivalent",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/equivalent-1.0.2/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/build/crc32fast-9befb0fd8c932402/build-script-build"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#crc32fast@1.5.0",
+      "name": "crc32fast",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "bin"
+        ],
+        "doc": false,
+        "doctest": false,
+        "edition": "2021",
+        "kind": [
+          "custom-build"
+        ],
+        "name": "build-script-build",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crc32fast-1.5.0/build.rs",
+        "test": false
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libtinyvec_macros-c28fc9208820cd62.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libtinyvec_macros-c28fc9208820cd62.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#tinyvec_macros@0.1.1",
+      "name": "tinyvec_macros",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "tinyvec_macros",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tinyvec_macros-0.1.1/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libvirtue-8c85d0fdff672a0d.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libvirtue-8c85d0fdff672a0d.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#virtue@0.0.18",
+      "name": "virtue",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "virtue",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/virtue-0.0.18/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default",
+        "raw_value",
+        "std",
+        "unbounded_depth"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/build/serde_json-384ba6f34182c278/build-script-build"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#serde_json@1.0.151",
+      "name": "serde_json",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "bin"
+        ],
+        "doc": false,
+        "doctest": false,
+        "edition": "2021",
+        "kind": [
+          "custom-build"
+        ],
+        "name": "build-script-build",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.151/build.rs",
+        "test": false
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/build/libc-9c459c8cd8d52cc8/build-script-build"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.189",
+      "name": "libc",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "bin"
+        ],
+        "doc": false,
+        "doctest": false,
+        "edition": "2021",
+        "kind": [
+          "custom-build"
+        ],
+        "name": "build-script-build",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libc-0.2.189/build.rs",
+        "test": false
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libbincode_derive-6b8c62c47b138b3d.dylib"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#bincode_derive@2.0.1",
+      "name": "bincode_derive",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "proc-macro"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "proc-macro"
+        ],
+        "name": "bincode_derive",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bincode_derive-2.0.1/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "alloc",
+        "default",
+        "tinyvec_macros"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libtinyvec-bd7e222c28008b9f.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libtinyvec-bd7e222c28008b9f.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#tinyvec@1.12.0",
+      "name": "tinyvec",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "tinyvec",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tinyvec-1.12.0/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libicu_collections-a46943789acd02a4.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libicu_collections-a46943789acd02a4.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#icu_collections@2.2.0",
+      "name": "icu_collections",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "icu_collections",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_collections-2.2.0/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "avx512",
+        "default",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libmatrixmultiply-30ee842512c0d5f8.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libmatrixmultiply-30ee842512c0d5f8.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#matrixmultiply@0.3.11",
+      "name": "matrixmultiply",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "matrixmultiply",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/matrixmultiply-0.3.11/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libnum_rational-6f53c694ed84f2af.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libnum_rational-6f53c694ed84f2af.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#num-rational@0.4.2",
+      "name": "num-rational",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "num_rational",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num-rational-0.4.2/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "std",
+        "wide"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libsimba-e19810159f39b307.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libsimba-e19810159f39b307.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#simba@0.9.1",
+      "name": "simba",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "simba",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/simba-0.9.1/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "baked"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libicu_provider-7618ab1f5e7dee3d.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libicu_provider-7618ab1f5e7dee3d.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#icu_provider@2.2.0",
+      "name": "icu_provider",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "icu_provider",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_provider-2.2.0/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "alloc",
+        "default",
+        "derive",
+        "serde_derive",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libserde-57c59ac9336fd6ba.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libserde-57c59ac9336fd6ba.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#serde@1.0.229",
+      "name": "serde",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "serde",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libicu_properties_data-60e86c58790535b8.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libicu_properties_data-60e86c58790535b8.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#icu_properties_data@2.2.0",
+      "name": "icu_properties_data",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "icu_properties_data",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_properties_data-2.2.0/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "alloc-stdlib",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libbrotli_decompressor-3c587e79d279b7b3.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libbrotli_decompressor-3c587e79d279b7b3.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#brotli-decompressor@5.0.3",
+      "name": "brotli-decompressor",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2015",
+        "kind": [
+          "lib"
+        ],
+        "name": "brotli_decompressor",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/brotli-decompressor-5.0.3/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libcrypto_common-e2531ecb226cf371.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libcrypto_common-e2531ecb226cf371.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#crypto-common@0.1.7",
+      "name": "crypto-common",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "crypto_common",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crypto-common-0.1.7/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libblock_buffer-d0cc71b0c4bf6d40.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libblock_buffer-d0cc71b0c4bf6d40.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#block-buffer@0.10.4",
+      "name": "block-buffer",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "block_buffer",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/block-buffer-0.10.4/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libcpufeatures-c954ddc7fdfc580a.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libcpufeatures-c954ddc7fdfc580a.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#cpufeatures@0.3.0",
+      "name": "cpufeatures",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2024",
+        "kind": [
+          "lib"
+        ],
+        "name": "cpufeatures",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpufeatures-0.3.0/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libnalgebra_macros-1f1e1628439a8d4d.dylib"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#nalgebra-macros@0.3.0",
+      "name": "nalgebra-macros",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "proc-macro"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2024",
+        "kind": [
+          "proc-macro"
+        ],
+        "name": "nalgebra_macros",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nalgebra-macros-0.3.0/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libunty-3ba3f62ab15d6912.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libunty-3ba3f62ab15d6912.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#unty@0.0.4",
+      "name": "unty",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "unty",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unty-0.0.4/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libhashbrown-0d129f655380e0ae.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libhashbrown-0d129f655380e0ae.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#hashbrown@0.17.1",
+      "name": "hashbrown",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2024",
+        "kind": [
+          "lib"
+        ],
+        "name": "hashbrown",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hashbrown-0.17.1/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libunicode_segmentation-2764d3a6bfbe73f1.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libunicode_segmentation-2764d3a6bfbe73f1.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#unicode-segmentation@1.13.3",
+      "name": "unicode-segmentation",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "unicode_segmentation",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-segmentation-1.13.3/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/build/serde_core-55c81f44a50d9f77/build-script-build"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#serde_core@1.0.229",
+      "name": "serde_core",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "bin"
+        ],
+        "doc": false,
+        "doctest": false,
+        "edition": "2021",
+        "kind": [
+          "custom-build"
+        ],
+        "name": "build-script-build",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.229/build.rs",
+        "test": false
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libgrapheme_macro-510df7907cc1db62.dylib"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#grapheme_macro@2.0.0",
+      "name": "grapheme_macro",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "proc-macro"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2024",
+        "kind": [
+          "proc-macro"
+        ],
+        "name": "grapheme_macro",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/grapheme_macro-2.0.0/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default",
+        "serde",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libindexmap-d9a0dc94ccd32675.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libindexmap-d9a0dc94ccd32675.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#indexmap@2.14.0",
+      "name": "indexmap",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2024",
+        "kind": [
+          "lib"
+        ],
+        "name": "indexmap",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/indexmap-2.14.0/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "alloc",
+        "bincode_derive",
+        "default",
+        "derive",
+        "serde",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libbincode-969dbd0babf214ad.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libbincode-969dbd0babf214ad.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#bincode@2.0.1",
+      "name": "bincode",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "bincode",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bincode-2.0.1/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default",
+        "macros",
+        "matrixmultiply",
+        "nalgebra-macros",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libnalgebra-d51901ff2ad5c241.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libnalgebra-d51901ff2ad5c241.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#nalgebra@0.34.2",
+      "name": "nalgebra",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2024",
+        "kind": [
+          "lib"
+        ],
+        "name": "nalgebra",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nalgebra-0.34.2/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libsha2-c7a8aa176add51db.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libsha2-c7a8aa176add51db.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#sha2@0.11.0",
+      "name": "sha2",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2024",
+        "kind": [
+          "lib"
+        ],
+        "name": "sha2",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sha2-0.11.0/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "alloc",
+        "block-buffer",
+        "core-api",
+        "default",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libdigest-85bcc107b3a39241.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libdigest-85bcc107b3a39241.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#digest@0.10.7",
+      "name": "digest",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "digest",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/digest-0.10.7/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "alloc-stdlib",
+        "default",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libbrotli-312bf81f53782948.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libbrotli-312bf81f53782948.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#brotli@8.0.4",
+      "name": "brotli",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2015",
+        "kind": [
+          "lib"
+        ],
+        "name": "brotli",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/brotli-8.0.4/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "compiled_data",
+        "default"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libicu_properties-a981105ff8bb9a32.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libicu_properties-a981105ff8bb9a32.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#icu_properties@2.2.0",
+      "name": "icu_properties",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "icu_properties",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_properties-2.2.0/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libcrc32fast-3b9b5d33a29a5c2f.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libcrc32fast-3b9b5d33a29a5c2f.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#crc32fast@1.5.0",
+      "name": "crc32fast",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "crc32fast",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crc32fast-1.5.0/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libunicode_normalization-4932bc9ec7343937.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libunicode_normalization-4932bc9ec7343937.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#unicode-normalization@0.1.25",
+      "name": "unicode-normalization",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "unicode_normalization",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-normalization-0.1.25/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default",
+        "raw_value",
+        "std",
+        "unbounded_depth"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libserde_json-20ad504a8f69c0ab.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libserde_json-20ad504a8f69c0ab.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#serde_json@1.0.151",
+      "name": "serde_json",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "serde_json",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.151/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/liblibc-343fe9c2f7c21410.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/liblibc-343fe9c2f7c21410.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.189",
+      "name": "libc",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "libc",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libc-0.2.189/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libcpufeatures-1011ec3b3006c0b8.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libcpufeatures-1011ec3b3006c0b8.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#cpufeatures@0.2.17",
+      "name": "cpufeatures",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "cpufeatures",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpufeatures-0.2.17/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libsmallvec-311d53c5affd8012.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libsmallvec-311d53c5affd8012.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#smallvec@1.15.2",
+      "name": "smallvec",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "smallvec",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smallvec-1.15.2/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "alloc",
+        "default",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libbase64-d0fbab76de838720.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libbase64-d0fbab76de838720.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#base64@0.22.1",
+      "name": "base64",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "base64",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/base64-0.22.1/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libbyteorder-99fc5b5eede118ce.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libbyteorder-99fc5b5eede118ce.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#byteorder@1.5.0",
+      "name": "byteorder",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "byteorder",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/byteorder-1.5.0/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libseahash-298915e68794826c.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libseahash-298915e68794826c.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#seahash@4.1.0",
+      "name": "seahash",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2015",
+        "kind": [
+          "lib"
+        ],
+        "name": "seahash",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/seahash-4.1.0/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/build/serde_json-7286163439932499/build-script-build"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#serde_json@1.0.151",
+      "name": "serde_json",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "bin"
+        ],
+        "doc": false,
+        "doctest": false,
+        "edition": "2021",
+        "kind": [
+          "custom-build"
+        ],
+        "name": "build-script-build",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.151/build.rs",
+        "test": false
+      }
+    },
+    {
+      "features": [
+        "base64",
+        "bincode",
+        "bool",
+        "brotli",
+        "byteorder",
+        "crc32fast",
+        "f64",
+        "floats",
+        "functions",
+        "indexmap",
+        "map",
+        "matrix",
+        "matrixd",
+        "nalgebra",
+        "num-traits",
+        "numbers",
+        "program",
+        "range",
+        "resident-execution",
+        "row_vectord",
+        "selective-convert",
+        "serde",
+        "serde_derive",
+        "serde_json",
+        "std",
+        "string",
+        "symbol_table",
+        "tuple",
+        "u32",
+        "u64",
+        "unsigned_ints",
+        "vectord"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libmech_core-44fd88d1dd5fa3a9.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libmech_core-44fd88d1dd5fa3a9.rmeta"
+      ],
+      "id": "path+file:///private/tmp/mech-deflate-linear-stack/src/core#mech-core@0.3.5",
+      "name": "mech-core",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2024",
+        "kind": [
+          "lib"
+        ],
+        "name": "mech_core",
+        "src_path": "/private/tmp/mech-deflate-linear-stack/src/core/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libgrapheme-61a1183fc037b071.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libgrapheme-61a1183fc037b071.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#grapheme@1.3.0",
+      "name": "grapheme",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2024",
+        "kind": [
+          "lib"
+        ],
+        "name": "grapheme",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/grapheme-1.3.0/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libsha2-4f4a616bade9fe0c.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libsha2-4f4a616bade9fe0c.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#sha2@0.10.9",
+      "name": "sha2",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "sha2",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sha2-0.10.9/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libserde_core-e50c2b9a91446037.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libserde_core-e50c2b9a91446037.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#serde_core@1.0.229",
+      "name": "serde_core",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "serde_core",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.229/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default",
+        "std"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libserde_json-1b688e9413d3ead5.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libserde_json-1b688e9413d3ead5.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#serde_json@1.0.151",
+      "name": "serde_json",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "serde_json",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.151/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "artifact-codec",
+        "assign",
+        "bool",
+        "convert",
+        "f64",
+        "floats",
+        "functions",
+        "indexmap",
+        "integer_bits",
+        "map",
+        "map_ops",
+        "matrix",
+        "matrix_horzcat",
+        "matrix_vertcat",
+        "matrixd",
+        "nalgebra",
+        "native-artifact",
+        "native-capture-pages",
+        "numbers",
+        "program",
+        "pure_text",
+        "resident-artifact",
+        "resident-ekf",
+        "row_vectord",
+        "runtime",
+        "sequence_buffers",
+        "std",
+        "string",
+        "symbol_table",
+        "u64",
+        "unsigned_ints",
+        "vectord"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libmech_engine-5bfd6e6ebc10c0ff.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libmech_engine-5bfd6e6ebc10c0ff.rmeta"
+      ],
+      "id": "path+file:///private/tmp/mech-deflate-linear-stack/src/engine#mech-engine@0.3.5",
+      "name": "mech-engine",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2024",
+        "kind": [
+          "lib"
+        ],
+        "name": "mech_engine",
+        "src_path": "/private/tmp/mech-deflate-linear-stack/src/engine/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libfoldhash-fc342310aa06cea5.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libfoldhash-fc342310aa06cea5.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#foldhash@0.1.5",
+      "name": "foldhash",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "foldhash",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/foldhash-0.1.5/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "alloc"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/liballocator_api2-c3b97e36fe09b8b4.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/liballocator_api2-c3b97e36fe09b8b4.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#allocator-api2@0.2.21",
+      "name": "allocator-api2",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2018",
+        "kind": [
+          "lib"
+        ],
+        "name": "allocator_api2",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/allocator-api2-0.2.21/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libadler2-e1f53431ab9a84a1.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libadler2-e1f53431ab9a84a1.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#adler2@2.0.1",
+      "name": "adler2",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "adler2",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/adler2-2.0.1/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default",
+        "with-alloc"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libminiz_oxide-4b93782711a25404.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libminiz_oxide-4b93782711a25404.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#miniz_oxide@0.8.9",
+      "name": "miniz_oxide",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "miniz_oxide",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/miniz_oxide-0.8.9/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "allocator-api2",
+        "default",
+        "default-hasher",
+        "equivalent",
+        "inline-more",
+        "raw-entry"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libhashbrown-9a6af24086513474.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libhashbrown-9a6af24086513474.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#hashbrown@0.15.5",
+      "name": "hashbrown",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "hashbrown",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hashbrown-0.15.5/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "default",
+        "runtime-values"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libmech_compute-d81e21359cb6f0cf.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libmech_compute-d81e21359cb6f0cf.rmeta"
+      ],
+      "id": "path+file:///private/tmp/mech-deflate-linear-stack/src/compute#mech-compute@0.3.5",
+      "name": "mech-compute",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2024",
+        "kind": [
+          "lib"
+        ],
+        "name": "mech_compute",
+        "src_path": "/private/tmp/mech-deflate-linear-stack/src/compute/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/build/checked-assertion-724f1e4101130333/build-script-build"
+      ],
+      "id": "path+file:///var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/project#checked-assertion@0.0.0",
+      "name": "checked-assertion",
+      "root": true,
+      "target": {
+        "crate_types": [
+          "bin"
+        ],
+        "doc": false,
+        "doctest": false,
+        "edition": "2024",
+        "kind": [
+          "custom-build"
+        ],
+        "name": "build-script-build",
+        "src_path": "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/project/build.rs",
+        "test": false
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libweb_time-f48169b09bb44185.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libweb_time-f48169b09bb44185.rmeta"
+      ],
+      "id": "registry+https://github.com/rust-lang/crates.io-index#web-time@1.1.0",
+      "name": "web-time",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2021",
+        "kind": [
+          "lib"
+        ],
+        "name": "web_time",
+        "src_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/web-time-1.1.0/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [
+        "canonical-native-program-runtime",
+        "canonical-native-runtime"
+      ],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libmech_gpu-5b7cd07b47da24db.rlib",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/deps/libmech_gpu-5b7cd07b47da24db.rmeta"
+      ],
+      "id": "path+file:///private/tmp/mech-deflate-linear-stack/hosts/gpu#mech-gpu@0.3.5",
+      "name": "mech-gpu",
+      "root": false,
+      "target": {
+        "crate_types": [
+          "lib"
+        ],
+        "doc": true,
+        "doctest": true,
+        "edition": "2024",
+        "kind": [
+          "lib"
+        ],
+        "name": "mech_gpu",
+        "src_path": "/private/tmp/mech-deflate-linear-stack/hosts/gpu/src/lib.rs",
+        "test": true
+      }
+    },
+    {
+      "features": [],
+      "filenames": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/cargo-target/debug/lexical-retry"
+      ],
+      "id": "path+file:///var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/project#checked-assertion@0.0.0",
+      "name": "checked-assertion",
+      "root": true,
+      "target": {
+        "crate_types": [
+          "bin"
+        ],
+        "doc": true,
+        "doctest": false,
+        "edition": "2024",
+        "kind": [
+          "bin"
+        ],
+        "name": "lexical-retry",
+        "src_path": "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/.tmpUTsV9f/project/src/bin/lexical-retry.rs",
+        "test": true
+      }
+    }
+  ],
+  "generated": {
+    "executed": false,
+    "linked": false,
+    "object": {
+      "abi_version": 35,
+      "borrowed_string_regions": 0,
+      "closed_tail_regions": 1,
+      "code_bytes": 10032,
+      "compiled_bound_call_shim": null,
+      "compiled_cfg_cleanup": {
+        "after_blocks": 392,
+        "after_instructions": 1855,
+        "before_blocks": 418,
+        "before_instructions": 2895,
+        "constant_branches_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1
+      },
+      "compiled_count_value_loops": [],
+      "compiled_frame_effects": {
+        "complete": true,
+        "regions": []
+      },
+      "compiled_guarded_loops": {
+        "complete": true,
+        "regions": []
+      },
+      "compiled_header_continuation_regions": 0,
+      "compiled_join_map_copies": [],
+      "compiled_lookup_facts": {
+        "complete": true,
+        "regions": []
+      },
+      "compiled_loop_constants": {
+        "callers": [],
+        "complete": true
+      },
+      "compiled_loop_invariants": [],
+      "compiled_mutation_loops": [],
+      "compiled_numeric_write_loops": [
+        {
+          "first_change_boundaries": [
+            32
+          ],
+          "fixed_template_instructions": 178,
+          "header": 15,
+          "length_sites": [],
+          "maximum_source_instructions": 165,
+          "parent": 0,
+          "register_words": 37,
+          "scalar_operations": 7,
+          "source_sites": [
+            15,
+            16,
+            17,
+            18,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47
+          ],
+          "successful_backedge_helpers": 0,
+          "typed_loads": [
+            [
+              30,
+              4
+            ],
+            [
+              32,
+              4
+            ]
+          ],
+          "typed_stores": [
+            [
+              32,
+              4
+            ]
+          ]
+        }
+      ],
+      "compiled_outlined_loops": [],
+      "compiled_preserving_call_regions": [],
+      "compiled_readonly_numeric_loops": [],
+      "compiled_scalar_loops": [],
+      "compiled_source_edge_facts": {
+        "complete": true,
+        "regions": []
+      },
+      "compiled_steady_loops": [],
+      "compiled_string_map_regions": 0,
+      "compiled_tag_threading": {
+        "complete": true,
+        "regions": []
+      },
+      "compiled_window_accumulator": null,
+      "compiled_window_histogram_regions": 0,
+      "compiled_window_query_regions": 0,
+      "effects": 0,
+      "entry_symbol": "mech_canonical_program_entry_v1",
+      "executed": false,
+      "identity_symbol": "mech_canonical_program_identity_v1_cf202c3141d3c88496511f8df4046c1bd5ca799422882ec3197d2afa9968565e",
+      "linked": false,
+      "numeric_write_regions": [
+        {
+          "compute_per_traversal": 26712,
+          "header": 15,
+          "iteration": 1,
+          "parent": 0,
+          "proof": {
+            "actions": [
+              [
+                16,
+                "Frame"
+              ],
+              [
+                20,
+                "Frame"
+              ],
+              [
+                21,
+                "Frame"
+              ],
+              [
+                22,
+                "Frame"
+              ],
+              [
+                23,
+                "Frame"
+              ],
+              [
+                30,
+                {
+                  "Read": {
+                    "array": 0,
+                    "index": 5,
+                    "output": 32
+                  }
+                }
+              ],
+              [
+                32,
+                {
+                  "Write": {
+                    "array": 0,
+                    "incoming": 33,
+                    "index": 5
+                  }
+                }
+              ],
+              [
+                40,
+                "Frame"
+              ],
+              [
+                41,
+                "Frame"
+              ],
+              [
+                45,
+                "Frame"
+              ],
+              [
+                46,
+                "Frame"
+              ],
+              [
+                47,
+                "Frame"
+              ]
+            ],
+            "arrays": [
+              {
+                "field": 0,
+                "width": 4,
+                "witness": 30,
+                "writable": true
+              }
+            ],
+            "frames": [
+              {
+                "arrays": [
+                  0,
+                  null,
+                  null,
+                  null
+                ],
+                "fields": [
+                  null,
+                  0,
+                  1,
+                  2
+                ],
+                "value": 22
+              },
+              {
+                "arrays": [
+                  0,
+                  null,
+                  null,
+                  null
+                ],
+                "fields": [
+                  null,
+                  3,
+                  4,
+                  5
+                ],
+                "value": 23
+              },
+              {
+                "arrays": [
+                  0,
+                  null
+                ],
+                "fields": [
+                  null,
+                  6
+                ],
+                "value": 24
+              },
+              {
+                "arrays": [
+                  0,
+                  null
+                ],
+                "fields": [
+                  null,
+                  7
+                ],
+                "value": 37
+              },
+              {
+                "arrays": [
+                  0,
+                  null,
+                  null,
+                  null
+                ],
+                "fields": [
+                  null,
+                  8,
+                  9,
+                  10
+                ],
+                "value": 39
+              },
+              {
+                "arrays": [
+                  0,
+                  null
+                ],
+                "fields": [
+                  null,
+                  11
+                ],
+                "value": 41
+              }
+            ],
+            "result": {
+              "Frame": {
+                "array": 0,
+                "ordinal": 0,
+                "value": 24
+              }
+            },
+            "scalar_words": 12,
+            "sites": [
+              15,
+              16,
+              17,
+              18,
+              20,
+              21,
+              22,
+              23,
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31,
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39,
+              40,
+              41,
+              42,
+              43,
+              44,
+              45,
+              46,
+              47
+            ],
+            "words": 17
+          }
+        }
+      ],
+      "object_bytes": 10760,
+      "object_optimization": "speed",
+      "observations": 0,
+      "private_frozen_map_candidates": 0,
+      "private_line_matrix_regions": 0,
+      "program_revision": "416f249d0ae958e4da6ffcd259c4fc9a996608cca792b63fdf44fd9ee7f719de",
+      "readonly_numeric_candidates": [
+        {
+          "header": 4,
+          "iteration": 0,
+          "origin": {
+            "block": null,
+            "local": null,
+            "node": 1
+          },
+          "parent": null,
+          "proof_eligible": false,
+          "rejection": "not a leaf: child loop or activation boundary",
+          "selected": false
+        },
+        {
+          "header": 15,
+          "iteration": 1,
+          "origin": {
+            "block": 0,
+            "local": 1,
+            "node": 1
+          },
+          "parent": 0,
+          "proof_eligible": true,
+          "rejection": null,
+          "selected": true
+        }
+      ],
+      "readonly_numeric_regions": [],
+      "requirements": 0,
+      "retained_map_scalar_admission_groups": 0,
+      "schema": "mech.canonical-managed-program-object.v1",
+      "selected_matrix_join_regions": 0,
+      "stack_bytes": 304,
+      "target_tag": [
+        1,
+        2,
+        1,
+        64,
+        1,
+        0,
+        0,
+        0
+      ],
+      "timing_samples": 0,
+      "transport_inputs": 1,
+      "transport_outputs": 1,
+      "typed_ir_sha256": "cf202c3141d3c88496511f8df4046c1bd5ca799422882ec3197d2afa9968565e",
+      "typed_ir_version": 118,
+      "unboxed_scalar_aggregate_values": 0,
+      "work_policy_version": 93
+    },
+    "pins": {
+      "Cargo.toml": "56dc9e648a498da815e50ad9be7a34ccd5a3bef08eede042212272dd96d5fdde",
+      "application.mec": "0685a88524a43319145c193596109c9fa3b89524051f95fd8ddebcb03615fbc0",
+      "build.rs": "0d46e31e457c10d6527faa14476e5d9178fd8ad72b7ac4ce6bcb8e3a8ced751d",
+      "factory-profile.json": "f00393032908304d7b5cddcc39fed7018d938dda1002d11a6a1b0d49e3e75844",
+      "native-descriptor.bin": "48de54c89a2f3f59628c03513751e18fc4cb5f963683a45fe38fede1dadfeabc",
+      "native-descriptor.json": "e9b11f0507f6e56f5f3222128e7965e3e90034fd560dd665c94b6907dd2f1e34",
+      "object-identity.bin": "3a0a37d2cc331b2e0a39076c2d23d562190c9ff50ee5fab6efd144f988596fc5",
+      "program.mecb": "56901dd8dfd2e2e276fa3af0edb6718d7480769ce719633d4a0a83a39c59da99",
+      "program.o": "316a5619d4107a777c28699a0e9e81cced9e735277c8db4bf5e6d10bc462ecdd",
+      "rust-toolchain.toml": "19219593d7dba33a75623287af94da940a93fac92eeef99e8fff9b7fd804fcf9",
+      "src/main.rs": "0328d75cebbd209c5d2e863f8c84962e3b55679522921f0758867b9b0d2f129d"
+    },
+    "program_revision": "416f249d0ae958e4da6ffcd259c4fc9a996608cca792b63fdf44fd9ee7f719de",
+    "route": "canonical-artifact-program-cranelift-object",
+    "runtime_features": [
+      "mech-gpu/canonical-native-program-runtime",
+      "mech-engine/native-artifact",
+      "mech-core/bool",
+      "mech-core/matrixd",
+      "mech-core/selective-convert",
+      "mech-core/serde",
+      "mech-core/tuple",
+      "mech-core/u32",
+      "mech-core/u64"
+    ],
+    "schema": "mech.canonical-linked-program-application.v1",
+    "source_is_provenance_only": true,
+    "timing_samples": 0,
+    "typed_ir_sha256": "cf202c3141d3c88496511f8df4046c1bd5ca799422882ec3197d2afa9968565e"
+  },
+  "prior_publication_preserved": true,
+  "qualification": "linked-assertion-retry",
+  "source_sha256": "0685a88524a43319145c193596109c9fa3b89524051f95fd8ddebcb03615fbc0",
+  "timing_samples": 0,
+  "valid_invalid_valid": [
+    3,
+    0,
+    2
+  ]
+}

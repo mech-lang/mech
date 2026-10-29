@@ -45,3 +45,38 @@ image corruption. Retain prior write contracts and scalar controls. Repeat the
 same eight-byte complete pair and separate profile, then commit the full packet
 before the next optimization. Larger inputs are not queued. The historical
 round-10 decoded-U64 1.0526036 ratio remains unresolved.
+
+
+The implementation now selects the generic parented child and unchanged
+huff-assign-symbols. Before/after 256-step System/probe observations:
+9251/646577 bytes/9811 visits →1619/172265/51 for the generic pair of calls;
+4918/303186/9651 →340/52138/108 for huff-assign-lengths. Positive iteration
+counts have flat allocation and ordinary-visit costs. These are not complete
+timing results. Prototype JIT/Object, terminal scalar kinds/bits, aliases, exact
+rectangular shapes, stale/escaping/multiple returns, short reads, ordered late
+errors, secondary cumulative decline, restored metadata and actual linked
+recovery pass. The first broad new cohort passed13/15; two fixture assumptions
+were corrected and both reruns pass, plus the read-only mixed-result case.
+
+The output-bound fixture had replaced one NoLimits dimension with None, creating
+an invalid partial policy. It now preserves the established policy except for
+the deliberate finite ceiling. The finite retry fixture's resident oracle
+reaches65888 comparisons against its inherited65536 limit for two64-step calls;
+that allowance is unchanged. It uses the already established independent model
+to verify every output word and terminal scalar instead. These are new test
+setup failures, not production regressions.
+
+All four actual runtime units pass, with16 real mutated-prefix exits in each
+of the old write and new mixed-result cases. The new normal-exit observer uses
+the existing audited callback and records no production execution changes. Its
+first fixture had an unsupported private-use path; its normal outer tuple
+consumer now qualifies. Subtracting from complete work initially failed later
+in public canonical output construction. The test now observes actual native
+exit work and withholds traversal fuel there. No existing allowance or check
+was relaxed; initial/diagnostic failed attempts are retained.
+
+IR118/work policy93 adds an explicit Scalar/Array/Frame result recipe and bounds
+terminal-field synchronization in existing admitted lanes. No Core/Engine
+ownership change, public aggregate ABI, canonical-bytecode revision or source
+rewrite is introduced. Existing broad component/scalar/static controls and the
+separate complete timing/profile are the remaining acceptance work.

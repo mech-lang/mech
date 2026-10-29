@@ -1,5 +1,5 @@
-//! Register-backed read-only numeric leaf. The funded successful body contains
-//! only native words, typed loads, arithmetic and source branches. Boundary and
+//! Register-backed numeric leaf. The funded successful body contains only
+//! native words, typed loads/stores, arithmetic and source branches. Boundary and
 //! original bounds-error calls are cold and reconcile the existing account.
 use crate::native_artifact::codegen::common::{ssa_words::Words, terminators};
 use crate::native_artifact::codegen::control::{CodegenReport, plan::CodePlan};
