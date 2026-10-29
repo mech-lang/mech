@@ -1,0 +1,146 @@
+[
+  {
+    "path": "baseline/disposition.rs.gz",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/disposition.rs",
+    "sha256": "acb9334f4a1ac63b393346a10f0345f66a7e50fa8cbb84204cad48b66649d981",
+    "original_sha256": "fb808cfb458f8fbe974f2825b109e3001bc657799613a35852e0df1f4dbafdd5"
+  },
+  {
+    "path": "baseline/build-disposition.py",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/build-disposition.py",
+    "sha256": "a633f21b598c537e6afba75001f8099ecf70e0a9c7bc625c39022f53f7a4a716",
+    "original_sha256": "a633f21b598c537e6afba75001f8099ecf70e0a9c7bc625c39022f53f7a4a716"
+  },
+  {
+    "path": "baseline/disposition-build.json",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/disposition-build.json",
+    "sha256": "0cfc3034d26db4876e4cdbfb1467a670598cb7f0d3b7110eb3aded1227949b0c",
+    "original_sha256": "0cfc3034d26db4876e4cdbfb1467a670598cb7f0d3b7110eb3aded1227949b0c"
+  },
+  {
+    "path": "baseline/disposition-build.log.gz",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/disposition-build.log",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "baseline/disposition.json",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/disposition.json",
+    "sha256": "b75177120c88fde364d06cf70d98acf274cd2c0fc997d15fb359201fdfcaf99d",
+    "original_sha256": "b75177120c88fde364d06cf70d98acf274cd2c0fc997d15fb359201fdfcaf99d"
+  },
+  {
+    "path": "baseline/disposition.stderr",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/disposition.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "baseline/disposition-run.json",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/disposition-run.json",
+    "sha256": "c5309ac5aac33200e3731424ae1e8a6c1b53973fff005efb4226f90de38bfb90",
+    "original_sha256": "c5309ac5aac33200e3731424ae1e8a6c1b53973fff005efb4226f90de38bfb90"
+  },
+  {
+    "path": "baseline/choice.mec",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/choice.mec",
+    "sha256": "f5dbb2db35115635519f840a655244e5712a7ef21ad81000687d315a3e055ac2",
+    "original_sha256": "f5dbb2db35115635519f840a655244e5712a7ef21ad81000687d315a3e055ac2"
+  },
+  {
+    "path": "baseline/choice-witness.rs.gz",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/choice-witness.rs",
+    "sha256": "40d818b02217d91c8f4b6bd5971e9884c2ce4b0ae3a28e494e6cbe639f958ac7",
+    "original_sha256": "bd6add98b7e60c23782a076bc45442596da10dee9b4f037709daea89b3dfd858"
+  },
+  {
+    "path": "baseline/before/component-qualification-v2.rs.gz",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/before/component-qualification-v2.rs",
+    "sha256": "16ae441e7714f269e2bb024569234ba3d6043121ae630d4b53c678ff2a602033",
+    "original_sha256": "e035c13b33abf3e892b4bc38eb46078f6e79427ebc4062654e29bc911d30d612"
+  },
+  {
+    "path": "baseline/before/component-v2-run.json",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/before/component-v2-run.json",
+    "sha256": "11b371e6bb0d1ab876ef4204e6959872c146ba766096664240ec73a82990f0e9",
+    "original_sha256": "11b371e6bb0d1ab876ef4204e6959872c146ba766096664240ec73a82990f0e9"
+  },
+  {
+    "path": "baseline/before/component-v2-build.log.gz",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/before/component-v2-build.log",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "baseline/before/component-v2-run.log.gz",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/before/component-v2-run.log",
+    "sha256": "41fc7d45f699732e387f403997043ecaaf1154cf6162cf1694bb71329964718f",
+    "original_sha256": "0970c2cc614340a4f2b2ef962b9d2acbd8ffb59385d87143b0ad167cdf0b266f"
+  },
+  {
+    "path": "baseline/before/component-v2-build.json",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/before/component-v2-build.json",
+    "sha256": "fe28f277660d0c93244f730fb2d6f674ba2ede341968a50c4225e8a866c8afd0",
+    "original_sha256": "fe28f277660d0c93244f730fb2d6f674ba2ede341968a50c4225e8a866c8afd0"
+  },
+  {
+    "path": "baseline/before/outer.log.gz",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/before/outer.log",
+    "sha256": "cc8962e29796205f83bfdfcf942aed843ec72fb26ee2d7dbedfa4f7efb4067a7",
+    "original_sha256": "a066db4933fb1c66ae4557ba5dd21ad7ab285e2b3fdf9692c7392cc265790f1c"
+  },
+  {
+    "path": "baseline/before/qualify.py",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/before/qualify.py",
+    "sha256": "99553992e01b0f5ae3c11b379e9631ccb90c2ada6e45e584a59032649f79e72c",
+    "original_sha256": "99553992e01b0f5ae3c11b379e9631ccb90c2ada6e45e584a59032649f79e72c"
+  },
+  {
+    "path": "baseline/before-witness/build.py",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/before-witness/build.py",
+    "sha256": "175f9cc942a11175323308f68e9dfb213b1d8940a69da10921fdfd130e3aa72c",
+    "original_sha256": "175f9cc942a11175323308f68e9dfb213b1d8940a69da10921fdfd130e3aa72c"
+  },
+  {
+    "path": "baseline/before-witness/choice-witness-run.json",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/before-witness/choice-witness-run.json",
+    "sha256": "6d717bf644ee3d712b2f5a1fa8bd59579d1d14d2dfe8dba9aa928f6b98b921c4",
+    "original_sha256": "6d717bf644ee3d712b2f5a1fa8bd59579d1d14d2dfe8dba9aa928f6b98b921c4"
+  },
+  {
+    "path": "baseline/before-witness/choice-witness-build.json",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/before-witness/choice-witness-build.json",
+    "sha256": "4e6ccdf9f4d7ab692e0af39b299ace4fef7653f2471c2b0aa6b204a8dcfed75c",
+    "original_sha256": "4e6ccdf9f4d7ab692e0af39b299ace4fef7653f2471c2b0aa6b204a8dcfed75c"
+  },
+  {
+    "path": "baseline/before-witness/outer.log.gz",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/before-witness/outer.log",
+    "sha256": "91039ef41d7884372cb483bdd3beef37e240c46945535eded3f143d93a6385af",
+    "original_sha256": "75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070"
+  },
+  {
+    "path": "baseline/before-witness/choice-witness.rs.gz",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/before-witness/choice-witness.rs",
+    "sha256": "40d818b02217d91c8f4b6bd5971e9884c2ce4b0ae3a28e494e6cbe639f958ac7",
+    "original_sha256": "bd6add98b7e60c23782a076bc45442596da10dee9b4f037709daea89b3dfd858"
+  },
+  {
+    "path": "baseline/before-witness/choice-witness.stderr",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/before-witness/choice-witness.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "baseline/before-witness/choice-witness.json",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/before-witness/choice-witness.json",
+    "sha256": "bb08cec755ef9bfdbe1c36d485c22606897edc78a4974941e8f101f7d84711d8",
+    "original_sha256": "bb08cec755ef9bfdbe1c36d485c22606897edc78a4974941e8f101f7d84711d8"
+  },
+  {
+    "path": "baseline/before-witness/choice-witness-build.log.gz",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/before-witness/choice-witness-build.log",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]
