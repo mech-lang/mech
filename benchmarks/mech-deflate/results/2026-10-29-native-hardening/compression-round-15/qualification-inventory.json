@@ -18,8 +18,8 @@
       "sha256": "aad28f927785aaf26895e21b8ff50bd11560c8de808e6d41881ab977581c5b8a"
     },
     "CLOSURE.md": {
-      "bytes": 13051,
-      "sha256": "d1026a16af92c52c08c1e1ea4a11ec020693c26bc3e16b4ae48c518e926d3d5a"
+      "bytes": 13212,
+      "sha256": "a647aca02c6db0193e88dfa61340d2e69358583943b407b178d23046395a22a8"
     },
     "timing-inventory.json": {
       "bytes": 6739,
@@ -244,10 +244,6 @@
     "qualification/object-audit/section-sizes.txt.gz": {
       "bytes": 207,
       "sha256": "1bddd57c70acddc383f92ab42b1d1e8351a263e3c8378a941a8377c5e5b891ee"
-    },
-    "qualification/object-audit/complete-object.json": {
-      "bytes": 1704995,
-      "sha256": "7dfdbc9a9c96b334c71f71b5b8d19ea616f33da12d2a9a64fc930eeb22acc21f"
     },
     "qualification/object-audit/object-build.json": {
       "bytes": 3199,
@@ -572,6 +568,12 @@
     "qualification/engine-units/build.json": {
       "bytes": 16663,
       "sha256": "abf11482447f7079ec15ae8a60f9963a3089e064e2277edaed3ca1aac156e3d1"
+    },
+    "qualification/object-audit/complete-object.json.gz": {
+      "bytes": 155471,
+      "sha256": "99ca1e1fa766568b9fa238a40194902a2c5a44f1cf8df2d66092c0961c3cb2d5",
+      "uncompressed_bytes": 1704995,
+      "uncompressed_sha256": "7dfdbc9a9c96b334c71f71b5b8d19ea616f33da12d2a9a64fc930eeb22acc21f"
     }
   }
 }
