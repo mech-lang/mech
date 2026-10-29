@@ -1,0 +1,45 @@
+
+running 6 tests
+test multi_result_qualification::multi_array_results_check_freshness_of_each_returned_field ... ok
+test multi_result_qualification::multi_array_results_finite_rejections_keep_prior_publication_and_retry ... ok
+test multi_result_qualification::multi_array_results_real_tree_and_cache_keep_one_initial_payload_each ... FAILED
+test multi_result_qualification::multi_array_results_restore_all_current_owners_and_recover_after_late_failure ... {"form":"original","requested_bytes":241629,"requests":2134,"steps":0,"visits":12,"witness":"multi-array-current-return","work":41547104}
+{"form":"original","requested_bytes":249803,"requests":2253,"steps":1,"visits":12,"witness":"multi-array-current-return","work":106785552}
+{"form":"original","requested_bytes":249803,"requests":2253,"steps":64,"visits":12,"witness":"multi-array-current-return","work":110223840}
+{"form":"original","requested_bytes":249803,"requests":2253,"steps":2,"visits":12,"witness":"multi-array-current-return","work":106840128}
+{"form":"original","requested_bytes":242699,"requests":2175,"steps":0,"visits":12,"witness":"multi-array-current-return","work":41578800}
+FAILED
+test multi_result_qualification::multi_array_results_select_pinned_huffman_placement_and_keep_branch_versions ... FAILED
+test multi_result_qualification::multi_array_results_shared_input_backing_stays_immutable_for_each_root ... FAILED
+
+failures:
+
+failures:
+    multi_result_qualification::multi_array_results_real_tree_and_cache_keep_one_initial_payload_each
+    multi_result_qualification::multi_array_results_restore_all_current_owners_and_recover_after_late_failure
+    multi_result_qualification::multi_array_results_select_pinned_huffman_placement_and_keep_branch_versions
+    multi_result_qualification::multi_array_results_shared_input_backing_stays_immutable_for_each_root
+
+test result: FAILED. 2 passed; 4 failed; 0 ignored; 0 measured; 437 filtered out; finished in 2.22s
+
+
+thread 'multi_result_qualification::multi_array_results_real_tree_and_cache_keep_one_initial_payload_each' (20147278) panicked at /private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_multi_results.rs:64:9:
+assertion `left == right` failed
+  left: Null
+ right: 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'multi_result_qualification::multi_array_results_restore_all_current_owners_and_recover_after_late_failure' (20147279) panicked at /private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_multi_results.rs:64:9:
+assertion `left == right` failed
+  left: Null
+ right: 0
+
+thread 'multi_result_qualification::multi_array_results_select_pinned_huffman_placement_and_keep_branch_versions' (20147280) panicked at /private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_multi_results.rs:64:9:
+assertion `left == right` failed
+  left: Null
+ right: 0
+
+thread 'multi_result_qualification::multi_array_results_shared_input_backing_stays_immutable_for_each_root' (20147283) panicked at /private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_multi_results.rs:64:9:
+assertion `left == right` failed
+  left: Null
+ right: 0

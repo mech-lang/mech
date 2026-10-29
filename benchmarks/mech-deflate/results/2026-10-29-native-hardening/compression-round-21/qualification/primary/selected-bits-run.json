@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-multi-results-round21-20261029/primary/selected-bits-tests",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.8798165000043809,
+  "binary_sha256": "6d6f8cab7c02310da90a41d0893a421a11cb42d4516d26000077d09be59a9889",
+  "skipped_coverage": null
+}

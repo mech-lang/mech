@@ -1,0 +1,11 @@
+{
+  "base": "430efcbaa1f193b1c2c4186fff86828d6d176eb9",
+  "production": "aed697ad21ba1ffcf07da89b90c4c33571cf6ef2",
+  "prior_primary": "/private/tmp/mech-nested-frames-round20-20261029/final-primary/results.json",
+  "preserved_binaries": {
+    "frame-before": "32f2b644d95d3567926df5acac49df69f5297b78dacc302d9582efe12a78f0dc",
+    "before": "1e36ae06aee5eb4be8af26070868c32683040564ca89d7cb877d2a1a56a4b03b"
+  },
+  "blocking_source": "hosts/gpu/tests/fixtures/native/deflate-huffman-level12.mec:82-86",
+  "operation": "huff-place-symbols returns counts<U64>,lens<U8>,a<U32>; current exact numeric result proof admits only one returned array. No compressor source changes."
+}

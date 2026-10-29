@@ -1,0 +1,6 @@
+
+running 1 test
+test buffer_frame_qualification::restored_numeric_leaf_rejects_stale_views_offsets_prices_and_factory_associations ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 442 filtered out; finished in 0.82s
+

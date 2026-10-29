@@ -1,0 +1,47 @@
+ guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })","witness":"repeated-buffer-returns","words":31}
+{"allocation_requests":130,"artifact":"decoded","elapsed_seconds":0.000046166,"permitted":true,"requested_allocation_bytes":16254,"result":"Ok(NativeProgramExecutionReport { work: 48139212, comparison_work: 0, visits: 326, transport_bytes: 1224, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })","witness":"repeated-buffer-returns","words":1500513}
+{"allocation_requests":130,"artifact":"decoded","elapsed_seconds":0.000033333,"permitted":false,"requested_allocation_bytes":16254,"result":"Err(Control(Integrity { origin: NativeMatchOrigin { node: NodeId(0), block: Some(0), local: Some(0) } }))","witness":"repeated-buffer-returns","words":1500513}
+{"allocation_requests":130,"artifact":"decoded","elapsed_seconds":0.000038125,"permitted":true,"requested_allocation_bytes":16254,"result":"Ok(NativeProgramExecutionReport { work: 72146924, comparison_work: 0, visits: 326, transport_bytes: 1224, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })","witness":"repeated-buffer-returns","words":1500513}
+ok
+test tail_qualification::atomic_structural_state_bindings_execute_and_suspending_machines_stay_closed ... ok
+test tail_qualification::huffman_bit_reversal_runs_word_primitives_inside_a_native_tail_loop ... ok
+test tail_qualification::native_aggregate_state_width_boundary_and_permuted_fields_preserve_values ... ok
+test tail_qualification::raw_string_literal_patterns_are_structural_observations_not_library_calls ... ok
+test tail_qualification::tail_work_denial_after_managed_state_transitions_is_atomic_and_recovers ... ok
+test uniform_words_qualification::repeated_uniform_calls_read_the_current_word_and_count ... ok
+test uniform_words_qualification::uniform_constructor_keeps_range_overflow_before_output_rejection ... ok
+test uniform_words_qualification::uniform_optimizer_leaves_selected_assertions_in_the_ordinary_body ... ok
+test uniform_words_qualification::uniform_unsigned_values_keep_clone_quotas_prior_outputs_and_recovery ... ok
+test uniform_words_qualification::uniform_word_facts_keep_the_exact_region_and_reject_effects_or_varying_yields ... ok
+test word_read_qualification::selected_u64_read_keeps_owner_admission_exact_call_limits_and_no_allocation ... ok
+test word_read_qualification::u64_read_budget_denials_preserve_previous_publication_and_recover ... ok
+test word_read_qualification::u64_read_selection_requires_the_maintained_factory ... ok
+test word_read_qualification::u64_reads_use_linear_column_major_order_and_already_admitted_scalar_storage ... ok
+test word_read_qualification::u64_scalar_reads_keep_wide_words_live_extents_errors_and_recovery ... ok
+test word_read_qualification::unsigned_linear_reads_match_resident_current_shapes_and_recover ... ok
+
+failures:
+
+failures:
+    buffer_frame_qualification::restored_numeric_leaf_rejects_stale_views_offsets_prices_and_factory_associations
+
+test result: FAILED. 204 passed; 1 failed; 0 ignored; 0 measured; 238 filtered out; finished in 78.60s
+
+/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_buffer_frames.rs:837:72:
+called `Option::unwrap()` on a `None` value
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+DEFLATE_TABLE entries=262144 operation=initial-nodes(count<u64>) report=NativeProgramExecutionReport { work: 63766136, comparison_work: 0, visits: 10, transport_bytes: 3048, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }
+DEFLATE_TABLE entries=262144 operation=initial-nodes(count<u64>) report=NativeProgramExecutionReport { work: 63766136, comparison_work: 0, visits: 10, transport_bytes: 3048, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }
+DEFLATE_TABLE entries=262144 operation=rebase-nodes(nodes<[u16]>) report=NativeProgramExecutionReport { work: 1184916800, comparison_work: 0, visits: 3413001, transport_bytes: 3880, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }
+DEFLATE_TABLE entries=262144 operation=rebase-nodes(nodes<[u16]>) report=NativeProgramExecutionReport { work: 1184916800, comparison_work: 0, visits: 3413001, transport_bytes: 3880, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }
+DEFLATE_RESIDENT_DEFAULT_DENIAL case=extend-35 Kernel { node: NodeId(5), error: ResourceLimit { phase: Admission, dimension: ComputeWork, required: 16842945, limit: 16777216 } }
+DEFLATE_RESIDENT_DEFAULT_DENIAL case=extend-35 Kernel { node: NodeId(5), error: ResourceLimit { phase: Admission, dimension: ComputeWork, required: 16842945, limit: 16777216 } }
+
+Traceback (most recent call last):
+  File "/private/tmp/mech-multi-results-round21-20261029/full-components.py", line 9, in <module>
+    print(result.stdout[-4000:]+result.stderr[-3000:]);result.check_returncode()
+                                                       ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 509, in check_returncode
+    raise CalledProcessError(self.returncode, self.args, self.stdout,
+                             self.stderr)
+subprocess.CalledProcessError: Command '['/private/tmp/mech-multi-results-round21-20261029/components-final/nested-component-tests', 'multi_result_qualification', 'nested_frame_qualification', 'scalar_record_qualification', 'record_buffer_qualification', 'packed_update_qualification', 'buffer_frame_qualification', 'sequence_capacity_qualification', 'collection_qualification', 'uniform_words_qualification', 'word_read_qualification', 'narrow_word_qualification', 'matchfinder_qualification', 'assembled_compressor_source_preserves_its_pinned_bytes', 'scalar_state_qualification', 'tail_qualification', 'costs_qualification', 'default_costs_qualification', 'pinned_min_cost_paths_keep_exact_nodes_and_real_reservation', 'path_checks_preserve_entry_order_publication_aliases_and_recovery', 'argument_transport_qualification', 'shared_transport_qualification', 'numeric_write_qualification', 'numeric_tail_qualification', 'numeric_result_qualification', 'numeric_predicate_qualification', 'dynamic_projection_qualification', 'binding_pressure_qualification', '--nocapture', '--test-threads=1']' returned non-zero exit status 101.

@@ -1,0 +1,23 @@
+
+running 8 tests
+test checked_u64_failure_matches_resident_and_never_publishes_partial_outputs ... ok
+test direct_constants_and_live_identity_need_no_computed_activation_or_local ... ok
+test finite_denials_and_completion_failure_are_atomic_and_recover ... ok
+test first_arithmetic_error_precedes_later_work_denial_and_denial_skips_later_bad_code ... ok
+test nested_scalar_entry_cannot_refill_an_active_library_account_or_change_its_memory ... ok
+test object_emission_and_same_definition_metadata_are_not_execution_evidence ... ok
+test setup_and_memory_admission_precede_even_input_type_traversal ... ok
+test shared_local_single_evaluation_and_all_declared_outputs_remain_ordered ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.13s
+
+
+
+running 3 tests
+test a_same_named_replacement_cannot_obtain_native_bitwise_semantics ... ok
+test libdeflate_hash_prefix_executes_as_native_word_operations ... ok
+test word_primitives_match_integer_oracles_resident_and_jit_original_and_decoded ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+
+
