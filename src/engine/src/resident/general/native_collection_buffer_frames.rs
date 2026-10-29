@@ -391,7 +391,11 @@ impl NativePreparedLibraryCall {
                     }
                 }
                 if let Some(recipe) = &geometry.shape {
-                    recipe.validate(&self.schemas, |i| inputs[i].as_ref().map(Value::shape))?;
+                    if admitted.is_none()
+                        || !recipe.matches_current(|i| inputs[i].as_ref().map(Value::shape))
+                    {
+                        recipe.validate(&self.schemas, |i| inputs[i].as_ref().map(Value::shape))?;
+                    }
                 } else {
                     let children = inputs
                         .iter()

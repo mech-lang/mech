@@ -11,6 +11,7 @@ pub(super) struct FrameShapeRecipe {
     inputs: Box<[SchemaId]>,
     parameters: usize,
     axes: Box<[Axis]>,
+    bindings: Box<[usize]>,
 }
 #[derive(Debug)]
 struct Axis {
@@ -91,11 +92,50 @@ impl FrameShapeRecipe {
         if bound.iter().any(|value| !value) {
             return None;
         }
+        let mut bindings = vec![0; bound.len()];
+        for (index, axis) in axes.iter().enumerate() {
+            if let DimensionExpr::Parameter(id) = axis.expected {
+                *bindings.get_mut(id.get() as usize)? = index;
+            }
+        }
         Some(Self {
             output,
             inputs: inputs.into(),
             parameters: bound.len(),
             axes: axes.into(),
+            bindings: bindings.into(),
+        })
+    }
+
+    /// The caller uses this only after the prepared flat-field measurement has
+    /// checked every current typed child. Each output matrix then has exactly
+    /// its validated child's extents and checked element-count product. Output
+    /// parameters are unconstrained Turn parameters, proven above. A miss
+    /// retains the constructor and its original error instead of rejecting here.
+    pub(super) fn matches_current<'a>(
+        &self,
+        current: impl Fn(usize) -> Option<&'a ShapeInstance>,
+    ) -> bool {
+        self.axes.iter().all(|axis| {
+            let Some(shape) = current(axis.input) else {
+                return false;
+            };
+            let Ok(actual) = shape.resolve_dimension(&axis.actual) else {
+                return false;
+            };
+            let expected = match axis.expected {
+                DimensionExpr::Constant(value) => Some(value),
+                DimensionExpr::Parameter(id) => self
+                    .bindings
+                    .get(id.get() as usize)
+                    .and_then(|index| self.axes.get(*index))
+                    .and_then(|binding| {
+                        current(binding.input)
+                            .and_then(|shape| shape.resolve_dimension(&binding.actual).ok())
+                    }),
+                _ => None,
+            };
+            expected == Some(actual)
         })
     }
 
@@ -248,6 +288,81 @@ mod tests {
                 recipe.validate(&built.table, |i| Some(&shapes[i])).is_ok(),
                 ordinary.is_ok()
             );
+            assert_eq!(
+                recipe.matches_current(|i| Some(&shapes[i])),
+                ordinary.is_ok()
+            );
+        }
+    }
+
+    #[test]
+    fn frame_recipe_direct_relations_agree_for_fresh_rectangles_and_zero_products() {
+        let body = matrix(vec![
+            DimensionExpr::Parameter(Id::new(0)),
+            DimensionExpr::Parameter(Id::new(1)),
+        ]);
+        let mut builder = SchemaTableBuilder::new();
+        let input = builder
+            .insert(
+                SchemaDraft {
+                    body: body.clone(),
+                    dimension_parameters: parameters(2),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let output = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Tuple(vec![body.clone(), body].into()),
+                    dimension_parameters: parameters(2),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let input = built.resolve(input).unwrap();
+        let output = built.resolve(output).unwrap();
+        let recipe = FrameShapeRecipe::derive(output, &[input, input], &built.table).unwrap();
+        for (left, right, accepted) in [
+            ([0, 7], [0, 7], true),
+            ([2, 3], [2, 3], true),
+            ([3, 2], [3, 2], true),
+            ([2, 3], [3, 2], false),
+            ([0, 7], [0, 8], false),
+            ([0, 0], [0, 0], true),
+            ([u64::MAX, 0], [u64::MAX, 0], true),
+        ] {
+            let shapes = [left, right].map(|values| {
+                built
+                    .table
+                    .get(input)
+                    .unwrap()
+                    .instantiate_shape(values.into())
+                    .unwrap()
+            });
+            let children = [(input, shapes[0].clone()), (input, shapes[1].clone())];
+            let ordinary = mech_core::snapshot::CompositeSnapshotConstructor::shape_for_children(
+                output,
+                &children,
+                &built.table,
+            )
+            .and_then(|shape| {
+                mech_core::snapshot::CompositeSnapshotConstructor::bind(
+                    output,
+                    shape,
+                    &children,
+                    built.table.clone().into(),
+                )
+            });
+            assert_eq!(ordinary.is_ok(), accepted, "{children:?}");
+            assert_eq!(
+                recipe.validate(&built.table, |i| Some(&shapes[i])).is_ok(),
+                accepted
+            );
+            assert_eq!(recipe.matches_current(|i| Some(&shapes[i])), accepted);
         }
     }
 
