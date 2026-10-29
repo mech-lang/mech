@@ -606,7 +606,7 @@ canonical bytecode revision14 and source remain unchanged.
 The [round 11 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-11/REPORT.md)
 records **408.21× → 346.11× Roc**, or **15.21% less elapsed**, 0.117155000 →
 0.099332833 s against a fresh 0.000287 s reference. Exact bytes, inflation,
-capacity13, aliases and zero terminal bytes/nodes agree. The caller clears and
+capacity 13, aliases and zero terminal bytes/nodes agree. The caller clears and
 rebinds its prior result, but `same_backing` is false for every measured call on
 both compilers. Physical output copying at the immutable public boundary remains
 a timed cost. Earlier references to output reuse describe caller/capacity
@@ -676,3 +676,44 @@ Mixed array/scalar results in the real cumulative Huffman loop are the next
 bounded candidate. No larger timing or new optimization is included here.
 #973 remains draft; the previous code review is clean, fresh review is requested
 for closure and CI is cancelled by request.
+
+
+## Private one-array/scalar result completion
+
+The [round 13 closure](../../benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-13/CLOSURE.md)
+records production compiler `1ec498a67fc862bac39188fdf5040eaacf6e954c`, based on
+`1087e7b8160894f542b81d46b887eb32a450125c`. The unchanged eight-byte pair is
+**253.03× → 250.01× Roc**, 0.073378958 → 0.072503125 seconds against 0.000290:
+**1.19% less elapsed**, a small observed gain. The much larger component
+reductions are separately attributed. The timing/profile packet was committed
+as `f8d8bcf07022c9ce9409d7ba3547b43053b5ba7c` before any further optimization.
+
+An explicit Scalar/Array/Frame recipe reuses exact private frame fields and
+current-version facts. Actual terminal scalar lanes and the current owner
+synchronize once after freezing private cells. One managed result is supported;
+records, nesting, multiple arrays, escaping results, growth and child native
+regions keep the maintained path. IR118/work policy93 identifies the new proof
+and conservative exit price; canonical bytecode14 and ABI35 are unchanged.
+No source, Core ownership authority or public aggregate ABI changed.
+
+All 247 scoped Rust tests pass: 87 Core, 144 components, 8 scalar, 3 bits, 4 actual
+runtime units and 1 generated linked application. New fuel observation records 16
+real changed prefixes with current fields, prior publication, released loans,
+cleanup and retry. The linked application runs 3 → 0 → 2 through a parented mixed
+child, preserving assertion-before-division after mutation. Restored-image
+corruption checks rederive terminal fields, owner links, offsets and prices.
+The real private U16/U32 buffers allocate one initial payload at 0/1/8 updates.
+All 12 static contracts and 12 fresh scalar pairs pass, maximum direct ratio
+1.0103051 against 1.05 with exact allocation equality. The historical round-10
+1.0526036 observation remains unresolved.
+
+The full Object now has 149 numeric regions: 45 read-only and 104 writes. The 13
+new mixed results are all parented; successful already-private CFGs have zero
+explicit calls. Full candidate origins and 320 dispositions are retained. The
+separate profile still has frame handling on 472/1347 overlapping ancestries and
+frame admission on 331. Actual cumulative execution remains excluded by the
+stale-version check after its repeated more condition. Predicate correlation is
+a separate next slice; no freshness check was weakened to force selection.
+Fixture-policy/oracle/observation failures and corrected runs remain archived.
+No larger timing or complete deployed-compressor benchmark ran. #973 remains
+draft; review is requested and CI is cancelled by request.
