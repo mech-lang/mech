@@ -1,0 +1,26 @@
+{
+  "class": "introduced harness setup, not compiler regression or policy denial",
+  "error": "PermissionError errno13 spawning primary/before; copied file mode0644",
+  "mech_processes_started": 0,
+  "mech_primary_observations": 0,
+  "reference_observations": 20000,
+  "reference_seconds": 0.000284,
+  "files": {
+    "before": {
+      "sha256": "7c39895dc9af8de0b6d33c77eb0003edb34ccd98b6cfbe526e25995a9ec2093e",
+      "mode": "0o644"
+    },
+    "frame-before": {
+      "sha256": "8ed845cec9643e8b8e3bc6ff8ea12452a2d8b3bbfe4d4f69ebef79fe4b4f992b",
+      "mode": "0o644"
+    },
+    "frame-after": {
+      "sha256": "ced91b9ccf48bd77d53bba1547e2db1bc66a86b6bff6bf5e51182512be13a697",
+      "mode": "0o644"
+    },
+    "current": {
+      "sha256": "1f9977d1fcf16eb83821be3ff14d689dc1f88d05174f87d6721cc42e1c2f5826",
+      "mode": "0o755"
+    }
+  }
+}
