@@ -59,6 +59,25 @@ fn record_selector(
     }
 }
 
+// Reuse the existing validated descriptor as immutable schema/type metadata.
+// A neutral shape is only a preparation witness, never a runtime argument.
+// Schemas that reject it retain the ordinary live constructor and error order.
+fn descriptor_templates(
+    template: &NativeProgramLibraryTemplate,
+) -> Option<Box<[mech_core::ResolvedValueDescriptor]>> {
+    template
+        .inputs()
+        .iter()
+        .chain(core::iter::once(template.output()))
+        .map(|schema| {
+            let shape = schema
+                .instantiate_shape(vec![0; schema.dimension_parameters().len()].into())
+                .ok()?;
+            mech_core::ResolvedValueDescriptor::from_schema(schema.clone(), shape).ok()
+        })
+        .collect()
+}
+
 #[cfg(any(
     feature = "pure_text",
     feature = "map_ops",
@@ -129,6 +148,8 @@ pub struct NativePreparedLibraryCall {
     // a process address. Loading must resolve its exact build-owned binding.
     #[serde(skip)]
     factory: ResidentKernelFactory,
+    #[serde(skip)]
+    descriptor_templates: Option<Box<[mech_core::ResolvedValueDescriptor]>>,
     binding_bytes: u64,
     binding_work: u64,
     binding_nodes: u64,
@@ -362,10 +383,12 @@ pub fn prepare_native_program_library_call(
     #[cfg(feature = "sequence_buffers")]
     let frame_geometry =
         buffer_frames::FrameGeometry::derive(&template, artifact.schemas(), binding_bytes);
+    let descriptor_templates = descriptor_templates(&template);
     Ok(NativePreparedLibraryCall {
         template,
         schemas: Arc::new(artifact.schemas().clone()),
         factory,
+        descriptor_templates,
         binding_bytes,
         binding_work,
         binding_nodes,
@@ -648,6 +671,7 @@ impl NativePreparedLibraryCall {
             &self.schemas,
             self.template.clone(),
             self.factory,
+            self.descriptor_templates.as_deref(),
             &parameters,
             output_parameters,
             record_selector(&self.template, inputs),

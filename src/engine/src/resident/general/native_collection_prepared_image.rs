@@ -70,10 +70,12 @@ impl NativePreparedLibraryCall {
         #[cfg(feature = "sequence_buffers")]
         let frame_geometry =
             super::buffer_frames::FrameGeometry::derive(&template, &schemas, wire.binding_bytes);
+        let descriptor_templates = super::descriptor_templates(&template);
         let call = Self {
             template,
             schemas,
             factory,
+            descriptor_templates,
             binding_bytes: wire.binding_bytes,
             binding_work: wire.binding_work,
             binding_nodes: wire.binding_nodes,
