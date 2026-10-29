@@ -61,6 +61,9 @@ mod scalar_record_qualification;
 #[path = "support/canonical_program_record_buffers.rs"]
 mod record_buffer_qualification;
 
+#[path = "support/canonical_program_nested_frames.rs"]
+mod nested_frame_qualification;
+
 #[path = "support/canonical_program_proof_storage.rs"]
 mod proof_storage_qualification;
 
