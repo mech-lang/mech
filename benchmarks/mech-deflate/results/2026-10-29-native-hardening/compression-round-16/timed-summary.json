@@ -1,0 +1,22 @@
+{
+  "diagnostic_system_nanoseconds": {
+    "CompositePack(3)": 2077083,
+    "MatrixHorizontal(1)": 153959,
+    "CompositePack(2)": 1003750,
+    "CompositePack(6)": 1238626,
+    "RecordFieldAccess": 15370920,
+    "CompositePack(7)": 645541,
+    "CompositePack(4)": 57916
+  },
+  "calls": {
+    "CompositePack(3)": 38,
+    "MatrixHorizontal(1)": 1,
+    "CompositePack(2)": 2,
+    "CompositePack(6)": 4,
+    "RecordFieldAccess": 53,
+    "CompositePack(7)": 1,
+    "CompositePack(4)": 1
+  },
+  "sum_nanoseconds": 20547795,
+  "primary_timing": false
+}

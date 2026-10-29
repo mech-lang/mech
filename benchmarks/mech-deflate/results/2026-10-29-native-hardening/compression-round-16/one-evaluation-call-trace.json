@@ -1,0 +1,758 @@
+{
+  "call_sites": [
+    {
+      "calls": 1,
+      "input_parameters": [
+        0,
+        0,
+        0
+      ],
+      "iteration": null,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(13), local: Some(33) }",
+      "output_parameters": 0,
+      "primitive": "CompositePack(3)",
+      "site": 612
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        0
+      ],
+      "iteration": null,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(13), local: Some(34) }",
+      "output_parameters": 0,
+      "primitive": "MatrixHorizontal(1)",
+      "site": 613
+    },
+    {
+      "calls": 8,
+      "input_parameters": [
+        0,
+        0,
+        0
+      ],
+      "iteration": 137,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(1505), local: Some(1) }",
+      "output_parameters": 0,
+      "primitive": "CompositePack(3)",
+      "site": 12797
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        0,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(207) }",
+      "output_parameters": 0,
+      "primitive": "CompositePack(2)",
+      "site": 13274
+    },
+    {
+      "calls": 16,
+      "input_parameters": [
+        0,
+        0,
+        0
+      ],
+      "iteration": 171,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(1871), local: Some(1) }",
+      "output_parameters": 0,
+      "primitive": "CompositePack(3)",
+      "site": 15674
+    },
+    {
+      "calls": 2,
+      "input_parameters": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "iteration": 168,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(1825), local: Some(97) }",
+      "output_parameters": 6,
+      "primitive": "CompositePack(6)",
+      "site": 19426
+    },
+    {
+      "calls": 2,
+      "input_parameters": [
+        6,
+        0
+      ],
+      "iteration": 168,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(1825), local: Some(98) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 19427
+    },
+    {
+      "calls": 2,
+      "input_parameters": [
+        6,
+        0
+      ],
+      "iteration": 168,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(1825), local: Some(99) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 19428
+    },
+    {
+      "calls": 2,
+      "input_parameters": [
+        6,
+        0
+      ],
+      "iteration": 168,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(1825), local: Some(100) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 19429
+    },
+    {
+      "calls": 2,
+      "input_parameters": [
+        6,
+        0
+      ],
+      "iteration": 168,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(1825), local: Some(101) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 19430
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        1,
+        1,
+        1
+      ],
+      "iteration": 168,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(2715), local: Some(0) }",
+      "output_parameters": 3,
+      "primitive": "CompositePack(3)",
+      "site": 22428
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        1,
+        1,
+        1
+      ],
+      "iteration": 168,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(2716), local: Some(0) }",
+      "output_parameters": 3,
+      "primitive": "CompositePack(3)",
+      "site": 22432
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        6,
+        0
+      ],
+      "iteration": 168,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(2717), local: Some(0) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 22438
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        6,
+        0
+      ],
+      "iteration": 168,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(2717), local: Some(1) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 22439
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        1,
+        1,
+        1
+      ],
+      "iteration": 168,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(2717), local: Some(8) }",
+      "output_parameters": 3,
+      "primitive": "CompositePack(3)",
+      "site": 22686
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        1,
+        1,
+        1
+      ],
+      "iteration": 168,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(2751), local: Some(0) }",
+      "output_parameters": 3,
+      "primitive": "CompositePack(3)",
+      "site": 22690
+    },
+    {
+      "calls": 2,
+      "input_parameters": [
+        3,
+        0
+      ],
+      "iteration": 168,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(1825), local: Some(179) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 22701
+    },
+    {
+      "calls": 2,
+      "input_parameters": [
+        3,
+        0
+      ],
+      "iteration": 168,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(1825), local: Some(180) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 22702
+    },
+    {
+      "calls": 2,
+      "input_parameters": [
+        3,
+        0
+      ],
+      "iteration": 168,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(1825), local: Some(181) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 22703
+    },
+    {
+      "calls": 2,
+      "input_parameters": [
+        3,
+        0
+      ],
+      "iteration": 168,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(1825), local: Some(182) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 22704
+    },
+    {
+      "calls": 2,
+      "input_parameters": [
+        3,
+        0
+      ],
+      "iteration": 168,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(1825), local: Some(183) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 22705
+    },
+    {
+      "calls": 2,
+      "input_parameters": [
+        3,
+        0
+      ],
+      "iteration": 168,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(1825), local: Some(184) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 22706
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        1,
+        3,
+        3,
+        6,
+        0,
+        0,
+        0
+      ],
+      "iteration": 168,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(2755), local: Some(0) }",
+      "output_parameters": 13,
+      "primitive": "CompositePack(7)",
+      "site": 22718
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        13,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(3239), local: Some(0) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 26599
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        13,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(3239), local: Some(1) }",
+      "output_parameters": 3,
+      "primitive": "RecordFieldAccess",
+      "site": 26600
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        3,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(3239), local: Some(2) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 26601
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        3,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(3239), local: Some(3) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 26602
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        3,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(3239), local: Some(4) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 26603
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        1,
+        1,
+        1
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(3239), local: Some(11) }",
+      "output_parameters": 3,
+      "primitive": "CompositePack(3)",
+      "site": 26850
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        3,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(3239), local: Some(12) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 26851
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        3,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(3239), local: Some(13) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 26852
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        3,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(3239), local: Some(14) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 26853
+    },
+    {
+      "calls": 8,
+      "input_parameters": [
+        0,
+        0,
+        0
+      ],
+      "iteration": 301,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(3318), local: Some(1) }",
+      "output_parameters": 0,
+      "primitive": "CompositePack(3)",
+      "site": 27273
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(3239), local: Some(112) }",
+      "output_parameters": 6,
+      "primitive": "CompositePack(6)",
+      "site": 31025
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        1,
+        3,
+        6,
+        0,
+        0,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(3239), local: Some(114) }",
+      "output_parameters": 10,
+      "primitive": "CompositePack(6)",
+      "site": 31027
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        13,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(228) }",
+      "output_parameters": 3,
+      "primitive": "RecordFieldAccess",
+      "site": 35480
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        10,
+        3
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(229) }",
+      "output_parameters": 13,
+      "primitive": "CompositePack(2)",
+      "site": 35481
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        13,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(230) }",
+      "output_parameters": 10,
+      "primitive": "RecordFieldAccess",
+      "site": 35482
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        10,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(231) }",
+      "output_parameters": 6,
+      "primitive": "RecordFieldAccess",
+      "site": 35483
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        10,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(233) }",
+      "output_parameters": 0,
+      "primitive": "RecordFieldAccess",
+      "site": 35485
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        6,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(234) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 35486
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        6,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(235) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 35487
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        6,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(236) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 35488
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        6,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(237) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 35489
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        6,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(238) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 35490
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        6,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(239) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 35491
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        10,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(240) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 35492
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(348) }",
+      "output_parameters": 0,
+      "primitive": "CompositePack(4)",
+      "site": 38690
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        10,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(383) }",
+      "output_parameters": 3,
+      "primitive": "RecordFieldAccess",
+      "site": 40977
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        3,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(384) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 40978
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        10,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(385) }",
+      "output_parameters": 3,
+      "primitive": "RecordFieldAccess",
+      "site": 40979
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        3,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(386) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 40980
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        10,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(387) }",
+      "output_parameters": 3,
+      "primitive": "RecordFieldAccess",
+      "site": 40981
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        3,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(388) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 40982
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        13,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(389) }",
+      "output_parameters": 3,
+      "primitive": "RecordFieldAccess",
+      "site": 40983
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        3,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(390) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 40984
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        13,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(391) }",
+      "output_parameters": 3,
+      "primitive": "RecordFieldAccess",
+      "site": 40985
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        3,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(392) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 40986
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        13,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(393) }",
+      "output_parameters": 3,
+      "primitive": "RecordFieldAccess",
+      "site": 40987
+    },
+    {
+      "calls": 1,
+      "input_parameters": [
+        3,
+        0
+      ],
+      "iteration": 21,
+      "origin": "NativeMatchOrigin { node: NodeId(0), block: Some(74), local: Some(394) }",
+      "output_parameters": 1,
+      "primitive": "RecordFieldAccess",
+      "site": 40988
+    }
+  ],
+  "diagnostic_only": true,
+  "input_bytes": 8,
+  "primary_timing": false,
+  "single_evaluation": true,
+  "source_unchanged": true,
+  "visits": 213929,
+  "work": 303735923752
+}

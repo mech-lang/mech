@@ -1,0 +1,37 @@
+[
+  {
+    "path": "hosts/gpu/src/batched/jit.rs",
+    "backup": "/private/tmp/mech-helper-costs-round16-20261029/excluded-unit-module-0-before.rs",
+    "sha256": "3e8c21b6f206b756640c06645a3bfd5b2293a56164d5dd9e5935236c7fb440e5",
+    "exclusion": "#[cfg(test)]\npub(super) mod tests {",
+    "reason": "Unrelated test module requires optional mech-runtime dev graph absent from the selected-operation profile; production module and all traced execution code remain included."
+  },
+  {
+    "path": "hosts/gpu/src/batched/mod.rs",
+    "backup": "/private/tmp/mech-helper-costs-round16-20261029/excluded-unit-module-1-before.rs",
+    "sha256": "24119cc20cc76e33224abdfbca6b5e11f5ef88409a375f367a7f7f4021b75f23",
+    "exclusion": "#[cfg(test)]\nmod axis_tests {",
+    "reason": "Unrelated test module requires optional mech-runtime dev graph absent from the selected-operation profile; production module and all traced execution code remain included."
+  },
+  {
+    "path": "hosts/gpu/src/native_artifact/program/runtime/maps/binding/mod.rs",
+    "backup": "/private/tmp/mech-helper-costs-round16-20261029/excluded-unit-module-2-before.rs",
+    "sha256": "2b98ff77e50a1ba2447e5f6b9add72f8882613593f36db1a3107d2fa1cee03a3",
+    "exclusion": "#[cfg(test)]\nmod tests;",
+    "reason": "Unrelated test module requires optional mech-runtime dev graph absent from the selected-operation profile; production module and all traced execution code remain included."
+  },
+  {
+    "path": "hosts/gpu/src/native_artifact/codegen/common/aggregates/mod.rs",
+    "backup": "/private/tmp/mech-helper-costs-round16-20261029/excluded-unit-module-3-before.rs",
+    "sha256": "8d7379d5955e02305db4d6aab41582c7bd62b7f7235d0180b96a1714cdf83369",
+    "exclusion": "#[cfg(test)]\nmod map_owner_tests;",
+    "reason": "Unrelated test module requires optional mech-runtime dev graph absent from the selected-operation profile; production module and all traced execution code remain included."
+  },
+  {
+    "path": "hosts/gpu/src/batched/aot.rs",
+    "backup": "/private/tmp/mech-helper-costs-round16-20261029/excluded-unit-module-4-before.rs",
+    "sha256": "d9cbd831b697787a05c69fa59f4f60aed305c097bca904674018e0a8668ff131",
+    "exclusion": "#[cfg(all(test, unix))]\nmod tests {",
+    "reason": "Unrelated AOT unit module imports the excluded batched JIT runtime tests; production code remains included."
+  }
+]
