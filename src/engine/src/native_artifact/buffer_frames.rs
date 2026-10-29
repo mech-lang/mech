@@ -115,7 +115,7 @@ fn fields(plan: &Plan, value: Value) -> Option<usize> {
         SchemaBody::Record(fields) => fields.iter().map(|field| &field.schema).collect(),
         _ => return None,
     };
-    let mut buffer = false;
+    let mut eligible = false;
     for field in &fields {
         match field {
             SchemaBody::UnsignedInteger(
@@ -135,8 +135,13 @@ fn fields(plan: &Plan, value: Value) -> Option<usize> {
                     )
                 ) =>
             {
-                buffer = true
+                eligible = true
             }
+            // Compound siblings remain opaque canonical Values in the same
+            // admitted managed-owner lanes. The component's unchanged use
+            // checks keep a child consumed by another pack canonical; no
+            // nested private frame or payload flattening is introduced here.
+            SchemaBody::Tuple(_) | SchemaBody::Record(_) => eligible = true,
             // A fixed aggregate matrix remains an admitted immutable Value.
             // It is not a packed buffer, but must not force sibling buffers
             // through canonical snapshot packing and discard their capacity.
@@ -147,7 +152,7 @@ fn fields(plan: &Plan, value: Value) -> Option<usize> {
             _ => return None,
         }
     }
-    buffer.then_some(fields.len())
+    eligible.then_some(fields.len())
 }
 fn pack(plan: &Plan, action: &Action) -> Option<(Value, Vec<SchemaId>)> {
     let Action::LibraryCall {
