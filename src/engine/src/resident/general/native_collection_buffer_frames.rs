@@ -343,8 +343,8 @@ impl NativePreparedLibraryCall {
                 let _nodes = memory.reserve_nodes(nodes)?;
                 let mut meter = ResidentBudgetMeter::for_native_projection(work, limits)?;
                 let admitted = match (&geometry.admission, &geometry.shape) {
-                    (Some(recipe), Some(shape)) => {
-                        recipe.try_admit(self, inputs, words, shape, &memory, &mut meter)?
+                    (Some(recipe), Some(_)) => {
+                        recipe.try_admit(self, inputs, words, &memory, &mut meter)?
                     }
                     _ => None,
                 };
@@ -389,41 +389,41 @@ impl NativePreparedLibraryCall {
                             .checked_add(footprint.retained_bytes)
                             .ok_or(InvokeError::InvalidInput)?;
                     }
-                    if let Some(recipe) = &geometry.shape {
-                        recipe.validate(&self.schemas, |i| inputs[i].as_ref().map(Value::shape))?;
-                    } else {
-                        let children = inputs
-                            .iter()
-                            .enumerate()
-                            .map(|(index, value)| {
-                                if let Some(value) = value {
-                                    Ok((value.schema(), value.shape().clone()))
-                                } else {
-                                    let schema = contract.inputs[index].schema;
-                                    let shape = self
-                                        .schemas
-                                        .get(schema)
-                                        .ok_or(InvokeError::InvalidInput)?
-                                        .instantiate_shape(Box::new([]))
-                                        .map_err(|_| InvokeError::InvalidInput)?;
-                                    Ok((schema, shape))
-                                }
-                            })
-                            .collect::<Result<Vec<_>, InvokeError>>()?;
-                        let shape = CompositeSnapshotConstructor::shape_for_children(
-                            output,
-                            &children,
-                            &self.schemas,
-                        )
-                        .map_err(|_| InvokeError::InvalidInput)?;
-                        let _constructor = CompositeSnapshotConstructor::bind(
-                            output,
-                            shape,
-                            &children,
-                            self.schemas.clone(),
-                        )
-                        .map_err(|_| InvokeError::InvalidInput)?;
-                    }
+                }
+                if let Some(recipe) = &geometry.shape {
+                    recipe.validate(&self.schemas, |i| inputs[i].as_ref().map(Value::shape))?;
+                } else {
+                    let children = inputs
+                        .iter()
+                        .enumerate()
+                        .map(|(index, value)| {
+                            if let Some(value) = value {
+                                Ok((value.schema(), value.shape().clone()))
+                            } else {
+                                let schema = contract.inputs[index].schema;
+                                let shape = self
+                                    .schemas
+                                    .get(schema)
+                                    .ok_or(InvokeError::InvalidInput)?
+                                    .instantiate_shape(Box::new([]))
+                                    .map_err(|_| InvokeError::InvalidInput)?;
+                                Ok((schema, shape))
+                            }
+                        })
+                        .collect::<Result<Vec<_>, InvokeError>>()?;
+                    let shape = CompositeSnapshotConstructor::shape_for_children(
+                        output,
+                        &children,
+                        &self.schemas,
+                    )
+                    .map_err(|_| InvokeError::InvalidInput)?;
+                    let _constructor = CompositeSnapshotConstructor::bind(
+                        output,
+                        shape,
+                        &children,
+                        self.schemas.clone(),
+                    )
+                    .map_err(|_| InvokeError::InvalidInput)?;
                 }
                 // Retain the logical output bound even though no payload is copied.
                 if let Some(violation) = mech_core::evaluate_call_memory_budget(
