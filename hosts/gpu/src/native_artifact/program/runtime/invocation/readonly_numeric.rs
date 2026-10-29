@@ -140,6 +140,17 @@ impl Invocation<'_, '_, '_> {
             else {
                 return Ok(false);
             };
+            // A no-op store still has the selected array output contract.
+            // Decline, rather than reject at entry: an earlier assertion or
+            // unselected store must keep its original source/error ordering.
+            if array.writable
+                && self
+                    .limits
+                    .max_output_elements
+                    .is_some_and(|limit| view[1] > limit)
+            {
+                return Ok(false);
+            }
             for (index, word) in view.into_iter().enumerate() {
                 self.write_borrowed_word(2 + proof.view(at) + index, word)?;
             }

@@ -261,3 +261,6 @@ fn numeric_writes_real_buffers_allocate_once_and_not_per_store() {
 
 #[path = "canonical_program_numeric_write_recovery.rs"]
 mod recovery;
+
+#[path = "canonical_program_numeric_write_paths.rs"]
+mod paths;
