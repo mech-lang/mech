@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-frame-admission-round14-20261029/final-engine-units/engine-tests",
+    "resident::budget::",
+    "native_projection_meter_tests",
+    "frame_recipe",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 1.1274091249797493,
+  "binary_sha256": "2d5bd01a735bc949c5ff7f706d7ed717c33fae448929c54d28ae2f1b100eb0a6"
+}

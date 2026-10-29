@@ -1,0 +1,5 @@
+round13 1347 {'remaining': 89, 'other_invocation_helper': 377, 'selected_library_call': 196, 'buffer_frame_actions': 472, 'ordinary_control_visit': 213} {'other_admission': 80, 'managed_value_footprint': 124, 'native_scalar_footprint': 78, 'frame_shape_validation': 47}
+combined 1352 {'remaining': 122, 'other_invocation_helper': 440, 'selected_library_call': 229, 'buffer_frame_actions': 327, 'ordinary_control_visit': 234} {'other_admission': 146}
+footprint_only 1354 {'remaining': 122, 'other_invocation_helper': 397, 'selected_library_call': 211, 'buffer_frame_actions': 369, 'ordinary_control_visit': 255} {'other_admission': 134, 'frame_shape_validation': 62}
+prepared_footprints 1356 {'remaining': 107, 'other_invocation_helper': 429, 'selected_library_call': 228, 'buffer_frame_actions': 343, 'ordinary_control_visit': 249} {'other_admission': 129, 'frame_shape_validation': 61}
+final 1349 {'remaining': 118, 'other_invocation_helper': 425, 'selected_library_call': 227, 'buffer_frame_actions': 311, 'ordinary_control_visit': 268} {'other_admission': 135}
