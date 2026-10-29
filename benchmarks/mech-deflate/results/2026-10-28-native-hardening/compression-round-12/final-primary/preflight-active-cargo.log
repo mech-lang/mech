@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/private/tmp/mech-numeric-writes-round12-20261028/final-primary/run.py", line 15, in <module>
+    assert not [p for p in active if Path(p.strip()).name in ['component-v2-tests', 'selected-native-tests', 'selected-bits-tests', 'rustc', 'cargo', 'complete-reality', 'compression-application', 'word-updates', 'round01-pinned-control', 'artifact_review', 'native_frame_transport']]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

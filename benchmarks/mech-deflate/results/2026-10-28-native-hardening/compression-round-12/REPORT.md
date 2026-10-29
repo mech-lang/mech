@@ -1,5 +1,30 @@
 # Round 12: private unsigned indexed-write leaf recurrences
 
+Corrected compiler `c0bef396bbc88cdd8dd94037053866b182b7a68d`: the final fresh
+pair is **345.80× → 250.94× Roc**, 0.099590208 → 0.072269500 s, reference
+0.000288 s. This is **27.43% less elapsed / 1.3780× faster Mech**. Exact bytes,
+independent inflation, reserve13, false physical-backing reuse and final cleanup
+checks pass. The separate 56-repetition profile is excluded from primary samples.
+`final-primary/` retains this cohort; the earlier cohort below remains separate.
+
+The provisional broader run executed126 tests:125 passed and the unchanged
+private-allocation test failed. The initial native boundary cloned its own
+carrier pin and always requested a copy, doubling private payload allocation.
+`c0bef396b` transfers that pin into the original consuming store instead. Core's
+exclusive same-account check remains authoritative; external aliases and other
+fields still force a copy. The original allocation test plus all11 new cases
+pass (12 tests), with no expected values or allowances changed. The private U32
+case now allocates its initial buffer once across0/1/8 updates; the exact large
+minus small delta is6000900 bytes in each case. Broad/fuel/linked qualification
+and the corrected compiler's protected scalar cohort are pending at this commit.
+
+One unit-profile build was deliberately interrupted to fix this regression first.
+Switching back rebuilt the unhashed selected math library; the corrective default
+build took3m58s. The timing overlap guard rejected an attempt while freshness
+verification was still active, before taking any samples. That attempt's log is
+retained; measurement restarted only after the build finished and library hashes
+were verified. See `corrected-timing-inventory.json` for all receipts.
+
 Compiler `ed75406f3893e05070542dc523634251947a7fdc`, base
 `efa2ff81741362394553d5c7eae7d9dfc39766c4`. The core fixed-shape handoff is
 `02fb501b3935d16f75b1eda4fbe049bdf1051465`; native selection/emission/runtime
