@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/private/tmp/mech-predicate-versions-round15-20261029/primary/current",
+    "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+    "98"
+  ],
+  "repetitions": 98,
+  "sample_command": [
+    "sample",
+    "90962",
+    "2",
+    "-file",
+    "/private/tmp/mech-predicate-versions-round15-20261029/primary/after.sample.txt"
+  ],
+  "sample_exit": 0,
+  "output": "Sampling process 90962 for 2 seconds with 1 millisecond of run time between samples\nSampling completed, processing symbols...\nSample analysis of process 90962 written to file /private/tmp/mech-predicate-versions-round15-20261029/primary/after.sample.txt\n",
+  "all_observations_excluded_from_primary": true
+}
