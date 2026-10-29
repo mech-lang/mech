@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-predicate-versions-round15-20261029/primary/selected-bits-tests",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.9363915000576526,
+  "binary_sha256": "4e8ae6f7a2234168fdb726fd6a11db8cfe29405930d814aea12f798f834df7b0",
+  "skipped_coverage": null
+}

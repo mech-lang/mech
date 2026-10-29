@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-predicate-versions-round15-20261029/object-audit/object-evidence",
+    "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+    "/private/tmp/mech-predicate-versions-round15-20261029/object-audit/complete-object"
+  ],
+  "exit": 0,
+  "seconds": 25.551125665893778,
+  "binary_sha256": "67c4d4fd3c3f88bfa0ff235c6d615b74b668e541546852450bb7995a991f593d"
+}

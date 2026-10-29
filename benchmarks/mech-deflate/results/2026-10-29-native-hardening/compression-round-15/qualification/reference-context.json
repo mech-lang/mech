@@ -1,0 +1,12 @@
+{
+  "binary_sha256": "3941ef59b2c9343d0493cc6b6d14ca4803e6bd27acfe520b1fb59d9b63026324",
+  "reexamined_archived_full_disassembly_sha256": "00e63ff90be8de25e58982c72fbb80e174982221ddff96de2877bb233857ff88",
+  "original_disassembly_command": [
+    "otool",
+    "-tvV",
+    "/private/tmp/mech-deflate-profiling-20261028/roc-profile"
+  ],
+  "fresh_disassembly_run": false,
+  "interpretation": "Pinned ARM64 compiler-hashed procedures contain checked scalar load/add/store and branch/backedge shapes. This supports using ordinary typed native loops. No proven mapping to the named cumulative function or per-function timing attribution is claimed.",
+  "excerpt_sha256": "a23bed2f08d03fb6db18ccc072ef4ee87d9b34e6dea7d1fa0baec0e814407fde"
+}

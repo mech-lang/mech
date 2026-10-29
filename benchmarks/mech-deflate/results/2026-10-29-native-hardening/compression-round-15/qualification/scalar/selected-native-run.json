@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-predicate-versions-round15-20261029/primary/selected-native-tests",
+    "--nocapture",
+    "--test-threads=1",
+    "--skip",
+    "all_certified_scalar_primitives_match_ordinary_resident_original_and_decoded"
+  ],
+  "exit": 0,
+  "seconds": 0.9164297499228269,
+  "binary_sha256": "703593bb4c10e3d95eec410e9a855326b38bc82e4f054f339f371e245097d6b8",
+  "skipped_coverage": "The all-primitives test needs not/xor, which this selected catalog deliberately omits."
+}
