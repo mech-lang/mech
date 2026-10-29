@@ -234,7 +234,9 @@ fn selected_template(
 // IR116 adds independently rederived read-only numeric leaf/view/carrier proofs.
 // IR117 adds current-version proofs, fixed private unsigned writes and prepaid publication.
 // IR118 derives private flat one-array/scalar terminal result recipes.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 118;
+// IR119 admits repeated current-Bool correlation in the existing numeric
+// version proof. Images rederive the eligibility from the restored plan.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 119;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

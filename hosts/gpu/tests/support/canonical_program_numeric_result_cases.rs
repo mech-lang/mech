@@ -639,7 +639,7 @@ fn mixed_results_exact_and_one_short_work_preserve_publication() {
 }
 
 #[test]
-fn secondary_cumulative_retains_the_predicate_correlation_rejection() {
+fn secondary_cumulative_selects_correlated_current_predicate_versions() {
     let source = format!(
         "{}\n(next, used) := huff-cumulative(data<[u64]>, 3u64, 7u64, 1u64)\n(next, used + 0u64)\n",
         include_str!("../fixtures/native/deflate-huffman-level12.mec")
@@ -648,22 +648,12 @@ fn secondary_cumulative_retains_the_predicate_correlation_rejection() {
         let metadata = emit_program_object(&artifact, &mech_stdlib::source_catalog())
             .unwrap()
             .metadata();
-        let candidates = metadata["readonly_numeric_candidates"].as_array().unwrap();
-        println!(
-            "{}",
-            serde_json::json!({"witness":"secondary-cumulative-decline","candidates":candidates})
-        );
+        let regions = metadata["compiled_numeric_write_loops"].as_array().unwrap();
+        assert!(!regions.is_empty(), "{metadata}");
         assert!(
-            candidates.iter().any(|r| r["rejection"]
-                .as_str()
-                .is_some_and(|s| s.contains("older array version"))),
-            "{metadata}"
-        );
-        assert!(
-            metadata["compiled_numeric_write_loops"]
-                .as_array()
-                .unwrap()
-                .is_empty()
+            regions
+                .iter()
+                .all(|r| r["successful_backedge_helpers"] == 0)
         );
         let mode = NativeProgramLimitMode::NoLimits;
         let memory = mode.memory_budget();

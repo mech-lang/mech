@@ -10,6 +10,9 @@ use crate::native_artifact::{
 };
 use std::{borrow::Cow, cell::OnceCell};
 
+#[path = "predicate_facts.rs"]
+mod predicates;
+
 #[cfg(feature = "sequence_buffers")]
 #[path = "old_value_reads.rs"]
 mod old_value_reads;
