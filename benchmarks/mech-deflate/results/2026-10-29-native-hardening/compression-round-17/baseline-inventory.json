@@ -1,0 +1,86 @@
+[
+  {
+    "path": "baseline/baseline-partition.json",
+    "sha256": "1b26d5cfc359195e6819bbab8f55d3dec1989cbbf01758d3ad7c315d6f33056f",
+    "original_sha256": "1b26d5cfc359195e6819bbab8f55d3dec1989cbbf01758d3ad7c315d6f33056f",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/baseline-partition.json"
+  },
+  {
+    "path": "baseline/record-witness.rs",
+    "sha256": "b154c73bcafc9807b462ad42a74f4063c2bb47941177b2ee520b66a97cf97403",
+    "original_sha256": "b154c73bcafc9807b462ad42a74f4063c2bb47941177b2ee520b66a97cf97403",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/record-witness.rs"
+  },
+  {
+    "path": "baseline/build-record-witness.py",
+    "sha256": "eed0bfdb9d6b0fe8b833b76b660bf159b8dab4606493fe997a90253ba8b51b00",
+    "original_sha256": "eed0bfdb9d6b0fe8b833b76b660bf159b8dab4606493fe997a90253ba8b51b00",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/build-record-witness.py"
+  },
+  {
+    "path": "baseline/record-witness-build.json",
+    "sha256": "92c55b067d9cabaa56353c7357282170e1a77dfc6a4802388d2eb046a461ef96",
+    "original_sha256": "92c55b067d9cabaa56353c7357282170e1a77dfc6a4802388d2eb046a461ef96",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/record-witness-build.json"
+  },
+  {
+    "path": "baseline/record-witness-build.log.gz",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/record-witness-build.log"
+  },
+  {
+    "path": "baseline/record-witness.stdout.gz",
+    "sha256": "1150497246444f0902e8c3714f5ccaae557a84419f536d772a7a25245996c8b8",
+    "original_sha256": "d87ae3606a6cf2270ca5a85b841347f28879c31de68d05cf106bc4000813f3ae",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/record-witness.stdout"
+  },
+  {
+    "path": "baseline/record-witness.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/record-witness.stderr"
+  },
+  {
+    "path": "baseline/baseline-summary.py",
+    "sha256": "930d84b5cfb5a0dc4d98944e8e57cc0c48aea79cacaeecd41c3476f5cd0d8299",
+    "original_sha256": "930d84b5cfb5a0dc4d98944e8e57cc0c48aea79cacaeecd41c3476f5cd0d8299",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/baseline-summary.py"
+  },
+  {
+    "path": "baseline/baseline-receipt.json",
+    "sha256": "27097b50d01d16d2bd06e4cfdd92c820777ed1a641cb6730bea9ad427db053a8",
+    "original_sha256": "27097b50d01d16d2bd06e4cfdd92c820777ed1a641cb6730bea9ad427db053a8",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/baseline-receipt.json"
+  },
+  {
+    "path": "baseline/initial-record-witness.rs",
+    "sha256": "0bcd6e69ab7393cc350cb03c89df58a7cde40fb8900401c9d7f290dea22cb07b",
+    "original_sha256": "0bcd6e69ab7393cc350cb03c89df58a7cde40fb8900401c9d7f290dea22cb07b",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/initial-record-witness.rs"
+  },
+  {
+    "path": "baseline/initial-record-witness-build.json",
+    "sha256": "711ee23c7c78aef0b071e14ac91113cf5f76c5ce158cf2eaf53f7aa515c8730e",
+    "original_sha256": "711ee23c7c78aef0b071e14ac91113cf5f76c5ce158cf2eaf53f7aa515c8730e",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/initial-record-witness-build.json"
+  },
+  {
+    "path": "baseline/initial-record-witness-build.log.gz",
+    "sha256": "391e7a894398219c5fda9d01b084e91f7aeae1312f50374562d7674e7f59b2fb",
+    "original_sha256": "9dda1282cbf8a19968865a19a6f84cfffa90c2ebf5f5bba2967732ced07f26cb",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/initial-record-witness-build.log"
+  },
+  {
+    "path": "baseline/initial-baseline-summary.py",
+    "sha256": "68928843548fa95f24779dc3953691947a06537ab23391ab6bc1f417d25a657f",
+    "original_sha256": "68928843548fa95f24779dc3953691947a06537ab23391ab6bc1f417d25a657f",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/initial-baseline-summary.py"
+  },
+  {
+    "path": "baseline/baseline-engine-binding.log.gz",
+    "sha256": "598371a91216e7418bdb9261ca4575191643ef2dca8698296e390386d64de96a",
+    "original_sha256": "858c427b68683c1621754c82e29a8978b1d132f4ec244167aa32b3efa570492e",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/baseline-engine-binding.log"
+  }
+]
