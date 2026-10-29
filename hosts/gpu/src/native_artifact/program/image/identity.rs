@@ -244,7 +244,7 @@ fn selected_template(
 // current leaf shape/admission recipes are rederived on image loading.
 // IR123 retains the constructor for dynamic opaque siblings or incompatible
 // structural bindings that the private leaf-shape recipe cannot represent.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 123;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 124;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

@@ -11,8 +11,9 @@ pub(in crate::native_artifact) enum ResultRecipe {
     },
     Frame {
         value: u32,
-        ordinal: usize,
-        array: usize,
+        /// Each returned managed field and its exact carrier-array root.
+        /// Repeated roots are valid aliases, but each field must be current.
+        arrays: Vec<(usize, usize)>,
     },
 }
 impl ResultRecipe {
@@ -64,7 +65,7 @@ pub(super) fn derive(
         return Err("numeric result is not a scalar, array, or private flat tuple");
     }
     // The connected private-use proof rejects escaping/nested composites.
-    // Records and multiple managed results remain outside this first slice.
+    // Records and nested composites remain outside this flat tuple proof.
     let fields = frames
         .fields(value)
         .ok_or("numeric result tuple escapes or lacks exact private fields")?;
@@ -79,12 +80,15 @@ pub(super) fn derive(
         .enumerate()
         .filter(|(_, f)| matches!(f.lane(), Lane::Managed { .. }))
         .collect::<Vec<_>>();
-    let [(ordinal, field)] = managed.as_slice() else {
-        return Err("numeric result tuple requires exactly one array owner");
-    };
+    if managed.is_empty() {
+        return Err("numeric result tuple requires an array owner");
+    }
+    let arrays = managed
+        .into_iter()
+        .map(|(ordinal, field)| Ok((ordinal, root(Some(ordinal), field.schema())?)))
+        .collect::<Result<Vec<_>, &'static str>>()?;
     Ok(ResultRecipe::Frame {
         value: value.get(),
-        ordinal: *ordinal,
-        array: root(Some(*ordinal), field.schema())?,
+        arrays,
     })
 }

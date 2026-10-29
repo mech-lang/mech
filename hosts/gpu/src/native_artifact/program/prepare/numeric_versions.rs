@@ -293,12 +293,14 @@ fn pass(
             }
         }
         if site == tail.finish() as usize {
-            let key = match result {
-                ResultRecipe::Scalar => None,
-                ResultRecipe::Array { .. } => Some((tail.returned().get(), None)),
-                ResultRecipe::Frame { value, ordinal, .. } => Some((*value, Some(*ordinal))),
+            let current = match result {
+                ResultRecipe::Scalar => true,
+                ResultRecipe::Array { .. } => fresh(&state, (tail.returned().get(), None)),
+                ResultRecipe::Frame { value, arrays } => arrays
+                    .iter()
+                    .all(|(ordinal, _)| fresh(&state, (*value, Some(*ordinal)))),
             };
-            if key.is_some_and(|key| !fresh(&state, key)) {
+            if !current {
                 return Err("leaf returns an older array version");
             }
         }
