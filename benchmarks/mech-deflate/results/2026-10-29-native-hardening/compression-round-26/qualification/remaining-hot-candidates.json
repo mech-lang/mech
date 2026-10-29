@@ -1,0 +1,110 @@
+{
+  "performance_observations": 0,
+  "scope": "Top remaining containing-iteration frame-helper counts joined to actual Object first numeric rejection. Counts are not elapsed attribution.",
+  "candidates": [
+    {
+      "header": 629,
+      "iteration": 21,
+      "origin": {
+        "block": 13,
+        "local": 42,
+        "node": 0
+      },
+      "parent": null,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": false
+    },
+    {
+      "header": 837,
+      "iteration": 25,
+      "origin": {
+        "block": 74,
+        "local": 7,
+        "node": 0
+      },
+      "parent": 21,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": false
+    },
+    {
+      "header": 13110,
+      "iteration": 142,
+      "origin": {
+        "block": 74,
+        "local": 192,
+        "node": 0
+      },
+      "parent": 21,
+      "proof_eligible": false,
+      "rejection": "numeric result frame escapes or lacks exact private fields",
+      "selected": false
+    },
+    {
+      "header": 17352,
+      "iteration": 190,
+      "origin": {
+        "block": 2015,
+        "local": 24,
+        "node": 0
+      },
+      "parent": 168,
+      "proof_eligible": false,
+      "rejection": "not a leaf: child loop or activation boundary",
+      "selected": false
+    },
+    {
+      "header": 38158,
+      "iteration": 424,
+      "origin": {
+        "block": 74,
+        "local": 310,
+        "node": 0
+      },
+      "parent": 21,
+      "proof_eligible": false,
+      "rejection": "numeric result frame escapes or lacks exact private fields",
+      "selected": false
+    },
+    {
+      "header": 38251,
+      "iteration": 425,
+      "origin": {
+        "block": 74,
+        "local": 314,
+        "node": 0
+      },
+      "parent": 21,
+      "proof_eligible": false,
+      "rejection": "numeric result frame escapes or lacks exact private fields",
+      "selected": false
+    },
+    {
+      "header": 38367,
+      "iteration": 426,
+      "origin": {
+        "block": 74,
+        "local": 323,
+        "node": 0
+      },
+      "parent": 21,
+      "proof_eligible": false,
+      "rejection": "numeric result frame escapes or lacks exact private fields",
+      "selected": false
+    },
+    {
+      "header": 38521,
+      "iteration": 427,
+      "origin": {
+        "block": 74,
+        "local": 327,
+        "node": 0
+      },
+      "parent": 21,
+      "proof_eligible": false,
+      "rejection": "numeric result frame escapes or lacks exact private fields",
+      "selected": false
+    }
+  ]
+}

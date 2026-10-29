@@ -1,0 +1,145 @@
+{
+  "fresh_rust_tests": 765,
+  "suites": [
+    {
+      "suite": "Engine",
+      "tests": 227,
+      "filtered": 900,
+      "seconds": 7.515493833227083,
+      "command": [
+        "/private/tmp/mech-field-retirement-round26-20261029/engine-units/engine-tests",
+        "resident::budget::",
+        "native_projection_meter_tests",
+        "frame_recipe",
+        "text_line_",
+        "shared_boolean_edge_facts",
+        "native_collection_",
+        "native_text_line_",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "receipt": "engine-units/run.json"
+    },
+    {
+      "suite": "GPU runtime",
+      "tests": 301,
+      "filtered": 131,
+      "seconds": 38.66090845898725,
+      "command": [
+        "/private/tmp/mech-field-retirement-round26-20261029/runtime-census/gpu-unit-tests",
+        "native_artifact::program::runtime::",
+        "--skip",
+        "complete_unchanged_knucleotide_body_uses_the_owned_emitted_map",
+        "--skip",
+        "complete_compressor_private_helper_census",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "receipt": "runtime-census/runtime-cohort.json"
+    },
+    {
+      "suite": "GPU memory",
+      "tests": 1,
+      "filtered": 431,
+      "seconds": 0.009887583088129759,
+      "command": [
+        "/private/tmp/mech-field-retirement-round26-20261029/runtime-census/gpu-unit-tests",
+        "native_artifact::memory::admission_tests::typed_transport_admission_includes_exact_initialization_metadata",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "receipt": "runtime-census/memory-admission.json"
+    },
+    {
+      "suite": "GPU funding",
+      "tests": 1,
+      "filtered": 431,
+      "seconds": 0.007677291985601187,
+      "command": [
+        "/private/tmp/mech-field-retirement-round26-20261029/runtime-census/gpu-unit-tests",
+        "native_artifact::work::tests::closed_tail_fuel_observes_the_same_spent_account_and_declines_nested_scopes",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "receipt": "runtime-census/closed-tail-fuel.json"
+    },
+    {
+      "suite": "components",
+      "tests": 224,
+      "filtered": 238,
+      "seconds": 91.05126929096878,
+      "command": [
+        "/private/tmp/mech-field-retirement-round26-20261029/components/nested-component-tests",
+        "scalar_path_qualification",
+        "multi_result_qualification",
+        "nested_frame_qualification",
+        "scalar_record_qualification",
+        "record_buffer_qualification",
+        "packed_update_qualification",
+        "buffer_frame_qualification",
+        "sequence_capacity_qualification",
+        "collection_qualification",
+        "uniform_words_qualification",
+        "word_read_qualification",
+        "narrow_word_qualification",
+        "matchfinder_qualification",
+        "assembled_compressor_source_preserves_its_pinned_bytes",
+        "scalar_state_qualification",
+        "tail_qualification",
+        "costs_qualification",
+        "default_costs_qualification",
+        "pinned_min_cost_paths_keep_exact_nodes_and_real_reservation",
+        "path_checks_preserve_entry_order_publication_aliases_and_recovery",
+        "argument_transport_qualification",
+        "shared_transport_qualification",
+        "numeric_write_qualification",
+        "numeric_tail_qualification",
+        "numeric_result_qualification",
+        "numeric_predicate_qualification",
+        "dynamic_projection_qualification",
+        "binding_pressure_qualification",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "receipt": "full-components-qualified.json"
+    },
+    {
+      "suite": "selected scalar",
+      "tests": 8,
+      "filtered": 1,
+      "seconds": 0.9045101660303771,
+      "command": [
+        "/private/tmp/mech-field-retirement-round26-20261029/primary/selected-native-tests",
+        "--nocapture",
+        "--test-threads=1",
+        "--skip",
+        "all_certified_scalar_primitives_match_ordinary_resident_original_and_decoded"
+      ],
+      "receipt": "primary/selected-native-run.json"
+    },
+    {
+      "suite": "bits",
+      "tests": 3,
+      "filtered": 0,
+      "seconds": 0.9113517079968005,
+      "command": [
+        "/private/tmp/mech-field-retirement-round26-20261029/primary/selected-bits-tests",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "receipt": "primary/selected-bits-run.json"
+    }
+  ],
+  "focused_tests": 26,
+  "focused_overlaps_components": true,
+  "diagnostic_runs": {
+    "parent_ownership": 1,
+    "current_ownership_separate": 1,
+    "current_ownership_in_initial_runtime_cohort": 1
+  },
+  "scalar_controls": 12,
+  "architecture_checks": 12,
+  "unchanged_Core_tests_last_parent": 353
+}

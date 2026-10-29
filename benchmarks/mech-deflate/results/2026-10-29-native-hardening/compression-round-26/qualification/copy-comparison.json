@@ -1,0 +1,534 @@
+{
+  "performance_observations": 0,
+  "before_source": "1b36e77f894a0cacff81802df7b2de0af86f95d5",
+  "after_source": "0a71eef5fa6847a7d08457af62edcc2773d15ead",
+  "controls": {
+    "before": {
+      "stores": 200,
+      "copies": 148,
+      "copied_bytes": 26165276,
+      "large_copies": [
+        {
+          "after_pointer": 4302124417024,
+          "arena_aliases": [
+            882,
+            908
+          ],
+          "capacity": 262144,
+          "copied": true,
+          "frame_aliases": [],
+          "frame_names": [],
+          "iteration": 25,
+          "length": 262144,
+          "origin": {
+            "block": 118,
+            "local": 38,
+            "node": 0
+          },
+          "output": 992,
+          "pointer": 24795742208,
+          "retirable_arena": [
+            908,
+            909
+          ],
+          "site": 1038,
+          "source": 908,
+          "status": 0,
+          "width": 2
+        },
+        {
+          "after_pointer": 4302574321664,
+          "arena_aliases": [
+            883,
+            1745
+          ],
+          "capacity": 1500513,
+          "copied": true,
+          "frame_aliases": [],
+          "frame_names": [],
+          "iteration": 25,
+          "length": 1500513,
+          "origin": {
+            "block": 100,
+            "local": 35,
+            "node": 0
+          },
+          "output": 1828,
+          "pointer": 4302115504128,
+          "retirable_arena": [
+            1745
+          ],
+          "site": 2365,
+          "source": 1745,
+          "status": 0,
+          "width": 4
+        },
+        {
+          "after_pointer": 24795742208,
+          "arena_aliases": [
+            882,
+            908
+          ],
+          "capacity": 262144,
+          "copied": true,
+          "frame_aliases": [],
+          "frame_names": [],
+          "iteration": 25,
+          "length": 262144,
+          "origin": {
+            "block": 118,
+            "local": 38,
+            "node": 0
+          },
+          "output": 992,
+          "pointer": 4302124417024,
+          "retirable_arena": [
+            908,
+            909
+          ],
+          "site": 1038,
+          "source": 908,
+          "status": 0,
+          "width": 2
+        },
+        {
+          "after_pointer": 4302115504128,
+          "arena_aliases": [
+            883,
+            1745
+          ],
+          "capacity": 1500513,
+          "copied": true,
+          "frame_aliases": [],
+          "frame_names": [],
+          "iteration": 25,
+          "length": 1500513,
+          "origin": {
+            "block": 100,
+            "local": 35,
+            "node": 0
+          },
+          "output": 1828,
+          "pointer": 4302574321664,
+          "retirable_arena": [
+            1745
+          ],
+          "site": 2365,
+          "source": 1745,
+          "status": 0,
+          "width": 4
+        },
+        {
+          "after_pointer": 4302124417024,
+          "arena_aliases": [
+            882,
+            908
+          ],
+          "capacity": 262144,
+          "copied": true,
+          "frame_aliases": [],
+          "frame_names": [],
+          "iteration": 25,
+          "length": 262144,
+          "origin": {
+            "block": 118,
+            "local": 38,
+            "node": 0
+          },
+          "output": 992,
+          "pointer": 24795742208,
+          "retirable_arena": [
+            908,
+            909
+          ],
+          "site": 1038,
+          "source": 908,
+          "status": 0,
+          "width": 2
+        },
+        {
+          "after_pointer": 4302574321664,
+          "arena_aliases": [
+            883,
+            1745
+          ],
+          "capacity": 1500513,
+          "copied": true,
+          "frame_aliases": [],
+          "frame_names": [],
+          "iteration": 25,
+          "length": 1500513,
+          "origin": {
+            "block": 100,
+            "local": 35,
+            "node": 0
+          },
+          "output": 1828,
+          "pointer": 4302115504128,
+          "retirable_arena": [
+            1745
+          ],
+          "site": 2365,
+          "source": 1745,
+          "status": 0,
+          "width": 4
+        },
+        {
+          "after_pointer": 24795742208,
+          "arena_aliases": [
+            882,
+            908
+          ],
+          "capacity": 262144,
+          "copied": true,
+          "frame_aliases": [],
+          "frame_names": [],
+          "iteration": 25,
+          "length": 262144,
+          "origin": {
+            "block": 118,
+            "local": 38,
+            "node": 0
+          },
+          "output": 992,
+          "pointer": 4302124417024,
+          "retirable_arena": [
+            908,
+            909
+          ],
+          "site": 1038,
+          "source": 908,
+          "status": 0,
+          "width": 2
+        },
+        {
+          "after_pointer": 4302115504128,
+          "arena_aliases": [
+            883,
+            1745
+          ],
+          "capacity": 1500513,
+          "copied": true,
+          "frame_aliases": [],
+          "frame_names": [],
+          "iteration": 25,
+          "length": 1500513,
+          "origin": {
+            "block": 100,
+            "local": 35,
+            "node": 0
+          },
+          "output": 1828,
+          "pointer": 4302574321664,
+          "retirable_arena": [
+            1745
+          ],
+          "site": 2365,
+          "source": 1745,
+          "status": 0,
+          "width": 4
+        }
+      ],
+      "report": "NativeProgramExecutionReport { work: 67271224898, comparison_work: 48826, visits: 33497, transport_bytes: 4757264, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "admits": 33497,
+      "helpers": 19255,
+      "frames": 14981
+    },
+    "after": {
+      "stores": 200,
+      "copies": 144,
+      "copied_bytes": 2157068,
+      "large_copies": [
+        {
+          "after_pointer": 5838277312512,
+          "arena_aliases": [
+            882,
+            908
+          ],
+          "capacity": 262144,
+          "copied": true,
+          "frame_aliases": [],
+          "frame_names": [],
+          "iteration": 25,
+          "length": 262144,
+          "origin": {
+            "block": 118,
+            "local": 38,
+            "node": 0
+          },
+          "output": 992,
+          "pointer": 5838412578816,
+          "retirable_arena": [
+            707,
+            777,
+            908,
+            909,
+            1129,
+            1139,
+            1146,
+            1659,
+            1681,
+            1692,
+            1698,
+            1710,
+            1714,
+            1717,
+            1728,
+            1744,
+            1837,
+            1874,
+            1875,
+            1966,
+            1976,
+            1983,
+            2478,
+            2500,
+            2511,
+            2517,
+            2529,
+            2533,
+            2537,
+            2549,
+            2753,
+            2763,
+            2770,
+            3283,
+            3305,
+            3316,
+            3322,
+            3334,
+            3338,
+            3341,
+            3352,
+            3368,
+            3403,
+            3418,
+            22405
+          ],
+          "site": 1038,
+          "source": 908,
+          "status": 0,
+          "width": 2
+        },
+        {
+          "after_pointer": 5838412578816,
+          "arena_aliases": [
+            882,
+            908
+          ],
+          "capacity": 262144,
+          "copied": true,
+          "frame_aliases": [],
+          "frame_names": [],
+          "iteration": 25,
+          "length": 262144,
+          "origin": {
+            "block": 118,
+            "local": 38,
+            "node": 0
+          },
+          "output": 992,
+          "pointer": 5838277312512,
+          "retirable_arena": [
+            707,
+            777,
+            908,
+            909,
+            1129,
+            1139,
+            1146,
+            1659,
+            1681,
+            1692,
+            1698,
+            1710,
+            1714,
+            1717,
+            1728,
+            1744,
+            1837,
+            1874,
+            1875,
+            1966,
+            1976,
+            1983,
+            2478,
+            2500,
+            2511,
+            2517,
+            2529,
+            2533,
+            2537,
+            2549,
+            2753,
+            2763,
+            2770,
+            3283,
+            3305,
+            3316,
+            3322,
+            3334,
+            3338,
+            3341,
+            3352,
+            3368,
+            3403,
+            3418,
+            22405
+          ],
+          "site": 1038,
+          "source": 908,
+          "status": 0,
+          "width": 2
+        },
+        {
+          "after_pointer": 5838277312512,
+          "arena_aliases": [
+            882,
+            908
+          ],
+          "capacity": 262144,
+          "copied": true,
+          "frame_aliases": [],
+          "frame_names": [],
+          "iteration": 25,
+          "length": 262144,
+          "origin": {
+            "block": 118,
+            "local": 38,
+            "node": 0
+          },
+          "output": 992,
+          "pointer": 5838412578816,
+          "retirable_arena": [
+            707,
+            777,
+            908,
+            909,
+            1129,
+            1139,
+            1146,
+            1659,
+            1681,
+            1692,
+            1698,
+            1710,
+            1714,
+            1717,
+            1728,
+            1744,
+            1837,
+            1874,
+            1875,
+            1966,
+            1976,
+            1983,
+            2478,
+            2500,
+            2511,
+            2517,
+            2529,
+            2533,
+            2537,
+            2549,
+            2753,
+            2763,
+            2770,
+            3283,
+            3305,
+            3316,
+            3322,
+            3334,
+            3338,
+            3341,
+            3352,
+            3368,
+            3403,
+            3418,
+            22405
+          ],
+          "site": 1038,
+          "source": 908,
+          "status": 0,
+          "width": 2
+        },
+        {
+          "after_pointer": 5838412578816,
+          "arena_aliases": [
+            882,
+            908
+          ],
+          "capacity": 262144,
+          "copied": true,
+          "frame_aliases": [],
+          "frame_names": [],
+          "iteration": 25,
+          "length": 262144,
+          "origin": {
+            "block": 118,
+            "local": 38,
+            "node": 0
+          },
+          "output": 992,
+          "pointer": 5838277312512,
+          "retirable_arena": [
+            707,
+            777,
+            908,
+            909,
+            1129,
+            1139,
+            1146,
+            1659,
+            1681,
+            1692,
+            1698,
+            1710,
+            1714,
+            1717,
+            1728,
+            1744,
+            1837,
+            1874,
+            1875,
+            1966,
+            1976,
+            1983,
+            2478,
+            2500,
+            2511,
+            2517,
+            2529,
+            2533,
+            2537,
+            2549,
+            2753,
+            2763,
+            2770,
+            3283,
+            3305,
+            3316,
+            3322,
+            3334,
+            3338,
+            3341,
+            3352,
+            3368,
+            3403,
+            3418,
+            22405
+          ],
+          "site": 1038,
+          "source": 908,
+          "status": 0,
+          "width": 2
+        }
+      ],
+      "report": "NativeProgramExecutionReport { work: 67079241202, comparison_work: 48826, visits: 33497, transport_bytes: 4757264, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }",
+      "admits": 33497,
+      "helpers": 19255,
+      "frames": 14981
+    }
+  },
+  "current_trace": "after-probe/counts.json; last complete retained diagnostic invocation. Initial Runtime cohort also ran the diagnostic and rewrote this file. First summary is retained in copy-comparison-first.json. Final maintained cohort excludes diagnostic. No performance observations were overwritten."
+}
