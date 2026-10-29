@@ -1,0 +1,2133 @@
+{
+  "before_sha256": "aa66f9a75daf9fb7b6ad507d9fd74f159655bdf4534a036f419a5682d9b71f40",
+  "after_sha256": "3dfe64f775ee694ce9fc6d39faa4864264b981d1fae00b2be2ab34c3f2bd8d89",
+  "controls": [
+    {
+      "case": "scalar-bool",
+      "form": "original",
+      "steps": 0,
+      "after_over_before": 0.9990237821879612,
+      "checks": {
+        "requests_equal": true,
+        "bytes_equal": true,
+        "timing_ratio_le_1_05": true
+      },
+      "before": {
+        "rows": [
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 0,
+            "scalar_operations": 1,
+            "seconds": 0.010805542,
+            "warmup": true
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 1,
+            "scalar_operations": 1,
+            "seconds": 0.010682666,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 2,
+            "scalar_operations": 1,
+            "seconds": 0.010664708,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 3,
+            "scalar_operations": 1,
+            "seconds": 0.010662417,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 4,
+            "scalar_operations": 1,
+            "seconds": 0.01066975,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 5,
+            "scalar_operations": 1,
+            "seconds": 0.010965709,
+            "warmup": false
+          }
+        ],
+        "median_seconds": 0.01066975
+      },
+      "after": {
+        "rows": [
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 0,
+            "scalar_operations": 1,
+            "seconds": 0.010785084,
+            "warmup": true
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 1,
+            "scalar_operations": 1,
+            "seconds": 0.010659334,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 2,
+            "scalar_operations": 1,
+            "seconds": 0.010634708,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 3,
+            "scalar_operations": 1,
+            "seconds": 0.010726209,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 4,
+            "scalar_operations": 1,
+            "seconds": 0.010678458,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 5,
+            "scalar_operations": 1,
+            "seconds": 0.010635042,
+            "warmup": false
+          }
+        ],
+        "median_seconds": 0.010659334
+      }
+    },
+    {
+      "case": "scalar-bool",
+      "form": "decoded",
+      "steps": 0,
+      "after_over_before": 1.0014111572885385,
+      "checks": {
+        "requests_equal": true,
+        "bytes_equal": true,
+        "timing_ratio_le_1_05": true
+      },
+      "before": {
+        "rows": [
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 0,
+            "scalar_operations": 1,
+            "seconds": 0.010770542,
+            "warmup": true
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 1,
+            "scalar_operations": 1,
+            "seconds": 0.010770083,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 2,
+            "scalar_operations": 1,
+            "seconds": 0.010747916,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 3,
+            "scalar_operations": 1,
+            "seconds": 0.010760541,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 4,
+            "scalar_operations": 1,
+            "seconds": 0.010746417,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 5,
+            "scalar_operations": 1,
+            "seconds": 0.010730792,
+            "warmup": false
+          }
+        ],
+        "median_seconds": 0.010747916
+      },
+      "after": {
+        "rows": [
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 0,
+            "scalar_operations": 1,
+            "seconds": 0.01081525,
+            "warmup": true
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 1,
+            "scalar_operations": 1,
+            "seconds": 0.010754917,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 2,
+            "scalar_operations": 1,
+            "seconds": 0.010763083,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 3,
+            "scalar_operations": 1,
+            "seconds": 0.010767541,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 4,
+            "scalar_operations": 1,
+            "seconds": 0.010756,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e0e5ee0586cf5c07977b0a65c2331089080ff49ce8545550f4b607c3cfa0e61d",
+            "case": "scalar-bool",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 5,
+            "scalar_operations": 1,
+            "seconds": 0.010780041,
+            "warmup": false
+          }
+        ],
+        "median_seconds": 0.010763083
+      }
+    },
+    {
+      "case": "scalar-u64",
+      "form": "original",
+      "steps": 0,
+      "after_over_before": 1.0114806424605163,
+      "checks": {
+        "requests_equal": true,
+        "bytes_equal": true,
+        "timing_ratio_le_1_05": true
+      },
+      "after": {
+        "rows": [
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 0,
+            "scalar_operations": 1,
+            "seconds": 0.010752166,
+            "warmup": true
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 1,
+            "scalar_operations": 1,
+            "seconds": 0.010736417,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 2,
+            "scalar_operations": 1,
+            "seconds": 0.01072925,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 3,
+            "scalar_operations": 1,
+            "seconds": 0.010782542,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 4,
+            "scalar_operations": 1,
+            "seconds": 0.010748583,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 5,
+            "scalar_operations": 1,
+            "seconds": 0.010788583,
+            "warmup": false
+          }
+        ],
+        "median_seconds": 0.010748583
+      },
+      "before": {
+        "rows": [
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 0,
+            "scalar_operations": 1,
+            "seconds": 0.010703167,
+            "warmup": true
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 1,
+            "scalar_operations": 1,
+            "seconds": 0.010626583,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 2,
+            "scalar_operations": 1,
+            "seconds": 0.010633125,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 3,
+            "scalar_operations": 1,
+            "seconds": 0.010651583,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 4,
+            "scalar_operations": 1,
+            "seconds": 0.010615875,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 5,
+            "scalar_operations": 1,
+            "seconds": 0.010621833,
+            "warmup": false
+          }
+        ],
+        "median_seconds": 0.010626583
+      }
+    },
+    {
+      "case": "scalar-u64",
+      "form": "decoded",
+      "steps": 0,
+      "after_over_before": 0.9921626283557727,
+      "checks": {
+        "requests_equal": true,
+        "bytes_equal": true,
+        "timing_ratio_le_1_05": true
+      },
+      "after": {
+        "rows": [
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 0,
+            "scalar_operations": 1,
+            "seconds": 0.010752625,
+            "warmup": true
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 1,
+            "scalar_operations": 1,
+            "seconds": 0.010694333,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 2,
+            "scalar_operations": 1,
+            "seconds": 0.010713,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 3,
+            "scalar_operations": 1,
+            "seconds": 0.010721583,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 4,
+            "scalar_operations": 1,
+            "seconds": 0.010720167,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 5,
+            "scalar_operations": 1,
+            "seconds": 0.010695959,
+            "warmup": false
+          }
+        ],
+        "median_seconds": 0.010713
+      },
+      "before": {
+        "rows": [
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 0,
+            "scalar_operations": 1,
+            "seconds": 0.0107725,
+            "warmup": true
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 1,
+            "scalar_operations": 1,
+            "seconds": 0.010778333,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 2,
+            "scalar_operations": 1,
+            "seconds": 0.010797625,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 3,
+            "scalar_operations": 1,
+            "seconds": 0.010838083,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 4,
+            "scalar_operations": 1,
+            "seconds": 0.010799209,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6",
+            "case": "scalar-u64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 5,
+            "scalar_operations": 1,
+            "seconds": 0.010753,
+            "warmup": false
+          }
+        ],
+        "median_seconds": 0.010797625
+      }
+    },
+    {
+      "case": "scalar-i64",
+      "form": "original",
+      "steps": 0,
+      "after_over_before": 0.9888950858207504,
+      "checks": {
+        "requests_equal": true,
+        "bytes_equal": true,
+        "timing_ratio_le_1_05": true
+      },
+      "before": {
+        "rows": [
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 0,
+            "scalar_operations": 1,
+            "seconds": 0.010804583,
+            "warmup": true
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 1,
+            "scalar_operations": 1,
+            "seconds": 0.01081875,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 2,
+            "scalar_operations": 1,
+            "seconds": 0.010875,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 3,
+            "scalar_operations": 1,
+            "seconds": 0.010892167,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 4,
+            "scalar_operations": 1,
+            "seconds": 0.0108505,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 5,
+            "scalar_operations": 1,
+            "seconds": 0.010854834,
+            "warmup": false
+          }
+        ],
+        "median_seconds": 0.010854834
+      },
+      "after": {
+        "rows": [
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 0,
+            "scalar_operations": 1,
+            "seconds": 0.0107475,
+            "warmup": true
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 1,
+            "scalar_operations": 1,
+            "seconds": 0.0107345,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 2,
+            "scalar_operations": 1,
+            "seconds": 0.010764542,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 3,
+            "scalar_operations": 1,
+            "seconds": 0.010734292,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 4,
+            "scalar_operations": 1,
+            "seconds": 0.010718833,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 5,
+            "scalar_operations": 1,
+            "seconds": 0.010728958,
+            "warmup": false
+          }
+        ],
+        "median_seconds": 0.010734292
+      }
+    },
+    {
+      "case": "scalar-i64",
+      "form": "decoded",
+      "steps": 0,
+      "after_over_before": 1.0124174409875455,
+      "checks": {
+        "requests_equal": true,
+        "bytes_equal": true,
+        "timing_ratio_le_1_05": true
+      },
+      "before": {
+        "rows": [
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 0,
+            "scalar_operations": 1,
+            "seconds": 0.010704625,
+            "warmup": true
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 1,
+            "scalar_operations": 1,
+            "seconds": 0.010678916,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 2,
+            "scalar_operations": 1,
+            "seconds": 0.01070025,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 3,
+            "scalar_operations": 1,
+            "seconds": 0.010979459,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 4,
+            "scalar_operations": 1,
+            "seconds": 0.010663125,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 5,
+            "scalar_operations": 1,
+            "seconds": 0.010680542,
+            "warmup": false
+          }
+        ],
+        "median_seconds": 0.010680542
+      },
+      "after": {
+        "rows": [
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 0,
+            "scalar_operations": 1,
+            "seconds": 0.0108075,
+            "warmup": true
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 1,
+            "scalar_operations": 1,
+            "seconds": 0.010824166,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 2,
+            "scalar_operations": 1,
+            "seconds": 0.010841083,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 3,
+            "scalar_operations": 1,
+            "seconds": 0.010783541,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 4,
+            "scalar_operations": 1,
+            "seconds": 0.010793958,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c",
+            "case": "scalar-i64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 5,
+            "scalar_operations": 1,
+            "seconds": 0.010813167,
+            "warmup": false
+          }
+        ],
+        "median_seconds": 0.010813167
+      }
+    },
+    {
+      "case": "scalar-f64",
+      "form": "original",
+      "steps": 0,
+      "after_over_before": 0.9964059285321474,
+      "checks": {
+        "requests_equal": true,
+        "bytes_equal": true,
+        "timing_ratio_le_1_05": true
+      },
+      "after": {
+        "rows": [
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 0,
+            "scalar_operations": 1,
+            "seconds": 0.010676917,
+            "warmup": true
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 1,
+            "scalar_operations": 1,
+            "seconds": 0.010639208,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 2,
+            "scalar_operations": 1,
+            "seconds": 0.010640875,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 3,
+            "scalar_operations": 1,
+            "seconds": 0.010632125,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 4,
+            "scalar_operations": 1,
+            "seconds": 0.01064525,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 5,
+            "scalar_operations": 1,
+            "seconds": 0.010627583,
+            "warmup": false
+          }
+        ],
+        "median_seconds": 0.010639208
+      },
+      "before": {
+        "rows": [
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 0,
+            "scalar_operations": 1,
+            "seconds": 0.010673542,
+            "warmup": true
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 1,
+            "scalar_operations": 1,
+            "seconds": 0.010693042,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 2,
+            "scalar_operations": 1,
+            "seconds": 0.010685416,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 3,
+            "scalar_operations": 1,
+            "seconds": 0.010656875,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 4,
+            "scalar_operations": 1,
+            "seconds": 0.010677584,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "original",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 5,
+            "scalar_operations": 1,
+            "seconds": 0.010665333,
+            "warmup": false
+          }
+        ],
+        "median_seconds": 0.010677584
+      }
+    },
+    {
+      "case": "scalar-f64",
+      "form": "decoded",
+      "steps": 0,
+      "after_over_before": 0.9979946887006063,
+      "checks": {
+        "requests_equal": true,
+        "bytes_equal": true,
+        "timing_ratio_le_1_05": true
+      },
+      "after": {
+        "rows": [
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 0,
+            "scalar_operations": 1,
+            "seconds": 0.010676167,
+            "warmup": true
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 1,
+            "scalar_operations": 1,
+            "seconds": 0.010710167,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 2,
+            "scalar_operations": 1,
+            "seconds": 0.010664791,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 3,
+            "scalar_operations": 1,
+            "seconds": 0.010669042,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 4,
+            "scalar_operations": 1,
+            "seconds": 0.010679125,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 5,
+            "scalar_operations": 1,
+            "seconds": 0.010679417,
+            "warmup": false
+          }
+        ],
+        "median_seconds": 0.010679125
+      },
+      "before": {
+        "rows": [
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 0,
+            "scalar_operations": 1,
+            "seconds": 0.010749166,
+            "warmup": true
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 1,
+            "scalar_operations": 1,
+            "seconds": 0.010723209,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 2,
+            "scalar_operations": 1,
+            "seconds": 0.010694917,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 3,
+            "scalar_operations": 1,
+            "seconds": 0.01069425,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 4,
+            "scalar_operations": 1,
+            "seconds": 0.0107295,
+            "warmup": false
+          },
+          {
+            "allocation_requests": 360000,
+            "artifact_sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7",
+            "case": "scalar-f64",
+            "form": "decoded",
+            "invocations": 10000,
+            "requested_bytes": 48040000,
+            "sample": 5,
+            "scalar_operations": 1,
+            "seconds": 0.010700583,
+            "warmup": false
+          }
+        ],
+        "median_seconds": 0.010700583
+      }
+    },
+    {
+      "case": "scalar-loop",
+      "form": "original",
+      "steps": 0,
+      "after_over_before": 0.9995795790607335,
+      "checks": {
+        "requests_equal": true,
+        "bytes_equal": true,
+        "timing_ratio_le_1_05": true
+      },
+      "before": {
+        "rows": [
+          {
+            "allocation_requests": 16405,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2405120,
+            "sample": 0,
+            "seconds": 0.000854709,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": true,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 1,
+            "seconds": 0.000708209,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 2,
+            "seconds": 0.000692625,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 3,
+            "seconds": 0.000710541,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 4,
+            "seconds": 0.000694542,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 5,
+            "seconds": 0.000691458,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          }
+        ],
+        "median_seconds": 0.000694542
+      },
+      "after": {
+        "rows": [
+          {
+            "allocation_requests": 16405,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2405120,
+            "sample": 0,
+            "seconds": 0.000848208,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": true,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 1,
+            "seconds": 0.000694667,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 2,
+            "seconds": 0.000694375,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 3,
+            "seconds": 0.000693875,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 4,
+            "seconds": 0.000693792,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 5,
+            "seconds": 0.00069425,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          }
+        ],
+        "median_seconds": 0.00069425
+      }
+    },
+    {
+      "case": "scalar-loop",
+      "form": "decoded",
+      "steps": 0,
+      "after_over_before": 0.9952192160834005,
+      "checks": {
+        "requests_equal": true,
+        "bytes_equal": true,
+        "timing_ratio_le_1_05": true
+      },
+      "before": {
+        "rows": [
+          {
+            "allocation_requests": 16405,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2405120,
+            "sample": 0,
+            "seconds": 0.00075225,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": true,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 1,
+            "seconds": 0.00070325,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 2,
+            "seconds": 0.000697166,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 3,
+            "seconds": 0.000697084,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 4,
+            "seconds": 0.0006995,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 5,
+            "seconds": 0.000696917,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          }
+        ],
+        "median_seconds": 0.000697166
+      },
+      "after": {
+        "rows": [
+          {
+            "allocation_requests": 16405,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2405120,
+            "sample": 0,
+            "seconds": 0.000759125,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": true,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 1,
+            "seconds": 0.000697167,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 2,
+            "seconds": 0.000693833,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 3,
+            "seconds": 0.000689083,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 4,
+            "seconds": 0.000688709,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 5,
+            "seconds": 0.000711333,
+            "steps": 0,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 368092
+          }
+        ],
+        "median_seconds": 0.000693833
+      }
+    },
+    {
+      "case": "scalar-loop",
+      "form": "original",
+      "steps": 64,
+      "after_over_before": 0.9854138398914518,
+      "checks": {
+        "requests_equal": true,
+        "bytes_equal": true,
+        "timing_ratio_le_1_05": true
+      },
+      "after": {
+        "rows": [
+          {
+            "allocation_requests": 16405,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2405120,
+            "sample": 0,
+            "seconds": 0.000780417,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": true,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 1,
+            "seconds": 0.000729917,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 2,
+            "seconds": 0.000725958,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 3,
+            "seconds": 0.000730334,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 4,
+            "seconds": 0.000726042,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 5,
+            "seconds": 0.00072625,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          }
+        ],
+        "median_seconds": 0.00072625
+      },
+      "before": {
+        "rows": [
+          {
+            "allocation_requests": 16405,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2405120,
+            "sample": 0,
+            "seconds": 0.000781458,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": true,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 1,
+            "seconds": 0.000741958,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 2,
+            "seconds": 0.000737416,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 3,
+            "seconds": 0.000736833,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 4,
+            "seconds": 0.000737,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "original",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 5,
+            "seconds": 0.000735875,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          }
+        ],
+        "median_seconds": 0.000737
+      }
+    },
+    {
+      "case": "scalar-loop",
+      "form": "decoded",
+      "steps": 64,
+      "after_over_before": 1.0010279253040946,
+      "checks": {
+        "requests_equal": true,
+        "bytes_equal": true,
+        "timing_ratio_le_1_05": true
+      },
+      "after": {
+        "rows": [
+          {
+            "allocation_requests": 16405,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2405120,
+            "sample": 0,
+            "seconds": 0.000786084,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": true,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 1,
+            "seconds": 0.000734041,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 2,
+            "seconds": 0.000730458,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 3,
+            "seconds": 0.000730375,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 4,
+            "seconds": 0.000727708,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 5,
+            "seconds": 0.000728584,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          }
+        ],
+        "median_seconds": 0.000730375
+      },
+      "before": {
+        "rows": [
+          {
+            "allocation_requests": 16405,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2405120,
+            "sample": 0,
+            "seconds": 0.000784125,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": true,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 1,
+            "seconds": 0.000733583,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 2,
+            "seconds": 0.000729625,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 3,
+            "seconds": 0.000727791,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 4,
+            "seconds": 0.000730375,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          },
+          {
+            "allocation_requests": 16400,
+            "artifact_sha256": "a7e2168c0a3b38f95df270fdcd6a2edd5308f674dda3f8964c79d1637fd19834",
+            "case": "scalar-loop",
+            "form": "decoded",
+            "invocations": 100,
+            "private_frame_fields": 0,
+            "requested_bytes": 2404800,
+            "sample": 5,
+            "seconds": 0.0007285,
+            "steps": 64,
+            "visits_per_invocation": 6,
+            "warmup": false,
+            "work_per_invocation": 1442268
+          }
+        ],
+        "median_seconds": 0.000729625
+      }
+    }
+  ],
+  "primary_compression_observations": 0,
+  "direct_controls_pass": true,
+  "scalar_loop_allocation_slope_zero": true
+}

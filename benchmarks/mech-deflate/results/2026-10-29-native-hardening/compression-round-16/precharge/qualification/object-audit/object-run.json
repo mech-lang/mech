@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-record-precharge-round16-20261029/object-audit/object-evidence",
+    "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+    "/private/tmp/mech-record-precharge-round16-20261029/object-audit/complete-object"
+  ],
+  "exit": 0,
+  "seconds": 26.560826666885987,
+  "binary_sha256": "172bf12eee20f343bcac3aa6d99c676fd383a0fee4ecab0175c95dfc5ab1c710"
+}

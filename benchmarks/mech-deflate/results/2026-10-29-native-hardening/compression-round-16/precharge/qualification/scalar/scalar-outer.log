@@ -1,0 +1,13 @@
+scalar-bool original 0 0.9990237821879612 {'requests_equal': True, 'bytes_equal': True, 'timing_ratio_le_1_05': True}
+scalar-bool decoded 0 1.0014111572885385 {'requests_equal': True, 'bytes_equal': True, 'timing_ratio_le_1_05': True}
+scalar-u64 original 0 1.0114806424605163 {'requests_equal': True, 'bytes_equal': True, 'timing_ratio_le_1_05': True}
+scalar-u64 decoded 0 0.9921626283557727 {'requests_equal': True, 'bytes_equal': True, 'timing_ratio_le_1_05': True}
+scalar-i64 original 0 0.9888950858207504 {'requests_equal': True, 'bytes_equal': True, 'timing_ratio_le_1_05': True}
+scalar-i64 decoded 0 1.0124174409875455 {'requests_equal': True, 'bytes_equal': True, 'timing_ratio_le_1_05': True}
+scalar-f64 original 0 0.9964059285321474 {'requests_equal': True, 'bytes_equal': True, 'timing_ratio_le_1_05': True}
+scalar-f64 decoded 0 0.9979946887006063 {'requests_equal': True, 'bytes_equal': True, 'timing_ratio_le_1_05': True}
+scalar-loop original 0 0.9995795790607335 {'requests_equal': True, 'bytes_equal': True, 'timing_ratio_le_1_05': True}
+scalar-loop decoded 0 0.9952192160834005 {'requests_equal': True, 'bytes_equal': True, 'timing_ratio_le_1_05': True}
+scalar-loop original 64 0.9854138398914518 {'requests_equal': True, 'bytes_equal': True, 'timing_ratio_le_1_05': True}
+scalar-loop decoded 64 1.0010279253040946 {'requests_equal': True, 'bytes_equal': True, 'timing_ratio_le_1_05': True}
+SCALAR_CONTROLS True
