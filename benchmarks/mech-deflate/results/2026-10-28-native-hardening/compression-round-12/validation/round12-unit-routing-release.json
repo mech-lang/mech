@@ -1,0 +1,30 @@
+{
+  "name": "round12-unit-routing-release",
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--offline",
+    "--release",
+    "--manifest-path",
+    "benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--features",
+    "unit-qualification",
+    "--message-format=json"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "3e7d546565cccc7ab0fd7e9eca291c5e7dc1d82c",
+  "dirty": "",
+  "exit": -2,
+  "seconds": 147.26618909835815,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round12-unit-routing-release.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}
