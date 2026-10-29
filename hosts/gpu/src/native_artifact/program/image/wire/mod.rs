@@ -205,6 +205,22 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
     let buffer_frames = plan.facts().buffer_frames();
     native::program::prepare::prepare_frame_composition(&plan, &buffer_frames, &mut calls)?;
     native::program::prepare::tail::validate_image(&plan, &buffer_frames, &calls, &closed_tails)?;
+    let visits = w
+        .visits
+        .into_vec()
+        .into_iter()
+        .map(Into::into)
+        .collect::<Box<[_]>>();
+    let admission = native::program::prepare::map_admission::Layout::derive(
+        &plan,
+        w.map_owner_words.as_ref(),
+        &visits,
+        &closed_tails,
+    )
+    .map_err(str::to_owned)?;
+    if admission != w.map_admission {
+        return Err("native path admission differs from its source frontiers".into());
+    }
     let frozen_maps = w
         .map_owner_words
         .as_ref()
@@ -240,7 +256,7 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
             calls,
             call_routes,
             types,
-            visits: w.visits.into_vec().into_iter().map(Into::into).collect(),
+            visits,
             retirements: w.retirements,
             constant_admission_bytes:
                 crate::native_artifact::program::prepare::constant_admission_total(

@@ -10,6 +10,7 @@ enum Mode {
     Fallback,
     Limited,
     LimitedHelper,
+    ScalarLimited,
 }
 #[derive(Default, Debug)]
 struct Observation {
@@ -24,6 +25,11 @@ struct Observation {
     fused: usize,
     helper_probes: usize,
     limited_helper: bool,
+    scalar_groups: usize,
+    scalar_interiors: usize,
+    scalar_fallbacks: usize,
+    scalar_limited: bool,
+    scalar_probes: usize,
 }
 thread_local! {
     static MODE: Cell<Mode> = const { Cell::new(Mode::Native) };
@@ -37,7 +43,40 @@ unsafe extern "C" fn observe_admit(raw: *mut c_void, site: u64) -> u64 {
     // SAFETY: this is the exact callback/context supplied by the checked entry.
     let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
     let group = ctx.descriptor.metadata().map_admission.group(site as usize);
-    let native = group.is_some_and(|group| ctx.state.map_owners.has_retained_binding(group.owner));
+    let native = group
+        .and_then(|group| group.owner)
+        .is_some_and(|owner| ctx.state.map_owners.has_retained_binding(owner));
+    let scalar = group.filter(|group| group.owner.is_none());
+    let scalar_limited = scalar.is_some_and(|group| {
+        group.start() as u64 == site
+            && group.sites.iter().any(|&s| {
+                matches!(
+                    ctx.descriptor.metadata().plan.blocks()[s as usize].action(),
+                    mech_engine::native_artifact::NativeIterationAction::Scalar(
+                        mech_engine::native_artifact::NativeMatchAction::Primitive {
+                            op: mech_engine::native_artifact::NativeScalarOp::U64Div,
+                            ..
+                        }
+                    )
+                )
+            })
+    }) && MODE.with(Cell::get) == Mode::ScalarLimited
+        && !OBS.with(|r| r.borrow().scalar_limited);
+    if scalar_limited {
+        let used = ctx.state.library.used();
+        if ctx
+            .state
+            .library
+            .restrict(used.0 + scalar.unwrap().work - 1, used.1)
+            .is_err()
+        {
+            note(|r| {
+                r.errors
+                    .push("could not establish one-short scalar funding")
+            });
+        }
+        note(|r| r.scalar_limited = true);
+    }
     note(|r| {
         r.calls += 1;
         if let Some(group) = group {
@@ -74,6 +113,56 @@ unsafe extern "C" fn observe_admit(raw: *mut c_void, site: u64) -> u64 {
     // SAFETY: delegate unchanged to the real current-visit admission callback.
     let status = unsafe { crate::native_artifact::program::runtime::hooks::admit(raw, site) };
     let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
+    if let Some(group) = scalar {
+        let active = ctx.state.scalar_path == Some(group.start());
+        if group.start() as u64 != site {
+            note(|r| {
+                if active {
+                    r.scalar_interiors += 1
+                } else {
+                    r.scalar_fallbacks += 1
+                }
+            });
+        } else if status == STATUS_OK && active {
+            note(|r| r.scalar_groups += 1);
+            if !OBS.with(|r| r.borrow().scalar_probes != 0) {
+                let before = (
+                    ctx.state.control.previous,
+                    ctx.state.control.work.used(),
+                    ctx.state.scalar_path,
+                );
+                if ctx.visit(site).is_ok()
+                    || ctx.visit(u64::from(group.sites[1])).is_ok()
+                    || ctx.failure_site(u64::MAX).is_ok()
+                {
+                    note(|r| {
+                        r.errors
+                            .push("scalar replay/interior/foreign origin was accepted")
+                    });
+                }
+                if (
+                    ctx.state.control.previous,
+                    ctx.state.control.work.used(),
+                    ctx.state.scalar_path,
+                ) != before
+                {
+                    note(|r| {
+                        r.errors
+                            .push("rejected scalar probe changed its ledger or entry")
+                    });
+                }
+                note(|r| r.scalar_probes += 3);
+            }
+        }
+        if scalar_limited {
+            if active {
+                note(|r| {
+                    r.errors
+                        .push("underfunded scalar group bypassed ordered visits")
+                });
+            }
+        }
+    }
     if limited
         && (status == STATUS_OK
             || before != (ctx.state.control.previous, ctx.state.control.work.used()))
@@ -417,5 +506,149 @@ fn native_map_group_arithmetic_failure_keeps_the_original_interior_origin() {
             (memory.used_bytes(), memory.retained_snapshot_nodes()),
             (0, 0)
         );
+    }
+}
+
+#[test]
+fn ordinary_scalar_groups_keep_interior_origins_and_one_short_funding_falls_back() {
+    let body = include_str!("../../../../../tests/fixtures/native/scalar-path-admission.mec")
+        .split("store(data")
+        .next()
+        .unwrap();
+    let source = format!("{body}\ncalculate(word<u64>,flag<bool>,permit<bool>,divisor<u64>)\n");
+    for artifact in artifacts(&source) {
+        let catalog = mech_stdlib::source_catalog();
+        let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let image = jit.descriptor().encode_build_owned_image().unwrap();
+        // SAFETY: the same checked JIT owner pins this build image and entry.
+        let restored =
+            unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
+        assert_eq!(restored.encode_build_owned_image().unwrap(), image);
+        for descriptor in [jit.descriptor(), &restored] {
+            assert!(
+                descriptor
+                    .metadata()
+                    .map_admission
+                    .groups
+                    .iter()
+                    .any(|g| g.owner.is_none())
+            );
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let mut outputs = vec![None; artifact.outputs().len()];
+            for (word, permit, divisor, mode) in [
+                (7, true, 1, Mode::Native),
+                (7, true, 0, Mode::Native),
+                (7, true, 0, Mode::ScalarLimited),
+                (11, true, 2, Mode::Native),
+                (u64::MAX, false, 0, Mode::Native),
+                (19, true, 3, Mode::Native),
+            ] {
+                let args = artifact
+                    .inputs()
+                    .iter()
+                    .map(|port| {
+                        let name = mech_engine::decode_source_input_name(&port.name).unwrap();
+                        let data = match name.as_str() {
+                            "word" => ValueDataDraft::U64(word),
+                            "flag" => ValueDataDraft::Bool(true),
+                            "permit" => ValueDataDraft::Bool(permit),
+                            "divisor" => ValueDataDraft::U64(divisor),
+                            _ => panic!("{name}"),
+                        };
+                        let value = ValueDraft {
+                            schema: port.schema,
+                            shape_values: Box::new([]),
+                            data,
+                        }
+                        .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+                        .unwrap();
+                        let mut claim = memory
+                            .reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap())
+                            .unwrap();
+                        value.into_memory_budget(&mut claim).unwrap()
+                    })
+                    .collect::<Vec<_>>();
+                let aliases = args.clone();
+                let prior = outputs.clone();
+                let before = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                let (outcome, observed) = run(&jit, descriptor, mode, &args, &mut outputs, &memory);
+                assert!(observed.errors.is_empty(), "{observed:?}");
+                assert_eq!(
+                    observed.scalar_interiors, 0,
+                    "funded interiors must have no callbacks: {observed:?}"
+                );
+                if permit && divisor != 0 {
+                    outcome.unwrap();
+                    assert!(
+                        matches!(outputs[0].as_ref().unwrap().data(),ValueData::U64(n) if *n==((word+1)*3+5)/divisor+17)
+                    );
+                    assert!(
+                        observed.scalar_groups > 0 && observed.scalar_probes == 3,
+                        "{observed:?}"
+                    );
+                } else {
+                    let error = outcome.unwrap_err();
+                    if !permit {
+                        assert!(
+                            matches!(
+                                error,
+                                NativeProgramExecutionError::Control(
+                                    NativeIterationExecutionError::Integrity { .. }
+                                )
+                            ),
+                            "{error:?}"
+                        );
+                    } else {
+                        let NativeProgramExecutionError::Control(
+                            NativeIterationExecutionError::Arithmetic { origin },
+                        ) = error
+                        else {
+                            panic!(
+                                "expected source arithmetic rather than admission denial: {error:?} {observed:?}"
+                            )
+                        };
+                        let (failed, previous) =
+                            observed.failure.expect("original arithmetic site");
+                        assert_eq!(origin, descriptor.metadata().visits[failed as usize].origin);
+                        if mode == Mode::ScalarLimited {
+                            assert!(
+                                observed.scalar_limited && observed.scalar_fallbacks > 0,
+                                "{observed:?}"
+                            );
+                            assert_eq!(
+                                previous,
+                                Some(failed as u32),
+                                "ordered fallback must reach the original failing visit"
+                            );
+                        } else {
+                            assert_ne!(
+                                previous,
+                                Some(failed as u32),
+                                "funded failure must be interior"
+                            );
+                        }
+                    }
+                    assert!(outputs.iter().zip(&prior).all(|(a, b)| {
+                        a.as_ref()
+                            .unwrap()
+                            .shares_frozen_storage(b.as_ref().unwrap())
+                    }));
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        before
+                    );
+                }
+                assert!(
+                    args.iter()
+                        .zip(&aliases)
+                        .all(|(a, b)| a.shares_frozen_storage(b))
+                );
+            }
+            drop(outputs);
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
     }
 }
