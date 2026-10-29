@@ -2355,7 +2355,7 @@ pub(crate) fn measure_canonical_value_footprint(
 // These are logical metadata-inspection units, not a serialized-byte scan or
 // machine instruction count. Each schema node and data chunk needs a bounded
 // number of variant, slice-length, checked-size and child-selection operations.
-const BORROWED_FOOTPRINT_METADATA_WORK: u64 = 64;
+pub(super) const BORROWED_FOOTPRINT_METADATA_WORK: u64 = 64;
 // This is only a fast-path eligibility cutoff. Deeper schemas keep the existing
 // full measurement path; the cutoff does not make a value ineligible to execute.
 const BORROWED_FOOTPRINT_SCHEMA_DEPTH: usize = 32;
@@ -2725,8 +2725,18 @@ impl ResidentBudgetMeter {
         let Some(work) = nodes.checked_mul(BORROWED_FOOTPRINT_METADATA_WORK) else {
             return Ok(false);
         };
-        let Some(next) = self.preview_compute_and_nodes(work, if retain_nodes { nodes } else { 0 })
-        else {
+        self.try_charge_borrowed_footprint(work, if retain_nodes { nodes } else { 0 })
+    }
+
+    /// An exact, bounded metadata-only recipe may combine successful debits.
+    /// Rejected previews spend nothing and require the original ordered visitor.
+    /// Shared-worker scopes never qualify, preserving their incremental loans.
+    pub(super) fn try_charge_borrowed_footprint(
+        &mut self,
+        work: u64,
+        nodes: u64,
+    ) -> Result<bool, ResidentKernelError> {
+        let Some(next) = self.preview_compute_and_nodes(work, nodes) else {
             return Ok(false);
         };
         self.charge(|cost| {

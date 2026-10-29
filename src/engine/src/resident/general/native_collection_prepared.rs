@@ -71,6 +71,9 @@ mod image;
 #[path = "native_collection_buffer_frames.rs"]
 mod buffer_frames;
 #[cfg(feature = "sequence_buffers")]
+#[path = "native_collection_frame_admission.rs"]
+mod frame_admission;
+#[cfg(feature = "sequence_buffers")]
 #[path = "native_collection_frame_shape.rs"]
 mod frame_shape;
 #[path = "native_collection_histogram.rs"]

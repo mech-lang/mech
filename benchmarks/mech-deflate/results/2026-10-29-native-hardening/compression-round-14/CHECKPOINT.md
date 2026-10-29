@@ -1,0 +1,11 @@
+# Successful ordinary-frame admission specialization
+
+Base: `2404a03596283cc2987ed2741ae5804115f0d7e7` (regression capture); prior published checkpoint: `fae97122b0dff4506f8fcb93e7cee87b9a67e184`.
+
+The new recipe is owned by the existing prepared library-call/frame geometry. It accepts only flat supported native scalar fields and actual packed numeric matrices. Its current-value preview uses Core's canonical DATA visitor, including retained unsigned-buffer capacity; it never scans payload cells, retains arguments, pins an owner, remembers an extent, or grants a visit. The existing frame-shape owner compares every current axis, including constants and repeated output parameters. Exact canonical schema/key checks and admission to the current memory account precede the preview.
+
+After the original metadata preflight and constructor-envelope reservation, a serial success combines the exact same footprint compute/node debits using the existing budget meter's full side-effect-free preview. Current output bounds are still checked. Any unsupported layout, invalid input, shape mismatch, overflow, tight budget or shared-worker account retains the original incremental visitor/constructor, including its first error and spent prefix. Scope restoration, factory selection, frame liveness and publication are unchanged. Typed IR118, work policy93, ABI35 and bytecode revision14 are unchanged.
+
+Validation before the timing: selected-operation optimized release build succeeded (449.43 seconds); 12 focused maintained frame tests passed (1.83 seconds). The 120 original/decoded success/rejection/retry observations agree exactly with the retained prior-production baseline. Original and decoded artifacts include fresh empty/small/real-table shapes and preserved aliased owners. The first release attempt had one new unresolved import, corrected to the existing Core error owner before this successful build; its failure receipt will be retained.
+
+The pinned compressor, its tables/allocations/limits, eight-byte caller, mimalloc object, output reserve/clear/rebind and evaluate_into timing boundary are unchanged. A fresh paired timing/profile will be committed before any further optimization. The timing result and broader qualification are pending at this checkpoint.

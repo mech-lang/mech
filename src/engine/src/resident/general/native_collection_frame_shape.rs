@@ -11,6 +11,7 @@ pub(super) struct FrameShapeRecipe {
     inputs: Box<[SchemaId]>,
     parameters: usize,
     axes: Box<[Axis]>,
+    bindings: Box<[usize]>,
 }
 #[derive(Debug)]
 struct Axis {
@@ -91,11 +92,51 @@ impl FrameShapeRecipe {
         if bound.iter().any(|value| !value) {
             return None;
         }
+        let bindings = (0..bound.len())
+            .map(|parameter| {
+                axes.iter().rposition(|axis| {
+                    matches!(axis.expected, DimensionExpr::Parameter(id) if id.get() as usize == parameter)
+                })
+            })
+            .collect::<Option<Box<[_]>>>()?;
         Some(Self {
             output,
             inputs: inputs.into(),
             parameters: bound.len(),
             axes: axes.into(),
+            bindings,
+        })
+    }
+
+    /// Current immutable children have already been checked against their exact
+    /// schemas. Comparing their axes proves the same unconstrained output shape
+    /// without rebuilding it. Every output matrix then has the extents of its
+    /// validated child, including the child's checked element-count product.
+    /// A miss is not an error: the ordinary constructor retains error ordering.
+    pub(super) fn matches_current<'a>(
+        &self,
+        current: impl Fn(usize) -> Option<&'a ShapeInstance>,
+    ) -> bool {
+        self.axes.iter().all(|axis| {
+            let Some(shape) = current(axis.input) else {
+                return false;
+            };
+            let Ok(actual) = shape.resolve_dimension(&axis.actual) else {
+                return false;
+            };
+            let expected = match axis.expected {
+                DimensionExpr::Constant(value) => Some(value),
+                DimensionExpr::Parameter(id) => self
+                    .bindings
+                    .get(id.get() as usize)
+                    .and_then(|index| self.axes.get(*index))
+                    .and_then(|binding| {
+                        current(binding.input)
+                            .and_then(|shape| shape.resolve_dimension(&binding.actual).ok())
+                    }),
+                _ => None,
+            };
+            expected == Some(actual)
         })
     }
 
@@ -246,6 +287,10 @@ mod tests {
             assert_eq!(ordinary.is_ok(), accepted, "{children:?}");
             assert_eq!(
                 recipe.validate(&built.table, |i| Some(&shapes[i])).is_ok(),
+                ordinary.is_ok()
+            );
+            assert_eq!(
+                recipe.matches_current(|i| Some(&shapes[i])),
                 ordinary.is_ok()
             );
         }
