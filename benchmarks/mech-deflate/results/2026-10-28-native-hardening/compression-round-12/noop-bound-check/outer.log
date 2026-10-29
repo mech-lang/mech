@@ -1,0 +1,97 @@
+
+running 15 tests
+test numeric_write_qualification::cases::numeric_writes_all_unsigned_widths_rectangular_geometry_and_empty_visits ... ok
+test numeric_write_qualification::cases::numeric_writes_noop_changes_preserve_the_original_backing ... ok
+test numeric_write_qualification::cases::numeric_writes_real_buffers_allocate_once_and_not_per_store ... {"count":262144,"requested_bytes":561530,"requests":276,"steps":1,"visits":6,"width":16,"witness":"private-real-buffer","work":50132626}
+{"count":262144,"requested_bytes":561530,"requests":276,"steps":8,"visits":6,"width":16,"witness":"private-real-buffer","work":50261090}
+{"count":262144,"requested_bytes":561530,"requests":276,"steps":1,"visits":6,"width":16,"witness":"private-real-buffer","work":50132626}
+{"count":262144,"requested_bytes":561530,"requests":276,"steps":8,"visits":6,"width":16,"witness":"private-real-buffer","work":50261090}
+{"count":1500513,"requested_bytes":6039294,"requests":276,"steps":1,"visits":6,"width":32,"witness":"private-real-buffer","work":225421074}
+{"count":1500513,"requested_bytes":6039294,"requests":276,"steps":8,"visits":6,"width":32,"witness":"private-real-buffer","work":225549538}
+{"count":1500513,"requested_bytes":6039294,"requests":276,"steps":1,"visits":6,"width":32,"witness":"private-real-buffer","work":225421074}
+{"count":1500513,"requested_bytes":6039294,"requests":276,"steps":8,"visits":6,"width":32,"witness":"private-real-buffer","work":225549538}
+ok
+test numeric_write_qualification::cases::numeric_writes_refuse_old_reads_old_returns_and_discarded_updates ... ok
+test numeric_write_qualification::cases::paths::numeric_writes_conditional_first_change_and_forwarded_current_versions ... ok
+test numeric_write_qualification::cases::paths::numeric_writes_two_roots_and_two_versions_in_one_visit ... ok
+test numeric_write_qualification::cases::paths::numeric_writes_unchanged_values_still_observe_selected_output_element_limits ... ok
+test numeric_write_qualification::cases::recovery::numeric_writes_distinct_fields_with_actual_aliases_remain_independent ... ok
+test numeric_write_qualification::cases::recovery::numeric_writes_finite_exact_one_short_failure_then_success ... ok
+test numeric_write_qualification::cases::recovery::numeric_writes_first_copy_uses_original_clone_admission_and_recovers ... ok
+test numeric_write_qualification::cases::recovery::numeric_writes_late_assertion_arithmetic_load_failures_leave_publication_and_retry ... ok
+test numeric_write_qualification::cases::recovery::numeric_writes_refresh_owners_and_scalars_under_an_ordinary_parent ... ok
+test numeric_write_qualification::numeric_write_baseline_observes_transport_in_generic_and_pinned_huffman_loops ... {"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000026166,"form":"original","requested_bytes":35890,"requests":250,"steps":0,"visits":6,"witness":"generic","work":11767638}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000015917,"form":"original","requested_bytes":38610,"requests":276,"steps":1,"visits":6,"witness":"generic","work":33394566}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000014709,"form":"original","requested_bytes":38610,"requests":276,"steps":8,"visits":6,"witness":"generic","work":33541062}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000014958,"form":"original","requested_bytes":38610,"requests":276,"steps":64,"visits":6,"witness":"generic","work":34713030}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000015291,"form":"original","requested_bytes":38610,"requests":276,"steps":256,"visits":6,"witness":"generic","work":38731206}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000013708,"form":"decoded","requested_bytes":35890,"requests":250,"steps":0,"visits":6,"witness":"generic","work":11767638}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000015291,"form":"decoded","requested_bytes":38610,"requests":276,"steps":1,"visits":6,"witness":"generic","work":33394566}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000014916,"form":"decoded","requested_bytes":38610,"requests":276,"steps":8,"visits":6,"witness":"generic","work":33541062}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000014917,"form":"decoded","requested_bytes":38610,"requests":276,"steps":64,"visits":6,"witness":"generic","work":34713030}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000014875,"form":"decoded","requested_bytes":38610,"requests":276,"steps":256,"visits":6,"witness":"generic","work":38731206}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000015834,"form":"original","requested_bytes":41162,"requests":254,"steps":0,"visits":6,"witness":"pinned-huffman-count","work":17170492}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000016959,"form":"original","requested_bytes":44906,"requests":280,"steps":1,"visits":6,"witness":"pinned-huffman-count","work":38910076}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000016,"form":"original","requested_bytes":44906,"requests":280,"steps":8,"visits":6,"witness":"pinned-huffman-count","work":39319660}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000016792,"form":"original","requested_bytes":44906,"requests":280,"steps":64,"visits":6,"witness":"pinned-huffman-count","work":42596332}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000019167,"form":"original","requested_bytes":44906,"requests":280,"steps":256,"visits":6,"witness":"pinned-huffman-count","work":53830636}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000015167,"form":"decoded","requested_bytes":41162,"requests":254,"steps":0,"visits":6,"witness":"pinned-huffman-count","work":17170492}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000016625,"form":"decoded","requested_bytes":44906,"requests":280,"steps":1,"visits":6,"witness":"pinned-huffman-count","work":38910076}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000016417,"form":"decoded","requested_bytes":44906,"requests":280,"steps":8,"visits":6,"witness":"pinned-huffman-count","work":39319660}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000017083,"form":"decoded","requested_bytes":44906,"requests":280,"steps":64,"visits":6,"witness":"pinned-huffman-count","work":42596332}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000018958,"form":"decoded","requested_bytes":44906,"requests":280,"steps":256,"visits":6,"witness":"pinned-huffman-count","work":53830636}
+ok
+test numeric_write_qualification::numeric_write_recurrence_selects_native_frame_and_typed_store_execution ... ok
+test packed_update_qualification::ownership::recursive_unsigned_updates_allocate_only_the_necessary_payload ... {"count":288,"elapsed_seconds":0.000014292,"form":"original","private":false,"requested_bytes":34968,"requests":231,"steps":0,"visits":6,"width":16,"witness":"recursive-scalar-store","work":11742310}
+{"count":288,"elapsed_seconds":0.000014833,"form":"original","private":false,"requested_bytes":37176,"requests":256,"steps":1,"visits":6,"width":16,"witness":"recursive-scalar-store","work":33363078}
+{"count":288,"elapsed_seconds":0.000014041,"form":"original","private":false,"requested_bytes":37176,"requests":256,"steps":8,"visits":6,"width":16,"witness":"recursive-scalar-store","work":33491542}
+{"count":262144,"elapsed_seconds":0.000012208,"form":"original","private":false,"requested_bytes":34968,"requests":231,"steps":0,"visits":6,"width":16,"witness":"recursive-scalar-store","work":22216550}
+{"count":262144,"elapsed_seconds":0.000023042,"form":"original","private":false,"requested_bytes":560888,"requests":256,"steps":1,"visits":6,"width":16,"witness":"recursive-scalar-store","work":48027014}
+{"count":262144,"elapsed_seconds":0.000023,"form":"original","private":false,"requested_bytes":560888,"requests":256,"steps":8,"visits":6,"width":16,"witness":"recursive-scalar-store","work":48155478}
+{"count":288,"elapsed_seconds":0.000013,"form":"decoded","private":false,"requested_bytes":34968,"requests":231,"steps":0,"visits":6,"width":16,"witness":"recursive-scalar-store","work":11742310}
+{"count":288,"elapsed_seconds":0.000013958,"form":"decoded","private":false,"requested_bytes":37176,"requests":256,"steps":1,"visits":6,"width":16,"witness":"recursive-scalar-store","work":33363078}
+{"count":288,"elapsed_seconds":0.000014042,"form":"decoded","private":false,"requested_bytes":37176,"requests":256,"steps":8,"visits":6,"width":16,"witness":"recursive-scalar-store","work":33491542}
+{"count":262144,"elapsed_seconds":0.000012125,"form":"decoded","private":false,"requested_bytes":34968,"requests":231,"steps":0,"visits":6,"width":16,"witness":"recursive-scalar-store","work":22216550}
+{"count":262144,"elapsed_seconds":0.000023083,"form":"decoded","private":false,"requested_bytes":560888,"requests":256,"steps":1,"visits":6,"width":16,"witness":"recursive-scalar-store","work":48027014}
+{"count":262144,"elapsed_seconds":0.000025083,"form":"decoded","private":false,"requested_bytes":560888,"requests":256,"steps":8,"visits":6,"width":16,"witness":"recursive-scalar-store","work":48155478}
+{"count":288,"elapsed_seconds":0.000018,"form":"original","private":true,"requested_bytes":39122,"requests":260,"steps":0,"visits":13,"width":16,"witness":"recursive-scalar-store","work":20744675}
+{"count":288,"elapsed_seconds":0.00001775,"form":"original","private":true,"requested_bytes":40706,"requests":284,"steps":1,"visits":13,"width":16,"witness":"recursive-scalar-store","work":41794787}
+{"count":288,"elapsed_seconds":0.000017291,"form":"original","private":true,"requested_bytes":40706,"requests":284,"steps":8,"visits":13,"width":16,"witness":"recursive-scalar-store","work":41923251}
+{"count":262144,"elapsed_seconds":0.000021167,"form":"original","private":true,"requested_bytes":562834,"requests":260,"steps":0,"visits":13,"width":16,"witness":"recursive-scalar-store","work":81495267}
+{"count":262144,"elapsed_seconds":0.000022875,"form":"original","private":true,"requested_bytes":564418,"requests":284,"steps":1,"visits":13,"width":16,"witness":"recursive-scalar-store","work":102545379}
+{"count":262144,"elapsed_seconds":0.000022416,"form":"original","private":true,"requested_bytes":564418,"requests":284,"steps":8,"visits":13,"width":16,"witness":"recursive-scalar-store","work":102673843}
+{"count":288,"elapsed_seconds":0.000016334,"form":"decoded","private":true,"requested_bytes":39122,"requests":260,"steps":0,"visits":13,"width":16,"witness":"recursive-scalar-store","work":20744675}
+{"count":288,"elapsed_seconds":0.00001725,"form":"decoded","private":true,"requested_bytes":40706,"requests":284,"steps":1,"visits":13,"width":16,"witness":"recursive-scalar-store","work":41794787}
+{"count":288,"elapsed_seconds":0.000017167,"form":"decoded","private":true,"requested_bytes":40706,"requests":284,"steps":8,"visits":13,"width":16,"witness":"recursive-scalar-store","work":41923251}
+{"count":262144,"elapsed_seconds":0.000019584,"form":"decoded","private":true,"requested_bytes":562834,"requests":260,"steps":0,"visits":13,"width":16,"witness":"recursive-scalar-store","work":81495267}
+{"count":262144,"elapsed_seconds":0.000022333,"form":"decoded","private":true,"requested_bytes":564418,"requests":284,"steps":1,"visits":13,"width":16,"witness":"recursive-scalar-store","work":102545379}
+{"count":262144,"elapsed_seconds":0.000022209,"form":"decoded","private":true,"requested_bytes":564418,"requests":284,"steps":8,"visits":13,"width":16,"witness":"recursive-scalar-store","work":102673843}
+{"count":288,"elapsed_seconds":0.000012833,"form":"original","private":false,"requested_bytes":34968,"requests":231,"steps":0,"visits":6,"width":32,"witness":"recursive-scalar-store","work":11753830}
+{"count":288,"elapsed_seconds":0.000014375,"form":"original","private":false,"requested_bytes":37752,"requests":256,"steps":1,"visits":6,"width":32,"witness":"recursive-scalar-store","work":33379206}
+{"count":288,"elapsed_seconds":0.000013958,"form":"original","private":false,"requested_bytes":37752,"requests":256,"steps":8,"visits":6,"width":32,"witness":"recursive-scalar-store","work":33507670}
+{"count":1500513,"elapsed_seconds":0.000012125,"form":"original","private":false,"requested_bytes":34968,"requests":231,"steps":0,"visits":6,"width":32,"witness":"recursive-scalar-store","work":131771830}
+{"count":1500513,"elapsed_seconds":0.000334,"form":"original","private":false,"requested_bytes":6038652,"requests":256,"steps":1,"visits":6,"width":32,"witness":"recursive-scalar-store","work":201404406}
+{"count":1500513,"elapsed_seconds":0.000393334,"form":"original","private":false,"requested_bytes":6038652,"requests":256,"steps":8,"visits":6,"width":32,"witness":"recursive-scalar-store","work":201532870}
+{"count":288,"elapsed_seconds":0.000013208,"form":"decoded","private":false,"requested_bytes":34968,"requests":231,"steps":0,"visits":6,"width":32,"witness":"recursive-scalar-store","work":11753830}
+{"count":288,"elapsed_seconds":0.000013959,"form":"decoded","private":false,"requested_bytes":37752,"requests":256,"steps":1,"visits":6,"width":32,"witness":"recursive-scalar-store","work":33379206}
+{"count":288,"elapsed_seconds":0.000014,"form":"decoded","private":false,"requested_bytes":37752,"requests":256,"steps":8,"visits":6,"width":32,"witness":"recursive-scalar-store","work":33507670}
+{"count":1500513,"elapsed_seconds":0.000011833,"form":"decoded","private":false,"requested_bytes":34968,"requests":231,"steps":0,"visits":6,"width":32,"witness":"recursive-scalar-store","work":131771830}
+{"count":1500513,"elapsed_seconds":0.000388042,"form":"decoded","private":false,"requested_bytes":6038652,"requests":256,"steps":1,"visits":6,"width":32,"witness":"recursive-scalar-store","work":201404406}
+{"count":1500513,"elapsed_seconds":0.000425208,"form":"decoded","private":false,"requested_bytes":6038652,"requests":256,"steps":8,"visits":6,"width":32,"witness":"recursive-scalar-store","work":201532870}
+{"count":288,"elapsed_seconds":0.000018291,"form":"original","private":true,"requested_bytes":39698,"requests":260,"steps":0,"visits":13,"width":32,"witness":"recursive-scalar-store","work":20811491}
+{"count":288,"elapsed_seconds":0.000017583,"form":"original","private":true,"requested_bytes":41282,"requests":284,"steps":1,"visits":13,"width":32,"witness":"recursive-scalar-store","work":41861603}
+{"count":288,"elapsed_seconds":0.0000175,"form":"original","private":true,"requested_bytes":41282,"requests":284,"steps":8,"visits":13,"width":32,"witness":"recursive-scalar-store","work":41990067}
+{"count":1500513,"elapsed_seconds":0.000351417,"form":"original","private":true,"requested_bytes":6040598,"requests":260,"steps":0,"visits":13,"width":32,"witness":"recursive-scalar-store","work":716915891}
+{"count":1500513,"elapsed_seconds":0.000288916,"form":"original","private":true,"requested_bytes":6042182,"requests":284,"steps":1,"visits":13,"width":32,"witness":"recursive-scalar-store","work":737966003}
+{"count":1500513,"elapsed_seconds":0.000358834,"form":"original","private":true,"requested_bytes":6042182,"requests":284,"steps":8,"visits":13,"width":32,"witness":"recursive-scalar-store","work":738094467}
+{"count":288,"elapsed_seconds":0.000016125,"form":"decoded","private":true,"requested_bytes":39698,"requests":260,"steps":0,"visits":13,"width":32,"witness":"recursive-scalar-store","work":20811491}
+{"count":288,"elapsed_seconds":0.000016916,"form":"decoded","private":true,"requested_bytes":41282,"requests":284,"steps":1,"visits":13,"width":32,"witness":"recursive-scalar-store","work":41861603}
+{"count":288,"elapsed_seconds":0.000016667,"form":"decoded","private":true,"requested_bytes":41282,"requests":284,"steps":8,"visits":13,"width":32,"witness":"recursive-scalar-store","work":41990067}
+{"count":1500513,"elapsed_seconds":0.000318042,"form":"decoded","private":true,"requested_bytes":6040598,"requests":260,"steps":0,"visits":13,"width":32,"witness":"recursive-scalar-store","work":716915891}
+{"count":1500513,"elapsed_seconds":0.000290708,"form":"decoded","private":true,"requested_bytes":6042182,"requests":284,"steps":1,"visits":13,"width":32,"witness":"recursive-scalar-store","work":737966003}
+{"count":1500513,"elapsed_seconds":0.00031425,"form":"decoded","private":true,"requested_bytes":6042182,"requests":284,"steps":8,"visits":13,"width":32,"witness":"recursive-scalar-store","work":738094467}
+ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 382 filtered out; finished in 5.61s
+
+

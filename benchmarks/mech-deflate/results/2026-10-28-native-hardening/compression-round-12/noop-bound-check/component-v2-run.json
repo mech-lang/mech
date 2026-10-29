@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/private/tmp/mech-numeric-writes-round12-20261028/noop-bound-check/component-v2-tests",
+    "numeric_write_qualification",
+    "recursive_unsigned_updates_allocate_only_the_necessary_payload",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 6.469046749989502,
+  "binary_sha256": "c9d3d986b1bc518a17b317a94cd358954070a8bc403311d3e039bc6bc77bf8b6",
+  "skipped": [
+    {
+      "module": "linked_qualification",
+      "source": "/private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_linked.rs",
+      "reason": "Linked Cargo subprocess qualification is separate from this existing component cohort."
+    }
+  ]
+}

@@ -1,5 +1,22 @@
 # Round 12: private unsigned indexed-write leaf recurrences
 
+Budget-correct compiler `d105f884bc79d464a205b3022da4abdc00da41aa`: latest fresh
+pair **345.68× → 251.38× Roc**, 0.099901542 → 0.072649542 s, reference0.000289 s.
+That is **27.28% less elapsed / 1.3751× faster Mech**. All exact-byte, inflation,
+capacity/backing and cleanup checks pass. `validated-primary/` retains this third
+independent cohort and its excluded 56-repetition profile. Earlier cohorts below
+remain separate; their small differences are not separately paired speedups.
+
+The corrected-handoff compiler passed128 broad component tests. An added edge
+case then reproduced a skipped selected output-element bound on an unchanged
+write (length8, limit4, incorrectly accepted). `d105f884b` declines native entry
+for that context, letting the original operation reject at its lexical position;
+an unselected write still succeeds. No allowance was increased. This case and
+new multi-root / same-visit-version / conditional-first-write coverage pass for
+original and decoded artifacts (15 focused tests including the unchanged
+allocation contract). The final broad, linked/fuel and scalar receipts remain
+pending at this timing commit. See `budget-correct-timing-inventory.json`.
+
 Corrected compiler `c0bef396bbc88cdd8dd94037053866b182b7a68d`: the final fresh
 pair is **345.80× → 250.94× Roc**, 0.099590208 → 0.072269500 s, reference
 0.000288 s. This is **27.43% less elapsed / 1.3780× faster Mech**. Exact bytes,
