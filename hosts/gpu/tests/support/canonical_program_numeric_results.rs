@@ -142,6 +142,9 @@ fn numeric_results_observe_generic_and_pinned_assign_transport() {
 #[path = "canonical_program_numeric_result_cases.rs"]
 mod cases;
 
+#[path = "canonical_program_numeric_result_ownership.rs"]
+mod ownership;
+
 #[test]
 fn numeric_results_select_generic_and_unchanged_assign_leaf_under_parent() {
     let mut observed = Vec::new();

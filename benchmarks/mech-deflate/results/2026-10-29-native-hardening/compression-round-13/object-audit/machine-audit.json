@@ -1,0 +1,45 @@
+{
+  "command": [
+    "otool",
+    "-tvV",
+    "/private/tmp/mech-numeric-results-round13-20261029/complete-object.o"
+  ],
+  "exit": 0,
+  "object_sha256": "eef36a03e58b00c5a85c3edff1cb0c67135bf908ec666690d395bb2ee6a488f2",
+  "full_disassembly_sha256": "cf82a21e7962466fe46bd68a9235f560226ae3a6d018735ed8d7c6f840a54c05",
+  "full_disassembly_lines": 1936962,
+  "whole_object_opcode_counts": {
+    "str": 242302,
+    "ldr": 388771,
+    "blr": 53692,
+    "ldrb": 113,
+    "strb": 15
+  },
+  "excerpts": {
+    "ldrb": [
+      "0000000000017eac\tldrb\tw0, [x6, x0]",
+      "000000000001809c\tldrb\tw10, [x0, x7]",
+      "000000000001ab94\tldrb\tw14, [x0, x5]",
+      "000000000002e220\tldrb\tw3, [x4, x3]",
+      "000000000002e454\tldrb\tw8, [x12, x8]",
+      "0000000000039eb0\tldrb\tw9, [x4, x9]",
+      "000000000003a114\tldrb\tw19, [x25, x19]",
+      "0000000000057fdc\tldrb\tw1, [x3, x1]",
+      "0000000000058284\tldrb\tw2, [x11, x2]",
+      "0000000000063e44\tldrb\tw13, [x1, x13]"
+    ],
+    "strb": [
+      "00000000000181f8\tstrb\tw1, [x0, x7]",
+      "00000000000cf0c4\tstrb\tw5, [x23, x1]",
+      "00000000001045d0\tstrb\tw3, [x23, x1]",
+      "00000000001502b0\tstrb\tw2, [x9, x1]",
+      "0000000000232cdc\tstrb\tw0, [x21, x1]",
+      "000000000026844c\tstrb\tw3, [x21, x1]",
+      "00000000002b4784\tstrb\tw0, [x21, x1]",
+      "00000000003204f0\tstrb\tw13, [x15, x0]",
+      "0000000000356864\tstrb\tw1, [x21, x0]",
+      "00000000003ce444\tstrb\tw3, [x20, x15]"
+    ]
+  },
+  "scope": "Whole Object passive inspection, not per-region attribution or runtime counts. Explicit successful-backedge call audit is in shared emitter metadata."
+}

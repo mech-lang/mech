@@ -1,0 +1,8 @@
+
+running 3 tests
+test a_same_named_replacement_cannot_obtain_native_bitwise_semantics ... ok
+test libdeflate_hash_prefix_executes_as_native_word_operations ... ok
+test word_primitives_match_integer_oracles_resident_and_jit_original_and_decoded ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
