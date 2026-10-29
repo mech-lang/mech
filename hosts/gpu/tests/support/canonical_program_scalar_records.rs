@@ -47,6 +47,7 @@ fn state_machine_record_results_use_words_through_copies_and_branch_merges() {
         let catalog = mech_stdlib::source_catalog();
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
         selected_records(&jit);
+        super::record_buffer_qualification::assert_build_owned_image_round_trip(&jit);
         let object = emit_program_object(&artifact, &catalog).unwrap();
         assert_eq!(
             object.descriptor().typed_ir_sha256(),
@@ -255,7 +256,7 @@ fn scalar_record_width_boundary_and_public_escape_keep_canonical_fallback() {
 }
 
 #[test]
-fn scalar_record_checks_preserve_error_order_exact_work_publication_and_retry() {
+fn scalar_record_checks_preserve_error_order_finite_admission_publication_and_retry() {
     for arithmetic_first in [false, true] {
         let earlier = if arithmetic_first {
             "  earlier := 12u64 / divisor\n"
