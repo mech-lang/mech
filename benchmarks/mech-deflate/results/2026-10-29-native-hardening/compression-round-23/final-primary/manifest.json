@@ -1,0 +1,251 @@
+{
+  "production": "299c70f4ce21eb3cba94dcb47e4d37106cc14b29",
+  "measured_checkpoint": "e6a1749ee",
+  "entries": [
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/after.sample.txt",
+      "archive": "after.sample.txt.gz",
+      "bytes": 870405,
+      "sha256": "a31385007bebbb7236df84c4a40528fe4509308eecec0ba30aa50a9b198ba183",
+      "archive_sha256": "f8d42d91e9da72ebadbfb0de47e6898788dfcd477f8f6d0343f983c57e7fc328"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/before.json",
+      "archive": "before.json",
+      "bytes": 187,
+      "sha256": "a89ab93e2c8a13df96b1149cc6ee0d268578d31d559ba5de89c2e9fac9b1ca45",
+      "archive_sha256": "a89ab93e2c8a13df96b1149cc6ee0d268578d31d559ba5de89c2e9fac9b1ca45"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/build.py",
+      "archive": "build.py",
+      "bytes": 3072,
+      "sha256": "111bec78101014948f4232c1821b42bf15d90f893bbfb53b7a22dd83bd2984cd",
+      "archive_sha256": "111bec78101014948f4232c1821b42bf15d90f893bbfb53b7a22dd83bd2984cd"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/commands.json",
+      "archive": "commands.json",
+      "bytes": 2579,
+      "sha256": "ff1991ebca0fb05129c35524c275e3a0a64dacb289e75ccab63758dbe568b604",
+      "archive_sha256": "ff1991ebca0fb05129c35524c275e3a0a64dacb289e75ccab63758dbe568b604"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/current-build.json",
+      "archive": "current-build.json",
+      "bytes": 3457,
+      "sha256": "45803b5ee02bde30ac7c34daa075bc5879e4abaa8d874ef88a120ff7b74fb626",
+      "archive_sha256": "45803b5ee02bde30ac7c34daa075bc5879e4abaa8d874ef88a120ff7b74fb626"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/current-build.log",
+      "archive": "current-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archive_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/frame-after.json",
+      "archive": "frame-after.json",
+      "bytes": 186,
+      "sha256": "c4148abaa80c546422ff8af3beceb65b4efb63f95bb2d9348236c3c06e8e2c9e",
+      "archive_sha256": "c4148abaa80c546422ff8af3beceb65b4efb63f95bb2d9348236c3c06e8e2c9e"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/frame-before.json",
+      "archive": "frame-before.json",
+      "bytes": 191,
+      "sha256": "b0f6c9b4d85cb3daedf75a8c6243105b350172ab31c6c603b61c0df9d34b4f6c",
+      "archive_sha256": "b0f6c9b4d85cb3daedf75a8c6243105b350172ab31c6c603b61c0df9d34b4f6c"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/inclusive-profile.py",
+      "archive": "inclusive-profile.py",
+      "bytes": 1687,
+      "sha256": "6434432f47a40239849982bd6f916379fcf85ea195b608f134eac8234561f341",
+      "archive_sha256": "6434432f47a40239849982bd6f916379fcf85ea195b608f134eac8234561f341"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/pair0-after.stderr",
+      "archive": "pair0-after.stderr",
+      "bytes": 128,
+      "sha256": "7678bb1875a4d86a511b03fa26e07fc7bcac68e24a316582737a53cc98fa9a2a",
+      "archive_sha256": "7678bb1875a4d86a511b03fa26e07fc7bcac68e24a316582737a53cc98fa9a2a"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/pair0-after.stdout",
+      "archive": "pair0-after.stdout",
+      "bytes": 1742,
+      "sha256": "3a93d57b9d4c159e4c8d93542842b457a58990ea41ce8910f07a50042f974c15",
+      "archive_sha256": "3a93d57b9d4c159e4c8d93542842b457a58990ea41ce8910f07a50042f974c15"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/pair0-before.stderr",
+      "archive": "pair0-before.stderr",
+      "bytes": 128,
+      "sha256": "c83bb43be8d64e8ecf6926e996fb4ca5714dcfdb9ed64f8ebef96627a2582fcc",
+      "archive_sha256": "c83bb43be8d64e8ecf6926e996fb4ca5714dcfdb9ed64f8ebef96627a2582fcc"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/pair0-before.stdout",
+      "archive": "pair0-before.stdout",
+      "bytes": 1740,
+      "sha256": "92d0422f234c02c6493d0c40b422cb3b3492d6e2af613e7872b73981e5f14d89",
+      "archive_sha256": "92d0422f234c02c6493d0c40b422cb3b3492d6e2af613e7872b73981e5f14d89"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/pair1-after.stderr",
+      "archive": "pair1-after.stderr",
+      "bytes": 128,
+      "sha256": "334773c156ae98b7624102889c3a9980551872a7eb92dfd2ab373cd2b6b40821",
+      "archive_sha256": "334773c156ae98b7624102889c3a9980551872a7eb92dfd2ab373cd2b6b40821"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/pair1-after.stdout",
+      "archive": "pair1-after.stdout",
+      "bytes": 1743,
+      "sha256": "119011a76887fca1ca01a006187c7400f4fdfd95db7e9c635f7ca175b3c271a7",
+      "archive_sha256": "119011a76887fca1ca01a006187c7400f4fdfd95db7e9c635f7ca175b3c271a7"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/pair1-before.stderr",
+      "archive": "pair1-before.stderr",
+      "bytes": 127,
+      "sha256": "ec18ef73069823d2d61e94bf967852482a73604f34ef36bad615f2c4ad7826c1",
+      "archive_sha256": "ec18ef73069823d2d61e94bf967852482a73604f34ef36bad615f2c4ad7826c1"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/pair1-before.stdout",
+      "archive": "pair1-before.stdout",
+      "bytes": 1743,
+      "sha256": "7d37a17f972bb811ce2a1edba1f83298db1f3a48c3c77f513efa6d659f00665d",
+      "archive_sha256": "7d37a17f972bb811ce2a1edba1f83298db1f3a48c3c77f513efa6d659f00665d"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/pair2-after.stderr",
+      "archive": "pair2-after.stderr",
+      "bytes": 128,
+      "sha256": "a66207787155188bafce7a8049a7a4e089a219445dab859f06091506be5768e1",
+      "archive_sha256": "a66207787155188bafce7a8049a7a4e089a219445dab859f06091506be5768e1"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/pair2-after.stdout",
+      "archive": "pair2-after.stdout",
+      "bytes": 1742,
+      "sha256": "0260086559a2399863ddee044affe28820e63407034e3724e32274f2abc7f7bb",
+      "archive_sha256": "0260086559a2399863ddee044affe28820e63407034e3724e32274f2abc7f7bb"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/pair2-before.stderr",
+      "archive": "pair2-before.stderr",
+      "bytes": 128,
+      "sha256": "42063defc2179f9c8890109b5fbf1a796509327a119dd2b428ede0feb5868b6f",
+      "archive_sha256": "42063defc2179f9c8890109b5fbf1a796509327a119dd2b428ede0feb5868b6f"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/pair2-before.stdout",
+      "archive": "pair2-before.stdout",
+      "bytes": 1743,
+      "sha256": "88793da1c7531e43a30caa9a887fef706ccf292c2347b2cde7fd987b6aad9801",
+      "archive_sha256": "88793da1c7531e43a30caa9a887fef706ccf292c2347b2cde7fd987b6aad9801"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/pair3-after.stderr",
+      "archive": "pair3-after.stderr",
+      "bytes": 128,
+      "sha256": "c1c0280b42ab1f9e74ec9bac34789d079fd785a3feade77194cf974477bae2d4",
+      "archive_sha256": "c1c0280b42ab1f9e74ec9bac34789d079fd785a3feade77194cf974477bae2d4"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/pair3-after.stdout",
+      "archive": "pair3-after.stdout",
+      "bytes": 1743,
+      "sha256": "eea463b76cb791577b2ba100a3577bd0daf5ea140fff15e3188ed5040ffd8aa6",
+      "archive_sha256": "eea463b76cb791577b2ba100a3577bd0daf5ea140fff15e3188ed5040ffd8aa6"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/pair3-before.stderr",
+      "archive": "pair3-before.stderr",
+      "bytes": 128,
+      "sha256": "e234b67f782b3bae57eb8e3b9077e977262e7c71e72a3c227441b5078698e684",
+      "archive_sha256": "e234b67f782b3bae57eb8e3b9077e977262e7c71e72a3c227441b5078698e684"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/pair3-before.stdout",
+      "archive": "pair3-before.stdout",
+      "bytes": 1743,
+      "sha256": "c2a3a0764d3f70057dfa8f9f2dbd42bbde6eff01ed95f6500c781ab58c29dc5e",
+      "archive_sha256": "c2a3a0764d3f70057dfa8f9f2dbd42bbde6eff01ed95f6500c781ab58c29dc5e"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/profile-command.json",
+      "archive": "profile-command.json",
+      "bytes": 728,
+      "sha256": "d831d3dbfda9d88a70df22a53990ba3dd38bef352e2992fda224b9c19fcf79d0",
+      "archive_sha256": "d831d3dbfda9d88a70df22a53990ba3dd38bef352e2992fda224b9c19fcf79d0"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/profile.stderr",
+      "archive": "profile.stderr",
+      "bytes": 2926,
+      "sha256": "17d4f11941b29b26a5dfaf1eb705b8a7acb4dd2858bea77823cfa5910b73efbb",
+      "archive_sha256": "17d4f11941b29b26a5dfaf1eb705b8a7acb4dd2858bea77823cfa5910b73efbb"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/profile.stdout",
+      "archive": "profile.stdout.gz",
+      "bytes": 74226,
+      "sha256": "1fd8f27e4e73ab2e079e26cbb9c30e1d8a8b0cf0124f291c7669852412b03aa3",
+      "archive_sha256": "8e585e2727b661e329ba535378bb34f0f8ed63c5085b039fe1109fdf4a7e42a5"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/qualify-selected.py",
+      "archive": "qualify-selected.py",
+      "bytes": 1800,
+      "sha256": "ec4ae85da0dcc07cec6b8fab0a4d017a721851b39d1aef21ca51c0b2f7b7cda8",
+      "archive_sha256": "ec4ae85da0dcc07cec6b8fab0a4d017a721851b39d1aef21ca51c0b2f7b7cda8"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/results.json",
+      "archive": "results.json",
+      "bytes": 60941,
+      "sha256": "93b3e1e5388c92dbea78a00cff68d0f01c5b38601280acaed5772d2c08349f3e",
+      "archive_sha256": "93b3e1e5388c92dbea78a00cff68d0f01c5b38601280acaed5772d2c08349f3e"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/roc.stderr",
+      "archive": "roc.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archive_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/roc.stdout",
+      "archive": "roc.stdout.gz",
+      "bytes": 628890,
+      "sha256": "43b9e1d6d7e7d42511710f1531fd8d58af80eb30042bf6ebc15e1b450b72ba83",
+      "archive_sha256": "e77e21cc4fb27551bc4eedb3779f4607b12c8ddb0360ccb23bda952c626b9b10"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/run.py",
+      "archive": "run.py",
+      "bytes": 8674,
+      "sha256": "f26460ffb817ab5ae3b3a9aec01652c35f08b25aecae28ce6e10024d4e82bfc4",
+      "archive_sha256": "f26460ffb817ab5ae3b3a9aec01652c35f08b25aecae28ce6e10024d4e82bfc4"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/scalar-controls.py",
+      "archive": "scalar-controls.py",
+      "bytes": 3238,
+      "sha256": "bbd452952661afb485c4b61f41ca54f6b9d75eb8c9e0d9d480f6e35e0d4d202c",
+      "archive_sha256": "bbd452952661afb485c4b61f41ca54f6b9d75eb8c9e0d9d480f6e35e0d4d202c"
+    },
+    {
+      "source": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/setup-validation.json",
+      "archive": "setup-validation.json",
+      "bytes": 195,
+      "sha256": "24a8323a6788b0567b375adabdcebd6518e2fbacb162605450ba4a8b8eb49020",
+      "archive_sha256": "24a8323a6788b0567b375adabdcebd6518e2fbacb162605450ba4a8b8eb49020"
+    }
+  ]
+}

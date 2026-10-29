@@ -1,0 +1,277 @@
+{
+  "method": "Exclusive leaf=count-sum(children), partition by frame > selected call > other helper > ordinary visit > remaining ancestry; disjoint weights, not elapsed-time guarantees. Before is the prior recorded sample, not a paired profile.",
+  "observations": {
+    "before": {
+      "path": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/after.sample.txt",
+      "sha256": "9076b8d536edf0deb962ce31865b56cd331f0cb986a712f8e76ecaa844ddbb2f",
+      "total_samples": 1315,
+      "disjoint_categories": {
+        "remaining": 192,
+        "other_invocation_helper": 193,
+        "selected_library_call": 322,
+        "ordinary_control_visit": 231,
+        "buffer_frame_actions": 377
+      },
+      "exclusive_complete_budget_evaluator": 58,
+      "frame_input_admission_inclusive": 141,
+      "exclusive_top_leaves": [
+        [
+          "_tlv_get_addr",
+          107
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          63
+        ],
+        [
+          "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+          58
+        ],
+        [
+          "???",
+          56
+        ],
+        [
+          "_platform_memmove",
+          52
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+          45
+        ],
+        [
+          "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks5admit",
+          44
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+          43
+        ],
+        [
+          "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames6retire",
+          34
+        ],
+        [
+          "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+          33
+        ],
+        [
+          "_RNvMs_NtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+          33
+        ],
+        [
+          "_RNvMs3_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+          33
+        ],
+        [
+          "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          32
+        ],
+        [
+          "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22charge_control_account",
+          31
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation14selected_callsNtB4_10Invocation21prepared_library_call",
+          23
+        ],
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget6charge",
+          23
+        ],
+        [
+          "_RNvMs1_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena14retire_current",
+          21
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation10needs_move",
+          18
+        ],
+        [
+          "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultNtNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation5ValueNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMNtNtB3e_8prepared16unsigned_buffersNtB4J_25NativePreparedLibraryCall28unsigned_buffer_with_sublist0EBa_",
+          16
+        ],
+        [
+          "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames4pack",
+          16
+        ],
+        [
+          "_RINvMNtCsgDHHaSskbIF_4core6optionINtB3_6OptionRSNtNtNtCs1qJAwyMG1lC_11mech_engine15native_artifact13buffer_frames22NativeBufferFrameFieldE6map_orjNCNCNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2r_12BufferFrames11field_count00EB2z_",
+          16
+        ],
+        [
+          "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+          15
+        ],
+        [
+          "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+          13
+        ],
+        [
+          "_RNvMNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact4workNtB2_15NativeWorkMeter6charge",
+          13
+        ],
+        [
+          "_RNvNtNtCskIfnrfrMWVM_9mech_core6schema5shape18evaluate_dimension",
+          12
+        ],
+        [
+          "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation5ValueECs29QkOtpKx6e_8mech_gpu",
+          12
+        ],
+        [
+          "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames13retire_fields",
+          11
+        ],
+        [
+          "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames7project",
+          11
+        ],
+        [
+          "_RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyINtNtCsgDHHaSskbIF_4core4cell7RefCellINtNtBZ_6option6OptionINtNtCsgKscDXrlV49_5alloc2rc2RcIBV_NtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget18ControlWorkAccountEEEEE4withNCINvMs0_B2s_NtB2s_23NativeLibraryWorkBudget16with_call_limitsINtNtBZ_6result6ResultyNtNtNtNtB2u_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMNtNtB58_8prepared16unsigned_lengthsNtB6E_25NativePreparedLibraryCall22unsigned_matrix_length0E0IB4I_B4H_NtNtNtCskIfnrfrMWVM_9mech_core8function8resident19ResidentKernelErrorEEB2w_",
+          11
+        ],
+        [
+          "_RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyINtNtCsgDHHaSskbIF_4core4cell7RefCellINtNtBZ_6option6OptionINtNtCsgKscDXrlV49_5alloc2rc2RcIBV_NtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget18ControlWorkAccountEEEEE4withNCINvMs0_B2s_NtB2s_23NativeLibraryWorkBudget16with_call_limitsINtNtBZ_6result6ResultyNtNtNtNtB2u_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMNtNtB58_8prepared10word_readsNtB6E_25NativePreparedLibraryCall23unsigned_matrix_element0E0IB4I_B4H_NtNtNtCskIfnrfrMWVM_9mech_core8function8resident19ResidentKernelErrorEEB2w_",
+          11
+        ]
+      ]
+    },
+    "after": {
+      "path": "/private/tmp/mech-budget-checks-round23-20261029/final-primary/after.sample.txt",
+      "sha256": "a31385007bebbb7236df84c4a40528fe4509308eecec0ba30aa50a9b198ba183",
+      "total_samples": 1315,
+      "disjoint_categories": {
+        "remaining": 186,
+        "other_invocation_helper": 202,
+        "selected_library_call": 280,
+        "ordinary_control_visit": 266,
+        "buffer_frame_actions": 381
+      },
+      "exclusive_complete_budget_evaluator": 18,
+      "frame_input_admission_inclusive": 141,
+      "exclusive_top_leaves": [
+        [
+          "_tlv_get_addr",
+          96
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          73
+        ],
+        [
+          "_platform_memmove",
+          63
+        ],
+        [
+          "???",
+          57
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+          51
+        ],
+        [
+          "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks5admit",
+          48
+        ],
+        [
+          "_RNvMNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact4workNtB2_15NativeWorkMeter6charge",
+          47
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+          40
+        ],
+        [
+          "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames6retire",
+          33
+        ],
+        [
+          "_RNvMs_NtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+          32
+        ],
+        [
+          "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+          31
+        ],
+        [
+          "_RNvMs3_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+          31
+        ],
+        [
+          "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22charge_control_account",
+          30
+        ],
+        [
+          "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          29
+        ],
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget6charge",
+          25
+        ],
+        [
+          "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+          21
+        ],
+        [
+          "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+          18
+        ],
+        [
+          "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+          18
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation15action_required",
+          18
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation14selected_callsNtB4_10Invocation21prepared_library_call",
+          17
+        ],
+        [
+          "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames13retire_fields",
+          16
+        ],
+        [
+          "_RINvMNtCsgDHHaSskbIF_4core6optionINtB3_6OptionRSNtNtNtCs1qJAwyMG1lC_11mech_engine15native_artifact13buffer_frames22NativeBufferFrameFieldE6map_orjNCNCNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2r_12BufferFrames11field_count00EB2z_",
+          16
+        ],
+        [
+          "madvise",
+          14
+        ],
+        [
+          "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultNtNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation5ValueNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMNtNtB3e_8prepared16unsigned_buffersNtB4J_25NativePreparedLibraryCall28unsigned_buffer_with_sublist0EBa_",
+          14
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls8prepared15frame_admissionNtB2_20FrameAdmissionRecipe9try_admit",
+          14
+        ],
+        [
+          "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames4pack",
+          14
+        ],
+        [
+          "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime7sessionNtB2_13CallCacheLane3new",
+          13
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation10needs_move",
+          12
+        ],
+        [
+          "_RNvMs1_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena14retire_current",
+          10
+        ],
+        [
+          "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation5ValueECs29QkOtpKx6e_8mech_gpu",
+          10
+        ]
+      ]
+    }
+  }
+}
