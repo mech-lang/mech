@@ -2,6 +2,8 @@
 use super::{allocation_probe, artifacts, equal, inputs, limits, reference_result};
 use mech_core::{ManagedMemoryBudget, ValueData, ValueDataDraft as Data};
 use mech_gpu::native_artifact::JitProgramArtifact;
+#[path = "canonical_program_append_recurrence.rs"]
+pub(super) mod native_recurrence;
 
 #[test]
 fn reserved_append_recurrence_selects_the_unchanged_path_guard_builder() {

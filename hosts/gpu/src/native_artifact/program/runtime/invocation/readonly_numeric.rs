@@ -151,6 +151,23 @@ impl Invocation<'_, '_, '_> {
             {
                 return Ok(false);
             }
+            if let Some(slot) = proof.capacity(at) {
+                let mech_core::ValueData::Matrix(matrix) = owner.data() else {
+                    return Ok(false);
+                };
+                let Some(capacity) = matrix.unsigned_buffer_capacity() else {
+                    return Ok(false);
+                };
+                if view[2] != 1
+                    || self
+                        .limits
+                        .max_output_elements
+                        .is_some_and(|limit| capacity as u64 > limit)
+                {
+                    return Ok(false);
+                }
+                self.write_borrowed_word(2 + slot, capacity as u64)?;
+            }
             for (index, word) in view.into_iter().enumerate() {
                 self.write_borrowed_word(2 + proof.view(at) + index, word)?;
             }
@@ -198,10 +215,23 @@ impl Invocation<'_, '_, '_> {
             if !self.state.buffer_frames.prepare_private(
                 id,
                 proof.arrays.len(),
+                proof.arrays.iter().any(|a| a.appends),
                 publication,
                 &memory,
             )? {
                 return Ok(false);
+            }
+            for (at, array) in proof.arrays.iter().enumerate().filter(|(_, a)| a.appends) {
+                let owner = self
+                    .state
+                    .buffer_frames
+                    .managed_owner(&metadata.buffer_frames, region.tail.carrier(), array.field)
+                    .ok_or_else(|| invalid("append preparation lost current owner"))?;
+                let Ok(Some(preparation)) = owner.prepare_private_unsigned_appends(&memory) else {
+                    drop(self.state.buffer_frames.finish_private(id)?);
+                    return Ok(false);
+                };
+                *self.state.buffer_frames.append_preparation_mut(id, at)? = Some(preparation);
             }
         }
         if proof.writes() {
@@ -248,7 +278,12 @@ impl Invocation<'_, '_, '_> {
         if proof.writes() || proof.result.direct_array().is_some() {
             for (at, array) in proof.arrays.iter().enumerate() {
                 if let Some(private) = self.state.buffer_frames.private_array_mut(id, at)?.take() {
-                    let owner = private.finish();
+                    let length = if array.appends {
+                        Some(self.read_borrowed_word(2 + proof.view(at) + 1)?)
+                    } else {
+                        None
+                    };
+                    let owner = Self::finish_numeric_array(private, length)?;
                     self.state.buffer_frames.synchronize_managed(
                         &metadata.buffer_frames,
                         region.tail.carrier(),

@@ -217,7 +217,8 @@ impl NativePreparedLibraryCall {
     ) -> Option<[u64; 4]> {
         if !(self.supports_unsigned_matrix_element()
             || self.supports_unsigned_matrix_length()
-            || self.supports_unsigned_matrix_replace())
+            || self.supports_unsigned_matrix_replace()
+            || self.supports_unsigned_matrix_append())
         {
             return None;
         }

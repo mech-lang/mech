@@ -186,7 +186,9 @@ impl Invocation<'_, '_, '_> {
                 }
             }
             2 | 3 if layout.sites.get(site).copied().flatten() == Some(state.region) => site as u32,
-            5 if proof.numeric.as_ref().and_then(|p| p.action(site)).is_some_and(|a| matches!(a, crate::native_artifact::program::prepare::readonly_numeric::Operation::Write { .. })) => site as u32,
+            5 if proof.numeric.as_ref().and_then(|p| p.action(site)).is_some_and(|a| matches!(a,
+                crate::native_artifact::program::prepare::readonly_numeric::Operation::Write { .. }
+                | crate::native_artifact::program::prepare::readonly_numeric::Operation::Append { .. })) => site as u32,
             _ => return Err(invalid("closed Tail exit outside its proved boundary")),
         };
         self.synchronize_numeric_carrier(state.region, site, args[2])?;

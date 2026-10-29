@@ -261,19 +261,27 @@ fn pass(
                 let current = fresh(&state, (source.get(), None));
                 state.insert((output.get(), None), current);
             }
-            Some(Operation::Read { .. } | Operation::Write { .. }) => {
+            Some(
+                operation @ (Operation::Read { array, .. }
+                | Operation::Write { array, .. }
+                | Operation::Append { array, .. }
+                | Operation::Length { array, .. }),
+            ) => {
                 let Action::LibraryCall {
                     operands, output, ..
                 } = plan.blocks()[site].action()
                 else {
                     return Err("version access lost operands");
                 };
-                if !fresh(&state, (operands[0].get(), None)) {
+                if (!matches!(operation, Operation::Length { .. }) || arrays[*array].appends)
+                    && !fresh(&state, (operands[0].get(), None))
+                {
                     return Err("content use reads an older array version");
                 }
-                if let Some(Operation::Write { array, .. }) =
-                    actions.iter().find(|(s, _)| *s == site).map(|(_, op)| op)
-                {
+                if matches!(
+                    operation,
+                    Operation::Write { .. } | Operation::Append { .. }
+                ) {
                     let root = arrays[*array].field;
                     for (&(value, field), current) in &mut state {
                         if provenance.array(value, field) == Some(root) {

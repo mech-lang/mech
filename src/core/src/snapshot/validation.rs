@@ -25,7 +25,9 @@ pub use owned_unsigned_matrix::{OwnedSnapshotUnsignedMatrix, UnsignedMatrixOwner
 
 #[path = "private_unsigned_matrix.rs"]
 mod private_unsigned_matrix;
-pub use private_unsigned_matrix::{PrivateUnsignedMatrix, UnsignedMatrixViewMut};
+pub use private_unsigned_matrix::{
+    PrivateUnsignedAppendPreparation, PrivateUnsignedMatrix, UnsignedMatrixViewMut,
+};
 
 #[cfg(test)]
 #[path = "frozen_identity_tests.rs"]

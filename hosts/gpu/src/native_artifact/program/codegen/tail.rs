@@ -80,6 +80,12 @@ pub(in crate::native_artifact) fn leave(
             b.ins()
                 .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
         }
+        for (array, _) in proof.arrays.iter().enumerate().filter(|(_, a)| a.appends) {
+            let slot = proof.view(array) + 1;
+            let value = load(options, b, locals, region, region.words + 3 + slot)?;
+            b.ins()
+                .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
+        }
     }
     let mode = b.ins().iconst(types::I64, mode);
     hooks.call_at(

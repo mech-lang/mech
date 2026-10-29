@@ -11,6 +11,27 @@ use mech_core::{
 };
 
 impl NativePreparedLibraryCall {
+    /// Same exact selected append factory and plain invariant row schema.
+    /// Runtime preparation still checks current geometry, admission and owners.
+    pub fn supports_unsigned_matrix_append(&self) -> bool {
+        let [matrix, incoming] = self.template.inputs() else {
+            return false;
+        };
+        let mech_core::SchemaBody::Matrix {
+            element,
+            dimensions,
+        } = matrix.body()
+        else {
+            return false;
+        };
+        self.template.primitive() == P::SequenceAppend
+            && matrix == self.template.output()
+            && dimensions.len() == 2
+            && element.as_ref() == incoming.body()
+            && incoming.dimension_parameters().is_empty()
+            && primitive::width(element).is_some()
+    }
+
     pub fn supports_unsigned_buffer(&self) -> bool {
         self.buffer_operation().is_some()
     }

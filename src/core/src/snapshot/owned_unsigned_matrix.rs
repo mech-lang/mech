@@ -19,6 +19,32 @@ pub enum UnsignedMatrixOwnershipTransfer {
 }
 
 impl OwnedSnapshotUnsignedMatrix {
+    /// Use the same private owner with a pre-admitted row-length preparation.
+    /// The preparation carries metadata only; exclusive cells still come from
+    /// this ordinary same-account consuming transfer.
+    pub fn into_private_appends(
+        self,
+        shape: ShapeInstance,
+        preparation: super::PrivateUnsignedAppendPreparation,
+    ) -> Result<super::PrivateUnsignedMatrix, SnapshotValueError> {
+        let Self {
+            words,
+            schemas,
+            reservation,
+            schema,
+            key,
+        } = self;
+        super::PrivateUnsignedMatrix::prepare_appends(
+            schema,
+            key,
+            shape,
+            words,
+            schemas,
+            reservation,
+            preparation,
+        )
+    }
+
     /// Prepare one private, fixed-shape update phase and its final frozen owner.
     /// Every fallible allocation/admission finishes before mutable cells escape.
     /// The result is not an immutable Value until it is consumed by `finish`.

@@ -792,12 +792,14 @@ fn restored_frame_type_slots_reject_misalignment_keys_and_definitions() {
 
 #[test]
 fn restored_numeric_leaf_rejects_stale_views_offsets_prices_and_factory_associations() {
+    let append = super::sequence_capacity_qualification::native_recurrence::source(32);
     for artifact in [
         super::numeric_tail_qualification::WEIGHTED,
         super::numeric_write_qualification::WRITE,
         super::numeric_result_qualification::GENERIC,
         super::multi_result_qualification::SOURCE,
         super::multi_result_qualification::RECORD_SOURCE,
+        &append,
     ]
     .into_iter()
     .flat_map(|source| artifacts(source).0)
@@ -812,6 +814,7 @@ fn restored_numeric_leaf_rejects_stale_views_offsets_prices_and_factory_associat
             "/numeric/arrays/0/width",
             "/numeric/arrays/0/witness",
             "/numeric/arrays/0/writable",
+            "/numeric/arrays/0/appends",
             "/numeric/result",
             "/numeric/words",
             "/numeric/scalar_words",
@@ -822,6 +825,19 @@ fn restored_numeric_leaf_rejects_stale_views_offsets_prices_and_factory_associat
         .into_iter()
         .map(str::to_owned)
         .collect::<Vec<_>>();
+        let actions = original
+            .pointer(&format!("{root}/numeric/actions"))
+            .unwrap()
+            .as_array()
+            .unwrap();
+        for (index, action) in actions.iter().enumerate() {
+            if action[1].get("Append").is_some() {
+                suffixes.extend([
+                    format!("/numeric/actions/{index}/1/Append/array"),
+                    format!("/numeric/actions/{index}/1/Append/incoming"),
+                ]);
+            }
+        }
         if original
             .pointer(&format!("{root}/numeric/result/Frame"))
             .is_some()

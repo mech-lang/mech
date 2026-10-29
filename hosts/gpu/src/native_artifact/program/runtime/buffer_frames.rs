@@ -21,6 +21,7 @@ struct FrameLanes {
 struct PrivateNumeric {
     region: usize,
     arrays: Vec<Option<mech_core::snapshot::PrivateUnsignedMatrix>>,
+    append: Option<Vec<Option<mech_core::snapshot::PrivateUnsignedAppendPreparation>>>,
     publication: Option<crate::native_artifact::values::PreparedValuePut>,
     _nodes: mech_core::ManagedNodeReservation,
     _reservation: mech_core::ManagedMemoryReservation,
@@ -106,7 +107,21 @@ impl BufferFrames {
     }
     pub(super) fn retained_nodes(&self) -> u64 {
         self.inner.as_ref().map_or(0, |inner| {
-            inner.nodes.nodes() + inner.private.as_ref().map_or(0, |p| p._nodes.nodes())
+            inner.nodes.nodes()
+                + inner.private.as_ref().map_or(0, |p| {
+                    p._nodes.nodes()
+                        + p.arrays
+                            .iter()
+                            .flatten()
+                            .map(|a| a.private_metadata_nodes())
+                            .sum::<u64>()
+                        + p.append
+                            .iter()
+                            .flatten()
+                            .flatten()
+                            .map(|a| a.retained_nodes())
+                            .sum::<u64>()
+                })
         })
     }
     pub(super) fn pack(
@@ -392,6 +407,7 @@ impl BufferFrames {
         &mut self,
         region: usize,
         count: usize,
+        append: bool,
         publication: Option<crate::native_artifact::values::PreparedValuePut>,
         memory: &ManagedMemoryBudget,
     ) -> Result<bool, NativeProgramExecutionError> {
@@ -404,13 +420,20 @@ impl BufferFrames {
         }
         let bytes = amount(
             count,
-            core::mem::size_of::<Option<mech_core::snapshot::PrivateUnsignedMatrix>>() as u64,
+            (core::mem::size_of::<Option<mech_core::snapshot::PrivateUnsignedMatrix>>()
+                + if append {
+                    core::mem::size_of::<
+                        Option<mech_core::snapshot::PrivateUnsignedAppendPreparation>,
+                    >()
+                } else {
+                    0
+                }) as u64,
             core::mem::size_of::<PrivateNumeric>() as u64,
         )?;
         let Ok(reservation) = memory.reserve_capacity(bytes) else {
             return Ok(false);
         };
-        let Ok(nodes) = memory.reserve_nodes(count as u64 + 1) else {
+        let Ok(nodes) = memory.reserve_nodes(count as u64 + 1 + u64::from(append)) else {
             return Ok(false);
         };
         let mut arrays = Vec::new();
@@ -418,9 +441,20 @@ impl BufferFrames {
             return Ok(false);
         }
         arrays.resize_with(count, || None);
+        let append = if append {
+            let mut values = Vec::new();
+            if values.try_reserve_exact(count).is_err() {
+                return Ok(false);
+            }
+            values.resize_with(count, || None);
+            Some(values)
+        } else {
+            None
+        };
         inner.private = Some(PrivateNumeric {
             region,
             arrays,
+            append,
             publication,
             _nodes: nodes,
             _reservation: reservation,
@@ -439,6 +473,22 @@ impl BufferFrames {
             .filter(|p| p.region == region)
             .and_then(|p| p.arrays.get_mut(array))
             .ok_or_else(|| invalid("private numeric array outside active region"))
+    }
+    pub(super) fn append_preparation_mut(
+        &mut self,
+        region: usize,
+        array: usize,
+    ) -> Result<
+        &mut Option<mech_core::snapshot::PrivateUnsignedAppendPreparation>,
+        NativeProgramExecutionError,
+    > {
+        self.inner
+            .as_mut()
+            .and_then(|i| i.private.as_mut())
+            .filter(|p| p.region == region)
+            .and_then(|p| p.append.as_mut())
+            .and_then(|p| p.get_mut(array))
+            .ok_or_else(|| invalid("append preparation outside active numeric region"))
     }
     pub(super) fn finish_private(
         &mut self,
