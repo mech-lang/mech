@@ -1,0 +1,22 @@
+{
+  "name": "round12-late-checks",
+  "command": [
+    "python3",
+    "/private/tmp/mech-numeric-writes-round12-20261028/late-checks.py"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "a30f6a4d67defc176ad1cc498df3f6bbb459c56a",
+  "dirty": " M hosts/gpu/src/native_artifact/program/runtime/numeric_fuel_tests.rs\n",
+  "exit": 0,
+  "seconds": 57.124045848846436,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round12-late-checks.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-numeric-writes-round12-20261028/qualified-linked/component-v2-tests",
+    "linked_private_numeric_child_freezes_recovers_and_preserves_error_order",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 82.88317562500015,
+  "binary_sha256": "043e9f202fec05a739c64769b5c3d96522b26d9c8431096a330e705ab7cf56f3",
+  "skipped": []
+}

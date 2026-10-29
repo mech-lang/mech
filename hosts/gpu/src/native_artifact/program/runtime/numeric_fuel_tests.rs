@@ -175,7 +175,19 @@ fn numeric_write_fuel_exit_freezes_current_cells_without_renewing_admission() {
             denied.execution.max_work = full.work - withheld * region.compute;
             let (run, rows) =
                 execute_observed_numeric_fuel(&jit, &args, &mut outputs, denied, &memory);
-            assert!(format!("{:?}", run.unwrap_err()).contains("WorkLimit"));
+            let error = run.unwrap_err();
+            assert!(
+                matches!(
+                    error,
+                    NativeProgramExecutionError::Control(
+                        NativeIterationExecutionError::Work { .. }
+                    ) | NativeProgramExecutionError::Base(NativeExecutionError::WorkLimit { .. })
+                        | NativeProgramExecutionError::Value(NativeValueError::Base(
+                            NativeExecutionError::WorkLimit { .. }
+                        ))
+                ),
+                "{error:?}; rows={rows:?}; withheld={withheld}"
+            );
             for row in &rows {
                 assert_eq!(row[0] % row[1], 0);
                 assert_eq!(row[1], region.compute);
@@ -209,7 +221,7 @@ fn numeric_write_fuel_exit_freezes_current_cells_without_renewing_admission() {
             );
             println!(
                 "{}",
-                serde_json::json!({"witness":"actual-write-fuel-exit","full_work":full.work,"body_cost":region.compute,"denied_limit":denied.execution.max_work,"carriers_and_cells":rows})
+                serde_json::json!({"witness":"actual-write-fuel-exit","full_work":full.work,"body_cost":region.compute,"denied_limit":denied.execution.max_work,"carriers_and_cells":rows,"error":format!("{error:?}")})
             );
         }
         assert!(observed > 0);
