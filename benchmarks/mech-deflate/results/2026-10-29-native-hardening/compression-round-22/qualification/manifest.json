@@ -1,0 +1,1216 @@
+{
+  "base": "4857600c48a97c83b51f97535232cb6a12f224a6",
+  "corrected_production": "43bde0813868613610856eb0e1936070c1a39eae",
+  "clean_measured_checkpoint": "c3f5cdabafd8e9bb118c7480958b4d27b01bd79b",
+  "clean_final_qualification_checkpoint": "40361958b2588fbb2756aefa514933788360c035",
+  "archive": "receipts.tar.gz",
+  "archive_sha256": "201fa6c103a50b3dbf5942472868e5863c424753b03702fbef02cf479fd99219",
+  "entries": [
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/activation-red/nested-component-build.json",
+      "archive_member": "activation-red/nested-component-build.json",
+      "bytes": 4465,
+      "sha256": "77d5b7985ba4fe9d14941a1b8701bef48c128afe073f9226542bbf6cf788251f"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/activation-red/nested-component-build.log",
+      "archive_member": "activation-red/nested-component-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/activation-red/nested-component-qualification.rs",
+      "archive_member": "activation-red/nested-component-qualification.rs",
+      "bytes": 36255,
+      "sha256": "d98ef68322b64ddbe5e5e2cd5a7ce0ad969fda6dae6bbbdd5bb6461faef5c060"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/activation-red/nested-component-run.json",
+      "archive_member": "activation-red/nested-component-run.json",
+      "bytes": 643,
+      "sha256": "58bb94d00eb438283e0fe0551d6e5eaf010c003bcbc1ecdbe30d2a52bb86cc10"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/activation-red/nested-component-run.log",
+      "archive_member": "activation-red/nested-component-run.log",
+      "bytes": 211,
+      "sha256": "7d838e5f5098c17144f772312f3aa92b3bce1e9816896d2ba7fa8e2fea955bef"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/activation-red/qualify.py",
+      "archive_member": "activation-red/qualify.py",
+      "bytes": 3606,
+      "sha256": "f281dfc789ab388e8c067a55e0b3a79c55963c13201af57d3e4940e2040d0c14"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/activation-red-driver.log",
+      "archive_member": "activation-red-driver.log",
+      "bytes": 212,
+      "sha256": "e45a71361364b8ba583311fd402e9c99fe62d85ddc057952d42db161117ff054"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/activation-red-second/nested-component-build.json",
+      "archive_member": "activation-red-second/nested-component-build.json",
+      "bytes": 4480,
+      "sha256": "cb69377021c8a5ad431b50230f65b11c50634eb73338b0694aaf028ffd697dfc"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/activation-red-second/nested-component-build.log",
+      "archive_member": "activation-red-second/nested-component-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/activation-red-second/nested-component-qualification.rs",
+      "archive_member": "activation-red-second/nested-component-qualification.rs",
+      "bytes": 36255,
+      "sha256": "d98ef68322b64ddbe5e5e2cd5a7ce0ad969fda6dae6bbbdd5bb6461faef5c060"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/activation-red-second/nested-component-run.json",
+      "archive_member": "activation-red-second/nested-component-run.json",
+      "bytes": 663,
+      "sha256": "df6954b8a345e17b930089829475332531162d8b8fc0e88c9eb5f9fd28185023"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/activation-red-second/nested-component-run.log",
+      "archive_member": "activation-red-second/nested-component-run.log",
+      "bytes": 224,
+      "sha256": "6093091e1fc1ed17c0d33dc037b503c71999cb92ffb09024ae26d7468cf4aa9d"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/activation-red-second/qualify.py",
+      "archive_member": "activation-red-second/qualify.py",
+      "bytes": 3619,
+      "sha256": "d61cc3d23ca58693b0832510d88b6aed638c951e767f31c7f937715021036071"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/activation-red-second-driver.log",
+      "archive_member": "activation-red-second-driver.log",
+      "bytes": 225,
+      "sha256": "8c00cc74a1998bcd062d1da8a764abaee18068ef0131e9c028af14b28954775b"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/baseline-unit-corrected-driver.log",
+      "archive_member": "baseline-unit-corrected-driver.log",
+      "bytes": 531,
+      "sha256": "456da73293fd0e66da781c39c91e395dccf1019eca6ff3bc6a4c14d168cf14a8"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/baseline-unit-driver.log",
+      "archive_member": "baseline-unit-driver.log",
+      "bytes": 9756,
+      "sha256": "7b23861afede09d680265ba7df341ea4c4e783719a7096e0da2216ba039e5634"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/baseline-units/build.json",
+      "archive_member": "baseline-units/build.json",
+      "bytes": 8515,
+      "sha256": "a0ee1fd94c5663628c9ef377efe837aef96991c03a78610a5806112a725c10d2"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/baseline-units/build.log",
+      "archive_member": "baseline-units/build.log",
+      "bytes": 94622,
+      "sha256": "8fd5b60b3071d93629a6687377edf8cedf35f67c067c3e766555a854ede50d98"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/baseline-units-corrected/build.json",
+      "archive_member": "baseline-units-corrected/build.json",
+      "bytes": 8865,
+      "sha256": "c3dd5d81de403995c8d3dedd41ffa41f09ef0573c6d85487fe397e1dfd012327"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/baseline-units-corrected/build.log",
+      "archive_member": "baseline-units-corrected/build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/baseline-units-corrected/phase-and-fuel.json",
+      "archive_member": "baseline-units-corrected/phase-and-fuel.json",
+      "bytes": 464,
+      "sha256": "060d94fb6ec6fd143efbba88441018eb9463db966c2e11d22a48c72f2ad80565"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/baseline-units-corrected/phase-and-fuel.log",
+      "archive_member": "baseline-units-corrected/phase-and-fuel.log",
+      "bytes": 20565,
+      "sha256": "dd42b2be980f0421d9d64837a4c9efcb3e6086a9ecfcbffebdde1017914a83eb"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/baseline-units-corrected/run.json",
+      "archive_member": "baseline-units-corrected/run.json",
+      "bytes": 342,
+      "sha256": "507bb09a1226a1d0fdf2fc8f8acb9fa16d3717938b98fc0aa5189852434da287"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/baseline-units-corrected/run.log",
+      "archive_member": "baseline-units-corrected/run.log",
+      "bytes": 529,
+      "sha256": "b7c5195a6df5c298976879365c0a2cc3eb1070c90b8baccfbac3d5196512d0f4"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/baseline-units-corrected/runtime-cohort.json",
+      "archive_member": "baseline-units-corrected/runtime-cohort.json",
+      "bytes": 337,
+      "sha256": "47a9b3c20307c99020868b1ab61f0411fd64ff2905888d782749c2f8f16e7ad8"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/baseline-units-corrected/runtime-cohort.log",
+      "archive_member": "baseline-units-corrected/runtime-cohort.log",
+      "bytes": 64398,
+      "sha256": "36364938a5ec089232b0828098184c0e50bd1cb9ac126920ce34ea18386ca0c4"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/baseline.json",
+      "archive_member": "baseline.json",
+      "bytes": 940,
+      "sha256": "1f0c3f7966c38a832c8edced5997d1a3b5bb973bb52e9894d14e3c598d899b38"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/callback-unit-dependencies-driver.log",
+      "archive_member": "callback-unit-dependencies-driver.log",
+      "bytes": 26708,
+      "sha256": "1d93e4690c1294694dee52f38ef99465ec3ccf019b111549697e2c8c9b50f1b1"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/checkpoint-fixed-unit-driver.log",
+      "archive_member": "checkpoint-fixed-unit-driver.log",
+      "bytes": 679,
+      "sha256": "69f1ee8cbd102cc5efcb3612c410b3692e749da7934798d45e117724d480fd0a"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/checkpoint-fixed-units/build.json",
+      "archive_member": "checkpoint-fixed-units/build.json",
+      "bytes": 8862,
+      "sha256": "9f4d9ae020a1897ef2fa859d0c4683b12fe6d255dc0d0d68e171a16fbaf669f3"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/checkpoint-fixed-units/build.log",
+      "archive_member": "checkpoint-fixed-units/build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/checkpoint-fixed-units/closed-tail-fuel.json",
+      "archive_member": "checkpoint-fixed-units/closed-tail-fuel.json",
+      "bytes": 420,
+      "sha256": "994395b84f9cd06aee87d4d76f253b2d58b5c31f5d959c41ef16883b7e72ee46"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/checkpoint-fixed-units/closed-tail-fuel.log",
+      "archive_member": "checkpoint-fixed-units/closed-tail-fuel.log",
+      "bytes": 232,
+      "sha256": "951dc62be3b61abc6f758691ec9b62f45582f7518bb6d3f5cc19aac33bfb38c3"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/checkpoint-fixed-units/run.json",
+      "archive_member": "checkpoint-fixed-units/run.json",
+      "bytes": 340,
+      "sha256": "85d0ac554fbc15448eda3d2bfca8a948b12d2235977a23dbe543f7940033c053"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/checkpoint-fixed-units/run.log",
+      "archive_member": "checkpoint-fixed-units/run.log",
+      "bytes": 677,
+      "sha256": "6d4511ebb77d6d585e4d1591f689d9918bbc3abe75d1f8b89567794ad0cf85c3"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/checkpoint-fixed-units/runtime-cohort.json",
+      "archive_member": "checkpoint-fixed-units/runtime-cohort.json",
+      "bytes": 540,
+      "sha256": "32367e125eb22479f8112cd511c97bbc55b9b646a025453f441e5eade35455a6"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/checkpoint-fixed-units/runtime-cohort.log",
+      "archive_member": "checkpoint-fixed-units/runtime-cohort.log",
+      "bytes": 62129,
+      "sha256": "929ba0f4d7f7023772c8a446def9636698b0d75d3fd005817e8eb116cd265b9e"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/components/nested-component-build.json",
+      "archive_member": "components/nested-component-build.json",
+      "bytes": 4458,
+      "sha256": "11c2978cf27ad0ebc7f0003d10ba068032049adac51b801571d2cb9092ff4a01"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/components/nested-component-build.log",
+      "archive_member": "components/nested-component-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/components/nested-component-qualification.rs",
+      "archive_member": "components/nested-component-qualification.rs",
+      "bytes": 36255,
+      "sha256": "d98ef68322b64ddbe5e5e2cd5a7ce0ad969fda6dae6bbbdd5bb6461faef5c060"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/components/nested-component-run.json",
+      "archive_member": "components/nested-component-run.json",
+      "bytes": 693,
+      "sha256": "c934886571a46454cc4e8806c01cb86a49d09db10f5b31cc180471b2c75abba5"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/components/nested-component-run.log",
+      "archive_member": "components/nested-component-run.log",
+      "bytes": 5247,
+      "sha256": "d51205842e31fc8c78bbb98ad6d7d05ccd2f6ee6b302f071b59cc6b18b971e44"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/components/qualify.py",
+      "archive_member": "components/qualify.py",
+      "bytes": 3656,
+      "sha256": "0a20e0e9dbcd6fa536276e1c39dfc00862b2ef3bcbf3ff82b15e539f6502ce4a"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/components-final/nested-component-build.json",
+      "archive_member": "components-final/nested-component-build.json",
+      "bytes": 4470,
+      "sha256": "3207909b0b99c982ec6d4ccbb54511b0b13afc0adbac89934fde3f15d06e3006"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/components-final/nested-component-build.log",
+      "archive_member": "components-final/nested-component-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/components-final/nested-component-qualification.rs",
+      "archive_member": "components-final/nested-component-qualification.rs",
+      "bytes": 36255,
+      "sha256": "d98ef68322b64ddbe5e5e2cd5a7ce0ad969fda6dae6bbbdd5bb6461faef5c060"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/components-final/nested-component-run.json",
+      "archive_member": "components-final/nested-component-run.json",
+      "bytes": 699,
+      "sha256": "5e18f5bb35e134814a4e86e203ef98320cecfc7e1545d12939134cb48624627a"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/components-final/nested-component-run.log",
+      "archive_member": "components-final/nested-component-run.log",
+      "bytes": 3634,
+      "sha256": "8d58ede1ea534ef47c50bf62bf48ccbdbb41f7aedb87d5389421d23b0d083215"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/components-final/qualify.py",
+      "archive_member": "components-final/qualify.py",
+      "bytes": 3656,
+      "sha256": "0a20e0e9dbcd6fa536276e1c39dfc00862b2ef3bcbf3ff82b15e539f6502ce4a"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/default-metadata.json",
+      "archive_member": "default-metadata.json",
+      "bytes": 1076525,
+      "sha256": "2dc9a38fd707a9ba31e447e503479ecf4ec2e2bbdffcf3679c344b33248e8c0a"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-component-driver.log",
+      "archive_member": "fixed-component-driver.log",
+      "bytes": 6781,
+      "sha256": "7ffbcb02c955e77d940a03ca6fd883a2e76a784d158824d66fabb57ff769a2ec"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-components/nested-component-build.json",
+      "archive_member": "fixed-components/nested-component-build.json",
+      "bytes": 4470,
+      "sha256": "180a70728b850990fae97810887eee962e3acf194d158412034b03e810f38acd"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-components/nested-component-build.log",
+      "archive_member": "fixed-components/nested-component-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-components/nested-component-qualification.rs",
+      "archive_member": "fixed-components/nested-component-qualification.rs",
+      "bytes": 36255,
+      "sha256": "d98ef68322b64ddbe5e5e2cd5a7ce0ad969fda6dae6bbbdd5bb6461faef5c060"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-components/qualify.py",
+      "archive_member": "fixed-components/qualify.py",
+      "bytes": 3186,
+      "sha256": "8598a410565cdfff7d246b7877651518db2e0b876adb1642ca9d499219dadbe8"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-full-components.json",
+      "archive_member": "fixed-full-components.json",
+      "bytes": 1703,
+      "sha256": "0398a12cd3f03c7a1657d8a36045274dfe3c66bc5c194daf5dad039d075821d4"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-full-components.log",
+      "archive_member": "fixed-full-components.log",
+      "bytes": 240711,
+      "sha256": "b89a612d2a41651419063a898cbbdaed82b955c32c379b843fd3204c3647e0db"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-full-components.py",
+      "archive_member": "fixed-full-components.py",
+      "bytes": 1957,
+      "sha256": "3a94aaba56d726819a9e5e9c93988d45b8ef6a5fc4e0f0eed9570cdeeaf6c67c"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-object-audit/build.py",
+      "archive_member": "fixed-object-audit/build.py",
+      "bytes": 1149,
+      "sha256": "d72a815ab8224bfc338069de70805057cf304e09f86dcd18ac00df68ea02aafd"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-object-audit/complete-object.json",
+      "archive_member": "fixed-object-audit/complete-object.json",
+      "bytes": 2002140,
+      "sha256": "a89ec17fd250522c82af2450e88c161a0bbffa93a7b5c7edca35225dd9a51028"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-object-audit/driver-retry.log",
+      "archive_member": "fixed-object-audit/driver-retry.log",
+      "bytes": 106738,
+      "sha256": "42f91ff9650069c10efe30f1ebf1d5c8c96fc453ec28ce2ad73fec0d40e4490c"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-object-audit/driver.log",
+      "archive_member": "fixed-object-audit/driver.log",
+      "bytes": 1050,
+      "sha256": "f5123d99e5722d637ef840b8ce83cda911d506690e13c2530671adb2a66ce7e4"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-object-audit/object-build.json",
+      "archive_member": "fixed-object-audit/object-build.json",
+      "bytes": 3199,
+      "sha256": "d7f11b9b4b446a8f3fd1cc02bb65fb969c1038a3814213cceb5300a74fde6570"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-object-audit/object-build.log",
+      "archive_member": "fixed-object-audit/object-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-object-audit/object-evidence.rs",
+      "archive_member": "fixed-object-audit/object-evidence.rs",
+      "bytes": 2238,
+      "sha256": "a5ee5c96f9dedc3871737b9058a5201e1c4c5507f8434e00e8d5c468a60fdcb8"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-object-audit/object-run.json",
+      "archive_member": "fixed-object-audit/object-run.json",
+      "bytes": 423,
+      "sha256": "d3e9ea742ceabf72779a58907fadad672d298fd38173f2407c1c557caae337d2"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-object-audit/object-run.stderr",
+      "archive_member": "fixed-object-audit/object-run.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-object-audit/object-run.stdout",
+      "archive_member": "fixed-object-audit/object-run.stdout",
+      "bytes": 106737,
+      "sha256": "c28e38383028449c275e0eb303f31fecf541e1229f53690e530a10ff4d3b3ead"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-object-audit/sections.json",
+      "archive_member": "fixed-object-audit/sections.json",
+      "bytes": 974,
+      "sha256": "8d174ff36af81583b709455eb04e7ff529040fa1c4627b698e82e833b3b73b7d"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-object-audit/sections.py",
+      "archive_member": "fixed-object-audit/sections.py",
+      "bytes": 1422,
+      "sha256": "d0c04e1ba2576629f9da87e0d4a344a4ae6b0942f74527affe8c89da2fe4bda6"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-partition-profile.py",
+      "archive_member": "fixed-partition-profile.py",
+      "bytes": 3891,
+      "sha256": "13a081be203c9aec5fcda6669d70690d0662f8794e02ab6352b7ec812b10aeaf"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-partitioned-profile.json",
+      "archive_member": "fixed-partitioned-profile.json",
+      "bytes": 54157,
+      "sha256": "9ecdb958475491260b0e0e094cbc17f50a0afb8b0efc05a6f4e63f9c5d4f137e"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-commands.json",
+      "archive_member": "fixed-primary/scalar-commands.json",
+      "bytes": 4899,
+      "sha256": "886afcc5a71a0d007da68c61dea90e5b6f1874ab7193baa966b80575c664edad"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-controls.py",
+      "archive_member": "fixed-primary/scalar-controls.py",
+      "bytes": 3238,
+      "sha256": "bbd452952661afb485c4b61f41ca54f6b9d75eb8c9e0d9d480f6e35e0d4d202c"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-results.json",
+      "archive_member": "fixed-primary/scalar-results.json",
+      "bytes": 73017,
+      "sha256": "ecc9046d7aef699457e42fbc7606857aa5fe17ce8eeb07cfd5f734fc99e4ed65"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-bool-0-decoded-after.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-bool-0-decoded-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-bool-0-decoded-after.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-bool-0-decoded-after.stdout",
+      "bytes": 1625,
+      "sha256": "96840b90bf049e83345481211e3f9c40a96cc80255bfbb1db40492d73b469452"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-bool-0-decoded-before.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-bool-0-decoded-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-bool-0-decoded-before.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-bool-0-decoded-before.stdout",
+      "bytes": 1625,
+      "sha256": "81eb846204ee67c3a07d4e818e9ea9766cbb334a40eeca3878e1ef58721da1f4"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-bool-0-original-after.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-bool-0-original-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-bool-0-original-after.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-bool-0-original-after.stdout",
+      "bytes": 1631,
+      "sha256": "7c4bac5b5e390b918d55847c7e3ea8e393795fce05999ff2f3c36eb5ebce907c"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-bool-0-original-before.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-bool-0-original-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-bool-0-original-before.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-bool-0-original-before.stdout",
+      "bytes": 1628,
+      "sha256": "2882032525cb07373657ab92c00b43cfa1c71a2748a31a904221b4223d9b9c16"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-f64-0-decoded-after.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-f64-0-decoded-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-f64-0-decoded-after.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-f64-0-decoded-after.stdout",
+      "bytes": 1619,
+      "sha256": "0bf103bb2d344588021800785e276e1aea261691e88a907d2d9f01e06d2a3a09"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-f64-0-decoded-before.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-f64-0-decoded-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-f64-0-decoded-before.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-f64-0-decoded-before.stdout",
+      "bytes": 1619,
+      "sha256": "45f61987c6f633f6eccf0c3273b36e49b782181c715b2aa0dd7b739ac01ccf58"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-f64-0-original-after.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-f64-0-original-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-f64-0-original-after.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-f64-0-original-after.stdout",
+      "bytes": 1622,
+      "sha256": "eede6fa7afd5cc782e6383ed177ca87dfff7432a412cdb83e708e54340250c40"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-f64-0-original-before.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-f64-0-original-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-f64-0-original-before.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-f64-0-original-before.stdout",
+      "bytes": 1620,
+      "sha256": "4b5e9c348b7a997391fed95689b942e77f522c03c0516d710cac399269404dcc"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-i64-0-decoded-after.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-i64-0-decoded-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-i64-0-decoded-after.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-i64-0-decoded-after.stdout",
+      "bytes": 1618,
+      "sha256": "303ec21b84f0e20404ff852ec8d949fcec5b8877052bf7221c33db59a2f9c3ce"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-i64-0-decoded-before.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-i64-0-decoded-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-i64-0-decoded-before.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-i64-0-decoded-before.stdout",
+      "bytes": 1618,
+      "sha256": "980a7c7b76fd37a5946829e60dc9ba4d0284e1142cfa0447aa067bcbcc709a81"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-i64-0-original-after.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-i64-0-original-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-i64-0-original-after.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-i64-0-original-after.stdout",
+      "bytes": 1625,
+      "sha256": "ac239240c94c720af4b2dd9e9a641f57f8bbb5d5d6a7f0ef6befd7bd5338924c"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-i64-0-original-before.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-i64-0-original-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-i64-0-original-before.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-i64-0-original-before.stdout",
+      "bytes": 1624,
+      "sha256": "9cafdcd700de48ed200a8ddfd21a31cce3355d6d0ab398bbad2dd88b9e67564e"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-loop-0-decoded-after.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-loop-0-decoded-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-loop-0-decoded-after.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-loop-0-decoded-after.stdout",
+      "bytes": 2008,
+      "sha256": "c0ef5c59e2848cb341d479c80c75d621e05ae0a4805ec140eed2843d74076243"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-loop-0-decoded-before.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-loop-0-decoded-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-loop-0-decoded-before.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-loop-0-decoded-before.stdout",
+      "bytes": 2002,
+      "sha256": "0d6df9119379991d768ba1f1ed44a661cf9ec71cbc44139208751b68fe5188a2"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-loop-0-original-after.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-loop-0-original-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-loop-0-original-after.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-loop-0-original-after.stdout",
+      "bytes": 2015,
+      "sha256": "1536ac4f5c6c66c0eeb4dde7c654125a828f20ce2c759764c4ebffe84f603c4f"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-loop-0-original-before.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-loop-0-original-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-loop-0-original-before.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-loop-0-original-before.stdout",
+      "bytes": 2014,
+      "sha256": "c81936c6a244a8e6363bef0f68176b9338b14a60cb9ed82a6c5574d0a0e6b853"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-loop-64-decoded-after.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-loop-64-decoded-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-loop-64-decoded-after.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-loop-64-decoded-after.stdout",
+      "bytes": 2013,
+      "sha256": "7154cda6e71e5b3ba3d6fcdc2f4d76e1bb4a8280eadb1c5dc1a643bda67dd5d4"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-loop-64-decoded-before.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-loop-64-decoded-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-loop-64-decoded-before.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-loop-64-decoded-before.stdout",
+      "bytes": 2021,
+      "sha256": "5dbb0cbfe8d3b6c4bd0b75c1db6827352ccda0bb8b99b5d7166e4b4a597ced52"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-loop-64-original-after.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-loop-64-original-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-loop-64-original-after.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-loop-64-original-after.stdout",
+      "bytes": 2021,
+      "sha256": "c8509ecfc3cd94ed22cd3d313e5e451057a7612ed6c6654f92c4966f231d3474"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-loop-64-original-before.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-loop-64-original-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-loop-64-original-before.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-loop-64-original-before.stdout",
+      "bytes": 2023,
+      "sha256": "0ad74c1d57ec5a161e04576083fed35625cc7f7bbf35801100527c0742be294d"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-u64-0-decoded-after.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-u64-0-decoded-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-u64-0-decoded-after.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-u64-0-decoded-after.stdout",
+      "bytes": 1618,
+      "sha256": "848bc810cec2477664ecada2617882b648ea7587299909f3628eba42f950edb5"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-u64-0-decoded-before.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-u64-0-decoded-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-u64-0-decoded-before.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-u64-0-decoded-before.stdout",
+      "bytes": 1619,
+      "sha256": "ea2ad1ea07bb06b9e0656280bb65a0de28b730d55f76f82cdfc787f7b8877455"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-u64-0-original-after.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-u64-0-original-after.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-u64-0-original-after.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-u64-0-original-after.stdout",
+      "bytes": 1624,
+      "sha256": "86388add6c56dd714e269cae45c0e0a1e9f3e21ca28ac15f06a201a1d8df155c"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-u64-0-original-before.stderr",
+      "archive_member": "fixed-primary/scalar-scalar-u64-0-original-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/scalar-scalar-u64-0-original-before.stdout",
+      "archive_member": "fixed-primary/scalar-scalar-u64-0-original-before.stdout",
+      "bytes": 1618,
+      "sha256": "49e8aaa9d92f66297c7f7879fbe5cfe7b574f434561353b38ca835942acd5caa"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/selected-bits-build.json",
+      "archive_member": "fixed-primary/selected-bits-build.json",
+      "bytes": 3343,
+      "sha256": "993fdabc8c4e47dcf7fb907eda2417a2e0479e33efd4aae4c8bc495095a1be61"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/selected-bits-build.log",
+      "archive_member": "fixed-primary/selected-bits-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/selected-bits-run.json",
+      "archive_member": "fixed-primary/selected-bits-run.json",
+      "bytes": 315,
+      "sha256": "09db8d659b1f681a2c6fbfdb75e181a45fee7a1afcdf0949232b897074c77790"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/selected-bits-run.log",
+      "archive_member": "fixed-primary/selected-bits-run.log",
+      "bytes": 347,
+      "sha256": "b3ef961bc298fd729d192ceee433a5d20e81d65c79bb2bd84add34b9efc69aab"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/selected-native-build.json",
+      "archive_member": "fixed-primary/selected-native-build.json",
+      "bytes": 3348,
+      "sha256": "247c67c6449009f523d06207c21e127a969466fa888ae28ef8f0068f4a0827c3"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/selected-native-build.log",
+      "archive_member": "fixed-primary/selected-native-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/selected-native-run.json",
+      "archive_member": "fixed-primary/selected-native-run.json",
+      "bytes": 499,
+      "sha256": "32095e1e1f76f2f58554da75da63c407fbe478f6180c861303ca7195861d6bbf"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/selected-native-run.log",
+      "archive_member": "fixed-primary/selected-native-run.log",
+      "bytes": 782,
+      "sha256": "f28abeca9d118ed020ce207689c1476258d3e5c94fae517923707678ca6a23f8"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-release-driver.log",
+      "archive_member": "fixed-release-driver.log",
+      "bytes": 28559,
+      "sha256": "b939c19338ce94c8ee80a4ee69ba14fe419f5dfbe24ea39960f3425853528f45"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/full-components-driver.log",
+      "archive_member": "full-components-driver.log",
+      "bytes": 8716,
+      "sha256": "5d094fc579ffa7ad4971aef13c6ad4fe3f962d36cab71b5f0bd07ec97ff7b635"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/full-components.py",
+      "archive_member": "full-components.py",
+      "bytes": 1957,
+      "sha256": "c62e7c3b3735cae8aae5218a47220aa97b65fe9558de140ce0991a70f4a5905a"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/implemented-unit-driver.log",
+      "archive_member": "implemented-unit-driver.log",
+      "bytes": 4808,
+      "sha256": "9857c019d6e7ff2681018a00c0989959597e2519786ccbd59a8be4c970929ca0"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/implemented-unit-second-driver.log",
+      "archive_member": "implemented-unit-second-driver.log",
+      "bytes": 679,
+      "sha256": "d00828a1adabe356f961314191b7084305e2ed4ff2f4e60d9388656678689781"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/implemented-units/build.json",
+      "archive_member": "implemented-units/build.json",
+      "bytes": 8858,
+      "sha256": "6de200dccd7d802ce99af5dcf2c776706687d2db6d51f40b3086ab7d147fc218"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/implemented-units/build.log",
+      "archive_member": "implemented-units/build.log",
+      "bytes": 934,
+      "sha256": "c6b7e3655d815dea3f43dc0ca565d357f265d404394e5e5b9fb60d02b19802a3"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/implemented-units-second/build.json",
+      "archive_member": "implemented-units-second/build.json",
+      "bytes": 8865,
+      "sha256": "522c6a57b5903eefae1a6dc8a1aef2b1ec82d9db260f8a51338a8ee307e0a761"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/implemented-units-second/build.log",
+      "archive_member": "implemented-units-second/build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/implemented-units-second/phase-and-fuel.json",
+      "archive_member": "implemented-units-second/phase-and-fuel.json",
+      "bytes": 463,
+      "sha256": "2fa2c1ae9f91e3effb50d8fe8c9dad2a87ba79e918556fb2f511eac068d78d9d"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/implemented-units-second/phase-and-fuel.log",
+      "archive_member": "implemented-units-second/phase-and-fuel.log",
+      "bytes": 20565,
+      "sha256": "fcc7cda62edc3891286cdb6431ef1cf6d450bb849aebe832c03e58542a3587f5"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/implemented-units-second/run.json",
+      "archive_member": "implemented-units-second/run.json",
+      "bytes": 342,
+      "sha256": "51a02ae94f6b6f42729cbf8d3d4b3b7d46bc06e42fb18562eea8b7c4e8a4d10f"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/implemented-units-second/run.log",
+      "archive_member": "implemented-units-second/run.log",
+      "bytes": 677,
+      "sha256": "77383ce1abce524095c9e6ed6d08653fa34f26c9bcdbcc1fba613e7371cc1682"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/implemented-units-second/runtime-cohort.json",
+      "archive_member": "implemented-units-second/runtime-cohort.json",
+      "bytes": 337,
+      "sha256": "84afd5e946cc7eaac9f94df20cce6bb7cd5aea9922cc370ac057afcf99bb53de"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/implemented-units-second/runtime-cohort.log",
+      "archive_member": "implemented-units-second/runtime-cohort.log",
+      "bytes": 64546,
+      "sha256": "c07e52fe1eee1300bc6eec7c65a5ec2092878480eb97f3f078f81e7928136d1d"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/initial-cost-red.json",
+      "archive_member": "initial-cost-red.json",
+      "bytes": 430,
+      "sha256": "3cecae6d5cf85704fc2a3524a1cc23ad34e4deaae090d683e351106a847ada71"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/initial-cost-red.log",
+      "archive_member": "initial-cost-red.log",
+      "bytes": 1065,
+      "sha256": "41c312ddb7caa871dc46df4bf789c9368b363bd888cfd50ab93a183a11e03f26"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/object-audit/build.py",
+      "archive_member": "object-audit/build.py",
+      "bytes": 1143,
+      "sha256": "564998d6bfe0689bab8a0be9dc29069b90f55f2fea340c187f1de25efcd09d8c"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/object-audit/complete-object.json",
+      "archive_member": "object-audit/complete-object.json",
+      "bytes": 2002140,
+      "sha256": "a89ec17fd250522c82af2450e88c161a0bbffa93a7b5c7edca35225dd9a51028"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/object-audit/driver.log",
+      "archive_member": "object-audit/driver.log",
+      "bytes": 106738,
+      "sha256": "42f91ff9650069c10efe30f1ebf1d5c8c96fc453ec28ce2ad73fec0d40e4490c"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/object-audit/object-build.json",
+      "archive_member": "object-audit/object-build.json",
+      "bytes": 3187,
+      "sha256": "ae45d2ad95f2585facceb94e007103f594d66ad27b7940006991fc742afa5e7e"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/object-audit/object-build.log",
+      "archive_member": "object-audit/object-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/object-audit/object-evidence.rs",
+      "archive_member": "object-audit/object-evidence.rs",
+      "bytes": 2238,
+      "sha256": "a5ee5c96f9dedc3871737b9058a5201e1c4c5507f8434e00e8d5c468a60fdcb8"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/object-audit/object-run.json",
+      "archive_member": "object-audit/object-run.json",
+      "bytes": 411,
+      "sha256": "789eef19e2fb97fe40c670e5baf9350b4bb149c53e6fafdd167b093e7e653621"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/object-audit/object-run.stderr",
+      "archive_member": "object-audit/object-run.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/object-audit/object-run.stdout",
+      "archive_member": "object-audit/object-run.stdout",
+      "bytes": 106737,
+      "sha256": "c28e38383028449c275e0eb303f31fecf541e1229f53690e530a10ff4d3b3ead"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/object-audit/sections.json",
+      "archive_member": "object-audit/sections.json",
+      "bytes": 968,
+      "sha256": "1c3854d4310ba02cb771b78098dd8f16b373b828120c5e373e1840f017e26010"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/object-audit/sections.py",
+      "archive_member": "object-audit/sections.py",
+      "bytes": 1422,
+      "sha256": "d0c04e1ba2576629f9da87e0d4a344a4ae6b0942f74527affe8c89da2fe4bda6"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/parent-costs-control.json",
+      "archive_member": "parent-costs-control.json",
+      "bytes": 428,
+      "sha256": "8eeb791ad87f62dd6c281bb705b1d4dd3d72d931e6089fe253a543308c3bee2b"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/parent-costs-control.log",
+      "archive_member": "parent-costs-control.log",
+      "bytes": 15326,
+      "sha256": "dbeb23f0d09769b7aba01db412454c19ced62c76a7b32a88fcd12974b7d9e376"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/partition-driver.log",
+      "archive_member": "partition-driver.log",
+      "bytes": 2103,
+      "sha256": "8eeb9b67420f20543212281b1f52407fdad9dbe4b7f1b896bf12ccb6bac431a0"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/partition-profile.py",
+      "archive_member": "partition-profile.py",
+      "bytes": 3819,
+      "sha256": "2ddacc66f96a040f6ea64793fcff56744ef287f4402f5dc49740bd2eb6def717"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/partitioned-profile.json",
+      "archive_member": "partitioned-profile.json",
+      "bytes": 49200,
+      "sha256": "78df904c12ad98e80c28e6758fb4e0f1032399b3a4edb86477336b79b3a15a77"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/red/nested-component-build.json",
+      "archive_member": "red/nested-component-build.json",
+      "bytes": 4443,
+      "sha256": "6acba4a65db2991c89c612daafa91e07cc221f9cc05e3b60f5364bc90f7b6065"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/red/nested-component-build.log",
+      "archive_member": "red/nested-component-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/red/nested-component-qualification.rs",
+      "archive_member": "red/nested-component-qualification.rs",
+      "bytes": 36255,
+      "sha256": "d98ef68322b64ddbe5e5e2cd5a7ce0ad969fda6dae6bbbdd5bb6461faef5c060"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/red/nested-component-run.json",
+      "archive_member": "red/nested-component-run.json",
+      "bytes": 602,
+      "sha256": "e38bfb1a5cfeab4e7568002b71bbbb129ca13bb0611a849d452d2a217d1b4775"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/red/nested-component-run.log",
+      "archive_member": "red/nested-component-run.log",
+      "bytes": 6290,
+      "sha256": "ab4980dddc06af027ce89248f3b16c7e9ff980c1820a893dca5c75eda14d4888"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/red/qualify.py",
+      "archive_member": "red/qualify.py",
+      "bytes": 3571,
+      "sha256": "ff79b1fb9518737414dff4c0b22a988a1e290d0301462329c7fab8c35181196c"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/red-second/nested-component-build.json",
+      "archive_member": "red-second/nested-component-build.json",
+      "bytes": 4458,
+      "sha256": "6249035346c6013754cf49b8cdcea512d742d5bcc6c8e40fbb4c0d428ea59ff8"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/red-second/nested-component-build.log",
+      "archive_member": "red-second/nested-component-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/red-second/nested-component-qualification.rs",
+      "archive_member": "red-second/nested-component-qualification.rs",
+      "bytes": 36255,
+      "sha256": "d98ef68322b64ddbe5e5e2cd5a7ce0ad969fda6dae6bbbdd5bb6461faef5c060"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/red-second/nested-component-run.json",
+      "archive_member": "red-second/nested-component-run.json",
+      "bytes": 609,
+      "sha256": "aa56beb5de102dfa13883b3c6cdb18fae24b8ad06947dc13291c2d00556308e1"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/red-second/nested-component-run.log",
+      "archive_member": "red-second/nested-component-run.log",
+      "bytes": 8939,
+      "sha256": "634e57be4fc8c81539d75f394514a968a44856bf4538427e9ff2782a5e32ef35"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/red-second/qualify.py",
+      "archive_member": "red-second/qualify.py",
+      "bytes": 3571,
+      "sha256": "ff79b1fb9518737414dff4c0b22a988a1e290d0301462329c7fab8c35181196c"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/release-driver.log",
+      "archive_member": "release-driver.log",
+      "bytes": 27851,
+      "sha256": "37355a23a8344381d28f84d5bf930077fe4d9122f8d6c4f66fb6591c04dec7ff"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/runtime-unit-metadata.json",
+      "archive_member": "runtime-unit-metadata.json",
+      "bytes": 1139985,
+      "sha256": "e755494f8ca93f98a9f932342c87e8cc27244d54048c4aed3977344d19165d0d"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/selected-driver.log",
+      "archive_member": "selected-driver.log",
+      "bytes": 1131,
+      "sha256": "c52785119a0b5876b180cc51848fcf4e2534e40dcca358e8650ade814d4095b6"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/static-driver.log",
+      "archive_member": "static-driver.log",
+      "bytes": 1953,
+      "sha256": "1a058c7d36ceca76cef427e838893b7edf433c37780bfaab1d4efac4307c1078"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/unit-build.py",
+      "archive_member": "unit-build.py",
+      "bytes": 3863,
+      "sha256": "710748645354a4c7f23c5b984241742ffe85e29a0358172ac684c616482b346d"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/unit-profile-diff.json",
+      "archive_member": "unit-profile-diff.json",
+      "bytes": 956,
+      "sha256": "8d461e2c3cde86235f9543044a7e4d07ca1fc2e29fe030c146dcb36a85b4fd91"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/verified-final-units/build.json",
+      "archive_member": "verified-final-units/build.json",
+      "bytes": 8967,
+      "sha256": "42fef155bab34477f8f043e3d1e6ce8305cf0fdce3d455234275fe6552c9aa05"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/verified-final-units/build.log",
+      "archive_member": "verified-final-units/build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/verified-final-units/identity.json",
+      "archive_member": "verified-final-units/identity.json",
+      "bytes": 538,
+      "sha256": "fa6d7c7e7a49427bde39f5c55515e3b06fe8725ca78cd990c598c361fadd9d05"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/verified-final-units/run.json",
+      "archive_member": "verified-final-units/run.json",
+      "bytes": 338,
+      "sha256": "219c3f776561223c0a39a748b78d15893aee8f40009477e9b8964f053af9ee63"
+    },
+    {
+      "source": "/private/tmp/mech-scalar-paths-round22-20261029/verified-final-units/run.log",
+      "archive_member": "verified-final-units/run.log",
+      "bytes": 677,
+      "sha256": "f3097ae850b0804901a31ec23a9379110366dd32b77267e8889d50da39fa2a51"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round22-admission-unit-dependencies.json",
+      "archive_member": "validation/round22-admission-unit-dependencies.json",
+      "bytes": 914,
+      "sha256": "c963332ed5313474dbbae721891d9f62ebd18c26ae282bc5e2b16cd613c30209"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round22-admission-unit-dependencies.log",
+      "archive_member": "validation/round22-admission-unit-dependencies.log",
+      "bytes": 168990,
+      "sha256": "815273e43ac97cb6aa346af3c21b7c3933563af0d3dc04a1d9c47b78d2bb4b76"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round22-callback-unit-dependencies.json",
+      "archive_member": "validation/round22-callback-unit-dependencies.json",
+      "bytes": 1088,
+      "sha256": "b5507e52867364c0795a99af5836c634c166944461f3887c9bb5ac7057fe177a"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round22-callback-unit-dependencies.log",
+      "archive_member": "validation/round22-callback-unit-dependencies.log",
+      "bytes": 166938,
+      "sha256": "75b0bb881d80b77ecae26832702e0629bce6d1b007c115f41557098d143f13c4"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round22-checkpoint-fixed-release.json",
+      "archive_member": "validation/round22-checkpoint-fixed-release.json",
+      "bytes": 898,
+      "sha256": "6d70b849701e7fc51958af8c6de83255941bb8dbf45a5a3cede110d6dc652db0"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round22-checkpoint-fixed-release.log",
+      "archive_member": "validation/round22-checkpoint-fixed-release.log",
+      "bytes": 158034,
+      "sha256": "ef0fd1684d24722308965c89171a2838d1542cad5e4dfadc0bf846d8896da9af"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round22-fixed-static-architecture.json",
+      "archive_member": "validation/round22-fixed-static-architecture.json",
+      "bytes": 702,
+      "sha256": "2e6289676092427a3a2e0c769b28166b444ee6a90f65cf4f3525852204023f79"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round22-fixed-static-architecture.log",
+      "archive_member": "validation/round22-fixed-static-architecture.log",
+      "bytes": 1252,
+      "sha256": "a181eff42c0d2aca60b13e3315172ed155d2ad49121875c15322638a179abd1e"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round22-scalar-admission-release.json",
+      "archive_member": "validation/round22-scalar-admission-release.json",
+      "bytes": 898,
+      "sha256": "aae12509ab10bee5540f188c2b138be3ec8837ac1faa9477b8578ed1c11176d7"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round22-scalar-admission-release.log",
+      "archive_member": "validation/round22-scalar-admission-release.log",
+      "bytes": 158119,
+      "sha256": "1cb643c51660fa21ad66d061ed2b1ffa0d66f3f6d3e685af85ece0d883bb0f7d"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round22-static-architecture.json",
+      "archive_member": "validation/round22-static-architecture.json",
+      "bytes": 690,
+      "sha256": "d3be09009707e42f48ecc498fa98d90ac236dc00e045e3a9fc6927ee8894db17"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/validation/round22-static-architecture.log",
+      "archive_member": "validation/round22-static-architecture.log",
+      "bytes": 1252,
+      "sha256": "a181eff42c0d2aca60b13e3315172ed155d2ad49121875c15322638a179abd1e"
+    },
+    {
+      "source": "/private/tmp/mech-final-static-20261028.py",
+      "archive_member": "orchestration/mech-final-static-20261028.py",
+      "bytes": 888,
+      "sha256": "5305c8f3221a1692942d3a94d1acd2d300c5fa4ee0a53d9aed625b43dfa33e83"
+    },
+    {
+      "source": "/private/tmp/mech-linear-restack-20261026/run-check.py",
+      "archive_member": "orchestration/run-check.py",
+      "bytes": 1349,
+      "sha256": "346dda5dabc7183f4701a3ed533db907402c8a8545d869765f2a923fc0fd329c"
+    }
+  ]
+}
