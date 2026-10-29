@@ -1,0 +1,44 @@
+[
+  {
+    "file": "baseline.json",
+    "sha256": "1f0c3f7966c38a832c8edced5997d1a3b5bb973bb52e9894d14e3c598d899b38",
+    "original_sha256": "1f0c3f7966c38a832c8edced5997d1a3b5bb973bb52e9894d14e3c598d899b38",
+    "compressed": false
+  },
+  {
+    "file": "unit-profile-diff.json",
+    "sha256": "8d461e2c3cde86235f9543044a7e4d07ca1fc2e29fe030c146dcb36a85b4fd91",
+    "original_sha256": "8d461e2c3cde86235f9543044a7e4d07ca1fc2e29fe030c146dcb36a85b4fd91",
+    "compressed": false
+  },
+  {
+    "file": "red/nested-component-run.log",
+    "sha256": "ab4980dddc06af027ce89248f3b16c7e9ff980c1820a893dca5c75eda14d4888",
+    "original_sha256": "ab4980dddc06af027ce89248f3b16c7e9ff980c1820a893dca5c75eda14d4888",
+    "compressed": false
+  },
+  {
+    "file": "red/nested-component-run.json",
+    "sha256": "e38bfb1a5cfeab4e7568002b71bbbb129ca13bb0611a849d452d2a217d1b4775",
+    "original_sha256": "e38bfb1a5cfeab4e7568002b71bbbb129ca13bb0611a849d452d2a217d1b4775",
+    "compressed": false
+  },
+  {
+    "file": "red-second/nested-component-run.log",
+    "sha256": "634e57be4fc8c81539d75f394514a968a44856bf4538427e9ff2782a5e32ef35",
+    "original_sha256": "634e57be4fc8c81539d75f394514a968a44856bf4538427e9ff2782a5e32ef35",
+    "compressed": false
+  },
+  {
+    "file": "red-second/nested-component-run.json",
+    "sha256": "aa56beb5de102dfa13883b3c6cdb18fae24b8ad06947dc13291c2d00556308e1",
+    "original_sha256": "aa56beb5de102dfa13883b3c6cdb18fae24b8ad06947dc13291c2d00556308e1",
+    "compressed": false
+  },
+  {
+    "file": "red-second/nested-component-build.json",
+    "sha256": "6249035346c6013754cf49b8cdcea512d742d5bcc6c8e40fbb4c0d428ea59ff8",
+    "original_sha256": "6249035346c6013754cf49b8cdcea512d742d5bcc6c8e40fbb4c0d428ea59ff8",
+    "compressed": false
+  }
+]
