@@ -2704,12 +2704,24 @@ impl<P> AdmittedMutationPlan<P> {
 impl ResidentBudgetMeter {
     /// Immutable layout bytes are the complete ordered visitor's successful
     /// debit. A missed preview keeps its original error and spent prefix.
-    #[cfg(feature = "native-artifact")]
     pub(super) fn precharge_schema_layout(
         &mut self,
         schemas: &SchemaTable,
     ) -> Result<u64, ResidentKernelError> {
-        if let Some(bytes) = schemas.clone_allocation_bound_bytes()
+        // Ordinary resident meters can also run under shared worker credit.
+        // Its availability can change between preview and debit, so preserve
+        // the incremental visitor and its denied prefix in those scopes.
+        #[cfg(feature = "native-artifact")]
+        let serial = CONTROL_WORK_SCOPE.with(|scope| {
+            scope
+                .borrow()
+                .as_ref()
+                .is_none_or(|scope| scope.total.borrow().worker.is_none())
+        });
+        #[cfg(not(feature = "native-artifact"))]
+        let serial = true;
+        if serial
+            && let Some(bytes) = schemas.clone_allocation_bound_bytes()
             && self.can_charge_compute_and_nodes(bytes, 0)
         {
             self.charge_compute_work(bytes)?;
