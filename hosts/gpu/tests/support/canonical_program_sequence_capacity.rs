@@ -4,6 +4,108 @@ use mech_core::{ManagedMemoryBudget, ValueData, ValueDataDraft as Data};
 use mech_gpu::native_artifact::JitProgramArtifact;
 
 #[test]
+fn reserved_append_recurrence_selects_the_unchanged_path_guard_builder() {
+    let source = format!(
+        "{}\nrun(capacity<u64>, top<u64>, end<u64>) => (out<[u64]>) :=\n  nodes := sequence/with-capacity(0u64, capacity)\n  guarded := optimal-path-guards(nodes, top, end)\n  out := sequence/append(guarded, 0u64).\nrun(capacity<u64>, top<u64>, end<u64>)\n",
+        include_str!("../fixtures/native/deflate-optimal-path.mec")
+    );
+    for (form, artifact) in ["original", "decoded"]
+        .into_iter()
+        .zip(artifacts(&source).0)
+    {
+        let mode = mech_gpu::native_artifact::NativeProgramLimitMode::NoLimits;
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        for (capacity, count) in [
+            (288u64, 0u64),
+            (305257, 0),
+            (288, 1),
+            (305257, 1),
+            (288, 257),
+            (305257, 257),
+        ] {
+            let memory = mode.memory_budget();
+            let args = inputs(
+                &artifact,
+                &[
+                    ("capacity", Data::U64(capacity)),
+                    ("top", Data::U64(8 + count)),
+                    ("end", Data::U64(8)),
+                ],
+                &memory,
+            );
+            let mut output = vec![None; artifact.outputs().len()];
+            let (execution, requests, bytes) = allocation_probe::measured_with_bytes(|| {
+                jit.evaluate_into(&args, &mut output, mode.execution(), &memory)
+            });
+            let report = execution.unwrap();
+            let value = output.last().unwrap().as_ref().unwrap();
+            let expected = Data::Matrix(
+                (0..count)
+                    .map(|_| Data::U64(2147483648))
+                    .chain([Data::U64(0)])
+                    .collect(),
+            );
+            assert_eq!(value.canonical_data_draft().unwrap(), expected);
+            let ValueData::Matrix(matrix) = value.data() else {
+                panic!()
+            };
+            assert_eq!(matrix.unsigned_buffer_capacity(), Some(capacity as usize));
+            if capacity == 288 && count <= 1 {
+                equal(
+                    &artifact,
+                    &output,
+                    &reference_result(&artifact, &args).unwrap(),
+                );
+            } else {
+                // The ordinary resident policy rejects the real reservation
+                // or the complete 257-step call. Keep those baseline allowances
+                // intact; NoLimits native uses the exact literal above.
+                let error = reference_result(&artifact, &args).unwrap_err();
+                assert!(error.contains("ResourceLimit"));
+                assert!(error.contains(if capacity == 288 {
+                    "ComparisonWork"
+                } else {
+                    "ComputeWork"
+                }));
+            }
+            println!(
+                "{}",
+                serde_json::json!({"witness":"pinned-reserved-path-guards","form":form,"appends":count,"capacity":capacity,"allocation_requests":requests,"requested_bytes":bytes,"visits":report.visits,"work":report.work})
+            );
+            drop((args, output));
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
+        let metadata = mech_gpu::native_artifact::emit_program_object(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+        )
+        .unwrap()
+        .metadata();
+        assert!(
+            metadata["numeric_write_regions"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|r| r["proof"]["actions"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|a| { a[1].as_object().is_some_and(|op| op.contains_key("Append")) })),
+            "missing native append recurrence: {}",
+            metadata["readonly_numeric_candidates"]
+        );
+    }
+}
+
+#[test]
 fn reserve_append_clear_agrees_in_resident_and_native_original_and_decoded() {
     for width in [8, 16, 32, 64] {
         let source = format!(
