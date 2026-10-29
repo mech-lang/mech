@@ -19,6 +19,7 @@ pub(super) struct FrameGeometry {
     metadata: Option<u64>,
     normalization: Option<mech_core::snapshot::CompositeBindingCost>,
     shape: Option<super::frame_shape::FrameShapeRecipe>,
+    admission: Option<super::frame_admission::FrameAdmissionRecipe>,
 }
 impl FrameGeometry {
     pub(super) fn derive(
@@ -56,6 +57,7 @@ impl FrameGeometry {
                 schemas,
             ),
             shape: super::frame_shape::FrameShapeRecipe::derive(output, &inputs, schemas),
+            admission: super::frame_admission::FrameAdmissionRecipe::derive(&inputs, schemas),
         }))
     }
 }
@@ -340,76 +342,88 @@ impl NativePreparedLibraryCall {
                 let _admission = memory.reserve_capacity(metadata)?;
                 let _nodes = memory.reserve_nodes(nodes)?;
                 let mut meter = ResidentBudgetMeter::for_native_projection(work, limits)?;
-                let mut logical_bytes = 0u64;
-                for (index, value) in inputs.iter().enumerate() {
-                    let footprint = match value {
-                        Some(value) => {
-                            if words.is_some_and(|bits| bits[index] != 0)
-                                || value.schema_key() != self.input_keys[index]
-                                || value.memory_budget_retained_bytes(&memory).is_none()
-                            {
-                                return Err(InvokeError::InvalidInput);
-                            }
-                            value
-                                .validate_against(&self.schemas)
-                                .map_err(|_| InvokeError::InvalidInput)?;
-                            measure_borrowed_canonical_value_footprint(
-                                &mut meter,
-                                value,
-                                &self.schemas,
-                            )?
-                        }
-                        None => {
-                            let schema = &self.template.inputs()[index];
-                            if !schema.dimension_parameters().is_empty() {
-                                return Err(InvokeError::InvalidInput);
-                            }
-                            let kind = NativeScalarKind::from_schema_body(schema.body())
-                                .ok_or(InvokeError::InvalidInput)?;
-                            let bits = words.ok_or(InvokeError::InvalidInput)?[index];
-                            let value = NativeScalarValue::from_bits(kind, bits)
-                                .ok_or(InvokeError::InvalidInput)?;
-                            measure_native_scalar_frame_footprint(&mut meter, schema.body(), value)?
-                        }
-                    };
-                    logical_bytes = logical_bytes
-                        .checked_add(footprint.retained_bytes)
-                        .ok_or(InvokeError::InvalidInput)?;
-                }
-                if let Some(recipe) = &geometry.shape {
-                    recipe.validate(&self.schemas, |i| inputs[i].as_ref().map(Value::shape))?;
-                } else {
-                    let children = inputs
-                        .iter()
-                        .enumerate()
-                        .map(|(index, value)| {
-                            if let Some(value) = value {
-                                Ok((value.schema(), value.shape().clone()))
-                            } else {
-                                let schema = contract.inputs[index].schema;
-                                let shape = self
-                                    .schemas
-                                    .get(schema)
-                                    .ok_or(InvokeError::InvalidInput)?
-                                    .instantiate_shape(Box::new([]))
+                let admitted = match (&geometry.admission, &geometry.shape) {
+                    (Some(recipe), Some(shape)) => {
+                        recipe.try_admit(self, inputs, words, shape, &memory, &mut meter)?
+                    }
+                    _ => None,
+                };
+                let mut logical_bytes = admitted.unwrap_or(0);
+                if admitted.is_none() {
+                    for (index, value) in inputs.iter().enumerate() {
+                        let footprint = match value {
+                            Some(value) => {
+                                if words.is_some_and(|bits| bits[index] != 0)
+                                    || value.schema_key() != self.input_keys[index]
+                                    || value.memory_budget_retained_bytes(&memory).is_none()
+                                {
+                                    return Err(InvokeError::InvalidInput);
+                                }
+                                value
+                                    .validate_against(&self.schemas)
                                     .map_err(|_| InvokeError::InvalidInput)?;
-                                Ok((schema, shape))
+                                measure_borrowed_canonical_value_footprint(
+                                    &mut meter,
+                                    value,
+                                    &self.schemas,
+                                )?
                             }
-                        })
-                        .collect::<Result<Vec<_>, InvokeError>>()?;
-                    let shape = CompositeSnapshotConstructor::shape_for_children(
-                        output,
-                        &children,
-                        &self.schemas,
-                    )
-                    .map_err(|_| InvokeError::InvalidInput)?;
-                    let _constructor = CompositeSnapshotConstructor::bind(
-                        output,
-                        shape,
-                        &children,
-                        self.schemas.clone(),
-                    )
-                    .map_err(|_| InvokeError::InvalidInput)?;
+                            None => {
+                                let schema = &self.template.inputs()[index];
+                                if !schema.dimension_parameters().is_empty() {
+                                    return Err(InvokeError::InvalidInput);
+                                }
+                                let kind = NativeScalarKind::from_schema_body(schema.body())
+                                    .ok_or(InvokeError::InvalidInput)?;
+                                let bits = words.ok_or(InvokeError::InvalidInput)?[index];
+                                let value = NativeScalarValue::from_bits(kind, bits)
+                                    .ok_or(InvokeError::InvalidInput)?;
+                                measure_native_scalar_frame_footprint(
+                                    &mut meter,
+                                    schema.body(),
+                                    value,
+                                )?
+                            }
+                        };
+                        logical_bytes = logical_bytes
+                            .checked_add(footprint.retained_bytes)
+                            .ok_or(InvokeError::InvalidInput)?;
+                    }
+                    if let Some(recipe) = &geometry.shape {
+                        recipe.validate(&self.schemas, |i| inputs[i].as_ref().map(Value::shape))?;
+                    } else {
+                        let children = inputs
+                            .iter()
+                            .enumerate()
+                            .map(|(index, value)| {
+                                if let Some(value) = value {
+                                    Ok((value.schema(), value.shape().clone()))
+                                } else {
+                                    let schema = contract.inputs[index].schema;
+                                    let shape = self
+                                        .schemas
+                                        .get(schema)
+                                        .ok_or(InvokeError::InvalidInput)?
+                                        .instantiate_shape(Box::new([]))
+                                        .map_err(|_| InvokeError::InvalidInput)?;
+                                    Ok((schema, shape))
+                                }
+                            })
+                            .collect::<Result<Vec<_>, InvokeError>>()?;
+                        let shape = CompositeSnapshotConstructor::shape_for_children(
+                            output,
+                            &children,
+                            &self.schemas,
+                        )
+                        .map_err(|_| InvokeError::InvalidInput)?;
+                        let _constructor = CompositeSnapshotConstructor::bind(
+                            output,
+                            shape,
+                            &children,
+                            self.schemas.clone(),
+                        )
+                        .map_err(|_| InvokeError::InvalidInput)?;
+                    }
                 }
                 // Retain the logical output bound even though no payload is copied.
                 if let Some(violation) = mech_core::evaluate_call_memory_budget(
