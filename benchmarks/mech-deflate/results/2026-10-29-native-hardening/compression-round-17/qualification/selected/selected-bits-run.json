@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-binding-descriptors-round17-20261029/primary/selected-bits-tests",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.9359653750434518,
+  "binary_sha256": "ca9cb2a0014d82304ae5805110c0160262086ed7b40cb8417c6fec4a14d4957e",
+  "skipped_coverage": null
+}
