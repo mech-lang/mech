@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-predicate-versions-round15-20261029/baseline/component-v2-tests",
+    "predicate_versions_select_generic_and_unchanged_cumulative_leaf",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit_code": 101,
+  "elapsed_seconds": 1.5544424580875784,
+  "compiler": "8aefbd86685850d1d6558514ee059f80ffd8936c",
+  "expected": "current conservative older-array rejection"
+}
