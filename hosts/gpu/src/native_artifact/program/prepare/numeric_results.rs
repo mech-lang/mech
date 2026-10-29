@@ -61,14 +61,18 @@ pub(super) fn derive(
             array: root(None, ty.schema())?,
         });
     }
-    if !matches!(ty.definition().body(), SchemaBody::Tuple(_)) {
-        return Err("numeric result is not a scalar, array, or private flat tuple");
+    if !matches!(
+        ty.definition().body(),
+        SchemaBody::Tuple(_) | SchemaBody::Record(_)
+    ) {
+        return Err("numeric result is not a scalar, array, or private flat frame");
     }
-    // The connected private-use proof rejects escaping/nested composites.
-    // Records and nested composites remain outside this flat tuple proof.
+    // The connected private-use proof supplies the exact tuple/record field
+    // order and rejects public escape. Both use the same per-field roots and
+    // terminal freshness proof; nested composites remain unsupported here.
     let fields = frames
         .fields(value)
-        .ok_or("numeric result tuple escapes or lacks exact private fields")?;
+        .ok_or("numeric result frame escapes or lacks exact private fields")?;
     if fields
         .iter()
         .any(|f| matches!(f.lane(), Lane::Composite { .. }))
@@ -81,7 +85,7 @@ pub(super) fn derive(
         .filter(|(_, f)| matches!(f.lane(), Lane::Managed { .. }))
         .collect::<Vec<_>>();
     if managed.is_empty() {
-        return Err("numeric result tuple requires an array owner");
+        return Err("numeric result frame requires an array owner");
     }
     let arrays = managed
         .into_iter()
