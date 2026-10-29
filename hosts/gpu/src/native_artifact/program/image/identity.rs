@@ -246,7 +246,9 @@ fn selected_template(
 // structural bindings that the private leaf-shape recipe cannot represent.
 // IR127 adds proved reserved-capacity appends, current length/capacity lanes,
 // header capacity fallback and final initialized-prefix reconciliation.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 127;
+// IR128 derives dead canonical alias candidates through structural transport;
+// original last-use barriers, runtime identity and Core exclusivity remain.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 128;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
