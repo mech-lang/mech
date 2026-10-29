@@ -1,0 +1,5 @@
+# Separately reviewable ABI assertion maintenance
+
+The complete maintained GPU runtime cohort was run on the clean parent binary4857600c48 and the initial scalar-path compilerc8700e17 with identical selected dependencies. Parent297 pass/4 fail; initial new298 pass/4 fail. Three failures are stale private-program ABI pins34: line-scanner image identity,structural-map identity,and worker private-frame ABI. The parent actually has ABI35; this round deliberately advances to ABI36 for the admission result-word contract. The fourth failure is an intentionally absent statistics provider in this selected-operation test profile.
+
+Update only those three private ABI assertions to36. Keep the frozen scalar prefix,frame offsets,signature andsemantic/output expectations unchanged. No allowance changes. This maintenance is separate from scalar grouping and the introduced activation checkpoint repair. Record the clean-parent and current raw executions in the closure packet. Run the repaired tests past their former early assertion and retain the stats omission explicitly; do not widen the production catalog for an unrelated test.
