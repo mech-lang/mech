@@ -36,14 +36,7 @@ fn fund_metadata(kernel: &BoundResidentKernel) -> Result<u64, ResidentKernelErro
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidOutput)?;
     let mut meter = super::super::budget::ResidentBudgetMeter::default();
-    let schema_bytes = schemas
-        .clone_allocation_bound_bytes_with_precharge(|bytes| meter.charge_compute_work(bytes))
-        .map_err(|error| match error {
-            mech_core::SchemaAllocationBoundError::Precharge(error) => error,
-            mech_core::SchemaAllocationBoundError::ArithmeticOverflow => {
-                ResidentKernelError::InvalidShape
-            }
-        })?;
+    let schema_bytes = meter.precharge_schema_layout(schemas)?;
     // Source/selected/target closure, dimension witnesses and their growth
     // coexist. This visits schema metadata, never array elements.
     let bytes = schema_bytes

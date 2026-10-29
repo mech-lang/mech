@@ -302,3 +302,135 @@ fn native_schema_precharge_keeps_shared_workers_incremental() {
     drop(parent);
     assert_eq!(memory.used_bytes(), 0);
 }
+
+fn resident_schema_precharge(
+    schemas: &SchemaTable,
+    legacy: bool,
+    cap: u64,
+    account: u64,
+    call: u64,
+    base: u64,
+    shared_worker: bool,
+) -> (
+    Result<u64, ResidentKernelError>,
+    KernelCostEstimate,
+    (u64, u64),
+) {
+    let memory = mech_core::ManagedMemoryBudget::new(1 << 20);
+    let parent = NativeLibraryWorkBudget::new(account, 1000, &memory).unwrap();
+    let group = shared_worker.then(|| parent.reserve_worker_group(account, 1000).unwrap());
+    let work = match &group {
+        Some(group) => {
+            NativeLibraryWorkBudget::from_worker_loan(group.worker_loan().unwrap()).unwrap()
+        }
+        None => parent.clone(),
+    };
+    let mut plan = detached_turn_plan(ResourceDemand::default()).unwrap();
+    plan.budget_limits.max_compute_work = Some(cap);
+    let answer = work
+        .with_call_limits(call, 1000, || {
+            with_resident_turn_plan(plan, || {
+                let mut meter = ResidentBudgetMeter::default();
+                meter.charge_compute_work(base).unwrap();
+                let result = if legacy {
+                    schemas
+                        .clone_allocation_bound_bytes_with_precharge(|bytes| {
+                            meter.charge_compute_work(bytes)
+                        })
+                        .map_err(|error| match error {
+                            mech_core::SchemaAllocationBoundError::Precharge(error) => error,
+                            mech_core::SchemaAllocationBoundError::ArithmeticOverflow => {
+                                ResidentKernelError::InvalidShape
+                            }
+                        })
+                } else {
+                    meter.precharge_schema_layout(schemas)
+                };
+                (result, meter.estimate(), work.used())
+            })
+        })
+        .unwrap();
+    drop(work);
+    if let Some(group) = group {
+        assert_eq!(group.finish().unwrap(), answer.2);
+    }
+    assert_eq!(parent.used(), answer.2);
+    drop(parent);
+    assert_eq!(memory.used_bytes(), 0);
+    answer
+}
+
+#[test]
+fn resident_schema_precharge_matches_ordered_visitor_at_every_denial_boundary() {
+    let schemas = layout_fixture();
+    let mut contributions = Vec::new();
+    let full = schemas
+        .clone_allocation_bound_bytes_with_precharge(|bytes| {
+            contributions.push(bytes);
+            Ok::<_, ResidentKernelError>(())
+        })
+        .unwrap();
+    assert_eq!(Some(full), schemas.clone_allocation_bound_bytes());
+    let base = 17;
+    let enough = base + full + 1;
+    let mut prefix = base;
+    let mut caps = vec![base, enough - 2, enough - 1, enough];
+    for part in contributions {
+        if part > 0 {
+            caps.extend([prefix + part - 1, prefix + part]);
+        }
+        prefix += part;
+    }
+    for cap in caps {
+        for (policy, account, call) in [
+            (cap, enough, enough),
+            (enough, cap, enough),
+            (enough, enough, cap),
+        ] {
+            assert_eq!(
+                resident_schema_precharge(&schemas, false, policy, account, call, base, false),
+                resident_schema_precharge(&schemas, true, policy, account, call, base, false),
+                "policy {policy}, account {account}, call {call}"
+            );
+        }
+    }
+    assert_eq!(
+        resident_schema_precharge(
+            &schemas,
+            false,
+            u64::MAX,
+            u64::MAX,
+            u64::MAX,
+            u64::MAX - 1,
+            false
+        ),
+        resident_schema_precharge(
+            &schemas,
+            true,
+            u64::MAX,
+            u64::MAX,
+            u64::MAX,
+            u64::MAX - 1,
+            false
+        )
+    );
+}
+
+#[test]
+fn resident_schema_precharge_keeps_shared_workers_incremental() {
+    let schemas = layout_fixture();
+    let full = schemas.clone_allocation_bound_bytes().unwrap();
+    for cap in [full - 1, full, full + 1] {
+        for (policy, account, call) in [(cap, full, full), (full, cap, full), (full, full, cap)] {
+            assert_eq!(
+                resident_schema_precharge(&schemas, false, policy, account, call, 0, true),
+                resident_schema_precharge(&schemas, true, policy, account, call, 0, true)
+            );
+        }
+    }
+}
+
+#[test]
+fn resident_schema_precharge_does_not_preview_without_a_turn() {
+    assert!(!ResidentBudgetMeter::default().can_charge_compute_and_nodes(1, 0));
+}
