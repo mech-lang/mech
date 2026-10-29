@@ -22,6 +22,7 @@ fn reserved_append_recurrence_selects_the_unchanged_path_guard_builder() {
             mode.compilation(),
         )
         .unwrap();
+        let mut append_costs = Vec::new();
         for (capacity, count) in [
             (288u64, 0u64),
             (305257, 0),
@@ -45,6 +46,9 @@ fn reserved_append_recurrence_selects_the_unchanged_path_guard_builder() {
                 jit.evaluate_into(&args, &mut output, mode.execution(), &memory)
             });
             let report = execution.unwrap();
+            if count > 0 {
+                append_costs.push((capacity, count, requests, bytes));
+            }
             let value = output.last().unwrap().as_ref().unwrap();
             let expected = Data::Matrix(
                 (0..count)
@@ -83,6 +87,21 @@ fn reserved_append_recurrence_selects_the_unchanged_path_guard_builder() {
             assert_eq!(
                 (memory.used_bytes(), memory.retained_snapshot_nodes()),
                 (0, 0)
+            );
+        }
+        for capacity in [288, 305257] {
+            let one = append_costs
+                .iter()
+                .find(|&&(cap, count, _, _)| cap == capacity && count == 1)
+                .unwrap();
+            let many = append_costs
+                .iter()
+                .find(|&&(cap, count, _, _)| cap == capacity && count == 257)
+                .unwrap();
+            assert_eq!(
+                (one.2, one.3),
+                (many.2, many.3),
+                "reserved native appends must not allocate per iteration"
             );
         }
         let metadata = mech_gpu::native_artifact::emit_program_object(
