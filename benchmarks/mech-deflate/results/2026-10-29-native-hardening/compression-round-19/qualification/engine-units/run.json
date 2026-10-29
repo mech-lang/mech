@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/private/tmp/mech-scalar-records-round19-20261029/engine-units/engine-tests",
+    "resident::budget::",
+    "native_projection_meter_tests",
+    "frame_recipe",
+    "text_line_",
+    "shared_boolean_edge_facts",
+    "native_collection_",
+    "native_text_line_",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 7.199761166935787,
+  "binary_sha256": "5a39f7f5f697a9fab0d6c760b3ea42b08ffdf7e80945a02ac07d7939bd5c6237"
+}

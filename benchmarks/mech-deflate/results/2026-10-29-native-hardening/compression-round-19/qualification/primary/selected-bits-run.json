@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-scalar-records-round19-20261029/primary/selected-bits-tests",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.9347008750773966,
+  "binary_sha256": "15021e55f30a927a653186ba29c82f2aa3077309d050cef16f23144df953e6e7",
+  "skipped_coverage": null
+}
