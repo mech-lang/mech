@@ -1,0 +1,32 @@
+{
+  "name": "round17-prepared-descriptors-release",
+  "command": [
+    "cargo",
+    "build",
+    "--release",
+    "--locked",
+    "--offline",
+    "--manifest-path",
+    "benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--message-format=json",
+    "--bin",
+    "native_frame_transport",
+    "--bin",
+    "artifact_review"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "3615e260d96185ffbd3b7c57a9b7613742ac8207",
+  "dirty": " M src/core/src/type_system/resolved_value.rs\n M src/engine/src/resident/general/native_collection_calls.rs\n M src/engine/src/resident/general/native_collection_line_reads.rs\n M src/engine/src/resident/general/native_collection_prepared.rs\n M src/engine/src/resident/general/native_collection_prepared_image.rs\n M src/engine/src/resident/general/native_collection_selected_lines.rs\n M src/engine/src/resident/general/native_collection_string_span.rs\n M src/engine/src/resident/general/native_collection_text_lines.rs\n",
+  "exit": 0,
+  "seconds": 1004.1947889328003,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round17-prepared-descriptors-release.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}
