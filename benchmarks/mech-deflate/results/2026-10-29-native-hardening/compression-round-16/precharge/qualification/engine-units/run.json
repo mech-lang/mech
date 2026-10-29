@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-record-precharge-round16-20261029/engine-units/engine-tests",
+    "resident::budget::",
+    "native_projection_meter_tests",
+    "frame_recipe",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 1.143326416844502,
+  "binary_sha256": "a824ec67aeb30c97813affd5afc0dff0bd27d692763497b590c82d7c66d452c6"
+}

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/private/tmp/mech-record-precharge-round16-20261029/primary/current",
+    "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+    "109"
+  ],
+  "repetitions": 109,
+  "sample_command": [
+    "sample",
+    "73868",
+    "2",
+    "-file",
+    "/private/tmp/mech-record-precharge-round16-20261029/primary/after.sample.txt"
+  ],
+  "sample_exit": 0,
+  "output": "Sampling process 73868 for 2 seconds with 1 millisecond of run time between samples\nSampling completed, processing symbols...\nSample analysis of process 73868 written to file /private/tmp/mech-record-precharge-round16-20261029/primary/after.sample.txt\n",
+  "all_observations_excluded_from_primary": true
+}

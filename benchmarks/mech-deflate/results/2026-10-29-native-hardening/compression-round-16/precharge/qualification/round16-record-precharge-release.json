@@ -1,0 +1,32 @@
+{
+  "name": "round16-record-precharge-release",
+  "command": [
+    "cargo",
+    "build",
+    "--release",
+    "--locked",
+    "--offline",
+    "--manifest-path",
+    "benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--message-format=json",
+    "--bin",
+    "native_frame_transport",
+    "--bin",
+    "artifact_review"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "c6054fcf72be0a196d700899360283108a29ccb8",
+  "dirty": " M src/engine/src/resident/budget.rs\n M src/engine/src/resident/native_projection_meter_tests.rs\n M src/engine/src/resident/numeric/aggregate_access.rs\n",
+  "exit": 0,
+  "seconds": 458.17349219322205,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round16-record-precharge-release.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}
