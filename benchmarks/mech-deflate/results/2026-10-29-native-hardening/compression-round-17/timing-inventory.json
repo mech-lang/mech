@@ -1,0 +1,236 @@
+[
+  {
+    "path": "primary/build.py",
+    "sha256": "21f2eec6afe99bf82574cfac5228f98937c7050fb90a92f34faf8af35bd72c66",
+    "original_sha256": "21f2eec6afe99bf82574cfac5228f98937c7050fb90a92f34faf8af35bd72c66",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/build.py"
+  },
+  {
+    "path": "primary/run.py",
+    "sha256": "0d749c8694d6110d92f015615ed40307df8d1da235dea108d0946aa0d1aaa54e",
+    "original_sha256": "0d749c8694d6110d92f015615ed40307df8d1da235dea108d0946aa0d1aaa54e",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/run.py"
+  },
+  {
+    "path": "primary/current-build.json",
+    "sha256": "53388608d6e1ce61634aadca815603bf31543e8c5d427bad477eaa0e5b18fc89",
+    "original_sha256": "53388608d6e1ce61634aadca815603bf31543e8c5d427bad477eaa0e5b18fc89",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/current-build.json"
+  },
+  {
+    "path": "primary/current-build.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/current-build.log"
+  },
+  {
+    "path": "primary/commands.json",
+    "sha256": "d09049448d2da78872626b05c825c6ddb918366a5e138bc671b774861a831ca8",
+    "original_sha256": "d09049448d2da78872626b05c825c6ddb918366a5e138bc671b774861a831ca8",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/commands.json"
+  },
+  {
+    "path": "primary/results.json",
+    "sha256": "9b2aaf31942cd055d17cf1cd40afcf54a01a80c552082038415ae3b283688dde",
+    "original_sha256": "9b2aaf31942cd055d17cf1cd40afcf54a01a80c552082038415ae3b283688dde",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/results.json"
+  },
+  {
+    "path": "primary/outer.log",
+    "sha256": "fe33d0427a7a37a77dfb8040f8c238f918efb922fe515e0dabb0b97394e5c34d",
+    "original_sha256": "fe33d0427a7a37a77dfb8040f8c238f918efb922fe515e0dabb0b97394e5c34d",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/outer.log"
+  },
+  {
+    "path": "primary/before.stdout",
+    "sha256": "09b510cb06d14a9e05282e0c9c2efd5d5cb236a5df8e96fa0999fe686ff8433f",
+    "original_sha256": "09b510cb06d14a9e05282e0c9c2efd5d5cb236a5df8e96fa0999fe686ff8433f",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/before.stdout"
+  },
+  {
+    "path": "primary/before.stderr",
+    "sha256": "1ad30585255543c30a6ecbd7ca80bb55cd840171a41d0dcab5f519dd59e59d25",
+    "original_sha256": "1ad30585255543c30a6ecbd7ca80bb55cd840171a41d0dcab5f519dd59e59d25",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/before.stderr"
+  },
+  {
+    "path": "primary/after.stdout",
+    "sha256": "5decba145c23de577cf872dc43e5deb24540287b675d1277b8d316406d16bce7",
+    "original_sha256": "5decba145c23de577cf872dc43e5deb24540287b675d1277b8d316406d16bce7",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/after.stdout"
+  },
+  {
+    "path": "primary/after.stderr",
+    "sha256": "a98f4f13351033a0e046d355e48abfb4678d9c434ee4a6a0e553a107f645f969",
+    "original_sha256": "a98f4f13351033a0e046d355e48abfb4678d9c434ee4a6a0e553a107f645f969",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/after.stderr"
+  },
+  {
+    "path": "primary/roc.stdout.gz",
+    "sha256": "c423bacfeff1f70e313610456aeba4b64942cf5c821addf8bec32a7612990bfb",
+    "original_sha256": "e964a6bc9e638f9b3bd28a887e44d5af364d1be54de0999327a50a082ac0ea14",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/roc.stdout"
+  },
+  {
+    "path": "primary/roc.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/roc.stderr"
+  },
+  {
+    "path": "primary/profile.stdout",
+    "sha256": "4c83b65f545e5dc11ebac93f33818910daefe3d156ec221dd2f0894618081e6e",
+    "original_sha256": "4c83b65f545e5dc11ebac93f33818910daefe3d156ec221dd2f0894618081e6e",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/profile.stdout"
+  },
+  {
+    "path": "primary/profile.stderr",
+    "sha256": "09e8c14c7541d7a0a143a27b7fdcd9b43b54528bd4b58a15f7514d35d7d89c7e",
+    "original_sha256": "09e8c14c7541d7a0a143a27b7fdcd9b43b54528bd4b58a15f7514d35d7d89c7e",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/profile.stderr"
+  },
+  {
+    "path": "primary/profile-command.json",
+    "sha256": "9faab0967ae42f059629ba35fee5260340e2b2f4c23f711162b05783ef702f0d",
+    "original_sha256": "9faab0967ae42f059629ba35fee5260340e2b2f4c23f711162b05783ef702f0d",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/profile-command.json"
+  },
+  {
+    "path": "primary/after.sample.txt.gz",
+    "sha256": "a6466c4d75bf6dceb2e593200628c49d002263ef603c90af2410d6899e2b13b7",
+    "original_sha256": "8ffa9482080d230a903cc3badff366ae71d22d2c26edcfa0f3b9cb5794eb17d8",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/after.sample.txt"
+  },
+  {
+    "path": "primary/inclusive-profile.py",
+    "sha256": "6434432f47a40239849982bd6f916379fcf85ea195b608f134eac8234561f341",
+    "original_sha256": "6434432f47a40239849982bd6f916379fcf85ea195b608f134eac8234561f341",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/inclusive-profile.py"
+  },
+  {
+    "path": "primary/inclusive-summary.txt",
+    "sha256": "fa9c1773e72d08fcb385d7ca15f48fc23040a347a0413dfb75727bdb893795d6",
+    "original_sha256": "fa9c1773e72d08fcb385d7ca15f48fc23040a347a0413dfb75727bdb893795d6",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/inclusive-summary.txt"
+  },
+  {
+    "path": "primary/after-inclusive-profile.json",
+    "sha256": "99741c39a977d29d3aae64a7ba00e57c20e5e9afb3e48c92ecef263a25d42172",
+    "original_sha256": "99741c39a977d29d3aae64a7ba00e57c20e5e9afb3e48c92ecef263a25d42172",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/after-inclusive-profile.json"
+  },
+  {
+    "path": "qualification/partition-profile.py",
+    "sha256": "586ee040800065b5a0994bf82e55634ccc479264475f1b4c36ce5b5beb2e92ab",
+    "original_sha256": "586ee040800065b5a0994bf82e55634ccc479264475f1b4c36ce5b5beb2e92ab",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/partition-profile.py"
+  },
+  {
+    "path": "qualification/final-partitioned-profile.json",
+    "sha256": "8da958ca30b199d9d35e350ca6916aded71ca89bf40bcd21d55f75582195831e",
+    "original_sha256": "8da958ca30b199d9d35e350ca6916aded71ca89bf40bcd21d55f75582195831e",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/final-partitioned-profile.json"
+  },
+  {
+    "path": "qualification/core-tests.py",
+    "sha256": "101520cd234ce0e25b78f4d9301da2deaa5904a8e5f9237e62f4cf23f3be0939",
+    "original_sha256": "101520cd234ce0e25b78f4d9301da2deaa5904a8e5f9237e62f4cf23f3be0939",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/core-tests.py"
+  },
+  {
+    "path": "qualification/core-build.json",
+    "sha256": "fcc261bdd6a97bde7a73a6b946080213a05b903337d5a70f348ba0f7d131b39f",
+    "original_sha256": "fcc261bdd6a97bde7a73a6b946080213a05b903337d5a70f348ba0f7d131b39f",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/core-build.json"
+  },
+  {
+    "path": "qualification/core-build.log.gz",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/core-build.log"
+  },
+  {
+    "path": "qualification/core-run.json",
+    "sha256": "bdaea2de04c3e0c0723e22053bf77373ede217f062d4c1ff740b595a552c5e08",
+    "original_sha256": "bdaea2de04c3e0c0723e22053bf77373ede217f062d4c1ff740b595a552c5e08",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/core-run.json"
+  },
+  {
+    "path": "qualification/core-run.log.gz",
+    "sha256": "59df564bdc49724f134707f302bc12e53652948826da746e3638bd47a66dcd4d",
+    "original_sha256": "cfb4beec4af23b4f99c6468a9d30b7f808df1002742e8f9b2448342b980a5307",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/core-run.log"
+  },
+  {
+    "path": "qualification/static.log.gz",
+    "sha256": "5f05f6bda086f544f8deb0ecd499d028be5cd47792e65493d9ac2485d44ce88b",
+    "original_sha256": "a181eff42c0d2aca60b13e3315172ed155d2ad49121875c15322638a179abd1e",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/static.log"
+  },
+  {
+    "path": "qualification/fresh-source-artifact.stdout",
+    "sha256": "9af8b9f1c359ad93d21b732f4f084b7edcc45797468fa55090e2332c204f05d4",
+    "original_sha256": "9af8b9f1c359ad93d21b732f4f084b7edcc45797468fa55090e2332c204f05d4",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/fresh-source-artifact.stdout"
+  },
+  {
+    "path": "qualification/fresh-source-artifact.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/fresh-source-artifact.stderr"
+  },
+  {
+    "path": "qualification/focused/qualify.py",
+    "sha256": "193b9b23d1e1d86ff7bb6b09a1e6210cc2aa4792f7d2756740d2162f0c0bef2b",
+    "original_sha256": "193b9b23d1e1d86ff7bb6b09a1e6210cc2aa4792f7d2756740d2162f0c0bef2b",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/components/qualify.py"
+  },
+  {
+    "path": "qualification/focused/component-v2-build.json",
+    "sha256": "d6dc5cdfe6d8aed2201444a433de1b25fdd14e8c58a8a4dd151dec06d741b256",
+    "original_sha256": "d6dc5cdfe6d8aed2201444a433de1b25fdd14e8c58a8a4dd151dec06d741b256",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/components/component-v2-build.json"
+  },
+  {
+    "path": "qualification/focused/component-v2-build.log.gz",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/components/component-v2-build.log"
+  },
+  {
+    "path": "qualification/focused/component-v2-run.json",
+    "sha256": "c65dcf22a553d40c70ce1f79692257df35a6fef7c7a9c2c8bf093650f29cefee",
+    "original_sha256": "c65dcf22a553d40c70ce1f79692257df35a6fef7c7a9c2c8bf093650f29cefee",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/components/component-v2-run.json"
+  },
+  {
+    "path": "qualification/focused/component-v2-run.log.gz",
+    "sha256": "23d6b3d34a7b53307d25903173225f98ca40d694e65e936f66ef1b196e0b5079",
+    "original_sha256": "b76603e96f3a9ea3ec84997164df65d1a2dfa32ac26ec8e64a2165f9c5e92641",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/components/component-v2-run.log"
+  },
+  {
+    "path": "qualification/round17-prepared-descriptors-release.json",
+    "sha256": "72126163c0ad89c2892b0cc4252040642cc772727bd0a12d328f137cbbe7cb3b",
+    "original_sha256": "72126163c0ad89c2892b0cc4252040642cc772727bd0a12d328f137cbbe7cb3b",
+    "source": "/private/tmp/mech-linear-restack-20261026/validation/round17-prepared-descriptors-release.json"
+  },
+  {
+    "path": "qualification/round17-prepared-descriptors-release.log.gz",
+    "sha256": "7a47867f55407255d568e6b3d5abe0e3b099e9d946e21660c40da022fcfcf8e7",
+    "original_sha256": "5aea126167d09c46b348a06bc48dc80aa72b1add7594b9c3cf871e1903c10d1e",
+    "source": "/private/tmp/mech-linear-restack-20261026/validation/round17-prepared-descriptors-release.log"
+  },
+  {
+    "path": "qualification/round17-prepared-descriptors-release-final.json",
+    "sha256": "d06d8d59d24e57d7c8d38121843a02e3e32f7738e3fa53893cab6ba20bcb6c50",
+    "original_sha256": "d06d8d59d24e57d7c8d38121843a02e3e32f7738e3fa53893cab6ba20bcb6c50",
+    "source": "/private/tmp/mech-linear-restack-20261026/validation/round17-prepared-descriptors-release-final.json"
+  },
+  {
+    "path": "qualification/round17-prepared-descriptors-release-final.log.gz",
+    "sha256": "c077f0b1bbbb0b6fed4f265d1de28607cdb6b53233d796dc771be964cd8a9658",
+    "original_sha256": "9599cef8cda8494f6c1d866a63adeea01887eadbdd690fff650491e50c577ea5",
+    "source": "/private/tmp/mech-linear-restack-20261026/validation/round17-prepared-descriptors-release-final.log"
+  }
+]

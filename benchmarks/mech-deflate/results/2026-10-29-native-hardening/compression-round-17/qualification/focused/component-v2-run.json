@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/private/tmp/mech-binding-descriptors-round17-20261029/components/component-v2-tests",
+    "dynamic_projection_qualification",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 1.2374360421672463,
+  "binary_sha256": "448f33e50fbdf7b5d80ab4d5c65909739ad8e79bda9cf5634f8127ee5462c18b",
+  "skipped": [
+    {
+      "module": "linked_qualification",
+      "source": "/private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_linked.rs",
+      "reason": "Linked Cargo subprocess qualification is separate from this existing component cohort."
+    }
+  ]
+}
