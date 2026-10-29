@@ -1,0 +1,620 @@
+[
+  {
+    "path": "qualification/full-components.py",
+    "sha256": "7a5ad47b29c2adf3066e85c881d62b972fa8b489935390531a4b9316a2fa7aaa",
+    "original_sha256": "7a5ad47b29c2adf3066e85c881d62b972fa8b489935390531a4b9316a2fa7aaa",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/full-components.py"
+  },
+  {
+    "path": "qualification/full-components.json",
+    "sha256": "54b5ff3bc42be764194bc6d4fbf942b6b7b2dd25808fd4f9ff3a21902f9a50c1",
+    "original_sha256": "54b5ff3bc42be764194bc6d4fbf942b6b7b2dd25808fd4f9ff3a21902f9a50c1",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/full-components.json"
+  },
+  {
+    "path": "qualification/full-components.log.gz",
+    "sha256": "581f743342729b666b5f1e5841adaae056e344c96ad02c9a5d78f7209e4aa151",
+    "original_sha256": "5e03f553eef95bc208c92b0b44690cfd450c485401f63930949baec7807d512d",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/full-components.log"
+  },
+  {
+    "path": "qualification/witness-comparison.json",
+    "sha256": "e35f447d95f905d99909b07ee11bc8046596f6145e5d03706a0c6fa70c1d4af0",
+    "original_sha256": "e35f447d95f905d99909b07ee11bc8046596f6145e5d03706a0c6fa70c1d4af0",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/witness-comparison.json"
+  },
+  {
+    "path": "qualification/validated-invoke-analyze.py",
+    "sha256": "14311eb3f37e31fd343203f312b79a5ab2c1134aeea97274e8ef3e4f808cc655",
+    "original_sha256": "14311eb3f37e31fd343203f312b79a5ab2c1134aeea97274e8ef3e4f808cc655",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/validated-invoke-analyze.py"
+  },
+  {
+    "path": "qualification/validated-invoke-costs.json",
+    "sha256": "3ae50e07b516f0abb7c1fba7b8ad5b918ed2253d49f97c0725ce198ec9a51850",
+    "original_sha256": "3ae50e07b516f0abb7c1fba7b8ad5b918ed2253d49f97c0725ce198ec9a51850",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/validated-invoke-costs.json"
+  },
+  {
+    "path": "qualification/cached-invoke-analyze.py",
+    "sha256": "18c1540562d1e765003eee6d19321edbcdba7b59422d08f4c588f006aa25cb14",
+    "original_sha256": "18c1540562d1e765003eee6d19321edbcdba7b59422d08f4c588f006aa25cb14",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/cached-invoke-analyze.py"
+  },
+  {
+    "path": "qualification/cached-invoke-costs.json",
+    "sha256": "f5993f4ea66b1a0c4be5b28487505acd77d901f9d072e1f75ccdb277f7f24d46",
+    "original_sha256": "f5993f4ea66b1a0c4be5b28487505acd77d901f9d072e1f75ccdb277f7f24d46",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/cached-invoke-costs.json"
+  },
+  {
+    "path": "qualification/after-binding-partition.json",
+    "sha256": "4694ccf0d3d7a287141b9c999a9f106191bd5287938d3d5123302ff7158999ab",
+    "original_sha256": "4694ccf0d3d7a287141b9c999a9f106191bd5287938d3d5123302ff7158999ab",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/after-binding-partition.json"
+  },
+  {
+    "path": "qualification/scalar-repeat.py",
+    "sha256": "27725093b17b29b0fbef47fa642c06d931b3f705e195366dbd3e219e37a3332c",
+    "original_sha256": "27725093b17b29b0fbef47fa642c06d931b3f705e195366dbd3e219e37a3332c",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/scalar-repeat.py"
+  },
+  {
+    "path": "qualification/engine-units/build.py",
+    "sha256": "7cbf066abe0a360cc517ee600d0b9505f6d79096f07715fa77fe1a94e13948d7",
+    "original_sha256": "7cbf066abe0a360cc517ee600d0b9505f6d79096f07715fa77fe1a94e13948d7",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/engine-units/build.py"
+  },
+  {
+    "path": "qualification/engine-units/build.json",
+    "sha256": "cac827764caf430d8da91066ac750e02bda4716b0809acd79492b0c50dd48661",
+    "original_sha256": "cac827764caf430d8da91066ac750e02bda4716b0809acd79492b0c50dd48661",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/engine-units/build.json"
+  },
+  {
+    "path": "qualification/engine-units/build.log.gz",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/engine-units/build.log"
+  },
+  {
+    "path": "qualification/engine-units/run.json",
+    "sha256": "c8541edaeb184c6810f20522a3f222278976118b27a08cadfd42c85bba9a5069",
+    "original_sha256": "c8541edaeb184c6810f20522a3f222278976118b27a08cadfd42c85bba9a5069",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/engine-units/run.json"
+  },
+  {
+    "path": "qualification/engine-units/run.log.gz",
+    "sha256": "6b0605b76ab2847fa2983f00c8ae4cb2437c5520b2df3931e6ad9fb96bcb3425",
+    "original_sha256": "6ff20e2cd675ff0850b9959720bfb2d6764ef5d91e416e8fd8fedcd0e5a5d1f3",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/engine-units/run.log"
+  },
+  {
+    "path": "qualification/engine-units/nonnative-check.py",
+    "sha256": "559cd58ba6ebece7af90b21020fd5de219e5cae20f8b91469181aeec2afe61ff",
+    "original_sha256": "559cd58ba6ebece7af90b21020fd5de219e5cae20f8b91469181aeec2afe61ff",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/engine-units/nonnative-check.py"
+  },
+  {
+    "path": "qualification/engine-units/nonnative-build.json",
+    "sha256": "ebe1aa5ab82b6ec6ad6df86ee6f7148c8863c112ac070f767d5c30a5145224d8",
+    "original_sha256": "ebe1aa5ab82b6ec6ad6df86ee6f7148c8863c112ac070f767d5c30a5145224d8",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/engine-units/nonnative-build.json"
+  },
+  {
+    "path": "qualification/engine-units/nonnative-build.log.gz",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/engine-units/nonnative-build.log"
+  },
+  {
+    "path": "qualification/after-witness/record-witness.rs",
+    "sha256": "b154c73bcafc9807b462ad42a74f4063c2bb47941177b2ee520b66a97cf97403",
+    "original_sha256": "b154c73bcafc9807b462ad42a74f4063c2bb47941177b2ee520b66a97cf97403",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/after-witness/record-witness.rs"
+  },
+  {
+    "path": "qualification/after-witness/build-record-witness.py",
+    "sha256": "8ef35a7ec32cf7d16b7bd4c9e5262fdb79f64973f0fb25be271c0bb14bfa3d11",
+    "original_sha256": "8ef35a7ec32cf7d16b7bd4c9e5262fdb79f64973f0fb25be271c0bb14bfa3d11",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/after-witness/build-record-witness.py"
+  },
+  {
+    "path": "qualification/after-witness/record-witness-build.json",
+    "sha256": "48b22957544f1432133f0db345148d9349a4b0c2d05bec6bee0907fa77545f01",
+    "original_sha256": "48b22957544f1432133f0db345148d9349a4b0c2d05bec6bee0907fa77545f01",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/after-witness/record-witness-build.json"
+  },
+  {
+    "path": "qualification/after-witness/record-witness-build.log.gz",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/after-witness/record-witness-build.log"
+  },
+  {
+    "path": "qualification/after-witness/record-witness.stdout.gz",
+    "sha256": "7d94290b9f2691e5548e2c717bb158de787ffaf703f56fccee51fe041ffb0a78",
+    "original_sha256": "e2a9b43c6a123ef9f39fef9f15451f20cde1b296a617f128fb11322f13d702dc",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/after-witness/record-witness.stdout"
+  },
+  {
+    "path": "qualification/after-witness/record-witness.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/after-witness/record-witness.stderr"
+  },
+  {
+    "path": "qualification/object-audit/object-evidence.rs",
+    "sha256": "a5ee5c96f9dedc3871737b9058a5201e1c4c5507f8434e00e8d5c468a60fdcb8",
+    "original_sha256": "a5ee5c96f9dedc3871737b9058a5201e1c4c5507f8434e00e8d5c468a60fdcb8",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/object-audit/object-evidence.rs"
+  },
+  {
+    "path": "qualification/object-audit/build.py",
+    "sha256": "564998d6bfe0689bab8a0be9dc29069b90f55f2fea340c187f1de25efcd09d8c",
+    "original_sha256": "564998d6bfe0689bab8a0be9dc29069b90f55f2fea340c187f1de25efcd09d8c",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/object-audit/build.py"
+  },
+  {
+    "path": "qualification/object-audit/object-build.json",
+    "sha256": "4e06b4eb253b86437f440b029538edf1c626a0efc719da3b5101aec4af87dc25",
+    "original_sha256": "4e06b4eb253b86437f440b029538edf1c626a0efc719da3b5101aec4af87dc25",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/object-audit/object-build.json"
+  },
+  {
+    "path": "qualification/object-audit/object-build.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/object-audit/object-build.log"
+  },
+  {
+    "path": "qualification/object-audit/object-run.json",
+    "sha256": "dec308f5dc6a28b62da29ff7c156adc57efe857730794ffdec0cebe552f1a5cc",
+    "original_sha256": "dec308f5dc6a28b62da29ff7c156adc57efe857730794ffdec0cebe552f1a5cc",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/object-audit/object-run.json"
+  },
+  {
+    "path": "qualification/object-audit/object-run.stdout.gz",
+    "sha256": "25e5b2b92527623eb49430bd7a0ebcd7576933114152f99009b5f252d4a6af32",
+    "original_sha256": "b52b0c5e5da9bc96a00e976f36f4ccd0486d50ef11408a05fe2ef69e0b20b3ec",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/object-audit/object-run.stdout"
+  },
+  {
+    "path": "qualification/object-audit/object-run.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/object-audit/object-run.stderr"
+  },
+  {
+    "path": "qualification/object-audit/identity.json",
+    "sha256": "9066ec3e82ce21148804fab94b2fffe8cd4e7e9b6711e02740b4016173fa97bb",
+    "original_sha256": "9066ec3e82ce21148804fab94b2fffe8cd4e7e9b6711e02740b4016173fa97bb",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/object-audit/identity.json"
+  },
+  {
+    "path": "qualification/selected/qualify-selected.py",
+    "sha256": "ec4ae85da0dcc07cec6b8fab0a4d017a721851b39d1aef21ca51c0b2f7b7cda8",
+    "original_sha256": "ec4ae85da0dcc07cec6b8fab0a4d017a721851b39d1aef21ca51c0b2f7b7cda8",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/qualify-selected.py"
+  },
+  {
+    "path": "qualification/selected/selected-native-build.json",
+    "sha256": "b320acca66ba89051825192a36ae83bb5ff6a7cb0d2dfc9d72244d33486814fe",
+    "original_sha256": "b320acca66ba89051825192a36ae83bb5ff6a7cb0d2dfc9d72244d33486814fe",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/selected-native-build.json"
+  },
+  {
+    "path": "qualification/selected/selected-native-build.log.gz",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/selected-native-build.log"
+  },
+  {
+    "path": "qualification/selected/selected-native-run.json",
+    "sha256": "ea8d86ccb1b57f2035d27e8f3f222e670c3a2169d8f33e5b71056a8391151f1b",
+    "original_sha256": "ea8d86ccb1b57f2035d27e8f3f222e670c3a2169d8f33e5b71056a8391151f1b",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/selected-native-run.json"
+  },
+  {
+    "path": "qualification/selected/selected-native-run.log.gz",
+    "sha256": "4f521e03350e24c4e792cda495934dbe39c14f22c48ff737ffef1dc22bb3db4c",
+    "original_sha256": "f7d019108899ac1b14a566a597c87e3fced44edf58911c9b916707aa52ec3c66",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/selected-native-run.log"
+  },
+  {
+    "path": "qualification/selected/selected-bits-build.json",
+    "sha256": "0d9d5628da17bf0eab77b428594d6f9055b59b5a81da5f2eafad48b6f1b11abf",
+    "original_sha256": "0d9d5628da17bf0eab77b428594d6f9055b59b5a81da5f2eafad48b6f1b11abf",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/selected-bits-build.json"
+  },
+  {
+    "path": "qualification/selected/selected-bits-build.log.gz",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/selected-bits-build.log"
+  },
+  {
+    "path": "qualification/selected/selected-bits-run.json",
+    "sha256": "7c37b68d176884f7fc1cbc660d40eef52e2587230103ec003611e77294a8d964",
+    "original_sha256": "7c37b68d176884f7fc1cbc660d40eef52e2587230103ec003611e77294a8d964",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/selected-bits-run.json"
+  },
+  {
+    "path": "qualification/selected/selected-bits-run.log.gz",
+    "sha256": "0183a9db6cff09d6a01f70613e08f96fba1f4c75a4f828ee0846a51a14ed6239",
+    "original_sha256": "7720252200d79d30480090f816956abb0e54a5fe33e74c4abb079dfdb72555bf",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/selected-bits-run.log"
+  },
+  {
+    "path": "qualification/scalar/frame-after.json",
+    "sha256": "25a36e4820fddaad7c76e8b148ab5709ad4e9421033679b2c0be8b40725abb14",
+    "original_sha256": "25a36e4820fddaad7c76e8b148ab5709ad4e9421033679b2c0be8b40725abb14",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/frame-after.json"
+  },
+  {
+    "path": "qualification/scalar/frame-before.json",
+    "sha256": "047f1b21c03b24c40f11704e12035b4cd47bae6fa6c73fe63712383364d51249",
+    "original_sha256": "047f1b21c03b24c40f11704e12035b4cd47bae6fa6c73fe63712383364d51249",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/frame-before.json"
+  },
+  {
+    "path": "qualification/scalar/scalar-commands.json",
+    "sha256": "7e4dcbffc17be70b8f80947145c547a9903dab2307f55b57b559cfbe03d063e6",
+    "original_sha256": "7e4dcbffc17be70b8f80947145c547a9903dab2307f55b57b559cfbe03d063e6",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-commands.json"
+  },
+  {
+    "path": "qualification/scalar/scalar-controls.py",
+    "sha256": "bbd452952661afb485c4b61f41ca54f6b9d75eb8c9e0d9d480f6e35e0d4d202c",
+    "original_sha256": "bbd452952661afb485c4b61f41ca54f6b9d75eb8c9e0d9d480f6e35e0d4d202c",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-controls.py"
+  },
+  {
+    "path": "qualification/scalar/scalar-outer.log",
+    "sha256": "b574cc81e7d7b1560e0577ed15fcb995d0ffbf60f95e01d9c9742bbfb85c61c1",
+    "original_sha256": "b574cc81e7d7b1560e0577ed15fcb995d0ffbf60f95e01d9c9742bbfb85c61c1",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-outer.log"
+  },
+  {
+    "path": "qualification/scalar/scalar-results.json",
+    "sha256": "7bb38d5e138432ff4cb0b60e015a2d4b18edebc41f98054828a5c73942092c98",
+    "original_sha256": "7bb38d5e138432ff4cb0b60e015a2d4b18edebc41f98054828a5c73942092c98",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-results.json"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-bool-0-decoded-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-bool-0-decoded-after.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-bool-0-decoded-after.stdout",
+    "sha256": "b50a59ad59ecaec4f418edddf59034fce154a915f1247f2080835a007e6a303c",
+    "original_sha256": "b50a59ad59ecaec4f418edddf59034fce154a915f1247f2080835a007e6a303c",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-bool-0-decoded-after.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-bool-0-decoded-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-bool-0-decoded-before.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-bool-0-decoded-before.stdout",
+    "sha256": "3a2bab41d633794389624436d65e38c5b666b607e446eae441b3328b06c4183a",
+    "original_sha256": "3a2bab41d633794389624436d65e38c5b666b607e446eae441b3328b06c4183a",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-bool-0-decoded-before.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-bool-0-original-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-bool-0-original-after.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-bool-0-original-after.stdout",
+    "sha256": "1db8a82f6b1d1c9043ae8887b444a03f31363ef45c703ba81de6fb475710de06",
+    "original_sha256": "1db8a82f6b1d1c9043ae8887b444a03f31363ef45c703ba81de6fb475710de06",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-bool-0-original-after.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-bool-0-original-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-bool-0-original-before.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-bool-0-original-before.stdout",
+    "sha256": "63773cb882122bb1ad0eb867f545ba20e2ceb52b6b2dd77432bd309b76cc03e8",
+    "original_sha256": "63773cb882122bb1ad0eb867f545ba20e2ceb52b6b2dd77432bd309b76cc03e8",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-bool-0-original-before.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-f64-0-decoded-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-f64-0-decoded-after.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-f64-0-decoded-after.stdout",
+    "sha256": "e180b3d3c90dc1e7c63c6ac707fc7b42eb4e2013d10107d92a0bfea353594b4d",
+    "original_sha256": "e180b3d3c90dc1e7c63c6ac707fc7b42eb4e2013d10107d92a0bfea353594b4d",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-f64-0-decoded-after.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-f64-0-decoded-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-f64-0-decoded-before.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-f64-0-decoded-before.stdout",
+    "sha256": "2ab729e74eabf09ae09f063955f82839c627100b0df9e09ff5c8ea022db31007",
+    "original_sha256": "2ab729e74eabf09ae09f063955f82839c627100b0df9e09ff5c8ea022db31007",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-f64-0-decoded-before.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-f64-0-original-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-f64-0-original-after.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-f64-0-original-after.stdout",
+    "sha256": "263dcac5c2508042ba4f0b35ba8a993573c037ae77aa6217973b59b995891504",
+    "original_sha256": "263dcac5c2508042ba4f0b35ba8a993573c037ae77aa6217973b59b995891504",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-f64-0-original-after.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-f64-0-original-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-f64-0-original-before.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-f64-0-original-before.stdout",
+    "sha256": "6121039c1ef3826b20d4f6ceb1dacb102ec044aa66cd51daeb5f144c1675be68",
+    "original_sha256": "6121039c1ef3826b20d4f6ceb1dacb102ec044aa66cd51daeb5f144c1675be68",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-f64-0-original-before.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-i64-0-decoded-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-i64-0-decoded-after.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-i64-0-decoded-after.stdout",
+    "sha256": "ab94d812b3749e386e2b28ec6cb324227c2a9196f70c643af7c8cff00ff86bfd",
+    "original_sha256": "ab94d812b3749e386e2b28ec6cb324227c2a9196f70c643af7c8cff00ff86bfd",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-i64-0-decoded-after.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-i64-0-decoded-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-i64-0-decoded-before.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-i64-0-decoded-before.stdout",
+    "sha256": "609089645649ec9980ffd4304af105c20e3cfb2e34ba9f757d831541be936a38",
+    "original_sha256": "609089645649ec9980ffd4304af105c20e3cfb2e34ba9f757d831541be936a38",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-i64-0-decoded-before.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-i64-0-original-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-i64-0-original-after.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-i64-0-original-after.stdout",
+    "sha256": "25c945068e193989441d502ae4932ac3a2af2757447a93080d7da7822f2ff827",
+    "original_sha256": "25c945068e193989441d502ae4932ac3a2af2757447a93080d7da7822f2ff827",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-i64-0-original-after.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-i64-0-original-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-i64-0-original-before.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-i64-0-original-before.stdout",
+    "sha256": "d1c02f80d94348b6bc5859ecbd58c5f06f27698beac21ec180dcc0ee47db8f7d",
+    "original_sha256": "d1c02f80d94348b6bc5859ecbd58c5f06f27698beac21ec180dcc0ee47db8f7d",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-i64-0-original-before.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-loop-0-decoded-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-loop-0-decoded-after.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-loop-0-decoded-after.stdout",
+    "sha256": "1de65dc857ff96beaece4f89a49e4a25c171e0c288ba23d60682fcda6c88a0a3",
+    "original_sha256": "1de65dc857ff96beaece4f89a49e4a25c171e0c288ba23d60682fcda6c88a0a3",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-loop-0-decoded-after.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-loop-0-decoded-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-loop-0-decoded-before.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-loop-0-decoded-before.stdout",
+    "sha256": "4583644701c84b55270b75243bf946e031c0403bda0e37c6cbc7fe436c787d36",
+    "original_sha256": "4583644701c84b55270b75243bf946e031c0403bda0e37c6cbc7fe436c787d36",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-loop-0-decoded-before.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-loop-0-original-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-loop-0-original-after.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-loop-0-original-after.stdout",
+    "sha256": "7c3a72b7982d052eeb8bf817c27d07a7ab6218b1a64f3b4b28e5d916509afbd6",
+    "original_sha256": "7c3a72b7982d052eeb8bf817c27d07a7ab6218b1a64f3b4b28e5d916509afbd6",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-loop-0-original-after.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-loop-0-original-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-loop-0-original-before.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-loop-0-original-before.stdout",
+    "sha256": "8debafd975731574c66108ab5342aa6a1beb4a67908ed179b4f80156c9df96c9",
+    "original_sha256": "8debafd975731574c66108ab5342aa6a1beb4a67908ed179b4f80156c9df96c9",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-loop-0-original-before.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-loop-64-decoded-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-loop-64-decoded-after.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-loop-64-decoded-after.stdout",
+    "sha256": "66c23486275934f1d5e950c10c4c0290bc931657a180a35b01c6420595af2df3",
+    "original_sha256": "66c23486275934f1d5e950c10c4c0290bc931657a180a35b01c6420595af2df3",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-loop-64-decoded-after.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-loop-64-decoded-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-loop-64-decoded-before.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-loop-64-decoded-before.stdout",
+    "sha256": "27251bc2208ea725e3f42991a6fb07b76adede7977ab5ed4b886e8b0fb434426",
+    "original_sha256": "27251bc2208ea725e3f42991a6fb07b76adede7977ab5ed4b886e8b0fb434426",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-loop-64-decoded-before.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-loop-64-original-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-loop-64-original-after.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-loop-64-original-after.stdout",
+    "sha256": "16b7aef74d46bb7f492cfbcb61d04a617c7d1fb8922eabaa5775ecdb0cb35c68",
+    "original_sha256": "16b7aef74d46bb7f492cfbcb61d04a617c7d1fb8922eabaa5775ecdb0cb35c68",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-loop-64-original-after.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-loop-64-original-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-loop-64-original-before.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-loop-64-original-before.stdout",
+    "sha256": "ca4a238a9f14fcd79529334cc55e4b980f9af96220c37bc827d4729b465db1ad",
+    "original_sha256": "ca4a238a9f14fcd79529334cc55e4b980f9af96220c37bc827d4729b465db1ad",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-loop-64-original-before.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-u64-0-decoded-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-u64-0-decoded-after.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-u64-0-decoded-after.stdout",
+    "sha256": "c26f7bd6b3afcabf5d8dde2e4137f7bac8bb6e5d28411ffc3ff94dced20c552f",
+    "original_sha256": "c26f7bd6b3afcabf5d8dde2e4137f7bac8bb6e5d28411ffc3ff94dced20c552f",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-u64-0-decoded-after.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-u64-0-decoded-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-u64-0-decoded-before.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-u64-0-decoded-before.stdout",
+    "sha256": "28ba073a87af3e5ae8a9bd8e05f6a3334737f71d8c6d5076a1b9019653c5b581",
+    "original_sha256": "28ba073a87af3e5ae8a9bd8e05f6a3334737f71d8c6d5076a1b9019653c5b581",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-u64-0-decoded-before.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-u64-0-original-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-u64-0-original-after.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-u64-0-original-after.stdout",
+    "sha256": "aefeb6d1e5f76ca93de2ba2f0c9f1c5ade118f732dd75ba9f9d414d7af96ae91",
+    "original_sha256": "aefeb6d1e5f76ca93de2ba2f0c9f1c5ade118f732dd75ba9f9d414d7af96ae91",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-u64-0-original-after.stdout"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-u64-0-original-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-u64-0-original-before.stderr"
+  },
+  {
+    "path": "qualification/scalar/scalar-scalar-u64-0-original-before.stdout",
+    "sha256": "5227f9c0ec819009d6054faec24f458e5db45960f4c85564667e007f42656c91",
+    "original_sha256": "5227f9c0ec819009d6054faec24f458e5db45960f4c85564667e007f42656c91",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/scalar-scalar-u64-0-original-before.stdout"
+  },
+  {
+    "path": "qualification/scalar-repeat/PLAN.json",
+    "sha256": "26d129cf371ff5e3d3d65f38fe4300dc3da798e2d619ff071cfcb24134e64286",
+    "original_sha256": "26d129cf371ff5e3d3d65f38fe4300dc3da798e2d619ff071cfcb24134e64286",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/scalar-repeat/PLAN.json"
+  },
+  {
+    "path": "qualification/scalar-repeat/SUMMARY.json",
+    "sha256": "efa2e65b6102ae2657d39a6863948a58c3b35395eaeddf7685e8a96ac8a0fe42",
+    "original_sha256": "efa2e65b6102ae2657d39a6863948a58c3b35395eaeddf7685e8a96ac8a0fe42",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/scalar-repeat/SUMMARY.json"
+  },
+  {
+    "path": "qualification/scalar-repeat/RESULTS.json.gz",
+    "sha256": "e585fd4bd891d809c038128a75a8f7d8a46eb36fc1f028c7ac7210af683804a9",
+    "original_sha256": "203f8677f133a4f889c33036922de1de38e580d90472dc37580ffbf0bd46f23c",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/scalar-repeat/RESULTS.json"
+  },
+  {
+    "path": "qualification/scalar-repeat/raw-outputs.tar.gz",
+    "sha256": "52103350e9ef0ecbce53655898e1453d40e78ba40f1e1b1e96befa27933f4e0b",
+    "original_sha256": "510da17c5cccc500a5dca8314a3b45dd9d98c92c8615375eea191817f4fccb8d",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/scalar-repeat/raw-outputs.tar"
+  },
+  {
+    "path": "qualification/reference-context.json",
+    "sha256": "0cf5baae8ef878ba7870a84baf34cc45b06e04ed79370667a7946d126dd54d02",
+    "original_sha256": "0cf5baae8ef878ba7870a84baf34cc45b06e04ed79370667a7946d126dd54d02",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/reference-context.json"
+  },
+  {
+    "path": "qualification/final-source-artifact.stdout",
+    "sha256": "9af8b9f1c359ad93d21b732f4f084b7edcc45797468fa55090e2332c204f05d4",
+    "original_sha256": "9af8b9f1c359ad93d21b732f4f084b7edcc45797468fa55090e2332c204f05d4",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/final-source-artifact.stdout"
+  },
+  {
+    "path": "qualification/final-source-artifact.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/final-source-artifact.stderr"
+  },
+  {
+    "path": "qualification/final-source-artifact.json",
+    "sha256": "0318cad1674ee446f21deb37dfe9cc16da42c36360ecb61522785a95f9c2a77d",
+    "original_sha256": "0318cad1674ee446f21deb37dfe9cc16da42c36360ecb61522785a95f9c2a77d",
+    "source": "/private/tmp/mech-binding-descriptors-round17-20261029/final-source-artifact.json"
+  }
+]

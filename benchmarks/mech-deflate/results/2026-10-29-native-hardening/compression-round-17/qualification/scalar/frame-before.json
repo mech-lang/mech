@@ -1,0 +1,7 @@
+{
+  "sha256": "3dfe64f775ee694ce9fc6d39faa4864264b981d1fae00b2be2ab34c3f2bd8d89",
+  "origin": "round16 default selected-operation release native_frame_transport",
+  "source": "/private/tmp/mech-live-control-target/release/native_frame_transport",
+  "production_head": "e982adbf6",
+  "cargo_receipt": "round16-record-precharge-release.json"
+}

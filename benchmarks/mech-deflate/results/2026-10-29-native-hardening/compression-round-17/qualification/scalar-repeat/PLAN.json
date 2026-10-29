@@ -1,0 +1,24 @@
+{
+  "reason": "Initial original zero-step loop ratio1.052454987>1.05; decoded zero-step moved in opposite direction. Fixed balanced replication, no conditional continuation or discarded observation. Initial strict failure remains retained.",
+  "pairs_per_form": 8,
+  "forms": [
+    "original",
+    "decoded"
+  ],
+  "source_case": "scalar-loop",
+  "steps": 0,
+  "measured_samples": 5,
+  "warmups": 1,
+  "invocations_per_sample": 100,
+  "aggregation": "median of eight paired after/before medians per form; also report ratio of all pooled medians and every individual pair.",
+  "binaries": {
+    "before": {
+      "path": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/frame-before",
+      "sha256": "3dfe64f775ee694ce9fc6d39faa4864264b981d1fae00b2be2ab34c3f2bd8d89"
+    },
+    "after": {
+      "path": "/private/tmp/mech-binding-descriptors-round17-20261029/primary/frame-after",
+      "sha256": "7306f6482f959eada7ac3e2b3871f5b2872c9a72736737bb27815f63c1a813d1"
+    }
+  }
+}

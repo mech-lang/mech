@@ -1,0 +1,13 @@
+{
+  "total": 35,
+  "partition": {
+    "resolved_value_descriptors": 14,
+    "memory_plan": 5,
+    "other_binding": 10,
+    "current_port_layout": 3,
+    "seal_attachment": 3
+  },
+  "descriptor_type_derivation": 0,
+  "sample_total": 1356,
+  "method": "same disjoint priority as baseline; counts are sampling, not exact elapsed time"
+}
