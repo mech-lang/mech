@@ -1,0 +1,5 @@
+{
+  "sha256": "aa66f9a75daf9fb7b6ad507d9fd74f159655bdf4534a036f419a5682d9b71f40",
+  "origin": "round15 default selected-operation release native_frame_transport",
+  "source": "benchmarks/mech-deflate/native-profile/src/bin/native_frame_transport.rs"
+}
