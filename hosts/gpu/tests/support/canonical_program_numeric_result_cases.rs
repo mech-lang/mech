@@ -33,7 +33,7 @@ fn mixed_result_terminal_scalar_kinds_preserve_exact_bits() {
     use mech_core::snapshot::F64Bits;
     let put = GENERIC.split("walk(xs").next().unwrap();
     let source = format!(
-        "{put}\nwalk(xs<[u32]>, left<u64>, flag<bool>, byte<u8>, half<u16>, packed<u32>, signed<i64>, fraction<f64>) => <([u32],bool,u8,u16,u32,u64,i64,f64)>\n  | (xs, left, flag, byte, half, packed, signed, fraction) => ((left > 0u64)? | true => walk(put(xs, 1u64, packed), left - 1u64, flag, byte, half, packed, signed, fraction) | false => (xs, flag == false, byte, half, packed, left + 17u64, signed, fraction)).\n(a,b,c,d,e,f,g,h) := walk(data<[u32]>, 2u64, flag<bool>, byte<u8>, half<u16>, packed<u32>, signed<i64>, fraction<f64>)\n(a,b,c,d,e,f + 0u64,g,h)\n"
+        "{put}\nwalk(xs<[u32]>, left<u64>, flag<bool>, byte<u8>, half<u16>, packed<u32>, signed<i64>, fraction<f64>) => <(bool,u8,[u32],u16,u32,u64,i64,f64)>\n  | (xs, left, flag, byte, half, packed, signed, fraction) => ((left > 0u64)? | true => walk(put(xs, 1u64, packed), left - 1u64, flag, byte, half, packed, signed, fraction) | false => (flag == false, byte, xs, half, packed, left + 17u64, signed, fraction)).\n(b,c,a,d,e,f,g,h) := walk(data<[u32]>, 2u64, flag<bool>, byte<u8>, half<u16>, packed<u32>, signed<i64>, fraction<f64>)\n(a,b,c,d,e,f + 0u64,g,h)\n"
     );
     selected(&source, true);
     for artifact in artifacts(&source).0 {
@@ -436,7 +436,16 @@ fn mixed_results_stale_multiple_and_escaping_returns_keep_the_maintained_path() 
     );
     let body = GENERIC.split("outer(xs").next().unwrap();
     let escaping = format!("{body}\nwalk(data<[u32]>, 0u64, 2u64)\n");
-    for source in [stale, multiple, escaping] {
+    let record = format!(
+        "{put}\n<result-record> := <{{words<[u32]> index<u64>}}>\nwalk(xs<[u32]>, left<u64>) => (out<result-record>) :=\n  next := put(xs, 1u64, xs[1u64] + 1u32)\n  out := ((left > 0u64)? | true => walk(next, left - 1u64) | false => {{words: next, index: 17u64}}).\nr := walk(data<[u32]>, 2u64)\n(r.words, r.index + 0u64)\n"
+    );
+    let nested = format!(
+        "{put}\nwalk(xs<[u32]>, left<u64>) => (out<(([u32],u64),bool)>) :=\n  next := put(xs, 1u64, xs[1u64] + 1u32)\n  out := ((left > 0u64)? | true => walk(next, left - 1u64) | false => ((next, 17u64), true)).\n(part, flag) := walk(data<[u32]>, 2u64)\n(a,b) := part\n(a, b + 0u64, flag)\n"
+    );
+    let nested_use = format!(
+        "{body}\n(next, at) := walk(data<[u32]>, 0u64, 2u64)\n(at == 19u64) and (next[1u64] == 8u32)\n"
+    );
+    for source in [stale, multiple, escaping, record, nested, nested_use] {
         selected(&source, false);
         for artifact in artifacts(&source).0 {
             let mode = NativeProgramLimitMode::NoLimits;

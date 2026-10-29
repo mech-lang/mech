@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-numeric-results-round13-20261029/primary/selected-bits-tests",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.9374882089905441,
+  "binary_sha256": "b257ec77dd19e880e3220f9fc9a2199a5a48ecdab6608e98b847da5dce5b6b78",
+  "skipped_coverage": null
+}

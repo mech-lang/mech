@@ -1,0 +1,266 @@
+[
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-before",
+      "scalar-bool",
+      "original",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-after",
+      "scalar-bool",
+      "original",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-before",
+      "scalar-bool",
+      "decoded",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-after",
+      "scalar-bool",
+      "decoded",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-after",
+      "scalar-u64",
+      "original",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-before",
+      "scalar-u64",
+      "original",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-after",
+      "scalar-u64",
+      "decoded",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-before",
+      "scalar-u64",
+      "decoded",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-before",
+      "scalar-i64",
+      "original",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-after",
+      "scalar-i64",
+      "original",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-before",
+      "scalar-i64",
+      "decoded",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-after",
+      "scalar-i64",
+      "decoded",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-after",
+      "scalar-f64",
+      "original",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-before",
+      "scalar-f64",
+      "original",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-after",
+      "scalar-f64",
+      "decoded",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-before",
+      "scalar-f64",
+      "decoded",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-before",
+      "scalar-loop",
+      "original",
+      "0",
+      "5",
+      "100"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-after",
+      "scalar-loop",
+      "original",
+      "0",
+      "5",
+      "100"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-before",
+      "scalar-loop",
+      "decoded",
+      "0",
+      "5",
+      "100"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-after",
+      "scalar-loop",
+      "decoded",
+      "0",
+      "5",
+      "100"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-after",
+      "scalar-loop",
+      "original",
+      "64",
+      "5",
+      "100"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-before",
+      "scalar-loop",
+      "original",
+      "64",
+      "5",
+      "100"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-after",
+      "scalar-loop",
+      "decoded",
+      "64",
+      "5",
+      "100"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-numeric-results-round13-20261029/primary/frame-before",
+      "scalar-loop",
+      "decoded",
+      "64",
+      "5",
+      "100"
+    ],
+    "exit": 0
+  }
+]
