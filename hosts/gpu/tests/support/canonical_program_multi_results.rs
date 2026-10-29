@@ -563,6 +563,101 @@ fn multi_record_results_shared_input_backing_stays_immutable_for_each_root() {
 }
 
 #[test]
+fn multi_record_results_repeated_root_fields_keep_current_values_and_recover() {
+    let source = r#"<repeated-record> := <{words<[u32]> index<u64> twin<[u32]>}>
+put(xs<[u32]>) => (out<[u32]>) :=
+  ~next := xs
+  next[1u64] = xs[1u64] + 1u32
+  out := next.
+walk(xs<[u32]>, left<u64>, permit<bool>) => (out<repeated-record>) :=
+  allowed! := permit
+  next := put(xs)
+  out := ((left > 0u64)? | true => walk(next, left - 1u64, permit) | false => {words: next, index: left + 17u64, twin: next}).
+r := walk(data<[u32]>, steps<u64>, permit<bool>)
+words := r.words
+twin := r.twin
+index := r.index
+(words,twin,index + 0u64)
+"#;
+    for artifact in artifacts(source).0 {
+        selected(&artifact, 2);
+        let metadata = emit_program_object(&artifact, &mech_stdlib::source_catalog())
+            .unwrap()
+            .metadata();
+        let regions = metadata["numeric_write_regions"].as_array().unwrap();
+        assert_eq!(regions.len(), 1);
+        let fields = regions[0]["proof"]["result"]["Frame"]["arrays"]
+            .as_array()
+            .unwrap();
+        assert_eq!(fields.len(), 2);
+        assert_ne!(fields[0][0], fields[1][0]);
+        assert_eq!(fields[0][1], fields[1][1]);
+        let mode = NativeProgramLimitMode::NoLimits;
+        let memory = mode.memory_budget();
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        super::record_buffer_qualification::assert_build_owned_image_round_trip(&jit);
+        let mut out = vec![None; artifact.outputs().len()];
+        for (initial, steps, permit) in [(7, 0, true), (11, 2, true), (17, 1, false), (23, 1, true)]
+        {
+            let args = inputs(
+                &artifact,
+                &[
+                    ("data", matrix([Data::U32(initial)])),
+                    ("steps", Data::U64(steps)),
+                    ("permit", Data::Bool(permit)),
+                ],
+                &memory,
+            );
+            let aliases = args.clone();
+            let prior = out.clone();
+            let evaluated = jit.evaluate_into(&args, &mut out, mode.execution(), &memory);
+            if permit {
+                evaluated.unwrap();
+                let words = matrix([Data::U32(initial + steps as u32 + 1)]);
+                assert_eq!(
+                    result(&out),
+                    Data::Tuple(vec![words.clone(), words, Data::U64(17)].into())
+                );
+                equal(
+                    &artifact,
+                    &out,
+                    &reference_result(&artifact, &args).unwrap(),
+                );
+            } else {
+                assert!(matches!(
+                    evaluated,
+                    Err(
+                        mech_gpu::native_artifact::NativeProgramExecutionError::Control(
+                            mech_gpu::native_artifact::NativeIterationExecutionError::Integrity { .. }
+                        )
+                    )
+                ));
+                unchanged(&out, &prior);
+            }
+            assert!(
+                args.iter()
+                    .zip(&aliases)
+                    .all(|(a, b)| a.shares_frozen_storage(b))
+            );
+            let data = artifact
+                .inputs()
+                .iter()
+                .position(|p| mech_engine::decode_source_input_name(&p.name).unwrap() == "data")
+                .unwrap();
+            assert_eq!(
+                aliases[data].canonical_data_draft().unwrap(),
+                matrix([Data::U32(initial)])
+            );
+        }
+        drop(out);
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
+}
+
+#[test]
 fn multi_array_results_finite_rejections_keep_prior_publication_and_retry() {
     check_finite_rejections(SOURCE);
 }
