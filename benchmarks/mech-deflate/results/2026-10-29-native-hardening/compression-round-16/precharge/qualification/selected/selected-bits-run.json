@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-record-precharge-round16-20261029/primary/selected-bits-tests",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.8787326670717448,
+  "binary_sha256": "3fe153c3aad35631252904343c8ea04772d691dab0568144b1dff4a33c1b6e7c",
+  "skipped_coverage": null
+}

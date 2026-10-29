@@ -1,0 +1,14 @@
+{
+  "o": {
+    "before_sha256": "2546a582ab601a30ef1375b4feb1346b6aee356c68f83bb362df75da501c6ae3",
+    "after_sha256": "2546a582ab601a30ef1375b4feb1346b6aee356c68f83bb362df75da501c6ae3",
+    "bytes": 11542304,
+    "identical": true
+  },
+  "json": {
+    "before_sha256": "7dfdbc9a9c96b334c71f71b5b8d19ea616f33da12d2a9a64fc930eeb22acc21f",
+    "after_sha256": "7dfdbc9a9c96b334c71f71b5b8d19ea616f33da12d2a9a64fc930eeb22acc21f",
+    "bytes": 1704995,
+    "identical": true
+  }
+}

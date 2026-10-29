@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-record-precharge-round16-20261029/primary/selected-native-tests",
+    "--nocapture",
+    "--test-threads=1",
+    "--skip",
+    "all_certified_scalar_primitives_match_ordinary_resident_original_and_decoded"
+  ],
+  "exit": 0,
+  "seconds": 0.8758503329008818,
+  "binary_sha256": "a4b4e0e3777ce92b00311243ab2e0d287508cf2f5e660864288c8c009c75b113",
+  "skipped_coverage": "The all-primitives test needs not/xor, which this selected catalog deliberately omits."
+}
