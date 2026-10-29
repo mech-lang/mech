@@ -588,6 +588,142 @@ fn frame_word_admission_rejects_invalid_width_without_retaining_a_visit() {
 }
 
 #[test]
+fn ordinary_frame_admission_keeps_exact_work_prefixes_and_current_owners() {
+    use mech_engine::native_artifact::{
+        NativeCollectionPrimitive as Primitive, NativeIterationAction as Action,
+        NativeLibraryWorkBudget, prepare_native_program_library_call,
+    };
+    let source = "+> sequence\nwalk(a<[u16]>, b<[u32]>, n<u64>, flag<bool>) => <u64> | (a, b, n, flag) => ((n > 0u64)? | true => walk(a, b, n - 1u64, flag) | false => ((flag)? | true => sequence/length(a) | false => sequence/length(b))).\nwalk(left<[u16]>, right<[u32]>, steps<u64>, take<bool>)\n";
+    for (form, artifact) in ["original", "decoded"].into_iter().zip(artifacts(source).0) {
+        let catalog = mech_stdlib::source_catalog();
+        let plan = lower_native_program_artifact(&artifact, &catalog).unwrap();
+        let template = plan
+            .blocks()
+            .iter()
+            .find_map(|block| match block.action() {
+                Action::LibraryCall { template, .. }
+                    if template.primitive() == Primitive::CompositePack(4) =>
+                {
+                    Some(template)
+                }
+                _ => None,
+            })
+            .unwrap();
+        let call = prepare_native_program_library_call(&artifact, template, &catalog).unwrap();
+        let mech_core::ResolvedOperationContract::Declared(contract) = template.contract() else {
+            panic!()
+        };
+        let memory = ManagedMemoryBudget::new(128 * 1024 * 1024);
+        let mut full_work = None;
+        for (a, b) in [(0, 0), (7, 13), (262144, 1500513), (2, 1)] {
+            let args = inputs(
+                &artifact,
+                &[
+                    ("left", Data::Matrix(vec![Data::U16(17); a].into())),
+                    ("right", Data::Matrix(vec![Data::U32(29); b].into())),
+                    ("steps", Data::U64(3)),
+                    ("take", Data::Bool(true)),
+                ],
+                &memory,
+            );
+            let current = contract
+                .inputs
+                .iter()
+                .map(|port| {
+                    let value = args
+                        .iter()
+                        .find(|value| value.schema() == port.schema)
+                        .unwrap();
+                    if matches!(value.data(), ValueData::Matrix(_)) {
+                        Some(value.clone())
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>();
+            let aliases = current.clone();
+            let before = (memory.used_bytes(), memory.retained_snapshot_nodes());
+            let observe = |label: &str, words: &[u64], policy: mech_core::MemoryBudgetLimits| {
+                let work =
+                    NativeLibraryWorkBudget::new(10_000_000_000, 10_000_000_000, &memory).unwrap();
+                let before = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                let result = call.admit_buffer_frame_words(
+                    &current,
+                    words,
+                    policy,
+                    &work,
+                    Default::default(),
+                );
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    before
+                );
+                let used = work.used();
+                println!(
+                    "{}",
+                    serde_json::json!({"witness":"ordinary-frame-admission", "form":form,
+                    "lengths":[a,b], "case":label, "work":used, "error":result.as_ref().err().map(|e| format!("{e:?}"))})
+                );
+                (result, used)
+            };
+            let (result, success) = observe("success", &[0, 0, 3, 1], limits().library);
+            result.unwrap();
+            assert_eq!(success.1, 0);
+            assert_eq!(*full_work.get_or_insert(success.0), success.0);
+            let (result, invalid) = observe("invalid-bool", &[0, 0, 3, 2], limits().library);
+            assert!(result.is_err());
+            assert_eq!(invalid, (success.0 - 192, 0));
+            let (result, invalid) = observe("managed-bits", &[1, 0, 3, 1], limits().library);
+            assert!(result.is_err());
+            // Two packed matrices cost 320 work each; two scalar words cost 192 each.
+            assert_eq!(invalid, (success.0 - 1024, 0));
+            for withheld in [1, 63, 64, 65, 127, 128, 191, 192, 193, 1024] {
+                let mut policy = limits().library;
+                policy.max_compute_work = Some(success.0 - withheld);
+                let (result, used) =
+                    observe(&format!("withhold-{withheld}"), &[0, 0, 3, 1], policy);
+                assert!(result.is_err(), "withheld {withheld}: {used:?}");
+                assert_eq!(used, (success.0 - withheld.div_ceil(64) * 64, 0));
+                let error = format!("{:?}", result.unwrap_err());
+                assert!(
+                    error.contains(&format!("required: {}", used.0 + 64)),
+                    "{error}"
+                );
+                assert!(
+                    error.contains(&format!("limit: {}", success.0 - withheld)),
+                    "{error}"
+                );
+            }
+            let mut policy = limits().library;
+            policy.max_output_elements = Some(3);
+            let (result, used) = observe("output-limit", &[0, 0, 3, 1], policy);
+            assert!(result.is_err());
+            assert_eq!(used, success);
+            observe("retry", &[0, 0, 5, 0], limits().library).0.unwrap();
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                before
+            );
+            assert!(
+                current
+                    .iter()
+                    .zip(&aliases)
+                    .all(|(value, alias)| match (value, alias) {
+                        (Some(value), Some(alias)) => value.shares_frozen_storage(alias),
+                        (None, None) => true,
+                        _ => false,
+                    })
+            );
+            drop((current, aliases, args));
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
+    }
+}
+
+#[test]
 fn restored_frame_type_slots_reject_misalignment_keys_and_definitions() {
     for source in [
         GROW,
