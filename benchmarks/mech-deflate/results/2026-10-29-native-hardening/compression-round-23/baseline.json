@@ -1,0 +1,9 @@
+{
+  "head": "545e17bf065028512c93a2bdc8677fbc3728a3fa",
+  "dirty": "",
+  "source_profile": "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/after.sample.txt",
+  "profile_sha256": "9076b8d536edf0deb962ce31865b56cd331f0cb986a712f8e76ecaa844ddbb2f",
+  "reference_multiple": 67.87900524475523,
+  "seconds": 0.0194133955,
+  "target": "Preserve shared call-budget semantics while removing complete violation-list construction/return when a selected native sink only needs its first violation."
+}

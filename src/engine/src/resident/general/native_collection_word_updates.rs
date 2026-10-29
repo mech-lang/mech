@@ -235,7 +235,7 @@ fn check_output(
     bytes: u64,
     copied: u64,
 ) -> Result<(), InvokeError> {
-    if let Some(violation) = mech_core::evaluate_call_memory_budget(
+    if let Some(violation) = mech_core::first_call_memory_budget_violation(
         mech_core::MemoryObjectOwner::NodeOutput { node, port: 0 },
         ResourceDemand {
             output_elements: length as u64,
@@ -245,13 +245,9 @@ fn check_output(
         bytes,
         0,
         limits,
-    )
-    .first()
-    {
+    ) {
         return Err(InvokeError::Plan(
-            mech_core::MemoryPlanError::TargetLimitExceeded {
-                violation: violation.clone(),
-            },
+            mech_core::MemoryPlanError::TargetLimitExceeded { violation },
         ));
     }
     Ok(())

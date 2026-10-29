@@ -93,7 +93,7 @@ impl<'a> NativeProjectionIndexContext<'a> {
             .retained_nodes
             .checked_add(nodes)
             .ok_or(ResidentKernelError::InvalidShape)?;
-        if let Some(violation) = mech_core::evaluate_call_memory_budget(
+        if let Some(violation) = mech_core::first_call_memory_budget_violation(
             mech_core::MemoryObjectOwner::DirectCallPort {
                 call: 0,
                 direction: mech_core::PortDirection::Input,
@@ -103,10 +103,8 @@ impl<'a> NativeProjectionIndexContext<'a> {
             0,
             0,
             self.limits,
-        )
-        .first()
-        {
-            return Err(resource_budget_error(violation));
+        ) {
+            return Err(resource_budget_error(&violation));
         }
         Ok(())
     }
