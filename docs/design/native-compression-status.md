@@ -9,25 +9,25 @@ components and entry remain 160992 bytes with SHA-256
 `345324ce551aaa2485dcd0fe4262da96e660d6b31f5f772bff89b034e9b1997f`.
 The six deliberate Huffman initialization sites remain.
 
-The latest measured compiler is `d105f884bc79d464a205b3022da4abdc00da41aa`.
-The [round 12 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-12/REPORT.md)
-records **345.68× → 251.38× Roc**, or **27.28% less elapsed time**, for unchanged
-eight-byte level-12 compression. Native private unsigned indexed-write leaves
-now keep current array owners and scalar state across iterations, including
-execution under ordinary suspended parents. The first changed store retains
-selected-operation admission and dynamic ownership checks; subsequent private
-stores execute as typed native instructions. The application is unchanged.
+The latest measured compiler is `1ec498a67fc862bac39188fdf5040eaacf6e954c`.
+The [round 13 closure](../../benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-13/CLOSURE.md)
+records **253.03× → 250.01× Roc**, or **1.19% less elapsed**, on unchanged
+eight-byte level-12 compression. Private one-array/scalar results now use the
+existing admitted frame lanes. The actual terminal scalar fields and current
+owner synchronize once after private cells freeze. Unchanged
+`huff-assign-symbols` selects under its ordinary parent; all 13 newly selected
+full-program regions are parented. The application and allocation sites are
+unchanged. Parity remains unmet.
 
-There are 231 scoped Rust passes, twelve static contracts and twelve passing
-fresh scalar timing/allocation pairs. Actual write-fuel exits and a runtime-only
-linked valid → invalid → valid application preserve publication, cleanup and
-recovery. The historical round-10 scalar ratio 1.0526036 against 1.05 remains
-unresolved. The caller retains capacity 13, but measured output backing changes
-on both compilers; physical output copies remain timed. Larger complete inputs
-and full deployed-compressor timing were not refreshed. The next bounded
-candidate is mixed array/scalar results, as used by `huff-cumulative`; this round
-admits only a scalar result or one numeric array. #973 remains draft, with CI
-cancelled by request.
+There are 247 scoped Rust passes, twelve static contracts and twelve fresh scalar
+pairs with exact allocation equality. Genuine mixed-result fuel exits, restored
+metadata and actual runtime-only linked recovery pass. The historical round-10
+1.0526036 scalar ratio against 1.05 remains unresolved. Physical output backing
+changes on both sides despite capacity 13. Larger complete inputs and full
+deployed-compressor timing were not refreshed. Predicate correlation for the
+cumulative loop is the next bounded candidate; multiple-array results, growth
+and child native regions remain separate. #973 stays draft, with CI cancelled
+by request.
 
 ## Components and required capabilities
 
@@ -114,7 +114,7 @@ a total compiler-memory bound and confers no runtime launch authority. Existing
 generic defaults remain unchanged. Compilation and launch policies are strict,
 separate JSON inputs; the public CLI also accepts `--native-compile-limits`.
 
-## Separate source experiment and next compiler slice
+## Historical source experiment and read-only slice
 
 The [round 09 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-09/REPORT.md)
 uses exactly the same compiler executable with an optional one-dimensional
@@ -134,39 +134,38 @@ invariant owners; per-invocation views and native scalar state support an ordina
 suspended parent. Native loads preserve current matrix geometry, checked errors
 and short-input guards. Independent restoration rederives proofs and prices.
 The full Object selects 45 parented regions with 72 typed load sites and zero
-calls on successful hot backedges. Private writes, growth and arbitrary nesting
-remain separate follow-on work.
+calls on successful hot backedges. Private writes and one-array/scalar results
+were completed in rounds 12 and 13. Growth and arbitrary nesting remain separate.
 
 ## Current small timing
 
-The [round 11 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-11/REPORT.md)
-measures **408.21× → 346.11× Roc**, with **Roc = 1×**: 0.117155000 s to
-0.099332833 s against a fresh 0.000287 s reference. This is **15.21% less elapsed
-time**, using the unchanged eight-byte source, artifact, allocator and timing
-boundary. All retained calls produce exact raw bytes and independent inflation,
-preserve input aliases and finish with zero managed bytes/nodes. Logical work
-changes 875610515844 → 789930572624 under explicit native work policy 91/IR116.
+The [round 13 closure](../../benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-13/CLOSURE.md)
+measures **253.03× → 250.01× Roc** (Roc = 1×): 0.073378958 → 0.072503125 seconds
+against a fresh 0.000290-second reference, **1.19% less elapsed**. This is a small
+observed gain with three primary observations per side. The same pinned source,
+artifact, allocator and evaluate_into-only boundary are used. Exact bytes,
+independent inflation, aliases and terminal cleanup pass. Logical work changes
+530905237224 → 527732164684 under IR118/work policy93.
 
-The caller retains capacity 13 and clears/rebinds the previous result outside
-timing. However, `same_backing` is **false on every before/after call**: compression
-copies the backing across the immutable public argument boundary. This overhead
-is timed; physical output-backing reuse is not established.
+The caller retains capacity 13 and clears/rebinds outside timing, but
+`same_backing=false` on every call. Physical public-boundary copies remain timed.
+All 247 scoped Rust tests and twelve fresh scalar pairs pass; the maximum direct
+ratio is 1.0103051 against 1.05, with exact request/byte counts and zero loop
+allocation slope. The historical round-10 failure remains unresolved.
 
-There are **128 scoped Rust passes**, twelve passing static contracts and four
-late changed-file checks. Original/decoded weighted reductions have fixed
-245 requests/40715 bytes/six ordinary visits over 0/1/8/64/256 elements. A real
-U16/U32-buffer diagnostic completes eight positions in about 0.83 ms; its exported
-tuple and System/probe allocator are separate from compressor timing. Ten observed
-finite-fuel exits restore the current scalar carrier, release the loan, preserve
-publication on rejection and retry. A real runtime-only linked executable passes
-valid → invalid → valid, preserving assertion-before-division and cleanup.
+The Object selects 149 native numeric regions, including 13 new parented mixed
+results. The separate profile still has frame handling on 472/1347 sampled
+ancestries and frame admission on 331. Overlapping ancestry is not additive time
+attribution. The unchanged cumulative loop remains rejected as an older array
+version after a same-condition merge. Predicate correlation is the next bounded
+candidate; its proof has not been weakened or bundled here.
 
-Fresh direct scalar timing/allocation gates pass (slowest ratio 1.020 against
-1.05), with exact request/byte counts and zero scalar-loop allocation slope. The
-historical round-10 decoded-U64 failure remains unresolved; its failed cohort is
-retained. Larger inputs and broader deployed coverage are not refreshed. The new
-profile still places ordinary frame admission and loop visits prominently; the
-next measured compiler slice is private indexed-write recurrences.
+The [preceding private-write packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-12/REPORT.md)
+measures 345.68× → 251.38× against its own fresh reference, 27.28% less elapsed.
+Its 231 scoped Rust passes include actual mutation/fuel and linked recovery.
+The [earlier read-only packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-11/REPORT.md)
+measures 408.21× → 346.11×, 15.21% less elapsed, with 128 scoped passes. Each cohort
+keeps its own denominator, source boundaries and qualification scope.
 
 The preceding [key-reuse packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-10/REPORT.md)
 measures **448.70× → 404.86× Roc**, 0.129673750 s to 0.117005125 s against a
@@ -209,8 +208,8 @@ avoid the old binding, payload-copy and full-equality path. External aliases kee
 their first necessary immutable copy; private recursive chains reuse backing.
 The actual six-position collector falls from 25682 to 8362 requests and 79457091
 to 35045914 requested bytes, with unchanged golden state and finite policy.
-Some copies remain. The next substantial target is repeated canonical object
-construction and runtime transitions in the real numeric loops. Parity is unmet.
+Some copies remained at that checkpoint. Later numeric slices address part of
+the repeated construction and runtime transitions. Parity remains unmet.
 
 The [preceding length change](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-05/REPORT.md)
 measures **1727× → 1632×** against a different reference cohort. Numeric length
