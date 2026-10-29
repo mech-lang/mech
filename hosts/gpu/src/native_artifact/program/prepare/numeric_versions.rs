@@ -302,7 +302,7 @@ fn pass(
         }
         if site == tail.finish() as usize {
             let current = match result {
-                ResultRecipe::Scalar => true,
+                ResultRecipe::Scalar | ResultRecipe::Aggregate { .. } => true,
                 ResultRecipe::Array { .. } => fresh(&state, (tail.returned().get(), None)),
                 ResultRecipe::Frame { value, arrays } => arrays
                     .iter()

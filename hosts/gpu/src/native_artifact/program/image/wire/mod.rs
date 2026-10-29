@@ -204,7 +204,13 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
     let closed_tails: native::program::prepare::tail::Layout = w.closed_tails.into();
     let buffer_frames = plan.facts().buffer_frames();
     native::program::prepare::prepare_frame_composition(&plan, &buffer_frames, &mut calls)?;
-    native::program::prepare::tail::validate_image(&plan, &buffer_frames, &calls, &closed_tails)?;
+    native::program::prepare::tail::validate_image(
+        &plan,
+        &buffer_frames,
+        &w.scalar_aggregates,
+        &calls,
+        &closed_tails,
+    )?;
     let visits = w
         .visits
         .into_vec()

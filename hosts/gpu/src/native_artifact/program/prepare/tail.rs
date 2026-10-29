@@ -86,7 +86,7 @@ impl Layout {
             // Its own body must still contain no child loop; the parent is
             // suspended until this private owner publishes at the Tail exit.
             let numeric = if map.is_none() && frames.action(tail.initialize() as usize).is_some() {
-                super::readonly_numeric::derive(plan, tail, frames, calls).ok()
+                super::readonly_numeric::derive(plan, tail, frames, aggregates, calls).ok()
             } else {
                 None
             };
@@ -276,11 +276,22 @@ impl Layout {
 pub(in crate::native_artifact) fn validate_image(
     plan: &NativeProgramArtifactPlan,
     frames: &mech_engine::native_artifact::NativeBufferFrames,
+    serialized_aggregates: &mech_engine::native_artifact::NativeScalarAggregates,
     calls: &[Option<mech_engine::native_artifact::NativePreparedLibraryCall>],
     serialized: &Layout,
 ) -> Result<(), String> {
     let facts = plan.facts();
     let aggregates = facts.scalar_aggregates();
+    // The numeric result proof and the emitted shared aggregate actions use
+    // these same global lanes. A rederived region cannot validate a different
+    // serialized word bank, even if that bank has a plausible total size.
+    if serde_json::to_vec(&aggregates).map_err(|e| e.to_string())?
+        != serde_json::to_vec(serialized_aggregates).map_err(|e| e.to_string())?
+    {
+        return Err(
+            "scalar aggregate lanes differ from independently validated source uses".into(),
+        );
+    }
     let borrowed = super::borrowed::Layout::derive(plan, &aggregates)?;
     let selected = super::selected_join::Layout::derive(plan, &plan.string_map_regions())?;
     let mut visits = crate::native_artifact::iteration_abi::control_visits(

@@ -3,10 +3,12 @@
 //! provenance for every managed field, including every alternative definition.
 use mech_core::{IntegerWidth, SchemaBody};
 use mech_engine::native_artifact::{
-    NativeBufferFrameLane as Lane, NativeBufferFrameOperation as Frame, NativeBufferFrames,
-    NativeControlLoop, NativeIterationAction as Action, NativeIterationTerminator as Term,
-    NativeMatchAction as Scalar, NativeMatchTerminator as Branch, NativePreparedLibraryCall,
-    NativeProgramArtifactPlan as Plan, NativeProgramFacts, NativeScalarKind, NativeTailLoop,
+    NativeAggregateWord, NativeBufferFrameLane as Lane, NativeBufferFrameOperation as Frame,
+    NativeBufferFrames, NativeControlLoop, NativeIterationAction as Action,
+    NativeIterationTerminator as Term, NativeMatchAction as Scalar,
+    NativeMatchTerminator as Branch, NativePreparedLibraryCall, NativeProgramArtifactPlan as Plan,
+    NativeProgramFacts, NativeScalarAggregateAction as Aggregate, NativeScalarAggregates,
+    NativeScalarKind, NativeTailLoop,
 };
 use std::collections::{BTreeMap, BTreeSet};
 #[path = "numeric_results.rs"]
@@ -37,6 +39,7 @@ pub(in crate::native_artifact) struct FrameWords {
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) enum Operation {
     Frame,
+    Aggregate,
     ArrayCopy,
     Length {
         array: usize,
@@ -219,6 +222,7 @@ pub(in crate::native_artifact) fn derive(
     plan: &Plan,
     tail: &NativeTailLoop,
     frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
     calls: &[Option<NativePreparedLibraryCall>],
 ) -> Result<Proof, &'static str> {
     let fields = frames
@@ -286,7 +290,15 @@ pub(in crate::native_artifact) fn derive(
     if arrays.is_empty() {
         return Err("no invariant numeric arrays");
     }
-    let result = results::derive(plan, tail, frames, fields, &arrays, &mut provenance)?;
+    let result = results::derive(
+        plan,
+        tail,
+        frames,
+        aggregates,
+        fields,
+        &arrays,
+        &mut provenance,
+    )?;
     let mut actions = Vec::new();
     let mut frame_values = BTreeSet::from([tail.carrier().get()]);
     if let Some(value) = result.frame() {
@@ -344,6 +356,28 @@ pub(in crate::native_artifact) fn derive(
                 Frame::Project { source, .. } => remember(source.get())?,
             }
             Operation::Frame
+        } else if let Some(action) = aggregates.action(site) {
+            let mut values = Vec::new();
+            match action {
+                Aggregate::Pack { output, words } => {
+                    values.push(*output);
+                    values.extend(words.iter().filter_map(|word| match word {
+                        NativeAggregateWord::Field(value, _) => Some(*value),
+                        _ => None,
+                    }));
+                }
+                Aggregate::Copy { source, output } | Aggregate::Project { source, output, .. } => {
+                    values.extend([*source, *output]);
+                }
+                Aggregate::Observe { source, .. } => values.push(*source),
+            }
+            if !values
+                .into_iter()
+                .all(|value| results::scalar_aggregate(plan, aggregates, value))
+            {
+                return Err("numeric aggregate requires exact private flat scalar fields");
+            }
+            Operation::Aggregate
         } else if let Action::LibraryCall {
             operands,
             output,
