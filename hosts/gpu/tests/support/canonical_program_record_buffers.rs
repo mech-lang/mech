@@ -1227,3 +1227,6 @@ fn mixed_record_buffer_frames_keep_capacity_aliases_and_failure_recovery() {
         assert_eq!(measured[1] - measured[0], 6633832 - 512);
     }
 }
+
+#[path = "canonical_program_opaque_frame_siblings.rs"]
+mod opaque_siblings;
