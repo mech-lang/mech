@@ -1,0 +1,31 @@
+[
+  {
+    "label": "roc",
+    "command": [
+      "/private/tmp/mech-deflate-profiling-20261028/roc-profile",
+      "12"
+    ],
+    "exit": 0,
+    "process_seconds": 6.073343334021047
+  },
+  {
+    "label": "before",
+    "command": [
+      "/private/tmp/mech-record-boundaries-round18-20261029/primary/before",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 22.866021709050983
+  },
+  {
+    "label": "after",
+    "command": [
+      "/private/tmp/mech-record-boundaries-round18-20261029/primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 22.807926249923185
+  }
+]
