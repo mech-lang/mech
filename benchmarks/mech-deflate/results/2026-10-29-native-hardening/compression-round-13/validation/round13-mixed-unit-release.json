@@ -1,0 +1,30 @@
+{
+  "name": "round13-mixed-unit-release",
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--offline",
+    "--release",
+    "--manifest-path",
+    "benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--features",
+    "unit-qualification",
+    "--message-format=json"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "e04ea4d6287c25ed8ecef9581b39315e0e41b75e",
+  "dirty": " M hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs\n M hosts/gpu/src/native_artifact/program/codegen/tail.rs\n M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/src/native_artifact/program/prepare/numeric_versions.rs\n M hosts/gpu/src/native_artifact/program/prepare/readonly_numeric.rs\n M hosts/gpu/src/native_artifact/program/prepare/tail.rs\n M hosts/gpu/src/native_artifact/program/runtime/invocation/readonly_numeric.rs\n M hosts/gpu/tests/support/canonical_program_buffer_frames.rs\n?? hosts/gpu/src/native_artifact/program/prepare/numeric_results.rs\n",
+  "exit": 0,
+  "seconds": 71.99173521995544,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round13-mixed-unit-release.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}
