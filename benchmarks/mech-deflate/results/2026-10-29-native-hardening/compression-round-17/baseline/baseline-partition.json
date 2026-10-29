@@ -1,0 +1,16 @@
+{
+  "total": 198,
+  "partition": {
+    "resolved_value_descriptors": 165,
+    "current_port_layout": 9,
+    "other_binding": 14,
+    "memory_plan": 9,
+    "seal_attachment": 1
+  },
+  "descriptor_partition": {
+    "type_derivation": 141,
+    "other_descriptor": 24
+  },
+  "source": "round16 validated-invoke-costs.json",
+  "categories_are_disjoint": true
+}
