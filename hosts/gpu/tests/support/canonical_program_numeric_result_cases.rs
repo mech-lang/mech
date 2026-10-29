@@ -449,7 +449,8 @@ fn mixed_results_stale_and_escaping_returns_keep_the_maintained_path() {
         (stale, false),
         (multiple, true),
         (escaping, false),
-        (record, false),
+        // Private flat records now use the same current-owner return proof.
+        (record, true),
         (nested, false),
         (nested_use, false),
     ] {
