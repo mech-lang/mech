@@ -1,0 +1,21 @@
+
+running 3 tests
+test multi_result_qualification::multi_array_results_check_freshness_of_each_returned_field ... ok
+test multi_result_qualification::multi_array_results_restore_all_current_owners_and_recover_after_late_failure ... FAILED
+test multi_result_qualification::multi_array_results_select_pinned_huffman_placement_and_keep_branch_versions ... FAILED
+
+failures:
+
+failures:
+    multi_result_qualification::multi_array_results_restore_all_current_owners_and_recover_after_late_failure
+    multi_result_qualification::multi_array_results_select_pinned_huffman_placement_and_keep_branch_versions
+
+test result: FAILED. 1 passed; 2 failed; 0 ignored; 0 measured; 437 filtered out; finished in 1.68s
+
+
+thread 'multi_result_qualification::multi_array_results_restore_all_current_owners_and_recover_after_late_failure' (20141388) panicked at /private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_multi_results.rs:75:10:
+called `Result::unwrap()` on an `Err` value: Backend("canonical native artifact lowering: MissingSemanticWitness { node: NodeId(1) }")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'multi_result_qualification::multi_array_results_select_pinned_huffman_placement_and_keep_branch_versions' (20141390) panicked at /private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_multi_results.rs:52:5:
+missing 3-array return proof: {"abi_version":35,"borrowed_string_regions":0,"closed_tail_regions":0,"code_bytes":7892,"compiled_bound_call_shim":null,"compiled_cfg_cleanup":{"after_blocks":327,"after_instructions":1699,"before_blocks":327,"before_instructions":1699,"constant_branches_removed":0,"enabled":true,"fixed_point":true,"pre_codegen_data_passes":0,"rounds":1},"compiled_count_value_loops":[],"compiled_frame_effects":{"complete":true,"regions":[]},"compiled_guarded_loops":{"complete":true,"regions":[]},"compiled_header_continuation_regions":0,"compiled_join_map_copies":[],"compiled_lookup_facts":{"complete":true,"regions":[]},"compiled_loop_constants":{"callers":[],"complete":true},"compiled_loop_invariants":[],"compiled_mutation_loops":[],"compiled_numeric_write_loops":[],"compiled_outlined_loops":[],"compiled_preserving_call_regions":[],"compiled_readonly_numeric_loops":[],"compiled_scalar_loops":[],"compiled_source_edge_facts":{"complete":true,"regions":[]},"compiled_steady_loops":[],"compiled_string_map_regions":0,"compiled_tag_threading":{"complete":true,"regions":[]},"compiled_window_accumulator":null,"compiled_window_histogram_regions":0,"compiled_window_query_regions":0,"effects":0,"entry_symbol":"mech_canonical_program_entry_v1","executed":false,"identity_symbol":"mech_canonical_program_identity_v1_d08fda2fa3c35401bab27b549ca88543397f08c249570fc6aa5e536e053e50ce","linked":false,"numeric_write_regions":[],"object_bytes":8624,"object_optimization":"speed","observations":0,"private_frozen_map_candidates":0,"private_line_matrix_regions":0,"program_revision":"69645a5a2e3eafea75a32bfe80ce0b4facc35c9389fe40054a6be4294c4ad867","readonly_numeric_candidates":[{"header":4,"iteration":0,"origin":{"block":null,"local":null,"node":1},"parent":null,"proof_eligible":false,"rejection":"numeric result tuple requires exactly one array owner","selected":false}],"readonly_numeric_regions":[],"requirements":0,"retained_map_scalar_admission_groups":0,"schema":"mech.canonical-managed-program-object.v1","selected_matrix_join_regions":0,"stack_bytes":96,"target_tag":[1,2,1,64,1,0,0,0],"timing_samples":0,"transport_inputs":4,"transport_outputs":1,"typed_ir_sha256":"d08fda2fa3c35401bab27b549ca88543397f08c249570fc6aa5e536e053e50ce","typed_ir_version":123,"unboxed_scalar_aggregate_values":0,"work_policy_version":93}
