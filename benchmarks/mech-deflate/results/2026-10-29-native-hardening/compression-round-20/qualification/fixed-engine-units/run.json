@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/private/tmp/mech-nested-frames-round20-20261029/fixed-engine-units/engine-tests",
+    "resident::budget::",
+    "native_projection_meter_tests",
+    "frame_recipe",
+    "text_line_",
+    "shared_boolean_edge_facts",
+    "native_collection_",
+    "native_text_line_",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 7.192129707895219,
+  "binary_sha256": "25435ef3612a250b26847c3631216ad39812ad0849080f2ee7fe4846a0f1dfef"
+}

@@ -1,0 +1,12 @@
+
+running 7 tests
+test nested_frame_qualification::composed_children_keep_aliases_and_all_current_scalar_bits_across_parents ... ok
+test nested_frame_qualification::composed_projection_keeps_exact_logical_output_bounds_and_current_shapes ... ok
+test nested_frame_qualification::nested_current_fields_preserve_errors_publication_aliases_and_retry ... ok
+test nested_frame_qualification::nested_private_path_and_output_buffers_keep_the_real_reservation ... ok
+test nested_frame_qualification::nested_public_escape_keeps_the_complete_component_canonical ... ok
+test nested_frame_qualification::private_nested_pack_return_and_projection_select_the_complete_component ... ok
+test nested_frame_qualification::recursive_composed_results_keep_current_visits_and_recover_after_rejection ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 429 filtered out; finished in 0.60s
+

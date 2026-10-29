@@ -1,0 +1,8 @@
+error: couldn't read `/private/tmp/mech-nested-frames-round20-20261029/parent-control/source/src/engine/src/efficacy/ekf/../../../../../tests/fixtures/resident-ekf/ekf-input-v1.bin`: No such file or directory (os error 2)
+  --> /private/tmp/mech-nested-frames-round20-20261029/parent-control/source/src/engine/src/efficacy/ekf/closure.rs:27:22
+   |
+27 | const TRACE: &[u8] = include_bytes!("../../../../../tests/fixtures/resident-ekf/ekf-input-v1.bin");
+   |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: aborting due to 1 previous error
+

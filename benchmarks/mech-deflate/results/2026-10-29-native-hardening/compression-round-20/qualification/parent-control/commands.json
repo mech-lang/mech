@@ -1,0 +1,87 @@
+{
+  "source_revision": "96721e45d454f507595c54e445d18266eff05ced",
+  "source_archive_sha256": "ba853fe0e86ddf7b3ea6e33e0f64a293315b3cdf44f62d1d24d507853bdeb06a",
+  "configuration": "Semantic control only; opt0 libraries from clean pinned source with unchanged selected-operation dependencies. No performance observations.",
+  "commands": [
+    {
+      "label": "parent-oracle-build",
+      "command": [
+        "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+        "--edition=2024",
+        "-C",
+        "opt-level=0",
+        "-D",
+        "warnings",
+        "-L",
+        "dependency=/private/tmp/mech-nested-frames-round20-20261029/parent-control/libs",
+        "-L",
+        "dependency=/private/tmp/mech-live-control-target/release/deps",
+        "--extern",
+        "mech_core=/private/tmp/mech-live-control-target/release/deps/libmech_core-4ff4856784490a86.rlib",
+        "--extern",
+        "mech_syntax=/private/tmp/mech-live-control-target/release/deps/libmech_syntax-99fe397930ae7109.rlib",
+        "--extern",
+        "serde_json=/private/tmp/mech-live-control-target/release/deps/libserde_json-e0f8af30c3327a5b.rlib",
+        "--extern",
+        "mech_engine=/private/tmp/mech-nested-frames-round20-20261029/parent-control/libs/libmech_engine.rlib",
+        "--extern",
+        "mech_stdlib=/private/tmp/mech-nested-frames-round20-20261029/parent-control/libs/libmech_stdlib.rlib",
+        "/private/tmp/mech-nested-frames-round20-20261029/parent-control/oracle.rs",
+        "-o",
+        "/private/tmp/mech-nested-frames-round20-20261029/parent-control/parent-oracle"
+      ],
+      "exit": 0,
+      "seconds": 1.1076153328176588
+    },
+    {
+      "label": "parent-oracle-run",
+      "command": [
+        "/private/tmp/mech-nested-frames-round20-20261029/parent-control/parent-oracle",
+        "/private/tmp/mech-nested-frames-round20-20261029/parent-control/public-escape.mec",
+        "/private/tmp/mech-nested-frames-round20-20261029/parent-control/parent.mbc"
+      ],
+      "exit": 0,
+      "seconds": 1.6339027921203524
+    },
+    {
+      "label": "current-oracle-build",
+      "command": [
+        "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+        "--edition=2024",
+        "-C",
+        "opt-level=0",
+        "-D",
+        "warnings",
+        "-L",
+        "dependency=/private/tmp/mech-nested-frames-round20-20261029/parent-control/libs",
+        "-L",
+        "dependency=/private/tmp/mech-live-control-target/release/deps",
+        "--extern",
+        "mech_core=/private/tmp/mech-live-control-target/release/deps/libmech_core-4ff4856784490a86.rlib",
+        "--extern",
+        "mech_syntax=/private/tmp/mech-live-control-target/release/deps/libmech_syntax-99fe397930ae7109.rlib",
+        "--extern",
+        "serde_json=/private/tmp/mech-live-control-target/release/deps/libserde_json-e0f8af30c3327a5b.rlib",
+        "--extern",
+        "mech_engine=/private/tmp/mech-live-control-target/release/deps/libmech_engine-0d214f77bb5acf15.rlib",
+        "--extern",
+        "mech_stdlib=/private/tmp/mech-live-control-target/release/deps/libmech_stdlib-6eec5c94a1151738.rlib",
+        "/private/tmp/mech-nested-frames-round20-20261029/parent-control/oracle.rs",
+        "-o",
+        "/private/tmp/mech-nested-frames-round20-20261029/parent-control/current-oracle"
+      ],
+      "exit": 0,
+      "seconds": 0.5859945830889046
+    },
+    {
+      "label": "current-oracle-run",
+      "command": [
+        "/private/tmp/mech-nested-frames-round20-20261029/parent-control/current-oracle",
+        "/private/tmp/mech-nested-frames-round20-20261029/parent-control/public-escape.mec",
+        "/private/tmp/mech-nested-frames-round20-20261029/parent-control/current.mbc"
+      ],
+      "exit": 0,
+      "seconds": 0.8746756250038743
+    }
+  ]
+}

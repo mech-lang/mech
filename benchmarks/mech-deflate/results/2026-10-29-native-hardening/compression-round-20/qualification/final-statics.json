@@ -1,0 +1,22 @@
+{
+  "name": "round20-fixed-static-architecture",
+  "command": [
+    "python3",
+    "/private/tmp/mech-final-static-20261028.py"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "81850eddf69f563f339babb9964aa5fa9b02a7a9",
+  "dirty": " M src/engine/src/native_artifact/buffer_frames.rs\n?? benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-20/qualification/\n",
+  "exit": 0,
+  "seconds": 185.0585949420929,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round20-fixed-static-architecture.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

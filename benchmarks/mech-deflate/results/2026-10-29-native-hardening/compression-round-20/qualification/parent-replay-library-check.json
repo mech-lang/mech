@@ -1,0 +1,18 @@
+{
+  "invalid_as_parent_evidence": true,
+  "reason": "The build paths were overwritten by the subsequent production Cargo build. A separate source-pinned old Engine/stdlib control is required.",
+  "mismatches": {
+    "mech_engine": {
+      "recorded": "2620ccb84b056c512c71bf262145d8c4f8c4903195d0bb425ef1f92b12800049",
+      "actual": "65b6be9a7ac826d7bca63d5f996a68a27e58a8ff70c0405822a4fed0381ca4e5"
+    },
+    "mech_gpu": {
+      "recorded": "f8d0ef92494cea8e7e91ad7958628fce233b82e462713cf7b03d87f53e7349ef",
+      "actual": "874ebba0ef96f5db191c168996b07da8fe99727f85b41796429ade9301b73255"
+    },
+    "mech_stdlib": {
+      "recorded": "fe81c04c6a4e06719aa4b8dbd3d63c2f006a1e0f84b9be7355c65f0a59f88e8d",
+      "actual": "e6355f8e9bd09ff30f64e5b56c7bf5c5cda831481ef6e3953bc82a833630ace1"
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/private/tmp/mech-nested-frames-round20-20261029/fallback-red/nested-component-tests",
+    "private_child_beside_a_dynamic_canonical_record_keeps_constructor_fallback",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 101,
+  "seconds": 0.9933857920113951,
+  "binary_sha256": "a8984767eb525a741eabb9e0d6f764796091a87346f522b82c5e2024b4bd5367",
+  "skipped": [
+    {
+      "module": "linked_qualification",
+      "source": "/private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_linked.rs",
+      "reason": "Linked Cargo subprocess qualification is separate from this existing component cohort."
+    }
+  ]
+}

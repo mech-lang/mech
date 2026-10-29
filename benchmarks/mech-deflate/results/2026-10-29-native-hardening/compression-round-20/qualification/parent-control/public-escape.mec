@@ -1,0 +1,9 @@
++> sequence
+<costs> := <{literal<[u32]> length<[u32]> offset<[u32]>}>
+<selected> := <{nodes<[u64]> costs<costs> marker<u64>}>
+<planned> := <{selected<selected> saved<costs>}>
+wrap(nodes<[u64]>, values<[u32]>, marker<u64>) => (out<planned>) :=
+  costs := {literal: values, length: values, offset: values}
+  selected := {nodes: nodes, costs: costs, marker: marker}
+  out := {selected: selected, saved: costs}.
+wrap(values<[u64]>, words<[u32]>, marker<u64>)

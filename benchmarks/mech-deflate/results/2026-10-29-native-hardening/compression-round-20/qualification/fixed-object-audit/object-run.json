@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-nested-frames-round20-20261029/fixed-object-audit/object-evidence",
+    "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+    "/private/tmp/mech-nested-frames-round20-20261029/fixed-object-audit/complete-object"
+  ],
+  "exit": 0,
+  "seconds": 25.455299207940698,
+  "binary_sha256": "5376625e7e0e848edcd2cc3a9b5e269b836f31dee4628af20f92e14354fa5bce"
+}

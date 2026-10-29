@@ -1,0 +1,22 @@
+{
+  "name": "round20-static-architecture",
+  "command": [
+    "python3",
+    "/private/tmp/mech-final-static-20261028.py"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "58fbf1b827f87a4adfe462faf3ac6e9586f7c871",
+  "dirty": " M hosts/gpu/tests/support/canonical_program_nested_frames.rs\n",
+  "exit": 0,
+  "seconds": 194.53970980644226,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round20-static-architecture.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "before": "/private/tmp/mech-record-boundaries-round18-20261029/object-audit/complete-object.o",
+  "after": "/private/tmp/mech-nested-frames-round20-20261029/object-audit/complete-object.o",
+  "sections": {
+    "__TEXT,__text": {
+      "before": {
+        "bytes": 11541572,
+        "sha256": "e378341416d531cda12cb54fd5e7dd5201bf50c1f1bc2332eff7d17a26801013",
+        "offset": 368
+      },
+      "after": {
+        "bytes": 10843932,
+        "sha256": "36e3f9f6487dfc38f728dc0a0a8c28b329a7e6ab4b41c5c5db88d424b9e064fb",
+        "offset": 368
+      },
+      "identical": false
+    },
+    "__TEXT,__const": {
+      "before": {
+        "bytes": 192,
+        "sha256": "a95fe1fc04a0da29754d851522ee33d955cbe7cc7e806f82944184213a12e2f1",
+        "offset": 11541944
+      },
+      "after": {
+        "bytes": 192,
+        "sha256": "5eb00e04e7b5b0c195f5904ebade5ac2aa744fbc1dd72bb3e5d5b09c2e7a3690",
+        "offset": 10844304
+      },
+      "identical": false
+    }
+  }
+}

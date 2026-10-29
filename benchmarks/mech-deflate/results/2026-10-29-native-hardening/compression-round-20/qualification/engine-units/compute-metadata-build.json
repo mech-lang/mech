@@ -1,0 +1,44 @@
+{
+  "command": [
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+    "--edition=2024",
+    "--crate-name",
+    "mech_compute",
+    "--crate-type",
+    "lib",
+    "--emit=metadata",
+    "-C",
+    "opt-level=0",
+    "-D",
+    "warnings",
+    "-L",
+    "dependency=/private/tmp/mech-live-control-target/release/deps",
+    "--cfg",
+    "feature=\"default\"",
+    "--cfg",
+    "feature=\"runtime-values\"",
+    "--extern",
+    "mech_core=/private/tmp/mech-live-control-target/release/deps/libmech_core-4ff4856784490a86.rlib",
+    "--extern",
+    "mech_engine=/private/tmp/mech-nested-frames-round20-20261029/engine-units/libmech_engine_nested_check.rmeta",
+    "/private/tmp/mech-deflate-linear-stack/src/compute/src/lib.rs",
+    "-o",
+    "/private/tmp/mech-nested-frames-round20-20261029/engine-units/libmech_compute_nested_check.rmeta"
+  ],
+  "exit": 0,
+  "seconds": 0.22743304213508964,
+  "features": [
+    "default",
+    "runtime-values"
+  ],
+  "libraries": {
+    "mech_core": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libmech_core-4ff4856784490a86.rlib",
+      "sha256": "feb4c2084478f12d1173b7411bb465d9c154baf747cd78dd15db8f00b0b6b7c7"
+    },
+    "mech_engine": {
+      "path": "/private/tmp/mech-nested-frames-round20-20261029/engine-units/libmech_engine_nested_check.rmeta",
+      "sha256": "a07f0f3d4c205d13ab99f2b010bdb474b701a064abfa9e5df507b927e38bd7bc"
+    }
+  }
+}
