@@ -862,7 +862,7 @@ impl Invocation<'_, '_, '_> {
                 .metadata()
                 .map_admission
                 .group(previous as usize)
-            && self.state.map_owners.has_retained_binding(group.owner)
+            && self.admission_active(group)
         {
             if previous != group.start() {
                 return Err(invalid("native path lost its entry"));
@@ -928,7 +928,25 @@ impl Invocation<'_, '_, '_> {
             .metadata()
             .map_admission
             .group(index)
-            .filter(|group| self.state.map_owners.has_retained_binding(group.owner));
+            .filter(|group| match group.owner {
+                Some(owner) => self.state.map_owners.has_retained_binding(owner),
+                None => {
+                    group.start() as usize == index
+                        && self.worker.is_none()
+                        && self
+                            .state
+                            .library
+                            .unscoped_remaining()
+                            .is_some_and(|remaining| remaining.0 >= group.work)
+                        && self
+                            .state
+                            .control
+                            .work
+                            .limit()
+                            .checked_sub(self.state.control.work.used())
+                            .is_some_and(|remaining| remaining >= group.work)
+                }
+            });
         if group.is_some_and(|group| u64::from(group.start()) != site) {
             return Err(invalid("ordinary visit inside admitted scalar group"));
         }
@@ -949,6 +967,9 @@ impl Invocation<'_, '_, '_> {
             self.control()
                 .visit_from(site, group.map(|group| group.work), previous)?;
         }
+        self.state.scalar_path = group
+            .filter(|group| group.owner.is_none())
+            .map(|group| group.start());
         self.state.map_owners.closed_exit = None;
         let descriptor = self.descriptor;
         if let Some(mech_engine::native_artifact::NativeBorrowedStringAction::Equal { .. }) =
@@ -1017,6 +1038,30 @@ impl Invocation<'_, '_, '_> {
         Ok(())
     }
 
+    fn admission_active(
+        &self,
+        group: &crate::native_artifact::program::prepare::map_admission::Group,
+    ) -> bool {
+        match group.owner {
+            Some(owner) => self.state.map_owners.has_retained_binding(owner),
+            None => self.state.scalar_path == Some(group.start()),
+        }
+    }
+
+    /// The existing one-word callback result is scratch between helpers.
+    /// Scalar interiors contain no helper that could overwrite this decision.
+    pub(in crate::native_artifact::program::runtime) fn scalar_admission_word(
+        &self,
+        site: u64,
+    ) -> Option<u64> {
+        self.descriptor
+            .metadata()
+            .map_admission
+            .group(site as usize)
+            .filter(|group| group.owner.is_none())
+            .map(|group| u64::from(self.state.scalar_path == Some(group.start())))
+    }
+
     pub(in crate::native_artifact::program::runtime) fn failure_site(
         &self,
         raw: u64,
@@ -1032,7 +1077,7 @@ impl Invocation<'_, '_, '_> {
         }
         let layout = &self.descriptor.metadata().map_admission;
         if let Some(group) = layout.group(previous as usize)
-            && self.state.map_owners.has_retained_binding(group.owner)
+            && self.admission_active(group)
             && group.start() == previous
             && group.sites.contains(&site)
         {

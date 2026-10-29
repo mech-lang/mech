@@ -38,5 +38,8 @@ pub(in crate::native_artifact::program::runtime) struct ExecutionState<'plan> {
     pub(in crate::native_artifact::program::runtime) control: ControlState,
     pub(in crate::native_artifact::program::runtime) stats: RuntimeStats,
     pub(in crate::native_artifact::program::runtime) consumed: bool,
+    // Paid scalar entry only; no source data or ownership is cached. Keep it
+    // with the control state across activation/prefix entry suspension.
+    pub(in crate::native_artifact::program::runtime) scalar_path: Option<u32>,
     pub(in crate::native_artifact::program::runtime) output_cursor: usize,
 }

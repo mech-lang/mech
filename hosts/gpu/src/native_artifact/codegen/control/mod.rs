@@ -888,6 +888,7 @@ impl<'plan> CfgDefinition<'plan> {
                     owner.as_ref(),
                     &map_admission,
                     index,
+                    hooks.as_ref(),
                 )?;
             #[cfg(feature = "canonical-native-program")]
             if let Some(region) = &prefix

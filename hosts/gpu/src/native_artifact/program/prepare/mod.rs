@@ -282,8 +282,9 @@ impl PreparedNativeProgram {
         )?;
         let map_admission = native::program::prepare::map_admission::Layout::derive(
             &plan,
-            &map_owner_words,
+            Some(&map_owner_words),
             &analysis_visits,
+            &closed_tails,
         )?;
         let visits = visits.into();
         let uniform_word_collections = facts.uniform_unsigned_collections().into_boxed_slice();

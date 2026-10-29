@@ -707,6 +707,7 @@ impl<'a> Prepared<'a> {
                 control: ControlState::new(work),
                 stats: RuntimeStats::default(),
                 consumed: false,
+                scalar_path: None,
                 output_cursor: 0,
             }),
         })

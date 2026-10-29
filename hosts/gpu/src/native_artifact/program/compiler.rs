@@ -229,7 +229,7 @@ impl NativeProgramObject {
             "borrowed_string_regions": self.descriptor.metadata().borrowed_strings.regions.len(),
             "closed_tail_regions": self.descriptor.metadata().closed_tails.regions.len(),
             "private_frozen_map_candidates": self.descriptor.metadata().frozen_maps.regions.len(),
-            "retained_map_scalar_admission_groups": self.descriptor.metadata().map_admission.groups.len(),
+            "retained_map_scalar_admission_groups": self.descriptor.metadata().map_admission.groups.iter().filter(|group| group.owner.is_some()).count(),
             "selected_matrix_join_regions": self.descriptor.metadata().selected_joins.regions.len(),
             "private_line_matrix_regions": self.descriptor.metadata().line_matrices.regions.len(),
             "compiled_header_continuation_regions": usize::from(self.descriptor.metadata().prefix.is_some()),
@@ -243,6 +243,25 @@ impl NativeProgramObject {
             "compiled_loop_invariants": &self.codegen.loop_invariants,
             "linked": false, "executed": false, "timing_samples": 0,
         });
+        metadata["ordinary_scalar_admission_groups"] = serde_json::json!(
+            self.descriptor
+                .metadata()
+                .map_admission
+                .groups
+                .iter()
+                .filter(|group| group.owner.is_none())
+                .count()
+        );
+        metadata["ordinary_scalar_admission_sites"] = serde_json::json!(
+            self.descriptor
+                .metadata()
+                .map_admission
+                .groups
+                .iter()
+                .filter(|group| group.owner.is_none())
+                .map(|group| group.sites.len())
+                .sum::<usize>()
+        );
         metadata["compiled_bound_call_shim"] = serde_json::json!(&self.codegen.bound_call_shim);
         metadata["compiled_preserving_call_regions"] =
             serde_json::json!(&self.codegen.preserving_call_regions);
