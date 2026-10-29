@@ -6,6 +6,8 @@ use super::{
     NativeMatchAction as Scalar, NativeMatchValue as Value, NativeProgramArtifactPlan as Plan,
     NativeProgramFacts as Facts,
 };
+#[path = "unsigned_buffer_aliases.rs"]
+mod aliases;
 
 #[derive(Clone, Debug)]
 pub struct NativeUnsignedBufferCall {
@@ -42,9 +44,6 @@ impl Facts<'_> {
             if matches!(template.primitive(), Primitive::MatrixIndexedReplace | Primitive::SequenceWithCapacity | Primitive::SequenceReserve | Primitive::SequenceAppend | Primitive::SequenceAppendLeBytes | Primitive::SequenceAppendSublist | Primitive::SequenceClear))) {
             return Vec::new();
         }
-        let Ok(actions) = facts.actions() else {
-            return vec![None; plan.blocks().len()];
-        };
         let Ok(reads) = facts.fusion_reads() else {
             return vec![None; plan.blocks().len()];
         };
@@ -71,33 +70,12 @@ impl Facts<'_> {
                 let sublist = (template.primitive() == Primitive::SequenceAppendSublist)
                     .then(|| operands.get(1).copied())
                     .flatten();
-                let mut eligible = vec![false; plan.values().len()];
-                if let Some(source) = source {
-                    if can_retire(facts, reads, source, site as u32) {
-                        eligible[source.get() as usize] = true;
-                    }
-                }
-                loop {
-                    let mut changed = false;
-                    for action in actions.iter() {
-                        if let Action::Scalar(Scalar::Copy { source, output }) = action {
-                            if eligible[output.get() as usize]
-                                && !eligible[source.get() as usize]
-                                && can_retire(facts, reads, *source, site as u32)
-                            {
-                                eligible[source.get() as usize] = true;
-                                changed = true;
-                            }
-                        }
-                    }
-                    if !changed {
-                        break;
-                    }
-                }
-                let owned_source_slots = eligible
+                let owned_source_slots = source
+                    .filter(|source| can_retire(facts, reads, *source, site as u32))
+                    .and_then(|source| aliases::possible(facts, source).ok())
+                    .unwrap_or_default()
                     .into_iter()
-                    .enumerate()
-                    .filter_map(|(slot, eligible)| eligible.then(|| Value(slot as u32)))
+                    .filter(|value| can_retire(facts, reads, *value, site as u32))
                     .collect();
                 Some(NativeUnsignedBufferCall {
                     site: site as u32,
