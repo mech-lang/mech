@@ -1222,7 +1222,7 @@ fn mixed_record_buffer_frames_keep_capacity_aliases_and_failure_recovery() {
 #[path = "canonical_program_opaque_frame_siblings.rs"]
 mod opaque_siblings;
 
-fn assert_build_owned_image_round_trip(jit: &JitProgramArtifact) {
+pub(super) fn assert_build_owned_image_round_trip(jit: &JitProgramArtifact) {
     let bytes = jit.descriptor().encode_build_owned_image().unwrap();
     // SAFETY: these bytes came from this checked build. Restored metadata
     // is confined to comparison; this does not authorize execution.
