@@ -1,0 +1,13 @@
+{
+  "command": [
+    "otool",
+    "-tvV",
+    "/private/tmp/mech-numeric-writes-round12-20261028/complete-object.o"
+  ],
+  "exit": 0,
+  "seconds": 4.78979241696652,
+  "object_sha256": "b3b36f6110c9a517ddfd8a8ec276eb77a98084c816c5f9462ea09777e0089f4e",
+  "lines": 1891534,
+  "full_text_sha256": "ff5035183c909cc010830e286cbfa981d611ed92272f63582d5428852293d8cf",
+  "excerpts": "Unsigned matrix-geometry quotient contexts containing typed U8/U16/U32 stores. Static CFG audit separately proves no calls on funded already-private paths; cold first-materialization branches are explicit. Region counts are not dynamic invocation counts."
+}

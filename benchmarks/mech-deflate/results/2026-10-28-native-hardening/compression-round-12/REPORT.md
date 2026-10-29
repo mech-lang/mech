@@ -1,5 +1,24 @@
 # Round 12: private unsigned indexed-write leaf recurrences
 
+Default-profile qualification now passes **227 scoped Rust tests**:87 snapshot,
+129 maintained component,8 scalar correctness and3 bit tests. All12 architecture,
+catalog, inventory, unsafe, warning and formatting checks pass. The complete
+Object emits **91 write regions** (88 under ordinary parents),117 typed stores
+and315 loads, alongside the retained45 read-only regions /72 loads. The emitted
+successful already-private CFGs contain zero calls. These are compiled sites,
+not dynamic invocation counts. Actual Object disassembly shows checked geometry,
+the private-flag branch, direct `str w26, [x9, x1, lsl #2]`, and the distinct cold
+materialization/helper arm. Full Object/disassembly hashes and excerpts are retained;
+large binary artifacts stay private. Hashed native reference procedures also show
+typed memory operations; their IDs do not prove a mapping to named source helpers.
+No source-level attribution or per-function reference speedup is claimed.
+
+The budget-correct scalar cohort passes all12 pairs (maximum direct ratio1.01804
+against1.05), exact allocations and zero loop allocation slope. This does not
+resolve the retained historical round-10 failed cohort. Runtime-only linked and
+observed fuel / prepaid-publication unit qualification are the remaining checks.
+See `default-qualification-inventory.json`.
+
 Budget-correct compiler `d105f884bc79d464a205b3022da4abdc00da41aa`: latest fresh
 pair **345.68× → 251.38× Roc**, 0.099901542 → 0.072649542 s, reference0.000289 s.
 That is **27.28% less elapsed / 1.3751× faster Mech**. All exact-byte, inflation,
