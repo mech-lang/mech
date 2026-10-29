@@ -277,16 +277,7 @@ fn escaping_records_keep_canonical_storage_and_image_layout_is_rederived() {
     for artifact in artifacts(PACK).0 {
         let catalog = mech_stdlib::source_catalog();
         let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
-        let bytes = jit.descriptor().encode_build_owned_image().unwrap();
-        // SAFETY: these bytes came from this checked build. Restored metadata
-        // is confined to comparison; this does not authorize execution.
-        let restored = unsafe {
-            mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
-                &bytes, &catalog,
-            )
-        }
-        .unwrap();
-        assert_eq!(restored.encode_build_owned_image().unwrap(), bytes);
+        assert_build_owned_image_round_trip(&jit);
     }
 }
 
@@ -1230,3 +1221,17 @@ fn mixed_record_buffer_frames_keep_capacity_aliases_and_failure_recovery() {
 
 #[path = "canonical_program_opaque_frame_siblings.rs"]
 mod opaque_siblings;
+
+fn assert_build_owned_image_round_trip(jit: &JitProgramArtifact) {
+    let bytes = jit.descriptor().encode_build_owned_image().unwrap();
+    // SAFETY: these bytes came from this checked build. Restored metadata
+    // is confined to comparison; this does not authorize execution.
+    let restored = unsafe {
+        mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
+            &bytes,
+            &mech_stdlib::source_catalog(),
+        )
+    }
+    .unwrap();
+    assert_eq!(restored.encode_build_owned_image().unwrap(), bytes);
+}
