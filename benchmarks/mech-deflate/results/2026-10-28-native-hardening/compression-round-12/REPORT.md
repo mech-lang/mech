@@ -1,168 +1,258 @@
-# Round 12: private unsigned indexed-write leaf recurrences
+# Round 12: native private unsigned indexed-write recurrences
 
-Default-profile qualification now passes **227 scoped Rust tests**:87 snapshot,
-129 maintained component,8 scalar correctness and3 bit tests. All12 architecture,
-catalog, inventory, unsafe, warning and formatting checks pass. The complete
-Object emits **91 write regions** (88 under ordinary parents),117 typed stores
-and315 loads, alongside the retained45 read-only regions /72 loads. The emitted
-successful already-private CFGs contain zero calls. These are compiled sites,
-not dynamic invocation counts. Actual Object disassembly shows checked geometry,
-the private-flag branch, direct `str w26, [x9, x1, lsl #2]`, and the distinct cold
-materialization/helper arm. Full Object/disassembly hashes and excerpts are retained;
-large binary artifacts stay private. Hashed native reference procedures also show
-typed memory operations; their IDs do not prove a mapping to named source helpers.
-No source-level attribution or per-function reference speedup is claimed.
+The completed round reduces unchanged eight-byte level-12 compression from
+**345.68× to 251.38× Roc** (Roc = 1×): **27.28% less elapsed time**, or
+1.3751× faster Mech. There are **231 scoped Rust passes**, twelve passing static
+contracts, and twelve passing paired scalar timing/allocation controls. This is
+a small-input result; parity and large-input throughput are not established.
 
-The budget-correct scalar cohort passes all12 pairs (maximum direct ratio1.01804
-against1.05), exact allocations and zero loop allocation slope. This does not
-resolve the retained historical round-10 failed cohort. Runtime-only linked and
-observed fuel / prepaid-publication unit qualification are the remaining checks.
-See `default-qualification-inventory.json`.
+## Revisions and unchanged application
 
-Budget-correct compiler `d105f884bc79d464a205b3022da4abdc00da41aa`: latest fresh
-pair **345.68× → 251.38× Roc**, 0.099901542 → 0.072649542 s, reference0.000289 s.
-That is **27.28% less elapsed / 1.3751× faster Mech**. All exact-byte, inflation,
-capacity/backing and cleanup checks pass. `validated-primary/` retains this third
-independent cohort and its excluded 56-repetition profile. Earlier cohorts below
-remain separate; their small differences are not separately paired speedups.
+- Round base: `efa2ff81741362394553d5c7eae7d9dfc39766c4`.
+- Core handoff: `02fb501b3935d16f75b1eda4fbe049bdf1051465`.
+- Native proof, shared emitter and runtime: `ed75406f3893e05070542dc523634251947a7fdc`.
+- Private carrier-pin correction: `c0bef396bbc88cdd8dd94037053866b182b7a68d`.
+- Final measured production code: `d105f884bc79d464a205b3022da4abdc00da41aa`.
+- Final unit/linked qualification and test-only error matching:
+  `e7767697e1b1bdc6e8013a499a1cecbb80319a22`.
+- Published draft PR: [#973](https://github.com/mech-lang/mech/pull/973), stacked
+  #934 → #935 → #939 → #973. PR parent:
+  `eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`.
 
-The corrected-handoff compiler passed128 broad component tests. An added edge
-case then reproduced a skipped selected output-element bound on an unchanged
-write (length8, limit4, incorrectly accepted). `d105f884b` declines native entry
-for that context, letting the original operation reject at its lexical position;
-an unselected write still succeeds. No allowance was increased. This case and
-new multi-root / same-visit-version / conditional-first-write coverage pass for
-original and decoded artifacts (15 focused tests including the unchanged
-allocation contract). The final broad, linked/fuel and scalar receipts remain
-pending at this timing commit. See `budget-correct-timing-inventory.json`.
+The reviewed head `a30f6a4d67defc176ad1cc498df3f6bbb459c56a` received a completed
+code review with no findings. The closure adds test/receipt/documentation changes;
+a fresh review is requested on publication. CI is cancelled by user request and
+is not claimed green. The PR remains draft and unmerged.
 
-Corrected compiler `c0bef396bbc88cdd8dd94037053866b182b7a68d`: the final fresh
-pair is **345.80× → 250.94× Roc**, 0.099590208 → 0.072269500 s, reference
-0.000288 s. This is **27.43% less elapsed / 1.3780× faster Mech**. Exact bytes,
-independent inflation, reserve13, false physical-backing reuse and final cleanup
-checks pass. The separate 56-repetition profile is excluded from primary samples.
-`final-primary/` retains this cohort; the earlier cohort below remains separate.
+The 25-component assembly remains 160992 bytes, SHA-256
+`345324ce551aaa2485dcd0fe4262da96e660d6b31f5f772bff89b034e9b1997f`.
+The timing caller source remains 160857 bytes, SHA-256
+`331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9`;
+its 4138627-byte canonical artifact remains
+`a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7`.
+Fresh source production, original-artifact encoding and decoded re-encoding agree
+exactly. Algorithms, tables, the 262144-entry U16 tree, 1500513-word U32 cache,
+depth 300, nice length 258, original EOF limits, six Huffman initializers,
+allocation sites and timing boundaries are unchanged. Mech performs compression.
 
-The provisional broader run executed126 tests:125 passed and the unchanged
-private-allocation test failed. The initial native boundary cloned its own
-carrier pin and always requested a copy, doubling private payload allocation.
-`c0bef396b` transfers that pin into the original consuming store instead. Core's
-exclusive same-account check remains authoritative; external aliases and other
-fields still force a copy. The original allocation test plus all11 new cases
-pass (12 tests), with no expected values or allowances changed. The private U32
-case now allocates its initial buffer once across0/1/8 updates; the exact large
-minus small delta is6000900 bytes in each case. Broad/fuel/linked qualification
-and the corrected compiler's protected scalar cohort are pending at this commit.
+## Final paired measurement
 
-One unit-profile build was deliberately interrupted to fix this regression first.
-Switching back rebuilt the unhashed selected math library; the corrective default
-build took3m58s. The timing overlap guard rejected an attempt while freshness
-verification was still active, before taking any samples. That attempt's log is
-retained; measurement restarted only after the build finished and library hashes
-were verified. See `corrected-timing-inventory.json` for all receipts.
+| Executable | Median seconds | Multiple of Roc |
+| --- | ---: | ---: |
+| Fresh pinned Roc reference, 20000 observations | 0.000289 | 1× |
+| Round-11 compiler, three primary observations | 0.099901542 | 345.6801× |
+| Budget-correct round-12 compiler, three primary observations | 0.072649542 | 251.3825× |
 
-Compiler `ed75406f3893e05070542dc523634251947a7fdc`, base
-`efa2ff81741362394553d5c7eae7d9dfc39766c4`. The core fixed-shape handoff is
-`02fb501b3935d16f75b1eda4fbe049bdf1051465`; native selection/emission/runtime
-and focused regressions are `ed75406f3`. PR parent remains `eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`.
+`validated-primary/results.json` retains every observation. The warmup and extra
+observation are excluded, as is a separate 56-repetition sampled process. No
+compilation or test process overlaps protected primary or scalar timing. The
+same pinned mimalloc 2.1.7 object is used without the allocation probe. The timer
+encloses only `evaluate_into`; reserve13, clear/rebind, JIT, verification and drop
+retain their existing boundaries. All five observations per side preserve exact
+raw bytes, independent inflation, capacity 13 and terminal zero bytes/nodes.
 
-The unchanged eight-byte level-12 pair improves from **344.70× to 252.69× Roc**
-(Roc = 1×), **26.69% less elapsed / 1.3641× faster Mech**. This is a small-case
-observation, not large-input throughput or parity. The fresh reference median is
-0.000289 s from 20,000 observations; Mech medians are 0.099616958 s before and
-0.073028666 s after (three primary observations each). All five observations on
-each side preserve exact raw bytes, independent inflation and final zero bytes /
-nodes. The separate 55-repetition sampled process contributes no primary samples.
+`same_backing` is false on every call on both compilers. Capacity is retained,
+but physical copying at the immutable public argument boundary remains timed.
+The diagnostic `NoLimits` policy is unchanged. Logical work changes from
+789930572624 to 530905237224 because proved native iterations eliminate canonical
+frame/store construction work; IR117/work policy92 prices the new representation.
+Canonical bytecode remains revision14 and ABI35 remains unchanged.
 
-Qualification at this first timing checkpoint: 87 snapshot tests pass. The new
-focused cases pass across the final two receipts (ten cases, then the corrected
-real-buffer measurement). Broader component, actual finite-fuel, linked/AOT and
-protected scalar controls are still pending; this is not the final acceptance
-packet. The historical round-10 decoded U64 ratio 1.0526036 against 1.05 remains an
-unresolved observation and must not be erased by a later cohort.
+Executable SHA-256:
 
-The source, canonical bytecode, algorithm, tables, sizes, limits and allocation
-sites are unchanged, including the real 262144 U16 tree / 1500513 U32 cache,
-depth 300, nice length 258, original near-EOF limits and six deliberate Huffman
-initializers. The same mimalloc 2.1.7 object is pinned. The timer encloses only
-`evaluate_into`; reserve13, clear/rebind, JIT, validation and drop keep their
-existing boundaries. Physical output backing changes on **both** sides at the
-immutable public argument boundary (`same_backing=false` on every call); those
-copies remain timed. Capacity retention is not physical output reuse.
+- Before: `7d1553881fc896b541d93345170e49a01bd7bbcf15cdce0abb12522508962dcf`.
+- After: `390370ca3419a4fa03646979a3ff121db07fc85cbca83e7226cf89db38d409a5`.
+- Reference: `3941ef59b2c9343d0493cc6b6d14ca4803e6bd27acfe520b1fb59d9b63026324`.
+- Allocator object: `38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874`.
 
-## Representation and authority
+The executable build receipt records pre-commit HEAD `cfcd9d6e9` with the final
+output-limit patch applied; that exact production patch is committed as `d105f884b`.
+The timing result identifies `d105f884b`. Library and executable hashes bind the
+actual measured build; receipt/documentation-only commits are not new timings.
 
-The existing canonical Program numeric-leaf proof now admits selected plain
-unsigned indexed replacements and one numeric-array result. A forward must-analysis
-checks current functional versions on every acyclic source path: stale content
-reads, stale returns and discarded recursive updates decline the class. Static
-root provenance alone cannot grant in-place mutation. Exact frame recipes,
-selected factories, schemas and geometry still select it; names and table sizes
-do not. Shared immutable inputs and separate fields with actual aliases remain
-valid. A suspended ordinary parent cannot run while its leaf holds native views.
+Earlier independent cohorts are preserved, with their own before/reference pair:
 
-The first **changed** write settles native fuel, calls the original selected
-replacement with current operands, and obtains one private copy. The existing
-exclusive core handoff retains that backing in a new, unregistered fixed-shape
-owner with its future canonical wrapper/registration already admitted. Subsequent
-successful iterations use typed loads/stores and SSA scalar state. Unchanged
-writes keep the original identity. No general per-element runtime dispatcher was
-substituted. On fuel exit, current cells freeze without allocation/admission and
-current scalar fields are restored. A pre-admitted arena ticket binds the eventual
-result to its exact arena generation, type, account and retained bound.
+| Stage | Packet | Before → after seconds | Roc multiples |
+| --- | --- | --- | --- |
+| Initial implementation | `primary/` | 0.099616958 → 0.073028666 | 344.70× → 252.69× |
+| Corrected private handoff | `final-primary/` | 0.099590208 → 0.072269500 | 345.80× → 250.94× |
+| Corrected unchanged-write output bounds | `validated-primary/` | 0.099901542 → 0.072649542 | 345.68× → 251.38× |
 
-The cold first-change boundary reopens the same **post-materialization** account;
-the partially executed traversal has already been paid and is not charged or
-funded twice. Exceptional paths close/discard ownership before the original typed
-error returns. IR117/work policy92 identifies these proofs and prices, including
-store comparisons and prepaid publication. Canonical bytecode remains revision14;
-ABI35 is unchanged. Restored layouts are independently rederived from the plan.
+These cohort differences are not additional paired speedups. The full historical
+checkpoint narrative is preserved byte-for-byte in `CHECKPOINT-HISTORY.md`.
 
-## Observations and limitations
+## Design and authority
 
-The actual unchanged Huffman counter at 256 symbols drops from 5629 requests /
-827362 bytes / 13846 ordinary visits to **280 / 44906 / 6**. Its after counts stay
-flat from 1 through 256 symbols, for original and decoded artifacts. The generic
-increment loop drops from 4090 requests / 275146 bytes / 4628 visits to
-**276 / 38610 / 6**, also flat for positive iteration counts. These System/probe
-component observations are separate from primary mimalloc timing.
+This extends the existing canonical Program numeric-leaf and closed-tail
+pipeline. Selected unsigned indexed replacements and either a scalar result or
+one numeric-array result are eligible. A forward must-analysis checks current
+functional array versions on every acyclic source path. Stale reads/returns,
+discarded updates, swaps, unknown effects, escapes, nested activations and
+unsupported result shapes retain the maintained path. Names, values and table
+sizes never select the optimization. Exact frame recipes, schemas, geometry,
+selected factories and dataflow remain authoritative.
 
-Real-buffer typed-store witnesses request **561530 bytes** for the U16 tree and
-**6039294 bytes** for the U32 cache, with **276 requests / 6 visits** each. One and
-eight updates agree exactly for both artifact forms. These witnesses use typed
-constant replacements, isolating stores from the separate narrow-arithmetic
-factory capability; the compressor source was not changed.
+Arrays retain invocation-current owners separately from scalar SSA state. A leaf
+may execute beneath an ordinary suspended parent, which cannot run while native
+views are live. All unsigned widths and qualified rectangular linear indexing
+are supported. Shared inputs and actual aliases remain immutable.
 
-The after profile contains 1351 sampled stacks. Inclusive overlapping ancestry:
-helper996, buffer-frame action454, frame-word admission329, frame-input
-admission327, visit231, selected library call193, selected unsigned replacement69,
-selected unsigned read30. They are neither additive buckets nor predicted gains.
-Ordinary mixed array/scalar frames remain a demonstrated cost; returning arbitrary
-mixed carriers, growing producers and nested native regions are outside this slice.
+At the first changed write, native fuel settles and the original selected
+consuming replacement receives the current operands and carrier owner. Core
+checks dynamic exclusivity: a private buffer retains its initial backing; a
+shared one copies once. A fixed-shape private owner holds an already admitted
+future canonical wrapper and ownership registration. Subsequent successful
+iterations emit direct typed loads/stores. No-op stores preserve original
+identity. Entry declines when a writable view exceeds the selected output-element
+ceiling, allowing the original operation to enforce its error at the reached
+source position, including unchanged stores and unselected paths.
 
-## Attempt disposition
+A pre-admitted value-arena ticket binds publication to the exact arena,
+generation, type, account and retained bound. Freezing allocates nothing and
+performs no new admission. At fuel exit current cells freeze and current scalar
+fields synchronize. The first changed traversal remains prepaid when execution
+resumes on the same post-materialization account: it is not funded twice.
+Failure discards private owners and preserves prior publication, aliases,
+cleanup and retry. Restored-image proofs and prices are independently rederived
+from the validated plan. JIT and Object emission share this implementation.
 
-All failed attempts are retained. The initial core check missed a `SequenceView`
-import; the first native check mapped a memory error as a snapshot error. Both
-introduced compilation mistakes were corrected before release. The first core
-test command addressed a nonmember package through a consumer workspace and was
-rejected; the second selected zero tests. Neither is passing evidence. The corrected
-command executed eight ownership tests, followed by all 87 snapshot tests.
+## Qualification and commands
 
-The first new native cohort passed eight cases and failed three fixture assumptions:
-two requested narrow additions lacking the existing scalar semantic witness; the
-store-width fixtures now use typed constants. The exact-budget fixture initially
-omitted prior-output retirement by taking an unwarmed receipt; it now uses the
-actual warmed receipt without increasing any allowance. The next cohort passed ten
-cases and exposed one cold metadata allocation difference in the new real-buffer
-measurement (261 requests versus 256). Warming both measurements removes that
-one-time cache difference; the final real-buffer case passes with identical counts.
-Existing component expected values and allowances are unchanged. The first static
-run passed architecture/catalog/inventory/unsafe checks and rejected formatting;
-formatting is corrected, with the final full static run pending.
+Nightly `2026-03-03`, aarch64-apple-darwin, warnings as errors, one compiler job,
+locked/offline Cargo and `CARGO_INCREMENTAL=0` were used. Default qualification
+uses `benchmarks/mech-deflate/native-profile/Cargo.toml`: full Core/Engine compiler
+values, canonical native Program, and only the five required math operations.
+The optional `unit-qualification` profile adds linked qualification and maintained
+runtime source-routing support. Exact rustc arguments, selected dependency hashes,
+Cargo feature metadata and executable commands are retained, not inferred.
 
-See `timing-inventory.json` for retained files and exact hashes. Release build:
-16m49s, selected five math operations; the clean freshness build was entirely
-fresh. Executables remain private with recorded hashes. Clearing the inactive
-37 GB debug cache recovered about35 GB; the successful core test executable and
-all receipts were retained. No cancelled large-input campaign was restarted.
+| Executed qualification | Passed | Receipt / command owner |
+| --- | ---: | --- |
+| Core snapshot unit tests | 87 | `validation/round12-core-snapshot-cohort.*`; `core-publication-tests snapshot:: --nocapture --test-threads=1` |
+| Existing and new maintained component cases | 129 | `qualification/qualified-components.json` and compressed log |
+| Selected native scalar correctness | 8 | `validated-primary/selected-native-run.json` |
+| Selected bit-operation correctness | 3 | `validated-primary/selected-bits-run.json` |
+| Actual runtime fuel and adversarial publication units | 3 | `final-qualification/units/unit-run3.json` |
+| Generated runtime-only linked retry application | 1 | `final-qualification/linked/component-v2-run.json` |
+| **Rust total** | **231** | Zero failed/ignored tests within these selected cohorts |
+| Architecture/catalog/inventory/unsafe/warnings/format contracts | 12 | `validation/round12-final-static.*` |
+| Fresh paired scalar timing/allocation controls | 12 pairs | `validated-primary/scalar-results.json` |
+
+The actual unit command selects `numeric_fuel_exit_synchronizes`,
+`numeric_write_fuel_exit` and `prepared_publication_is_bound`, with `--nocapture
+--test-threads=1`. Sixteen observed write-fuel exits (eight per artifact form)
+freeze prefixes of 64/63/61/57/49/33/17/1 updated cells, with current i/end fields,
+released loans, unchanged prior output and stable final bytes/nodes. Retry
+succeeds. The retained read-only unit observes ten actual synchronized exits;
+six additional denied cases stop before native entry. Publication adversaries
+cover wrong arena, generation, type, foreign account, retained bound and successful
+publication at full admitted memory.
+
+The linked command selects
+`linked_private_numeric_child_freezes_recovers_and_preserves_error_order`.
+Its generated binary executes inputs **3 → 0 → 2** through a child with a private
+write beneath an ordinary parent. The invalid invocation asserts after its first
+write and before failing division; prior output is unchanged, all temporary
+state is cleaned, and the final valid invocation succeeds. Generated project
+pins, Object metadata, binary hash and actual compilation-unit closure are in
+the compressed run log. The deployed program uses the runtime-only feature
+closure and excludes parser, compiler and Cranelift. Its binary SHA-256 is
+`140a94404a5c5421f85a6334952978e94534c16752ec179b7c71648447e8ed05`.
+This is linked feature qualification, not a full linked compressor benchmark.
+
+After the test-only typed-error correction, five applicable checks were rerun:
+formatting, diff whitespace, unsafe boundaries, warning policy and Rust module
+layout. All pass; receipts are in `final-qualification/round12-late-checks.*`.
+The full twelve contracts passed before that test-only change. The final
+unit-profile build completed in 964.15 seconds; no timing ran concurrently.
+
+All twelve fresh scalar pairs meet the unchanged 1.05 ceiling, retain exact
+allocation requests/bytes, and preserve zero loop allocation slope. The maximum
+direct original/decoded ratio is **1.0180374**. The historical round-10 decoded
+U64 ratio **1.0526036** against 1.05 remains unresolved; a fresh passing cohort
+does not erase that earlier failure.
+
+## Allocation and machine-code evidence
+
+Component diagnostics use the System allocator and probe, separate from complete
+mimalloc timing. At 256 iterations the generic counter changes from
+4090 requests / 275146 bytes / 4628 visits to **276 / 38610 / 6**. The actual
+unchanged Huffman counter changes from 5629 / 827362 / 13846 to
+**280 / 44906 / 6**. Positive counts stay flat from 1 through 256 iterations,
+for original and decoded artifacts.
+
+Real shared-buffer typed-store witnesses request 561530 bytes for the U16 tree
+and 6039294 for the U32 cache, with 276 requests / 6 visits each; one and eight
+updates agree. The pre-existing private-allocation contract is unchanged:
+large-minus-small requested bytes are exactly **6000900** for zero, one and eight
+updates, in both forms. This proves one initial private payload allocation.
+The test caught and drove correction of an initial extra payload copy.
+
+The complete Object selects **91 write regions**, 88 parented, with **117 typed
+store sites and 315 load sites**; the retained 45 read-only regions have 72 loads.
+An emitted-CFG audit proves zero calls on successful already-private backedges.
+First-change cold helper arms remain explicit. These are compiled sites, not
+runtime invocation counts. Actual disassembly includes the checked private
+branch and `str w26, [x9, x1, lsl #2]`; excerpts and hashes bind the full Object
+(7566856 bytes) and 1891534-line disassembly retained privately.
+
+The native reference binary was inspected passively. Hashed procedures contain
+typed memory operations, but their identifiers do not prove a mapping to named
+source helpers. No per-function reference timing or source attribution is
+claimed. Large binaries/full disassemblies are excluded from Git; hashes,
+metadata and excerpts are retained in `qualification/`.
+
+The final separate profile has 1356 sampled stacks. Inclusive ancestry contains
+helper 1005, buffer-frame action 446, frame-word and input admission 318 each,
+ordinary visit 232, selected library call 189, selected replacement 58 and
+selected read 33. These overlapping counts are not additive time buckets or
+predicted speedups. Ordinary mixed array/scalar frame admission remains a
+measured cost. The next bounded candidate is the existing Huffman cumulative
+loop's `(countsArray, usedU64)` result, currently outside this slice's result
+shape. Establish its generic witness and acceptance before widening support.
+
+## Failed attempts and remaining coverage
+
+- Introduced compile mistakes (missing `SequenceView` import and a memory/snapshot
+  error conversion) were corrected before release.
+- A Core command used a nonmember package manifest; another selected zero tests.
+  Neither is passing evidence. Corrected execution passed 8 ownership tests and
+  then all 87 snapshot tests.
+- Initial width fixtures requested unsupported narrow addition. Typed constants
+  now isolate the selected-store capability; application source is unchanged.
+- A new exact-budget fixture omitted prior-output retirement; an unwarmed
+  receipt caused the failure. It now uses the actual warmed receipt. A separate
+  cold metadata difference (261 versus 256 requests) was removed by warming both
+  measurements. No expected component result or allowance was increased.
+- The initial broad cohort passed 125/126 and exposed an introduced extra private
+  copy. `c0bef396b` transfers the carrier pin; the original allocation contract
+  passes unchanged. An interrupted unit-profile build is retained separately.
+- The new unchanged-write test exposed an introduced output-element-bound bypass
+  (length8, limit4). `d105f884b` restores the selected-operation boundary. Clean
+  parent evidence in `baseline-review.json` shows the original selected check.
+- The timing overlap guard rejected an attempt while a freshness build was still
+  active, before samples. Measurement restarted only after completion and
+  library hash verification. The rejected attempt is retained.
+- Initial formatting failed and was corrected. The full twelve contracts and
+  final five applicable checks pass.
+- The first fuel unit assumed every work denial used a `WorkLimit` debug string.
+  Actual synchronized denial correctly used `Control::Work`. The test now
+  matches explicit maintained typed work failures; runtime classes were not
+  merged or changed. Initial and diagnostic failed runs are retained alongside
+  the final three passing units.
+- The inherited historical round-10 scalar timing failure remains unresolved.
+  No remaining introduced correctness failure is known in the executed scope.
+
+The selected-operation catalog deliberately omits an all-primitives not/xor test;
+it is not counted as a pass. Full-catalog/all-unit sweeps, larger complete input
+boundary refreshes and a complete deployed compressor benchmark were not run.
+No cancelled full-corpus or long-input campaign was restarted. CI is cancelled,
+not green. General mixed results, growing producers, nested native regions and
+SIMD are outside this completed round. No further optimization is included here.
+
+`closure-inventory.json` hashes every packet file other than itself. Earlier
+stage inventories remain unchanged and describe their checkpoint, including
+checks which were pending at the time. Actual executable commands, selected
+profiles, failures and observations are retained in those receipts. About 35 GB
+of inactive debug build cache was removed after preserving the successful Core
+unit executable and receipts; release and measured executables remain private.

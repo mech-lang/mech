@@ -30,3 +30,15 @@ cleanup and retry; original/decoded/restored shared JIT/Object execution. Preser
 scalar controls and independently rederive image proofs. Record every failed
 attempt. Repeat paired complete small-case timing and a separate profile, then
 commit the packet before another optimization. No larger input is queued.
+
+The [completed round 12 packet](../results/2026-10-28-native-hardening/compression-round-12/REPORT.md)
+records production compiler `d105f884bc79d464a205b3022da4abdc00da41aa` and
+**345.68× → 251.38× Roc**, 27.28% less elapsed on unchanged eight-byte compression.
+All 231 scoped Rust tests, twelve static contracts and twelve fresh scalar pairs
+pass. Actual finite-fuel observations, adversarial prepaid publication and a
+runtime-only linked retry application complete this slice's acceptance. Two
+introduced regressions caught by qualification (an extra private payload copy
+and an unchanged-store output-bound bypass) are corrected without changing
+component expectations or allowances. Historical scalar timing failure and
+unrefreshed larger/deployed coverage remain explicit. Mixed array/scalar results
+and growing producers remain outside this completed patch.
