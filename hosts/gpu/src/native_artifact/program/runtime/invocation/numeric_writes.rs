@@ -117,19 +117,23 @@ impl Invocation<'_, '_, '_> {
             owned.into_private_updates(shape)
         }
         .map_err(Error::Snapshot)?;
-        let address = match private.elements_mut() {
-            UnsignedMatrixViewMut::U8(cells) => cells.as_mut_ptr() as u64,
-            UnsignedMatrixViewMut::U16(cells) => cells.as_mut_ptr() as u64,
-            UnsignedMatrixViewMut::U32(cells) => cells.as_mut_ptr() as u64,
-            UnsignedMatrixViewMut::U64(cells) => cells.as_mut_ptr() as u64,
-        };
-        if let Some(capacity) = proof.capacity(*array) {
-            let length = private.elements().len() as u64;
+        let address = if let Some(capacity) = proof.capacity(*array) {
+            let [address, length, cells] = private
+                .reserved_native_view()
+                .ok_or_else(|| invalid("numeric append lacks a reserved Vec view"))?;
             self.write_borrowed_word(2 + proof.view(*array) + 1, length)?;
             self.write_borrowed_word(2 + proof.view(*array) + 2, 1)?;
             self.write_borrowed_word(2 + proof.view(*array) + 3, length)?;
-            self.write_borrowed_word(2 + capacity, private.capacity_elements() as u64)?;
-        }
+            self.write_borrowed_word(2 + capacity, cells)?;
+            address
+        } else {
+            match private.elements_mut() {
+                UnsignedMatrixViewMut::U8(cells) => cells.as_mut_ptr() as u64,
+                UnsignedMatrixViewMut::U16(cells) => cells.as_mut_ptr() as u64,
+                UnsignedMatrixViewMut::U32(cells) => cells.as_mut_ptr() as u64,
+                UnsignedMatrixViewMut::U64(cells) => cells.as_mut_ptr() as u64,
+            }
+        };
         // Moving this owner moves only metadata; the allocated cells stay put.
         *self.state.buffer_frames.private_array_mut(id, *array)? = Some(private);
         self.write_borrowed_word(2 + proof.view(*array), address)?;

@@ -103,6 +103,36 @@ impl Value {
 }
 
 impl PrivateUnsignedMatrix {
+    /// Address, initialized length and actual capacity for a synchronous native
+    /// append phase. Use the Vec allocation directly: a mutable slice grants
+    /// access only to initialized cells, not the spare cells that append writes.
+    /// No reference to the cells may be materialized while this view is live;
+    /// the owner cannot grow or move its backing until the loan ends.
+    pub fn reserved_native_view(&mut self) -> Option<[u64; 3]> {
+        self.append.as_ref()?;
+        let root = Arc::get_mut(&mut self.value.root).expect("private root");
+        let data = Arc::get_mut(&mut root.data).expect("private data");
+        let ValueData::Matrix(matrix) = &mut data.data else {
+            unreachable!("private matrix")
+        };
+        macro_rules! view {
+            ($words:expr) => {
+                [
+                    $words.as_mut_ptr() as u64,
+                    $words.len() as u64,
+                    $words.capacity() as u64,
+                ]
+            };
+        }
+        Some(match &mut matrix.elements {
+            SequenceStorage::U8(words) => view!(words),
+            SequenceStorage::U16(words) => view!(words),
+            SequenceStorage::U32(words) => view!(words),
+            SequenceStorage::U64(words) => view!(words),
+            _ => unreachable!("plain unsigned buffer"),
+        })
+    }
+
     pub fn private_metadata_nodes(&self) -> u64 {
         self.append.as_ref().map_or(0, |a| a.retained_nodes())
     }
@@ -171,10 +201,12 @@ impl PrivateUnsignedMatrix {
     /// Invalid geometry is rejected before changing the Vec length.
     ///
     /// # Safety
-    /// Every cell between the previous initialized length and `length` must
-    /// have been initialized as this exact unsigned kind. No native borrow may
-    /// survive this call. The sealed producer must check reserved capacity
-    /// before each traversal and advance length only after the typed store.
+    /// For a valid append-phase length inside the old-length/capacity range,
+    /// every new cell must have been initialized as this exact unsigned kind.
+    /// Invalid mode/geometry is rejected before cell access and requires no
+    /// initialized-prefix claim. No native borrow may survive this call. The
+    /// producer checks capacity before a traversal and advances length only
+    /// after the typed store.
     pub unsafe fn assume_initialized_prefix(
         &mut self,
         length: usize,
@@ -232,3 +264,7 @@ impl PrivateUnsignedMatrix {
         drop(preparation);
     }
 }
+
+#[cfg(test)]
+#[path = "private_unsigned_append_tests.rs"]
+mod tests;
