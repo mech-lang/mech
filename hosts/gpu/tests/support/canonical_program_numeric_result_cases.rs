@@ -426,7 +426,7 @@ fn mixed_results_zero_visits_and_unchanged_stores_keep_input_identity() {
 }
 
 #[test]
-fn mixed_results_stale_multiple_and_escaping_returns_keep_the_maintained_path() {
+fn mixed_results_stale_and_escaping_returns_keep_the_maintained_path() {
     let put = GENERIC.split("walk(xs").next().unwrap();
     let stale = format!(
         "{put}\nwalk(xs<[u32]>, left<u64>) => (out<([u32],u64)>) :=\n  next := put(xs, 1u64, xs[1u64] + 1u32)\n  out := ((left > 0u64)? | true => walk(next, left - 1u64) | false => (xs, 17u64)).\n(a, b) := walk(data<[u32]>, 2u64)\n(a, b + 0u64)\n"
@@ -445,8 +445,15 @@ fn mixed_results_stale_multiple_and_escaping_returns_keep_the_maintained_path() 
     let nested_use = format!(
         "{body}\n(next, at) := walk(data<[u32]>, 0u64, 2u64)\n(at == 19u64) and (next[1u64] == 8u32)\n"
     );
-    for source in [stale, multiple, escaping, record, nested, nested_use] {
-        selected(&source, false);
+    for (source, eligible) in [
+        (stale, false),
+        (multiple, true),
+        (escaping, false),
+        (record, false),
+        (nested, false),
+        (nested_use, false),
+    ] {
+        selected(&source, eligible);
         for artifact in artifacts(&source).0 {
             let mode = NativeProgramLimitMode::NoLimits;
             let memory = mode.memory_budget();
