@@ -11,6 +11,76 @@ use mech_gpu::native_artifact::JitProgramArtifact;
 const NESTED: &str = "+> sequence\n<costs> := <{literal<[u32]> length<[u32]> offset<[u32]>}>\n<selected> := <{nodes<[u64]> costs<costs> marker<u64>}>\n<planned> := <{selected<selected> saved<costs>}>\nwrap(nodes<[u64]>, values<[u32]>, marker<u64>) => (out<planned>) :=\n  costs := {literal: values, length: values, offset: values}\n  selected := {nodes: nodes, costs: costs, marker: marker}\n  out := {selected: selected, saved: costs}.\nchecked(capacity<u64>, marker<u64>, allowed<bool>, divisor<u64>) => (out<[u64]>) :=\n  returned := wrap(sequence/with-capacity(0u64, capacity), [7u32], marker)\n  current! := returned.selected.marker == marker\n  same! := returned.selected.costs.literal[1u64] == returned.saved.length[1u64]\n  other! := returned.saved.offset[1u64] == 7u32\n  enabled! := allowed\n  word := marker + 12u64 / divisor\n  out := sequence/append(returned.selected.nodes, word).\nchecked(capacity<u64>, marker<u64>, allowed<bool>, divisor<u64>)\n";
 
 #[test]
+fn private_child_beside_a_dynamic_canonical_record_keeps_constructor_fallback() {
+    use mech_core::snapshot::{NamedValueDraft, SnapshotValidationContext, ValueDraft};
+    let source = "+> sequence\nchild := {nodes: sequence/with-capacity(0u64, 16u64)}\nparent := {child: child, extra: metadata<{payload<[u16]>}>}\nsequence/append(parent.child.nodes, 17u64)\n";
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        assert_eq!(artifact.inputs().len(), 1);
+        let port = &artifact.inputs()[0];
+        let definition = artifact.schemas().get(port.schema).unwrap();
+        let mech_core::SchemaBody::Record(fields) = definition.body() else {
+            panic!()
+        };
+        let mech_core::SchemaBody::Matrix { dimensions, .. } = &fields[0].schema else {
+            panic!()
+        };
+        for count in [0u64, 3, 1] {
+            let mut shape = vec![0; definition.dimension_parameters().len()];
+            for (axis, extent) in dimensions.iter().zip([1, count]) {
+                match axis {
+                    mech_core::DimensionExpr::Parameter(id) => shape[id.get() as usize] = extent,
+                    mech_core::DimensionExpr::Constant(value) => assert_eq!(*value, extent),
+                    _ => panic!(),
+                }
+            }
+            let value = ValueDraft {
+                schema: port.schema,
+                shape_values: shape.into(),
+                data: Data::Record(
+                    vec![NamedValueDraft {
+                        name: "payload".into(),
+                        value: Data::Matrix((0..count).map(|i| Data::U16(i as u16)).collect()),
+                    }]
+                    .into(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+            .unwrap();
+            let mut reserve = memory
+                .reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap())
+                .unwrap();
+            let value = value.into_memory_budget(&mut reserve).unwrap();
+            drop(reserve);
+            let aliases = vec![value.clone()];
+            jit.evaluate_into(&[value], &mut output, limits(), &memory)
+                .unwrap();
+            assert_eq!(
+                output
+                    .last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                Data::Matrix(vec![Data::U64(17)].into())
+            );
+            assert_eq!(
+                aliases[0].shape().parameter_values().len(),
+                definition.dimension_parameters().len()
+            );
+        }
+        drop(output);
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
+}
+
+#[test]
 fn private_nested_pack_return_and_projection_select_the_complete_component() {
     for artifact in artifacts(NESTED).0 {
         let plan =
@@ -578,6 +648,58 @@ fn composed_projection_keeps_exact_logical_output_bounds_and_current_shapes() {
                 Default::default(),
             )
             .unwrap();
+            for dimension in 0..5 {
+                let mut tight = policy;
+                let expected = match dimension {
+                    0 => {
+                        tight.max_output_elements = Some(0);
+                        "OutputElements"
+                    }
+                    1 => {
+                        tight.max_temporary_bytes = Some(0);
+                        "TemporaryBytes"
+                    }
+                    2 => {
+                        tight.max_retained_nodes = Some(0);
+                        "RetainedNodes"
+                    }
+                    3 => {
+                        tight.max_compute_work = Some(0);
+                        "ComputeWork"
+                    }
+                    _ => {
+                        tight.max_comparison_work = Some(0);
+                        "ComparisonWork"
+                    }
+                };
+                let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                let error = call
+                    .admit_buffer_frame_composition(
+                        &[None, None],
+                        &[0, 0],
+                        read,
+                        Some((&selector, *ordinal)),
+                        tight,
+                        &work,
+                        Default::default(),
+                    )
+                    .unwrap_err();
+                assert!(format!("{error:?}").contains(expected), "{error:?}");
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    retained
+                );
+                call.admit_buffer_frame_composition(
+                    &[None, None],
+                    &[0, 0],
+                    read,
+                    Some((&selector, *ordinal)),
+                    policy,
+                    &work,
+                    Default::default(),
+                )
+                .unwrap();
+            }
             let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
             let mut short = policy;
             short.max_output_bytes = Some(exact - 1);
