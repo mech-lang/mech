@@ -214,6 +214,12 @@ pub(in crate::native_artifact) fn derive(
     let fields = frames
         .fields(tail.carrier())
         .ok_or("carrier escapes or lacks an exact private frame")?;
+    if fields
+        .iter()
+        .any(|f| matches!(f.lane(), Lane::Composite { .. }))
+    {
+        return Err("numeric carrier requires flat fields");
+    }
     let iteration = plan
         .iterations()
         .iter()
@@ -291,6 +297,12 @@ pub(in crate::native_artifact) fn derive(
                 let fields = frames
                     .fields_at(value as usize)
                     .ok_or("frame lost exact fields")?;
+                if fields
+                    .iter()
+                    .any(|f| matches!(f.lane(), Lane::Composite { .. }))
+                {
+                    return Err("numeric frame requires flat fields");
+                }
                 for (ordinal, field) in fields.iter().enumerate() {
                     if matches!(field.lane(), Lane::Managed { .. })
                         && !arrays
@@ -438,6 +450,7 @@ pub(in crate::native_artifact) fn derive(
                         Some(at)
                     }
                     Lane::Managed { .. } => None,
+                    Lane::Composite { .. } => unreachable!("flat numeric proof"),
                 })
                 .collect();
             let array_fields = frames

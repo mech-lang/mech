@@ -13,6 +13,26 @@ use std::sync::Arc;
 
 pub(in crate::native_artifact) mod call_routes;
 
+/// Recomputed both on source preparation and independent build-image loading.
+pub(in crate::native_artifact) fn prepare_frame_composition(
+    plan: &NativeProgramArtifactPlan,
+    frames: &mech_engine::native_artifact::NativeBufferFrames,
+    calls: &mut [Option<NativePreparedLibraryCall>],
+) -> Result<(), String> {
+    for (site, call) in calls.iter_mut().enumerate() {
+        let (Some(call), Some(action)) = (call, frames.action(site)) else {
+            continue;
+        };
+        let NativeIterationAction::LibraryCall { operands, .. } = plan.blocks()[site].action()
+        else {
+            continue;
+        };
+        call.prepare_buffer_frame_composition(frames, action.operation(), operands)
+            .map_err(str::to_owned)?;
+    }
+    Ok(())
+}
+
 #[derive(Debug)]
 pub(in crate::native_artifact) struct ProgramMetadata {
     pub(in crate::native_artifact) plan: NativeProgramArtifactPlan,
@@ -150,7 +170,7 @@ impl PreparedNativeProgram {
             |site| native::program::prepare::map_owner::extra_work(&map_owner_words, site),
             "map owner visit work overflow",
         )?;
-        let calls = plan
+        let mut calls = plan
             .blocks()
             .iter()
             .map(|block| match block.action() {
@@ -244,6 +264,7 @@ impl PreparedNativeProgram {
             })
             .collect::<Result<Box<[_]>, _>>()?;
         query_stages::validate_query_stages(&plan, &calls).map_err(str::to_owned)?;
+        prepare_frame_composition(&plan, &buffer_frames, &mut calls)?;
         let closed_tails = native::program::prepare::tail::Layout::derive(
             &plan,
             &borrowed_strings,

@@ -87,6 +87,8 @@ impl NativePreparedLibraryCall {
             cache_identity: Arc::new(()),
             #[cfg(feature = "sequence_buffers")]
             frame_geometry,
+            #[cfg(feature = "sequence_buffers")]
+            frame_composition: None,
             span_selector_metadata_bytes: wire.span_selector_metadata_bytes,
             span_selector_work: wire.span_selector_work,
             #[cfg(feature = "pure_text")]

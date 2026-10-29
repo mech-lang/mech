@@ -26,6 +26,22 @@ impl FrameShapeRecipe {
         inputs: &[SchemaId],
         schemas: &SchemaTable,
     ) -> Option<Self> {
+        let fields = match schemas.get(output)?.body() {
+            SchemaBody::Tuple(fields) => fields.iter().collect::<Vec<_>>(),
+            SchemaBody::Record(fields) => fields.iter().map(|field| &field.schema).collect(),
+            _ => return None,
+        };
+        Self::derive_leaves(output, inputs, &fields, schemas)
+    }
+
+    /// The same dimension proof applied to exact structural leaf paths. The
+    /// composition owner has checked every intervening tuple/record identity.
+    pub(super) fn derive_leaves(
+        output: SchemaId,
+        inputs: &[SchemaId],
+        fields: &[&SchemaBody],
+        schemas: &SchemaTable,
+    ) -> Option<Self> {
         let definition = schemas.get(output)?;
         // This is this consumer's eligibility policy, not a new type relation.
         // Bounded/persistent/computed output axes use the general constructor.
@@ -36,11 +52,6 @@ impl FrameShapeRecipe {
         }) {
             return None;
         }
-        let fields = match definition.body() {
-            SchemaBody::Tuple(fields) => fields.iter().collect::<Vec<_>>(),
-            SchemaBody::Record(fields) => fields.iter().map(|field| &field.schema).collect(),
-            _ => return None,
-        };
         if fields.len() != inputs.len() {
             return None;
         }

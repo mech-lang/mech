@@ -189,33 +189,7 @@ impl NativePreparedLibraryCall {
                             .ok_or(InvokeError::InvalidInput)?,
                     )?;
                 context.check_capacity(0, 0)?;
-                context.charge(
-                    self.lookup_work
-                        .checked_add(128)
-                        .ok_or(InvokeError::InvalidInput)?,
-                    0,
-                )?;
-                let (mech_core::SchemaBody::Record(fields), mech_core::ValueData::Id(selected)) =
-                    (self.template.inputs()[0].body(), selector.data())
-                else {
-                    return Err(InvokeError::InvalidInput);
-                };
-                let actual = crate::resident::numeric::named_schema_ordinal(
-                    fields.iter().map(|f| f.name.as_str()),
-                    *selected,
-                    |characters| {
-                        context.charge(
-                            characters
-                                .checked_mul(16)
-                                .and_then(|n| n.checked_add(64))
-                                .ok_or(mech_core::ResidentKernelError::InvalidShape)?,
-                            characters,
-                        )
-                    },
-                )?;
-                if actual != ordinal {
-                    return Err(InvokeError::InvalidInput);
-                }
+                self.check_buffer_record_ordinal(selector, ordinal, &context)?;
                 let mut meter = ResidentBudgetMeter::for_native_projection(work, limits)?;
                 let footprint = match child {
                     Child::Managed(child) => measure_borrowed_canonical_value_footprint(
@@ -253,6 +227,44 @@ impl NativePreparedLibraryCall {
                 Ok(())
             },
         )?
+    }
+
+    /// Shared selected-operation lookup; both canonical children and composed
+    /// private children retain this same selector and character-work proof.
+    pub(super) fn check_buffer_record_ordinal(
+        &self,
+        selector: &Value,
+        ordinal: usize,
+        context: &NativeProjectionIndexContext<'_>,
+    ) -> Result<(), InvokeError> {
+        context.charge(
+            self.lookup_work
+                .checked_add(128)
+                .ok_or(InvokeError::InvalidInput)?,
+            0,
+        )?;
+        let (mech_core::SchemaBody::Record(fields), mech_core::ValueData::Id(selected)) =
+            (self.template.inputs()[0].body(), selector.data())
+        else {
+            return Err(InvokeError::InvalidInput);
+        };
+        let actual = crate::resident::numeric::named_schema_ordinal(
+            fields.iter().map(|f| f.name.as_str()),
+            *selected,
+            |characters| {
+                context.charge(
+                    characters
+                        .checked_mul(16)
+                        .and_then(|n| n.checked_add(64))
+                        .ok_or(mech_core::ResidentKernelError::InvalidShape)?,
+                    characters,
+                )
+            },
+        )?;
+        if actual != ordinal {
+            return Err(InvokeError::InvalidInput);
+        }
+        Ok(())
     }
 
     /// The generated caller proves private frame uses and retains the actual

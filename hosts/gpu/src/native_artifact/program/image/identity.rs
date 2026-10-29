@@ -240,7 +240,9 @@ fn selected_template(
 // managed-owner frame. The unchanged component use checks remain authoritative.
 // IR121 derives private flat scalar records and constant named observations
 // through the existing scalar aggregate storage, escape proof and emitter.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 121;
+// IR122 composes private structural spans in the existing scalar/owner lanes;
+// current leaf shape/admission recipes are rederived on image loading.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 122;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

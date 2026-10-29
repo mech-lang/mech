@@ -47,6 +47,11 @@ pub enum NativeBufferFrameLane {
     Managed {
         at: usize,
     },
+    /// A structural span in this same layout, never a canonical owner lane.
+    Composite {
+        at: usize,
+        count: usize,
+    },
 }
 #[derive(Clone, Copy, Debug)]
 pub struct NativeBufferFrameField {
@@ -97,6 +102,56 @@ impl NativeBufferFrames {
         let (at, count) = self.slot_at(value)?;
         self.fields.get(at..at + count)
     }
+    pub fn children(&self, field: NativeBufferFrameField) -> Option<&[NativeBufferFrameField]> {
+        let NativeBufferFrameLane::Composite { at, count } = field.lane else {
+            return None;
+        };
+        self.fields.get(at..at + count)
+    }
+}
+
+// Composition resolves every output axis directly from current leaf shapes.
+// Other shape policies retain the existing opaque/canonical constructor path.
+fn composable(plan: &Plan, value: Value) -> bool {
+    use mech_core::DimensionExpr as D;
+    let definition = plan.values()[value.get() as usize].definition();
+    if definition.dimension_parameters().iter().any(|p| {
+        p.lifetime() != mech_core::DimensionLifetime::Turn
+            || p.lower_bound() != &D::Constant(0)
+            || p.upper_bound().is_some()
+    }) {
+        return false;
+    }
+    fn visit(body: &SchemaBody, bound: &mut [bool]) -> bool {
+        match body {
+            SchemaBody::Tuple(fields) => fields.iter().all(|f| visit(f, bound)),
+            SchemaBody::Record(fields) => fields.iter().all(|f| visit(&f.schema, bound)),
+            SchemaBody::Matrix {
+                element,
+                dimensions,
+            } => {
+                // Matrix elements stay opaque; no array-of-record flattening.
+                let closed = mech_core::SchemaDraft {
+                    body: element.as_ref().clone(),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .is_ok();
+                closed
+                    && dimensions.iter().all(|axis| match axis {
+                        D::Constant(_) => true,
+                        D::Parameter(id) => bound.get_mut(id.get() as usize).is_some_and(|v| {
+                            *v = true;
+                            true
+                        }),
+                        _ => false,
+                    })
+            }
+            _ => true,
+        }
+    }
+    let mut bound = vec![false; definition.dimension_parameters().len()];
+    visit(definition.body(), &mut bound) && bound.iter().all(|b| *b)
 }
 
 fn fields(plan: &Plan, value: Value) -> Option<usize> {
@@ -295,13 +350,27 @@ impl Facts<'_> {
         };
         let mut edges = vec![Vec::new(); count];
         let mut schemas = vec![None::<Vec<SchemaId>>; count];
+        let mut by_schema = std::collections::BTreeMap::new();
+        let mut ambiguous = std::collections::BTreeSet::new();
         for action in actions.iter() {
             if let Some((value, fields)) = pack(plan, action) {
+                let schema = plan.values()[value.get() as usize].schema();
+                if by_schema
+                    .insert(schema, fields.clone())
+                    .is_some_and(|old| old != fields)
+                {
+                    ambiguous.insert(schema);
+                }
                 schemas[value.get() as usize] = Some(fields);
             }
             if let Some((source, output)) = movement(plan, action) {
                 edges[source.get() as usize].push(output.get() as usize);
                 edges[output.get() as usize].push(source.get() as usize);
+            }
+        }
+        for (i, rejected) in bad.iter_mut().enumerate() {
+            if ambiguous.contains(&plan.values()[i].schema()) {
+                *rejected = true;
             }
         }
         // Establish one exact leaf schema layout across the whole copy component.
@@ -323,6 +392,46 @@ impl Facts<'_> {
                 }
             }
         }
+        // A projected child has the exact schema of the corresponding pack
+        // operand. Its layout is the same recipe, not a newly inferred owner.
+        for (i, layout) in schemas.iter_mut().enumerate() {
+            if layout.is_none() && !bad[i] {
+                *layout = by_schema.get(&plan.values()[i].schema()).cloned();
+            }
+        }
+        let composable = (0..count)
+            .map(|i| !bad[i] && composable(plan, Value(i as u32)))
+            .collect::<Vec<_>>();
+        let mut composition = vec![Vec::new(); count];
+        let mut link = |parent: Value, child: Value| {
+            let (a, b) = (parent.get() as usize, child.get() as usize);
+            if composable[a] && composable[b] && schemas[a].is_some() && schemas[b].is_some() {
+                composition[a].push(b);
+                composition[b].push(a);
+            }
+        };
+        for action in actions.iter() {
+            if let Some((output, _)) = pack(plan, action) {
+                let Action::LibraryCall { operands, .. } = action else {
+                    unreachable!()
+                };
+                for operand in operands {
+                    link(output, *operand);
+                }
+            }
+            if let Some((source, ordinal, output)) = projection(plan, action) {
+                if schemas[source.get() as usize]
+                    .as_ref()
+                    .and_then(|f| f.get(ordinal))
+                    == Some(&plan.values()[output.get() as usize].schema())
+                {
+                    link(source, output);
+                }
+            }
+        }
+        let connected = |parent: Value, child: Value| {
+            composition[parent.get() as usize].contains(&(child.get() as usize))
+        };
         for i in 0..count {
             if bad[i] {
                 continue;
@@ -336,9 +445,13 @@ impl Facts<'_> {
                 return NativeBufferFrames::default();
             };
             if definitions.iter().any(|d| match d.role() {
-                Producer::Library => d
-                    .site()
-                    .is_none_or(|site| pack(plan, &actions[site as usize]).is_none()),
+                Producer::Library | Producer::Structural => d.site().is_none_or(|site| {
+                    let action = &actions[site as usize];
+                    pack(plan, action).is_none()
+                        && !projection(plan, action).is_some_and(|(source, _, output)| {
+                            output == value && connected(source, output)
+                        })
+                }),
                 Producer::Scalar | Producer::InitializeCarrier | Producer::LatchCarrier => d
                     .site()
                     .is_none_or(|site| movement(plan, &actions[site as usize]).is_none()),
@@ -362,6 +475,8 @@ impl Facts<'_> {
                                 && fields.get(ordinal).is_some_and(|schema| {
                                     *schema == plan.values()[output.get() as usize].schema()
                                 })
+                        } else if let Some((output, _)) = pack(plan, action) {
+                            connected(output, value)
                         } else {
                             false
                         }
@@ -388,6 +503,9 @@ impl Facts<'_> {
                 }
             }
         }
+        for (copy, composed) in edges.iter_mut().zip(composition) {
+            copy.extend(composed);
+        }
         let mut pending = bad
             .iter()
             .enumerate()
@@ -401,18 +519,6 @@ impl Facts<'_> {
                 }
             }
         }
-        let mut elements = 0usize;
-        let slots = (0..count)
-            .map(|i| {
-                if bad[i] {
-                    return None;
-                }
-                let n = schemas[i].as_ref()?.len();
-                let start = elements;
-                elements = elements.checked_add(n)?;
-                Some((start, n))
-            })
-            .collect::<Box<[_]>>();
         let kinds = plan
             .values()
             .iter()
@@ -420,27 +526,70 @@ impl Facts<'_> {
             .collect::<std::collections::BTreeMap<_, _>>();
         let mut scalar_fields = 0;
         let mut managed_fields = 0;
-        let mut field_layout = Vec::with_capacity(elements);
-        for (i, slot) in slots.iter().enumerate() {
-            if slot.is_none() {
-                continue;
-            }
-            for schema in schemas[i].as_ref().unwrap() {
+        let mut field_layout = Vec::new();
+        let nested = (0..count)
+            .filter(|&i| !bad[i] && composable[i])
+            .map(|i| plan.values()[i].schema())
+            .collect::<std::collections::BTreeSet<_>>();
+        fn layout(
+            schemas: &[SchemaId],
+            compose: bool,
+            nested: &std::collections::BTreeSet<SchemaId>,
+            by_schema: &std::collections::BTreeMap<SchemaId, Vec<SchemaId>>,
+            kinds: &std::collections::BTreeMap<SchemaId, Option<super::NativeScalarKind>>,
+            field_layout: &mut Vec<NativeBufferFrameField>,
+            scalar_fields: &mut usize,
+            managed_fields: &mut usize,
+        ) -> (usize, usize) {
+            let start = field_layout.len();
+            field_layout.extend(schemas.iter().map(|schema| NativeBufferFrameField {
+                schema: *schema,
+                lane: NativeBufferFrameLane::Managed { at: usize::MAX },
+            }));
+            for (index, schema) in schemas.iter().enumerate() {
                 let lane = if let Some(kind) = kinds[schema] {
-                    let at = scalar_fields;
-                    scalar_fields += 1;
+                    let at = *scalar_fields;
+                    *scalar_fields += 1;
                     NativeBufferFrameLane::Scalar { at, kind }
+                } else if compose && nested.contains(schema) {
+                    let (at, count) = layout(
+                        &by_schema[schema],
+                        true,
+                        nested,
+                        by_schema,
+                        kinds,
+                        field_layout,
+                        scalar_fields,
+                        managed_fields,
+                    );
+                    NativeBufferFrameLane::Composite { at, count }
                 } else {
-                    let at = managed_fields;
-                    managed_fields += 1;
+                    let at = *managed_fields;
+                    *managed_fields += 1;
                     NativeBufferFrameLane::Managed { at }
                 };
-                field_layout.push(NativeBufferFrameField {
-                    schema: *schema,
-                    lane,
-                });
+                field_layout[start + index].lane = lane;
             }
+            (start, schemas.len())
         }
+        let slots = (0..count)
+            .map(|i| {
+                if bad[i] {
+                    return None;
+                }
+                Some(layout(
+                    schemas[i].as_ref()?,
+                    composable[i],
+                    &nested,
+                    &by_schema,
+                    &kinds,
+                    &mut field_layout,
+                    &mut scalar_fields,
+                    &mut managed_fields,
+                ))
+            })
+            .collect::<Box<[_]>>();
+        let elements = field_layout.len();
         let selected = |value: Value| slots[value.get() as usize].is_some();
         let actions = plan
             .blocks()

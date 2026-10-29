@@ -102,7 +102,11 @@ fn nested_current_fields_preserve_errors_publication_aliases_and_retry() {
                     let resident = resident.unwrap_err();
                     let assertion = !allowed && assertion_first;
                     assert_eq!(native.contains("Integrity"), assertion, "{native}");
-                    assert_eq!(resident.contains("LexicalIntegrity"), assertion, "{resident}");
+                    assert_eq!(
+                        resident.contains("LexicalIntegrity"),
+                        assertion,
+                        "{resident}"
+                    );
                     assert_eq!(
                         (memory.used_bytes(), memory.retained_snapshot_nodes()),
                         retained
@@ -113,10 +117,17 @@ fn nested_current_fields_preserve_errors_publication_aliases_and_retry() {
                             .shares_frozen_storage(p.as_ref().unwrap())
                     }));
                 }
-                assert!(args.iter().zip(&aliases).all(|(v, a)| v.shares_frozen_storage(a)));
+                assert!(
+                    args.iter()
+                        .zip(&aliases)
+                        .all(|(v, a)| v.shares_frozen_storage(a))
+                );
             }
             drop(output);
-            assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
         }
     }
 }
@@ -146,12 +157,24 @@ fn nested_private_path_and_output_buffers_keep_the_real_reservation() {
             let value = output.last().unwrap().as_ref().unwrap();
             assert_eq!(
                 value.canonical_data_draft().unwrap(),
-                Data::Matrix(vec![if width == 64 { Data::U64(17) } else { Data::U8(17) }].into())
+                Data::Matrix(
+                    vec![if width == 64 {
+                        Data::U64(17)
+                    } else {
+                        Data::U8(17)
+                    }]
+                    .into()
+                )
             );
-            let ValueData::Matrix(matrix) = value.data() else { panic!() };
+            let ValueData::Matrix(matrix) = value.data() else {
+                panic!()
+            };
             assert_eq!(matrix.unsigned_buffer_capacity(), Some(capacity as usize));
             drop((args, output));
-            assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
         }
     }
 }

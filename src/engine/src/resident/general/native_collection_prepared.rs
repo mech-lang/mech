@@ -93,6 +93,9 @@ mod buffer_frames;
 #[path = "native_collection_frame_admission.rs"]
 mod frame_admission;
 #[cfg(feature = "sequence_buffers")]
+#[path = "native_collection_frame_composition.rs"]
+mod frame_composition;
+#[cfg(feature = "sequence_buffers")]
 #[path = "native_collection_frame_shape.rs"]
 mod frame_shape;
 #[path = "native_collection_histogram.rs"]
@@ -163,6 +166,9 @@ pub struct NativePreparedLibraryCall {
     #[cfg(feature = "sequence_buffers")]
     #[serde(skip)]
     frame_geometry: Option<Box<buffer_frames::FrameGeometry>>,
+    #[cfg(feature = "sequence_buffers")]
+    #[serde(skip)]
+    frame_composition: Option<Box<frame_composition::Composition>>,
     span_selector_metadata_bytes: u64,
     span_selector_work: u64,
     #[cfg(feature = "pure_text")]
@@ -400,6 +406,8 @@ pub fn prepare_native_program_library_call(
         cache_identity: Arc::new(()),
         #[cfg(feature = "sequence_buffers")]
         frame_geometry,
+        #[cfg(feature = "sequence_buffers")]
+        frame_composition: None,
         span_selector_metadata_bytes,
         span_selector_work,
         #[cfg(feature = "pure_text")]

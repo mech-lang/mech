@@ -40,24 +40,40 @@ impl Invocation<'_, '_, '_> {
                         if words[index] != 0 {
                             return Err(invalid("private frame managed input has native bits"));
                         }
-                        Some(
-                            self.state
-                                .arena
-                                .copy_current(operand.get(), &mut self.state.control.work)?,
-                        )
+                        if layout.fields(*operand).is_some() {
+                            None
+                        } else {
+                            Some(
+                                self.state
+                                    .arena
+                                    .copy_current(operand.get(), &mut self.state.control.work)?,
+                            )
+                        }
                     };
                 }
                 let call = descriptor.metadata().calls[site]
                     .as_ref()
                     .ok_or_else(|| invalid("private frame lost selected factory"))?;
                 let coexistence = self.selected_join_coexistence(None)?;
-                let outcome = call.admit_buffer_frame_words(
-                    &self.state.call_inputs.values()[..words.len()],
-                    words,
-                    self.limits,
-                    &self.state.library,
-                    coexistence,
-                );
+                let outcome = if operands.iter().any(|v| layout.fields(*v).is_some()) {
+                    call.admit_buffer_frame_composition(
+                        &self.state.call_inputs.values()[..words.len()],
+                        words,
+                        |field| self.state.buffer_frames.current_leaf(field),
+                        None,
+                        self.limits,
+                        &self.state.library,
+                        coexistence,
+                    )
+                } else {
+                    call.admit_buffer_frame_words(
+                        &self.state.call_inputs.values()[..words.len()],
+                        words,
+                        self.limits,
+                        &self.state.library,
+                        coexistence,
+                    )
+                };
                 if let Err(error) = outcome {
                     self.state.call_inputs.values_mut()[..words.len()].fill(None);
                     return Err(Error::Library {
@@ -68,6 +84,7 @@ impl Invocation<'_, '_, '_> {
                 let packed = self.state.buffer_frames.pack(
                     layout,
                     *output,
+                    operands,
                     &self.state.call_inputs.values()[..words.len()],
                     words,
                     &mut self.state.control.work,
@@ -117,68 +134,107 @@ impl Invocation<'_, '_, '_> {
                 if !matches_visit {
                     return Err(invalid("private frame projection differs from visit"));
                 }
-                let value = self.state.buffer_frames.project(
-                    layout,
-                    *source,
-                    *ordinal,
-                    &mut self.state.control.work,
-                )?;
-                if let NativeIterationAction::LibraryCall { operands, .. } = action {
-                    let selector = self
-                        .state
-                        .arena
-                        .copy_current(operands[1].get(), &mut self.state.control.work)?;
-                    let call = descriptor.metadata().calls[site]
-                        .as_ref()
-                        .ok_or_else(|| invalid("private record field lost selected factory"))?;
-                    let coexistence = self.selected_join_coexistence(None)?;
-                    match &value {
-                        super::super::buffer_frames::Field::Managed(value) => call
-                            .admit_buffer_record_field(
-                                &selector,
-                                *ordinal,
-                                value,
-                                self.limits,
-                                &self.state.library,
-                                coexistence,
-                            ),
-                        super::super::buffer_frames::Field::Scalar { schema, value } => call
-                            .admit_buffer_record_word(
-                                &selector,
-                                *ordinal,
-                                *schema,
-                                *value,
-                                self.limits,
-                                &self.state.library,
-                                coexistence,
-                            ),
-                    }
-                    .map_err(|error| Error::Library {
-                        origin: descriptor.metadata().plan.blocks()[site].origin(),
-                        error,
-                    })?;
-                }
-                let ty = &descriptor.metadata().plan.values()[output.get() as usize];
-                match value {
-                    super::super::buffer_frames::Field::Scalar { schema, value } => {
-                        if schema != ty.schema() || ty.scalar_kind() != Some(value.kind()) {
-                            return Err(invalid("private frame scalar field schema differs"));
-                        }
-                        result = Some(value.to_bits());
-                    }
-                    super::super::buffer_frames::Field::Managed(value) => {
-                        // This exact value index/schema/definition/key relation
-                        // is checked at preparation and independent restoration.
-                        let slot = &descriptor.metadata().types[output.get() as usize];
-                        if value.schema() != slot.schema
-                            || value.schema_key() != slot.key
-                            || ty.scalar_kind().is_some()
-                        {
-                            return Err(invalid("private frame managed field schema differs"));
-                        }
-                        self.state
+                let field = layout
+                    .fields(*source)
+                    .and_then(|f| f.get(*ordinal))
+                    .ok_or_else(|| invalid("private projection field missing"))?;
+                if layout.children(*field).is_some() {
+                    if let NativeIterationAction::LibraryCall { operands, .. } = action {
+                        let selector = self
+                            .state
                             .arena
-                            .put(output.get(), &value, &mut self.state.control.work)?;
+                            .copy_current(operands[1].get(), &mut self.state.control.work)?;
+                        let call = descriptor.metadata().calls[site]
+                            .as_ref()
+                            .ok_or_else(|| invalid("private child lost selected factory"))?;
+                        let coexistence = self.selected_join_coexistence(None)?;
+                        call.admit_buffer_frame_composition(
+                            &[None, None],
+                            &[0, 0],
+                            |field| self.state.buffer_frames.current_leaf(field),
+                            Some((&selector, *ordinal)),
+                            self.limits,
+                            &self.state.library,
+                            coexistence,
+                        )
+                        .map_err(|error| Error::Library {
+                            origin: descriptor.metadata().plan.blocks()[site].origin(),
+                            error,
+                        })?;
+                    }
+                    self.state.buffer_frames.project_composite(
+                        layout,
+                        *source,
+                        *ordinal,
+                        *output,
+                        &mut self.state.control.work,
+                    )?;
+                } else {
+                    let value = self.state.buffer_frames.project(
+                        layout,
+                        *source,
+                        *ordinal,
+                        &mut self.state.control.work,
+                    )?;
+                    if let NativeIterationAction::LibraryCall { operands, .. } = action {
+                        let selector = self
+                            .state
+                            .arena
+                            .copy_current(operands[1].get(), &mut self.state.control.work)?;
+                        let call = descriptor.metadata().calls[site]
+                            .as_ref()
+                            .ok_or_else(|| invalid("private record field lost selected factory"))?;
+                        let coexistence = self.selected_join_coexistence(None)?;
+                        match &value {
+                            super::super::buffer_frames::Field::Managed(value) => call
+                                .admit_buffer_record_field(
+                                    &selector,
+                                    *ordinal,
+                                    value,
+                                    self.limits,
+                                    &self.state.library,
+                                    coexistence,
+                                ),
+                            super::super::buffer_frames::Field::Scalar { schema, value } => call
+                                .admit_buffer_record_word(
+                                    &selector,
+                                    *ordinal,
+                                    *schema,
+                                    *value,
+                                    self.limits,
+                                    &self.state.library,
+                                    coexistence,
+                                ),
+                        }
+                        .map_err(|error| Error::Library {
+                            origin: descriptor.metadata().plan.blocks()[site].origin(),
+                            error,
+                        })?;
+                    }
+                    let ty = &descriptor.metadata().plan.values()[output.get() as usize];
+                    match value {
+                        super::super::buffer_frames::Field::Scalar { schema, value } => {
+                            if schema != ty.schema() || ty.scalar_kind() != Some(value.kind()) {
+                                return Err(invalid("private frame scalar field schema differs"));
+                            }
+                            result = Some(value.to_bits());
+                        }
+                        super::super::buffer_frames::Field::Managed(value) => {
+                            // This exact value index/schema/definition/key relation
+                            // is checked at preparation and independent restoration.
+                            let slot = &descriptor.metadata().types[output.get() as usize];
+                            if value.schema() != slot.schema
+                                || value.schema_key() != slot.key
+                                || ty.scalar_kind().is_some()
+                            {
+                                return Err(invalid("private frame managed field schema differs"));
+                            }
+                            self.state.arena.put(
+                                output.get(),
+                                &value,
+                                &mut self.state.control.work,
+                            )?;
+                        }
                     }
                 }
             }
