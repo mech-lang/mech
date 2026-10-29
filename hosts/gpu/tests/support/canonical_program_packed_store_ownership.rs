@@ -3,6 +3,9 @@ use super::{allocation_probe, artifacts, inputs};
 use mech_core::{ManagedMemoryBudget, ValueData, ValueDataDraft as Data};
 use mech_gpu::native_artifact::{JitProgramArtifact, NativeProgramLimitMode};
 
+#[path = "canonical_program_packed_alias_transport.rs"]
+mod alias_transport;
+
 fn pointer(value: &mech_core::Value) -> usize {
     let ValueData::Matrix(matrix) = value.data() else {
         panic!("packed matrix")
