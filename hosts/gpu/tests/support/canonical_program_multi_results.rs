@@ -3,7 +3,7 @@ use super::{allocation_probe, artifacts, equal, inputs, reference_result};
 use mech_core::{Value, ValueDataDraft as Data};
 use mech_gpu::native_artifact::{JitProgramArtifact, NativeProgramLimitMode, emit_program_object};
 
-const SOURCE: &str = r#"put16(xs<[u16]>, at<u64>, word<u16>) => (out<[u16]>) :=
+pub(super) const SOURCE: &str = r#"put16(xs<[u16]>, at<u64>, word<u16>) => (out<[u16]>) :=
   ~next := xs
   next[at] = word
   out := next.

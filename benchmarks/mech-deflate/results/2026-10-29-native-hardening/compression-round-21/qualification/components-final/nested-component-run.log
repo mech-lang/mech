@@ -1,0 +1,45 @@
+
+running 6 tests
+test multi_result_qualification::multi_array_results_check_freshness_of_each_returned_field ... ok
+test multi_result_qualification::multi_array_results_finite_rejections_keep_prior_publication_and_retry ... ok
+test multi_result_qualification::multi_array_results_real_tree_and_cache_keep_one_initial_payload_each ... {"form":"original","payloads":2,"published_tuple":true,"requested_bytes":239432,"requests":2186,"steps":0,"u16_count":288,"u32_count":288,"visits":37,"witness":"multi-array-real-payloads"}
+{"form":"original","payloads":2,"published_tuple":true,"requested_bytes":244376,"requests":2261,"steps":1,"u16_count":288,"u32_count":288,"visits":37,"witness":"multi-array-real-payloads"}
+{"form":"original","payloads":2,"published_tuple":true,"requested_bytes":244376,"requests":2261,"steps":8,"u16_count":288,"u32_count":288,"visits":37,"witness":"multi-array-real-payloads"}
+{"form":"original","payloads":2,"published_tuple":true,"requested_bytes":13288656,"requests":2186,"steps":0,"u16_count":262144,"u32_count":1500513,"visits":37,"witness":"multi-array-real-payloads"}
+{"form":"original","payloads":2,"published_tuple":true,"requested_bytes":13293600,"requests":2261,"steps":1,"u16_count":262144,"u32_count":1500513,"visits":37,"witness":"multi-array-real-payloads"}
+{"form":"original","payloads":2,"published_tuple":true,"requested_bytes":13293600,"requests":2261,"steps":8,"u16_count":262144,"u32_count":1500513,"visits":37,"witness":"multi-array-real-payloads"}
+{"form":"decoded","payloads":2,"published_tuple":true,"requested_bytes":239432,"requests":2186,"steps":0,"u16_count":288,"u32_count":288,"visits":37,"witness":"multi-array-real-payloads"}
+{"form":"decoded","payloads":2,"published_tuple":true,"requested_bytes":244376,"requests":2261,"steps":1,"u16_count":288,"u32_count":288,"visits":37,"witness":"multi-array-real-payloads"}
+{"form":"decoded","payloads":2,"published_tuple":true,"requested_bytes":244376,"requests":2261,"steps":8,"u16_count":288,"u32_count":288,"visits":37,"witness":"multi-array-real-payloads"}
+{"form":"decoded","payloads":2,"published_tuple":true,"requested_bytes":13288656,"requests":2186,"steps":0,"u16_count":262144,"u32_count":1500513,"visits":37,"witness":"multi-array-real-payloads"}
+{"form":"decoded","payloads":2,"published_tuple":true,"requested_bytes":13293600,"requests":2261,"steps":1,"u16_count":262144,"u32_count":1500513,"visits":37,"witness":"multi-array-real-payloads"}
+{"form":"decoded","payloads":2,"published_tuple":true,"requested_bytes":13293600,"requests":2261,"steps":8,"u16_count":262144,"u32_count":1500513,"visits":37,"witness":"multi-array-real-payloads"}
+{"form":"original","payloads":1,"published_tuple":false,"requested_bytes":62885,"requests":334,"steps":0,"u16_count":288,"u32_count":288,"visits":84,"witness":"multi-array-real-payloads"}
+{"form":"original","payloads":1,"published_tuple":false,"requested_bytes":67829,"requests":409,"steps":1,"u16_count":288,"u32_count":288,"visits":81,"witness":"multi-array-real-payloads"}
+{"form":"original","payloads":1,"published_tuple":false,"requested_bytes":67829,"requests":409,"steps":8,"u16_count":288,"u32_count":288,"visits":81,"witness":"multi-array-real-payloads"}
+{"form":"original","payloads":1,"published_tuple":false,"requested_bytes":6587497,"requests":334,"steps":0,"u16_count":262144,"u32_count":1500513,"visits":84,"witness":"multi-array-real-payloads"}
+{"form":"original","payloads":1,"published_tuple":false,"requested_bytes":6592441,"requests":409,"steps":1,"u16_count":262144,"u32_count":1500513,"visits":81,"witness":"multi-array-real-payloads"}
+{"form":"original","payloads":1,"published_tuple":false,"requested_bytes":6592441,"requests":409,"steps":8,"u16_count":262144,"u32_count":1500513,"visits":81,"witness":"multi-array-real-payloads"}
+{"form":"decoded","payloads":1,"published_tuple":false,"requested_bytes":62885,"requests":334,"steps":0,"u16_count":288,"u32_count":288,"visits":84,"witness":"multi-array-real-payloads"}
+{"form":"decoded","payloads":1,"published_tuple":false,"requested_bytes":67829,"requests":409,"steps":1,"u16_count":288,"u32_count":288,"visits":81,"witness":"multi-array-real-payloads"}
+{"form":"decoded","payloads":1,"published_tuple":false,"requested_bytes":67829,"requests":409,"steps":8,"u16_count":288,"u32_count":288,"visits":81,"witness":"multi-array-real-payloads"}
+{"form":"decoded","payloads":1,"published_tuple":false,"requested_bytes":6587497,"requests":334,"steps":0,"u16_count":262144,"u32_count":1500513,"visits":84,"witness":"multi-array-real-payloads"}
+{"form":"decoded","payloads":1,"published_tuple":false,"requested_bytes":6592441,"requests":409,"steps":1,"u16_count":262144,"u32_count":1500513,"visits":81,"witness":"multi-array-real-payloads"}
+{"form":"decoded","payloads":1,"published_tuple":false,"requested_bytes":6592441,"requests":409,"steps":8,"u16_count":262144,"u32_count":1500513,"visits":81,"witness":"multi-array-real-payloads"}
+ok
+test multi_result_qualification::multi_array_results_restore_all_current_owners_and_recover_after_late_failure ... {"form":"original","requested_bytes":241629,"requests":2134,"steps":0,"visits":12,"witness":"multi-array-current-return","work":41547104}
+{"form":"original","requested_bytes":249803,"requests":2253,"steps":1,"visits":12,"witness":"multi-array-current-return","work":106785552}
+{"form":"original","requested_bytes":249803,"requests":2253,"steps":64,"visits":12,"witness":"multi-array-current-return","work":110223840}
+{"form":"original","requested_bytes":249803,"requests":2253,"steps":2,"visits":12,"witness":"multi-array-current-return","work":106840128}
+{"form":"original","requested_bytes":242699,"requests":2175,"steps":0,"visits":12,"witness":"multi-array-current-return","work":41578800}
+{"form":"decoded","requested_bytes":241565,"requests":2133,"steps":0,"visits":12,"witness":"multi-array-current-return","work":41547104}
+{"form":"decoded","requested_bytes":249803,"requests":2253,"steps":1,"visits":12,"witness":"multi-array-current-return","work":106785552}
+{"form":"decoded","requested_bytes":249803,"requests":2253,"steps":64,"visits":12,"witness":"multi-array-current-return","work":110223840}
+{"form":"decoded","requested_bytes":249803,"requests":2253,"steps":2,"visits":12,"witness":"multi-array-current-return","work":106840128}
+{"form":"decoded","requested_bytes":242699,"requests":2175,"steps":0,"visits":12,"witness":"multi-array-current-return","work":41578800}
+ok
+test multi_result_qualification::multi_array_results_select_pinned_huffman_placement_and_keep_branch_versions ... ok
+test multi_result_qualification::multi_array_results_shared_input_backing_stays_immutable_for_each_root ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 437 filtered out; finished in 2.68s
+
