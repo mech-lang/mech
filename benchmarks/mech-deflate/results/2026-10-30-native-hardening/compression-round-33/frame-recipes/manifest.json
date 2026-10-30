@@ -1,0 +1,46 @@
+{
+  "compiler_source": "850717cb17ebd3e3d6052f5026f5bff5b5e2d916",
+  "gpu_profile": "opt1 production cfg, semantic diagnostics only",
+  "tests_passed": 4,
+  "image_test_passed": 1,
+  "current_child_buffer_export_checked": true,
+  "all_lexical_frame_retirement_lists_preserved": true,
+  "performance_claim": false,
+  "files": [
+    {
+      "path": "build.json",
+      "sha256": "4d8110d8f2545a5fcd1316a9e1b34af5dd94af97c5ca0bd2b99c04c7c062b0ee",
+      "bytes": 2063
+    },
+    {
+      "path": "build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "canonical_program_numeric_composition.rs",
+      "sha256": "30202b7079577851c1dac47baeb3627f33c777a5606c343cc7f4e5df1148252e",
+      "bytes": 17006
+    },
+    {
+      "path": "recipes.json",
+      "sha256": "9f27e0fae2627fe6d7ae340d113f4963e093f8f21a87cb3033383755d0ed61e3",
+      "bytes": 463
+    },
+    {
+      "path": "recipes.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "recipes.stdout",
+      "sha256": "7fa2c9dc8562c4161cb62b105f4fc28f6acc01d2b6b3ee603d686e0b4116d514",
+      "bytes": 7500
+    }
+  ]
+}
