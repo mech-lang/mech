@@ -1,0 +1,46 @@
+{
+  "build_exit": 0,
+  "test_exit": 101,
+  "passed": 3,
+  "failed": 1,
+  "multiple_child_negative_passed": true,
+  "classification": "introduced append negative fixture rejected by unchanged Engine schema validation before GPU preparation",
+  "performance_claim": false,
+  "files": [
+    {
+      "path": "build.json",
+      "sha256": "a62e998d501806b7f89005ff2011ba7df1bbdb9c442e7cc749d047cdf481598a",
+      "bytes": 2090
+    },
+    {
+      "path": "build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "canonical_program_numeric_composition.rs",
+      "sha256": "673a004b7c62e19512f8e61f0357ed10de0c217a215f4c494f99c7d4d2d9c300",
+      "bytes": 14005
+    },
+    {
+      "path": "partition.json",
+      "sha256": "a0a21a7bb661e489bf29f7487c11ef7e0345db8d64388a6e5e092b271adba353",
+      "bytes": 477
+    },
+    {
+      "path": "partition.stderr",
+      "sha256": "0cd2ab436be1cfc09eec60433c6f6488e051e4f90c78b2bcbda0887d7222069b",
+      "bytes": 462
+    },
+    {
+      "path": "partition.stdout",
+      "sha256": "5069dd265eb1fc0815c0933bce7b7c40d3ba4c9381f910611f31e2a3236af72c",
+      "bytes": 2253
+    }
+  ]
+}
