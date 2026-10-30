@@ -326,63 +326,11 @@ fn projection(plan: &Plan, action: &Action) -> Option<(Value, usize, Value)> {
         *output,
     ))
 }
-fn read_site(plan: &Plan, role: Read) -> Option<(u32, bool)> {
-    Some(match role {
-        Read::Action(site) => (site, false),
-        Read::Terminator(site) => (site, true),
-        Read::LoopSeed(id) | Read::LoopNext(id) => {
-            let seed = matches!(role, Read::LoopSeed(_));
-            (
-                match &plan.iterations()[id as usize] {
-                    Loop::Tail(t) => {
-                        if seed {
-                            t.initialize()
-                        } else {
-                            t.latch()
-                        }
-                    }
-                    Loop::Iteration(t) => {
-                        if seed {
-                            t.initialize()
-                        } else {
-                            t.latch()
-                        }
-                    }
-                    _ => return None,
-                },
-                false,
-            )
-        }
-        Read::LoopReturned(id) => (
-            match &plan.iterations()[id as usize] {
-                Loop::Tail(t) => t.finish(),
-                _ => return None,
-            },
-            true,
-        ),
-        _ => return None,
-    })
-}
 /// Reads precede writes. A future definition kills only the old visit's owner.
 /// Unlike a fusion Read::Other, loop seed/latch roles retain their exact site.
 fn last_use(facts: &Facts<'_>, value: Value, frontier: u32) -> bool {
-    let Ok(reads) = facts.read_roles(value) else {
-        return false;
-    };
-    let Some(reads) = reads
-        .iter()
-        .map(|r| read_site(facts.plan(), *r))
-        .collect::<Option<Vec<_>>>()
-    else {
-        return false;
-    };
     !facts
-        .old_value_read_before_redefinition(
-            value,
-            frontier,
-            |site| reads.contains(&(site, false)),
-            |site| reads.contains(&(site, true)),
-        )
+        .old_value_has_future_reads(value, frontier)
         .unwrap_or(true)
 }
 
@@ -553,7 +501,9 @@ impl Facts<'_> {
                             false
                         }
                     }
-                    Read::LoopSeed(_) | Read::LoopNext(_) => read_site(plan, *read).is_some(),
+                    Read::LoopSeed(_) | Read::LoopNext(_) => {
+                        Facts::control_read_site(plan, *read).is_some()
+                    }
                     Read::LoopReturned(id) => match &plan.iterations()[id as usize] {
                         // A tail finish only branches to this existing managed
                         // copy. It does not publish a canonical record. Escape

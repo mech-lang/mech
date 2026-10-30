@@ -1,8 +1,71 @@
 //! Mechanical graph query only. Consumers decide which reads and owners qualify.
-use super::NativeProgramFacts;
-use crate::native_artifact::NativeMatchValue;
+use super::{NativeProgramFacts, NativeProgramReadRole as Read};
+use crate::native_artifact::{
+    NativeControlLoop as Loop, NativeMatchValue, NativeProgramArtifactPlan as Plan,
+};
 
 impl NativeProgramFacts<'_> {
+    /// Exact original visit of a descriptive read. Collection/publication and
+    /// effect reads keep their independent ownership frontiers.
+    pub(crate) fn control_read_site(plan: &Plan, role: Read) -> Option<(u32, bool)> {
+        Some(match role {
+            Read::Action(site) => (site, false),
+            Read::Terminator(site) => (site, true),
+            Read::LoopSeed(id) | Read::LoopNext(id) => {
+                let seed = matches!(role, Read::LoopSeed(_));
+                let site = match plan.iterations().get(id as usize)? {
+                    Loop::Tail(t) => {
+                        if seed {
+                            t.initialize()
+                        } else {
+                            t.latch()
+                        }
+                    }
+                    Loop::Iteration(t) => {
+                        if seed {
+                            t.initialize()
+                        } else {
+                            t.latch()
+                        }
+                    }
+                    Loop::Collection(_) => return None,
+                };
+                (site, false)
+            }
+            Read::LoopReturned(id) => (
+                match plan.iterations().get(id as usize)? {
+                    Loop::Tail(t) => t.finish(),
+                    _ => return None,
+                },
+                true,
+            ),
+            _ => return None,
+        })
+    }
+
+    /// Same old-owner query with loop reads placed at their actual visits.
+    /// Unknown ownership frontiers remain conservative; no read is discarded.
+    pub(crate) fn old_value_has_future_reads(
+        &self,
+        value: NativeMatchValue,
+        frontier: u32,
+    ) -> Result<bool, &'static str> {
+        let Some(reads) = self
+            .read_roles(value)?
+            .iter()
+            .map(|role| Self::control_read_site(self.plan(), *role))
+            .collect::<Option<Vec<_>>>()
+        else {
+            return Ok(true);
+        };
+        self.old_value_read_before_redefinition(
+            value,
+            frontier,
+            |site| reads.contains(&(site, false)),
+            |site| reads.contains(&(site, true)),
+        )
+    }
+
     /// An action reads before writing its result; a redefining action kills the
     /// old owner before its terminator. Includes backedges and the frontier's
     /// terminator. Opaque reads and loop/publication roles remain caller policy.
