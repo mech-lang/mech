@@ -764,6 +764,7 @@ fn restored_frame_type_slots_reject_misalignment_keys_and_definitions() {
                 "definition",
                 "retirement-cache",
                 "call-cache",
+                "composition-cache",
             ] {
                 let mut changed = original.clone();
                 match corruption {
@@ -794,6 +795,10 @@ fn restored_frame_type_slots_reject_misalignment_keys_and_definitions() {
                     "call-cache" => {
                         changed["descriptor"]["call_cache"] =
                             serde_json::json!({"slots": [1], "repeated": [false]});
+                    }
+                    "composition-cache" => {
+                        changed["descriptor"]["compositions"] =
+                            serde_json::json!({"parents": [{"child": 0}]});
                     }
                     _ => unreachable!(),
                 }
