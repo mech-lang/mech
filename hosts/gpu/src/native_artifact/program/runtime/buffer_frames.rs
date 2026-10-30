@@ -34,11 +34,6 @@ pub(super) enum Field {
     Managed(Value),
 }
 impl BufferFrames {
-    /// Stable backing for the owning session's call-scoped generated reads.
-    /// Helpers remain its only writers; no slice borrow crosses native entry.
-    pub(super) fn scalar_words(&self) -> Option<&[u64]> {
-        self.inner.as_ref().map(|inner| inner.words.values())
-    }
     fn word_count(layout: &Layout) -> Result<usize, NativeProgramExecutionError> {
         layout
             .scalar_fields()

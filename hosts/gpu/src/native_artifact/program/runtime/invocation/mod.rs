@@ -289,15 +289,6 @@ impl Invocation<'_, '_, '_> {
         &self,
         site: usize,
     ) -> bool {
-        if crate::native_artifact::program::prepare::frame_scalars::read(
-            &self.descriptor.metadata().plan,
-            &self.descriptor.metadata().buffer_frames,
-            site,
-        )
-        .is_some()
-        {
-            return false;
-        }
         if self.borrowed_action(site).is_some() || self.retained_native_action(site) {
             return false;
         }
@@ -486,15 +477,6 @@ impl Invocation<'_, '_, '_> {
             .is_some()
         {
             return Err(invalid("helper at native-only aggregate site"));
-        }
-        if crate::native_artifact::program::prepare::frame_scalars::read(
-            &descriptor.metadata().plan,
-            &descriptor.metadata().buffer_frames,
-            site,
-        )
-        .is_some()
-        {
-            return Err(invalid("helper at native-only frame scalar read"));
         }
         if tag == GlobalHelper::WindowPrepare {
             self.prepare_window_region(site, args)
@@ -963,23 +945,6 @@ impl Invocation<'_, '_, '_> {
         self.state.scalar_path = group
             .filter(|group| group.owner.is_none())
             .map(|group| group.start());
-        if group.is_none()
-            && !self.retained_native_action(index)
-            && crate::native_artifact::program::prepare::frame_scalars::read(
-                &self.descriptor.metadata().plan,
-                &self.descriptor.metadata().buffer_frames,
-                index,
-            )
-            .is_some()
-        {
-            // Same source projection price and phase, before validity/bits
-            // are observed. Funded scalar paths prepaid it; failed previews
-            // retain this ordinary precise-denial route.
-            self.state.control.work.charge(
-                NativeExecutionPhase::Setup,
-                crate::native_artifact::program::prepare::frame_scalars::READ_WORK,
-            )?;
-        }
         self.state.map_owners.closed_exit = None;
         let descriptor = self.descriptor;
         if let Some(mech_engine::native_artifact::NativeBorrowedStringAction::Equal { .. }) =
