@@ -1,0 +1,101 @@
+{
+  "created_utc": "2026-10-30T17:08:41.966426+00:00",
+  "head": "921cd91940d31b5e8f045511f4feb1c1e643ecd1",
+  "files": [
+    {
+      "path": "red-unit/build.json",
+      "sha256": "49d2aa97f583e10e55bc57b9ab4923a434ef4666199d481ea1c07769eb72b8d3",
+      "bytes": 4939
+    },
+    {
+      "path": "red-unit/build.stderr",
+      "sha256": "d994ac83bf810aea11b21db7a907f6a3365bd2ab795328dc36ec191231b338f8",
+      "bytes": 681
+    },
+    {
+      "path": "red-unit/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "red-unit/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+      "sha256": "5735afcc3b5fb943918425b670682b552b75d3301e118910d004fbbc0f263f16",
+      "bytes": 9711
+    },
+    {
+      "path": "red-unit/source/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs",
+      "sha256": "d7ec40bfd8284ceafd89cdb41fac6b27b7c158d4872d0a41865bdb6a6a85e324",
+      "bytes": 58696
+    },
+    {
+      "path": "red-unit/source/hosts/gpu/src/native_artifact/program/runtime/mod.rs",
+      "sha256": "cb46ff93ce0d5fc302e6927a6bb10a0de4d06a2db2f2aa9ed1df2984e4f3e471",
+      "bytes": 13050
+    },
+    {
+      "path": "red-unit/source/hosts/gpu/src/native_artifact/program/runtime/retirement.rs",
+      "sha256": "828046c7b426895866319c471f86704380bf1f2b3460d504a6f0021c0a4b8f53",
+      "bytes": 929
+    },
+    {
+      "path": "red-unit/source.diff",
+      "sha256": "2f1dfbd95ee159395dc5edff196d366ee7777d210e6ba7e3cb4d90863613f2bb",
+      "bytes": 3915
+    },
+    {
+      "path": "red-unit-02/build.json",
+      "sha256": "a4990534a6216ee3a7a278d65447242b8b0f9136564f39d0e06514fd13f0eb9a",
+      "bytes": 5031
+    },
+    {
+      "path": "red-unit-02/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "red-unit-02/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "red-unit-02/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+      "sha256": "3280b89dd7a189301496a2dcd1166eb75233f1e5793bdd46a8b16d19da28e2d2",
+      "bytes": 9905
+    },
+    {
+      "path": "red-unit-02/source/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs",
+      "sha256": "eda9b5bd1dea0ef2d728f61e56e023a733b8a2722f05a2d88437ffc669773694",
+      "bytes": 58689
+    },
+    {
+      "path": "red-unit-02/source/hosts/gpu/src/native_artifact/program/runtime/mod.rs",
+      "sha256": "cb46ff93ce0d5fc302e6927a6bb10a0de4d06a2db2f2aa9ed1df2984e4f3e471",
+      "bytes": 13050
+    },
+    {
+      "path": "red-unit-02/source/hosts/gpu/src/native_artifact/program/runtime/retirement.rs",
+      "sha256": "828046c7b426895866319c471f86704380bf1f2b3460d504a6f0021c0a4b8f53",
+      "bytes": 929
+    },
+    {
+      "path": "red-unit-02/source.diff",
+      "sha256": "39885fbee671f053ba3ac2093d4f193e9928181ec0e36b6a6fd71f1744f3b93f",
+      "bytes": 4106
+    },
+    {
+      "path": "red-unit-02/witness.json",
+      "sha256": "46b190fec8fb5c5fd8217de26f6ee47eb3b575ca32c36802ffc496013050cd09",
+      "bytes": 311
+    },
+    {
+      "path": "red-unit-02/witness.stderr",
+      "sha256": "a9c6d4bd2e50252992bd6a51a71789e82024dccb2980584f3a72e771accb2f5a",
+      "bytes": 387
+    },
+    {
+      "path": "red-unit-02/witness.stdout",
+      "sha256": "25564e8a154afd5185edcf2851e3a49bbae02e8bf5d8fbb356903160a7856a2e",
+      "bytes": 422
+    }
+  ]
+}
