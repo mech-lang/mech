@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-30T21:44:18.277611+00:00",
+  "head": "f2a68c8431ff55f484763ebba1fe52510078a457",
+  "files": [
+    {
+      "path": "red/build.json",
+      "sha256": "ddbb8c7baca54529572742ccde5bf02ce49fb2b79f2f11c4c00d4567cd613f86",
+      "bytes": 2145
+    },
+    {
+      "path": "red/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "red/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "red/run.json",
+      "sha256": "72ec29b2a7e04d36023644db48f2dcd4d6f723808e733f381d1512b6805626c0",
+      "bytes": 455
+    },
+    {
+      "path": "red/run.stderr",
+      "sha256": "7a25de84eeb32e57db82b387bc9a7f12f685ff9acbc4371b6fc5ec74c8683f91",
+      "bytes": 405
+    },
+    {
+      "path": "red/run.stdout",
+      "sha256": "e22cc2a3c5ded991ccc71c557f0bd9fb70b0434b54078bea6263589adb5bfa1e",
+      "bytes": 338
+    },
+    {
+      "path": "red.py",
+      "sha256": "72375433fb81e86e823e818486fc5f91361bade5c8e05334a0c283eb8a8fd7b3",
+      "bytes": 1347
+    }
+  ]
+}
