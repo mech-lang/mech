@@ -1,0 +1,13 @@
+
+thread 'numeric_composition_qualification::child_results_keep_current_arrays_indices_publication_and_recovery' (21770913) panicked at /private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_numeric_composition.rs:13:90:
+called `Result::unwrap()` on an `Err` value: InvalidPlan { node: Some(NodeId(1)), reason: "Iteration visit exceeds conservative work template" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'numeric_composition_qualification::parent_partition_follows_reordered_child_results' (21770917) panicked at /private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_numeric_composition.rs:318:85:
+called `Result::unwrap()` on an `Err` value: InvalidPlan { node: Some(NodeId(1)), reason: "Iteration visit exceeds conservative work template" }
+
+thread 'numeric_composition_qualification::parent_partition_keeps_exact_child_result_mapping_and_single_entry_boundaries' (21770918) panicked at /private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_numeric_composition.rs:177:85:
+called `Result::unwrap()` on an `Err` value: InvalidPlan { node: Some(NodeId(1)), reason: "Iteration visit exceeds conservative work template" }
+
+thread 'numeric_composition_qualification::parent_segments_are_emitted_around_the_selected_native_child' (21770919) panicked at /private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_numeric_composition.rs:150:85:
+called `Result::unwrap()` on an `Err` value: InvalidPlan { node: Some(NodeId(1)), reason: "Iteration visit exceeds conservative work template" }

@@ -1,0 +1,9 @@
+{
+  "command": [
+    "python3",
+    "scripts/check-rust-module-layout.py"
+  ],
+  "exit": 1,
+  "seconds": 0.30257762502878904,
+  "classification": "introduced file/directory collision; move composition.rs to composition/mod.rs without allowance changes"
+}
