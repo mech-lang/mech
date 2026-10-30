@@ -103,10 +103,28 @@ complete-program slowdown.
 
 The reverted source equals the already qualified preceding source, whose 321
 maintained tests and 2.35% gain remain retained. Its frozen executable also
-passes every fresh observation in this round's four baseline workers. A local
-rebuild of the restored source is recorded separately in `restored-build/` when
-complete; at this checkpoint that rebuild is running, with no new compression
-timing underway. No completed-rebuild claim is made here.
+passes every fresh observation in this round's four baseline workers. The
+restored release rebuild succeeds in **492.36 seconds**; receipts are archived
+in `restored-build/`.
+
+An additional assertion that all eight rebuilt Rust library archives would be
+byte-identical fails: Engine, GPU and standard-library hashes differ, while five
+unrelated libraries match. That reproducibility assumption was too strong and
+is not claimed as a compiler contract. The reason for archive-byte differences
+is not determined. The restored source is identical to the reviewed source;
+the three inspected hot functions regain **151/155/113** instructions and linked
+Rust text regains **48187088 bytes**. The complete executable is not byte-identical.
+
+A separate balanced restoration control then compares the rebuilt executable
+with the retained frozen executable. All **996** observations are retained,
+including **992** primary calls. Fresh reference remains **0.285 ms**:
+retained **4.898896 ms / 17.18910877x**, rebuilt **4.890229 ms / 17.15869825x**.
+Median ratio 0.99823083; geometric block ratio 1.00503384; 10/16 blocks improve.
+This is compatible with unchanged latency, not a new improvement claim. All
+output/work/alias/capacity/cleanup checks pass. Raw reference, pair and summary
+were committed immediately in `cfeb8ded9`, `926bb3159`, `d0d5ec73c`.
+Restored worker SHA256 is
+`71bace62e3b90fb7ef443183307f2311a4cf3cb181fe291fea15ebd03134b958`.
 
 ## Machine code, Object and profile
 
@@ -132,10 +150,21 @@ exclusive samples, shared debit 58, frame retirement 56, TLS lookup 48 and
 ordinary visits 49. Sampling is not a paired time comparison or proof of the
 specific cause of the slowdown. Account and retirement work remain prominent.
 
+A fresh profile of the rebuilt retained compiler also completes **695** diagnostic
+compressions, all excluded from timing and correct with zero cleanup. It has
+1354 exclusive weights: frame actions 323, ordinary visits 229, other helpers
+334, selected calls 123, remaining 345. Leading runtime leaves include helper
+dispatch 75, library debit 61, frame retirement 59, TLS lookup 59 and visits 46.
+Raw observations are committed in `261a2a190`; the next investigation uses this
+restored executable and its frozen libraries, not the rejected candidate.
+
 ## Disposition and next step
 
-No build, maintained test or protected control failed. The performance candidate
-failed its intended improvement criterion and is removed. A diagnostic JSON
+No build, maintained test or protected control failed. The archive-identity
+validation assertion above failed; no reproducible-library claim is made.
+Source restoration and actual executable recovery are established separately.
+The performance candidate failed its intended improvement criterion and is
+removed. A diagnostic JSON
 inspection probe assumed an object where one old receipt held a command list;
 that probe was corrected and did not affect a build, test or measurement.
 
