@@ -594,5 +594,5 @@ impl BufferFrames {
 }
 
 #[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "buffer_frame_retirement_tests.rs"]
+#[path = "buffer_frame_retirement_tests/mod.rs"]
 mod tests;
