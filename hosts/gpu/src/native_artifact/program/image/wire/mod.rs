@@ -225,9 +225,6 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
         &closed_tails,
     )
     .map_err(str::to_owned)?;
-    if admission != w.map_admission {
-        return Err("native path admission differs from its source frontiers".into());
-    }
     let frozen_maps = w
         .map_owner_words
         .as_ref()
@@ -269,8 +266,12 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
         &closed_tails,
         &visits,
         &frame_retirements,
-        &w.map_admission,
+        &admission,
     )?;
+    let admission = admission.exclude_composed_pieces(&compositions);
+    if admission != w.map_admission {
+        return Err("native path admission differs from its source frontiers".into());
+    }
     if w.max_library_inputs < compositions.argument_words() {
         return Err("restored parent native argument bank is too small".into());
     }

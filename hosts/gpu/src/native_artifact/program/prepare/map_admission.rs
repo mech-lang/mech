@@ -43,6 +43,44 @@ pub(in crate::native_artifact) struct Layout {
     pub sites: Box<[Option<usize>]>,
 }
 impl Layout {
+    /// Existing numeric pieces already replace their interior visits. Keep one
+    /// entry authority: an intersecting ordinary group stays on ordinary visits
+    /// outside that piece, rather than skipping an entry the piece swallowed.
+    /// Reuse this pure selection after derivation and during image validation.
+    pub(in crate::native_artifact::program) fn exclude_composed_pieces(
+        mut self,
+        pieces: &super::composition::Layout,
+    ) -> Self {
+        let occupied = pieces
+            .parents
+            .iter()
+            .flat_map(|parent| parent.segments.iter())
+            .filter(|segment| pieces.entry(segment.entry as usize).is_some())
+            .flat_map(|segment| segment.sites.iter().copied())
+            .collect::<std::collections::BTreeSet<_>>();
+        if occupied.is_empty() {
+            return self;
+        }
+        self.groups = self
+            .groups
+            .into_vec()
+            .into_iter()
+            .filter(|group| {
+                group.owner.is_some() || !group.sites.iter().any(|site| occupied.contains(site))
+            })
+            .collect();
+        if self.groups.is_empty() {
+            return Self::default();
+        }
+        self.sites.fill(None);
+        for (id, group) in self.groups.iter().enumerate() {
+            for &site in &group.sites {
+                self.sites[site as usize] = Some(id);
+            }
+        }
+        self
+    }
+
     pub fn group(&self, site: usize) -> Option<&Group> {
         self.sites
             .get(site)
