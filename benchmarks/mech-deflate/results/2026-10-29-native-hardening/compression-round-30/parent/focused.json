@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-frame-reads-round30-20261029/parent/nested-component-tests",
+    "buffer_frame_qualification::scalar_reads",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 101,
+  "seconds": 1.1113754590041935,
+  "binary_sha256": "98178539b6c3ec6f1424e5e53519d8bef577f2f0c184fb771b8fcb05fac4c237",
+  "expected": "Exactly one native-selection rejection and one correct original/decoded fresh-argument pass on the retained parent."
+}
