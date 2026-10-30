@@ -1,0 +1,51 @@
+{
+  "created_utc": "2026-10-30T18:49:18.160545+00:00",
+  "head": "0bd9b4cc5472894c9a357844f808cfd58a782b3b",
+  "files": [
+    {
+      "path": "cpu-round37/run.json",
+      "sha256": "b5f5a959fccdad4d0b58ed75145ddb6da185da8b3a2e7a0c96f3ef959e5c243e",
+      "bytes": 390
+    },
+    {
+      "path": "cpu-round37/run.stderr",
+      "sha256": "3d345a49c707af9447c3b937ef0a7fc707dff2e47a089ad842e6b8534ee01404",
+      "bytes": 594
+    },
+    {
+      "path": "cpu-round37/run.stdout",
+      "sha256": "8cacff11644f9e2a160a709188f3bdca2a695f5f87032a0a905141db8bb8e96d",
+      "bytes": 20438
+    },
+    {
+      "path": "cpu_usage.rs",
+      "sha256": "3f3e2ac6cead2a6758f96afe77f4fa56da054f1d5e1e1e163f9d79ed8dc12817",
+      "bytes": 385
+    },
+    {
+      "path": "mech-cpu-round37-build.json",
+      "sha256": "6ee8b37986fb1d90411e1cd22d2a253a01c8f2aef6759ea3ed85c3b7a3e25461",
+      "bytes": 13783
+    },
+    {
+      "path": "mech-cpu-round37-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "mech_cpu.rs",
+      "sha256": "2ce4128e140727365f790a7f1a167cd1ee01a008430dfe03d602b2e651c2f48f",
+      "bytes": 6956
+    },
+    {
+      "path": "usage.c",
+      "sha256": "883fe6a7baf228bc881b4b76aef13f352da38f19c8e7a5b3ca938dbd1dddfd0e",
+      "bytes": 448
+    },
+    {
+      "path": "usage.h",
+      "sha256": "ca6ac3c2cd82bfb367c07aa9e26b1aea3b025e48ea44db76dbded2be45b5fb9f",
+      "bytes": 233
+    }
+  ]
+}
