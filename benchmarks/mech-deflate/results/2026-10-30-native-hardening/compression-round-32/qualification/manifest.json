@@ -1,0 +1,83 @@
+{
+  "compiler": "915f039cfd7e2647cc3a1d349ab1070c3f292d19",
+  "base": "aff5d1e7d544fb18ef8efa4d66766ae58ae57a83",
+  "scoped_maintained_tests_passed": 561,
+  "scalar_controls_passed": 12,
+  "managed_frame_controls_passed": 8,
+  "architecture_checks_passed": 12,
+  "object_and_metadata_equal_to_retained_parent": true,
+  "source_algorithm_changed": false,
+  "failures": "Only intended parent-red density failure; no unresolved introduced failure",
+  "files": [
+    {
+      "path": "controls-and-record.py",
+      "sha256": "ef5a8cf085c8b72274e4e2b33783e7667af0421575ec138df5b4096660e17436",
+      "bytes": 1319
+    },
+    {
+      "path": "object-audit/after.json",
+      "sha256": "38d441ad72329f5bb4b7cb353f99f8b9c4930ff82d8cb6bad88beda90fb8ea37",
+      "bytes": 2191167
+    },
+    {
+      "path": "object-audit/after.o",
+      "sha256": "97152f81cfe0270df3ac255a0c6da360dfb9e0ffb0bc075f7033e9549c44205b",
+      "bytes": 12924328
+    },
+    {
+      "path": "object-audit/build.json",
+      "sha256": "f6dcf3ab981c528a78440a6355ac50275df99838908ceba86850db751fb5543b",
+      "bytes": 3311
+    },
+    {
+      "path": "object-audit/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "object-audit/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "object-audit/comparison.json",
+      "sha256": "4df73471a7f9c08c436bdb5138072b0ee369d059b2b9745d82fd2c8f318bba7b",
+      "bytes": 577
+    },
+    {
+      "path": "object-audit/object-evidence.rs",
+      "sha256": "a5ee5c96f9dedc3871737b9058a5201e1c4c5507f8434e00e8d5c468a60fdcb8",
+      "bytes": 2238
+    },
+    {
+      "path": "object-audit/run.json",
+      "sha256": "f29f146783761448913b55647864960af61d72148b34ea9a37d8b284cbc6e638",
+      "bytes": 2156
+    },
+    {
+      "path": "object-audit/run.py",
+      "sha256": "b4494f92eff7cf92dc1b5bbdf9ccfd87fa8af4bfc55922454ebd07c56dc41dd6",
+      "bytes": 1680
+    },
+    {
+      "path": "object-audit/run.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "object-audit/run.stdout",
+      "sha256": "19d332172863e53d0777d853ff0280086537f72a1804447f8c364e2b5a89fc9f",
+      "bytes": 119423
+    },
+    {
+      "path": "primary-workers/summary.json",
+      "sha256": "68f88cb3dcaede968e4893632e2799d39334b90afe3620b326af33e4b183c842",
+      "bytes": 2243
+    },
+    {
+      "path": "profile-analysis.json",
+      "sha256": "0abac5df0be91132c906805db9f1f8ca3f810d4bc80a60e354c1705685fc812d",
+      "bytes": 7772
+    }
+  ]
+}
