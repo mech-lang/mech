@@ -1,0 +1,96 @@
+{
+  "created_utc": "2026-10-30T19:00:34.260346+00:00",
+  "head": "36c7082f70c8a6c77620287648cea18232837334",
+  "files": [
+    {
+      "path": "allocation_profile.c",
+      "sha256": "d4e2ef8c1c635bf0e87a72ec6308abb2ba1b845d5da502a6d204135f07b7c27e",
+      "bytes": 4893
+    },
+    {
+      "path": "allocation_profile.h",
+      "sha256": "56852a08a6cb3fbba88daa10b8674cdb938933833722f0ed3bfcc8ae9ae9b31a",
+      "bytes": 384
+    },
+    {
+      "path": "build-reference.py",
+      "sha256": "e19dc5fffd33777c1e39a1010757cccd32e41634e50afc5798ce6542ca73d838",
+      "bytes": 4327
+    },
+    {
+      "path": "package-verification.json",
+      "sha256": "852fa03afedda2c351398296220e7e1ff9ebce7e673ad04e9bbfd43472943ae1",
+      "bytes": 2466
+    },
+    {
+      "path": "reference-cpu-identity.json",
+      "sha256": "2b4623ae7fbb3949faae4adf114078ec8a27e19aed7dc7b7669cfab251e330cf",
+      "bytes": 422
+    },
+    {
+      "path": "reference-cpu-run/run.json",
+      "sha256": "888cc4b4ebdf353873019eebdea89480bde698cb235818ffdebfa95c564d2b3a",
+      "bytes": 165
+    },
+    {
+      "path": "reference-cpu-run/run.stderr",
+      "sha256": "96953d853f6a38573619bcc61433d713aa3dcd5307d726314b337846a6f86bf7",
+      "bytes": 16347
+    },
+    {
+      "path": "reference-cpu-run/run.stdout",
+      "sha256": "39f844d865145e1a92195ebfa10134d54fc24355ce883bbd34b0d0c5f9af095c",
+      "bytes": 628890
+    },
+    {
+      "path": "reference-profile-host.c",
+      "sha256": "9f0ec74f723e25aba72dc2a1d5cf209b75f03b19e5c98e803440eab73bfa5d37",
+      "bytes": 3739
+    },
+    {
+      "path": "roc-cpu-app-build.json",
+      "sha256": "a882236674404e75bb14e43339b3d4f6e07c89a5bce60dbea9adc72f1da34cd8",
+      "bytes": 352
+    },
+    {
+      "path": "roc-cpu-app-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "roc-cpu-app-build.stdout",
+      "sha256": "df6de782c7a9a820da1da3571799a3255ecb8e2a3ceb8b4568a84a8fe3aae826",
+      "bytes": 86
+    },
+    {
+      "path": "roc-cpu-host-build.json",
+      "sha256": "54f97791a4b40eae70aa26fa00db2f103e68f07a4d57e8e536b5d0950880ecdc",
+      "bytes": 543
+    },
+    {
+      "path": "roc-cpu-host-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "roc-cpu-probe-build.json",
+      "sha256": "a5e8e61cc69e115fad78c79892ed46b5e7acd7e62fc30ba299c489cb5aae377b",
+      "bytes": 468
+    },
+    {
+      "path": "roc-cpu-probe-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "usage.c",
+      "sha256": "883fe6a7baf228bc881b4b76aef13f352da38f19c8e7a5b3ca938dbd1dddfd0e",
+      "bytes": 448
+    },
+    {
+      "path": "usage.h",
+      "sha256": "ca6ac3c2cd82bfb367c07aa9e26b1aea3b025e48ea44db76dbded2be45b5fb9f",
+      "bytes": 233
+    }
+  ]
+}
