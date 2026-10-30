@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-30T23:12:58.161718+00:00",
+  "head": "bf4762fa2076b427444466c96ef407f93772bcf0",
+  "files": [
+    {
+      "path": "red-component/build.json",
+      "sha256": "55b11c368571bb1a3274adaf632b0c9d9d7feae0c160323d7f1058023c455940",
+      "bytes": 2137
+    },
+    {
+      "path": "red-component/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "red-component/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "red-component/run.json",
+      "sha256": "8bcb1af0e4e678b2214334e8238e4205167c8af1a5be5cc75c92afeaea88b2e1",
+      "bytes": 483
+    },
+    {
+      "path": "red-component/run.stderr",
+      "sha256": "df15550cd2427d9fad0597ed12b594ea41239b5bb8ad74f8aacd141a7b8c6124",
+      "bytes": 389
+    },
+    {
+      "path": "red-component/run.stdout",
+      "sha256": "6a693210e634ff826b6419fecf59df48dbcc3348b8b5fbdb7e92cfc028cbb3e1",
+      "bytes": 346
+    },
+    {
+      "path": "red-component.py",
+      "sha256": "b2839a1973dd109f610105c8f6f913f85568fdc4024637b309a9a8afc8df383c",
+      "bytes": 1387
+    }
+  ]
+}
