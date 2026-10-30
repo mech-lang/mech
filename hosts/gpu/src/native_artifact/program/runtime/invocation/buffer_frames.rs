@@ -246,6 +246,8 @@ impl Invocation<'_, '_, '_> {
         }
         // Same-plan liveness checks include exact loop seed/latch reads. Retire
         // only after all current reads; a fresh definition kills the old visit.
+        #[cfg(all(test, feature = "canonical-native-program"))]
+        super::super::retirement::observe_action(action.retire().len());
         for value in action.retire() {
             if !self.state.buffer_frames.retire(
                 &descriptor.metadata().frame_retirements,
