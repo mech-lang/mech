@@ -1,0 +1,71 @@
+{
+  "created_utc": "2026-10-30T23:48:51.709485+00:00",
+  "head": "09110d276a666fb338944b8e1c3437aba10be5b1",
+  "files": [
+    {
+      "path": "prepare-refined-primary.py",
+      "sha256": "abd4c7e52eefdad15c041c7981a195ee4fe0b94f1be376849ecfbf3a909a08c7",
+      "bytes": 873
+    },
+    {
+      "path": "refined-primary/baseline/binding.json",
+      "sha256": "f08b7702f7dff4127da59b373fa1b517ce16199c9a85e8a26ee39f1b532b13aa",
+      "bytes": 13003
+    },
+    {
+      "path": "refined-primary/baseline/metadata.json",
+      "sha256": "d47f456a2a2be1c9408a2c2c7afb0d8cf00e67aabf6587f0445a645067680db4",
+      "bytes": 2542212
+    },
+    {
+      "path": "refined-primary/baseline/worker-build.json",
+      "sha256": "17692e1c51e1fc9153b7d89c5a50eaea4ad6b771a7c5d6124286a969ccb147cf",
+      "bytes": 13675
+    },
+    {
+      "path": "refined-primary/baseline/worker.rs",
+      "sha256": "ef3265e3d05e0ce27fa06ab2a2773628459efe20c8097ae0e58d9c80d0e471b3",
+      "bytes": 6939
+    },
+    {
+      "path": "refined-primary/initial/binding.json",
+      "sha256": "d79f8580267637f4c4679b2a38a78fc5f96b5375fe9673449f099bd62120ec59",
+      "bytes": 13090
+    },
+    {
+      "path": "refined-primary/initial/metadata.json",
+      "sha256": "dd73c0a8601b88f0216be48396c16102f34c7c8d8aa507be3654a035068acd9b",
+      "bytes": 2542212
+    },
+    {
+      "path": "refined-primary/initial/worker-build.json",
+      "sha256": "7e47e8afc80f658743719870cf90eeac28413181f0e188f21b2ec444ac62b3bd",
+      "bytes": 13802
+    },
+    {
+      "path": "refined-primary/initial/worker.rs",
+      "sha256": "2f3f12ff0e9dfe2be0c09a70a82d720f3e21a3e5feadca0f9f6226be1b7a51dc",
+      "bytes": 6944
+    },
+    {
+      "path": "refined-primary/refined/binding.json",
+      "sha256": "b7a87db54a1b7a1c106361d01647f9e312a90bc308396c072a33314c1d15a461",
+      "bytes": 13154
+    },
+    {
+      "path": "refined-primary/refined/metadata.json",
+      "sha256": "51ab2034b3e33778e202dbcb730f99c75bbe6abb13431a0292cc35f54313d235",
+      "bytes": 2542212
+    },
+    {
+      "path": "refined-primary/refined/worker-build.json",
+      "sha256": "116c0474c623544097b77af560a9301ae70363c66d98b281ce8e546d494c25a0",
+      "bytes": 13954
+    },
+    {
+      "path": "refined-primary/refined/worker.rs",
+      "sha256": "c199d299e6068128fc9d93beaf4285677e7665cd2ce27ade59d52d01b8709e6c",
+      "bytes": 6952
+    }
+  ]
+}
