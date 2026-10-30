@@ -248,7 +248,7 @@ impl Invocation<'_, '_, '_> {
         // only after all current reads; a fresh definition kills the old visit.
         for value in action.retire() {
             if !self.state.buffer_frames.retire(
-                layout,
+                &descriptor.metadata().frame_retirements,
                 value.get(),
                 &mut self.state.control.work,
             )? {

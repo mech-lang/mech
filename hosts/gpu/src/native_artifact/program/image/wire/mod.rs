@@ -255,6 +255,10 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
         &unsigned_buffer_calls,
         &calls,
     );
+    let frame_retirements = native::program::prepare::frame_retirement::FrameRetirements::derive(
+        &buffer_frames,
+        plan.values().len(),
+    )?;
     let descriptor = NativeProgramDescriptor {
         metadata: native::program::prepare::ProgramMetadata {
             plan,
@@ -275,6 +279,7 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
             uniform_word_collections,
             unsigned_buffer_calls,
             buffer_frames,
+            frame_retirements,
             window_regions: w.window_regions,
             string_map_regions: w.string_map_regions,
             scalar_aggregates: w.scalar_aggregates,

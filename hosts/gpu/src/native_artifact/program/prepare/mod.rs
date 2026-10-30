@@ -12,6 +12,7 @@ use mech_engine::native_artifact::{
 use std::sync::Arc;
 
 pub(in crate::native_artifact) mod call_routes;
+pub(in crate::native_artifact) mod frame_retirement;
 
 /// Recomputed both on source preparation and independent build-image loading.
 pub(in crate::native_artifact) fn prepare_frame_composition(
@@ -58,6 +59,8 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     // Same-plan last-use candidates are recomputed on every image load. The
     // runtime still checks exact current owners and exclusive core storage.
     pub(in crate::native_artifact) buffer_frames: mech_engine::native_artifact::NativeBufferFrames,
+    // Derived from these exact frame lanes, including independent image load.
+    pub(in crate::native_artifact) frame_retirements: frame_retirement::FrameRetirements,
     pub(in crate::native_artifact) unsigned_buffer_calls:
         Box<[Option<mech_engine::native_artifact::NativeUnsignedBufferCall>]>,
     // Pure derived cache. Recomputed from the validated plan on image load;
@@ -393,6 +396,8 @@ impl PreparedNativeProgram {
             .unwrap_or_default();
         let call_routes =
             call_routes::derive(&plan, &buffer_frames, &unsigned_buffer_calls, &calls);
+        let frame_retirements =
+            frame_retirement::FrameRetirements::derive(&buffer_frames, plan.values().len())?;
         let (scalar_aggregates, line_retention_frontiers) = facts.into_preparation_inventories();
         let metadata = ProgramMetadata {
             plan,
@@ -410,6 +415,7 @@ impl PreparedNativeProgram {
             uniform_word_collections,
             unsigned_buffer_calls,
             buffer_frames,
+            frame_retirements,
             window_regions,
             string_map_regions,
             scalar_aggregates,

@@ -1119,7 +1119,7 @@ impl Invocation<'_, '_, '_> {
             .charge(NativeExecutionPhase::Setup, scan)?;
         for &slot in slots {
             self.state.buffer_frames.retire(
-                &self.descriptor.metadata().buffer_frames,
+                &self.descriptor.metadata().frame_retirements,
                 slot as u32,
                 &mut self.state.control.work,
             )?;
