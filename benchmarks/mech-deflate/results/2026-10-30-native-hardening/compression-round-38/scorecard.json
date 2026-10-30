@@ -1,0 +1,989 @@
+{
+  "schema": "mech.complete-eight-byte-executable-profile.v2",
+  "input_bytes": 8,
+  "raw_output_bytes": 10,
+  "level": 12,
+  "base": "eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b",
+  "starting_published_head": "ba198160dc51162da49d962866fe4a19e0aa051c",
+  "before_compiler_source": "3a54f1a1d64db9eee01db97763a3f95a138db93a",
+  "ownership_change": "f64c9e65f26e6fc47cd16c0ea419643712196fbd",
+  "after_compiler_source": "dc77024f29f373f0938695531ab2b7c975bb1e7e",
+  "revision_ir_work_abi_bytecode": [
+    131,
+    95,
+    37,
+    14
+  ],
+  "primary": {
+    "groups": [
+      {
+        "group": 0,
+        "before": {
+          "median_seconds": 0.0046275835,
+          "multiple_of_roc": 15.902348797250857,
+          "multiple_of_fixed_roc": 15.425278333333335
+        },
+        "after": {
+          "median_seconds": 0.004635271,
+          "multiple_of_roc": 15.928766323024053,
+          "multiple_of_fixed_roc": 15.450903333333335
+        },
+        "pooled_ratio": 1.0016612342057145,
+        "median_block_ratio": 0.9970567983252395,
+        "geometric_block_ratio": 1.0006540705578257,
+        "improving_blocks": 10
+      },
+      {
+        "group": 1,
+        "before": {
+          "median_seconds": 0.004623271,
+          "multiple_of_roc": 15.887529209621992,
+          "multiple_of_fixed_roc": 15.410903333333335
+        },
+        "after": {
+          "median_seconds": 0.0046524795,
+          "multiple_of_roc": 15.987902061855669,
+          "multiple_of_fixed_roc": 15.508265000000002
+        },
+        "pooled_ratio": 1.006317713151576,
+        "median_block_ratio": 1.0039735693499348,
+        "geometric_block_ratio": 1.0122294154423055,
+        "improving_blocks": 6
+      },
+      {
+        "group": 2,
+        "before": {
+          "median_seconds": 0.0045959375,
+          "multiple_of_roc": 15.793599656357388,
+          "multiple_of_fixed_roc": 15.319791666666669
+        },
+        "after": {
+          "median_seconds": 0.0046196875000000005,
+          "multiple_of_roc": 15.875214776632303,
+          "multiple_of_fixed_roc": 15.398958333333336
+        },
+        "pooled_ratio": 1.005167607261848,
+        "median_block_ratio": 1.0079582139716055,
+        "geometric_block_ratio": 1.0052410732398738,
+        "improving_blocks": 4
+      },
+      {
+        "group": 3,
+        "before": {
+          "median_seconds": 0.0046364165,
+          "multiple_of_roc": 15.93270274914089,
+          "multiple_of_fixed_roc": 15.454721666666668
+        },
+        "after": {
+          "median_seconds": 0.0046364795,
+          "multiple_of_roc": 15.932919243986253,
+          "multiple_of_fixed_roc": 15.454931666666669
+        },
+        "pooled_ratio": 1.0000135880803636,
+        "median_block_ratio": 1.0019117814557204,
+        "geometric_block_ratio": 1.0021009661293314,
+        "improving_blocks": 6
+      }
+    ],
+    "reference_seconds": 0.000291,
+    "fixed_reference_seconds": 0.0003,
+    "primary_observations": 3968,
+    "all_observations": 3984,
+    "scope": "Four fixed independent worker groups with descriptive within-group block comparisons",
+    "before": {
+      "median_seconds": 0.0046224375,
+      "multiple_of_roc": 15.884664948453606,
+      "multiple_of_fixed_roc": 15.408125
+    },
+    "after": {
+      "median_seconds": 0.0046378545,
+      "multiple_of_roc": 15.937644329896905,
+      "multiple_of_fixed_roc": 15.459515000000001
+    },
+    "pooled_ratio": 1.0033352533160265,
+    "median_block_ratio": 1.0024136796394933,
+    "geometric_block_ratio": 1.0050465023706683,
+    "improving_blocks": 26
+  },
+  "cpu": {
+    "reference": {
+      "instructions": {
+        "median": 1364372.0,
+        "min": 1364164,
+        "max": 1391358
+      },
+      "cycles": {
+        "median": 931804.0,
+        "min": 890507,
+        "max": 982150
+      },
+      "rss_before": {
+        "median": 14778368.0,
+        "min": 14696448,
+        "max": 14778368
+      },
+      "rss_after": {
+        "median": 14778368.0,
+        "min": 14778368,
+        "max": 14778368
+      },
+      "physical_before": {
+        "median": 14418816.0,
+        "min": 14336896,
+        "max": 14418816
+      },
+      "physical_after": {
+        "median": 14418816.0,
+        "min": 14418816,
+        "max": 14418816
+      },
+      "lifetime_peak_physical": {
+        "median": 14418816.0,
+        "min": 14418816,
+        "max": 14418816
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "samples": 32,
+      "ipc_ratio_of_medians": 1.4642263823722586
+    },
+    "before": {
+      "instructions": {
+        "median": 50664319.5,
+        "min": 50659805,
+        "max": 52388318
+      },
+      "cycles": {
+        "median": 14651785.5,
+        "min": 14395452,
+        "max": 16996276
+      },
+      "rss_before": {
+        "median": 2358575104.0,
+        "min": 2358214656,
+        "max": 2358575104
+      },
+      "rss_after": {
+        "median": 2358575104.0,
+        "min": 2358214656,
+        "max": 2358575104
+      },
+      "physical_before": {
+        "median": 16874882816.0,
+        "min": 16874882816,
+        "max": 16874882816
+      },
+      "physical_after": {
+        "median": 16874882816.0,
+        "min": 16874882816,
+        "max": 16874882816
+      },
+      "lifetime_peak_physical": {
+        "median": 16874882816.0,
+        "min": 16874882816,
+        "max": 16874882816
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "samples": 32,
+      "ipc_ratio_of_medians": 3.4578938860386677
+    },
+    "after": {
+      "instructions": {
+        "median": 50672317.5,
+        "min": 50666930,
+        "max": 50830116
+      },
+      "cycles": {
+        "median": 15782050.0,
+        "min": 14594894,
+        "max": 18381028
+      },
+      "rss_before": {
+        "median": 1690976256.0,
+        "min": 1665810432,
+        "max": 1720270848
+      },
+      "rss_after": {
+        "median": 1690976256.0,
+        "min": 1665810432,
+        "max": 1720270848
+      },
+      "physical_before": {
+        "median": 16864446272.0,
+        "min": 16864446272,
+        "max": 16864446272
+      },
+      "physical_after": {
+        "median": 16864446272.0,
+        "min": 16864446272,
+        "max": 16864446272
+      },
+      "lifetime_peak_physical": {
+        "median": 16864446272.0,
+        "min": 16864446272,
+        "max": 16864446272
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "samples": 32,
+      "ipc_ratio_of_medians": 3.2107563656179012
+    }
+  },
+  "allocation": {
+    "reference": {
+      "allocation_requests": {
+        "median": 95.0,
+        "min": 95,
+        "max": 95
+      },
+      "requested_bytes": {
+        "median": 9021923.0,
+        "min": 9021923,
+        "max": 9021923
+      },
+      "deallocation_calls": {
+        "median": 95.0,
+        "min": 95,
+        "max": 95
+      },
+      "reallocations": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "relocating_reallocations": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "live_usable_before": {
+        "median": 32.0,
+        "min": 32,
+        "max": 32
+      },
+      "live_usable_after": {
+        "median": 32.0,
+        "min": 32,
+        "max": 32
+      },
+      "peak_live_usable": {
+        "median": 9257360.0,
+        "min": 9257360,
+        "max": 9257360
+      },
+      "incremental_peak_live_usable": {
+        "median": 9257328.0,
+        "min": 9257328,
+        "max": 9257328
+      },
+      "samples": 32,
+      "large_requested_size_histogram": {
+        "2442064": 1,
+        "524336": 1,
+        "6002100": 1
+      }
+    },
+    "before": {
+      "allocation_requests": {
+        "median": 14002.0,
+        "min": 14002,
+        "max": 14002
+      },
+      "requested_bytes": {
+        "median": 108355555.0,
+        "min": 108355555,
+        "max": 108355555
+      },
+      "deallocation_calls": {
+        "median": 12781.0,
+        "min": 12781,
+        "max": 12781
+      },
+      "reallocations": {
+        "median": 1213.0,
+        "min": 1213,
+        "max": 1213
+      },
+      "relocating_reallocations": {
+        "median": 458.0,
+        "min": 458,
+        "max": 458
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 13905.0,
+        "min": 13905,
+        "max": 13905
+      },
+      "live_usable_before": {
+        "median": 148214600.0,
+        "min": 148214600,
+        "max": 148214600
+      },
+      "live_usable_after": {
+        "median": 148215168.0,
+        "min": 148215168,
+        "max": 148215168
+      },
+      "peak_live_usable": {
+        "median": 174034568.0,
+        "min": 174034568,
+        "max": 174034568
+      },
+      "incremental_peak_live_usable": {
+        "median": 25819968.0,
+        "min": 25819968,
+        "max": 25819968
+      },
+      "samples": 8,
+      "large_requested_size_histogram": {
+        "483328": 1,
+        "1437504": 1,
+        "179688": 2,
+        "361024": 1,
+        "97296": 1,
+        "75600": 1,
+        "95648": 1,
+        "124344": 1,
+        "524288": 5,
+        "6002052": 1,
+        "2442056": 39
+      }
+    },
+    "after": {
+      "allocation_requests": {
+        "median": 13994.0,
+        "min": 13994,
+        "max": 13994
+      },
+      "requested_bytes": {
+        "median": 98586819.0,
+        "min": 98586819,
+        "max": 98586819
+      },
+      "deallocation_calls": {
+        "median": 12773.0,
+        "min": 12773,
+        "max": 12773
+      },
+      "reallocations": {
+        "median": 1213.0,
+        "min": 1213,
+        "max": 1213
+      },
+      "relocating_reallocations": {
+        "median": 458.0,
+        "min": 458,
+        "max": 458
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 13905.0,
+        "min": 13905,
+        "max": 13905
+      },
+      "live_usable_before": {
+        "median": 148214600.0,
+        "min": 148214600,
+        "max": 148214600
+      },
+      "live_usable_after": {
+        "median": 148215168.0,
+        "min": 148215168,
+        "max": 148215168
+      },
+      "peak_live_usable": {
+        "median": 168790032.0,
+        "min": 168790032,
+        "max": 168790032
+      },
+      "incremental_peak_live_usable": {
+        "median": 20575432.0,
+        "min": 20575432,
+        "max": 20575432
+      },
+      "samples": 8,
+      "large_requested_size_histogram": {
+        "483328": 1,
+        "1437504": 1,
+        "179688": 2,
+        "361024": 1,
+        "97296": 1,
+        "75600": 1,
+        "95648": 1,
+        "124344": 1,
+        "524288": 5,
+        "6002052": 1,
+        "2442056": 35
+      }
+    }
+  },
+  "cpu_boundary_calibration": {
+    "before": {
+      "median_cycles": 1231,
+      "median_instructions": 5010,
+      "observations": 101
+    },
+    "after": {
+      "median_cycles": 2149,
+      "median_instructions": 5010,
+      "observations": 101
+    }
+  },
+  "ratios_to_reference": {
+    "before": {
+      "instructions": 37.13380185169441,
+      "cycles": 15.724106679087019,
+      "allocation_requests": 147.38947368421051,
+      "requested_bytes": 12.01025047542525,
+      "incremental_peak_live_usable": 2.789138291308248
+    },
+    "after": {
+      "instructions": 37.13966388932051,
+      "cycles": 16.9370919206185,
+      "allocation_requests": 147.30526315789473,
+      "requested_bytes": 10.92747289020312,
+      "incremental_peak_live_usable": 2.2226102391532416
+    }
+  },
+  "after_change_percent": {
+    "instructions": 0.015786257624550437,
+    "cycles": 7.714175859317618,
+    "allocation_requests": -0.05713469504357027,
+    "requested_bytes": -9.015445493311347,
+    "incremental_peak_live_usable": -20.31193841913359,
+    "primary_elapsed": 0.3335253316026465
+  },
+  "generated_object": {
+    "object.o": {
+      "identical": true,
+      "sha256": "d2c0185ac19d2279c477386cb9f51b080bb4ea159735bbae61101930bfe2cf13",
+      "bytes": 13802344
+    },
+    "metadata.json": {
+      "identical": true,
+      "sha256": "9b9cfb5a6d8052c11fbb4f55e7c56e040bbeebd14860b42fa9f8ac8e475cb5eb",
+      "bytes": 2411445
+    },
+    "descriptor.json": {
+      "identical": true,
+      "sha256": "7b6cfa95f6735e77b12842bbd2e9aa94388d6f04b29c8417b30e01f0cb21520e",
+      "bytes": 59784245
+    }
+  },
+  "profile": {
+    "method": "Exclusive leaf=count-sum(children), partition by frame > selected call > other helper > ordinary visit > remaining ancestry; disjoint weights, not elapsed-time guarantees. Before is the prior recorded sample, not a paired profile.",
+    "observations": {
+      "before": {
+        "path": "/private/tmp/mech-action-retirement-round37-20261030/profile/after.sample.txt",
+        "sha256": "e74a07e5c679e91b08facd93788b75ab273a7bec0112e70a4544ca615d579f29",
+        "total_samples": 1351,
+        "disjoint_categories": {
+          "remaining": 446,
+          "other_invocation_helper": 193,
+          "selected_library_call": 145,
+          "ordinary_control_visit": 201,
+          "buffer_frame_actions": 366
+        },
+        "exclusive_complete_budget_evaluator": 13,
+        "frame_input_admission_inclusive": 83,
+        "exclusive_top_leaves": [
+          [
+            "???",
+            153
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+            57
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+            53
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+            52
+          ],
+          [
+            "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget32charge_control_account_at_limits",
+            45
+          ],
+          [
+            "_tlv_get_addr",
+            39
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+            39
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation18retire_tail_locals",
+            35
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+            29
+          ],
+          [
+            "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks5admit",
+            28
+          ],
+          [
+            "_platform_memmove",
+            27
+          ],
+          [
+            "_RNvMs3_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+            27
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+            25
+          ],
+          [
+            "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+            24
+          ],
+          [
+            "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames16apply_retirement",
+            24
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+            18
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultTNtNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation5ValuebENtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMNtNtB3h_8prepared12word_updatesNtB4M_25NativePreparedLibraryCall23unsigned_matrix_replace0EBa_",
+            17
+          ],
+          [
+            "_RNvMs1_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena3put",
+            17
+          ],
+          [
+            "mi_free",
+            16
+          ],
+          [
+            "_RNvNtNtCskIfnrfrMWVM_9mech_core6schema5shape18evaluate_dimension",
+            16
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation16readonly_numericNtB4_10Invocation19begin_numeric_views",
+            16
+          ],
+          [
+            "_RNvMs1_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena12copy_current",
+            16
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation14selected_callsNtB4_10Invocation21prepared_library_call",
+            13
+          ],
+          [
+            "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+            13
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation15action_required",
+            13
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls8prepared13buffer_framesNtB6_25NativePreparedLibraryCall27check_buffer_record_ordinal",
+            12
+          ],
+          [
+            "_RNvXsl_NtCskIfnrfrMWVM_9mech_core6schemaNtB5_10SchemaBodyNtNtCsgDHHaSskbIF_4core3cmp9PartialEq2eq",
+            10
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+            10
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCskIfnrfrMWVM_9mech_core8snapshot8encoding19ValueFootprintErrorEBM_",
+            10
+          ],
+          [
+            "_RNvMs0_NtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime11collections11string_spanNtB7_5State22validate_span_boundary",
+            10
+          ]
+        ]
+      },
+      "after": {
+        "path": "/private/tmp/mech-buffer-ownership-round38-20261030/profile/after.sample.txt",
+        "sha256": "edb47d28419698d3b1bb4901a298c624ef270579a827bba20aca15f907151a6e",
+        "total_samples": 1332,
+        "disjoint_categories": {
+          "remaining": 465,
+          "ordinary_control_visit": 180,
+          "other_invocation_helper": 180,
+          "selected_library_call": 142,
+          "buffer_frame_actions": 365
+        },
+        "exclusive_complete_budget_evaluator": 18,
+        "frame_input_admission_inclusive": 97,
+        "exclusive_top_leaves": [
+          [
+            "???",
+            149
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+            58
+          ],
+          [
+            "_tlv_get_addr",
+            51
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+            49
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+            44
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+            35
+          ],
+          [
+            "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget32charge_control_account_at_limits",
+            32
+          ],
+          [
+            "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+            30
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation18retire_tail_locals",
+            29
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+            28
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+            26
+          ],
+          [
+            "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks5admit",
+            25
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation16readonly_numericNtB4_10Invocation19begin_numeric_views",
+            25
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation14selected_callsNtB4_10Invocation21prepared_library_call",
+            24
+          ],
+          [
+            "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames16apply_retirement",
+            23
+          ],
+          [
+            "_RNvMs3_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+            22
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+            19
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+            18
+          ],
+          [
+            "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+            18
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation5ValueECs29QkOtpKx6e_8mech_gpu",
+            17
+          ],
+          [
+            "_RNvNtNtCskIfnrfrMWVM_9mech_core6schema5shape18evaluate_dimension",
+            16
+          ],
+          [
+            "_platform_memmove",
+            15
+          ],
+          [
+            "_RNvMs1_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena3put",
+            15
+          ],
+          [
+            "_RNvXsl_NtCskIfnrfrMWVM_9mech_core6schemaNtB5_10SchemaBodyNtNtCsgDHHaSskbIF_4core3cmp9PartialEq2eq",
+            14
+          ],
+          [
+            "_RNvMs7_NtNtCskIfnrfrMWVM_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+            13
+          ],
+          [
+            "_RNvMsa_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_19ResidentBudgetMeter19charge_compute_work",
+            13
+          ],
+          [
+            "mi_free",
+            11
+          ],
+          [
+            "_RNvMNtCs40e1XR8pRG7_7seahash6bufferNtB2_5State4hash",
+            11
+          ],
+          [
+            "write",
+            11
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultTNtNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation5ValuebENtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMNtNtB3h_8prepared12word_updatesNtB4M_25NativePreparedLibraryCall23unsigned_matrix_replace0EBa_",
+            10
+          ]
+        ]
+      }
+    }
+  },
+  "ownership_census": {
+    "changed_observations": [
+      {
+        "site": 12411,
+        "length": 257,
+        "width": 8,
+        "capacity": 305257,
+        "before": {
+          "arena_aliases_after": [
+            7317
+          ],
+          "frame_aliases_after": [],
+          "output_keeps_old_frozen_identity": false,
+          "output_reuses_backing": false
+        },
+        "after": {
+          "arena_aliases_after": [],
+          "frame_aliases_after": [],
+          "output_keeps_old_frozen_identity": false,
+          "output_reuses_backing": true
+        }
+      },
+      {
+        "site": 15288,
+        "length": 257,
+        "width": 8,
+        "capacity": 305257,
+        "before": {
+          "arena_aliases_after": [
+            8808
+          ],
+          "frame_aliases_after": [],
+          "output_keeps_old_frozen_identity": false,
+          "output_reuses_backing": false
+        },
+        "after": {
+          "arena_aliases_after": [],
+          "frame_aliases_after": [],
+          "output_keeps_old_frozen_identity": false,
+          "output_reuses_backing": true
+        }
+      },
+      {
+        "site": 15288,
+        "length": 257,
+        "width": 8,
+        "capacity": 305257,
+        "before": {
+          "arena_aliases_after": [
+            8808
+          ],
+          "frame_aliases_after": [],
+          "output_keeps_old_frozen_identity": false,
+          "output_reuses_backing": false
+        },
+        "after": {
+          "arena_aliases_after": [],
+          "frame_aliases_after": [],
+          "output_keeps_old_frozen_identity": false,
+          "output_reuses_backing": true
+        }
+      },
+      {
+        "site": 26887,
+        "length": 257,
+        "width": 8,
+        "capacity": 305257,
+        "before": {
+          "arena_aliases_after": [
+            14888
+          ],
+          "frame_aliases_after": [],
+          "output_keeps_old_frozen_identity": false,
+          "output_reuses_backing": false
+        },
+        "after": {
+          "arena_aliases_after": [],
+          "frame_aliases_after": [],
+          "output_keeps_old_frozen_identity": false,
+          "output_reuses_backing": true
+        }
+      }
+    ],
+    "identified_copied_initialized_path_bytes_removed": 8224,
+    "large_path_requests_before": 39,
+    "large_path_requests_after": 35,
+    "large_path_requested_bytes_removed": 9768224,
+    "remaining": {
+      "tree_copies": 4,
+      "tree_initialized_copy_bytes": 2097152,
+      "path_appends_without_usable_proof": 32,
+      "path_clears_retaining_frame_alias": 2
+    },
+    "scope": "The weak-identity observer changes no maintained function body and retains no strong owner across the unchanged helper. Counts are diagnostic only."
+  },
+  "linked_compressor_diagnostic": {
+    "scope": "Diagnostic only. Full compressor is linked same-build machine code; two tiny seed/clear helpers retain their original JIT preparation outside the compression boundary. Not runtime-only minimal binary size and not a new primary elapsed comparison.",
+    "cpu": {
+      "instructions": {
+        "median": 50686564.5,
+        "min": 50682008,
+        "max": 50695211
+      },
+      "cycles": {
+        "median": 14266775.0,
+        "min": 14057914,
+        "max": 15227851
+      },
+      "rss_before": {
+        "median": 318963712.0,
+        "min": 318963712,
+        "max": 318963712
+      },
+      "rss_after": {
+        "median": 318963712.0,
+        "min": 318963712,
+        "max": 318963712
+      },
+      "physical_before": {
+        "median": 228001472.0,
+        "min": 228001472,
+        "max": 228001472
+      },
+      "physical_after": {
+        "median": 228001472.0,
+        "min": 228001472,
+        "max": 228001472
+      },
+      "lifetime_peak_physical": {
+        "median": 228001472.0,
+        "min": 228001472,
+        "max": 228001472
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "allocation": {
+      "allocation_requests": {
+        "median": 13994.0,
+        "min": 13994,
+        "max": 13994
+      },
+      "requested_bytes": {
+        "median": 98586819.0,
+        "min": 98586819,
+        "max": 98586819
+      },
+      "deallocation_calls": {
+        "median": 12773.0,
+        "min": 12773,
+        "max": 12773
+      },
+      "reallocations": {
+        "median": 1213.0,
+        "min": 1213,
+        "max": 1213
+      },
+      "relocating_reallocations": {
+        "median": 458.0,
+        "min": 458,
+        "max": 458
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 13905.0,
+        "min": 13905,
+        "max": 13905
+      },
+      "live_usable_before": {
+        "median": 141537520.0,
+        "min": 141537520,
+        "max": 141537520
+      },
+      "live_usable_after": {
+        "median": 141538088.0,
+        "min": 141538088,
+        "max": 141538088
+      },
+      "peak_live_usable": {
+        "median": 162112952.0,
+        "min": 162112952,
+        "max": 162112952
+      },
+      "incremental_peak_live_usable": {
+        "median": 20575432.0,
+        "min": 20575432,
+        "max": 20575432
+      }
+    },
+    "cpu_observations": 32,
+    "allocation_observations": 8,
+    "instructions_multiple_of_reference": 37.15010605611959,
+    "cycles_multiple_of_reference": 15.310918390562822,
+    "primary_elapsed_comparison_claimed": false
+  },
+  "static": {
+    "reference_whole_executable": {
+      "text_bytes": 195456,
+      "four_byte_instruction_slots_including_padding": 48864
+    },
+    "linked_diagnostic_whole_executable": {
+      "text_bytes": 62813572,
+      "four_byte_instruction_slots_including_padding": 15703393
+    },
+    "jit_diagnostic_whole_executable": {
+      "text_bytes": 48193356,
+      "four_byte_instruction_slots_including_padding": 12048339
+    },
+    "generated_compressor_object": {
+      "text_bytes": 13801616,
+      "four_byte_instruction_slots_including_padding": 3450404
+    },
+    "scope": "Whole diagnostic executables include compiler, catalog, verification and setup helpers; generated compressor Object is a single entry. Static instruction slots include padding, and are distinct from actual executed instructions. No minimal runtime-only binary-size claim."
+  },
+  "scope": [
+    "CPU, allocation, sample profile and primary elapsed measurements are separate cohorts.",
+    "CPU fields are actual hardware counters and include the measured getter overhead; no silent calibration subtraction.",
+    "Incremental peak is tracked live usable heap above the compression entry baseline, not whole-task RSS.",
+    "Whole-task footprint includes compiler/JIT preparation and swapped memory; not runtime-only AOT peak memory.",
+    "Requested path capacity is distinct from initialized payload copying.",
+    "No cache/branch-miss, total-copy-byte, energy, streaming-throughput or larger-input result is claimed.",
+    "Primary descriptive blocks share four independently prepared worker pairs; no latency speedup established."
+  ]
+}
