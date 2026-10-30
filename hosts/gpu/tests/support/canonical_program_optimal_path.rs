@@ -148,6 +148,14 @@ fn path_match_search_groups_existing_private_scalar_aggregate_steps() {
         let groups = image["descriptor"]["map_admission"]["groups"]
             .as_array()
             .unwrap();
+        let parent_iteration = parent["iteration"].as_u64().unwrap() as u32;
+        assert!(groups.iter().any(|group| group["owner"].is_null()
+            && group["sites"].as_array().unwrap().iter().any(|site| {
+                let site = site.as_u64().unwrap() as usize;
+                object.descriptor().plan().blocks()[site].iteration() == Some(parent_iteration)
+                    && matches!(aggregates.action(site),
+                        Some(mech_engine::native_artifact::NativeScalarAggregateAction::Pack { .. }))
+            })), "the scalar state packs after a numeric piece must retain ordinary grouping");
         for segment in metadata["compiled_numeric_segments"].as_array().unwrap() {
             let sites = segment["source_sites"].as_array().unwrap();
             for group in groups {
