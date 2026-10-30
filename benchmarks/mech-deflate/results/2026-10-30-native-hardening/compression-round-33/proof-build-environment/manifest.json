@@ -1,0 +1,22 @@
+{
+  "exit": 1,
+  "classification": "introduced direct-build runner omitted Cargo package version variables; no Rust type or semantic failure reported",
+  "performance_claim": false,
+  "files": [
+    {
+      "path": "build.json",
+      "sha256": "265d8b37225c90087e3ec3658b47c48e89f5cfbea3238fba10e1ef2162367027",
+      "bytes": 3883
+    },
+    {
+      "path": "build.stderr",
+      "sha256": "8dba1bd6fdaa96d737619995f09ef47a024dd41cfb2f6971413633be962d7a70",
+      "bytes": 750
+    },
+    {
+      "path": "build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}
