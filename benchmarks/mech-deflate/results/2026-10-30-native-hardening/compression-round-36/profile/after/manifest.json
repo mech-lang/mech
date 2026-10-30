@@ -1,0 +1,54 @@
+{
+  "scope": "Diagnostic matched profile only; every process observation excluded from primary and no new elapsed comparison claimed",
+  "receipt": {
+    "label": "after",
+    "command": [
+      "/private/tmp/mech-retirement-round36-20261030/primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "693"
+    ],
+    "exit": 0,
+    "binary_sha256": "9c9887b0c42b806f4cc0b394e8f2017853b118eb2acf5672fec53d4b97525634",
+    "artifact_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+    "head": "a0e91b28ffed415bf693d4607dd7d403b09ff980",
+    "sample_command": [
+      "sample",
+      "62643",
+      "2",
+      "-file",
+      "/private/tmp/mech-retirement-round36-20261030/profile/after.sample.txt"
+    ],
+    "sample_exit": 0,
+    "all_observations_excluded_from_primary": true,
+    "performance_comparison_claimed": false,
+    "created_utc": "2026-10-30T17:55:45.131861+00:00",
+    "rows": 695
+  },
+  "files": [
+    {
+      "path": "profile/after-sampler.log",
+      "sha256": "c6e018c33ca71950305f97ade63e28d80fee2ab74e5965f6ae14871f0c6a0c22",
+      "bytes": 246
+    },
+    {
+      "path": "profile/after.json",
+      "sha256": "e7dccb4b076da8e2148297766b0818abd6ee077da509c1f6512188cfd7130556",
+      "bytes": 788
+    },
+    {
+      "path": "profile/after.sample.txt",
+      "sha256": "9a7d8907f60518f6c4aea67b18ba755dbb9a297123d9eee4c687b193053623d2",
+      "bytes": 1036928
+    },
+    {
+      "path": "profile/after.stderr",
+      "sha256": "f4acca1be3999190770e336cceb0486aecb7182e1e2382d305745ffe94c3be3c",
+      "bytes": 9688
+    },
+    {
+      "path": "profile/after.stdout",
+      "sha256": "92dfa6ed866e520f44f90f88f0737f8ac27579c09ce619bcd3b0bbe3593ecac6",
+      "bytes": 242900
+    }
+  ]
+}
