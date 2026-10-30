@@ -25,12 +25,10 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
         for _ in 0..2 {
             output.fill(None);
             super::retirement::take_observation();
-            super::retirement::take_action_observation();
             let report = jit
                 .evaluate_into(&args, &mut output, mode.execution(), &memory)
                 .unwrap();
             let batches = super::retirement::take_observation();
-            let action_cleanup = super::retirement::take_action_observation();
             assert_eq!(contents(&args), before);
             assert_eq!(
                 output
@@ -48,7 +46,6 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
                 "original cleanup prices must remain"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
-            println!("huffman-action-cleanup calls/entries/multiple={action_cleanup:?}");
             assert!(
                 batches > 0,
                 "original Huffman parent must use funded cleanup"
