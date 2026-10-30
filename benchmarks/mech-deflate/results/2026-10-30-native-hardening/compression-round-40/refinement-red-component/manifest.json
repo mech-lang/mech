@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-30T23:38:38.627485+00:00",
+  "head": "c28356ab3df3b94ee2e63ca7bcda7f89efffee7b",
+  "files": [
+    {
+      "path": "refinement-red-component/build.json",
+      "sha256": "952b5b02828d709021b2fbf361f2fedbc4d9948419a9abde49a598946d263105",
+      "bytes": 2203
+    },
+    {
+      "path": "refinement-red-component/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "refinement-red-component/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "refinement-red-component/run.json",
+      "sha256": "7d9e1fb2d62f30eb3002d4a97be970fd192ce32adcb0853fc57e68274888fb39",
+      "bytes": 494
+    },
+    {
+      "path": "refinement-red-component/run.stderr",
+      "sha256": "3f168d2271234a3ddf9b0d7ceacc218e077316cac12cd585c06540c56960537b",
+      "bytes": 383
+    },
+    {
+      "path": "refinement-red-component/run.stdout",
+      "sha256": "24f2a09920723c0b9b2d015968e79a9177a1e642278ebc074dc6b213488a54be",
+      "bytes": 346
+    },
+    {
+      "path": "refinement-red-component.py",
+      "sha256": "02c4e307da43736d9e33999ab35d2cfea930cf8483721c954eaac6ad250bb505",
+      "bytes": 1410
+    }
+  ]
+}
