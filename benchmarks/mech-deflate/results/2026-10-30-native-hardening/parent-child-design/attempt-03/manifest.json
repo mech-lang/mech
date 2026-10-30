@@ -1,0 +1,59 @@
+{
+  "compiler": "915f039cfd7e2647cc3a1d349ab1070c3f292d19",
+  "build_exit": 0,
+  "witness_executed": false,
+  "classification": "introduced diagnostic runner looked in its receipt directory rather than the compiler output path; no compiler change",
+  "performance_claim": false,
+  "files": [
+    {
+      "path": "build-command.json",
+      "sha256": "56c3149d467c51dc55e03ccd0d8e755002285d81e5a4388432c730da5db90b94",
+      "bytes": 1716
+    },
+    {
+      "path": "build-environment.json",
+      "sha256": "be0df049ca64182475f31273f45aafc745b385f53b7dbe1853efd88e2fe9229f",
+      "bytes": 79
+    },
+    {
+      "path": "build.json",
+      "sha256": "fec9e4364c2e7f2cce60341bbf7b08d2ef3e55fe750d1293d550ba3323ec5dda",
+      "bytes": 1883
+    },
+    {
+      "path": "build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "huffman.mec",
+      "sha256": "f1a918de00774c512668c284836692e521db219147b991b75aada72303dabec4",
+      "bytes": 1503
+    },
+    {
+      "path": "qualification.rs",
+      "sha256": "c5ea5fa2cbe818bd1bcfa5f6f83aee49dfc138e19e551defe301fda0becb5a09",
+      "bytes": 36416
+    },
+    {
+      "path": "run.py",
+      "sha256": "a4f374ec25e671ebcfd70a8551e758e63a843e4734aba42a3ca46022fcd5f68d",
+      "bytes": 1033
+    },
+    {
+      "path": "runner-error.json",
+      "sha256": "8fc3d7e07fcd82e41ba159e691ab883a81417334b293250e506e92f233dedfe5",
+      "bytes": 361
+    },
+    {
+      "path": "witness.rs",
+      "sha256": "46ef8748ffdb7c378c7b78c1a4974c22eb6057e29f58b11f2a5a51c98151c79c",
+      "bytes": 6215
+    }
+  ]
+}
