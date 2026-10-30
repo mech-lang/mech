@@ -1,0 +1,21 @@
+{
+  "created_utc": "2026-10-30T21:29:00.576469+00:00",
+  "head": "db35040688975f45dd1cb705852b3628c450b6cf",
+  "files": [
+    {
+      "path": "census-comparison.json",
+      "sha256": "f97c2c2dafd54d0993dd974d4b85ef75913d7a878012987ce9c7a64fd8a9dce6",
+      "bytes": 2530
+    },
+    {
+      "path": "partition-profile.py",
+      "sha256": "0371e97783c997e912a66b0d17229f654100b12c107cf88e1b0381d0ecd9320a",
+      "bytes": 2492
+    },
+    {
+      "path": "partitioned-profile.json",
+      "sha256": "9482d3ebda046de46c2fc716598de45f5f4f530f6a8adb0958c1e59cdc0a7d7a",
+      "bytes": 11182
+    }
+  ]
+}
