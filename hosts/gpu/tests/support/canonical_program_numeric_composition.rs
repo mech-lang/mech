@@ -5,6 +5,9 @@ use super::{
 };
 use mech_core::ValueDataDraft;
 
+#[path = "canonical_program_composition_cases.rs"]
+mod cases;
+
 #[test]
 fn child_results_keep_current_arrays_indices_publication_and_recovery() {
     use mech_core::ValueDataDraft as Data;
@@ -58,6 +61,15 @@ fn child_results_keep_current_arrays_indices_publication_and_recovery() {
                 vec![0, 3, 2, 1],
                 vec![9, 9],
                 vec![0, 1, 1, 2],
+                3,
+                0,
+                None,
+            ),
+            (
+                "reject-in-later-child",
+                vec![0, 3, 2, 1],
+                vec![9, 9],
+                vec![0, 1, 1, 1],
                 3,
                 0,
                 None,

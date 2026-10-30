@@ -8,6 +8,7 @@ use mech_core::{MemoryBudgetLimits, Value};
 use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeMatchValue};
 
 mod buffer_frames;
+pub(super) mod continuation;
 mod numeric_segments;
 mod numeric_writes;
 mod readonly_numeric;
@@ -162,6 +163,8 @@ pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visi
     pub(in crate::native_artifact::program::runtime) borrowed_strings: Option<borrowed::State>,
     pub(in crate::native_artifact::program::runtime) closed_tail:
         Option<crate::native_artifact::program::runtime::invocation::tail::State>,
+    // Scalar edge identity only; all owners remain in the inventoried frame/arena banks.
+    pub(in crate::native_artifact::program::runtime) parent_continuation: continuation::Pending,
     pub(in crate::native_artifact::program::runtime) selected_join:
         Option<crate::native_artifact::program::runtime::invocation::joins::State>,
     pub(in crate::native_artifact::program::runtime) limits: MemoryBudgetLimits,
@@ -862,6 +865,7 @@ impl Invocation<'_, '_, '_> {
             return Err(invalid("entry omitted current required helper"));
         }
         let previous = self.admission_predecessor(site)?;
+        self.complete_parent_continuation(previous, site)?;
         // A native scalar/aggregate latch has no managed move callback. Retire the
         // OTHER managed loop locals after that generated copy, before the next
         // visit, exactly as the managed latch used to do. Aggregate words own
@@ -952,6 +956,7 @@ impl Invocation<'_, '_, '_> {
             self.control()
                 .visit_from(site, group.map(|group| group.work), previous)?;
         }
+        self.arm_parent_continuation(index)?;
         self.state.scalar_path = group
             .filter(|group| group.owner.is_none())
             .map(|group| group.start());
@@ -1015,6 +1020,9 @@ impl Invocation<'_, '_, '_> {
         }
         if self.state.control.completed && self.has_retained_maps() {
             return Err(invalid("completion with an active retained map owner"));
+        }
+        if self.state.control.completed && self.parent_continuation.is_pending() {
+            return Err(invalid("completion with pending parent child edge"));
         }
         self.state.consumed = false;
         // Keep the actual admitted anchor. The next callback must belong to
