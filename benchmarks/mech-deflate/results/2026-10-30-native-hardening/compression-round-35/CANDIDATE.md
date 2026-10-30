@@ -1,5 +1,8 @@
 # Inline the maintained library debit across the crate boundary
 
+Status: **rejected and removed after a consistent 2.46% slowdown**.
+See [the closure packet](CLOSURE.md); the earlier work-wrapper gain is retained.
+
 Starting published/compiler checkpoint:
 `a4b9ac5f4312cf822102dd394f9ea52c3add08b6`.
 Keep the preceding work-wrapper hint and all earlier retained improvements.
