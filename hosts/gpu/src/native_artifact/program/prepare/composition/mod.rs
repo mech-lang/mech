@@ -306,20 +306,10 @@ impl Layout {
                 let Some(numeric) = &part.numeric else {
                     continue;
                 };
-                // Two boundary calls and each managed entry source need current
-                // ownership/account checks. A tiny projection group must save
-                // more existing calls than that transport, not merely two.
-                // This is profitability, never a source-size/resource allowance.
+                // Two new boundary calls must replace more existing calls.
+                // This is a profitability choice, never a source-size allowance.
                 let saved = part.sites.len().saturating_sub(1) + numeric.actions.len();
-                let overhead = part
-                    .frame_plan
-                    .as_ref()
-                    .ok_or("parent numeric piece lacks its frame transport")?
-                    .sources
-                    .len()
-                    .checked_add(2)
-                    .ok_or("parent transport cost overflows")?;
-                if saved <= overhead || admissions.group(part.entry as usize).is_some() {
+                if saved <= 2 || admissions.group(part.entry as usize).is_some() {
                     continue;
                 }
                 words = words.max(
