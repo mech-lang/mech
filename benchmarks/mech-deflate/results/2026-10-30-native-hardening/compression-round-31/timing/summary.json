@@ -1,0 +1,123 @@
+{
+  "comparison_scope": "prepared typed frame retirement only; retained alias, scalar results and shared accounting; identical selected-operation profile, source, allocator and boundaries",
+  "head": "389ac11af5941f5e4c800cf9e09b132ce412f339",
+  "baseline": "Roc = 1x",
+  "previous_round_multiple": 19.65100680272109,
+  "input_bytes": 8,
+  "level": 12,
+  "reference_seconds": 0.000285,
+  "reference_samples": 20000,
+  "reference_sha256": "3941ef59b2c9343d0493cc6b6d14ca4803e6bd27acfe520b1fb59d9b63026324",
+  "artifact_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+  "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+  "timing_boundary": "unchanged evaluate_into-only harness; output reserve13/clear/rebind/JIT/verification/drop excluded",
+  "allocator": "same pinned mimalloc2.1.7, no allocation probe",
+  "runtime_policy": "existing diagnostic NoLimits unchanged",
+  "started_utc": "2026-10-30T04:58:02.163246+00:00",
+  "design": "Fixed eight balanced alternating-order process pairs;31 primary observations per control per process; all528 observations retained. Pairs, not within-process observations, are the independent comparison units.",
+  "pairs": [
+    {
+      "pair": 0,
+      "order": [
+        "before",
+        "after"
+      ],
+      "before": 0.005703625,
+      "after": 0.005597,
+      "after_over_before": 0.9813057485371146
+    },
+    {
+      "pair": 1,
+      "order": [
+        "after",
+        "before"
+      ],
+      "after": 0.00558475,
+      "before": 0.00570375,
+      "after_over_before": 0.979136532982687
+    },
+    {
+      "pair": 2,
+      "order": [
+        "before",
+        "after"
+      ],
+      "before": 0.00569875,
+      "after": 0.005594666,
+      "after_over_before": 0.981735643781531
+    },
+    {
+      "pair": 3,
+      "order": [
+        "after",
+        "before"
+      ],
+      "after": 0.00714725,
+      "before": 0.006861042,
+      "after_over_before": 1.04171494650521
+    },
+    {
+      "pair": 4,
+      "order": [
+        "before",
+        "after"
+      ],
+      "before": 0.006858958,
+      "after": 0.006971833,
+      "after_over_before": 1.0164565813057902
+    },
+    {
+      "pair": 5,
+      "order": [
+        "after",
+        "before"
+      ],
+      "after": 0.006346459,
+      "before": 0.006104375,
+      "after_over_before": 1.0396574587898022
+    },
+    {
+      "pair": 6,
+      "order": [
+        "before",
+        "after"
+      ],
+      "before": 0.005681375,
+      "after": 0.005609625,
+      "after_over_before": 0.9873710149391653
+    },
+    {
+      "pair": 7,
+      "order": [
+        "after",
+        "before"
+      ],
+      "after": 0.005607917,
+      "before": 0.00567575,
+      "after_over_before": 0.9880486279346341
+    }
+  ],
+  "median_paired_ratio": 0.9877098214368998,
+  "geometric_mean_paired_ratio": 1.00162142688978,
+  "after_over_before": 0.9828789694401896,
+  "speedup": 1.0174192663513413,
+  "logical_work_unchanged": 45060848918,
+  "versions": "IR129/work93/ABI36/bytecode14 unchanged",
+  "profile_primary_observations": 0,
+  "controls": {
+    "before": {
+      "binary": "/private/tmp/mech-retirement-round31-20261030/primary/before",
+      "sha256": "d18a0d65aed6f4ef819db28682e8529d4f824ec73ecb91275a3d8efe8a296c69",
+      "cleanup": true,
+      "median_seconds": 0.005782333000000001,
+      "multiple_of_roc": 20.28888771929825
+    },
+    "after": {
+      "binary": "/private/tmp/mech-retirement-round31-20261030/primary/current",
+      "sha256": "0d2a1a5c438c8143ce85fbd6d04b0525703e8405975c6c17a8da6d4ef671108c",
+      "cleanup": true,
+      "median_seconds": 0.0056833335,
+      "multiple_of_roc": 19.94152105263158
+    }
+  }
+}
