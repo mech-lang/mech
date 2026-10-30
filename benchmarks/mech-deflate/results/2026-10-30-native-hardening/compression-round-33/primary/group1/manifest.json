@@ -1,0 +1,93 @@
+{
+  "scope": "All observations from this fixed worker group, including partial evidence on failure",
+  "receipt": {
+    "group": 1,
+    "head": "fc4919236499f03355e0df3abb86061669bde100",
+    "created_utc": "2026-10-30T14:32:10.481545+00:00",
+    "reference_seconds": 0.000288,
+    "source_sha256": "a0062c6170db0005d96eba239232cfdbdd41054945c2e4a574afa8acb8939575",
+    "artifact_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+    "preparation_order": [
+      "after",
+      "before"
+    ],
+    "blocks": [],
+    "primary_per_worker": 496,
+    "statistical_scope": "16 descriptive block pairs within one worker pair; not 16 independent executable pairs",
+    "timed_boundary": "Unchanged evaluate_into-only line; readiness, stdin wait, clear/rebind, verify and drops outside",
+    "exit": 1,
+    "error": "KeyboardInterrupt()",
+    "workers": {
+      "after": {
+        "command": [
+          "/private/tmp/mech-numeric-composition-round33-20261030/primary-workers/after",
+          "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+          "496"
+        ],
+        "binary_sha256": "7c9bf908cb2d9d27c40628f7a1ff5c1b0daa4f0c026265bf558e9f28e8e2e1ee",
+        "exit": -15
+      },
+      "before": {
+        "command": [
+          "/private/tmp/mech-numeric-composition-round33-20261030/primary-workers/before",
+          "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+          "496"
+        ],
+        "binary_sha256": "9b1487101942a812477f2b2adf78e2abf1954adff1d8ade5d7597a18492de30b",
+        "exit": -15
+      }
+    }
+  },
+  "files": [
+    {
+      "path": "after-build.json",
+      "sha256": "b20a894419c16cb9d1204e63263203ba59e0e15116c8846fd57a855bdcb803e0",
+      "bytes": 3658
+    },
+    {
+      "path": "before-build.json",
+      "sha256": "91bc5101103f59bfc713363ffca56af346c41ed19c337f6cdcbbf29f35aeec88",
+      "bytes": 3743
+    },
+    {
+      "path": "group1/after.stderr",
+      "sha256": "541e819850c4a0a0cf4bf54a6f204c875fba8e5d1c9b0ed407e689fadd69098d",
+      "bytes": 42
+    },
+    {
+      "path": "group1/after.stdout",
+      "sha256": "fb9f2f551e57a8aa8540f2dba12b8aa114fde915b692ac32c3af7fed98d7c9b2",
+      "bytes": 14
+    },
+    {
+      "path": "group1/before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "group1/before.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "group1/results.json",
+      "sha256": "dc72980eacb3277e16b8f23e5053ea5bd04765b320a71389f94da51b6af9b6c4",
+      "bytes": 1488
+    },
+    {
+      "path": "run.py",
+      "sha256": "1a47e17ed2439ee7ddd0c72b84474a1958898776ed1408a76d9929903cf507d7",
+      "bytes": 10149
+    },
+    {
+      "path": "session.rs",
+      "sha256": "a0062c6170db0005d96eba239232cfdbdd41054945c2e4a574afa8acb8939575",
+      "bytes": 6293
+    },
+    {
+      "path": "source-adaptation.json",
+      "sha256": "9d6160b478ca5f4fd26c8cf22053c97b42011097cf8fa512329315165861f320",
+      "bytes": 192
+    }
+  ]
+}
