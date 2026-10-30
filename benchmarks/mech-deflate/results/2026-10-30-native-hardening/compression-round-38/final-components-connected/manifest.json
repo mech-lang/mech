@@ -1,0 +1,21 @@
+{
+  "created_utc": "2026-10-30T21:06:47.537075+00:00",
+  "head": "236444919fb7ca543a656db772e31885291795fd",
+  "files": [
+    {
+      "path": "final-components/connected.json",
+      "sha256": "2b5ab273a6d9cea69ca8f60b6d0eb4fedaf286e157bb73393e88e6e2f6b197f2",
+      "bytes": 12252
+    },
+    {
+      "path": "final-components/connected.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "final-components/connected.stdout",
+      "sha256": "105a9aa5a9beb911314be975282f370e53efdcb84b1217623df4aa3e648d532f",
+      "bytes": 149790
+    }
+  ]
+}
