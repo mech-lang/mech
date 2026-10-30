@@ -1,0 +1,12 @@
+calculate(word<u64>, flag<bool>, permit<bool>, divisor<u64>, signed<i64>, real<f64>) => (out<u64>) :=
+  allowed! := permit
+  advanced := word + 1u64
+  first := {word: advanced, flag: flag, signed: signed, real: real}
+  selected := (first.flag? | true => first.word * 3u64 + 5u64 | false => first.word * 7u64 + 11u64)
+  second := {word: selected, flag: first.flag == false, signed: first.signed, real: first.real}
+  marked := (second.flag? | true => second.word + 13u64 | false => second.word + 17u64)
+  integral := ((second.signed < 0i64)? | true => marked + 2u64 | false => marked + 3u64)
+  floating := ((second.real < 0.0)? | true => integral + 5u64 | false => integral + 7u64)
+  divided := floating / divisor
+  out := divided + 17u64.
+calculate(word<u64>, flag<bool>, permit<bool>, divisor<u64>, signed<i64>, real<f64>)

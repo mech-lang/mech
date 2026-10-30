@@ -117,6 +117,38 @@ fn path_scan_emits_native_pieces_around_its_nested_scalar_child() {
 }
 
 #[test]
+fn path_match_search_groups_existing_private_scalar_aggregate_steps() {
+    for artifact in artifacts(SOURCE).0 {
+        let object = super::emit_program_object(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let image: serde_json::Value =
+            serde_json::from_slice(&object.descriptor().encode_build_owned_image().unwrap())
+                .unwrap();
+        let aggregates = object.descriptor().plan().scalar_aggregates();
+        let metadata = object.metadata();
+        let parent = metadata["numeric_parent_partitions"]["parents"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|parent| parent["scalar_child"] == true)
+            .unwrap();
+        let child = parent["child"].as_u64().unwrap() as u32;
+        assert!(
+            image["descriptor"]["map_admission"]["groups"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|group| group["owner"].is_null()
+                    && group["sites"].as_array().unwrap().iter().any(|site| {
+                        let site = site.as_u64().unwrap() as usize;
+                        aggregates.action(site).is_some()
+                            && object.descriptor().plan().blocks()[site].iteration() == Some(child)
+                    })),
+            "the unchanged match-choice search must group its existing scalar aggregate steps"
+        );
+    }
+}
+
+#[test]
 fn pinned_min_cost_paths_keep_exact_nodes_and_real_reservation() {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "../fixtures/native/deflate-optimal-path-reference.json"
