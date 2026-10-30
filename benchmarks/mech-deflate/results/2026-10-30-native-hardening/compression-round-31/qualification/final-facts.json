@@ -1,0 +1,280 @@
+{
+  "compiler": "239935ab8f382d1cfc7b93db9b4ece71a3a535e9",
+  "source_baseline": "8c20a24303ccd94ec63492dd56c603fb7092a201",
+  "production_source_baseline_equivalent_to_reviewed": "48341cf70e20ddd5c2b676d27256b144ea0b99ea",
+  "primary_reduction_percent": 1.444566624330601,
+  "confirmation": {
+    "groups": [
+      {
+        "group": 0,
+        "before": {
+          "median_seconds": 0.005694042,
+          "multiple_of_roc": 19.979094736842107
+        },
+        "after": {
+          "median_seconds": 0.005622125,
+          "multiple_of_roc": 19.726754385964913
+        },
+        "pooled_ratio": 0.9873697805530764,
+        "median_block_ratio": 0.9879422001796632,
+        "geometric_block_ratio": 0.9886900889333039,
+        "improving_blocks": 15
+      },
+      {
+        "group": 1,
+        "before": {
+          "median_seconds": 0.005751146,
+          "multiple_of_roc": 20.17945964912281
+        },
+        "after": {
+          "median_seconds": 0.005652916500000001,
+          "multiple_of_roc": 19.83479473684211
+        },
+        "pooled_ratio": 0.9829200128113598,
+        "median_block_ratio": 0.9854689144539879,
+        "geometric_block_ratio": 0.9870311326029383,
+        "improving_blocks": 13
+      }
+    ],
+    "reference_seconds": 0.000285,
+    "primary_observations": 1984,
+    "all_observations": 1992,
+    "scope": "Descriptive confirmation, not a replacement for the original independent-process campaign; only two independent worker groups",
+    "before": {
+      "median_seconds": 0.0057197085,
+      "multiple_of_roc": 20.069152631578948
+    },
+    "after": {
+      "median_seconds": 0.0056370835,
+      "multiple_of_roc": 19.779240350877192
+    },
+    "pooled_ratio": 0.985554333756694,
+    "median_block_ratio": 0.9863303338058602,
+    "geometric_block_ratio": 0.9878602625235711,
+    "improving_blocks": 28
+  },
+  "profile": {
+    "method": "Exclusive weight=count minus child counts. Before is the separately recorded retained-compiler profile, not simultaneous paired latency evidence. Samples do not promise removable time or prove the absence of an allocation. Source and allocation witnesses separately establish mechanism.",
+    "observations": {
+      "before": {
+        "path": "/private/tmp/mech-frame-reads-round30-20261029/matched-profile/before.sample.txt",
+        "sha256": "8aeca6f4135eb1b687b69cb8b743469f817b59b399b1cd1174ffb11c6191c393",
+        "weights": 1290,
+        "disjoint_categories": {
+          "remaining": 352,
+          "ordinary_visits": 219,
+          "other_helpers": 286,
+          "selected_library_calls": 106,
+          "frame_actions": 327
+        },
+        "frame_retire_subtree": 119,
+        "recursive_layout_below_retire_exclusive": 34,
+        "allocator_new_under_retire_exclusive": 0,
+        "exclusive_top": [
+          [
+            "???",
+            140
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+            58
+          ],
+          [
+            "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime7sessionNtB2_13CallCacheLane3new",
+            58
+          ],
+          [
+            "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames6retire",
+            51
+          ],
+          [
+            "_tlv_get_addr",
+            49
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+            43
+          ],
+          [
+            "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget32charge_control_account_at_limits",
+            42
+          ],
+          [
+            "_RNvMNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact4workNtB2_15NativeWorkMeter6charge",
+            37
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+            35
+          ],
+          [
+            "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames13retire_fields",
+            28
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+            27
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+            25
+          ],
+          [
+            "_platform_memmove",
+            24
+          ],
+          [
+            "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks5admit",
+            23
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+            21
+          ],
+          [
+            "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+            20
+          ],
+          [
+            "_RNvMs1_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena14retire_current",
+            18
+          ],
+          [
+            "_RNvMs3_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+            18
+          ],
+          [
+            "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames7project",
+            16
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+            14
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation16readonly_numericNtB4_10Invocation19begin_numeric_views",
+            13
+          ],
+          [
+            "_RNvMNtCs40e1XR8pRG7_7seahash6bufferNtB2_5State4hash",
+            13
+          ]
+        ]
+      },
+      "after": {
+        "path": "/private/tmp/mech-retirement-round31-20261030/profile/after.sample.txt",
+        "sha256": "fe9abd11ea32098cf89c779452d0b9ddc1fdb627e2943dbea52895b17bc1c251",
+        "weights": 1292,
+        "disjoint_categories": {
+          "remaining": 346,
+          "ordinary_visits": 214,
+          "other_helpers": 260,
+          "selected_library_calls": 111,
+          "frame_actions": 361
+        },
+        "frame_retire_subtree": 109,
+        "recursive_layout_below_retire_exclusive": 0,
+        "allocator_new_under_retire_exclusive": 0,
+        "exclusive_top": [
+          [
+            "???",
+            131
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+            54
+          ],
+          [
+            "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames6retire",
+            53
+          ],
+          [
+            "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget32charge_control_account_at_limits",
+            51
+          ],
+          [
+            "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime7sessionNtB2_13CallCacheLane3new",
+            51
+          ],
+          [
+            "_tlv_get_addr",
+            43
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+            37
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+            34
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+            31
+          ],
+          [
+            "_platform_memmove",
+            28
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+            27
+          ],
+          [
+            "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks5admit",
+            25
+          ],
+          [
+            "_RNvMNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact4workNtB2_15NativeWorkMeter6charge",
+            24
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+            22
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+            22
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+            18
+          ],
+          [
+            "_RNvNtNtCskIfnrfrMWVM_9mech_core6schema5shape18evaluate_dimension",
+            16
+          ],
+          [
+            "_RNvMNtCs40e1XR8pRG7_7seahash6bufferNtB2_5State4hash",
+            16
+          ],
+          [
+            "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+            15
+          ],
+          [
+            "_RNvMs3_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+            15
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation15action_required",
+            15
+          ],
+          [
+            "_platform_memset",
+            14
+          ]
+        ]
+      }
+    }
+  },
+  "object": {
+    "bytes": 12924328,
+    "text": 12923596,
+    "stack": 108032,
+    "typed_ir": 129,
+    "work_policy": 93,
+    "abi": 36
+  },
+  "production_feature_profiles_identical": true
+}
