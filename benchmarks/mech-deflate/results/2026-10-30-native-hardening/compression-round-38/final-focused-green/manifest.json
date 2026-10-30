@@ -1,0 +1,56 @@
+{
+  "created_utc": "2026-10-30T21:04:53.572364+00:00",
+  "head": "ca7b859f94691ad90f9f6be8133ce88a27325753",
+  "files": [
+    {
+      "path": "build-final.py",
+      "sha256": "7fa3b5a6095a1b32c49f9572f0b5935d9bc8aedcde516cd77bf24276fc6f03e5",
+      "bytes": 2115
+    },
+    {
+      "path": "components-final.py",
+      "sha256": "74c7a5a5ee68f638abec4f6181d3a3a7a1fcc03edf64ccb605db72c687fa7146",
+      "bytes": 2268
+    },
+    {
+      "path": "final-components/build.json",
+      "sha256": "72e134945ec411f0b84bc997989200110f62d16150ff629dcfbee6d6a992328b",
+      "bytes": 14016
+    },
+    {
+      "path": "final-components/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "final-components/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "final-components/focused.json",
+      "sha256": "2b90991fe4e8086b4473543457072f5a3573d5e6c98561f3b79001f91c99b858",
+      "bytes": 12427
+    },
+    {
+      "path": "final-components/focused.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "final-components/focused.stdout",
+      "sha256": "799a8cb79cf5b9a90e701616bba31a3fc3a12e9e38916139d7dfc4215a6d4b72",
+      "bytes": 2347
+    },
+    {
+      "path": "final-libraries.json",
+      "sha256": "88060ba568418d55948e8b61c945e1d540f3755ed57266ed0620b990b6c490e0",
+      "bytes": 10844
+    },
+    {
+      "path": "final-release.json",
+      "sha256": "6e2e62d322d9bced47bc0dca123a49d9cf14cfddc70cc2614dbb7aafbec27cf1",
+      "bytes": 731
+    }
+  ]
+}
