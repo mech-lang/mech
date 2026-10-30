@@ -61,9 +61,27 @@ fn preview(
 #[cfg(all(test, feature = "canonical-native-program"))]
 thread_local! {
     static BATCHES: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+    static ACTIONS: std::cell::Cell<(u64, u64, u64)> = const { std::cell::Cell::new((0, 0, 0)) };
 }
 
 #[cfg(all(test, feature = "canonical-native-program"))]
 pub(super) fn take_observation() -> u64 {
     BATCHES.with(|count| count.replace(0))
+}
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+pub(super) fn observe_action(entries: usize) {
+    ACTIONS.with(|count| {
+        let (calls, slots, groups) = count.get();
+        count.set((
+            calls + 1,
+            slots + entries as u64,
+            groups + u64::from(entries > 1),
+        ));
+    });
+}
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+pub(super) fn take_action_observation() -> (u64, u64, u64) {
+    ACTIONS.with(|count| count.replace((0, 0, 0)))
 }
