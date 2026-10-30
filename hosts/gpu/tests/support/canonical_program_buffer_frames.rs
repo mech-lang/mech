@@ -758,7 +758,7 @@ fn restored_frame_type_slots_reject_misalignment_keys_and_definitions() {
                 .iter()
                 .position(|slot| slot["schema"] != types[first]["schema"])
                 .unwrap();
-            for corruption in ["slots", "key", "definition"] {
+            for corruption in ["slots", "key", "definition", "retirement-cache"] {
                 let mut changed = original.clone();
                 match corruption {
                     // Both entries remain individually valid for their schemas.
@@ -778,6 +778,12 @@ fn restored_frame_type_slots_reject_misalignment_keys_and_definitions() {
                             .unwrap();
                         changed["descriptor"]["plan"]["values"][first]["definition"] =
                             values[other]["definition"].clone();
+                    }
+                    // A caller cannot supply the derived typed retirement
+                    // recipe. Image loading must rederive it from the plan.
+                    "retirement-cache" => {
+                        changed["descriptor"]["frame_retirements"] =
+                            serde_json::json!({"work": 0, "operations": []});
                     }
                     _ => unreachable!(),
                 }

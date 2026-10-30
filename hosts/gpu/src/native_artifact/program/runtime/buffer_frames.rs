@@ -547,34 +547,29 @@ impl BufferFrames {
     }
     pub(super) fn retire(
         &mut self,
-        layout: &Layout,
+        recipes: &crate::native_artifact::program::prepare::frame_retirement::FrameRetirements,
         value: u32,
         work: &mut NativeWorkMeter,
     ) -> Result<bool, NativeProgramExecutionError> {
-        let Some(fields) = layout.fields_at(value as usize) else {
+        let Some((charge, operations)) = recipes.get(value as usize) else {
             return Ok(false);
         };
         // Retirement consumes existing owner credit and invalidates word visits.
-        work.charge(
-            NativeExecutionPhase::Setup,
-            amount(Self::field_count(layout, fields), 32, 32)?,
-        )?;
+        work.charge(NativeExecutionPhase::Setup, charge)?;
         let inner = self
             .inner
             .as_mut()
             .ok_or_else(|| invalid("private frame lanes missing"))?;
-        Self::retire_fields(inner, layout, fields);
-        Ok(true)
-    }
-    fn retire_fields(inner: &mut FrameLanes, layout: &Layout, fields: &[FrameField]) {
-        for field in fields {
-            match field.lane() {
-                Lane::Scalar { at, .. } => inner.words.values_mut()[at * 2..at * 2 + 2].fill(0),
-                Lane::Managed { at } => inner.owners.values_mut()[at] = None,
-                Lane::Composite { .. } => {
-                    Self::retire_fields(inner, layout, layout.children(*field).unwrap())
-                }
+        use crate::native_artifact::program::prepare::frame_retirement::Operation;
+        for operation in operations {
+            match operation {
+                Operation::Scalars(words) => inner.words.values_mut()[words.clone()].fill(0),
+                Operation::Managed(at) => inner.owners.values_mut()[*at] = None,
             }
         }
+        Ok(true)
     }
 }
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod tests;
