@@ -1,0 +1,68 @@
+{
+  "exit": 1,
+  "classification": "introduced Rust type inference error after passing visits as a slice; fixed by retaining explicit boxed visit inventory type",
+  "source_unchanged_during_build": true,
+  "performance_claim": false,
+  "files": [
+    {
+      "path": "build.json",
+      "sha256": "e12d5048efcafa6bd277406fe644584cb3c17887f82d013a1f0e2d970c92e143",
+      "bytes": 5385
+    },
+    {
+      "path": "build.stderr",
+      "sha256": "2774897cda714200b2c2a81dfb79a997f35e9d40398c71fcc90951d54c237eb2",
+      "bytes": 3733
+    },
+    {
+      "path": "build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "libmech_gpu.long-type-6754466890733817870.txt",
+      "sha256": "5510096f95f1eceafd67182695fbb20152e20c2ab72f6a77dc9f8471d407b3d5",
+      "bytes": 7249
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/image/wire/mod.rs",
+      "sha256": "e261f7df1c3b34d2284cf15c0b0040a3586a2f8f5ccf003c575f53e66cfa38fd",
+      "bytes": 11249
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/prepare/composition/frames.rs",
+      "sha256": "f0577a00759dac5f0005122d9bffbacbf58fa7ca17f189ac3d4fe263da05db11",
+      "bytes": 11794
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/prepare/composition/numeric.rs",
+      "sha256": "a1e6137613db534dbc068fa321246f894d677e42812493ca4f3c2b88fab20b33",
+      "bytes": 6824
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/prepare/composition.rs",
+      "sha256": "8c043b643f5a3d2969304bd3fd3a8e595f56f59b32c523f75680256537cf08c9",
+      "bytes": 11795
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/prepare/mod.rs",
+      "sha256": "7b28db05c241f93783b0f376dc2341c367e4402e98e6d92117a9d705f8daa49c",
+      "bytes": 25872
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/prepare/readonly_numeric.rs",
+      "sha256": "d034ef91fedea10c05711c2cde02cb768f2e5a9a43228f39fb7a4bfe7ed047d8",
+      "bytes": 21148
+    },
+    {
+      "path": "source/hosts/gpu/tests/support/canonical_program_numeric_composition.rs",
+      "sha256": "30202b7079577851c1dac47baeb3627f33c777a5606c343cc7f4e5df1148252e",
+      "bytes": 17006
+    },
+    {
+      "path": "source.diff",
+      "sha256": "232a51b3dc5ac5af584f6020c79b2d48332486b73d87c023bdd886c4d65d47bd",
+      "bytes": 10883
+    }
+  ]
+}
