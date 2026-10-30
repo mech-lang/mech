@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-30T22:19:07.929473+00:00",
+  "head": "a9400ad247ca7e702159265269b39d4ce406437c",
+  "files": [
+    {
+      "path": "preflight-refined/reference.json",
+      "sha256": "d761d2cd912703969ade8b2f004d351bfa53c365b57ae7078874be8474faaf0d",
+      "bytes": 234
+    },
+    {
+      "path": "preflight-refined/reference.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "preflight-refined/reference.stdout",
+      "sha256": "9dea2fe35c07bc53e35cfb7370b0c8c3020ba431a43d1bcb8c9cf93567fd1a87",
+      "bytes": 628890
+    },
+    {
+      "path": "preflight-refined.py",
+      "sha256": "c1977920a990589bc6062b68b547b2ebda5b9a7b14123e39a39afe48a53bd3c7",
+      "bytes": 3747
+    }
+  ]
+}
