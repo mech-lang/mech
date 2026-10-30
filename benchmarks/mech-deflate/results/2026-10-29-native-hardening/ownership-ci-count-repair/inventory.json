@@ -1,0 +1,24 @@
+{
+  "executed_core_module_inventory": 11,
+  "checks": [
+    {
+      "expected": 6,
+      "command": [
+        "bash",
+        "-c",
+        "test \"$(printf '%s\\n' \"$BUFFER_OWNERSHIP_TESTS\" | awk '/^snapshot::validation::owned_unsigned_matrix::tests::.*: test$/ { count += 1 } END { print count + 0 }')\" -eq 6"
+      ],
+      "exit": 1
+    },
+    {
+      "expected": 11,
+      "command": [
+        "bash",
+        "-c",
+        "test \"$(printf '%s\\n' \"$BUFFER_OWNERSHIP_TESTS\" | awk '/^snapshot::validation::owned_unsigned_matrix::tests::.*: test$/ { count += 1 } END { print count + 0 }')\" -eq 11"
+      ],
+      "exit": 0
+    }
+  ],
+  "profile": "Actual maintained Core unit root with existing full selected-operation features, not a claimed all-features Cargo rerun. All eleven test functions in this module are unconditional."
+}
