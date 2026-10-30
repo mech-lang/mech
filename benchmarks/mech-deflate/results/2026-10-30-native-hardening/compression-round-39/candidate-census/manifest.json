@@ -1,0 +1,101 @@
+{
+  "created_utc": "2026-10-30T22:08:55.858979+00:00",
+  "head": "62f7f08c6a151f5cf4e034846714d5ba41a1a068",
+  "files": [
+    {
+      "path": "census/adaptation.json",
+      "sha256": "7b59f20aeafa5a3b3c0617467ac62a54605f1e3bcc10d693d57d316e964a8e0f",
+      "bytes": 3087
+    },
+    {
+      "path": "census/build.json",
+      "sha256": "c24caef2cef835c858920b41cbc5decb8f5a1d905b682704c1a10e62deaabf21",
+      "bytes": 4212
+    },
+    {
+      "path": "census/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "census/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "census/counts.json",
+      "sha256": "bf7d0e0753447dd63b1682f6317fb81293e894be25e5428b8dec53848b81aad0",
+      "bytes": 2422292
+    },
+    {
+      "path": "census/lib.rs",
+      "sha256": "53345f514271695963885c2bdd2bd9477f23ea313722d6c8d5218987641b5861",
+      "bytes": 81977
+    },
+    {
+      "path": "census/native_artifact_mod.rs",
+      "sha256": "9a2334f1baefd505c35492f6975fcff9018fb78181b2c42baf77749d4c9efc3b",
+      "bytes": 8480
+    },
+    {
+      "path": "census/native_artifact_program_mod.rs",
+      "sha256": "ff7b302810d02c6ecf36fa481d756e99035b9f09130b212637ad53f26efb029c",
+      "bytes": 1754
+    },
+    {
+      "path": "census/native_artifact_program_runtime_buffer_frames.rs",
+      "sha256": "d59621e2ddd0043cc537d4bc500f0d876d689e783e982477cd4394d3ab2d328f",
+      "bytes": 23263
+    },
+    {
+      "path": "census/native_artifact_program_runtime_invocation_mod.rs",
+      "sha256": "cb8ec2dad1dd7f54f45342bd20ee3d8276f767dd7f542d43ca57a38200aad29b",
+      "bytes": 53876
+    },
+    {
+      "path": "census/native_artifact_program_runtime_mod.rs",
+      "sha256": "9066d48fdea4063b3a0fb12cf1a1cb2c168c435d8e49baa3be415623b1d60c89",
+      "bytes": 15023
+    },
+    {
+      "path": "census/native_artifact_values_mod.rs",
+      "sha256": "c944f9423799d40106eb8907fc73fa6639235217d0f1c938b5310a335bbbd270",
+      "bytes": 22103
+    },
+    {
+      "path": "census/probe.rs",
+      "sha256": "a5afdd30e5be3c2316b2424d44bb9b8660dcd9c70e74156012e7644d3f848532",
+      "bytes": 11144
+    },
+    {
+      "path": "census/run.json",
+      "sha256": "def5601ece8a393bdbad9b91c43b57ee652a4da674a53f266a319d90640355fa",
+      "bytes": 744
+    },
+    {
+      "path": "census/run.stderr",
+      "sha256": "d50db30e68a360d3d3da1316cf76b575182b6401d4921a69a9a28de58eddbf51",
+      "bytes": 24
+    },
+    {
+      "path": "census/run.stdout",
+      "sha256": "dd228201901d5678922ab19d86bced3a708fe545b28505dfad05469422b257c0",
+      "bytes": 223
+    },
+    {
+      "path": "census.py",
+      "sha256": "8fd0868c316fb062bf112db03e2011623119a6f79f6b43c7c1f2180fa82da450",
+      "bytes": 10203
+    },
+    {
+      "path": "partition-profile.py",
+      "sha256": "38e14f1db0c02d28fc9b398853aa9534044d30d1204d57ad090c91813c3356c3",
+      "bytes": 2491
+    },
+    {
+      "path": "partitioned-profile.json",
+      "sha256": "7471a6023908556af625ee13d5d3f42a5c48cc7b0e2505d6931dbca267ba1c39",
+      "bytes": 10641
+    }
+  ]
+}
