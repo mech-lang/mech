@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-10-30T16:45:20.178406+00:00",
+  "head": "261a2a190690cddfa0c4e01bee5a53d3bd092422",
+  "files": [
+    {
+      "path": "partition-restored-profile.py",
+      "sha256": "429909e1584f74aa52199ed5bbd409ed5827331af4c72df5e4e5130410f03de1",
+      "bytes": 2514
+    },
+    {
+      "path": "profile-restored.py",
+      "sha256": "964f9c6ded6552cc59792fb597bb5dfb7dc63848e7dfff2498a18d77623a1648",
+      "bytes": 3638
+    },
+    {
+      "path": "restoration-validation.json",
+      "sha256": "38fe67989f4bd26150ab63f1a1ad497dd57bbdebb1a86e27c92b11ce1527d6b3",
+      "bytes": 4846
+    },
+    {
+      "path": "restored-executable-comparison.json",
+      "sha256": "febf150f2612207871aa85ca8f330493f9116014cdd634353e9d4f5351ee269c",
+      "bytes": 4455
+    },
+    {
+      "path": "restored-inspection.json",
+      "sha256": "cfafbf8b34459a968a7e3d37cb46ee1b2b76310c1c5655c842610f8afd111616",
+      "bytes": 422
+    },
+    {
+      "path": "restored-partitioned-profile.json",
+      "sha256": "098641a2cad4317d13ddcb53970a5d7cac465b4ae3ace75932ead2a832ca9806",
+      "bytes": 11177
+    },
+    {
+      "path": "restored-primary/build.json",
+      "sha256": "14c52ca73628099f8d88528545eb8f9fc605e13804049427cc886971615f4d80",
+      "bytes": 14157
+    },
+    {
+      "path": "restored-worker-build.json",
+      "sha256": "c2ca95d4accb8c1507a488df61591bdf88f64c2bfdc6cc0c018b3e268e0963f6",
+      "bytes": 2604
+    }
+  ]
+}
