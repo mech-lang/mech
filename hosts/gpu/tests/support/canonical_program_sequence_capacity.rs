@@ -142,6 +142,97 @@ fn reserved_append_recurrence_selects_the_unchanged_path_guard_builder() {
 }
 
 #[test]
+fn completed_call_handoff_keeps_future_seed_reads_and_failure_recovery() {
+    let source = format!(
+        "{}\nrun(capacity<u64>, top<u64>, end<u64>, allowed<bool>, divisor<u64>) => (out<{{changed<[u64]> again<[u64]>}}>) :=\n  first := optimal-path-guards(sequence/with-capacity(0u64, capacity), top, end)\n  allowed! := allowed\n  changed := sequence/append(first, 12u64 / divisor)\n  again := optimal-path-guards(first, top, end)\n  out := {{changed: changed, again: again}}.\nrun(capacity<u64>, top<u64>, end<u64>, allowed<bool>, divisor<u64>)\n",
+        include_str!("../fixtures/native/deflate-optimal-path.mec")
+    );
+    for artifact in artifacts(&source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(128 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        for (allowed, divisor) in [(true, 3), (false, 0), (true, 0), (true, 2)] {
+            let args = inputs(
+                &artifact,
+                &[
+                    ("capacity", Data::U64(288)),
+                    ("top", Data::U64(11)),
+                    ("end", Data::U64(8)),
+                    ("allowed", Data::Bool(allowed)),
+                    ("divisor", Data::U64(divisor)),
+                ],
+                &memory,
+            );
+            let aliases = args.clone();
+            let prior = output.clone();
+            let retained = memory.used_bytes();
+            let nodes = memory.retained_snapshot_nodes();
+            let result = jit.evaluate_into(&args, &mut output, limits(), &memory);
+            let resident = reference_result(&artifact, &args);
+            if allowed && divisor != 0 {
+                result.unwrap();
+                equal(&artifact, &output, &resident.unwrap());
+                let data = output
+                    .last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap();
+                let Data::Record(fields) = data else {
+                    panic!("expected both retained results")
+                };
+                let changed = fields.iter().find(|field| field.name == "changed").unwrap();
+                let again = fields.iter().find(|field| field.name == "again").unwrap();
+                assert_eq!(
+                    changed.value,
+                    Data::Matrix(
+                        [2147483648, 2147483648, 2147483648, 12 / divisor]
+                            .map(Data::U64)
+                            .into()
+                    )
+                );
+                assert_eq!(
+                    again.value,
+                    Data::Matrix(vec![Data::U64(2147483648); 6].into())
+                );
+            } else {
+                let error = format!("{:?}", result.unwrap_err());
+                let resident = resident.unwrap_err();
+                assert_eq!(error.contains("Integrity"), !allowed, "{error}");
+                assert_eq!(
+                    resident.contains("LexicalIntegrity"),
+                    !allowed,
+                    "{resident}"
+                );
+                for (current, previous) in output.iter().zip(&prior) {
+                    assert!(
+                        current
+                            .as_ref()
+                            .unwrap()
+                            .shares_frozen_storage(previous.as_ref().unwrap())
+                    );
+                }
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    (retained, nodes)
+                );
+            }
+            assert!(
+                args.iter()
+                    .zip(&aliases)
+                    .all(|(current, alias)| current.shares_frozen_storage(alias))
+            );
+        }
+        drop(output);
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
+}
+
+#[test]
 fn reserve_append_clear_agrees_in_resident_and_native_original_and_decoded() {
     for width in [8, 16, 32, 64] {
         let source = format!(
