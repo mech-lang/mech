@@ -66,6 +66,13 @@ fn composition_finite_boundaries_preserve_publication_contents_and_retry() {
                         );
                     }
                 }
+                assert_eq!(
+                    outputs
+                        .iter()
+                        .map(|v| v.as_ref().unwrap().canonical_data_draft().unwrap())
+                        .collect::<Vec<_>>(),
+                    expected
+                );
                 drop(outputs);
                 assert_eq!(contents(&args), before);
                 assert_eq!(

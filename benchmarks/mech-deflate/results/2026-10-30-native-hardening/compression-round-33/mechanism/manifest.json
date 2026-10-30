@@ -1,0 +1,160 @@
+{
+  "scope": "Fresh complete eight-byte checked-entry callback census; no elapsed compression timing. Production compiler code at 2de2b627d, reduced selected catalog; observation wrappers and absolute path adapters only. Full unchanged-runtime scope matches R32 and excludes its same stats-catalog case.",
+  "files": [
+    {
+      "path": "baseline-catalog/inherited.json",
+      "sha256": "3ece46dc947b591199aec4e273d4be62933f08b0fe7295f409c744b88df73347",
+      "bytes": 305
+    },
+    {
+      "path": "baseline-catalog/inherited.stderr",
+      "sha256": "56f188fec37cdacb145ffc88f96484eaa5b36c8443751774853da474e089cf4b",
+      "bytes": 725
+    },
+    {
+      "path": "baseline-catalog/inherited.stdout",
+      "sha256": "5457abd3a94a3f4330f639deac2889111eb694cf59fab2b709fa85edffe910e8",
+      "bytes": 458
+    },
+    {
+      "path": "census/build.json",
+      "sha256": "eb1a8fa2ec1e50834eab0d628e197ea159430149fd75386b52bb38d4fdc720cf",
+      "bytes": 4164
+    },
+    {
+      "path": "census/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "census/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "census/command.json",
+      "sha256": "d26c8a7b4cb50809ac3f01307f8cd2fc29b64023414ebf84339c8b30311c8a26",
+      "bytes": 4119
+    },
+    {
+      "path": "census/comparison.json",
+      "sha256": "9d27a8ca436a6976455e3b5fc68b752549cd5eb1ebeab0c2dfde93c2bf62c896",
+      "bytes": 5779
+    },
+    {
+      "path": "census/counts.json",
+      "sha256": "aafe61ad113e62f269b3a2bbd6745c6cd75c0bf6a91f8f4991b0291312d3d011",
+      "bytes": 2158762
+    },
+    {
+      "path": "census/lib.rs",
+      "sha256": "82f2274b54c17d812935470052b4cfb0d7d13b2c71635fab85c320d713d222a8",
+      "bytes": 81980
+    },
+    {
+      "path": "census/native_artifact.rs",
+      "sha256": "6b501a8f84f4401c42bdee8f513bab404a2e8d22f33d9190bdc50230391ffa52",
+      "bytes": 8572
+    },
+    {
+      "path": "census/probe.rs",
+      "sha256": "d7d7085b7c29f0339c22967a9a0e883d2a4136ce8a4e7797cf4acc3472095a7c",
+      "bytes": 10395
+    },
+    {
+      "path": "census/run.json",
+      "sha256": "5ac32a28f1032b50bf239594af9a2d63b74f0d1e43e1dd92c43dbfd40f70f17c",
+      "bytes": 298
+    },
+    {
+      "path": "census/run.stderr",
+      "sha256": "d50db30e68a360d3d3da1316cf76b575182b6401d4921a69a9a28de58eddbf51",
+      "bytes": 24
+    },
+    {
+      "path": "census/run.stdout",
+      "sha256": "c982a9f892867e217ae9492025c28d50fe31cafa9cf63a2ea4e54f7929dc14e6",
+      "bytes": 194
+    },
+    {
+      "path": "census/source-adapter.json",
+      "sha256": "c388360da996aa788f9ef5516c5d9f4c0da3e58db71235bff86e3b1f54e8590b",
+      "bytes": 776
+    },
+    {
+      "path": "final-unit/accounting.json",
+      "sha256": "4235aba29147844a72f9062a46ec772dd1ab85896c8b8a88e458d7834d4c3a16",
+      "bytes": 319
+    },
+    {
+      "path": "final-unit/accounting.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "final-unit/accounting.stdout",
+      "sha256": "443867bf2e72504251f5d93f9671e296d6ed64bba002e2ad740fa3a628a5d79f",
+      "bytes": 1562
+    },
+    {
+      "path": "final-unit/build.json",
+      "sha256": "044bdfed8710c58cf148ade06e0e9b839ceac3bb2d2df7445c5726c65705767d",
+      "bytes": 5061
+    },
+    {
+      "path": "final-unit/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "final-unit/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "final-unit/maintained-runtime.json",
+      "sha256": "2b2b4868de5b21c1694ee0d37028b9859ea65ff22a6efd9181d3ff330ec1e0e6",
+      "bytes": 379
+    },
+    {
+      "path": "final-unit/maintained-runtime.stderr",
+      "sha256": "6629a09c7c6648dbfdfc1afb57c5913eac2739c34b4bb54175e2ecb2518863d5",
+      "bytes": 268
+    },
+    {
+      "path": "final-unit/maintained-runtime.stdout",
+      "sha256": "65a116e1e90866f7c1162a013959a36f76d204a85864e5622a48e5b56b96fe7a",
+      "bytes": 64997
+    },
+    {
+      "path": "static/architecture.json",
+      "sha256": "a2b88cbb15b1ea61272ed89a9a6c6b04e407374feb299b086965058577cda0c4",
+      "bytes": 206
+    },
+    {
+      "path": "static/architecture.stderr",
+      "sha256": "d464ce92b4ed6dea21034bd3307c7a60523ee4984b3428aed2a6af7c71a4b212",
+      "bytes": 1209
+    },
+    {
+      "path": "static/architecture.stdout",
+      "sha256": "72503839c0c6a5dc62f4ecf71380ae3b1647aecc8e89d4fb53378c3d12677c36",
+      "bytes": 1150
+    },
+    {
+      "path": "static/unsafe-boundary.json",
+      "sha256": "d64e9557ac0c389b4d0e22fd8f5e6c9e30fe6b315460e74997c8eb5e48af349c",
+      "bytes": 173
+    },
+    {
+      "path": "static/unsafe-boundary.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "static/unsafe-boundary.stdout",
+      "sha256": "c24be89d9f9be275f7b5b0f67d7e02f78621e916de92af9d732c99f4ba1e5e55",
+      "bytes": 29
+    }
+  ]
+}

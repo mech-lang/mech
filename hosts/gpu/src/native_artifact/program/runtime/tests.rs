@@ -997,7 +997,7 @@ fn managed_link_metadata_rederives_semantics_and_rejects_mutations_without_an_en
 }
 #[test]
 fn worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-    assert_eq!(VERSION, 36);
+    assert_eq!(VERSION, 37);
     assert_eq!(
         crate::native_artifact::program::protocol::abi::PHASE_CAPTURE_TAIL,
         3

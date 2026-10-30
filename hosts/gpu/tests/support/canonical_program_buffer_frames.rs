@@ -345,6 +345,36 @@ fn build_owned_image_rederives_private_frame_and_scalar_metadata() {
 }
 
 #[test]
+fn restored_parent_segments_rederive_scratch_and_reject_forged_authority() {
+    let source = include_str!("../fixtures/native/numeric-parent-child.mec");
+    for artifact in artifacts(source).0 {
+        let catalog = mech_stdlib::source_catalog();
+        let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let bytes = jit.descriptor().encode_build_owned_image().unwrap();
+        // SAFETY: this checked JIT produced the image; metadata comparison
+        // grants no entry pointer and executes no restored code here.
+        let restored = unsafe {
+            mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(&bytes, &catalog)
+        }.unwrap();
+        assert_eq!(restored.encode_build_owned_image().unwrap(), bytes);
+        let original: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        for field in ["max_library_inputs", "compositions"] {
+            let mut changed = original.clone();
+            changed["descriptor"][field] = if field == "max_library_inputs" {
+                serde_json::json!(0)
+            } else {
+                serde_json::json!({"words":0,"parents":[{"child":0,"child_successor":0,"compute":0}]})
+            };
+            // SAFETY: deliberately malformed metadata is confined to rejection;
+            // no restored descriptor or entry from this branch is executed.
+            assert!(unsafe {
+                mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(&serde_json::to_vec(&changed).unwrap(), &catalog)
+            }.is_err(), "{field}");
+        }
+    }
+}
+
+#[test]
 fn frame_shape_binding_admits_the_core_metadata_node_bound_before_construction() {
     use mech_engine::native_artifact::{
         NativeCollectionPrimitive as Primitive, NativeIterationAction as Action,
