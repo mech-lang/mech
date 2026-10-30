@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-30T18:16:31.158555+00:00",
+  "head": "4a2f2e685df5294ac0c110932b64b56cc7e67c39",
+  "files": [
+    {
+      "path": "probe/build.json",
+      "sha256": "d1d696ea286cc6767790cb7a493b47cd24657268ea5a7871fa5e8b7da14ac830",
+      "bytes": 4831
+    },
+    {
+      "path": "probe/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "probe/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "probe/run.json",
+      "sha256": "9e5eecc928ee59dd1af60bfe0c9308a37b1f5f950b6c08027d6ffa0ec613821a",
+      "bytes": 309
+    },
+    {
+      "path": "probe/run.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "probe/run.stdout",
+      "sha256": "79c9a13a63f5b6b0a886234877045740b0acbaf8bc0c4f223b4a8360fd3d266f",
+      "bytes": 629
+    }
+  ]
+}
