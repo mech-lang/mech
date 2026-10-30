@@ -1,0 +1,76 @@
+{
+  "created_utc": "2026-10-30T19:17:44.933446+00:00",
+  "head": "3a05cb0bfdbe345f681ec7834912ef1bcf6b2ac2",
+  "files": [
+    {
+      "path": "attribute-retained-memory.py",
+      "sha256": "87d5007ce8eed330c2cb565eb86cf01051e089d99854fd52a75a835ee3985051",
+      "bytes": 2838
+    },
+    {
+      "path": "retained-memory/after-vmmap.json",
+      "sha256": "840848490e79f09238b255df254b7e9e9fad81fd96aa25bbab25adb7f5122859",
+      "bytes": 119
+    },
+    {
+      "path": "retained-memory/after-vmmap.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "retained-memory/after-vmmap.stdout",
+      "sha256": "b1ca4ef04520c5853673275bdb86e33868c30228e1aeed9fd95fd43dc7bbbe4a",
+      "bytes": 5244
+    },
+    {
+      "path": "retained-memory/before-vmmap.json",
+      "sha256": "96e7bfb292c60d104073cfb8b4783e6db5b80562c48d0cfff4f408f9d828d24e",
+      "bytes": 118
+    },
+    {
+      "path": "retained-memory/before-vmmap.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "retained-memory/before-vmmap.stdout",
+      "sha256": "eccfce2bba6f63a6583a754a5dd1e53498a1e4de1b135a783ef9e7263f7a97fb",
+      "bytes": 5244
+    },
+    {
+      "path": "retained-memory/main.rs",
+      "sha256": "faca8e4ac4d01aa977ed5f2a208ca8424183e2c8575b96fc90cc8c84217e59c9",
+      "bytes": 6392
+    },
+    {
+      "path": "retained-memory/run.json",
+      "sha256": "a8c491fae1285abc8b8fa54a7d0abdb649b5fe77e8e01c0d6013d0e217f5a8cc",
+      "bytes": 516
+    },
+    {
+      "path": "retained-memory/run.stderr",
+      "sha256": "482c5d8eac6c4e255505da28fada573b73e1c4ba56c830695d2f50493bab6573",
+      "bytes": 2767
+    },
+    {
+      "path": "retained-memory/run.stdout",
+      "sha256": "c9a922fd092e6ddb3cfd35810ba3c36305dc5e1e122a7a9f20c93df8f2990b37",
+      "bytes": 1192
+    },
+    {
+      "path": "retained-memory/runner-build.json",
+      "sha256": "d89f7665f7aabc5f4239832350f975047367a1f7649d7c2168296cf9538f2ef5",
+      "bytes": 1858
+    },
+    {
+      "path": "retained-memory/runner-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "retained-memory/runner-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}
