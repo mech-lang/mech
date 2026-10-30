@@ -7,6 +7,36 @@ use mech_syntax::document::{
     parse_canonical_document,
 };
 
+#[test]
+fn cache_backing_contains_only_the_complete_prepared_call_inventory() {
+    let mut saw_non_library = false;
+    for source in [
+        "seed<u64> + 1u64\n",
+        "+> sequence\nsequence/length(seed<string>)\n",
+        "[i | i <- 0u64..count<u64>]\n",
+        "+> text\ntext/join([(seed<string>)[1u64..=2u64] | attempt <- 1u64..=2u64], \"|\")\n",
+    ] {
+        for artifact in artifacts(source) {
+            let jit = crate::native_artifact::JitProgramArtifact::compile(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+            )
+            .unwrap();
+            let descriptor = jit.descriptor();
+            let expected = descriptor.metadata().calls.iter().filter(|c| c.is_some()).count();
+            saw_non_library |= descriptor.metadata().calls.iter().zip(descriptor.metadata().plan.blocks()).any(|(call,block)| {
+                call.is_some() && !matches!(block.action(), NativeIterationAction::LibraryCall { .. })
+            });
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let (lane, library) = lane(descriptor, &memory);
+            assert_eq!(lane.entries.len(), expected, "cache backing includes blocks without prepared calls");
+            drop((lane, library));
+            assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+        }
+    }
+    assert!(saw_non_library);
+}
+
 pub(in crate::native_artifact::program::runtime::session) fn artifacts(
     source: &str,
 ) -> [mech_engine::ProgramArtifact; 2] {

@@ -1,0 +1,37 @@
+{
+  "scope": "New density witness on unchanged parent: actual maintained unit root compiles; one expected failure4 block entries vs0 prepared calls",
+  "compiler_source_base": "aff5d1e7d544fb18ef8efa4d66766ae58ae57a83",
+  "expected_red": true,
+  "files": [
+    {
+      "path": "parent-build.py",
+      "sha256": "f07eb5fd9f831acdcca42ef08fc0ab6fbba0ae77abf954e4994f33e853c2fbdd",
+      "bytes": 1291
+    },
+    {
+      "path": "unit-command.json",
+      "sha256": "ad3955c0271b96e391abdf8dfb576ce7b518d161bc868613b993b6083fe60135",
+      "bytes": 3549
+    },
+    {
+      "path": "unit-build.json",
+      "sha256": "111a86c20e69d4814ede908c357752f95b61250e7c9f01781a7bc9b9e81ca014",
+      "bytes": 4086
+    },
+    {
+      "path": "unit-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "density-parent.json",
+      "sha256": "c1526b2ff4615f516539fc1b31406954ab102611defe4256c6189e11ab14737e",
+      "bytes": 577
+    },
+    {
+      "path": "density-parent.log",
+      "sha256": "c8c64f202b28ea750936e073fb095eadad2623cecdf831b488377458ee1f3910",
+      "bytes": 883
+    }
+  ]
+}
