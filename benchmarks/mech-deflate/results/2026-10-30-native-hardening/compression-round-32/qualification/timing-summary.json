@@ -1,0 +1,80 @@
+{
+  "groups": [
+    {
+      "group": 0,
+      "before": {
+        "median_seconds": 0.005606396,
+        "multiple_of_roc": 18.687986666666667
+      },
+      "after": {
+        "median_seconds": 0.005102229,
+        "multiple_of_roc": 17.00743
+      },
+      "pooled_ratio": 0.9100728881798574,
+      "median_block_ratio": 0.9072006893339677,
+      "geometric_block_ratio": 0.9096632970753423,
+      "improving_blocks": 16
+    },
+    {
+      "group": 1,
+      "before": {
+        "median_seconds": 0.005595375499999999,
+        "multiple_of_roc": 18.651251666666667
+      },
+      "after": {
+        "median_seconds": 0.005062063,
+        "multiple_of_roc": 16.873543333333338
+      },
+      "pooled_ratio": 0.9046869151140975,
+      "median_block_ratio": 0.9040747091849004,
+      "geometric_block_ratio": 0.9047894065951237,
+      "improving_blocks": 16
+    },
+    {
+      "group": 2,
+      "before": {
+        "median_seconds": 0.0056046875,
+        "multiple_of_roc": 18.682291666666668
+      },
+      "after": {
+        "median_seconds": 0.0050840625,
+        "multiple_of_roc": 16.946875000000002
+      },
+      "pooled_ratio": 0.9071090047393364,
+      "median_block_ratio": 0.9054247689814728,
+      "geometric_block_ratio": 0.9117824765109311,
+      "improving_blocks": 15
+    },
+    {
+      "group": 3,
+      "before": {
+        "median_seconds": 0.005621167,
+        "multiple_of_roc": 18.737223333333333
+      },
+      "after": {
+        "median_seconds": 0.005069271,
+        "multiple_of_roc": 16.89757
+      },
+      "pooled_ratio": 0.9018182523308773,
+      "median_block_ratio": 0.8993420711358461,
+      "geometric_block_ratio": 0.900605875775779,
+      "improving_blocks": 16
+    }
+  ],
+  "reference_seconds": 0.0003,
+  "primary_observations": 3968,
+  "all_observations": 3984,
+  "scope": "Four fixed independent worker groups with descriptive within-group block comparisons",
+  "before": {
+    "median_seconds": 0.005606229,
+    "multiple_of_roc": 18.687430000000003
+  },
+  "after": {
+    "median_seconds": 0.005081396,
+    "multiple_of_roc": 16.937986666666667
+  },
+  "pooled_ratio": 0.9063839525641925,
+  "median_block_ratio": 0.9042841441991304,
+  "geometric_block_ratio": 0.9066998610735123,
+  "improving_blocks": 63
+}
