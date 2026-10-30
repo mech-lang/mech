@@ -1,5 +1,10 @@
 # Pay eligible lexical cleanup together
 
+Status: **qualified, measured and retained for review**. Complete eight-byte
+compression improves 4.9301665 → 4.6873125 ms, or 17.17828049× → 16.33209930×
+against the same 0.287 ms reference. See [closure](CLOSURE.md) for the execution
+contract, complete receipts and limitations.
+
 Starting reviewed source: `bf64adb1e471213811470a9862c5a4c189a4c2e8`.
 The separate workflow-contract repair is commit `921cd9194` and has its own
 receipts. This optimization does not change workflow contract requirements.
