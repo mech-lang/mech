@@ -6,12 +6,17 @@ use crate::native_artifact::program::runtime::{
     NativeProgramExecutionError as Error, amount, invalid,
 };
 
+#[derive(Clone, Copy)]
+pub(super) enum Region {
+    Tail(usize),
+    Segment(usize),
+}
 pub(in crate::native_artifact::program::runtime) struct State {
-    region: usize,
-    used: (u64, u64),
-    remaining: (u64, u64),
-    entry: u32,
-    partial: bool,
+    pub(super) region: Region,
+    pub(super) used: (u64, u64),
+    pub(super) remaining: (u64, u64),
+    pub(super) entry: u32,
+    pub(super) partial: bool,
 }
 impl Invocation<'_, '_, '_> {
     pub(in crate::native_artifact::program::runtime) fn begin_closed_tail(
@@ -97,7 +102,7 @@ impl Invocation<'_, '_, '_> {
             self.write_borrowed_word(1, remaining.1)?;
         }
         self.closed_tail = Some(State {
-            region,
+            region: Region::Tail(region),
             used: self.state.library.used(),
             remaining,
             entry: self
@@ -121,7 +126,10 @@ impl Invocation<'_, '_, '_> {
             .ok_or_else(|| invalid("closed Tail exit without entry"))?;
         let descriptor = self.descriptor;
         let layout = &descriptor.metadata().closed_tails;
-        let proof = &layout.regions[state.region];
+        let Region::Tail(region) = state.region else {
+            return Err(invalid("closed Tail exit received a parent segment loan"));
+        };
+        let proof = &layout.regions[region];
         if self.state.control.previous != Some(state.entry)
             || self.state.control.current != Some(proof.iteration)
             || self.progress[proof.iteration as usize * 2..][..2] != [0, 1]
@@ -145,7 +153,7 @@ impl Invocation<'_, '_, '_> {
             if args[1] != 0 {
                 return Err(invalid("closed map comparison lane changed"));
             }
-            (0, 0, self.reconcile_closed(state.region, args[0], args[2])?)
+            (0, 0, self.reconcile_closed(region, args[0], args[2])?)
         } else {
             let compute = state
                 .remaining
@@ -185,13 +193,13 @@ impl Invocation<'_, '_, '_> {
                     proof.tail.latch()
                 }
             }
-            2 | 3 if layout.sites.get(site).copied().flatten() == Some(state.region) => site as u32,
+            2 | 3 if layout.sites.get(site).copied().flatten() == Some(region) => site as u32,
             5 if proof.numeric.as_ref().and_then(|p| p.action(site)).is_some_and(|a| matches!(a,
                 crate::native_artifact::program::prepare::readonly_numeric::Operation::Write { .. }
                 | crate::native_artifact::program::prepare::readonly_numeric::Operation::Append { .. })) => site as u32,
             _ => return Err(invalid("closed Tail exit outside its proved boundary")),
         };
-        self.synchronize_numeric_carrier(state.region, site, args[2])?;
+        self.synchronize_numeric_carrier(region, site, args[2])?;
         self.state
             .library
             .charge(compute, comparison)
@@ -235,7 +243,7 @@ impl Invocation<'_, '_, '_> {
         self.write_borrowed_word(0, remaining.0)?;
         self.write_borrowed_word(1, remaining.1)?;
         self.closed_tail = Some(State {
-            region,
+            region: Region::Tail(region),
             used: self.state.library.used(),
             remaining,
             entry: site as u32,

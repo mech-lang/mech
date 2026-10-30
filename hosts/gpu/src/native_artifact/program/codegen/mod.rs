@@ -34,4 +34,8 @@ pub(in crate::native_artifact) mod tail;
 pub(in crate::native_artifact) mod window;
 
 #[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod numeric_segments;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod numeric_words;
+#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod readonly_numeric;

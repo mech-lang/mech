@@ -102,7 +102,7 @@ impl Proof {
     }
 }
 
-fn width(body: &SchemaBody) -> Option<u8> {
+pub(super) fn width(body: &SchemaBody) -> Option<u8> {
     let SchemaBody::Matrix {
         element,
         dimensions,

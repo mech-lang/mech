@@ -265,7 +265,13 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
         &buffer_frames,
         &calls,
         &closed_tails,
+        &visits,
+        &frame_retirements,
+        &w.map_admission,
     )?;
+    if w.max_library_inputs < compositions.argument_words() {
+        return Err("restored parent native argument bank is too small".into());
+    }
     let descriptor = NativeProgramDescriptor {
         metadata: native::program::prepare::ProgramMetadata {
             plan,

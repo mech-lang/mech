@@ -8,6 +8,7 @@ use mech_core::{MemoryBudgetLimits, Value};
 use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeMatchValue};
 
 mod buffer_frames;
+mod numeric_segments;
 mod numeric_writes;
 mod readonly_numeric;
 mod selected_calls;
@@ -393,6 +394,12 @@ impl Invocation<'_, '_, '_> {
                 .map_err(|_| invalid("numeric materialization site overflow"))?;
             return self.prepare_numeric_write(site, args);
         }
+        if tag == GlobalHelper::NumericSegmentEnd {
+            return self.end_numeric_segment(
+                usize::try_from(site).map_err(|_| invalid("parent segment site overflow"))?,
+                args,
+            );
+        }
         if self.closed_tail.is_some() {
             return Err(invalid(
                 "ordinary helper while closed Tail fuel is outstanding",
@@ -437,6 +444,9 @@ impl Invocation<'_, '_, '_> {
         let descriptor = self.descriptor;
         if tag == GlobalHelper::ClosedTailBegin {
             return self.begin_closed_tail(site, args);
+        }
+        if tag == GlobalHelper::NumericSegmentBegin {
+            return self.begin_numeric_segment(site, args);
         }
         if matches!(
             tag,
