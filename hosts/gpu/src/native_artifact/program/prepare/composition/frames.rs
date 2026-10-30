@@ -19,7 +19,7 @@ pub(in crate::native_artifact) enum Source {
 pub(in crate::native_artifact) struct Exit {
     pub from: u32,
     pub to: u32,
-    pub frames: Vec<u32>,
+    pub frames: Vec<NativeMatchValue>,
 }
 #[derive(Debug, Eq, PartialEq, serde::Serialize)]
 pub(in crate::native_artifact) struct Layout {
@@ -114,12 +114,12 @@ impl Origins<'_, '_> {
 }
 
 impl Layout {
-    pub(super) fn derive(
-        plan: &Plan,
+    pub(super) fn derive<'p>(
+        plan: &'p Plan,
+        facts: &Facts<'p>,
         frames: &NativeBufferFrames,
         segment: &Segment,
     ) -> Result<Self, &'static str> {
-        let facts = plan.facts();
         let members = segment.sites.iter().copied().collect::<BTreeSet<_>>();
         let mut writes = BTreeMap::<u32, Vec<usize>>::new();
         let mut written_values = BTreeMap::<u32, NativeMatchValue>::new();
@@ -154,7 +154,7 @@ impl Layout {
             .collect::<Vec<_>>();
         let mut origins = Origins {
             plan,
-            facts: &facts,
+            facts,
             frames,
             members: &members,
             writes,
@@ -273,7 +273,10 @@ impl Layout {
             exits.push(Exit {
                 from,
                 to,
-                frames: current[&from].intersection(&external).copied().collect(),
+                frames: current[&from]
+                    .intersection(&external)
+                    .map(|v| written_values[v])
+                    .collect(),
             });
         }
         Ok(Self {

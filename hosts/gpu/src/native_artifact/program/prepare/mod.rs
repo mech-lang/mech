@@ -294,7 +294,18 @@ impl PreparedNativeProgram {
             &analysis_visits,
             &closed_tails,
         )?;
-        let visits = visits.into();
+        let visits: Box<[NativeIterationVisit]> = visits.into();
+        let frame_retirements =
+            frame_retirement::FrameRetirements::derive(&buffer_frames, plan.values().len())?;
+        let compositions = composition::Layout::derive(
+            &plan,
+            &buffer_frames,
+            &calls,
+            &closed_tails,
+            &visits,
+            &frame_retirements,
+            &map_admission,
+        )?;
         let uniform_word_collections = facts.uniform_unsigned_collections().into_boxed_slice();
         let window_regions = plan.window_regions().into_boxed_slice();
         let occupied_frame =
@@ -349,7 +360,8 @@ impl PreparedNativeProgram {
                 0
             } else {
                 4
-            });
+            })
+            .max(compositions.argument_words());
         let types: Box<[_]> = plan
             .values()
             .iter()
@@ -401,11 +413,7 @@ impl PreparedNativeProgram {
             .unwrap_or_default();
         let call_routes =
             call_routes::derive(&plan, &buffer_frames, &unsigned_buffer_calls, &calls);
-        let frame_retirements =
-            frame_retirement::FrameRetirements::derive(&buffer_frames, plan.values().len())?;
         let call_cache = call_cache::Layout::derive(&plan, &calls)?;
-        let compositions =
-            composition::Layout::derive(&plan, &buffer_frames, &calls, &closed_tails)?;
         let (scalar_aggregates, line_retention_frontiers) = facts.into_preparation_inventories();
         let metadata = ProgramMetadata {
             plan,
@@ -503,9 +511,13 @@ impl ProgramMetadata {
             &self.closed_tails,
         )
         .ok_or("local count overflow")?;
-        self.map_owner_words
+        let words = self
+            .map_owner_words
             .as_ref()
-            .map_or(Ok(prefix), native::program::prepare::map_owner::local_words)
+            .map_or(Ok(prefix), native::program::prepare::map_owner::local_words)?;
+        words
+            .checked_add(self.compositions.words)
+            .ok_or("parent local words overflow")
     }
 }
 

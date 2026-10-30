@@ -918,6 +918,16 @@ impl<'plan> CfgDefinition<'plan> {
                 b.switch_to_block(joined);
             }
             #[cfg(feature = "canonical-native-program")]
+            let segment_ir = if let Some(hooks) = &hooks {
+                crate::native_artifact::program::codegen::numeric_segments::emit_entry(
+                    &controls, b, frame, locals, plan, index, hooks, &blocks, error, report,
+                )?
+            } else {
+                0
+            };
+            #[cfg(not(feature = "canonical-native-program"))]
+            let segment_ir = 0;
+            #[cfg(feature = "canonical-native-program")]
             if let crate::native_artifact::codegen::control::plan::CodePlan::Program(prepared) =
                 plan
                 && let NativeIterationTerminator::Header {
@@ -1498,7 +1508,10 @@ impl<'plan> CfgDefinition<'plan> {
                     );
                 }
             }
-            let emitted = (b.func.dfg.num_insts() - before) as u64;
+            // Selected acyclic parent bodies have their own independently
+            // derived, runtime-funded instruction envelope. Keep their fixed
+            // entry guard in this unchanged ordinary visit audit.
+            let emitted = (b.func.dfg.num_insts() - before - segment_ir) as u64;
             let bound = emission_template_bound(plan, index)?;
             if emitted.checked_add(128).is_none_or(|total| total > bound) {
                 return Err(NativeCompileError::InvalidPlan {

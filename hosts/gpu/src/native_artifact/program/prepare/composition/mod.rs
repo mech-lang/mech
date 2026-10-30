@@ -7,8 +7,9 @@ use mech_engine::native_artifact::{
     NativeMatchAction as Scalar, NativePreparedLibraryCall, NativeProgramArtifactPlan as Plan,
 };
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
-#[path = "composition/frames.rs"]
+use std::num::NonZeroUsize;
 pub(in crate::native_artifact) mod frames;
+pub(in crate::native_artifact) mod numeric;
 
 #[derive(Debug, Eq, PartialEq, serde::Serialize)]
 pub(in crate::native_artifact) struct Segment {
@@ -17,6 +18,7 @@ pub(in crate::native_artifact) struct Segment {
     /// Exact last executed source site and its next, still ordinary frontier.
     pub exits: Vec<(u32, u32)>,
     pub frame_plan: Option<frames::Layout>,
+    pub numeric: Option<numeric::Layout>,
     pub rejection: Option<&'static str>,
 }
 #[derive(Debug, Eq, PartialEq, serde::Serialize)]
@@ -32,8 +34,37 @@ pub(in crate::native_artifact) struct Parent {
 #[derive(Debug, Default, Eq, PartialEq, serde::Serialize)]
 pub(in crate::native_artifact) struct Layout {
     pub parents: Vec<Parent>,
+    #[serde(skip)]
+    entries: Box<[Option<NonZeroUsize>]>,
+    #[serde(skip)]
+    regions: Vec<(usize, usize)>,
+    #[serde(skip)]
+    pub words: usize,
 }
 impl Layout {
+    pub(in crate::native_artifact) fn entry(&self, site: usize) -> Option<usize> {
+        self.entries.get(site)?.map(|v| v.get() - 1)
+    }
+    pub(in crate::native_artifact) fn region(&self, index: usize) -> Option<(&Parent, &Segment)> {
+        let &(parent, segment) = self.regions.get(index)?;
+        let parent = self.parents.get(parent)?;
+        Some((parent, parent.segments.get(segment)?))
+    }
+    pub(in crate::native_artifact) fn argument_words(&self) -> usize {
+        self.regions
+            .iter()
+            .map(|&(p, s)| {
+                let segment = &self.parents[p].segments[s];
+                segment
+                    .numeric
+                    .as_ref()
+                    .unwrap()
+                    .words
+                    .max(segment.frame_plan.as_ref().unwrap().sources.len())
+            })
+            .max()
+            .unwrap_or(0)
+    }
     /// Source preparation and independently validated image loading use this
     /// same pure derivation. No serialized candidate inventory is accepted.
     pub(in crate::native_artifact) fn derive(
@@ -41,8 +72,11 @@ impl Layout {
         frames: &NativeBufferFrames,
         calls: &[Option<NativePreparedLibraryCall>],
         closed: &tail::Layout,
+        visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
+        retirements: &super::frame_retirement::FrameRetirements,
+        admissions: &super::map_admission::Layout,
     ) -> Result<Self, &'static str> {
-        if calls.len() != plan.blocks().len() {
+        if calls.len() != plan.blocks().len() || visits.len() != plan.blocks().len() {
             return Err("composition factories differ from source blocks");
         }
         let facts = plan.facts();
@@ -185,6 +219,7 @@ impl Layout {
                     sites: Vec::new(),
                     exits: Vec::new(),
                     frame_plan: None,
+                    numeric: None,
                     rejection: None,
                 });
                 segment.sites.push(site);
@@ -196,8 +231,23 @@ impl Layout {
             }
             let mut segments = segments.into_values().collect::<Vec<_>>();
             for segment in &mut segments {
-                match frames::Layout::derive(plan, frames, segment) {
-                    Ok(proof) => segment.frame_plan = Some(proof),
+                match frames::Layout::derive(plan, &facts, frames, segment) {
+                    Ok(mut proof) => {
+                        match numeric::Layout::derive(
+                            plan,
+                            &facts,
+                            frames,
+                            calls,
+                            visits,
+                            retirements,
+                            segment,
+                            &mut proof,
+                        ) {
+                            Ok(numeric) => segment.numeric = Some(numeric),
+                            Err(reason) => segment.rejection = Some(reason),
+                        }
+                        segment.frame_plan = Some(proof);
+                    }
                     Err(reason) => segment.rejection = Some(reason),
                 }
             }
@@ -224,7 +274,44 @@ impl Layout {
                 segments,
             });
         }
-        Ok(Self { parents })
+        let mut regions = Vec::new();
+        let mut words = 0usize;
+        for (parent, proof) in parents.iter().enumerate() {
+            for (segment, part) in proof.segments.iter().enumerate() {
+                let Some(numeric) = &part.numeric else {
+                    continue;
+                };
+                // Two new boundary calls must replace more existing calls.
+                // This is a profitability choice, never a source-size allowance.
+                let saved = part.sites.len().saturating_sub(1) + numeric.actions.len();
+                if saved <= 2 || admissions.group(part.entry as usize).is_some() {
+                    continue;
+                }
+                words = words.max(
+                    numeric
+                        .words
+                        .checked_add(1)
+                        .ok_or("parent native scratch overflows")?,
+                );
+                regions.push((parent, segment));
+            }
+        }
+        let entries = if regions.is_empty() {
+            Box::default()
+        } else {
+            let mut entries = vec![None; plan.blocks().len()];
+            for (id, &(parent, segment)) in regions.iter().enumerate() {
+                entries[parents[parent].segments[segment].entry as usize] =
+                    NonZeroUsize::new(id.checked_add(1).ok_or("parent region index overflows")?);
+            }
+            entries.into_boxed_slice()
+        };
+        Ok(Self {
+            parents,
+            entries,
+            regions,
+            words,
+        })
     }
 }
 

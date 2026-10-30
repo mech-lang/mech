@@ -16,11 +16,7 @@ use crate::native_artifact::{NativeCompileError, abi::STATUS_ABI};
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::FunctionBuilder;
-use mech_engine::native_artifact::{
-    NativeBufferFrameOperation as Frame, NativeIterationAction as Action,
-    NativeIterationTerminator as Term, NativeMatchAction as Scalar,
-    NativeMatchTerminator as Branch,
-};
+use mech_engine::native_artifact::{NativeIterationAction as Action, NativeMatchAction as Scalar};
 use std::collections::{BTreeMap, BTreeSet};
 #[path = "numeric_boundary.rs"]
 mod boundary;
@@ -48,78 +44,12 @@ fn slots(
     proof: &Proof,
     base: usize,
 ) -> Result<BTreeSet<usize>, NativeCompileError> {
-    let mut slots = BTreeSet::from_iter(base..base + 3 + proof.words);
-    for &site in &proof.sites {
-        match code.blocks()[site].action() {
-            Action::Scalar(Scalar::Primitive {
-                operands, output, ..
-            }) => {
-                slots.extend(operands.iter().map(|v| v.get() as usize));
-                slots.insert(output.get() as usize);
-            }
-            Action::Scalar(Scalar::Copy { source, output }) if code.kind(*output).is_some() => {
-                slots.extend([source.get() as usize, output.get() as usize]);
-            }
-            Action::Structural { output, .. } | Action::LibraryCall { output, .. }
-                if code.kind(*output).is_some() =>
-            {
-                slots.insert(output.get() as usize);
-            }
-            _ => {}
-        }
-        match proof.action(site) {
-            Some(Operation::Read { index, .. }) => {
-                slots.insert(*index as usize);
-            }
-            Some(Operation::Write {
-                index, incoming, ..
-            }) => {
-                slots.extend([*index as usize, *incoming as usize]);
-            }
-            Some(Operation::Append { incoming, .. }) => {
-                slots.insert(*incoming as usize);
-            }
-            _ => {}
-        }
-        if let CodePlan::Program(program) = code {
-            if let Some(action) = program.metadata().scalar_aggregates.action(site) {
-                aggregates::aggregate_words(
-                    &program.metadata().scalar_aggregates,
-                    action,
-                    &mut slots,
-                )
-                .ok_or_else(|| backend("numeric aggregate lost exact word lanes"))?;
-            }
-            if let Some(frame) = program.metadata().buffer_frames.action(site) {
-                match frame.operation() {
-                    Frame::Pack { .. } => {
-                        if let Action::LibraryCall { operands, .. } = code.blocks()[site].action() {
-                            slots.extend(
-                                operands
-                                    .iter()
-                                    .filter(|v| code.kind(**v).is_some())
-                                    .map(|v| v.get() as usize),
-                            );
-                        }
-                    }
-                    Frame::Project { output, .. } if code.kind(*output).is_some() => {
-                        slots.insert(output.get() as usize);
-                    }
-                    _ => {}
-                }
-            }
-        }
-        match code.blocks()[site].terminator() {
-            Term::Scalar(Branch::Branch { condition, .. }) => {
-                slots.insert(condition.get() as usize);
-            }
-            Term::Scalar(Branch::LiteralBranch { left, right, .. }) => {
-                slots.extend([left.get() as usize, right.get() as usize]);
-            }
-            _ => {}
-        }
-    }
-    Ok(slots)
+    super::numeric_words::source_slots(
+        code,
+        proof.sites.iter().copied(),
+        &proof.actions,
+        base..base + 3 + proof.words,
+    )
 }
 
 pub(in crate::native_artifact) fn emit_entry(
@@ -271,52 +201,7 @@ pub(in crate::native_artifact) fn emit_entry(
                 )?;
             }
             Some(Operation::Frame) => {
-                let operation = program
-                    .metadata()
-                    .buffer_frames
-                    .action(site)
-                    .ok_or_else(|| backend("numeric frame lost fields"))?
-                    .operation();
-                match operation {
-                    Frame::Pack { output } => {
-                        let Action::LibraryCall { operands, .. } = code.blocks()[site].action()
-                        else {
-                            return Err(backend("numeric pack lost operands"));
-                        };
-                        for (field, operand) in
-                            proof.fields(output.get()).unwrap().iter().zip(operands)
-                        {
-                            if let Some(field) = field {
-                                let value = words.read(b, operand.get() as usize);
-                                words.write(b, shadow + field, value);
-                            }
-                        }
-                    }
-                    Frame::Copy { source, output } => {
-                        // Read every old scalar before writing any next-state lane.
-                        let copied = proof
-                            .fields(source.get())
-                            .unwrap()
-                            .iter()
-                            .zip(proof.fields(output.get()).unwrap())
-                            .filter_map(|(from, to)| from.zip(*to))
-                            .map(|(from, to)| (to, words.read(b, shadow + from)))
-                            .collect::<Vec<_>>();
-                        for (to, value) in copied {
-                            words.write(b, shadow + to, value);
-                        }
-                    }
-                    Frame::Project {
-                        source,
-                        ordinal,
-                        output,
-                    } => {
-                        if let Some(field) = proof.fields(source.get()).unwrap()[*ordinal] {
-                            let value = words.read(b, shadow + field);
-                            words.write(b, output.get() as usize, value);
-                        }
-                    }
-                }
+                super::numeric_words::frame_words(b, &words, shadow, code, site, &proof.frames)?;
             }
             Some(Operation::ArrayCopy) => {}
             Some(Operation::Length { array, output }) => {
@@ -400,21 +285,11 @@ pub(in crate::native_artifact) fn emit_entry(
                 // one-based column-major. A valid ordinal proves rows > 0.
                 let rows = words.read(b, view + 2);
                 let columns = words.read(b, view + 3);
-                let row = b.ins().urem(ordinal, rows);
-                let column = b.ins().udiv(ordinal, rows);
-                let row = b.ins().imul(row, columns);
-                let physical = b.ins().iadd(row, column);
                 let width = proof.arrays[*array].width;
-                let at = b.ins().imul_imm(physical, i64::from(width));
-                let base = words.read(b, view);
-                let address = b.ins().iadd(base, at);
-                let ty = match width {
-                    1 => types::I8,
-                    2 => types::I16,
-                    4 => types::I32,
-                    8 => types::I64,
-                    _ => return Err(backend("numeric load width differs")),
-                };
+                let (address, ty) =
+                    super::numeric_words::linear_address(b, ordinal, rows, columns, width, |b| {
+                        words.read(b, view)
+                    })?;
                 let value = b.ins().load(ty, MemFlags::new(), address, 0);
                 let value = if width < 8 {
                     b.ins().uextend(types::I64, value)

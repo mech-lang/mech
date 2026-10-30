@@ -12,7 +12,7 @@ fn child_results_keep_current_arrays_indices_publication_and_recovery() {
     for (form, artifact) in ["original", "decoded"].into_iter().zip(artifacts(source).0) {
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
-        let mut output = vec![None; artifact.outputs().len()];
+        let mut output: Vec<Option<mech_core::Value>> = vec![None; artifact.outputs().len()];
         // Multiple nonempty child calls expose stale returned arrays or indices;
         // zero widths/counts expose accidentally executed child paths. The short
         // output rejects after one valid write, then the same JIT/account retry.
@@ -90,12 +90,24 @@ fn child_results_keep_current_arrays_indices_publication_and_recovery() {
             ];
             let args = inputs(&artifact, &named, &memory);
             let aliases = args.clone();
+            let original = args
+                .iter()
+                .map(|v| v.canonical_data_draft().unwrap())
+                .collect::<Vec<_>>();
             let prior = output.clone();
+            let published = prior
+                .iter()
+                .map(|v| v.as_ref().map(|v| v.canonical_data_draft().unwrap()))
+                .collect::<Vec<_>>();
             let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
             let native = jit.evaluate_into(&args, &mut output, limits(), &memory);
             let resident = reference_result(&artifact, &args);
             let error = if let Some(expected) = expected {
-                native.unwrap();
+                let report = native.unwrap();
+                println!(
+                    "{}",
+                    serde_json::json!({"witness":"parent-runtime-visits","form":form,"case":name,"visits":report.visits,"work":report.work})
+                );
                 equal(&artifact, &output, &resident.unwrap());
                 assert_eq!(
                     output
@@ -122,12 +134,32 @@ fn child_results_keep_current_arrays_indices_publication_and_recovery() {
                     (memory.used_bytes(), memory.retained_snapshot_nodes()),
                     retained
                 );
+                assert_eq!(
+                    output
+                        .iter()
+                        .map(|v| v.as_ref().map(|v| v.canonical_data_draft().unwrap()))
+                        .collect::<Vec<_>>(),
+                    published
+                );
                 Some(error)
             };
             assert!(
                 args.iter()
                     .zip(&aliases)
                     .all(|(a, b)| a.shares_frozen_storage(b))
+            );
+            assert_eq!(
+                args.iter()
+                    .map(|v| v.canonical_data_draft().unwrap())
+                    .collect::<Vec<_>>(),
+                original
+            );
+            assert_eq!(
+                aliases
+                    .iter()
+                    .map(|v| v.canonical_data_draft().unwrap())
+                    .collect::<Vec<_>>(),
+                original
             );
             println!(
                 "{}",
@@ -184,12 +216,43 @@ fn parent_partition_keeps_exact_child_result_mapping_and_single_entry_boundaries
         assert_eq!(parent["iteration"], 0);
         assert_eq!(parent["child"], 1);
         assert_eq!(parent["returned_arrays"], serde_json::json!([[0, 1]]));
+        println!(
+            "{}",
+            serde_json::json!({"witness":"parent-current-frame-recipes", "parent":parent})
+        );
         let plan = object.descriptor().plan();
         let mech_engine::native_artifact::NativeControlLoop::Tail(tail) = &plan.iterations()[0]
         else {
             panic!()
         };
         let facts = plan.facts();
+        let frames = facts.buffer_frames();
+        let mech_engine::native_artifact::NativeControlLoop::Tail(child) = &plan.iterations()[1]
+        else {
+            panic!()
+        };
+        let returned_schema = plan.values()[child.result().get() as usize].schema();
+        let current_lens = plan
+            .blocks()
+            .iter()
+            .enumerate()
+            .find_map(|(site, block)| {
+                if block.iteration() != Some(0) {
+                    return None;
+                }
+                match frames.action(site)?.operation() {
+                    mech_engine::native_artifact::NativeBufferFrameOperation::Project {
+                        source,
+                        ordinal: 0,
+                        output,
+                    } if plan.values()[source.get() as usize].schema() == returned_schema => {
+                        Some(output.get())
+                    }
+                    _ => None,
+                }
+            })
+            .unwrap();
+        let mut checked_current_result = false;
         let mut all = std::collections::BTreeSet::new();
         for segment in parent["segments"].as_array().unwrap() {
             let entry = segment["entry"].as_u64().unwrap() as u32;
@@ -200,6 +263,37 @@ fn parent_partition_keeps_exact_child_result_mapping_and_single_entry_boundaries
                 .map(|v| v.as_u64().unwrap() as u32)
                 .collect::<std::collections::BTreeSet<_>>();
             assert!(sites.contains(&entry));
+            if let Some(recipe) = segment["frame_plan"].as_object() {
+                let expected = segment["sites"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .filter_map(|site| {
+                        let at = site.as_u64().unwrap() as usize;
+                        let action = frames.action(at)?;
+                        (!action.retire().is_empty()).then(|| {
+                            serde_json::json!([
+                                at,
+                                action.retire().iter().map(|v| v.get()).collect::<Vec<_>>()
+                            ])
+                        })
+                    })
+                    .collect::<Vec<_>>();
+                assert_eq!(recipe["retirements"], serde_json::json!(expected));
+                if let Some(next) = recipe["frames"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|f| f["value"] == tail.next().get())
+                {
+                    let root = next["arrays"][1].as_u64().unwrap() as usize;
+                    assert_eq!(
+                        recipe["sources"][root],
+                        serde_json::json!({"Value":current_lens})
+                    );
+                    checked_current_result = true;
+                }
+            }
             for &site in &sites {
                 assert!(all.insert(site), "overlapping native pieces");
                 assert_eq!(plan.blocks()[site as usize].iteration(), Some(0));
@@ -235,6 +329,10 @@ fn parent_partition_keeps_exact_child_result_mapping_and_single_entry_boundaries
             }
         }
         assert!(all.len() > 30);
+        assert!(
+            checked_current_result,
+            "parent next frame has no proved current child buffer"
+        );
         if let Some(prior) = prior {
             assert_eq!(prior, *parent);
         }

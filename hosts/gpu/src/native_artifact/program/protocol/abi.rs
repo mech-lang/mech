@@ -18,7 +18,8 @@
 use crate::native_artifact::abi::NativeEntryFrame;
 use crate::native_artifact::program::protocol::GlobalHelper;
 use core::ffi::c_void;
-pub(in crate::native_artifact) const VERSION: u64 = 36;
+// ABI37 adds settled, nonoverlapping parent numeric segments on the same entry.
+pub(in crate::native_artifact) const VERSION: u64 = 37;
 pub(in crate::native_artifact) const JOIN_MAP_MISSING_BYTE: u8 = 0x80;
 pub(in crate::native_artifact) const PHASE_ACTIVATION: u64 = 0;
 pub(in crate::native_artifact) const PHASE_TURN: u64 = 1;

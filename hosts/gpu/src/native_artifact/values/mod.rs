@@ -403,6 +403,39 @@ impl<'a> NativeValueArena<'a> {
             .transpose()
     }
 
+    /// Pure current-entry availability, geometry and retirement previews.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn native_entry_preview(
+        &self,
+        slot: u32,
+        work: &NativeWorkMeter,
+    ) -> Result<Option<&Value>, NativeValueError> {
+        // Pure current availability/geometry preview, analogous to private
+        // frame current_leaf. It grants neither mutation nor an entry loan.
+        // The caller must fund and validate its selected view before execution.
+        self.check_work(work)?;
+        self.values
+            .values()
+            .get(slot as usize)
+            .map(Option::as_ref)
+            .ok_or(NativeValueError::InvalidSlot)
+    }
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn native_retirement_available(
+        &self,
+        slot: u32,
+        work: &NativeWorkMeter,
+    ) -> Result<bool, NativeValueError> {
+        self.check_work(work)?;
+        let index = slot as usize;
+        let value = self
+            .values
+            .values()
+            .get(index)
+            .ok_or(NativeValueError::InvalidSlot)?;
+        Ok(value.is_none() || self.generations.values()[index] != u64::MAX)
+    }
+
     /// Only the certified generated caller may retire a lexical local. Payload
     /// retirement was prepaid by put; invalidate its handle before releasing it.
     #[cfg(feature = "canonical-native-program-runtime")]

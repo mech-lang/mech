@@ -250,7 +250,8 @@ fn selected_template(
 // original last-use barriers, runtime identity and Core exclusivity remain.
 // IR129 composes exact private flat scalar aggregate results and their shared
 // word-bank actions with numeric leaves. The restored plan rederives selection.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 129;
+// IR130 composes current parent frame sources around already-qualified children.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 130;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -430,7 +431,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 129;
 // Policy92 funds fixed-shape publication before entry, charges store comparisons,
 // and settles/reopens the same account only at a first changed write.
 // Policy93 also funds synchronization of the actual private terminal frame.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 93;
+// Policy94 settles acyclic parent envelopes and reached lexical retirements
+// before ordinary child entry; it does not renew a child or parent allowance.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 94;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
