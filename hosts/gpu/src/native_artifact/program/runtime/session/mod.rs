@@ -1245,6 +1245,7 @@ impl<'a> Prepared<'a> {
             window_hashes: None,
             borrowed_strings: None,
             closed_tail: None,
+            parent_continuation: Default::default(),
             selected_join: None,
             prefix: prefix_input.map(|input| {
                 crate::native_artifact::program::runtime::invocation::prefix::State::new(

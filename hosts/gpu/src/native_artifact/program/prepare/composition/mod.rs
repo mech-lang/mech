@@ -27,6 +27,7 @@ pub(in crate::native_artifact) struct Parent {
     pub child: u32,
     pub child_initialize: u32,
     pub child_exit: u32,
+    pub child_successor: u32,
     /// Returned tuple/record field -> CURRENT child carrier array field.
     pub returned_arrays: Vec<(usize, usize)>,
     pub segments: Vec<Segment>,
@@ -43,7 +44,18 @@ pub(in crate::native_artifact) struct Layout {
 }
 impl Layout {
     pub(in crate::native_artifact) fn entry(&self, site: usize) -> Option<usize> {
-        self.entries.get(site)?.map(|v| v.get() - 1)
+        let encoded = self.entries.get(site)?.map(|v| v.get() - 1)?;
+        (encoded % 4 == 0).then_some(encoded / 4)
+    }
+    /// 1 arms the child edge; 2 identifies the completed child exit.
+    /// Both reuse the existing immutable site map; no second per-site bank.
+    pub(in crate::native_artifact) fn boundary(&self, site: usize) -> Option<(usize, bool)> {
+        let encoded = self.entries.get(site)?.map(|v| v.get() - 1)?;
+        match encoded % 4 {
+            1 => Some((encoded / 4, true)),
+            2 => Some((encoded / 4, false)),
+            _ => None,
+        }
     }
     pub(in crate::native_artifact) fn region(&self, index: usize) -> Option<(&Parent, &Segment)> {
         let &(parent, segment) = self.regions.get(index)?;
@@ -120,6 +132,12 @@ impl Layout {
                 continue;
             }
             let ResultRecipe::Frame { arrays, .. } = &proof.result else {
+                continue;
+            };
+            let Term::Scalar(mech_engine::native_artifact::NativeMatchTerminator::Jump(
+                child_successor,
+            )) = plan.blocks()[child.exit() as usize].terminator()
+            else {
                 continue;
             };
             let returned_arrays = arrays
@@ -270,6 +288,7 @@ impl Layout {
                 child: *child_id as u32,
                 child_initialize: child.initialize(),
                 child_exit: child.exit(),
+                child_successor,
                 returned_arrays,
                 segments,
             });
@@ -301,8 +320,28 @@ impl Layout {
         } else {
             let mut entries = vec![None; plan.blocks().len()];
             for (id, &(parent, segment)) in regions.iter().enumerate() {
-                entries[parents[parent].segments[segment].entry as usize] =
-                    NonZeroUsize::new(id.checked_add(1).ok_or("parent region index overflows")?);
+                entries[parents[parent].segments[segment].entry as usize] = NonZeroUsize::new(
+                    id.checked_mul(4)
+                        .and_then(|n| n.checked_add(1))
+                        .ok_or("parent region index overflows")?,
+                );
+            }
+            for parent in regions.iter().map(|&(p, _)| p).collect::<BTreeSet<_>>() {
+                for (site, tag) in [
+                    (parents[parent].child_initialize, 1),
+                    (parents[parent].child_exit, 2),
+                ] {
+                    let encoded = parent
+                        .checked_mul(4)
+                        .and_then(|n| n.checked_add(tag + 1))
+                        .ok_or("parent boundary index overflows")?;
+                    if entries[site as usize]
+                        .replace(NonZeroUsize::new(encoded).unwrap())
+                        .is_some()
+                    {
+                        return Err("parent boundary overlaps another selected region");
+                    }
+                }
             }
             entries.into_boxed_slice()
         };

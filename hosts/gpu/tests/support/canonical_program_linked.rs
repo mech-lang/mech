@@ -192,6 +192,27 @@ fn linked_sublist_append_preserves_publication_and_recovers() {
     linked_assertion_retry_with_oracle(source, &oracle, ValueDataDraft::U64);
 }
 
+#[test]
+fn linked_numeric_parent_child_preserves_current_results_and_recovers() {
+    let definitions = include_str!("../fixtures/native/numeric-parent-child.mec")
+        .split("\nhuff-assign-lengths(a<[u32]>, lens<[u8]>, counts<[u64]>, width<u64>, start<u64>)")
+        .next()
+        .unwrap();
+    let source = format!(
+        "{definitions}\nchecked(n<u64>) => (out<u64>) :=\n  lengths := huff-assign-lengths([2u32 0u32 3u32 1u32], [9u8 9u8 9u8 9u8], [0u64 1u64 1u64 2u64], 3u64, 0u64)\n  positive! := n > 0u64\n  first<u64> := lengths[1u64]\n  out := 12u64 / n + first - 3u64.\nchecked(input<u64>)\n"
+    );
+    let artifact = super::artifacts(&source).0.into_iter().next().unwrap();
+    assert!(
+        !mech_gpu::native_artifact::emit_program_object(&artifact, &mech_stdlib::source_catalog())
+            .unwrap()
+            .metadata()["compiled_numeric_segments"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+    linked_assertion_retry(&source, ValueDataDraft::U64);
+}
+
 fn linked_assertion_retry(source: &str, input_word: fn(u64) -> ValueDataDraft) {
     linked_assertion_retry_with_oracle(source, source, input_word);
 }
