@@ -30,6 +30,7 @@ struct Observation {
     scalar_fallbacks: usize,
     scalar_limited: bool,
     scalar_probes: usize,
+    aggregate_groups: usize,
 }
 thread_local! {
     static MODE: Cell<Mode> = const { Cell::new(Mode::Native) };
@@ -125,6 +126,15 @@ unsafe extern "C" fn observe_admit(raw: *mut c_void, site: u64) -> u64 {
             });
         } else if status == STATUS_OK && active {
             note(|r| r.scalar_groups += 1);
+            if group.sites.iter().any(|&s| {
+                ctx.descriptor
+                    .metadata()
+                    .scalar_aggregates
+                    .action(s as usize)
+                    .is_some()
+            }) {
+                note(|r| r.aggregate_groups += 1);
+            }
             if !OBS.with(|r| r.borrow().scalar_probes != 0) {
                 let before = (
                     ctx.state.control.previous,
@@ -368,6 +378,9 @@ fn artifacts(source: &str) -> [mech_engine::ProgramArtifact; 2] {
     .unwrap();
     [original, decoded]
 }
+
+#[path = "admission_tests/scalar_aggregates.rs"]
+mod scalar_aggregates;
 
 #[test]
 fn native_map_groups_reduce_actual_callbacks_preserve_fallback_and_deny_one_short_fuel() {
