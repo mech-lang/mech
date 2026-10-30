@@ -1,0 +1,96 @@
+{
+  "created_utc": "2026-10-30T21:19:20.196369+00:00",
+  "head": "f7d1d580691840d5e23f9343a658431dba0e9716",
+  "files": [
+    {
+      "path": "diagnostics/allocation_profile.c",
+      "sha256": "d4e2ef8c1c635bf0e87a72ec6308abb2ba1b845d5da502a6d204135f07b7c27e",
+      "bytes": 4893
+    },
+    {
+      "path": "diagnostics/allocation_profile.h",
+      "sha256": "56852a08a6cb3fbba88daa10b8674cdb938933833722f0ed3bfcc8ae9ae9b31a",
+      "bytes": 384
+    },
+    {
+      "path": "diagnostics/allocation_profile.rs",
+      "sha256": "d9c4bc779939567f5dced46d7c7f7030726b4c0e17df72efc3339cdfe2514b19",
+      "bytes": 1306
+    },
+    {
+      "path": "diagnostics/cpu-after/run.json",
+      "sha256": "4069909c32fa33596fc2d1828c82e6c17f7c7f9c3ef9d1cb2cea900cd7150bf1",
+      "bytes": 12490
+    },
+    {
+      "path": "diagnostics/cpu-after/run.stderr",
+      "sha256": "311a3fd30698ccdd24515ba089eb330effb5dc55a33b5c65a9f23e0a5c9648cb",
+      "bytes": 594
+    },
+    {
+      "path": "diagnostics/cpu-after/run.stdout",
+      "sha256": "3cd3e626f14362323a4998a1fdfe46f4f6f6457ab95febd95ceb57872e946abe",
+      "bytes": 20446
+    },
+    {
+      "path": "diagnostics/cpu-build.json",
+      "sha256": "26f937c1d9505c1701c57f7b13c33b24a8c55c6026f586e5c690495e27bc8931",
+      "bytes": 1793
+    },
+    {
+      "path": "diagnostics/cpu-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "diagnostics/cpu-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "diagnostics/cpu.rs",
+      "sha256": "7423fc0daccbb354ba59588f1c50555b077c27169db85a57037e296c52062603",
+      "bytes": 6980
+    },
+    {
+      "path": "diagnostics/cpu_usage.rs",
+      "sha256": "3f3e2ac6cead2a6758f96afe77f4fa56da054f1d5e1e1e163f9d79ed8dc12817",
+      "bytes": 385
+    },
+    {
+      "path": "diagnostics/memory-build.json",
+      "sha256": "685141d3e651727cdd39953243f26e681caec8b60dfda703ac7fb3cdf48e906d",
+      "bytes": 1906
+    },
+    {
+      "path": "diagnostics/memory-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "diagnostics/memory-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "diagnostics/memory.rs",
+      "sha256": "33f7dd23d09ab18c5d7c91254394738328e2a5eeae63d5f0f5531aabe4a78533",
+      "bytes": 6141
+    },
+    {
+      "path": "diagnostics/usage.c",
+      "sha256": "883fe6a7baf228bc881b4b76aef13f352da38f19c8e7a5b3ca938dbd1dddfd0e",
+      "bytes": 448
+    },
+    {
+      "path": "diagnostics/usage.h",
+      "sha256": "ca6ac3c2cd82bfb367c07aa9e26b1aea3b025e48ea44db76dbded2be45b5fb9f",
+      "bytes": 233
+    },
+    {
+      "path": "diagnostics.py",
+      "sha256": "b2fda8bbcb5e317b7c0486010402205f03aa152d97d3adb804ae1200293ac387",
+      "bytes": 3912
+    }
+  ]
+}
