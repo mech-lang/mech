@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-frame-reads-round30-20261029/gpu-after/gpu-unit-tests",
+    "complete_compressor_private_helper_census",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 39.17451399983838,
+  "binary_sha256": "652856ead73315b3d9a1eb7246994f1644d48a22d6948cb92c79dec6fd047e2a"
+}

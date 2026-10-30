@@ -1,0 +1,50 @@
+[
+  {
+    "name": "serde",
+    "before_sha256": "719e178acfe69acea9a91cbc644b344e669197b324d9477b434961547a02a044",
+    "after_sha256": "719e178acfe69acea9a91cbc644b344e669197b324d9477b434961547a02a044",
+    "equal": true
+  },
+  {
+    "name": "serde_json",
+    "before_sha256": "b5a1c2826c3cfddfb9efd7336afc4b43c7b2f031ac28c6433cee1fe3610c9779",
+    "after_sha256": "b5a1c2826c3cfddfb9efd7336afc4b43c7b2f031ac28c6433cee1fe3610c9779",
+    "equal": true
+  },
+  {
+    "name": "mech_core",
+    "before_sha256": "04c3a2dccc61a713bd1222e6497abe4cd86a8280631d6c158897522f29ecfdfd",
+    "after_sha256": "04c3a2dccc61a713bd1222e6497abe4cd86a8280631d6c158897522f29ecfdfd",
+    "equal": true
+  },
+  {
+    "name": "mech_syntax",
+    "before_sha256": "038d0bd142e860066d9a398e7baaa1cb0bc920cd15ff3b4f2bc4bafa63f6e7f5",
+    "after_sha256": "038d0bd142e860066d9a398e7baaa1cb0bc920cd15ff3b4f2bc4bafa63f6e7f5",
+    "equal": true
+  },
+  {
+    "name": "mech_engine",
+    "before_sha256": "367e6751f7756e9ac58207bc676fd46a05c48a508264cbe9cb5903542baa21d1",
+    "after_sha256": "42f4d01e7c95d13cc14d74a15c9788fac2386b623b018c481b6c8181097bdd05",
+    "equal": false
+  },
+  {
+    "name": "miniz_oxide",
+    "before_sha256": "49a1806c0b276e1f9d2c6620467506ed4dd39bbc959a93f884ab4fa7aaba35a3",
+    "after_sha256": "49a1806c0b276e1f9d2c6620467506ed4dd39bbc959a93f884ab4fa7aaba35a3",
+    "equal": true
+  },
+  {
+    "name": "mech_gpu",
+    "before_sha256": "de454a0eb3dd15b372ba37abed174e5f844929ac107c5c94efc145a2051b3dbf",
+    "after_sha256": "4b0ed924d898c2204bb942725483bcbd81f6ce9be27db5596afb1793310e3aec",
+    "equal": false
+  },
+  {
+    "name": "mech_stdlib",
+    "before_sha256": "4939f1e5dc174bff5ba03791eb9a1b956df090bbc31935565f8a8fee35ed8c33",
+    "after_sha256": "0f077a0a74fbde6d5c7dabad70250f71ce5c882a9202adce06d6b271681fa4b5",
+    "equal": false
+  }
+]

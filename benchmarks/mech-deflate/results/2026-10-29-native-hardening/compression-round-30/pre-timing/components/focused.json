@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/private/tmp/mech-frame-reads-round30-20261029/components/nested-component-tests",
+    "buffer_frame_qualification::scalar_reads",
+    "scalar_path_qualification",
+    "recursive_buffers_retain_real_reservations_without_payload_copies",
+    "mixed_record_buffer_frames_keep_capacity_aliases_and_failure_recovery",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 4.01458066701889,
+  "binary_sha256": "71196d06b3bc8b28a41044d58c379e6039af5a4640e12a696e0450555f999361"
+}
