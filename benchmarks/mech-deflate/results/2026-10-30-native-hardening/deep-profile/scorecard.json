@@ -1,0 +1,592 @@
+{
+  "schema": "mech.complete-eight-byte-executable-profile.v1",
+  "input_bytes": 8,
+  "output_bytes": 10,
+  "level": 12,
+  "units": "Bytes are exact integers; displayed MB are decimal. Cycles and instructions are actual CPU counters, not logical work.",
+  "cpu": {
+    "round36": {
+      "instructions": {
+        "median": 50728073.5,
+        "min": 50694507,
+        "max": 50915457
+      },
+      "cycles": {
+        "median": 15243233.5,
+        "min": 14527806,
+        "max": 16849621
+      },
+      "rss_before": {
+        "median": 1881194496.0,
+        "min": 1876131840,
+        "max": 1885650944
+      },
+      "rss_after": {
+        "median": 1881186304.0,
+        "min": 1876131840,
+        "max": 1881243648
+      },
+      "physical_before": {
+        "median": 16864233216.0,
+        "min": 16864233216,
+        "max": 16864233216
+      },
+      "physical_after": {
+        "median": 16864233216.0,
+        "min": 16864233216,
+        "max": 16864233216
+      },
+      "lifetime_peak_physical": {
+        "median": 16864233216.0,
+        "min": 16864233216,
+        "max": 16864233216
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "samples": 32,
+      "ipc_ratio_of_medians": 3.327907658175019
+    },
+    "round37": {
+      "instructions": {
+        "median": 50663871.0,
+        "min": 50659568,
+        "max": 51608593
+      },
+      "cycles": {
+        "median": 14760138.0,
+        "min": 14398891,
+        "max": 19043634
+      },
+      "rss_before": {
+        "median": 2093334528.0,
+        "min": 2092285952,
+        "max": 2093334528
+      },
+      "rss_after": {
+        "median": 2093334528.0,
+        "min": 2092957696,
+        "max": 2093334528
+      },
+      "physical_before": {
+        "median": 16816260928.0,
+        "min": 16816260928,
+        "max": 16816260928
+      },
+      "physical_after": {
+        "median": 16816260928.0,
+        "min": 16816260928,
+        "max": 16816260928
+      },
+      "lifetime_peak_physical": {
+        "median": 16816260928.0,
+        "min": 16816260928,
+        "max": 16816260928
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "samples": 32,
+      "ipc_ratio_of_medians": 3.4324794930779103
+    },
+    "reference": {
+      "instructions": {
+        "median": 1364372.0,
+        "min": 1364164,
+        "max": 1391279
+      },
+      "cycles": {
+        "median": 939783.5,
+        "min": 905941,
+        "max": 1054522
+      },
+      "rss_before": {
+        "median": 14794752.0,
+        "min": 14712832,
+        "max": 14794752
+      },
+      "rss_after": {
+        "median": 14794752.0,
+        "min": 14794752,
+        "max": 14794752
+      },
+      "physical_before": {
+        "median": 14435200.0,
+        "min": 14353280,
+        "max": 14435200
+      },
+      "physical_after": {
+        "median": 14435200.0,
+        "min": 14435200,
+        "max": 14435200
+      },
+      "lifetime_peak_physical": {
+        "median": 14435200.0,
+        "min": 14435200,
+        "max": 14435200
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "samples": 32,
+      "ipc_ratio_of_medians": 1.4517939504151753
+    }
+  },
+  "allocation": {
+    "round36": {
+      "allocation_requests": {
+        "median": 14002.0,
+        "min": 14002,
+        "max": 14002
+      },
+      "requested_bytes": {
+        "median": 108355555.0,
+        "min": 108355555,
+        "max": 108355555
+      },
+      "deallocation_calls": {
+        "median": 12781.0,
+        "min": 12781,
+        "max": 12781
+      },
+      "reallocations": {
+        "median": 1213.0,
+        "min": 1213,
+        "max": 1213
+      },
+      "relocating_reallocations": {
+        "median": 458.0,
+        "min": 458,
+        "max": 458
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 13905.0,
+        "min": 13905,
+        "max": 13905
+      },
+      "live_usable_before": {
+        "median": 148214600.0,
+        "min": 148214600,
+        "max": 148214600
+      },
+      "live_usable_after": {
+        "median": 148215168.0,
+        "min": 148215168,
+        "max": 148215168
+      },
+      "peak_live_usable": {
+        "median": 174034568.0,
+        "min": 174034568,
+        "max": 174034568
+      },
+      "incremental_peak_live_usable": {
+        "median": 25819968.0,
+        "min": 25819968,
+        "max": 25819968
+      },
+      "samples": 8,
+      "large_requested_size_histogram": {
+        "483328": 1,
+        "1437504": 1,
+        "179688": 2,
+        "361024": 1,
+        "97296": 1,
+        "75600": 1,
+        "95648": 1,
+        "124344": 1,
+        "524288": 5,
+        "6002052": 1,
+        "2442056": 39
+      }
+    },
+    "round37": {
+      "allocation_requests": {
+        "median": 14002.0,
+        "min": 14002,
+        "max": 14002
+      },
+      "requested_bytes": {
+        "median": 108355555.0,
+        "min": 108355555,
+        "max": 108355555
+      },
+      "deallocation_calls": {
+        "median": 12781.0,
+        "min": 12781,
+        "max": 12781
+      },
+      "reallocations": {
+        "median": 1213.0,
+        "min": 1213,
+        "max": 1213
+      },
+      "relocating_reallocations": {
+        "median": 458.0,
+        "min": 458,
+        "max": 458
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 13905.0,
+        "min": 13905,
+        "max": 13905
+      },
+      "live_usable_before": {
+        "median": 148214600.0,
+        "min": 148214600,
+        "max": 148214600
+      },
+      "live_usable_after": {
+        "median": 148215168.0,
+        "min": 148215168,
+        "max": 148215168
+      },
+      "peak_live_usable": {
+        "median": 174034568.0,
+        "min": 174034568,
+        "max": 174034568
+      },
+      "incremental_peak_live_usable": {
+        "median": 25819968.0,
+        "min": 25819968,
+        "max": 25819968
+      },
+      "samples": 8,
+      "large_requested_size_histogram": {
+        "483328": 1,
+        "1437504": 1,
+        "179688": 2,
+        "361024": 1,
+        "97296": 1,
+        "75600": 1,
+        "95648": 1,
+        "124344": 1,
+        "524288": 5,
+        "6002052": 1,
+        "2442056": 39
+      }
+    },
+    "reference": {
+      "allocation_requests": {
+        "median": 95.0,
+        "min": 95,
+        "max": 95
+      },
+      "requested_bytes": {
+        "median": 9021923.0,
+        "min": 9021923,
+        "max": 9021923
+      },
+      "deallocation_calls": {
+        "median": 95.0,
+        "min": 95,
+        "max": 95
+      },
+      "reallocations": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "relocating_reallocations": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "live_usable_before": {
+        "median": 32.0,
+        "min": 32,
+        "max": 32
+      },
+      "live_usable_after": {
+        "median": 32.0,
+        "min": 32,
+        "max": 32
+      },
+      "peak_live_usable": {
+        "median": 9257360.0,
+        "min": 9257360,
+        "max": 9257360
+      },
+      "incremental_peak_live_usable": {
+        "median": 9257328.0,
+        "min": 9257328,
+        "max": 9257328
+      },
+      "samples": 32,
+      "large_requested_size_histogram": {
+        "2442064": 1,
+        "524336": 1,
+        "6002100": 1
+      }
+    }
+  },
+  "pins": {
+    "mech_compiler_round36": "9047e634e5964ad23ae19449bc425c2a3cf325b2",
+    "mech_compiler_round37": "3a54f1a1d64db9eee01db97763a3f95a138db93a",
+    "base": "eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b",
+    "published_start": "4686620853914517474a23e9d8a6ff1cf11db5cf",
+    "reference_compiler_revision_recorded_at_original_build": "d99c7b838fb05bb1047eb0c18d4d06d0f86f345d",
+    "reference_package_revision": "671077457ff7ef3a3d44caf715a3fc595addf379",
+    "allocator_revision": "8c532c32c3c96e5ba1f2283e032f69ead8add00f",
+    "reference_checkout_note": "Old source checkout Git metadata was removed by prior cleanup; no fresh git HEAD claim. Compiler binary is rehashed, pinned package sources verified individually against fixed Git blobs.",
+    "files": [
+      {
+        "path": "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mec",
+        "bytes": 160857,
+        "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+      },
+      {
+        "path": "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+        "bytes": 4138627,
+        "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+      },
+      {
+        "path": "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+        "bytes": 189456,
+        "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+      },
+      {
+        "path": "/private/tmp/mech-deflate-profiling-20261028/roc-profile",
+        "bytes": 283424,
+        "sha256": "3941ef59b2c9343d0493cc6b6d14ca4803e6bd27acfe520b1fb59d9b63026324"
+      },
+      {
+        "path": "/private/tmp/mech-action-retirement-round37-20261030/primary/current",
+        "bytes": 96372728,
+        "sha256": "6926ffc67963e9e7b7dd11831907fdea26688c895a8297f172086f00a244596b"
+      },
+      {
+        "path": "/private/tmp/mech-retirement-round36-20261030/object/object.o",
+        "bytes": 13802344,
+        "sha256": "d2c0185ac19d2279c477386cb9f51b080bb4ea159735bbae61101930bfe2cf13"
+      },
+      {
+        "path": "/private/tmp/mech-retirement-round36-20261030/object/metadata.json",
+        "bytes": 2411445,
+        "sha256": "9b9cfb5a6d8052c11fbb4f55e7c56e040bbeebd14860b42fa9f8ac8e475cb5eb"
+      },
+      {
+        "path": "/private/tmp/mech-retirement-round36-20261030/object/descriptor.json",
+        "bytes": 59784245,
+        "sha256": "7b6cfa95f6735e77b12842bbd2e9aa94388d6f04b29c8417b30e01f0cb21520e"
+      },
+      {
+        "path": "/private/tmp/mech-deep-profile-20261030/reference-stage-cpu/Bench.roc",
+        "bytes": 1606,
+        "sha256": "f468e1f38a467bc054d1cc9f2c3898ff550a593f7c5ed5a463910ebc1a0ed940"
+      },
+      {
+        "path": "/private/tmp/mech-deep-profile-20261030/include/mimalloc.h",
+        "bytes": 37055,
+        "sha256": "6787270694ae286bbb75fc75b21da57a04d2326320d9aabdef7e815cbe23f774"
+      },
+      {
+        "path": "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+        "bytes": 233595632,
+        "sha256": "fdd590c62a2783295c7bfe7e8e5a19e83de508418a95b48373ab5b189f87ff94"
+      }
+    ],
+    "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0\n"
+  },
+  "primary_paired_elapsed": {
+    "groups": [
+      {
+        "group": 0,
+        "before": {
+          "median_seconds": 0.0047520005,
+          "multiple_of_roc": 16.85106560283688,
+          "multiple_of_fixed_roc": 15.840001666666668
+        },
+        "after": {
+          "median_seconds": 0.0047834999999999996,
+          "multiple_of_roc": 16.962765957446805,
+          "multiple_of_fixed_roc": 15.945
+        },
+        "pooled_ratio": 1.0066286819624704,
+        "median_block_ratio": 0.9923931128525044,
+        "geometric_block_ratio": 1.0086573380561212,
+        "improving_blocks": 12
+      },
+      {
+        "group": 1,
+        "before": {
+          "median_seconds": 0.0046413545,
+          "multiple_of_roc": 16.458703900709217,
+          "multiple_of_fixed_roc": 15.471181666666668
+        },
+        "after": {
+          "median_seconds": 0.0046054170000000005,
+          "multiple_of_roc": 16.33126595744681,
+          "multiple_of_fixed_roc": 15.351390000000004
+        },
+        "pooled_ratio": 0.9922571094278622,
+        "median_block_ratio": 0.9936588581650585,
+        "geometric_block_ratio": 0.9933160090876281,
+        "improving_blocks": 13
+      },
+      {
+        "group": 2,
+        "before": {
+          "median_seconds": 0.004614604,
+          "multiple_of_roc": 16.3638439716312,
+          "multiple_of_fixed_roc": 15.382013333333333
+        },
+        "after": {
+          "median_seconds": 0.0046262915,
+          "multiple_of_roc": 16.405289007092197,
+          "multiple_of_fixed_roc": 15.420971666666668
+        },
+        "pooled_ratio": 1.0025327200340486,
+        "median_block_ratio": 0.9992620259750491,
+        "geometric_block_ratio": 0.999088992643611,
+        "improving_blocks": 10
+      },
+      {
+        "group": 3,
+        "before": {
+          "median_seconds": 0.0046895835,
+          "multiple_of_roc": 16.629728723404256,
+          "multiple_of_fixed_roc": 15.631945000000002
+        },
+        "after": {
+          "median_seconds": 0.004658312499999999,
+          "multiple_of_roc": 16.518838652482266,
+          "multiple_of_fixed_roc": 15.527708333333333
+        },
+        "pooled_ratio": 0.9933318172072209,
+        "median_block_ratio": 0.9930898612152286,
+        "geometric_block_ratio": 0.9916571899319206,
+        "improving_blocks": 12
+      }
+    ],
+    "reference_seconds": 0.000282,
+    "fixed_reference_seconds": 0.0003,
+    "primary_observations": 3968,
+    "all_observations": 3984,
+    "scope": "Four fixed independent worker groups with descriptive within-group block comparisons",
+    "before": {
+      "median_seconds": 0.0046680415,
+      "multiple_of_roc": 16.553338652482267,
+      "multiple_of_fixed_roc": 15.560138333333335
+    },
+    "after": {
+      "median_seconds": 0.0046539165,
+      "multiple_of_roc": 16.503249999999998,
+      "multiple_of_fixed_roc": 15.513055000000001
+    },
+    "pooled_ratio": 0.996974105735778,
+    "median_block_ratio": 0.9942672752646032,
+    "geometric_block_ratio": 0.9981578041087299,
+    "improving_blocks": 47
+  },
+  "cpu_boundary_calibration": {
+    "round36": {
+      "median_cycles": 2125,
+      "median_instructions": 5010,
+      "observations": 101
+    },
+    "round37": {
+      "median_cycles": 1234,
+      "median_instructions": 5010,
+      "observations": 101
+    }
+  },
+  "large_allocation_attribution": [
+    {
+      "requested_bytes": 524288,
+      "path": "CollectedValues::reserve / State::fill_uniform_words",
+      "count": 1
+    },
+    {
+      "requested_bytes": 524288,
+      "path": "native_collection_word_updates::copy",
+      "count": 4
+    },
+    {
+      "requested_bytes": 2442056,
+      "path": "sequence_buffers::copy_buffer_with_sublist",
+      "count": 39
+    },
+    {
+      "requested_bytes": 6002052,
+      "path": "CollectedValues::reserve / State::fill_uniform_words",
+      "count": 1
+    }
+  ],
+  "static": {
+    "reference": {
+      "text_bytes": 195456,
+      "four_byte_instruction_slots_including_padding": 48864,
+      "text_symbols_including_aliases": 225
+    },
+    "mech-jit-runner": {
+      "text_bytes": 48186240,
+      "four_byte_instruction_slots_including_padding": 12046560,
+      "text_symbols_including_aliases": 100243
+    },
+    "mech-generated": {
+      "text_bytes": 13801616,
+      "four_byte_instruction_slots_including_padding": 3450404,
+      "text_symbols_including_aliases": 1
+    },
+    "scope": "Fresh round37 generated Object, descriptor and metadata are byte-identical to round36; comparison receipt included. JIT runner contains compiler and verification code. Reference text includes its whole application/runtime. Slots include padding and are not retired instructions."
+  },
+  "generated_object_verification": {
+    "object.o": {
+      "identical": true,
+      "sha256": "d2c0185ac19d2279c477386cb9f51b080bb4ea159735bbae61101930bfe2cf13",
+      "bytes": 13802344
+    },
+    "metadata.json": {
+      "identical": true,
+      "sha256": "9b9cfb5a6d8052c11fbb4f55e7c56e040bbeebd14860b42fa9f8ac8e475cb5eb",
+      "bytes": 2411445
+    },
+    "descriptor.json": {
+      "identical": true,
+      "sha256": "7b6cfa95f6735e77b12842bbd2e9aa94388d6f04b29c8417b30e01f0cb21520e",
+      "bytes": 59784245
+    }
+  },
+  "ratios_to_reference": {
+    "round36": {
+      "instructions": 37.18052957697754,
+      "cycles": 16.21994161421221,
+      "allocation_requests": 147.38947368421051,
+      "requested_bytes": 12.01025047542525,
+      "incremental_peak_live_usable": 2.789138291308248
+    },
+    "round37": {
+      "instructions": 37.133473129029326,
+      "cycles": 15.705891835725994,
+      "allocation_requests": 147.38947368421051,
+      "requested_bytes": 12.01025047542525,
+      "incremental_peak_live_usable": 2.789138291308248
+    }
+  },
+  "opportunity_bounds": {
+    "path_capacity_allocations_beyond_one": 38,
+    "path_capacity_bytes_requested_beyond_one": 92798128,
+    "tree_backing_copies": 4,
+    "tree_initialized_bytes_copied": 2097152,
+    "note": "Requested path capacity is uninitialized spare storage, not equal to copied bytes or proportional elapsed cost. Real aliases may require some copies; these are investigation targets, not promised elimination/speedups."
+  },
+  "limitations": [
+    "Eight-byte case only; no extrapolation to larger input throughput.",
+    "Compression CPU samples are diagnostic cohorts, not a new paired elapsed-time result.",
+    "Allocation instrumentation is separate; its CPU/time fields are excluded from CPU results.",
+    "Tracked peak usable heap excludes direct VM mappings/libc-private heaps and internal transient overlap during realloc.",
+    "Whole-Mech memory includes preparation/JIT/retained allocator state; not a runtime-only AOT compressor-memory result.",
+    "No exact total memcpy bytes, cache-miss, branch-miss, memory-bandwidth or energy comparison claimed."
+  ]
+}
