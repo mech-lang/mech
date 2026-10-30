@@ -1,0 +1,24 @@
+{
+  "cohorts": [
+    "allocation-attribution",
+    "analysis-inputs",
+    "binary-inspection",
+    "cpu-round36",
+    "cpu-round37",
+    "generated-object",
+    "memory-round36",
+    "memory-round37",
+    "pins-and-assembly",
+    "reference-cpu",
+    "reference-memory",
+    "retained-memory",
+    "verified-pins"
+  ],
+  "file_hash_checks": 215,
+  "exact_scorecard_reproduction": true,
+  "analysis_exit": 0,
+  "output_sha256": {
+    "scorecard.json": "02c80d60ce53af983d5a0dcf7dc2f2ac6fbbee13e00474ce1de376875b2bde0f",
+    "scorecard.csv": "1dc71c75d03c000512f6cfde4f9150e2cdafcad387db694e7756c253677db4ee"
+  }
+}

@@ -1,0 +1,7 @@
+metric,unit,reference,mech_round36,mech_round37,round37_multiple_of_reference,scope
+primary_elapsed,seconds,0.000282,0.0046680415,0.0046539165,16.503249999999998,primary paired comparison; two improving and two regressing worker pairs
+instructions,count,1364372.0,50728073.5,50663871.0,37.133473129029326,per compression; independent diagnostic cohorts
+cycles,count,939783.5,15243233.5,14760138.0,15.705891835725994,per compression; independent diagnostic cohorts
+allocation_requests,count,95.0,14002.0,14002.0,147.38947368421051,per compression; independent diagnostic cohorts
+requested_bytes,bytes,9021923.0,108355555.0,108355555.0,12.01025047542525,per compression; independent diagnostic cohorts
+incremental_peak_live_usable,bytes,9257328.0,25819968.0,25819968.0,2.789138291308248,per compression; independent diagnostic cohorts
