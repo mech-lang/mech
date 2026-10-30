@@ -1,0 +1,69 @@
+{
+  "compiler": "915f039cfd7e2647cc3a1d349ab1070c3f292d19",
+  "source_base": "94e732bddb0a709a35cdb884e6d553141235f0cb",
+  "build_exit": 0,
+  "test_exit": 101,
+  "executed_tests": 2,
+  "passed": 1,
+  "expected_failed": 1,
+  "failure": "Maintained selection witness: parent native segments are absent",
+  "semantics": "12 original/decoded observations pass against unchanged compiler",
+  "performance_claim": false,
+  "files": [
+    {
+      "path": "build.json",
+      "sha256": "6b037fc7f340f5e6d42dc9772188fb91fd0eeffa7745e45a3b5c3ee70821070f",
+      "bytes": 3821
+    },
+    {
+      "path": "build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "canonical_artifact_program.rs",
+      "sha256": "5fb3968b321d97a68e6485813f5812e0a31da3b93ac1589a7b4095d5644fd5ff",
+      "bytes": 31999
+    },
+    {
+      "path": "canonical_program_numeric_composition.rs",
+      "sha256": "29b43dda86988dda5b6a7134eb064a7c82bf995737d123af6bd48cc22b69540d",
+      "bytes": 6220
+    },
+    {
+      "path": "numeric-parent-child.mec",
+      "sha256": "9e5072de9817fa7147a394bc89ee3c5d74455df0f1e257fcc7e726b9f0af2f26",
+      "bytes": 1702
+    },
+    {
+      "path": "plan.json",
+      "sha256": "506987275953c366c7978e93ce46306fab06dd9521477caf1ead707eefc64f37",
+      "bytes": 203027
+    },
+    {
+      "path": "qualification.rs",
+      "sha256": "a70aaeff784b630e74eb3596cf85484ea5ba1bd186f48fd04f22d650421c5124",
+      "bytes": 36411
+    },
+    {
+      "path": "tests.json",
+      "sha256": "4c3d3cf998112d81203480dc305bc286270b480090ee2188dfaec01cf0105d73",
+      "bytes": 310
+    },
+    {
+      "path": "tests.stderr",
+      "sha256": "05425cfe3d534f17ee2c8b9b27c852467db02bb2bae7798166d0c8f01d35ed6e",
+      "bytes": 414
+    },
+    {
+      "path": "tests.stdout",
+      "sha256": "ce0ac32e3c296094007f7876b6b3c43d497915565a3d40e283df0c8e44a6c522",
+      "bytes": 70996
+    }
+  ]
+}

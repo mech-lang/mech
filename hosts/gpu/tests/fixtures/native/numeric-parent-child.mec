@@ -1,0 +1,30 @@
+// Parent/child recurrence extracted unchanged from deflate-huffman-level12.mec.
+// Copyright 2016 Eric Biggers (MIT); Copyright 2024 Niclas Åhdén (Apache-2.0).
+// See deflate-huffman-LICENSES.md.
++> bits
++> sequence
+
+huff-word(value<u32>) => (out<u64>) :=
+  out<u64> := value.
+huff-byte(value<u64>) => (out<u8>) :=
+  out<u8> := bits/and(value, 255u64).
+huff-get32(values<[u32]>, at<u64>) => <u32>
+  | (values, at) => ((at < sequence/length(values))? | true => values[bits/wrapping-add(at, 1u64)] | false => 0u32).
+huff-get64(values<[u64]>, at<u64>) => <u64>
+  | (values, at) => ((at < sequence/length(values))? | true => values[bits/wrapping-add(at, 1u64)] | false => 0u64).
+huff-set8(values<[u8]>, at<u64>, value<u8>) => (out<[u8]>) :=
+  ~next := values
+  next[bits/wrapping-add(at, 1u64)] = value
+  out := next.
+huff-assign-one(a<[u32]>, lens<[u8]>, width<u64>, i<u64>) => (out<[u8]>) :=
+  sym := bits/and(huff-word(huff-get32(a, i)), 1023u64)
+  out := huff-set8(lens, sym, huff-byte(width)).
+huff-assign-symbols(a<[u32]>, lens<[u8]>, width<u64>, i<u64>, left<u64>) => <([u8],u64)>
+  | (a, lens, width, i, left) => ((left > 0u64)? | true => huff-assign-symbols(a, huff-assign-one(a, lens, width, i), width, i + 1u64, left - 1u64) | false => (lens, i)).
+huff-assign-lengths(a<[u32]>, lens<[u8]>, counts<[u64]>, width<u64>, i<u64>) => (out<[u8]>) :=
+  more := width >= 1u64
+  step := (more? | true => huff-assign-symbols(a, lens, width, i, huff-get64(counts, width)) | false => (lens, i))
+  (next, next-i) := step
+  out := (more? | true => huff-assign-lengths(a, next, counts, width - 1u64, next-i) | false => lens).
+
+huff-assign-lengths(a<[u32]>, lens<[u8]>, counts<[u64]>, width<u64>, start<u64>)
