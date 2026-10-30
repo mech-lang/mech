@@ -1,0 +1,54 @@
+{
+  "scope": "Diagnostic matched profile only; every process observation excluded from primary and no new elapsed comparison claimed",
+  "receipt": {
+    "label": "after",
+    "command": [
+      "/private/tmp/mech-library-debit-inline-round35-20261030/primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "693"
+    ],
+    "exit": 0,
+    "binary_sha256": "b0e7714aa4cae068e66b9dfe369edede1f8c0733b7d9edddc08f28232036fbcd",
+    "artifact_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+    "head": "c898f8cd94c299d5d67379c4afbdb1acdfe4258f",
+    "sample_command": [
+      "sample",
+      "76679",
+      "2",
+      "-file",
+      "/private/tmp/mech-library-debit-inline-round35-20261030/profile/after.sample.txt"
+    ],
+    "sample_exit": 0,
+    "all_observations_excluded_from_primary": true,
+    "performance_comparison_claimed": false,
+    "created_utc": "2026-10-30T16:24:09.217890+00:00",
+    "rows": 695
+  },
+  "files": [
+    {
+      "path": "profile/after-sampler.log",
+      "sha256": "ea3d12acea6f02d31425b109ebff2f0b038b2a845e817dc19543f760da2b7886",
+      "bytes": 256
+    },
+    {
+      "path": "profile/after.json",
+      "sha256": "5f89bb8937e5b4a6e5be1cd59788bcf0707b7d2d6413e609b9f97bc7a4319469",
+      "bytes": 808
+    },
+    {
+      "path": "profile/after.sample.txt",
+      "sha256": "c045eb94deca0e2c25aeb6ccc5f1b63198a2bd0e6e8620bebf49038395a14ad3",
+      "bytes": 1077118
+    },
+    {
+      "path": "profile/after.stderr",
+      "sha256": "a48354b0762d3bc89dc12feab5c4d3b99f667fab1487627d15107a524f92712f",
+      "bytes": 9688
+    },
+    {
+      "path": "profile/after.stdout",
+      "sha256": "c99b4577f6b334826d348c8c90cd4dd5d0a57a14094e64393ed961f479e1e679",
+      "bytes": 242948
+    }
+  ]
+}
