@@ -1,0 +1,96 @@
+{
+  "created_utc": "2026-10-30T18:05:07.366477+00:00",
+  "head": "6cd002bfce488cb145da683ec66a17192fa066a6",
+  "files": [
+    {
+      "path": "binary-sizes.json",
+      "sha256": "16a51c09aa0c946cb6ead9cae41e2a7548f66e751a536773eaef467840db1be3",
+      "bytes": 1919
+    },
+    {
+      "path": "machine-code/after-16apply_retirement.asm",
+      "sha256": "8ecc4c1d247e5cee973a797f6a8f5ab6c712a382383433f5e77b48b520cd115d",
+      "bytes": 4957
+    },
+    {
+      "path": "machine-code/after-18retire_tail_locals.asm",
+      "sha256": "01ab05ccbd1c46bf270cf04488a46b950f9b63d654f8775e975bfeca3f98eb2f",
+      "bytes": 44506
+    },
+    {
+      "path": "machine-code/after-20try_retirement_batch.asm",
+      "sha256": "ce1e8110cee2130c86b252940f48e2d1b06ab31aef3ee0e4781a5f0f01ca3520",
+      "bytes": 7309
+    },
+    {
+      "path": "machine-code/before-18retire_tail_locals.asm",
+      "sha256": "b297781904303b4d1c2cb6c70d4a1ecd2465ca5fdda8e4796482efa268d525ad",
+      "bytes": 23924
+    },
+    {
+      "path": "machine-code/inspection.json",
+      "sha256": "c1f8956adabdecb15d809d074770fc33d8a24b959eb5295f2d5373859031acbb",
+      "bytes": 8725
+    },
+    {
+      "path": "machine-code/mechanism.json",
+      "sha256": "8dfbd607a3e2ac7c9ff76bf1d66bb8ede90bb29d655a1a824e0ed735cc45cab2",
+      "bytes": 1558
+    },
+    {
+      "path": "object/build.json",
+      "sha256": "c9bb048f48a28f3735b0d1cb6afe771dc58d479ad969e7de4fd0679f0948a478",
+      "bytes": 1750
+    },
+    {
+      "path": "object/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "object/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "object/comparison.json",
+      "sha256": "44b40ce35a60e1cfe2bb3609b1955f80ab712b2f570ef9993e82d8f4e112ffd9",
+      "bytes": 743
+    },
+    {
+      "path": "object/inspect.rs",
+      "sha256": "cdd11b847ca67518a9efebad4bfc9159ba68a07ad54edc23615b54a7491c7490",
+      "bytes": 1015
+    },
+    {
+      "path": "object/run.json",
+      "sha256": "5d0fbb15b3f08006c0c6ae6932d4829ce61d34fcff30e49c2caf35971b11e357",
+      "bytes": 257
+    },
+    {
+      "path": "object/run.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "object/run.stdout",
+      "sha256": "2241b89ee78b44a4114df62197440391c076aa282de3bcbcd286397e7bedf87b",
+      "bytes": 43
+    },
+    {
+      "path": "order-analysis.json",
+      "sha256": "0f9f77bb610c85bbe70b0ff4a48b415f1d9f681f0cdc491ee371d2fc96320bd3",
+      "bytes": 285
+    },
+    {
+      "path": "partition-profile.py",
+      "sha256": "99f66aac466ae990fa0e835973b33820c060ab85f5dcae46d680eba61185abd5",
+      "bytes": 2507
+    },
+    {
+      "path": "partitioned-profile.json",
+      "sha256": "31e7aedded0bb622fc5ac5d9e05d40a172eb1441fc82ce0b085e743ebaad06bf",
+      "bytes": 11212
+    }
+  ]
+}
