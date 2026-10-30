@@ -1,11 +1,12 @@
 //! Prepay an acyclic native path between observable runtime boundaries.
 //! Branches and scalar joins remain generated instructions. A selected map
-//! helper may anchor its owner's path. Ordinary scalar paths contain no helper
-//! or progress transition, and require a successful funding preview at entry.
+//! helper may anchor its owner's path. Ordinary scalar/aggregate paths contain
+//! no helper or progress transition, and require successful funding at entry.
 use crate::native_artifact::iteration_abi::{NativeIterationVisit, Progress};
 use mech_engine::native_artifact::{
     NativeIterationAction as Action, NativeIterationTerminator as Terminator, NativeMapOwnerWords,
     NativeMatchAction as Scalar, NativeMatchTerminator as Term, NativeProgramArtifactPlan,
+    NativeScalarAggregates,
 };
 
 #[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -53,6 +54,7 @@ impl Layout {
     pub fn derive(
         plan: &NativeProgramArtifactPlan,
         owners: Option<&NativeMapOwnerWords>,
+        aggregates: &NativeScalarAggregates,
         visits: &[NativeIterationVisit],
         closed: &super::tail::Layout,
     ) -> Result<Self, &'static str> {
@@ -91,7 +93,11 @@ impl Layout {
                 block.action(),
                 Action::Scalar(Scalar::None | Scalar::Primitive { .. })
             ) || matches!(block.action(), Action::Scalar(Scalar::Copy { output, .. })
-                    if plan.values()[output.get() as usize].scalar_kind().is_some());
+                    if plan.values()[output.get() as usize].scalar_kind().is_some())
+                // Reuse the complete connected proof consumed by the ordinary
+                // aggregate emitter. These steps already emit only native words;
+                // grouping grants no new representation or ownership rights.
+                || (owner.is_none() && aggregates.action(site).is_some());
             let native = scalar
                 || owner.is_some_and(|owner| owners.unwrap().action_region(site) == Some(owner));
             if (!native && !helper)
