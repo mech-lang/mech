@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-30T23:11:36.642099+00:00",
+  "head": "1bad373e777937eb108419d8a7fb70ab437383a3",
+  "files": [
+    {
+      "path": "red/unit-build.json",
+      "sha256": "8fdc81f3eae827842c6d06ad3d1045a1f642f8be0205082233cf607519767795",
+      "bytes": 4206
+    },
+    {
+      "path": "red/unit-build.stderr",
+      "sha256": "c3fdc7dcc31675bc53ef12487877b403b5a268677306269c9ed3b69fae9f18c9",
+      "bytes": 724
+    },
+    {
+      "path": "red/unit-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "test.py",
+      "sha256": "f4898443e66076b7e79ae343290ce427aa2996070e89faa32fc47fcb8095a643",
+      "bytes": 1543
+    }
+  ]
+}
