@@ -12,7 +12,6 @@ use mech_engine::native_artifact::{
 use std::sync::Arc;
 
 pub(in crate::native_artifact) mod call_routes;
-pub(in crate::native_artifact) mod frame_scalars;
 
 /// Recomputed both on source preparation and independent build-image loading.
 pub(in crate::native_artifact) fn prepare_frame_composition(
@@ -283,7 +282,6 @@ impl PreparedNativeProgram {
         )?;
         let map_admission = native::program::prepare::map_admission::Layout::derive(
             &plan,
-            &buffer_frames,
             Some(&map_owner_words),
             &analysis_visits,
             &closed_tails,
@@ -482,18 +480,6 @@ fn frame_prefix_words(
 }
 impl ProgramMetadata {
     pub(in crate::native_artifact) fn local_words(&self) -> Result<usize, &'static str> {
-        self.owned_local_words()?
-            .checked_add(usize::from(self.buffer_frames.scalar_fields() != 0))
-            .ok_or("frame scalar loan word overflows")
-    }
-    /// A call-scoped read loan into this session's already admitted word bank.
-    /// It follows every owned local lane and grants no ownership authority.
-    pub(in crate::native_artifact) fn frame_scalar_pointer(&self) -> Option<usize> {
-        (self.buffer_frames.scalar_fields() != 0)
-            .then(|| self.owned_local_words().ok())
-            .flatten()
-    }
-    fn owned_local_words(&self) -> Result<usize, &'static str> {
         let prefix = frame_prefix_words(
             &self.plan,
             &self.scalar_aggregates,

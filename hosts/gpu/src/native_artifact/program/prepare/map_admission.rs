@@ -52,7 +52,6 @@ impl Layout {
 
     pub fn derive(
         plan: &NativeProgramArtifactPlan,
-        frames: &mech_engine::native_artifact::NativeBufferFrames,
         owners: Option<&NativeMapOwnerWords>,
         visits: &[NativeIterationVisit],
         closed: &super::tail::Layout,
@@ -88,14 +87,10 @@ impl Layout {
                         .span_site(site)
                         .is_some_and(|id| owners.spans()[id].region() == owner)
             });
-            let frame_read =
-                owner.is_none() && super::frame_scalars::read(plan, frames, site).is_some();
-            let scalar = frame_read
-                || matches!(
-                    block.action(),
-                    Action::Scalar(Scalar::None | Scalar::Primitive { .. })
-                )
-                || matches!(block.action(), Action::Scalar(Scalar::Copy { output, .. })
+            let scalar = matches!(
+                block.action(),
+                Action::Scalar(Scalar::None | Scalar::Primitive { .. })
+            ) || matches!(block.action(), Action::Scalar(Scalar::Copy { output, .. })
                     if plan.values()[output.get() as usize].scalar_kind().is_some());
             let native = scalar
                 || owner.is_some_and(|owner| owners.unwrap().action_region(site) == Some(owner));
@@ -185,17 +180,6 @@ impl Layout {
             for &site in &sites {
                 work = work
                     .checked_add(visits[site as usize].work)
-                    .and_then(|n| {
-                        n.checked_add(
-                            if selected[first] == Some(None)
-                                && super::frame_scalars::read(plan, frames, site as usize).is_some()
-                            {
-                                super::frame_scalars::READ_WORK
-                            } else {
-                                0
-                            },
-                        )
-                    })
                     .and_then(|n| n.checked_add(16))
                     .ok_or("map admission work overflow")?;
                 for next in visits[site as usize].successors.into_iter().flatten() {

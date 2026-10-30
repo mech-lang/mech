@@ -7,7 +7,6 @@ const MAX_SUBSTITUTIONS: usize = 4096;
 
 #[derive(Default)]
 pub(in crate::native_artifact) struct CodegenReport {
-    pub frame_scalar_reads: Vec<(usize, usize)>,
     pub source_edge_facts: EdgeFacts,
     pub tag_threading: TagThreading,
     pub frame_effects: FrameEffects,

@@ -1,0 +1,11 @@
+{
+  "path": "/private/tmp/mech-ownership-round29-20261029/primary/after.sample.txt",
+  "sha256": "34bf63ae78bae61cdd0de1516195e6c34439c9c7cc117d058522d68f59d7676f",
+  "method": "exclusive=count minus child counts; subtree counts are inclusive ancestry classifications of those exclusive memmove weights",
+  "counts": {
+    "total": 1291,
+    "memmove_exclusive": 22,
+    "under_unsigned_matrix_replace": 12,
+    "under_word_updates_copy": 11
+  }
+}
