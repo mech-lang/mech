@@ -1,0 +1,70 @@
+{
+  "scope": "Actual compact lane constructor and cleanup; all prepared actions retained; no compression timing",
+  "files": [
+    {
+      "path": "after-inventory/adaptation.json",
+      "sha256": "8e10bed2cb96ffa38af4183db5cf8e112ef107bccad49dfc5d603629161162cb",
+      "bytes": 960
+    },
+    {
+      "path": "after-inventory/build.json",
+      "sha256": "a8cb8ab06eb0c4208544004a1ed07d5ecf7d0699d6ed3e3e9fd935b25c371d8f",
+      "bytes": 3903
+    },
+    {
+      "path": "after-inventory/build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "after-inventory/command.json",
+      "sha256": "8ec468010f0da6d56617b75e767463f5ab39a2e06d329ef3143b2c9dd0289d66",
+      "bytes": 3575
+    },
+    {
+      "path": "after-inventory/counts.json",
+      "sha256": "4bf270bae342a7aea08898aa97bbde836d09102b6ff38be45b1f3e47ef9d2c54",
+      "bytes": 600
+    },
+    {
+      "path": "after-inventory/lib.rs",
+      "sha256": "983c5dfcd69fec981e2a1ffd899b51ad2fdb2f107d8999d5f562496d0217f4db",
+      "bytes": 81980
+    },
+    {
+      "path": "after-inventory/native_artifact.rs",
+      "sha256": "6277ceb25175104ca4baa53d23d47de1a2588076fc3b17f1870aef2a9b3e55d9",
+      "bytes": 8465
+    },
+    {
+      "path": "after-inventory/program.rs",
+      "sha256": "420c5c3c3c1d69461f59f9569b9ce5850b21d3b040f5eb3196c2cf1399492ba3",
+      "bytes": 1733
+    },
+    {
+      "path": "after-inventory/run.json",
+      "sha256": "467315f42517e06db0d777604a0cb30812668fbb90c378b4da48e5da480a9c08",
+      "bytes": 366
+    },
+    {
+      "path": "after-inventory/run.log",
+      "sha256": "dd6976de8af159feb8e0cd09b19f315618f067a021a1ae8b0c68659b44a54a1b",
+      "bytes": 769
+    },
+    {
+      "path": "after-inventory/runtime.rs",
+      "sha256": "02e077cdf7732cfcc973f2faa947811b714fd7622c8ef71c36e8a4b71812d3d4",
+      "bytes": 14552
+    },
+    {
+      "path": "after-inventory/session.rs",
+      "sha256": "7b9fbf968aa929499cb3f7c9c77b630181edd860b621df5dd6510c160b73ee7b",
+      "bytes": 69169
+    },
+    {
+      "path": "after-inventory.py",
+      "sha256": "10aaf6e324cfcb55e7196f4bce3b9f78ecc90aa47d3f1c071159c9ac443a7394",
+      "bytes": 1174
+    }
+  ]
+}

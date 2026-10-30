@@ -1,0 +1,44 @@
+{
+  "before": {
+    "actual_initialized_entries": 41039,
+    "actual_initialized_repeated_entries": 40836,
+    "admitted_capacity_bytes": 1970000,
+    "admitted_nodes": 1970000,
+    "blocks": 41039,
+    "compression_executions": 0,
+    "entry_bytes": 24,
+    "once_prepared_call_sites": 44,
+    "prepared_action_kinds": {
+      "LibraryCall": 5061,
+      "PrepareU64Range": 120
+    },
+    "prepared_call_sites": 5181,
+    "raw_entry_backing_bytes": 984936,
+    "repeated_prepared_call_sites": 5137,
+    "scope": "Actual prepared descriptor and actual lane constructor; no performance timing or compressor execution claimed",
+    "setup_work": 15760128
+  },
+  "after": {
+    "actual_initialized_entries": 5181,
+    "actual_initialized_repeated_entries": 5137,
+    "admitted_capacity_bytes": 248816,
+    "admitted_nodes": 248816,
+    "blocks": 41039,
+    "compression_executions": 0,
+    "entry_bytes": 24,
+    "once_prepared_call_sites": 44,
+    "prepared_action_kinds": {
+      "LibraryCall": 5061,
+      "PrepareU64Range": 120
+    },
+    "prepared_call_sites": 5181,
+    "raw_entry_backing_bytes": 124344,
+    "repeated_prepared_call_sites": 5137,
+    "scope": "Actual prepared descriptor and actual lane constructor; no performance timing or compressor execution claimed",
+    "setup_work": 1990656
+  },
+  "raw_bytes_removed": 860592,
+  "admitted_units_removed": 1721184,
+  "setup_work_removed": 13769472,
+  "predicted_complete_work": 45047079446
+}
