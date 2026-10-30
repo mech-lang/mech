@@ -1,0 +1,11 @@
+metric,unit,reference,baseline,initial,refined,chosen_multiple_of_reference,chosen_change_from_baseline_percent,scope
+primary_elapsed,seconds,0.000289,0.0044977705,0.0043774999999999994,0.0043849585,15.147058823529411,-2.674002597509151,four prepared triplets; 5952 primary calls; all groups/blocks improve versus baseline
+instructions,count,1364372.0,50690556.0,49009728.0,49074812.5,35.92108896987039,-3.3158602560997785,independent diagnostic cohort; not primary elapsed
+cycles,count,886670.5,14166741.0,14004336.5,13891441.5,15.794296190072863,-1.1463786907659257,independent diagnostic cohort; not primary elapsed
+allocation_requests,count,95.0,13994.0,13994.0,13994.0,147.30526315789473,0.0,independent diagnostic cohort; not primary elapsed
+requested_bytes,bytes,9021923.0,98586819.0,98586843.0,98586843.0,10.927475550389866,2.4344025129074964e-05,independent diagnostic cohort; not primary elapsed
+incremental_peak_live_usable,bytes,9257328.0,20575432.0,20575432.0,20575432.0,2.2226102391532416,0.0,independent diagnostic cohort; not primary elapsed
+rss_after,bytes,14778368.0,318881792.0,319012864.0,318685184.0,21.586474501108647,0.04110363253353455,"whole prepared task, not incremental compressor heap; setup/compiler/catalog retained"
+physical_after,bytes,14418816.0,227936000.0,228034240.0,227690176.0,15.815046117517555,0.04309981749262004,"whole prepared task, not incremental compressor heap; setup/compiler/catalog retained"
+lifetime_peak_physical,bytes,14418816.0,227936000.0,228034240.0,227690176.0,15.815046117517555,0.04309981749262004,"whole prepared task, not incremental compressor heap; setup/compiler/catalog retained"
+generated_compressor_code,bytes,not function-matched,13801616,13885696,13879032,not comparable,0.6092040236447716,generated entry alone; reference whole executable text is 195456 bytes
