@@ -1,0 +1,32 @@
+{
+  "exit": 1,
+  "classification": "introduced maintained-test missing ValueDataDraft import; no test ran",
+  "performance_claim": false,
+  "files": [
+    {
+      "path": "build.json",
+      "sha256": "611b5e2eb70ca6b4add525569a93aaeb6d35f2c62b6bf5d0137af5b9d7ee9b52",
+      "bytes": 2086
+    },
+    {
+      "path": "build.stderr",
+      "sha256": "d6e621015fce1b58845887881f64333209fc7f941183a188bd6813fa4ed881af",
+      "bytes": 5506
+    },
+    {
+      "path": "build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "canonical_program_numeric_composition.rs",
+      "sha256": "ae4c68505069bc28fe3d9579f59e466b8733e5d13a4d1da62a6d604ee7f1b44d",
+      "bytes": 13556
+    },
+    {
+      "path": "qualification.rs",
+      "sha256": "a70aaeff784b630e74eb3596cf85484ea5ba1bd186f48fd04f22d650421c5124",
+      "bytes": 36411
+    }
+  ]
+}
