@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-30T21:27:47.552175+00:00",
+  "head": "577269f90710df0cec6cda8008492494440f18a3",
+  "files": [
+    {
+      "path": "static/commands.json",
+      "sha256": "72bca3399e96caa5934e4ca03f0df35fd207e946f7db641d2077793bef87888b",
+      "bytes": 633
+    },
+    {
+      "path": "static/linked.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "static/linked.stdout",
+      "sha256": "a4d020ad56e723101d40b2be4b08d69d46cdd365c4803fc8bcf4e90fa767e653",
+      "bytes": 731
+    },
+    {
+      "path": "static/reference.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "static/reference.stdout",
+      "sha256": "55ed6b943cbe4bcc8ef11d9350c2b16691e15ab1259cb50a03f5befeb627632d",
+      "bytes": 684
+    },
+    {
+      "path": "static.py",
+      "sha256": "2c109704fa3f916d3e38301917f43c052e0eb5e03523368767258009b92dd3c0",
+      "bytes": 886
+    }
+  ]
+}
