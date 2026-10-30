@@ -1,0 +1,45 @@
+{
+  "scope": "Derived descriptive summary of both immediately committed worker groups",
+  "summary": {
+    "groups": [
+      {
+        "group": 0,
+        "before": {
+          "median_seconds": 0.004898896,
+          "multiple_of_roc": 17.189108771929824
+        },
+        "after": {
+          "median_seconds": 0.004890229,
+          "multiple_of_roc": 17.158698245614037
+        },
+        "pooled_ratio": 0.998230825884036,
+        "median_block_ratio": 0.9950344965404068,
+        "geometric_block_ratio": 1.0050338449316925,
+        "improving_blocks": 10
+      }
+    ],
+    "reference_seconds": 0.000285,
+    "primary_observations": 992,
+    "all_observations": 996,
+    "scope": "One restored-build control pair; no new optimization claim",
+    "before": {
+      "median_seconds": 0.004898896,
+      "multiple_of_roc": 17.189108771929824
+    },
+    "after": {
+      "median_seconds": 0.004890229,
+      "multiple_of_roc": 17.158698245614037
+    },
+    "pooled_ratio": 0.998230825884036,
+    "median_block_ratio": 0.9950344965404068,
+    "geometric_block_ratio": 1.0050338449316925,
+    "improving_blocks": 10
+  },
+  "files": [
+    {
+      "path": "summary.json",
+      "sha256": "bd9311d3ce55c9787162b8f42b71a4663eab9a0a14792737640bfb3ae2607e43",
+      "bytes": 953
+    }
+  ]
+}
