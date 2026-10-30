@@ -48,7 +48,7 @@ fn ordinary_aggregate_groups_keep_current_words_origins_fallback_and_retry() {
                             "permit" => ValueDataDraft::Bool(permit),
                             "divisor" => ValueDataDraft::U64(divisor),
                             "signed" => ValueDataDraft::I64(signed),
-                            "real" => ValueDataDraft::F64(real),
+                            "real" => ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(real)),
                             _ => panic!("{name}"),
                         };
                         let value = ValueDraft {
