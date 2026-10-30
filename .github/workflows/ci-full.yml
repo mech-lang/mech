@@ -399,7 +399,7 @@ jobs:
             --exact --nocapture --test-threads=1
           BUFFER_OWNERSHIP_TESTS=$(cargo +nightly-2026-03-03 test --locked -p mech-core \
             --all-features --lib -- snapshot::validation::owned_unsigned_matrix::tests:: --list)
-          test "$(printf '%s\n' "$BUFFER_OWNERSHIP_TESTS" | awk '/^snapshot::validation::owned_unsigned_matrix::tests::.*: test$/ { count += 1 } END { print count + 0 }')" -eq 6
+          test "$(printf '%s\n' "$BUFFER_OWNERSHIP_TESTS" | awk '/^snapshot::validation::owned_unsigned_matrix::tests::.*: test$/ { count += 1 } END { print count + 0 }')" -eq 11
           cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --lib -- \
             snapshot::validation::owned_unsigned_matrix::tests:: \
             snapshot::validation::owned_string::tests:: --test-threads=1

@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-frame-reads-round30-20261029/core-ci/core-unit-tests",
+    "snapshot::validation::owned_unsigned_matrix::tests::",
+    "snapshot::validation::owned_string::tests::",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.04933991702273488,
+  "binary_sha256": "64910775af40a8200bd5ec4930c32412cd71799e853dded860f336a60ab4ac2d"
+}
