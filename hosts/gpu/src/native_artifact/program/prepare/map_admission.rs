@@ -44,13 +44,18 @@ pub(in crate::native_artifact) struct Layout {
 }
 impl Layout {
     /// Existing numeric pieces already replace their interior visits. Keep one
-    /// entry authority: an intersecting ordinary group stays on ordinary visits
-    /// outside that piece, rather than skipping an entry the piece swallowed.
+    /// entry authority: derive ordinary groups around those pieces, rather than
+    /// skipping an entry a piece swallowed or discarding its useful suffix.
     /// Reuse this pure selection after derivation and during image validation.
-    pub(in crate::native_artifact::program) fn exclude_composed_pieces(
-        mut self,
+    pub(in crate::native_artifact::program) fn outside_composed_pieces(
+        self,
         pieces: &super::composition::Layout,
-    ) -> Self {
+        plan: &NativeProgramArtifactPlan,
+        owners: Option<&NativeMapOwnerWords>,
+        aggregates: &NativeScalarAggregates,
+        visits: &[NativeIterationVisit],
+        closed: &super::tail::Layout,
+    ) -> Result<Self, &'static str> {
         let occupied = pieces
             .parents
             .iter()
@@ -59,26 +64,9 @@ impl Layout {
             .flat_map(|segment| segment.sites.iter().copied())
             .collect::<std::collections::BTreeSet<_>>();
         if occupied.is_empty() {
-            return self;
+            return Ok(self);
         }
-        self.groups = self
-            .groups
-            .into_vec()
-            .into_iter()
-            .filter(|group| {
-                group.owner.is_some() || !group.sites.iter().any(|site| occupied.contains(site))
-            })
-            .collect();
-        if self.groups.is_empty() {
-            return Self::default();
-        }
-        self.sites.fill(None);
-        for (id, group) in self.groups.iter().enumerate() {
-            for &site in &group.sites {
-                self.sites[site as usize] = Some(id);
-            }
-        }
-        self
+        Self::derive_excluding(plan, owners, aggregates, visits, closed, &occupied)
     }
 
     pub fn group(&self, site: usize) -> Option<&Group> {
@@ -95,6 +83,24 @@ impl Layout {
         aggregates: &NativeScalarAggregates,
         visits: &[NativeIterationVisit],
         closed: &super::tail::Layout,
+    ) -> Result<Self, &'static str> {
+        Self::derive_excluding(
+            plan,
+            owners,
+            aggregates,
+            visits,
+            closed,
+            &Default::default(),
+        )
+    }
+
+    fn derive_excluding(
+        plan: &NativeProgramArtifactPlan,
+        owners: Option<&NativeMapOwnerWords>,
+        aggregates: &NativeScalarAggregates,
+        visits: &[NativeIterationVisit],
+        closed: &super::tail::Layout,
+        excluded: &std::collections::BTreeSet<u32>,
     ) -> Result<Self, &'static str> {
         let count = plan.blocks().len();
         if visits.len() != count {
@@ -113,6 +119,10 @@ impl Layout {
         let mut roots = vec![None; count];
         let mut known = vec![false; count];
         for (site, block) in plan.blocks().iter().enumerate() {
+            if excluded.contains(&(site as u32)) {
+                known[site] = true;
+                continue;
+            }
             let visit = visits[site];
             let owner = owners.and_then(|owners| {
                 owners

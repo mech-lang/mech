@@ -268,7 +268,14 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
         &frame_retirements,
         &admission,
     )?;
-    let admission = admission.exclude_composed_pieces(&compositions);
+    let admission = admission.outside_composed_pieces(
+        &compositions,
+        &plan,
+        w.map_owner_words.as_ref(),
+        &w.scalar_aggregates,
+        &visits,
+        &closed_tails,
+    )?;
     if admission != w.map_admission {
         return Err("native path admission differs from its source frontiers".into());
     }
