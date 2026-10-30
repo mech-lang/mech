@@ -171,9 +171,6 @@ impl Layout {
                         && site != parent.finish() as usize
                         && site != child.initialize() as usize
                         && site != child.exit() as usize
-                        // A piece must not bypass another path's funded entry.
-                        // Its interior tests the entry decision in hook scratch.
-                        && !admissions.group(site).is_some_and(|g| g.start() as usize == site)
                         && plan.activation_boundary() != Some(site as u32)
                         && matches!(block.terminator(), Term::Scalar(_))
                         && eligible(plan, frames, calls, site))
@@ -312,7 +309,15 @@ impl Layout {
                 // Two new boundary calls must replace more existing calls.
                 // This is a profitability choice, never a source-size allowance.
                 let saved = part.sites.len().saturating_sub(1) + numeric.actions.len();
-                if saved <= 2 || admissions.group(part.entry as usize).is_some() {
+                // A wholly contained ordinary group is replaced by this piece.
+                // A partial overlap would skip its funded entry, then reach an
+                // interior that reads an unrelated hook-scratch decision.
+                let partial_group = part.sites.iter().any(|&site| {
+                    admissions.group(site as usize).is_some_and(|group| {
+                        group.sites.iter().any(|site| !part.sites.contains(site))
+                    })
+                });
+                if saved <= 2 || admissions.group(part.entry as usize).is_some() || partial_group {
                     continue;
                 }
                 words = words.max(

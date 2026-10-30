@@ -145,6 +145,21 @@ fn path_match_search_groups_existing_private_scalar_aggregate_steps() {
                     })),
             "the unchanged match-choice search must group its existing scalar aggregate steps"
         );
+        let groups = image["descriptor"]["map_admission"]["groups"]
+            .as_array()
+            .unwrap();
+        for segment in metadata["compiled_numeric_segments"].as_array().unwrap() {
+            let sites = segment["source_sites"].as_array().unwrap();
+            for group in groups {
+                let members = group["sites"].as_array().unwrap();
+                if members.iter().any(|site| sites.contains(site)) {
+                    assert!(
+                        members.iter().all(|site| sites.contains(site)),
+                        "a numeric piece must contain a complete ordinary group or stay outside it"
+                    );
+                }
+            }
+        }
     }
 }
 
