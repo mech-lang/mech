@@ -1,0 +1,36 @@
+{
+  "schema": "mech.frame-scalar-census-comparison.v1",
+  "performance_observations": 0,
+  "selected_static_reads": 808,
+  "retiring_projection_static": 1211,
+  "retiring_projection_reached_helpers": 945,
+  "scope": "Only pure structural scalar projections; all retirement-bearing reads keep the original helper and ordering. No native child composition.",
+  "controls": {
+    "before": {
+      "admits": 14894,
+      "helper_calls": 9500,
+      "frame_site_helpers": 7161,
+      "eligible_pure_projection_helpers": 656,
+      "work": 45060848918,
+      "report": "NativeProgramExecutionReport { work: 45060848918, comparison_work: 47856, visits: 14894, transport_bytes: 4758520, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }"
+    },
+    "after": {
+      "admits": 14661,
+      "helper_calls": 8844,
+      "frame_site_helpers": 6505,
+      "eligible_pure_projection_helpers": 0,
+      "work": 45060870730,
+      "report": "NativeProgramExecutionReport { work: 45060870730, comparison_work: 47856, visits: 14661, transport_bytes: 4758528, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }"
+    }
+  },
+  "raw": {
+    "before": {
+      "path": "/private/tmp/mech-scalar-results-round27-20261029/after-unit-census/counts.json",
+      "sha256": "6c5e085a1ec2e162953a0af8aa2c4744e2528f07a87bddf568c9a0b245a9bed0"
+    },
+    "after": {
+      "path": "/private/tmp/mech-child-loops-round28-20261029/after-unit-census/counts.json",
+      "sha256": "703b0cf621e82b1f03257dfb4bbf227f2071d80df9c9ccb06336704f40bb9a80"
+    }
+  }
+}

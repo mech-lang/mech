@@ -1,0 +1,28 @@
+{
+  "base": "d818db593a707ebc37c602e14084dde1af0948fa",
+  "removed_experiment": "46aece8b8",
+  "primary_receipt_commit": "73f1ef0fb",
+  "scalar_receipt_commit": "953daf6b5",
+  "restored": [
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/report/mod.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+    "hosts/gpu/src/native_artifact/program/compiler.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/image/wire/mod.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/map_admission.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/buffer_frames.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/session/mod.rs",
+    "hosts/gpu/tests/support/canonical_program_buffer_frames.rs",
+    "hosts/gpu/tests/support/canonical_program_linked.rs"
+  ],
+  "removed": [
+    "hosts/gpu/src/native_artifact/program/codegen/frame_scalars.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/frame_scalars.rs",
+    "hosts/gpu/tests/support/canonical_program_frame_scalar_reads.rs"
+  ],
+  "source_and_tests_identical_to_reviewed_base": true,
+  "reason": "Only1.99% pooled-median gain, alternating pair signs favor process order,745524 extra text bytes and one call-scoped pointer lane. Retain complete measured experiment; no demonstrated material gain justifies this complexity."
+}

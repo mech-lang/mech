@@ -1,4 +1,4 @@
-# Native scalar reads from ordinary private frames
+# Private frame scalar-read experiment (not retained)
 
 Base d818db593a707ebc37c602e14084dde1af0948fa, clean review6511499782. Last balanced eight-byte result20.259555172x reference; objective remains1x. Pinned source/artifact, real arrays, algorithms, allocation sites and timing boundaries remain unchanged.
 
@@ -11,3 +11,5 @@ Move the same64-unit projection charge into its ordinary visit (same Setup phase
 The maintained nested parent/child witness passes values, changing Bool/seed/words, resident agreement, aliases and cleanup against the clean parent. A separate selection requirement intentionally fails1 while that behavior test passes1: ordinary structural projection still calls the runtime. Frozen before SHA256ec7de13b857ceb435a7b26ac13c3e5171a4273a58266e831d66ea48b1c3f3463. This round will check actual helper/visit removal and measure the complete unchanged eight-byte program before claiming a gain. New pointer use requires fresh linked execution as well as original/decoded tests, finite failure/retry and scalar controls.
 
 Pre-measurement qualification exposed a narrower eligibility condition: a scalar projection can also retire managed frame owners. Omitting that effect caused two unchanged reservation/copy tests to fail (235/237 component passes). Keeping a visit anchor alone still failed both tests. The final proof declines every projection with a nonempty action.retire inventory, preserving its complete original helper, charges and error order. The unchanged census has808 static pure sites/656 reached helpers and1211 retiring sites/945 reached helpers. The latter receive no optimization credit. This is a bounded pure-read specialization, not native child-region composition. All failed builds/checks are retained.
+
+Final disposition: insufficient measured benefit. The experiment is fully archived and production/tests are restored to reviewed d818db593a; no new pointer loan, IR130 eligibility or scalar-frame emitter remains. See CLOSURE.md for timing, profile, raw qualification and the exact restoration proof.

@@ -1,0 +1,55 @@
+{
+  "reviewed": "d818db593a707ebc37c602e14084dde1af0948fa",
+  "restored": "880ee63378427e34071264f1ca56989e29ef1e2a",
+  "all_net_changes_are_experiment_receipts": true,
+  "net_changed_files": [
+    "benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-28/DESIGN.md",
+    "benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-28/TIMING.md",
+    "benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-28/baseline-driver.log.gz",
+    "benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-28/baseline-focused.json.gz",
+    "benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-28/baseline-focused.log.gz",
+    "benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-28/baseline-nested-component-build.json.gz",
+    "benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-28/baseline-nested-component-build.log.gz",
+    "benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-28/baseline-qualify.py.gz",
+    "benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-28/scalar/manifest.json",
+    "benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-28/scalar/receipts.tar.gz",
+    "benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-28/scalar/results.json",
+    "benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-28/timing/manifest.json",
+    "benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-28/timing/receipts.tar.gz",
+    "benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-28/timing/results.json"
+  ],
+  "trees": {
+    "hosts/gpu": {
+      "reviewed": "69054434a8850d8997459fa9387f04553057d4fe",
+      "restored": "69054434a8850d8997459fa9387f04553057d4fe"
+    },
+    "src/core": {
+      "reviewed": "5d7b97b3e40e056b3a555df7ff8274a6545ec9b1",
+      "restored": "5d7b97b3e40e056b3a555df7ff8274a6545ec9b1"
+    },
+    "src/engine": {
+      "reviewed": "032d0d426d4a91429fbfb54861d47855f530fb75",
+      "restored": "032d0d426d4a91429fbfb54861d47855f530fb75"
+    },
+    "src/stdlib": {
+      "reviewed": "0344d8637b9701b161a1382f5b8ecb9c4c15b062",
+      "restored": "0344d8637b9701b161a1382f5b8ecb9c4c15b062"
+    },
+    "machines": {
+      "reviewed": "cf16a0db4d9307f877e8fda5daeb43b7d19f4835",
+      "restored": "cf16a0db4d9307f877e8fda5daeb43b7d19f4835"
+    },
+    "benchmarks/mech-deflate/native-profile": {
+      "reviewed": "a793842b2c0ebb14e3b0a32a41eba2dea64bf293",
+      "restored": "a793842b2c0ebb14e3b0a32a41eba2dea64bf293"
+    }
+  },
+  "reviewed_ir_work_abi_bytecode": [
+    129,
+    93,
+    36,
+    14
+  ],
+  "measured_retained_binary_sha256": "ec7de13b857ceb435a7b26ac13c3e5171a4273a58266e831d66ea48b1c3f3463",
+  "restored_code_not_rebuilt_or_retimed": "Exact tree identity with the reviewed compiler; this experiment freshly measures its retained binary in four pairs. Prototype qualification is separately labelled and is not claimed to qualify a new final compiler."
+}
