@@ -62,7 +62,21 @@ impl NativeProgramFacts<'_> {
         let NativeCollectionSource::U64Range(cursor) = generator.source() else {
             return None;
         };
-        if cursor.template().primitive().name() != "range/inclusive" {
+        #[cfg(any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        ))]
+        let inclusive_range = cursor.template().primitive().name() == "range/inclusive";
+        // The base profile has no typed selected-library vocabulary. Decline
+        // this optional proof rather than infer factory semantics from a name.
+        #[cfg(not(any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )))]
+        let inclusive_range = false;
+        if !inclusive_range {
             return None;
         }
         let plan = self.plan();
