@@ -284,6 +284,8 @@ impl NativeProgramObject {
         metadata["compiled_numeric_write_loops"] =
             serde_json::json!(&self.codegen.numeric_write_loops);
         metadata["compiled_scalar_loops"] = serde_json::json!(&self.codegen.scalar_loops);
+        metadata["compiled_frame_scalar_reads"] =
+            serde_json::json!(&self.codegen.frame_scalar_reads);
         metadata
     }
 }
