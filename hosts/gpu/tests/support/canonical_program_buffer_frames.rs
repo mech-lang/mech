@@ -1,9 +1,4 @@
 //! Ordinary recursive frames retain immutable buffers rather than copying them.
-#[path = "canonical_program_frame_scalar_reads.rs"]
-mod scalar_reads;
-
-pub(super) const SCALAR_READ_PARENT: &str = scalar_reads::SOURCE;
-
 use super::{
     JitProgramArtifact, ManagedMemoryBudget, ValueDataDraft as Data, allocation_probe, artifacts,
     inputs, limits, reference_result,
