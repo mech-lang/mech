@@ -197,7 +197,7 @@ fn whole_metadata_preview_is_pure_and_repeated_scans_share_the_cumulative_accoun
                         assert_eq!(budget.used(), (0, 0));
                         assert_eq!(meter, ResidentBudgetMeter::default());
                         assert_eq!(
-                            with_control_work_scope(|active| active
+                            CONTROL_WORK_SCOPE.with(|active| active
                                 .borrow()
                                 .as_ref()
                                 .unwrap()

@@ -212,8 +212,8 @@ impl NativeLibraryWorkBudget {
     where
         E: From<ResidentKernelError>,
     {
-        if with_control_work(|v| v.borrow().is_some())
-            || with_control_work_scope(|v| v.borrow().is_some())
+        if CONTROL_WORK.with(|v| v.borrow().is_some())
+            || CONTROL_WORK_SCOPE.with(|v| v.borrow().is_some())
         {
             return Ok(None);
         }
