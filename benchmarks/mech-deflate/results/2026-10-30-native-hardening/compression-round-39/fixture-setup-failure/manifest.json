@@ -1,0 +1,71 @@
+{
+  "created_utc": "2026-10-30T21:53:09.137074+00:00",
+  "head": "a27963b492972929073df71dae6675e6b50804c2",
+  "files": [
+    {
+      "path": "fixture-setup-failure/candidate.patch",
+      "sha256": "a449796113c8a5b08b160b530e981b44fa2af15ecbd0b7efda55bab4c3dd7f89",
+      "bytes": 12821
+    },
+    {
+      "path": "fixture-setup-failure/numeric-scalar-child.mec",
+      "sha256": "9cece0681c5d14046607c04d9e7a70d78b3a36ac39dc60ea5979e8081a0cd950",
+      "bytes": 1106
+    },
+    {
+      "path": "fixture-setup-failure/scalar_child.rs",
+      "sha256": "9247abb4f1bda4bc911750dc95661d0135919ae4a733be6fde38b2e4e7e0c133",
+      "bytes": 4703
+    },
+    {
+      "path": "unit/build.json",
+      "sha256": "241aa805896d750f7b31dc979ca6581f8938f258340863c925196ff37ad36249",
+      "bytes": 4199
+    },
+    {
+      "path": "unit/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "unit/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "unit/focused.json",
+      "sha256": "84249e40f89611da7626bca9edf8cf29e9abef57e47726c94502d0e990add456",
+      "bytes": 682
+    },
+    {
+      "path": "unit/focused.stderr",
+      "sha256": "d1aaa53e91794d07a1b071c34dd2400488429a048baed4800761cd3a511f97c2",
+      "bytes": 1791
+    },
+    {
+      "path": "unit/focused.stdout",
+      "sha256": "22924cd0cce23c61ebaa09960c730595cd22e7aab51a4a39981ab1f8e54dd747",
+      "bytes": 3583
+    },
+    {
+      "path": "unit/format.json",
+      "sha256": "69c4168c4e5e9e718fcc974306806258a1c801ed34239794bfeb16d4c3a3293c",
+      "bytes": 563
+    },
+    {
+      "path": "unit/format.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "unit/format.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "unit.py",
+      "sha256": "05130de81414d89a2de369c09befd528e4b6fe819910c1294d98ac470382b01a",
+      "bytes": 1388
+    }
+  ]
+}
