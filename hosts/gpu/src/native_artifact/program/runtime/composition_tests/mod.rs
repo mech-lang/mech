@@ -6,6 +6,41 @@ use mech_engine::ProgramArtifact;
 mod observe;
 mod resources;
 
+#[test]
+fn huffman_parent_cleanup_selects_funded_retirement_batches() {
+    let source = include_str!("../../../../../tests/fixtures/native/numeric-parent-child.mec");
+    for artifact in artifacts(source) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let memory = mode.memory_budget();
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        let args = huffman_inputs(&artifact, 3, vec![0, 1, 1, 2], &memory);
+        let before = contents(&args);
+        let mut output = vec![None; artifact.outputs().len()];
+        let mut expected_work = None;
+        for _ in 0..2 {
+            super::retirement::take_observation();
+            let report = jit.evaluate_into(&args, &mut output, mode.execution(), &memory).unwrap();
+            let batches = super::retirement::take_observation();
+            assert_eq!(contents(&args), before);
+            assert_eq!(
+                output.last().unwrap().as_ref().unwrap().canonical_data_draft().unwrap(),
+                Data::Matrix([3, 1, 3, 2].map(Data::U8).into()),
+            );
+            assert_eq!(report.work, *expected_work.get_or_insert(report.work));
+            assert_eq!(report.work, 91_452_918, "original cleanup prices must remain");
+            println!("huffman-cleanup work={} batches={batches}", report.work);
+            assert!(batches > 0, "original Huffman parent must use funded cleanup");
+        }
+        drop((args, output));
+        assert_eq!((memory.used_bytes(), memory.retained_snapshot_nodes()), (0, 0));
+    }
+}
+
 fn artifacts(source: &str) -> [ProgramArtifact; 2] {
     let original = super::tests::artifact_source(source);
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(

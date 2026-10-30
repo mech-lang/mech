@@ -1130,22 +1130,14 @@ impl Invocation<'_, '_, '_> {
             .retirements
             .slots(self.retirements, iteration, kind)
             .map_err(invalid)?;
-        let scan = amount(slots.len(), 16, 64)?;
-        self.state
-            .control
-            .work
-            .charge(NativeExecutionPhase::Setup, scan)?;
-        for &slot in slots {
-            self.state.buffer_frames.retire(
-                &self.descriptor.metadata().frame_retirements,
-                slot as u32,
-                &mut self.state.control.work,
-            )?;
-            self.state
-                .arena
-                .retire_current(slot as u32, &mut self.state.control.work)?;
-        }
-        Ok(())
+        super::retirement::run(
+            slots,
+            &self.descriptor.metadata().frame_retirements,
+            &mut self.state.buffer_frames,
+            &mut self.state.arena,
+            &mut self.state.control.work,
+        )
+        .map(|_| ())
     }
 }
 
