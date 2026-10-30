@@ -13,6 +13,7 @@ use std::sync::Arc;
 
 pub(in crate::native_artifact) mod call_cache;
 pub(in crate::native_artifact) mod call_routes;
+pub(in crate::native_artifact) mod composition;
 pub(in crate::native_artifact) mod frame_retirement;
 
 /// Recomputed both on source preparation and independent build-image loading.
@@ -45,6 +46,7 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     pub(in crate::native_artifact) calls: Box<[Option<NativePreparedLibraryCall>]>,
     // Complete prepared-call inventory, independently rederived on image load.
     pub(in crate::native_artifact) call_cache: call_cache::Layout,
+    pub(in crate::native_artifact) compositions: composition::Layout,
     // Derived from these exact calls/proofs, including independent image load.
     pub(in crate::native_artifact) call_routes: Box<[call_routes::LibraryCallRoute]>,
     pub(in crate::native_artifact) types: Box<[NativeValueSlot]>,
@@ -402,12 +404,15 @@ impl PreparedNativeProgram {
         let frame_retirements =
             frame_retirement::FrameRetirements::derive(&buffer_frames, plan.values().len())?;
         let call_cache = call_cache::Layout::derive(&plan, &calls)?;
+        let compositions =
+            composition::Layout::derive(&plan, &buffer_frames, &calls, &closed_tails)?;
         let (scalar_aggregates, line_retention_frontiers) = facts.into_preparation_inventories();
         let metadata = ProgramMetadata {
             plan,
             schemas: Arc::new(artifact.schemas().clone()),
             calls,
             call_cache,
+            compositions,
             call_routes,
             types,
             visits,

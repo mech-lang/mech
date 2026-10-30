@@ -3,6 +3,7 @@ use super::{
     JitProgramArtifact, ManagedMemoryBudget, artifacts, emit_program_object, equal, inputs, limits,
     reference_result,
 };
+use mech_core::ValueDataDraft;
 
 #[test]
 fn child_results_keep_current_arrays_indices_publication_and_recovery() {
@@ -165,5 +166,199 @@ fn parent_segments_are_emitted_around_the_selected_native_child() {
             "parent segments are absent; an ordinary parent plus a native child does not satisfy composition"
         );
         assert!(segments.unwrap().iter().any(|s| s["iteration"] == 0));
+    }
+}
+
+#[test]
+fn parent_partition_keeps_exact_child_result_mapping_and_single_entry_boundaries() {
+    let source = include_str!("../fixtures/native/numeric-parent-child.mec");
+    let mut prior = None;
+    for artifact in artifacts(source).0 {
+        let object = emit_program_object(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let metadata = object.metadata();
+        let parents = metadata["numeric_parent_partitions"]["parents"]
+            .as_array()
+            .unwrap();
+        assert_eq!(parents.len(), 1);
+        let parent = &parents[0];
+        assert_eq!(parent["iteration"], 0);
+        assert_eq!(parent["child"], 1);
+        assert_eq!(parent["returned_arrays"], serde_json::json!([[0, 1]]));
+        let plan = object.descriptor().plan();
+        let mech_engine::native_artifact::NativeControlLoop::Tail(tail) = &plan.iterations()[0]
+        else {
+            panic!()
+        };
+        let facts = plan.facts();
+        let mut all = std::collections::BTreeSet::new();
+        for segment in parent["segments"].as_array().unwrap() {
+            let entry = segment["entry"].as_u64().unwrap() as u32;
+            let sites = segment["sites"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_u64().unwrap() as u32)
+                .collect::<std::collections::BTreeSet<_>>();
+            assert!(sites.contains(&entry));
+            for &site in &sites {
+                assert!(all.insert(site), "overlapping native pieces");
+                assert_eq!(plan.blocks()[site as usize].iteration(), Some(0));
+                assert!(
+                    ![
+                        tail.header(),
+                        tail.latch(),
+                        tail.finish(),
+                        parent["child_initialize"].as_u64().unwrap() as u32,
+                        parent["child_exit"].as_u64().unwrap() as u32
+                    ]
+                    .contains(&site)
+                );
+                if site != entry {
+                    assert!(
+                        facts
+                            .predecessors(site)
+                            .unwrap()
+                            .iter()
+                            .all(|p| sites.contains(p))
+                    );
+                }
+                for next in facts.successors(site).unwrap().into_iter().flatten() {
+                    assert_eq!(
+                        segment["exits"]
+                            .as_array()
+                            .unwrap()
+                            .contains(&serde_json::json!([site, next])),
+                        !sites.contains(&next),
+                        "unrecorded or invented boundary"
+                    );
+                }
+            }
+        }
+        assert!(all.len() > 30);
+        if let Some(prior) = prior {
+            assert_eq!(prior, *parent);
+        }
+        prior = Some(parent.clone());
+    }
+}
+
+#[test]
+fn parent_partition_follows_reordered_child_results() {
+    let source = include_str!("../fixtures/native/numeric-parent-child.mec")
+        .replace("=> <([u8],u64)>", "=> <(u64,[u8])>")
+        .replace("(lens, i)", "(i, lens)")
+        .replace("(next, next-i) := step", "(next-i, next) := step");
+    for artifact in artifacts(&source).0 {
+        let object = emit_program_object(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let metadata = object.metadata();
+        let parents = metadata["numeric_parent_partitions"]["parents"]
+            .as_array()
+            .unwrap();
+        assert_eq!(parents.len(), 1);
+        assert_eq!(parents[0]["returned_arrays"], serde_json::json!([[1, 1]]));
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let args = inputs(
+            &artifact,
+            &[
+                (
+                    "a",
+                    ValueDataDraft::Matrix(
+                        [2, 0, 3, 1].into_iter().map(ValueDataDraft::U32).collect(),
+                    ),
+                ),
+                (
+                    "lens",
+                    ValueDataDraft::Matrix(
+                        [9, 9, 9, 9].into_iter().map(ValueDataDraft::U8).collect(),
+                    ),
+                ),
+                (
+                    "counts",
+                    ValueDataDraft::Matrix(
+                        [0, 1, 1, 2].into_iter().map(ValueDataDraft::U64).collect(),
+                    ),
+                ),
+                ("width", ValueDataDraft::U64(3)),
+                ("start", ValueDataDraft::U64(0)),
+            ],
+            &memory,
+        );
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let mut output = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&args, &mut output, limits(), &memory)
+            .unwrap();
+        equal(
+            &artifact,
+            &output,
+            &reference_result(&artifact, &args).unwrap(),
+        );
+        assert_eq!(
+            output
+                .last()
+                .unwrap()
+                .as_ref()
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::Matrix([3, 1, 3, 2].into_iter().map(ValueDataDraft::U8).collect())
+        );
+        drop((output, args));
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
+}
+
+#[test]
+fn parent_partition_declines_multiple_children_and_append_owners() {
+    let original = include_str!("../fixtures/native/numeric-parent-child.mec");
+    let siblings = original.replace("  (next, next-i) := step\n",
+        "  (first, first-i) := step\n  (next, next-i) := second-symbols(a, lens, width, first-i, 0u64)\n");
+    let start = original.find("\nhuff-assign-symbols(").unwrap() + 1;
+    let end = original.find("\nhuff-assign-lengths(").unwrap() + 1;
+    let second = original[start..end].replace("huff-assign-symbols", "second-symbols");
+    let siblings = siblings.replacen(
+        "huff-assign-lengths(",
+        &format!("{second}huff-assign-lengths("),
+        1,
+    );
+    assert_ne!(siblings, original);
+    // The child is the already qualified record-buffer append recurrence.
+    let append = "+> sequence\ngrow(words<[u64]>, left<u64>) => (out<{nodes<[u64]>}>) :=\n  out := ((left > 0u64)? | true => grow(sequence/append(words, left), left - 1u64) | false => {nodes: words}).\nouter(words<[u64]>, left<u64>) => (out<[u64]>) :=\n  result := grow(words, left)\n  out := ((left > 0u64)? | true => outer(result.nodes, left - 1u64) | false => result.nodes).\nouter(sequence/with-capacity(0u64, capacity<u64>), steps<u64>)\n";
+    for (source, expect_append) in [(siblings.as_str(), false), (append, true)] {
+        println!("negative parent append={expect_append}");
+        for artifact in artifacts(source).0 {
+            let metadata = emit_program_object(&artifact, &mech_stdlib::source_catalog())
+                .unwrap()
+                .metadata();
+            let parents = metadata["numeric_parent_partitions"]["parents"]
+                .as_array()
+                .unwrap();
+            assert!(parents.is_empty());
+            if expect_append {
+                assert!(
+                    metadata["numeric_write_regions"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .any(|r| r["proof"]["arrays"]
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .any(|a| a["appends"] == true))
+                );
+            } else {
+                assert_eq!(
+                    metadata["readonly_numeric_candidates"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .filter(|c| c["parent"] == 0 && c["selected"] == true)
+                        .count(),
+                    2
+                );
+            }
+        }
     }
 }
