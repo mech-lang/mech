@@ -250,9 +250,7 @@ fn selected_template(
 // original last-use barriers, runtime identity and Core exclusivity remain.
 // IR129 composes exact private flat scalar aggregate results and their shared
 // word-bank actions with numeric leaves. The restored plan rederives selection.
-// IR130 loans the existing frame scalar bank for exact structural word reads;
-// ordinary visits or existing prepaid scalar paths retain their read charges.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 130;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 129;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
