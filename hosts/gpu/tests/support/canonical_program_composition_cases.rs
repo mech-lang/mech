@@ -235,3 +235,83 @@ fn composition_preserves_errors_before_child_and_after_completed_child() {
         }
     }
 }
+
+#[test]
+fn composition_handoff_preserves_the_existing_payload_copy_slope() {
+    let source = include_str!("../fixtures/native/numeric-parent-child.mec");
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let mut observed = Vec::new();
+        for length in [288, 8192] {
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let args = inputs(
+                &artifact,
+                &[
+                    ("a", Data::Matrix([2, 0, 3, 1].map(Data::U32).into())),
+                    ("lens", Data::Matrix(vec![Data::U8(9); length].into())),
+                    ("counts", Data::Matrix([0, 1, 1, 2].map(Data::U64).into())),
+                    ("width", Data::U64(3)),
+                    ("start", Data::U64(0)),
+                ],
+                &memory,
+            );
+            let alias = args.clone();
+            let before = args
+                .iter()
+                .map(|v| v.canonical_data_draft().unwrap())
+                .collect::<Vec<_>>();
+            let mut output = vec![None; artifact.outputs().len()];
+            jit.evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            output.fill(None);
+            let (run, requests, bytes) =
+                super::super::allocation_probe::measured_with_bytes(|| {
+                    jit.evaluate_into(&args, &mut output, limits(), &memory)
+                });
+            run.unwrap();
+            let mut expected = vec![Data::U8(9); length];
+            for (slot, value) in [3, 1, 3, 2].into_iter().enumerate() {
+                expected[slot] = Data::U8(value);
+            }
+            assert_eq!(
+                output
+                    .last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                Data::Matrix(expected.into())
+            );
+            assert_eq!(
+                args.iter()
+                    .map(|v| v.canonical_data_draft().unwrap())
+                    .collect::<Vec<_>>(),
+                before
+            );
+            assert!(
+                args.iter()
+                    .zip(&alias)
+                    .all(|(a, b)| a.shares_frozen_storage(b))
+            );
+            observed.push((length, requests, bytes));
+            println!(
+                "{}",
+                serde_json::json!({"witness":"parent-child-payload-allocation", "length":length,"requests":requests,"bytes":bytes,"timing_observations":0})
+            );
+            drop((output, args, alias));
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
+        assert_eq!(observed[1].1, observed[0].1);
+        // The retained compiler also allocates three payloads for these
+        // successive calls. Composition may improve that inherited slope,
+        // but must not add a fourth backing through a stale parent alias.
+        assert!(
+            (observed[1].2 - observed[0].2) <= 3 * (observed[1].0 - observed[0].0),
+            "additional payload copy at parent handoff: {observed:?}"
+        );
+    }
+}

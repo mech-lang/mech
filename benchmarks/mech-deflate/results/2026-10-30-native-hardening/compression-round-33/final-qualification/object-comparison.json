@@ -1,0 +1,37 @@
+{
+  "abi": 37,
+  "ir": 131,
+  "policy": 95,
+  "text": 13801616,
+  "object": 13802344,
+  "stack": 108560,
+  "native_parent_segments": 39,
+  "parent_ids": [
+    70,
+    89,
+    119,
+    190,
+    209,
+    239,
+    269,
+    288,
+    320,
+    339,
+    365,
+    384,
+    417
+  ],
+  "interior_helpers": 0,
+  "native_numeric_loops": 239,
+  "backedge_helpers": 0,
+  "metadata_json_bytes": 2411445,
+  "descriptor_json_bytes": 59784245,
+  "previous": {
+    "text": 12923596,
+    "object": 12924328,
+    "stack": 108032,
+    "metadata_json_bytes": 2191167
+  },
+  "object_sha256": "d2c0185ac19d2279c477386cb9f51b080bb4ea159735bbae61101930bfe2cf13",
+  "descriptor_sha256": "7b6cfa95f6735e77b12842bbd2e9aa94388d6f04b29c8417b30e01f0cb21520e"
+}
