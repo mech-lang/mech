@@ -54,10 +54,12 @@ fn artifacts(source: &str) -> [mech_engine::ProgramArtifact; 2] {
 #[test]
 fn prepared_frame_retirement_matches_recursive_order_and_composite_work() {
     let flat = "+> sequence\nwalk(a<[u32]>, b<[u32]>, n<u64>, flag<bool>) => <u64> | (a,b,n,flag) => ((n > 0u64)? | true => walk(a,b,n - 1u64,flag == false) | false => sequence/length(a) + sequence/length(b)).\nwalk(data<[u32]>, data, n<u64>, flag<bool>)\n";
+    let managed = "+> sequence\nr := {left: data<[u32]>, right: data}\nsequence/length(r.left) + sequence/length(r.right)\n";
     let mut saw_nested = false;
     let mut saw_coalesced = false;
     let mut saw_managed = false;
-    for source in ["seed<u64> + 1u64\n", flat, NESTED] {
+    let mut saw_managed_only = false;
+    for source in ["seed<u64> + 1u64\n", managed, flat, NESTED] {
         for artifact in artifacts(source) {
             let plan = mech_engine::native_artifact::lower_native_program_artifact(
                 &artifact,
@@ -78,6 +80,8 @@ fn prepared_frame_retirement_matches_recursive_order_and_composite_work() {
                 assert_eq!(prepared_leaves(operations), expected);
                 saw_nested |= count > expected.len();
                 saw_managed |= expected.iter().any(|leaf| matches!(leaf, Leaf::Managed(_)));
+                saw_managed_only |= !expected.is_empty()
+                    && expected.iter().all(|leaf| matches!(leaf, Leaf::Managed(_)));
                 saw_coalesced |= operations
                     .iter()
                     .any(|op| matches!(op, Operation::Scalars(words) if words.len() > 2));
@@ -85,7 +89,7 @@ fn prepared_frame_retirement_matches_recursive_order_and_composite_work() {
             assert!(recipes.get(usize::MAX).is_none());
         }
     }
-    assert!(saw_nested && saw_coalesced && saw_managed);
+    assert!(saw_nested && saw_coalesced && saw_managed && saw_managed_only);
 }
 
 fn value(
