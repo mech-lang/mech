@@ -1,0 +1,54 @@
+{
+  "scope": "Diagnostic matched profile only; every process observation excluded from primary and no new elapsed comparison claimed",
+  "receipt": {
+    "label": "restored",
+    "command": [
+      "/private/tmp/mech-library-debit-inline-round35-20261030/restored-primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "693"
+    ],
+    "exit": 0,
+    "binary_sha256": "cf6f72c585537950a9261ff0c58260795acab2b46a9d820f9ddb49835ae1b8b4",
+    "artifact_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+    "head": "d0d5ec73cb72561d2a7e00c7c27d89cd7209c79c",
+    "sample_command": [
+      "sample",
+      "77194",
+      "2",
+      "-file",
+      "/private/tmp/mech-library-debit-inline-round35-20261030/restored-profile/restored.sample.txt"
+    ],
+    "sample_exit": 0,
+    "all_observations_excluded_from_primary": true,
+    "performance_comparison_claimed": false,
+    "created_utc": "2026-10-30T16:43:43.978932+00:00",
+    "rows": 695
+  },
+  "files": [
+    {
+      "path": "restored-profile/restored-sampler.log",
+      "sha256": "c99a766255d28937eb2bfcf163f1365831f23ce68613fcbd10acdae4a08d9f3c",
+      "bytes": 268
+    },
+    {
+      "path": "restored-profile/restored.json",
+      "sha256": "3e45a36e03ee38a5a68e99c833f502f0893145dc9d896db2563df6b308f1639d",
+      "bytes": 832
+    },
+    {
+      "path": "restored-profile/restored.sample.txt",
+      "sha256": "cfc1a93095a50569c7c40ce96225bf77823a9c20cd984eae29c5650a41927474",
+      "bytes": 991380
+    },
+    {
+      "path": "restored-profile/restored.stderr",
+      "sha256": "16dd7f6199ea35ef05ac3d4daf7a5c349124e5d357093f48586d0329d369c509",
+      "bytes": 9688
+    },
+    {
+      "path": "restored-profile/restored.stdout",
+      "sha256": "96ec6696bb49e6f7287c90df7db7fbf70423fec26423cf42637c66d96351c8ae",
+      "bytes": 242911
+    }
+  ]
+}
