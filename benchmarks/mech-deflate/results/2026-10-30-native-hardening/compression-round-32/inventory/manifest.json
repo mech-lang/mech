@@ -1,0 +1,71 @@
+{
+  "base": "aff5d1e7d544fb18ef8efa4d66766ae58ae57a83",
+  "scope": "Actual before-cache inventory and concrete constructor admission; no compression timing claimed",
+  "files": [
+    {
+      "path": "inventory/adaptation.json",
+      "sha256": "a10817c1342a03ea3b8499a6901df23bb392d441f8f94e9d5299d40dee66a868",
+      "bytes": 2286
+    },
+    {
+      "path": "inventory/build.json",
+      "sha256": "accfeb77732103a3e94a0107623e9ab212cd2b351ea79484c2947d300b870380",
+      "bytes": 3892
+    },
+    {
+      "path": "inventory/build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "inventory/command.json",
+      "sha256": "b50a33abdb0562509bbb5add2509d7fd207bd2310991fd9ec8d90064d43f0356",
+      "bytes": 3563
+    },
+    {
+      "path": "inventory/counts.json",
+      "sha256": "d3219f23c8b64014bed9d2830b9e1dddf06a7435cd5f068e21e5d587230a5515",
+      "bytes": 605
+    },
+    {
+      "path": "inventory/lib.rs",
+      "sha256": "ec056a8349faf3496443f5098996a78bf2f13adc7c703b16b865334a4130662b",
+      "bytes": 81974
+    },
+    {
+      "path": "inventory/native_artifact.rs",
+      "sha256": "f8a562833cb455a700b2519a097ec1d9093a9d684e6a36f393d8ceedc1fa94f0",
+      "bytes": 8459
+    },
+    {
+      "path": "inventory/program.rs",
+      "sha256": "06dd2d2342c53377cb405f1cab893af80ca34ea4e83c59d5ecf8990b652563b5",
+      "bytes": 1727
+    },
+    {
+      "path": "inventory/run.json",
+      "sha256": "520ceaa05a2a2d61f75a9f304fd964284b65077695b27ec533d4c0fed8b5be39",
+      "bytes": 361
+    },
+    {
+      "path": "inventory/run.log",
+      "sha256": "eb1a39cd20c63c60466a6d9a49809dfb34cad89575d894d036a199af81871c20",
+      "bytes": 774
+    },
+    {
+      "path": "inventory/runtime.rs",
+      "sha256": "3dbb3ea8f0ca96ae9226323484885642b0b273da49a28f18bab18b8b43bd688a",
+      "bytes": 14546
+    },
+    {
+      "path": "inventory/session.rs",
+      "sha256": "f99a384309e13e0b6b3a32d6aaddd9f5b1458b8738c6c98357f6623781e9edc4",
+      "bytes": 68525
+    },
+    {
+      "path": "inventory.py",
+      "sha256": "67d5c73b489e25652cfdd97803327821714105fa8eab0b2d4a8952ad3b74dd5d",
+      "bytes": 1168
+    }
+  ]
+}
