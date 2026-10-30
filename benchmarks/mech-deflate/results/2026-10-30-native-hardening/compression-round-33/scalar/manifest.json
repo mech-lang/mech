@@ -1,0 +1,270 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-numeric-composition-round33-20261030/confirmed-primary/scalar-controls.py"
+  ],
+  "exit": 0,
+  "created_utc": "2026-10-30T15:09:25.307987+00:00",
+  "files": [
+    {
+      "path": "confirmed-primary/frame-before.json",
+      "sha256": "c32f439997722ba795386379b3bcf77461cd5b2dacb201e82e9a45d1224feb87",
+      "bytes": 83
+    },
+    {
+      "path": "confirmed-primary/scalar-commands.json",
+      "sha256": "926ca7aad1e1dc3fcd726c8f624e7dcd0c38c19353755ca0f913ae5f2e10e6a3",
+      "bytes": 5163
+    },
+    {
+      "path": "confirmed-primary/scalar-results.json",
+      "sha256": "9ef4d65381843cc5b6b9141a73d56b2cba562166da8e585ccce5dd4c6f2b987a",
+      "bytes": 73853
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-bool-0-decoded-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-bool-0-decoded-after.stdout",
+      "sha256": "015811b6733fc445caed4e0203266aeabb6056fb457585eff400c667ce73c881",
+      "bytes": 1624
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-bool-0-decoded-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-bool-0-decoded-before.stdout",
+      "sha256": "10c599a37fc3a2ba493e633e960797ba18b2394e3e0a2f6da87afeaddd56b077",
+      "bytes": 1621
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-bool-0-original-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-bool-0-original-after.stdout",
+      "sha256": "66c31a15df549235c0516c99568a491993889106b69f1b6dc43baabee16f4976",
+      "bytes": 1631
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-bool-0-original-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-bool-0-original-before.stdout",
+      "sha256": "4ac2593ffe8c5cffb06a5a38d16407dd1ab9499deda375e2c0e17224d28128ef",
+      "bytes": 1630
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-f64-0-decoded-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-f64-0-decoded-after.stdout",
+      "sha256": "41f52cd3a8bfe1e68546fd2f30c6977977e711eb9e03c4f784506fe9b1d525db",
+      "bytes": 1619
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-f64-0-decoded-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-f64-0-decoded-before.stdout",
+      "sha256": "7a5c51e4a3a81fd7051a93ec1c771a8b220bb36cea75b7fd318b02ebc23b7412",
+      "bytes": 1615
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-f64-0-original-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-f64-0-original-after.stdout",
+      "sha256": "b3edb01a9470d81490fccfb35b990401d52cf7deae4de74307a7a979039be711",
+      "bytes": 1624
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-f64-0-original-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-f64-0-original-before.stdout",
+      "sha256": "26870945523e0abea70ed149434d5d25d6a18b89446e9d5cab673d42ba7bcb79",
+      "bytes": 1625
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-i64-0-decoded-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-i64-0-decoded-after.stdout",
+      "sha256": "84fa14f3cd3d4b4ddcf4863b2b5ff3c0c1ed9866ac22170a2354677db973f675",
+      "bytes": 1619
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-i64-0-decoded-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-i64-0-decoded-before.stdout",
+      "sha256": "e73048a86b454452b72c659ec23e67e51c397fe600192bb6f7b77e173f37c7e2",
+      "bytes": 1619
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-i64-0-original-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-i64-0-original-after.stdout",
+      "sha256": "677c0f1b8420fb4d55cadc3efba86516b3f449b9f15229e94cc82fd978002425",
+      "bytes": 1625
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-i64-0-original-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-i64-0-original-before.stdout",
+      "sha256": "d8b19334f84b0e88ccf32b87f24cbebd058b6ffa50c94d3a01e6534ff07c95c1",
+      "bytes": 1625
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-loop-0-decoded-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-loop-0-decoded-after.stdout",
+      "sha256": "2c1bf6c3d67d11b2784ecbcee88d31de213e91b77994383c5ce9298d4456d4ea",
+      "bytes": 2006
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-loop-0-decoded-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-loop-0-decoded-before.stdout",
+      "sha256": "7b2c915a76d2a992db54ce1ea9d8a01ffeab638d38029b40629e334117fc96d3",
+      "bytes": 2009
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-loop-0-original-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-loop-0-original-after.stdout",
+      "sha256": "3179cfd8c36b99f9588e6d952997666272679037f5fb209c1448b7f657e80745",
+      "bytes": 2014
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-loop-0-original-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-loop-0-original-before.stdout",
+      "sha256": "59909128379a2423e3c9a948bd09e04ebe198cc994cc01aa2df0e1ae4f35589c",
+      "bytes": 2014
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-loop-64-decoded-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-loop-64-decoded-after.stdout",
+      "sha256": "4d5e36388fcb605478de3c58e2a75e778cd26a6776f286cb08ae833199e63b74",
+      "bytes": 2018
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-loop-64-decoded-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-loop-64-decoded-before.stdout",
+      "sha256": "b5d0a7013b4104544e3382aa5f372ad94ad64cfb56f1fb69b8950c49b61c930f",
+      "bytes": 2018
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-loop-64-original-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-loop-64-original-after.stdout",
+      "sha256": "f1d3f90ef791e3a9f843f7294233eeacd6199dac41714839226409609ddd07ff",
+      "bytes": 2024
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-loop-64-original-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-loop-64-original-before.stdout",
+      "sha256": "8cac583c7442b726ad425e8d1400cf76739b01cf6d10099e71fd94ef44329cd8",
+      "bytes": 2027
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-u64-0-decoded-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-u64-0-decoded-after.stdout",
+      "sha256": "f8ff1fc67779f41b806cfd9b6c2b96744f00668d21e06bb8022eccbe291302eb",
+      "bytes": 1619
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-u64-0-decoded-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-u64-0-decoded-before.stdout",
+      "sha256": "abf66155437bccedc51da1e68e12d0c6dc7e9f73ebe0b128e97189359add27cb",
+      "bytes": 1617
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-u64-0-original-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-u64-0-original-after.stdout",
+      "sha256": "e154c483e7a7fab39cf1f28b211f337d63aee9a98d0e4c1569bd322f20188353",
+      "bytes": 1621
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-u64-0-original-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "confirmed-primary/scalar-scalar-u64-0-original-before.stdout",
+      "sha256": "d95adc2f211b088b221b164c2bce91092e7b898ae2c82004726f276550666609",
+      "bytes": 1624
+    },
+    {
+      "path": "confirmed-primary/scalar-controls.py",
+      "sha256": "1498073dd6d5a480232c3e36515759607219b23c084405ea189c9166630ffa26",
+      "bytes": 3534
+    }
+  ]
+}
