@@ -308,6 +308,7 @@ impl PreparedNativeProgram {
             &frame_retirements,
             &map_admission,
         )?;
+        let map_admission = map_admission.exclude_composed_pieces(&compositions);
         let uniform_word_collections = facts.uniform_unsigned_collections().into_boxed_slice();
         let window_regions = plan.window_regions().into_boxed_slice();
         let occupied_frame =

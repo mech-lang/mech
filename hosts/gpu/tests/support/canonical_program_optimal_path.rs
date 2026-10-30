@@ -152,12 +152,10 @@ fn path_match_search_groups_existing_private_scalar_aggregate_steps() {
             let sites = segment["source_sites"].as_array().unwrap();
             for group in groups {
                 let members = group["sites"].as_array().unwrap();
-                if members.iter().any(|site| sites.contains(site)) {
-                    assert!(
-                        members.iter().all(|site| sites.contains(site)),
-                        "a numeric piece must contain a complete ordinary group or stay outside it"
-                    );
-                }
+                assert!(
+                    !members.iter().any(|site| sites.contains(site)),
+                    "a numeric piece and ordinary admission group must have separate entry authority"
+                );
             }
         }
     }
