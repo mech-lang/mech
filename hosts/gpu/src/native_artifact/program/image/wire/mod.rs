@@ -263,6 +263,7 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
     let compositions = native::program::prepare::composition::Layout::derive(
         &plan,
         &buffer_frames,
+        &w.scalar_aggregates,
         &calls,
         &closed_tails,
         &visits,

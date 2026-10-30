@@ -25,7 +25,7 @@ pub(in crate::native_artifact) enum ResultRecipe {
 /// Reuse the connected private-use proof and its exact scalar word count.
 /// Numeric leaves initially compose only flat tuples/records, not enum tags or
 /// nested fields. Their ordinary shared aggregate emitter owns bit semantics.
-pub(super) fn scalar_aggregate(
+pub(in crate::native_artifact::program::prepare) fn scalar_aggregate(
     plan: &Plan,
     aggregates: &NativeScalarAggregates,
     value: NativeMatchValue,

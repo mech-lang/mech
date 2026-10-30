@@ -5,6 +5,7 @@ use mech_core::ValueDataDraft as Data;
 use mech_engine::ProgramArtifact;
 mod observe;
 mod resources;
+mod scalar_child;
 
 #[test]
 fn huffman_parent_cleanup_selects_funded_retirement_batches() {

@@ -300,6 +300,7 @@ impl PreparedNativeProgram {
         let compositions = composition::Layout::derive(
             &plan,
             &buffer_frames,
+            &scalar_aggregates,
             &calls,
             &closed_tails,
             &visits,
