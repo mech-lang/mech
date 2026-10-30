@@ -1,0 +1,10 @@
+{
+  "head": "b44f5833a95a9c853619ad0ea037f76a88178d86",
+  "measured_implementation": "e3640245eff14060c840a64f196429c09498ce8d",
+  "all_compiler_runtime_host_machine_harness_sources_match_measured_implementation": true,
+  "sole_difference": "cfg(panic = \"unwind\") on the new panic-recovery test; no production behavior or unwind-build test body changes",
+  "new_compression_observations": 0,
+  "reused_timing_commit": "c7f6d414531ad6518ac1c043366601b33133bb3d",
+  "reused_scalar_commit": "97bbbaf23006264f457731987c419fa1f6c2992f",
+  "source_diff": "diff --git a/src/engine/src/resident/budget.rs b/src/engine/src/resident/budget.rs\nindex 03daa6b36..3d298e9d3 100644\n--- a/src/engine/src/resident/budget.rs\n+++ b/src/engine/src/resident/budget.rs\n@@ -969,6 +969,7 @@ mod native_library_work_tests {\n     }\n \n     #[test]\n+    #[cfg(panic = \"unwind\")]\n     fn nested_call_unwind_restores_context_without_refunding_spent_work() {\n         let memory = mech_core::ManagedMemoryBudget::new(8192);\n         let budget = NativeLibraryWorkBudget::new(100, 100, &memory).unwrap();\n"
+}

@@ -1,0 +1,172 @@
+{
+  "schema": "mech.optimization.receipts.v1",
+  "head": "b44f5833a95a9c853619ad0ea037f76a88178d86",
+  "scope": "Restored measured accounting optimization; actual runtime-only linked original publication/assertion rejection/recovery execution. Previous timing/scalar/785-test receipts remain applicable to identical production code.",
+  "files": [
+    {
+      "path": "linked/build.json",
+      "sha256": "5787635545ad4300a8801e1c34ce50e9b11f697e7f78f0e612b72ca5c336e2f2",
+      "bytes": 586
+    },
+    {
+      "path": "linked/build.stderr",
+      "sha256": "b11a4cf2e40aa5c19d1334a7d8605f91bb08607fb8ed7232db894439c9a6d6a1",
+      "bytes": 1864
+    },
+    {
+      "path": "linked/build.stdout",
+      "sha256": "c960bab82a7d091f6b71dcec45f9f8a69ba191ec581b88f6c8c0774b1aa77f6c",
+      "bytes": 109649
+    },
+    {
+      "path": "linked/closure.json",
+      "sha256": "612d9014369c6db40c59242dc4545e4bcbc1a1ec80a0ba353b9304b39e67f922",
+      "bytes": 12240
+    },
+    {
+      "path": "linked/expected.stdout",
+      "sha256": "d59b43a83f857a46792f287f03191d25a6c889ae7306d8be6d1dce40c0914209",
+      "bytes": 157
+    },
+    {
+      "path": "linked/generate.rs",
+      "sha256": "1463319ad288118cf9ea3210b29e89a4f7d280eb48ac0cff810698bb71b1cf74",
+      "bytes": 1854
+    },
+    {
+      "path": "linked/generation.json",
+      "sha256": "4f3b3e7a0ba8f58e697f590fe31beb7d11e5af5a3fbb41b25c4991b7b83284e4",
+      "bytes": 10044
+    },
+    {
+      "path": "linked/generator-build.json",
+      "sha256": "d60307dc88af0f2953c0765c8d71656eb11de3049f0dbf693f34bae32f236b5c",
+      "bytes": 1496
+    },
+    {
+      "path": "linked/generator-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "linked/generator-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "linked/generator-run.json",
+      "sha256": "64b04f761dbf1a1d9f8f78db67d9aa307ce6334ba6cef39190ac485d9d4cf77c",
+      "bytes": 202
+    },
+    {
+      "path": "linked/generator-run.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "linked/generator-run.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "linked/input.json",
+      "sha256": "aa02c9966f63ffed8348423f9a9675abc69d99718add0578917b192b23a845c0",
+      "bytes": 49
+    },
+    {
+      "path": "linked/metadata.json",
+      "sha256": "f5a24763e187bdc23a62115bb5427136a27801989266bd0039ea8f92d4db4640",
+      "bytes": 545
+    },
+    {
+      "path": "linked/metadata.stderr",
+      "sha256": "8152b2333cd2678b275ca15c452b2cb1f89b6638319827080c6fb8e70a627ac2",
+      "bytes": 1453
+    },
+    {
+      "path": "linked/metadata.stdout",
+      "sha256": "e1f3f3cb930e133d673a7ff0e5269e2e72821c7d5b747484c0fb85988a786d3b",
+      "bytes": 782067
+    },
+    {
+      "path": "linked/project/Cargo.lock",
+      "sha256": "6b3fd52c23e191c861ec8e75d6cd2a350211be38f5cd1776021d876a77f749f7",
+      "bytes": 32016
+    },
+    {
+      "path": "linked/project/Cargo.toml",
+      "sha256": "56dc9e648a498da815e50ad9be7a34ccd5a3bef08eede042212272dd96d5fdde",
+      "bytes": 1901
+    },
+    {
+      "path": "linked/project/application.mec",
+      "sha256": "93e917922fa4057f846d080f8502b280b89ee06ae42ea078e8f4c4147d409431",
+      "bytes": 594
+    },
+    {
+      "path": "linked/project/build.rs",
+      "sha256": "ac99c167d3048adbae0c3229ae1dfff15fd59e553fde2590c80464dade0f565c",
+      "bytes": 2544
+    },
+    {
+      "path": "linked/project/factory-profile.json",
+      "sha256": "37da5b8455f00f3b6e0e4579be1c9745ee15ffda90f47987de5240baf4cd2538",
+      "bytes": 579
+    },
+    {
+      "path": "linked/project/linked-manifest.json",
+      "sha256": "e42d087d2cabed23982953f0c50b0942963c1e057d9a01b020a6839479521c83",
+      "bytes": 8272
+    },
+    {
+      "path": "linked/project/native-descriptor.json",
+      "sha256": "75875fc87010e29f5110beba6ac01038b5188088f7f9d7ba70a5103ae75583bd",
+      "bytes": 91299
+    },
+    {
+      "path": "linked/project/rust-toolchain.toml",
+      "sha256": "19219593d7dba33a75623287af94da940a93fac92eeef99e8fff9b7fd804fcf9",
+      "bytes": 63
+    },
+    {
+      "path": "linked/project/src/bin/lexical-retry.rs",
+      "sha256": "0a336483e45a7af53a9726145a9c2ba43df6a0db7607c7494fb43ec133137eef",
+      "bytes": 5962
+    },
+    {
+      "path": "linked/project/src/main.rs",
+      "sha256": "4547826ea85b29b87d9f43778dc3f6ef14e8a0f682decd8cf1cd4f7f0ed16c36",
+      "bytes": 1454
+    },
+    {
+      "path": "linked/qualify.py",
+      "sha256": "88db514639eeaaa57b43fa6dadeb658c2bb02672b8d6495f0956b7d3df15453d",
+      "bytes": 4404
+    },
+    {
+      "path": "linked/run.json",
+      "sha256": "9518fe4628f298355a5cc777e5e29b6ab05f7053c01f008b6644d5f5cb95fa05",
+      "bytes": 393
+    },
+    {
+      "path": "linked/run.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "linked/run.stdout",
+      "sha256": "d59b43a83f857a46792f287f03191d25a6c889ae7306d8be6d1dce40c0914209",
+      "bytes": 157
+    },
+    {
+      "path": "linked/source.mec",
+      "sha256": "93e917922fa4057f846d080f8502b280b89ee06ae42ea078e8f4c4147d409431",
+      "bytes": 594
+    },
+    {
+      "path": "retain.py",
+      "sha256": "d74645a49089e9977114de7595fbcfded0d0a3c035a5428425135468da99fe5b",
+      "bytes": 15134
+    }
+  ]
+}
