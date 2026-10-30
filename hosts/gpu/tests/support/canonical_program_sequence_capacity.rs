@@ -104,6 +104,21 @@ fn reserved_append_recurrence_selects_the_unchanged_path_guard_builder() {
                 "reserved native appends must not allocate per iteration"
             );
         }
+        for count in [1, 257] {
+            let small = append_costs
+                .iter()
+                .find(|&&(capacity, n, _, _)| capacity == 288 && n == count)
+                .unwrap();
+            let real = append_costs
+                .iter()
+                .find(|&&(capacity, n, _, _)| capacity == 305257 && n == count)
+                .unwrap();
+            assert_eq!(
+                real.3 - small.3,
+                (305257 - 288) * 8,
+                "the append after a completed call must retain its one path backing"
+            );
+        }
         let metadata = mech_gpu::native_artifact::emit_program_object(
             &artifact,
             &mech_stdlib::source_catalog(),
