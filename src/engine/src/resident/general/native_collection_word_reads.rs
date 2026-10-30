@@ -216,9 +216,27 @@ impl NativePreparedLibraryCall {
         memory: &mech_core::ManagedMemoryBudget,
     ) -> Option<[u64; 4]> {
         if !(self.supports_unsigned_matrix_element()
-            || self.supports_unsigned_matrix_length()
-            || self.supports_unsigned_matrix_replace()
-            || self.supports_unsigned_matrix_append())
+            || {
+                #[cfg(feature = "pure_text")]
+                {
+                    self.supports_unsigned_matrix_length()
+                }
+                #[cfg(not(feature = "pure_text"))]
+                {
+                    false
+                }
+            }
+            || {
+                #[cfg(feature = "sequence_buffers")]
+                {
+                    self.supports_unsigned_matrix_replace()
+                        || self.supports_unsigned_matrix_append()
+                }
+                #[cfg(not(feature = "sequence_buffers"))]
+                {
+                    false
+                }
+            })
         {
             return None;
         }
