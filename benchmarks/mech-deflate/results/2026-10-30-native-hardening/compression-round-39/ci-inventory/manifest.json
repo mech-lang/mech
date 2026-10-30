@@ -1,0 +1,66 @@
+{
+  "created_utc": "2026-10-30T22:18:07.576660+00:00",
+  "head": "892275fec5b462ca76f0ba47a34dfefb6096c6bc",
+  "files": [
+    {
+      "path": "ci-inventory/configured.json",
+      "sha256": "f88c7468da35b202277974b749863848e68e92f05b79472b72a2c1714550d2b7",
+      "bytes": 366
+    },
+    {
+      "path": "ci-inventory/configured.stderr",
+      "sha256": "8124453cef415b60c981a1d3724fb2b19614d37bad165006ea53c79684849bde",
+      "bytes": 270
+    },
+    {
+      "path": "ci-inventory/configured.stdout",
+      "sha256": "419353814b9b69c4459415b2339c063fa45b0e69e293a07db90311a984b4508f",
+      "bytes": 201
+    },
+    {
+      "path": "ci-inventory/execute.stderr",
+      "sha256": "f8e88928e3a284241a6585737e2bf9254a95067b73b09adcb27601d08fdebf2f",
+      "bytes": 47
+    },
+    {
+      "path": "ci-inventory/execute.stdout",
+      "sha256": "87fe3d6ae918216ac924d7942990b52397349e065352e53ea691f39058a52547",
+      "bytes": 5991
+    },
+    {
+      "path": "ci-inventory/inventory-contract.stderr",
+      "sha256": "0d5f045e150c13d580387a69814727a5eee570c7ec962f9229382fb5603b376f",
+      "bytes": 1325
+    },
+    {
+      "path": "ci-inventory/inventory-contract.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "ci-inventory/list.json",
+      "sha256": "b212d9e721ff55e209fdc35bcc744cefacda5a12ece4ba7c645be1b068920a26",
+      "bytes": 480
+    },
+    {
+      "path": "ci-inventory/list.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "ci-inventory/list.stdout",
+      "sha256": "1b74d34c8056110512e61454d0acbba764c76b94bf93058fab3994749e5d933d",
+      "bytes": 1906
+    },
+    {
+      "path": "ci-inventory/workflow-contract.stderr",
+      "sha256": "8a7a77dfc3aa23b917d02eafff3c046e400f9b0735c5144d1d035514511f3c4f",
+      "bytes": 226
+    },
+    {
+      "path": "ci-inventory/workflow-contract.stdout",
+      "sha256": "52e9ee73f9045ac74241664487507197b71661060fa89400cc308979e5b5609e",
+      "bytes": 201
+    }
+  ]
+}
