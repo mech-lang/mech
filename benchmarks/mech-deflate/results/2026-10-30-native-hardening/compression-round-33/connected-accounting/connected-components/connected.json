@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/private/tmp/mech-numeric-composition-round33-20261030/connected-components/tests",
+    "numeric_composition_qualification",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 101,
+  "seconds": 1.6656182499136776,
+  "environment": {
+    "CARGO_MANIFEST_DIR": "/private/tmp/mech-deflate-linear-stack/hosts/gpu"
+  },
+  "source": "ed5266a3b plus connected-library-02 captured source diff/hashes; opt1 GPU semantic diagnostics"
+}
