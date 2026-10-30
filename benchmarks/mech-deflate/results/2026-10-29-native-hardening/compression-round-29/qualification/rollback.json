@@ -1,0 +1,43 @@
+{
+  "head": "cf8779edda0bad423e8abfdf4f9345e69754125e",
+  "restored_to": "2cd0b8edae555c24509f6531f68ee7344f3f9e2b",
+  "production_base": "d75177747b6870d32265b5410c000b789552060b",
+  "preserved_new_tests": [
+    "native_ceiling_and_overflow_precede_foreign_account_and_library_caps",
+    "nested_call_unwind_restores_context_without_refunding_spent_work"
+  ],
+  "files": [
+    {
+      "path": "hosts/gpu/src/native_artifact/work/mod.rs",
+      "sha256": "4ed2229535491ea3a7a176fced88da1762d9fadd87cfadff42cf67bc1e0beb06",
+      "matches_parent_witness_checkpoint": true
+    },
+    {
+      "path": "src/engine/src/resident/borrowed_metadata_scan_tests.rs",
+      "sha256": "c140c8dac51c6cac4bbda1519d102a49a45ea395d1551ebe5766fefcc245a8fd",
+      "matches_parent_witness_checkpoint": true
+    },
+    {
+      "path": "src/engine/src/resident/budget.rs",
+      "sha256": "8140f4b5c7fd5940af53d48ac5b597ecb3fa350a71ec516e86241aa6e19e1e3e",
+      "matches_parent_witness_checkpoint": false,
+      "only_difference_from_parent_witness_checkpoint": "cfg(panic = \"unwind\") on the new test; production bytes identical"
+    },
+    {
+      "path": "src/engine/src/resident/native_worker_budget.rs",
+      "sha256": "aeb2c521277f5c4da2cfbe7aa0efd31d1499bb8c00f620c07d1340b480c81f3b",
+      "matches_parent_witness_checkpoint": true
+    },
+    {
+      "path": "src/engine/src/resident/native_worker_budget_tests.rs",
+      "sha256": "006134c6665c08cad1603d6d1e30186f1238637f7e269301badfc6ebf3957f95",
+      "matches_parent_witness_checkpoint": true
+    },
+    {
+      "path": "src/engine/src/resident/native_worker_credits.rs",
+      "sha256": "edeccaf044cd1c1d3901f7d8aa74a4e63e1aa107c139e21192033cf5f66b8afa",
+      "matches_parent_witness_checkpoint": true
+    }
+  ],
+  "attribute_only_test_followup": "The new panic-recovery test additionally uses cfg(panic = \"unwind\"), matching the existing recovery-test convention. No production code differs."
+}

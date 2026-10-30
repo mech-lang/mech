@@ -1,0 +1,81 @@
+{
+  "method": "Disjoint exclusive leaves under named charge/fuel functions only; excludes whole with_call_limits leaf bodies. Before is prior retained recorded sample, not paired; weights are not elapsed-time guarantees.",
+  "observations": {
+    "before": {
+      "path": "/private/tmp/mech-scalar-results-round27-20261029/primary/after.sample.txt",
+      "sha256": "bb4aa0dc1b5fd45a15d4cb941279b63bf2909e9ccd4c719e0d6ec633bbf30bba",
+      "total": 1283,
+      "accounting": 187,
+      "tls": 101,
+      "accounting_tls": 72,
+      "leaves": [
+        [
+          "_tlv_get_addr",
+          72
+        ],
+        [
+          "_RNvMNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact4workNtB2_15NativeWorkMeter6charge",
+          44
+        ],
+        [
+          "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22charge_control_account",
+          28
+        ],
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget6charge",
+          27
+        ],
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget4used",
+          14
+        ],
+        [
+          "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget20observe_control_work",
+          2
+        ],
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget18unscoped_remaining",
+          0
+        ]
+      ]
+    },
+    "after": {
+      "path": "/private/tmp/mech-ownership-round29-20261029/primary/after.sample.txt",
+      "sha256": "34bf63ae78bae61cdd0de1516195e6c34439c9c7cc117d058522d68f59d7676f",
+      "total": 1291,
+      "accounting": 163,
+      "tls": 48,
+      "accounting_tls": 38,
+      "leaves": [
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+          56
+        ],
+        [
+          "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget32charge_control_account_at_limits",
+          43
+        ],
+        [
+          "_tlv_get_addr",
+          38
+        ],
+        [
+          "_RNvMNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact4workNtB2_15NativeWorkMeter6charge",
+          18
+        ],
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget6charge",
+          4
+        ],
+        [
+          "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget20observe_control_work",
+          3
+        ],
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget18unscoped_remaining",
+          1
+        ]
+      ]
+    }
+  }
+}
