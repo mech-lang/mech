@@ -1,6 +1,5 @@
 //! Same-plan last-use candidates for selected packed buffer operations.
 //! Runtime exclusivity and the original current-visit checks remain mandatory.
-use super::fusion_semantics::Read;
 use super::{
     NativeCollectionPrimitive as Primitive, NativeIterationAction as Action,
     NativeMatchAction as Scalar, NativeMatchValue as Value, NativeProgramArtifactPlan as Plan,
@@ -44,9 +43,6 @@ impl Facts<'_> {
             if matches!(template.primitive(), Primitive::MatrixIndexedReplace | Primitive::SequenceWithCapacity | Primitive::SequenceReserve | Primitive::SequenceAppend | Primitive::SequenceAppendLeBytes | Primitive::SequenceAppendSublist | Primitive::SequenceClear))) {
             return Vec::new();
         }
-        let Ok(reads) = facts.fusion_reads() else {
-            return vec![None; plan.blocks().len()];
-        };
         plan.blocks()
             .iter()
             .enumerate()
@@ -71,11 +67,11 @@ impl Facts<'_> {
                     .then(|| operands.get(1).copied())
                     .flatten();
                 let owned_source_slots = source
-                    .filter(|source| can_retire(facts, reads, *source, site as u32))
+                    .filter(|source| can_retire(facts, *source, site as u32))
                     .and_then(|source| aliases::possible(facts, source).ok())
                     .unwrap_or_default()
                     .into_iter()
-                    .filter(|value| can_retire(facts, reads, *value, site as u32))
+                    .filter(|value| can_retire(facts, *value, site as u32))
                     .collect();
                 Some(NativeUnsignedBufferCall {
                     site: site as u32,
@@ -88,24 +84,11 @@ impl Facts<'_> {
     }
 }
 
-fn can_retire(facts: &Facts<'_>, reads: &[Vec<Read>], value: Value, frontier: u32) -> bool {
-    let Some(reads) = reads.get(value.get() as usize) else {
-        return false;
-    };
-    // Collection capture, loop seed/next/return, publication and effects have
-    // independent ownership frontiers. Stay immutable unless those consumers
-    // establish a dedicated proof; never silently discard such a read.
-    if reads.iter().any(|read| {
-        matches!(read, Read::Other) || matches!(read, Read::Terminator(site) if *site == frontier)
-    }) {
-        return false;
-    }
+fn can_retire(facts: &Facts<'_>, value: Value, frontier: u32) -> bool {
+    // A completed return/seed/latch is not a future read of the old visit.
+    // Preserve exact control order and all opaque ownership frontiers, sharing
+    // the same mechanical query as existing private-frame retirement.
     !facts
-        .old_value_read_before_redefinition(
-            value,
-            frontier,
-            |site| reads.contains(&Read::Action(site)),
-            |site| reads.contains(&Read::Terminator(site)),
-        )
+        .old_value_has_future_reads(value, frontier)
         .unwrap_or(true)
 }

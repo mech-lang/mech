@@ -85,11 +85,7 @@ pub struct NativeProgramFacts<'p> {
     graph: OnceCell<Result<Graph, &'static str>>,
     reads: OnceCell<Result<Vec<Vec<NativeProgramReadRole>>, &'static str>>,
     definitions: OnceCell<Result<Vec<Vec<NativeProgramDefinition>>, &'static str>>,
-    #[cfg(any(
-        feature = "pure_text",
-        feature = "map_ops",
-        feature = "sequence_buffers"
-    ))]
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
     fusion_reads: OnceCell<Result<Vec<Vec<Read>>, &'static str>>,
     #[cfg(any(
         feature = "pure_text",
@@ -107,11 +103,7 @@ impl Plan {
             graph: OnceCell::new(),
             reads: OnceCell::new(),
             definitions: OnceCell::new(),
-            #[cfg(any(
-                feature = "pure_text",
-                feature = "map_ops",
-                feature = "sequence_buffers"
-            ))]
+            #[cfg(any(feature = "pure_text", feature = "map_ops"))]
             fusion_reads: OnceCell::new(),
             #[cfg(any(
                 feature = "pure_text",
@@ -135,11 +127,7 @@ impl<'p> NativeProgramFacts<'p> {
     ) -> Result<&super::SemanticActions<'p>, &'static str> {
         self.inputs.actions()
     }
-    #[cfg(any(
-        feature = "pure_text",
-        feature = "map_ops",
-        feature = "sequence_buffers"
-    ))]
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
     pub(in crate::native_artifact) fn fusion_reads(&self) -> Result<&[Vec<Read>], &'static str> {
         self.fusion_reads
             .get_or_init(|| super::reads(self.plan(), self.actions()?))
