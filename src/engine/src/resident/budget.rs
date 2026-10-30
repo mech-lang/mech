@@ -858,6 +858,7 @@ mod native_library_work_tests {
     }
 
     #[test]
+    #[cfg(panic = "unwind")]
     fn nested_call_unwind_restores_context_without_refunding_spent_work() {
         let memory = mech_core::ManagedMemoryBudget::new(8192);
         let budget = NativeLibraryWorkBudget::new(100, 100, &memory).unwrap();
