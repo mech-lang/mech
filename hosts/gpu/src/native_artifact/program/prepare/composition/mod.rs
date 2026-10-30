@@ -171,6 +171,9 @@ impl Layout {
                         && site != parent.finish() as usize
                         && site != child.initialize() as usize
                         && site != child.exit() as usize
+                        // A piece must not bypass another path's funded entry.
+                        // Its interior tests the entry decision in hook scratch.
+                        && !admissions.group(site).is_some_and(|g| g.start() as usize == site)
                         && plan.activation_boundary() != Some(site as u32)
                         && matches!(block.terminator(), Term::Scalar(_))
                         && eligible(plan, frames, calls, site))
