@@ -1,0 +1,40 @@
+{
+  "scope": "Fresh pinned compressor source compiles to the exact measured canonical artifact; original/decoded codec agreement. Frozen release timing driver/library receipts.",
+  "files": [
+    {
+      "path": "final-source/fresh.json",
+      "sha256": "94010f5d49aaeecd8ca4ad9df010a9a965e475cd85e418d55e1b6887cf4f07e2",
+      "bytes": 369
+    },
+    {
+      "path": "final-source/fresh.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "final-source/fresh.stdout",
+      "sha256": "9af8b9f1c359ad93d21b732f4f084b7edcc45797468fa55090e2332c204f05d4",
+      "bytes": 166
+    },
+    {
+      "path": "confirmed-primary/current-build.json",
+      "sha256": "e7e1434a3d5c91ef94cf8f61b21b6ac8b90f454a96b0c944b3335e6249292555",
+      "bytes": 3622
+    },
+    {
+      "path": "confirmed-workers/before-build.json",
+      "sha256": "91bc5101103f59bfc713363ffca56af346c41ed19c337f6cdcbbf29f35aeec88",
+      "bytes": 3743
+    },
+    {
+      "path": "confirmed-workers/after-build.json",
+      "sha256": "ef5d7b4a98943e46c50e7cf157df6677f4cf4faa5166f32dccd980a68e382567",
+      "bytes": 3670
+    },
+    {
+      "path": "confirmed-workers/source-adaptation.json",
+      "sha256": "9d6160b478ca5f4fd26c8cf22053c97b42011097cf8fa512329315165861f320",
+      "bytes": 192
+    }
+  ]
+}
