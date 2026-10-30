@@ -71,13 +71,13 @@ impl<'borrow, 'state, 'visit, 'plan> MapExecution<'borrow, 'state, 'visit, 'plan
         self.invocation.result
     }
     #[inline]
-    pub(in crate::native_artifact::program::runtime) fn caches(&self) -> &CallCacheLane {
+    pub(in crate::native_artifact::program::runtime) fn caches(&self) -> &CallCacheLane<'plan> {
         &self.invocation.state.call_caches
     }
     #[inline]
     pub(in crate::native_artifact::program::runtime) fn caches_and_library(
         &mut self,
-    ) -> (&mut CallCacheLane, &NativeLibraryWorkBudget) {
+    ) -> (&mut CallCacheLane<'plan>, &NativeLibraryWorkBudget) {
         (
             &mut self.invocation.state.call_caches,
             &self.invocation.state.library,
@@ -1167,13 +1167,13 @@ impl<'borrow, 'state, 'visit, 'plan> CollectionExecution<'borrow, 'state, 'visit
         self.invocation.limits
     }
     #[inline]
-    pub(in crate::native_artifact::program::runtime) fn caches(&self) -> &CallCacheLane {
+    pub(in crate::native_artifact::program::runtime) fn caches(&self) -> &CallCacheLane<'plan> {
         &self.invocation.state.call_caches
     }
     #[inline]
     pub(in crate::native_artifact::program::runtime) fn caches_and_library(
         &mut self,
-    ) -> (&mut CallCacheLane, &NativeLibraryWorkBudget) {
+    ) -> (&mut CallCacheLane<'plan>, &NativeLibraryWorkBudget) {
         (
             &mut self.invocation.state.call_caches,
             &self.invocation.state.library,

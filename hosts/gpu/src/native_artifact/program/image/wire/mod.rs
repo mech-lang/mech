@@ -259,11 +259,13 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
         &buffer_frames,
         plan.values().len(),
     )?;
+    let call_cache = native::program::prepare::call_cache::Layout::derive(&plan, &calls)?;
     let descriptor = NativeProgramDescriptor {
         metadata: native::program::prepare::ProgramMetadata {
             plan,
             schemas,
             calls,
+            call_cache,
             call_routes,
             types,
             visits,

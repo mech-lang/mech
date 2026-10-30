@@ -11,6 +11,7 @@ use mech_engine::native_artifact::{
 };
 use std::sync::Arc;
 
+pub(in crate::native_artifact) mod call_cache;
 pub(in crate::native_artifact) mod call_routes;
 pub(in crate::native_artifact) mod frame_retirement;
 
@@ -42,6 +43,8 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     // by validate_query_stages before this immutable descriptor can escape.
     // Runtime stage lookup never rebinds or clones those selected templates.
     pub(in crate::native_artifact) calls: Box<[Option<NativePreparedLibraryCall>]>,
+    // Complete prepared-call inventory, independently rederived on image load.
+    pub(in crate::native_artifact) call_cache: call_cache::Layout,
     // Derived from these exact calls/proofs, including independent image load.
     pub(in crate::native_artifact) call_routes: Box<[call_routes::LibraryCallRoute]>,
     pub(in crate::native_artifact) types: Box<[NativeValueSlot]>,
@@ -398,11 +401,13 @@ impl PreparedNativeProgram {
             call_routes::derive(&plan, &buffer_frames, &unsigned_buffer_calls, &calls);
         let frame_retirements =
             frame_retirement::FrameRetirements::derive(&buffer_frames, plan.values().len())?;
+        let call_cache = call_cache::Layout::derive(&plan, &calls)?;
         let (scalar_aggregates, line_retention_frontiers) = facts.into_preparation_inventories();
         let metadata = ProgramMetadata {
             plan,
             schemas: Arc::new(artifact.schemas().clone()),
             calls,
+            call_cache,
             call_routes,
             types,
             visits,

@@ -190,18 +190,30 @@ pub(in crate::native_artifact::program::runtime) enum CallCacheEntry {
     Repeated(NativePreparedLibraryCallCache, u64),
 }
 
-/// Empty per-site slots are native invocation metadata, not prebound calls.
+/// Empty prepared-call slots are invocation metadata, not prebound calls.
 /// Their complete concrete backing is admitted during setup. Once slots have
 /// no cache owner; repeated slots separately admit lazy bound metadata.
-pub(in crate::native_artifact::program::runtime) struct CallCacheLane {
-    pub(in crate::native_artifact::program::runtime) entries: Box<[CallCacheEntry]>,
+pub(in crate::native_artifact::program::runtime) struct CallCacheLane<'plan> {
+    layout: &'plan crate::native_artifact::program::prepare::call_cache::Layout,
+    entries: Box<[CallCacheEntry]>,
     metadata_nodes: u64,
     metadata_valid: bool,
     library: Option<NativeLibraryWorkBudget>,
     _reservation: mech_core::ManagedMemoryReservation,
     _nodes: mech_core::ManagedNodeReservation,
 }
-impl CallCacheLane {
+impl<'plan> CallCacheLane<'plan> {
+    #[inline]
+    pub(in crate::native_artifact::program::runtime) fn entry(
+        &self,
+        site: usize,
+    ) -> Option<&CallCacheEntry> {
+        self.entries.get(self.layout.slot(site)?)
+    }
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    pub(in crate::native_artifact::program::runtime) fn test_entries(&self) -> &[CallCacheEntry] {
+        &self.entries
+    }
     /// Reconcile only the cache that can change at this boundary. A failed
     /// reconciliation leaves the lane unusable, never a stale lower bound.
     pub(in crate::native_artifact::program::runtime) fn with_repeated<T>(
@@ -214,9 +226,13 @@ impl CallCacheLane {
     ) -> Result<T, NativeCollectionInvocationError> {
         self.check_account(work)?;
         work.charge(256, 0)?;
+        let slot = self
+            .layout
+            .slot(site)
+            .ok_or(NativeCollectionInvocationError::InvalidInput)?;
         let CallCacheEntry::Repeated(cache, nodes) = self
             .entries
-            .get_mut(site)
+            .get_mut(slot)
             .ok_or(NativeCollectionInvocationError::InvalidInput)?
         else {
             return Err(NativeCollectionInvocationError::InvalidInput);
@@ -248,7 +264,7 @@ impl CallCacheLane {
         limits: MemoryBudgetLimits,
         work: &NativeLibraryWorkBudget,
     ) -> Result<bool, NativeCollectionInvocationError> {
-        match self.entries.get(site) {
+        match self.entry(site) {
             Some(CallCacheEntry::Once) => call.invoke_current(inputs, output, limits, work),
             Some(CallCacheEntry::Repeated(..)) => self.with_repeated(site, work, |cache| {
                 call.invoke_current_cached(cache, inputs, output, limits, work)
@@ -295,13 +311,13 @@ impl CallCacheLane {
         )
     }
     fn new(
-        descriptor: &NativeProgramDescriptor,
+        descriptor: &'plan NativeProgramDescriptor,
         limit: u64,
         memory: &ManagedMemoryBudget,
         work: &mut NativeWorkMeter,
     ) -> Result<Self, NativeProgramExecutionError> {
-        let blocks = descriptor.metadata().plan.blocks();
-        let count = blocks.len();
+        let layout = &descriptor.metadata().call_cache;
+        let count = layout.len();
         let bytes = Self::metadata_bytes(count)?;
         if bytes > limit {
             return Err(NativeExecutionError::TransportLimit {
@@ -327,14 +343,14 @@ impl CallCacheLane {
         // Phase resume retains the same previous/current/progress state and
         // cannot replay a root block. No new execution authority is created.
         let entries = call_cache_allocation::allocate(count, bytes, |ordinal| {
-            let block = &blocks[ordinal];
-            if block.iteration().is_none() {
+            if !layout.repeated()[ordinal] {
                 CallCacheEntry::Once
             } else {
                 CallCacheEntry::Repeated(NativePreparedLibraryCallCache::default(), 0)
             }
         })?;
         Ok(Self {
+            layout,
             entries: entries.into_boxed_slice(),
             metadata_nodes: 0,
             metadata_valid: true,
@@ -386,7 +402,7 @@ impl<'a> Prepared<'a> {
             crate::native_artifact::program::runtime::collections::State::metadata_bytes(
                 descriptor,
             )?;
-        let call_caches = CallCacheLane::metadata_bytes(descriptor.metadata().plan.blocks().len())?;
+        let call_caches = CallCacheLane::metadata_bytes(descriptor.metadata().call_cache.len())?;
         let line_matrices = u64::from(!descriptor.metadata().line_matrices.regions.is_empty());
         let frames = super::buffer_frames::BufferFrames::metadata_nodes(
             &descriptor.metadata().buffer_frames,
@@ -513,7 +529,11 @@ impl<'a> Prepared<'a> {
                     .ok()?,
                 )
             })
-            .and_then(|n| n.checked_add(CallCacheLane::metadata_bytes(plan.blocks().len()).ok()?))
+            .and_then(|n| {
+                n.checked_add(
+                    CallCacheLane::metadata_bytes(descriptor.metadata().call_cache.len()).ok()?,
+                )
+            })
             .and_then(|n| {
                 n.checked_add(
                     crate::native_artifact::program::runtime::lines::State::metadata_bytes(

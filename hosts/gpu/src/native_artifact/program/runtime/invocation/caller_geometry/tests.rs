@@ -38,7 +38,7 @@ unsafe extern "C" fn observe(
             // Independent scan checks the maintained total against all live
             // cache owners, including selected String-span index mutations.
             let mut scanned = 0u64;
-            for entry in &ctx.state.call_caches.entries {
+            for entry in ctx.state.call_caches.test_entries() {
                 if let crate::native_artifact::program::runtime::session::CallCacheEntry::Repeated(
                     cache,
                     tracked,
@@ -58,7 +58,7 @@ unsafe extern "C" fn observe(
                     .caller_retained_nodes(&ctx.state.library)
                     .unwrap(),
                 crate::native_artifact::program::runtime::session::CallCacheLane::metadata_bytes(
-                    ctx.state.call_caches.entries.len()
+                    ctx.state.call_caches.test_entries().len()
                 )
                 .unwrap()
                     + scanned
