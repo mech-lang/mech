@@ -1,0 +1,90 @@
+{
+  "scope": "Derived descriptive summary of both immediately committed worker groups",
+  "summary": {
+    "groups": [
+      {
+        "group": 0,
+        "before": {
+          "median_seconds": 0.005040562,
+          "multiple_of_roc": 18.06653046594982
+        },
+        "after": {
+          "median_seconds": 0.0049230415,
+          "multiple_of_roc": 17.645310035842293
+        },
+        "pooled_ratio": 0.9766850402792387,
+        "median_block_ratio": 0.9758731865402943,
+        "geometric_block_ratio": 0.9822546038700702,
+        "improving_blocks": 15
+      },
+      {
+        "group": 1,
+        "before": {
+          "median_seconds": 0.005013771,
+          "multiple_of_roc": 17.970505376344086
+        },
+        "after": {
+          "median_seconds": 0.0049083124999999995,
+          "multiple_of_roc": 17.59251792114695
+        },
+        "pooled_ratio": 0.9789662312060122,
+        "median_block_ratio": 0.9731293329888674,
+        "geometric_block_ratio": 0.9885285334671297,
+        "improving_blocks": 12
+      },
+      {
+        "group": 2,
+        "before": {
+          "median_seconds": 0.0050399165,
+          "multiple_of_roc": 18.064216845878136
+        },
+        "after": {
+          "median_seconds": 0.0049363129999999995,
+          "multiple_of_roc": 17.692878136200715
+        },
+        "pooled_ratio": 0.9794434094295014,
+        "median_block_ratio": 0.9802142012464359,
+        "geometric_block_ratio": 0.9784787458154875,
+        "improving_blocks": 15
+      },
+      {
+        "group": 3,
+        "before": {
+          "median_seconds": 0.005053083,
+          "multiple_of_roc": 18.111408602150536
+        },
+        "after": {
+          "median_seconds": 0.004903,
+          "multiple_of_roc": 17.573476702508962
+        },
+        "pooled_ratio": 0.9702987265398174,
+        "median_block_ratio": 0.971435839246796,
+        "geometric_block_ratio": 0.9710772001548051,
+        "improving_blocks": 15
+      }
+    ],
+    "reference_seconds": 0.000279,
+    "primary_observations": 3968,
+    "all_observations": 3984,
+    "scope": "Four fixed independent worker groups with descriptive within-group block comparisons",
+    "before": {
+      "median_seconds": 0.0050355415,
+      "multiple_of_roc": 18.048535842293905
+    },
+    "after": {
+      "median_seconds": 0.004917375,
+      "multiple_of_roc": 17.625
+    },
+    "pooled_ratio": 0.976533506873094,
+    "median_block_ratio": 0.9752591175102207,
+    "geometric_block_ratio": 0.9800643888043183,
+    "improving_blocks": 57
+  },
+  "files": [
+    {
+      "path": "summary.json",
+      "sha256": "dab0a5fada947811125927a0fcec21ac5b458f47b6676b8bf32144574300f973",
+      "bytes": 2259
+    }
+  ]
+}
