@@ -1,0 +1,201 @@
+{
+  "created_utc": "2026-10-30T19:22:45.109111+00:00",
+  "head": "bd60d04cfc2364ba151498388cc821ae659c9308",
+  "files": [
+    {
+      "path": "binary-inspection/reference-hot-function.asm",
+      "sha256": "ba0c29f666013c8b7a25447948ca7ea073e5026db46ec215bcb5bffad4c8aeb1",
+      "bytes": 889705
+    },
+    {
+      "path": "binary-inspection/reference-hot-function.json",
+      "sha256": "e73e5dbb10cfb1f474e9ca2baacc7795b695e6f9dbddf7febb15fd2a0058e164",
+      "bytes": 6575
+    },
+    {
+      "path": "binary-inspection/reference-hot-function.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "include/mimalloc.h",
+      "sha256": "6787270694ae286bbb75fc75b21da57a04d2326320d9aabdef7e815cbe23f774",
+      "bytes": 37055
+    },
+    {
+      "path": "package-verification.json",
+      "sha256": "852fa03afedda2c351398296220e7e1ff9ebce7e673ad04e9bbfd43472943ae1",
+      "bytes": 2466
+    },
+    {
+      "path": "pinned-package-tree.json",
+      "sha256": "33ccde9f70d309d864196f833597811f492d06d92bf433cf85397e5eadf5deb9",
+      "bytes": 1237
+    },
+    {
+      "path": "reference-package/BlockOut.roc",
+      "sha256": "3964b066eda11a4d99123255809615ed4caec7636085f5ec7f76804b640187a2",
+      "bytes": 32133
+    },
+    {
+      "path": "reference-package/BtMatchfinder.roc",
+      "sha256": "4970b6d3e93bb46e511c2db3071e7619f0d1d9cc02402cbaea1af0c98c7542d3",
+      "bytes": 16948
+    },
+    {
+      "path": "reference-package/CompressFast.roc",
+      "sha256": "03df18d51b7014aa3f41770a8a79809bfd16178f765f212c6a7d2256aef3bdf1",
+      "bytes": 16375
+    },
+    {
+      "path": "reference-package/CompressLazy.roc",
+      "sha256": "131bfdf5a737c5501706884186ef0fb9360686ae68540cb4ff49912b4c967607",
+      "bytes": 75024
+    },
+    {
+      "path": "reference-package/CompressOptimal.roc",
+      "sha256": "76640a1c710d8392abd7902c7841a9e0b34cba2eb5acd857ae6acd65e7c11e61",
+      "bytes": 52281
+    },
+    {
+      "path": "reference-package/Deflate.roc",
+      "sha256": "37dc76638190df2af21dc4a7bee33a79a525bfec796045ce09086ae7ba956c51",
+      "bytes": 12304
+    },
+    {
+      "path": "reference-package/DeflateTables.roc",
+      "sha256": "34683f82623b438f71e7048ee8d8e402ea8e0121e3fd6b97d1c351db5b05368b",
+      "bytes": 6598
+    },
+    {
+      "path": "reference-package/HcMatchfinder.roc",
+      "sha256": "260e5d1fc6283df821813e013823e3f76325b81915f8591dfc8d81c28c018ae2",
+      "bytes": 250
+    },
+    {
+      "path": "reference-package/HcTables.roc",
+      "sha256": "f93e3a245e1947c0d02a7341ac97245b27d744fce97677e5cf107a44238a58f2",
+      "bytes": 3071
+    },
+    {
+      "path": "reference-package/HtMatchfinder.roc",
+      "sha256": "6ad20f55f3185fc46b6b46ff15ffdfdbd987a7d74d9f804f3eb369aa0652d983",
+      "bytes": 7947
+    },
+    {
+      "path": "reference-package/HuffmanEncode.roc",
+      "sha256": "b1a40d5343fc1ab50c6c33fc62cc0c97cc1f3eff0523d94200603960b6ac8746",
+      "bytes": 16526
+    },
+    {
+      "path": "reference-package/Inflate.roc",
+      "sha256": "cbc9ecb2be67bef20e28bf0b0addafef08a71ed7152e48d412e1ad1a17524781",
+      "bytes": 39436
+    },
+    {
+      "path": "reference-package/Matchfinder.roc",
+      "sha256": "f1ed36d2b1b7695908a5a7e0362e5bb3b8190c2cd5507f67768df0a3ad33c172",
+      "bytes": 4010
+    },
+    {
+      "path": "reference-package/main.roc",
+      "sha256": "efe101d86a5ad8d07f643246222d69ac26df9cc5e8feafe1a473d6510a4b17bb",
+      "bytes": 21
+    },
+    {
+      "path": "reference-platform/Host.roc",
+      "sha256": "b55c301b17a6ef5f86ffb1d859a573e1ddea94e4bdf1aa6a489a71166b568455",
+      "bytes": 288
+    },
+    {
+      "path": "reference-platform/build.sh",
+      "sha256": "929f2296062bf73c12cf3424dda1eda514771fbf17a5a0adff3d7a8c7eb9cf51",
+      "bytes": 1317
+    },
+    {
+      "path": "reference-platform/host.c",
+      "sha256": "957ea0ee1d6f90050b3f5ac0cedeb6f1902fde2a7e8a5620ee6eb6e112c7101c",
+      "bytes": 2942
+    },
+    {
+      "path": "reference-platform/main.roc",
+      "sha256": "9bd508fc4b6cf1cdb200d3e63b0d01a15050979b873c9faf6412ac3fba6581fc",
+      "bytes": 404
+    },
+    {
+      "path": "reference-platform/roc_platform_abi.h",
+      "sha256": "3b82b9074c8a02debfe7a21561ccac2e99d7ca292dfe400f0567ae62fea3ee44",
+      "bytes": 8527
+    },
+    {
+      "path": "reference-stage-cpu/Bench.roc",
+      "sha256": "f468e1f38a467bc054d1cc9f2c3898ff550a593f7c5ed5a463910ebc1a0ed940",
+      "bytes": 1606
+    },
+    {
+      "path": "reference-stage-cpu/app.roc",
+      "sha256": "b7966014929e7bfbb46b00814e06d78e60dc9df96dd210b822d202fa7824f025",
+      "bytes": 301
+    },
+    {
+      "path": "reference-stage-cpu/expected.deflate",
+      "sha256": "a7f1a85abba17147bbb424a67b37785d1ffd34316bad83b83c27ef6c2349b09a",
+      "bytes": 10
+    },
+    {
+      "path": "reference-stage-cpu/input",
+      "sha256": "9c56cc51b374c3ba189210d5b6d4bf57790d351c96c47c02190ecf1e430635ab",
+      "bytes": 8
+    },
+    {
+      "path": "reference-stage-cpu/prefix",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "reference-stage-memory/Bench.roc",
+      "sha256": "f468e1f38a467bc054d1cc9f2c3898ff550a593f7c5ed5a463910ebc1a0ed940",
+      "bytes": 1606
+    },
+    {
+      "path": "reference-stage-memory/app.roc",
+      "sha256": "fc0e1edcc9332a7f7843a39fad5a9e9dbd5760ff7aa7b9e6eb389552463b0431",
+      "bytes": 304
+    },
+    {
+      "path": "reference-stage-memory/expected.deflate",
+      "sha256": "a7f1a85abba17147bbb424a67b37785d1ffd34316bad83b83c27ef6c2349b09a",
+      "bytes": 10
+    },
+    {
+      "path": "reference-stage-memory/input",
+      "sha256": "9c56cc51b374c3ba189210d5b6d4bf57790d351c96c47c02190ecf1e430635ab",
+      "bytes": 8
+    },
+    {
+      "path": "reference-stage-memory/prefix",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "rusage_probe.c",
+      "sha256": "6f831fad4f4f853ecb65ed7dcbdb634507b0df279b1ea95b161844863c9a3a2d",
+      "bytes": 736
+    },
+    {
+      "path": "setup-errors/roc-cpu-probe-build.json",
+      "sha256": "23d512396b7cca817dc646980fea899513c4a278a5722487013c5ac2079ba28c",
+      "bytes": 558
+    },
+    {
+      "path": "setup-errors/roc-cpu-probe-build.stderr",
+      "sha256": "59d5278fa7c11755dfc29846037e8eaaeab89bc4a7c4f20e3fa6bf6fa2627b5a",
+      "bytes": 187
+    },
+    {
+      "path": "setup-errors/roc-cpu-probe-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}
