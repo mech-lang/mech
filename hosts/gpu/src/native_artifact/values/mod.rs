@@ -446,6 +446,22 @@ impl<'a> NativeValueArena<'a> {
     ) -> Result<(), NativeValueError> {
         self.check_work(work)?;
         work.charge(NativeExecutionPhase::Setup, 32)?;
+        self.retire_current_value(slot)
+    }
+
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn retire_current_prepaid(
+        &mut self,
+        slot: u32,
+        paid: &mut crate::native_artifact::work::PaidRetirements<'_>,
+    ) -> Result<(), NativeValueError> {
+        self.check_work(paid.meter())?;
+        paid.pay(32)?;
+        self.retire_current_value(slot)
+    }
+
+    #[cfg(feature = "canonical-native-program-runtime")]
+    fn retire_current_value(&mut self, slot: u32) -> Result<(), NativeValueError> {
         let index = slot as usize;
         let value = self
             .values

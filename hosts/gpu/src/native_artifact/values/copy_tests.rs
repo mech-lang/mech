@@ -2,6 +2,37 @@
 use super::*;
 
 #[test]
+fn exhausted_retirement_generation_declines_preview_and_preserves_live_alias() {
+    let memory = ManagedMemoryBudget::new(1_000_000);
+    let (ty, raw) = text("kept on rejection");
+    let payload = admit(&raw, &memory);
+    let types = [ty];
+    let mut work = NativeWorkMeter::new(1_000_000).unwrap();
+    let mut arena = NativeValueArena::new(&types, TRANSPORT_LIMIT, &memory, &mut work).unwrap();
+    let mut handle = arena.put(0, &payload, &mut work).unwrap();
+    arena.generations.values_mut()[0] = u64::MAX;
+    handle.generation = u64::MAX;
+    assert!(!arena.native_retirement_available(0, &work).unwrap());
+    let before = work.used();
+    assert_eq!(
+        arena.retire_current(0, &mut work),
+        Err(NativeValueError::GenerationExhausted)
+    );
+    assert_eq!(work.used(), before + 32);
+    assert!(
+        arena
+            .get(handle, &mut work)
+            .unwrap()
+            .shares_frozen_storage(&payload)
+    );
+    drop((arena, payload, work));
+    assert_eq!(
+        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+        (0, 0)
+    );
+}
+
+#[test]
 fn copies_preserve_owners_generations_and_cleanup_after_seed_retirement() {
     let memory = ManagedMemoryBudget::new(1024 * 1024);
     let (ty, first) = text("original λ");

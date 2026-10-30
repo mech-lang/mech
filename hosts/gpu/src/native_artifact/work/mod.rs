@@ -15,8 +15,12 @@ pub struct NativeWorkMeter {
     memory: Option<ManagedMemoryBudget>,
 }
 
+#[cfg(feature = "canonical-native-program-runtime")]
+mod retirement;
 #[cfg(test)]
 mod tests;
+#[cfg(feature = "canonical-native-program-runtime")]
+pub(in crate::native_artifact) use retirement::PaidRetirements;
 impl NativeWorkMeter {
     /// Attach a meter to a consumed parent-backed worker loan. This does not
     /// promote a scalar ledger, mint root fuel or copy thread-local scopes.

@@ -556,6 +556,28 @@ impl BufferFrames {
         };
         // Retirement consumes existing owner credit and invalidates word visits.
         work.charge(NativeExecutionPhase::Setup, charge)?;
+        self.apply_retirement(operations)?;
+        Ok(true)
+    }
+    pub(super) fn has_retirement_backing(&self) -> bool {
+        self.inner.is_some()
+    }
+    pub(super) fn retire_prepaid(
+        &mut self,
+        recipes: &crate::native_artifact::program::prepare::frame_retirement::FrameRetirements,
+        value: u32,
+        paid: &mut crate::native_artifact::work::PaidRetirements<'_>,
+    ) -> Result<(), NativeProgramExecutionError> {
+        if let Some((charge, operations)) = recipes.get(value as usize) {
+            paid.pay(charge)?;
+            self.apply_retirement(operations)?;
+        }
+        Ok(())
+    }
+    fn apply_retirement(
+        &mut self,
+        operations: &[crate::native_artifact::program::prepare::frame_retirement::Operation],
+    ) -> Result<(), NativeProgramExecutionError> {
         let inner = self
             .inner
             .as_mut()
@@ -567,7 +589,7 @@ impl BufferFrames {
                 Operation::Managed(at) => inner.owners.values_mut()[*at] = None,
             }
         }
-        Ok(true)
+        Ok(())
     }
 }
 
