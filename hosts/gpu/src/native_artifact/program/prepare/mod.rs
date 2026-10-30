@@ -291,6 +291,7 @@ impl PreparedNativeProgram {
         let map_admission = native::program::prepare::map_admission::Layout::derive(
             &plan,
             Some(&map_owner_words),
+            &scalar_aggregates,
             &analysis_visits,
             &closed_tails,
         )?;
