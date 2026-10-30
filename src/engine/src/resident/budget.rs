@@ -387,7 +387,6 @@ impl NativeLibraryWorkBudget {
     /// Apply an additional caller compute ceiling before the existing account
     /// checks. This cannot grant fuel or replace any shared/relative/worker cap.
     /// Native callers retain ceiling/overflow precedence over a foreign scope.
-    #[inline]
     pub fn charge_compute_with_limit(
         &self,
         compute: u64,
