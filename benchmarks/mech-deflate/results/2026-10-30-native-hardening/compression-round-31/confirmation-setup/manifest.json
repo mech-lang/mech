@@ -1,0 +1,84 @@
+{
+  "scope": "Predeclared confirmation harness and exact linkage; compiler production remains239935ab8",
+  "source_adaptation": {
+    "original_sha256": "8595dfc8b529d5ad06b57580314e3fe4fc6110bd161ffa768a3d59e6c6608fd2",
+    "session_sha256": "a0062c6170db0005d96eba239232cfdbdd41054945c2e4a574afa8acb8939575",
+    "timed_evaluation_line_identical": true,
+    "change": "Only optional readiness marker and stdin wait before each unchanged clear/rebind/evaluate/verify repetition. Source, allocator, allocations, native call, checks and boundaries unchanged.",
+    "primary_scope": "One worker computes at a time; the other blocks on stdin. Both prepare before each group starts measuring.",
+    "handshake": "One stack byte; no per-repetition String or added heap allocation",
+    "initial_build": "Unmeasured preliminary handshake used String; frozen before replacing it with stack-byte IO; no observations existed."
+  },
+  "files": [
+    {
+      "path": "after-build.json",
+      "sha256": "158a5b8b3d16fb061222fba30860ea77a20fe1671cf10210b818c11c93dae7e1",
+      "bytes": 3647
+    },
+    {
+      "path": "after-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "before-build.json",
+      "sha256": "8b5bd979df4bae4ede85b1643312e2ceb0ca37d84c45ff65423016fe4cb46594",
+      "bytes": 3633
+    },
+    {
+      "path": "before-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "build.py",
+      "sha256": "f8246afb52f1aaa179ce23cd15b995c7959a6a5c2a3d3abd6c0ea5d3903af8b4",
+      "bytes": 831
+    },
+    {
+      "path": "initial-unmeasured-build/after-build.json",
+      "sha256": "4bee2cfe477eaadf175252c376595a662d8b8086f84e7ebcf7af36e8c5877c10",
+      "bytes": 3647
+    },
+    {
+      "path": "initial-unmeasured-build/after-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "initial-unmeasured-build/before-build.json",
+      "sha256": "afb088d6aaf3f58efeba58449b605ecc1f88000f56336f385621d2102bf6514f",
+      "bytes": 3633
+    },
+    {
+      "path": "initial-unmeasured-build/before-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "initial-unmeasured-build/session.rs",
+      "sha256": "e526a9bac82c70064d9e32d14ca539a3380e0fa8bf7415907b2060ee42874a09",
+      "bytes": 6297
+    },
+    {
+      "path": "initial-unmeasured-build/source-adaptation.json",
+      "sha256": "41dc56da88d97f8eb4a198f3a061c76074764b4ac8dddfbc0c8f9fd47872b398",
+      "bytes": 554
+    },
+    {
+      "path": "run.py",
+      "sha256": "8aed3dab0bfc12828e96da2305a6af95e7e331158077bacee199bf8b25b73e88",
+      "bytes": 10032
+    },
+    {
+      "path": "session.rs",
+      "sha256": "a0062c6170db0005d96eba239232cfdbdd41054945c2e4a574afa8acb8939575",
+      "bytes": 6293
+    },
+    {
+      "path": "source-adaptation.json",
+      "sha256": "e54a42daa1786d3042ce81d38e3923e62373f7c9884cc490c6a7496a03d875e0",
+      "bytes": 778
+    }
+  ]
+}
