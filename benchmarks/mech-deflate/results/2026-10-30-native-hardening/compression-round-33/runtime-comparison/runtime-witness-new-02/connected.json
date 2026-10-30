@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/private/tmp/mech-numeric-composition-round33-20261030/runtime-witness-new-02/tests",
+    "child_results_keep_current_arrays_indices_publication_and_recovery",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 1.1716102079953998,
+  "environment": {
+    "CARGO_MANIFEST_DIR": "/private/tmp/mech-deflate-linear-stack/hosts/gpu"
+  },
+  "source_head": "c828a798ba4d0e89fd7edfa866538851caf6e2e8",
+  "library": "/private/tmp/mech-numeric-composition-round33-20261030/connected-library-03b/libmech_gpu.rlib"
+}

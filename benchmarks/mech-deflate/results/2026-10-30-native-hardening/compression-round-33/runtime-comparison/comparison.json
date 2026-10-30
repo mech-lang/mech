@@ -1,0 +1,132 @@
+{
+  "before": [
+    {
+      "case": "changed-start-and-counts",
+      "form": "original",
+      "visits": 82,
+      "witness": "parent-runtime-visits",
+      "work": 161517968
+    },
+    {
+      "case": "zero-width",
+      "form": "original",
+      "visits": 24,
+      "witness": "parent-runtime-visits",
+      "work": 29114992
+    },
+    {
+      "case": "zero-child-counts",
+      "form": "original",
+      "visits": 111,
+      "witness": "parent-runtime-visits",
+      "work": 162279592
+    },
+    {
+      "case": "retry",
+      "form": "original",
+      "visits": 111,
+      "witness": "parent-runtime-visits",
+      "work": 227699448
+    },
+    {
+      "case": "three-widths",
+      "form": "decoded",
+      "visits": 111,
+      "witness": "parent-runtime-visits",
+      "work": 227671608
+    },
+    {
+      "case": "changed-start-and-counts",
+      "form": "decoded",
+      "visits": 82,
+      "witness": "parent-runtime-visits",
+      "work": 161517968
+    },
+    {
+      "case": "zero-width",
+      "form": "decoded",
+      "visits": 24,
+      "witness": "parent-runtime-visits",
+      "work": 29114992
+    },
+    {
+      "case": "zero-child-counts",
+      "form": "decoded",
+      "visits": 111,
+      "witness": "parent-runtime-visits",
+      "work": 162279592
+    },
+    {
+      "case": "retry",
+      "form": "decoded",
+      "visits": 111,
+      "witness": "parent-runtime-visits",
+      "work": 227699448
+    }
+  ],
+  "after": [
+    {
+      "case": "changed-start-and-counts",
+      "form": "original",
+      "visits": 49,
+      "witness": "parent-runtime-visits",
+      "work": 67777518
+    },
+    {
+      "case": "zero-width",
+      "form": "original",
+      "visits": 19,
+      "witness": "parent-runtime-visits",
+      "work": 20332462
+    },
+    {
+      "case": "zero-child-counts",
+      "form": "original",
+      "visits": 64,
+      "witness": "parent-runtime-visits",
+      "work": 26059342
+    },
+    {
+      "case": "retry",
+      "form": "original",
+      "visits": 64,
+      "witness": "parent-runtime-visits",
+      "work": 91480758
+    },
+    {
+      "case": "three-widths",
+      "form": "decoded",
+      "visits": 64,
+      "witness": "parent-runtime-visits",
+      "work": 91452918
+    },
+    {
+      "case": "changed-start-and-counts",
+      "form": "decoded",
+      "visits": 49,
+      "witness": "parent-runtime-visits",
+      "work": 67777518
+    },
+    {
+      "case": "zero-width",
+      "form": "decoded",
+      "visits": 19,
+      "witness": "parent-runtime-visits",
+      "work": 20332462
+    },
+    {
+      "case": "zero-child-counts",
+      "form": "decoded",
+      "visits": 64,
+      "witness": "parent-runtime-visits",
+      "work": 26059342
+    },
+    {
+      "case": "retry",
+      "form": "decoded",
+      "visits": 64,
+      "witness": "parent-runtime-visits",
+      "work": 91480758
+    }
+  ]
+}

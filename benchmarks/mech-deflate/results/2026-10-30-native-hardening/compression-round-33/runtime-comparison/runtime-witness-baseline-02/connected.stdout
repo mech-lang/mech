@@ -1,0 +1,28 @@
+
+running 1 test
+test numeric_composition_qualification::child_results_keep_current_arrays_indices_publication_and_recovery ... {"case":"three-widths","form":"original","visits":111,"witness":"parent-runtime-visits","work":227671608}
+{"case":"three-widths","error":null,"form":"original","witness":"huffman-parent-child-semantics"}
+{"case":"changed-start-and-counts","form":"original","visits":82,"witness":"parent-runtime-visits","work":161517968}
+{"case":"changed-start-and-counts","error":null,"form":"original","witness":"huffman-parent-child-semantics"}
+{"case":"zero-width","form":"original","visits":24,"witness":"parent-runtime-visits","work":29114992}
+{"case":"zero-width","error":null,"form":"original","witness":"huffman-parent-child-semantics"}
+{"case":"zero-child-counts","form":"original","visits":111,"witness":"parent-runtime-visits","work":162279592}
+{"case":"zero-child-counts","error":null,"form":"original","witness":"huffman-parent-child-semantics"}
+{"case":"reject-after-first-write","error":"Library { origin: NativeMatchOrigin { node: NodeId(1), block: Some(6), local: Some(7) }, error: Kernel(IndexOutOfRange { index: 4, upper_bound: 2 }) }","form":"original","witness":"huffman-parent-child-semantics"}
+{"case":"retry","form":"original","visits":111,"witness":"parent-runtime-visits","work":227699448}
+{"case":"retry","error":null,"form":"original","witness":"huffman-parent-child-semantics"}
+{"case":"three-widths","form":"decoded","visits":111,"witness":"parent-runtime-visits","work":227671608}
+{"case":"three-widths","error":null,"form":"decoded","witness":"huffman-parent-child-semantics"}
+{"case":"changed-start-and-counts","form":"decoded","visits":82,"witness":"parent-runtime-visits","work":161517968}
+{"case":"changed-start-and-counts","error":null,"form":"decoded","witness":"huffman-parent-child-semantics"}
+{"case":"zero-width","form":"decoded","visits":24,"witness":"parent-runtime-visits","work":29114992}
+{"case":"zero-width","error":null,"form":"decoded","witness":"huffman-parent-child-semantics"}
+{"case":"zero-child-counts","form":"decoded","visits":111,"witness":"parent-runtime-visits","work":162279592}
+{"case":"zero-child-counts","error":null,"form":"decoded","witness":"huffman-parent-child-semantics"}
+{"case":"reject-after-first-write","error":"Library { origin: NativeMatchOrigin { node: NodeId(1), block: Some(6), local: Some(7) }, error: Kernel(IndexOutOfRange { index: 4, upper_bound: 2 }) }","form":"decoded","witness":"huffman-parent-child-semantics"}
+{"case":"retry","form":"decoded","visits":111,"witness":"parent-runtime-visits","work":227699448}
+{"case":"retry","error":null,"form":"decoded","witness":"huffman-parent-child-semantics"}
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 472 filtered out; finished in 0.26s
+
