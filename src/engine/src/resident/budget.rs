@@ -858,6 +858,45 @@ mod native_library_work_tests {
     }
 
     #[test]
+    fn nested_call_unwind_restores_context_without_refunding_spent_work() {
+        let memory = mech_core::ManagedMemoryBudget::new(8192);
+        let budget = NativeLibraryWorkBudget::new(100, 100, &memory).unwrap();
+        let foreign = NativeLibraryWorkBudget::new(100, 100, &memory).unwrap();
+        budget
+            .with_scope(|| {
+                let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    budget
+                        .with_call_limits(3, 1, || {
+                            budget.charge(2, 1).unwrap();
+                            budget
+                                .with_call_limits(1, 0, || {
+                                    budget.charge(1, 0).unwrap();
+                                    panic!("unwind nested work context");
+                                })
+                                .unwrap();
+                        })
+                        .unwrap();
+                }));
+                assert!(panic.is_err());
+                assert!(budget.has_matching_active_scope());
+                assert_eq!(budget.used(), (3, 1));
+                assert_eq!(foreign.charge(0, 0), Err(ResidentKernelError::InvalidInput));
+                budget.charge(4, 2).unwrap();
+            })
+            .unwrap();
+        assert!(!NativeLibraryWorkBudget::has_active_scope());
+        assert_eq!(budget.unscoped_remaining(), Some((93, 97)));
+        foreign
+            .with_scope(|| foreign.charge(1, 1))
+            .unwrap()
+            .unwrap();
+        assert_eq!(foreign.used(), (1, 1));
+        assert_eq!(budget.used(), (7, 3));
+        drop((budget, foreign));
+        assert_eq!(memory.used_bytes(), 0);
+    }
+
+    #[test]
     fn native_scalar_debits_and_library_observations_use_one_counter() {
         let memory = mech_core::ManagedMemoryBudget::new(4096);
         let budget = NativeLibraryWorkBudget::new(8, 4, &memory).unwrap();
