@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-10-30T20:47:15.644413+00:00",
+  "head": "dc77024f29f373f0938695531ab2b7c975bb1e7e",
+  "files": [
+    {
+      "path": "preflight/before.json",
+      "sha256": "263797e1db69d876936a8aac81e97df8b1c07249a87b011a8f28eda9b61c1a60",
+      "bytes": 395
+    },
+    {
+      "path": "preflight/before.stderr",
+      "sha256": "5aa9580ec15db291c768adc99ee48e5476111f9e28d39ba4c7ac3afb367e99ab",
+      "bytes": 498
+    },
+    {
+      "path": "preflight/before.stdout",
+      "sha256": "6b9acf4b9ce43d41492612abe03330debe60ada53c2aebc6ca39284f1db3da6b",
+      "bytes": 11842
+    },
+    {
+      "path": "preflight/build.json",
+      "sha256": "b88e0dd74fec205211f94d3cf39fa8068e2ce5e7b475dd8c55551af41104f733",
+      "bytes": 13568
+    },
+    {
+      "path": "preflight/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "preflight/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "preflight/summary.json",
+      "sha256": "658b4e72a95b249e0d453f8bf7091756cb9ffadf6c07c8741ebf346edf8c9ca5",
+      "bytes": 466
+    },
+    {
+      "path": "preflight.py",
+      "sha256": "3e6c374133dc1a530be03324b0b96309850312974d39d43ed91f4ff7ada03b91",
+      "bytes": 3445
+    }
+  ]
+}
