@@ -1,0 +1,106 @@
+{
+  "created_utc": "2026-10-30T19:46:22.177594+00:00",
+  "head": "6fe385d1867b3003f803c5e8298704984e93f5ac",
+  "files": [
+    {
+      "path": "make-probe.py",
+      "sha256": "205df2bbcea41d551882e0d534dea501e07d25a2f20413e7a5e6e76748bcc0f0",
+      "bytes": 10202
+    },
+    {
+      "path": "probe/adaptation.json",
+      "sha256": "92ff3ee4b50bd951aac15fc490687942e2bf87d0b8b462c381da140671126ed9",
+      "bytes": 3108
+    },
+    {
+      "path": "probe/build.json",
+      "sha256": "f00c4354ce21b6b1266c6ac4dcedfc8402ef7bb1f6315223e03a8e941ff1d49f",
+      "bytes": 4218
+    },
+    {
+      "path": "probe/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "probe/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "probe/counts.json",
+      "sha256": "7c191d98ade043b2bd7788779ab116fb89dc56790905e6fc91e43a15ba8cf456",
+      "bytes": 2340673
+    },
+    {
+      "path": "probe/lib.rs",
+      "sha256": "e0357af57d389b23091e5206d6e9e88884f663e9610ce22e5c3a2314ab758f1d",
+      "bytes": 81980
+    },
+    {
+      "path": "probe/native_artifact_mod.rs",
+      "sha256": "b1a410c7de4ee6ea5f8c9d6e768bf1caaa09d02d31ecf7c96c2ddd0b0e147888",
+      "bytes": 8486
+    },
+    {
+      "path": "probe/native_artifact_program_mod.rs",
+      "sha256": "2deeaab82ff0cc4a2863803e66ae4ea078d616b33a58ebe5adfe5dfb85b181d6",
+      "bytes": 1757
+    },
+    {
+      "path": "probe/native_artifact_program_runtime_buffer_frames.rs",
+      "sha256": "d59621e2ddd0043cc537d4bc500f0d876d689e783e982477cd4394d3ab2d328f",
+      "bytes": 23263
+    },
+    {
+      "path": "probe/native_artifact_program_runtime_invocation_mod.rs",
+      "sha256": "cb8ec2dad1dd7f54f45342bd20ee3d8276f767dd7f542d43ca57a38200aad29b",
+      "bytes": 53876
+    },
+    {
+      "path": "probe/native_artifact_program_runtime_mod.rs",
+      "sha256": "100f73b0e5d48b0825781240940b2a0f0beeb5d22674db8e9ee524f9254b1893",
+      "bytes": 15032
+    },
+    {
+      "path": "probe/native_artifact_values_mod.rs",
+      "sha256": "c944f9423799d40106eb8907fc73fa6639235217d0f1c938b5310a335bbbd270",
+      "bytes": 22103
+    },
+    {
+      "path": "probe/probe.rs",
+      "sha256": "f5acb8e504a20b3c49e223502c89b3a1bcd83f67262700757cfe4da696b26499",
+      "bytes": 11147
+    },
+    {
+      "path": "probe/run.json",
+      "sha256": "d2d564e6eb63f3d339d9171ca06c52f249d714fcb78e4112656bc7b923074d94",
+      "bytes": 748
+    },
+    {
+      "path": "probe/run.stderr",
+      "sha256": "d50db30e68a360d3d3da1316cf76b575182b6401d4921a69a9a28de58eddbf51",
+      "bytes": 24
+    },
+    {
+      "path": "probe/run.stdout",
+      "sha256": "d164fe7141735dda41d29f5e06c173bac538d185f56608b8ce1d2f6df443eb14",
+      "bytes": 223
+    },
+    {
+      "path": "probe/setup-failure/adaptation.json",
+      "sha256": "460ee4bd685db1db871885d5a1ac55af9ddac1130558c5029bec96f4bcff6baa",
+      "bytes": 3108
+    },
+    {
+      "path": "probe/setup-failure/build.json",
+      "sha256": "01cd2a5c07d767e813b199c98b448f9714fe00830fc6b1323ce676a45e8d6f5d",
+      "bytes": 3860
+    },
+    {
+      "path": "probe/setup-failure/build.stderr",
+      "sha256": "d9a4569ef72004a6e4eb49c17d4bd93eabe88ba5e352c5da38ca7f25b94cb160",
+      "bytes": 1189
+    }
+  ]
+}
