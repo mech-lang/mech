@@ -1,0 +1,54 @@
+{
+  "scope": "Diagnostic matched profile only; every process observation excluded from primary and no new elapsed comparison claimed",
+  "receipt": {
+    "label": "baseline",
+    "command": [
+      "/private/tmp/mech-scalar-child-round39-20261030/linked-primary/baseline/worker",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "693"
+    ],
+    "exit": 0,
+    "binary_sha256": "da7b0eac54c9640369fccbe960d6869491820bdd93223635fa08d067209178b7",
+    "artifact_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+    "head": "b7db312ad4bd26fa93c001b93d69b787f9339021",
+    "sample_command": [
+      "sample",
+      "5911",
+      "2",
+      "-file",
+      "/private/tmp/mech-scalar-child-round39-20261030/profile-linked-baseline/baseline.sample.txt"
+    ],
+    "sample_exit": 0,
+    "all_observations_excluded_from_primary": true,
+    "performance_comparison_claimed": false,
+    "created_utc": "2026-10-30T22:55:09.455130+00:00",
+    "rows": 695
+  },
+  "files": [
+    {
+      "path": "profile-linked-baseline/baseline-sampler.log",
+      "sha256": "1960fe72b6af1dee294c78dd688a31bc701fe4322f026c25b6e96b3367a39310",
+      "bytes": 265
+    },
+    {
+      "path": "profile-linked-baseline/baseline.json",
+      "sha256": "d069376c48458d13cc60734f9ff274d5de0bcaee2e07055f2844d8a90a234165",
+      "bytes": 828
+    },
+    {
+      "path": "profile-linked-baseline/baseline.sample.txt",
+      "sha256": "c37b326851eca0dc68d09ae534b9ef5c6f13703ae59cd414b68af8d9a86f7c4f",
+      "bytes": 885099
+    },
+    {
+      "path": "profile-linked-baseline/baseline.stderr",
+      "sha256": "3fe851340be5caf1f514e3c8eb0477eba88e8593a447c37dfe16df97f612873d",
+      "bytes": 9708
+    },
+    {
+      "path": "profile-linked-baseline/baseline.stdout",
+      "sha256": "f487d14cd2f6776b3225c2cf9ceb34384e59739966fb83a5c41c6b33be9b2abb",
+      "bytes": 242932
+    }
+  ]
+}
