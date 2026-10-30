@@ -1,5 +1,7 @@
 # Inline the existing work-meter wrapper
 
+Status: **measured and retained**; see [the closure packet](CLOSURE.md).
+
 Starting compiler/review head: `6123fdf46b749c5b5793591be7f9ed92f38269da`.
 The review receipt for that head is issue comment 6526753449 on PR 973.
 
