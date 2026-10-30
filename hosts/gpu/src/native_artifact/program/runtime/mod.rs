@@ -34,8 +34,8 @@ mod collections;
 
 mod lines;
 
-mod session;
 mod retirement;
+mod session;
 #[cfg(feature = "canonical-native-program-host-runtime")]
 pub(in crate::native_artifact) use crate::native_artifact::program::runtime::session::CheckedEntry;
 #[cfg(feature = "canonical-native-program-host-runtime")]
