@@ -224,8 +224,8 @@ impl NativeLibraryWorkBudget {
     ) -> Result<bool, ResidentKernelError> {
         if compute == 0
             || comparison == 0
-            || with_control_work(|v| v.borrow().is_some())
-            || with_control_work_scope(|v| v.borrow().is_some())
+            || CONTROL_WORK.with(|v| v.borrow().is_some())
+            || CONTROL_WORK_SCOPE.with(|v| v.borrow().is_some())
         {
             return Ok(false);
         }

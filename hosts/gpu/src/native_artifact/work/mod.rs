@@ -163,19 +163,14 @@ impl NativeWorkMeter {
         phase: NativeExecutionPhase,
         amount: u64,
     ) -> Result<(), NativeExecutionError> {
-        if let Some(budget) = &self.library {
-            return budget
-                .charge_compute_with_limit(amount, self.limit)
-                .map_err(|error| Self::library_error(phase, error));
-        }
-        if NativeLibraryWorkBudget::has_active_scope() {
+        if self.library.is_none() && NativeLibraryWorkBudget::has_active_scope() {
             return Err(Self::library_error(
                 phase,
                 ResidentKernelError::InvalidInput,
             ));
         }
         let required = self
-            .used
+            .used()
             .checked_add(amount)
             .ok_or(NativeExecutionError::WorkLimit {
                 phase,
@@ -189,7 +184,13 @@ impl NativeWorkMeter {
                 limit: self.limit,
             });
         }
-        self.used = required;
+        if let Some(budget) = &self.library {
+            budget
+                .charge(amount, 0)
+                .map_err(|error| Self::library_error(phase, error))?;
+        } else {
+            self.used = required;
+        }
         Ok(())
     }
 }
