@@ -758,7 +758,13 @@ fn restored_frame_type_slots_reject_misalignment_keys_and_definitions() {
                 .iter()
                 .position(|slot| slot["schema"] != types[first]["schema"])
                 .unwrap();
-            for corruption in ["slots", "key", "definition", "retirement-cache"] {
+            for corruption in [
+                "slots",
+                "key",
+                "definition",
+                "retirement-cache",
+                "call-cache",
+            ] {
                 let mut changed = original.clone();
                 match corruption {
                     // Both entries remain individually valid for their schemas.
@@ -784,6 +790,10 @@ fn restored_frame_type_slots_reject_misalignment_keys_and_definitions() {
                     "retirement-cache" => {
                         changed["descriptor"]["frame_retirements"] =
                             serde_json::json!({"work": 0, "operations": []});
+                    }
+                    "call-cache" => {
+                        changed["descriptor"]["call_cache"] =
+                            serde_json::json!({"slots": [1], "repeated": [false]});
                     }
                     _ => unreachable!(),
                 }
