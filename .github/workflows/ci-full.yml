@@ -663,15 +663,6 @@ jobs:
             --no-default-features --features canonical-native-program \
             --lib native_artifact::program::runtime::tests -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
-            --no-default-features --features canonical-native-program --lib -- \
-            composition_tests parent_continuation_is_single_use native_runtime_consolidation \
-            --list | tee native-composition-tests.txt
-          test "$(rg -c ': test$' native-composition-tests.txt)" -eq 5
-          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
-            --no-default-features --features canonical-native-program --lib -- \
-            composition_tests parent_continuation_is_single_use native_runtime_consolidation \
-            --test-threads=1
-          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-program \
             --lib native_artifact::program::runtime::session::prefix_tests -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
@@ -695,6 +686,19 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features semantic-compiler,resident-artifact,sequence_buffers \
             --test sequence_buffer_contract -- --test-threads=1
+      - name: Inventory and execute native composition contracts
+        if: ${{ matrix.suite == 'native' }}
+        shell: bash
+        run: |
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native-program --lib -- \
+            composition_tests parent_continuation_is_single_use native_runtime_consolidation \
+            --list | tee native-composition-tests.txt
+          test "$(rg -c ': test$' native-composition-tests.txt)" -eq 5
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native-program --lib -- \
+            composition_tests parent_continuation_is_single_use native_runtime_consolidation \
+            --test-threads=1
       - name: Execute secured canonical reference bytecode admission
         if: ${{ matrix.suite == 'cli' }}
         run: >-
