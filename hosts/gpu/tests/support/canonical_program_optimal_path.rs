@@ -64,6 +64,49 @@ fn policy() -> mech_gpu::native_artifact::NativeProgramExecutionLimits {
 }
 
 #[test]
+fn path_scan_emits_native_pieces_around_its_nested_scalar_child() {
+    for artifact in artifacts(SOURCE).0 {
+        let object = super::emit_program_object(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let metadata = object.metadata();
+        let parents = metadata["numeric_parent_partitions"]["parents"]
+            .as_array()
+            .unwrap();
+        let segments = metadata["compiled_numeric_segments"].as_array().unwrap();
+        let selected = parents
+            .iter()
+            .filter(|parent| parent["scalar_child"] == true)
+            .filter(|parent| {
+                segments
+                    .iter()
+                    .any(|segment| segment["iteration"] == parent["iteration"])
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(selected.len(), 1, "the unchanged path scan must emit native pieces");
+        let parent = selected[0];
+        assert!(parent["returned_arrays"].as_array().unwrap().is_empty());
+        let child = parent["child"].as_u64().unwrap() as u32;
+        assert!(
+            object
+                .descriptor()
+                .plan()
+                .iterations()
+                .iter()
+                .any(|iteration| iteration.as_ref().parent() == Some(child)),
+            "the actual match-choice child retains its nested length search"
+        );
+        for segment in segments
+            .iter()
+            .filter(|segment| segment["iteration"] == parent["iteration"])
+        {
+            assert_eq!(segment["successful_interior_helpers"], 0);
+            assert!(segment["source_sites"].as_array().unwrap().iter().all(|site| {
+                site != &parent["child_initialize"] && site != &parent["child_exit"]
+            }));
+        }
+    }
+}
+
+#[test]
 fn pinned_min_cost_paths_keep_exact_nodes_and_real_reservation() {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "../fixtures/native/deflate-optimal-path-reference.json"
