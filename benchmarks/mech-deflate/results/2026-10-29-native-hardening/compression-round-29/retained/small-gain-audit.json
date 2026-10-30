@@ -1,0 +1,58 @@
+{
+  "scope": "Compression optimization campaign on PR973 from eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b through round29; 29 recorded round reports and all intervening commit subjects inspected. Not an audit of unrelated prior knucleotide branches.",
+  "head": "b44f5833a95a9c853619ad0ea037f76a88178d86",
+  "removed_candidates": [
+    {
+      "round": 28,
+      "operation": "Direct native scalar observations from private frames",
+      "before_multiple_of_reference": 20.886173010380624,
+      "after_multiple_of_reference": 20.46957785467128,
+      "pooled_elapsed_reduction_percent": 1.99459784,
+      "median_paired_after_over_before": 0.99666122,
+      "pairs_after_over_before": [
+        1.056861721,
+        0.962506649,
+        1.030815791,
+        0.962274997
+      ],
+      "text_growth_bytes": 745524,
+      "correctness_and_scalar_controls_passed": true,
+      "status": "Not present. Retest needed: all four pairs favored first process condition; the measured benefit remains uncertain. Size alone is not a rejection criterion.",
+      "source_commit": "46aece8b8427a0d68e0db3b389316de5aca0804b",
+      "rollback": "880ee63378427e34071264f1ca56989e29ef1e2a"
+    },
+    {
+      "round": 29,
+      "operation": "Shared work-account context and fused native compute debit",
+      "pooled_elapsed_reduction_percent": 1.648102749,
+      "all_four_pairs_improve": true,
+      "status": "Restored, retained; magnitude alone was an unjustified reason to remove it.",
+      "reapplication": "b44f5833a95a9c853619ad0ea037f76a88178d86"
+    }
+  ],
+  "other_small_gains_retained": [
+    {
+      "round": 13,
+      "operation": "Private mixed numeric results",
+      "recorded_elapsed_reduction_percent": 1.19,
+      "implementation": "1ec498a67fc862bac39188fdf5040eaacf6e954c",
+      "current_evidence": "ResultRecipe::Frame and exact carrier-root result derivation remain in hosts/gpu/src/native_artifact/program/prepare/numeric_results.rs."
+    },
+    {
+      "round": 19,
+      "operation": "Private scalar named results",
+      "recorded_elapsed_reduction_percent": 2.259823,
+      "implementation": "7f96b935684f15d3a09bbd9a4b949b29d6a625e0",
+      "current_evidence": "NativeScalarAggregates::words still admits exact flat Schema::Record fields in src/engine/src/native_artifact/scalar_aggregates.rs."
+    },
+    {
+      "round": 23,
+      "operation": "First-violation call budget checks",
+      "recorded_elapsed_reduction_percent": 2.386697,
+      "implementation": "299c70f4ce21eb3cba94dcb47e4d37106cc14b29",
+      "current_evidence": "Core first_call_memory_budget_violation and its eight selected Engine sinks remain."
+    }
+  ],
+  "source_experiment_note": "Round9 independent-cost-table variant measured6.06%; it remains checked in as a separate optional source experiment. It changes source allocation sites and is not a compiler gain in the pinned comparison.",
+  "policy": "Prioritize larger reached costs, but retain worthwhile verified small gains. Evaluate correctness, scalar regressions, added complexity and measurement consistency individually; no minimum speedup cutoff."
+}
