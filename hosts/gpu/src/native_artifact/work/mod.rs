@@ -158,6 +158,7 @@ impl NativeWorkMeter {
             error => NativeExecutionError::LibraryWork { phase, error },
         }
     }
+    #[inline]
     pub(in crate::native_artifact) fn charge(
         &mut self,
         phase: NativeExecutionPhase,
