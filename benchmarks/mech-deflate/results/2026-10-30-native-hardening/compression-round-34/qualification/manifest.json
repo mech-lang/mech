@@ -1,0 +1,96 @@
+{
+  "created_utc": "2026-10-30T15:45:20.432330+00:00",
+  "head": "8c60a8cee62c01257b2c282dea95755a141307c8",
+  "files": [
+    {
+      "path": "build-harnesses.py",
+      "sha256": "82c3c5c7a058a118de8dd1eaf0551d5de42257f78e5840700b08a87747b8277f",
+      "bytes": 1926
+    },
+    {
+      "path": "candidate-inspection.json",
+      "sha256": "fd16226ca8feb71e4ff4c61d75fb136d668ab8f9d521e57221c8b0e242cc84e4",
+      "bytes": 3998
+    },
+    {
+      "path": "libraries.json",
+      "sha256": "66659f70ae3231018b33cfc6a0d6080f75048c8f8ecee19dc7a8535fe2c0f8ee",
+      "bytes": 11619
+    },
+    {
+      "path": "primary/current-build.json",
+      "sha256": "49fb172792b429435f70823ec8499826f4b76bd848fd9f1973c2931df8d33f26",
+      "bytes": 14424
+    },
+    {
+      "path": "release.json",
+      "sha256": "7e4bb073426c27a20eebbe93fde5235fc15ed15a10d98bfd91cbb2d2defad3fb",
+      "bytes": 924
+    },
+    {
+      "path": "release.log",
+      "sha256": "2076278537d7614633eb112b238c12f63df786606c31ba293a29e2ed6289fb69",
+      "bytes": 167351
+    },
+    {
+      "path": "release.stderr",
+      "sha256": "ccfdd8eb66c2ce16d092dc6a45c4daa68b6876dd466b372a07e0e199aade632f",
+      "bytes": 275
+    },
+    {
+      "path": "unit/accounting.json",
+      "sha256": "0111953bdd3d33de78efdfef6cfc0b8abffe057cc19cc4c49985c36a40a746cf",
+      "bytes": 313
+    },
+    {
+      "path": "unit/accounting.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "unit/accounting.stdout",
+      "sha256": "443867bf2e72504251f5d93f9671e296d6ed64bba002e2ad740fa3a628a5d79f",
+      "bytes": 1562
+    },
+    {
+      "path": "unit/build.json",
+      "sha256": "260a6791aa347572f51aff1c8320ba5e5f4cf32b10e8164fe98c6e3330860788",
+      "bytes": 4482
+    },
+    {
+      "path": "unit/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "unit/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "unit/runtime.json",
+      "sha256": "9b5024c9a453802e3626b2387782e39311ff7e03c658e5d1d17723a906c689d5",
+      "bytes": 372
+    },
+    {
+      "path": "unit/runtime.stderr",
+      "sha256": "6629a09c7c6648dbfdfc1afb57c5913eac2739c34b4bb54175e2ecb2518863d5",
+      "bytes": 268
+    },
+    {
+      "path": "unit/runtime.stdout",
+      "sha256": "173e296e5ec4d1cde448526b2428122415f96602be7b40d84f76e74b2d26de06",
+      "bytes": 64997
+    },
+    {
+      "path": "unit/source.diff",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "workers/after-build.json",
+      "sha256": "da4d31894cac1d1b4889b1e35357f348b7cff373665869e3bc039730ffc2b857",
+      "bytes": 14461
+    }
+  ]
+}
