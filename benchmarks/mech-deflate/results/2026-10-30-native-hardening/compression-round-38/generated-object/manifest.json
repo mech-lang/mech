@@ -1,0 +1,96 @@
+{
+  "created_utc": "2026-10-30T21:23:43.929668+00:00",
+  "head": "b5a17909947d7f87c296d0f8b08a564402d3205b",
+  "files": [
+    {
+      "path": "generated-object/build.json",
+      "sha256": "d432f4f7369eb7c5d71457252859c587ac282ac887330f2038ed6b4beb621e5f",
+      "bytes": 1708
+    },
+    {
+      "path": "generated-object/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "generated-object/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "generated-object/comparison.json",
+      "sha256": "421f67375e7abca2d983e0ec4944688a0b318197804e6777ca7d7cb1139f189a",
+      "bytes": 458
+    },
+    {
+      "path": "generated-object/emit.json",
+      "sha256": "2131500c733f2a7ac58c0ab339ea93d915aaccd52017031d7d6fddbb77bc3a20",
+      "bytes": 151
+    },
+    {
+      "path": "generated-object/emit.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "generated-object/emit.stdout",
+      "sha256": "2241b89ee78b44a4114df62197440391c076aa282de3bcbcd286397e7bedf87b",
+      "bytes": 43
+    },
+    {
+      "path": "generated-object/inspect.rs",
+      "sha256": "df6db3898ceb64386a15933589f3a8bec5520dd51a30bb547b66d1205bf41e60",
+      "bytes": 1031
+    },
+    {
+      "path": "generated-object/runner-sections.json",
+      "sha256": "b5dfa6b50ef38c5ac1978fb81c51a7c383756e3e1806139813000f45afb02b43",
+      "bytes": 180
+    },
+    {
+      "path": "generated-object/runner-sections.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "generated-object/runner-sections.stdout",
+      "sha256": "7a4edf3313b05c0a4bf06723d22724133b3b0fce6f2138d00eaefa97b3208b7c",
+      "bytes": 728
+    },
+    {
+      "path": "generated-object/runner-symbols.json",
+      "sha256": "74ee1ae0522c044e6e54862d1406dc8d4762106aea384db7cce5d44cb4e4f084",
+      "bytes": 165
+    },
+    {
+      "path": "generated-object/runner-symbols.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "generated-object/runner-symbols.stdout",
+      "sha256": "7ea4f160a9977b07f54587580857f75c444d4d820f9d76d8e1a2ec48e07fad46",
+      "bytes": 39266729
+    },
+    {
+      "path": "generated-object/sections.json",
+      "sha256": "277b9abf827f6ca020bb63838eb0994bbcd5e41727d02746a219f65d56da4abe",
+      "bytes": 190
+    },
+    {
+      "path": "generated-object/sections.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "generated-object/sections.stdout",
+      "sha256": "730e2bbb9f841a1812b61846b791fad899f0723641dd4a91127a2a34bd383d63",
+      "bytes": 118
+    },
+    {
+      "path": "verify-generated-object.py",
+      "sha256": "fe36772cbb59f29a3003756f4a9ec487537e2105b51c0166d4cc0269addb4a60",
+      "bytes": 1711
+    }
+  ]
+}
