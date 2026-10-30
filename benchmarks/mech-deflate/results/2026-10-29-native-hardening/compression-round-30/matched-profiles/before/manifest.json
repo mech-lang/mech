@@ -1,0 +1,54 @@
+{
+  "scope": "Diagnostic matched profile only; every process observation excluded from primary and no new elapsed comparison claimed",
+  "receipt": {
+    "label": "before",
+    "command": [
+      "/private/tmp/mech-frame-reads-round30-20261029/primary/before",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "693"
+    ],
+    "exit": 0,
+    "binary_sha256": "d18a0d65aed6f4ef819db28682e8529d4f824ec73ecb91275a3d8efe8a296c69",
+    "artifact_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+    "head": "10e78043f86fd0ace503753e3174af9113a9af34",
+    "sample_command": [
+      "sample",
+      "72672",
+      "2",
+      "-file",
+      "/private/tmp/mech-frame-reads-round30-20261029/matched-profile/before.sample.txt"
+    ],
+    "sample_exit": 0,
+    "all_observations_excluded_from_primary": true,
+    "performance_comparison_claimed": false,
+    "created_utc": "2026-10-30T04:23:50.912887+00:00",
+    "rows": 695
+  },
+  "files": [
+    {
+      "path": "matched-profile/before-sampler.log",
+      "sha256": "b610dfde0aa3efc6b5705041355bccda1010cfc049f018b2e06d475c0b7def43",
+      "bytes": 256
+    },
+    {
+      "path": "matched-profile/before.json",
+      "sha256": "3c393c686ad9b6e1fb59cd59977bc1f112069f5774a23d882319d8febfdb90fb",
+      "bytes": 799
+    },
+    {
+      "path": "matched-profile/before.sample.txt",
+      "sha256": "8aeca6f4135eb1b687b69cb8b743469f817b59b399b1cd1174ffb11c6191c393",
+      "bytes": 925395
+    },
+    {
+      "path": "matched-profile/before.stderr",
+      "sha256": "61aafac0c611952137e64c6f78e9429cf62db2f579eef79b7e7fa135002a0987",
+      "bytes": 9694
+    },
+    {
+      "path": "matched-profile/before.stdout",
+      "sha256": "0a2f24a1504c65ce6698ab56b815deb30068eaacba8de110b5ae3c5c103f1b1b",
+      "bytes": 242940
+    }
+  ]
+}
