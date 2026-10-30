@@ -81,7 +81,11 @@ fn path_scan_emits_native_pieces_around_its_nested_scalar_child() {
                     .any(|segment| segment["iteration"] == parent["iteration"])
             })
             .collect::<Vec<_>>();
-        assert_eq!(selected.len(), 1, "the unchanged path scan must emit native pieces");
+        assert_eq!(
+            selected.len(),
+            1,
+            "the unchanged path scan must emit native pieces"
+        );
         let parent = selected[0];
         assert!(parent["returned_arrays"].as_array().unwrap().is_empty());
         let child = parent["child"].as_u64().unwrap() as u32;
@@ -99,9 +103,15 @@ fn path_scan_emits_native_pieces_around_its_nested_scalar_child() {
             .filter(|segment| segment["iteration"] == parent["iteration"])
         {
             assert_eq!(segment["successful_interior_helpers"], 0);
-            assert!(segment["source_sites"].as_array().unwrap().iter().all(|site| {
-                site != &parent["child_initialize"] && site != &parent["child_exit"]
-            }));
+            assert!(
+                segment["source_sites"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .all(|site| {
+                        site != &parent["child_initialize"] && site != &parent["child_exit"]
+                    })
+            );
         }
     }
 }

@@ -16,6 +16,7 @@ mod results;
 #[path = "numeric_versions.rs"]
 mod versions;
 pub(in crate::native_artifact) use results::ResultRecipe;
+pub(super) use results::scalar_aggregate;
 
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]

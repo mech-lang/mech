@@ -3,6 +3,22 @@ use super::*;
 #[test]
 fn composition_finite_boundaries_preserve_publication_contents_and_retry() {
     let source = include_str!("../../../../../tests/fixtures/native/numeric-parent-child.mec");
+    finite_boundaries(source, |artifact, memory| {
+        huffman_inputs(artifact, 3, vec![0, 1, 1, 2], memory)
+    });
+}
+
+#[test]
+fn scalar_child_finite_boundaries_preserve_publication_contents_and_retry() {
+    finite_boundaries(scalar_child::SOURCE, |artifact, memory| {
+        scalar_child::arguments(artifact, memory, 3, 2, true, true, 1)
+    });
+}
+
+fn finite_boundaries(
+    source: &str,
+    make_inputs: impl Fn(&ProgramArtifact, &ManagedMemoryBudget) -> Vec<Value>,
+) {
     for artifact in artifacts(source) {
         let mode = NativeProgramLimitMode::NoLimits;
         let memory = mode.memory_budget();
@@ -12,7 +28,7 @@ fn composition_finite_boundaries_preserve_publication_contents_and_retry() {
             mode.compilation(),
         )
         .unwrap();
-        let args = huffman_inputs(&artifact, 3, vec![0, 1, 1, 2], &memory);
+        let args = make_inputs(&artifact, &memory);
         let before = contents(&args);
         let mut published = vec![None; artifact.outputs().len()];
         jit.evaluate_into(&args, &mut published, mode.execution(), &memory)

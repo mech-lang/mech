@@ -5,6 +5,7 @@ use mech_engine::native_artifact::{
     NativeBufferFrameLane as Lane, NativeBufferFrameOperation as Frame, NativeBufferFrames,
     NativeControlLoop as Loop, NativeIterationAction as Action, NativeIterationTerminator as Term,
     NativeMatchAction as Scalar, NativePreparedLibraryCall, NativeProgramArtifactPlan as Plan,
+    NativeScalarAggregates,
 };
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::num::NonZeroUsize;
@@ -28,6 +29,9 @@ pub(in crate::native_artifact) struct Parent {
     pub child_initialize: u32,
     pub child_exit: u32,
     pub child_successor: u32,
+    /// Ordinary nested scalar control, with no private-frame parent below it.
+    /// This describes selection; no owner, view or fuel crosses the child call.
+    pub scalar_child: bool,
     /// Returned tuple/record field -> CURRENT child carrier array field.
     pub returned_arrays: Vec<(usize, usize)>,
     pub segments: Vec<Segment>,
@@ -82,6 +86,7 @@ impl Layout {
     pub(in crate::native_artifact) fn derive(
         plan: &Plan,
         frames: &NativeBufferFrames,
+        aggregates: &NativeScalarAggregates,
         calls: &[Option<NativePreparedLibraryCall>],
         closed: &tail::Layout,
         visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
@@ -109,29 +114,40 @@ impl Layout {
             let [(child_id, Loop::Tail(child))] = children.as_slice() else {
                 continue;
             };
-            if plan
-                .iterations()
-                .iter()
-                .any(|c| c.as_ref().parent() == Some(*child_id as u32))
-                || !frames.fields(parent.carrier()).is_some_and(|f| {
-                    f.iter()
-                        .all(|f| !matches!(f.lane(), Lane::Composite { .. }))
-                })
-            {
+            if !frames.fields(parent.carrier()).is_some_and(|f| {
+                f.iter()
+                    .all(|f| !matches!(f.lane(), Lane::Composite { .. }))
+            }) {
                 continue;
             }
-            let Some(proof) = closed
+            let proof = closed
                 .regions
                 .iter()
                 .find(|r| r.iteration as usize == *child_id)
-                .and_then(|r| r.numeric.as_ref())
-            else {
-                continue;
-            };
-            if proof.arrays.iter().any(|a| a.appends) {
-                continue;
-            }
-            let ResultRecipe::Frame { arrays, .. } = &proof.result else {
+                .and_then(|r| r.numeric.as_ref());
+            let (scalar_child, returned_arrays) = if let Some(proof) = proof {
+                if proof.arrays.iter().any(|a| a.appends) {
+                    continue;
+                }
+                let ResultRecipe::Frame { arrays, .. } = &proof.result else {
+                    continue;
+                };
+                let returned = arrays
+                    .iter()
+                    .map(|&(field, array)| {
+                        proof
+                            .arrays
+                            .get(array)
+                            .map(|a| (field, a.field))
+                            .ok_or("composition child result array is outside its proof")
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                (false, returned)
+            } else if super::readonly_numeric::scalar_aggregate(plan, aggregates, child.result())
+                && scalar_child_tree(plan, frames, aggregates, *child_id)
+            {
+                (true, Vec::new())
+            } else {
                 continue;
             };
             let Term::Scalar(mech_engine::native_artifact::NativeMatchTerminator::Jump(
@@ -140,17 +156,6 @@ impl Layout {
             else {
                 continue;
             };
-            let returned_arrays = arrays
-                .iter()
-                .map(|&(field, array)| {
-                    proof
-                        .arrays
-                        .get(array)
-                        .map(|a| (field, a.field))
-                        .ok_or("composition child result array is outside its proof")
-                })
-                .collect::<Result<Vec<_>, _>>()?;
-
             // Every lifecycle transition and managed scalar handoff stays an
             // ordinary boundary. A native piece must finish before the child
             // initializer, and may only reopen after its original exit/copies.
@@ -289,6 +294,7 @@ impl Layout {
                 child_initialize: child.initialize(),
                 child_exit: child.exit(),
                 child_successor,
+                scalar_child,
                 returned_arrays,
                 segments,
             });
@@ -352,6 +358,38 @@ impl Layout {
             words,
         })
     }
+}
+
+/// The existing single pending edge can span arbitrary ordinary scalar control,
+/// but cannot nest another selected private-frame parent edge. Reuse the exact
+/// connected scalar carrier proof and explicitly exclude every frame carrier.
+fn scalar_child_tree(
+    plan: &Plan,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    child: usize,
+) -> bool {
+    let mut pending = vec![child];
+    let mut seen = BTreeSet::new();
+    while let Some(id) = pending.pop() {
+        if !seen.insert(id) {
+            return false;
+        }
+        let Some(Loop::Tail(tail)) = plan.iterations().get(id) else {
+            return false;
+        };
+        if aggregates.slot(tail.carrier()).is_none() || frames.fields(tail.carrier()).is_some() {
+            return false;
+        }
+        pending.extend(
+            plan.iterations()
+                .iter()
+                .enumerate()
+                .filter(|(_, control)| control.as_ref().parent() == Some(id as u32))
+                .map(|(id, _)| id),
+        );
+    }
+    true
 }
 
 fn eligible(
