@@ -1,0 +1,101 @@
+{
+  "scope": "Derived descriptive summary of both immediately committed worker groups",
+  "summary": {
+    "groups": [
+      {
+        "group": 0,
+        "before": {
+          "median_seconds": 0.0047520005,
+          "multiple_of_roc": 16.85106560283688,
+          "multiple_of_fixed_roc": 15.840001666666668
+        },
+        "after": {
+          "median_seconds": 0.0047834999999999996,
+          "multiple_of_roc": 16.962765957446805,
+          "multiple_of_fixed_roc": 15.945
+        },
+        "pooled_ratio": 1.0066286819624704,
+        "median_block_ratio": 0.9923931128525044,
+        "geometric_block_ratio": 1.0086573380561212,
+        "improving_blocks": 12
+      },
+      {
+        "group": 1,
+        "before": {
+          "median_seconds": 0.0046413545,
+          "multiple_of_roc": 16.458703900709217,
+          "multiple_of_fixed_roc": 15.471181666666668
+        },
+        "after": {
+          "median_seconds": 0.0046054170000000005,
+          "multiple_of_roc": 16.33126595744681,
+          "multiple_of_fixed_roc": 15.351390000000004
+        },
+        "pooled_ratio": 0.9922571094278622,
+        "median_block_ratio": 0.9936588581650585,
+        "geometric_block_ratio": 0.9933160090876281,
+        "improving_blocks": 13
+      },
+      {
+        "group": 2,
+        "before": {
+          "median_seconds": 0.004614604,
+          "multiple_of_roc": 16.3638439716312,
+          "multiple_of_fixed_roc": 15.382013333333333
+        },
+        "after": {
+          "median_seconds": 0.0046262915,
+          "multiple_of_roc": 16.405289007092197,
+          "multiple_of_fixed_roc": 15.420971666666668
+        },
+        "pooled_ratio": 1.0025327200340486,
+        "median_block_ratio": 0.9992620259750491,
+        "geometric_block_ratio": 0.999088992643611,
+        "improving_blocks": 10
+      },
+      {
+        "group": 3,
+        "before": {
+          "median_seconds": 0.0046895835,
+          "multiple_of_roc": 16.629728723404256,
+          "multiple_of_fixed_roc": 15.631945000000002
+        },
+        "after": {
+          "median_seconds": 0.004658312499999999,
+          "multiple_of_roc": 16.518838652482266,
+          "multiple_of_fixed_roc": 15.527708333333333
+        },
+        "pooled_ratio": 0.9933318172072209,
+        "median_block_ratio": 0.9930898612152286,
+        "geometric_block_ratio": 0.9916571899319206,
+        "improving_blocks": 12
+      }
+    ],
+    "reference_seconds": 0.000282,
+    "fixed_reference_seconds": 0.0003,
+    "primary_observations": 3968,
+    "all_observations": 3984,
+    "scope": "Four fixed independent worker groups with descriptive within-group block comparisons",
+    "before": {
+      "median_seconds": 0.0046680415,
+      "multiple_of_roc": 16.553338652482267,
+      "multiple_of_fixed_roc": 15.560138333333335
+    },
+    "after": {
+      "median_seconds": 0.0046539165,
+      "multiple_of_roc": 16.503249999999998,
+      "multiple_of_fixed_roc": 15.513055000000001
+    },
+    "pooled_ratio": 0.996974105735778,
+    "median_block_ratio": 0.9942672752646032,
+    "geometric_block_ratio": 0.9981578041087299,
+    "improving_blocks": 47
+  },
+  "files": [
+    {
+      "path": "summary.json",
+      "sha256": "ce751305d429a28dd7ab1b7f469a5b7f54ab678c4bba0884c986b09cbafc8be4",
+      "bytes": 2831
+    }
+  ]
+}
