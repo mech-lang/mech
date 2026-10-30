@@ -1,0 +1,233 @@
+{
+  "scope": "Reached containing-iteration counts, not predicted elapsed benefit.",
+  "candidates": [
+    {
+      "iteration": 25,
+      "admits": 1129,
+      "helpers": 838,
+      "frame_helpers": 685,
+      "numeric_disposition": {
+        "header": 837,
+        "iteration": 25,
+        "origin": {
+          "block": 74,
+          "local": 7,
+          "node": 0
+        },
+        "parent": 21,
+        "proof_eligible": false,
+        "rejection": "not a leaf: child loop or activation boundary",
+        "selected": false
+      }
+    },
+    {
+      "iteration": 21,
+      "admits": 1274,
+      "helpers": 1053,
+      "frame_helpers": 661,
+      "numeric_disposition": {
+        "header": 629,
+        "iteration": 21,
+        "origin": {
+          "block": 13,
+          "local": 42,
+          "node": 0
+        },
+        "parent": null,
+        "proof_eligible": false,
+        "rejection": "not a leaf: child loop or activation boundary",
+        "selected": false
+      }
+    },
+    {
+      "iteration": 190,
+      "admits": 848,
+      "helpers": 610,
+      "frame_helpers": 550,
+      "numeric_disposition": {
+        "header": 17352,
+        "iteration": 190,
+        "origin": {
+          "block": 2015,
+          "local": 24,
+          "node": 0
+        },
+        "parent": 168,
+        "proof_eligible": false,
+        "rejection": "not a leaf: child loop or activation boundary",
+        "selected": false
+      }
+    },
+    {
+      "iteration": 168,
+      "admits": 931,
+      "helpers": 799,
+      "frame_helpers": 515,
+      "numeric_disposition": {
+        "header": 15230,
+        "iteration": 168,
+        "origin": {
+          "block": 74,
+          "local": 221,
+          "node": 0
+        },
+        "parent": 21,
+        "proof_eligible": false,
+        "rejection": "not a leaf: child loop or activation boundary",
+        "selected": false
+      }
+    },
+    {
+      "iteration": 170,
+      "admits": 1212,
+      "helpers": 638,
+      "frame_helpers": 474,
+      "numeric_disposition": {
+        "header": 15296,
+        "iteration": 170,
+        "origin": {
+          "block": 1825,
+          "local": 13,
+          "node": 0
+        },
+        "parent": 168,
+        "proof_eligible": false,
+        "rejection": "not a leaf: child loop or activation boundary",
+        "selected": false
+      }
+    },
+    {
+      "iteration": 220,
+      "admits": 658,
+      "helpers": 516,
+      "frame_helpers": 472,
+      "numeric_disposition": {
+        "header": 19663,
+        "iteration": 220,
+        "origin": {
+          "block": 1825,
+          "local": 115,
+          "node": 0
+        },
+        "parent": 168,
+        "proof_eligible": false,
+        "rejection": "not a leaf: child loop or activation boundary",
+        "selected": false
+      }
+    },
+    {
+      "iteration": 188,
+      "admits": 920,
+      "helpers": 514,
+      "frame_helpers": 360,
+      "numeric_disposition": {
+        "header": 17151,
+        "iteration": 188,
+        "origin": {
+          "block": 2015,
+          "local": 17,
+          "node": 0
+        },
+        "parent": 168,
+        "proof_eligible": false,
+        "rejection": "not a leaf: child loop or activation boundary",
+        "selected": false
+      }
+    },
+    {
+      "iteration": 434,
+      "admits": 539,
+      "helpers": 348,
+      "frame_helpers": 292,
+      "numeric_disposition": {
+        "header": 39373,
+        "iteration": 434,
+        "origin": {
+          "block": 4743,
+          "local": 21,
+          "node": 0
+        },
+        "parent": 21,
+        "proof_eligible": false,
+        "rejection": "array field changes, swaps, or has unknown recursive forwarding",
+        "selected": false
+      }
+    },
+    {
+      "iteration": 239,
+      "admits": 442,
+      "helpers": 316,
+      "frame_helpers": 284,
+      "numeric_disposition": {
+        "header": 21531,
+        "iteration": 239,
+        "origin": {
+          "block": 2529,
+          "local": 24,
+          "node": 0
+        },
+        "parent": 168,
+        "proof_eligible": false,
+        "rejection": "not a leaf: child loop or activation boundary",
+        "selected": false
+      }
+    },
+    {
+      "iteration": 70,
+      "admits": 424,
+      "helpers": 305,
+      "frame_helpers": 275,
+      "numeric_disposition": {
+        "header": 7022,
+        "iteration": 70,
+        "origin": {
+          "block": 725,
+          "local": 24,
+          "node": 0
+        },
+        "parent": 21,
+        "proof_eligible": false,
+        "rejection": "not a leaf: child loop or activation boundary",
+        "selected": false
+      }
+    },
+    {
+      "iteration": 320,
+      "admits": 424,
+      "helpers": 305,
+      "frame_helpers": 275,
+      "numeric_disposition": {
+        "header": 28951,
+        "iteration": 320,
+        "origin": {
+          "block": 3462,
+          "local": 24,
+          "node": 0
+        },
+        "parent": 21,
+        "proof_eligible": false,
+        "rejection": "not a leaf: child loop or activation boundary",
+        "selected": false
+      }
+    },
+    {
+      "iteration": 136,
+      "admits": 606,
+      "helpers": 319,
+      "frame_helpers": 237,
+      "numeric_disposition": {
+        "header": 12419,
+        "iteration": 136,
+        "origin": {
+          "block": 1423,
+          "local": 26,
+          "node": 0
+        },
+        "parent": 21,
+        "proof_eligible": false,
+        "rejection": "not a leaf: child loop or activation boundary",
+        "selected": false
+      }
+    }
+  ]
+}

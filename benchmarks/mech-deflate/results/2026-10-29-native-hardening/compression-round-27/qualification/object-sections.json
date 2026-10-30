@@ -1,0 +1,32 @@
+{
+  "before": "/private/tmp/mech-field-retirement-round26-20261029/object-audit/complete-object.o",
+  "after": "/private/tmp/mech-scalar-results-round27-20261029/object-audit/complete-object.o",
+  "sections": {
+    "__TEXT,__text": {
+      "before": {
+        "bytes": 13561884,
+        "sha256": "d48acfc667723ad196ea75506fb68e42587e257bc0882321c1ddeccd5122e26d",
+        "offset": 368
+      },
+      "after": {
+        "bytes": 12923596,
+        "sha256": "0ad019551aa5e0c624f4dac56091567f1e6fbb721c92edf11883c05a1d6c476d",
+        "offset": 368
+      },
+      "identical": false
+    },
+    "__TEXT,__const": {
+      "before": {
+        "bytes": 192,
+        "sha256": "c3c838e3f6c1da05229a5a47638ee4d3918b58479774e78d921deb68ce86b205",
+        "offset": 13562256
+      },
+      "after": {
+        "bytes": 192,
+        "sha256": "e87b3917dc754990d51a35aa140a3b86f64c8613c8e7eaaf8dca989b12a62774",
+        "offset": 12923968
+      },
+      "identical": false
+    }
+  }
+}

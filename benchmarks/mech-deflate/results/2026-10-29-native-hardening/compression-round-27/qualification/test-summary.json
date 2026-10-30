@@ -1,0 +1,17 @@
+{
+  "fresh_maintained_rust_tests": 546,
+  "gpu_runtime": 301,
+  "transport_admission": 1,
+  "closed_fuel": 1,
+  "components": 232,
+  "selected_scalar": 8,
+  "selected_bits": 3,
+  "focused_final": 7,
+  "focused_overlap": true,
+  "architecture_commands": 12,
+  "protected_scalar_controls": 12,
+  "engine_core_changed": false,
+  "engine_parent_passes_not_counted_fresh": 227,
+  "core_parent_passes_not_counted_fresh": 353,
+  "full_components_note": "232 tests ran before moving the unsafe image checks into the existing audited fixture. All changed test paths pass in the final focused7; production source is identical to the measured commit."
+}
