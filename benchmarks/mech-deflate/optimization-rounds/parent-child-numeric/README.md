@@ -1,9 +1,19 @@
 # Parent/child numeric composition: design gate
 
-Status: **reproducer and proposed execution contract, without a compiler change**.
-The production compiler remains `915f039cfd7e2647cc3a1d349ab1070c3f292d19`.
-The retained compression result remains round 32: **16.937986667× the reference**
-on complete eight-byte compression. This diagnostic establishes no new speedup.
+Status: **implemented and qualified in round 33**, with the original design history below.
+Production compiler `2de2b627d1656c50adfc99ab75f4f3242e354c29` composes read-only
+parent pieces around the existing native/ordinary child. The final balanced
+comparison measures 5.1046875 → 5.045167 ms (1.166% improvement), or
+18.296371× → 18.083036× the fresh 0.279 ms reference. Against the previous
+fixed 0.300 ms ruler this is 17.015625× → 16.817223×. Reference variation
+must not be confused with a same-session regression.
+
+The maintained fixture is now `hosts/gpu/tests/fixtures/native/numeric-parent-child.mec`.
+Exact single-use continuation, ownership/funding contract, 574 scoped checks,
+copy/code-size costs and all raw evidence are in
+[the round-33 closure](../../results/2026-10-30-native-hardening/compression-round-33/CLOSURE.md).
+The following records the original design gate and witness; its original
+one-test counts and implementation-next statements are historical.
 
 ## Real operation and minimal witness
 
