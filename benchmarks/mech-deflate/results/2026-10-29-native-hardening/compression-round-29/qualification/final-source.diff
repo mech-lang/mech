@@ -1,0 +1,106 @@
+diff --git a/hosts/gpu/src/native_artifact/work/tests.rs b/hosts/gpu/src/native_artifact/work/tests.rs
+index 9caec7e88..eb32c51f7 100644
+--- a/hosts/gpu/src/native_artifact/work/tests.rs
++++ b/hosts/gpu/src/native_artifact/work/tests.rs
+@@ -288,3 +288,50 @@ fn a_different_shared_ledger_cannot_replace_a_live_library_caller() {
+         .unwrap();
+     assert_eq!(caller.used(), 65);
+ }
++
++#[test]
++fn native_ceiling_and_overflow_precede_foreign_account_and_library_caps() {
++    let memory = ManagedMemoryBudget::new(8192);
++    for ceiling in [100, u64::MAX] {
++        let mut meter = NativeWorkMeter::new(ceiling).unwrap();
++        let owner = meter
++            .shared_library_budget(NativeExecutionPhase::Setup, 10, &memory)
++            .unwrap();
++        let foreign = NativeLibraryWorkBudget::new(1000, 10, &memory).unwrap();
++        let amount = if ceiling == 100 { 37 } else { u64::MAX };
++        foreign
++            .with_scope(|| {
++                assert_eq!(
++                    meter.charge(NativeExecutionPhase::Completion, amount),
++                    Err(NativeExecutionError::WorkLimit {
++                        phase: NativeExecutionPhase::Completion,
++                        required: if ceiling == 100 { 101 } else { u64::MAX },
++                        limit: ceiling,
++                    })
++                );
++                assert!(matches!(
++                    meter.charge(NativeExecutionPhase::Completion, 1),
++                    Err(NativeExecutionError::LibraryWork {
++                        error: ResidentKernelError::InvalidInput,
++                        ..
++                    })
++                ));
++                assert_eq!(owner.used(), (64, 0));
++                assert_eq!(foreign.used(), (0, 0));
++            })
++            .unwrap();
++        owner.restrict(90, 10).unwrap();
++        assert_eq!(
++            meter.charge(NativeExecutionPhase::Completion, 27),
++            Err(NativeExecutionError::WorkLimit {
++                phase: NativeExecutionPhase::Completion,
++                required: 91,
++                limit: 90,
++            })
++        );
++        assert_eq!(owner.used(), (64, 0));
++        meter.charge(NativeExecutionPhase::Completion, 26).unwrap();
++        assert_eq!(meter.used(), 90);
++    }
++    assert_eq!(memory.used_bytes(), 0);
++}
+diff --git a/src/engine/src/resident/budget.rs b/src/engine/src/resident/budget.rs
+index 6d6b118bd..f0ffca99e 100644
+--- a/src/engine/src/resident/budget.rs
++++ b/src/engine/src/resident/budget.rs
+@@ -857,6 +857,46 @@ mod native_library_work_tests {
+         demand
+     }
+ 
++    #[test]
++    #[cfg(panic = "unwind")]
++    fn nested_call_unwind_restores_context_without_refunding_spent_work() {
++        let memory = mech_core::ManagedMemoryBudget::new(8192);
++        let budget = NativeLibraryWorkBudget::new(100, 100, &memory).unwrap();
++        let foreign = NativeLibraryWorkBudget::new(100, 100, &memory).unwrap();
++        budget
++            .with_scope(|| {
++                let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
++                    budget
++                        .with_call_limits(3, 1, || {
++                            budget.charge(2, 1).unwrap();
++                            budget
++                                .with_call_limits(1, 0, || {
++                                    budget.charge(1, 0).unwrap();
++                                    panic!("unwind nested work context");
++                                })
++                                .unwrap();
++                        })
++                        .unwrap();
++                }));
++                assert!(panic.is_err());
++                assert!(budget.has_matching_active_scope());
++                assert_eq!(budget.used(), (3, 1));
++                assert_eq!(foreign.charge(0, 0), Err(ResidentKernelError::InvalidInput));
++                budget.charge(4, 2).unwrap();
++            })
++            .unwrap();
++        assert!(!NativeLibraryWorkBudget::has_active_scope());
++        assert_eq!(budget.unscoped_remaining(), Some((93, 97)));
++        foreign
++            .with_scope(|| foreign.charge(1, 1))
++            .unwrap()
++            .unwrap();
++        assert_eq!(foreign.used(), (1, 1));
++        assert_eq!(budget.used(), (7, 3));
++        drop((budget, foreign));
++        assert_eq!(memory.used_bytes(), 0);
++    }
++
+     #[test]
+     fn native_scalar_debits_and_library_observations_use_one_counter() {
+         let memory = mech_core::ManagedMemoryBudget::new(4096);
