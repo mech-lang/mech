@@ -354,8 +354,11 @@ fn restored_parent_segments_rederive_scratch_and_reject_forged_authority() {
         // SAFETY: this checked JIT produced the image; metadata comparison
         // grants no entry pointer and executes no restored code here.
         let restored = unsafe {
-            mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(&bytes, &catalog)
-        }.unwrap();
+            mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
+                &bytes, &catalog,
+            )
+        }
+        .unwrap();
         assert_eq!(restored.encode_build_owned_image().unwrap(), bytes);
         let original: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         for field in ["max_library_inputs", "compositions"] {
@@ -367,9 +370,16 @@ fn restored_parent_segments_rederive_scratch_and_reject_forged_authority() {
             };
             // SAFETY: deliberately malformed metadata is confined to rejection;
             // no restored descriptor or entry from this branch is executed.
-            assert!(unsafe {
-                mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(&serde_json::to_vec(&changed).unwrap(), &catalog)
-            }.is_err(), "{field}");
+            assert!(
+                unsafe {
+                    mech_gpu::native_artifact::NativeProgramDescriptor::decode_build_owned_image(
+                        &serde_json::to_vec(&changed).unwrap(),
+                        &catalog,
+                    )
+                }
+                .is_err(),
+                "{field}"
+            );
         }
     }
 }
