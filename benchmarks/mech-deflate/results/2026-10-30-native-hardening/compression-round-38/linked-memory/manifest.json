@@ -1,0 +1,56 @@
+{
+  "created_utc": "2026-10-30T21:25:06.511348+00:00",
+  "head": "a4bdaad281117b107bb1a376eab76d1e4b2db41e",
+  "files": [
+    {
+      "path": "linked/memory-binary.json",
+      "sha256": "9f75fcc32178ae76511d8383286dcce138b93ecf701c034d51a7c5e5726f8c7a",
+      "bytes": 105
+    },
+    {
+      "path": "linked/memory-build.json",
+      "sha256": "54795baf381a0119b0b7d9ea981b6574a8d6197e7d95852ff189c25b1d02ba9b",
+      "bytes": 2316
+    },
+    {
+      "path": "linked/memory-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "linked/memory-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "linked/memory.json",
+      "sha256": "10967cd3934f1573f3f4f403ae3fbe4855f186936601666f3093bbc8c1251e82",
+      "bytes": 559
+    },
+    {
+      "path": "linked/memory.rs",
+      "sha256": "c0c03c0707140e9e37ce26b4abcfca56658fef738b4b55b09d89b2e14b77d76e",
+      "bytes": 6822
+    },
+    {
+      "path": "linked/memory.stderr",
+      "sha256": "00c7647396427bb48cb4db630fa66e7cec469230e8552e469f9895326ff8af5b",
+      "bytes": 8900
+    },
+    {
+      "path": "linked/memory.stdout",
+      "sha256": "211ed0647d1a8d169366fe58b8f6bd6b8cd894e845f6495b30ecf228d090d2ea",
+      "bytes": 3957
+    },
+    {
+      "path": "linked/pins.json",
+      "sha256": "63cfebd9147e6b06da732b3a6efbb52e67710f6a08fe1697d608878f0320ab3e",
+      "bytes": 1275
+    },
+    {
+      "path": "linked.py",
+      "sha256": "349d85534c44f46a7a9bdbc0d9381b3093e7cb648a0568f96cea58e587dddb4f",
+      "bytes": 4270
+    }
+  ]
+}
