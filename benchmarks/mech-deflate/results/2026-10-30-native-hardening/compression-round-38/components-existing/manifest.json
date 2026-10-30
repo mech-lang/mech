@@ -1,0 +1,21 @@
+{
+  "created_utc": "2026-10-30T20:14:47.523468+00:00",
+  "head": "c2cd498329e333f6449d0d6a3468124ece4a678c",
+  "files": [
+    {
+      "path": "components/existing.json",
+      "sha256": "153e38ef5b81b8c9444c6ab43eb9f312d1a8b32e789ac98170b82abf7832af82",
+      "bytes": 13260
+    },
+    {
+      "path": "components/existing.stderr",
+      "sha256": "34ecc7971a01c77df7c5785302ffad5fa83efd9df81aa2a20a9a6d809345e2ee",
+      "bytes": 2780
+    },
+    {
+      "path": "components/existing.stdout",
+      "sha256": "b4b6173b0428c8faed4ab70434fa3a2b0cecb78b1220f69af1e7684f99191d9f",
+      "bytes": 292562
+    }
+  ]
+}
