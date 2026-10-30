@@ -1,0 +1,86 @@
+{
+  "created_utc": "2026-10-30T19:04:37.331639+00:00",
+  "head": "4e81d1d390e0b3732cccecaf7001d9073113b230",
+  "files": [
+    {
+      "path": "allocation_profile.c",
+      "sha256": "d4e2ef8c1c635bf0e87a72ec6308abb2ba1b845d5da502a6d204135f07b7c27e",
+      "bytes": 4893
+    },
+    {
+      "path": "allocation_profile.h",
+      "sha256": "56852a08a6cb3fbba88daa10b8674cdb938933833722f0ed3bfcc8ae9ae9b31a",
+      "bytes": 384
+    },
+    {
+      "path": "allocation_profile.rs",
+      "sha256": "d9c4bc779939567f5dced46d7c7f7030726b4c0e17df72efc3339cdfe2514b19",
+      "bytes": 1306
+    },
+    {
+      "path": "build-memory.py",
+      "sha256": "0e908007122441978b86cc2b3df9f9ac7caae3d9ed7e0918b179f6d8d566abf5",
+      "bytes": 3598
+    },
+    {
+      "path": "calibrate_memory.c",
+      "sha256": "d2ea73c22dd5b58c8ab277cc811db7aee8a8db6530048be349303c49cbe258a9",
+      "bytes": 392
+    },
+    {
+      "path": "mech-memory-round37-build.json",
+      "sha256": "fac2714d4bafcf76bf84631b6cfa0a8c59cad53c2f9ca0985d9063f6c097c08d",
+      "bytes": 1830
+    },
+    {
+      "path": "mech-memory-round37-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "mech_memory.rs",
+      "sha256": "9e1470e8845adce9d2451b47ff542d560416fd2a8b8fda55d768e1ee595023c6",
+      "bytes": 6119
+    },
+    {
+      "path": "memory-calibration.json",
+      "sha256": "392f188f073d4c135383b587dc41ae410410600a858d6dee219502b6850a587e",
+      "bytes": 132
+    },
+    {
+      "path": "memory-calibration.stderr",
+      "sha256": "af00e87e7c5a9afa7b0c246b77ad91b1a3cf885bd705b88750aa31637e522e08",
+      "bytes": 508
+    },
+    {
+      "path": "memory-calibration.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "memory-round37/run.json",
+      "sha256": "8ed22ded28ee5e74a3f73afa91faceb3cdbc08a617c7a627b1b0affa87ed7019",
+      "bytes": 12294
+    },
+    {
+      "path": "memory-round37/run.stderr",
+      "sha256": "134e031990f4f4739357faed0ac0a75416bf239fb23174ccb4d2e98f52053ca2",
+      "bytes": 8968
+    },
+    {
+      "path": "memory-round37/run.stdout",
+      "sha256": "8a981545d7acf784014ed7a66e2cd72163529fe9d2af0a6ec6798f1ff2b16618",
+      "bytes": 3976
+    },
+    {
+      "path": "usage.c",
+      "sha256": "883fe6a7baf228bc881b4b76aef13f352da38f19c8e7a5b3ca938dbd1dddfd0e",
+      "bytes": 448
+    },
+    {
+      "path": "usage.h",
+      "sha256": "ca6ac3c2cd82bfb367c07aa9e26b1aea3b025e48ea44db76dbded2be45b5fb9f",
+      "bytes": 233
+    }
+  ]
+}
