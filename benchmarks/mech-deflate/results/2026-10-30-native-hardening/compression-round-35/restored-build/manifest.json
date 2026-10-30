@@ -1,0 +1,21 @@
+{
+  "created_utc": "2026-10-30T16:34:59.550401+00:00",
+  "head": "dc24669ec9d476d04e25e164b85bb48b6296542c",
+  "files": [
+    {
+      "path": "restored-build/receipt.json",
+      "sha256": "f109e9d9b7bcae16ff3ae29bb380e37610560a688c23fe1b1f7d963f85071817",
+      "bytes": 13142
+    },
+    {
+      "path": "restored-build/release.log",
+      "sha256": "3f9b5f0e6a312cd409876a74adb554313cf2e4cc4f9f33b4e4ae5fb11ba75621",
+      "bytes": 167355
+    },
+    {
+      "path": "restored-build/release.stderr",
+      "sha256": "f8e03ad053d9083cfcb7b314a847bd7e0886c88932ca16413b48e56a93a51aa6",
+      "bytes": 615
+    }
+  ]
+}
