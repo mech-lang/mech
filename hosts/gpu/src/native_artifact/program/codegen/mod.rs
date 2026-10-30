@@ -1,6 +1,9 @@
 //! Native owner namespace.
 
 #[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod frame_scalars;
+
+#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod ascii_map;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod borrowed;

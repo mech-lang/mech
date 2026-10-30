@@ -91,6 +91,18 @@ fn linked_assertion_rejection_preserves_publication_and_recovers() {
 }
 
 #[test]
+fn linked_private_frame_scalar_reads_refresh_and_recover() {
+    let functions = super::buffer_frame_qualification::SCALAR_READ_PARENT
+        .split("(total, flag) := outer")
+        .next()
+        .unwrap();
+    let source = format!(
+        "{functions}\nchecked(n<u64>) => (out<u64>) :=\n  (total,flag) := outer([7u32],3u64,n,true)\n  changed! := flag == false\n  accumulated! := total == n + 21u64\n  positive! := n > 0u64\n  out := 12u64 / n.\nchecked(input<u64>)\n"
+    );
+    linked_assertion_retry(&source, ValueDataDraft::U64);
+}
+
+#[test]
 fn linked_narrow_comparison_assertion_preserves_publication_and_recovers() {
     let source = "checked(n<u32>) => (out<u64>) :=\n  positive! := n > 0u32\n  wide<u64> := n\n  out := 12u64 / wide.\nchecked(input<u32>)\n";
     linked_assertion_retry(source, |n| ValueDataDraft::U32(n.try_into().unwrap()));

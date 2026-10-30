@@ -1084,25 +1084,42 @@ impl<'plan> CfgDefinition<'plan> {
                     // No Matrix result word/handle is written or fabricated.
                 }
                 NativeIterationAction::Structural { output, .. } => {
-                    let hooks = hooks
-                        .as_ref()
-                        .ok_or_else(|| backend("structural observation without managed hooks"))?;
-                    let zero = b.ins().iconst(types::I64, 0);
-                    hooks.call(
-                        b,
-                        index,
-                        GlobalHelper::StructuralObservation,
-                        [zero; 3],
-                        error,
-                    );
-                    if plan.kind(*output).is_some() {
-                        let word = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
-                        b.ins().store(
-                            MemFlags::new(),
-                            word,
+                    #[cfg(feature = "canonical-native-program")]
+                    let direct = if let plan::CodePlan::Program(program) = plan {
+                        crate::native_artifact::program::codegen::frame_scalars::emit(
+                            b,
                             locals,
-                            offset(output.get() as usize)?,
+                            program.metadata(),
+                            index,
+                            error,
+                            report,
+                        )?
+                    } else {
+                        false
+                    };
+                    #[cfg(not(feature = "canonical-native-program"))]
+                    let direct = false;
+                    if !direct {
+                        let hooks = hooks.as_ref().ok_or_else(|| {
+                            backend("structural observation without managed hooks")
+                        })?;
+                        let zero = b.ins().iconst(types::I64, 0);
+                        hooks.call(
+                            b,
+                            index,
+                            GlobalHelper::StructuralObservation,
+                            [zero; 3],
+                            error,
                         );
+                        if plan.kind(*output).is_some() {
+                            let word = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+                            b.ins().store(
+                                MemFlags::new(),
+                                word,
+                                locals,
+                                offset(output.get() as usize)?,
+                            );
+                        }
                     }
                 }
                 NativeIterationAction::LibraryCall {

@@ -1189,11 +1189,31 @@ impl<'a> Prepared<'a> {
             .work
             .charge(NativeExecutionPhase::Setup, transition_work);
         transitioned?;
+        let scalar_loan = if let Some(slot) = descriptor.metadata().frame_scalar_pointer() {
+            let words = state
+                .buffer_frames
+                .scalar_words()
+                .ok_or_else(|| invalid("frame scalar loan has no owned backing"))?;
+            if words.len() != descriptor.metadata().buffer_frames.scalar_fields() * 2 {
+                return Err(invalid("frame scalar loan size differs from descriptor"));
+            }
+            // The owning session retains this fixed admitted backing for the
+            // entire checked call. No Rust slice borrow crosses entry. Native
+            // code only reads; helpers suspend those reads before changing a
+            // payload/validity word. The address is reconstructed on each
+            // phase and never serialized, cached or granted to guest code.
+            Some((slot, words.as_ptr() as u64))
+        } else {
+            None
+        };
         let (input_words, rest) = self
             .storage
             .values_mut()
             .split_at_mut(plan.transport_input_count());
         let (values, rest) = rest.split_at_mut(self.locals);
+        if let Some((slot, pointer)) = scalar_loan {
+            values[slot] = pointer;
+        }
         let (progress_words, rest) = rest.split_at_mut(self.progress);
         let (output_words, rest) = rest.split_at_mut(plan.transport_output_count());
         let (result, rest) = rest.split_at_mut(1);
@@ -1268,6 +1288,11 @@ impl<'a> Prepared<'a> {
         };
         let phase_words = (frame.resume_site, frame.available_lines, frame.input_eof);
         let status = entry(&mut frame);
+        if let Some((slot, _)) = scalar_loan {
+            // No generated read remains active after entry returns. Remove
+            // the call-scoped address before any error or phase checkpoint.
+            values[slot] = 0;
+        }
         if let Some(error) = context.error.take() {
             return Err(error);
         }
