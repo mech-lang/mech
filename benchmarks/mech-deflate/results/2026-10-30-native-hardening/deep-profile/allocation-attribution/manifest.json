@@ -1,0 +1,81 @@
+{
+  "created_utc": "2026-10-30T19:11:15.818339+00:00",
+  "head": "6e4067084034b54d8d2f38ce6f2e474824a48de6",
+  "files": [
+    {
+      "path": "allocation-attribution/allocation_stacks.c",
+      "sha256": "b5f18911ab90edf32919acae477e1888e1fa8180b8be83e5c65bee6e88c981b6",
+      "bytes": 5669
+    },
+    {
+      "path": "allocation-attribution/main.rs",
+      "sha256": "1f7972c2b5df24ef8d53b18a08ce709a40a361f991d129ca74dd8cbac17be57f",
+      "bytes": 6275
+    },
+    {
+      "path": "allocation-attribution/prepared-vmmap.json",
+      "sha256": "88dd0720909cc3ae22683829bd69279a2a52a4f5f503d6969aed76059c6f4812",
+      "bytes": 118
+    },
+    {
+      "path": "allocation-attribution/prepared-vmmap.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "allocation-attribution/prepared-vmmap.stdout",
+      "sha256": "f18446a639c799412c81a585f90da2ac10400f21b4595e103936bf3ceb9a463e",
+      "bytes": 5217
+    },
+    {
+      "path": "allocation-attribution/probe-build.json",
+      "sha256": "abff2b185c44dd5dde9eec51d9fa3e858f80c0453ab5c5b50445f0a5119b3f58",
+      "bytes": 471
+    },
+    {
+      "path": "allocation-attribution/probe-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "allocation-attribution/probe-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "allocation-attribution/run.json",
+      "sha256": "817ea35a3d10fa8aefa800b6cd2cac9d0afd10f9402d88695cedcb15c6c762e6",
+      "bytes": 12313
+    },
+    {
+      "path": "allocation-attribution/run.stderr",
+      "sha256": "7ecda877a332069d61ecbb88faf7adeccb4453b156e1b3711aa3b09dcf62d70a",
+      "bytes": 133643
+    },
+    {
+      "path": "allocation-attribution/run.stdout",
+      "sha256": "34fed5750fe4efbc64ce3c6487c4701022cbb812af2e401313934731af0c5eb8",
+      "bytes": 1189
+    },
+    {
+      "path": "allocation-attribution/runner-build.json",
+      "sha256": "e19da826c3ee31148f745083176c8cc6f5f69f60d5c504404f0e5cb00a861e78",
+      "bytes": 1878
+    },
+    {
+      "path": "allocation-attribution/runner-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "allocation-attribution/runner-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "attribute-large-allocations.py",
+      "sha256": "716c58e1acd393c5c7ffc8ccf994c84a5c656a12549dbf6eedaaa11b39ab7016",
+      "bytes": 4378
+    }
+  ]
+}
