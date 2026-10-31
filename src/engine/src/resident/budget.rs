@@ -4411,3 +4411,7 @@ mod tests {
 #[cfg(all(test, feature = "native-artifact"))]
 #[path = "native_projection_meter_tests.rs"]
 mod native_projection_meter_tests;
+
+#[cfg(all(test, feature = "native-artifact"))]
+#[path = "native_compute_debit_tests.rs"]
+mod native_compute_debit_tests;
