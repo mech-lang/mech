@@ -387,6 +387,13 @@ jobs:
           cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --lib \
             snapshot::validation::tests::budget_registration_removal_and_same_owner_reuse_ignore_later_foreign_imports \
             -- --exact --test-threads=1
+      - name: Execute exclusive snapshot first-admission regressions
+        run: |
+          ADMISSION_TESTS=$(cargo +nightly-2026-03-03 test --locked -p mech-core \
+            --all-features --lib -- snapshot::validation::unique_admission_tests:: --list)
+          test "$(printf '%s\n' "$ADMISSION_TESTS" | awk '/^snapshot::validation::unique_admission_tests::.*: test$/ { count += 1 } END { print count + 0 }')" -eq 6
+          cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --lib -- \
+            snapshot::validation::unique_admission_tests:: --test-threads=1
       - name: Execute retained unsigned buffer ownership and allocation regressions
         run: |
           BUFFER_TESTS=$(cargo +nightly-2026-03-03 test --locked -p mech-core \
