@@ -1,0 +1,51 @@
+{
+  "created_utc": "2026-10-31T03:00:08.137284+00:00",
+  "head": "f9cd03bdb4293e3596bc6885c62e56b5f96935d2",
+  "files": [
+    {
+      "path": "control-build.py",
+      "sha256": "2821b92dea8d1cf0233ed872a8f9e5a4838edfbb62cbb7f88c1dbc8c9ab66fcc",
+      "bytes": 1804
+    },
+    {
+      "path": "primary/frame-after-build.json",
+      "sha256": "100ffe207d308452c8b2cbf5165dc8fa48d12036f4144ef4d446673e2a4b02a4",
+      "bytes": 13877
+    },
+    {
+      "path": "primary/frame-after-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "primary/frame-after-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "primary/frame-after.json",
+      "sha256": "bbb99a302804c4386776b6106755fa39bef03f9a004941d289804b71ba37a74f",
+      "bytes": 252
+    },
+    {
+      "path": "primary/frame-before-build.json",
+      "sha256": "8b26c48d1a3da2abc9b56538b105e2b7716617090a9252da889f2209e44c5eda",
+      "bytes": 13892
+    },
+    {
+      "path": "primary/frame-before-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "primary/frame-before-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "primary/frame-before.json",
+      "sha256": "d33f19b916f896468e57ecb607bf3a4bd99b2f0490101b235fdba39dc193ca71",
+      "bytes": 253
+    }
+  ]
+}
