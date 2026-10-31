@@ -1,0 +1,216 @@
+{
+  "schema": "mech.borrowed-turn-source-mechanism.v1",
+  "groups": {
+    "before": {
+      "native_planner": {
+        "requests": 571,
+        "requested_bytes": 72207,
+        "stack_groups": 552
+      },
+      "inner_planner": {
+        "requests": 414,
+        "requested_bytes": 52969,
+        "stack_groups": 399
+      },
+      "outer_owned_wrapper": {
+        "requests": 157,
+        "requested_bytes": 19238,
+        "stack_groups": 153
+      },
+      "complete_resolution": {
+        "requests": 386,
+        "requested_bytes": 42006,
+        "stack_groups": 378
+      },
+      "binding": {
+        "requests": 447,
+        "requested_bytes": 40431,
+        "stack_groups": 422
+      },
+      "nested_groups_overlap": true
+    },
+    "after": {
+      "native_planner": {
+        "requests": 414,
+        "requested_bytes": 52969,
+        "stack_groups": 399
+      },
+      "inner_planner": {
+        "requests": 414,
+        "requested_bytes": 52969,
+        "stack_groups": 399
+      },
+      "outer_owned_wrapper": {
+        "requests": 0,
+        "requested_bytes": 0,
+        "stack_groups": 0
+      },
+      "complete_resolution": {
+        "requests": 386,
+        "requested_bytes": 42006,
+        "stack_groups": 378
+      },
+      "binding": {
+        "requests": 447,
+        "requested_bytes": 40431,
+        "stack_groups": 422
+      },
+      "nested_groups_overlap": true
+    }
+  },
+  "removed_size_kind_histogram": [
+    {
+      "kind": "alloc",
+      "bytes_each": 2,
+      "count": 1
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 4,
+      "count": 5
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 6,
+      "count": 23
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 7,
+      "count": 1
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 8,
+      "count": 1
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 11,
+      "count": 21
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 12,
+      "count": 5
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 14,
+      "count": 2
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 16,
+      "count": 1
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 17,
+      "count": 1
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 19,
+      "count": 1
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 20,
+      "count": 20
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 24,
+      "count": 2
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 36,
+      "count": 1
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 48,
+      "count": 15
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 64,
+      "count": 11
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 104,
+      "count": 3
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 112,
+      "count": 1
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 176,
+      "count": 3
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 192,
+      "count": 5
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 240,
+      "count": 14
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 256,
+      "count": 2
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 288,
+      "count": 6
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 312,
+      "count": 1
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 432,
+      "count": 3
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 528,
+      "count": 1
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 768,
+      "count": 2
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 1000,
+      "count": 2
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 1152,
+      "count": 2
+    },
+    {
+      "kind": "alloc",
+      "bytes_each": 1296,
+      "count": 1
+    }
+  ],
+  "exact_removed_wrapper_histogram_equals_whole_call_delta": true,
+  "inner_planning_binding_and_resolution_histograms_unchanged": true,
+  "scope": "Fresh current traces: the 157-request/19238-byte outer adapter disappears exactly. The remaining 414-request/52969-byte turn planner and 447-request/40431-byte binding remain. These nested family counts overlap; do not sum them. Histogram equality establishes count/size evidence, not unchanged instruction or exact call counts. Current facts and output plans still get freshly derived."
+}
