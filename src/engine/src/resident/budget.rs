@@ -993,15 +993,15 @@ fn charge_control_account_at_limits(
 // infallible local assignment, so denial cannot partially spend either ledger.
 fn commit_control_account_work(
     account: &mut ControlWorkAccount,
-    compute: u64,
-    comparison: u64,
+    _compute: u64,
+    _comparison: u64,
     next: ControlWork,
 ) -> Result<(), ResidentKernelError> {
     #[cfg(feature = "native-artifact")]
     if let Some(worker) = &account.worker {
         // Local call caps were checked first. Both shared dimensions commit
         // together before the infallible local-counter assignment.
-        worker.charge(compute, comparison)?;
+        worker.charge(_compute, _comparison)?;
     }
     account.used = next;
     Ok(())
