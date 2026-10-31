@@ -1,0 +1,51 @@
+{
+  "created_utc": "2026-10-31T23:49:57.139505+00:00",
+  "head": "c22c788ba21f87f47a3cdc7992c0cf12031fd7c3",
+  "files": [
+    {
+      "path": "engine-focused.py",
+      "sha256": "55a82fd388bd12b6f7b21ddacde4a3ec49e9a4bcf7bb2a02b53b53365703ca71",
+      "bytes": 5992
+    },
+    {
+      "path": "engine-parent/borrowed-turn.json",
+      "sha256": "820f1e9f5a9f805e3d0d9e8f4df31dd40016ce74e0da595556f7e25554360284",
+      "bytes": 12981
+    },
+    {
+      "path": "engine-parent/borrowed-turn.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-parent/borrowed-turn.stdout",
+      "sha256": "850c4d53ebf2b7c19f93c9721b2b762438fdeef44f1f274ca19fbb94f5d55d11",
+      "bytes": 915
+    },
+    {
+      "path": "engine-parent/budget.rs",
+      "sha256": "d3101d673c6602cf3bf998e33a6e785e907595d0baca5b6145284227b787c85b",
+      "bytes": 171672
+    },
+    {
+      "path": "engine-parent/mod.rs",
+      "sha256": "6e714d6d76616eb60f926de2beb7e84dfc273d22e210b6c2e31a3df0493c0767",
+      "bytes": 6362
+    },
+    {
+      "path": "engine-parent/retained-rust-build.json",
+      "sha256": "845776df17afdbe67e569bf6a1f45fbfa05f233b04aac72ba0cae4c24c090d77",
+      "bytes": 23201
+    },
+    {
+      "path": "engine-parent/reuse-proof.json",
+      "sha256": "d8535714dfba6d769cfc0ee8ffd10c5a9a7adcb10915970b9375d12a4e4425d2",
+      "bytes": 56327
+    },
+    {
+      "path": "verify-parent.py",
+      "sha256": "ef018dfccdb9990ba0c1838eaab1c9aa1545b5db85fbd9e624f937b759bec92e",
+      "bytes": 1786
+    }
+  ]
+}
