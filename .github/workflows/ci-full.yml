@@ -716,6 +716,17 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features full_compiler,native-artifact,sequence_buffers \
             --lib -- native_projection_meter_tests --test-threads=1
+      - name: Inventory and execute scoped work context contracts
+        if: ${{ matrix.suite == 'native' }}
+        shell: bash
+        run: |
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact,sequence_buffers \
+            --lib -- native_work_context::tests:: --list | tee native-work-context-tests.txt
+          test "$(rg -c ': test$' native-work-context-tests.txt)" -eq 5
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact,sequence_buffers \
+            --lib -- native_work_context::tests:: --test-threads=1
       - name: Inventory and execute private frame shape contracts
         if: ${{ matrix.suite == 'native' }}
         shell: bash
