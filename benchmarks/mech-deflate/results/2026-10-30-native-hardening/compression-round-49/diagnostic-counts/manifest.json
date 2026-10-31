@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-10-31T06:53:24.726413+00:00",
+  "head": "d2bbb5b4dbc2e62628b842003a9fb1b4c8f12faa",
+  "files": [
+    {
+      "path": "probe/linked-primary/after/counter-build.json",
+      "sha256": "bb7ac3ad51720a7746be1623943ac961ef622de43fd39794570d59345cd8d67a",
+      "bytes": 14147
+    },
+    {
+      "path": "probe/linked-primary/after/counter-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "probe/linked-primary/after/counter-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "probe/linked-primary/after/counter-run.stderr",
+      "sha256": "2c4a9f9c125d59a2c9a53b5787e129a2fe64f3631a7b8586e5dc7ac7adb97788",
+      "bytes": 211
+    },
+    {
+      "path": "probe/linked-primary/after/counter-run.stdout",
+      "sha256": "5cfba911d47ae57cc8624d1dad2fea0d027779f2dc0e4c5da23b2ea25cfae777",
+      "bytes": 4168
+    },
+    {
+      "path": "probe/linked-primary/after/counter-worker.rs",
+      "sha256": "ce31cb5e96ce52a0dffcf85d6ef28234cb02f9fca42fe9eaf51a52421f52e3c5",
+      "bytes": 7348
+    },
+    {
+      "path": "probe/result.json",
+      "sha256": "3ba40a8342f43e36f576390e5b0ea97ca1a602adef8f63dc43689181bf9dac75",
+      "bytes": 828
+    },
+    {
+      "path": "probe/run.py",
+      "sha256": "7b87e2afa3c51c09fd17bc945c4926c6e66251d9ccc2e9ae66ef4c51907b2e38",
+      "bytes": 4634
+    }
+  ]
+}
