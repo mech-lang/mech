@@ -1,0 +1,51 @@
+{
+  "created_utc": "2026-10-31T12:35:32.296249+00:00",
+  "head": "40d97fcbedd8d3f1936f87a254a6b124e1a1f3ec",
+  "files": [
+    {
+      "path": "baseline-census-pin.json",
+      "sha256": "d925b08718390b7e192d2e3aecf0524239a375c4a24670177f39926e1f8604e7",
+      "bytes": 427
+    },
+    {
+      "path": "linked-primary/before/binding.json",
+      "sha256": "f5705493ec7ba604d8a7c14855fb029ea6189d09da6cddadc646e515d7ddc275",
+      "bytes": 19264
+    },
+    {
+      "path": "linked-primary/before/metadata.json",
+      "sha256": "a1d3f2710f3c2bb40eeb7cd10529b87ad6eae1d3786b3811823ee07ea3c3cac9",
+      "bytes": 2542212
+    },
+    {
+      "path": "linked-primary/before/worker-build.json",
+      "sha256": "279c7e71294929f792d3e1c16f870aa9f43b6ecccc1799a158044d241a32ab3d",
+      "bytes": 20303
+    },
+    {
+      "path": "linked-primary/before/worker-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "linked-primary/before/worker-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "linked-primary/before/worker.rs",
+      "sha256": "b63cc30db3a2c195fe0ae230857f91281791424eff8a52cdb587c4221321ec4d",
+      "bytes": 6936
+    },
+    {
+      "path": "variants/before/common.json",
+      "sha256": "bcf92e8ad5d7f39d59410bae81cc17746ac57f11b5f094d3b9bbd4e6c34b22f2",
+      "bytes": 65414
+    },
+    {
+      "path": "variants/before/libraries.json",
+      "sha256": "c78d940ee244e60a15c8194501c246d8c4a523f7d39f201462ac2779a7905948",
+      "bytes": 10912
+    }
+  ]
+}
