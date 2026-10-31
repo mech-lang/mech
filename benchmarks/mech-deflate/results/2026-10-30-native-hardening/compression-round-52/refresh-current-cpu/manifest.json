@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-10-31T09:15:09.430439+00:00",
+  "head": "a5217119014ae6eb562c9f530c64f91fff7eaa28",
+  "files": [
+    {
+      "path": "refresh/consumer-validation-repair.json",
+      "sha256": "2df69568b5ca7368daf1b2dabf08fb4207dc51ca6d0ad77147a45a039e5bb11a",
+      "bytes": 566
+    },
+    {
+      "path": "refresh/cpu-build.json",
+      "sha256": "7ba6e3c245975f2d7dc912fbfc68d971f998d7a0a51af69cbd1b40e1fbebbcfc",
+      "bytes": 20598
+    },
+    {
+      "path": "refresh/cpu-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "refresh/cpu-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "refresh/current-cpu/run.json",
+      "sha256": "d58202425bc4f23c785cdb37c3565eccf969fabdde102985c876f87c2ee74aea",
+      "bytes": 507
+    },
+    {
+      "path": "refresh/current-cpu/run.stderr",
+      "sha256": "5906366761ce7090e9ca60726146e3b3801817704ec12009d1b80d0b73756006",
+      "bytes": 614
+    },
+    {
+      "path": "refresh/current-cpu/run.stdout",
+      "sha256": "a1320cbace0603bba9b9615db91ba43337cb51529a973b215a7f29a0d649af9e",
+      "bytes": 20134
+    },
+    {
+      "path": "refresh.py",
+      "sha256": "e61b985acd53f17df710b399f1357be15b707f98fdfac10783b7ce83fcd4bad9",
+      "bytes": 8057
+    }
+  ]
+}
