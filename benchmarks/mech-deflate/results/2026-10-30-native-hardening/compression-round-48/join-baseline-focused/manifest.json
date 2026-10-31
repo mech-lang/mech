@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T05:55:08.961235+00:00",
+  "head": "7038352f33ece4d682e89ff9bf1295c89efae89e",
+  "files": [
+    {
+      "path": "join-baseline/focused.json",
+      "sha256": "43263063b197796f9e9bdbd0ccbf581cdb43762fb1ee995ec1ac452c84cb87cd",
+      "bytes": 934
+    },
+    {
+      "path": "join-baseline/focused.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "join-baseline/focused.stdout",
+      "sha256": "9b57078684f9a8e5eb8716f1f7f5e92a505176eda542fc13b505d878af05103b",
+      "bytes": 271
+    },
+    {
+      "path": "join-baseline.py",
+      "sha256": "5f2cf578259d4b5985ef3949c970177f312f6a7ee98d301ce848f72bc2047f6e",
+      "bytes": 1919
+    }
+  ]
+}
