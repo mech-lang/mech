@@ -1,0 +1,16 @@
+{
+  "created_utc": "2026-10-31T13:14:48.981483+00:00",
+  "head": "5c10c415bc40455c283ae5072c8834857ce9da39",
+  "files": [
+    {
+      "path": "census.json",
+      "sha256": "02647996f84e1af961184624b048c430e24d645138760531281b4d4ff3d14d2b",
+      "bytes": 15830398
+    },
+    {
+      "path": "word-replacement-sites.json",
+      "sha256": "7a1ccfea72791cb408f3a2c20277cbda6c0fcbe8804800a8833e8038ad497c9b",
+      "bytes": 117066
+    }
+  ]
+}
