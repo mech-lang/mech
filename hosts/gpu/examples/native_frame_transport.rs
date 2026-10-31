@@ -114,11 +114,17 @@ fn policy() -> NativeProgramExecutionLimits {
 
 fn managed(case: &str, decoded: bool, steps: u64, samples: usize, repetitions: usize) {
     let body = "walk(words<[u32]>, left<u64>, total<u64>) => <u64>\n  | (words, left, total) => ((left > 0u64)? | true => walk(words, left - 1u64, total + 3u64) | false => sequence/length(words) + total).\n";
+    let private_update = "walk(words<[u32]>, left<u64>, total<u64>) => (out<u64>) :=\n  old := words[1u64]\n  ~next := words\n  next[1u64] = old + 1u32\n  current<u64> := next[1u64]\n  out := ((left > 0u64)? | true => walk(next, left - 1u64, total + 3u64) | false => total + current).\nwalk([0u32], steps<u64>, seed<u64>)\n";
+    let private_append = "+> sequence\nwalk(words<[u32]>, left<u64>, total<u64>) => (out<u64>) :=\n  next := sequence/append(words, 7u32)\n  out := ((left > 0u64)? | true => walk(next, left - 1u64, total + 3u64) | false => total + sequence/length(next)).\nwalk(sequence/with-capacity(0u32, 64u64), steps<u64>, seed<u64>)\n";
     let source = match case {
         "exclusive" => format!("+> sequence\n{body}walk(sequence/with-capacity(0u32, 64u64), steps<u64>, seed<u64>)\n"),
         "aliased" => format!("+> sequence\n{body}walk(values<[u32]>, steps<u64>, seed<u64>)\n"),
-        "private-update" => "walk(words<[u32]>, left<u64>, total<u64>) => (out<u64>) :=\n  old := words[1u64]\n  ~next := words\n  next[1u64] = old + 1u32\n  current<u64> := next[1u64]\n  out := ((left > 0u64)? | true => walk(next, left - 1u64, total + 3u64) | false => total + current).\nwalk([0u32], steps<u64>, seed<u64>)\n".to_owned(),
-        "private-append" => "+> sequence\nwalk(words<[u32]>, left<u64>, total<u64>) => (out<u64>) :=\n  next := sequence/append(words, 7u32)\n  out := ((left > 0u64)? | true => walk(next, left - 1u64, total + 3u64) | false => total + sequence/length(next)).\nwalk(sequence/with-capacity(0u32, 64u64), steps<u64>, seed<u64>)\n".to_owned(),
+        "private-update" => private_update.to_owned(),
+        "private-append" => private_append.to_owned(),
+        "private-tree" => private_update.replace("u32", "u16").replace("walk([0u16],", "walk([0u16 | i <- 0u64..=262144u64, i < 262144u64],"),
+        "private-cache" => private_update.replace("walk([0u32],", "walk([0u32 | i <- 0u64..=1500513u64, i < 1500513u64],"),
+        "private-path" => private_append.replace("u32", "u64").replace("64u64", "305257u64"),
+        "private-output" => private_append.replace("u32", "u8").replace("64u64", "13u64"),
         "scalar-loop" => "walk(left<u64>, total<u64>) => <u64>\n  | (left, total) => ((left > 0u64)? | true => walk(left - 1u64, total + 3u64) | false => total).\nwalk(steps<u64>, seed<u64>)\n".to_owned(),
         _ => panic!("unknown managed case"),
     };
@@ -144,7 +150,8 @@ fn managed(case: &str, decoded: bool, steps: u64, samples: usize, repetitions: u
         17 + steps * 3
             + match case {
                 "aliased" => 64,
-                "private-update" | "private-append" => steps + 1,
+                "private-update" | "private-append" | "private-tree" | "private-cache"
+                | "private-path" | "private-output" => steps + 1,
                 _ => 0,
             },
     );
@@ -279,7 +286,8 @@ fn main() {
     assert!(repetitions > 0);
     assert_eq!(allocation_probe::measured(|| ()).1, 0);
     match args[1].as_str() {
-        "exclusive" | "aliased" | "scalar-loop" | "private-update" | "private-append" => {
+        "exclusive" | "aliased" | "scalar-loop" | "private-update" | "private-append"
+        | "private-tree" | "private-cache" | "private-path" | "private-output" => {
             managed(&args[1], decoded, steps, samples, repetitions)
         }
         _ => scalar(&args[1], decoded, samples, repetitions),
