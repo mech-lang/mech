@@ -12,9 +12,13 @@ fn entry_locals_snapshot_survives_callback_pointer_change_and_fresh_invocations(
     .unwrap();
     let mut work = Vec::new();
     for artifact in [original, decoded] {
-        let jit = crate::native_artifact::JitProgramArtifact::compile(
+        // Keep these scalar sites on the ordinary source-block path whose
+        // pointer placement this regression exercises. Native region batching
+        // has separate qualifications and can combine their admission calls.
+        let jit = crate::native_artifact::JitProgramArtifact::compile_for_test(
             &artifact,
             &mech_stdlib::source_catalog(),
+            crate::native_artifact::codegen::options::OptimizationPass::ScalarLoops,
         )
         .unwrap();
         let operations = jit

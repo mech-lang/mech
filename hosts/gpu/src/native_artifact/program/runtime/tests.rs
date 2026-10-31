@@ -1297,6 +1297,7 @@ struct LocalsSnapshotProbe {
     restore_site: u64,
     switched: bool,
     restored: bool,
+    visits: Vec<u64>,
 }
 thread_local! {
     static LOCALS_SNAPSHOT_PROBE: std::cell::RefCell<Option<LocalsSnapshotProbe>> = const { std::cell::RefCell::new(None) };
@@ -1311,6 +1312,7 @@ unsafe extern "C" fn observe_locals_snapshot(context: *mut c_void, site: u64) ->
         LOCALS_SNAPSHOT_PROBE.with(|probe| {
             let mut probe = probe.borrow_mut();
             let probe = probe.as_mut().unwrap();
+            probe.visits.push(site);
             // SAFETY: the generated entry is suspended in this callback. The
             // frame and both equally sized, disjoint local banks remain live.
             // Only the ABI pointer changes; the invocation's actual storage and
@@ -1374,6 +1376,7 @@ fn execute_observed_locals_snapshot(
                     restore_site: u64::from(restore_site),
                     switched: false,
                     restored: false,
+                    visits: Vec::new(),
                 });
             });
             // SAFETY: the decoy backing outlives the complete checked entry;
@@ -1388,7 +1391,12 @@ fn execute_observed_locals_snapshot(
             let probe = LOCALS_SNAPSHOT_PROBE.with(|probe| probe.borrow_mut().take().unwrap());
             assert!(
                 probe.switched && probe.restored,
-                "both source callbacks must execute"
+                "both source callbacks must execute: switch={} restore={} visits={:?} switched={} restored={}",
+                probe.switch_site,
+                probe.restore_site,
+                probe.visits,
+                probe.switched,
+                probe.restored
             );
             // SAFETY: the entry returned and no callback owns the frame. This
             // asserts restoration already happened inside the entry, rather
