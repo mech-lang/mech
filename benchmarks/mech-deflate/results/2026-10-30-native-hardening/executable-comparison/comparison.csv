@@ -1,0 +1,18 @@
+metric,unit,reference,mech,mech_over_reference,mech_minus_reference,scope
+elapsed,seconds,0.000291,0.004387083,15.075886597938142,0.004096083,primary compression timer
+instructions,count,1364372.0,49008490.5,35.920181959172425,47644118.5,hardware counter delta at compression boundaries; separate CPU cohort
+cycles,count,935346.5,13808872.5,14.76337645995361,12873526.0,hardware counter delta at compression boundaries; separate CPU cohort
+rss_after,bytes,14761984.0,318717952.0,21.590455049944506,303955968.0,whole prepared task after compression
+physical_after,bytes,14402432.0,227755776.0,15.813702574676277,213353344.0,whole prepared task after compression
+allocation_requests,count,95.0,13994.0,147.30526315789473,13899.0,tracked allocator; separate memory cohort; peak excludes private heaps/direct VM
+requested_bytes,bytes,9021923.0,98586843.0,10.927475550389866,89564920.0,tracked allocator; separate memory cohort; peak excludes private heaps/direct VM
+incremental_peak_live_usable,bytes,9257328.0,20575432.0,2.2226102391532416,11318104.0,tracked allocator; separate memory cohort; peak excludes private heaps/direct VM
+peak_live_usable,bytes,9257360.0,162171352.0,17.51809932853427,152913992.0,tracked allocator; separate memory cohort; peak excludes private heaps/direct VM
+text_bytes,bytes,195456,13885696,71.04256712508186,13690240,scope differs: whole reference executable text versus generated Mech compressor entry
+call_sites,static sites,2212,55450,25.067811934900543,53238,disassembled sites including unreached/error paths and padding; not dynamic counts
+conditional_branch_sites,static sites,5389,110409,20.487845611430693,105020,disassembled sites including unreached/error paths and padding; not dynamic counts
+load_instruction_sites,static sites,8182,737401,90.1247861158641,729219,disassembled sites including unreached/error paths and padding; not dynamic counts
+other_instruction_sites,static sites,23581,1940481,82.29002162758152,1916900,disassembled sites including unreached/error paths and padding; not dynamic counts
+return_sites,static sites,227,3,0.013215859030837005,-224,disassembled sites including unreached/error paths and padding; not dynamic counts
+store_instruction_sites,static sites,7713,402158,52.14028263969921,394445,disassembled sites including unreached/error paths and padding; not dynamic counts
+unconditional_branch_sites,static sites,1560,225522,144.5653846153846,223962,disassembled sites including unreached/error paths and padding; not dynamic counts
