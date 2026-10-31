@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-10-31T23:54:50.911286+00:00",
+  "head": "d854abf442c7b45ca68af422183cf8f3a37bb847",
+  "files": [
+    {
+      "path": "engine-after/budget.json",
+      "sha256": "01756b7a26ef80b372370e5371f5e5628215a38536fff6aca5baa2b1fa9da7c2",
+      "bytes": 13152
+    },
+    {
+      "path": "engine-after/budget.rs",
+      "sha256": "957e667d51a867f04a193ee63e82a3e8020f2b09accd4e2c7cf3020dd524f63f",
+      "bytes": 172084
+    },
+    {
+      "path": "engine-after/budget.stderr",
+      "sha256": "9d358b4e97d7c98218863fa422b3d4a7dbd2316d73edea1505de355452c3094d",
+      "bytes": 2580
+    },
+    {
+      "path": "engine-after/budget.stdout",
+      "sha256": "689dffdadd6bb932724c493d50187bb15245c3167058c4476ba314383173a4e7",
+      "bytes": 13627
+    },
+    {
+      "path": "engine-after/mod.rs",
+      "sha256": "1498299e0d0669899d074fd4c49b2106e89377d3cc294a78f97c2e84f635f7df",
+      "bytes": 6418
+    },
+    {
+      "path": "engine-after/native_work_context.rs",
+      "sha256": "f8ddd5709a2dbc15b1d40f04860ac9cb2993cdb37990ed90eca8cfa3c128bbad",
+      "bytes": 1469
+    },
+    {
+      "path": "engine-after/native_work_context_tests.rs",
+      "sha256": "17edb1ef8e8aa0c021531798a9386074ea4e1859ff08af8e3aacdd44d93fd4b0",
+      "bytes": 6972
+    },
+    {
+      "path": "engine-focused.py",
+      "sha256": "55a82fd388bd12b6f7b21ddacde4a3ec49e9a4bcf7bb2a02b53b53365703ca71",
+      "bytes": 5992
+    }
+  ]
+}
