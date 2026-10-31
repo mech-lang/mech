@@ -1,0 +1,24 @@
+metric,reference,baseline,candidate,change_percent,scope
+linked-primary_seconds,0.000285,0.004387687499999999,0.0043887915,0.025161317892408164,four matched pairs; common reference per cohort
+confirmation-primary_seconds,0.000287,0.004377041999999999,0.0043766875,-0.008099076956513684,four matched pairs; common reference per cohort
+instructions,1364372.0,49005195.0,48881711.5,-0.2519804277893445,separate diagnostic cohorts
+cycles,890968.5,13818663.0,13996810.0,1.2891768183361796,separate diagnostic cohorts
+rss_after,14761984.0,318783488.0,318980096.0,,separate diagnostic cohorts
+physical_after,14402432.0,227804864.0,227919616.0,,separate diagnostic cohorts
+pageins,0.0,0.0,0.0,,separate diagnostic cohorts
+allocation_requests,95.0,13994.0,13994.0,0.0,separate diagnostic cohorts
+requested_bytes,9021923.0,98586843.0,98586843.0,0.0,separate diagnostic cohorts
+reallocations,0.0,1213.0,1213.0,0.0,separate diagnostic cohorts
+relocating_reallocations,0.0,458.0,458.0,0.0,separate diagnostic cohorts
+relocating_realloc_copy_upper_bound,0.0,13905.0,13905.0,0.0,separate diagnostic cohorts
+live_usable_before,32.0,141595920.0,141601920.0,0.00423741023045654,separate diagnostic cohorts
+live_usable_after,32.0,141596488.0,141602488.0,0.004237393232520148,separate diagnostic cohorts
+peak_live_usable,9257360.0,162171352.0,162177352.0,0.003699790330413677,separate diagnostic cohorts
+incremental_peak_live_usable,9257328.0,20575432.0,20575432.0,0.0,separate diagnostic cohorts
+abi_version,not function matched,37,38,,static generated compressor entry
+code_bytes,not function matched,13885696,13898456,,static generated compressor entry
+stack_bytes,not function matched,108400,108416,,static generated compressor entry
+ordinary_scalar_admission_groups,not function matched,1372,1372,,static generated compressor entry
+ordinary_scalar_admission_sites,not function matched,8642,8642,,static generated compressor entry
+projection_batches,not function matched,0,107,,static generated compressor entry
+projection_batch_sites,not function matched,0,282,,static generated compressor entry
