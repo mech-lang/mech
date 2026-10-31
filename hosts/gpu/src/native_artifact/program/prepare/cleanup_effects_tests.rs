@@ -30,7 +30,7 @@ fn plans(source: &str) -> [NativeProgramArtifactPlan; 2] {
 
 #[test]
 fn completed_children_keep_original_prices_returns_and_current_scope_effects() {
-    let source = include_str!("../../../../../tests/fixtures/native/numeric-parent-child.mec");
+    let source = include_str!("../../../../tests/fixtures/native/numeric-parent-child.mec");
     let mut omitted_count = 0;
     let mut return_count = 0;
     for plan in plans(source) {
