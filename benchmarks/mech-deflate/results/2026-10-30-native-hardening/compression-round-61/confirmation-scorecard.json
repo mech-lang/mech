@@ -1,0 +1,138 @@
+{
+  "round": 61,
+  "comparison": "accepted R56 production versus final R61 production",
+  "purpose": {
+    "purpose": "Resolve cumulative elapsed uncertainty after R60 instruction/latency tradeoff with one fresh matched comparison of accepted starting R56 against final R61; no multiplication of independent gains.",
+    "before": "Published R56 accepted production, frozen worker",
+    "after": "R61 final production, frozen worker",
+    "same_source_and_timer": true,
+    "new_code_change": false,
+    "cohort": "Primary elapsed only; existing per-change counters and qualification remain separate."
+  },
+  "primary": {
+    "configuration": "Matched linked compressor; identical tiny setup JIT helpers; unchanged evaluate_into timer. Both programs ready before measurements.",
+    "reference_seconds": 0.000284,
+    "fixed_reference_seconds": 0.0003,
+    "groups": [
+      {
+        "group": 0,
+        "medians": {
+          "before": 0.003815896,
+          "after": 0.0037779795
+        },
+        "after_over_before": 0.9900635394675327
+      },
+      {
+        "group": 1,
+        "medians": {
+          "before": 0.003891541,
+          "after": 0.003874417
+        },
+        "after_over_before": 0.9955996866022996
+      },
+      {
+        "group": 2,
+        "medians": {
+          "before": 0.0038465829999999998,
+          "after": 0.003797375
+        },
+        "after_over_before": 0.9872073474041767
+      },
+      {
+        "group": 3,
+        "medians": {
+          "before": 0.004063854,
+          "after": 0.004133916499999999
+        },
+        "after_over_before": 1.0172404077508688
+      }
+    ],
+    "primary_observations": 3968,
+    "all_observations": 3984,
+    "observations_per_variant": 1984,
+    "medians": {
+      "before": {
+        "seconds": 0.0038783545000000003,
+        "multiple_of_reference": 13.656177816901408,
+        "multiple_of_fixed_reference": 12.927848333333335
+      },
+      "after": {
+        "seconds": 0.0038491665,
+        "multiple_of_reference": 13.553403169014084,
+        "multiple_of_fixed_reference": 12.830555
+      }
+    },
+    "comparisons": {
+      "after_over_before": {
+        "pooled_ratio": 0.9924741278807803,
+        "improving_groups": 3,
+        "improving_blocks": 49,
+        "median_block_ratio": 0.9914750867339078,
+        "geometric_block_ratio": 0.9942062298304617
+      }
+    }
+  },
+  "change_percent": -0.7525872119219734,
+  "adverse_pairs": [
+    {
+      "group": 3,
+      "medians": {
+        "before": 0.004063854,
+        "after": 0.004133916499999999
+      },
+      "after_over_before": 1.0172404077508688
+    }
+  ],
+  "bindings": {
+    "before": {
+      "compiler_source": "198b7818a0e0d0aac518678445a4bd31c08f3267",
+      "worker_sha256": "bd99f5c7c85eec2009c9eb95717dfffcf17af225bfc62af2682153917fedbc5c",
+      "normalized_source_sha256": "61bec08e46c54f52df5577ac0f7caea9bc5bc6bd5fdcba9ae0b6f18ec42b7e7d",
+      "original_worker_sha256": "a0062c6170db0005d96eba239232cfdbdd41054945c2e4a574afa8acb8939575",
+      "pins": {
+        "object.o": {
+          "sha256": "1a8bb46e9f78fec2147b3242fab5651e470f86ba0347f4f11c7f1aedd5008777",
+          "bytes": 13047400
+        },
+        "descriptor.json": {
+          "sha256": "1b4dbdd2fb0c1f9f51ae7e9dd0bc931bbc2804e6cb949653461d6348c31615c9",
+          "bytes": 59787859
+        },
+        "metadata.json": {
+          "sha256": "a1d3f2710f3c2bb40eeb7cd10529b87ad6eae1d3786b3811823ee07ea3c3cac9",
+          "bytes": 2542212
+        }
+      }
+    },
+    "after": {
+      "compiler_source": "6f412525daf0f7284d4ef6bc2bd8e21f95d22e96",
+      "worker_sha256": "e5a83f3a4238be189507ebf83ef97fd004a8d8f0adc8759cca34a13c3bdcbef8",
+      "normalized_source_sha256": "61bec08e46c54f52df5577ac0f7caea9bc5bc6bd5fdcba9ae0b6f18ec42b7e7d",
+      "original_worker_sha256": "a0062c6170db0005d96eba239232cfdbdd41054945c2e4a574afa8acb8939575",
+      "pins": {
+        "object.o": {
+          "sha256": "4e222709764d92ac2b2b74e06a7237d3b901bf07cf095e1c23a7751c0dd8269d",
+          "bytes": 13083416
+        },
+        "descriptor.json": {
+          "sha256": "b87db111e0978c4b045da2325598f1e79d6f47767e4e0c3d62c028e937617f59",
+          "bytes": 59787859
+        },
+        "metadata.json": {
+          "sha256": "8c98427567f2891707a230b5d5e696a8fe0c2d39d62bd40a309ec9a905a04b4e",
+          "bytes": 2542208
+        }
+      }
+    }
+  },
+  "verified": {
+    "primary_rows": 3968,
+    "all_rows": 3984,
+    "blocks": 64,
+    "prepared_pairs": 4,
+    "reference_rows": 20000,
+    "all_block_medians_recomputed": true,
+    "all_exact_output_and_cleanup_checks": true
+  },
+  "scope": "A fresh separate elapsed-only cohort; no new code change. It compares frozen R56 and R61 executables with the same source, bytecode, allocator and evaluate_into timing. CPU/heap counters and per-change results remain separate. The adverse pair is retained. No independent gains are multiplied, and no counter change is inferred from this elapsed-only confirmation."
+}

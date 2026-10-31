@@ -1,0 +1,4853 @@
+{
+  "schema": "mech.numeric-first-change-spill.v1",
+  "implementation": {
+    "candidate_build_source": "6f412525daf0f7284d4ef6bc2bd8e21f95d22e96",
+    "baseline_build_source": "aea11e1f17f05055535171fa1b0cb8b5ff2d4bcf",
+    "baseline_directory": "/private/tmp/mech-vector-address-round60-20261031",
+    "scope": "Remove the redundant numeric-boundary scalar spill before numeric first change; unchanged source program, bytecode, resource pricing, runtime admission, dependency graph, allocator and evaluate_into timing. Candidate Object/image/metadata are freshly emitted and independently pinned; Object identity equality with baseline is not required.",
+    "unchanged_libraries": [
+      "serde",
+      "serde_json",
+      "mech_core",
+      "mech_syntax",
+      "mech_engine",
+      "miniz_oxide",
+      "mech_stdlib"
+    ],
+    "expected_allocation_requests_before": 8173,
+    "expected_allocation_requests_after": 8173
+  },
+  "primary": {
+    "configuration": "Matched linked compressor; identical tiny setup JIT helpers; unchanged evaluate_into timer. Both programs ready before measurements.",
+    "reference_seconds": 0.000283,
+    "fixed_reference_seconds": 0.0003,
+    "groups": [
+      {
+        "group": 0,
+        "medians": {
+          "before": 0.003823333,
+          "after": 0.003781
+        },
+        "after_over_before": 0.9889277235333674
+      },
+      {
+        "group": 1,
+        "medians": {
+          "before": 0.0038267085,
+          "after": 0.0037794165
+        },
+        "after_over_before": 0.9876415985173681
+      },
+      {
+        "group": 2,
+        "medians": {
+          "before": 0.0038434375,
+          "after": 0.0037765209999999997
+        },
+        "after_over_before": 0.9825894137734774
+      },
+      {
+        "group": 3,
+        "medians": {
+          "before": 0.0038442705,
+          "after": 0.0037858960000000004
+        },
+        "after_over_before": 0.9848151944562695
+      }
+    ],
+    "primary_observations": 3968,
+    "all_observations": 3984,
+    "observations_per_variant": 1984,
+    "medians": {
+      "before": {
+        "seconds": 0.00383425,
+        "multiple_of_reference": 13.548586572438163,
+        "multiple_of_fixed_reference": 12.780833333333334
+      },
+      "after": {
+        "seconds": 0.0037807505,
+        "multiple_of_reference": 13.359542402826856,
+        "multiple_of_fixed_reference": 12.602501666666667
+      }
+    },
+    "comparisons": {
+      "after_over_before": {
+        "pooled_ratio": 0.9860469452956901,
+        "improving_groups": 4,
+        "improving_blocks": 57,
+        "median_block_ratio": 0.9859364709702241,
+        "geometric_block_ratio": 0.9856576247154495
+      }
+    }
+  },
+  "cpu": {
+    "reference": {
+      "observations": 32,
+      "instructions": {
+        "median": 1364372.0,
+        "min": 1364164,
+        "max": 1551588
+      },
+      "cycles": {
+        "median": 928233.5,
+        "min": 896257,
+        "max": 1212281
+      },
+      "rss_after": {
+        "median": 14745600.0,
+        "min": 14745600,
+        "max": 14745600
+      },
+      "physical_after": {
+        "median": 14402496.0,
+        "min": 14402496,
+        "max": 14402496
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "before": {
+      "observations": 32,
+      "instructions": {
+        "median": 42439545.5,
+        "min": 42435290,
+        "max": 42462422
+      },
+      "cycles": {
+        "median": 12587498.5,
+        "min": 12151533,
+        "max": 13856067
+      },
+      "rss_after": {
+        "median": 319651840.0,
+        "min": 319651840,
+        "max": 319651840
+      },
+      "physical_after": {
+        "median": 228722432.0,
+        "min": 228722432,
+        "max": 228722432
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "after": {
+      "observations": 32,
+      "instructions": {
+        "median": 42253819.0,
+        "min": 42249955,
+        "max": 42261496
+      },
+      "cycles": {
+        "median": 12562077.5,
+        "min": 11828265,
+        "max": 13579400
+      },
+      "rss_after": {
+        "median": 319406080.0,
+        "min": 319406080,
+        "max": 319406080
+      },
+      "physical_after": {
+        "median": 228951744.0,
+        "min": 228951744,
+        "max": 228951744
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    }
+  },
+  "allocation": {
+    "reference": {
+      "observations": 32,
+      "allocation_requests": {
+        "median": 95.0,
+        "min": 95,
+        "max": 95
+      },
+      "requested_bytes": {
+        "median": 9021923.0,
+        "min": 9021923,
+        "max": 9021923
+      },
+      "reallocations": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "relocating_reallocations": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "live_usable_before": {
+        "median": 32.0,
+        "min": 32,
+        "max": 32
+      },
+      "live_usable_after": {
+        "median": 32.0,
+        "min": 32,
+        "max": 32
+      },
+      "peak_live_usable": {
+        "median": 9257360.0,
+        "min": 9257360,
+        "max": 9257360
+      },
+      "incremental_peak_live_usable": {
+        "median": 9257328.0,
+        "min": 9257328,
+        "max": 9257328
+      }
+    },
+    "before": {
+      "observations": 8,
+      "allocation_requests": {
+        "median": 8173.0,
+        "min": 8173,
+        "max": 8173
+      },
+      "requested_bytes": {
+        "median": 98228396.0,
+        "min": 98228396,
+        "max": 98228396
+      },
+      "reallocations": {
+        "median": 162.0,
+        "min": 162,
+        "max": 162
+      },
+      "relocating_reallocations": {
+        "median": 119.0,
+        "min": 119,
+        "max": 119
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 8571.0,
+        "min": 8571,
+        "max": 8571
+      },
+      "live_usable_before": {
+        "median": 142982512.0,
+        "min": 142982512,
+        "max": 142982512
+      },
+      "live_usable_after": {
+        "median": 142983016.0,
+        "min": 142983016,
+        "max": 142983016
+      },
+      "peak_live_usable": {
+        "median": 163464584.0,
+        "min": 163464584,
+        "max": 163464584
+      },
+      "incremental_peak_live_usable": {
+        "median": 20482072.0,
+        "min": 20482072,
+        "max": 20482072
+      }
+    },
+    "after": {
+      "observations": 8,
+      "allocation_requests": {
+        "median": 8173.0,
+        "min": 8173,
+        "max": 8173
+      },
+      "requested_bytes": {
+        "median": 98228396.0,
+        "min": 98228396,
+        "max": 98228396
+      },
+      "reallocations": {
+        "median": 162.0,
+        "min": 162,
+        "max": 162
+      },
+      "relocating_reallocations": {
+        "median": 119.0,
+        "min": 119,
+        "max": 119
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 8571.0,
+        "min": 8571,
+        "max": 8571
+      },
+      "live_usable_before": {
+        "median": 142982512.0,
+        "min": 142982512,
+        "max": 142982512
+      },
+      "live_usable_after": {
+        "median": 142983016.0,
+        "min": 142983016,
+        "max": 142983016
+      },
+      "peak_live_usable": {
+        "median": 163464584.0,
+        "min": 163464584,
+        "max": 163464584
+      },
+      "incremental_peak_live_usable": {
+        "median": 20482072.0,
+        "min": 20482072,
+        "max": 20482072
+      }
+    }
+  },
+  "static": {
+    "before": {
+      "source": "aea11e1f17f05055535171fa1b0cb8b5ff2d4bcf",
+      "libraries": {
+        "serde": {
+          "path": "/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+          "sha256": "c92969536946485cace85c825d49406183f604d7279483af096a2d10d94e2998",
+          "features": [
+            "alloc",
+            "default",
+            "derive",
+            "serde_derive",
+            "std"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "serde_json": {
+          "path": "/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+          "sha256": "e887a7afbab6cadfb0337bc7bebfa21c68b83933509274961faefac4b412444b",
+          "features": [
+            "alloc",
+            "default",
+            "raw_value",
+            "std",
+            "unbounded_depth"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_core": {
+          "path": "/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+          "sha256": "7a96b9958cb66565c35f517546d7f0e0121a4514583ee65a4b2baf2a9b5b2003",
+          "features": [
+            "atom",
+            "base64",
+            "baselib",
+            "bincode",
+            "bool",
+            "brotli",
+            "byteorder",
+            "c64",
+            "compiler",
+            "complex",
+            "crc32fast",
+            "dot_indexing",
+            "enum",
+            "f32",
+            "f64",
+            "floats",
+            "formulas",
+            "full",
+            "functions",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "indexmap",
+            "invariant_define",
+            "kind_annotation",
+            "kind_define",
+            "libm",
+            "logical_indexing",
+            "map",
+            "math_pow",
+            "matrix",
+            "matrixd",
+            "mika",
+            "nalgebra",
+            "native-plan",
+            "num-rational",
+            "num-traits",
+            "numbers",
+            "pretty_print",
+            "program",
+            "r64",
+            "range",
+            "rational",
+            "record",
+            "resident-execution",
+            "row_vectord",
+            "semantic-compiler",
+            "serde",
+            "serde_derive",
+            "serde_json",
+            "set",
+            "signed_ints",
+            "statements",
+            "statements_default",
+            "std",
+            "string",
+            "subscript",
+            "subscript_default",
+            "subscript_formula",
+            "subscript_range",
+            "subscript_slice",
+            "swizzle",
+            "symbol_table",
+            "table",
+            "tabled",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "unsigned_ints",
+            "variable_assign",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_syntax": {
+          "path": "/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+          "sha256": "1ea20c07f50d96e51360d9a892d9ad25a6569341f334f85c638ee4b084c48ecd",
+          "features": [
+            "atom",
+            "baselib",
+            "bool",
+            "c64",
+            "compiler",
+            "complex",
+            "dot_indexing",
+            "enum",
+            "f32",
+            "f64",
+            "floats",
+            "formulas",
+            "full",
+            "functions",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "invariant_define",
+            "kind_annotation",
+            "kind_define",
+            "logical_indexing",
+            "map",
+            "matrix",
+            "matrix_horzcat",
+            "matrix_vertcat",
+            "matrixd",
+            "mika",
+            "numbers",
+            "pretty_print",
+            "program",
+            "r64",
+            "rational",
+            "record",
+            "row_vectord",
+            "semantic-compiler",
+            "serde",
+            "set",
+            "signed_ints",
+            "statements",
+            "statements_default",
+            "string",
+            "subscript",
+            "subscript_default",
+            "subscript_formula",
+            "subscript_range",
+            "subscript_slice",
+            "swizzle",
+            "symbol_table",
+            "table",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "unsigned_ints",
+            "variable_assign",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_engine": {
+          "path": "/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+          "sha256": "9aa6f0b7a8a21b86c4ce117bd939c4cea2a57f7c715fdbc47ea777e90714714b",
+          "features": [
+            "access",
+            "artifact-codec",
+            "assign",
+            "async",
+            "atom",
+            "bool",
+            "c64",
+            "combinatorics_default",
+            "combinatorics_n_choose_k",
+            "compare_default",
+            "compare_eq",
+            "compare_gt",
+            "compare_gte",
+            "compare_lt",
+            "compare_lte",
+            "compare_neq",
+            "compare_seq",
+            "compare_sneq",
+            "compiler",
+            "compiler_default",
+            "complex",
+            "convert",
+            "dot_indexing",
+            "enum",
+            "f32",
+            "f64",
+            "floats",
+            "formulas",
+            "full_compiler",
+            "functions",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "indexmap",
+            "integer_bits",
+            "invariant_define",
+            "kind_annotation",
+            "kind_define",
+            "logic_and",
+            "logic_default",
+            "logic_not",
+            "logic_or",
+            "logic_xor",
+            "logical_indexing",
+            "map",
+            "map_ops",
+            "math_acos",
+            "math_acosh",
+            "math_acot",
+            "math_acsc",
+            "math_add",
+            "math_add_assign",
+            "math_asec",
+            "math_asin",
+            "math_asinh",
+            "math_atan",
+            "math_atan2",
+            "math_atanh",
+            "math_cos",
+            "math_cosh",
+            "math_cot",
+            "math_csc",
+            "math_default",
+            "math_div",
+            "math_div_assign",
+            "math_mod",
+            "math_mul",
+            "math_mul_assign",
+            "math_neg",
+            "math_ops_assign_default",
+            "math_ops_default",
+            "math_pow",
+            "math_root_default",
+            "math_sec",
+            "math_sin",
+            "math_sinh",
+            "math_sqrt",
+            "math_sub",
+            "math_sub_assign",
+            "math_tan",
+            "math_tanh",
+            "math_trig_default",
+            "matrix",
+            "matrix_comprehensions",
+            "matrix_default",
+            "matrix_dot",
+            "matrix_horzcat",
+            "matrix_matmul",
+            "matrix_solve",
+            "matrix_transpose",
+            "matrix_vertcat",
+            "matrixd",
+            "mika",
+            "nalgebra",
+            "native-artifact",
+            "native-capture-pages",
+            "native-plan",
+            "numbers",
+            "pretty_print",
+            "program",
+            "pure_text",
+            "r64",
+            "range_default",
+            "range_exclusive",
+            "range_exclusive_increment",
+            "range_inclusive",
+            "range_inclusive_increment",
+            "rational",
+            "record",
+            "resident-artifact",
+            "resident-ekf",
+            "row_vectord",
+            "runtime",
+            "runtime_default",
+            "semantic-compiler",
+            "sequence_buffers",
+            "sequence_sort",
+            "serde",
+            "set",
+            "set_cartesian_product",
+            "set_comprehensions",
+            "set_default",
+            "set_difference",
+            "set_disjoint",
+            "set_element_of",
+            "set_equals",
+            "set_insert",
+            "set_intersection",
+            "set_membership_default",
+            "set_modify_default",
+            "set_not_element_of",
+            "set_not_equals",
+            "set_operations_default",
+            "set_powerset",
+            "set_proper_subset",
+            "set_proper_superset",
+            "set_relations_default",
+            "set_remove",
+            "set_setdata_default",
+            "set_size",
+            "set_subset",
+            "set_superset",
+            "set_symmetric_difference",
+            "set_union",
+            "signed_ints",
+            "source",
+            "source_default",
+            "state_machines",
+            "statements",
+            "statements_default",
+            "stats_default",
+            "stats_sum",
+            "std",
+            "string",
+            "string_concat",
+            "string_default",
+            "subscript",
+            "subscript_default",
+            "subscript_formula",
+            "subscript_range",
+            "subscript_slice",
+            "swizzle",
+            "symbol_table",
+            "table",
+            "trace",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "unsigned_ints",
+            "variable_assign",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "miniz_oxide": {
+          "path": "/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+          "sha256": "681adce5cb63aef90b398ba24c2c9ef63c9a250f4af390a66e565bb36860d2e3",
+          "features": [
+            "default",
+            "with-alloc"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_gpu": {
+          "path": "/private/tmp/mech-vector-address-round60-20261031/variants/after/libmech_gpu.rlib",
+          "sha256": "28a0637aa3cc98787c8764a69b46cb8ddf2f8cdaa1cca94ef81caf0ed3365fe1",
+          "features": [
+            "aot",
+            "canonical-native",
+            "canonical-native-program",
+            "canonical-native-program-runtime",
+            "canonical-native-runtime",
+            "jit"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_stdlib": {
+          "path": "/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+          "sha256": "fa78fc1a98e9a8f8e0d0ac1efbb84e7a739baeb8a42c186cc549163c405f939a",
+          "features": [
+            "access",
+            "assign",
+            "atom",
+            "bool",
+            "c64",
+            "compare_eq",
+            "compare_gt",
+            "compare_gte",
+            "compare_lt",
+            "compare_lte",
+            "compare_neq",
+            "compiler",
+            "convert",
+            "enum",
+            "f32",
+            "f64",
+            "full_values",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "integer_bits",
+            "invariant_define",
+            "logic_and",
+            "logic_or",
+            "map",
+            "math_add",
+            "math_div",
+            "math_mod",
+            "math_mul",
+            "math_sub",
+            "matrix_comprehensions",
+            "matrixd",
+            "mech-compare",
+            "mech-logic",
+            "mech-math",
+            "mech-range",
+            "native-plan",
+            "r64",
+            "range_inclusive",
+            "record",
+            "row_vectord",
+            "runtime",
+            "semantic-compiler",
+            "set",
+            "source",
+            "string",
+            "table",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        }
+      },
+      "pins": {
+        "object.o": {
+          "sha256": "7a211a5fcdfbbc1ceb1ad93a305380712da0af560c30fb387a34673165f04bc5",
+          "bytes": 13807080
+        },
+        "descriptor.json": {
+          "sha256": "e35fb1e1fe3793cfa215aed86401c611a2838235a47b9ae87ccf598aca633114",
+          "bytes": 59787859
+        },
+        "metadata.json": {
+          "sha256": "06a7bbee4ae717717aa60ccb5a9853f0ccc5ec34a86b3c854c93aa4505ad438e",
+          "bytes": 2542208
+        }
+      },
+      "normalized_source_sha256": "61bec08e46c54f52df5577ac0f7caea9bc5bc6bd5fdcba9ae0b6f18ec42b7e7d",
+      "original_worker_sha256": "a0062c6170db0005d96eba239232cfdbdd41054945c2e4a574afa8acb8939575",
+      "typed_ir_version": 132,
+      "abi_version": 37,
+      "code_bytes": 13806352,
+      "stack_bytes": 108880
+    },
+    "after": {
+      "source": "6f412525daf0f7284d4ef6bc2bd8e21f95d22e96",
+      "libraries": {
+        "serde": {
+          "path": "/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+          "sha256": "c92969536946485cace85c825d49406183f604d7279483af096a2d10d94e2998",
+          "features": [
+            "alloc",
+            "default",
+            "derive",
+            "serde_derive",
+            "std"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "serde_json": {
+          "path": "/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+          "sha256": "e887a7afbab6cadfb0337bc7bebfa21c68b83933509274961faefac4b412444b",
+          "features": [
+            "alloc",
+            "default",
+            "raw_value",
+            "std",
+            "unbounded_depth"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_core": {
+          "path": "/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+          "sha256": "7a96b9958cb66565c35f517546d7f0e0121a4514583ee65a4b2baf2a9b5b2003",
+          "features": [
+            "atom",
+            "base64",
+            "baselib",
+            "bincode",
+            "bool",
+            "brotli",
+            "byteorder",
+            "c64",
+            "compiler",
+            "complex",
+            "crc32fast",
+            "dot_indexing",
+            "enum",
+            "f32",
+            "f64",
+            "floats",
+            "formulas",
+            "full",
+            "functions",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "indexmap",
+            "invariant_define",
+            "kind_annotation",
+            "kind_define",
+            "libm",
+            "logical_indexing",
+            "map",
+            "math_pow",
+            "matrix",
+            "matrixd",
+            "mika",
+            "nalgebra",
+            "native-plan",
+            "num-rational",
+            "num-traits",
+            "numbers",
+            "pretty_print",
+            "program",
+            "r64",
+            "range",
+            "rational",
+            "record",
+            "resident-execution",
+            "row_vectord",
+            "semantic-compiler",
+            "serde",
+            "serde_derive",
+            "serde_json",
+            "set",
+            "signed_ints",
+            "statements",
+            "statements_default",
+            "std",
+            "string",
+            "subscript",
+            "subscript_default",
+            "subscript_formula",
+            "subscript_range",
+            "subscript_slice",
+            "swizzle",
+            "symbol_table",
+            "table",
+            "tabled",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "unsigned_ints",
+            "variable_assign",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_syntax": {
+          "path": "/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+          "sha256": "1ea20c07f50d96e51360d9a892d9ad25a6569341f334f85c638ee4b084c48ecd",
+          "features": [
+            "atom",
+            "baselib",
+            "bool",
+            "c64",
+            "compiler",
+            "complex",
+            "dot_indexing",
+            "enum",
+            "f32",
+            "f64",
+            "floats",
+            "formulas",
+            "full",
+            "functions",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "invariant_define",
+            "kind_annotation",
+            "kind_define",
+            "logical_indexing",
+            "map",
+            "matrix",
+            "matrix_horzcat",
+            "matrix_vertcat",
+            "matrixd",
+            "mika",
+            "numbers",
+            "pretty_print",
+            "program",
+            "r64",
+            "rational",
+            "record",
+            "row_vectord",
+            "semantic-compiler",
+            "serde",
+            "set",
+            "signed_ints",
+            "statements",
+            "statements_default",
+            "string",
+            "subscript",
+            "subscript_default",
+            "subscript_formula",
+            "subscript_range",
+            "subscript_slice",
+            "swizzle",
+            "symbol_table",
+            "table",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "unsigned_ints",
+            "variable_assign",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_engine": {
+          "path": "/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+          "sha256": "9aa6f0b7a8a21b86c4ce117bd939c4cea2a57f7c715fdbc47ea777e90714714b",
+          "features": [
+            "access",
+            "artifact-codec",
+            "assign",
+            "async",
+            "atom",
+            "bool",
+            "c64",
+            "combinatorics_default",
+            "combinatorics_n_choose_k",
+            "compare_default",
+            "compare_eq",
+            "compare_gt",
+            "compare_gte",
+            "compare_lt",
+            "compare_lte",
+            "compare_neq",
+            "compare_seq",
+            "compare_sneq",
+            "compiler",
+            "compiler_default",
+            "complex",
+            "convert",
+            "dot_indexing",
+            "enum",
+            "f32",
+            "f64",
+            "floats",
+            "formulas",
+            "full_compiler",
+            "functions",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "indexmap",
+            "integer_bits",
+            "invariant_define",
+            "kind_annotation",
+            "kind_define",
+            "logic_and",
+            "logic_default",
+            "logic_not",
+            "logic_or",
+            "logic_xor",
+            "logical_indexing",
+            "map",
+            "map_ops",
+            "math_acos",
+            "math_acosh",
+            "math_acot",
+            "math_acsc",
+            "math_add",
+            "math_add_assign",
+            "math_asec",
+            "math_asin",
+            "math_asinh",
+            "math_atan",
+            "math_atan2",
+            "math_atanh",
+            "math_cos",
+            "math_cosh",
+            "math_cot",
+            "math_csc",
+            "math_default",
+            "math_div",
+            "math_div_assign",
+            "math_mod",
+            "math_mul",
+            "math_mul_assign",
+            "math_neg",
+            "math_ops_assign_default",
+            "math_ops_default",
+            "math_pow",
+            "math_root_default",
+            "math_sec",
+            "math_sin",
+            "math_sinh",
+            "math_sqrt",
+            "math_sub",
+            "math_sub_assign",
+            "math_tan",
+            "math_tanh",
+            "math_trig_default",
+            "matrix",
+            "matrix_comprehensions",
+            "matrix_default",
+            "matrix_dot",
+            "matrix_horzcat",
+            "matrix_matmul",
+            "matrix_solve",
+            "matrix_transpose",
+            "matrix_vertcat",
+            "matrixd",
+            "mika",
+            "nalgebra",
+            "native-artifact",
+            "native-capture-pages",
+            "native-plan",
+            "numbers",
+            "pretty_print",
+            "program",
+            "pure_text",
+            "r64",
+            "range_default",
+            "range_exclusive",
+            "range_exclusive_increment",
+            "range_inclusive",
+            "range_inclusive_increment",
+            "rational",
+            "record",
+            "resident-artifact",
+            "resident-ekf",
+            "row_vectord",
+            "runtime",
+            "runtime_default",
+            "semantic-compiler",
+            "sequence_buffers",
+            "sequence_sort",
+            "serde",
+            "set",
+            "set_cartesian_product",
+            "set_comprehensions",
+            "set_default",
+            "set_difference",
+            "set_disjoint",
+            "set_element_of",
+            "set_equals",
+            "set_insert",
+            "set_intersection",
+            "set_membership_default",
+            "set_modify_default",
+            "set_not_element_of",
+            "set_not_equals",
+            "set_operations_default",
+            "set_powerset",
+            "set_proper_subset",
+            "set_proper_superset",
+            "set_relations_default",
+            "set_remove",
+            "set_setdata_default",
+            "set_size",
+            "set_subset",
+            "set_superset",
+            "set_symmetric_difference",
+            "set_union",
+            "signed_ints",
+            "source",
+            "source_default",
+            "state_machines",
+            "statements",
+            "statements_default",
+            "stats_default",
+            "stats_sum",
+            "std",
+            "string",
+            "string_concat",
+            "string_default",
+            "subscript",
+            "subscript_default",
+            "subscript_formula",
+            "subscript_range",
+            "subscript_slice",
+            "swizzle",
+            "symbol_table",
+            "table",
+            "trace",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "unsigned_ints",
+            "variable_assign",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "miniz_oxide": {
+          "path": "/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+          "sha256": "681adce5cb63aef90b398ba24c2c9ef63c9a250f4af390a66e565bb36860d2e3",
+          "features": [
+            "default",
+            "with-alloc"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_gpu": {
+          "path": "/private/tmp/mech-first-change-spill-round61-20261031/variants/after/libmech_gpu.rlib",
+          "sha256": "a7f2ddbb5cb136c31bf104e8865c9cf3c7ca04f967fe3484d55d9efbe056c000",
+          "features": [
+            "aot",
+            "canonical-native",
+            "canonical-native-program",
+            "canonical-native-program-runtime",
+            "canonical-native-runtime",
+            "jit"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_stdlib": {
+          "path": "/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+          "sha256": "fa78fc1a98e9a8f8e0d0ac1efbb84e7a739baeb8a42c186cc549163c405f939a",
+          "features": [
+            "access",
+            "assign",
+            "atom",
+            "bool",
+            "c64",
+            "compare_eq",
+            "compare_gt",
+            "compare_gte",
+            "compare_lt",
+            "compare_lte",
+            "compare_neq",
+            "compiler",
+            "convert",
+            "enum",
+            "f32",
+            "f64",
+            "full_values",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "integer_bits",
+            "invariant_define",
+            "logic_and",
+            "logic_or",
+            "map",
+            "math_add",
+            "math_div",
+            "math_mod",
+            "math_mul",
+            "math_sub",
+            "matrix_comprehensions",
+            "matrixd",
+            "mech-compare",
+            "mech-logic",
+            "mech-math",
+            "mech-range",
+            "native-plan",
+            "r64",
+            "range_inclusive",
+            "record",
+            "row_vectord",
+            "runtime",
+            "semantic-compiler",
+            "set",
+            "source",
+            "string",
+            "table",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        }
+      },
+      "pins": {
+        "object.o": {
+          "sha256": "4e222709764d92ac2b2b74e06a7237d3b901bf07cf095e1c23a7751c0dd8269d",
+          "bytes": 13083416
+        },
+        "descriptor.json": {
+          "sha256": "b87db111e0978c4b045da2325598f1e79d6f47767e4e0c3d62c028e937617f59",
+          "bytes": 59787859
+        },
+        "metadata.json": {
+          "sha256": "8c98427567f2891707a230b5d5e696a8fe0c2d39d62bd40a309ec9a905a04b4e",
+          "bytes": 2542208
+        }
+      },
+      "normalized_source_sha256": "61bec08e46c54f52df5577ac0f7caea9bc5bc6bd5fdcba9ae0b6f18ec42b7e7d",
+      "original_worker_sha256": "a0062c6170db0005d96eba239232cfdbdd41054945c2e4a574afa8acb8939575",
+      "typed_ir_version": 132,
+      "abi_version": 37,
+      "code_bytes": 13082688,
+      "stack_bytes": 105552
+    }
+  },
+  "validation": {
+    "all_required_checks_pass": true,
+    "checks": [
+      {
+        "receipt": "units-parent/build.json",
+        "command": [
+          "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+          "-L",
+          "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/dependency",
+          "-L",
+          "dependency=/private/tmp/mech-vector-address-round60-20261031/variants/after/dependency",
+          "-L",
+          "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+          "-L",
+          "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+          "--edition=2024",
+          "--crate-name",
+          "mech_gpu",
+          "--test",
+          "-C",
+          "opt-level=1",
+          "-C",
+          "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "-D",
+          "warnings",
+          "-L",
+          "dependency=/private/tmp/mech-live-control-target/release/deps",
+          "--cfg",
+          "feature=\"aot\"",
+          "--cfg",
+          "feature=\"canonical-native\"",
+          "--cfg",
+          "feature=\"canonical-native-program\"",
+          "--cfg",
+          "feature=\"canonical-native-program-runtime\"",
+          "--cfg",
+          "feature=\"canonical-native-runtime\"",
+          "--cfg",
+          "feature=\"jit\"",
+          "--extern",
+          "cranelift_codegen=/private/tmp/mech-live-control-target/release/deps/libcranelift_codegen-79250b96f7a4172f.rlib",
+          "--extern",
+          "cranelift_frontend=/private/tmp/mech-live-control-target/release/deps/libcranelift_frontend-796ddca52b1baa23.rlib",
+          "--extern",
+          "cranelift_jit=/private/tmp/mech-live-control-target/release/deps/libcranelift_jit-4d33b45d7690e2ef.rlib",
+          "--extern",
+          "cranelift_module=/private/tmp/mech-live-control-target/release/deps/libcranelift_module-8bb9481823a63cf0.rlib",
+          "--extern",
+          "cranelift_native=/private/tmp/mech-live-control-target/release/deps/libcranelift_native-448aa3dcdc0c0785.rlib",
+          "--extern",
+          "cranelift_object=/private/tmp/mech-live-control-target/release/deps/libcranelift_object-e9e960ce24552414.rlib",
+          "--extern",
+          "grapheme=/private/tmp/mech-live-control-target/release/deps/libgrapheme-2e22bda36eb1f0f8.rlib",
+          "--extern",
+          "hashbrown=/private/tmp/mech-live-control-target/release/deps/libhashbrown-d20f4ad24099052b.rlib",
+          "--extern",
+          "libloading=/private/tmp/mech-live-control-target/release/deps/liblibloading-836fe5ac7ed0962d.rlib",
+          "--extern",
+          "mech_compute=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_compute-84cb0ef1d137eee3.rlib",
+          "--extern",
+          "mech_core=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+          "--extern",
+          "mech_engine=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+          "--extern",
+          "miniz_oxide=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+          "--extern",
+          "serde=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+          "--extern",
+          "serde_json=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+          "--extern",
+          "sha2=/private/tmp/mech-live-control-target/release/deps/libsha2-f9316069bed82edc.rlib",
+          "--extern",
+          "toml_edit=/private/tmp/mech-live-control-target/release/deps/libtoml_edit-14168309fb56d330.rlib",
+          "--extern",
+          "web_time=/private/tmp/mech-live-control-target/release/deps/libweb_time-5004144e8c3d1139.rlib",
+          "--extern",
+          "wide=/private/tmp/mech-live-control-target/release/deps/libwide-24e8d1268668e37f.rlib",
+          "--extern",
+          "mech_syntax=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+          "--extern",
+          "mech_runtime=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_runtime-44999c02af6b18b6.rlib",
+          "--extern",
+          "mech_stdlib=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+          "--extern",
+          "tempfile=/private/tmp/mech-live-control-target/release/deps/libtempfile-cd3db811e0a0846f.rlib",
+          "-L",
+          "dependency=/private/tmp/mech-record-lookup-round42-20261030/diagnostic-libs/after",
+          "-L",
+          "dependency=/private/tmp/mech-record-lookup-round42-20261030/final-library",
+          "-L",
+          "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+          "-L",
+          "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+          "/private/tmp/mech-deflate-linear-stack/hosts/gpu/src/lib.rs",
+          "-o",
+          "/private/tmp/mech-first-change-spill-round61-20261031/units-parent/gpu-unit-tests"
+        ],
+        "exit": 0,
+        "expected_tests": null,
+        "observed_tests": null,
+        "inventory_only": false,
+        "passed": true
+      },
+      {
+        "receipt": "units-parent/vector-address-inventory.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/units-parent/gpu-unit-tests",
+          "native_artifact::program::codegen::numeric_words::tests::unit_dimension_addresses_emit_no_division_and_keep_general_geometry",
+          "--exact",
+          "--list"
+        ],
+        "exit": 0,
+        "expected_tests": 1,
+        "observed_tests": 1,
+        "inventory_only": true,
+        "passed": true
+      },
+      {
+        "receipt": "units-parent/vector-address.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/units-parent/gpu-unit-tests",
+          "native_artifact::program::codegen::numeric_words::tests::unit_dimension_addresses_emit_no_division_and_keep_general_geometry",
+          "--exact",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "exit": 0,
+        "expected_tests": 1,
+        "observed_tests": 1,
+        "inventory_only": false,
+        "passed": true
+      },
+      {
+        "receipt": "units-after/build.json",
+        "command": [
+          "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+          "-L",
+          "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/dependency",
+          "-L",
+          "dependency=/private/tmp/mech-vector-address-round60-20261031/variants/after/dependency",
+          "-L",
+          "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+          "-L",
+          "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+          "--edition=2024",
+          "--crate-name",
+          "mech_gpu",
+          "--test",
+          "-C",
+          "opt-level=1",
+          "-C",
+          "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "-D",
+          "warnings",
+          "-L",
+          "dependency=/private/tmp/mech-live-control-target/release/deps",
+          "--cfg",
+          "feature=\"aot\"",
+          "--cfg",
+          "feature=\"canonical-native\"",
+          "--cfg",
+          "feature=\"canonical-native-program\"",
+          "--cfg",
+          "feature=\"canonical-native-program-runtime\"",
+          "--cfg",
+          "feature=\"canonical-native-runtime\"",
+          "--cfg",
+          "feature=\"jit\"",
+          "--extern",
+          "cranelift_codegen=/private/tmp/mech-live-control-target/release/deps/libcranelift_codegen-79250b96f7a4172f.rlib",
+          "--extern",
+          "cranelift_frontend=/private/tmp/mech-live-control-target/release/deps/libcranelift_frontend-796ddca52b1baa23.rlib",
+          "--extern",
+          "cranelift_jit=/private/tmp/mech-live-control-target/release/deps/libcranelift_jit-4d33b45d7690e2ef.rlib",
+          "--extern",
+          "cranelift_module=/private/tmp/mech-live-control-target/release/deps/libcranelift_module-8bb9481823a63cf0.rlib",
+          "--extern",
+          "cranelift_native=/private/tmp/mech-live-control-target/release/deps/libcranelift_native-448aa3dcdc0c0785.rlib",
+          "--extern",
+          "cranelift_object=/private/tmp/mech-live-control-target/release/deps/libcranelift_object-e9e960ce24552414.rlib",
+          "--extern",
+          "grapheme=/private/tmp/mech-live-control-target/release/deps/libgrapheme-2e22bda36eb1f0f8.rlib",
+          "--extern",
+          "hashbrown=/private/tmp/mech-live-control-target/release/deps/libhashbrown-d20f4ad24099052b.rlib",
+          "--extern",
+          "libloading=/private/tmp/mech-live-control-target/release/deps/liblibloading-836fe5ac7ed0962d.rlib",
+          "--extern",
+          "mech_compute=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_compute-84cb0ef1d137eee3.rlib",
+          "--extern",
+          "mech_core=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+          "--extern",
+          "mech_engine=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+          "--extern",
+          "miniz_oxide=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+          "--extern",
+          "serde=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+          "--extern",
+          "serde_json=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+          "--extern",
+          "sha2=/private/tmp/mech-live-control-target/release/deps/libsha2-f9316069bed82edc.rlib",
+          "--extern",
+          "toml_edit=/private/tmp/mech-live-control-target/release/deps/libtoml_edit-14168309fb56d330.rlib",
+          "--extern",
+          "web_time=/private/tmp/mech-live-control-target/release/deps/libweb_time-5004144e8c3d1139.rlib",
+          "--extern",
+          "wide=/private/tmp/mech-live-control-target/release/deps/libwide-24e8d1268668e37f.rlib",
+          "--extern",
+          "mech_syntax=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+          "--extern",
+          "mech_runtime=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_runtime-44999c02af6b18b6.rlib",
+          "--extern",
+          "mech_stdlib=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+          "--extern",
+          "tempfile=/private/tmp/mech-live-control-target/release/deps/libtempfile-cd3db811e0a0846f.rlib",
+          "-L",
+          "dependency=/private/tmp/mech-record-lookup-round42-20261030/diagnostic-libs/after",
+          "-L",
+          "dependency=/private/tmp/mech-record-lookup-round42-20261030/final-library",
+          "-L",
+          "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+          "-L",
+          "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+          "/private/tmp/mech-deflate-linear-stack/hosts/gpu/src/lib.rs",
+          "-o",
+          "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests"
+        ],
+        "exit": 0,
+        "expected_tests": null,
+        "observed_tests": null,
+        "inventory_only": false,
+        "passed": true
+      },
+      {
+        "receipt": "units-after/vector-address-inventory.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+          "native_artifact::program::codegen::numeric_words::tests::unit_dimension_addresses_emit_no_division_and_keep_general_geometry",
+          "--exact",
+          "--list"
+        ],
+        "exit": 0,
+        "expected_tests": 1,
+        "observed_tests": 1,
+        "inventory_only": true,
+        "passed": true
+      },
+      {
+        "receipt": "units-after/vector-address.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+          "native_artifact::program::codegen::numeric_words::tests::unit_dimension_addresses_emit_no_division_and_keep_general_geometry",
+          "--exact",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "exit": 0,
+        "expected_tests": 1,
+        "observed_tests": 1,
+        "inventory_only": false,
+        "passed": true
+      },
+      {
+        "receipt": "units-parent/first-change-inventory.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/units-parent/gpu-unit-tests",
+          "delayed_numeric_first_changes_preserve_current_scalars_two_arrays_and_retry",
+          "--list"
+        ],
+        "exit": 0,
+        "expected_tests": 1,
+        "observed_tests": 1,
+        "inventory_only": true,
+        "passed": true
+      },
+      {
+        "receipt": "units-parent/first-change.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/units-parent/gpu-unit-tests",
+          "delayed_numeric_first_changes_preserve_current_scalars_two_arrays_and_retry",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "exit": 0,
+        "expected_tests": 1,
+        "observed_tests": 1,
+        "inventory_only": false,
+        "passed": true
+      },
+      {
+        "receipt": "units-after/first-change-inventory.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+          "delayed_numeric_first_changes_preserve_current_scalars_two_arrays_and_retry",
+          "--list"
+        ],
+        "exit": 0,
+        "expected_tests": 1,
+        "observed_tests": 1,
+        "inventory_only": true,
+        "passed": true
+      },
+      {
+        "receipt": "units-after/first-change.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+          "delayed_numeric_first_changes_preserve_current_scalars_two_arrays_and_retry",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "exit": 0,
+        "expected_tests": 1,
+        "observed_tests": 1,
+        "inventory_only": false,
+        "passed": true
+      },
+      {
+        "receipt": "units-after/preparation-inventory.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+          "cleanup_effects::tests::",
+          "--list"
+        ],
+        "exit": 0,
+        "expected_tests": 2,
+        "observed_tests": 2,
+        "inventory_only": true,
+        "passed": true
+      },
+      {
+        "receipt": "units-after/preparation.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+          "cleanup_effects::tests::",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "exit": 0,
+        "expected_tests": 2,
+        "observed_tests": 2,
+        "inventory_only": false,
+        "passed": true
+      },
+      {
+        "receipt": "units-after/runtime-inventory.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+          "native_artifact::program::runtime::",
+          "--skip",
+          "complete_unchanged_knucleotide_body_uses_the_owned_emitted_map",
+          "--list"
+        ],
+        "exit": 0,
+        "expected_tests": 328,
+        "observed_tests": 328,
+        "inventory_only": true,
+        "passed": true
+      },
+      {
+        "receipt": "units-after/runtime.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+          "native_artifact::program::runtime::",
+          "--skip",
+          "complete_unchanged_knucleotide_body_uses_the_owned_emitted_map",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "exit": 0,
+        "expected_tests": 328,
+        "observed_tests": 328,
+        "inventory_only": false,
+        "passed": true
+      },
+      {
+        "receipt": "units-after/work-values-inventory.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+          "native_artifact::work::",
+          "native_artifact::memory::",
+          "native_artifact::values::",
+          "--list"
+        ],
+        "exit": 0,
+        "expected_tests": 32,
+        "observed_tests": 32,
+        "inventory_only": true,
+        "passed": true
+      },
+      {
+        "receipt": "units-after/work-values.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+          "native_artifact::work::",
+          "native_artifact::memory::",
+          "native_artifact::values::",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "exit": 0,
+        "expected_tests": 32,
+        "observed_tests": 32,
+        "inventory_only": false,
+        "passed": true
+      },
+      {
+        "receipt": "qualification/component-build.json",
+        "command": [
+          "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+          "-L",
+          "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/dependency",
+          "-L",
+          "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after",
+          "-L",
+          "dependency=/private/tmp/mech-vector-address-round60-20261031/variants/after/dependency",
+          "-L",
+          "dependency=/private/tmp/mech-vector-address-round60-20261031/variants/after",
+          "--edition=2024",
+          "-C",
+          "opt-level=1",
+          "-D",
+          "warnings",
+          "-L",
+          "dependency=/private/tmp/mech-live-control-target/release/deps",
+          "--extern",
+          "serde=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+          "--extern",
+          "serde_json=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+          "--extern",
+          "mech_core=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+          "--extern",
+          "mech_syntax=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+          "--extern",
+          "mech_engine=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+          "--extern",
+          "miniz_oxide=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+          "--extern",
+          "mech_gpu=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/libmech_gpu.rlib",
+          "--extern",
+          "mech_stdlib=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+          "--extern",
+          "sha2=/private/tmp/mech-live-control-target/release/deps/libsha2-f9316069bed82edc.rlib",
+          "--extern",
+          "grapheme=/private/tmp/mech-live-control-target/release/deps/libgrapheme-2e22bda36eb1f0f8.rlib",
+          "--extern",
+          "tempfile=/private/tmp/mech-live-control-target/release/deps/libtempfile-cd3db811e0a0846f.rlib",
+          "--test",
+          "--cfg",
+          "feature=\"canonical-native-program\"",
+          "-L",
+          "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+          "-L",
+          "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+          "-L",
+          "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after",
+          "/private/tmp/mech-numeric-composition-round33-20261030/partition/qualification.rs",
+          "-o",
+          "/private/tmp/mech-first-change-spill-round61-20261031/qualification/tests"
+        ],
+        "exit": 0,
+        "expected_tests": null,
+        "observed_tests": null,
+        "inventory_only": false,
+        "passed": true
+      },
+      {
+        "receipt": "qualification/path-mechanism-inventory.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/qualification/tests",
+          "optimal_path_qualification::path_scan_emits_native_pieces_around_its_nested_scalar_child",
+          "--list"
+        ],
+        "exit": 0,
+        "expected_tests": 1,
+        "observed_tests": 1,
+        "inventory_only": true,
+        "passed": true
+      },
+      {
+        "receipt": "qualification/path-mechanism.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/qualification/tests",
+          "optimal_path_qualification::path_scan_emits_native_pieces_around_its_nested_scalar_child",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "exit": 0,
+        "expected_tests": 1,
+        "observed_tests": 1,
+        "inventory_only": false,
+        "passed": true
+      },
+      {
+        "receipt": "qualification/components-inventory.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/qualification/tests",
+          "scalar_path_qualification",
+          "multi_result_qualification",
+          "nested_frame_qualification",
+          "scalar_record_qualification",
+          "record_buffer_qualification",
+          "packed_update_qualification",
+          "buffer_frame_qualification",
+          "sequence_capacity_qualification",
+          "collection_qualification",
+          "uniform_words_qualification",
+          "word_read_qualification",
+          "narrow_word_qualification",
+          "matchfinder_qualification",
+          "assembled_compressor_source_preserves_its_pinned_bytes",
+          "scalar_state_qualification",
+          "tail_qualification",
+          "costs_qualification",
+          "default_costs_qualification",
+          "block_choice_qualification",
+          "pinned_min_cost_paths_keep_exact_nodes_and_real_reservation",
+          "path_checks_preserve_entry_order_publication_aliases_and_recovery",
+          "argument_transport_qualification",
+          "shared_transport_qualification",
+          "numeric_write_qualification",
+          "numeric_tail_qualification",
+          "numeric_result_qualification",
+          "numeric_predicate_qualification",
+          "dynamic_projection_qualification",
+          "binding_pressure_qualification",
+          "--list"
+        ],
+        "exit": 0,
+        "expected_tests": 236,
+        "observed_tests": 236,
+        "inventory_only": true,
+        "passed": true
+      },
+      {
+        "receipt": "qualification/components.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/qualification/tests",
+          "scalar_path_qualification",
+          "multi_result_qualification",
+          "nested_frame_qualification",
+          "scalar_record_qualification",
+          "record_buffer_qualification",
+          "packed_update_qualification",
+          "buffer_frame_qualification",
+          "sequence_capacity_qualification",
+          "collection_qualification",
+          "uniform_words_qualification",
+          "word_read_qualification",
+          "narrow_word_qualification",
+          "matchfinder_qualification",
+          "assembled_compressor_source_preserves_its_pinned_bytes",
+          "scalar_state_qualification",
+          "tail_qualification",
+          "costs_qualification",
+          "default_costs_qualification",
+          "block_choice_qualification",
+          "pinned_min_cost_paths_keep_exact_nodes_and_real_reservation",
+          "path_checks_preserve_entry_order_publication_aliases_and_recovery",
+          "argument_transport_qualification",
+          "shared_transport_qualification",
+          "numeric_write_qualification",
+          "numeric_tail_qualification",
+          "numeric_result_qualification",
+          "numeric_predicate_qualification",
+          "dynamic_projection_qualification",
+          "binding_pressure_qualification",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "exit": 0,
+        "expected_tests": 236,
+        "observed_tests": 236,
+        "inventory_only": false,
+        "passed": true
+      },
+      {
+        "receipt": "qualification/composition-inventory.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/qualification/tests",
+          "numeric_composition_qualification",
+          "--list"
+        ],
+        "exit": 0,
+        "expected_tests": 8,
+        "observed_tests": 8,
+        "inventory_only": true,
+        "passed": true
+      },
+      {
+        "receipt": "qualification/composition.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/qualification/tests",
+          "numeric_composition_qualification",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "exit": 0,
+        "expected_tests": 8,
+        "observed_tests": 8,
+        "inventory_only": false,
+        "passed": true
+      },
+      {
+        "receipt": "ci/workflow-python.json",
+        "command": [
+          "/private/tmp/mech-profile-ci-python-20261030/bin/python",
+          "-B",
+          "-m",
+          "unittest",
+          "tests.ci.test_ci_full_contract",
+          "tests.ci.test_ci_test_inventory"
+        ],
+        "exit": 0,
+        "expected_tests": 132,
+        "observed_tests": 132,
+        "inventory_only": false,
+        "passed": true
+      },
+      {
+        "receipt": "linked-acceptance/emit-build.json",
+        "command": [
+          "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+          "-L",
+          "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/dependency",
+          "-L",
+          "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after",
+          "--edition=2024",
+          "-C",
+          "opt-level=3",
+          "-D",
+          "warnings",
+          "-L",
+          "dependency=/private/tmp/mech-live-control-target/release/deps",
+          "--extern",
+          "serde=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+          "--extern",
+          "serde_json=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+          "--extern",
+          "mech_core=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+          "--extern",
+          "mech_syntax=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+          "--extern",
+          "mech_engine=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+          "--extern",
+          "miniz_oxide=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+          "--extern",
+          "mech_gpu=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/libmech_gpu.rlib",
+          "--extern",
+          "mech_stdlib=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+          "-C",
+          "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "-L",
+          "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/dependency",
+          "-L",
+          "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+          "-L",
+          "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after",
+          "/private/tmp/mech-first-change-spill-round61-20261031/linked-acceptance/emit.rs",
+          "-o",
+          "/private/tmp/mech-first-change-spill-round61-20261031/linked-acceptance/emit"
+        ],
+        "exit": 0,
+        "expected_tests": null,
+        "observed_tests": null,
+        "inventory_only": false,
+        "passed": true
+      },
+      {
+        "receipt": "linked-acceptance/emit.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/linked-acceptance/emit"
+        ],
+        "exit": 0,
+        "expected_tests": null,
+        "observed_tests": null,
+        "inventory_only": false,
+        "passed": true
+      },
+      {
+        "receipt": "linked-acceptance/worker-build.json",
+        "command": [
+          "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+          "-L",
+          "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/dependency",
+          "-L",
+          "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after",
+          "--edition=2024",
+          "-C",
+          "opt-level=3",
+          "-D",
+          "warnings",
+          "-L",
+          "dependency=/private/tmp/mech-live-control-target/release/deps",
+          "--extern",
+          "serde=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+          "--extern",
+          "serde_json=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+          "--extern",
+          "mech_core=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+          "--extern",
+          "mech_syntax=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+          "--extern",
+          "mech_engine=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+          "--extern",
+          "miniz_oxide=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+          "--extern",
+          "mech_gpu=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/libmech_gpu.rlib",
+          "--extern",
+          "mech_stdlib=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+          "-C",
+          "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "-L",
+          "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/dependency",
+          "-L",
+          "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+          "-L",
+          "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after",
+          "-C",
+          "link-arg=/private/tmp/mech-first-change-spill-round61-20261031/linked-acceptance/object.o",
+          "/private/tmp/mech-first-change-spill-round61-20261031/linked-acceptance/worker.rs",
+          "-o",
+          "/private/tmp/mech-first-change-spill-round61-20261031/linked-acceptance/worker"
+        ],
+        "exit": 0,
+        "expected_tests": null,
+        "observed_tests": null,
+        "inventory_only": false,
+        "passed": true
+      },
+      {
+        "receipt": "linked-acceptance/run.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/linked-acceptance/worker"
+        ],
+        "exit": 0,
+        "expected_tests": null,
+        "observed_tests": null,
+        "inventory_only": false,
+        "passed": true
+      },
+      {
+        "receipt": "ci/results.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+          "composition_tests",
+          "parent_continuation_is_single_use",
+          "native_runtime_consolidation",
+          "buffer_frames::tests::batching",
+          "buffer_frames::tests::transfer",
+          "work::retirement::tests",
+          "exhausted_retirement_generation",
+          "cleanup_effects::tests",
+          "numeric_shadow",
+          "numeric_words::tests",
+          "numeric_first_change",
+          "--list"
+        ],
+        "exit": 0,
+        "expected_tests": 34,
+        "observed_tests": 34,
+        "inventory_only": true,
+        "passed": true
+      },
+      {
+        "receipt": "ci/results.json",
+        "command": [
+          "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+          "composition_tests",
+          "parent_continuation_is_single_use",
+          "native_runtime_consolidation",
+          "buffer_frames::tests::batching",
+          "buffer_frames::tests::transfer",
+          "work::retirement::tests",
+          "exhausted_retirement_generation",
+          "cleanup_effects::tests",
+          "numeric_shadow",
+          "numeric_words::tests",
+          "numeric_first_change",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "exit": 0,
+        "expected_tests": 34,
+        "observed_tests": 34,
+        "inventory_only": false,
+        "passed": true
+      },
+      {
+        "receipt": "architecture/results.json",
+        "command": [
+          "python3",
+          "scripts/check-production-resident-routing.py"
+        ],
+        "exit": 0,
+        "passed": true
+      },
+      {
+        "receipt": "architecture/results.json",
+        "command": [
+          "python3",
+          "scripts/check-source-catalog-entrypoints.py"
+        ],
+        "exit": 0,
+        "passed": true
+      },
+      {
+        "receipt": "architecture/results.json",
+        "command": [
+          "python3",
+          "scripts/check-native-host-catalog.py"
+        ],
+        "exit": 0,
+        "passed": true
+      },
+      {
+        "receipt": "architecture/results.json",
+        "command": [
+          "python3",
+          "scripts/check-native-build-analysis-layout.py"
+        ],
+        "exit": 0,
+        "passed": true
+      },
+      {
+        "receipt": "architecture/results.json",
+        "command": [
+          "python3",
+          "scripts/check-rust-module-layout.py"
+        ],
+        "exit": 0,
+        "passed": true
+      },
+      {
+        "receipt": "architecture/results.json",
+        "command": [
+          "python3",
+          "scripts/check-runtime-factory-safety.py"
+        ],
+        "exit": 0,
+        "passed": true
+      },
+      {
+        "receipt": "architecture/results.json",
+        "command": [
+          "python3",
+          "scripts/check-warning-policy.py"
+        ],
+        "exit": 0,
+        "passed": true
+      },
+      {
+        "receipt": "architecture-audit-fixed/result.json",
+        "command": [
+          "sh",
+          "scripts/check-unsafe-boundaries.sh"
+        ],
+        "exit": 0,
+        "passed": true,
+        "supersedes_failed_receipt": "architecture/results.json"
+      },
+      {
+        "receipt": "architecture/results.json",
+        "command": [
+          "cargo",
+          "+nightly-2026-03-03",
+          "fmt",
+          "--all",
+          "--",
+          "--check"
+        ],
+        "exit": 0,
+        "passed": true
+      },
+      {
+        "receipt": "architecture/results.json",
+        "command": [
+          "git",
+          "diff",
+          "--check"
+        ],
+        "exit": 0,
+        "passed": true
+      },
+      {
+        "receipt": "primary/scalar-results.json",
+        "cases": 12,
+        "passed": true
+      },
+      {
+        "receipt": "frame-allocation/results.json",
+        "cases": 8,
+        "passed": true
+      },
+      {
+        "receipt": "linked-acceptance/run.stdout",
+        "cases": 12,
+        "passed": true
+      }
+    ],
+    "architecture_initial": [
+      {
+        "command": [
+          "python3",
+          "scripts/check-production-resident-routing.py"
+        ],
+        "exit": 0,
+        "seconds": 0.27101108292117715
+      },
+      {
+        "command": [
+          "python3",
+          "scripts/check-source-catalog-entrypoints.py"
+        ],
+        "exit": 0,
+        "seconds": 0.06182762491516769
+      },
+      {
+        "command": [
+          "python3",
+          "scripts/check-native-host-catalog.py"
+        ],
+        "exit": 0,
+        "seconds": 0.574894999852404
+      },
+      {
+        "command": [
+          "python3",
+          "scripts/check-native-build-analysis-layout.py"
+        ],
+        "exit": 0,
+        "seconds": 0.023994165938347578
+      },
+      {
+        "command": [
+          "python3",
+          "scripts/check-rust-module-layout.py"
+        ],
+        "exit": 0,
+        "seconds": 0.19331691600382328
+      },
+      {
+        "command": [
+          "python3",
+          "scripts/check-runtime-factory-safety.py"
+        ],
+        "exit": 0,
+        "seconds": 0.9812697090674192
+      },
+      {
+        "command": [
+          "python3",
+          "scripts/check-warning-policy.py"
+        ],
+        "exit": 0,
+        "seconds": 13.634867958026007
+      },
+      {
+        "command": [
+          "sh",
+          "scripts/check-unsafe-boundaries.sh"
+        ],
+        "exit": 1,
+        "seconds": 2.1451956250239164
+      },
+      {
+        "command": [
+          "cargo",
+          "+nightly-2026-03-03",
+          "fmt",
+          "--all",
+          "--",
+          "--check"
+        ],
+        "exit": 0,
+        "seconds": 6.669588666874915
+      },
+      {
+        "command": [
+          "git",
+          "diff",
+          "--check"
+        ],
+        "exit": 0,
+        "seconds": 0.023176874965429306
+      }
+    ],
+    "prior_failures": [
+      {
+        "receipt": "units-parent-initial/build.json",
+        "exit": 1,
+        "compiler_source": "ce5c852c809f1675a5d383b54ef0810b16efaebc",
+        "classification": "introduced test-only compilation failure, corrected before measurements",
+        "corrected_receipt": "units-parent/build.json",
+        "corrected_source": "bf7dd0f6bd306171b4f101b728f3b5614ac86f99",
+        "disposition": "The new test had ambiguous boxed shape inference. The explicit shape type correction compiled successfully; unchanged parent production then passed the new exact regression before the spill removal was applied. The original failed command and stderr remain archived."
+      },
+      {
+        "receipt": "architecture/results.json",
+        "command": [
+          "sh",
+          "scripts/check-unsafe-boundaries.sh"
+        ],
+        "exit": 1,
+        "classification": "introduced review-evidence layout failure; compiler/runtime production unchanged",
+        "corrected_receipt": "architecture-audit-fixed/result.json",
+        "corrected_exit": 0,
+        "corrected_source": null,
+        "disposition": "The unsafe-boundary scan found unsafe text in duplicated external regalloc.rs dependency snapshots copied as review evidence. Their public duplicate source files were removed, with evidence retained in compressed archives. No allowlist or production source was changed. The exact same unsafe-boundary command was rerun; its observed result is required for acceptance."
+      }
+    ],
+    "skipped_coverage": [
+      {
+        "test": "complete_unchanged_knucleotide_body_uses_the_owned_emitted_map",
+        "disposition": "Existing runtime selection exclusion retained; unrelated complete knucleotide body is not requalified here."
+      },
+      {
+        "coverage": "full remote CI",
+        "disposition": "Not awaited as requested. Local exact inventory and architecture checks reported separately."
+      },
+      {
+        "coverage": "larger compression inputs/full-scale timing",
+        "disposition": "Not run; this optimization is measured on the complete pinned eight-byte level-12 call only."
+      }
+    ],
+    "scope": "Counts are observed from actual archived inventories and execution receipts, never inferred from source annotations. Test batches overlap; counts must not be summed as unique tests."
+  },
+  "allocation_target": {
+    "baseline": "/private/tmp/mech-vector-address-round60-20261031",
+    "before_allocation_requests": 8173,
+    "after_allocation_requests": 8173,
+    "generated_object_may_change": true,
+    "source_and_bytecode_must_remain_identical": true,
+    "before_requested_bytes": 98228396,
+    "after_requested_bytes": 98228396,
+    "before_reallocations": 162,
+    "after_reallocations": 162,
+    "scope": "No allocation change predicted; remove redundant generated numeric first-change spill only. All successful steady-state events remain 8173 requests / 98228396 bytes / 162 reallocations; imports on the initial warmup are recorded separately."
+  },
+  "profiles": {
+    "scope": "Fresh matched serial sample windows. Each Mech worker completes 695 calls; reference 20,000. Sampling includes harness and is excluded from primary elapsed. Weights are samples, not instructions or exact timer fractions; ancestry unions overlap. Opaque reference hashes are not assigned unsupported source names.",
+    "profiles": {
+      "baseline": {
+        "sha256": "94c9c869581e5bafa5a6d07a49fa0c71f2a97cda66e5633e42e96847b979e11a",
+        "total_exclusive_weights": 1316,
+        "exclusive_top": [
+          [
+            "mech_canonical_program_entry_v1",
+            164
+          ],
+          [
+            "_tlv_get_addr",
+            54
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+            52
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+            46
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+            43
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+            39
+          ],
+          [
+            "_platform_memmove",
+            32
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation18retire_tail_locals",
+            32
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget17charge_in_context",
+            32
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+            28
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation14selected_callsNtB4_10Invocation21prepared_library_call",
+            24
+          ],
+          [
+            "_RNvNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+            22
+          ],
+          [
+            "_RNvMs3_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+            22
+          ],
+          [
+            "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+            20
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+            18
+          ]
+        ],
+        "frame_exclusive_top": [
+          [
+            "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+            46
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+            21
+          ],
+          [
+            "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+            20
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+            18
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_record_child0EBa_",
+            18
+          ],
+          [
+            "_tlv_get_addr",
+            18
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames4pack",
+            12
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget17charge_in_context",
+            11
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext17try_charge_prefix",
+            8
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+            8
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls8prepared15frame_admissionNtB2_20FrameAdmissionRecipe9try_admit",
+            7
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+            7
+          ],
+          [
+            "_RNvMNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget15frame_footprintNtB2_28PreparedNativeFrameFootprint5value",
+            7
+          ],
+          [
+            "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget20observe_control_work",
+            6
+          ],
+          [
+            "_RNvMsa_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_19ResidentBudgetMeter19charge_compute_work",
+            5
+          ],
+          [
+            "_RINvMNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls8prepared11frame_shapeNtB3_16FrameShapeRecipe15matches_currentNCNCNvMs_NtB5_13buffer_framesNtB5_25NativePreparedLibraryCall25admit_buffer_frame_inputs0s2_0EBd_",
+            5
+          ],
+          [
+            "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena3put",
+            5
+          ],
+          [
+            "_RINvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB3_12BufferFrames4copyKb1_EBb_",
+            5
+          ],
+          [
+            "_RINvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB3_12BufferFrames11copy_fieldsKb1_EBb_",
+            5
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames10check_copy",
+            5
+          ]
+        ],
+        "ancestry_unions": {
+          "registration admission/removal": {
+            "weights": 33,
+            "percent": 2.507598784194529
+          },
+          "host mutex lifecycle": {
+            "weights": 3,
+            "percent": 0.22796352583586627
+          },
+          "frame copy actions": {
+            "weights": 25,
+            "percent": 1.8996960486322187
+          },
+          "capacity-buffer calls": {
+            "weights": 18,
+            "percent": 1.3677811550151975
+          },
+          "memory move/copy": {
+            "weights": 32,
+            "percent": 2.43161094224924
+          },
+          "frame actions": {
+            "weights": 339,
+            "percent": 25.75987841945289
+          },
+          "tail cleanup": {
+            "weights": 67,
+            "percent": 5.091185410334346
+          },
+          "canonical construction/admission": {
+            "weights": 48,
+            "percent": 3.6474164133738602
+          },
+          "schema closure": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "projection accounting": {
+            "weights": 51,
+            "percent": 3.8753799392097266
+          },
+          "thread-local lookup": {
+            "weights": 54,
+            "percent": 4.103343465045593
+          }
+        },
+        "ancestry_groups_overlap": true
+      },
+      "candidate": {
+        "sha256": "81669d370983800bb9db6512042a424d2f3a125c6797e9e07f05ad603008e4f0",
+        "total_exclusive_weights": 1327,
+        "exclusive_top": [
+          [
+            "mech_canonical_program_entry_v1",
+            154
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+            61
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+            58
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+            45
+          ],
+          [
+            "_tlv_get_addr",
+            35
+          ],
+          [
+            "_platform_memmove",
+            32
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget17charge_in_context",
+            32
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+            30
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+            29
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+            27
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation14selected_callsNtB4_10Invocation21prepared_library_call",
+            26
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation18retire_tail_locals",
+            23
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+            21
+          ],
+          [
+            "_RNvMs3_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+            21
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_record_child0EBa_",
+            20
+          ]
+        ],
+        "frame_exclusive_top": [
+          [
+            "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+            61
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+            21
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_record_child0EBa_",
+            20
+          ],
+          [
+            "_tlv_get_addr",
+            18
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext17try_charge_prefix",
+            16
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget17charge_in_context",
+            13
+          ],
+          [
+            "_RINvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB3_12BufferFrames11copy_fieldsKb1_EBb_",
+            12
+          ],
+          [
+            "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+            11
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+            11
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+            11
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+            10
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames4pack",
+            10
+          ],
+          [
+            "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena12copy_current",
+            9
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls8prepared15frame_admissionNtB2_20FrameAdmissionRecipe9try_admit",
+            9
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames7project",
+            9
+          ],
+          [
+            "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget20observe_control_work",
+            7
+          ],
+          [
+            "_RNvMNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget15frame_footprintNtB2_28PreparedNativeFrameFootprint5value",
+            7
+          ],
+          [
+            "_RNvMsa_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_19ResidentBudgetMeter19charge_compute_work",
+            6
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames6retire",
+            6
+          ],
+          [
+            "_RINvNtNtCskIfnrfrMWVM_9mech_core8snapshot8encoding19visit_sequence_workuNCNvMNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget15frame_footprintNtB1d_28PreparedNativeFrameFootprint5value0EB1j_",
+            6
+          ]
+        ],
+        "ancestry_unions": {
+          "registration admission/removal": {
+            "weights": 47,
+            "percent": 3.541823662396383
+          },
+          "host mutex lifecycle": {
+            "weights": 7,
+            "percent": 0.5275056518462697
+          },
+          "frame copy actions": {
+            "weights": 20,
+            "percent": 1.5071590052750565
+          },
+          "capacity-buffer calls": {
+            "weights": 14,
+            "percent": 1.0550113036925395
+          },
+          "memory move/copy": {
+            "weights": 32,
+            "percent": 2.4114544084400906
+          },
+          "frame actions": {
+            "weights": 354,
+            "percent": 26.6767143933685
+          },
+          "tail cleanup": {
+            "weights": 60,
+            "percent": 4.52147701582517
+          },
+          "canonical construction/admission": {
+            "weights": 53,
+            "percent": 3.9939713639788996
+          },
+          "schema closure": {
+            "weights": 1,
+            "percent": 0.07535795026375283
+          },
+          "projection accounting": {
+            "weights": 53,
+            "percent": 3.9939713639788996
+          },
+          "thread-local lookup": {
+            "weights": 35,
+            "percent": 2.637528259231349
+          }
+        },
+        "ancestry_groups_overlap": true
+      },
+      "reference": {
+        "sha256": "bd84a5a78c60acb783322551c2a4ac27d1ff9e7dec84d5581580657f1f4ba5c7",
+        "total_exclusive_weights": 1517,
+        "exclusive_top": [
+          [
+            "roc__p5794f552e2e0fcba87a322629fdca7c0.fast",
+            1426
+          ],
+          [
+            "roc__p1a804bfda1f5e4235a696be5d06bcb43.fast",
+            41
+          ],
+          [
+            "roc__pa6e6a0bf5ace6ced425a6feecccd5c1b.fast",
+            16
+          ],
+          [
+            "roc__p499ff7eb2f98e9031bc9d0002db086b6.fast",
+            6
+          ],
+          [
+            "roc__p81003bf97431a8821d5be871f2471565.fast",
+            5
+          ],
+          [
+            "roc__p9d8198fedbd801212718a09deebc5774.fast",
+            5
+          ],
+          [
+            "roc__p251d42c9b11261f4b6c38feff48bfd2d.fast",
+            3
+          ],
+          [
+            "roc__p5577dd3f98103e165031983d14e7560c.fast",
+            2
+          ],
+          [
+            "mach_absolute_time",
+            2
+          ],
+          [
+            "list.listAppendRangeWithinUnsafe",
+            2
+          ],
+          [
+            "list.RocList.reallocate",
+            1
+          ],
+          [
+            "_tlv_get_addr",
+            1
+          ],
+          [
+            "DYLD-STUB$$mach_boottime_usec",
+            1
+          ],
+          [
+            "roc__p7f95ed46022205c5413858b3de8531cb.fast",
+            1
+          ],
+          [
+            "mi_find_page",
+            1
+          ]
+        ],
+        "frame_exclusive_top": [],
+        "ancestry_unions": {
+          "registration admission/removal": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "host mutex lifecycle": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "frame copy actions": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "capacity-buffer calls": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "memory move/copy": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "frame actions": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "tail cleanup": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "canonical construction/admission": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "schema closure": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "projection accounting": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "thread-local lookup": {
+            "weights": 1,
+            "percent": 0.06591957811470006
+          }
+        },
+        "ancestry_groups_overlap": true
+      }
+    }
+  },
+  "diagnostic_cpu_elapsed": {
+    "before": {
+      "observations": 32,
+      "median_seconds": 0.003937042
+    },
+    "after": {
+      "observations": 32,
+      "median_seconds": 0.003982542
+    },
+    "change_percent": 1.1556899824792355,
+    "scope": "Elapsed observations from the separate CPU-counter diagnostic cohort; all excluded from primary timing. Preserve its measured direction independently of the matched primary result."
+  },
+  "binary_audit": {
+    "MSUB": {
+      "after": 16,
+      "before": 16,
+      "delta": 0
+    },
+    "UDIV": {
+      "after": 101,
+      "before": 101,
+      "delta": 0
+    },
+    "after": {
+      "descriptor.json": {
+        "path": "/private/tmp/mech-first-change-spill-round61-20261031/linked-primary/after/descriptor.json",
+        "sha256": "b87db111e0978c4b045da2325598f1e79d6f47767e4e0c3d62c028e937617f59"
+      },
+      "metadata.json": {
+        "path": "/private/tmp/mech-first-change-spill-round61-20261031/linked-primary/after/metadata.json",
+        "sha256": "8c98427567f2891707a230b5d5e696a8fe0c2d39d62bd40a309ec9a905a04b4e"
+      },
+      "object.o": {
+        "path": "/private/tmp/mech-first-change-spill-round61-20261031/linked-primary/after/object.o",
+        "sha256": "4e222709764d92ac2b2b74e06a7237d3b901bf07cf095e1c23a7751c0dd8269d"
+      }
+    },
+    "before": {
+      "descriptor.json": {
+        "path": "/private/tmp/mech-vector-address-round60-20261031/linked-primary/after/descriptor.json",
+        "sha256": "e35fb1e1fe3793cfa215aed86401c611a2838235a47b9ae87ccf598aca633114"
+      },
+      "metadata.json": {
+        "path": "/private/tmp/mech-vector-address-round60-20261031/linked-primary/after/metadata.json",
+        "sha256": "06a7bbee4ae717717aa60ccb5a9853f0ccc5ec34a86b3c854c93aa4505ad438e"
+      },
+      "object.o": {
+        "path": "/private/tmp/mech-vector-address-round60-20261031/linked-primary/after/object.o",
+        "sha256": "7a211a5fcdfbbc1ceb1ad93a305380712da0af560c30fb387a34673165f04bc5"
+      }
+    },
+    "code_bytes": {
+      "after": 13082688,
+      "before": 13806352,
+      "delta": -723664
+    },
+    "opcode_delta": {
+      "add": -51,
+      "adds": 0,
+      "and": -422,
+      "b": 1,
+      "b.eq": -23,
+      "b.hi": -28,
+      "b.hs": -4,
+      "b.lo": 4,
+      "b.ls": 28,
+      "b.ne": 23,
+      "blr": 0,
+      "cbnz": 0,
+      "cbz": 0,
+      "clz": 0,
+      "cmp": 0,
+      "cset": 0,
+      "eor": 0,
+      "ldp": 0,
+      "ldr": -34977,
+      "ldrb": 0,
+      "ldur": -40,
+      "lsl": -5,
+      "lsr": -3,
+      "madd": 0,
+      "mov": -59113,
+      "movk": -48608,
+      "msub": 0,
+      "mul": 0,
+      "mvn": 0,
+      "orr": -73,
+      "pacibsp": 0,
+      "rbit": 0,
+      "retab": 0,
+      "smulh": 0,
+      "stp": 0,
+      "str": -35975,
+      "strb": 0,
+      "stur": -25,
+      "sub": 0,
+      "subs": 0,
+      "udf": 0,
+      "udiv": 0,
+      "umulh": 0,
+      "uxtb": -1625
+    },
+    "same_typed_ir": true,
+    "scope": "Static before/after encoded instructions; no dynamic or elapsed claims.",
+    "stack_bytes": {
+      "after": 105552,
+      "before": 108880,
+      "delta": -3328
+    },
+    "static_instructions": {
+      "after": 3270672,
+      "before": 3451588,
+      "delta": -180916
+    },
+    "stack_accesses": {
+      "scope": "Static scalar stack-access comparison; not dynamic visits or hardware counters.",
+      "pointers": {
+        "locals": {
+          "before_slot": "0x1a8d8",
+          "after_slot": "0x19bd0",
+          "before_loads": 181076,
+          "after_loads": 165897,
+          "delta": -15179
+        },
+        "context": {
+          "before_slot": "0x1a8d0",
+          "after_slot": "0x19bc8",
+          "before_loads": 55450,
+          "after_loads": 55450,
+          "delta": 0
+        },
+        "admit_callback": {
+          "before_slot": "0x1a8c8",
+          "after_slot": "0x19bc0",
+          "before_loads": 39938,
+          "after_loads": 39938,
+          "delta": 0
+        },
+        "helper": {
+          "before_slot": "0x1a8c0",
+          "after_slot": "0x19bb8",
+          "before_loads": 15518,
+          "after_loads": 15518,
+          "delta": 0
+        },
+        "result": {
+          "before_slot": "0x1a8b8",
+          "after_slot": "0x19bb0",
+          "before_loads": 27564,
+          "after_loads": 27564,
+          "delta": 0
+        },
+        "arguments": {
+          "before_slot": "0x1a8b0",
+          "after_slot": "0x19ba8",
+          "before_loads": 31255,
+          "after_loads": 31199,
+          "delta": -56
+        },
+        "argument_capacity": {
+          "before_slot": "0x1a8a8",
+          "after_slot": "0x19ba0",
+          "before_loads": 8348,
+          "after_loads": 8345,
+          "delta": -3
+        },
+        "frame": {
+          "before_slot": "0x0",
+          "after_slot": "0x0",
+          "before_loads": 113038,
+          "after_loads": 113038,
+          "delta": 0
+        }
+      },
+      "total": {
+        "stack_load": {
+          "before": 628971,
+          "after": 593954,
+          "delta": -35017
+        },
+        "stack_store": {
+          "before": 144326,
+          "after": 137100,
+          "delta": -7226
+        },
+        "indexed_stack_load": {
+          "before": 468335,
+          "after": 438478,
+          "delta": -29857
+        },
+        "indexed_stack_store": {
+          "before": 117001,
+          "after": 111582,
+          "delta": -5419
+        }
+      }
+    },
+    "first_change_snapshot_store_reconciliation": {
+      "static_bridges": 312,
+      "static_local_stores_removed": 28774,
+      "regions": [
+        {
+          "header": 119,
+          "register_words": 31,
+          "first_change_boundaries": [
+            160
+          ],
+          "removed_local_stores": 31
+        },
+        {
+          "header": 184,
+          "register_words": 86,
+          "first_change_boundaries": [
+            313
+          ],
+          "removed_local_stores": 86
+        },
+        {
+          "header": 350,
+          "register_words": 59,
+          "first_change_boundaries": [
+            418
+          ],
+          "removed_local_stores": 59
+        },
+        {
+          "header": 724,
+          "register_words": 41,
+          "first_change_boundaries": [
+            755
+          ],
+          "removed_local_stores": 41
+        },
+        {
+          "header": 5031,
+          "register_words": 44,
+          "first_change_boundaries": [
+            5073,
+            5076
+          ],
+          "removed_local_stores": 88
+        },
+        {
+          "header": 5105,
+          "register_words": 39,
+          "first_change_boundaries": [
+            5150,
+            5152
+          ],
+          "removed_local_stores": 78
+        },
+        {
+          "header": 5311,
+          "register_words": 39,
+          "first_change_boundaries": [
+            5356,
+            5358
+          ],
+          "removed_local_stores": 78
+        },
+        {
+          "header": 5397,
+          "register_words": 44,
+          "first_change_boundaries": [
+            5439,
+            5442
+          ],
+          "removed_local_stores": 88
+        },
+        {
+          "header": 5538,
+          "register_words": 53,
+          "first_change_boundaries": [
+            5598
+          ],
+          "removed_local_stores": 53
+        },
+        {
+          "header": 5680,
+          "register_words": 53,
+          "first_change_boundaries": [
+            5748
+          ],
+          "removed_local_stores": 53
+        },
+        {
+          "header": 5759,
+          "register_words": 43,
+          "first_change_boundaries": [
+            5795
+          ],
+          "removed_local_stores": 43
+        },
+        {
+          "header": 5822,
+          "register_words": 77,
+          "first_change_boundaries": [
+            5897,
+            5907,
+            5913
+          ],
+          "removed_local_stores": 231
+        },
+        {
+          "header": 6024,
+          "register_words": 81,
+          "first_change_boundaries": [
+            6130,
+            6159
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 6260,
+          "register_words": 81,
+          "first_change_boundaries": [
+            6366,
+            6395
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 6482,
+          "register_words": 198,
+          "first_change_boundaries": [
+            6672,
+            6678,
+            6713,
+            6753
+          ],
+          "removed_local_stores": 792
+        },
+        {
+          "header": 7060,
+          "register_words": 51,
+          "first_change_boundaries": [
+            7101
+          ],
+          "removed_local_stores": 51
+        },
+        {
+          "header": 7146,
+          "register_words": 59,
+          "first_change_boundaries": [
+            7215
+          ],
+          "removed_local_stores": 59
+        },
+        {
+          "header": 7226,
+          "register_words": 90,
+          "first_change_boundaries": [
+            7286,
+            7339
+          ],
+          "removed_local_stores": 180
+        },
+        {
+          "header": 7407,
+          "register_words": 53,
+          "first_change_boundaries": [
+            7475
+          ],
+          "removed_local_stores": 53
+        },
+        {
+          "header": 7486,
+          "register_words": 43,
+          "first_change_boundaries": [
+            7522
+          ],
+          "removed_local_stores": 43
+        },
+        {
+          "header": 7549,
+          "register_words": 77,
+          "first_change_boundaries": [
+            7624,
+            7634,
+            7640
+          ],
+          "removed_local_stores": 231
+        },
+        {
+          "header": 7751,
+          "register_words": 81,
+          "first_change_boundaries": [
+            7857,
+            7886
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 7987,
+          "register_words": 81,
+          "first_change_boundaries": [
+            8093,
+            8122
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 8209,
+          "register_words": 198,
+          "first_change_boundaries": [
+            8399,
+            8405,
+            8440,
+            8480
+          ],
+          "removed_local_stores": 792
+        },
+        {
+          "header": 8787,
+          "register_words": 51,
+          "first_change_boundaries": [
+            8828
+          ],
+          "removed_local_stores": 51
+        },
+        {
+          "header": 8873,
+          "register_words": 59,
+          "first_change_boundaries": [
+            8942
+          ],
+          "removed_local_stores": 59
+        },
+        {
+          "header": 8953,
+          "register_words": 90,
+          "first_change_boundaries": [
+            9013,
+            9066
+          ],
+          "removed_local_stores": 180
+        },
+        {
+          "header": 9215,
+          "register_words": 36,
+          "first_change_boundaries": [
+            9250
+          ],
+          "removed_local_stores": 36
+        },
+        {
+          "header": 9261,
+          "register_words": 36,
+          "first_change_boundaries": [
+            9296
+          ],
+          "removed_local_stores": 36
+        },
+        {
+          "header": 9425,
+          "register_words": 78,
+          "first_change_boundaries": [
+            9475,
+            9484
+          ],
+          "removed_local_stores": 156
+        },
+        {
+          "header": 9630,
+          "register_words": 69,
+          "first_change_boundaries": [
+            9674,
+            9683
+          ],
+          "removed_local_stores": 138
+        },
+        {
+          "header": 9717,
+          "register_words": 75,
+          "first_change_boundaries": [
+            9757,
+            9766
+          ],
+          "removed_local_stores": 150
+        },
+        {
+          "header": 9859,
+          "register_words": 53,
+          "first_change_boundaries": [
+            9927
+          ],
+          "removed_local_stores": 53
+        },
+        {
+          "header": 9938,
+          "register_words": 43,
+          "first_change_boundaries": [
+            9974
+          ],
+          "removed_local_stores": 43
+        },
+        {
+          "header": 10001,
+          "register_words": 77,
+          "first_change_boundaries": [
+            10076,
+            10086,
+            10092
+          ],
+          "removed_local_stores": 231
+        },
+        {
+          "header": 10203,
+          "register_words": 81,
+          "first_change_boundaries": [
+            10309,
+            10338
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 10439,
+          "register_words": 81,
+          "first_change_boundaries": [
+            10545,
+            10574
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 10661,
+          "register_words": 198,
+          "first_change_boundaries": [
+            10851,
+            10857,
+            10892,
+            10932
+          ],
+          "removed_local_stores": 792
+        },
+        {
+          "header": 11239,
+          "register_words": 51,
+          "first_change_boundaries": [
+            11280
+          ],
+          "removed_local_stores": 51
+        },
+        {
+          "header": 11325,
+          "register_words": 59,
+          "first_change_boundaries": [
+            11394
+          ],
+          "removed_local_stores": 59
+        },
+        {
+          "header": 11405,
+          "register_words": 90,
+          "first_change_boundaries": [
+            11465,
+            11518
+          ],
+          "removed_local_stores": 180
+        },
+        {
+          "header": 12130,
+          "register_words": 43,
+          "first_change_boundaries": [
+            12178
+          ],
+          "removed_local_stores": 43
+        },
+        {
+          "header": 12189,
+          "register_words": 74,
+          "first_change_boundaries": [
+            12283
+          ],
+          "removed_local_stores": 74
+        },
+        {
+          "header": 12294,
+          "register_words": 58,
+          "first_change_boundaries": [
+            12365
+          ],
+          "removed_local_stores": 58
+        },
+        {
+          "header": 12388,
+          "register_words": 23,
+          "first_change_boundaries": [
+            12402
+          ],
+          "removed_local_stores": 23
+        },
+        {
+          "header": 12868,
+          "register_words": 53,
+          "first_change_boundaries": [
+            12928
+          ],
+          "removed_local_stores": 53
+        },
+        {
+          "header": 13284,
+          "register_words": 26,
+          "first_change_boundaries": [
+            13301
+          ],
+          "removed_local_stores": 26
+        },
+        {
+          "header": 13312,
+          "register_words": 58,
+          "first_change_boundaries": [
+            13375
+          ],
+          "removed_local_stores": 58
+        },
+        {
+          "header": 13386,
+          "register_words": 41,
+          "first_change_boundaries": [
+            13426
+          ],
+          "removed_local_stores": 41
+        },
+        {
+          "header": 13537,
+          "register_words": 26,
+          "first_change_boundaries": [
+            13554
+          ],
+          "removed_local_stores": 26
+        },
+        {
+          "header": 13565,
+          "register_words": 58,
+          "first_change_boundaries": [
+            13628
+          ],
+          "removed_local_stores": 58
+        },
+        {
+          "header": 13639,
+          "register_words": 41,
+          "first_change_boundaries": [
+            13679
+          ],
+          "removed_local_stores": 41
+        },
+        {
+          "header": 13701,
+          "register_words": 70,
+          "first_change_boundaries": [
+            13785
+          ],
+          "removed_local_stores": 70
+        },
+        {
+          "header": 13796,
+          "register_words": 102,
+          "first_change_boundaries": [
+            13926
+          ],
+          "removed_local_stores": 102
+        },
+        {
+          "header": 13937,
+          "register_words": 85,
+          "first_change_boundaries": [
+            14044
+          ],
+          "removed_local_stores": 85
+        },
+        {
+          "header": 14066,
+          "register_words": 70,
+          "first_change_boundaries": [
+            14150
+          ],
+          "removed_local_stores": 70
+        },
+        {
+          "header": 14161,
+          "register_words": 102,
+          "first_change_boundaries": [
+            14291
+          ],
+          "removed_local_stores": 102
+        },
+        {
+          "header": 14302,
+          "register_words": 85,
+          "first_change_boundaries": [
+            14409
+          ],
+          "removed_local_stores": 85
+        },
+        {
+          "header": 14430,
+          "register_words": 70,
+          "first_change_boundaries": [
+            14514
+          ],
+          "removed_local_stores": 70
+        },
+        {
+          "header": 14525,
+          "register_words": 102,
+          "first_change_boundaries": [
+            14655
+          ],
+          "removed_local_stores": 102
+        },
+        {
+          "header": 14666,
+          "register_words": 85,
+          "first_change_boundaries": [
+            14773
+          ],
+          "removed_local_stores": 85
+        },
+        {
+          "header": 14788,
+          "register_words": 70,
+          "first_change_boundaries": [
+            14872
+          ],
+          "removed_local_stores": 70
+        },
+        {
+          "header": 14883,
+          "register_words": 102,
+          "first_change_boundaries": [
+            15013
+          ],
+          "removed_local_stores": 102
+        },
+        {
+          "header": 15024,
+          "register_words": 85,
+          "first_change_boundaries": [
+            15131
+          ],
+          "removed_local_stores": 85
+        },
+        {
+          "header": 15265,
+          "register_words": 23,
+          "first_change_boundaries": [
+            15279
+          ],
+          "removed_local_stores": 23
+        },
+        {
+          "header": 15737,
+          "register_words": 143,
+          "first_change_boundaries": [
+            15815,
+            15867,
+            15916
+          ],
+          "removed_local_stores": 429
+        },
+        {
+          "header": 16010,
+          "register_words": 53,
+          "first_change_boundaries": [
+            16078
+          ],
+          "removed_local_stores": 53
+        },
+        {
+          "header": 16089,
+          "register_words": 43,
+          "first_change_boundaries": [
+            16125
+          ],
+          "removed_local_stores": 43
+        },
+        {
+          "header": 16152,
+          "register_words": 77,
+          "first_change_boundaries": [
+            16227,
+            16237,
+            16243
+          ],
+          "removed_local_stores": 231
+        },
+        {
+          "header": 16354,
+          "register_words": 81,
+          "first_change_boundaries": [
+            16460,
+            16489
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 16590,
+          "register_words": 81,
+          "first_change_boundaries": [
+            16696,
+            16725
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 16812,
+          "register_words": 198,
+          "first_change_boundaries": [
+            17002,
+            17008,
+            17043,
+            17083
+          ],
+          "removed_local_stores": 792
+        },
+        {
+          "header": 17390,
+          "register_words": 51,
+          "first_change_boundaries": [
+            17431
+          ],
+          "removed_local_stores": 51
+        },
+        {
+          "header": 17476,
+          "register_words": 59,
+          "first_change_boundaries": [
+            17545
+          ],
+          "removed_local_stores": 59
+        },
+        {
+          "header": 17556,
+          "register_words": 90,
+          "first_change_boundaries": [
+            17616,
+            17669
+          ],
+          "removed_local_stores": 180
+        },
+        {
+          "header": 17737,
+          "register_words": 53,
+          "first_change_boundaries": [
+            17805
+          ],
+          "removed_local_stores": 53
+        },
+        {
+          "header": 17816,
+          "register_words": 43,
+          "first_change_boundaries": [
+            17852
+          ],
+          "removed_local_stores": 43
+        },
+        {
+          "header": 17879,
+          "register_words": 77,
+          "first_change_boundaries": [
+            17954,
+            17964,
+            17970
+          ],
+          "removed_local_stores": 231
+        },
+        {
+          "header": 18081,
+          "register_words": 81,
+          "first_change_boundaries": [
+            18187,
+            18216
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 18317,
+          "register_words": 81,
+          "first_change_boundaries": [
+            18423,
+            18452
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 18539,
+          "register_words": 198,
+          "first_change_boundaries": [
+            18729,
+            18735,
+            18770,
+            18810
+          ],
+          "removed_local_stores": 792
+        },
+        {
+          "header": 19117,
+          "register_words": 51,
+          "first_change_boundaries": [
+            19158
+          ],
+          "removed_local_stores": 51
+        },
+        {
+          "header": 19203,
+          "register_words": 59,
+          "first_change_boundaries": [
+            19272
+          ],
+          "removed_local_stores": 59
+        },
+        {
+          "header": 19283,
+          "register_words": 90,
+          "first_change_boundaries": [
+            19343,
+            19396
+          ],
+          "removed_local_stores": 180
+        },
+        {
+          "header": 19545,
+          "register_words": 36,
+          "first_change_boundaries": [
+            19580
+          ],
+          "removed_local_stores": 36
+        },
+        {
+          "header": 19591,
+          "register_words": 36,
+          "first_change_boundaries": [
+            19626
+          ],
+          "removed_local_stores": 36
+        },
+        {
+          "header": 19755,
+          "register_words": 78,
+          "first_change_boundaries": [
+            19805,
+            19814
+          ],
+          "removed_local_stores": 156
+        },
+        {
+          "header": 19960,
+          "register_words": 69,
+          "first_change_boundaries": [
+            20004,
+            20013
+          ],
+          "removed_local_stores": 138
+        },
+        {
+          "header": 20047,
+          "register_words": 75,
+          "first_change_boundaries": [
+            20087,
+            20096
+          ],
+          "removed_local_stores": 150
+        },
+        {
+          "header": 20189,
+          "register_words": 53,
+          "first_change_boundaries": [
+            20257
+          ],
+          "removed_local_stores": 53
+        },
+        {
+          "header": 20268,
+          "register_words": 43,
+          "first_change_boundaries": [
+            20304
+          ],
+          "removed_local_stores": 43
+        },
+        {
+          "header": 20331,
+          "register_words": 77,
+          "first_change_boundaries": [
+            20406,
+            20416,
+            20422
+          ],
+          "removed_local_stores": 231
+        },
+        {
+          "header": 20533,
+          "register_words": 81,
+          "first_change_boundaries": [
+            20639,
+            20668
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 20769,
+          "register_words": 81,
+          "first_change_boundaries": [
+            20875,
+            20904
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 20991,
+          "register_words": 198,
+          "first_change_boundaries": [
+            21181,
+            21187,
+            21222,
+            21262
+          ],
+          "removed_local_stores": 792
+        },
+        {
+          "header": 21569,
+          "register_words": 51,
+          "first_change_boundaries": [
+            21610
+          ],
+          "removed_local_stores": 51
+        },
+        {
+          "header": 21655,
+          "register_words": 59,
+          "first_change_boundaries": [
+            21724
+          ],
+          "removed_local_stores": 59
+        },
+        {
+          "header": 21735,
+          "register_words": 90,
+          "first_change_boundaries": [
+            21795,
+            21848
+          ],
+          "removed_local_stores": 180
+        },
+        {
+          "header": 22442,
+          "register_words": 43,
+          "first_change_boundaries": [
+            22490
+          ],
+          "removed_local_stores": 43
+        },
+        {
+          "header": 22501,
+          "register_words": 74,
+          "first_change_boundaries": [
+            22595
+          ],
+          "removed_local_stores": 74
+        },
+        {
+          "header": 22606,
+          "register_words": 58,
+          "first_change_boundaries": [
+            22677
+          ],
+          "removed_local_stores": 58
+        },
+        {
+          "header": 22773,
+          "register_words": 53,
+          "first_change_boundaries": [
+            22833
+          ],
+          "removed_local_stores": 53
+        },
+        {
+          "header": 22915,
+          "register_words": 53,
+          "first_change_boundaries": [
+            22983
+          ],
+          "removed_local_stores": 53
+        },
+        {
+          "header": 22994,
+          "register_words": 43,
+          "first_change_boundaries": [
+            23030
+          ],
+          "removed_local_stores": 43
+        },
+        {
+          "header": 23057,
+          "register_words": 77,
+          "first_change_boundaries": [
+            23132,
+            23142,
+            23148
+          ],
+          "removed_local_stores": 231
+        },
+        {
+          "header": 23259,
+          "register_words": 81,
+          "first_change_boundaries": [
+            23365,
+            23394
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 23495,
+          "register_words": 81,
+          "first_change_boundaries": [
+            23601,
+            23630
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 23717,
+          "register_words": 198,
+          "first_change_boundaries": [
+            23907,
+            23913,
+            23948,
+            23988
+          ],
+          "removed_local_stores": 792
+        },
+        {
+          "header": 24295,
+          "register_words": 51,
+          "first_change_boundaries": [
+            24336
+          ],
+          "removed_local_stores": 51
+        },
+        {
+          "header": 24381,
+          "register_words": 59,
+          "first_change_boundaries": [
+            24450
+          ],
+          "removed_local_stores": 59
+        },
+        {
+          "header": 24461,
+          "register_words": 90,
+          "first_change_boundaries": [
+            24521,
+            24574
+          ],
+          "removed_local_stores": 180
+        },
+        {
+          "header": 24642,
+          "register_words": 53,
+          "first_change_boundaries": [
+            24710
+          ],
+          "removed_local_stores": 53
+        },
+        {
+          "header": 24721,
+          "register_words": 43,
+          "first_change_boundaries": [
+            24757
+          ],
+          "removed_local_stores": 43
+        },
+        {
+          "header": 24784,
+          "register_words": 77,
+          "first_change_boundaries": [
+            24859,
+            24869,
+            24875
+          ],
+          "removed_local_stores": 231
+        },
+        {
+          "header": 24986,
+          "register_words": 81,
+          "first_change_boundaries": [
+            25092,
+            25121
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 25222,
+          "register_words": 81,
+          "first_change_boundaries": [
+            25328,
+            25357
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 25444,
+          "register_words": 198,
+          "first_change_boundaries": [
+            25634,
+            25640,
+            25675,
+            25715
+          ],
+          "removed_local_stores": 792
+        },
+        {
+          "header": 26022,
+          "register_words": 51,
+          "first_change_boundaries": [
+            26063
+          ],
+          "removed_local_stores": 51
+        },
+        {
+          "header": 26108,
+          "register_words": 59,
+          "first_change_boundaries": [
+            26177
+          ],
+          "removed_local_stores": 59
+        },
+        {
+          "header": 26188,
+          "register_words": 90,
+          "first_change_boundaries": [
+            26248,
+            26301
+          ],
+          "removed_local_stores": 180
+        },
+        {
+          "header": 26339,
+          "register_words": 43,
+          "first_change_boundaries": [
+            26387
+          ],
+          "removed_local_stores": 43
+        },
+        {
+          "header": 26398,
+          "register_words": 74,
+          "first_change_boundaries": [
+            26492
+          ],
+          "removed_local_stores": 74
+        },
+        {
+          "header": 26503,
+          "register_words": 58,
+          "first_change_boundaries": [
+            26574
+          ],
+          "removed_local_stores": 58
+        },
+        {
+          "header": 26606,
+          "register_words": 43,
+          "first_change_boundaries": [
+            26654
+          ],
+          "removed_local_stores": 43
+        },
+        {
+          "header": 26665,
+          "register_words": 74,
+          "first_change_boundaries": [
+            26759
+          ],
+          "removed_local_stores": 74
+        },
+        {
+          "header": 26770,
+          "register_words": 58,
+          "first_change_boundaries": [
+            26841
+          ],
+          "removed_local_stores": 58
+        },
+        {
+          "header": 26864,
+          "register_words": 23,
+          "first_change_boundaries": [
+            26878
+          ],
+          "removed_local_stores": 23
+        },
+        {
+          "header": 27336,
+          "register_words": 143,
+          "first_change_boundaries": [
+            27414,
+            27466,
+            27515
+          ],
+          "removed_local_stores": 429
+        },
+        {
+          "header": 27609,
+          "register_words": 53,
+          "first_change_boundaries": [
+            27677
+          ],
+          "removed_local_stores": 53
+        },
+        {
+          "header": 27688,
+          "register_words": 43,
+          "first_change_boundaries": [
+            27724
+          ],
+          "removed_local_stores": 43
+        },
+        {
+          "header": 27751,
+          "register_words": 77,
+          "first_change_boundaries": [
+            27826,
+            27836,
+            27842
+          ],
+          "removed_local_stores": 231
+        },
+        {
+          "header": 27953,
+          "register_words": 81,
+          "first_change_boundaries": [
+            28059,
+            28088
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 28189,
+          "register_words": 81,
+          "first_change_boundaries": [
+            28295,
+            28324
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 28411,
+          "register_words": 198,
+          "first_change_boundaries": [
+            28601,
+            28607,
+            28642,
+            28682
+          ],
+          "removed_local_stores": 792
+        },
+        {
+          "header": 28989,
+          "register_words": 51,
+          "first_change_boundaries": [
+            29030
+          ],
+          "removed_local_stores": 51
+        },
+        {
+          "header": 29075,
+          "register_words": 59,
+          "first_change_boundaries": [
+            29144
+          ],
+          "removed_local_stores": 59
+        },
+        {
+          "header": 29155,
+          "register_words": 90,
+          "first_change_boundaries": [
+            29215,
+            29268
+          ],
+          "removed_local_stores": 180
+        },
+        {
+          "header": 29336,
+          "register_words": 53,
+          "first_change_boundaries": [
+            29404
+          ],
+          "removed_local_stores": 53
+        },
+        {
+          "header": 29415,
+          "register_words": 43,
+          "first_change_boundaries": [
+            29451
+          ],
+          "removed_local_stores": 43
+        },
+        {
+          "header": 29478,
+          "register_words": 77,
+          "first_change_boundaries": [
+            29553,
+            29563,
+            29569
+          ],
+          "removed_local_stores": 231
+        },
+        {
+          "header": 29680,
+          "register_words": 81,
+          "first_change_boundaries": [
+            29786,
+            29815
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 29916,
+          "register_words": 81,
+          "first_change_boundaries": [
+            30022,
+            30051
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 30138,
+          "register_words": 198,
+          "first_change_boundaries": [
+            30328,
+            30334,
+            30369,
+            30409
+          ],
+          "removed_local_stores": 792
+        },
+        {
+          "header": 30716,
+          "register_words": 51,
+          "first_change_boundaries": [
+            30757
+          ],
+          "removed_local_stores": 51
+        },
+        {
+          "header": 30802,
+          "register_words": 59,
+          "first_change_boundaries": [
+            30871
+          ],
+          "removed_local_stores": 59
+        },
+        {
+          "header": 30882,
+          "register_words": 90,
+          "first_change_boundaries": [
+            30942,
+            30995
+          ],
+          "removed_local_stores": 180
+        },
+        {
+          "header": 31055,
+          "register_words": 23,
+          "first_change_boundaries": [
+            31069
+          ],
+          "removed_local_stores": 23
+        },
+        {
+          "header": 31527,
+          "register_words": 143,
+          "first_change_boundaries": [
+            31605,
+            31657,
+            31706
+          ],
+          "removed_local_stores": 429
+        },
+        {
+          "header": 31800,
+          "register_words": 53,
+          "first_change_boundaries": [
+            31868
+          ],
+          "removed_local_stores": 53
+        },
+        {
+          "header": 31879,
+          "register_words": 43,
+          "first_change_boundaries": [
+            31915
+          ],
+          "removed_local_stores": 43
+        },
+        {
+          "header": 31942,
+          "register_words": 77,
+          "first_change_boundaries": [
+            32017,
+            32027,
+            32033
+          ],
+          "removed_local_stores": 231
+        },
+        {
+          "header": 32144,
+          "register_words": 81,
+          "first_change_boundaries": [
+            32250,
+            32279
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 32380,
+          "register_words": 81,
+          "first_change_boundaries": [
+            32486,
+            32515
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 32602,
+          "register_words": 198,
+          "first_change_boundaries": [
+            32792,
+            32798,
+            32833,
+            32873
+          ],
+          "removed_local_stores": 792
+        },
+        {
+          "header": 33180,
+          "register_words": 51,
+          "first_change_boundaries": [
+            33221
+          ],
+          "removed_local_stores": 51
+        },
+        {
+          "header": 33266,
+          "register_words": 59,
+          "first_change_boundaries": [
+            33335
+          ],
+          "removed_local_stores": 59
+        },
+        {
+          "header": 33346,
+          "register_words": 90,
+          "first_change_boundaries": [
+            33406,
+            33459
+          ],
+          "removed_local_stores": 180
+        },
+        {
+          "header": 33527,
+          "register_words": 53,
+          "first_change_boundaries": [
+            33595
+          ],
+          "removed_local_stores": 53
+        },
+        {
+          "header": 33606,
+          "register_words": 43,
+          "first_change_boundaries": [
+            33642
+          ],
+          "removed_local_stores": 43
+        },
+        {
+          "header": 33669,
+          "register_words": 77,
+          "first_change_boundaries": [
+            33744,
+            33754,
+            33760
+          ],
+          "removed_local_stores": 231
+        },
+        {
+          "header": 33871,
+          "register_words": 81,
+          "first_change_boundaries": [
+            33977,
+            34006
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 34107,
+          "register_words": 81,
+          "first_change_boundaries": [
+            34213,
+            34242
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 34329,
+          "register_words": 198,
+          "first_change_boundaries": [
+            34519,
+            34525,
+            34560,
+            34600
+          ],
+          "removed_local_stores": 792
+        },
+        {
+          "header": 34907,
+          "register_words": 51,
+          "first_change_boundaries": [
+            34948
+          ],
+          "removed_local_stores": 51
+        },
+        {
+          "header": 34993,
+          "register_words": 59,
+          "first_change_boundaries": [
+            35062
+          ],
+          "removed_local_stores": 59
+        },
+        {
+          "header": 35073,
+          "register_words": 90,
+          "first_change_boundaries": [
+            35133,
+            35186
+          ],
+          "removed_local_stores": 180
+        },
+        {
+          "header": 35224,
+          "register_words": 43,
+          "first_change_boundaries": [
+            35272
+          ],
+          "removed_local_stores": 43
+        },
+        {
+          "header": 35283,
+          "register_words": 74,
+          "first_change_boundaries": [
+            35377
+          ],
+          "removed_local_stores": 74
+        },
+        {
+          "header": 35388,
+          "register_words": 58,
+          "first_change_boundaries": [
+            35459
+          ],
+          "removed_local_stores": 58
+        },
+        {
+          "header": 35609,
+          "register_words": 36,
+          "first_change_boundaries": [
+            35644
+          ],
+          "removed_local_stores": 36
+        },
+        {
+          "header": 35655,
+          "register_words": 36,
+          "first_change_boundaries": [
+            35690
+          ],
+          "removed_local_stores": 36
+        },
+        {
+          "header": 35819,
+          "register_words": 78,
+          "first_change_boundaries": [
+            35869,
+            35878
+          ],
+          "removed_local_stores": 156
+        },
+        {
+          "header": 36024,
+          "register_words": 69,
+          "first_change_boundaries": [
+            36068,
+            36077
+          ],
+          "removed_local_stores": 138
+        },
+        {
+          "header": 36111,
+          "register_words": 75,
+          "first_change_boundaries": [
+            36151,
+            36160
+          ],
+          "removed_local_stores": 150
+        },
+        {
+          "header": 36253,
+          "register_words": 53,
+          "first_change_boundaries": [
+            36321
+          ],
+          "removed_local_stores": 53
+        },
+        {
+          "header": 36332,
+          "register_words": 43,
+          "first_change_boundaries": [
+            36368
+          ],
+          "removed_local_stores": 43
+        },
+        {
+          "header": 36395,
+          "register_words": 77,
+          "first_change_boundaries": [
+            36470,
+            36480,
+            36486
+          ],
+          "removed_local_stores": 231
+        },
+        {
+          "header": 36597,
+          "register_words": 81,
+          "first_change_boundaries": [
+            36703,
+            36732
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 36833,
+          "register_words": 81,
+          "first_change_boundaries": [
+            36939,
+            36968
+          ],
+          "removed_local_stores": 162
+        },
+        {
+          "header": 37055,
+          "register_words": 198,
+          "first_change_boundaries": [
+            37245,
+            37251,
+            37286,
+            37326
+          ],
+          "removed_local_stores": 792
+        },
+        {
+          "header": 37633,
+          "register_words": 51,
+          "first_change_boundaries": [
+            37674
+          ],
+          "removed_local_stores": 51
+        },
+        {
+          "header": 37719,
+          "register_words": 59,
+          "first_change_boundaries": [
+            37788
+          ],
+          "removed_local_stores": 59
+        },
+        {
+          "header": 37799,
+          "register_words": 90,
+          "first_change_boundaries": [
+            37859,
+            37912
+          ],
+          "removed_local_stores": 180
+        },
+        {
+          "header": 39196,
+          "register_words": 111,
+          "first_change_boundaries": [
+            39311,
+            39334
+          ],
+          "removed_local_stores": 222
+        },
+        {
+          "header": 39702,
+          "register_words": 55,
+          "first_change_boundaries": [
+            39762
+          ],
+          "removed_local_stores": 55
+        },
+        {
+          "header": 39801,
+          "register_words": 55,
+          "first_change_boundaries": [
+            39861
+          ],
+          "removed_local_stores": 55
+        },
+        {
+          "header": 39900,
+          "register_words": 89,
+          "first_change_boundaries": [
+            40008
+          ],
+          "removed_local_stores": 89
+        },
+        {
+          "header": 40825,
+          "register_words": 36,
+          "first_change_boundaries": [
+            40863
+          ],
+          "removed_local_stores": 36
+        }
+      ]
+    }
+  },
+  "decision": {
+    "round": 61,
+    "candidate_build_source": "6f412525daf0f7284d4ef6bc2bd8e21f95d22e96",
+    "baseline_build_source": "aea11e1f17f05055535171fa1b0cb8b5ff2d4bcf",
+    "status": "retained",
+    "reason": "All required local qualification passes after correcting the review-evidence layout without changing the unsafe allowlist or production source. The matched complete-call primary elapsed improves 1.395305%, retired instructions improve 0.437626%, and cycles improve 0.201954%; exact output, logical work, error/retry behavior and allocation counts are preserved. The separate CPU-counter diagnostic elapsed (+1.155690%) and post-call physical footprint (+0.100258%) remain adverse and explicitly retained. The later R56-to-R61 confirmation is a separate cohort and does not contribute to this decision.",
+    "architecture_correction_receipt": "architecture-audit-fixed/result.json",
+    "qualification_required": true
+  },
+  "artifact_pin_equality": {
+    "object.o": false,
+    "descriptor.json": false,
+    "metadata.json": false
+  },
+  "census": {
+    "requests": 8173,
+    "requested_bytes": 98228396,
+    "reallocations": 162,
+    "unique_stacks_with_size_and_kind": 4712,
+    "unique_pcs": 1278,
+    "reconciled_to_heap_counters": true,
+    "scope": "Full candidate allocation trace; stack counts are exact requests, not CPU samples. No allocation saving claimed for removal of a generated scalar spill."
+  },
+  "changes_percent": {
+    "primary_seconds": -1.3953054704309853,
+    "instructions": -0.437626034425842,
+    "cycles": -0.20195434382772603,
+    "rss_after": -0.07688364941056403,
+    "physical_after": 0.10025776570965483,
+    "pageins": null,
+    "allocation_requests": 0.0,
+    "requested_bytes": 0.0,
+    "reallocations": 0.0,
+    "relocating_reallocations": 0.0,
+    "relocating_realloc_copy_upper_bound": 0.0,
+    "live_usable_before": 0.0,
+    "live_usable_after": 0.0,
+    "peak_live_usable": 0.0,
+    "incremental_peak_live_usable": 0.0
+  },
+  "reference_multiples": {
+    "cpu": {
+      "instructions": {
+        "before": 31.105552957697753,
+        "after": 30.969426959802753
+      },
+      "cycles": {
+        "before": 13.560702668024803,
+        "after": 13.533316239933164
+      },
+      "rss_after": {
+        "before": 21.677777777777777,
+        "after": 21.66111111111111
+      },
+      "physical_after": {
+        "before": 15.880749558965334,
+        "after": 15.8966712436511
+      }
+    },
+    "allocation": {
+      "allocation_requests": {
+        "before": 86.03157894736842,
+        "after": 86.03157894736842
+      },
+      "requested_bytes": {
+        "before": 10.887744885430745,
+        "after": 10.887744885430745
+      },
+      "live_usable_before": {
+        "before": 4468203.5,
+        "after": 4468203.5
+      },
+      "live_usable_after": {
+        "before": 4468219.25,
+        "after": 4468219.25
+      },
+      "peak_live_usable": {
+        "before": 17.657797039328706,
+        "after": 17.657797039328706
+      },
+      "incremental_peak_live_usable": {
+        "before": 2.212525255667726,
+        "after": 2.212525255667726
+      }
+    }
+  },
+  "contrary_primary_groups": [],
+  "contrary_counter_directions": {
+    "physical_after": 0.10025776570965483
+  },
+  "source_pins": {
+    "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+    "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+    "allocator_sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874",
+    "logical_work": 60260219686,
+    "comparison_work": 47612,
+    "input_bytes": 8,
+    "expected_output": [
+      75,
+      76,
+      74,
+      78,
+      73,
+      77,
+      75,
+      207,
+      0,
+      0
+    ],
+    "output_capacity": 13
+  },
+  "scope": "Complete eight-byte level-12 only. Same source/bytecode, algorithm, source allocation sites, buffer sizes, allocator and timing boundaries. Baseline R60 graph and candidate GPU-only rebuild; all non-GPU libraries, features and profile selection identical. Four independently prepared executable pairs. Counter, heap, stack-census and sample runs are separate serialized diagnostics. Post-call OS memory is not peak RSS; retained compiler/catalog/image storage is included. No larger-input or minimum standalone memory claim."
+}
