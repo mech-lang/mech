@@ -456,36 +456,7 @@ impl NativeLibraryWorkBudget {
         if required > limit {
             return Err(exceeded(required));
         }
-        CONTROL_WORK_CONTEXT.with(|context| {
-            self.check_context_account(context)?;
-            let mut account = self.account.borrow_mut();
-            // Only the const-initialized TLS lookup and account identity test
-            // separate the precheck from this same-thread account borrow. No
-            // kernel/user callback can change used.compute between them.
-            let next = ControlWork {
-                compute: required,
-                comparison: account.used.comparison,
-            };
-            let next =
-                checked_local_control_account_next_at_limits(&account, next, context.limits.get())?;
-            commit_control_account_work(&mut account, compute, 0, next)
-        })
-    }
-
-    #[inline(always)]
-    fn check_context_account(
-        &self,
-        context: &ControlWorkContext,
-    ) -> Result<(), ResidentKernelError> {
-        if context
-            .active
-            .borrow()
-            .as_ref()
-            .is_some_and(|current| !std::rc::Rc::ptr_eq(current, &self.account))
-        {
-            return Err(ResidentKernelError::InvalidInput);
-        }
-        Ok(())
+        CONTROL_WORK_CONTEXT.with(|context| self.charge_in_context(context, compute, 0))
     }
 
     #[inline(always)]
@@ -495,7 +466,14 @@ impl NativeLibraryWorkBudget {
         compute: u64,
         comparison: u64,
     ) -> Result<(), ResidentKernelError> {
-        self.check_context_account(context)?;
+        if context
+            .active
+            .borrow()
+            .as_ref()
+            .is_some_and(|current| !std::rc::Rc::ptr_eq(current, &self.account))
+        {
+            return Err(ResidentKernelError::InvalidInput);
+        }
         charge_control_account_at_limits(
             &mut self.account.borrow_mut(),
             compute,
@@ -881,6 +859,9 @@ fn checked_local_control_account_work_at_limits(
     comparison: u64,
     limits: Option<(u64, u64)>,
 ) -> Result<ControlWork, ResidentKernelError> {
+    let (root_compute, root_comparison) = limits.unwrap_or((u64::MAX, u64::MAX));
+    let compute_limit = account.compute_limit.min(root_compute);
+    let comparison_limit = account.comparison_limit.min(root_comparison);
     let compute = account
         .used
         .compute
@@ -891,37 +872,16 @@ fn checked_local_control_account_work_at_limits(
         .comparison
         .checked_add(comparison)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    checked_local_control_account_next_at_limits(
-        account,
-        ControlWork {
-            compute,
-            comparison,
-        },
-        limits,
-    )
-}
-
-// This is a current candidate, never stored admission or authority. Generic
-// callers compute both sums above; the compute-only native boundary forwards
-// its already checked sum. Reservations and both live caps remain shared.
-fn checked_local_control_account_next_at_limits(
-    account: &ControlWorkAccount,
-    next: ControlWork,
-    limits: Option<(u64, u64)>,
-) -> Result<ControlWork, ResidentKernelError> {
-    let (root_compute, root_comparison) = limits.unwrap_or((u64::MAX, u64::MAX));
-    let compute_limit = account.compute_limit.min(root_compute);
-    let comparison_limit = account.comparison_limit.min(root_comparison);
     for (required, limit, dimension) in [
         (
-            next.compute
+            compute
                 .checked_add(account.reserved.compute)
                 .ok_or(ResidentKernelError::InvalidShape)?,
             compute_limit,
             MemoryBudgetDimension::ComputeWork,
         ),
         (
-            next.comparison
+            comparison
                 .checked_add(account.reserved.comparison)
                 .ok_or(ResidentKernelError::InvalidShape)?,
             comparison_limit,
@@ -937,7 +897,10 @@ fn checked_local_control_account_next_at_limits(
             });
         }
     }
-    Ok(next)
+    Ok(ControlWork {
+        compute,
+        comparison,
+    })
 }
 
 #[cfg(feature = "native-artifact")]
@@ -985,23 +948,11 @@ fn charge_control_account_at_limits(
     // A real debit checks and commits both shared dimensions under one lock.
     // Eligibility-only callers retain the separate, non-spending preview.
     let next = checked_local_control_account_work_at_limits(account, compute, comparison, limits)?;
-    commit_control_account_work(account, compute, comparison, next)
-}
-
-// Both call sites finish the same local/reservation validation immediately
-// before this operation. The current shared-worker debit still precedes the
-// infallible local assignment, so denial cannot partially spend either ledger.
-fn commit_control_account_work(
-    account: &mut ControlWorkAccount,
-    _compute: u64,
-    _comparison: u64,
-    next: ControlWork,
-) -> Result<(), ResidentKernelError> {
     #[cfg(feature = "native-artifact")]
     if let Some(worker) = &account.worker {
         // Local call caps were checked first. Both shared dimensions commit
         // together before the infallible local-counter assignment.
-        worker.charge(_compute, _comparison)?;
+        worker.charge(compute, comparison)?;
     }
     account.used = next;
     Ok(())
