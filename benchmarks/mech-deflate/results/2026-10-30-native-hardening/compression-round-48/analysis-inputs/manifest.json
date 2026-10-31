@@ -1,0 +1,61 @@
+{
+  "created_utc": "2026-10-31T06:10:58.929199+00:00",
+  "head": "d8fb2d53ecefd868849e048a6adbbb02c0c51d25",
+  "files": [
+    {
+      "path": "analyze.py",
+      "sha256": "281e051bcd838854383f5fc4126a161cf2b847084e061fe7787c2f645efa78ed",
+      "bytes": 13196
+    },
+    {
+      "path": "archive.py",
+      "sha256": "63dffaf9f81ec69e072e7674f3b23bafeb1e81a91161f3310cb7357f42ba23f8",
+      "bytes": 1706
+    },
+    {
+      "path": "core-qualification/core-pin.json",
+      "sha256": "cd339a54f01e35231d95094ee7ab080c081d1c94f22b45e217b35d336ee326f5",
+      "bytes": 1813
+    },
+    {
+      "path": "core-qualification/summary.json",
+      "sha256": "6d3afd923eb686d43e34bed8c1423a6a257c3fee6752db8c9d6bdc1c2fbd4c6b",
+      "bytes": 40482
+    },
+    {
+      "path": "environment.json",
+      "sha256": "8e9b3d41ff08c227975094eadce5aa14a7963a0906d28ae1e3e2c498e1ef185b",
+      "bytes": 772
+    },
+    {
+      "path": "failure-disposition.txt",
+      "sha256": "65658cf279a32dacf9e4988f222ea9b7cbdc820c48070bdc2cf7f00e91c49d0d",
+      "bytes": 1098
+    },
+    {
+      "path": "implementation.json",
+      "sha256": "e48effd6824b5abe61cb63419b50b49c3bbe5688c4cfca948d3528ab6a6a4cb7",
+      "bytes": 259
+    },
+    {
+      "path": "profile-numbers.json",
+      "sha256": "abda636e6af1ce685b102845d0f61e2f8ca039db51b1a5c6737e3ca319b63dfe",
+      "bytes": 8512
+    },
+    {
+      "path": "profile_analysis.py",
+      "sha256": "61e116416b001871e754d6c6a1352cb5c4e0da7946a08e9e0f80de0c3d901e9f",
+      "bytes": 2593
+    },
+    {
+      "path": "units-initial-adapter/disposition.txt",
+      "sha256": "bc98a8653973f267e2d0e76829b2e8d4051aab0e6f28bc6cecab4ae15ab0d69e",
+      "bytes": 566
+    },
+    {
+      "path": "validation.json",
+      "sha256": "77e1571768366dfa27b97090bb347064bd6a1cebbfaaf6b54b469a5c713d857d",
+      "bytes": 1653
+    }
+  ]
+}
