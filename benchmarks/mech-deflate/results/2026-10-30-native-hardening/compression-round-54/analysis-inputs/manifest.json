@@ -1,0 +1,81 @@
+{
+  "created_utc": "2026-10-31T11:28:58.025394+00:00",
+  "head": "7280209b5d01354f98f2746bb31f387f767d82d8",
+  "files": [
+    {
+      "path": "allocation-target.json",
+      "sha256": "6e00fc6cfe954c46a00d32c30b0e9ec2b75de5c47c1d11f18ca63bf40e5f9b05",
+      "bytes": 1677
+    },
+    {
+      "path": "allocation_analysis.py",
+      "sha256": "1a87a6560501a64e6a5114f76ab9f75df9922700aba8eb62fb00f15593035fda",
+      "bytes": 1879
+    },
+    {
+      "path": "analyze.py",
+      "sha256": "23fd3e78183348a1a58c6dca134f1edda5fbd7f0edcbbd66a261474bfeacff18",
+      "bytes": 4868
+    },
+    {
+      "path": "attribution-comparison.json",
+      "sha256": "562d1722207d9a81abccdd676ff36b32d40100accd071255b9b4b693bd07d084",
+      "bytes": 2952
+    },
+    {
+      "path": "auxiliary-dependencies.json",
+      "sha256": "905f1064d7afbabc2b449bd40029af9568a716ede93bce5fd2b6bacabd1fa0bb",
+      "bytes": 5954
+    },
+    {
+      "path": "final-libraries.json",
+      "sha256": "c78d940ee244e60a15c8194501c246d8c4a523f7d39f201462ac2779a7905948",
+      "bytes": 10912
+    },
+    {
+      "path": "final-release.json",
+      "sha256": "fecb4cd1311cd54194ff0d88f909003674d73ac3bd62675ac6b2c2e39fca48f5",
+      "bytes": 5117
+    },
+    {
+      "path": "implementation.json",
+      "sha256": "a5dda461590d54cab0e4943efe3bb884d374fff0e1218e4ec73a50f3ec2ff91a",
+      "bytes": 490
+    },
+    {
+      "path": "linked-primary/before/binding.json",
+      "sha256": "cc134e0c51353dbef80896ab1f6e8c921ec26ae39c8073e6f2129e0ded7c6db7",
+      "bytes": 19262
+    },
+    {
+      "path": "linked-primary/before/metadata.json",
+      "sha256": "a1d3f2710f3c2bb40eeb7cd10529b87ad6eae1d3786b3811823ee07ea3c3cac9",
+      "bytes": 2542212
+    },
+    {
+      "path": "linked-primary/before/original-worker-build.json",
+      "sha256": "2f8f90c48da587a17b72ffdd8fb1de590fb48404f6ed99a20a604bc49602d270",
+      "bytes": 20288
+    },
+    {
+      "path": "linked-primary/before/worker-build.json",
+      "sha256": "ee7e50546d532e194edfc7df91ff4c3b3e19ed33ceaf863d646a983555c2f0ea",
+      "bytes": 20624
+    },
+    {
+      "path": "profile-numbers.json",
+      "sha256": "86ab982db5257342861a4f0f8391cdee3dbad0ee4f8ae8b86b02703f9a2ee942",
+      "bytes": 17549
+    },
+    {
+      "path": "profile_analysis.py",
+      "sha256": "59aa373062795d0e58ef9e7ba829a87b343e3362f23b4ca35ee36f514c403767",
+      "bytes": 2989
+    },
+    {
+      "path": "validation.json",
+      "sha256": "abfb4489bb30485f1bb28837fcb5400ab9661c84e2825134b34d7fa753877746",
+      "bytes": 1291
+    }
+  ]
+}
