@@ -433,11 +433,24 @@ fn private_numeric_publication_and_exclusive_retirement_do_not_allocate() {
                     );
                     let bytes = probe.memory_budget_admission_bytes(&memory).unwrap();
                     let mut reservation = memory.reserve_capacity(bytes).unwrap();
+                    let retry = probe.clone();
                     assert!(
-                        probe.into_memory_budget(&mut reservation).is_err(),
+                        matches!(
+                            probe.into_memory_budget(&mut reservation),
+                            Err(mech_core::MemoryRuntimeError::AllocationFailed { .. })
+                        ),
                         "publication and retirement must leave the injected failure armed"
                     );
                     drop(reservation);
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        (0, 0)
+                    );
+                    let bytes = retry.memory_budget_admission_bytes(&memory).unwrap();
+                    let mut reservation = memory.reserve_capacity(bytes).unwrap();
+                    let recovered = retry.into_memory_budget(&mut reservation).unwrap();
+                    recovered.validate_against(&schemas).unwrap();
+                    drop((recovered, reservation));
                     assert_eq!(
                         (memory.used_bytes(), memory.retained_snapshot_nodes()),
                         (0, 0)
