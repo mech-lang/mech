@@ -1,0 +1,86 @@
+{
+  "created_utc": "2026-10-31T08:59:50.906589+00:00",
+  "head": "80561a2a6d75f59b54b06a74be937c83744a9d39",
+  "files": [
+    {
+      "path": "probe/allocation_profile.h",
+      "sha256": "56852a08a6cb3fbba88daa10b8674cdb938933833722f0ed3bfcc8ae9ae9b31a",
+      "bytes": 384
+    },
+    {
+      "path": "probe/allocation_profile.rs",
+      "sha256": "d9c4bc779939567f5dced46d7c7f7030726b4c0e17df72efc3339cdfe2514b19",
+      "bytes": 1306
+    },
+    {
+      "path": "probe/allocation_stacks.c",
+      "sha256": "97961925d8d8c7fc09904d72b78fbcc1e1eb228ecd2d5229f1c551d314d00b8d",
+      "bytes": 5743
+    },
+    {
+      "path": "probe/gpu-build.json",
+      "sha256": "48f2685128bd8d6f8165ac27668fe12c946049e14d65f9f3860b5222e42d9955",
+      "bytes": 4981
+    },
+    {
+      "path": "probe/memory.rs",
+      "sha256": "6377df7f57bb509bbbbc6b044b5ec2d5d20e13a10c058fea19240859cab8d7dc",
+      "bytes": 6770
+    },
+    {
+      "path": "probe/probe-build.json",
+      "sha256": "2cecc0f9f8d82d8d86a7fe9c6d7a1e167470a06ed73e28dc8893edcfbfe4a2c3",
+      "bytes": 655
+    },
+    {
+      "path": "probe/probe-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "probe/probe-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "probe/run.json",
+      "sha256": "ae4f81b8e79fa552edd14f3ec92fc54ccdb5e9756235ec29c51ca92ede5d8a60",
+      "bytes": 13673
+    },
+    {
+      "path": "probe/run.py",
+      "sha256": "315e8fe477ab9810c132823f8c70127386d745021b26e94ea7c86085c1006123",
+      "bytes": 4709
+    },
+    {
+      "path": "probe/run.stderr",
+      "sha256": "955e5dc1d9aa748330872c1b18897653b59a745bb1f67249ee641813dd48e581",
+      "bytes": 148769
+    },
+    {
+      "path": "probe/run.stdout",
+      "sha256": "83a032b744cc22e3f0893dfe53084127a98762bdf779d7622669febc2d600177",
+      "bytes": 1183
+    },
+    {
+      "path": "probe/source-pin.json",
+      "sha256": "0f9fa7f3e651b918484642d9015aa4c77c028d1cb92059c3c029a7f95612268e",
+      "bytes": 953
+    },
+    {
+      "path": "probe/worker-build.json",
+      "sha256": "661ce30542c61a324c0bf740541c1ab014fd7f7c5a195fa5dd0cecb16d87ed7f",
+      "bytes": 2535
+    },
+    {
+      "path": "probe/worker-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "probe/worker-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}
