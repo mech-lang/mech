@@ -1,0 +1,21 @@
+{
+  "created_utc": "2026-10-31T15:20:43.507698+00:00",
+  "head": "9dad89723e5db25625b51249e3a65a895201e6a2",
+  "files": [
+    {
+      "path": "architecture-audit-fixed/audit.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "architecture-audit-fixed/audit.stdout",
+      "sha256": "c24be89d9f9be275f7b5b0f67d7e02f78621e916de92af9d732c99f4ba1e5e55",
+      "bytes": 29
+    },
+    {
+      "path": "architecture-audit-fixed/result.json",
+      "sha256": "b33f1cdced7263f46c2cb53843c4f3c352fd7d66d14d4b719ee758db36ca355a",
+      "bytes": 317
+    }
+  ]
+}
