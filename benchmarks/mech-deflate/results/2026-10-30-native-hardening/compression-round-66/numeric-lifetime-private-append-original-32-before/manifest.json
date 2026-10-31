@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T18:05:39.462138+00:00",
+  "head": "8cfa980293a30111c6742838e79e2cc1387eed3f",
+  "files": [
+    {
+      "path": "numeric-lifetime/private-append-original-32-before.json",
+      "sha256": "1e717f607438e10a6265899742fe61847c002b97f26b19a3f2d2239de5ccfe9c",
+      "bytes": 593
+    },
+    {
+      "path": "numeric-lifetime/private-append-original-32-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "numeric-lifetime/private-append-original-32-before.stdout",
+      "sha256": "fab2f739ccc9577e0a88621625b6c8c0cfa488e102e2172bd3400106d5e76499",
+      "bytes": 1019
+    },
+    {
+      "path": "numeric-lifetime-controls.py",
+      "sha256": "b9a86bb8ef420990f79140846e39168a3cf472b8ea4045bfcc6a66a971382e0c",
+      "bytes": 3778
+    }
+  ]
+}
