@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-31T16:56:41.835938+00:00",
+  "head": "3d696e5ca1b4d2c8e03ba4d967b634122c8ed430",
+  "files": [
+    {
+      "path": "engine-after/budget.rs",
+      "sha256": "4632950b18e1cd6e1e7571cc14bfd68853addd656e91514812728314585bc743",
+      "bytes": 171542
+    },
+    {
+      "path": "engine-after/native_projection_meter_tests.rs",
+      "sha256": "20e35bbf8d88ada49bc8ad181e2a37a9e761d826ac95d25d4e4b2ebb722c56c5",
+      "bytes": 20714
+    },
+    {
+      "path": "engine-after/overflow-retry-inventory.json",
+      "sha256": "dff2a7ae09580b9b5aee38bcc477691cbcee307397d75743a4c7ba72a0749f2b",
+      "bytes": 13023
+    },
+    {
+      "path": "engine-after/overflow-retry-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-after/overflow-retry-inventory.stdout",
+      "sha256": "1f85e0efcf04411c80bf7cfc2476c30ebba99245fed8597920f8c47ecc0d5c59",
+      "bytes": 154
+    },
+    {
+      "path": "engine-focused.py",
+      "sha256": "995b2350feabab23fe255dd7bec85cea625d9335fdb935abe33ce10ce4305f4b",
+      "bytes": 4889
+    }
+  ]
+}
