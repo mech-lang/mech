@@ -37,6 +37,18 @@ impl PrivateUnsignedMatrix {
         // fresh wrapper/data owners are unregistered and cannot have weak or
         // strong aliases; the Value remains confined inside this private type.
         let value = Value::from_unsigned_matrix_buffer(schema, shape, words, schemas.clone())?;
+        Ok(Self::admit(value, &mut reservation)?)
+    }
+
+    fn admit(
+        value: Value,
+        reservation: &mut crate::ManagedMemoryReservation,
+    ) -> crate::MemoryRuntimeResult<Self> {
+        let schemas = value
+            .schemas
+            .as_ref()
+            .expect("checked private schema")
+            .clone();
         let budget = reservation.budget();
         let (required_bytes, nodes) = value.memory_budget_ownership_witness()?;
         let admitted_bytes =
@@ -46,8 +58,7 @@ impl PrivateUnsignedMatrix {
                 operation: None,
                 requested: admitted_bytes,
                 limit: reservation.capacity_bytes(),
-            }
-            .into());
+            });
         }
         let bytes = Value::budget_registration_allocation_bytes();
         budget.check_snapshot_import_allocation(
@@ -142,5 +153,53 @@ impl PrivateUnsignedMatrix {
             .owner
             .set(Arc::downgrade(&value.root));
         value
+    }
+}
+
+impl Value {
+    /// Confine a fresh, unadmitted plain unsigned matrix to its private phase.
+    /// The selected operation has already constructed and validated these cells;
+    /// its final publication owner is admitted once and never escapes here.
+    /// Existing snapshots, imports, aliases and weak identities cannot enter.
+    pub fn into_private_unsigned_matrix(
+        mut self,
+        reservation: &mut crate::ManagedMemoryReservation,
+    ) -> crate::MemoryRuntimeResult<PrivateUnsignedMatrix> {
+        let plain = self
+            .schemas
+            .as_ref()
+            .and_then(|s| s.get(self.schema))
+            .is_some_and(|s| {
+                matches!(s.body(), SchemaBody::Matrix { element, .. }
+                if matches!(element.as_ref(), SchemaBody::UnsignedInteger(
+                    IntegerWidth::W8 | IntegerWidth::W16 | IntegerWidth::W32 | IntegerWidth::W64)))
+            });
+        let invalid = || crate::MemoryRuntimeError::CandidateValidationFailed {
+            object: None,
+            reason: "private unsigned matrix requires a fresh exclusive unadmitted owner".into(),
+        };
+        if !plain || self.root.memory_budget.is_some() {
+            return Err(invalid());
+        }
+        let root = Arc::get_mut(&mut self.root).ok_or_else(invalid)?;
+        let data = Arc::get_mut(&mut root.data).ok_or_else(invalid)?;
+        if data.ownership.get().is_some()
+            || !matches!(
+                &data.data,
+                ValueData::Matrix(MatrixValue {
+                    elements: SequenceStorage::U8(_)
+                        | SequenceStorage::U16(_)
+                        | SequenceStorage::U32(_)
+                        | SequenceStorage::U64(_)
+                })
+            )
+        {
+            return Err(invalid());
+        }
+        // No identity or owner can observe these cells. A fingerprint computed
+        // before confinement is a value, not authority to retain a stale cache.
+        data.resident_token.take();
+        data.string_ascii_without_crlf.take();
+        PrivateUnsignedMatrix::admit(self, reservation)
     }
 }

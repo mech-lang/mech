@@ -55,6 +55,64 @@ impl NativePreparedLibraryCall {
         work: &NativeLibraryWorkBudget,
         coexistence: ResourceDemand,
     ) -> Result<(Value, bool), InvokeError> {
+        self.unsigned_matrix_replace_with(
+            source,
+            index,
+            incoming,
+            may_consume,
+            limits,
+            work,
+            coexistence,
+            |value, admission| match admission {
+                Some(admission) => Ok(value.into_memory_budget(admission)?),
+                None => Ok(value),
+            },
+        )
+    }
+
+    /// The same selected replacement, with one final owner confined throughout
+    /// the native private phase. All validation, copying and admission above
+    /// the output boundary is shared with the canonical result path.
+    pub fn unsigned_matrix_replace_private(
+        &self,
+        source: Value,
+        index: u64,
+        incoming: u64,
+        may_consume: bool,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+    ) -> Result<mech_core::snapshot::PrivateUnsignedMatrix, InvokeError> {
+        self.unsigned_matrix_replace_with(
+            source,
+            index,
+            incoming,
+            may_consume,
+            limits,
+            work,
+            coexistence,
+            |value, admission| {
+                let admission = admission.ok_or(InvokeError::InvalidInput)?;
+                Ok(value.into_private_unsigned_matrix(admission)?)
+            },
+        )
+        .map(|(private, _)| private)
+    }
+
+    fn unsigned_matrix_replace_with<T>(
+        &self,
+        source: Value,
+        index: u64,
+        incoming: u64,
+        may_consume: bool,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+        finish: impl FnOnce(
+            Value,
+            Option<&mut mech_core::ManagedMemoryReservation>,
+        ) -> Result<T, InvokeError>,
+    ) -> Result<(T, bool), InvokeError> {
         finite_limits(self.template.origin().node(), limits).map_err(InvokeError::Binding)?;
         let width = self
             .unsigned_matrix_replace_width()
@@ -125,7 +183,7 @@ impl NativePreparedLibraryCall {
                 // selected-word comparison exactly the full snapshot changed bit.
                 context.charge(16, 1)?;
                 if old == incoming {
-                    return Ok((source, false));
+                    return Ok((finish(source, None)?, false));
                 }
                 let metadata = self
                     .binding_bytes
@@ -219,8 +277,8 @@ impl NativePreparedLibraryCall {
                     buffer,
                     self.schemas.clone(),
                 )
-                .map_err(|_| InvokeError::InvalidInput)?
-                .into_memory_budget(&mut admission)?;
+                .map_err(|_| InvokeError::InvalidInput)?;
+                let value = finish(value, Some(&mut admission))?;
                 drop(source);
                 Ok((value, true))
             },

@@ -102,6 +102,59 @@ impl NativePreparedLibraryCall {
         work: &NativeLibraryWorkBudget,
         coexistence: ResourceDemand,
     ) -> Result<Value, InvokeError> {
+        self.unsigned_buffer_with(
+            source,
+            argument,
+            count,
+            sublist,
+            may_consume,
+            limits,
+            work,
+            coexistence,
+            |value, admission| Ok(value.into_memory_budget(admission)?),
+        )
+    }
+
+    /// Finalize the original selected append directly into its private owner.
+    /// Its pre-admitted variable-length metadata is attached by the caller at
+    /// the same ordered handoff boundary as the canonical-result path.
+    pub fn unsigned_matrix_append_private(
+        &self,
+        source: Value,
+        argument: u64,
+        may_consume: bool,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+    ) -> Result<mech_core::snapshot::PrivateUnsignedMatrix, InvokeError> {
+        if !self.supports_unsigned_matrix_append() {
+            return Err(InvokeError::InvalidInput);
+        }
+        self.unsigned_buffer_with(
+            Some(source),
+            argument,
+            None,
+            None,
+            may_consume,
+            limits,
+            work,
+            coexistence,
+            |value, admission| Ok(value.into_private_unsigned_matrix(admission)?),
+        )
+    }
+
+    fn unsigned_buffer_with<T>(
+        &self,
+        source: Option<Value>,
+        argument: u64,
+        count: Option<u64>,
+        sublist: Option<Value>,
+        may_consume: bool,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+        finish: impl FnOnce(Value, &mut mech_core::ManagedMemoryReservation) -> Result<T, InvokeError>,
+    ) -> Result<T, InvokeError> {
         finite_limits(self.template.origin().node(), limits).map_err(InvokeError::Binding)?;
         let operation = self.buffer_operation().ok_or(InvokeError::InvalidInput)?;
         if (operation == Operation::AppendSublist) != sublist.is_some() {
@@ -354,7 +407,7 @@ impl NativePreparedLibraryCall {
                     value
                 };
                 // Drop detached inputs only after the fresh candidate has frozen.
-                let value = value.into_memory_budget(&mut admission)?;
+                let value = finish(value, &mut admission)?;
                 drop(source);
                 Ok(value)
             },

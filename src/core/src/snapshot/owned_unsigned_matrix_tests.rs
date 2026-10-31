@@ -673,3 +673,146 @@ fn private_append_rejects_full_capacity_and_out_of_kind_words_without_changing_l
         (0, 0)
     );
 }
+
+#[test]
+fn fresh_unsigned_result_keeps_one_private_owner_until_allocation_free_publication() {
+    macro_rules! check {
+        ($kind:ident, $width:ident, $ty:ty, $count:expr) => {{
+            let (id, schemas) = schema(IntegerWidth::$width);
+            let mut cells = vec![7 as $ty; $count];
+            let address = cells.as_mut_ptr();
+            let value = Value::from_unsigned_matrix_buffer(
+                id,
+                shape(id, &schemas, $count),
+                UnsignedMatrixBuffer::$kind(cells),
+                schemas.clone(),
+            )
+            .unwrap();
+            let prior_token = value.resident_token();
+            let memory = crate::ManagedMemoryBudget::new(32 * 1024 * 1024);
+            let bytes = value
+                .unshared_memory_budget_admission_bytes(&memory)
+                .unwrap();
+            let nodes = value.retained_footprint(&schemas).unwrap().node_count;
+            let mut reservation = memory.reserve_capacity(bytes).unwrap();
+            let mut private = value
+                .into_private_unsigned_matrix(&mut reservation)
+                .unwrap();
+            assert_eq!(reservation.capacity_bytes(), 0);
+            assert_eq!(memory.used_bytes(), bytes);
+            assert_eq!(memory.retained_snapshot_nodes(), nodes);
+            let UnsignedMatrixViewMut::$kind(cells) = private.elements_mut() else {
+                panic!()
+            };
+            assert_eq!(cells.as_mut_ptr(), address);
+            for i in 0..4096 {
+                cells[i % $count] = (i % 127) as $ty;
+            }
+            // Neither repeated writes nor publication need another admission.
+            let rest = memory
+                .reserve_capacity(memory.limit_bytes() - bytes)
+                .unwrap();
+            memory.inject_snapshot_import_failure_after(0);
+            let value = private.finish();
+            assert_ne!(value.resident_token(), prior_token);
+            value.validate_against(&schemas).unwrap();
+            let ValueData::Matrix(matrix) = value.data() else {
+                panic!()
+            };
+            let SequenceView::$kind(cells) = matrix.elements() else {
+                panic!()
+            };
+            assert_eq!(cells.as_ptr(), address);
+            assert!(memory.check_snapshot_import_allocation(1, 1).is_err());
+            assert_eq!(memory.retained_snapshot_nodes(), nodes);
+            drop((rest, reservation, value));
+            assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+        }};
+    }
+    check!(U8, W8, u8, 13);
+    check!(U16, W16, u16, 262144);
+    check!(U32, W32, u32, 1500513);
+    check!(U64, W64, u64, 266);
+}
+
+#[test]
+fn fresh_private_confinement_rejects_aliases_weak_identities_and_existing_admission() {
+    for observer in 0..3 {
+        let memory = crate::ManagedMemoryBudget::new(32 * 1024 * 1024);
+        let value = u64_value(305257);
+        let expected = value.canonical_data_draft().unwrap();
+        let bytes = value
+            .unshared_memory_budget_admission_bytes(&memory)
+            .unwrap();
+        let alias = (observer == 0).then(|| value.clone());
+        let weak = (observer == 1).then(|| value.frozen_storage_identity());
+        let value = if observer == 2 {
+            admit(value, &memory)
+        } else {
+            value
+        };
+        let alias = alias.or_else(|| (observer == 2).then(|| value.clone()));
+        let retained = memory.used_bytes();
+        let mut reservation = memory.reserve_capacity(bytes).unwrap();
+        assert!(
+            value
+                .into_private_unsigned_matrix(&mut reservation)
+                .is_err()
+        );
+        assert_eq!(reservation.capacity_bytes(), bytes);
+        assert_eq!(memory.used_bytes(), retained + bytes);
+        if let Some(alias) = &alias {
+            assert_eq!(alias.canonical_data_draft().unwrap(), expected);
+        }
+        if let Some(weak) = weak {
+            assert_eq!(weak.data.strong_count(), 0);
+        }
+        drop((alias, reservation));
+        assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+    }
+}
+
+#[test]
+fn fresh_private_admission_keeps_byte_node_and_allocation_denial_atomic_and_recovers() {
+    for denial in 0..3 {
+        let value = u64_value(305257);
+        let schemas = value.schemas().unwrap();
+        let memory = crate::ManagedMemoryBudget::new(32 * 1024 * 1024);
+        let bytes = value
+            .unshared_memory_budget_admission_bytes(&memory)
+            .unwrap();
+        let nodes = value.retained_footprint(&schemas).unwrap().node_count;
+        let bounded = memory.with_limits(
+            memory.limit_bytes(),
+            if denial == 1 { nodes - 1 } else { nodes },
+        );
+        let mut reservation = bounded
+            .reserve_capacity(bytes - u64::from(denial == 0))
+            .unwrap();
+        if denial == 2 {
+            memory.inject_snapshot_import_failure_after(0);
+        }
+        let error = value
+            .into_private_unsigned_matrix(&mut reservation)
+            .err()
+            .unwrap();
+        assert!(match error {
+            crate::MemoryRuntimeError::BudgetExceeded { .. } => denial < 2,
+            crate::MemoryRuntimeError::AllocationFailed { .. } => denial == 2,
+            _ => false,
+        });
+        assert_eq!(reservation.capacity_bytes(), bytes - u64::from(denial == 0));
+        assert_eq!(memory.retained_nodes(), 0);
+        drop(reservation);
+        assert_eq!(memory.used_bytes(), 0);
+        let value = u64_value(305257);
+        let mut reservation = memory.reserve_capacity(bytes).unwrap();
+        let private = value
+            .into_private_unsigned_matrix(&mut reservation)
+            .unwrap();
+        let value = private.finish();
+        assert_eq!(memory.used_bytes(), bytes);
+        drop((value, reservation));
+        assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+    }
+}
