@@ -1,0 +1,21 @@
+{
+  "created_utc": "2026-10-31T02:53:58.975944+00:00",
+  "head": "36ab00451eeda707f922ea08337c1f087ad7c01c",
+  "files": [
+    {
+      "path": "auxiliary-dependencies.json",
+      "sha256": "ca1a4b96ae035bb7900fdaca868fa6d6856fc6bdc2e86bc07a066cd183951931",
+      "bytes": 628
+    },
+    {
+      "path": "variants/before/gpu-build-origin.json",
+      "sha256": "b6addfc61deb55a9d055eaf76a03f9a341e9464a0fdd56268786ec65de486975",
+      "bytes": 4595
+    },
+    {
+      "path": "variants/before/libraries.json",
+      "sha256": "a00d43a776ff2c69759fb0630fb54dcce6aeb83ea7feb7256ba11cb7966aaaf3",
+      "bytes": 10811
+    }
+  ]
+}
