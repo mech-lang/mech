@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-10-31T23:54:51.947348+00:00",
+  "head": "00c6300e1db53c0a260f37e90fab2681034a6b18",
+  "files": [
+    {
+      "path": "engine-after/budget.rs",
+      "sha256": "957e667d51a867f04a193ee63e82a3e8020f2b09accd4e2c7cf3020dd524f63f",
+      "bytes": 172084
+    },
+    {
+      "path": "engine-after/mod.rs",
+      "sha256": "1498299e0d0669899d074fd4c49b2106e89377d3cc294a78f97c2e84f635f7df",
+      "bytes": 6418
+    },
+    {
+      "path": "engine-after/native_work_context.rs",
+      "sha256": "f8ddd5709a2dbc15b1d40f04860ac9cb2993cdb37990ed90eca8cfa3c128bbad",
+      "bytes": 1469
+    },
+    {
+      "path": "engine-after/native_work_context_tests.rs",
+      "sha256": "17edb1ef8e8aa0c021531798a9386074ea4e1859ff08af8e3aacdd44d93fd4b0",
+      "bytes": 6972
+    },
+    {
+      "path": "engine-after/policy-order-inventory.json",
+      "sha256": "2dd6e9d7a2ce3128f953364cf982a5587daec9f20d73f61373946f07f827175e",
+      "bytes": 13121
+    },
+    {
+      "path": "engine-after/policy-order-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-after/policy-order-inventory.stdout",
+      "sha256": "cefd4243c5adb25c464f48768a0063cc336a83963babd7a0205cc47469263f4a",
+      "bytes": 144
+    },
+    {
+      "path": "engine-focused.py",
+      "sha256": "55a82fd388bd12b6f7b21ddacde4a3ec49e9a4bcf7bb2a02b53b53365703ca71",
+      "bytes": 5992
+    }
+  ]
+}
