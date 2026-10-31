@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T11:21:30.679165+00:00",
+  "head": "bb456812673df327d67b0a0d87b8774b41b9c536",
+  "files": [
+    {
+      "path": "numeric-ci/matrix-execute.json",
+      "sha256": "459af4eb73d3309f9c490c7bc36555cd8c786dd7a82d22bd266ef026625071c7",
+      "bytes": 424
+    },
+    {
+      "path": "numeric-ci/matrix-execute.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "numeric-ci/matrix-execute.stdout",
+      "sha256": "2334f2900047c92dea420e666a85b5ef896153e9884e3d33fcf0ba29b080644f",
+      "bytes": 779
+    },
+    {
+      "path": "numeric-ci.py",
+      "sha256": "c1388d59b4e1d816fb2da04d082387bfb738eeb8224e4c8d39bb43689ae72631",
+      "bytes": 1527
+    }
+  ]
+}
