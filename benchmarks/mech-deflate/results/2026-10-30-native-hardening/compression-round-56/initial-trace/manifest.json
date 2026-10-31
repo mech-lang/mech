@@ -1,0 +1,21 @@
+{
+  "created_utc": "2026-10-31T12:47:29.545833+00:00",
+  "head": "7f7aad194537cdddb24d3a8b9f32c9a74ae0720d",
+  "files": [
+    {
+      "path": "archive.py",
+      "sha256": "dd2c3c530d01093e730a1dd375fe333e5df4b9b531df6686a3ef7b6349aadaa0",
+      "bytes": 1704
+    },
+    {
+      "path": "inspect.rs",
+      "sha256": "2b4f9f25475025c5cafd9b6262e068ce66c2d60be24e5e0eda2808429e8448c3",
+      "bytes": 1940
+    },
+    {
+      "path": "investigation.json",
+      "sha256": "7da826c2465a3593a5f2b2cf99ac9da2001761fdb22d275952972012cc7de12c",
+      "bytes": 19068
+    }
+  ]
+}
