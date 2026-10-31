@@ -167,12 +167,24 @@ pub(super) fn linear_address(
     rows: Value,
     columns: Value,
     width: u8,
+    schema: &mech_core::SchemaBody,
     base: impl FnOnce(&mut FunctionBuilder<'_>) -> Value,
 ) -> Result<(Value, cranelift_codegen::ir::Type), NativeCompileError> {
-    let row = b.ins().urem(ordinal, rows);
-    let column = b.ins().udiv(ordinal, rows);
-    let row = b.ins().imul(row, columns);
-    let physical = b.ins().iadd(row, column);
+    // The same entry witness that lends this view has already checked the
+    // current owner's exact schema and dimensions. A unit dimension makes
+    // column-major source order identical to row-major backing order. Derive
+    // this immutable fact from that witness, never from a previous view.
+    let vector = matches!(schema, mech_core::SchemaBody::Matrix { dimensions, .. }
+        if dimensions.len() == 2 && dimensions.iter().any(|dimension|
+            matches!(dimension, mech_core::DimensionExpr::Constant(1))));
+    let physical = if vector {
+        ordinal
+    } else {
+        let row = b.ins().urem(ordinal, rows);
+        let column = b.ins().udiv(ordinal, rows);
+        let row = b.ins().imul(row, columns);
+        b.ins().iadd(row, column)
+    };
     let at = b.ins().imul_imm(physical, i64::from(width));
     let base = base(b);
     let address = b.ins().iadd(base, at);
@@ -185,3 +197,7 @@ pub(super) fn linear_address(
     };
     Ok((address, ty))
 }
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "numeric_address_tests.rs"]
+mod tests;
