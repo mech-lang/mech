@@ -1,0 +1,71 @@
+{
+  "created_utc": "2026-10-31T22:42:07.636931+00:00",
+  "head": "edd968d8e8fb5a33ba96f131510098f0506937b8",
+  "files": [
+    {
+      "path": "sites-after/allocation_profile.h",
+      "sha256": "56852a08a6cb3fbba88daa10b8674cdb938933833722f0ed3bfcc8ae9ae9b31a",
+      "bytes": 384
+    },
+    {
+      "path": "sites-after/allocation_profile.rs",
+      "sha256": "d9c4bc779939567f5dced46d7c7f7030726b4c0e17df72efc3339cdfe2514b19",
+      "bytes": 1306
+    },
+    {
+      "path": "sites-after/allocation_sites.c",
+      "sha256": "8e6a18a29b959e38fa794e9106e7bc3302d7105c32978389a9bd62410368ff31",
+      "bytes": 6374
+    },
+    {
+      "path": "sites-after/binding.json",
+      "sha256": "4751d53481801cc4244aabf93984d022dd957f4b161989c700718313227d407e",
+      "bytes": 32568
+    },
+    {
+      "path": "sites-after/environment-before.txt",
+      "sha256": "2df50ebc52e1dc440d529358e5d5b9db16252c110a46753538bdc4fc09ea5947",
+      "bytes": 38561
+    },
+    {
+      "path": "sites-after/memory.rs",
+      "sha256": "ebf5dc970de4bea33bae294dbc5c1b3a6474b600fbaa87d64ce8c87602f1243b",
+      "bytes": 6784
+    },
+    {
+      "path": "sites-after/probe-pin.json",
+      "sha256": "193c5f11717440410cd9bc5fcf9fc55ebe7c1dd053315f1cfa4f0e436cc12558",
+      "bytes": 277
+    },
+    {
+      "path": "sites-after/run.json",
+      "sha256": "7b75fc48f5026f46984150884f27f96cca8e60b33f6f4a9deb73fcebb0a77110",
+      "bytes": 264
+    },
+    {
+      "path": "sites-after/run.stderr",
+      "sha256": "26d0f5fddaaf6d5c5f3575a5395ac0d8a05afb9517c1209d3abe5db05a408bf1",
+      "bytes": 2171855
+    },
+    {
+      "path": "sites-after/run.stdout",
+      "sha256": "d3e87fe72617412c614f3cdf17eaec3bd18a881489047892ebe956da402d8017",
+      "bytes": 1186
+    },
+    {
+      "path": "sites-after/usage.c",
+      "sha256": "883fe6a7baf228bc881b4b76aef13f352da38f19c8e7a5b3ca938dbd1dddfd0e",
+      "bytes": 448
+    },
+    {
+      "path": "sites-after/usage.h",
+      "sha256": "ca6ac3c2cd82bfb367c07aa9e26b1aea3b025e48ea44db76dbded2be45b5fb9f",
+      "bytes": 233
+    },
+    {
+      "path": "sites.py",
+      "sha256": "7cf876738caf67f2bea5cf18ab629f2b3a14adb6184d8216f10757a899696579",
+      "bytes": 6203
+    }
+  ]
+}
