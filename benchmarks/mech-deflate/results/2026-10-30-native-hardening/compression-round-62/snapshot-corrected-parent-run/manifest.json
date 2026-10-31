@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-31T15:55:07.607279+00:00",
+  "head": "7bcaf891af7f0ffb8193909233c1432ac2ebbf68",
+  "files": [
+    {
+      "path": "snapshot-controls/locals-snapshot-source.rs",
+      "sha256": "892e0b027e147915877cdaf6bf0c9038bfb72352fd1ff2e7ff24b13f9fde5531",
+      "bytes": 4165
+    },
+    {
+      "path": "snapshot-controls/parent/control-source.rs",
+      "sha256": "22926f75336340ddc10a6455591b928ab77849bd737b7216b1565edcb60880c7",
+      "bytes": 74360
+    },
+    {
+      "path": "snapshot-controls/parent/run.json",
+      "sha256": "72b9fea949a747a631e983f69ec244c9ff35185f9093921077a56d21ba0839ea",
+      "bytes": 1359
+    },
+    {
+      "path": "snapshot-controls/parent/run.stderr",
+      "sha256": "498a4fbfcfc1dcf50955a2d368beffa491c11401f2c3fec00106b17d02dfb7e0",
+      "bytes": 451
+    },
+    {
+      "path": "snapshot-controls/parent/run.stdout",
+      "sha256": "97bf1b5f9b56dcbb8d450b40d13b23132e5c0b1b69c910e1ddde40edd4819651",
+      "bytes": 432
+    },
+    {
+      "path": "snapshot-controls/runtime-tests-source.rs",
+      "sha256": "a967d0d2fcdbb32e0ce934ab758381cc2e0caeb727f9f00830f3fe83d0dcdef7",
+      "bytes": 54505
+    },
+    {
+      "path": "snapshot-controls.py",
+      "sha256": "ad79f7949c81b3f9b97cd4c894540caa6e270b996d4a4428d7149936329c9392",
+      "bytes": 5262
+    }
+  ]
+}
