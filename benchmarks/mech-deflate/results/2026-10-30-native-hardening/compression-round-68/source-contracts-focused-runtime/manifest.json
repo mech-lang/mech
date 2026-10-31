@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-10-31T19:40:19.989032+00:00",
+  "head": "20a4196894bafa903f7a759b948c14cc638b5cb6",
+  "files": [
+    {
+      "path": "source-contracts-focused/planner.json",
+      "sha256": "3ee9e40492fc296e7047eed2b49fe7f8274665241864a7fe54c61aff56f7a1f5",
+      "bytes": 327
+    },
+    {
+      "path": "source-contracts-focused/planner.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "source-contracts-focused/planner.stdout",
+      "sha256": "2735714dbcdd449212ec8780a49a1a43192230a72984043cced9b311807f251a",
+      "bytes": 28
+    },
+    {
+      "path": "source-contracts-focused/results.json",
+      "sha256": "f118b7758a39e39bcd63b6b2b557308f8cff62a1d4712acd390006e75f0d1bb4",
+      "bytes": 698
+    },
+    {
+      "path": "source-contracts-focused/runtime.json",
+      "sha256": "4203d29161c8df3c92439968686775c790745478c0aff2cfc17599292d13b0be",
+      "bytes": 326
+    },
+    {
+      "path": "source-contracts-focused/runtime.stderr",
+      "sha256": "72f487de66199f1c635f19163f85ffafdfacee4ae383f442cc367b64247ee5ab",
+      "bytes": 113
+    },
+    {
+      "path": "source-contracts-focused/runtime.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "source-contracts.py",
+      "sha256": "55aaf52877f935ecaf318c4d348969bcb94ed1af0ae0a7d33baa27dc51c8b190",
+      "bytes": 2829
+    }
+  ]
+}
