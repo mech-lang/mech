@@ -1,7 +1,7 @@
 //! Native finite fuel for closed scalar/map Tail bodies, inside the same round.
 use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::codegen::options::OptimizationOptions;
-use crate::native_artifact::compiler::offset;
+use crate::native_artifact::compiler::{backend, offset};
 use crate::native_artifact::program::codegen::hooks::Hooks;
 use crate::native_artifact::program::prepare::tail::{Layout, Region};
 #[cfg(feature = "canonical-native-program-runtime")]
@@ -62,6 +62,9 @@ pub(in crate::native_artifact) fn leave(
     let zero = b.ins().iconst(types::I64, 0);
     store(options, b, locals, region, region.words, zero)?;
     if let Some(proof) = &region.numeric {
+        let shadow = region
+            .shadow
+            .ok_or_else(|| backend("numeric exit lacks scratch home"))?;
         hooks.require_argument_words(b, proof.words + 2, error);
         let terminal = proof
             .result
@@ -76,13 +79,13 @@ pub(in crate::native_artifact) fn leave(
             .chain(terminal.iter())
             .flatten()
         {
-            let value = load(options, b, locals, region, region.words + 3 + slot)?;
+            let value = load(options, b, locals, region, shadow + slot)?;
             b.ins()
                 .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
         }
         for (array, _) in proof.arrays.iter().enumerate().filter(|(_, a)| a.appends) {
             let slot = proof.view(array) + 1;
-            let value = load(options, b, locals, region, region.words + 3 + slot)?;
+            let value = load(options, b, locals, region, shadow + slot)?;
             b.ins()
                 .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
         }
@@ -257,7 +260,16 @@ fn prepare_region(
         let word = b
             .ins()
             .load(types::I64, MemFlags::new(), hooks.arguments, offset(i)?);
-        store(options, b, locals, region, region.words + 1 + i, word)?;
+        let destination = if region.numeric.is_some() && i >= 2 {
+            region
+                .shadow
+                .ok_or_else(|| backend("numeric entry lacks scratch home"))?
+                + i
+                - 2
+        } else {
+            region.words + 1 + i
+        };
+        store(options, b, locals, region, destination, word)?;
     }
     Ok(())
 }

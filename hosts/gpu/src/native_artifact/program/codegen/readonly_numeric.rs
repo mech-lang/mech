@@ -42,13 +42,14 @@ pub(in crate::native_artifact) struct Report {
 fn slots(
     code: CodePlan<'_>,
     proof: &Proof,
-    base: usize,
+    state: usize,
+    shadow: usize,
 ) -> Result<BTreeSet<usize>, NativeCompileError> {
     super::numeric_words::source_slots(
         code,
         proof.sites.iter().copied(),
         &proof.actions,
-        base..base + 3 + proof.words,
+        (state..state + 3).chain(shadow..shadow + proof.words),
     )
 }
 
@@ -90,7 +91,10 @@ pub(in crate::native_artifact) fn emit_entry(
     let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
     b.ins().brif(ready, selected, &[], ordinary, &[]);
     b.switch_to_block(selected);
-    let slots = slots(code, proof, region.words)?;
+    let shadow = region
+        .shadow
+        .ok_or_else(|| backend("numeric region lacks scratch home"))?;
+    let slots = slots(code, proof, region.words, shadow)?;
     let register_words = slots.len();
     let words = Words::new(b, locals, code, slots)?;
     let setup_work = b.func.dfg.num_insts() - setup_start;
@@ -129,7 +133,6 @@ pub(in crate::native_artifact) fn emit_entry(
         maximum_source_instructions: 0,
         fixed_template_instructions: 0,
     };
-    let shadow = region.words + 3;
     for &site in &proof.sites {
         b.switch_to_block(target(site as u32));
         let fail = b.create_block();

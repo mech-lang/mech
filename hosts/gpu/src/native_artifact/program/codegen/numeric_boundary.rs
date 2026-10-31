@@ -16,7 +16,9 @@ pub(super) fn materialize(
     hooks: &Hooks,
     error: Block,
 ) -> Result<(), NativeCompileError> {
-    let shadow = region.words + 3;
+    let shadow = region
+        .shadow
+        .ok_or_else(|| backend("numeric materialization lacks scratch home"))?;
     set_origin(b, frame, site as u64);
     words.spill_all(b, locals)?;
     let zero = b.ins().iconst(types::I64, 0);

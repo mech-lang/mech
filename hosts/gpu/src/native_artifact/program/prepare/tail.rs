@@ -25,6 +25,8 @@ pub(in crate::native_artifact) struct Region {
     pub packed: Option<crate::native_artifact::program::prepare::packed_map::Proof>,
     // Emission and checkpoint validation use the identical admitted word lane.
     pub words: usize,
+    /// Numeric-only scratch. Readiness/fuel always retain private word homes.
+    pub shadow: Option<usize>,
     pub compute: u64,
     pub comparison: u64,
 }
@@ -36,6 +38,8 @@ pub(in crate::native_artifact) struct Layout {
     pub initializers: Vec<Option<usize>>,
     pub exits: Vec<Option<usize>>,
     pub words: usize,
+    /// Original independent-bank count for unchanged setup work/admission.
+    pub logical_words: usize,
 }
 impl Layout {
     pub fn derive(
@@ -241,11 +245,12 @@ impl Layout {
                 }),
                 numeric,
                 words: _word_offset,
+                shadow: None,
                 compute,
                 comparison,
             });
-            layout.words = layout
-                .words
+            layout.logical_words = layout
+                .logical_words
                 .checked_add(
                     if map.is_some() { 5 } else { 3 }
                         + layout
@@ -255,7 +260,32 @@ impl Layout {
                             .map_or(0, |p| p.words),
                 )
                 .ok_or("Tail words overflow")?;
+            layout.words = layout
+                .words
+                .checked_add(if map.is_some() { 5 } else { 3 })
+                .ok_or("Tail state words overflow")?;
         }
+        // Every selected numeric body is child-free. The runtime admits only
+        // one closed loan and reconciles it before ordinary/parent execution.
+        // Sharing the flags too would let global abort export the wrong region.
+        let maximum = layout
+            .regions
+            .iter()
+            .filter_map(|r| r.numeric.as_ref().map(|p| p.words))
+            .max()
+            .unwrap_or(0);
+        let shadow = base
+            .checked_add(layout.words)
+            .ok_or("numeric shadow offset overflows")?;
+        for region in &mut layout.regions {
+            if region.numeric.is_some() {
+                region.shadow = Some(shadow);
+            }
+        }
+        layout.words = layout
+            .words
+            .checked_add(maximum)
+            .ok_or("numeric shadow size overflows")?;
         Ok(layout)
     }
     pub fn extra_work(&self, site: usize) -> u64 {
