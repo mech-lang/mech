@@ -2,6 +2,27 @@
 use super::*;
 
 #[test]
+fn exhausted_retirement_generation_of_an_empty_slot_keeps_epoch_and_original_charge() {
+    let memory = ManagedMemoryBudget::new(1_000_000);
+    let (ty, raw) = text("never installed");
+    let types = [ty];
+    let mut work = NativeWorkMeter::new(1_000_000).unwrap();
+    let mut arena = NativeValueArena::new(&types, TRANSPORT_LIMIT, &memory, &mut work).unwrap();
+    arena.generations.values_mut()[0] = u64::MAX;
+    assert!(arena.native_retirement_available(0, &work).unwrap());
+    let before = work.used();
+    arena.retire_current(0, &mut work).unwrap();
+    assert_eq!(work.used(), before + 32);
+    assert_eq!(arena.generations.values()[0], u64::MAX);
+    assert!(arena.native_entry_preview(0, &work).unwrap().is_none());
+    drop((arena, work, raw));
+    assert_eq!(
+        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+        (0, 0)
+    );
+}
+
+#[test]
 fn exhausted_retirement_generation_declines_preview_and_preserves_live_alias() {
     let memory = ManagedMemoryBudget::new(1_000_000);
     let (ty, raw) = text("kept on rejection");
