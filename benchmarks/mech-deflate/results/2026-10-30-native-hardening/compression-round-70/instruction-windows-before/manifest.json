@@ -1,0 +1,76 @@
+{
+  "created_utc": "2026-10-31T21:44:15.189597+00:00",
+  "head": "500542f316a5129fc8db9d100856515efdbd0cc3",
+  "files": [
+    {
+      "path": "instruction-windows/before-binding.json",
+      "sha256": "2dc5e28945520c20707c8aeec3187d0e05ffe1b976035585168ea4a6d8853684",
+      "bytes": 12882
+    },
+    {
+      "path": "instruction-windows/before-build.json",
+      "sha256": "b95b99f99c214fae548c5d39b8207592d015508b252a65fea7e90a125ca55f41",
+      "bytes": 2324
+    },
+    {
+      "path": "instruction-windows/before-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "instruction-windows/before-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "instruction-windows/before.json",
+      "sha256": "70fb817059e88422ed0799581d8600afa53e9146d38075df55f575822cc4c255",
+      "bytes": 401
+    },
+    {
+      "path": "instruction-windows/before.rs",
+      "sha256": "1a2fa83f5ca10b0b8ed59098a29f0597d92f6f366946e58ce06150721e8509e9",
+      "bytes": 8498
+    },
+    {
+      "path": "instruction-windows/before.stderr",
+      "sha256": "5cfa4d55021387bd97b9cc11e6b7dda6ea853f922fa537b56f182fb28dcd9310",
+      "bytes": 827
+    },
+    {
+      "path": "instruction-windows/before.stdout",
+      "sha256": "4a7295c87211b70a4a6332a41bf8a85887bdc354f22faff0e0c83b29f89f660f",
+      "bytes": 24808
+    },
+    {
+      "path": "instruction-windows/entry_probe.rs",
+      "sha256": "90f615bd27131b7510f1839234e0575d6e6e4c453e824f03cca0dbfc5afcccc9",
+      "bytes": 823
+    },
+    {
+      "path": "instruction-windows/scope-build.json",
+      "sha256": "54985eb2e07cf5b3ea8ff14d909ff5cb5bcd2257298593a4fe05c1166c16ebba",
+      "bytes": 435
+    },
+    {
+      "path": "instruction-windows/scope-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "instruction-windows/scope-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "instruction-windows/scope.c",
+      "sha256": "a6c08a19a4dbb9d15078354dda70a2bde0d4ec16e9afc8513ddcc15f9fc69e02",
+      "bytes": 874
+    },
+    {
+      "path": "instruction-windows.py",
+      "sha256": "bdab59691563756076dc3272751b684cef32a1e0d7df45bb9d93625b604a2898",
+      "bytes": 6338
+    }
+  ]
+}
