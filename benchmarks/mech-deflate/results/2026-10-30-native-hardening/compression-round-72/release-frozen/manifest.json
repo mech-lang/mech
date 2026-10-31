@@ -1,0 +1,61 @@
+{
+  "created_utc": "2026-10-31T22:36:47.247707+00:00",
+  "head": "9025d11c961abaff56a5fb5dfc09e8d74b1d7a0b",
+  "files": [
+    {
+      "path": "allocation-target.json",
+      "sha256": "1d50c5cf3ea87ef35999b937ed73199bd2df9459807bdb6215e4ca38078dbede",
+      "bytes": 408
+    },
+    {
+      "path": "auxiliary-dependencies.json",
+      "sha256": "d5ca61562f5ea0d1ad67643ff5cab12e1ed68833c8c5198a512f9eebd978fba3",
+      "bytes": 5636
+    },
+    {
+      "path": "build-changed.py",
+      "sha256": "e1f102f191deaee06d071480d62ff8fd5dc440c18edbf2da50a05bcdf42e53f0",
+      "bytes": 5998
+    },
+    {
+      "path": "final-release.json",
+      "sha256": "840c9c6191f6d9b56e7af3a58d665bdbd9bcf09a4353e7b886446303a85a7a7f",
+      "bytes": 5365
+    },
+    {
+      "path": "frozen-inputs.json",
+      "sha256": "fa88bc38ea34eced6da47c296f47ac304c45472f35972edebe59ae858dae21ff",
+      "bytes": 206360
+    },
+    {
+      "path": "implementation.json",
+      "sha256": "c548b286ce514f01e04a65f94197196658f22d0446464b18aa59df706a865543",
+      "bytes": 1298
+    },
+    {
+      "path": "production.patch",
+      "sha256": "bff93282a4169a2d060e90d2bc025b8c9f2cff62c2e4ff76a5aa7a694232f0c4",
+      "bytes": 5376
+    },
+    {
+      "path": "source-scope.json",
+      "sha256": "74cb63d7ce373c0e677c35d1f779be6ec12177862450c73ea1d9d78ba68e4d6e",
+      "bytes": 682
+    },
+    {
+      "path": "source.patch",
+      "sha256": "bff93282a4169a2d060e90d2bc025b8c9f2cff62c2e4ff76a5aa7a694232f0c4",
+      "bytes": 5376
+    },
+    {
+      "path": "variants/after/build-summary.json",
+      "sha256": "4186f7045f78b588e6841ae9af3680da9340bc807f51d79c36a1f50c99ae4bba",
+      "bytes": 38191
+    },
+    {
+      "path": "variants/after/libraries.json",
+      "sha256": "be0bb6fe668de4adc3db2368c3dae536e07a27bae543a09a9d608ac946cd3b2f",
+      "bytes": 10950
+    }
+  ]
+}
