@@ -1,186 +1,145 @@
 # Mech and Roc executable comparison
 
-For the same complete eight-byte level-12 compression, current Mech takes
-**15.261× Roc's time**, executes **36.294× the instructions**, and makes
-**147.305× the allocation requests**. Most of the visible opportunity is in
-Mech's runtime bookkeeping and buffer ownership. Neither implementation streams
-input in this experiment.
+Current Mech takes **14.847× Roc's elapsed time**, executes **35.622× the instructions**,
+and makes **147.305× the allocation requests** for the same complete eight-byte
+level-12 compression. The latest retained compiler/runtime change removes a
+redundant clone/drop of temporary managed handles during private record packing.
+It improves matched elapsed **1.854%**, instructions **1.853%** and cycles
+**2.392%**, with unchanged tracked allocation and heap metrics.
 
-The latest retained compiler change moves immutable record-name hashing into
-preparation. It reduces matched elapsed time **0.909%**, from **4.3892295 to
-4.3493335 ms**. All four independent preparations improve; 54/64 descriptive
-blocks improve. It increases diagnostic instructions **1.046%** and prepared
-tracked heap **1,110,160 bytes**, while compression allocations and additional
-peak tracked heap stay unchanged. The table makes these tradeoffs explicit.
+## Per-compression scorecard
 
-## Measurements per compression
-
-Roc is 1× in each row. MB means decimal million bytes. Elapsed, hardware counters,
-allocation tracking and sampling are separate cohorts. Instrumented elapsed
-measurements are excluded from the primary time result.
+Roc is 1× in every row. MB is decimal million bytes. Elapsed, hardware counters,
+allocation tracking and sampling are separate cohorts; instrumented elapsed is
+excluded from the primary timer.
 
 | Metric | Roc | Previous Mech | Current Mech | Current / Roc |
 | --- | ---: | ---: | ---: | ---: |
-| Elapsed | 0.285 ms | 4.3892295 ms | **4.3493335 ms** | **15.261×** |
-| Hardware instructions | 1,364,372 | 49,006,012.5 | **49,518,676** | **36.294×** |
-| CPU cycles | 928,313 | 13,832,994 | **13,775,388.5** | **14.839×** |
-| Allocation requests, including realloc | 95 | 13,994 | **13,994** | **147.305×** |
+| Elapsed | 0.289000 ms | 4.371896 ms | **4.290833 ms** | **14.847×** |
+| Executed hardware instructions | 1.364 million | 49.519 million | **48.602 million** | **35.622×** |
+| CPU cycles | 0.904 million | 13.900 million | **13.567 million** | **15.013×** |
+| Allocation requests | 95  | 13,994  | **13,994 ** | **147.305×** |
 | Requested allocation bytes | 9.022 MB | 98.587 MB | **98.587 MB** | **10.927×** |
-| Additional peak tracked heap above entry | 9.257 MB | 20.575 MB | **20.575 MB** | **2.223×** |
-| Total tracked peak heap, including preparation retained at entry | 9.257 MB | 162.171 MB | **163.282 MB** | **17.638×** |
-| Reallocation calls | 0 | 1,213 | **1,213** | — |
-| Relocating reallocation calls | 0 | 458 | **458** | — |
+| Extra peak tracked heap during compression | 9.257 MB | 20.575 MB | **20.575 MB** | **2.223×** |
+| Total tracked peak heap including preparation | 9.257 MB | 163.282 MB | **163.282 MB** | **17.638×** |
+| Resident memory after compression including setup | 14.762 MB | 319.685 MB | **319.734 MB** | **21.659×** |
+| Kernel physical footprint after compression | 14.402 MB | 228.706 MB | **228.706 MB** | **15.880×** |
+| Machine-code text (different scopes) | 0.195 MB | unchanged | **13.886 MB** | **71.043×** |
 
-Primary time has 1,984 calls/version across four independently prepared pairs,
-16 alternating-order blocks/pair, 31 calls/block/version, with one shared fresh
-20,000-call reference. The fixed historical 0.300 ms ruler is also preserved:
-**14.631× → 14.498×**. The fresh shared reference is used for the table above.
-The baseline and candidate share exact work **60,260,219,686**.
+The matched primary time is **4.371896 → 4.290833 ms** or
+**15.127668× → 14.847173×**, with one shared fresh reference of **0.289 ms**.
+All four independent preparations and **62/64 descriptive blocks** improve.
+There are 1,984 primary calls/version, 16 alternating-order blocks of 31/version
+per pair. The reference has 20,000 calls. The fixed historical 0.300 ms ruler moves
+**14.572987× → 14.302777×**. Compare within the matched pair: the previous
+round's 4.3493335 ms and 0.285 ms reference belong to a different cohort.
 
-Hardware medians use 32 steady calls/implementation; allocation medians use
-eight Mech and 32 reference calls. Half units come from even-count medians.
-Boundary-read overhead remains included, approximately 5,010 instructions.
-No hardware-counter observation incurred a page-in.
+Hardware medians use 32 steady calls/implementation; allocation medians use eight
+Mech and 32 reference calls. Boundary-read overhead, approximately 5010 instructions,
+is included. No CPU observation incurs a page-in. Current Mech executes
+**47.237 million more instructions per compression**. Instructions and cycles
+measure different costs; their reductions do not have to equal elapsed gains.
 
-There are **48.154 million extra instructions per compression**. Mech retires
-about 3.595 instructions/cycle here versus Roc's 1.470, so an instruction-count
-reduction does not translate directly into the same elapsed-time reduction.
-Primary uninstrumented time is the latency measure.
+## Memory and buffer ownership
 
-## Memory of the prepared executable
+Tracked live heap retained before compression is **142,706,080 bytes** in both
+Mech versions. Whole-task RSS and footprint include retained compiler/catalog
+and preparation; these are not minimal runtime-only application requirements.
+Tracked heap, RSS and physical footprint are different views and must not be
+added. Tracked heap excludes allocator-private heaps, direct VM and transient
+relocating-realloc overlap. Reallocations remain 1213, including 458 relocations.
 
-| Metric | Roc | Previous Mech | Current Mech | Current / Roc |
-| --- | ---: | ---: | ---: | ---: |
-| Tracked live heap at compression entry | 32 bytes | 141.596 MB | **142.706 MB** | different retained state |
-| Kernel physical footprint after compression | 14.435 MB | 228.296 MB | **228.411 MB** | **15.823×** |
-| Resident-set size after compression | 14.795 MB | 319.275 MB | **319.390 MB** | **21.588×** |
-
-Tracked heap, physical footprint and RSS are different accounting views and must
-not be added. Tracked heap excludes allocator-private heaps, direct VM and
-transient overlap inside a relocating realloc. Whole-task metrics include
-compiler/catalog/preparation retained by this harness; they do not establish
-the size of a minimal runtime-only Mech application. The prior multi-gigabyte
-full-JIT configuration is a separate setup.
-
-The extra 1.110 MB of current prepared heap is the measured cost of the newly
-prepared immutable selector metadata. It is retained outside compression's
-allocation boundary. This is a time/memory tradeoff, not a memory improvement.
-
-## Buffer reuse and copying
-
-| Large backing requests during one compression | Roc | Mech | Reduction to investigate |
-| --- | ---: | ---: | --- |
-| U64 path capacity, about 2.44 MB each | 1 | **35** | 34 additional capacity requests |
-| U16 tree, about 0.524 MB each | 1 | **5** | four whole-tree fallback copies |
-| U32 cache, about 6.00 MB each | 1 | **1** | already one backing |
-
-The 34 extra path requests reserve **83,029,904 bytes of capacity**. They copy
-only initialized elements; 83 MB is not demonstrated data copying. The retained
-ownership census identifies 32 later appends without a usable consume proof and
-two clears retaining private-frame aliases. Reuse requires proving those aliases
-have no future read. The four tree fallback copies contain **2,097,152 initialized
-bytes** in total. Current allocation histograms agree with these unchanged counts.
-
-Both programs receive the complete input already loaded in memory. Mech's
-immutable input handles share frozen backing. Every observation verifies retained
-input aliases and contents. The source's stored-block payload append is preserved.
-Total input-copy bytes and total bytes copied across all runtime operations remain
-unmeasured; allocation capacity is not a substitute.
-
-## Where the sampled work goes
-
-Fresh isolated samples use the actual unchanged primary executables after all
-other workers finish. The current Mech main thread has 1,048 weights:
-
-| Disjoint sample ancestry | Weights | Share |
+| Large backing requests during one compression | Roc | Mech |
 | --- | ---: | ---: |
-| Function-frame actions | 268 | **25.57%** |
-| Ordinary control visits | 148 | **14.12%** |
-| Other invocation helpers | 153 | **14.60%** |
-| Selected library calls | 108 | **10.31%** |
-| Remaining generated/runtime/harness work | 371 | **35.40%** |
+| U64 path capacity, about 2.44 MB each | 1 | **35** |
+| U16 tree, about 0.524 MB each | 1 | **5** |
+| U32 cache, about 6.00 MB each | 1 | **1** |
 
-These samples include surrounding harness work. They locate costs, not exact
-fractions of the compression timer or guaranteed removable time. A retained
-full-compressor census records 12,450 admissions and 8,836 helper visits. The
-previous callback-batching experiment was neutral and was restored; these
-weights do not turn it into an established optimization.
+Both implementations receive the whole input already in memory. Mech's immutable
+input handles share frozen backing, verified on every observation. Neither
+streams file input here. The prior ownership census identifies four extra tree
+fallback copies totaling **2,097,152 initialized bytes**; the current histogram
+retains five tree requests. Extra path requests reserve **83,029,904 bytes of
+capacity** but copy only initialized elements. Reserved capacity is not bytes
+copied. Total input-copy and total runtime-copy bytes remain unmeasured.
 
-Roc's retained sample has 1,416/1,513 weights in its hot compression function.
-Inspected offsets show direct paired stores in tree/cache initialization loops.
-Mech still crosses many frame/admission boundaries. Scalar arithmetic itself
-continues to use emitted native instructions.
+The new pack change is a handle-transport improvement: `Value` already shares
+shape, root and optional schema through Arc. It removes reference-count traffic
+without claiming a payload-copy or allocation reduction. Other aliases stay real
+owners, and later buffer reuse still requires a future-read/exclusivity proof.
 
-## Generated machine code
+## Why the latest change helps
 
-The current generated Object is byte-identical to the previously disassembled
-Object, SHA-256 `3f0c0e1954afe1083254d928a8ff66977ee9203e64bfd281326c75f9ff5f09e9`.
-The immutable-name optimization changes host runtime code and prepared metadata.
-The unchanged generated entry requires **108,400 stack bytes**.
+The existing selected call creates temporary managed handles, validates every
+field and its original finite charge, clones those handles into the private
+frame, then immediately clears the temporaries. Moving the disposable owners
+after the same complete preflight removes the duplicate clone/drop. Current
+arena roots, external aliases, composite child copies and all charges remain.
 
-| Static metric | Roc whole executable text | Mech generated compressor entry |
+Disassembly of the actual measured linked workers shows:
+
+| Reached host helper | Previous | Current |
 | --- | ---: | ---: |
-| Text bytes | 195,456 | **13,885,696** |
-| Four-byte instruction sites, including padding | 48,864 | **3,471,424** |
-| Call sites | 2,212 | **55,450** |
-| Conditional branch sites | 5,389 | **110,409** |
-| Unconditional branch sites | 1,560 | **225,522** |
-| Load sites | 8,182 | **737,401** |
-| Store sites | 7,713 | **402,158** |
+| Pack instruction sites |469|**448**|
+| Pack atomic increment sites |3|**0**|
+| Enclosing frame-action instruction sites |1332|**1332**|
 
-Mech's generated entry alone is **71.043×** the reference's whole text size.
-Scopes differ: Mech's shared runtime is excluded; Roc's whole text is included.
-Unreached paths, errors and padding are included. These are static sites, not
-executed branch/load counts. They establish code expansion, but do not establish
-an instruction-cache bottleneck. Disassembly covers both text sections exactly,
-with no unrecognized tokens.
+Static sites include error/unreached paths and are not dynamic counts. Dynamic
+hardware instructions independently fall **49,519,459.5 → 48,601,797**.
+The generated compressor Object remains byte-identical, SHA-256
+`3f0c0e1954afe1083254d928a8ff66977ee9203e64bfd281326c75f9ff5f09e9`.
+Its entry stack remains **108,400 bytes**.
 
-## Targets and the numbers that should fall
+## Remaining sampled work
 
-1. **Frame and argument handling:** use the existing compiler proofs to remove
-   repeated construction, admission and helper boundaries. Measure hardware
-   instructions, reached callbacks and elapsed time together. Preserve every
-   finite charge, error order, alias and failure/retry guarantee.
-2. **Buffer ownership:** prove dead aliases before reusing path/tree storage.
-   Track the 35/5/1 backing counts, initialized bytes copied, allocation requests
-   and additional peak heap separately. A prior capacity-only reduction did not
-   improve latency; reserve bytes alone are a poor predictor of speed.
-3. **Prepared state and generated code:** identify duplicated immutable metadata
-   and repeated cold/control paths. Track prepared heap, footprint, generated
-   text and stack. Any proposed reduction still needs a matched elapsed result.
+Fresh serial samples of the actual linked primary workers use 695 calls each.
+The current main thread has 1237 disjoint weights:
 
-No matched branch-miss, cache-miss, bandwidth, energy or total-copy-byte count
-is available. These remain unmeasured. No larger-input scaling estimate follows
-from this eight-byte case.
+| Sample ancestry | Weights | Share |
+| --- | ---: | ---: |
+| Remaining generated/runtime/harness work | 453 | 36.62% |
+| Ordinary control visits | 175 | 14.15% |
+| Other invocation helpers | 177 | 14.31% |
+| Selected library calls | 110 | 8.89% |
+| Function-frame actions | 322 | 26.03% |
 
-## Build and measurement scopes
+Samples include surrounding harness work; these are not exact percentages of
+the compression timer or guaranteed removable time. Roc's retained profile has
+1416/1513 weights in its hot compression function. Inspected offsets show direct
+paired stores in tree/cache initialization. Mech's remaining frame/admission
+boundaries and buffer ownership are still concrete optimization targets.
+The earlier callback-batching experiment was neutral and was restored.
 
-Previous compiler source: `552e537fcbcfc3811ce442c982010b5e1e999e6c`.
-Current implementation: `326576c01541820f3f98839880b90ba4e1e4edb4`.
-Release source head: `b8319ff83da250a49e9cee81acb91ba1da5c6a25`.
-Roc's recorded compiler revision is `d99c7b838fb05bb1047eb0c18d4d06d0f86f345d`,
-package `671077457ff7ef3a3d44caf715a3fc595addf379`, executable SHA-256
+The unchanged generated entry contains 3,471,424 four-byte instruction sites,
+55,450 call sites, 110,409 conditional branches, 225,522 unconditional branches,
+737,401 loads and 402,158 stores. Scope differs: Mech's generated compressor entry
+alone versus Roc's entire executable text. These figures include padding and
+unreached paths, and do not establish instruction-cache misses.
+
+## Pins, scope and reproduction
+
+Baseline production source: `a0ad02497c96ea876799d1f844554cdc23d6c669`.
+Implementation: `f85d1d670aba40b145fd5b9586def4aab061b507`.
+Optimized host-build source: `be651d31a82008daf24b4ad2d4dcbc553264a10a`.
+Both primary and counter/memory variants use their exact same coherent optimized
+library graph and same-build Object/image. The transitive Compute artifact is
+frozen too. Every non-GPU library hash is unchanged; only GPU rebuilds, in 22.864 s.
+The preceding round's diagnostic dependency recovery is retained in its own packet.
+
+Roc's recorded compiler revision remains
+`d99c7b838fb05bb1047eb0c18d4d06d0f86f345d`, package
+`671077457ff7ef3a3d44caf715a3fc595addf379`, executable SHA-256
 `3941ef59b2c9343d0493cc6b6d14ca4803e6bd27acfe520b1fb59d9b63026324`.
+All observations use the M1 Mac mini, fixed mimalloc 2.1.7, unchanged level-12
+source/bytecode, real 262144 U16 tree/1500513 U32 cache/305257 U64 path capacity,
+depth 300, nice 258, original near-EOF limits/allocation sites, output capacity 13
+clear/reuse and evaluate_into-only timing. Every Mech call checks exact ten raw
+bytes, independent inflate, input aliases/content, work 60,260,219,686 and zero
+final managed bytes/nodes. No build/test/audit/profile/diagnostic overlaps primary.
 
-The CPU/memory cohorts use matched, optimized coherent Compute/GPU rebuilds
-with the original frozen Engine libraries and fresh same-build Object/images.
-Both Objects match their primary Objects byte-for-byte. The earlier eight-library
-freeze omitted a transitive Compute artifact later overwritten in the shared
-build directory; the diagnostic rebuild configuration is recorded explicitly.
-These counter values are not claimed to come from relinking the original frozen
-primary graph. Primary binaries and elapsed observations remained untouched.
-An attempted after-only original-graph counter build failed before any execution.
-
-All measurements use the same M1 Mac mini, pinned mimalloc 2.1.7, unchanged source
-and bytecode, complete level-12 compression of `abcdefgh`, the real 262144 U16
-tree, 1500513 U32 cache, 305257 U64 path capacity, depth 300, nice 258 and original
-near-EOF limits. Every Mech call checks exact ten raw bytes, independent inflate,
-output capacity 13 with clear/reuse, input aliases, exact work and zero final
-managed bytes/nodes. Algorithms, allocation sites and timing boundaries are
-unchanged. No build, test, audit, profile or diagnostic overlaps primary time.
-
-`python3 compare.py OUTPUT_DIRECTORY` regenerates the JSON/CSV without executing
-a benchmark. The complete current scorecard, archived observations, commands,
-profiles, qualification and independent reconstruction are in
-`../compression-round-42/`. `inspect_static.py` preserves the original exact
-disassembler commands, hashes and mnemonic histograms.
+Branch/cache misses, bandwidth, energy and total copied bytes remain unmeasured.
+No larger-input scaling or parity claim follows from this small complete case.
+[Current design, validation and independent reconstruction](../compression-round-43/CLOSURE.md).
+`python3 compare.py OUTPUT_DIRECTORY` regenerates JSON/CSV without executing a
+benchmark. Original static commands and mnemonic histograms remain in
+`inspect_static.py`/`static.json`; Object identity verifies reuse of that inventory.

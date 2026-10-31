@@ -1,16 +1,16 @@
 {
   "schema": "mech.retained-executable-comparison.v1",
-  "compiler_source": "b8319ff83da250a49e9cee81acb91ba1da5c6a25",
-  "implementation": "326576c01541820f3f98839880b90ba4e1e4edb4",
-  "previous_compiler_source": "552e537fcbcfc3811ce442c982010b5e1e999e6c",
-  "publication_start": "5083c1732a15852aa7017d1c9d2685082feba2ef",
+  "compiler_source": "be651d31a82008daf24b4ad2d4dcbc553264a10a",
+  "implementation": "f85d1d670aba40b145fd5b9586def4aab061b507",
+  "previous_compiler_source": "a0ad02497c96ea876799d1f844554cdc23d6c669",
+  "publication_start": "a0ad02497c96ea876799d1f844554cdc23d6c669",
   "reference_compiler_revision": "d99c7b838fb05bb1047eb0c18d4d06d0f86f345d",
   "reference_package_revision": "671077457ff7ef3a3d44caf715a3fc595addf379",
   "input_bytes": 8,
   "raw_output_bytes": 10,
   "level": 12,
   "new_timing_claimed": false,
-  "description": "Latest measured linked-executable primary cohort plus separately configured coherent diagnostics. Static inventory reused only after proving emitted Object byte identity.",
+  "description": "Latest measured linked-executable primary cohort plus separate diagnostic cohorts with the exact same per-variant coherent libraries. Static inventory reused only after proving emitted Object byte identity.",
   "primary_counts": {
     "mech": 1984,
     "reference": 20000
@@ -29,56 +29,56 @@
     {
       "metric": "elapsed",
       "unit": "seconds",
-      "reference": 0.000285,
-      "mech": 0.0043493335,
-      "mech_over_reference": 15.260819298245615,
-      "mech_minus_reference": 0.0040643335000000004,
-      "previous_mech": 0.0043892294999999994,
-      "change_percent": -0.9089522432126018,
+      "reference": 0.000289,
+      "mech": 0.004290833,
+      "mech_over_reference": 14.847173010380624,
+      "mech_minus_reference": 0.004001833,
+      "previous_mech": 0.004371896,
+      "change_percent": -1.8541840885510585,
       "scope": "primary compression timer"
     },
     {
       "metric": "instructions",
       "unit": "count",
       "reference": 1364372.0,
-      "mech": 49518676.0,
-      "mech_over_reference": 36.29411626741094,
-      "mech_minus_reference": 48154304.0,
-      "previous_mech": 49006012.5,
-      "change_percent": 1.0461236771712512,
+      "mech": 48601797.0,
+      "mech_over_reference": 35.62210086398724,
+      "mech_minus_reference": 47237425.0,
+      "previous_mech": 49519459.5,
+      "change_percent": -1.8531351296352527,
       "scope": "hardware counter delta at compression boundaries; separate coherent CPU cohort"
     },
     {
       "metric": "cycles",
       "unit": "count",
-      "reference": 928313.0,
-      "mech": 13775388.5,
-      "mech_over_reference": 14.839163622614356,
-      "mech_minus_reference": 12847075.5,
-      "previous_mech": 13832994.0,
-      "change_percent": -0.4164355164182121,
+      "reference": 903706.5,
+      "mech": 13567326.5,
+      "mech_over_reference": 15.012978771315687,
+      "mech_minus_reference": 12663620.0,
+      "previous_mech": 13899757.0,
+      "change_percent": -2.391628141412827,
       "scope": "hardware counter delta at compression boundaries; separate coherent CPU cohort"
     },
     {
       "metric": "rss_after",
       "unit": "bytes",
-      "reference": 14794752.0,
-      "mech": 319389696.0,
-      "mech_over_reference": 21.588039867109636,
-      "mech_minus_reference": 304594944.0,
-      "previous_mech": 319275008.0,
-      "change_percent": 0.03592138348642582,
+      "reference": 14761984.0,
+      "mech": 319733760.0,
+      "mech_over_reference": 21.659267480577135,
+      "mech_minus_reference": 304971776.0,
+      "previous_mech": 319684608.0,
+      "change_percent": 0.015375153751540083,
       "scope": "whole prepared task after compression"
     },
     {
       "metric": "physical_after",
       "unit": "bytes",
-      "reference": 14435200.0,
-      "mech": 228411136.0,
-      "mech_over_reference": 15.823205497672356,
-      "mech_minus_reference": 213975936.0,
-      "previous_mech": 228296384.0,
-      "change_percent": 0.05026448425919927,
+      "reference": 14402432.0,
+      "mech": 228706048.0,
+      "mech_over_reference": 15.879682542503932,
+      "mech_minus_reference": 214303616.0,
+      "previous_mech": 228706048.0,
+      "change_percent": 0.0,
       "scope": "whole prepared task after compression"
     },
     {
@@ -121,8 +121,8 @@
       "mech": 163281512.0,
       "mech_over_reference": 17.63802120690996,
       "mech_minus_reference": 154024152.0,
-      "previous_mech": 162171352.0,
-      "change_percent": 0.6845598722023283,
+      "previous_mech": 163281512.0,
+      "change_percent": 0.0,
       "scope": "tracked allocator; separate coherent memory cohort; peak excludes private heaps/direct VM"
     },
     {
@@ -215,7 +215,7 @@
     }
   ],
   "prepared_live_heap_bytes": {
-    "baseline": 141595920.0,
+    "baseline": 142706080.0,
     "candidate": 142706080.0,
     "reference": 32.0
   },
@@ -236,17 +236,17 @@
   "extra_path_requested_capacity_bytes": 83029904,
   "tree_initialized_bytes_copied_by_four_fallbacks": 2097152,
   "mech_profile_sample_weights": {
-    "remaining": 371,
-    "ordinary_control_visit": 148,
-    "other_invocation_helper": 153,
-    "selected_library_call": 108,
-    "buffer_frame_actions": 268
+    "remaining": 453,
+    "ordinary_control_visit": 175,
+    "other_invocation_helper": 177,
+    "selected_library_call": 110,
+    "buffer_frame_actions": 322
   },
-  "mech_profile_total_sample_weights": 1048,
+  "mech_profile_total_sample_weights": 1237,
   "input_files": [
     {
-      "path": "compression-round-42/scorecard.json",
-      "sha256": "4e512f61d6c160a5c7c90444fec443f8d3845c7bdc3fdfcdf4d4de98ab566e71"
+      "path": "compression-round-43/scorecard.json",
+      "sha256": "7cdaa72191d7f24dbcae26ec60d2c02b4c7a565d1618d24cb57a8985c4c52c34"
     },
     {
       "path": "deep-profile/scorecard.json",
@@ -259,7 +259,7 @@
   ],
   "limitations": [
     "Elapsed, CPU, allocation and sampling are separate cohorts, not simultaneous observations.",
-    "Matched optimized coherent Compute/GPU rebuilds of the same production sources/features, original frozen Engine libraries, fresh same-build Object/images. Both emitted Objects match their primary Objects byte-for-byte. Original primary workers are unchanged. Original eight-library freezing omitted a required transitive Compute artifact, so these diagnostics use separately recorded coherent rebuilds; an after-only original-graph link remains unavailable.",
+    "Each hardware/memory variant uses the exact same coherent optimized libraries and unchanged same-build Object/image as its primary worker. Compute is explicitly frozen as well as all eight direct libraries; no Cargo artifact mutation. Hardware/memory instrumentation is separate and excluded from primary elapsed.",
     "Reported hardware instruction counts include about 5010 instructions of uncorrected boundary-read overhead.",
     "Requested capacity is not initialized data copied; total memcpy/input-copy bytes remain unmeasured.",
     "Prepared task includes compiler/catalog/setup state; it is not a minimal runtime-only application.",
