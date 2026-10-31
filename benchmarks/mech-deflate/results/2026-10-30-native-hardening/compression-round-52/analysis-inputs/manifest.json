@@ -1,0 +1,146 @@
+{
+  "created_utc": "2026-10-31T09:28:14.259526+00:00",
+  "head": "2603e12f0516fbbf0ffe53a735ad2c18c2094e20",
+  "files": [
+    {
+      "path": "analyze.py",
+      "sha256": "c64f06d7585720e7a0c73ddd6b191ffba40bda015942ec8c1676ca379d133d3b",
+      "bytes": 7692
+    },
+    {
+      "path": "completed-build-cleanup.json",
+      "sha256": "302d5a2ce9c60184621d4e3b9337abef3b7647a1dae56991a8abceb25c6b3ebc",
+      "bytes": 1161
+    },
+    {
+      "path": "completed-probe-cleanup.json",
+      "sha256": "66b636171feaf3ee653644175f05f8a6926b9743a83f7da344843619af4dbd1b",
+      "bytes": 710
+    },
+    {
+      "path": "duplicate-diagnostic-cleanup.json",
+      "sha256": "6fd9086922d9a011905e67a6a9d0599da8d9222ff8644f47aa9191d5ee48aeaf",
+      "bytes": 1223
+    },
+    {
+      "path": "graph-path.json",
+      "sha256": "9bc7dd9116146354c9e6df75d220c3fcf4da12db22a4b92d1181812eb3eaedf5",
+      "bytes": 6385
+    },
+    {
+      "path": "graph-path.py",
+      "sha256": "40ea3c6be411bcc09bc37d5dfbcb1990f5df06cea37721b50a13130bec5d5129",
+      "bytes": 3001
+    },
+    {
+      "path": "profile_analysis.py",
+      "sha256": "5742f6d97288dd0396355276835f53a5a786cd93049ad9c6f3f7a4bd3ce82501",
+      "bytes": 3018
+    },
+    {
+      "path": "reconstruct.py",
+      "sha256": "f4e481f2011a91ae2d1847ec2603502f25893441c9d75b2acc77ad1e916a2d36",
+      "bytes": 2304
+    },
+    {
+      "path": "source-audit/allocation_profile.c",
+      "sha256": "d4e2ef8c1c635bf0e87a72ec6308abb2ba1b845d5da502a6d204135f07b7c27e",
+      "bytes": 4893
+    },
+    {
+      "path": "source-audit/allocation_profile.h",
+      "sha256": "56852a08a6cb3fbba88daa10b8674cdb938933833722f0ed3bfcc8ae9ae9b31a",
+      "bytes": 384
+    },
+    {
+      "path": "source-audit/allocation_profile.rs",
+      "sha256": "d9c4bc779939567f5dced46d7c7f7030726b4c0e17df72efc3339cdfe2514b19",
+      "bytes": 1306
+    },
+    {
+      "path": "source-audit/baseline-source/hosts/gpu/src/native_artifact/program/runtime/buffer_frames.rs",
+      "sha256": "3586d800f8ce4fb63a6928c3cbd4b03ba6c79502b6f664d6cca2890d241201b0",
+      "bytes": 23974
+    },
+    {
+      "path": "source-audit/baseline-source/hosts/gpu/src/native_artifact/program/runtime/invocation/buffer_frames.rs",
+      "sha256": "70241f668379e7d41617f6916d161af7951d07729ba410757a09c436c27796f9",
+      "bytes": 12495
+    },
+    {
+      "path": "source-audit/baseline-source/hosts/gpu/src/native_artifact/program/runtime/invocation/unsigned_buffers.rs",
+      "sha256": "dcd5453ee371d5efa5c4835adb602782d67cea8661e77dcb3ba0b17b6dbd73a3",
+      "bytes": 4460
+    },
+    {
+      "path": "source-audit/baseline-source/src/engine/src/intrinsics/sequence_buffers.rs",
+      "sha256": "b83e1c8c522f73560a93cd672b1fec9c07df2ff27d3dff738c815ab1959f0606",
+      "bytes": 35096
+    },
+    {
+      "path": "source-audit/baseline-source/src/engine/src/native_artifact/old_value_reads.rs",
+      "sha256": "da4583a8cc1415fdb045962a727c997db9f2f96215ac3ea6d2b84619595b20d6",
+      "bytes": 6387
+    },
+    {
+      "path": "source-audit/baseline-source/src/engine/src/native_artifact/unsigned_buffer_aliases.rs",
+      "sha256": "5cc8e870ace4b1318a7cbeaf33a4c31dbadb883ef313632a264fd3f118da4bb1",
+      "bytes": 5195
+    },
+    {
+      "path": "source-audit/baseline-source/src/engine/src/native_artifact/unsigned_buffer_call.rs",
+      "sha256": "e45109d6751e8b551b5645d719763e2715f4e78e874fd80e10c18fd6b7327be7",
+      "bytes": 3739
+    },
+    {
+      "path": "source-audit/baseline-source/src/engine/src/resident/general/native_collection_unsigned_buffers.rs",
+      "sha256": "bb5178351a18de7010d6f65a5ef47298ab3690c3a01eaf675a092c1bf2bcf108",
+      "bytes": 20434
+    },
+    {
+      "path": "source-audit/cpu.rs",
+      "sha256": "ae3ad076fefb64a838f7c447d76d0024e0428e077042857a3c3d952d62d46d8e",
+      "bytes": 7604
+    },
+    {
+      "path": "source-audit/cpu_usage.rs",
+      "sha256": "3f3e2ac6cead2a6758f96afe77f4fa56da054f1d5e1e1e163f9d79ed8dc12817",
+      "bytes": 385
+    },
+    {
+      "path": "source-audit/final-libraries.json",
+      "sha256": "0fb29eccfe3f48f9f851199f4b4803b706c4c97e14a606526ba492220d814eaa",
+      "bytes": 10910
+    },
+    {
+      "path": "source-audit/final-release.json",
+      "sha256": "6ebe7df2dcc354cb236888b7197915fd17947ec9b8aed80c4f1508e08f6d07cb",
+      "bytes": 5136
+    },
+    {
+      "path": "source-audit/memory.rs",
+      "sha256": "fcbd8e5c552bf64453194c03da144d817b607b23398f77798a41c6a18d559de8",
+      "bytes": 6765
+    },
+    {
+      "path": "source-audit/scope.json",
+      "sha256": "fd372bc7aac0ac414a5d1203cc16c2e22a524310f872bea95ded6c0c0e9c6f7e",
+      "bytes": 637
+    },
+    {
+      "path": "source-audit/usage.c",
+      "sha256": "883fe6a7baf228bc881b4b76aef13f352da38f19c8e7a5b3ca938dbd1dddfd0e",
+      "bytes": 448
+    },
+    {
+      "path": "source-audit/usage.h",
+      "sha256": "ca6ac3c2cd82bfb367c07aa9e26b1aea3b025e48ea44db76dbded2be45b5fb9f",
+      "bytes": 233
+    },
+    {
+      "path": "source-audit/worker.rs",
+      "sha256": "9795a36f021cebbc1ca744c2fd859f455914029a5dc2e5b43fae9a7221a7ca41",
+      "bytes": 6934
+    }
+  ]
+}
