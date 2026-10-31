@@ -12,7 +12,9 @@ use crate::native_artifact::{
     NativeExecutionError, NativeExecutionLimits, NativeExecutionPhase, NativeWorkMeter,
 };
 use mech_core::ManagedMemoryBudget;
-use mech_engine::native_artifact::{NativeMatchOrigin, NativeScalarKind, NativeScalarValue};
+use mech_engine::native_artifact::{
+    NativeLibraryWorkContext, NativeMatchOrigin, NativeScalarKind, NativeScalarValue,
+};
 use std::ffi::c_void;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum NativeIterationExecutionError {
@@ -68,24 +70,25 @@ fn charge(
     meter: &mut NativeWorkMeter,
     amount: u64,
     origin: Option<NativeMatchOrigin>,
+    context: Option<NativeLibraryWorkContext<'_>>,
 ) -> Result<(), NativeIterationExecutionError> {
-    meter
-        .charge(
-            origin.map_or(NativeExecutionPhase::Setup, |origin| {
-                NativeExecutionPhase::Node(origin.node())
-            }),
-            amount,
-        )
-        .map_err(|error| match error {
-            NativeExecutionError::WorkLimit {
-                required, limit, ..
-            } => NativeIterationExecutionError::Work {
-                origin,
-                required,
-                limit,
-            },
-            error => error.into(),
-        })
+    let phase = origin.map_or(NativeExecutionPhase::Setup, |origin| {
+        NativeExecutionPhase::Node(origin.node())
+    });
+    match context {
+        Some(context) => meter.charge_scoped(context, phase, amount),
+        None => meter.charge(phase, amount),
+    }
+    .map_err(|error| match error {
+        NativeExecutionError::WorkLimit {
+            required, limit, ..
+        } => NativeIterationExecutionError::Work {
+            origin,
+            required,
+            limit,
+        },
+        error => error.into(),
+    })
 }
 pub(in crate::native_artifact) trait VisitPlan {
     fn entry(&self) -> u32;
@@ -160,7 +163,24 @@ impl<D: VisitPlan> ControlView<'_, '_, D> {
         group_work: Option<u64>,
         previous: Option<u32>,
     ) -> Result<(), NativeIterationExecutionError> {
-        self.visit_from_entry(raw, group_work, previous, self.descriptor.entry())
+        self.visit_from_entry(raw, group_work, previous, self.descriptor.entry(), None)
+    }
+
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn visit_from_scoped(
+        &mut self,
+        raw: u64,
+        group_work: Option<u64>,
+        previous: Option<u32>,
+        context: NativeLibraryWorkContext<'_>,
+    ) -> Result<(), NativeIterationExecutionError> {
+        self.visit_from_entry(
+            raw,
+            group_work,
+            previous,
+            self.descriptor.entry(),
+            Some(context),
+        )
     }
 
     #[cfg(feature = "canonical-native-program-runtime")]
@@ -176,7 +196,7 @@ impl<D: VisitPlan> ControlView<'_, '_, D> {
         {
             return Err(invalid("outlined entry requires fresh worker control"));
         }
-        self.visit_from_entry(raw, None, None, entry)
+        self.visit_from_entry(raw, None, None, entry, None)
     }
 
     fn visit_from_entry(
@@ -185,6 +205,7 @@ impl<D: VisitPlan> ControlView<'_, '_, D> {
         group_work: Option<u64>,
         previous: Option<u32>,
         entry: u32,
+        context: Option<NativeLibraryWorkContext<'_>>,
     ) -> Result<(), NativeIterationExecutionError> {
         let id = u32::try_from(raw).ok();
         let allowed = !self.state.completed
@@ -225,7 +246,7 @@ impl<D: VisitPlan> ControlView<'_, '_, D> {
         if work < site.work {
             return Err(invalid("group admission underfunds its entry"));
         }
-        charge(&mut self.state.work, work, Some(site.origin))?;
+        charge(&mut self.state.work, work, Some(site.origin), context)?;
         match site.progress {
             Progress::Initialize(iteration) => {
                 let data = self.descriptor.iteration(iteration as usize);
@@ -327,7 +348,7 @@ impl<D: VisitPlan> ControlView<'_, '_, D> {
         {
             return Err(invalid("live count outside exact collection initializer"));
         }
-        charge(&mut self.state.work, 32, None)?;
+        charge(&mut self.state.work, 32, None, None)?;
         self.progress[iteration as usize * 2] = count;
         self.progress[iteration as usize * 2 + 1] = 1;
         Ok(())
@@ -412,7 +433,7 @@ pub(in crate::native_artifact) fn execute<F: FnOnce(*mut Frame) -> u64>(
         )?,
     )?;
     let mut work = NativeWorkMeter::new(limits.max_work)?;
-    charge(&mut work, setup, None)?;
+    charge(&mut work, setup, None, None)?;
     // Actual shared memory denial precedes input type scans as well as copies.
     let mut storage = NativeWordStorage::new(words, limits.max_transport_bytes, budget)?;
     for (index, (value, ty)) in inputs.iter().zip(&descriptor.inputs).enumerate() {
