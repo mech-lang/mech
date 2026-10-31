@@ -385,6 +385,7 @@ struct SetupGeometry {
     locals: usize,
     progress: usize,
     words: usize,
+    logical_words: usize,
     bytes: u64,
 }
 
@@ -495,7 +496,17 @@ impl<'a> Prepared<'a> {
             .and_then(|n| n.checked_add(descriptor.metadata().max_library_inputs.max(1)))
             .and_then(|n| n.checked_add(descriptor.metadata().retirements.words().len()))
             .ok_or_else(|| invalid("transport count overflow"))?;
-        let word_and_frame_bytes = transport_bytes(words)?
+        let tails = &descriptor.metadata().closed_tails;
+        let saved = tails
+            .logical_words
+            .checked_sub(tails.words)
+            .ok_or_else(|| invalid("numeric physical words exceed logical envelope"))?;
+        let logical_words = words
+            .checked_add(saved)
+            .ok_or_else(|| invalid("logical transport count overflow"))?;
+        // Keep the original combined transport threshold and setup price;
+        // physical planned storage below allocates only the compact bank.
+        let word_and_frame_bytes = transport_bytes(logical_words)?
             .checked_add(super::buffer_frames::BufferFrames::raw_bytes(
                 &descriptor.metadata().buffer_frames,
             )?)
@@ -547,6 +558,7 @@ impl<'a> Prepared<'a> {
             locals,
             progress,
             words,
+            logical_words,
             bytes,
         })
     }
@@ -599,6 +611,7 @@ impl<'a> Prepared<'a> {
             locals,
             progress,
             words,
+            logical_words,
             bytes,
         } = Self::setup_geometry(descriptor)?;
         if bytes > limits.execution.max_transport_bytes {
@@ -613,7 +626,7 @@ impl<'a> Prepared<'a> {
         } else {
             NativeWorkMeter::new(limits.execution.max_work)?
         };
-        work.charge(NativeExecutionPhase::Setup, amount(words, 4, 256)?)?;
+        work.charge(NativeExecutionPhase::Setup, amount(logical_words, 4, 256)?)?;
         work.charge(
             NativeExecutionPhase::Setup,
             amount(
