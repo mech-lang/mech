@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T09:43:05.852232+00:00",
+  "head": "310031b158e407055836bd492a7546a1630f66b6",
+  "files": [
+    {
+      "path": "probe/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "probe/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "probe/run.py",
+      "sha256": "0adf811eb62b44014affe230e2370cda1db30f80b1b6dbbb67fc6289ab01af5a",
+      "bytes": 3028
+    },
+    {
+      "path": "probe/source/native_artifact/program/runtime/invocation/buffer_frames.rs",
+      "sha256": "4ffb2b53d2c0354401b61a42b3fb47a516acc5de2b9723dfced7a79e62340d1b",
+      "bytes": 13760
+    },
+    {
+      "path": "probe/variants/after/build.json",
+      "sha256": "206c1e8c065e98a6e1c1252a52b6049fec5f5b716bc793163a61551db215c9df",
+      "bytes": 5176
+    }
+  ]
+}
