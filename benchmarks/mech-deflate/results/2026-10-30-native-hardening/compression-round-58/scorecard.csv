@@ -1,0 +1,16 @@
+metric,reference,before,after,change_percent,scope
+seconds,0.000288,0.0038281039999999997,0.0038457079999999998,0.45986211450890213,matched complete-compression primary
+instructions,1364372.0,42991226.0,42894791.0,-0.2243132121889202,separate serialized diagnostics
+cycles,945516.5,12118885.5,12285354.5,1.373632913686662,separate serialized diagnostics
+rss_after,14745600.0,319766528.0,319668224.0,-0.030742429676688943,separate serialized diagnostics
+physical_after,14386048.0,228935424.0,228902656.0,-0.0143132065049012,separate serialized diagnostics
+pageins,0.0,0.0,0.0,,separate serialized diagnostics
+allocation_requests,95.0,8773.0,8773.0,0.0,separate serialized diagnostics
+requested_bytes,9021923.0,98243843.0,98243843.0,0.0,separate serialized diagnostics
+reallocations,0.0,540.0,540.0,0.0,separate serialized diagnostics
+relocating_reallocations,0.0,458.0,458.0,0.0,separate serialized diagnostics
+relocating_realloc_copy_upper_bound,0.0,13905.0,13905.0,0.0,separate serialized diagnostics
+live_usable_before,32.0,142982512.0,142982512.0,0.0,separate serialized diagnostics
+live_usable_after,32.0,142983016.0,142983016.0,0.0,separate serialized diagnostics
+peak_live_usable,9257360.0,163464584.0,163464584.0,0.0,separate serialized diagnostics
+incremental_peak_live_usable,9257328.0,20482072.0,20482072.0,0.0,separate serialized diagnostics

@@ -1,0 +1,100 @@
+{
+  "before": {
+    "requests": 8773,
+    "requested_bytes": 98243843,
+    "complete_stack_events": 8773,
+    "unique_pcs": 1280,
+    "categories": [
+      {
+        "category": "other",
+        "requests": 4504,
+        "requested_bytes": 97719475
+      },
+      {
+        "category": "typed-matrix construction (includes retained owners)",
+        "requests": 2019,
+        "requested_bytes": 204592
+      },
+      {
+        "category": "budget admission: execution",
+        "requests": 1018,
+        "requested_bytes": 85552
+      },
+      {
+        "category": "budget admission: constant/setup",
+        "requests": 1000,
+        "requested_bytes": 108000
+      },
+      {
+        "category": "private frame preparation",
+        "requests": 227,
+        "requested_bytes": 125792
+      },
+      {
+        "category": "other immutable owner construction",
+        "requests": 3,
+        "requested_bytes": 304
+      },
+      {
+        "category": "budget-import lookup",
+        "requests": 2,
+        "requested_bytes": 128
+      }
+    ],
+    "typed_matrix_sizes": {
+      "32": 673,
+      "160": 673,
+      "112": 673
+    }
+  },
+  "after": {
+    "requests": 8773,
+    "requested_bytes": 98243843,
+    "complete_stack_events": 8773,
+    "unique_pcs": 1280,
+    "categories": [
+      {
+        "category": "other",
+        "requests": 4504,
+        "requested_bytes": 97719475
+      },
+      {
+        "category": "typed-matrix construction (includes retained owners)",
+        "requests": 2019,
+        "requested_bytes": 204592
+      },
+      {
+        "category": "budget admission: execution",
+        "requests": 1018,
+        "requested_bytes": 85552
+      },
+      {
+        "category": "budget admission: constant/setup",
+        "requests": 1000,
+        "requested_bytes": 108000
+      },
+      {
+        "category": "private frame preparation",
+        "requests": 227,
+        "requested_bytes": 125792
+      },
+      {
+        "category": "other immutable owner construction",
+        "requests": 3,
+        "requested_bytes": 304
+      },
+      {
+        "category": "budget-import lookup",
+        "requests": 2,
+        "requested_bytes": 128
+      }
+    ],
+    "typed_matrix_sizes": {
+      "32": 673,
+      "160": 673,
+      "112": 673
+    }
+  },
+  "size_kind_deltas": {},
+  "scope": "Retained R56 second complete-call census for the exact R58 baseline, and a fresh second complete eight-byte candidate call; both use the respective optimized graph and Object/image. All events reconcile exactly to fresh uninstrumented counters. Categories use ordered mutually exclusive stack predicates, not elapsed samples. Raw PCs and same-executable atos results are preserved; unclassified requests stay other."
+}
