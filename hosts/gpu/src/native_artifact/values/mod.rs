@@ -269,13 +269,24 @@ impl<'a> NativeValueArena<'a> {
         slot: u32,
         work: &mut NativeWorkMeter,
     ) -> Result<Value, NativeValueError> {
+        self.read_current(slot, work).cloned()
+    }
+
+    /// The same checked and charged current read, lent only while this arena
+    /// remains borrowed. No owner, generation, visit or funding is retained.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    #[inline]
+    pub(in crate::native_artifact) fn read_current(
+        &self,
+        slot: u32,
+        work: &mut NativeWorkMeter,
+    ) -> Result<&Value, NativeValueError> {
         self.check_work(work)?;
         work.charge(NativeExecutionPhase::Setup, 32)?;
         self.values
             .values()
             .get(slot as usize)
             .and_then(Option::as_ref)
-            .cloned()
             .ok_or(NativeValueError::StaleHandle)
     }
 

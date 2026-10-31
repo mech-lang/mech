@@ -140,19 +140,26 @@ impl Invocation<'_, '_, '_> {
                     .ok_or_else(|| invalid("private projection field missing"))?;
                 if layout.children(*field).is_some() {
                     if let NativeIterationAction::LibraryCall { operands, .. } = action {
-                        let selector = self
-                            .state
+                        // Keep the original paid read before factory/coexistence
+                        // errors. Coexistence only reads live geometry; it cannot
+                        // replace the arena owner. Borrow it for admission below.
+                        self.state
                             .arena
-                            .copy_current(operands[1].get(), &mut self.state.control.work)?;
+                            .read_current(operands[1].get(), &mut self.state.control.work)?;
                         let call = descriptor.metadata().calls[site]
                             .as_ref()
                             .ok_or_else(|| invalid("private child lost selected factory"))?;
                         let coexistence = self.selected_join_coexistence(None)?;
+                        let selector = self
+                            .state
+                            .arena
+                            .native_entry_preview(operands[1].get(), &self.state.control.work)?
+                            .ok_or(NativeValueError::StaleHandle)?;
                         call.admit_buffer_frame_composition(
                             &[None, None],
                             &[0, 0],
                             |field| self.state.buffer_frames.current_leaf(field),
-                            Some((&selector, *ordinal)),
+                            Some((selector, *ordinal)),
                             self.limits,
                             &self.state.library,
                             coexistence,
@@ -177,18 +184,25 @@ impl Invocation<'_, '_, '_> {
                         &mut self.state.control.work,
                     )?;
                     if let NativeIterationAction::LibraryCall { operands, .. } = action {
-                        let selector = self
-                            .state
+                        // Keep the original paid read before factory/coexistence
+                        // errors. Coexistence only reads live geometry; it cannot
+                        // replace the arena owner. Borrow it for admission below.
+                        self.state
                             .arena
-                            .copy_current(operands[1].get(), &mut self.state.control.work)?;
+                            .read_current(operands[1].get(), &mut self.state.control.work)?;
                         let call = descriptor.metadata().calls[site]
                             .as_ref()
                             .ok_or_else(|| invalid("private record field lost selected factory"))?;
                         let coexistence = self.selected_join_coexistence(None)?;
+                        let selector = self
+                            .state
+                            .arena
+                            .native_entry_preview(operands[1].get(), &self.state.control.work)?
+                            .ok_or(NativeValueError::StaleHandle)?;
                         match &value {
                             super::super::buffer_frames::Field::Managed(value) => call
                                 .admit_buffer_record_field(
-                                    &selector,
+                                    selector,
                                     *ordinal,
                                     value,
                                     self.limits,
@@ -197,7 +211,7 @@ impl Invocation<'_, '_, '_> {
                                 ),
                             super::super::buffer_frames::Field::Scalar { schema, value } => call
                                 .admit_buffer_record_word(
-                                    &selector,
+                                    selector,
                                     *ordinal,
                                     *schema,
                                     *value,
