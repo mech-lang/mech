@@ -293,10 +293,9 @@ impl NativePreparedLibraryCall {
                             .ok_or(InvokeError::InvalidInput)?;
                     }
                 }
-                if measured.is_none()
-                    || !recipe
-                        .shape
-                        .matches_current(|i| read(i).and_then(|(v, _)| v.map(Value::shape)))
+                if !recipe
+                    .shape
+                    .matches_current(|i| read(i).and_then(|(v, _)| v.map(Value::shape)))
                 {
                     recipe.shape.validate(&self.schemas, |i| {
                         read(i).and_then(|(v, _)| v.map(Value::shape))
