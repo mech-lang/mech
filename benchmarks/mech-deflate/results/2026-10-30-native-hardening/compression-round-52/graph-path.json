@@ -1,0 +1,337 @@
+{
+  "scope": "Diagnostic source-CFG witness only, not an execution or ownership proof. Actual read roles/eligibility remain the Engine policy. This illustrates the selected append and the conservative reachable old-source Copy at the repeated conditional. No branch exclusion is implemented.",
+  "image_sha256": "1b4dbdd2fb0c1f9f51ae7e9dd0bc931bbc2804e6cb949653461d6348c31615c9",
+  "source_value": 7335,
+  "append_frontier": 12806,
+  "future_old_source_read_path": [
+    12807,
+    12808,
+    12809,
+    12435,
+    12814,
+    12815,
+    12816,
+    12817,
+    12819,
+    12824,
+    12825
+  ],
+  "source_predicate": 7343,
+  "known_other_canonical_owner_at_first_append": 7382,
+  "other_owner_definitions": [
+    {
+      "site": 12510,
+      "action": {
+        "Structural": {
+          "source": 7380,
+          "path": [
+            {
+              "TupleItem": {
+                "ordinal": 0
+              }
+            }
+          ],
+          "observation": "CanonicalValue",
+          "output": 7382
+        }
+      }
+    }
+  ],
+  "blocks": [
+    {
+      "site": 12424,
+      "action": {
+        "Structural": {
+          "source": 7332,
+          "path": [
+            {
+              "TupleItem": {
+                "ordinal": 0
+              }
+            }
+          ],
+          "observation": "CanonicalValue",
+          "output": 7335
+        }
+      },
+      "terminator": {
+        "Scalar": {
+          "Jump": 12425
+        }
+      },
+      "iteration": 136
+    },
+    {
+      "site": 12433,
+      "action": {
+        "Scalar": {
+          "Primitive": {
+            "op": "U64Ne",
+            "operands": [
+              7336,
+              67
+            ],
+            "output": 7343
+          }
+        }
+      },
+      "terminator": {
+        "Scalar": {
+          "Jump": 12434
+        }
+      },
+      "iteration": 136
+    },
+    {
+      "site": 12434,
+      "action": {
+        "Scalar": "None"
+      },
+      "terminator": {
+        "Scalar": {
+          "LiteralBranch": {
+            "left": 7343,
+            "right": 416,
+            "yes": 12437,
+            "no": 12436
+          }
+        }
+      },
+      "iteration": 136
+    },
+    {
+      "site": 12435,
+      "action": {
+        "Scalar": "None"
+      },
+      "terminator": {
+        "Scalar": {
+          "Jump": 12814
+        }
+      },
+      "iteration": 136
+    },
+    {
+      "site": 12806,
+      "action": {
+        "LibraryCall": {
+          "operation": {
+            "module_path": [
+              "sequence"
+            ],
+            "operation_name": "append"
+          },
+          "operands": [
+            7335,
+            7560
+          ],
+          "output": 7561
+        }
+      },
+      "terminator": {
+        "Scalar": {
+          "Jump": 12807
+        }
+      },
+      "iteration": 136
+    },
+    {
+      "site": 12807,
+      "action": {
+        "LibraryCall": {
+          "operation": {
+            "module_path": [
+              "access"
+            ],
+            "operation_name": "column"
+          },
+          "operands": [
+            7406,
+            467
+          ],
+          "output": 7562
+        }
+      },
+      "terminator": {
+        "Scalar": {
+          "Jump": 12808
+        }
+      },
+      "iteration": 136
+    },
+    {
+      "site": 12808,
+      "action": {
+        "LibraryCall": {
+          "operation": {
+            "module_path": [
+              "core"
+            ],
+            "operation_name": "composite-pack"
+          },
+          "operands": [
+            7561,
+            7345,
+            7562
+          ],
+          "output": 7563
+        }
+      },
+      "terminator": {
+        "Scalar": {
+          "Jump": 12809
+        }
+      },
+      "iteration": 136
+    },
+    {
+      "site": 12809,
+      "action": {
+        "Scalar": {
+          "Copy": {
+            "source": 7563,
+            "output": 7344
+          }
+        }
+      },
+      "terminator": {
+        "Scalar": {
+          "Jump": 12435
+        }
+      },
+      "iteration": 136
+    },
+    {
+      "site": 12814,
+      "action": {
+        "Structural": {
+          "source": 7344,
+          "path": [
+            {
+              "TupleItem": {
+                "ordinal": 0
+              }
+            }
+          ],
+          "observation": "CanonicalValue",
+          "output": 7565
+        }
+      },
+      "terminator": {
+        "Scalar": {
+          "Jump": 12815
+        }
+      },
+      "iteration": 136
+    },
+    {
+      "site": 12815,
+      "action": {
+        "Structural": {
+          "source": 7344,
+          "path": [
+            {
+              "TupleItem": {
+                "ordinal": 1
+              }
+            }
+          ],
+          "observation": "U64",
+          "output": 7566
+        }
+      },
+      "terminator": {
+        "Scalar": {
+          "Jump": 12816
+        }
+      },
+      "iteration": 136
+    },
+    {
+      "site": 12816,
+      "action": {
+        "Structural": {
+          "source": 7344,
+          "path": [
+            {
+              "TupleItem": {
+                "ordinal": 2
+              }
+            }
+          ],
+          "observation": "U64",
+          "output": 7567
+        }
+      },
+      "terminator": {
+        "Scalar": {
+          "Jump": 12817
+        }
+      },
+      "iteration": 136
+    },
+    {
+      "site": 12817,
+      "action": {
+        "Scalar": "None"
+      },
+      "terminator": {
+        "Scalar": {
+          "LiteralBranch": {
+            "left": 7343,
+            "right": 416,
+            "yes": 12820,
+            "no": 12819
+          }
+        }
+      },
+      "iteration": 136
+    },
+    {
+      "site": 12819,
+      "action": {
+        "Scalar": "None"
+      },
+      "terminator": {
+        "Scalar": {
+          "LiteralBranch": {
+            "left": 7343,
+            "right": 415,
+            "yes": 12824,
+            "no": 12823
+          }
+        }
+      },
+      "iteration": 136
+    },
+    {
+      "site": 12824,
+      "action": {
+        "Scalar": "None"
+      },
+      "terminator": {
+        "Scalar": {
+          "Jump": 12825
+        }
+      },
+      "iteration": 136
+    },
+    {
+      "site": 12825,
+      "action": {
+        "Scalar": {
+          "Copy": {
+            "source": 7335,
+            "output": 7568
+          }
+        }
+      },
+      "terminator": {
+        "Scalar": {
+          "Jump": 12818
+        }
+      },
+      "iteration": 136
+    }
+  ]
+}
