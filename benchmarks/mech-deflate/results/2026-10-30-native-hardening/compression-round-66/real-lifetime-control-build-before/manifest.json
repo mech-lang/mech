@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-31T18:18:57.308354+00:00",
+  "head": "5cc83e1c5dd90381ed220022e75f1072072dd892",
+  "files": [
+    {
+      "path": "numeric-lifetime-real/frame-before-build.json",
+      "sha256": "a163b227e9eda6668e2cd65b0f002bf171bd5f526c3e6a918f7604dc50f3a9d4",
+      "bytes": 13940
+    },
+    {
+      "path": "numeric-lifetime-real/frame-before-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "numeric-lifetime-real/frame-before-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "numeric-lifetime-real/frame-before.json",
+      "sha256": "b53e03b3641c175414c74462e43e24e34fe5ac5abd66b58f40e33edc14c013f3",
+      "bytes": 284
+    },
+    {
+      "path": "numeric-lifetime-real/witness-source.rs",
+      "sha256": "6ab525922de338ea7b5df7084f63e6c17bd65f82ecdf8157b9f653c6958945d7",
+      "bytes": 14462
+    },
+    {
+      "path": "real-control-build.py",
+      "sha256": "de9428031d1588aa76a4942f2fe2f63070c8cb4039f62465118c4cc478e3fcd1",
+      "bytes": 1785
+    }
+  ]
+}
