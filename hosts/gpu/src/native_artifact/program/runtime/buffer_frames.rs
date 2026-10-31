@@ -129,7 +129,7 @@ impl BufferFrames {
         layout: &Layout,
         output: NativeMatchValue,
         operands: &[NativeMatchValue],
-        inputs: &[Option<Value>],
+        inputs: &mut [Option<Value>],
         bits: &[u64],
         work: &mut NativeWorkMeter,
     ) -> Result<(), NativeProgramExecutionError> {
@@ -147,7 +147,9 @@ impl BufferFrames {
             amount(Self::field_count(layout, fields), 64, 64)?,
         )?;
         // Validate the complete pack before changing any previous frame owner.
-        for (index, ((field, owner), word)) in fields.iter().zip(inputs).zip(bits).enumerate() {
+        for (index, ((field, owner), word)) in
+            fields.iter().zip(inputs.iter()).zip(bits).enumerate()
+        {
             match field.lane() {
                 Lane::Scalar { kind, .. } if owner.is_none() && kind.accepts_bits(*word) => {}
                 Lane::Managed { .. }
@@ -165,7 +167,9 @@ impl BufferFrames {
                 _ => return Err(invalid("private frame field representation differs")),
             }
         }
-        for (index, ((field, owner), word)) in fields.iter().zip(inputs).zip(bits).enumerate() {
+        for (index, ((field, owner), word)) in
+            fields.iter().zip(inputs.iter_mut()).zip(bits).enumerate()
+        {
             if let Some(children) = layout.children(*field) {
                 self.copy_fields(layout, layout.fields(operands[index]).unwrap(), children)?;
                 continue;
@@ -179,7 +183,10 @@ impl BufferFrames {
                     inner.words.values_mut()[at * 2] = *word;
                     inner.words.values_mut()[at * 2 + 1] = 1;
                 }
-                Lane::Managed { at } => inner.owners.values_mut()[at] = owner.clone(),
+                // Admission and complete pack validation precede every take.
+                // These temporary owners are otherwise cleared immediately by
+                // the caller; original arena roots and outside aliases remain.
+                Lane::Managed { at } => inner.owners.values_mut()[at] = owner.take(),
                 Lane::Composite { .. } => unreachable!("handled child span"),
             }
         }
