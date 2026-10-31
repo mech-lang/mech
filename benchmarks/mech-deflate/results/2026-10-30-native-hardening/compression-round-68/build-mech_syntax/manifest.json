@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T19:32:12.530074+00:00",
+  "head": "358d9cfdb8a8cdbeeed1b4ec8ec3b81786e28eed",
+  "files": [
+    {
+      "path": "build-changed.py",
+      "sha256": "52b10cd4e9dcb4bfc7b877f5f925f4b1f3b60f8d63ea42d32d05d2eaf367d338",
+      "bytes": 5905
+    },
+    {
+      "path": "retained-build-commands.json",
+      "sha256": "621c307954ab44a2cc002549dc8bb672b654e8dfb9e72313a9d109f16c9191e5",
+      "bytes": 66665
+    },
+    {
+      "path": "variants/after/mech_syntax.json",
+      "sha256": "bcd6a73261e58f186361ffe6288c11b0830c1cb79cf0f993af37722f161576ab",
+      "bytes": 6694
+    },
+    {
+      "path": "variants/after/mech_syntax.stderr",
+      "sha256": "5af433acaa97360d3b4c2106ff597d2601ee2cf0641e9d9f5d6ccc9a31ca913a",
+      "bytes": 540
+    },
+    {
+      "path": "variants/after/mech_syntax.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}
