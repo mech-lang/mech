@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-31T19:29:43.293625+00:00",
+  "head": "84d532dbb7d337a7eeb7383dc7d7160da1dfd611",
+  "files": [
+    {
+      "path": "core-before/composite_constructor_allocation.rs",
+      "sha256": "963553816b4887a6e3a920d421fb46526b9b63d3e080a86586d2484eda1bb027",
+      "bytes": 22070
+    },
+    {
+      "path": "core-before/descriptor-inventory.json",
+      "sha256": "654d4a67e2bb89e524a6018f0c24715e59fed8b5358e681d77eaa88167d29286",
+      "bytes": 1329
+    },
+    {
+      "path": "core-before/descriptor-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "core-before/descriptor-inventory.stdout",
+      "sha256": "46de9acdc90f66a5acefd75d053ff9aee2879141f5d99baf20aa436a835e84d2",
+      "bytes": 257
+    },
+    {
+      "path": "core-before/resolved_value.rs",
+      "sha256": "fbe7cf4a6ba571649aa0400fe1b681e96e068921da0f0105edfe4e70e5035811",
+      "bytes": 59474
+    },
+    {
+      "path": "core-before/resolved_value_witness_tests.rs",
+      "sha256": "068d00c6a877db1c72a4a5bda50d6498dbe17fb008b1498889adba77b7c6bc3d",
+      "bytes": 12188
+    },
+    {
+      "path": "core-focused.py",
+      "sha256": "853b4fa19bacdf43622096c916da896f5899de7cb9c1cdfb487c860c41e88a96",
+      "bytes": 3818
+    }
+  ]
+}
