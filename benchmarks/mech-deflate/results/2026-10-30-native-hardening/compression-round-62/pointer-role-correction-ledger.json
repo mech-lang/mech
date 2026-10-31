@@ -1,0 +1,546 @@
+{
+  "scope": "Corrected static pointer-slot attribution only; dynamic timing/hardware-counter/allocation measurements and static whole-stack totals unchanged.",
+  "cause": "v1 only tracked mov w16 immediate updates; mov x16 immediate updates left stale offsets. v2 recognizes both forms and invalidates unknown x16 writes.",
+  "objects": {
+    "R59": {
+      "object": "/private/tmp/mech-vector-address-round60-20261031/linked-primary/before/object.o",
+      "object_sha256": "1a8bb46e9f78fec2147b3242fab5651e470f86ba0347f4f11c7f1aedd5008777",
+      "raw_receipt": "/private/tmp/mech-astra-audit-20261031/pointer-role-correction/r59-r60/before/pointer-homes.json",
+      "roles": {
+        "admit_callback": {
+          "slots": {
+            "0x1a6c0": {
+              "stack_load": 39938,
+              "stack_store": 1,
+              "indexed_stack_load": 39938,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": 39938,
+          "corrected_loads": 39938,
+          "attribution_correction": 0
+        },
+        "argument_capacity": {
+          "slots": {
+            "0x1a6a0": {
+              "stack_load": 8241,
+              "stack_store": 1,
+              "indexed_stack_load": 8241,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": 8336,
+          "corrected_loads": 8241,
+          "attribution_correction": -95
+        },
+        "arguments": {
+          "slots": {
+            "0x1a6a8": {
+              "stack_load": 15352,
+              "stack_store": 1,
+              "indexed_stack_load": 15352,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": 15523,
+          "corrected_loads": 15352,
+          "attribution_correction": -171
+        },
+        "context": {
+          "slots": {
+            "0x1a6c8": {
+              "stack_load": 55450,
+              "stack_store": 1,
+              "indexed_stack_load": 55450,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": 55450,
+          "corrected_loads": 55450,
+          "attribution_correction": 0
+        },
+        "frame": {
+          "slots": {
+            "0x0": {
+              "stack_load": 113038,
+              "stack_store": 1,
+              "indexed_stack_load": 0,
+              "indexed_stack_store": 0
+            }
+          },
+          "previous_reported_loads": 113038,
+          "corrected_loads": 113038,
+          "attribution_correction": 0
+        },
+        "helper": {
+          "slots": {
+            "0x1a6b8": {
+              "stack_load": 15518,
+              "stack_store": 1,
+              "indexed_stack_load": 15518,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": 15518,
+          "corrected_loads": 15518,
+          "attribution_correction": 0
+        },
+        "locals": {
+          "slots": {
+            "0x1a6d0": {
+              "stack_load": 95127,
+              "stack_store": 2,
+              "indexed_stack_load": 95127,
+              "indexed_stack_store": 2
+            }
+          },
+          "previous_reported_loads": 118456,
+          "corrected_loads": 95127,
+          "attribution_correction": -23329
+        },
+        "result": {
+          "slots": {
+            "0x1a6b0": {
+              "stack_load": 27564,
+              "stack_store": 1,
+              "indexed_stack_load": 27564,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": 27564,
+          "corrected_loads": 27564,
+          "attribution_correction": 0
+        }
+      },
+      "totals": {
+        "stack_load": {
+          "corrected": 562473,
+          "previous": 562473
+        },
+        "stack_store": {
+          "corrected": 144709,
+          "previous": 144709
+        },
+        "indexed_stack_load": {
+          "corrected": 402254,
+          "previous": 402254
+        },
+        "indexed_stack_store": {
+          "corrected": 117425,
+          "previous": 117425
+        }
+      }
+    },
+    "R60": {
+      "object": "/private/tmp/mech-vector-address-round60-20261031/linked-primary/after/object.o",
+      "object_sha256": "7a211a5fcdfbbc1ceb1ad93a305380712da0af560c30fb387a34673165f04bc5",
+      "raw_receipt": "/private/tmp/mech-astra-audit-20261031/pointer-role-correction/r59-r60/after/pointer-homes.json",
+      "roles": {
+        "admit_callback": {
+          "slots": {
+            "0x1a8c8": {
+              "stack_load": 39938,
+              "stack_store": 1,
+              "indexed_stack_load": 39938,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": 39938,
+          "corrected_loads": 39938,
+          "attribution_correction": 0
+        },
+        "argument_capacity": {
+          "slots": {
+            "0x1a8a8": {
+              "stack_load": 8241,
+              "stack_store": 1,
+              "indexed_stack_load": 8241,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": 8348,
+          "corrected_loads": 8241,
+          "attribution_correction": -107
+        },
+        "arguments": {
+          "slots": {
+            "0x1a8b0": {
+              "stack_load": 30966,
+              "stack_store": 1,
+              "indexed_stack_load": 30966,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": 31255,
+          "corrected_loads": 30966,
+          "attribution_correction": -289
+        },
+        "context": {
+          "slots": {
+            "0x1a8d0": {
+              "stack_load": 55450,
+              "stack_store": 1,
+              "indexed_stack_load": 55450,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": 55450,
+          "corrected_loads": 55450,
+          "attribution_correction": 0
+        },
+        "frame": {
+          "slots": {
+            "0x0": {
+              "stack_load": 113038,
+              "stack_store": 1,
+              "indexed_stack_load": 0,
+              "indexed_stack_store": 0
+            }
+          },
+          "previous_reported_loads": 113038,
+          "corrected_loads": 113038,
+          "attribution_correction": 0
+        },
+        "helper": {
+          "slots": {
+            "0x1a8c0": {
+              "stack_load": 15518,
+              "stack_store": 1,
+              "indexed_stack_load": 15518,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": 15518,
+          "corrected_loads": 15518,
+          "attribution_correction": 0
+        },
+        "locals": {
+          "slots": {
+            "0x1a8d8": {
+              "stack_load": 148811,
+              "stack_store": 2,
+              "indexed_stack_load": 148811,
+              "indexed_stack_store": 2
+            }
+          },
+          "previous_reported_loads": 181076,
+          "corrected_loads": 148811,
+          "attribution_correction": -32265
+        },
+        "result": {
+          "slots": {
+            "0x1a8b8": {
+              "stack_load": 27564,
+              "stack_store": 1,
+              "indexed_stack_load": 27564,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": 27564,
+          "corrected_loads": 27564,
+          "attribution_correction": 0
+        }
+      },
+      "totals": {
+        "stack_load": {
+          "corrected": 628971,
+          "previous": 628971
+        },
+        "stack_store": {
+          "corrected": 144326,
+          "previous": 144326
+        },
+        "indexed_stack_load": {
+          "corrected": 468335,
+          "previous": 468335
+        },
+        "indexed_stack_store": {
+          "corrected": 117001,
+          "previous": 117001
+        }
+      }
+    },
+    "R61": {
+      "object": "/private/tmp/mech-first-change-spill-round61-20261031/linked-primary/after/object.o",
+      "object_sha256": "4e222709764d92ac2b2b74e06a7237d3b901bf07cf095e1c23a7751c0dd8269d",
+      "raw_receipt": "/private/tmp/mech-pointer-locality-round62-20261031/binary-audit/pointer-homes/before/pointer-homes.json",
+      "roles": {
+        "admit_callback": {
+          "slots": {
+            "0x19bc0": {
+              "stack_load": 39938,
+              "stack_store": 1,
+              "indexed_stack_load": 39938,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": 39938,
+          "corrected_loads": 39938,
+          "attribution_correction": 0
+        },
+        "argument_capacity": {
+          "slots": {
+            "0x19ba0": {
+              "stack_load": 8241,
+              "stack_store": 1,
+              "indexed_stack_load": 8241,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": 8345,
+          "corrected_loads": 8241,
+          "attribution_correction": -104
+        },
+        "arguments": {
+          "slots": {
+            "0x19ba8": {
+              "stack_load": 30900,
+              "stack_store": 1,
+              "indexed_stack_load": 30900,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": 31199,
+          "corrected_loads": 30900,
+          "attribution_correction": -299
+        },
+        "context": {
+          "slots": {
+            "0x19bc8": {
+              "stack_load": 55450,
+              "stack_store": 1,
+              "indexed_stack_load": 55450,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": 55450,
+          "corrected_loads": 55450,
+          "attribution_correction": 0
+        },
+        "frame": {
+          "slots": {
+            "0x0": {
+              "stack_load": 113038,
+              "stack_store": 1,
+              "indexed_stack_load": 0,
+              "indexed_stack_store": 0
+            }
+          },
+          "previous_reported_loads": 113038,
+          "corrected_loads": 113038,
+          "attribution_correction": 0
+        },
+        "helper": {
+          "slots": {
+            "0x19bb8": {
+              "stack_load": 15518,
+              "stack_store": 1,
+              "indexed_stack_load": 15518,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": 15518,
+          "corrected_loads": 15518,
+          "attribution_correction": 0
+        },
+        "locals": {
+          "slots": {
+            "0x19bd0": {
+              "stack_load": 139076,
+              "stack_store": 2,
+              "indexed_stack_load": 139076,
+              "indexed_stack_store": 2
+            }
+          },
+          "previous_reported_loads": 165897,
+          "corrected_loads": 139076,
+          "attribution_correction": -26821
+        },
+        "result": {
+          "slots": {
+            "0x19bb0": {
+              "stack_load": 27564,
+              "stack_store": 1,
+              "indexed_stack_load": 27564,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": 27564,
+          "corrected_loads": 27564,
+          "attribution_correction": 0
+        }
+      },
+      "totals": {
+        "stack_load": {
+          "corrected": 593954,
+          "previous": 593954
+        },
+        "stack_store": {
+          "corrected": 137100,
+          "previous": 137100
+        },
+        "indexed_stack_load": {
+          "corrected": 438478,
+          "previous": 438478
+        },
+        "indexed_stack_store": {
+          "corrected": 111582,
+          "previous": 111582
+        }
+      }
+    },
+    "R62": {
+      "object": "/private/tmp/mech-pointer-locality-round62-20261031/linked-primary/after/object.o",
+      "object_sha256": "4921d95fdc25eaff386a16eb3de22c0178c3171d0eba668a5bee7fabaa0f7224",
+      "raw_receipt": "/private/tmp/mech-pointer-locality-round62-20261031/binary-audit/pointer-homes/after/pointer-homes.json",
+      "roles": {
+        "admit_callback": {
+          "slots": {
+            "0x1a2c8": {
+              "stack_load": 39938,
+              "stack_store": 1,
+              "indexed_stack_load": 39938,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": null,
+          "corrected_loads": 39938,
+          "attribution_correction": null
+        },
+        "argument_capacity": {
+          "slots": {
+            "0x1a2a8": {
+              "stack_load": 8241,
+              "stack_store": 1,
+              "indexed_stack_load": 8241,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": null,
+          "corrected_loads": 8241,
+          "attribution_correction": null
+        },
+        "arguments": {
+          "slots": {
+            "0x1a2b0": {
+              "stack_load": 15445,
+              "stack_store": 1,
+              "indexed_stack_load": 15445,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": null,
+          "corrected_loads": 15445,
+          "attribution_correction": null
+        },
+        "context": {
+          "slots": {
+            "0x1a2d0": {
+              "stack_load": 55450,
+              "stack_store": 1,
+              "indexed_stack_load": 55450,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": null,
+          "corrected_loads": 55450,
+          "attribution_correction": null
+        },
+        "frame": {
+          "slots": {
+            "0x8": {
+              "stack_load": 113028,
+              "stack_store": 1,
+              "indexed_stack_load": 0,
+              "indexed_stack_store": 0
+            }
+          },
+          "previous_reported_loads": null,
+          "corrected_loads": 113028,
+          "attribution_correction": null
+        },
+        "helper": {
+          "slots": {
+            "0x1a2c0": {
+              "stack_load": 15518,
+              "stack_store": 1,
+              "indexed_stack_load": 15518,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": null,
+          "corrected_loads": 15518,
+          "attribution_correction": null
+        },
+        "locals": {
+          "slots": {
+            "0x0": {
+              "stack_load": 39932,
+              "stack_store": 1,
+              "indexed_stack_load": 0,
+              "indexed_stack_store": 0
+            },
+            "0x1a2d8": {
+              "stack_load": 1,
+              "stack_store": 2,
+              "indexed_stack_load": 1,
+              "indexed_stack_store": 2
+            }
+          },
+          "previous_reported_loads": null,
+          "corrected_loads": 39933,
+          "attribution_correction": null
+        },
+        "result": {
+          "slots": {
+            "0x1a2b8": {
+              "stack_load": 27564,
+              "stack_store": 1,
+              "indexed_stack_load": 27564,
+              "indexed_stack_store": 1
+            }
+          },
+          "previous_reported_loads": null,
+          "corrected_loads": 27564,
+          "attribution_correction": null
+        }
+      },
+      "totals": {
+        "stack_load": {
+          "corrected": 514629,
+          "previous": null
+        },
+        "stack_store": {
+          "corrected": 138046,
+          "previous": null
+        },
+        "indexed_stack_load": {
+          "corrected": 319377,
+          "previous": null
+        },
+        "indexed_stack_store": {
+          "corrected": 112515,
+          "previous": null
+        }
+      }
+    }
+  },
+  "scripts": {
+    "audit-stack-reloads-v1.py": {
+      "sha256": "b57800fcfb4c1c0a34819e62a24df8cd1f858f071f433a32a9f10e83deb81cac",
+      "path": "/private/tmp/mech-astra-audit-20261031/audit-stack-reloads-v1.py"
+    },
+    "audit-stack-reloads.py": {
+      "sha256": "59836a04ce4cd73d513bd36efd0174d0d96858a9ca848313c35fa10c9495ed69",
+      "path": "/private/tmp/mech-astra-audit-20261031/audit-stack-reloads.py"
+    },
+    "audit-pointer-homes.py": {
+      "sha256": "0a3dfaf9a49496b59f5d0057c06a5240d944b28383a13caa0bd31f9ccdac350d",
+      "path": "/private/tmp/mech-astra-audit-20261031/audit-pointer-homes.py"
+    },
+    "summarize-pointer-audit.py": {
+      "sha256": "6d89b7d7e7bee15b9423ccd8ff0c8341c8e67bc2988fc0f175639ce3f73d49b4",
+      "path": "/private/tmp/mech-astra-audit-20261031/summarize-pointer-audit.py"
+    }
+  }
+}

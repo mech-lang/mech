@@ -1,5 +1,7 @@
 # R61: numeric first-change scalar transport
 
+> Correction: pointer-role counts in this historical report are superseded by the [R62 audit correction](../compression-round-62/pointer-role-correction.md). The original counter missed one ARM64 immediate form. Whole-Object totals, measured hardware counters, allocations and timings remain unchanged.
+
 Candidate compiler: `6f412525daf0f7284d4ef6bc2bd8e21f95d22e96`. Baseline R60 compiler: `aea11e1f17f05055535171fa1b0cb8b5ff2d4bcf`. Only GPU was rebuilt; every other production library hash, feature set and profile is unchanged.
 
 The complete eight-byte level-12 call measured **13.359542× the reference**, from **13.548587×** in the matched baseline cohort. Candidate/baseline elapsed is **0.98604695×** (-1.3953%). Reference median: 0.283000 ms.

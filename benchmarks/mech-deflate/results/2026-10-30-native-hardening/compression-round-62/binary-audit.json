@@ -1,0 +1,691 @@
+{
+  "scope": "Static encoded instruction and scalar stack-access comparison; not dynamic visits, retired instructions or elapsed measurements.",
+  "historical_role_count_correction": "Prior audit-stack-reloads.py omitted mov x16 immediate updates, misattributing some spills to a stale pointer offset. Role-specific counts here supersede prior R61165897 locals and31199 arguments figures. Whole stack-access totals and opcode counts were unaffected.",
+  "before": {
+    "object.o": {
+      "path": "/private/tmp/mech-first-change-spill-round61-20261031/linked-primary/after/object.o",
+      "sha256": "4e222709764d92ac2b2b74e06a7237d3b901bf07cf095e1c23a7751c0dd8269d"
+    },
+    "metadata.json": {
+      "path": "/private/tmp/mech-first-change-spill-round61-20261031/linked-primary/after/metadata.json",
+      "sha256": "8c98427567f2891707a230b5d5e696a8fe0c2d39d62bd40a309ec9a905a04b4e"
+    },
+    "descriptor.json": {
+      "path": "/private/tmp/mech-first-change-spill-round61-20261031/linked-primary/after/descriptor.json",
+      "sha256": "b87db111e0978c4b045da2325598f1e79d6f47767e4e0c3d62c028e937617f59"
+    }
+  },
+  "after": {
+    "object.o": {
+      "path": "/private/tmp/mech-pointer-locality-round62-20261031/linked-primary/after/object.o",
+      "sha256": "4921d95fdc25eaff386a16eb3de22c0178c3171d0eba668a5bee7fabaa0f7224"
+    },
+    "metadata.json": {
+      "path": "/private/tmp/mech-pointer-locality-round62-20261031/linked-primary/after/metadata.json",
+      "sha256": "ddba92983b3f34d6e7307e10655a02cc82e23edbcdfdafa2b43e94ce1052de76"
+    },
+    "descriptor.json": {
+      "path": "/private/tmp/mech-pointer-locality-round62-20261031/linked-primary/after/descriptor.json",
+      "sha256": "8a578e3c0b3a4facbb613fc024f59f76488d00b8a7ef2974c484ce9989497702"
+    }
+  },
+  "code_bytes": {
+    "before": 13082688,
+    "after": 11800572,
+    "delta": -1282116
+  },
+  "stack_bytes": {
+    "before": 105552,
+    "after": 107344,
+    "delta": 1792
+  },
+  "static_instructions": {
+    "before": 3270672,
+    "after": 2950143,
+    "delta": -320529
+  },
+  "opcode_delta": {
+    "add": 0,
+    "adds": 0,
+    "and": 0,
+    "b": -4893,
+    "b.eq": -2677,
+    "b.hi": -55,
+    "b.hs": -80,
+    "b.lo": 80,
+    "b.ls": 55,
+    "b.ne": 2677,
+    "blr": 0,
+    "cbnz": 0,
+    "cbz": 0,
+    "clz": 0,
+    "cmp": 0,
+    "cset": 0,
+    "eor": 0,
+    "ldp": 0,
+    "ldr": -119252,
+    "ldrb": 0,
+    "ldur": 39927,
+    "lsl": 0,
+    "lsr": 0,
+    "madd": 0,
+    "mov": -118719,
+    "movk": -118538,
+    "msub": 0,
+    "mul": 0,
+    "mvn": 0,
+    "orr": 0,
+    "pacibsp": 0,
+    "rbit": 0,
+    "retab": 0,
+    "smulh": 0,
+    "stp": 0,
+    "str": 970,
+    "strb": 0,
+    "stur": -24,
+    "sub": 0,
+    "subs": 0,
+    "udf": 0,
+    "udiv": 0,
+    "umulh": 0,
+    "uxtb": 0
+  },
+  "UDIV": {
+    "before": 101,
+    "after": 101,
+    "delta": 0
+  },
+  "MSUB": {
+    "before": 16,
+    "after": 16,
+    "delta": 0
+  },
+  "same_typed_ir": true,
+  "same_program_revision": true,
+  "metadata_descriptor_agree": true,
+  "stack_accesses": {
+    "stack_load": {
+      "before": 593954,
+      "after": 514629,
+      "delta": -79325
+    },
+    "stack_store": {
+      "before": 137100,
+      "after": 138046,
+      "delta": 946
+    },
+    "indexed_stack_load": {
+      "before": 438478,
+      "after": 319377,
+      "delta": -119101
+    },
+    "indexed_stack_store": {
+      "before": 111582,
+      "after": 112515,
+      "delta": 933
+    }
+  },
+  "pointer_roles": {
+    "admit_callback": {
+      "before_slots": {
+        "0x19bc0": {
+          "stack_load": 39938,
+          "stack_store": 1,
+          "indexed_stack_load": 39938,
+          "indexed_stack_store": 1
+        }
+      },
+      "after_slots": {
+        "0x1a2c8": {
+          "stack_load": 39938,
+          "stack_store": 1,
+          "indexed_stack_load": 39938,
+          "indexed_stack_store": 1
+        }
+      },
+      "loads": {
+        "before": 39938,
+        "after": 39938,
+        "delta": 0
+      },
+      "indexed_loads": {
+        "before": 39938,
+        "after": 39938,
+        "delta": 0
+      }
+    },
+    "argument_capacity": {
+      "before_slots": {
+        "0x19ba0": {
+          "stack_load": 8241,
+          "stack_store": 1,
+          "indexed_stack_load": 8241,
+          "indexed_stack_store": 1
+        }
+      },
+      "after_slots": {
+        "0x1a2a8": {
+          "stack_load": 8241,
+          "stack_store": 1,
+          "indexed_stack_load": 8241,
+          "indexed_stack_store": 1
+        }
+      },
+      "loads": {
+        "before": 8241,
+        "after": 8241,
+        "delta": 0
+      },
+      "indexed_loads": {
+        "before": 8241,
+        "after": 8241,
+        "delta": 0
+      }
+    },
+    "arguments": {
+      "before_slots": {
+        "0x19ba8": {
+          "stack_load": 30900,
+          "stack_store": 1,
+          "indexed_stack_load": 30900,
+          "indexed_stack_store": 1
+        }
+      },
+      "after_slots": {
+        "0x1a2b0": {
+          "stack_load": 15445,
+          "stack_store": 1,
+          "indexed_stack_load": 15445,
+          "indexed_stack_store": 1
+        }
+      },
+      "loads": {
+        "before": 30900,
+        "after": 15445,
+        "delta": -15455
+      },
+      "indexed_loads": {
+        "before": 30900,
+        "after": 15445,
+        "delta": -15455
+      }
+    },
+    "context": {
+      "before_slots": {
+        "0x19bc8": {
+          "stack_load": 55450,
+          "stack_store": 1,
+          "indexed_stack_load": 55450,
+          "indexed_stack_store": 1
+        }
+      },
+      "after_slots": {
+        "0x1a2d0": {
+          "stack_load": 55450,
+          "stack_store": 1,
+          "indexed_stack_load": 55450,
+          "indexed_stack_store": 1
+        }
+      },
+      "loads": {
+        "before": 55450,
+        "after": 55450,
+        "delta": 0
+      },
+      "indexed_loads": {
+        "before": 55450,
+        "after": 55450,
+        "delta": 0
+      }
+    },
+    "frame": {
+      "before_slots": {
+        "0x0": {
+          "stack_load": 113038,
+          "stack_store": 1,
+          "indexed_stack_load": 0,
+          "indexed_stack_store": 0
+        }
+      },
+      "after_slots": {
+        "0x8": {
+          "stack_load": 113028,
+          "stack_store": 1,
+          "indexed_stack_load": 0,
+          "indexed_stack_store": 0
+        }
+      },
+      "loads": {
+        "before": 113038,
+        "after": 113028,
+        "delta": -10
+      },
+      "indexed_loads": {
+        "before": 0,
+        "after": 0,
+        "delta": 0
+      }
+    },
+    "helper": {
+      "before_slots": {
+        "0x19bb8": {
+          "stack_load": 15518,
+          "stack_store": 1,
+          "indexed_stack_load": 15518,
+          "indexed_stack_store": 1
+        }
+      },
+      "after_slots": {
+        "0x1a2c0": {
+          "stack_load": 15518,
+          "stack_store": 1,
+          "indexed_stack_load": 15518,
+          "indexed_stack_store": 1
+        }
+      },
+      "loads": {
+        "before": 15518,
+        "after": 15518,
+        "delta": 0
+      },
+      "indexed_loads": {
+        "before": 15518,
+        "after": 15518,
+        "delta": 0
+      }
+    },
+    "locals": {
+      "before_slots": {
+        "0x19bd0": {
+          "stack_load": 139076,
+          "stack_store": 2,
+          "indexed_stack_load": 139076,
+          "indexed_stack_store": 2
+        }
+      },
+      "after_slots": {
+        "0x0": {
+          "stack_load": 39932,
+          "stack_store": 1,
+          "indexed_stack_load": 0,
+          "indexed_stack_store": 0
+        },
+        "0x1a2d8": {
+          "stack_load": 1,
+          "stack_store": 2,
+          "indexed_stack_load": 1,
+          "indexed_stack_store": 2
+        }
+      },
+      "loads": {
+        "before": 139076,
+        "after": 39933,
+        "delta": -99143
+      },
+      "indexed_loads": {
+        "before": 139076,
+        "after": 1,
+        "delta": -139075
+      }
+    },
+    "result": {
+      "before_slots": {
+        "0x19bb0": {
+          "stack_load": 27564,
+          "stack_store": 1,
+          "indexed_stack_load": 27564,
+          "indexed_stack_store": 1
+        }
+      },
+      "after_slots": {
+        "0x1a2b8": {
+          "stack_load": 27564,
+          "stack_store": 1,
+          "indexed_stack_load": 27564,
+          "indexed_stack_store": 1
+        }
+      },
+      "loads": {
+        "before": 27564,
+        "after": 27564,
+        "delta": 0
+      },
+      "indexed_loads": {
+        "before": 27564,
+        "after": 27564,
+        "delta": 0
+      }
+    }
+  },
+  "source796_action": {
+    "origin": {
+      "node": 0,
+      "block": 93,
+      "local": 0
+    },
+    "action": {
+      "Scalar": {
+        "Primitive": {
+          "op": "U64Add",
+          "operands": [
+            856,
+            79
+          ],
+          "output": 864
+        }
+      }
+    },
+    "terminator": {
+      "Scalar": {
+        "Jump": 797
+      }
+    },
+    "iteration": 24
+  },
+  "source797_action": {
+    "origin": {
+      "node": 0,
+      "block": 93,
+      "local": 1
+    },
+    "action": {
+      "LibraryCall": {
+        "template": {
+          "origin": {
+            "node": 0,
+            "block": 93,
+            "local": 1
+          },
+          "revision": [
+            33,
+            244,
+            154,
+            195,
+            242,
+            73,
+            114,
+            71,
+            237,
+            46,
+            47,
+            190,
+            103,
+            52,
+            70,
+            64,
+            57,
+            45,
+            132,
+            161,
+            159,
+            120,
+            13,
+            135,
+            114,
+            173,
+            220,
+            213,
+            5,
+            211,
+            150,
+            193
+          ],
+          "inputs": [
+            {
+              "dimension_parameters": [
+                {
+                  "lifetime": "Turn",
+                  "lower_bound": {
+                    "Constant": 0
+                  },
+                  "upper_bound": null
+                }
+              ],
+              "body": {
+                "Matrix": {
+                  "element": {
+                    "UnsignedInteger": "W8"
+                  },
+                  "dimensions": [
+                    {
+                      "Constant": 1
+                    },
+                    {
+                      "Parameter": 0
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "dimension_parameters": [],
+              "body": {
+                "UnsignedInteger": "W64"
+              }
+            }
+          ],
+          "output": {
+            "dimension_parameters": [],
+            "body": {
+              "UnsignedInteger": "W8"
+            }
+          },
+          "contract": {
+            "Declared": {
+              "inputs": [
+                {
+                  "schema": 53,
+                  "access": "Read",
+                  "delivery": "Signal"
+                },
+                {
+                  "schema": 6,
+                  "access": "Read",
+                  "delivery": "Signal"
+                }
+              ],
+              "outputs": [
+                {
+                  "schema": 3,
+                  "access": "Write",
+                  "delivery": "Signal",
+                  "construction": {
+                    "FullWrite": {
+                      "shape": "Declared"
+                    }
+                  },
+                  "alias": "NoAlias",
+                  "change_detection": "KernelReported"
+                }
+              ],
+              "interaction": "Pure"
+            }
+          },
+          "selected_key": {
+            "module_path": [
+              "access"
+            ],
+            "operation_name": "scalar"
+          },
+          "selected": {
+            "Lexical": {
+              "revision": [
+                33,
+                244,
+                154,
+                195,
+                242,
+                73,
+                114,
+                71,
+                237,
+                46,
+                47,
+                190,
+                103,
+                52,
+                70,
+                64,
+                57,
+                45,
+                132,
+                161,
+                159,
+                120,
+                13,
+                135,
+                114,
+                173,
+                220,
+                213,
+                5,
+                211,
+                150,
+                193
+              ],
+              "owner": 0,
+              "block": 93,
+              "local": 1,
+              "sources": [
+                {
+                  "Control": {
+                    "Parameter": {
+                      "block": 93,
+                      "ordinal": 1
+                    }
+                  }
+                },
+                {
+                  "Control": {
+                    "Local": {
+                      "block": 93,
+                      "node": 0
+                    }
+                  }
+                }
+              ],
+              "leaf": {
+                "selected_key": {
+                  "module_path": [
+                    "access"
+                  ],
+                  "operation_name": "scalar"
+                },
+                "primitive": "MatrixScalarAccess",
+                "inputs": [
+                  {
+                    "dimension_parameters": [
+                      {
+                        "lifetime": "Turn",
+                        "lower_bound": {
+                          "Constant": 0
+                        },
+                        "upper_bound": null
+                      }
+                    ],
+                    "body": {
+                      "Matrix": {
+                        "element": {
+                          "UnsignedInteger": "W8"
+                        },
+                        "dimensions": [
+                          {
+                            "Constant": 1
+                          },
+                          {
+                            "Parameter": 0
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "dimension_parameters": [],
+                    "body": {
+                      "UnsignedInteger": "W64"
+                    }
+                  }
+                ],
+                "output": {
+                  "dimension_parameters": [],
+                  "body": {
+                    "UnsignedInteger": "W8"
+                  }
+                },
+                "contract": {
+                  "Declared": {
+                    "inputs": [
+                      {
+                        "schema": 53,
+                        "access": "Read",
+                        "delivery": "Signal"
+                      },
+                      {
+                        "schema": 6,
+                        "access": "Read",
+                        "delivery": "Signal"
+                      }
+                    ],
+                    "outputs": [
+                      {
+                        "schema": 3,
+                        "access": "Write",
+                        "delivery": "Signal",
+                        "construction": {
+                          "FullWrite": {
+                            "shape": "Declared"
+                          }
+                        },
+                        "alias": "NoAlias",
+                        "change_detection": "KernelReported"
+                      }
+                    ],
+                    "interaction": "Pure"
+                  }
+                },
+                "implementation_memory": "CanonicalFinalize"
+              }
+            }
+          }
+        },
+        "operands": [
+          855,
+          864
+        ],
+        "output": 865
+      }
+    },
+    "terminator": {
+      "Scalar": {
+        "Jump": 798
+      }
+    },
+    "iteration": 24
+  },
+  "source_anchors": {
+    "before": {
+      "796": [
+        "0x20368"
+      ],
+      "797": [
+        "0x20438",
+        "0x21b40",
+        "0x21bf8"
+      ]
+    },
+    "after": {
+      "796": [
+        "0x1b1e8"
+      ],
+      "797": [
+        "0x1b270",
+        "0x1c528",
+        "0x1c5c8"
+      ]
+    }
+  },
+  "limitations": [
+    "Roles inferred on successful straight-line entry before first call/branch; inspect evidence. Additional short-lived copies spilled later are not attributed by this bounded provenance pass.",
+    "The verified operand/window offsets identify the same source action; source callback anchors are not per-instruction debug maps."
+  ]
+}

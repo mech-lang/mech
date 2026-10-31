@@ -1,5 +1,7 @@
 # One-hour compiler audit — 2026-10-31
 
+> Correction: pointer-role counts in this historical report are superseded by the [R62 audit correction](../compression-round-62/pointer-role-correction.md). The original counter missed one ARM64 immediate form. Whole-Object totals, measured hardware counters, allocations and timings remain unchanged.
+
 The complete unchanged eight-byte level-12 workload remains about thirteen times the reference. The final direct R56→R61 comparison uses one fresh reference and gives **13.656178×→13.553403×**, an observed **0.752587% elapsed reduction**. Three of four prepared pairs and 49/64 alternating blocks improve; pair 3 is **1.724041% slower**. This is a modest measured gain, not parity or a larger-input result. Percentages from separate rounds are not multiplied.
 
 | Retained change | Matched elapsed change | Separate retired-instruction change | Allocation requests |
