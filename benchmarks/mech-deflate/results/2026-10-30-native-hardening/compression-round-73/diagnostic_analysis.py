@@ -1,0 +1,10 @@
+"""Recompute bounded mechanism counts from raw diagnostic calls, no execution."""
+from pathlib import Path
+import json,sys
+r=Path(sys.argv[1]);out=Path(sys.argv[2]);p=r/'diagnostic-counts';summary=json.loads((p/'summary.json').read_text());all_rows=[json.loads(x) for x in (p/'run.stdout').read_text().splitlines() if x.startswith('{')];rows=[x for x in all_rows if not x['warmup'] and not x['profile']];assert len(rows)==4
+assert all(x['exact_reference'] and x['independent_inflation'] and x['work']==60260219686 and x['capacity']==13 and len(x['mechanism_counts'])==64 for x in rows)
+assert (p/'run.stderr').read_text().endswith('CLEANUP bytes=0 nodes=0\n');counts=rows[0]['mechanism_counts'];assert all(x['mechanism_counts']==counts for x in rows);assert sum(counts[3:35])==counts[2]
+labels={0:'shared_compute_debit_attempts',1:'admit_callback_attempts',2:'helper_callback_attempts',3:'helper_Library',4:'helper_Move',5:'helper_Collection',6:'helper_Output',40:'frame_Pack_selected',41:'frame_Copy_selected',42:'frame_Project_selected',43:'frame_Project_composite_child',44:'frame_Project_selected_scalar_word',45:'frame_Project_selected_managed_child'}
+high=['WindowPrepare','WindowFinish','StringMapPrepare','StringMapFinish','BorrowedStringsPrepare','BorrowedStringFailure','ClosedTailBegin','ClosedTailEnd','PrefixPause','PrefixBorrowedResume','PrefixTailResume','PrefixScanned','JoinMapPrepare','JoinMapFinish','StructuralObservation','MapOwnerBegin','MapOwnerCall','MapOwnerEnd','MapOwnerSpan','ParallelRun','ParallelTake','ParallelYield','ParallelEnter','FrozenMapCopy','FrozenMapRead','NumericWritePrepare','NumericSegmentBegin','NumericSegmentEnd'];labels.update({7+i:'helper_'+name for i,name in enumerate(high)})
+observed={labels.get(i,str(i)):n for i,n in enumerate(counts) if n};assert observed==summary['consistent_per_call_counts']
+summary.update(status='passed',observations=len(rows),consistent_per_call_counts=observed);out.write_text(json.dumps(summary,indent=2)+'\n');print(json.dumps(observed,indent=2))
