@@ -695,7 +695,7 @@ jobs:
             composition_tests parent_continuation_is_single_use native_runtime_consolidation \
             buffer_frames::tests::batching work::retirement::tests exhausted_retirement_generation \
             --list | tee native-composition-tests.txt
-          test "$(rg -c ': test$' native-composition-tests.txt)" -eq 19
+          test "$(rg -c ': test$' native-composition-tests.txt)" -eq 18
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-program --lib -- \
             composition_tests parent_continuation_is_single_use native_runtime_consolidation \

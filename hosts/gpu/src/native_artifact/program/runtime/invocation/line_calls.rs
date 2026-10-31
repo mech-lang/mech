@@ -1,28 +1,5 @@
 //! Synchronous invocation orchestration for this owner.
 use super::*;
-
-/// The original geometry calculation borrows no arena or frame owner. Only
-/// its existing work ledger is mutable, so a current arena read can stay lent.
-#[inline]
-pub(super) fn line_coexistence(
-    lines: &super::super::lines::State,
-    descriptor: &NativeProgramDescriptor,
-    library: &NativeLibraryWorkBudget,
-    work: &mut NativeWorkMeter,
-    skip: Option<NativeMatchValue>,
-) -> Result<ResourceDemand, Error> {
-    if lines.views.is_empty() {
-        return Ok(ResourceDemand::default());
-    }
-    work.charge(
-        NativeExecutionPhase::Setup,
-        amount(lines.views.len(), 256, 256)?,
-    )?;
-    let ordinal =
-        skip.and_then(|value| descriptor.metadata().line_matrices.matrices[value.get() as usize]);
-    lines.retained_demand(ordinal, &library.memory_budget())
-}
-
 impl Invocation<'_, '_, '_> {
     pub(in crate::native_artifact::program::runtime) fn line_matrix(
         &self,
@@ -42,13 +19,19 @@ impl Invocation<'_, '_, '_> {
         &mut self,
         skip: Option<NativeMatchValue>,
     ) -> Result<ResourceDemand, Error> {
-        line_coexistence(
-            &self.state.line_matrices,
-            self.descriptor,
-            &self.state.library,
-            &mut self.state.control.work,
-            skip,
-        )
+        if self.state.line_matrices.views.is_empty() {
+            return Ok(ResourceDemand::default());
+        }
+        self.state.control.work.charge(
+            NativeExecutionPhase::Setup,
+            amount(self.state.line_matrices.views.len(), 256, 256)?,
+        )?;
+        let ordinal = skip.and_then(|value| {
+            self.descriptor.metadata().line_matrices.matrices[value.get() as usize]
+        });
+        self.state
+            .line_matrices
+            .retained_demand(ordinal, &self.state.library.memory_budget())
     }
     pub(in crate::native_artifact::program::runtime) fn line_matrix_call(
         &mut self,
