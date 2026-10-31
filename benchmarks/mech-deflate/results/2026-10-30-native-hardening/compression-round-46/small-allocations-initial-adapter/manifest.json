@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T03:57:07.020863+00:00",
+  "head": "630f28661388184a520fe7d7d6411a8e4024bff0",
+  "files": [
+    {
+      "path": "small-allocations/adapter-failure.json",
+      "sha256": "1d89ef7742d36d15bb791f7edd6057a0cbfce239c64b4fce4164438c378cb307",
+      "bytes": 415
+    },
+    {
+      "path": "small-allocations/run0.json",
+      "sha256": "413e58e8bbe67189926c2b6c6ce884143c2ca0d3baa441187cb47249f1e29032",
+      "bytes": 12214
+    },
+    {
+      "path": "small-allocations/run0.stderr",
+      "sha256": "c2297a433dc93016f1d5978657b776e38508347701aa958f9f9d20b50dd60397",
+      "bytes": 9604118
+    },
+    {
+      "path": "small-allocations/run0.stdout",
+      "sha256": "6f6f4d977f2a0a87b22c1c1f68584fcc8c1f6a199c17f5e4bff1630afef01115",
+      "bytes": 1181
+    },
+    {
+      "path": "small-allocations-initial.py",
+      "sha256": "7bebc3329bcb0ca9c38b901ba9f530e835d24e66494ece2227ffac4738dbc912",
+      "bytes": 3955
+    }
+  ]
+}
