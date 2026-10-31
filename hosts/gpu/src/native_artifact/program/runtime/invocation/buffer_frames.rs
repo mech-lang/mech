@@ -85,7 +85,7 @@ impl Invocation<'_, '_, '_> {
                     layout,
                     *output,
                     operands,
-                    &self.state.call_inputs.values()[..words.len()],
+                    &mut self.state.call_inputs.values_mut()[..words.len()],
                     words,
                     &mut self.state.control.work,
                 );
