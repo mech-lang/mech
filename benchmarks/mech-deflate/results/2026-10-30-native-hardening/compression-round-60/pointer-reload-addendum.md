@@ -1,5 +1,7 @@
 # R60 addendum: where the extra machine code comes from
 
+> Correction: pointer-role counts in this historical report are superseded by the [R62 audit correction](../compression-round-62/pointer-role-correction.md). The original counter missed one ARM64 immediate form. Whole-Object totals, measured hardware counters, allocations and timings remain unchanged.
+
 The retained R60 result remains **13.565443× reference elapsed**, from **13.521790×**, with elapsed **+0.3228%**, cycles **+0.1961%**, and retired instructions **−0.9686%**. Allocation counts are unchanged. This addendum explains the larger generated code; it does not add or revise timing samples.
 
 The direct-address change removes 1,724 static UDIV instructions and 862 MSUB instructions at 862 eligible sites. Nevertheless, generated text grows by 759,684 bytes and the entry stack by 512 bytes. Inspection of the actual Objects now shows that most extra code reloads pointers from stack spill slots.
