@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-31T16:36:41.142262+00:00",
+  "head": "d94ceb5bc133d3eba81cd0930c60ca1961e18040",
+  "files": [
+    {
+      "path": "engine-after-overlay/all-inventory.json",
+      "sha256": "983e5bd259fd33a07ec71b7e7b79586108ac5c95d91870b8e42f83e9064cbd75",
+      "bytes": 12976
+    },
+    {
+      "path": "engine-after-overlay/all-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-after-overlay/all-inventory.stdout",
+      "sha256": "2ac64ce5d5554bcae45ed2b51363c214cb8c21fa6409d3bd049e23be70d5c5c0",
+      "bytes": 945
+    },
+    {
+      "path": "engine-after-overlay/native_collection_buffer_frames.rs",
+      "sha256": "f19a3ebbf85a5c5cb9478b944e5c5f59162cd0f306292ccd4d3054cf5d624bcb",
+      "bytes": 20540
+    },
+    {
+      "path": "engine-after-overlay/native_collection_frame_composition.rs",
+      "sha256": "6de70c3445c703e7b44c2cfa818e0ae3aad92ae1ca05a7e77dddddb4299df456",
+      "bytes": 15302
+    },
+    {
+      "path": "engine-after-overlay/native_collection_frame_shape.rs",
+      "sha256": "0fa5f331fe7c3f4dfe9f14c507d7e85569f6ba6fd1ac69c4cdc6e85fc0366abc",
+      "bytes": 40333
+    },
+    {
+      "path": "engine-focused.py",
+      "sha256": "774c48367822d7f921e227c57d9df9a07669dfa4f2d9a218057c026fc11c4352",
+      "bytes": 5528
+    }
+  ]
+}
