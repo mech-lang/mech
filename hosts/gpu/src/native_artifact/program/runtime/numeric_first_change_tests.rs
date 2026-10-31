@@ -37,7 +37,7 @@ fn arguments(
         .iter()
         .map(|input| {
             let name = mech_engine::decode_source_input_name(&input.name).unwrap();
-            let (data, shape_values) = match name.as_str() {
+            let (data, shape_values): (ValueDataDraft, Box<[u64]>) = match name.as_str() {
                 "first" | "second" => (
                     ValueDataDraft::Matrix(
                         vec![ValueDataDraft::U32(if name == "first" { a } else { b })].into(),
