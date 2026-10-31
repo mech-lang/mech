@@ -1,0 +1,1950 @@
+{
+  "schema": "mech.dead-private-frame-transfer.v1",
+  "baseline_published": "8ef19b0c8a899a0f0f4f8d09433e5745368f51c3",
+  "implementation": {
+    "parent": "8ef19b0c8a899a0f0f4f8d09433e5745368f51c3",
+    "implementation": "4947e9773cbe418255e182f13166a0b2fe664c73",
+    "ci": "a0c089e0b4f2b67dda7d0b5bcde566a79dead22d",
+    "optimized_source": "a0c089e0b4f2b67dda7d0b5bcde566a79dead22d",
+    "tests_first": "1567f0cb1",
+    "corrected_selected_layouts": "13f23ccc3",
+    "retained_work": 60260219686,
+    "expected_ir_work_abi_bytecode": [
+      132,
+      95,
+      37,
+      14
+    ]
+  },
+  "primary": {
+    "configuration": "Matched linked compressor; identical tiny setup JIT helpers; unchanged evaluate_into timer. Both programs ready before measurements.",
+    "reference_seconds": 0.000288,
+    "fixed_reference_seconds": 0.0003,
+    "groups": [
+      {
+        "group": 0,
+        "medians": {
+          "before": 0.0042359165,
+          "after": 0.0041610835
+        },
+        "after_over_before": 0.9823336933105268
+      },
+      {
+        "group": 1,
+        "medians": {
+          "before": 0.004232625,
+          "after": 0.0041955625
+        },
+        "after_over_before": 0.991243613596763
+      },
+      {
+        "group": 2,
+        "medians": {
+          "before": 0.0042474995,
+          "after": 0.0041805415
+        },
+        "after_over_before": 0.9842359016169396
+      },
+      {
+        "group": 3,
+        "medians": {
+          "before": 0.004202021,
+          "after": 0.0042005415
+        },
+        "after_over_before": 0.9996479075187867
+      }
+    ],
+    "primary_observations": 3968,
+    "all_observations": 3984,
+    "observations_per_variant": 1984,
+    "medians": {
+      "before": {
+        "seconds": 0.004228895999999999,
+        "multiple_of_reference": 14.683666666666664,
+        "multiple_of_fixed_reference": 14.096319999999999
+      },
+      "after": {
+        "seconds": 0.0041867085000000005,
+        "multiple_of_reference": 14.537182291666667,
+        "multiple_of_fixed_reference": 13.955695000000002
+      }
+    },
+    "comparisons": {
+      "after_over_before": {
+        "pooled_ratio": 0.9900239920773651,
+        "improving_groups": 4,
+        "improving_blocks": 49,
+        "median_block_ratio": 0.9913337641353716,
+        "geometric_block_ratio": 0.9900110818980997
+      }
+    }
+  },
+  "cpu": {
+    "reference": {
+      "observations": 32,
+      "instructions": {
+        "median": 1364372.0,
+        "min": 1364164,
+        "max": 1391327
+      },
+      "cycles": {
+        "median": 904110.0,
+        "min": 880698,
+        "max": 950654
+      },
+      "rss_after": {
+        "median": 14843904.0,
+        "min": 14843904,
+        "max": 14843904
+      },
+      "physical_after": {
+        "median": 14484352.0,
+        "min": 14484352,
+        "max": 14484352
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "before": {
+      "observations": 32,
+      "instructions": {
+        "median": 45490459.5,
+        "min": 45490148,
+        "max": 45495958
+      },
+      "cycles": {
+        "median": 13566263.5,
+        "min": 12740413,
+        "max": 14612051
+      },
+      "rss_after": {
+        "median": 319717376.0,
+        "min": 319717376,
+        "max": 319717376
+      },
+      "physical_after": {
+        "median": 228951808.0,
+        "min": 228951808,
+        "max": 228951808
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "after": {
+      "observations": 32,
+      "instructions": {
+        "median": 45057256.0,
+        "min": 45052520,
+        "max": 45090352
+      },
+      "cycles": {
+        "median": 12494762.0,
+        "min": 12364364,
+        "max": 13346194
+      },
+      "rss_after": {
+        "median": 319750144.0,
+        "min": 319750144,
+        "max": 319750144
+      },
+      "physical_after": {
+        "median": 228886272.0,
+        "min": 228886272,
+        "max": 228886272
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    }
+  },
+  "allocation": {
+    "reference": {
+      "observations": 32,
+      "allocation_requests": {
+        "median": 95.0,
+        "min": 95,
+        "max": 95
+      },
+      "requested_bytes": {
+        "median": 9021923.0,
+        "min": 9021923,
+        "max": 9021923
+      },
+      "reallocations": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "relocating_reallocations": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "live_usable_before": {
+        "median": 32.0,
+        "min": 32,
+        "max": 32
+      },
+      "live_usable_after": {
+        "median": 32.0,
+        "min": 32,
+        "max": 32
+      },
+      "peak_live_usable": {
+        "median": 9257360.0,
+        "min": 9257360,
+        "max": 9257360
+      },
+      "incremental_peak_live_usable": {
+        "median": 9257328.0,
+        "min": 9257328,
+        "max": 9257328
+      }
+    },
+    "before": {
+      "observations": 8,
+      "allocation_requests": {
+        "median": 13484.0,
+        "min": 13484,
+        "max": 13484
+      },
+      "requested_bytes": {
+        "median": 98480739.0,
+        "min": 98480739,
+        "max": 98480739
+      },
+      "reallocations": {
+        "median": 1213.0,
+        "min": 1213,
+        "max": 1213
+      },
+      "relocating_reallocations": {
+        "median": 458.0,
+        "min": 458,
+        "max": 458
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 13905.0,
+        "min": 13905,
+        "max": 13905
+      },
+      "live_usable_before": {
+        "median": 142982576.0,
+        "min": 142982576,
+        "max": 142982576
+      },
+      "live_usable_after": {
+        "median": 142983144.0,
+        "min": 142983144,
+        "max": 142983144
+      },
+      "peak_live_usable": {
+        "median": 163500552.0,
+        "min": 163500552,
+        "max": 163500552
+      },
+      "incremental_peak_live_usable": {
+        "median": 20517976.0,
+        "min": 20517976,
+        "max": 20517976
+      }
+    },
+    "after": {
+      "observations": 8,
+      "allocation_requests": {
+        "median": 13484.0,
+        "min": 13484,
+        "max": 13484
+      },
+      "requested_bytes": {
+        "median": 98480739.0,
+        "min": 98480739,
+        "max": 98480739
+      },
+      "reallocations": {
+        "median": 1213.0,
+        "min": 1213,
+        "max": 1213
+      },
+      "relocating_reallocations": {
+        "median": 458.0,
+        "min": 458,
+        "max": 458
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 13905.0,
+        "min": 13905,
+        "max": 13905
+      },
+      "live_usable_before": {
+        "median": 142982576.0,
+        "min": 142982576,
+        "max": 142982576
+      },
+      "live_usable_after": {
+        "median": 142983144.0,
+        "min": 142983144,
+        "max": 142983144
+      },
+      "peak_live_usable": {
+        "median": 163500552.0,
+        "min": 163500552,
+        "max": 163500552
+      },
+      "incremental_peak_live_usable": {
+        "median": 20517976.0,
+        "min": 20517976,
+        "max": 20517976
+      }
+    }
+  },
+  "static": {
+    "before": {
+      "source": "e0c180a47fdeeabada8b6d8df0c57f3f5fdc3d6c",
+      "libraries": {
+        "serde": {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+          "sha256": "c92969536946485cace85c825d49406183f604d7279483af096a2d10d94e2998",
+          "features": [
+            "alloc",
+            "default",
+            "derive",
+            "serde_derive",
+            "std"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "serde_json": {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+          "sha256": "e887a7afbab6cadfb0337bc7bebfa21c68b83933509274961faefac4b412444b",
+          "features": [
+            "alloc",
+            "default",
+            "raw_value",
+            "std",
+            "unbounded_depth"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_core": {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+          "sha256": "d108019406335c7627061c0bf46cfda6e96adfc05fb97dae652499f1bbcbb873",
+          "features": [
+            "atom",
+            "base64",
+            "baselib",
+            "bincode",
+            "bool",
+            "brotli",
+            "byteorder",
+            "c64",
+            "compiler",
+            "complex",
+            "crc32fast",
+            "dot_indexing",
+            "enum",
+            "f32",
+            "f64",
+            "floats",
+            "formulas",
+            "full",
+            "functions",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "indexmap",
+            "invariant_define",
+            "kind_annotation",
+            "kind_define",
+            "libm",
+            "logical_indexing",
+            "map",
+            "math_pow",
+            "matrix",
+            "matrixd",
+            "mika",
+            "nalgebra",
+            "native-plan",
+            "num-rational",
+            "num-traits",
+            "numbers",
+            "pretty_print",
+            "program",
+            "r64",
+            "range",
+            "rational",
+            "record",
+            "resident-execution",
+            "row_vectord",
+            "semantic-compiler",
+            "serde",
+            "serde_derive",
+            "serde_json",
+            "set",
+            "signed_ints",
+            "statements",
+            "statements_default",
+            "std",
+            "string",
+            "subscript",
+            "subscript_default",
+            "subscript_formula",
+            "subscript_range",
+            "subscript_slice",
+            "swizzle",
+            "symbol_table",
+            "table",
+            "tabled",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "unsigned_ints",
+            "variable_assign",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_syntax": {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+          "sha256": "bc9c7570ccb0b0c1820350d5bdcb1ca54611253bf4915dc7bf157e21fd9907a4",
+          "features": [
+            "atom",
+            "baselib",
+            "bool",
+            "c64",
+            "compiler",
+            "complex",
+            "dot_indexing",
+            "enum",
+            "f32",
+            "f64",
+            "floats",
+            "formulas",
+            "full",
+            "functions",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "invariant_define",
+            "kind_annotation",
+            "kind_define",
+            "logical_indexing",
+            "map",
+            "matrix",
+            "matrix_horzcat",
+            "matrix_vertcat",
+            "matrixd",
+            "mika",
+            "numbers",
+            "pretty_print",
+            "program",
+            "r64",
+            "rational",
+            "record",
+            "row_vectord",
+            "semantic-compiler",
+            "serde",
+            "set",
+            "signed_ints",
+            "statements",
+            "statements_default",
+            "string",
+            "subscript",
+            "subscript_default",
+            "subscript_formula",
+            "subscript_range",
+            "subscript_slice",
+            "swizzle",
+            "symbol_table",
+            "table",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "unsigned_ints",
+            "variable_assign",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_engine": {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+          "sha256": "988fc423bc4da29bd9479bfc0482db1bf14f79291bad4ad7e19ceaa20cf1687a",
+          "features": [
+            "access",
+            "artifact-codec",
+            "assign",
+            "async",
+            "atom",
+            "bool",
+            "c64",
+            "combinatorics_default",
+            "combinatorics_n_choose_k",
+            "compare_default",
+            "compare_eq",
+            "compare_gt",
+            "compare_gte",
+            "compare_lt",
+            "compare_lte",
+            "compare_neq",
+            "compare_seq",
+            "compare_sneq",
+            "compiler",
+            "compiler_default",
+            "complex",
+            "convert",
+            "dot_indexing",
+            "enum",
+            "f32",
+            "f64",
+            "floats",
+            "formulas",
+            "full_compiler",
+            "functions",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "indexmap",
+            "integer_bits",
+            "invariant_define",
+            "kind_annotation",
+            "kind_define",
+            "logic_and",
+            "logic_default",
+            "logic_not",
+            "logic_or",
+            "logic_xor",
+            "logical_indexing",
+            "map",
+            "map_ops",
+            "math_acos",
+            "math_acosh",
+            "math_acot",
+            "math_acsc",
+            "math_add",
+            "math_add_assign",
+            "math_asec",
+            "math_asin",
+            "math_asinh",
+            "math_atan",
+            "math_atan2",
+            "math_atanh",
+            "math_cos",
+            "math_cosh",
+            "math_cot",
+            "math_csc",
+            "math_default",
+            "math_div",
+            "math_div_assign",
+            "math_mod",
+            "math_mul",
+            "math_mul_assign",
+            "math_neg",
+            "math_ops_assign_default",
+            "math_ops_default",
+            "math_pow",
+            "math_root_default",
+            "math_sec",
+            "math_sin",
+            "math_sinh",
+            "math_sqrt",
+            "math_sub",
+            "math_sub_assign",
+            "math_tan",
+            "math_tanh",
+            "math_trig_default",
+            "matrix",
+            "matrix_comprehensions",
+            "matrix_default",
+            "matrix_dot",
+            "matrix_horzcat",
+            "matrix_matmul",
+            "matrix_solve",
+            "matrix_transpose",
+            "matrix_vertcat",
+            "matrixd",
+            "mika",
+            "nalgebra",
+            "native-artifact",
+            "native-capture-pages",
+            "native-plan",
+            "numbers",
+            "pretty_print",
+            "program",
+            "pure_text",
+            "r64",
+            "range_default",
+            "range_exclusive",
+            "range_exclusive_increment",
+            "range_inclusive",
+            "range_inclusive_increment",
+            "rational",
+            "record",
+            "resident-artifact",
+            "resident-ekf",
+            "row_vectord",
+            "runtime",
+            "runtime_default",
+            "semantic-compiler",
+            "sequence_buffers",
+            "sequence_sort",
+            "serde",
+            "set",
+            "set_cartesian_product",
+            "set_comprehensions",
+            "set_default",
+            "set_difference",
+            "set_disjoint",
+            "set_element_of",
+            "set_equals",
+            "set_insert",
+            "set_intersection",
+            "set_membership_default",
+            "set_modify_default",
+            "set_not_element_of",
+            "set_not_equals",
+            "set_operations_default",
+            "set_powerset",
+            "set_proper_subset",
+            "set_proper_superset",
+            "set_relations_default",
+            "set_remove",
+            "set_setdata_default",
+            "set_size",
+            "set_subset",
+            "set_superset",
+            "set_symmetric_difference",
+            "set_union",
+            "signed_ints",
+            "source",
+            "source_default",
+            "state_machines",
+            "statements",
+            "statements_default",
+            "stats_default",
+            "stats_sum",
+            "std",
+            "string",
+            "string_concat",
+            "string_default",
+            "subscript",
+            "subscript_default",
+            "subscript_formula",
+            "subscript_range",
+            "subscript_slice",
+            "swizzle",
+            "symbol_table",
+            "table",
+            "trace",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "unsigned_ints",
+            "variable_assign",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "miniz_oxide": {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+          "sha256": "681adce5cb63aef90b398ba24c2c9ef63c9a250f4af390a66e565bb36860d2e3",
+          "features": [
+            "default",
+            "with-alloc"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_gpu": {
+          "path": "/private/tmp/mech-shared-shadows-round51-20261031/variants/after/libmech_gpu.rlib",
+          "sha256": "51b1ae56b4ceaf5566b8364a83ea52f9201840a5ede790b4fc0edad68876a924",
+          "features": [
+            "aot",
+            "canonical-native",
+            "canonical-native-program",
+            "canonical-native-program-runtime",
+            "canonical-native-runtime",
+            "jit"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_stdlib": {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+          "sha256": "bf368096ebfcfaf5747d80b1f2a2118ab34f9e7fb330f243ab78799592afef77",
+          "features": [
+            "access",
+            "assign",
+            "atom",
+            "bool",
+            "c64",
+            "compare_eq",
+            "compare_gt",
+            "compare_gte",
+            "compare_lt",
+            "compare_lte",
+            "compare_neq",
+            "compiler",
+            "convert",
+            "enum",
+            "f32",
+            "f64",
+            "full_values",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "integer_bits",
+            "invariant_define",
+            "logic_and",
+            "logic_or",
+            "map",
+            "math_add",
+            "math_div",
+            "math_mod",
+            "math_mul",
+            "math_sub",
+            "matrix_comprehensions",
+            "matrixd",
+            "mech-compare",
+            "mech-logic",
+            "mech-math",
+            "mech-range",
+            "native-plan",
+            "r64",
+            "range_inclusive",
+            "record",
+            "row_vectord",
+            "runtime",
+            "semantic-compiler",
+            "set",
+            "source",
+            "string",
+            "table",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        }
+      },
+      "object_sha256": "1a8bb46e9f78fec2147b3242fab5651e470f86ba0347f4f11c7f1aedd5008777",
+      "typed_ir_version": 132,
+      "abi_version": 37,
+      "code_bytes": 13046668,
+      "stack_bytes": 108368
+    },
+    "after": {
+      "source": "a0c089e0b4f2b67dda7d0b5bcde566a79dead22d",
+      "libraries": {
+        "serde": {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+          "sha256": "c92969536946485cace85c825d49406183f604d7279483af096a2d10d94e2998",
+          "features": [
+            "alloc",
+            "default",
+            "derive",
+            "serde_derive",
+            "std"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "serde_json": {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+          "sha256": "e887a7afbab6cadfb0337bc7bebfa21c68b83933509274961faefac4b412444b",
+          "features": [
+            "alloc",
+            "default",
+            "raw_value",
+            "std",
+            "unbounded_depth"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_core": {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+          "sha256": "d108019406335c7627061c0bf46cfda6e96adfc05fb97dae652499f1bbcbb873",
+          "features": [
+            "atom",
+            "base64",
+            "baselib",
+            "bincode",
+            "bool",
+            "brotli",
+            "byteorder",
+            "c64",
+            "compiler",
+            "complex",
+            "crc32fast",
+            "dot_indexing",
+            "enum",
+            "f32",
+            "f64",
+            "floats",
+            "formulas",
+            "full",
+            "functions",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "indexmap",
+            "invariant_define",
+            "kind_annotation",
+            "kind_define",
+            "libm",
+            "logical_indexing",
+            "map",
+            "math_pow",
+            "matrix",
+            "matrixd",
+            "mika",
+            "nalgebra",
+            "native-plan",
+            "num-rational",
+            "num-traits",
+            "numbers",
+            "pretty_print",
+            "program",
+            "r64",
+            "range",
+            "rational",
+            "record",
+            "resident-execution",
+            "row_vectord",
+            "semantic-compiler",
+            "serde",
+            "serde_derive",
+            "serde_json",
+            "set",
+            "signed_ints",
+            "statements",
+            "statements_default",
+            "std",
+            "string",
+            "subscript",
+            "subscript_default",
+            "subscript_formula",
+            "subscript_range",
+            "subscript_slice",
+            "swizzle",
+            "symbol_table",
+            "table",
+            "tabled",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "unsigned_ints",
+            "variable_assign",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_syntax": {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+          "sha256": "bc9c7570ccb0b0c1820350d5bdcb1ca54611253bf4915dc7bf157e21fd9907a4",
+          "features": [
+            "atom",
+            "baselib",
+            "bool",
+            "c64",
+            "compiler",
+            "complex",
+            "dot_indexing",
+            "enum",
+            "f32",
+            "f64",
+            "floats",
+            "formulas",
+            "full",
+            "functions",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "invariant_define",
+            "kind_annotation",
+            "kind_define",
+            "logical_indexing",
+            "map",
+            "matrix",
+            "matrix_horzcat",
+            "matrix_vertcat",
+            "matrixd",
+            "mika",
+            "numbers",
+            "pretty_print",
+            "program",
+            "r64",
+            "rational",
+            "record",
+            "row_vectord",
+            "semantic-compiler",
+            "serde",
+            "set",
+            "signed_ints",
+            "statements",
+            "statements_default",
+            "string",
+            "subscript",
+            "subscript_default",
+            "subscript_formula",
+            "subscript_range",
+            "subscript_slice",
+            "swizzle",
+            "symbol_table",
+            "table",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "unsigned_ints",
+            "variable_assign",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_engine": {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+          "sha256": "988fc423bc4da29bd9479bfc0482db1bf14f79291bad4ad7e19ceaa20cf1687a",
+          "features": [
+            "access",
+            "artifact-codec",
+            "assign",
+            "async",
+            "atom",
+            "bool",
+            "c64",
+            "combinatorics_default",
+            "combinatorics_n_choose_k",
+            "compare_default",
+            "compare_eq",
+            "compare_gt",
+            "compare_gte",
+            "compare_lt",
+            "compare_lte",
+            "compare_neq",
+            "compare_seq",
+            "compare_sneq",
+            "compiler",
+            "compiler_default",
+            "complex",
+            "convert",
+            "dot_indexing",
+            "enum",
+            "f32",
+            "f64",
+            "floats",
+            "formulas",
+            "full_compiler",
+            "functions",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "indexmap",
+            "integer_bits",
+            "invariant_define",
+            "kind_annotation",
+            "kind_define",
+            "logic_and",
+            "logic_default",
+            "logic_not",
+            "logic_or",
+            "logic_xor",
+            "logical_indexing",
+            "map",
+            "map_ops",
+            "math_acos",
+            "math_acosh",
+            "math_acot",
+            "math_acsc",
+            "math_add",
+            "math_add_assign",
+            "math_asec",
+            "math_asin",
+            "math_asinh",
+            "math_atan",
+            "math_atan2",
+            "math_atanh",
+            "math_cos",
+            "math_cosh",
+            "math_cot",
+            "math_csc",
+            "math_default",
+            "math_div",
+            "math_div_assign",
+            "math_mod",
+            "math_mul",
+            "math_mul_assign",
+            "math_neg",
+            "math_ops_assign_default",
+            "math_ops_default",
+            "math_pow",
+            "math_root_default",
+            "math_sec",
+            "math_sin",
+            "math_sinh",
+            "math_sqrt",
+            "math_sub",
+            "math_sub_assign",
+            "math_tan",
+            "math_tanh",
+            "math_trig_default",
+            "matrix",
+            "matrix_comprehensions",
+            "matrix_default",
+            "matrix_dot",
+            "matrix_horzcat",
+            "matrix_matmul",
+            "matrix_solve",
+            "matrix_transpose",
+            "matrix_vertcat",
+            "matrixd",
+            "mika",
+            "nalgebra",
+            "native-artifact",
+            "native-capture-pages",
+            "native-plan",
+            "numbers",
+            "pretty_print",
+            "program",
+            "pure_text",
+            "r64",
+            "range_default",
+            "range_exclusive",
+            "range_exclusive_increment",
+            "range_inclusive",
+            "range_inclusive_increment",
+            "rational",
+            "record",
+            "resident-artifact",
+            "resident-ekf",
+            "row_vectord",
+            "runtime",
+            "runtime_default",
+            "semantic-compiler",
+            "sequence_buffers",
+            "sequence_sort",
+            "serde",
+            "set",
+            "set_cartesian_product",
+            "set_comprehensions",
+            "set_default",
+            "set_difference",
+            "set_disjoint",
+            "set_element_of",
+            "set_equals",
+            "set_insert",
+            "set_intersection",
+            "set_membership_default",
+            "set_modify_default",
+            "set_not_element_of",
+            "set_not_equals",
+            "set_operations_default",
+            "set_powerset",
+            "set_proper_subset",
+            "set_proper_superset",
+            "set_relations_default",
+            "set_remove",
+            "set_setdata_default",
+            "set_size",
+            "set_subset",
+            "set_superset",
+            "set_symmetric_difference",
+            "set_union",
+            "signed_ints",
+            "source",
+            "source_default",
+            "state_machines",
+            "statements",
+            "statements_default",
+            "stats_default",
+            "stats_sum",
+            "std",
+            "string",
+            "string_concat",
+            "string_default",
+            "subscript",
+            "subscript_default",
+            "subscript_formula",
+            "subscript_range",
+            "subscript_slice",
+            "swizzle",
+            "symbol_table",
+            "table",
+            "trace",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "unsigned_ints",
+            "variable_assign",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "miniz_oxide": {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+          "sha256": "681adce5cb63aef90b398ba24c2c9ef63c9a250f4af390a66e565bb36860d2e3",
+          "features": [
+            "default",
+            "with-alloc"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_gpu": {
+          "path": "/private/tmp/mech-frame-transfer-round53-20261031/variants/after/libmech_gpu.rlib",
+          "sha256": "396212d90dd23b5b1850ae1277884aa75d3e62fe4b650fc8ff269adfafada382",
+          "features": [
+            "aot",
+            "canonical-native",
+            "canonical-native-program",
+            "canonical-native-program-runtime",
+            "canonical-native-runtime",
+            "jit"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_stdlib": {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+          "sha256": "bf368096ebfcfaf5747d80b1f2a2118ab34f9e7fb330f243ab78799592afef77",
+          "features": [
+            "access",
+            "assign",
+            "atom",
+            "bool",
+            "c64",
+            "compare_eq",
+            "compare_gt",
+            "compare_gte",
+            "compare_lt",
+            "compare_lte",
+            "compare_neq",
+            "compiler",
+            "convert",
+            "enum",
+            "f32",
+            "f64",
+            "full_values",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "integer_bits",
+            "invariant_define",
+            "logic_and",
+            "logic_or",
+            "map",
+            "math_add",
+            "math_div",
+            "math_mod",
+            "math_mul",
+            "math_sub",
+            "matrix_comprehensions",
+            "matrixd",
+            "mech-compare",
+            "mech-logic",
+            "mech-math",
+            "mech-range",
+            "native-plan",
+            "r64",
+            "range_inclusive",
+            "record",
+            "row_vectord",
+            "runtime",
+            "semantic-compiler",
+            "set",
+            "source",
+            "string",
+            "table",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        }
+      },
+      "object_sha256": "1a8bb46e9f78fec2147b3242fab5651e470f86ba0347f4f11c7f1aedd5008777",
+      "typed_ir_version": 132,
+      "abi_version": 37,
+      "code_bytes": 13046668,
+      "stack_bytes": 108368
+    }
+  },
+  "validation": {
+    "fresh_rust_tests": 603,
+    "cohorts": [
+      {
+        "receipt": "units-after/runtime.json",
+        "tests": 326
+      },
+      {
+        "receipt": "units-after/work-values.json",
+        "tests": 32
+      },
+      {
+        "receipt": "units-after/preparation.json",
+        "tests": 2
+      },
+      {
+        "receipt": "qualification/path-mechanism.json",
+        "tests": 1
+      },
+      {
+        "receipt": "qualification/components.json",
+        "tests": 234
+      },
+      {
+        "receipt": "qualification/composition.json",
+        "tests": 8
+      }
+    ],
+    "unchanged_core_tests_in_round48": 413,
+    "unchanged_core_production_hash": "d108019406335c7627061c0bf46cfda6e96adfc05fb97dae652499f1bbcbb873",
+    "linked_executions": 12,
+    "scalar_controls": 12,
+    "frame_allocation_cases": 8,
+    "listed_and_executed_ci_tests": 31,
+    "python_tests": 132,
+    "architecture_checks": 10,
+    "inherited_skip": "complete_unchanged_knucleotide_body_uses_the_owned_emitted_map; reduced selected catalog lacks its stats import",
+    "no_local_all_features_or_hosted_pass_claimed": true
+  },
+  "mechanism": {
+    "observations": 1,
+    "scope": "One complete second eight-byte visit from a matched diagnostic linked worker; trace excluded from performance. Eligibility is existing whole-frame last use, not a payload exclusivity or savings claim.",
+    "selected_copy_visits": 1139,
+    "last_use_visits": 1139,
+    "last_use_managed_handles": 2729,
+    "live_source_visits": 0,
+    "live_managed_handles": 0
+  },
+  "confirmation": {
+    "configuration": "Matched linked compressor; identical tiny setup JIT helpers; unchanged evaluate_into timer. Both programs ready before measurements.",
+    "reference_seconds": 0.00029,
+    "fixed_reference_seconds": 0.0003,
+    "groups": [
+      {
+        "group": 0,
+        "medians": {
+          "before": 0.0042256455,
+          "after": 0.004192167
+        },
+        "after_over_before": 0.9920773051123196
+      },
+      {
+        "group": 1,
+        "medians": {
+          "before": 0.00420475,
+          "after": 0.004222021
+        },
+        "after_over_before": 1.004107497473096
+      },
+      {
+        "group": 2,
+        "medians": {
+          "before": 0.004208146,
+          "after": 0.004162104
+        },
+        "after_over_before": 0.9890588396885468
+      },
+      {
+        "group": 3,
+        "medians": {
+          "before": 0.0042089585,
+          "after": 0.0041923540000000006
+        },
+        "after_over_before": 0.9960549622905525
+      }
+    ],
+    "primary_observations": 8064,
+    "all_observations": 8080,
+    "observations_per_variant": 4032,
+    "medians": {
+      "before": {
+        "seconds": 0.0042129165,
+        "multiple_of_reference": 14.52729827586207,
+        "multiple_of_fixed_reference": 14.043055000000003
+      },
+      "after": {
+        "seconds": 0.0041915835,
+        "multiple_of_reference": 14.453736206896552,
+        "multiple_of_fixed_reference": 13.971945000000002
+      }
+    },
+    "comparisons": {
+      "after_over_before": {
+        "pooled_ratio": 0.9949362870116224,
+        "improving_groups": 3,
+        "improving_blocks": 41,
+        "median_block_ratio": 0.992269704290901,
+        "geometric_block_ratio": 0.9934737067544549
+      }
+    }
+  },
+  "profiles": {
+    "scope": "Fresh matched serial sample windows. Each Mech worker completes 695 calls; reference 20,000. Sampling includes harness and is excluded from primary elapsed. Weights are samples, not instructions or exact timer fractions; ancestry unions overlap. Opaque reference hashes are not assigned unsupported source names.",
+    "profiles": {
+      "baseline": {
+        "sha256": "0e255b12e172eb9d9c979a738e8cac8a6c816e8f268ddbf87534340d6bca561b",
+        "total_exclusive_weights": 1200,
+        "exclusive_top": [
+          [
+            "mech_canonical_program_entry_v1",
+            139
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+            59
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+            38
+          ],
+          [
+            "_tlv_get_addr",
+            35
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+            33
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+            31
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+            27
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget17charge_in_context",
+            24
+          ],
+          [
+            "_RNvMs3_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+            24
+          ],
+          [
+            "_RNvNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10retirement3run",
+            23
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation16readonly_numericNtB4_10Invocation19begin_numeric_views",
+            21
+          ],
+          [
+            "_platform_memmove",
+            20
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+            18
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+            16
+          ],
+          [
+            "_RNvNtNtCskIfnrfrMWVM_9mech_core6schema5shape18evaluate_dimension",
+            15
+          ]
+        ],
+        "frame_exclusive_top": [
+          [
+            "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+            31
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+            18
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls8prepared15frame_admissionNtB2_20FrameAdmissionRecipe9try_admit",
+            12
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_record_child0EBa_",
+            12
+          ],
+          [
+            "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+            12
+          ],
+          [
+            "_tlv_get_addr",
+            12
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames7project",
+            11
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext17try_charge_prefix",
+            11
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget17charge_in_context",
+            10
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames4pack",
+            9
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+            9
+          ],
+          [
+            "_RNvMs4_NtNtCskIfnrfrMWVM_9mech_core8snapshot8encodingNtB5_14ValueFootprint11checked_add",
+            9
+          ],
+          [
+            "_RNvMNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget15frame_footprintNtB2_28PreparedNativeFrameFootprint5value",
+            8
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+            8
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames11copy_fields",
+            8
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+            5
+          ],
+          [
+            "_platform_memset",
+            5
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCskIfnrfrMWVM_9mech_core8snapshot8encoding19ValueFootprintErrorEBM_",
+            5
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames4copy",
+            4
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames6retire",
+            4
+          ]
+        ],
+        "ancestry_unions": {
+          "frame copy actions": {
+            "weights": 19,
+            "percent": 1.5833333333333333
+          },
+          "capacity-buffer calls": {
+            "weights": 18,
+            "percent": 1.5
+          },
+          "memory move/copy": {
+            "weights": 21,
+            "percent": 1.75
+          },
+          "frame actions": {
+            "weights": 283,
+            "percent": 23.583333333333332
+          },
+          "tail cleanup": {
+            "weights": 64,
+            "percent": 5.333333333333333
+          },
+          "canonical construction/admission": {
+            "weights": 67,
+            "percent": 5.583333333333333
+          },
+          "schema closure": {
+            "weights": 21,
+            "percent": 1.75
+          },
+          "projection accounting": {
+            "weights": 36,
+            "percent": 3.0
+          },
+          "thread-local lookup": {
+            "weights": 35,
+            "percent": 2.9166666666666665
+          }
+        },
+        "ancestry_groups_overlap": true
+      },
+      "candidate": {
+        "sha256": "6820d81a53d1c6a5443a0807ef1a0bff655db3d13f0ab08fb702c16f0bebe5e8",
+        "total_exclusive_weights": 1185,
+        "exclusive_top": [
+          [
+            "mech_canonical_program_entry_v1",
+            146
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+            44
+          ],
+          [
+            "_tlv_get_addr",
+            43
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+            36
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+            31
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+            29
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget17charge_in_context",
+            29
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation18retire_tail_locals",
+            28
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+            25
+          ],
+          [
+            "_platform_memmove",
+            22
+          ],
+          [
+            "_RNvMs3_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+            22
+          ],
+          [
+            "_RNvNtNtCskIfnrfrMWVM_9mech_core6schema5shape18evaluate_dimension",
+            21
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+            20
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation16readonly_numericNtB4_10Invocation19begin_numeric_views",
+            20
+          ],
+          [
+            "_RNvNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime5hooks5admit",
+            17
+          ]
+        ],
+        "frame_exclusive_top": [
+          [
+            "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+            36
+          ],
+          [
+            "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+            16
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext17try_charge_prefix",
+            15
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+            12
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+            12
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget17charge_in_context",
+            12
+          ],
+          [
+            "_tlv_get_addr",
+            11
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_record_child0EBa_",
+            10
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames4pack",
+            8
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCskIfnrfrMWVM_9mech_core8snapshot8encoding19ValueFootprintErrorEBM_",
+            8
+          ],
+          [
+            "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena3put",
+            8
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+            7
+          ],
+          [
+            "_RNvMNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget15frame_footprintNtB2_28PreparedNativeFrameFootprint5value",
+            7
+          ],
+          [
+            "_RNvNtNtCskIfnrfrMWVM_9mech_core6schema5shape18evaluate_dimension",
+            7
+          ],
+          [
+            "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget20observe_control_work",
+            6
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames7project",
+            6
+          ],
+          [
+            "_RNvMs7_NtNtCskIfnrfrMWVM_9mech_core8snapshot10validationNtB5_5Value28memory_budget_retained_bytes",
+            5
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation5joinsNtB6_10Invocation25selected_join_coexistence",
+            5
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation5ValueECs7fdMCt8k5K6_8mech_gpu",
+            5
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames12current_leaf",
+            4
+          ]
+        ],
+        "ancestry_unions": {
+          "frame copy actions": {
+            "weights": 9,
+            "percent": 0.759493670886076
+          },
+          "capacity-buffer calls": {
+            "weights": 22,
+            "percent": 1.8565400843881856
+          },
+          "memory move/copy": {
+            "weights": 23,
+            "percent": 1.9409282700421941
+          },
+          "frame actions": {
+            "weights": 288,
+            "percent": 24.303797468354432
+          },
+          "tail cleanup": {
+            "weights": 72,
+            "percent": 6.075949367088608
+          },
+          "canonical construction/admission": {
+            "weights": 65,
+            "percent": 5.485232067510548
+          },
+          "schema closure": {
+            "weights": 16,
+            "percent": 1.350210970464135
+          },
+          "projection accounting": {
+            "weights": 38,
+            "percent": 3.2067510548523206
+          },
+          "thread-local lookup": {
+            "weights": 43,
+            "percent": 3.628691983122363
+          }
+        },
+        "ancestry_groups_overlap": true
+      },
+      "reference": {
+        "sha256": "028788166dc0c2a2f528f5d372e1419b890642ae3cb86d9340268af4deae1fda",
+        "total_exclusive_weights": 1520,
+        "exclusive_top": [
+          [
+            "roc__p5794f552e2e0fcba87a322629fdca7c0.fast",
+            1432
+          ],
+          [
+            "roc__p1a804bfda1f5e4235a696be5d06bcb43.fast",
+            31
+          ],
+          [
+            "roc__pa6e6a0bf5ace6ced425a6feecccd5c1b.fast",
+            16
+          ],
+          [
+            "roc__p81003bf97431a8821d5be871f2471565.fast",
+            6
+          ],
+          [
+            "roc__p499ff7eb2f98e9031bc9d0002db086b6.fast",
+            5
+          ],
+          [
+            "__write_nocancel",
+            4
+          ],
+          [
+            "roc__p9d8198fedbd801212718a09deebc5774.fast",
+            3
+          ],
+          [
+            "roc__pe21b3db7436f4bcdc21a284b2c2e5c88.fast",
+            3
+          ],
+          [
+            "_platform_memset",
+            2
+          ],
+          [
+            "roc__p251d42c9b11261f4b6c38feff48bfd2d.fast",
+            2
+          ],
+          [
+            "mach_absolute_time",
+            2
+          ],
+          [
+            "_mi_page_retire",
+            2
+          ],
+          [
+            "roc_alloc",
+            1
+          ],
+          [
+            "_mi_malloc_generic",
+            1
+          ],
+          [
+            "mi_segments_page_alloc",
+            1
+          ]
+        ],
+        "frame_exclusive_top": [],
+        "ancestry_unions": {
+          "frame copy actions": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "capacity-buffer calls": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "memory move/copy": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "frame actions": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "tail cleanup": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "canonical construction/admission": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "schema closure": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "projection accounting": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "thread-local lookup": {
+            "weights": 1,
+            "percent": 0.06578947368421052
+          }
+        },
+        "ancestry_groups_overlap": true
+      }
+    }
+  },
+  "outcome": {
+    "retained": true,
+    "reason": "Initial elapsed -0.998%; independent longer confirmation -0.506%, seven of eight preparations improve. Instructions fall 0.952%; allocations, memory and generated Object are unchanged. Preserve both cohorts and all contrary metrics."
+  },
+  "changes_percent": {
+    "primary_seconds": -0.9976007922634866,
+    "instructions": -0.9522952829263076,
+    "cycles": -7.898280171249805,
+    "rss_after": 0.01024905196269632,
+    "physical_after": -0.028624364477614073,
+    "pageins": null,
+    "allocation_requests": 0.0,
+    "requested_bytes": 0.0,
+    "reallocations": 0.0,
+    "relocating_reallocations": 0.0,
+    "relocating_realloc_copy_upper_bound": 0.0,
+    "live_usable_before": 0.0,
+    "live_usable_after": 0.0,
+    "peak_live_usable": 0.0,
+    "incremental_peak_live_usable": 0.0
+  },
+  "scope": "Complete eight-byte level-12 only; source/bytecode/algorithm/buffers/allocator/output reuse/timer unchanged. Four prepared pairs. Hardware, allocator, sampling and exact mechanism census are separate serialized cohorts. Hardware reads include boundary overhead; cycle change from one preparation is not a universal speed claim. Current post-call RSS is not OS peak; tracked heap includes harness/catalog state. No larger-input claim."
+}
