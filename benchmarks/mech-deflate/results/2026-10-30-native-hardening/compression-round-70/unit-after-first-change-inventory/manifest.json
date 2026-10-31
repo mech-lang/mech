@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T21:38:37.533674+00:00",
+  "head": "1c1e85ff77b69250be3b47ae94a1abae1e356aa0",
+  "files": [
+    {
+      "path": "units-after/first-change-inventory.json",
+      "sha256": "50bc155b3302a23571dd75dcd354457ef1a790ac7b7b64af2d1d380efec71349",
+      "bytes": 12851
+    },
+    {
+      "path": "units-after/first-change-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "units-after/first-change-inventory.stdout",
+      "sha256": "ab026b22ddd2328bc4eb5f1a8e142b9bba36395f78fa19aa3bb663e9c910980f",
+      "bytes": 168
+    },
+    {
+      "path": "units.py",
+      "sha256": "629bf1d1642b86eef3df71b5996fe0949d6b900e4b27746cf6732659b0b42a5c",
+      "bytes": 3724
+    }
+  ]
+}
