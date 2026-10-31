@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-31T16:29:56.976400+00:00",
+  "head": "2dfb1045e284661e5b1257aeb840dcce88f09366",
+  "files": [
+    {
+      "path": "engine-focused.py",
+      "sha256": "774c48367822d7f921e227c57d9df9a07669dfa4f2d9a218057c026fc11c4352",
+      "bytes": 5528
+    },
+    {
+      "path": "engine-parent-canonical/coverage-inventory.json",
+      "sha256": "8e4225e331b185d6e998e2099c0ae9b83da53202414d8b66e0ffbc355e6fbcde",
+      "bytes": 13072
+    },
+    {
+      "path": "engine-parent-canonical/coverage-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-parent-canonical/coverage-inventory.stdout",
+      "sha256": "5f84112c2c52fafbeea7f76047e181927183600efcf135595d6748a5ce3e4c97",
+      "bytes": 168
+    },
+    {
+      "path": "engine-parent-canonical/native_collection_buffer_frames.rs",
+      "sha256": "762ecd767ae9fc9d919fed1b50803ee6288cfcd962432b567686f46c13a8bd8c",
+      "bytes": 20606
+    },
+    {
+      "path": "engine-parent-canonical/native_collection_frame_composition.rs",
+      "sha256": "103d63837eb775d37db0bb6faa1802d9c09187560cd047de649e78f0331b70c9",
+      "bytes": 15352
+    },
+    {
+      "path": "engine-parent-canonical/native_collection_frame_shape.rs",
+      "sha256": "5747a39a4ed87888abfd3c5970fa8b174ab45d4f829db5b1a7821dd59c9005df",
+      "bytes": 36704
+    }
+  ]
+}
