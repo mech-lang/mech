@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T19:39:57.390674+00:00",
+  "head": "dc712a110e8442c26210f14467f367444c127ea5",
+  "files": [
+    {
+      "path": "source-contracts-focused/planner.json",
+      "sha256": "3ee9e40492fc296e7047eed2b49fe7f8274665241864a7fe54c61aff56f7a1f5",
+      "bytes": 327
+    },
+    {
+      "path": "source-contracts-focused/planner.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "source-contracts-focused/planner.stdout",
+      "sha256": "2735714dbcdd449212ec8780a49a1a43192230a72984043cced9b311807f251a",
+      "bytes": 28
+    },
+    {
+      "path": "source-contracts-focused/results.json",
+      "sha256": "3623acab69d1090a9e2890a71a4efbf6db1ddd162e857dcd801440d3d7f877ec",
+      "bytes": 351
+    },
+    {
+      "path": "source-contracts.py",
+      "sha256": "55aaf52877f935ecaf318c4d348969bcb94ed1af0ae0a7d33baa27dc51c8b190",
+      "bytes": 2829
+    }
+  ]
+}
