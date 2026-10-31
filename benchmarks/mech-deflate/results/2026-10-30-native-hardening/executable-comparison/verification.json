@@ -1,0 +1,23 @@
+{
+  "scope": "Comparison derivation and static coverage checks; no new runtime timing or compiler test claim.",
+  "regenerated": [
+    {
+      "file": "comparison.json",
+      "sha256": "05aac5f6b10dcbaca608ebce7c421c5c17b43d14f93dd28ed341614e3834be03",
+      "byte_identical": true
+    },
+    {
+      "file": "comparison.csv",
+      "sha256": "4031abcb17ec8370b5b1e1033067b993807a228e2430f617c32483775f8fe518",
+      "byte_identical": true
+    }
+  ],
+  "static_sites_exactly_cover_text": true,
+  "static_unrecognized_tokens": 0,
+  "prior_receipts": {
+    "archives_verified": 68,
+    "file_occurrences_verified": 475,
+    "unique_paths": 368,
+    "scorecards_and_targets_byte_identical": true
+  }
+}

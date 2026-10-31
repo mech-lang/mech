@@ -1,0 +1,229 @@
+{
+  "schema": "mech.retained-executable-comparison.v1",
+  "compiler_source": "552e537fcbcfc3811ce442c982010b5e1e999e6c",
+  "published_checkpoint": "0d31783d7d7cbb4d0ee411710f77fd1c317d7126",
+  "reference_compiler_revision": "d99c7b838fb05bb1047eb0c18d4d06d0f86f345d",
+  "reference_package_revision": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "input_bytes": 8,
+  "raw_output_bytes": 10,
+  "level": 12,
+  "new_timing_claimed": false,
+  "description": "Consolidates latest retained linked-executable cohorts; new static inspection only. Pending compiler edits are not measured here.",
+  "primary_counts": {
+    "mech": 1984,
+    "reference": 20000
+  },
+  "cpu_counts": {
+    "baseline": 32,
+    "reference": 32
+  },
+  "allocation_counts": {
+    "baseline": 8,
+    "reference": 32
+  },
+  "rows": [
+    {
+      "metric": "elapsed",
+      "unit": "seconds",
+      "reference": 0.000291,
+      "mech": 0.004387083,
+      "mech_over_reference": 15.075886597938142,
+      "mech_minus_reference": 0.004096083,
+      "scope": "primary compression timer"
+    },
+    {
+      "metric": "instructions",
+      "unit": "count",
+      "reference": 1364372.0,
+      "mech": 49008490.5,
+      "mech_over_reference": 35.920181959172425,
+      "mech_minus_reference": 47644118.5,
+      "scope": "hardware counter delta at compression boundaries; separate CPU cohort"
+    },
+    {
+      "metric": "cycles",
+      "unit": "count",
+      "reference": 935346.5,
+      "mech": 13808872.5,
+      "mech_over_reference": 14.76337645995361,
+      "mech_minus_reference": 12873526.0,
+      "scope": "hardware counter delta at compression boundaries; separate CPU cohort"
+    },
+    {
+      "metric": "rss_after",
+      "unit": "bytes",
+      "reference": 14761984.0,
+      "mech": 318717952.0,
+      "mech_over_reference": 21.590455049944506,
+      "mech_minus_reference": 303955968.0,
+      "scope": "whole prepared task after compression"
+    },
+    {
+      "metric": "physical_after",
+      "unit": "bytes",
+      "reference": 14402432.0,
+      "mech": 227755776.0,
+      "mech_over_reference": 15.813702574676277,
+      "mech_minus_reference": 213353344.0,
+      "scope": "whole prepared task after compression"
+    },
+    {
+      "metric": "allocation_requests",
+      "unit": "count",
+      "reference": 95.0,
+      "mech": 13994.0,
+      "mech_over_reference": 147.30526315789473,
+      "mech_minus_reference": 13899.0,
+      "scope": "tracked allocator; separate memory cohort; peak excludes private heaps/direct VM"
+    },
+    {
+      "metric": "requested_bytes",
+      "unit": "bytes",
+      "reference": 9021923.0,
+      "mech": 98586843.0,
+      "mech_over_reference": 10.927475550389866,
+      "mech_minus_reference": 89564920.0,
+      "scope": "tracked allocator; separate memory cohort; peak excludes private heaps/direct VM"
+    },
+    {
+      "metric": "incremental_peak_live_usable",
+      "unit": "bytes",
+      "reference": 9257328.0,
+      "mech": 20575432.0,
+      "mech_over_reference": 2.2226102391532416,
+      "mech_minus_reference": 11318104.0,
+      "scope": "tracked allocator; separate memory cohort; peak excludes private heaps/direct VM"
+    },
+    {
+      "metric": "peak_live_usable",
+      "unit": "bytes",
+      "reference": 9257360.0,
+      "mech": 162171352.0,
+      "mech_over_reference": 17.51809932853427,
+      "mech_minus_reference": 152913992.0,
+      "scope": "tracked allocator; separate memory cohort; peak excludes private heaps/direct VM"
+    },
+    {
+      "metric": "text_bytes",
+      "unit": "bytes",
+      "reference": 195456,
+      "mech": 13885696,
+      "mech_over_reference": 71.04256712508186,
+      "mech_minus_reference": 13690240,
+      "scope": "scope differs: whole reference executable text versus generated Mech compressor entry"
+    },
+    {
+      "metric": "call_sites",
+      "unit": "static sites",
+      "reference": 2212,
+      "mech": 55450,
+      "mech_over_reference": 25.067811934900543,
+      "mech_minus_reference": 53238,
+      "scope": "disassembled sites including unreached/error paths and padding; not dynamic counts"
+    },
+    {
+      "metric": "conditional_branch_sites",
+      "unit": "static sites",
+      "reference": 5389,
+      "mech": 110409,
+      "mech_over_reference": 20.487845611430693,
+      "mech_minus_reference": 105020,
+      "scope": "disassembled sites including unreached/error paths and padding; not dynamic counts"
+    },
+    {
+      "metric": "load_instruction_sites",
+      "unit": "static sites",
+      "reference": 8182,
+      "mech": 737401,
+      "mech_over_reference": 90.1247861158641,
+      "mech_minus_reference": 729219,
+      "scope": "disassembled sites including unreached/error paths and padding; not dynamic counts"
+    },
+    {
+      "metric": "other_instruction_sites",
+      "unit": "static sites",
+      "reference": 23581,
+      "mech": 1940481,
+      "mech_over_reference": 82.29002162758152,
+      "mech_minus_reference": 1916900,
+      "scope": "disassembled sites including unreached/error paths and padding; not dynamic counts"
+    },
+    {
+      "metric": "return_sites",
+      "unit": "static sites",
+      "reference": 227,
+      "mech": 3,
+      "mech_over_reference": 0.013215859030837005,
+      "mech_minus_reference": -224,
+      "scope": "disassembled sites including unreached/error paths and padding; not dynamic counts"
+    },
+    {
+      "metric": "store_instruction_sites",
+      "unit": "static sites",
+      "reference": 7713,
+      "mech": 402158,
+      "mech_over_reference": 52.14028263969921,
+      "mech_minus_reference": 394445,
+      "scope": "disassembled sites including unreached/error paths and padding; not dynamic counts"
+    },
+    {
+      "metric": "unconditional_branch_sites",
+      "unit": "static sites",
+      "reference": 1560,
+      "mech": 225522,
+      "mech_over_reference": 144.5653846153846,
+      "mech_minus_reference": 223962,
+      "scope": "disassembled sites including unreached/error paths and padding; not dynamic counts"
+    }
+  ],
+  "prepared_live_heap_bytes": {
+    "baseline": 141595920.0,
+    "reference": 32.0
+  },
+  "large_backing_request_counts": {
+    "path": {
+      "mech": 35,
+      "reference": 1
+    },
+    "tree": {
+      "mech": 5,
+      "reference": 1
+    },
+    "cache": {
+      "mech": 1,
+      "reference": 1
+    }
+  },
+  "extra_path_requested_capacity_bytes": 83029904,
+  "tree_initialized_bytes_copied_by_four_fallbacks": 2097152,
+  "mech_profile_sample_weights": {
+    "remaining": 444,
+    "ordinary_control_visit": 201,
+    "other_invocation_helper": 190,
+    "selected_library_call": 126,
+    "buffer_frame_actions": 340
+  },
+  "mech_profile_total_sample_weights": 1301,
+  "input_files": [
+    {
+      "path": "compression-round-40/scorecard.json",
+      "sha256": "415a13928c24317f04b1758614ad77671243a28d6d98b80d1a5b96c8a42c164e"
+    },
+    {
+      "path": "deep-profile/scorecard.json",
+      "sha256": "02c80d60ce53af983d5a0dcf7dc2f2ac6fbbee13e00474ce1de376875b2bde0f"
+    },
+    {
+      "path": "executable-comparison/static.json",
+      "sha256": "75a3405d1f1a6e2c351e0bd89e21eb701e2796ee65699e7055a3f3d11e2e03c4"
+    }
+  ],
+  "limitations": [
+    "Elapsed, CPU, allocation and sampling are separate cohorts, not simultaneous observations.",
+    "Reported hardware instruction counts include about 5010 instructions of uncorrected boundary-read overhead.",
+    "Requested capacity is not initialized data copied; total memcpy/input-copy bytes remain unmeasured.",
+    "Prepared task includes compiler/catalog/setup state; it is not a minimal runtime-only application.",
+    "Static instruction sites include padding and unreached paths; static categories do not measure branch/cache misses.",
+    "Only the complete eight-byte case; no larger-input throughput or scaling prediction."
+  ]
+}
