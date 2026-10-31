@@ -542,7 +542,9 @@ pub(crate) fn apply_observed_turn_demand(
     observed: ResourceDemand,
     final_output: Option<CurrentMemoryFootprint>,
 ) -> Result<TurnMemoryPlan, MemoryPlanError> {
-    if let Some(mut call) = plan.call.clone() {
+    // This plan is owned for the entire refinement. Borrow its call instead
+    // of rebuilding an immutable template; an unselected refinement keeps it.
+    if let Some(call) = plan.call.as_mut() {
         if call.outputs.len() == 1
             && (observed.persistent_bytes != 0
                 || observed.output_elements != 0
@@ -601,16 +603,16 @@ pub(crate) fn apply_observed_turn_demand(
                         .unwrap_or_default()
                 })
                 .collect::<Vec<_>>();
-            let complete = derive_turn_call(&mut call, &resolved, Some(&published))?;
+            let complete = derive_turn_call(call, &resolved, Some(&published))?;
             refresh_turn_allocations(
                 &mut plan.allocations,
-                &call,
+                call,
                 &complete,
                 plan.node,
                 &plan.facts,
             )?;
             plan.demand = checked_demand_add(complete.demand, plan.facts.additional_demand)?;
-            plan.call = Some(scope_turn_call(complete, &call, &plan.allocations));
+            plan.call = Some(scope_turn_call(complete, call, &plan.allocations));
         }
     }
     let observed = checked_demand_add(observed, plan.facts.additional_demand)?;
