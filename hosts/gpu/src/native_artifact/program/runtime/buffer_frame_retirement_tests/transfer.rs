@@ -222,7 +222,9 @@ fn dead_frame_copy_transfers_flat_and_nested_owners_with_original_prices() {
                 let before = snapshot(&frames);
                 let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
                 let mut exact = NativeWorkMeter::new(charge).unwrap();
-                frames.copy(&layout, source, output, &mut exact).unwrap();
+                frames
+                    .copy::<true>(&layout, source, output, &mut exact)
+                    .unwrap();
                 assert_eq!(exact.used(), charge);
                 copied(&layout, &frames, from, to, &before);
                 moved(&layout, &frames, from);
@@ -269,7 +271,11 @@ fn frame_copy_preflight_and_retirement_denials_preserve_aliases_and_retry() {
         let published = snapshot(&frames);
         let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
         let mut denied = NativeWorkMeter::new(charge - 1).unwrap();
-        assert!(frames.copy(&layout, source, output, &mut denied).is_err());
+        assert!(
+            frames
+                .copy::<true>(&layout, source, output, &mut denied)
+                .is_err()
+        );
         assert_eq!(denied.used(), 0);
         unchanged(&frames, &published);
         let fields = leaves(&layout, from);
@@ -301,12 +307,18 @@ fn frame_copy_preflight_and_retirement_denials_preserve_aliases_and_retry() {
         frames.inner.as_mut().unwrap().words.values_mut()[at * 2] = 2;
         let invalid = snapshot(&frames);
         let mut exact = NativeWorkMeter::new(charge).unwrap();
-        assert!(frames.copy(&layout, source, output, &mut exact).is_err());
+        assert!(
+            frames
+                .copy::<true>(&layout, source, output, &mut exact)
+                .is_err()
+        );
         assert_eq!(exact.used(), charge);
         unchanged(&frames, &invalid);
         frames.inner.as_mut().unwrap().words.values_mut()[at * 2] = 1;
         let mut prefix = NativeWorkMeter::new(charge + retirement - 1).unwrap();
-        frames.copy(&layout, source, output, &mut prefix).unwrap();
+        frames
+            .copy::<true>(&layout, source, output, &mut prefix)
+            .unwrap();
         assert!(frames.retire(&recipes, source.get(), &mut prefix).is_err());
         assert_eq!(prefix.used(), charge);
         copied(&layout, &frames, from, to, &published);
@@ -318,7 +330,9 @@ fn frame_copy_preflight_and_retirement_denials_preserve_aliases_and_retry() {
         fill(&layout, from, &artifact, &mut frames, &memory, 20);
         let fresh = snapshot(&frames);
         let mut retry = NativeWorkMeter::new(charge + retirement).unwrap();
-        frames.copy(&layout, source, output, &mut retry).unwrap();
+        frames
+            .copy::<true>(&layout, source, output, &mut retry)
+            .unwrap();
         assert!(frames.retire(&recipes, source.get(), &mut retry).unwrap());
         assert_eq!(retry.used(), charge + retirement);
         copied(&layout, &frames, from, to, &fresh);
@@ -368,9 +382,13 @@ fn live_and_identity_frame_copies_retain_owners_and_selected_lanes_are_disjoint(
             let mut frames = BufferFrames::new(&layout, u64::MAX, &memory, &mut work).unwrap();
             fill(&layout, from, &artifact, &mut frames, &memory, 5);
             let before = snapshot(&frames);
-            frames.copy_fields(&layout, from, from).unwrap();
+            frames
+                .copy::<true>(&layout, source, source, &mut work)
+                .unwrap();
             unchanged(&frames, &before);
-            frames.copy(&layout, source, output, &mut work).unwrap();
+            frames
+                .copy::<false>(&layout, source, output, &mut work)
+                .unwrap();
             copied(&layout, &frames, from, from, &before);
             copied(&layout, &frames, from, to, &before);
             drop((frames, before));

@@ -171,7 +171,11 @@ impl BufferFrames {
             fields.iter().zip(inputs.iter_mut()).zip(bits).enumerate()
         {
             if let Some(children) = layout.children(*field) {
-                self.copy_fields(layout, layout.fields(operands[index]).unwrap(), children)?;
+                self.copy_fields::<false>(
+                    layout,
+                    layout.fields(operands[index]).unwrap(),
+                    children,
+                )?;
                 continue;
             }
             let inner = self
@@ -245,7 +249,7 @@ impl BufferFrames {
         }
         Ok(())
     }
-    fn copy_fields(
+    fn copy_fields<const TAKE: bool>(
         &mut self,
         layout: &Layout,
         source: &[FrameField],
@@ -253,7 +257,7 @@ impl BufferFrames {
     ) -> Result<(), NativeProgramExecutionError> {
         for (from, to) in source.iter().zip(target) {
             if let (Some(a), Some(b)) = (layout.children(*from), layout.children(*to)) {
-                self.copy_fields(layout, a, b)?;
+                self.copy_fields::<TAKE>(layout, a, b)?;
                 continue;
             }
             let inner = self
@@ -266,20 +270,27 @@ impl BufferFrames {
                     inner.words.values_mut()[to * 2 + 1] = 1;
                 }
                 (Lane::Managed { at: from }, Lane::Managed { at: to }) => {
-                    inner.owners.values_mut()[to] = inner.owners.values()[from].clone();
+                    inner.owners.values_mut()[to] = if TAKE {
+                        inner.owners.values_mut()[from].take()
+                    } else {
+                        inner.owners.values()[from].clone()
+                    };
                 }
                 _ => return Err(invalid("private frame copy lanes differ")),
             }
         }
         Ok(())
     }
-    pub(super) fn copy(
+    pub(super) fn copy<const TAKE: bool>(
         &mut self,
         layout: &Layout,
         source: NativeMatchValue,
         output: NativeMatchValue,
         work: &mut NativeWorkMeter,
     ) -> Result<(), NativeProgramExecutionError> {
+        // The maintained same-plan layout allocates disjoint recursive lanes
+        // for distinct root values. Self-copy always retains the original owner.
+        let take_source = TAKE && source != output;
         let source = layout
             .fields(source)
             .ok_or_else(|| invalid("private frame source has no lanes"))?;
@@ -294,7 +305,13 @@ impl BufferFrames {
             amount(Self::field_count(layout, source), 64, 64)?,
         )?;
         self.check_copy(layout, source, target)?;
-        self.copy_fields(layout, source, target)
+        // Complete validation and the original charge precede every take.
+        // Scalar readiness and the caller's ordered retirement stay unchanged.
+        if take_source {
+            self.copy_fields::<true>(layout, source, target)
+        } else {
+            self.copy_fields::<false>(layout, source, target)
+        }
     }
     pub(super) fn project_composite(
         &mut self,
@@ -317,7 +334,7 @@ impl BufferFrames {
             amount(Self::field_count(layout, source), 64, 64)?,
         )?;
         self.check_copy(layout, source, target)?;
-        self.copy_fields(layout, source, target)
+        self.copy_fields::<false>(layout, source, target)
     }
     pub(super) fn project(
         &self,
