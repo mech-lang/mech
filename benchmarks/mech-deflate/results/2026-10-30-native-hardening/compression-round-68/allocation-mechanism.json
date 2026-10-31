@@ -1,0 +1,129 @@
+{
+  "schema": "mech.shared-descriptor-semantics-mechanism.v1",
+  "variants": {
+    "before": {
+      "groups": {
+        "descriptor_clone": {
+          "requests": 704,
+          "requested_bytes": 60042,
+          "reallocations": 0,
+          "stack_groups": 678
+        },
+        "current_shape": {
+          "requests": 52,
+          "requested_bytes": 4050,
+          "reallocations": 0,
+          "stack_groups": 51
+        },
+        "identified_descriptor_construction": {
+          "requests": 0,
+          "requested_bytes": 0,
+          "reallocations": 0,
+          "stack_groups": 0
+        },
+        "other_binding": {
+          "requests": 231,
+          "requested_bytes": 22119,
+          "reallocations": 62,
+          "stack_groups": 213
+        },
+        "other_turn_planning": {
+          "requests": 198,
+          "requested_bytes": 34657,
+          "reallocations": 25,
+          "stack_groups": 191
+        },
+        "remaining": {
+          "requests": 5755,
+          "requested_bytes": 98006626,
+          "reallocations": 75,
+          "stack_groups": 2773
+        }
+      },
+      "requests": 6940,
+      "requested_bytes": 98127494,
+      "reallocations": 162
+    },
+    "after": {
+      "groups": {
+        "descriptor_clone": {
+          "requests": 28,
+          "requested_bytes": 1008,
+          "reallocations": 0,
+          "stack_groups": 28
+        },
+        "current_shape": {
+          "requests": 0,
+          "requested_bytes": 0,
+          "reallocations": 0,
+          "stack_groups": 0
+        },
+        "identified_descriptor_construction": {
+          "requests": 0,
+          "requested_bytes": 0,
+          "reallocations": 0,
+          "stack_groups": 0
+        },
+        "other_binding": {
+          "requests": 231,
+          "requested_bytes": 19079,
+          "reallocations": 62,
+          "stack_groups": 213
+        },
+        "other_turn_planning": {
+          "requests": 198,
+          "requested_bytes": 32833,
+          "reallocations": 25,
+          "stack_groups": 191
+        },
+        "remaining": {
+          "requests": 5755,
+          "requested_bytes": 98003890,
+          "reallocations": 75,
+          "stack_groups": 2773
+        }
+      },
+      "requests": 6212,
+      "requested_bytes": 98056810,
+      "reallocations": 162
+    }
+  },
+  "delta": {
+    "descriptor_clone": {
+      "requests": -676,
+      "requested_bytes": -59034,
+      "reallocations": 0
+    },
+    "current_shape": {
+      "requests": -52,
+      "requested_bytes": -4050,
+      "reallocations": 0
+    },
+    "identified_descriptor_construction": {
+      "requests": 0,
+      "requested_bytes": 0,
+      "reallocations": 0
+    },
+    "other_binding": {
+      "requests": 0,
+      "requested_bytes": -3040,
+      "reallocations": 0
+    },
+    "other_turn_planning": {
+      "requests": 0,
+      "requested_bytes": -1824,
+      "reallocations": 0
+    },
+    "remaining": {
+      "requests": 0,
+      "requested_bytes": -2736,
+      "reallocations": 0
+    }
+  },
+  "whole_call_delta": {
+    "requests": -728,
+    "requested_bytes": -70684,
+    "reallocations": 0
+  },
+  "scope": "Ordered first-match categories are mutually exclusive and sum exactly to each full trace. Descriptor clone and current-shape ancestry expose the removed deep semantic construction; identified constructor ancestry is only the observed symbol family, not a complete count of semantic definitions. Other binding/planning are residual after earlier rules, not their overlapping subtree totals. New immutable owners can add requests elsewhere; the net complete-call delta remains authoritative. No per-function retired-instruction counts are inferred."
+}
