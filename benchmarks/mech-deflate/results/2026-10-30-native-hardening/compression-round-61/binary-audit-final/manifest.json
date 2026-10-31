@@ -1,0 +1,11 @@
+{
+  "created_utc": "2026-10-31T15:20:47.573415+00:00",
+  "head": "06edc262b4bce1d55ca5ff5615c4db65fe29d8b4",
+  "files": [
+    {
+      "path": "binary-audit.json",
+      "sha256": "45e728700f154f1ef8a4497aa9b1f0c04b575d4fb9e61bd5306eecd5c87f46f7",
+      "bytes": 38991
+    }
+  ]
+}
