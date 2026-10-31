@@ -462,6 +462,8 @@ impl<'a> NativeValueArena<'a> {
 
     #[cfg(feature = "canonical-native-program-runtime")]
     fn retire_current_value(&mut self, slot: u32) -> Result<(), NativeValueError> {
+        #[cfg(test)]
+        PHYSICAL_RETIREMENTS.with(|count| count.set(count.get() + 1));
         let index = slot as usize;
         let value = self
             .values
@@ -476,6 +478,11 @@ impl<'a> NativeValueArena<'a> {
             *value = None;
         }
         Ok(())
+    }
+
+    #[cfg(all(test, feature = "canonical-native-program-runtime"))]
+    pub(in crate::native_artifact) fn take_retirement_effect_count() -> u64 {
+        PHYSICAL_RETIREMENTS.with(|count| count.replace(0))
     }
 
     /// Retirement only, not an ownership/last-use proof. The generated caller
@@ -557,6 +564,11 @@ impl<'a> NativeValueArena<'a> {
             .take()
             .ok_or(NativeValueError::StaleHandle)
     }
+}
+
+#[cfg(all(test, feature = "canonical-native-program-runtime"))]
+thread_local! {
+    static PHYSICAL_RETIREMENTS: core::cell::Cell<u64> = const { core::cell::Cell::new(0) };
 }
 
 #[cfg(test)]
