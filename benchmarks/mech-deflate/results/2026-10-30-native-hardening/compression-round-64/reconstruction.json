@@ -1,0 +1,20 @@
+{
+  "archives": 84,
+  "verified_file_occurrences": 646,
+  "unique_paths": 487,
+  "paths_with_multiple_preserved_versions": 2,
+  "scope": "Every archived version is hash-verified before chronological overlay. Numerical reconstruction uses archived raw observations/censuses and pins only; no compiler, compressor, executable or external scratch input.",
+  "byte_identical_outputs": [
+    "scorecard.json",
+    "scorecard.csv",
+    "allocation-comparison.json",
+    "profile-numbers.json",
+    "validation.json"
+  ],
+  "command": [
+    "python3",
+    "/private/tmp/mech-deflate-linear-stack/benchmarks/mech-deflate/results/2026-10-30-native-hardening/compression-round-64/reconstruct.py",
+    "/private/tmp/mech-projection-budget-round64-20261031/replay-final"
+  ],
+  "exit": 0
+}
