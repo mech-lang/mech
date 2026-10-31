@@ -1,0 +1,15 @@
+# Ordinary construction audit, accepted R56 baseline
+
+This directory preserves a source and complete-allocation-census audit performed on 2026-10-31 against published revision `46617b61f3ccf0e4a6ddf27fe37f9f4003016ac4`. It identifies ordinary deep copies and discarded metadata construction beneath the two canonical seed operations. The seven stack families total 574 requests and are disjoint in this census. Larger prepared-plan proposals could remove overlapping work, so their predicted gains must not be added together.
+
+**All three patches are unapplied, uncompiled candidates. No improvement from these patches has been measured.** The request counts are observed baseline attribution and acceptance targets, not achieved savings. The audit agent performed no production edits, builds, tests or compressor runs for these proposals. Each patch is independent; its adjacent plan documents the current-value, finite-admission, error-order, publication and recovery obligations. The owned-refinement patch includes the required restoration for every no-refinement path. The validation patch retains validation at the existing planner boundary.
+
+- `audit-findings.txt` records seven specific construction chains, source locations and prepared-plan design caveats.
+- `construction-ledger.py` and `.json` reproduce baseline family counts and check overlaps from complete event stacks.
+- `unsealed-binding-transfer.patch` and `.txt` propose moving an already owned BoundCall when no private scalar seal is eligible (72 requests / 5,404 requested bytes). This patch includes an uncompiled focused pointer-identity regression test.
+- `owned-refinement-call-transfer.patch` and `-plan.txt` propose moving the already owned optional CallMemoryPlan during refinement and restoring it when refinement is not selected (149 / 15,286). Focused regression design is supplied separately.
+- `borrowed-operation-validation.patch` and `-plan.txt` propose checking operation identity by borrowing its name/contract instead of cloning the full descriptor solely for validation (30 / 657). Focused regression and feature-profile acceptance design is supplied separately.
+
+Reproduce the ledger with `python3 construction-ledger.py /path/to/r56-census.json`. The default retains the original local census path. The same accepted R56 census is archived as `census.json` in the sibling R59 `target-and-baseline/receipts.tar.gz`, whose manifest supplies its hash. Running R59's numerical reconstruction also extracts it. The chosen input path is emitted in the JSON, so relocating it changes that provenance field while preserving counts. This analysis reads receipts only and does not execute a compiler or compressor.
+
+The R59 cached-key change is separate: its measured 600-request reduction is documented under `compression-round-59`. Do not describe these construction candidates as part of that measured result. Revalidate current source locations, use the then-current accepted baseline, and retain adverse elapsed/cycle observations before selecting any candidate for production.

@@ -1,0 +1,27 @@
+Candidate: move the owned BoundCall into non-sealed kernels.
+Status: patch prepared, not applied; no build or execution performed by audit agent.
+
+Source: src/engine/src/resident/native_semantics.rs:221-248.
+At line 239 all calls clone BoundCall; when candidate is None, the original is dropped at function exit. The kernel already takes BoundCall by value. The candidate=None path needs no second owner. Keep both with_bound_call and with_work_accounting because with_bound_call resets witness and accounting (core function/resident.rs:574-577).
+
+Current R56 real-call census (same root and exact generated offsets):
+site 612, entry return 92004: 24 requests / 2082 bytes in bind_call subtree.
+site 613, entry return 92212: 48 requests / 3322 bytes.
+Full call: 72 requests / 5404 bytes; no other bind_call subtree events.
+The two leaves have no CandidateWitness, because their factories construct composites/matrices, not maintained scalar semantic kernels. Existing census identifies all 72 as nested BoundCall clone allocation chains.
+Expected absolute count if isolated against R56: 8773 -> 8701; bytes 98243843 -> 98238439. If applied after cached-key change, use the measured preceding count and subtract 72. Do not claim elapsed gain until measured.
+
+Candidate filtering allocation:
+When no CandidateWitness exists, lowering_witness is a borrowed downcast and Option::filter closure is not executed; no allocation here. With a candidate, scalar_request checks borrowed data, but bound_call_matches (188-215) constructs a ResolvedOperationDescriptor, clones canonical_name, and recomputes Schema::key for every port. Then .cloned() at 236 deep-clones CandidateWitness.contract, inputs and parameters solely to retain its Copy semantics field. Separate optional scalar-preparation optimization: map to candidate.semantics instead of cloning the whole CandidateWitness. This has zero eligible hits at these two complete-call seed constructors, so do not mix it into this timing claim.
+
+Patch includes one test with two cases:
+1. custom factory with a public typed attachment but no private CandidateWitness; no seal granted, accounting preserved, original non-empty BoundCall input/output descriptor Box addresses retained.
+2. actual maintained candidate whose input metadata changes and therefore declines sealing; same transfer and no stale seal.
+The pointer checks are intended to fail on parent because cloning occurs while original boxes remain alive; passing output equality alone would not establish removal of the allocation chain. Test uses existing Binding/custom_factory helpers. It is uncompiled.
+
+Acceptance:
+- Run focused parent/candidate transfer test: parent must fail descriptor-address identity, candidate pass.
+- Existing native_semantics tests: valid maintained scalar seal, same-name replacement, changed request/cost/semantic attachments; preserve finite execution and bound metadata behavior.
+- Real original/decoded complete eight-byte cases retain output, aliases, work, cleanup; measure matched elapsed separately.
+- Separate CPU/heap and complete allocation census must establish 72-request / 5404-byte drop at the exact generic binder path. No schema/source/bytecode/object change expected from this host-only edit, but verify.
+- Scalar controls retain prior <=1.05 threshold. Warnings/architecture checks remain.

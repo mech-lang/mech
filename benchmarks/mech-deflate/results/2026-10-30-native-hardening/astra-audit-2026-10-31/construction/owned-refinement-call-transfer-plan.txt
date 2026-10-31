@@ -1,0 +1,41 @@
+Independent candidate: transfer the owned call during observed turn refinement
+Patch: owned-refinement-call-transfer.patch
+Scope: Engine only, src/engine/src/memory_planner/turn.rs. No Core changes or new public APIs.
+Status: unapplied; no compile, test, or benchmark run.
+
+Mechanism
+apply_observed_turn_demand already owns TurnMemoryPlan by value. Its first line clones plan.call, although the original is either replaced by a freshly derived call or kept unchanged. Take the existing Option instead, then explicitly restore it in the no-refinement branch. Do not touch derive_turn_call, scope_turn_call, the outer Arc/TurnMemoryPlan clone, reservations or charges in this patch.
+
+Exact R56 target
+149 successful requests / 15,286 requested bytes: 52 / 7,009 at seed record, 97 / 8,277 at singleton matrix. This is the CallMemoryPlan clone descendant subtree beneath apply_observed_turn_demand, not the entire 382-request refinement subtree. Isolated R56 prediction: requests 8,773 -> 8,624; bytes 98,243,843 -> 98,228,557. These are predicted family savings, not measured results.
+
+Control-flow audit
+- call=None: take returns None; original path also does nothing. Subsequent demand/growth/placement still executes.
+- call=Some with outputs.len()!=1: restore unchanged call before demand/growth/placement. Omitting this else would lose the call and is the central regression risk.
+- call=Some, one output, zero persistent_bytes/output_elements and no final_output: restore unchanged call. Work-only or temporary-only observed demand must still retain it.
+- one output and candidate facts present: all the same checks run with the moved call; refresh_turn_allocations receives the same pre-refinement template. The replacement scoped call is assigned at exactly the original source step.
+- errors before replacement: final footprint addition, derive_turn_call, refresh_turn_allocations and additional-demand addition can return early. The whole input TurnMemoryPlan is already consumed and never escapes on Err. Its metadata owners may drop in a different order, but CallMemoryPlan fields are immutable planning/type/value-descriptor metadata, not admission reservations or published payload handles (Core memory_plan/model.rs:422-448).
+- errors after replacement: additional-demand addition, stage growth, placement and peak computation remain in the same order.
+- derive_turn_call still temporarily clears/restores template.target.limits, including error returns. Do not remove its restoration or change its order.
+- the actual caller, resident/budget.rs:1829, clones the active TurnMemoryPlan before passing it by value. The active Arc remains unchanged on success and failure. Cached refinement also passes its own clone. This patch does not move out of the active shared plan.
+- a finite-policy rejection is not normally an Err from apply_observed_turn_demand: this function returns a plan with budget_violations, and ResidentBudgetPermit::from_turn_plan rejects it. Tests must preserve that distinction, exact violation ordering and current spent prefix.
+
+Focused new tests (existing turn_tests.rs under cfg(test,string), resident-artifact enabled)
+1. observed_refinement_retains_call_without_candidate_replanning:
+   Build a valid one-call plan with existing template()/footprint() helpers and plan_turn_memory. Exercise default demand, work-only demand, and temporary-only demand with final_output=None. Confirm call remains Some with unchanged BoundCall/descriptors/target/witnesses; complete post-placement plan must agree with the parent receipt. Exercise call=None separately. Include a real two-output call to cover outputs.len()!=1, preserving both output objects and transactions.
+2. observed_refinement_uses_current_candidate_and_keeps_published_facts:
+   Use one retained baseline plan and fresh owned clones for candidate payload lengths 0 -> 13 -> 5. Pass exact current final_output footprints. Check candidate payload, original published footprint, node identity, allocation object IDs, transaction association, placements, finite limits and retained original baseline equality. Include final_output=Some with zero observed publication fields; Some alone selects refinement.
+3. observed_refinement_rejection_keeps_active_plan_and_recovers:
+   Success -> missing input footprint (MissingFootprintWitness) -> success; success -> overflowing final fixed_bytes+payload_bytes (TargetAddressOverflow) -> success. Assert exact errors and unchanged original plan. Keep a finite max_output_bytes=required-1 case that compares the resulting violation vector and the later permit rejection, plus exact allowance success. Reuse resident budget's existing active-turn harness for publication/admission state rather than adding another permit path.
+No global allocation observer is needed inside Engine unit tests; use the complete-call census as the physical-mechanism assertion. Semantic tests pass on parent and candidate by design.
+
+Reusable maintained coverage
+- memory_planner::turn::tests::owned_turn_template_restores_limits_and_uses_each_current_payload
+- memory_planner::turn::tests::owned_turn_template_restores_limits_after_rejections_and_retries
+- resident::budget tests control_admission_reconciles_with_the_real_node_turn_plan, permit_requires_one_complete_peak_estimate, and active-plan panic/restoration tests around budget.rs:3900.
+- native_incremental_allowance_tests::uncached_map_lookup_finalization_obeys_actual_finite_allowance_and_root (original/decoded, actual finite policy, no allowance renewal).
+- native_data_footprint_boundary_tests::prepared_memo_keeps_current_geometry_policy_account_and_owner_authority and prepared_cache_node_denial_precedes_binding_allocation_and_publication.
+- Core memory_plan integration: publication_comparison_keeps_old_and_candidate_sizes_distinct, deferred_footprints_rederive_clone_hash_and_canonical_demand, and alias_plans_choose_safe_reuse_staging_and_required_undo. Core is unchanged, so explicitly record reused binary if not rebuilding.
+
+Measurement acceptance
+Keep the preceding accepted baseline, 8-byte source/MBC/object pins, exact compressed bytes, independent inflate, input aliases, output-capacity reuse, work/comparison receipts, final bytes/nodes zero. Collect separate CPU/heap and census; 149/15,286 should disappear at this exact subtree, with other family movement explained. Run matched elapsed and keep adverse pairs. No additional lowering/ownership policy is part of this patch.
