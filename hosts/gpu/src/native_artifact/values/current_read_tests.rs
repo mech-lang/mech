@@ -9,7 +9,8 @@ fn native_runtime_consolidation_current_read_preserves_funding_identity_and_fres
     let (_, raw_next) = value(SchemaBody::Id, ValueDataDraft::Id(11));
     let next = admit(&raw_next, &memory);
     let mut work = NativeWorkMeter::new(1_000_000).unwrap();
-    let mut arena = NativeValueArena::new(&[ty, ty], TRANSPORT_LIMIT, &memory, &mut work).unwrap();
+    let types = [ty, ty];
+    let mut arena = NativeValueArena::new(&types, TRANSPORT_LIMIT, &memory, &mut work).unwrap();
     arena.put(0, &first, &mut work).unwrap();
     let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
     for expected in [&first, &first] {
