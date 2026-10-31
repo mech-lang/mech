@@ -4,8 +4,6 @@ use crate::native_artifact::{JitProgramArtifact, NativeProgramLimitMode};
 use mech_engine::native_artifact::{
     NativeBufferFrameAction as Action, NativeBufferFrameOperation as F,
 };
-#[path = "projection.rs"]
-mod projection;
 
 const FLAT: &str = "+> sequence\nwalk(a<[u32]>, b<[u32]>, n<u64>, flag<bool>) => <u64> | (a,b,n,flag) => ((n > 0u64)? | true => walk(a,b,n - 1u64,flag == false) | false => sequence/length(a) + sequence/length(b)).\nwalk(data<[u32]>, data, n<u64>, flag<bool>)\n";
 const LIVE: &str = "+> sequence\n<child> := <{data<[u32]> n<u64> flag<bool>}>\nkeep(p<child>, choose<bool>) => (out<child>) :=\n  q := (choose? | true => p | false => p)\n  out := (choose? | true => q | false => p).\np := {data: data<[u32]>, n: n<u64>, flag: flag<bool>}\nq := keep(p, flag)\n(q.n + p.n, q.data, q.flag == true)\n";

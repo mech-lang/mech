@@ -196,14 +196,7 @@ impl Invocation<'_, '_, '_> {
                         let call = descriptor.metadata().calls[site]
                             .as_ref()
                             .ok_or_else(|| invalid("private record field lost selected factory"))?;
-                        let coexistence = super::joins::coexistence(
-                            self.state.collections.as_ref(),
-                            &self.state.line_matrices,
-                            &descriptor.metadata().line_matrices,
-                            None,
-                            &mut self.state.control.work,
-                            &self.state.library,
-                        )?;
+                        let coexistence = self.selected_join_coexistence(None)?;
                         match &value {
                             super::super::buffer_frames::Field::Managed(value) => call
                                 .admit_buffer_record_field(
@@ -250,7 +243,7 @@ impl Invocation<'_, '_, '_> {
                             }
                             self.state.arena.put(
                                 output.get(),
-                                value,
+                                &value,
                                 &mut self.state.control.work,
                             )?;
                         }

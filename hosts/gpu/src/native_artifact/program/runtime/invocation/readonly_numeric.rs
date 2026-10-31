@@ -120,8 +120,8 @@ impl Invocation<'_, '_, '_> {
                 return Ok(false);
             }
         }
-        // Fill only fixed, already admitted transport. Borrow current headers
-        // while the carrier retains each owner throughout native execution.
+        // Fill only fixed, already admitted transport. The carrier retains each
+        // owner throughout native execution; this temporary clone is setup only.
         for (at, array) in proof.arrays.iter().enumerate() {
             let Field::Managed(owner) = self.state.buffer_frames.project(
                 &metadata.buffer_frames,
@@ -136,7 +136,7 @@ impl Invocation<'_, '_, '_> {
                 .as_ref()
                 .ok_or_else(|| invalid("numeric view lost factory"))?;
             let Some(view) =
-                call.unsigned_matrix_native_view(owner, &self.state.library.memory_budget())
+                call.unsigned_matrix_native_view(&owner, &self.state.library.memory_budget())
             else {
                 return Ok(false);
             };
@@ -378,7 +378,7 @@ impl Invocation<'_, '_, '_> {
             };
             self.state
                 .arena
-                .put(operands[0].get(), owner, &mut self.state.control.work)?;
+                .put(operands[0].get(), &owner, &mut self.state.control.work)?;
         }
         Ok(())
     }
