@@ -1,0 +1,11 @@
+{
+  "created_utc": "2026-10-31T13:25:45.154746+00:00",
+  "head": "3922abbe2ef2807903f69b641c112487642b2581",
+  "files": [
+    {
+      "path": "counter-summary.json",
+      "sha256": "a835192d82e14ce1465fa5ba3e4d688ecca1726a9e78a3dbc34c2f35cb4851a4",
+      "bytes": 2428
+    }
+  ]
+}
