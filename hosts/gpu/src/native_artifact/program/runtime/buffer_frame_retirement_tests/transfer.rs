@@ -7,8 +7,8 @@ use mech_engine::native_artifact::{
 
 const FLAT: &str = "+> sequence\nwalk(a<[u32]>, b<[u32]>, n<u64>, flag<bool>) => <u64> | (a,b,n,flag) => ((n > 0u64)? | true => walk(a,b,n - 1u64,flag == false) | false => sequence/length(a) + sequence/length(b)).\nwalk(data<[u32]>, data, n<u64>, flag<bool>)\n";
 const LIVE: &str = "+> sequence\n<child> := <{data<[u32]> n<u64> flag<bool>}>\nkeep(p<child>, choose<bool>) => (out<child>) :=\n  q := (choose? | true => p | false => p)\n  out := (choose? | true => q | false => p).\np := {data: data<[u32]>, n: n<u64>, flag: flag<bool>}\nq := keep(p, flag)\n(q.n + p.n, q.data, q.flag == true)\n";
-const NESTED_LOCAL: &str = "+> sequence\n<child> := <{data<[u32]> n<u64> flag<bool>}>\n<parent> := <{first<child> sibling<child>}>\nwrap(data<[u32]>, n<u64>, flag<bool>) => (out<parent>) :=\n  a := {data: data, n: n, flag: flag}\n  b := {data: data, n: n + 1u64, flag: flag == false}\n  out := {first: a, sibling: b}.\ninspect(data<[u32]>, n<u64>, flag<bool>) => (out<u64>) :=\n  p := wrap(data, n, flag)\n  out := p.first.n + p.sibling.n + sequence/length(p.first.data).\ninspect(data<[u32]>, n<u64>, flag<bool>)\n";
-const CHECKED: &str = "+> sequence\n<child> := <{data<[u32]> n<u64> flag<bool>}>\n<parent> := <{first<child> sibling<child>}>\nwrap(data<[u32]>, n<u64>, flag<bool>, allowed<bool>) => (out<parent>) :=\n  permission! := allowed\n  a := {data: data, n: n, flag: flag}\n  b := {data: data, n: n + 1u64, flag: flag == false}\n  out := {first: a, sibling: b}.\nchecked(data<[u32]>, n<u64>, flag<bool>, allowed<bool>) => (out<(u64,[u32],bool)>) :=\n  p := wrap(data, n, flag, allowed)\n  out := (p.first.n + p.sibling.n, p.first.data, p.sibling.flag == true).\nchecked(data<[u32]>, n<u64>, flag<bool>, allowed<bool>)\n";
+const NESTED_LOCAL: &str = "+> sequence\n<child> := <{data<[u32]> n<u64> flag<bool>}>\n<parent> := <{item<child> marker<u64>}>\nwrap(data<[u32]>, n<u64>, flag<bool>) => (out<parent>) :=\n  a := {data: data, n: n, flag: flag}\n  out := {item: a, marker: n}.\ninspect(data<[u32]>, n<u64>, flag<bool>) => (out<u64>) :=\n  p := wrap(data, n, flag)\n  q := wrap(data, n, flag)\n  out := p.item.n + q.item.n + p.marker + q.marker + sequence/length(p.item.data) + sequence/length(q.item.data).\ninspect(data<[u32]>, n<u64>, flag<bool>)\n";
+const CHECKED: &str = "+> sequence\n<child> := <{data<[u32]> n<u64> flag<bool>}>\nkeep(p<child>, choose<bool>) => (out<child>) :=\n  q := (choose? | true => p | false => p)\n  out := (choose? | true => q | false => p).\nchecked(data<[u32]>, n<u64>, flag<bool>, allowed<bool>) => (out<(u64,[u32],bool)>) :=\n  permission! := allowed\n  p := keep({data: data, n: n, flag: flag}, flag)\n  word := p.n + 1u64\n  out := (p.n + word, p.data, p.flag == false).\nchecked(data<[u32]>, n<u64>, flag<bool>, allowed<bool>)\n";
 
 fn leaves(layout: &Layout, fields: &[FrameField]) -> Vec<FrameField> {
     fields
@@ -37,6 +37,69 @@ fn candidate(layout: &Layout, sites: usize, dead: bool, nested: bool) -> Option<
         .then_some(action)
     })
 }
+fn plan_value(
+    plan: &mech_engine::native_artifact::NativeProgramArtifactPlan,
+    slot: usize,
+) -> NativeMatchValue {
+    plan.blocks()
+        .iter()
+        .find_map(|block| match block.action() {
+            mech_engine::native_artifact::NativeIterationAction::LibraryCall { output, .. }
+            | mech_engine::native_artifact::NativeIterationAction::Structural { output, .. }
+                if output.get() as usize == slot =>
+            {
+                Some(*output)
+            }
+            mech_engine::native_artifact::NativeIterationAction::Scalar(
+                mech_engine::native_artifact::NativeMatchAction::Copy { output, .. },
+            ) if output.get() as usize == slot => Some(*output),
+            _ => None,
+        })
+        .expect("selected nested root producer")
+}
+
+fn pair(
+    layout: &Layout,
+    plan: &mech_engine::native_artifact::NativeProgramArtifactPlan,
+    nested: bool,
+) -> (NativeMatchValue, NativeMatchValue) {
+    if !nested {
+        let action = candidate(layout, plan.blocks().len(), true, false).unwrap();
+        let F::Copy { source, output } = *action.operation() else {
+            unreachable!()
+        };
+        return (source, output);
+    }
+    let roots = (0..plan.values().len())
+        .filter_map(|slot| {
+            let fields = layout.fields_at(slot)?;
+            let flat = leaves(layout, fields);
+            (fields.iter().any(|f| layout.children(*f).is_some())
+                && flat
+                    .iter()
+                    .any(|f| matches!(f.lane(), Lane::Managed { .. }))
+                && flat.iter().any(|f| {
+                    matches!(
+                        f.lane(),
+                        Lane::Scalar {
+                            kind: mech_engine::native_artifact::NativeScalarKind::Bool,
+                            ..
+                        }
+                    )
+                }))
+            .then_some(slot)
+        })
+        .collect::<Vec<_>>();
+    for &a in &roots {
+        for &b in &roots {
+            if a != b && plan.values()[a] == plan.values()[b] {
+                return (plan_value(plan, a), plan_value(plan, b));
+            }
+        }
+    }
+    panic!("two selected nested roots with the same exact type");
+}
+
 fn fill(
     layout: &Layout,
     fields: &[FrameField],
@@ -145,11 +208,7 @@ fn dead_frame_copy_transfers_flat_and_nested_owners_with_original_prices() {
             )
             .unwrap();
             let layout = plan.facts().buffer_frames();
-            let action = candidate(&layout, plan.blocks().len(), true, nested)
-                .expect("actual last-use mixed frame Copy");
-            let F::Copy { source, output } = *action.operation() else {
-                unreachable!()
-            };
+            let (source, output) = pair(&layout, &plan, nested);
             let from = layout.fields(source).unwrap();
             let to = layout.fields(output).unwrap();
             let recipes = FrameRetirements::derive(&layout, plan.values().len()).unwrap();
@@ -196,10 +255,7 @@ fn frame_copy_preflight_and_retirement_denials_preserve_aliases_and_retry() {
         )
         .unwrap();
         let layout = plan.facts().buffer_frames();
-        let action = candidate(&layout, plan.blocks().len(), true, true).unwrap();
-        let F::Copy { source, output } = *action.operation() else {
-            unreachable!()
-        };
+        let (source, output) = pair(&layout, &plan, true);
         let from = layout.fields(source).unwrap();
         let to = layout.fields(output).unwrap();
         let charge = 64 * old_walk(&layout, from, &mut Vec::new()) as u64 + 64;
@@ -340,6 +396,20 @@ fn checked_nested_frame_calls_preserve_publication_on_failure_and_recover() {
             mode.compilation(),
         )
         .unwrap();
+        let plan = jit.descriptor().plan();
+        assert!(
+            candidate(
+                &plan.facts().buffer_frames(),
+                plan.blocks().len(),
+                true,
+                false
+            )
+            .is_some()
+        );
+        assert!(
+            plan.iterations().is_empty(),
+            "both Boolean visits exercise ordinary frame copies"
+        );
         let memory = mode.memory_budget();
         let mut output = vec![None; artifact.outputs().len()];
         for (word, n, flag, allowed, error) in [
