@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T18:22:52.509268+00:00",
+  "head": "f508517497daa8195be9a444edd05fa8ca5beb98",
+  "files": [
+    {
+      "path": "numeric-lifetime-real-final/private-tree-original-64-before.json",
+      "sha256": "a8cfdb135358f925096932117f117f16bb221b35c88deff9a7a1a68da81983a0",
+      "bytes": 611
+    },
+    {
+      "path": "numeric-lifetime-real-final/private-tree-original-64-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "numeric-lifetime-real-final/private-tree-original-64-before.stdout",
+      "sha256": "e5d25d814394269c8266ad1a4ae8e307b54cc2ce509a6e4f136a17b339876930",
+      "bytes": 1090
+    },
+    {
+      "path": "numeric-lifetime-real-final-controls.py",
+      "sha256": "3267262c5a7b3d4ac29ebd974fcac5d8dda0d9b034289c3671881a46783ab8f2",
+      "bytes": 4081
+    }
+  ]
+}
