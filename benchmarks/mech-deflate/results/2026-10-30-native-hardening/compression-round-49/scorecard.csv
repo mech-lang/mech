@@ -1,0 +1,16 @@
+metric,reference,before,after,change_percent,scope
+seconds,0.000293,0.0041917085,0.004177937499999999,-0.32852952441709826,matched primary
+instructions,1364372.0,46929766.5,46770583.0,-0.33919516731454324,separate diagnostics
+cycles,931466.5,13359339.5,13469479.5,0.8244419568796735,separate diagnostics
+rss_after,14778368.0,320126976.0,319733760.0,-0.12283126055581128,separate diagnostics
+physical_after,14435264.0,229148416.0,228935424.0,-0.09294936605627191,separate diagnostics
+pageins,0.0,0.0,0.0,,separate diagnostics
+allocation_requests,95.0,13484.0,13484.0,0.0,separate diagnostics
+requested_bytes,9021923.0,98529723.0,98529723.0,0.0,separate diagnostics
+reallocations,0.0,1213.0,1213.0,0.0,separate diagnostics
+relocating_reallocations,0.0,458.0,458.0,0.0,separate diagnostics
+relocating_realloc_copy_upper_bound,0.0,13905.0,13905.0,0.0,separate diagnostics
+live_usable_before,32.0,142829248.0,142829248.0,0.0,separate diagnostics
+live_usable_after,32.0,142829816.0,142829816.0,0.0,separate diagnostics
+peak_live_usable,9257360.0,163404568.0,163404568.0,0.0,separate diagnostics
+incremental_peak_live_usable,9257328.0,20575320.0,20575320.0,0.0,separate diagnostics
