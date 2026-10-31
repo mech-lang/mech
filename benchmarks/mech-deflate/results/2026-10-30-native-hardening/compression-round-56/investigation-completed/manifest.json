@@ -1,0 +1,51 @@
+{
+  "created_utc": "2026-10-31T13:01:21.620733+00:00",
+  "head": "667d82ab9393835a57dcc51762389bf419781d00",
+  "files": [
+    {
+      "path": "entry-2319936.disassembly.txt",
+      "sha256": "87602ae1a2afb1746719c0c8995be9f40b9375fa0c6326a1515291df4ada82b1",
+      "bytes": 2882
+    },
+    {
+      "path": "entry-2871692.disassembly.txt",
+      "sha256": "c3ae11c3dcf65ab9829df73e34acb52fcdca4c8e8ba30568a3d6ce90e474e096",
+      "bytes": 2729
+    },
+    {
+      "path": "entry-2910840.disassembly.txt",
+      "sha256": "1816fc04a5c8a2dd1416f74e8d05cdcd8da68d123cfcbc0d50fca9616e91184f",
+      "bytes": 2738
+    },
+    {
+      "path": "entry-5493316.disassembly.txt",
+      "sha256": "f8cc5dd3593e784f98f653fffb9439e5a72be59674ea337b115723ffff61010f",
+      "bytes": 2760
+    },
+    {
+      "path": "entry-5534280.disassembly.txt",
+      "sha256": "8ab66312342ffbe7355814e4ad0a4a74eeb6ddc020f89d520348cd81049f32d7",
+      "bytes": 2699
+    },
+    {
+      "path": "entry-70468.disassembly.txt",
+      "sha256": "353ba584fa321a1d2ec1eb4289a86c6e882750a6450d6df5e5d4279a4470115b",
+      "bytes": 2642
+    },
+    {
+      "path": "investigation-completed.json",
+      "sha256": "f30b5e30ccd45431de1624a738c34d667cf5b6790efda118f9ef7c1e12ac7b52",
+      "bytes": 3436
+    },
+    {
+      "path": "large-path-plan-context.json",
+      "sha256": "6359a732639eb17cda264e0d159741a7633b61ed6fa99a7a1de62c65a70780ee",
+      "bytes": 383423
+    },
+    {
+      "path": "large-path-sites.json",
+      "sha256": "b7e52e7cf7ed30298fbde6aa6d56153414d9a43ce4d8f27d9fe5d633c520d011",
+      "bytes": 50084
+    }
+  ]
+}
