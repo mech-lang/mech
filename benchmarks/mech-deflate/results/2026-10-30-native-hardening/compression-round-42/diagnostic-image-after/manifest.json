@@ -1,0 +1,56 @@
+{
+  "created_utc": "2026-10-31T02:16:22.402667+00:00",
+  "head": "de89a19945b2465e35dd319d1104f0f19961f5f2",
+  "files": [
+    {
+      "path": "diagnostic-images.py",
+      "sha256": "6016af7ac6988d903e5ba4e4549413e89ef412261a1df4b96d73b8d6fd118d56",
+      "bytes": 2112
+    },
+    {
+      "path": "diagnostic-libs/after/image/build.json",
+      "sha256": "bc09d2668a5dbb93c181cf9c438b46bc9518163f0bb859929b16a17bee7f9ddc",
+      "bytes": 13707
+    },
+    {
+      "path": "diagnostic-libs/after/image/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "diagnostic-libs/after/image/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "diagnostic-libs/after/image/emit.json",
+      "sha256": "3edaf25af6ef0ba6575b74603ca4bbaf7545503048dc8e973a2d2724712705ea",
+      "bytes": 11985
+    },
+    {
+      "path": "diagnostic-libs/after/image/emit.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "diagnostic-libs/after/image/emit.stdout",
+      "sha256": "b2210938d019cf175b0dba75ed8fd38798b6b7bbf7518f5e04c5e66a57d366d8",
+      "bytes": 43
+    },
+    {
+      "path": "diagnostic-libs/after/image/inspect.rs",
+      "sha256": "00f52b727761106d3f26f12c8f658b272fa06b7a767684286476d14f9b7bde05",
+      "bytes": 1039
+    },
+    {
+      "path": "diagnostic-libs/after/image/metadata.json",
+      "sha256": "d47f456a2a2be1c9408a2c2c7afb0d8cf00e67aabf6587f0445a645067680db4",
+      "bytes": 2542212
+    },
+    {
+      "path": "diagnostic-libs/after/image/pins.json",
+      "sha256": "546f56cf6ea4956559381b8575ee5428f3d4317e098b15be5e6f02490b0840b1",
+      "bytes": 588
+    }
+  ]
+}
