@@ -1,0 +1,9 @@
+# Exact funded record-admission prefixes
+
+Baseline compiler: `b12f6c5afb2c859f6cde29ba566ddf09e70d2f79` (restored as `7a2230b2b`). Stack base: `eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`.
+
+Unblocks removal of repeated accounting transactions during actual private record-field admission. Immutable name IDs already exist (round 42). Prepare exact original compute/comparison prefix totals and first-ID occurrence. Only the current selector matching the proved first ordinal may combine the successful prefix. A side-effect-free full projection-demand check precedes an atomic same-account scoped debit using unchanged enclosing and invocation caps, reserved work and overflow checks. Any declined preview runs the original incremental path with its original error and spent prefix. Shared worker credit always uses that incremental path. Existing observer high-water marks are not changed by direct charges.
+
+Measure this separately from scalar result-footprint reuse. Matched full eight-byte compression only, fixed source/bytecode/allocator/real buffers, evaluate_into timer, exact raw bytes and independent inflate, aliases, work 60,260,219,686 and zero cleanup. Serialize timing, hardware, allocation and sampling cohorts. Commit every timing group immediately. Broader tests follow the first real linked witness. Primary and diagnostic consumers must share coherent per-variant library graphs and identical generated compressor code.
+
+The follow-up priorities from the supplied brief remain: prepared scalar record footprints (separate candidate); virtual managed projection across two pieces, then the demonstrated path scan; consuming projection-handle installation at the original put commit point; scratch SSA boundary transport; small-allocation attribution; vector geometry. Pack-handle transfer is already retained in round 43. No compressor-source changes or large timings.
