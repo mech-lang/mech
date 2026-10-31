@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-31T22:05:47.477461+00:00",
+  "head": "245cdd873886bf0c5fa61e97c2573a2914d8459b",
+  "files": [
+    {
+      "path": "engine-focused.py",
+      "sha256": "d1fbe6ae6425139ee45b70268c2622ead842a65867cdd566b74fb6e701bae054",
+      "bytes": 5255
+    },
+    {
+      "path": "engine-parent/budget.rs",
+      "sha256": "d3101d673c6602cf3bf998e33a6e785e907595d0baca5b6145284227b787c85b",
+      "bytes": 171672
+    },
+    {
+      "path": "engine-parent/native_compute_debit_tests.rs",
+      "sha256": "95fd1cf752d3a688eb0b3239875140daa17b53a9442ce512a1934cad1e3e790b",
+      "bytes": 7153
+    },
+    {
+      "path": "engine-parent/shape.json",
+      "sha256": "2ec9b8cfb043e676599e07d8871896f11af62fc54346a2c6d242b5de106679d2",
+      "bytes": 12992
+    },
+    {
+      "path": "engine-parent/shape.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-parent/shape.stdout",
+      "sha256": "68c665d2faf8acd7e3f1fc79359ca9e82a698e5f54db14c3334cbd396dbcb179",
+      "bytes": 2960
+    }
+  ]
+}
