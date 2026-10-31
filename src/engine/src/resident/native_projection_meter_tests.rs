@@ -434,3 +434,100 @@ fn resident_schema_precharge_keeps_shared_workers_incremental() {
 fn resident_schema_precharge_does_not_preview_without_a_turn() {
     assert!(!ResidentBudgetMeter::default().can_charge_compute_and_nodes(1, 0));
 }
+
+#[test]
+fn native_projection_meter_keeps_policy_order_after_enclosing_funding() {
+    for enclosing_cap in [100, 4] {
+        let memory = mech_core::ManagedMemoryBudget::new(1024 * 1024);
+        let work = NativeLibraryWorkBudget::new(100, 100, &memory).unwrap();
+        work.with_call_limits(enclosing_cap, 100, || {
+            let mut policy = limits();
+            policy.max_compute_work = Some(2);
+            policy.max_retained_nodes = Some(3);
+            let mut meter = ResidentBudgetMeter::for_native_projection(&work, policy).unwrap();
+            let before = meter;
+            let result = meter.charge(|cost| {
+                cost.set_compute_work(5)?;
+                cost.set_retained_nodes(4);
+                Ok(())
+            });
+            let (dimension, required, limit, spent) = if enclosing_cap == 100 {
+                // The call policy has two failures. Its ordered first error is
+                // nodes, after the enclosing account observes this paid prefix.
+                (MemoryBudgetDimension::RetainedNodes, 4, 3, 5)
+            } else {
+                // The enclosing account must reject before either call-policy
+                // failure, without spending or committing the meter estimate.
+                (MemoryBudgetDimension::ComputeWork, 5, 4, 0)
+            };
+            assert_eq!(
+                result,
+                Err(ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension,
+                    required,
+                    limit,
+                })
+            );
+            assert_eq!(meter, before);
+            assert_eq!(work.used(), (spent, 0));
+            meter
+                .charge(|cost| {
+                    cost.set_compute_work(2)?;
+                    cost.set_retained_nodes(3);
+                    Ok(())
+                })
+                .unwrap();
+            assert_eq!(meter.estimate().compute_work(), 2);
+            assert_eq!(meter.estimate().retained_nodes(), 3);
+            assert_eq!(work.used(), (spent.max(2), 0));
+        })
+        .unwrap();
+        drop(work);
+        assert_eq!(memory.used_bytes(), 0);
+        assert_eq!(memory.retained_nodes(), 0);
+    }
+}
+
+#[test]
+fn native_projection_meter_preview_and_charge_keep_compute_node_overflow_atomic() {
+    let memory = mech_core::ManagedMemoryBudget::new(1024 * 1024);
+    let work = NativeLibraryWorkBudget::new(u64::MAX, u64::MAX, &memory).unwrap();
+    work.with_call_limits(u64::MAX, u64::MAX, || {
+        let mut policy = limits();
+        policy.max_compute_work = Some(u64::MAX);
+        policy.max_comparison_work = Some(u64::MAX);
+        policy.max_retained_nodes = Some(u64::MAX);
+        let mut meter = ResidentBudgetMeter::for_native_projection(&work, policy).unwrap();
+        meter.charge_compute_work(1).unwrap();
+        meter.charge_retained_nodes(1).unwrap();
+        let before = (meter, work.used());
+        assert!(meter.can_charge_compute_and_nodes(1, 1));
+        for (compute, nodes) in [(u64::MAX, 0), (0, u64::MAX)] {
+            assert!(!meter.can_charge_compute_and_nodes(compute, nodes));
+            assert_eq!(
+                meter.try_charge_borrowed_footprint(compute, nodes),
+                Ok(false)
+            );
+            assert_eq!((meter, work.used()), before);
+        }
+        assert_eq!(
+            meter.charge_compute_work(u64::MAX),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert_eq!((meter, work.used()), before);
+        assert_eq!(
+            meter.charge_retained_nodes(u64::MAX),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert_eq!((meter, work.used()), before);
+        assert!(meter.try_charge_borrowed_footprint(1, 1).unwrap());
+        assert_eq!(meter.estimate().compute_work(), 2);
+        assert_eq!(meter.estimate().retained_nodes(), 2);
+        assert_eq!(work.used(), (2, 0));
+    })
+    .unwrap();
+    drop(work);
+    assert_eq!(memory.used_bytes(), 0);
+    assert_eq!(memory.retained_nodes(), 0);
+}
