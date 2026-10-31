@@ -72,6 +72,7 @@ mod tests {
         let prepared = RecordSelector::from_names(names).unwrap();
         let mut selectors = names.map(mech_core::hash_str).to_vec();
         selectors.extend([mech_core::hash_str("absent"), mech_core::hash_str("a")]);
+        let (mut successes, mut denials, mut spent_denials) = (0, 0, 0);
         for selected in selectors {
             for compute in [0, 63, 64, 79, 80, 159, 160, 287, 288, 10000] {
                 for comparison in [0, 1, 2, 3, 4, 5, 8, 9, 1000] {
@@ -95,10 +96,18 @@ mod tests {
                         };
                         (format!("{result:?}"), work.used())
                     };
-                    assert_eq!(trial(true), trial(false));
+                    let cached = trial(true);
+                    assert_eq!(cached, trial(false));
+                    if cached.0.starts_with("Ok(") {
+                        successes += 1;
+                    } else {
+                        denials += 1;
+                        spent_denials += usize::from(cached.1 != (0, 0));
+                    }
                 }
             }
         }
+        assert!(successes > 0 && denials > 0 && spent_denials > 0);
     }
 
     #[test]
