@@ -1,0 +1,16 @@
+{
+  "created_utc": "2026-10-31T13:02:26.514769+00:00",
+  "head": "82d8d31418c126986ccf2fbdd808b3070d52c310",
+  "files": [
+    {
+      "path": "acceptance-correction.json",
+      "sha256": "e23c8dcff276dcc8de91752f1e96f1b99684a8e74958f6d70d9df6d6fef48b70",
+      "bytes": 535
+    },
+    {
+      "path": "allocation-regression.py",
+      "sha256": "b81219fd2d5664cfac368201bf239b8de4486490d5cdfb884125258ee5b80a93",
+      "bytes": 2525
+    }
+  ]
+}
