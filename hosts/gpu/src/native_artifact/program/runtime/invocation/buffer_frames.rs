@@ -99,12 +99,24 @@ impl Invocation<'_, '_, '_> {
                 if expected != (*source, *output) {
                     return Err(invalid("private frame move differs from current action"));
                 }
-                self.state.buffer_frames.copy(
-                    layout,
-                    *source,
-                    *output,
-                    &mut self.state.control.work,
-                )?;
+                // The existing exact-action proof already retires this source
+                // after Copy. Transfer only that disposable frame's handles;
+                // outside aliases and the original retirement charge remain.
+                if action.retire().contains(source) {
+                    self.state.buffer_frames.copy::<true>(
+                        layout,
+                        *source,
+                        *output,
+                        &mut self.state.control.work,
+                    )?;
+                } else {
+                    self.state.buffer_frames.copy::<false>(
+                        layout,
+                        *source,
+                        *output,
+                        &mut self.state.control.work,
+                    )?;
+                }
             }
             Operation::Project {
                 source,
