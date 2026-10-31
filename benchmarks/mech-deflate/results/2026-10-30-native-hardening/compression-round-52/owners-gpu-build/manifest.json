@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-10-31T09:08:17.653025+00:00",
+  "head": "6a44f7fe54ecc6a432f286f386778884504ad812",
+  "files": [
+    {
+      "path": "owners/gpu-build.json",
+      "sha256": "dfea8d08bfa9023807d0703e605141d4f606cce65c5b53e1986e4ddd7ebe1de9",
+      "bytes": 4982
+    },
+    {
+      "path": "owners/gpu-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "owners/gpu-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "owners/run.py",
+      "sha256": "315e8fe477ab9810c132823f8c70127386d745021b26e94ea7c86085c1006123",
+      "bytes": 4709
+    },
+    {
+      "path": "owners/source/native_artifact/program/runtime/invocation/unsigned_buffers.rs",
+      "sha256": "0137d8a0360fa82d263d74f07d50c5ed32d5d951fbeaf590939c41ceeda864ed",
+      "bytes": 7372
+    },
+    {
+      "path": "owners/source-pin.json",
+      "sha256": "09841a288185a6992fff4568f17a9ebca8a3b84cbc0bc05e8c302df910b22c1e",
+      "bytes": 1148
+    },
+    {
+      "path": "owners/variants/after/build.json",
+      "sha256": "ad95488d61fd351c0ae2410ab9f2911169b398c826313443456b0270d986bda7",
+      "bytes": 17037
+    },
+    {
+      "path": "owners/variants/after/libraries.json",
+      "sha256": "34811ce2c70e989bd9b0f1e043e968e6f96de4ffa040ff027ce69608f5a871fb",
+      "bytes": 10918
+    }
+  ]
+}
