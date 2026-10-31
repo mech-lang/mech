@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-31T22:15:15.538045+00:00",
+  "head": "d1576824a070d3c19231e6e055acc45d4fe730b0",
+  "files": [
+    {
+      "path": "engine-after/budget.rs",
+      "sha256": "a916ba4be9f43b768f9269acc7f34f06a823a72bceedb3234577ebbd7e227fc9",
+      "bytes": 173553
+    },
+    {
+      "path": "engine-after/native_compute_debit_tests.rs",
+      "sha256": "95fd1cf752d3a688eb0b3239875140daa17b53a9442ce512a1934cad1e3e790b",
+      "bytes": 7153
+    },
+    {
+      "path": "engine-after/overflow-retry.json",
+      "sha256": "f24ea8c4182fdf2de51185ccbc3eb3d5cee00e0048fa3bd41e8a10c03c9dd170",
+      "bytes": 13025
+    },
+    {
+      "path": "engine-after/overflow-retry.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-after/overflow-retry.stdout",
+      "sha256": "cc619de70cb8af266f8d00ed652cf2c3c0abf43f11872eabcbdd91df1577d9dc",
+      "bytes": 253
+    },
+    {
+      "path": "engine-focused.py",
+      "sha256": "d1fbe6ae6425139ee45b70268c2622ead842a65867cdd566b74fb6e701bae054",
+      "bytes": 5255
+    }
+  ]
+}
