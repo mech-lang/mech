@@ -12,13 +12,9 @@ fn entry_locals_snapshot_survives_callback_pointer_change_and_fresh_invocations(
     .unwrap();
     let mut work = Vec::new();
     for artifact in [original, decoded] {
-        // Keep these scalar sites on the ordinary source-block path whose
-        // pointer placement this regression exercises. Native region batching
-        // has separate qualifications and can combine their admission calls.
-        let jit = crate::native_artifact::JitProgramArtifact::compile_for_test(
+        let jit = crate::native_artifact::JitProgramArtifact::compile(
             &artifact,
             &mech_stdlib::source_catalog(),
-            crate::native_artifact::codegen::options::OptimizationPass::ScalarLoops,
         )
         .unwrap();
         let operations = jit
@@ -43,6 +39,19 @@ fn entry_locals_snapshot_survives_callback_pointer_change_and_fresh_invocations(
         assert_eq!(operations[0].1, NativeScalarOp::U64Add);
         assert_eq!(operations[1].1, NativeScalarOp::U64Mul);
         assert_eq!(operations[2].1, NativeScalarOp::U64Add);
+        // Scalar admissions can cover the complete arithmetic path. Restore
+        // at its actual callback frontier, after crossing the interior source
+        // blocks, rather than assuming every primitive invokes the callback.
+        let group = jit
+            .descriptor()
+            .metadata()
+            .map_admission
+            .group(operations[0].0 as usize)
+            .unwrap();
+        assert_eq!(group.start(), operations[0].0);
+        assert_eq!(group.frontier.len(), 1);
+        assert_eq!(group.frontier[0].previous, operations[2].0);
+        let restore_site = group.frontier[0].site;
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
         let mut output = vec![None; artifact.outputs().len()];
         let mut ordinary_output = vec![None; artifact.outputs().len()];
@@ -71,7 +80,7 @@ fn entry_locals_snapshot_survives_callback_pointer_change_and_fresh_invocations(
                 &mut output,
                 &memory,
                 operations[0].0,
-                operations[2].0,
+                restore_site,
             )
             .unwrap();
             assert_eq!(observed, ordinary);
