@@ -26,12 +26,12 @@ struct PrivateNumeric {
     _nodes: mech_core::ManagedNodeReservation,
     _reservation: mech_core::ManagedMemoryReservation,
 }
-pub(super) enum Field<'a> {
+pub(super) enum Field {
     Scalar {
         schema: mech_core::SchemaId,
         value: NativeScalarValue,
     },
-    Managed(&'a Value),
+    Managed(Value),
 }
 impl BufferFrames {
     fn word_count(layout: &Layout) -> Result<usize, NativeProgramExecutionError> {
@@ -342,7 +342,7 @@ impl BufferFrames {
         source: NativeMatchValue,
         ordinal: usize,
         work: &mut NativeWorkMeter,
-    ) -> Result<Field<'_>, NativeProgramExecutionError> {
+    ) -> Result<Field, NativeProgramExecutionError> {
         let field = layout
             .fields(source)
             .and_then(|f| f.get(ordinal))
@@ -362,7 +362,7 @@ impl BufferFrames {
                 })
             }
             Lane::Managed { at } => inner.owners.values()[at]
-                .as_ref()
+                .clone()
                 .map(Field::Managed)
                 .ok_or_else(|| invalid("private frame field is not current")),
             _ => Err(invalid("private frame field is not current")),

@@ -112,40 +112,22 @@ fn require(
     Ok(())
 }
 
-/// A current-owner census only; it grants no visit or publication authority.
-/// Explicit disjoint borrows let a frame field stay borrowed during admission.
-#[inline]
-pub(super) fn coexistence(
-    collections: Option<&crate::native_artifact::program::runtime::collections::State>,
-    lines: &crate::native_artifact::program::runtime::lines::State,
-    layout: &crate::native_artifact::program::prepare::line_matrix::Layout,
-    skip: Option<mech_engine::native_artifact::NativeMatchValue>,
-    work: &mut crate::native_artifact::NativeWorkMeter,
-    library: &mech_engine::native_artifact::NativeLibraryWorkBudget,
-) -> Result<ResourceDemand, Error> {
-    // Preserve the original collection-before-line error and debit order.
-    let mut prior = collections.map_or(Ok(ResourceDemand::default()), |state| {
-        state.retained_demand()
-    })?;
-    let lines = lines.coexistence(layout, skip, work, library)?;
-    prior.turn_peak_bytes = add(prior.turn_peak_bytes, lines.turn_peak_bytes)?;
-    prior.retained_nodes = add(prior.retained_nodes, lines.retained_nodes)?;
-    Ok(prior)
-}
-
 impl Invocation<'_, '_, '_> {
     pub(in crate::native_artifact::program::runtime) fn selected_join_coexistence(
         &mut self,
         skip: Option<mech_engine::native_artifact::NativeMatchValue>,
     ) -> Result<ResourceDemand, Error> {
-        coexistence(
-            self.state.collections.as_ref(),
-            &self.state.line_matrices,
-            &self.descriptor.metadata().line_matrices,
-            skip,
-            &mut self.state.control.work,
-            &self.state.library,
-        )
+        let mut prior = self
+            .state
+            .collections
+            .as_ref()
+            .map_or(Ok(ResourceDemand::default()), |state| {
+                state.retained_demand()
+            })?;
+        let lines = self.line_matrix_coexistence(skip)?;
+        prior.turn_peak_bytes = add(prior.turn_peak_bytes, lines.turn_peak_bytes)?;
+        prior.retained_nodes = add(prior.retained_nodes, lines.retained_nodes)?;
+        Ok(prior)
     }
 
     pub(in crate::native_artifact::program::runtime) fn validate_selected_join_boundary(
