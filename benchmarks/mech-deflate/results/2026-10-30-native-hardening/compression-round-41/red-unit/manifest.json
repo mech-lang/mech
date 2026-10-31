@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-31T00:35:54.576514+00:00",
+  "head": "5825d774664e7a7dcb9dbfb77b218b1fe1f3986b",
+  "files": [
+    {
+      "path": "red/unit-build.json",
+      "sha256": "6a34802f2be23b2dc4f20ea1804713d8d00a82e447ccc5c080b31214a1789a31",
+      "bytes": 4198
+    },
+    {
+      "path": "red/unit-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "red/unit-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "red/unit.json",
+      "sha256": "f7a3f51da4abdd6a53032e71a9df6cc31729eb9655ce766b10fe718f530bb161",
+      "bytes": 422
+    },
+    {
+      "path": "red/unit.stderr",
+      "sha256": "03793966c466d14df3974f9035f5d11ed97964c4123d9f752ce279889f4cb136",
+      "bytes": 460
+    },
+    {
+      "path": "red/unit.stdout",
+      "sha256": "918e20b953bf82ab2f15f2529096f4b0be9bf895aae2da5fc89adbc222fe3077",
+      "bytes": 440
+    },
+    {
+      "path": "test.py",
+      "sha256": "d83a12dbc26913a04e2b74e99a6036680fc96d7b4b0e8e9daceeeb2633761edb",
+      "bytes": 1545
+    }
+  ]
+}
