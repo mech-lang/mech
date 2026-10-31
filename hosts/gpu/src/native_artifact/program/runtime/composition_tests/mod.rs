@@ -9,6 +9,7 @@ mod pack;
 mod record_lookup;
 mod resources;
 mod scalar_child;
+mod schema_key;
 
 #[test]
 fn huffman_parent_cleanup_selects_funded_retirement_batches() {
