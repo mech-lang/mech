@@ -638,6 +638,8 @@ mod tests {
             assert_eq!(base.inputs().len(), 2);
             assert_eq!(base.outputs().len(), 1);
             assert!(base.constants().is_empty());
+            assert!(base.constraints().is_empty());
+            assert!(base.compute_regions().is_empty());
             let matrix = |axis| SchemaBody::Matrix {
                 element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
                 dimensions: vec![D::Constant(0), axis].into(),
@@ -672,12 +674,9 @@ mod tests {
             });
             let built = builder.finish().unwrap();
             let ids = handles.map(|handle| built.resolve(handle).unwrap());
-            let schemas = base.schemas().extend_preserving_ids(&built.table).unwrap();
-            let ids = ids.map(|id| {
-                schemas
-                    .find_by_key(built.table.entry(id).unwrap().key())
-                    .unwrap()
-            });
+            // Artifact schemas must retain canonical sorted IDs. An append-only
+            // table extension is valid for runtime owners, not encoded artifacts.
+            let schemas = built.table;
             let input = |name: &str| {
                 base.inputs()
                     .iter()
@@ -687,10 +686,10 @@ mod tests {
             };
             let prior = [input("left"), input("right"), base.outputs()[0].schema];
             let remap = |schema| {
-                prior
+                ids[prior
                     .iter()
                     .position(|old| *old == schema)
-                    .map_or(schema, |i| ids[i])
+                    .expect("the fixture has only its two input and one output schemas")]
             };
             let mut inputs = base.inputs().to_vec();
             for input in &mut inputs {
