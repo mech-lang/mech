@@ -1,0 +1,56 @@
+{
+  "created_utc": "2026-10-31T02:58:16.330218+00:00",
+  "head": "70eb620dd2a424b6a1ff549d4c2f002e32b67823",
+  "files": [
+    {
+      "path": "counters/allocation_profile.c",
+      "sha256": "d4e2ef8c1c635bf0e87a72ec6308abb2ba1b845d5da502a6d204135f07b7c27e",
+      "bytes": 4893
+    },
+    {
+      "path": "counters/allocation_profile.h",
+      "sha256": "56852a08a6cb3fbba88daa10b8674cdb938933833722f0ed3bfcc8ae9ae9b31a",
+      "bytes": 384
+    },
+    {
+      "path": "counters/allocation_profile.rs",
+      "sha256": "d9c4bc779939567f5dced46d7c7f7030726b4c0e17df72efc3339cdfe2514b19",
+      "bytes": 1306
+    },
+    {
+      "path": "counters/cpu_usage.rs",
+      "sha256": "3f3e2ac6cead2a6758f96afe77f4fa56da054f1d5e1e1e163f9d79ed8dc12817",
+      "bytes": 385
+    },
+    {
+      "path": "counters/reference-cpu/run.json",
+      "sha256": "b64cf029c927de2e13f174ddf53aee1709fa50f9a37d947ec5fe13ee7ccee055",
+      "bytes": 405
+    },
+    {
+      "path": "counters/reference-cpu/run.stderr",
+      "sha256": "fd8b17a6f40a40e25d5a3c69c8a0ebcace11d1a6720c1f268803f945a68b73d8",
+      "bytes": 16344
+    },
+    {
+      "path": "counters/reference-cpu/run.stdout",
+      "sha256": "910ee6230d450e2ba7ddbf463e256a29c403d445bff5ee5c76dc7ceee39d5466",
+      "bytes": 628890
+    },
+    {
+      "path": "counters/usage.c",
+      "sha256": "883fe6a7baf228bc881b4b76aef13f352da38f19c8e7a5b3ca938dbd1dddfd0e",
+      "bytes": 448
+    },
+    {
+      "path": "counters/usage.h",
+      "sha256": "ca6ac3c2cd82bfb367c07aa9e26b1aea3b025e48ea44db76dbded2be45b5fb9f",
+      "bytes": 233
+    },
+    {
+      "path": "counters.py",
+      "sha256": "55c7df4837456d6be78ec3f65570e1cf861116bea3b79b2ec98699bf3ee5c5d5",
+      "bytes": 4918
+    }
+  ]
+}
