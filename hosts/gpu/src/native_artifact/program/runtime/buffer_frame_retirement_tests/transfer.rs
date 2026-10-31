@@ -7,7 +7,8 @@ use mech_engine::native_artifact::{
 
 const FLAT: &str = "+> sequence\nwalk(a<[u32]>, b<[u32]>, n<u64>, flag<bool>) => <u64> | (a,b,n,flag) => ((n > 0u64)? | true => walk(a,b,n - 1u64,flag == false) | false => sequence/length(a) + sequence/length(b)).\nwalk(data<[u32]>, data, n<u64>, flag<bool>)\n";
 const LIVE: &str = "+> sequence\n<child> := <{data<[u32]> n<u64> flag<bool>}>\nkeep(p<child>, choose<bool>) => (out<child>) :=\n  q := (choose? | true => p | false => p)\n  out := (choose? | true => q | false => p).\np := {data: data<[u32]>, n: n<u64>, flag: flag<bool>}\nq := keep(p, flag)\n(q.n + p.n, q.data, q.flag == true)\n";
-const CHECKED: &str = "+> sequence\n<child> := <{data<[u32]> n<u64> flag<bool>}>\n<parent> := <{first<child> sibling<child>}>\nwrap(data<[u32]>, n<u64>, flag<bool>, allowed<bool>) => (out<parent>) :=\n  permission! := allowed\n  a := {data: data, n: n, flag: flag}\n  b := {data: data, n: n + 1u64, flag: flag == false}\n  out := {first: a, sibling: b}.\np := wrap(data<[u32]>, n<u64>, flag<bool>, allowed<bool>)\n(p.first.n + p.sibling.n, p.first.data, p.sibling.flag == true)\n";
+const NESTED_LOCAL: &str = "+> sequence\n<child> := <{data<[u32]> n<u64> flag<bool>}>\n<parent> := <{first<child> sibling<child>}>\nwrap(data<[u32]>, n<u64>, flag<bool>) => (out<parent>) :=\n  a := {data: data, n: n, flag: flag}\n  b := {data: data, n: n + 1u64, flag: flag == false}\n  out := {first: a, sibling: b}.\ninspect(data<[u32]>, n<u64>, flag<bool>) => (out<u64>) :=\n  p := wrap(data, n, flag)\n  out := p.first.n + p.sibling.n + sequence/length(p.first.data).\ninspect(data<[u32]>, n<u64>, flag<bool>)\n";
+const CHECKED: &str = "+> sequence\n<child> := <{data<[u32]> n<u64> flag<bool>}>\n<parent> := <{first<child> sibling<child>}>\nwrap(data<[u32]>, n<u64>, flag<bool>, allowed<bool>) => (out<parent>) :=\n  permission! := allowed\n  a := {data: data, n: n, flag: flag}\n  b := {data: data, n: n + 1u64, flag: flag == false}\n  out := {first: a, sibling: b}.\nchecked(data<[u32]>, n<u64>, flag<bool>, allowed<bool>) => (out<(u64,[u32],bool)>) :=\n  p := wrap(data, n, flag, allowed)\n  out := (p.first.n + p.sibling.n, p.first.data, p.sibling.flag == true).\nchecked(data<[u32]>, n<u64>, flag<bool>, allowed<bool>)\n";
 
 fn leaves(layout: &Layout, fields: &[FrameField]) -> Vec<FrameField> {
     fields
@@ -136,7 +137,7 @@ fn moved(layout: &Layout, frames: &BufferFrames, fields: &[FrameField]) {
 
 #[test]
 fn dead_frame_copy_transfers_flat_and_nested_owners_with_original_prices() {
-    for (source, nested) in [(FLAT, false), (NESTED, true)] {
+    for (source, nested) in [(FLAT, false), (NESTED_LOCAL, true)] {
         for artifact in artifacts(source) {
             let plan = mech_engine::native_artifact::lower_native_program_artifact(
                 &artifact,
@@ -188,7 +189,7 @@ fn dead_frame_copy_transfers_flat_and_nested_owners_with_original_prices() {
 
 #[test]
 fn frame_copy_preflight_and_retirement_denials_preserve_aliases_and_retry() {
-    for artifact in artifacts(NESTED) {
+    for artifact in artifacts(NESTED_LOCAL) {
         let plan = mech_engine::native_artifact::lower_native_program_artifact(
             &artifact,
             &mech_stdlib::source_catalog(),
@@ -276,7 +277,7 @@ fn frame_copy_preflight_and_retirement_denials_preserve_aliases_and_retry() {
 #[test]
 fn live_and_identity_frame_copies_retain_owners_and_selected_lanes_are_disjoint() {
     let mut live = 0;
-    for text in [FLAT, NESTED, LIVE] {
+    for text in [FLAT, NESTED_LOCAL, LIVE] {
         for artifact in artifacts(text) {
             let plan = mech_engine::native_artifact::lower_native_program_artifact(
                 &artifact,
