@@ -1,0 +1,176 @@
+{
+  "created_utc": "2026-10-31T07:44:53.317134+00:00",
+  "head": "4f6f419724e2b06eb7e0eeac4a82743c4c264045",
+  "files": [
+    {
+      "path": "frame-allocation/aliased-decoded-0-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "frame-allocation/aliased-decoded-0-after.stdout",
+      "sha256": "87413d80159ff21448154f95a69033ecbc53831bdf4400c57e4d9b0fb8901f1c",
+      "bytes": 992
+    },
+    {
+      "path": "frame-allocation/aliased-decoded-0-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "frame-allocation/aliased-decoded-0-before.stdout",
+      "sha256": "298c11f4d922aa5cab2a13f2e019abdc3c4ae262ab6c9a2f9be1b1616817908e",
+      "bytes": 992
+    },
+    {
+      "path": "frame-allocation/aliased-decoded-64-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "frame-allocation/aliased-decoded-64-after.stdout",
+      "sha256": "06323ab9bc5d83b565381ead8028ff9982cdf96587140eb654945b883d7f2e45",
+      "bytes": 995
+    },
+    {
+      "path": "frame-allocation/aliased-decoded-64-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "frame-allocation/aliased-decoded-64-before.stdout",
+      "sha256": "b10b62e211be8f71bc0781f363306670a789f4944049bb41695111d4b35fce30",
+      "bytes": 995
+    },
+    {
+      "path": "frame-allocation/aliased-original-0-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "frame-allocation/aliased-original-0-after.stdout",
+      "sha256": "bf91a7a6d4ccefade58e3d294337c58b6b735258b60e9a15d81963d823a8c8b2",
+      "bytes": 993
+    },
+    {
+      "path": "frame-allocation/aliased-original-0-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "frame-allocation/aliased-original-0-before.stdout",
+      "sha256": "bd9d1bdea9a5490219075c3ab81c2c6bc7df11dc44ae0b67cc1729770fc2ea7d",
+      "bytes": 992
+    },
+    {
+      "path": "frame-allocation/aliased-original-64-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "frame-allocation/aliased-original-64-after.stdout",
+      "sha256": "5888a298a6a144c5f6537f1d92beb03234fa8eb63794d34f08a3920227a1044a",
+      "bytes": 995
+    },
+    {
+      "path": "frame-allocation/aliased-original-64-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "frame-allocation/aliased-original-64-before.stdout",
+      "sha256": "3fd49224fe5dbdc3b4cea2cf0218b6ad81e8513ea59252556e83ba54f2acd23b",
+      "bytes": 994
+    },
+    {
+      "path": "frame-allocation/exclusive-decoded-0-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "frame-allocation/exclusive-decoded-0-after.stdout",
+      "sha256": "de8a4b4df870d6c7ec09c3066aa6e9c6acbfa64f7c324d1beebf202ffdf6e634",
+      "bytes": 998
+    },
+    {
+      "path": "frame-allocation/exclusive-decoded-0-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "frame-allocation/exclusive-decoded-0-before.stdout",
+      "sha256": "a5d6daa1c28cdca12a120418ccebd8c1892a7711e5fd3585dc46e59029590e74",
+      "bytes": 997
+    },
+    {
+      "path": "frame-allocation/exclusive-decoded-64-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "frame-allocation/exclusive-decoded-64-after.stdout",
+      "sha256": "d81e546f7942db1e5bb940546da5d3259a2f1c4698acf0c9afdb98360195405c",
+      "bytes": 1001
+    },
+    {
+      "path": "frame-allocation/exclusive-decoded-64-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "frame-allocation/exclusive-decoded-64-before.stdout",
+      "sha256": "cc8295a5e49444731b0fb8b034d2df3669cd79ec43ff4dad6b04f1a14b994fb9",
+      "bytes": 1001
+    },
+    {
+      "path": "frame-allocation/exclusive-original-0-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "frame-allocation/exclusive-original-0-after.stdout",
+      "sha256": "099da59ab043517e849c62744e426018aec19aa43408d7574653ee305f80e62e",
+      "bytes": 1001
+    },
+    {
+      "path": "frame-allocation/exclusive-original-0-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "frame-allocation/exclusive-original-0-before.stdout",
+      "sha256": "b4cc459d9b5a73ea146e378d698db2ed765d019590ee63f1d0626332a7dda0c2",
+      "bytes": 1001
+    },
+    {
+      "path": "frame-allocation/exclusive-original-64-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "frame-allocation/exclusive-original-64-after.stdout",
+      "sha256": "dc1f29e680dd629cb020c68fecf0a17a33cfc0ddb47f4c66f7759c77123ebbc9",
+      "bytes": 1001
+    },
+    {
+      "path": "frame-allocation/exclusive-original-64-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "frame-allocation/exclusive-original-64-before.stdout",
+      "sha256": "bd7554c34910c3eeb360c5dc57010a62013f1341029d2707c736c62286e39488",
+      "bytes": 1003
+    },
+    {
+      "path": "frame-allocation/results.json",
+      "sha256": "1793a3b806084324f7683d792db68dd22629e34c3080bf4da66ae188b5f9a12c",
+      "bytes": 31578
+    },
+    {
+      "path": "frame-allocation.py",
+      "sha256": "968c443c6e2ed2f595b69625d2bca6679fc9e3378af3fdaea0a05b2ec2490cb6",
+      "bytes": 1591
+    }
+  ]
+}
