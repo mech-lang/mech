@@ -63,3 +63,5 @@ Acceptance for any follow-up: same source/typed-IR pins and exact output, all ex
 No compiler build, dependency edit, compressor run or benchmark was performed by this audit agent. All dependency-source snapshots are evidence, not replacement production files.
 
 The complete `before.json` and `after.json` slot histograms are retained in `../../pointer-reload-addendum/receipts.tar.gz`, under `pointer-reload-evidence/r60-stack-audit/`. They are omitted as duplicate expanded files here so the review diff stays readable. The manifest retains their exact hashes.
+
+The three external dependency source snapshots are also retained only in the verified compressed receipt, with their original paths and hashes. They are evidence, not repository Rust modules; the production unsafe-boundary allowlist remains unchanged.
