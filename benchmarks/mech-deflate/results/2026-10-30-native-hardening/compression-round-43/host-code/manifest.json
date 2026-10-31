@@ -1,0 +1,66 @@
+{
+  "created_utc": "2026-10-31T03:03:47.782474+00:00",
+  "head": "44b9e40d210abeb8ac5116b649f4f3dbb22c1adc",
+  "files": [
+    {
+      "path": "host-code/after-0.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "host-code/after-0.stdout",
+      "sha256": "5f4e6597ee63ee69725206670f43105a822d3e70ed42928555d2610476a18e77",
+      "bytes": 28964
+    },
+    {
+      "path": "host-code/after-1.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "host-code/after-1.stdout",
+      "sha256": "97938fa29b700d9e37b529fbba0fb39bf4c4cc3ca22aec7c626220d4b06b468c",
+      "bytes": 83291
+    },
+    {
+      "path": "host-code/after.symbols",
+      "sha256": "134eb8421bd928d59d7eeef0ed6890c94a1184300740b6a0cc61a986c218f340",
+      "bytes": 286
+    },
+    {
+      "path": "host-code/before-0.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "host-code/before-0.stdout",
+      "sha256": "5323caec57bc691a547addc3b0cb2a088fdb3847e59e43ab6decdd4c7f086273",
+      "bytes": 30423
+    },
+    {
+      "path": "host-code/before-1.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "host-code/before-1.stdout",
+      "sha256": "0f3375f2fa5be18890b7dc3f602f6c0a4a86ed4950153f2a88141c0d6fc17c53",
+      "bytes": 83308
+    },
+    {
+      "path": "host-code/before.symbols",
+      "sha256": "075ef8f79f75204cd28c82e94fc540d4438852fa9a97eefbd2cc910a25723bef",
+      "bytes": 286
+    },
+    {
+      "path": "host-code/result.json",
+      "sha256": "02345363a0401f2bf3fbedb7f80085338b26640b0cdb8f9b56ebb5db48087247",
+      "bytes": 28869
+    },
+    {
+      "path": "inspect-host.py",
+      "sha256": "c35a80948096f7120300a8ad643ebbd6a319ea15604d0e2163c00d45ebfca9b3",
+      "bytes": 2212
+    }
+  ]
+}
