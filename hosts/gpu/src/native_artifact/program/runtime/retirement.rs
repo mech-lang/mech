@@ -1,5 +1,6 @@
 //! Original ordered lexical cleanup, shared by ordinary tail boundaries.
 use super::*;
+use crate::native_artifact::program::prepare::cleanup_effects::Boundary;
 use crate::native_artifact::program::prepare::frame_retirement::FrameRetirements;
 
 pub(super) fn run(
@@ -8,15 +9,24 @@ pub(super) fn run(
     frames: &mut buffer_frames::BufferFrames,
     arena: &mut NativeValueArena<'_>,
     work: &mut NativeWorkMeter,
+    prepared: Option<&Boundary>,
 ) -> Result<bool, NativeProgramExecutionError> {
     work.charge(NativeExecutionPhase::Setup, amount(slots.len(), 16, 64)?)?;
     // The original scan price is paid first. Preview only current validity and
     // immutable recipe costs; an unsupported or denied group stays ordered.
-    if let Some((total, charges)) = preview(slots, recipes, frames, arena, work)
+    let effects = prepared.map_or(slots, |prepared| &prepared.effects);
+    let available = match prepared {
+        Some(prepared) => prepared_preview(slots, prepared, recipes, frames, arena, work),
+        None => preview(slots, recipes, frames, arena, work),
+    };
+    if let Some((total, charges)) = available
         && charges > 1
         && let Some(mut paid) = work.try_retirement_batch(total)
     {
-        for &slot in slots {
+        // Empty completed-child storage has no owner, generation or visit
+        // effect. Consume its ORIGINAL prices on this same exclusive receipt.
+        paid.pay(prepared.map_or(0, |prepared| prepared.omitted_work))?;
+        for &slot in effects {
             if frames.retire_prepaid(recipes, slot as u32, &mut paid)? {
                 // The same batch preview checked this selected container's
                 // canonical slot is empty. Only its frame can hold storage;
@@ -29,6 +39,8 @@ pub(super) fn run(
         paid.finish()?;
         #[cfg(all(test, feature = "canonical-native-program"))]
         BATCHES.with(|count| count.set(count.get() + 1));
+        #[cfg(all(test, feature = "canonical-native-program"))]
+        CHILD_EFFECTS.with(|count| count.set(count.get() + (slots.len() - effects.len()) as u64));
         return Ok(true);
     }
     for &slot in slots {
@@ -36,6 +48,35 @@ pub(super) fn run(
         arena.retire_current(slot as u32, work)?;
     }
     Ok(false)
+}
+
+fn prepared_preview(
+    slots: &[u64],
+    prepared: &Boundary,
+    recipes: &FrameRetirements,
+    frames: &buffer_frames::BufferFrames,
+    arena: &NativeValueArena<'_>,
+    work: &NativeWorkMeter,
+) -> Option<(u64, usize)> {
+    if prepared.has_frames && !frames.has_retirement_backing() {
+        return None;
+    }
+    // Even an entirely omitted inventory retains the original arena/account
+    // validity requirement. Every prepared ordinal is in this exact plan.
+    arena
+        .native_entry_preview(u32::try_from(*slots.first()?).ok()?, work)
+        .ok()?;
+    for &slot in &prepared.effects {
+        let slot = u32::try_from(slot).ok()?;
+        if recipes.get(slot as usize).is_some() {
+            if arena.native_entry_preview(slot, work).ok()?.is_some() {
+                return None;
+            }
+        } else if !arena.native_retirement_available(slot, work).ok()? {
+            return None;
+        }
+    }
+    Some((prepared.total, prepared.charges))
 }
 
 fn preview(

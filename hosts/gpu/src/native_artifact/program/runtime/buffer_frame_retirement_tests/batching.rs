@@ -141,6 +141,7 @@ fn trial(
                 &mut frames,
                 &mut arena,
                 meter,
+                None,
             )
         } else {
             // The maintained old entries are the oracle, including their error

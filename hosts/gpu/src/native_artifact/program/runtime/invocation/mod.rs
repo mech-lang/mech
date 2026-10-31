@@ -903,6 +903,10 @@ impl Invocation<'_, '_, '_> {
             &mut self.state.buffer_frames,
             &mut self.state.arena,
             &mut self.state.control.work,
+            self.descriptor
+                .metadata()
+                .cleanup_effects
+                .get(iteration, kind),
         )
         .map(|_| ())
     }
