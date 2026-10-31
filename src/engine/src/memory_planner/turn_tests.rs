@@ -296,3 +296,121 @@ fn borrowed_single_call_projection_keeps_error_precedence_immutable_input_and_re
         assert_eq!(call, original);
     }
 }
+
+#[cfg(feature = "resident-artifact")]
+fn observed_plan() -> (super::TurnMemoryPlan, CallMemoryPlan) {
+    let node = mech_core::NodeId(37);
+    let call = scratch_template();
+    let facts = super::TurnMemoryFacts {
+        resolved_footprints: BTreeMap::from([
+            ((node, PortDirection::Input, 0), footprint(&call, 11)),
+            ((node, PortDirection::Output, 0), footprint(&call, 2)),
+        ]),
+        published_footprints: BTreeMap::from([((node, 0), footprint(&call, 7))]),
+        ..Default::default()
+    };
+    (
+        super::plan_single_call_turn_memory(&call, node, &facts).unwrap(),
+        call,
+    )
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn observed_owned_call_refines_current_outputs_and_keeps_published_finite_facts() {
+    let (plan, template) = observed_plan();
+    let retained_template = template.clone();
+    for bytes in [0, 13, 511] {
+        let output = footprint(&template, bytes);
+        let result = super::apply_observed_turn_demand(
+            plan.clone(),
+            mech_core::ResourceDemand {
+                output_elements: 1,
+                persistent_bytes: output.fixed_bytes + output.payload_bytes,
+                retained_nodes: 1,
+                ..Default::default()
+            },
+            Some(output),
+        )
+        .unwrap();
+        let call = result.call.as_ref().unwrap();
+        assert_eq!(call.inputs[0].value.payload.current_bytes, 11);
+        assert_eq!(call.outputs[0].value.payload.current_bytes, bytes);
+        assert_eq!(
+            result.facts.published_footprints,
+            plan.facts.published_footprints
+        );
+        assert_eq!(
+            result.facts.resolved_footprints[&(plan.node, PortDirection::Input, 0)],
+            plan.facts.resolved_footprints[&(plan.node, PortDirection::Input, 0)]
+        );
+        assert_eq!(result.node, plan.node);
+        assert_eq!(result.budget_limits, plan.budget_limits);
+        assert_eq!(call.target.limits, plan.budget_limits);
+        assert!(
+            !result.budget_violations.is_empty(),
+            "finite zero limits remain effective"
+        );
+        assert_eq!(template, retained_template);
+    }
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn observed_owned_call_keeps_the_call_when_refinement_is_not_selected() {
+    let (plan, _) = observed_plan();
+    let original = plan.clone();
+    let result = super::apply_observed_turn_demand(plan, Default::default(), None).unwrap();
+    assert_eq!(result.call, original.call);
+    assert_eq!(result.facts, original.facts);
+    assert_eq!(result.transactions, original.transactions);
+    assert_eq!(result.node, original.node);
+    assert_eq!(result.budget_limits, original.budget_limits);
+
+    let mut no_call = original;
+    no_call.call = None;
+    let result = super::apply_observed_turn_demand(no_call, Default::default(), None).unwrap();
+    assert!(result.call.is_none());
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn observed_owned_call_preserves_overflow_before_resolution_and_allows_retry() {
+    let (plan, template) = observed_plan();
+    let retained_template = template.clone();
+    let mut missing = plan.clone();
+    missing
+        .facts
+        .resolved_footprints
+        .remove(&(plan.node, PortDirection::Input, 0));
+    let overflow = CurrentMemoryFootprint {
+        fixed_bytes: u64::MAX,
+        payload_bytes: 1,
+        ..footprint(&template, 0)
+    };
+    assert_eq!(
+        super::apply_observed_turn_demand(missing.clone(), Default::default(), Some(overflow)),
+        Err(MemoryPlanError::TargetAddressOverflow)
+    );
+    assert_eq!(
+        super::apply_observed_turn_demand(
+            missing,
+            Default::default(),
+            Some(footprint(&template, 13))
+        ),
+        Err(MemoryPlanError::MissingFootprintWitness {
+            stage: MemoryWitnessStage::Turn
+        })
+    );
+    let recovered =
+        super::apply_observed_turn_demand(plan, Default::default(), Some(footprint(&template, 13)))
+            .unwrap();
+    assert_eq!(
+        recovered.call.unwrap().outputs[0]
+            .value
+            .payload
+            .current_bytes,
+        13
+    );
+    assert_eq!(template, retained_template);
+}
