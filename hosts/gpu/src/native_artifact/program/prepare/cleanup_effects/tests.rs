@@ -118,7 +118,6 @@ fn collection_boundaries_and_scalar_only_programs_keep_original_inventories() {
     for source in [
         "seed<u64> + 1u64\n",
         "+> text\n[text/join([inner | inner <- values], outer) | outer <- values<[string]>]\n",
-        crossing,
     ] {
         for plan in plans(source) {
             let frames = plan.facts().buffer_frames();
@@ -126,11 +125,21 @@ fn collection_boundaries_and_scalar_only_programs_keep_original_inventories() {
             let tables = RetirementTables::derive(&plan, &plan.scalar_aggregates()).unwrap();
             let layout = Layout::derive(&plan, &tables, &frames, &recipes).unwrap();
             assert!(layout.boundaries.is_empty());
-            if source == crossing {
-                assert!(plan.iterations().iter().any(|control| {
-                    matches!(control, NativeControlLoop::Tail(tail) if tail.parent().is_some_and(|parent| matches!(plan.iterations()[parent as usize], NativeControlLoop::Collection(_))))
-                }), "fixture must actually cross a collection boundary");
-            }
         }
     }
+    // The source pipeline currently rejects recursive calls inside a
+    // comprehension, before a native child/collection crossing can exist.
+    // Preserve that rejection rather than fabricating an unreachable plan.
+    let parsed = parse_canonical_document(
+        TextSnapshot::new(DocumentId(0x434c4541), Revision(1), crossing).unwrap(),
+        ParseConfig::default(),
+    );
+    assert!(parsed.is_strictly_clean());
+    let Err(error) = CanonicalSourceFrontend.compile_document_with_catalog(
+        &DocumentSyntax::cast(parsed.syntax()).unwrap(),
+        mech_stdlib::source_catalog(),
+    ) else {
+        panic!("recursive comprehension must retain its source rejection")
+    };
+    assert_eq!(error.code, "source-semantics/recursive-comprehension");
 }
