@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T13:20:47.049716+00:00",
+  "head": "df9e2eed546948c62b0f45f3dfb90f286b816b76",
+  "files": [
+    {
+      "path": "build-matched.py",
+      "sha256": "a11ddf68b9d2883f54e961db5ec6c8d1795b2bc3509ebb1ca27415d4c4b13527",
+      "bytes": 5322
+    },
+    {
+      "path": "variants/after/cargo.json",
+      "sha256": "3b702ca5ad2cbb9e0543c8dd3735cd03924b57e63310957722a4618e1bac2657",
+      "bytes": 993
+    },
+    {
+      "path": "variants/after/cargo.log",
+      "sha256": "49bccd0ef64efb86bd83a01cd339c3d37076ab79ef557c8e1c99cdb798d3f4d4",
+      "bytes": 167362
+    },
+    {
+      "path": "variants/after/cargo.stderr",
+      "sha256": "ad93534b7b0c9d98390ff42b45bf2fb84ca27fd8405edb17a124fa4990ff679f",
+      "bytes": 56844
+    }
+  ]
+}
