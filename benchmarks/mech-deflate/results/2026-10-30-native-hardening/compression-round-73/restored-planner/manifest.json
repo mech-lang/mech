@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-31T23:15:46.894499+00:00",
+  "head": "429b8be412c4e3522d269d7e8c29e98614e60302",
+  "files": [
+    {
+      "path": "decision.json",
+      "sha256": "70a38bc77be6b794a6d9f511412ebd40ee5dd42829713312c89af77310eebe63",
+      "bytes": 748
+    },
+    {
+      "path": "restore-checks/planner.json",
+      "sha256": "54c09d698653a1bcbffc5c4cc0e81280dd5de6162d0aef889a6179b3d354e043",
+      "bytes": 619
+    },
+    {
+      "path": "restore-checks/planner.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "restore-checks/planner.stdout",
+      "sha256": "2109d1263b0ee90e954a71c45e1633f0976c92fe207b1498b51d5b7bcb11ef6f",
+      "bytes": 2446
+    },
+    {
+      "path": "restore-checks.py",
+      "sha256": "4dd5a9e74436943ef0fc291c5b6d79703007784922ebda48457c3afa517124f4",
+      "bytes": 1985
+    },
+    {
+      "path": "restore.json",
+      "sha256": "bd7239ec511747f0c5a115b96e01e7775a943dfefe947e70e2310457e5cbf530",
+      "bytes": 239
+    }
+  ]
+}
