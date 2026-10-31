@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-31T23:15:46.648486+00:00",
+  "head": "0d0953a0fdb1a76fb25072a6b95c895bc247dc19",
+  "files": [
+    {
+      "path": "decision.json",
+      "sha256": "70a38bc77be6b794a6d9f511412ebd40ee5dd42829713312c89af77310eebe63",
+      "bytes": 748
+    },
+    {
+      "path": "restore-checks/budget.json",
+      "sha256": "c6b62a26f6841f154fc89b8d53da7d57ff7ed5ed8e35d6e93164078cd988f3fc",
+      "bytes": 621
+    },
+    {
+      "path": "restore-checks/budget.stderr",
+      "sha256": "c2751da83f02162cdb4e35e5b0a2a0bc70beae2bd2d0fcc56e332b86241d0b7b",
+      "bytes": 2315
+    },
+    {
+      "path": "restore-checks/budget.stdout",
+      "sha256": "3020fa83c5c22097323da3d2a0c94055372681f3285e83ea4e36d23af4cc6eba",
+      "bytes": 13038
+    },
+    {
+      "path": "restore-checks.py",
+      "sha256": "4dd5a9e74436943ef0fc291c5b6d79703007784922ebda48457c3afa517124f4",
+      "bytes": 1985
+    },
+    {
+      "path": "restore.json",
+      "sha256": "bd7239ec511747f0c5a115b96e01e7775a943dfefe947e70e2310457e5cbf530",
+      "bytes": 239
+    }
+  ]
+}
