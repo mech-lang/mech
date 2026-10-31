@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T10:48:55.411043+00:00",
+  "head": "ae049bf9452a63d4b67b81ef31531ed3e31e2984",
+  "files": [
+    {
+      "path": "allocation-before/build.json",
+      "sha256": "72da8d77fe1e3373afd8c7100d8058708b5362a86a7e2ace58d2789750604101",
+      "bytes": 9927
+    },
+    {
+      "path": "allocation-before/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "allocation-before/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "allocation-regression.py",
+      "sha256": "77607510d6e11c7bb6b77b99c96d310ecae518ca11d68a5acd78da8b3cbd3bcf",
+      "bytes": 2483
+    },
+    {
+      "path": "allocation-test.rs",
+      "sha256": "b2e88e46b3a56f93022a44d968b3f010e70ad7b2b6772be34e1b87eb26a52af6",
+      "bytes": 8280
+    }
+  ]
+}
