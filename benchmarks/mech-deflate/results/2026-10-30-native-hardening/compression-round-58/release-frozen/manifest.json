@@ -1,0 +1,21 @@
+{
+  "created_utc": "2026-10-31T14:20:11.254320+00:00",
+  "head": "3f64123e64cafa7a13552b421668439300b016cf",
+  "files": [
+    {
+      "path": "build-native.py",
+      "sha256": "cc34b8f6704b7580dc6f06718ffda2304f3c7686589ec409c0e4338d99ca4b5e",
+      "bytes": 2495
+    },
+    {
+      "path": "implementation.json",
+      "sha256": "bdb77d197b6c34eb96ca5ca90f1ad0e506cd8c82eb3b5dd28fd120e236c557da",
+      "bytes": 703
+    },
+    {
+      "path": "variants/after/libraries.json",
+      "sha256": "bded0e79b80279bdf160b0b3813cec7bac00492403959fad3d650e3e9eb2655b",
+      "bytes": 10909
+    }
+  ]
+}
