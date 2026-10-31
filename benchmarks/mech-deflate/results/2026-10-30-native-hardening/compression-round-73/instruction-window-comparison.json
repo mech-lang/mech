@@ -1,0 +1,125 @@
+{
+  "variants": {
+    "before": {
+      "observations": 32,
+      "stdout_sha256": "04738b54c6298b186dd18679daece9829470f698484b6df725d8f059a4de54c5",
+      "compiler_source": "3979d6e360ed6d5def3aea745df94d970c92dc4d",
+      "stats": {
+        "instructions": {
+          "mean": 40416272.75,
+          "median": 40415631.0,
+          "min": 40411722,
+          "max": 40424861
+        },
+        "entry_instructions": {
+          "mean": 38798335.84375,
+          "median": 38797913.0,
+          "min": 38793929,
+          "max": 38807201
+        },
+        "outside_entry_instructions": {
+          "mean": 1617936.90625,
+          "median": 1617651.5,
+          "min": 1617541,
+          "max": 1621023
+        },
+        "cycles": {
+          "mean": 11653562.28125,
+          "median": 11530517.0,
+          "min": 11285406,
+          "max": 12533712
+        },
+        "entry_cycles": {
+          "mean": 11046251,
+          "median": 10909977.0,
+          "min": 10704696,
+          "max": 11904780
+        },
+        "outside_entry_cycles": {
+          "mean": 607311.28125,
+          "median": 594005.5,
+          "min": 577804,
+          "max": 728055
+        },
+        "entry_calls": {
+          "mean": 2,
+          "median": 2.0,
+          "min": 2,
+          "max": 2
+        }
+      },
+      "empty_entry_calibration": {
+        "entry_calls": 1,
+        "median_cycles": 2123,
+        "median_instructions": 5000,
+        "observations": 101,
+        "scope": "Empty begin/end; raw results are retained, not subtracted from primary or window counters."
+      },
+      "entry_instruction_share_percent": 95.99681812259642
+    },
+    "after": {
+      "observations": 32,
+      "stdout_sha256": "acaa092940fdb7f6ae31a75443b75c60ee9fd539a90ff3b7a9dbd488b617b7be",
+      "compiler_source": "636945c270484b15334dbc54af9226afd1163c37",
+      "stats": {
+        "instructions": {
+          "mean": 41425492.21875,
+          "median": 41426460.0,
+          "min": 41422326,
+          "max": 41438121
+        },
+        "entry_instructions": {
+          "mean": 39782953.71875,
+          "median": 39782082.0,
+          "min": 39780222,
+          "max": 39792536
+        },
+        "outside_entry_instructions": {
+          "mean": 1642538.5,
+          "median": 1642127.0,
+          "min": 1641898,
+          "max": 1647584
+        },
+        "cycles": {
+          "mean": 11770406.71875,
+          "median": 11648181.0,
+          "min": 11412508,
+          "max": 12737963
+        },
+        "entry_cycles": {
+          "mean": 11167995.5625,
+          "median": 11051347.0,
+          "min": 10809234,
+          "max": 12086316
+        },
+        "outside_entry_cycles": {
+          "mean": 602411.15625,
+          "median": 596766.5,
+          "min": 585030,
+          "max": 651893
+        },
+        "entry_calls": {
+          "mean": 2,
+          "median": 2.0,
+          "min": 2,
+          "max": 2
+        }
+      },
+      "empty_entry_calibration": {
+        "entry_calls": 1,
+        "median_cycles": 2163,
+        "median_instructions": 5000,
+        "observations": 101,
+        "scope": "Empty begin/end; raw results are retained, not subtracted from primary or window counters."
+      },
+      "entry_instruction_share_percent": 96.03495719175413
+    }
+  },
+  "mean_instruction_delta": {
+    "instructions": 1009219.46875,
+    "entry_instructions": 984617.875,
+    "outside_entry_instructions": 24601.59375
+  },
+  "added_instructions_in_entry_percent": 97.56231478763772,
+  "scope": "Separate diagnostic cohort only. Entry includes the exact linked machine entry and every host callback it invokes; outside combines setup and cleanup. Two entry calls occur per complete compression, with two counter reads per entry, never per loop. Empty entry calibration is retained and not subtracted. Row windows are disjoint; means reconcile exactly, while independent medians need not sum. Counter trampoline/overhead is absent from primary timing. This does not identify individual callback costs or prove a pointer/refcount mechanism."
+}
