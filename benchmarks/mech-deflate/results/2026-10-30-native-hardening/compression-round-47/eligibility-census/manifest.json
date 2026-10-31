@@ -1,0 +1,76 @@
+{
+  "created_utc": "2026-10-31T05:03:59.674112+00:00",
+  "head": "369a3821beee4644dc0d7a6d7f5fb58b549a65a1",
+  "files": [
+    {
+      "path": "census/allocation_profile.c",
+      "sha256": "d4e2ef8c1c635bf0e87a72ec6308abb2ba1b845d5da502a6d204135f07b7c27e",
+      "bytes": 4893
+    },
+    {
+      "path": "census/allocation_profile.h",
+      "sha256": "56852a08a6cb3fbba88daa10b8674cdb938933833722f0ed3bfcc8ae9ae9b31a",
+      "bytes": 384
+    },
+    {
+      "path": "census/allocation_profile.rs",
+      "sha256": "d9c4bc779939567f5dced46d7c7f7030726b4c0e17df72efc3339cdfe2514b19",
+      "bytes": 1306
+    },
+    {
+      "path": "census/build.json",
+      "sha256": "4081b62f4faeef25148f31a4649bfdd02b1705dfde300bd6ba63111d64fb302d",
+      "bytes": 14436
+    },
+    {
+      "path": "census/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "census/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "census/run.json",
+      "sha256": "759c637e37438a05cecc395d545408cff969845f72e3c53c1916bd1d6d0a5ef0",
+      "bytes": 12494
+    },
+    {
+      "path": "census/run.stderr",
+      "sha256": "f16575a2c253587f4849821f132b93844bf8da55d872ae099705412991767fd1",
+      "bytes": 8902
+    },
+    {
+      "path": "census/run.stdout",
+      "sha256": "4baa719b7494951be5973dd760ca06892fca0938e8ca0318d8d47cdd2f905709",
+      "bytes": 4646
+    },
+    {
+      "path": "census/summary.json",
+      "sha256": "97965c9b4144b7afaedb08ba5c76b3ad5e5a3d1329177520ac4e99cb8c071573",
+      "bytes": 813
+    },
+    {
+      "path": "census/usage.c",
+      "sha256": "883fe6a7baf228bc881b4b76aef13f352da38f19c8e7a5b3ca938dbd1dddfd0e",
+      "bytes": 448
+    },
+    {
+      "path": "census/usage.h",
+      "sha256": "ca6ac3c2cd82bfb367c07aa9e26b1aea3b025e48ea44db76dbded2be45b5fb9f",
+      "bytes": 233
+    },
+    {
+      "path": "census/worker.rs",
+      "sha256": "cb884ed2d992d9ad88bba8741d15f1e99afe82f21b75ed54e10dbfc87456cf28",
+      "bytes": 7270
+    },
+    {
+      "path": "census.py",
+      "sha256": "e43f316d4c31976c545cf0622365d71e0e205b1ba06aca79a8eb71e4f105f5b4",
+      "bytes": 4471
+    }
+  ]
+}
