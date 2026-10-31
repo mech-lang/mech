@@ -1283,3 +1283,130 @@ fn execute_observed_numeric_first_change(
     let rows = NUMERIC_FIRST_CHANGES.with(|rows| core::mem::take(&mut *rows.borrow_mut()));
     (outcome, rows)
 }
+
+#[path = "locals_snapshot_tests.rs"]
+mod locals_snapshot;
+
+type LocalsSnapshotAdmit = unsafe extern "C" fn(*mut c_void, u64) -> u64;
+struct LocalsSnapshotProbe {
+    frame: *mut Frame,
+    original: *mut u64,
+    decoy: *mut u64,
+    admit: LocalsSnapshotAdmit,
+    switch_site: u64,
+    restore_site: u64,
+    switched: bool,
+    restored: bool,
+}
+thread_local! {
+    static LOCALS_SNAPSHOT_PROBE: std::cell::RefCell<Option<LocalsSnapshotProbe>> = const { std::cell::RefCell::new(None) };
+}
+
+unsafe extern "C" fn observe_locals_snapshot(context: *mut c_void, site: u64) -> u64 {
+    let admit = LOCALS_SNAPSHOT_PROBE.with(|probe| probe.borrow().as_ref().unwrap().admit);
+    // SAFETY: the owning test retains the exact callback and invocation context;
+    // no frame or invocation borrow crosses this unchanged real admission.
+    let status = unsafe { admit(context, site) };
+    if status == STATUS_OK {
+        LOCALS_SNAPSHOT_PROBE.with(|probe| {
+            let mut probe = probe.borrow_mut();
+            let probe = probe.as_mut().unwrap();
+            // SAFETY: the generated entry is suspended in this callback. The
+            // frame and both equally sized, disjoint local banks remain live.
+            // Only the ABI pointer changes; the invocation's actual storage and
+            // admitted capacity stay intact. No scalar value is a host pointer.
+            unsafe {
+                assert_eq!((*probe.frame).base.context, context);
+                if site == probe.switch_site {
+                    assert!(!probe.switched);
+                    assert_eq!((*probe.frame).base.locals, probe.original);
+                    (*probe.frame).base.locals = probe.decoy;
+                    probe.switched = true;
+                } else if site == probe.restore_site {
+                    assert!(probe.switched && !probe.restored);
+                    assert_eq!((*probe.frame).base.locals, probe.decoy);
+                    (*probe.frame).base.locals = probe.original;
+                    probe.restored = true;
+                }
+            }
+        });
+    }
+    status
+}
+
+fn execute_observed_locals_snapshot(
+    jit: &crate::native_artifact::JitProgramArtifact,
+    args: &[Value],
+    outputs: &mut [Option<Value>],
+    memory: &ManagedMemoryBudget,
+    switch_site: u32,
+    restore_site: u32,
+) -> Result<NativeProgramExecutionReport, NativeProgramExecutionError> {
+    let entry = jit.test_checked_entry();
+    let mut observed_turns = 0;
+    let outcome = execute(
+        jit.descriptor(),
+        |raw| {
+            // SAFETY: execute owns this initialized frame for the synchronous
+            // checked entry. Activation keeps its ordinary unmodified frame.
+            if unsafe { (*raw).phase } != crate::native_artifact::program::protocol::abi::PHASE_TURN
+            {
+                return unsafe { entry(raw) };
+            }
+            // SAFETY: these metadata/pointer reads end before native execution.
+            let (original, count, admit) = unsafe {
+                (
+                    (*raw).base.locals,
+                    (*raw).base.local_count,
+                    (*raw).base.admit_next,
+                )
+            };
+            let mut decoy = vec![0u64; usize::try_from(count).unwrap()];
+            assert!(!decoy.is_empty());
+            LOCALS_SNAPSHOT_PROBE.with(|probe| {
+                assert!(probe.borrow().is_none());
+                *probe.borrow_mut() = Some(LocalsSnapshotProbe {
+                    frame: raw,
+                    original,
+                    decoy: decoy.as_mut_ptr(),
+                    admit,
+                    switch_site: u64::from(switch_site),
+                    restore_site: u64::from(restore_site),
+                    switched: false,
+                    restored: false,
+                });
+            });
+            // SAFETY: the decoy backing outlives the complete checked entry;
+            // the observer restores locals during the third source callback.
+            // Callback wiring is restored before execute validates the frame.
+            let status = unsafe {
+                (*raw).base.admit_next = observe_locals_snapshot;
+                let status = entry(raw);
+                (*raw).base.admit_next = admit;
+                status
+            };
+            let probe = LOCALS_SNAPSHOT_PROBE.with(|probe| probe.borrow_mut().take().unwrap());
+            assert!(
+                probe.switched && probe.restored,
+                "both source callbacks must execute"
+            );
+            // SAFETY: the entry returned and no callback owns the frame. This
+            // asserts restoration already happened inside the entry, rather
+            // than hiding a failed restoration in the outer driver.
+            assert_eq!(unsafe { (*raw).base.locals }, original);
+            assert!(
+                decoy.iter().all(|word| *word == 0),
+                "entry must retain its original local bank"
+            );
+            observed_turns += 1;
+            status
+        },
+        args,
+        outputs,
+        limits(),
+        memory,
+    );
+    assert_eq!(observed_turns, 1);
+    assert!(LOCALS_SNAPSHOT_PROBE.with(|probe| probe.borrow().is_none()));
+    outcome
+}
