@@ -253,8 +253,10 @@ impl NativePreparedLibraryCall {
                 if measured.is_none() {
                     for (index, schema) in recipe.schemas.iter().enumerate() {
                         let (value, bits) = read(index).ok_or(InvokeError::InvalidInput)?;
-                        let entry =
-                            self.schemas.entry(*schema).ok_or(InvokeError::InvalidInput)?;
+                        let entry = self
+                            .schemas
+                            .entry(*schema)
+                            .ok_or(InvokeError::InvalidInput)?;
                         let definition = entry.schema();
                         let footprint = if let Some(value) = value {
                             if bits != 0
