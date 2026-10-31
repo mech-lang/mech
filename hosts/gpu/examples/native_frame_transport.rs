@@ -57,6 +57,7 @@ fn inputs(
     artifact: &ProgramArtifact,
     named: &[(&str, Data)],
     memory: &ManagedMemoryBudget,
+    case: &str,
 ) -> Vec<Value> {
     let schemas = Arc::new(artifact.schemas().clone());
     artifact
@@ -64,30 +65,60 @@ fn inputs(
         .iter()
         .map(|input| {
             let name = mech_engine::decode_source_input_name(&input.name).unwrap();
-            let data = named
-                .iter()
-                .find(|(key, _)| *key == name)
-                .unwrap()
-                .1
-                .clone();
-            let shape_values: Box<[u64]> = if let Data::Matrix(values) = &data {
-                mech_core::shape_for_resolved_extents(
+            let value = if name == "values" && matches!(case, "private-tree" | "private-cache") {
+                let length = if case == "private-tree" {
+                    262144
+                } else {
+                    1500513
+                };
+                let shape = mech_core::shape_for_resolved_extents(
                     schemas.get(input.schema).unwrap(),
-                    &[1, values.len() as u64],
+                    &[1, length],
                 )
-                .unwrap()
-                .parameter_values()
-                .into()
+                .unwrap();
+                if case == "private-tree" {
+                    Value::from_u16_matrix(
+                        input.schema,
+                        shape,
+                        vec![0u16; length as usize].into(),
+                        schemas.clone(),
+                    )
+                    .unwrap()
+                } else {
+                    Value::from_u32_matrix(
+                        input.schema,
+                        shape,
+                        vec![0u32; length as usize].into(),
+                        schemas.clone(),
+                    )
+                    .unwrap()
+                }
             } else {
-                Box::new([])
+                let data = named
+                    .iter()
+                    .find(|(key, _)| *key == name)
+                    .unwrap()
+                    .1
+                    .clone();
+                let shape_values: Box<[u64]> = if let Data::Matrix(values) = &data {
+                    mech_core::shape_for_resolved_extents(
+                        schemas.get(input.schema).unwrap(),
+                        &[1, values.len() as u64],
+                    )
+                    .unwrap()
+                    .parameter_values()
+                    .into()
+                } else {
+                    Box::new([])
+                };
+                ValueDraft {
+                    schema: input.schema,
+                    shape_values,
+                    data,
+                }
+                .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+                .unwrap()
             };
-            let value = ValueDraft {
-                schema: input.schema,
-                shape_values,
-                data,
-            }
-            .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
-            .unwrap();
             let mut admission = memory
                 .reserve_capacity(value.memory_budget_admission_bytes(memory).unwrap())
                 .unwrap();
@@ -121,8 +152,8 @@ fn managed(case: &str, decoded: bool, steps: u64, samples: usize, repetitions: u
         "aliased" => format!("+> sequence\n{body}walk(values<[u32]>, steps<u64>, seed<u64>)\n"),
         "private-update" => private_update.to_owned(),
         "private-append" => private_append.to_owned(),
-        "private-tree" => private_update.replace("u32", "u16").replace("walk([0u16],", "walk([0u16 | i <- 0u64..=262144u64, i < 262144u64],"),
-        "private-cache" => private_update.replace("walk([0u32],", "walk([0u32 | i <- 0u64..=1500513u64, i < 1500513u64],"),
+        "private-tree" => private_update.replace("u32", "u16").replace("walk([0u16],", "walk(values<[u16]>,"),
+        "private-cache" => private_update.replace("walk([0u32],", "walk(values<[u32]>,"),
         "private-path" => private_append.replace("u32", "u64").replace("64u64", "305257u64"),
         "private-output" => private_append.replace("u32", "u8").replace("64u64", "13u64"),
         "scalar-loop" => "walk(left<u64>, total<u64>) => <u64>\n  | (left, total) => ((left > 0u64)? | true => walk(left - 1u64, total + 3u64) | false => total).\nwalk(steps<u64>, seed<u64>)\n".to_owned(),
@@ -131,10 +162,28 @@ fn managed(case: &str, decoded: bool, steps: u64, samples: usize, repetitions: u
     let artifact = artifact(&source, decoded);
     let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
     let hash = digest(&encoded);
-    let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+    let real_buffers = matches!(
+        case,
+        "private-tree" | "private-cache" | "private-path" | "private-output"
+    );
+    let mode = mech_gpu::native_artifact::NativeProgramLimitMode::NoLimits;
+    let jit = if real_buffers {
+        JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+    } else {
+        JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog())
+    }
+    .unwrap();
     let frames = jit.descriptor().plan().facts().buffer_frames().elements();
     assert_eq!(frames > 0, case != "scalar-loop");
-    let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+    let memory = if real_buffers {
+        mode.memory_budget()
+    } else {
+        ManagedMemoryBudget::new(256 * 1024 * 1024)
+    };
     let args = inputs(
         &artifact,
         &[
@@ -143,6 +192,7 @@ fn managed(case: &str, decoded: bool, steps: u64, samples: usize, repetitions: u
             ("values", Data::Matrix((0..64).map(Data::U32).collect())),
         ],
         &memory,
+        case,
     );
     let aliases = args.clone();
     let retained = memory.used_bytes();
@@ -155,7 +205,11 @@ fn managed(case: &str, decoded: bool, steps: u64, samples: usize, repetitions: u
                 _ => 0,
             },
     );
-    let policy = policy();
+    let policy = if real_buffers {
+        mode.execution()
+    } else {
+        policy()
+    };
     for sample in 0..=samples {
         // Output containers and all previous publications stay outside timing.
         let mut outputs = (0..repetitions)
@@ -189,9 +243,21 @@ fn managed(case: &str, decoded: bool, steps: u64, samples: usize, repetitions: u
                 .zip(&aliases)
                 .all(|(a, b)| a.shares_frozen_storage(b))
         );
+        if matches!(case, "private-tree" | "private-cache") {
+            for arg in &args {
+                if let mech_core::ValueData::Matrix(matrix) = arg.data() {
+                    use mech_core::snapshot::SequenceView;
+                    match matrix.elements() {
+                        SequenceView::U16(cells) => assert!(cells.iter().all(|&v| v == 0)),
+                        SequenceView::U32(cells) => assert!(cells.iter().all(|&v| v == 0)),
+                        _ => panic!("real array fixture lost its packed kind"),
+                    }
+                }
+            }
+        }
         println!(
             "{}",
-            serde_json::json!({"case":case,"form":if decoded {"decoded"} else {"original"},"steps":steps,"sample":sample,"warmup":sample==0,"invocations":repetitions,"seconds":elapsed,"allocation_requests":allocations,"requested_bytes":bytes,"work_per_invocation":last.work,"visits_per_invocation":last.visits,"private_frame_fields":frames,"artifact_sha256":hash})
+            serde_json::json!({"case":case,"limit_mode":if real_buffers {"no-limits"} else {"existing-finite-controls"},"form":if decoded {"decoded"} else {"original"},"steps":steps,"sample":sample,"warmup":sample==0,"invocations":repetitions,"seconds":elapsed,"allocation_requests":allocations,"requested_bytes":bytes,"work_per_invocation":last.work,"visits_per_invocation":last.visits,"private_frame_fields":frames,"artifact_sha256":hash})
         );
         drop(outputs);
         assert_eq!(memory.used_bytes(), retained);
