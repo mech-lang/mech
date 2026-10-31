@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T13:37:12.798047+00:00",
+  "head": "85d41866da3c5bc4da4f492ca85312e4a92ff364",
+  "files": [
+    {
+      "path": "analysis/scorecard.csv",
+      "sha256": "2b9853541aeb52abd72863265c2e7e2a471963f20add52322c778e57d6a55c65",
+      "bytes": 1422
+    },
+    {
+      "path": "analysis/scorecard.json",
+      "sha256": "18c4b6b2475f427284778836c19e9d7bb4c425ad7f32a594091f2168f02a392c",
+      "bytes": 72995
+    },
+    {
+      "path": "analyze.py",
+      "sha256": "9bbf0f0cf1a336a5a1a0487328633076b20bef70863e63f70698890c072b3a0d",
+      "bytes": 4869
+    },
+    {
+      "path": "source-provenance.json",
+      "sha256": "77eaeda06e4d50ba17df60164403e9f767e8f645a4b13abcef2c7eee56682336",
+      "bytes": 2782
+    },
+    {
+      "path": "validation.json",
+      "sha256": "92e9aafc383c99519e4c9f38c9a4e3874625008c363100304e83d4ccaa1e59bc",
+      "bytes": 1952
+    }
+  ]
+}
