@@ -1,0 +1,22 @@
+{
+  "name": "round08-static-fixed",
+  "command": [
+    "python3",
+    "/private/tmp/mech-final-static-20261028.py"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "803e2e83bc76d31d4d2a5d5dad7b28ba04ab9f8b",
+  "dirty": "",
+  "exit": 0,
+  "seconds": 193.35656094551086,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/round08-static-fixed.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

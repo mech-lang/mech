@@ -1,0 +1,18 @@
+metric,reference,baseline,candidate,change_percent,scope
+seconds,0.000287,0.0042711875,0.0042800830000000005,0.2082676070765066,four matched primary pairs; common reference
+instructions,1364372.0,48597760.5,48546303.0,-0.10588450881393596,separate coherent diagnostic cohorts
+cycles,922080.5,13646173.0,13657909.5,0.08600579810911224,separate coherent diagnostic cohorts
+rss_after,14745600.0,319815680.0,319324160.0,-0.15368852459016757,separate coherent diagnostic cohorts
+physical_after,14402496.0,228771520.0,228394752.0,-0.1646918287730892,separate coherent diagnostic cohorts
+pageins,0.0,0.0,0.0,,separate coherent diagnostic cohorts
+allocation_requests,95.0,13994.0,13994.0,0.0,separate coherent diagnostic cohorts
+requested_bytes,9021923.0,98586843.0,98586843.0,0.0,separate coherent diagnostic cohorts
+reallocations,0.0,1213.0,1213.0,0.0,separate coherent diagnostic cohorts
+relocating_reallocations,0.0,458.0,458.0,0.0,separate coherent diagnostic cohorts
+relocating_realloc_copy_upper_bound,0.0,13905.0,13905.0,0.0,separate coherent diagnostic cohorts
+live_usable_before,32.0,142706080.0,142706080.0,0.0,separate coherent diagnostic cohorts
+live_usable_after,32.0,142706648.0,142706648.0,0.0,separate coherent diagnostic cohorts
+peak_live_usable,9257360.0,163281512.0,163281512.0,0.0,separate coherent diagnostic cohorts
+incremental_peak_live_usable,9257328.0,20575432.0,20575432.0,0.0,separate coherent diagnostic cohorts
+code_bytes,not function matched,13885696,13885696,0,static generated compressor entry
+stack_bytes,not function matched,108400,108400,0,static generated compressor entry

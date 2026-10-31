@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-deflate-linear-stack/benchmarks/mech-deflate/results/2026-10-30-native-hardening/compression-round-55/reconstruct.py",
+    "/private/tmp/mech-registration-locks-round55-20261031/replay-publication"
+  ],
+  "exit": 0,
+  "archives": 69,
+  "verified_file_occurrences": 517,
+  "unique_paths": 422,
+  "paths_with_multiple_preserved_versions": 4,
+  "scope": "Every version is verified before chronological overlay. Numerical replay only; no binaries or benchmarks are rebuilt or rerun.",
+  "byte_identical_outputs": [
+    "scorecard.json",
+    "scorecard.csv",
+    "profile-numbers.json",
+    "attribution-comparison.json"
+  ]
+}

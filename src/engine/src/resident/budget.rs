@@ -16,9 +16,18 @@ use crate::memory_planner::{
 #[cfg(test)]
 #[path = "borrowed_metadata_scan_tests.rs"]
 mod borrowed_metadata_scan_tests;
+#[cfg(all(feature = "native-artifact", feature = "sequence_buffers"))]
+#[path = "native_frame_footprint.rs"]
+mod frame_footprint;
+#[cfg(all(feature = "native-artifact", feature = "sequence_buffers"))]
+pub(crate) use frame_footprint::PreparedNativeFrameFootprint;
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 #[path = "native_turn_plan_cache.rs"]
 pub(crate) mod native_turn_plan_cache;
@@ -32,6 +41,10 @@ pub use workers::{
     NativeWorkDebitBatch, NativeWorkGroup, NativeWorkerBudgetError, NativeWorkerCreditStatistics,
     NativeWorkerWorkLoan,
 };
+
+#[path = "word_draft_expansion.rs"]
+mod word_drafts;
+pub(crate) use word_drafts::unsigned_word_draft_expansion;
 
 #[derive(Default)]
 struct DisplayByteCounter(usize);
@@ -290,7 +303,11 @@ impl NativeLibraryWorkBudget {
 
     /// Identity check for invocation-owned prepared metadata. Equal
     /// limits or an equal memory account cannot renew a different work ledger.
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     pub fn shares_account(&self, other: &Self) -> bool {
         std::rc::Rc::ptr_eq(&self.account, &other.account)
     }
@@ -307,19 +324,19 @@ impl NativeLibraryWorkBudget {
     /// This neither reserves nor renews work: the owner must reconcile actual
     /// debits to this SAME account before any helper or publication can occur.
     pub fn unscoped_remaining(&self) -> Option<(u64, u64)> {
-        if CONTROL_WORK.with(|v| v.borrow().is_some())
-            || CONTROL_WORK_SCOPE.with(|v| v.borrow().is_some())
-        {
-            return None;
-        }
-        let state = self.account.borrow();
-        let local = unscoped_local_remaining(&state)?;
-        if let Some(worker) = &state.worker {
-            let shared = worker.remaining()?;
-            Some((local.0.min(shared.0), local.1.min(shared.1)))
-        } else {
-            Some(local)
-        }
+        CONTROL_WORK_CONTEXT.with(|context| {
+            if context.active.borrow().is_some() || context.scope.borrow().is_some() {
+                return None;
+            }
+            let state = self.account.borrow();
+            let local = unscoped_local_remaining_at_limits(&state, context.limits.get())?;
+            if let Some(worker) = &state.worker {
+                let shared = worker.remaining()?;
+                Some((local.0.min(shared.0), local.1.min(shared.1)))
+            } else {
+                Some(local)
+            }
+        })
     }
 
     /// Identity of the account that admitted this ledger's actual backing.
@@ -336,40 +353,133 @@ impl NativeLibraryWorkBudget {
     /// An independent native meter must not bypass an active invocation.
     /// Callers must reuse that invocation's account or reject nested entry.
     pub fn has_active_scope() -> bool {
-        CONTROL_WORK.with(|active| active.borrow().is_some())
+        with_control_work(|active| active.borrow().is_some())
     }
 
     /// A reusable measured summary requires a real paid native scope, not
     /// merely an account installed beside an absent or foreign observer.
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     pub(in crate::resident) fn has_matching_active_scope(&self) -> bool {
-        CONTROL_WORK.with(|active| {
-            active
+        CONTROL_WORK_CONTEXT.with(|context| {
+            context
+                .active
                 .borrow()
                 .as_ref()
                 .is_some_and(|current| std::rc::Rc::ptr_eq(current, &self.account))
-        }) && CONTROL_WORK_SCOPE.with(|active| {
-            active
-                .borrow()
-                .as_ref()
-                .is_some_and(|scope| std::rc::Rc::ptr_eq(&scope.total, &self.account))
+                && context
+                    .scope
+                    .borrow()
+                    .as_ref()
+                    .is_some_and(|scope| std::rc::Rc::ptr_eq(&scope.total, &self.account))
         })
     }
 
     /// Generated scalar/control work and maintained leaf work debit this same
     /// account. This method never replaces the current invocation's account.
     pub fn charge(&self, compute: u64, comparison: u64) -> Result<(), ResidentKernelError> {
-        CONTROL_WORK.with(|active| {
-            if active
+        CONTROL_WORK_CONTEXT.with(|context| self.charge_in_context(context, compute, comparison))
+    }
+
+    /// Combine an exact successful prefix inside its existing call scope.
+    /// A miss is eligibility only: the caller must run its original ordered
+    /// debits, preserving their error and spent prefix. Worker credit can
+    /// change concurrently, so it always keeps that incremental path.
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
+    pub(in crate::resident) fn try_charge_scoped_prefix(
+        &self,
+        compute: u64,
+        comparison: u64,
+    ) -> bool {
+        CONTROL_WORK_CONTEXT.with(|context| {
+            if !context
+                .active
                 .borrow()
                 .as_ref()
-                .is_some_and(|current| !std::rc::Rc::ptr_eq(current, &self.account))
+                .is_some_and(|current| std::rc::Rc::ptr_eq(current, &self.account))
+                || !context
+                    .scope
+                    .borrow()
+                    .as_ref()
+                    .is_some_and(|scope| std::rc::Rc::ptr_eq(&scope.total, &self.account))
             {
-                return Err(ResidentKernelError::InvalidInput);
+                return false;
             }
-            Ok(())
-        })?;
-        charge_control_account(&mut self.account.borrow_mut(), compute, comparison)
+            let mut account = self.account.borrow_mut();
+            if account.worker.is_some() {
+                return false;
+            }
+            let Ok(next) = checked_local_control_account_work_at_limits(
+                &account,
+                compute,
+                comparison,
+                context.limits.get(),
+            ) else {
+                return false;
+            };
+            // No callbacks or fallible operation separate eligibility and
+            // commit. These are the same counters an ordinary debit assigns;
+            // observer high-water marks remain unchanged by direct charges.
+            account.used = next;
+            true
+        })
+    }
+
+    /// Apply an additional caller compute ceiling before the existing account
+    /// checks. This cannot grant fuel or replace any shared/relative/worker cap.
+    /// Native callers retain ceiling/overflow precedence over a foreign scope.
+    pub fn charge_compute_with_limit(
+        &self,
+        compute: u64,
+        limit: u64,
+    ) -> Result<(), ResidentKernelError> {
+        let exceeded = |required| ResidentKernelError::ResourceLimit {
+            phase: mech_core::ResidentResourcePhase::Admission,
+            dimension: MemoryBudgetDimension::ComputeWork,
+            required,
+            limit,
+        };
+        let required = self
+            .account
+            .borrow()
+            .used
+            .compute
+            .checked_add(compute)
+            .ok_or_else(|| exceeded(u64::MAX))?;
+        if required > limit {
+            return Err(exceeded(required));
+        }
+        CONTROL_WORK_CONTEXT.with(|context| self.charge_in_context(context, compute, 0))
+    }
+
+    #[inline]
+    fn charge_in_context(
+        &self,
+        context: &ControlWorkContext,
+        compute: u64,
+        comparison: u64,
+    ) -> Result<(), ResidentKernelError> {
+        if context
+            .active
+            .borrow()
+            .as_ref()
+            .is_some_and(|current| !std::rc::Rc::ptr_eq(current, &self.account))
+        {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+        charge_control_account_at_limits(
+            &mut self.account.borrow_mut(),
+            compute,
+            comparison,
+            context.limits.get(),
+        )
     }
 
     /// Preview the same account's debit before optional backing is selected.
@@ -384,7 +494,7 @@ impl NativeLibraryWorkBudget {
         &self,
         compute: u64,
     ) -> Result<(), ResidentKernelError> {
-        CONTROL_WORK.with(|active| {
+        with_control_work(|active| {
             if active
                 .borrow()
                 .as_ref()
@@ -416,7 +526,7 @@ impl NativeLibraryWorkBudget {
         compute: u64,
         comparison: u64,
     ) -> Result<(), ResidentKernelError> {
-        CONTROL_WORK.with(|active| {
+        with_control_work(|active| {
             if active
                 .borrow()
                 .as_ref()
@@ -475,10 +585,10 @@ impl NativeLibraryWorkBudget {
         struct Guard(Option<std::rc::Rc<std::cell::RefCell<ControlWorkAccount>>>);
         impl Drop for Guard {
             fn drop(&mut self) {
-                CONTROL_WORK.with(|active| *active.borrow_mut() = self.0.take());
+                with_control_work(|active| *active.borrow_mut() = self.0.take());
             }
         }
-        let previous = CONTROL_WORK.with(|active| {
+        let previous = with_control_work(|active| {
             let mut active = active.borrow_mut();
             if active
                 .as_ref()
@@ -532,7 +642,8 @@ impl NativeLibraryWorkBudget {
                 self.0.set(self.1);
             }
         }
-        CONTROL_WORK.with(|active| {
+        CONTROL_WORK_CONTEXT.with(|context| {
+            let active = &context.active;
             let previous = {
                 let mut current = active.borrow_mut();
                 if current
@@ -544,24 +655,22 @@ impl NativeLibraryWorkBudget {
                 current.replace(self.account.clone())
             };
             let _account = AccountGuard(active, previous);
-            CONTROL_WORK_SCOPE.with(|scope| {
-                let previous = scope.replace(Some(ControlWorkScope {
-                    total: self.account.clone(),
-                    observed: ControlWork::default(),
-                }));
-                let _scope = ScopeGuard(scope, previous);
-                let used = self.used();
-                CONTROL_ROOT_LIMITS.with(|limits| {
-                    let previous = limits.get();
-                    let enclosing = previous.unwrap_or((u64::MAX, u64::MAX));
-                    limits.set(Some((
-                        used.0.saturating_add(compute).min(enclosing.0),
-                        used.1.saturating_add(comparison).min(enclosing.1),
-                    )));
-                    let _limits = LimitGuard(limits, previous);
-                    Ok(execute())
-                })
-            })
+            let scope = &context.scope;
+            let previous = scope.replace(Some(ControlWorkScope {
+                total: self.account.clone(),
+                observed: ControlWork::default(),
+            }));
+            let _scope = ScopeGuard(scope, previous);
+            let used = self.used();
+            let limits = &context.limits;
+            let previous = limits.get();
+            let enclosing = previous.unwrap_or((u64::MAX, u64::MAX));
+            limits.set(Some((
+                used.0.saturating_add(compute).min(enclosing.0),
+                used.1.saturating_add(comparison).min(enclosing.1),
+            )));
+            let _limits = LimitGuard(limits, previous);
+            Ok(execute())
         })
     }
 }
@@ -571,11 +680,39 @@ struct ControlWorkScope {
     observed: ControlWork,
 }
 
+// One thread-local address for the existing account, observer and relative
+// caps. Independent cells preserve the original reentrant borrow boundaries;
+// holding a field reference does not borrow the whole context across execution.
+struct ControlWorkContext {
+    active: std::cell::RefCell<Option<std::rc::Rc<std::cell::RefCell<ControlWorkAccount>>>>,
+    scope: std::cell::RefCell<Option<ControlWorkScope>>,
+    limits: std::cell::Cell<Option<(u64, u64)>>,
+}
 thread_local! {
-    static CONTROL_WORK: std::cell::RefCell<Option<std::rc::Rc<std::cell::RefCell<ControlWorkAccount>>>> = const { std::cell::RefCell::new(None) };
-    static CONTROL_WORK_SCOPE: std::cell::RefCell<Option<ControlWorkScope>> = const { std::cell::RefCell::new(None) };
-    static CONTROL_ROOT_LIMITS: std::cell::Cell<Option<(u64, u64)>> = const { std::cell::Cell::new(None) };
+    static CONTROL_WORK_CONTEXT: ControlWorkContext = const { ControlWorkContext {
+        active: std::cell::RefCell::new(None),
+        scope: std::cell::RefCell::new(None),
+        limits: std::cell::Cell::new(None),
+    } };
     static PLANNING_STEPS: std::cell::RefCell<Option<PlanningSteps>> = const { std::cell::RefCell::new(None) };
+}
+#[inline]
+fn with_control_work<T>(
+    call: impl FnOnce(
+        &std::cell::RefCell<Option<std::rc::Rc<std::cell::RefCell<ControlWorkAccount>>>>,
+    ) -> T,
+) -> T {
+    CONTROL_WORK_CONTEXT.with(|context| call(&context.active))
+}
+#[inline]
+fn with_control_work_scope<T>(
+    call: impl FnOnce(&std::cell::RefCell<Option<ControlWorkScope>>) -> T,
+) -> T {
+    CONTROL_WORK_CONTEXT.with(|context| call(&context.scope))
+}
+#[inline]
+fn with_control_root_limits<T>(call: impl FnOnce(&std::cell::Cell<Option<(u64, u64)>>) -> T) -> T {
+    CONTROL_WORK_CONTEXT.with(|context| call(&context.limits))
 }
 
 struct PlanningSteps {
@@ -637,18 +774,18 @@ pub(crate) fn with_control_work_budget<T>(execute: impl FnOnce() -> T) -> T {
     }
     impl Drop for Guard {
         fn drop(&mut self) {
-            CONTROL_WORK.with(|active| *active.borrow_mut() = self.previous.take());
-            CONTROL_ROOT_LIMITS.with(|active| active.set(self.limits));
+            with_control_work(|active| *active.borrow_mut() = self.previous.take());
+            with_control_root_limits(|active| active.set(self.limits));
         }
     }
-    let previous = CONTROL_WORK.with(|active| {
+    let previous = with_control_work(|active| {
         let mut active = active.borrow_mut();
         let total = active.clone().unwrap_or_default();
         active.replace(total)
     });
     // Native callers cannot lift a resident program's original whole-turn
     // caps. Nested work inherits the tighter limits without a fresh account.
-    let limits = CONTROL_ROOT_LIMITS.with(|active| {
+    let limits = with_control_root_limits(|active| {
         let previous = active.get();
         let (compute, comparison) = previous.unwrap_or((u64::MAX, u64::MAX));
         active.set(Some((
@@ -665,27 +802,32 @@ pub(super) struct ControlWorkScopeGuard(Option<ControlWorkScope>);
 
 impl ControlWorkScopeGuard {
     pub(super) fn enter() -> Self {
-        let next = CONTROL_WORK
-            .with(|active| active.borrow().clone())
-            .map(|total| ControlWorkScope {
+        let next =
+            with_control_work(|active| active.borrow().clone()).map(|total| ControlWorkScope {
                 total,
                 observed: ControlWork::default(),
             });
-        Self(CONTROL_WORK_SCOPE.with(|active| active.replace(next)))
+        Self(with_control_work_scope(|active| active.replace(next)))
     }
 }
 
 impl Drop for ControlWorkScopeGuard {
     fn drop(&mut self) {
-        CONTROL_WORK_SCOPE.with(|active| *active.borrow_mut() = self.0.take());
+        with_control_work_scope(|active| *active.borrow_mut() = self.0.take());
     }
 }
 
 #[cfg(feature = "native-artifact")]
 fn unscoped_local_remaining(account: &ControlWorkAccount) -> Option<(u64, u64)> {
-    let root = CONTROL_ROOT_LIMITS
-        .with(|v| v.get())
-        .unwrap_or((u64::MAX, u64::MAX));
+    with_control_root_limits(|limits| unscoped_local_remaining_at_limits(account, limits.get()))
+}
+
+#[cfg(feature = "native-artifact")]
+fn unscoped_local_remaining_at_limits(
+    account: &ControlWorkAccount,
+    limits: Option<(u64, u64)>,
+) -> Option<(u64, u64)> {
+    let root = limits.unwrap_or((u64::MAX, u64::MAX));
     Some((
         account
             .compute_limit
@@ -700,14 +842,24 @@ fn unscoped_local_remaining(account: &ControlWorkAccount) -> Option<(u64, u64)> 
     ))
 }
 
+#[cfg(feature = "native-artifact")]
 fn checked_local_control_account_work(
     account: &ControlWorkAccount,
     compute: u64,
     comparison: u64,
 ) -> Result<ControlWork, ResidentKernelError> {
-    let (root_compute, root_comparison) = CONTROL_ROOT_LIMITS
-        .with(|active| active.get())
-        .unwrap_or((u64::MAX, u64::MAX));
+    with_control_root_limits(|limits| {
+        checked_local_control_account_work_at_limits(account, compute, comparison, limits.get())
+    })
+}
+
+fn checked_local_control_account_work_at_limits(
+    account: &ControlWorkAccount,
+    compute: u64,
+    comparison: u64,
+    limits: Option<(u64, u64)>,
+) -> Result<ControlWork, ResidentKernelError> {
+    let (root_compute, root_comparison) = limits.unwrap_or((u64::MAX, u64::MAX));
     let compute_limit = account.compute_limit.min(root_compute);
     let comparison_limit = account.comparison_limit.min(root_comparison);
     let compute = account
@@ -751,12 +903,24 @@ fn checked_local_control_account_work(
     })
 }
 
+#[cfg(feature = "native-artifact")]
 fn checked_control_account_work(
     account: &ControlWorkAccount,
     compute: u64,
     comparison: u64,
 ) -> Result<ControlWork, ResidentKernelError> {
-    let next = checked_local_control_account_work(account, compute, comparison)?;
+    with_control_root_limits(|limits| {
+        checked_control_account_work_at_limits(account, compute, comparison, limits.get())
+    })
+}
+
+fn checked_control_account_work_at_limits(
+    account: &ControlWorkAccount,
+    compute: u64,
+    comparison: u64,
+    limits: Option<(u64, u64)>,
+) -> Result<ControlWork, ResidentKernelError> {
+    let next = checked_local_control_account_work_at_limits(account, compute, comparison, limits)?;
     #[cfg(feature = "native-artifact")]
     if let Some(worker) = &account.worker {
         worker.preview(compute, comparison)?;
@@ -764,14 +928,26 @@ fn checked_control_account_work(
     Ok(next)
 }
 
+#[cfg(feature = "native-artifact")]
 fn charge_control_account(
     account: &mut ControlWorkAccount,
     compute: u64,
     comparison: u64,
 ) -> Result<(), ResidentKernelError> {
+    with_control_root_limits(|limits| {
+        charge_control_account_at_limits(account, compute, comparison, limits.get())
+    })
+}
+
+fn charge_control_account_at_limits(
+    account: &mut ControlWorkAccount,
+    compute: u64,
+    comparison: u64,
+    limits: Option<(u64, u64)>,
+) -> Result<(), ResidentKernelError> {
     // A real debit checks and commits both shared dimensions under one lock.
     // Eligibility-only callers retain the separate, non-spending preview.
-    let next = checked_local_control_account_work(account, compute, comparison)?;
+    let next = checked_local_control_account_work_at_limits(account, compute, comparison, limits)?;
     #[cfg(feature = "native-artifact")]
     if let Some(worker) = &account.worker {
         // Local call caps were checked first. Both shared dimensions commit
@@ -787,37 +963,41 @@ fn charge_control_account(
 pub(in crate::resident) fn preview_control_work(
     demand: ResourceDemand,
 ) -> Result<(), ResidentKernelError> {
-    CONTROL_WORK_SCOPE.with(|active| {
+    CONTROL_WORK_CONTEXT.with(|context| {
+        let active = &context.scope;
         let active = active.borrow();
         let Some(scope) = active.as_ref() else {
             return Ok(());
         };
-        checked_control_account_work(
+        checked_control_account_work_at_limits(
             &scope.total.borrow(),
             demand.work.compute.saturating_sub(scope.observed.compute),
             demand
                 .work
                 .comparison
                 .saturating_sub(scope.observed.comparison),
+            context.limits.get(),
         )
         .map(drop)
     })
 }
 
 pub(crate) fn observe_control_work(demand: ResourceDemand) -> Result<(), ResidentKernelError> {
-    CONTROL_WORK_SCOPE.with(|active| {
+    CONTROL_WORK_CONTEXT.with(|context| {
+        let active = &context.scope;
         let mut active = active.borrow_mut();
         let Some(scope) = active.as_mut() else {
             return Ok(());
         };
         let mut account = scope.total.borrow_mut();
-        charge_control_account(
+        charge_control_account_at_limits(
             &mut account,
             demand.work.compute.saturating_sub(scope.observed.compute),
             demand
                 .work
                 .comparison
                 .saturating_sub(scope.observed.comparison),
+            context.limits.get(),
         )?;
         scope.observed.compute = scope.observed.compute.max(demand.work.compute);
         scope.observed.comparison = scope.observed.comparison.max(demand.work.comparison);
@@ -834,6 +1014,46 @@ mod native_library_work_tests {
         demand.work.compute = compute;
         demand.work.comparison = comparison;
         demand
+    }
+
+    #[test]
+    #[cfg(panic = "unwind")]
+    fn nested_call_unwind_restores_context_without_refunding_spent_work() {
+        let memory = mech_core::ManagedMemoryBudget::new(8192);
+        let budget = NativeLibraryWorkBudget::new(100, 100, &memory).unwrap();
+        let foreign = NativeLibraryWorkBudget::new(100, 100, &memory).unwrap();
+        budget
+            .with_scope(|| {
+                let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    budget
+                        .with_call_limits(3, 1, || {
+                            budget.charge(2, 1).unwrap();
+                            budget
+                                .with_call_limits(1, 0, || {
+                                    budget.charge(1, 0).unwrap();
+                                    panic!("unwind nested work context");
+                                })
+                                .unwrap();
+                        })
+                        .unwrap();
+                }));
+                assert!(panic.is_err());
+                assert!(budget.has_matching_active_scope());
+                assert_eq!(budget.used(), (3, 1));
+                assert_eq!(foreign.charge(0, 0), Err(ResidentKernelError::InvalidInput));
+                budget.charge(4, 2).unwrap();
+            })
+            .unwrap();
+        assert!(!NativeLibraryWorkBudget::has_active_scope());
+        assert_eq!(budget.unscoped_remaining(), Some((93, 97)));
+        foreign
+            .with_scope(|| foreign.charge(1, 1))
+            .unwrap()
+            .unwrap();
+        assert_eq!(foreign.used(), (1, 1));
+        assert_eq!(budget.used(), (7, 3));
+        drop((budget, foreign));
+        assert_eq!(memory.used_bytes(), 0);
     }
 
     #[test]
@@ -858,7 +1078,11 @@ mod native_library_work_tests {
         assert_eq!(fresh.used(), (0, 0));
     }
 
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     #[test]
     fn reusable_measurement_requires_matching_account_and_paid_observer_scope() {
         let memory = mech_core::ManagedMemoryBudget::new(4096);
@@ -872,9 +1096,9 @@ mod native_library_work_tests {
                 assert!(cloned.has_matching_active_scope());
                 assert!(!other.has_matching_active_scope());
                 {
-                    let _restore = ControlWorkScopeGuard(
-                        CONTROL_WORK_SCOPE.with(|active| active.replace(None)),
-                    );
+                    let _restore = ControlWorkScopeGuard(with_control_work_scope(|active| {
+                        active.replace(None)
+                    }));
                     assert!(!budget.has_matching_active_scope());
                     // Observing no scope is deliberately a no-op elsewhere;
                     // that success must never authenticate a cached summary.
@@ -882,7 +1106,7 @@ mod native_library_work_tests {
                     assert_eq!(budget.used(), (0, 0));
                 }
                 {
-                    let _restore = ControlWorkScopeGuard(CONTROL_WORK_SCOPE.with(|active| {
+                    let _restore = ControlWorkScopeGuard(with_control_work_scope(|active| {
                         active.replace(Some(ControlWorkScope {
                             total: other.account.clone(),
                             observed: ControlWork::default(),
@@ -1166,7 +1390,11 @@ pub(crate) fn with_payload_admission<T>(
 
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 pub(in crate::resident) fn record_native_index_memory_error(
     error: mech_core::MemoryRuntimeError,
@@ -1194,7 +1422,11 @@ fn admit_payload_plan(plan: &TurnMemoryPlan) -> Result<(), ResidentKernelError> 
                     .ok_or(ResidentKernelError::InvalidShape)?;
                 #[cfg(all(
                     feature = "native-artifact",
-                    any(feature = "pure_text", feature = "map_ops")
+                    any(
+                        feature = "pure_text",
+                        feature = "map_ops",
+                        feature = "sequence_buffers"
+                    )
                 ))]
                 {
                     // Cache capacity is independently reserved on this exact
@@ -1313,7 +1545,11 @@ pub(crate) fn with_resident_turn_plan<T>(
     let previous = with_active_turn_plan(|active| active.replace(plan.into()));
     #[cfg(all(
         feature = "native-artifact",
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     ))]
     let _cache_guard = native_turn_plan_cache::suspend();
     let _guard = ActiveTurnPlanGuard(previous);
@@ -1577,7 +1813,11 @@ impl KernelCostEstimate {
             }
             #[cfg(all(
                 feature = "native-artifact",
-                any(feature = "pure_text", feature = "map_ops")
+                any(
+                    feature = "pure_text",
+                    feature = "map_ops",
+                    feature = "sequence_buffers"
+                )
             ))]
             if !super::text_index::has_index_scope()
                 && index_growth(&active)? == (0, 0)
@@ -1711,14 +1951,13 @@ impl KernelCostEstimate {
         // The call policy cannot replenish its enclosing cumulative account or
         // a tighter nested call. The planning check above charged this prefix;
         // only the currently remaining finite allowance may reach a finalizer.
-        CONTROL_WORK_SCOPE.with(|scope| {
+        with_control_work_scope(|scope| {
             let scope = scope.borrow();
             let Some(scope) = scope.as_ref() else {
                 return Ok(remaining);
             };
             let account = scope.total.borrow();
-            let (root_compute, root_comparison) = CONTROL_ROOT_LIMITS
-                .with(|limits| limits.get())
+            let (root_compute, root_comparison) = with_control_root_limits(|limits| limits.get())
                 .unwrap_or((account.compute_limit, account.comparison_limit));
             let compute = account
                 .compute_limit
@@ -1899,7 +2138,11 @@ pub(crate) fn check_output_element_count(required: u64) -> Result<(), ResidentKe
 #[cfg(all(
     test,
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops"),
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ),
     any(feature = "full_source", feature = "full_compiler")
 ))]
 #[path = "snapshot_output_element_tests.rs"]
@@ -2566,7 +2809,11 @@ fn measure_borrowed_value_footprint(
     meter.charge_retained_nodes(1)?;
     #[cfg(all(
         feature = "native-artifact",
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     ))]
     if source_cache
         && let Some(data) =
@@ -2581,12 +2828,53 @@ fn measure_borrowed_value_footprint(
     }
     #[cfg(not(all(
         feature = "native-artifact",
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     )))]
     let _ = source_cache;
     let data =
         measure_proven_borrowed_canonical_data_footprint(meter, schema.body(), value.data(), true)?;
     projected_canonical_value_footprint(data, shape_parameters)
+}
+
+/// Logical canonical footprint for an exact native scalar leaf, without
+/// allocating a canonical wrapper. Physical word storage has separate arena
+/// admission. Retain the same schema/data inspection and logical output fees.
+#[cfg(all(feature = "native-artifact", feature = "sequence_buffers"))]
+pub(crate) fn measure_native_scalar_frame_footprint(
+    meter: &mut ResidentBudgetMeter,
+    schema: &SchemaBody,
+    value: crate::native_artifact::NativeScalarValue,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    use crate::native_artifact::NativeScalarKind;
+    if NativeScalarKind::from_schema_body(schema) != Some(value.kind()) {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let data = native_scalar_frame_data(value);
+    meter.charge_compute_work(BORROWED_FOOTPRINT_METADATA_WORK)?;
+    if !borrowed_footprint_schema_supported(meter, schema, 0)? {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    meter.charge_retained_nodes(1)?;
+    let data = measure_proven_borrowed_canonical_data_footprint(meter, schema, &data, true)?;
+    projected_canonical_value_footprint(data, 0)
+}
+
+#[cfg(all(feature = "native-artifact", feature = "sequence_buffers"))]
+fn native_scalar_frame_data(value: crate::native_artifact::NativeScalarValue) -> ValueData {
+    use crate::native_artifact::NativeScalarValue as Scalar;
+    match value {
+        Scalar::Bool(v) => ValueData::Bool(v),
+        Scalar::U8(v) => ValueData::U8(v),
+        Scalar::U16(v) => ValueData::U16(v),
+        Scalar::U32(v) => ValueData::U32(v),
+        Scalar::U64(v) => ValueData::U64(v),
+        Scalar::I64(v) => ValueData::I64(v),
+        Scalar::F64(v) => ValueData::F64(v),
+    }
 }
 
 /// Measures a borrowed value whose exact schema identity and supported body
@@ -2612,6 +2900,41 @@ impl<P> AdmittedMutationPlan<P> {
 }
 
 impl ResidentBudgetMeter {
+    /// Immutable layout bytes are the complete ordered visitor's successful
+    /// debit. A missed preview keeps its original error and spent prefix.
+    pub(super) fn precharge_schema_layout(
+        &mut self,
+        schemas: &SchemaTable,
+    ) -> Result<u64, ResidentKernelError> {
+        // Ordinary resident meters can also run under shared worker credit.
+        // Its availability can change between preview and debit, so preserve
+        // the incremental visitor and its denied prefix in those scopes.
+        #[cfg(feature = "native-artifact")]
+        let serial = with_control_work_scope(|scope| {
+            scope
+                .borrow()
+                .as_ref()
+                .is_none_or(|scope| scope.total.borrow().worker.is_none())
+        });
+        #[cfg(not(feature = "native-artifact"))]
+        let serial = true;
+        if serial
+            && let Some(bytes) = schemas.clone_allocation_bound_bytes()
+            && self.can_charge_compute_and_nodes(bytes, 0)
+        {
+            self.charge_compute_work(bytes)?;
+            return Ok(bytes);
+        }
+        schemas
+            .clone_allocation_bound_bytes_with_precharge(|bytes| self.charge_compute_work(bytes))
+            .map_err(|error| match error {
+                mech_core::SchemaAllocationBoundError::Precharge(error) => error,
+                mech_core::SchemaAllocationBoundError::ArithmeticOverflow => {
+                    ResidentKernelError::InvalidShape
+                }
+            })
+    }
+
     /// Prepay a fixed-count metadata scan, never payload work, allocation or
     /// publication. The preview uses the same authorities as ordinary charges
     /// and is side-effect free; a rejected preview is only a fast-path miss.
@@ -2623,8 +2946,18 @@ impl ResidentBudgetMeter {
         let Some(work) = nodes.checked_mul(BORROWED_FOOTPRINT_METADATA_WORK) else {
             return Ok(false);
         };
-        let Some(next) = self.preview_compute_and_nodes(work, if retain_nodes { nodes } else { 0 })
-        else {
+        self.try_charge_borrowed_footprint(work, if retain_nodes { nodes } else { 0 })
+    }
+
+    /// An exact, bounded metadata-only recipe may combine successful debits.
+    /// Rejected previews spend nothing and require the original ordered visitor.
+    /// Shared-worker scopes never qualify, preserving their incremental loans.
+    pub(super) fn try_charge_borrowed_footprint(
+        &mut self,
+        work: u64,
+        nodes: u64,
+    ) -> Result<bool, ResidentKernelError> {
+        let Some(next) = self.preview_compute_and_nodes(work, nodes) else {
             return Ok(false);
         };
         self.charge(|cost| {
@@ -2650,6 +2983,33 @@ impl ResidentBudgetMeter {
             next.check_analysis_limits().is_ok()
                 && next.compute_work() <= compute
                 && next.comparison_work() <= comparison
+        } else if let Some((limits, identity)) = self.native_projection_limits {
+            // Shared worker credit can change after preview. Keep its original
+            // incremental traversal rather than changing a denied paid prefix.
+            #[cfg(feature = "native-artifact")]
+            let serial = with_control_work_scope(|scope| {
+                scope
+                    .borrow()
+                    .as_ref()
+                    .is_some_and(|scope| scope.total.borrow().worker.is_none())
+            });
+            #[cfg(not(feature = "native-artifact"))]
+            let serial = false;
+            serial
+                && self.check_native_projection_scope(identity).is_ok()
+                && preview_control_work(next.demand).is_ok()
+                && mech_core::evaluate_call_memory_budget(
+                    mech_core::MemoryObjectOwner::DirectCallPort {
+                        call: 0,
+                        direction: mech_core::PortDirection::Input,
+                        port: 0,
+                    },
+                    next.demand,
+                    0,
+                    0,
+                    limits,
+                )
+                .is_empty()
         } else {
             // A preview must not enter the detached test-only admission path,
             // which can observe work. Production scans require a real turn.
@@ -2675,19 +3035,24 @@ impl ResidentBudgetMeter {
 
     #[cfg(all(
         feature = "native-artifact",
-        any(test, feature = "pure_text", feature = "map_ops")
+        any(
+            test,
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     ))]
     pub(crate) fn for_native_projection(
         work: &NativeLibraryWorkBudget,
         limits: mech_core::MemoryBudgetLimits,
     ) -> Result<Self, ResidentKernelError> {
-        let same_account = CONTROL_WORK.with(|active| {
+        let same_account = with_control_work(|active| {
             active
                 .borrow()
                 .as_ref()
                 .is_some_and(|account| std::rc::Rc::ptr_eq(account, &work.account))
         });
-        let same_scope = CONTROL_WORK_SCOPE.with(|scope| {
+        let same_scope = with_control_work_scope(|scope| {
             scope
                 .borrow()
                 .as_ref()
@@ -2709,7 +3074,7 @@ impl ResidentBudgetMeter {
     }
 
     fn check_native_projection_scope(&self, identity: u64) -> Result<(), ResidentKernelError> {
-        let live = CONTROL_WORK_SCOPE.with(|scope| {
+        let live = with_control_work_scope(|scope| {
             scope
                 .borrow()
                 .as_ref()
@@ -2741,15 +3106,14 @@ impl ResidentBudgetMeter {
     pub(crate) fn remaining_incremental_work(&self) -> Result<u64, ResidentKernelError> {
         if let Some((limits, identity)) = self.native_projection_limits {
             self.check_native_projection_scope(identity)?;
-            return CONTROL_WORK_SCOPE.with(|scope| {
+            return with_control_work_scope(|scope| {
                 let scope = scope.borrow();
                 let account = scope
                     .as_ref()
                     .ok_or(ResidentKernelError::InvalidInput)?
                     .total
                     .borrow();
-                let (root_compute, root_comparison) = CONTROL_ROOT_LIMITS
-                    .with(|root| root.get())
+                let (root_compute, root_comparison) = with_control_root_limits(|root| root.get())
                     .ok_or(ResidentKernelError::InvalidInput)?;
                 let compute = account
                     .compute_limit

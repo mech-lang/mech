@@ -58,6 +58,13 @@ fn scalar_port(
     };
     let expected = match kind {
         NativeScalarKind::Bool => SchemaBody::Bool,
+        #[cfg(any(feature = "convert", feature = "native-artifact"))]
+        NativeScalarKind::U8 => SchemaBody::UnsignedInteger(IntegerWidth::W8),
+        #[cfg(any(feature = "convert", feature = "native-artifact"))]
+        NativeScalarKind::U16 => SchemaBody::UnsignedInteger(IntegerWidth::W16),
+        #[cfg(any(feature = "convert", feature = "native-artifact"))]
+        NativeScalarKind::U32 => SchemaBody::UnsignedInteger(IntegerWidth::W32),
+
         NativeScalarKind::U64 => SchemaBody::UnsignedInteger(IntegerWidth::W64),
         NativeScalarKind::I64 => SchemaBody::SignedInteger(IntegerWidth::W64),
         NativeScalarKind::F64 => SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
@@ -73,6 +80,10 @@ fn scalar_port(
                 NativeScalarKind::Bool => ResidentValueKind::Bool,
                 NativeScalarKind::F64 => ResidentValueKind::F64,
                 NativeScalarKind::U64 | NativeScalarKind::I64 => ResidentValueKind::Snapshot,
+                #[cfg(any(feature = "convert", feature = "native-artifact"))]
+                NativeScalarKind::U8 | NativeScalarKind::U16 | NativeScalarKind::U32 => {
+                    ResidentValueKind::Snapshot
+                }
             }
 }
 
@@ -95,7 +106,19 @@ fn scalar_request(
         | NativeScalarOp::U64ToF64
         | NativeScalarOp::I64ToF64
         | NativeScalarOp::F64ToU64
-        | NativeScalarOp::F64ToI64 => true,
+        | NativeScalarOp::F64ToI64
+        | NativeScalarOp::U8ToU16
+        | NativeScalarOp::U8ToU32
+        | NativeScalarOp::U8ToU64
+        | NativeScalarOp::U16ToU8
+        | NativeScalarOp::U16ToU32
+        | NativeScalarOp::U16ToU64
+        | NativeScalarOp::U32ToU8
+        | NativeScalarOp::U32ToU16
+        | NativeScalarOp::U32ToU64
+        | NativeScalarOp::U64ToU8
+        | NativeScalarOp::U64ToU16
+        | NativeScalarOp::U64ToU32 => true,
         _ => false,
     };
     let change = if cast {
@@ -268,6 +291,12 @@ mod tests {
                 SchemaBody::UnsignedInteger(IntegerWidth::W64),
                 SchemaBody::SignedInteger(IntegerWidth::W64),
                 SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+                #[cfg(any(feature = "convert", feature = "native-artifact"))]
+                SchemaBody::UnsignedInteger(IntegerWidth::W8),
+                #[cfg(any(feature = "convert", feature = "native-artifact"))]
+                SchemaBody::UnsignedInteger(IntegerWidth::W16),
+                #[cfg(any(feature = "convert", feature = "native-artifact"))]
+                SchemaBody::UnsignedInteger(IntegerWidth::W32),
             ]
             .into_iter()
             .map(|body| {
@@ -296,6 +325,12 @@ mod tests {
                     NativeScalarKind::U64 => ids[1],
                     NativeScalarKind::I64 => ids[2],
                     NativeScalarKind::F64 => ids[3],
+                    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+                    NativeScalarKind::U8 => ids[4],
+                    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+                    NativeScalarKind::U16 => ids[5],
+                    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+                    NativeScalarKind::U32 => ids[6],
                 };
                 ResidentPortLayout {
                     schema_id,
@@ -304,6 +339,10 @@ mod tests {
                         NativeScalarKind::Bool => ResidentValueKind::Bool,
                         NativeScalarKind::F64 => ResidentValueKind::F64,
                         NativeScalarKind::U64 | NativeScalarKind::I64 => {
+                            ResidentValueKind::Snapshot
+                        }
+                        #[cfg(any(feature = "convert", feature = "native-artifact"))]
+                        NativeScalarKind::U8 | NativeScalarKind::U16 | NativeScalarKind::U32 => {
                             ResidentValueKind::Snapshot
                         }
                     },
@@ -407,6 +446,27 @@ mod tests {
                 exact_cardinality: None,
                 maximum_cardinality: None,
             }
+        }
+    }
+
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    #[test]
+    fn shared_unsigned_scalar_layouts_do_not_depend_on_conversion_factories() {
+        use NativeScalarKind::{Bool, U8, U16, U32};
+        use NativeScalarOp::{U8Eq, U16Eq, U32Eq};
+        for (op, kind, wrong_kind) in [(U8Eq, U8, U16), (U16Eq, U16, U32), (U32Eq, U32, U8)] {
+            assert_eq!(op.signature(), (&[kind, kind][..], Bool));
+            let binding = Binding::scalar(op);
+            let request = binding.request();
+            for port in &binding.inputs {
+                assert!(scalar_port(&request, port, kind));
+                assert!(!scalar_port(&request, port, wrong_kind));
+                let mut wrong_representation = port.clone();
+                wrong_representation.kind = ResidentValueKind::Bool;
+                assert!(!scalar_port(&request, &wrong_representation, kind));
+            }
+            assert!(scalar_port(&request, &binding.output, Bool));
+            assert!(!scalar_port(&request, &binding.output, kind));
         }
     }
 
@@ -769,7 +829,10 @@ mod tests {
         let mut builder = FunctionCatalogBuilder::new();
         super::super::conversion::install(&mut builder).unwrap();
         let catalog = builder.build().unwrap();
-        for op in [U64ToI64, I64ToU64, U64ToF64, I64ToF64, F64ToU64, F64ToI64] {
+        for op in [
+            U64ToI64, I64ToU64, U64ToF64, I64ToF64, F64ToU64, F64ToI64, U8ToU16, U8ToU32, U8ToU64,
+            U16ToU8, U16ToU32, U16ToU64, U32ToU8, U32ToU16, U32ToU64, U64ToU8, U64ToU16, U64ToU32,
+        ] {
             let mut binding = Binding::scalar(op);
             let policy =
                 mech_core::maintained_operation_contract("convert/kind", 1, false).unwrap();

@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-31T02:16:38.069247+00:00",
+  "head": "1a3b840e0b3d4faaad3cd3968038f1d78f643701",
+  "files": [
+    {
+      "path": "profile/after-sampler.log",
+      "sha256": "34fcb6640522d97832005dabfeef7bc89f0e60fda41aa4a5ac3400c0d1610e41",
+      "bytes": 249
+    },
+    {
+      "path": "profile/after.json",
+      "sha256": "067804c0954ae7f4f81c140e7f13fe7a90732fb1da9817517e52466527aadd39",
+      "bytes": 806
+    },
+    {
+      "path": "profile/after.sample.txt",
+      "sha256": "4d2891ee80e062a722669e6b3b775df7054f2eb24b90c25ccc299f2eb0411222",
+      "bytes": 497625
+    },
+    {
+      "path": "profile/after.stderr",
+      "sha256": "7eaa77f44a1439404ceadbe6f8f5ca4e347e4c85b6146654e6b13ebfd0f1a55c",
+      "bytes": 9711
+    },
+    {
+      "path": "profile/after.stdout",
+      "sha256": "c3b3b5a96dabb494f8615269d07e7918f4569a4ac8242420b429b5b0f677d439",
+      "bytes": 242918
+    },
+    {
+      "path": "profile.py",
+      "sha256": "a3a32c1c07461cdfe60141c03dba2fda5422235397db5768a58bb087ca820ae0",
+      "bytes": 2930
+    }
+  ]
+}

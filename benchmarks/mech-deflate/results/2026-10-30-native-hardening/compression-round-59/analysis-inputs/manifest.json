@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-31T14:58:06.909661+00:00",
+  "head": "42c482f18e12b2e489ef563b3101d9a8a2b8a294",
+  "files": [
+    {
+      "path": "allocation_analysis.py",
+      "sha256": "1053186a98416bb203c022bbbbca15d427c9b4bff1f0318d2df8a1f8367ed22e",
+      "bytes": 3914
+    },
+    {
+      "path": "analyze.py",
+      "sha256": "170708ef9849ba8d5928b67b41e78e17b6a0eb98afb3b988e536a78102690f1e",
+      "bytes": 7004
+    },
+    {
+      "path": "implementation.json",
+      "sha256": "4217f6cb34eb9c228ca1276b24d634e1bc4006969c1712505e9e2617bc8102b1",
+      "bytes": 2165
+    },
+    {
+      "path": "profile-numbers.json",
+      "sha256": "883fce87b6ec941de213a1e29e8623651e466537caf1d038389dcc907b0bdd15",
+      "bytes": 18092
+    },
+    {
+      "path": "profile_analysis.py",
+      "sha256": "54b5f96c2c2d02b87557b0e920bab100426d359e13a94c58f45d6b5736b1d89a",
+      "bytes": 3171
+    },
+    {
+      "path": "reconstruct.py",
+      "sha256": "d0a00f473aa75ffb029483ba14b50e4042143f36a087b5f651c6e3808bdcfb94",
+      "bytes": 2517
+    },
+    {
+      "path": "validation.json",
+      "sha256": "5d771f9e64a4695c8ad462bb1dae0e8e51cac581dcb0c727703b70f089e11c03",
+      "bytes": 11000
+    }
+  ]
+}

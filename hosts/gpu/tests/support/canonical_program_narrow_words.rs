@@ -1,0 +1,473 @@
+//! Byte/word buffers keep exact widths while scalar reads/casts stay native.
+use super::{artifacts, equal, inputs, limits, reference, reference_result};
+use mech_core::{ManagedMemoryBudget, ValueDataDraft as Data};
+use mech_gpu::native_artifact::JitProgramArtifact;
+
+fn word(width: u32, value: u64) -> Data {
+    match width {
+        8 => Data::U8(value.try_into().unwrap()),
+        16 => Data::U16(value.try_into().unwrap()),
+        32 => Data::U32(value.try_into().unwrap()),
+        _ => unreachable!(),
+    }
+}
+fn matrix(width: u32, values: &[u64]) -> Data {
+    Data::Matrix(
+        values
+            .iter()
+            .map(|&value| word(width, value))
+            .collect::<Vec<_>>()
+            .into(),
+    )
+}
+
+#[test]
+fn checked_u32_add_keeps_frequency_width_overflow_and_recovery() {
+    // CompressOptimal.merge_match_len_freqs and CompressLazy.merge_observations
+    // add U32 counters with checked arithmetic. This is their minimal operation.
+    for source in [
+        "left<u32> + right<u32>\n",
+        "values := words<[u32]>\nvalues[1u64] + values[2u64]\n",
+    ] {
+        let (forms, last) = artifacts(source);
+        for artifact in forms {
+            let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
+            let mut cases = Vec::new();
+            for (left, right) in [
+                (0, 0),
+                (u32::MAX, 0),
+                (0x7fff_ffff, 1),
+                (u32::MAX - 1, 1),
+                (u32::MAX, 1),
+                (u32::MAX, u32::MAX),
+                (9, 3),
+            ] {
+                let named = if source.starts_with("values") {
+                    vec![("words", matrix(32, &[left.into(), right.into()]))]
+                } else {
+                    vec![("left", Data::U32(left)), ("right", Data::U32(right))]
+                };
+                let args = inputs(&artifact, &named, &memory);
+                let ordinary = reference_result(&artifact, &args);
+                match left.checked_add(right) {
+                    Some(sum) => assert_eq!(
+                        ordinary.as_ref().unwrap()[last]
+                            .canonical_data_draft()
+                            .unwrap(),
+                        Data::U32(sum)
+                    ),
+                    None => assert!(ordinary.as_ref().unwrap_err().contains("Arithmetic")),
+                }
+                cases.push((args, ordinary));
+            }
+            let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog())
+                .expect("checked U32 frequency addition must have its own native witness");
+            let mut output = vec![None; artifact.outputs().len()];
+            for (args, ordinary) in &cases {
+                let aliases = args.clone();
+                let prior = output.clone();
+                let retained = memory.used_bytes();
+                let result = jit.evaluate_into(args, &mut output, limits(), &memory);
+                match ordinary {
+                    Ok(expected) => {
+                        result.unwrap();
+                        equal(&artifact, &output, expected);
+                    }
+                    Err(_) => {
+                        assert!(matches!(result,
+                            Err(mech_gpu::native_artifact::NativeProgramExecutionError::Control(
+                                mech_gpu::native_artifact::NativeIterationExecutionError::Arithmetic { .. }
+                            ))), "{result:?}");
+                        assert_eq!(memory.used_bytes(), retained);
+                        assert!(output.iter().zip(&prior).all(|(value, old)| {
+                            value
+                                .as_ref()
+                                .unwrap()
+                                .shares_frozen_storage(old.as_ref().unwrap())
+                        }));
+                    }
+                }
+                assert!(
+                    args.iter()
+                        .zip(&aliases)
+                        .all(|(value, alias)| value.shares_frozen_storage(alias))
+                );
+            }
+            drop((output, cases));
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+}
+
+#[test]
+fn narrow_comparisons_preserve_unsigned_boundaries_and_buffer_reads() {
+    // The pinned component source compares U32 hash sequences/frequencies and
+    // U8 bytes before widening. Exercise the complete unsigned word family.
+    for width in [8, 16, 32] {
+        let maximum = (1u64 << width) - 1;
+        let high_bit = 1u64 << (width - 1);
+        let cases = [
+            (0, 0),
+            (0, maximum),
+            (maximum, 0),
+            (maximum, maximum),
+            (high_bit - 1, high_bit),
+            (high_bit, high_bit - 1),
+        ];
+        for op in ["==", "!=", "<", "<=", ">", ">="] {
+            for buffered in [false, true] {
+                let source = if buffered {
+                    format!("values := words<[u{width}]>\nvalues[1u64] {op} values[2u64]\n")
+                } else {
+                    format!("left<u{width}> {op} right<u{width}>\n")
+                };
+                let (artifacts, last) = artifacts(&source);
+                for artifact in artifacts {
+                    let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                    let mut args_and_expected = Vec::new();
+                    // Establish resident correctness before attempting native lowering.
+                    for (left, right) in cases {
+                        let values = if buffered {
+                            vec![("words", matrix(width, &[left, right]))]
+                        } else {
+                            vec![("left", word(width, left)), ("right", word(width, right))]
+                        };
+                        let args = inputs(&artifact, &values, &memory);
+                        let expected = match op {
+                            "==" => left == right,
+                            "!=" => left != right,
+                            "<" => left < right,
+                            "<=" => left <= right,
+                            ">" => left > right,
+                            ">=" => left >= right,
+                            _ => unreachable!(),
+                        };
+                        let ordinary = reference(&artifact, &args);
+                        assert_eq!(
+                            ordinary[last].canonical_data_draft().unwrap(),
+                            Data::Bool(expected)
+                        );
+                        args_and_expected.push((args, ordinary));
+                    }
+                    let jit =
+                        JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog())
+                            .unwrap_or_else(|error| {
+                                panic!("u{width} {op}, buffered={buffered}: {error:?}")
+                            });
+                    let mut output = vec![None; artifact.outputs().len()];
+                    for (args, ordinary) in &args_and_expected {
+                        jit.evaluate_into(args, &mut output, limits(), &memory)
+                            .unwrap();
+                        equal(&artifact, &output, ordinary);
+                    }
+                    drop((output, args_and_expected));
+                    assert_eq!(memory.used_bytes(), 0);
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn narrow_comparison_assertions_keep_error_order_publication_and_retry() {
+    for width in [8, 16, 32] {
+        let source = format!(
+            "check(left<u{width}>, right<u{width}>, divisor<u64>) => (out<u64>) :=\n  ordered! := left <= right\n  out := 12u64 / divisor.\ncheck(left<u{width}>, right<u{width}>, divisor<u64>)\n"
+        );
+        let (artifacts, last) = artifacts(&source);
+        for artifact in artifacts {
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let mut output: Vec<Option<mech_core::Value>> = vec![None; artifact.outputs().len()];
+            let maximum = (1u64 << width) - 1;
+            for (left, right, divisor) in [(maximum, maximum, 3), (maximum, 0, 0), (0, maximum, 2)]
+            {
+                let args = inputs(
+                    &artifact,
+                    &[
+                        ("left", word(width, left)),
+                        ("right", word(width, right)),
+                        ("divisor", Data::U64(divisor)),
+                    ],
+                    &memory,
+                );
+                if left > right {
+                    assert!(
+                        reference_result(&artifact, &args)
+                            .unwrap_err()
+                            .contains("LexicalIntegrity")
+                    );
+                    let previous = output
+                        .iter()
+                        .map(|value| value.clone().unwrap())
+                        .collect::<Vec<_>>();
+                    let retained = memory.used_bytes();
+                    let error = jit
+                        .evaluate_into(&args, &mut output, limits(), &memory)
+                        .unwrap_err();
+                    assert!(matches!(error,
+                        mech_gpu::native_artifact::NativeProgramExecutionError::Control(
+                            mech_gpu::native_artifact::NativeIterationExecutionError::Integrity { .. }
+                        )), "{error:?}");
+                    equal(&artifact, &output, &previous);
+                    assert_eq!(memory.used_bytes(), retained);
+                } else {
+                    let ordinary = reference(&artifact, &args);
+                    jit.evaluate_into(&args, &mut output, limits(), &memory)
+                        .unwrap();
+                    equal(&artifact, &output, &ordinary);
+                    assert_eq!(
+                        output[last]
+                            .as_ref()
+                            .unwrap()
+                            .canonical_data_draft()
+                            .unwrap(),
+                        Data::U64(12 / divisor)
+                    );
+                }
+            }
+            drop(output);
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+}
+
+#[test]
+fn narrow_reads_and_widening_execute_with_zero_snapshot_clones() {
+    for width in [8, 16, 32] {
+        for source in [
+            format!("buffer := values<[u{width}]>\nresult<u64> := buffer[position<u64>]\nresult\n"),
+            format!(
+                "read(xs<[u{width}]>, at<u64>) => (out<u64>) :=\n  out<u64> := xs[at].\nread(values<[u{width}]>, position<u64>)\n"
+            ),
+        ] {
+            let (artifacts, last) = artifacts(&source);
+            for artifact in artifacts {
+                let jit =
+                    JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+                let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                let mut output = vec![None; artifact.outputs().len()];
+                let maximum = (1u64 << width) - 1;
+                let values = [0, maximum, 1, maximum / 2 + 1];
+                let mut policy = limits();
+                policy.library.max_cloned_bytes = Some(0);
+                policy.library.max_output_bytes = Some(u64::from(width / 8));
+                for position in [2, 4, 1, 3, 2] {
+                    let args = inputs(
+                        &artifact,
+                        &[
+                            ("values", matrix(width, &values)),
+                            ("position", Data::U64(position)),
+                        ],
+                        &memory,
+                    );
+                    let expected = reference(&artifact, &args);
+                    jit.evaluate_into(&args, &mut output, policy, &memory)
+                        .unwrap();
+                    equal(&artifact, &output, &expected);
+                    assert_eq!(
+                        output[last]
+                            .as_ref()
+                            .unwrap()
+                            .canonical_data_draft()
+                            .unwrap(),
+                        Data::U64(values[position as usize - 1])
+                    );
+                }
+                drop(output);
+                assert_eq!(memory.used_bytes(), 0);
+            }
+        }
+    }
+}
+
+#[test]
+fn narrow_generator_yields_and_checked_late_cast_errors_preserve_publication() {
+    for width in [8, 16, 32] {
+        let source = format!(
+            "increment(value<u{width}>) => (out<u{width}>) :=\n  wide<u64> := value\n  out<u{width}> := wide + 1u64.\n[increment(item) | item <- values<[u{width}]>]\n"
+        );
+        let (artifacts, last) = artifacts(&source);
+        for artifact in artifacts {
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let mut output = vec![None; artifact.outputs().len()];
+            let maximum = (1u64 << width) - 1;
+            for values in [
+                vec![0, 1, 2],
+                vec![1, maximum],
+                vec![3],
+                vec![],
+                vec![maximum - 1],
+            ] {
+                let args = inputs(&artifact, &[("values", matrix(width, &values))], &memory);
+                if values.contains(&maximum) {
+                    assert!(
+                        reference_result(&artifact, &args)
+                            .unwrap_err()
+                            .contains("Arithmetic")
+                    );
+                    let prior = output
+                        .iter()
+                        .map(|value| value.clone().unwrap())
+                        .collect::<Vec<_>>();
+                    let before = memory.used_bytes();
+                    let error = jit
+                        .evaluate_into(&args, &mut output, limits(), &memory)
+                        .unwrap_err();
+                    assert!(matches!(error, mech_gpu::native_artifact::NativeProgramExecutionError::Control(
+                        mech_gpu::native_artifact::NativeIterationExecutionError::Arithmetic { .. }
+                    )), "{error:?}");
+                    equal(&artifact, &output, &prior);
+                    assert_eq!(memory.used_bytes(), before);
+                } else {
+                    let expected = reference(&artifact, &args);
+                    jit.evaluate_into(&args, &mut output, limits(), &memory)
+                        .unwrap();
+                    equal(&artifact, &output, &expected);
+                    assert_eq!(
+                        output[last]
+                            .as_ref()
+                            .unwrap()
+                            .canonical_data_draft()
+                            .unwrap(),
+                        matrix(
+                            width,
+                            &values.iter().map(|value| value + 1).collect::<Vec<_>>()
+                        )
+                    );
+                }
+            }
+            drop(output);
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+}
+
+#[test]
+fn narrow_selectors_keep_the_ordinary_indexed_access_fallback() {
+    for width in [8, 16, 32] {
+        let source = format!("buffer := values<[u{width}]>\nbuffer[position<u{width}>]\n");
+        let (artifacts, last) = artifacts(&source);
+        for artifact in artifacts {
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let args = inputs(
+                &artifact,
+                &[
+                    ("values", matrix(width, &[17, 23])),
+                    ("position", word(width, 2)),
+                ],
+                &memory,
+            );
+            let mut output = vec![None; artifact.outputs().len()];
+            let expected = reference(&artifact, &args);
+            jit.evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            equal(&artifact, &output, &expected);
+            assert_eq!(
+                output[last]
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                word(width, 23)
+            );
+        }
+    }
+}
+
+#[test]
+fn writer_narrow_arithmetic_preserves_width_paths_failure_and_retry() {
+    // Match-length extra bits subtract U32 values; code lengths add U8 values.
+    for (width, op) in [(32, "-"), (8, "+")] {
+        let maximum = (1u64 << width) - 1;
+        for form in ["scalar", "buffer", "selected"] {
+            let expression = if form == "buffer" {
+                "values[1u64] OP values[2u64]".replace("OP", op)
+            } else {
+                format!("left<u{width}> {op} right<u{width}>")
+            };
+            let source = match form {
+                "buffer" => format!("values := words<[u{width}]>\n{expression}\n"),
+                "selected" => {
+                    format!("(enabled<bool>? | true => {expression} | false => 0u{width})\n")
+                }
+                _ => format!("{expression}\n"),
+            };
+            let (forms, last) = artifacts(&source);
+            for artifact in forms {
+                let jit =
+                    JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+                let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
+                let mut output = vec![None; artifact.outputs().len()];
+                for (left, right, enabled) in [
+                    (0, 0, true),
+                    (maximum, 0, true),
+                    (maximum, 1, true),
+                    (0, 1, true),
+                    (maximum, maximum, false),
+                    (0, maximum, false),
+                    (9, 3, true),
+                ] {
+                    let expected = if form == "selected" && !enabled {
+                        Some(0)
+                    } else if op == "+" {
+                        left.checked_add(right).filter(|&sum| sum <= maximum)
+                    } else {
+                        left.checked_sub(right)
+                    };
+                    let mut named = if form == "buffer" {
+                        vec![("words", matrix(width, &[left, right]))]
+                    } else {
+                        vec![("left", word(width, left)), ("right", word(width, right))]
+                    };
+                    if form == "selected" {
+                        named.push(("enabled", Data::Bool(enabled)));
+                    }
+                    let args = inputs(&artifact, &named, &memory);
+                    let aliases = args.clone();
+                    let prior = output.clone();
+                    let retained = memory.used_bytes();
+                    let nodes = memory.retained_snapshot_nodes();
+                    let native = jit.evaluate_into(&args, &mut output, limits(), &memory);
+                    let resident = reference_result(&artifact, &args);
+                    if let Some(expected) = expected {
+                        native.unwrap();
+                        equal(&artifact, &output, &resident.unwrap());
+                        assert_eq!(
+                            output[last]
+                                .as_ref()
+                                .unwrap()
+                                .canonical_data_draft()
+                                .unwrap(),
+                            word(width, expected)
+                        );
+                    } else {
+                        assert!(format!("{:?}", native.unwrap_err()).contains("Arithmetic"));
+                        assert!(resident.unwrap_err().contains("Arithmetic"));
+                        assert_eq!(memory.used_bytes(), retained);
+                        assert_eq!(memory.retained_snapshot_nodes(), nodes);
+                        assert!(output.iter().zip(&prior).all(|(value, old)| {
+                            value
+                                .as_ref()
+                                .unwrap()
+                                .shares_frozen_storage(old.as_ref().unwrap())
+                        }));
+                    }
+                    assert!(
+                        args.iter()
+                            .zip(&aliases)
+                            .all(|(value, alias)| value.shares_frozen_storage(alias))
+                    );
+                }
+                drop(output);
+                assert_eq!(memory.used_bytes(), 0);
+                assert_eq!(memory.retained_snapshot_nodes(), 0);
+            }
+        }
+    }
+}

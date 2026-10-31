@@ -138,6 +138,35 @@ pub fn maintained_operation_contract(
         )
     };
     match name {
+        "bits/not" | "bits/leading-zeros" | "bits/trailing-zeros"
+            if input_count == 1 && !matrix_output =>
+        {
+            Some(elementwise_operation_contract(
+                1,
+                ChangeDetectionPolicy::ExactScalar,
+            ))
+        }
+        "bits/and"
+        | "bits/or"
+        | "bits/xor"
+        | "bits/shift-left-wrap"
+        | "bits/shift-right-wrap"
+        | "bits/wrapping-add"
+        | "bits/wrapping-sub"
+        | "bits/wrapping-mul"
+            if input_count == 2 && !matrix_output =>
+        {
+            Some(elementwise_operation_contract(
+                2,
+                ChangeDetectionPolicy::ExactScalar,
+            ))
+        }
+        "sequence/with-capacity" | "sequence/reserve" | "sequence/append" if input_count == 2 => {
+            Some(full(ShapeRule::Declared))
+        }
+        "sequence/append-le-bytes" if input_count == 3 => Some(full(ShapeRule::Declared)),
+        "sequence/append-sublist" if input_count == 4 => Some(full(ShapeRule::Declared)),
+        "sequence/clear" if input_count == 1 => Some(full(ShapeRule::Declared)),
         "sequence/sort-indices" if input_count == 4 => Some(full(ShapeRule::Declared)),
         "map/contains-key" if input_count == 2 => Some(declaration(
             fixed(),

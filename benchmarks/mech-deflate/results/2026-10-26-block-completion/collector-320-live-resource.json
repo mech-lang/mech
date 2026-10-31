@@ -1,0 +1,10 @@
+[
+  {
+    "pid": 44898,
+    "parent": 44876,
+    "elapsed": "09:02",
+    "cpu_percent": "100.0",
+    "rss_kib": 647408,
+    "executable": "/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-161b919374daec0a"
+  }
+]

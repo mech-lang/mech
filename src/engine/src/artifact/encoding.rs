@@ -124,6 +124,7 @@ impl CanonicalArtifactWriter {
                 self.u8(3);
                 self.u8(*ancestor);
             }
+            super::ControlOperationBody::Assert => self.u8(8),
 
             super::ControlOperationBody::Suspend => self.u8(4),
             super::ControlOperationBody::Publish => self.u8(5),

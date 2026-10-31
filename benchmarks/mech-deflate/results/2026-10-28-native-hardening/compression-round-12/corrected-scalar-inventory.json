@@ -1,0 +1,210 @@
+{
+  "compiler_commit": "c0bef396bbc88cdd8dd94037053866b182b7a68d",
+  "result": "12 paired controls pass; exact allocations; <=1.05 timing; zero scalar loop allocation slope",
+  "files": [
+    {
+      "path": "final-primary/scalar-scalar-f64-0-decoded-after.stdout",
+      "sha256": "5982bb235fadcd39c7a4f355b2eb22471c485114c070aa252b491decf8a0dbad"
+    },
+    {
+      "path": "final-primary/scalar-scalar-loop-64-original-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-i64-0-decoded-before.stdout",
+      "sha256": "c6cfed68265f1424009185f267ce5d4fb7e1af4e0a6c926fca74550b898d6cf7"
+    },
+    {
+      "path": "final-primary/scalar-scalar-loop-0-decoded-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-commands.json",
+      "sha256": "e0a3318cc02ed2c8907da387915777433c05802dbe71b70a090e28e2940501aa"
+    },
+    {
+      "path": "final-primary/scalar-scalar-loop-64-decoded-before.stdout",
+      "sha256": "0fcd26a6432a4d4d6635d240d52caebfd051d7a7852efdb91b2faf10cb68618c"
+    },
+    {
+      "path": "final-primary/scalar-scalar-u64-0-decoded-before.stdout",
+      "sha256": "08c66712145269ae01aa90bdc206cd19b80ae0f1edb2965ebbf25b1f5ec50fad"
+    },
+    {
+      "path": "final-primary/scalar-results.json",
+      "sha256": "09d609cb287253a525e146e47a03ddf4f8f51448a9da6e8b2356c3898b660132"
+    },
+    {
+      "path": "final-primary/scalar-scalar-loop-64-decoded-after.stdout",
+      "sha256": "8bb2f20ceeb2852d1cf321cac1e55dc6086c10bf6116bb9ef6c47e6455beeff5"
+    },
+    {
+      "path": "final-primary/scalar-scalar-bool-0-decoded-before.stdout",
+      "sha256": "a14eba83fa451a1ee055224deb7a300c2a8d67aaa06dd599a0a8252fdf02bc67"
+    },
+    {
+      "path": "final-primary/scalar-scalar-bool-0-decoded-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-loop-0-decoded-before.stdout",
+      "sha256": "413a015c951476ac2f91839c92eec9801f5096e5c426a82a0ed7bb0465f6885d"
+    },
+    {
+      "path": "final-primary/scalar-scalar-f64-0-decoded-before.stdout",
+      "sha256": "ad172f8f39e37bb03e6f83a3ea7316935df0fe94ab4584d4210a565d3706d914"
+    },
+    {
+      "path": "final-primary/scalar-scalar-f64-0-original-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-loop-0-decoded-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-bool-0-decoded-after.stdout",
+      "sha256": "d806ede747b108a0a6e7aafaf5138cfc884ffb248399ae0346499a9543735358"
+    },
+    {
+      "path": "final-primary/scalar-scalar-f64-0-decoded-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-f64-0-original-before.stdout",
+      "sha256": "3bba0fec88a9a5ad2e227d286b357f886ffa97afb0331b1f81b0d1aa10cda459"
+    },
+    {
+      "path": "final-primary/scalar-scalar-loop-64-decoded-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-u64-0-decoded-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-bool-0-decoded-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-loop-64-decoded-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-f64-0-decoded-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-loop-0-decoded-after.stdout",
+      "sha256": "8675fc28110bc2a5b5a2833ab0972aa77cf6f7a4d7978e179f717d11502755b3"
+    },
+    {
+      "path": "final-primary/scalar-scalar-i64-0-decoded-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-loop-64-original-before.stdout",
+      "sha256": "972974f43babde422a8c65224878578ca7a0fbdb605f79ad997904fae32a5a09"
+    },
+    {
+      "path": "final-primary/scalar-scalar-bool-0-original-after.stdout",
+      "sha256": "74fb0e28e05008e840d6b2ab29f0593b9299a8ef55765803d0d1a3a15f16d0ef"
+    },
+    {
+      "path": "final-primary/scalar-scalar-u64-0-original-after.stdout",
+      "sha256": "e1b47f8c7ff40eb665bc7fbefefaf9fa69c210d87f1777ae53aedcfd5da222cc"
+    },
+    {
+      "path": "final-primary/scalar-scalar-i64-0-original-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-u64-0-decoded-after.stdout",
+      "sha256": "3abb2daf77bd6181b9966f6a961d332a4676cf8847fb27ec7674e21a489b88ad"
+    },
+    {
+      "path": "final-primary/scalar-scalar-f64-0-original-after.stdout",
+      "sha256": "0c11020e61d11ed7b68ef5ee8a18036021e16b6b79aa9b0cda6afea93a0b1a51"
+    },
+    {
+      "path": "final-primary/scalar-scalar-loop-0-original-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-loop-0-original-after.stdout",
+      "sha256": "04ecbf20b319fb311a39995b91f9d563a303a7835a6f87a1b9efd26f3b7e659b"
+    },
+    {
+      "path": "final-primary/scalar-scalar-i64-0-original-after.stdout",
+      "sha256": "41b011b556a183f0ae0355ceb4986f9ab892c52ef0425726bdd4ee7580315f1b"
+    },
+    {
+      "path": "final-primary/scalar-scalar-i64-0-decoded-after.stdout",
+      "sha256": "a3796568a89c764accc93811d9098d05a11264f553bfff1e2dde7415e967eb37"
+    },
+    {
+      "path": "final-primary/scalar-scalar-loop-64-original-after.stdout",
+      "sha256": "0398b1e4b160074b347385b2f50a5039153d85307640ddceb34fc4577c74cd50"
+    },
+    {
+      "path": "final-primary/scalar-scalar-u64-0-original-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-bool-0-original-before.stdout",
+      "sha256": "ba120fa364072a8342cc281f6089bc7db42618e42d9caaf7af00f53bc970a9cd"
+    },
+    {
+      "path": "final-primary/scalar-scalar-loop-64-original-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-u64-0-original-before.stdout",
+      "sha256": "e2caeebf708f2fdaaa4e44ca2c746bbaab7b173bd03a1385890109aa5f847257"
+    },
+    {
+      "path": "final-primary/scalar-scalar-bool-0-original-before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-i64-0-original-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-i64-0-decoded-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-u64-0-decoded-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-f64-0-original-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-i64-0-original-before.stdout",
+      "sha256": "9aadbc87acacfed5685ca93f964cb4aabe879b3ca3be5b858fb1b861d85f0a80"
+    },
+    {
+      "path": "final-primary/scalar-scalar-loop-0-original-before.stdout",
+      "sha256": "af0edade076f6b2bfe5c9df8484ebc0df19ba458a3bea98d3b914b1a1283a7a4"
+    },
+    {
+      "path": "final-primary/scalar-scalar-loop-0-original-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-scalar-bool-0-original-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-primary/scalar-outer.log",
+      "sha256": "edbfc4f4c659ba9497a24d5a5b3ea36b6fb98aa3ea3cdd97272e943581b30f27"
+    },
+    {
+      "path": "final-primary/scalar-scalar-u64-0-original-after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

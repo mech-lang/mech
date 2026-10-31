@@ -1,0 +1,28 @@
+{
+  "compiler_base": "1b02c2d4d6c1079131f29af64821fc128a0ee0dc",
+  "source_pin": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "reference_compiler": "d99c7b838fb05bb1047eb0c18d4d06d0f86f345d",
+  "executing": [
+    "block-compute-costs",
+    "block-choose-kind",
+    "block-write-static-header",
+    "block-write-dynamic-header"
+  ],
+  "validation": "3 maintained tests passed;343 filtered;65.50s execution,89.86s with build.24 cost cases and32 header cases original/decoded;7 explicit tie cases original/decoded. Four architecture/catalog checks, inventory[],format/diff pass.",
+  "preserved": "Original cost execution order, stored-first/static-second tie preference, header bit ordering and flush boundaries. Real6633832 output reservation. Existing qualification allowances unchanged.",
+  "initial_failure": "Test helper cannot supply nested record matrix shape parameters (expected8 actual0). Construct the precode inside Mech from individually shaped inputs as the real program does; no production compiler changes.",
+  "scope": "Cost cases include length65536 scalars only: this is NOT compression of65536 input bytes. Header cases consume existing precomputed headers. Full header precomputation is qualified separately and must be connected.",
+  "remaining": [
+    "stored range append and stored blocks",
+    "connect compressed header to path/sequence payload, end-of-block and final draining",
+    "full compressor integration and complete correctness",
+    "first full measured run"
+  ],
+  "not_claimed": [
+    "Full compressor",
+    "Full-stream decompression",
+    "Benchmark timing",
+    "Green CI"
+  ],
+  "next_blocker": "Stored block range append is absent: source-semantics/unknown-function. Minimal source, exact pinned requirement and acceptance criteria included; no production change attempted in this component checkpoint."
+}

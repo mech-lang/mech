@@ -1,0 +1,240 @@
+[
+  {
+    "receipt": "receipts/frame-transport-ci-inventory.json",
+    "log": "logs/frame-transport-ci-inventory.log.gz",
+    "raw_bytes": 19,
+    "raw_log_sha256": "0d6e5ad2ca78664447899fe323c2ed9aecb4f86ff371b787d62253ffcbb908f7",
+    "compressed_log_sha256": "dd671e137edd9be0b5766741e8f506740b0f7eb4d41d8d7a8efcebe09d50e544"
+  },
+  {
+    "receipt": "receipts/frame-transport-clean-components-linked.json",
+    "log": "logs/frame-transport-clean-components-linked.log.gz",
+    "raw_bytes": 84915,
+    "raw_log_sha256": "d983ebdf5244fecbbb8ebc09cf0166b1770b2380eb370884fa5579d014c62729",
+    "compressed_log_sha256": "3bc191fea134c8cb09ef5146514ce381d92f518eb84642607caee0e82f850455"
+  },
+  {
+    "receipt": "receipts/frame-transport-engine-selection-check.json",
+    "log": "logs/frame-transport-engine-selection-check.log.gz",
+    "raw_bytes": 1456,
+    "raw_log_sha256": "e7cabf4985c46bc83b813b34bde3f030fb27c654f0ab751fe61ac8f983a22f5f",
+    "compressed_log_sha256": "e7812d9970bbeece605c6e87476806a5c8e09554daa84c9f8eb19a3258ad79d7"
+  },
+  {
+    "receipt": "receipts/frame-transport-final-components-linked-layout.json",
+    "log": "logs/frame-transport-final-components-linked-layout.log.gz",
+    "raw_bytes": 85409,
+    "raw_log_sha256": "eae5a207e9716b06080eb4ffd8883d4766aa6fe4642ce2595a617f0400c70228",
+    "compressed_log_sha256": "938dad8af38fbd7431fa85e2d0e54d592cfed7c04daa1ed76dfe57544015a9bd"
+  },
+  {
+    "receipt": "receipts/frame-transport-final-geometry-regressions.json",
+    "log": "logs/frame-transport-final-geometry-regressions.log.gz",
+    "raw_bytes": 5315,
+    "raw_log_sha256": "7c81952d42ac0df5a0472721e34feee996661411e3464ae8d3bdf16e45fd6353",
+    "compressed_log_sha256": "97b923d497485a3a457edacbc4de204ce5d858e4ce133df603ebec9f10206a3d"
+  },
+  {
+    "receipt": "receipts/frame-transport-final-static.json",
+    "log": "logs/frame-transport-final-static.log.gz",
+    "raw_bytes": 309,
+    "raw_log_sha256": "c38001f9584540c58d814ab6bd89e3367165184f0bfb8ebe65cccb268c2ac267",
+    "compressed_log_sha256": "4875bce582a3b965275d6f01e090306801039f4219a2fe886238f7084487c438"
+  },
+  {
+    "receipt": "receipts/frame-transport-first-engine-check.json",
+    "log": "logs/frame-transport-first-engine-check.log.gz",
+    "raw_bytes": 742,
+    "raw_log_sha256": "b28b0651e0dfa69fbe46d2a62cb923a88ccbe8f677d04c21bf007fe758b67b66",
+    "compressed_log_sha256": "abe276d20c25d8d7b54348b655000a5c7dc0700dcebb69977e1426913c562d31"
+  },
+  {
+    "receipt": "receipts/frame-transport-first-real-arguments-pinned-consumer.json",
+    "log": "logs/frame-transport-first-real-arguments-pinned-consumer.log.gz",
+    "raw_bytes": 5697,
+    "raw_log_sha256": "cf5be08d7ee23b19fa84d094cc6de4548c555a4429fac1e76e02cd009601c948",
+    "compressed_log_sha256": "9ed3fe7412199e4d650aad4348b37e276b2bc2adf45b6d85fb0de2c246bee5d8"
+  },
+  {
+    "receipt": "receipts/frame-transport-first-real-arguments.json",
+    "log": "logs/frame-transport-first-real-arguments.log.gz",
+    "raw_bytes": 1015,
+    "raw_log_sha256": "5a3a4bb807b14448064fa1080e166f1b546bc2a36df2503ca8f7865d8b1e3c3e",
+    "compressed_log_sha256": "bc5382da76217a13b326fcff6dfef3896375c0d13e428412ecbf83c7ab979027"
+  },
+  {
+    "receipt": "receipts/frame-transport-first-recursive-capacity.json",
+    "log": "logs/frame-transport-first-recursive-capacity.log.gz",
+    "raw_bytes": 1423,
+    "raw_log_sha256": "df6f36a411c4a44816ea208a49a91c52bc35d6d031e95401698cc6565a94e9c6",
+    "compressed_log_sha256": "c5dca345c6312e822e2844fcbaf4d90ec152d345cc2f5a1aef326806b5f90433"
+  },
+  {
+    "receipt": "receipts/frame-transport-growing-plan-compact.json",
+    "log": "logs/frame-transport-growing-plan-compact.log.gz",
+    "raw_bytes": 5262,
+    "raw_log_sha256": "da5dad0f14afff4e97eb0ef67acf1a8e5a11eaa592369669bd62c43a664bb29c",
+    "compressed_log_sha256": "3c41dcff13e173851fe541deb03c4d9395a2eb2d2e7c682f53852dd7f1ba0180"
+  },
+  {
+    "receipt": "receipts/frame-transport-growing-plan.json",
+    "log": "logs/frame-transport-growing-plan.log.gz",
+    "raw_bytes": 105804,
+    "raw_log_sha256": "e31a623047727c82937eac913ee2b3fecf71b38c683df9a93ca2a71d7f3c88b6",
+    "compressed_log_sha256": "9f05ae43638905892fa37de8d32baf2618bf37e304757d8eecf6256809b17a2b"
+  },
+  {
+    "receipt": "receipts/frame-transport-live-meter-recursive-capacity.json",
+    "log": "logs/frame-transport-live-meter-recursive-capacity.log.gz",
+    "raw_bytes": 3614,
+    "raw_log_sha256": "4d81446cf92c5b0752dd7b398e207b02802d36858d54148af1157de117893a87",
+    "compressed_log_sha256": "bdc87aca6cf2a30cce9573279499cc32bcf29aaee5848a9941db177ac51dc050"
+  },
+  {
+    "receipt": "receipts/frame-transport-native-first-check.json",
+    "log": "logs/frame-transport-native-first-check.log.gz",
+    "raw_bytes": 311,
+    "raw_log_sha256": "c6511c17f5251826b82930a318070f33edb62fd16811f19315fa3b0f8743d346",
+    "compressed_log_sha256": "29a97bb093e9aafb827e452926197937c62de13b72f9fbc5f3e46351c9c68c54"
+  },
+  {
+    "receipt": "receipts/frame-transport-native-only-engine.json",
+    "log": "logs/frame-transport-native-only-engine.log.gz",
+    "raw_bytes": 144,
+    "raw_log_sha256": "930090b0c830ff8d64f89d722cfb2b1c0175954ed09aa23aa7a95fead3739860",
+    "compressed_log_sha256": "fd4f4011f47f25bcd0173d27306f9c50b8a3620fb4def1fdd06b1465849938a9"
+  },
+  {
+    "receipt": "receipts/frame-transport-original-pending-capacity-now-passes.json",
+    "log": "logs/frame-transport-original-pending-capacity-now-passes.log.gz",
+    "raw_bytes": 3274,
+    "raw_log_sha256": "87da4a239b34074bf2a2a3bfd0c6d26ec072ac5469bfd3263b0a0dba21ca4ac7",
+    "compressed_log_sha256": "50c43c175b62548950a8ccbc702b56dc161cc1ed4ed26697533f183442428b8c"
+  },
+  {
+    "receipt": "receipts/frame-transport-parent-record-resident-default.json",
+    "log": "logs/frame-transport-parent-record-resident-default.log.gz",
+    "raw_bytes": 643,
+    "raw_log_sha256": "1cd95e09db20cc63a1a3021abd5d34211299cd582332ee741b33659c88a6b414",
+    "compressed_log_sha256": "11d6a31ed0c97896f7a4f7a16ca115dbf0099877ebae5689143bf62e32bb7e9e"
+  },
+  {
+    "receipt": "receipts/frame-transport-parent-record-return-negative.json",
+    "log": "logs/frame-transport-parent-record-return-negative.log.gz",
+    "raw_bytes": 2008,
+    "raw_log_sha256": "90fe27e7b6874df288a7f30d7428dd57f4dc48464fd412d3f0a80236c393a21c",
+    "compressed_log_sha256": "ec71852fcb2303e0ff8e977e78a66ca948550198583906b4042fddb2fd980486"
+  },
+  {
+    "receipt": "receipts/frame-transport-permanent-regressions.json",
+    "log": "logs/frame-transport-permanent-regressions.log.gz",
+    "raw_bytes": 4829,
+    "raw_log_sha256": "9ba57d7b8bbe2df7bade1130dab36079e040c6f481b2fe926fc46833acfe951e",
+    "compressed_log_sha256": "443597dcddc86027a427365998501f11fc5c71f4468b5f1c552fe1294e9a0e87"
+  },
+  {
+    "receipt": "receipts/frame-transport-real-argument-plan.json",
+    "log": "logs/frame-transport-real-argument-plan.log.gz",
+    "raw_bytes": 7762,
+    "raw_log_sha256": "943dbe842008c0655a39b9142f9e97591edaad3c0cb447c7f22ed75f99ec2c97",
+    "compressed_log_sha256": "4c078424ddb16c6c4ebbd5d36ffd68a654b47af673f8dd341263a1194132f1b4"
+  },
+  {
+    "receipt": "receipts/frame-transport-record-return-capacity-observation.json",
+    "log": "logs/frame-transport-record-return-capacity-observation.log.gz",
+    "raw_bytes": 646,
+    "raw_log_sha256": "0ad3e24e696ad77b0c63c8467a804986eb44a9dda7bbc7806e3f60a832049d8c",
+    "compressed_log_sha256": "00179da38cc7ceb76cacf32822e046273d0647b53a2c0f27dcf902e3dd34319c"
+  },
+  {
+    "receipt": "receipts/frame-transport-record-return-current-negative.json",
+    "log": "logs/frame-transport-record-return-current-negative.log.gz",
+    "raw_bytes": 1589,
+    "raw_log_sha256": "8c55da92800b54fe298c6e5b280ae08f072b2a853ac7555f65fb371efff61fce",
+    "compressed_log_sha256": "b507dc93c852161d7a7b8a4f4ee977d10af4f007fee712763ec4dcbf7195f102"
+  },
+  {
+    "receipt": "receipts/frame-transport-record-return-native-observation.json",
+    "log": "logs/frame-transport-record-return-native-observation.log.gz",
+    "raw_bytes": 660,
+    "raw_log_sha256": "88e27d3f89cb0766ace4a1edf981b681d55d90c4d4455d3548e533b2a6e3e4ab",
+    "compressed_log_sha256": "d663bf3ccc578d3b24bfbca66c56d67165255e90077fd4e2f6adbb5d617f5e20"
+  },
+  {
+    "receipt": "receipts/frame-transport-repeated-tuple-exit-probe.json",
+    "log": "logs/frame-transport-repeated-tuple-exit-probe.log.gz",
+    "raw_bytes": 1198,
+    "raw_log_sha256": "73f44af347d77d18879257efe8ed7f3564a309b9a913667aacbc69152d1fcf4b",
+    "compressed_log_sha256": "e91d5aca246111ddc300fa4ccb6f738c920ebd5b748da26fe2cbf3fe25485d85"
+  },
+  {
+    "receipt": "receipts/frame-transport-runtime-only-engine.json",
+    "log": "logs/frame-transport-runtime-only-engine.log.gz",
+    "raw_bytes": 60,
+    "raw_log_sha256": "e7a0e788c2f011df0653279f56cd58dcca091a34d28573a86e1b886eaa34b4d9",
+    "compressed_log_sha256": "23d33527eae6cf24b98ca88a3c16c95a2102a7dcac70b02ca96281060a7e1a69"
+  },
+  {
+    "receipt": "receipts/frame-transport-runtime-only-host.json",
+    "log": "logs/frame-transport-runtime-only-host.log.gz",
+    "raw_bytes": 311,
+    "raw_log_sha256": "2669eb1cc55c93d042a2cb94b294320fe377ae83c052ba0ed2ff52b4005d5622",
+    "compressed_log_sha256": "c3b4e2f113c41a0df1b8465d572af040df1f8c25420b95484b3436fc6a63fc43"
+  },
+  {
+    "receipt": "receipts/frame-transport-shape-node-bound-fixed.json",
+    "log": "logs/frame-transport-shape-node-bound-fixed.log.gz",
+    "raw_bytes": 6110,
+    "raw_log_sha256": "cc513a5f6d4dbaa77a3b46b90cb4becd3bf3e809e757b1bfaf66495c66b0ab9a",
+    "compressed_log_sha256": "3a05d72b98448dec29eb0868ac12b0898081edc13eefeee349c01f1a21aa5910"
+  },
+  {
+    "receipt": "receipts/frame-transport-shape-node-bound-red.json",
+    "log": "logs/frame-transport-shape-node-bound-red.log.gz",
+    "raw_bytes": 1093,
+    "raw_log_sha256": "0ad5aae7d09a4e8c6aa23e92ca202e9cb94bdf641581975f4706672ec94f608a",
+    "compressed_log_sha256": "4b29246c6ef873da62744b8243b1ce381513b67124c65e2a5024f11cabd99685"
+  },
+  {
+    "receipt": "receipts/frame-transport-shape-node-bound-same-default-policy.json",
+    "log": "logs/frame-transport-shape-node-bound-same-default-policy.log.gz",
+    "raw_bytes": 512,
+    "raw_log_sha256": "6c8af75046f30d8e3f2c652eb78e31403153f590a4c3440f5dd5195931cf15e2",
+    "compressed_log_sha256": "763410cada7ae502c280f3e95a14dd127215d06484be20cd7620f74f0c22c715"
+  },
+  {
+    "receipt": "receipts/frame-transport-six-regressions-corrected.json",
+    "log": "logs/frame-transport-six-regressions-corrected.log.gz",
+    "raw_bytes": 5686,
+    "raw_log_sha256": "8b657ebb15d1b384d9b683b267ae7097ce389bf9c11a7eed6b3b1ac45a372bd6",
+    "compressed_log_sha256": "c923c642a50d550c19fd34599d8f8d485fd960df5abcb623002d6d5813a5e11d"
+  },
+  {
+    "receipt": "receipts/frame-transport-six-regressions-final.json",
+    "log": "logs/frame-transport-six-regressions-final.log.gz",
+    "raw_bytes": 5315,
+    "raw_log_sha256": "f89aac2f5474ba6e148ba822586cda65748eb8f5e711a33e977fb7145dcaf78b",
+    "compressed_log_sha256": "e07d392581e4d85e655dfe5fa87fd102cf996a1f83277d7fd2833ccf317018ff"
+  },
+  {
+    "receipt": "receipts/frame-transport-six-regressions.json",
+    "log": "logs/frame-transport-six-regressions.log.gz",
+    "raw_bytes": 5647,
+    "raw_log_sha256": "853588446266115e0ae03f99be4a924d0e73d1e31fb26f20041a54297aad9d45",
+    "compressed_log_sha256": "5be56f5ef0cf7fbb152fe8a9437bb2412a5a1a7f2a4693313343a9fcf48198e2"
+  },
+  {
+    "receipt": "receipts/frame-transport-static-contracts.json",
+    "log": "logs/frame-transport-static-contracts.log.gz",
+    "raw_bytes": 163,
+    "raw_log_sha256": "cd38d87ea5920e41347cc00f8a39fab8b0270d1698831a4fcffff16e67095e24",
+    "compressed_log_sha256": "e61e76656fb4974ff72a0c919b259dcdc28f712a895b11ea895c5b016c699e0f"
+  },
+  {
+    "receipt": "receipts/frame-transport-unary-repeated-tuple-exit-probe.json",
+    "log": "logs/frame-transport-unary-repeated-tuple-exit-probe.log.gz",
+    "raw_bytes": 1229,
+    "raw_log_sha256": "eedf260805b7dabab7e8d598fd34d06214f29d847be26734c95491413cf6592d",
+    "compressed_log_sha256": "b03a72ba007c8423d973dd6db5f8e3eab2e1c4020aa05c3a011fe132f378714e"
+  }
+]

@@ -1,0 +1,13 @@
+# Multiple-array numeric results: baseline and bounded change
+
+Base430efcbaa1f193b1c2c4186fff86828d6d176eb9; frozen current compressor executable1e36ae06aee5eb4be8af26070868c32683040564ca89d7cb877d2a1a56a4b03b and scalar control are preserved privately before replacing libraries. Previous protected complete eight-byte result102.707533217×Roc at29.3743545ms. Re-time both controls against a fresh common reference after this change; do not splice normalized experiments.
+
+Exact pinned requirement: hosts/gpu/tests/fixtures/native/deflate-huffman-level12.mec:82–86, `huff-place-symbols` returns counts<U64>,lens<U8>,a<U32>. Current result selection rejects25 static candidates with `numeric result tuple requires exactly one array owner`. No pinned algorithm/source/allocation/timing change is proposed.
+
+The new tests run against the frozen old libraries. One stale-second-root fallback test passes; the two positive selection tests fail specifically on the one-array restriction. The pinned Huffman example already agrees with its independent expected tuple and resident oracle before the expected red selection check. Generic ordinary-route observations: steps0/1/64/2/0 have50/95/2930/140/50 visits and2133/2216/4862/2258/2174 requests. Source inputs/aliases, failure precedence, publication, cleanup and retry pass before the expected selection rejection. All observations, including warm-up differences, remain.
+
+Initial generic test setup used a narrow U32 division without a native scalar witness; that is not a required compressor operation. The final witness uses the established U64 arithmetic plus checked narrowing path, with literal U16/U8 writes. Initial failed setup receipts remain. This round does not expand into a new arithmetic family.
+
+Extend the exact private flat-tuple return recipe to a bounded association for every managed field, each tied to its carrier root and exact schema. Require every returned field's current version on each feasible terminal path, reusing the existing version lattice and repeated-current-predicate proof. Repeated roots remain legal aliases. The existing numeric runtime already freezes all private carriers and restores all terminal frame array lanes; no new helper, payload owner, executor, or cache is needed. Public/nested/record/unknown/stale cases retain fallback. Fingerprint IR124; work93/ABI35/bytecode14 stay.
+
+The old duplicate-root positive fixture will keep its source/expected values while its specialization expectation changes to selected; unrelated decline expectations and allowances stay. Add aliases, real-buffer payload scaling and finite-resource failure/recovery coverage before closure. Each production revision gets a protected small timing/profile committed before the next optimization.

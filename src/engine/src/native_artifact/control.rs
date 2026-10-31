@@ -65,6 +65,9 @@ pub enum NativeMatchTerminator {
     Complete,
     /// An exhaustive validated Match cannot reach this block for valid inputs.
     Reject,
+    /// The selected lexical invariant was false. Distinct from an unmatched
+    /// pattern; generated code must preserve this checked failure boundary.
+    IntegrityFailure,
 }
 
 #[derive(Clone, Debug, serde::Serialize)]

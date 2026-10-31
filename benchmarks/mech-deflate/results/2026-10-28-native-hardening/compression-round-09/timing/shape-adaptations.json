@@ -1,0 +1,26 @@
+[
+  {
+    "command": [
+      "/private/tmp/mech-mixed-scalar-state-round08-20261028/produce",
+      "/private/tmp/mech-independent-tables-round09-20261028/append_clear.mec",
+      "/private/tmp/mech-independent-tables-round09-20261028/append_clear.mbc"
+    ],
+    "exit": 101
+  },
+  {
+    "command": [
+      "/private/tmp/mech-mixed-scalar-state-round08-20261028/produce",
+      "/private/tmp/mech-independent-tables-round09-20261028/annotated_identity.mec",
+      "/private/tmp/mech-independent-tables-round09-20261028/annotated_identity.mbc"
+    ],
+    "exit": 101
+  },
+  {
+    "command": [
+      "/private/tmp/mech-mixed-scalar-state-round08-20261028/produce",
+      "/private/tmp/mech-independent-tables-round09-20261028/copy_assign.mec",
+      "/private/tmp/mech-independent-tables-round09-20261028/copy_assign.mbc"
+    ],
+    "exit": 101
+  }
+]

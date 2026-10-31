@@ -1,0 +1,25 @@
+{
+  "name": "level12-choice-reference-build-cache-access",
+  "command": [
+    "/private/tmp/roc-deflate-repro-20261024/roc-install/bin/roc",
+    "build",
+    "--opt=speed",
+    "--output=/private/tmp/mech-linear-restack-20261026/block-choice-reference/block-choice-reference",
+    "/private/tmp/roc-deflate-repro-20261024/roc-deflate/package/MechCompressChoiceOracle.roc"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "566dfd1df2eb81eb95e2804d6b50a6334bdaca42",
+  "dirty": "",
+  "exit": 0,
+  "seconds": 5.043184280395508,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/level12-choice-reference-build-cache-access.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "before": {
+    "requests": 8773,
+    "requested_bytes": 98243843,
+    "complete_stack_events": 8773,
+    "unique_pcs": 1280,
+    "categories": [
+      {
+        "category": "composition canonical schema encoding",
+        "requests": 600,
+        "requested_bytes": 15447
+      },
+      {
+        "category": "other composition validation",
+        "requests": 36,
+        "requested_bytes": 528
+      },
+      {
+        "category": "other canonical schema encoding",
+        "requests": 148,
+        "requested_bytes": 4893
+      },
+      {
+        "category": "remaining complete-call requests",
+        "requests": 7989,
+        "requested_bytes": 98222975
+      }
+    ],
+    "large_requests": 50,
+    "large_requested_bytes": 97086052
+  },
+  "after": {
+    "requests": 8173,
+    "requested_bytes": 98228396,
+    "complete_stack_events": 8173,
+    "unique_pcs": 1278,
+    "categories": [
+      {
+        "category": "composition canonical schema encoding",
+        "requests": 0,
+        "requested_bytes": 0
+      },
+      {
+        "category": "other composition validation",
+        "requests": 36,
+        "requested_bytes": 528
+      },
+      {
+        "category": "other canonical schema encoding",
+        "requests": 148,
+        "requested_bytes": 4893
+      },
+      {
+        "category": "remaining complete-call requests",
+        "requests": 7989,
+        "requested_bytes": 98222975
+      }
+    ],
+    "large_requests": 50,
+    "large_requested_bytes": 97086052
+  },
+  "size_kind_deltas": [
+    {
+      "kind": "alloc",
+      "bytes_each": 8,
+      "after_minus_before": -222
+    },
+    {
+      "kind": "realloc",
+      "bytes_each": 3,
+      "after_minus_before": -42
+    },
+    {
+      "kind": "realloc",
+      "bytes_each": 16,
+      "after_minus_before": -147
+    },
+    {
+      "kind": "realloc",
+      "bytes_each": 32,
+      "after_minus_before": -66
+    },
+    {
+      "kind": "realloc",
+      "bytes_each": 33,
+      "after_minus_before": -3
+    },
+    {
+      "kind": "realloc",
+      "bytes_each": 46,
+      "after_minus_before": -33
+    },
+    {
+      "kind": "realloc",
+      "bytes_each": 64,
+      "after_minus_before": -33
+    },
+    {
+      "kind": "realloc",
+      "bytes_each": 66,
+      "after_minus_before": -3
+    },
+    {
+      "kind": "realloc",
+      "bytes_each": 78,
+      "after_minus_before": -33
+    },
+    {
+      "kind": "realloc",
+      "bytes_each": 99,
+      "after_minus_before": -3
+    },
+    {
+      "kind": "realloc",
+      "bytes_each": 108,
+      "after_minus_before": -3
+    },
+    {
+      "kind": "realloc",
+      "bytes_each": 132,
+      "after_minus_before": -3
+    },
+    {
+      "kind": "realloc",
+      "bytes_each": 146,
+      "after_minus_before": -3
+    },
+    {
+      "kind": "realloc",
+      "bytes_each": 159,
+      "after_minus_before": -3
+    },
+    {
+      "kind": "realloc",
+      "bytes_each": 216,
+      "after_minus_before": -3
+    }
+  ],
+  "exact_target_delta": {
+    "requests_removed": 600,
+    "requested_bytes_removed": 15447,
+    "allocations_removed": 222,
+    "reallocations_removed": 378,
+    "remaining_size_kind_histogram_unchanged": true
+  },
+  "scope": "Retained accepted R56 second complete-call census and fresh R59 second complete-call census. Every successful allocation/reallocation event is symbolized and reconciles with its independent heap counter. Classification is mutually exclusive; the exact target requires both composition-admission and canonical schema-encoding frames. All remaining size/kind counts are identical. Requested bytes include reallocations and reserved capacity; they are neither live bytes nor copied bytes. Census instruction/cycle counters are instrumented and excluded from CPU comparisons."
+}

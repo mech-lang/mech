@@ -1,0 +1,91 @@
+[
+  {
+    "label": "roc",
+    "command": [
+      "/private/tmp/mech-deflate-profiling-20261028/roc-profile",
+      "12"
+    ],
+    "exit": 0,
+    "process_seconds": 5.955803542165086
+  },
+  {
+    "label": "pair0-before",
+    "command": [
+      "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/before",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 25.497350374935195
+  },
+  {
+    "label": "pair0-after",
+    "command": [
+      "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 26.123836084036157
+  },
+  {
+    "label": "pair1-after",
+    "command": [
+      "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 25.668953499989584
+  },
+  {
+    "label": "pair1-before",
+    "command": [
+      "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/before",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 24.902525583049282
+  },
+  {
+    "label": "pair2-before",
+    "command": [
+      "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/before",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 24.837172667030245
+  },
+  {
+    "label": "pair2-after",
+    "command": [
+      "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 25.301217916887254
+  },
+  {
+    "label": "pair3-after",
+    "command": [
+      "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 25.23569970810786
+  },
+  {
+    "label": "pair3-before",
+    "command": [
+      "/private/tmp/mech-scalar-paths-round22-20261029/fixed-primary/before",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 24.685810500057414
+  }
+]

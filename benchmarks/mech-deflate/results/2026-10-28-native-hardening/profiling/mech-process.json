@@ -1,0 +1,9 @@
+{
+  "pid": 12207,
+  "binary": "/private/tmp/mech-live-control-target/release/complete-reality",
+  "binary_sha256": "6c23c247bb0c661e3627a7ca833ca6f724139b1b4e3d13d1008239f0b1393346",
+  "artifact": "/private/tmp/mech-linear-restack-20261026/complete-compressor-choice-qualified.mbc",
+  "artifact_sha256": "a2daaaf746d6bcc8668c5439f84a782ecea2aff376546566c01d4fc0f8c6f585",
+  "input_bytes": 8,
+  "profiling_only": true
+}

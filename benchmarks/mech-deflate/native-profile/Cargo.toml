@@ -1,0 +1,56 @@
+[package]
+name = "mech-compression-native-profile"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+# An ordinary consumer does not activate mech-gpu's full-catalog dev dependencies.
+[workspace]
+
+[features]
+linked-qualification = ["dep:mech-build"]
+unit-qualification = ["linked-qualification", "dep:mech-runtime"]
+
+[dependencies]
+mech-build = { path = "../../../src/build", default-features = false, features = ["process-supervision"], optional = true }
+mech-runtime = { path = "../../../src/runtime", default-features = false, features = ["compiler", "resident-routing-source"], optional = true }
+# Retain the established compiler/value configuration while selecting only the
+# machine operations needed by compression and the scalar regression controls.
+mech-core = { path = "../../../src/core", default-features = false, features = ["full", "math_pow"] }
+mech-engine = { path = "../../../src/engine", default-features = false, features = ["full_compiler", "async"] }
+mech-syntax = { path = "../../../src/syntax", default-features = false, features = ["full"] }
+mech-gpu = { path = "../../../hosts/gpu", default-features = false, features = ["canonical-native-program"] }
+mech-stdlib = { path = "../../../src/stdlib", default-features = false, features = [
+  "compiler", "native-plan", "full_values", "integer_bits",
+  "access", "assign", "convert", "variable_define", "invariant_define",
+  "variables", "matrix_comprehensions",
+  "math_add", "math_sub", "math_mul", "math_div", "math_mod",
+  "compare_eq", "compare_neq", "compare_lt", "compare_gt", "compare_lte", "compare_gte",
+  "logic_and", "logic_or", "range_inclusive",
+] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.149"
+miniz_oxide = "=0.8.9"
+sha2 = { version = "0.11.0", default-features = false }
+
+[[bin]]
+name = "native_frame_transport"
+path = "../../../hosts/gpu/examples/native_frame_transport.rs"
+
+[[bin]]
+name = "artifact_review"
+path = "artifact_review.rs"
+
+[profile.release]
+debug = false
+
+[patch.crates-io]
+mech-math = { path = "../../../machines/math" }
+mech-compare = { path = "../../../machines/compare" }
+mech-logic = { path = "../../../machines/logic" }
+mech-range = { path = "../../../machines/range" }
+mech-matrix = { path = "../../../machines/matrix" }
+mech-set = { path = "../../../machines/set" }
+mech-string = { path = "../../../machines/string" }
+mech-stats = { path = "../../../machines/stats" }
+mech-combinatorics = { path = "../../../machines/combinatorics" }

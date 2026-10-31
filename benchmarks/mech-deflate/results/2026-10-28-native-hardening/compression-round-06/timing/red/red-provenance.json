@@ -1,0 +1,9 @@
+{
+  "regression_head": "151d5a0b5507b57b0f7cad0aee8784788a9b9bfe",
+  "production_libraries_from": "ced2c71c36d002a044b40f1f5cfb8ae293e92572",
+  "production_changes_since_build": false,
+  "source_sha256": "2e6888452a12be25126b186851dea5f59fd3dd9b475a3c5ae47ba8cc751e65ad",
+  "test_exit": 101,
+  "observations": 48,
+  "note": "Expected allocation-complexity failure after all witnesses; separate initial fixture macro compilation failure is retained in the parent directory."
+}

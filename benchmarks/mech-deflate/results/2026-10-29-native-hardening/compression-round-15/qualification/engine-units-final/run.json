@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/private/tmp/mech-predicate-versions-round15-20261029/engine-units-final/engine-tests",
+    "text_line_",
+    "shared_boolean_edge_facts",
+    "resident::budget::",
+    "native_projection_meter_tests",
+    "frame_recipe",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 3.6978585419710726,
+  "binary_sha256": "dd61cb9da185236030d2e42eb5eaf1a76e401daf07588be1aa83a03ba71c7f74"
+}

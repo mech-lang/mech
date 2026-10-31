@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-mixed-scalar-state-round08-20261028/selected-native-tests",
+    "--nocapture",
+    "--test-threads=1",
+    "--skip",
+    "all_certified_scalar_primitives_match_ordinary_resident_original_and_decoded"
+  ],
+  "exit": 0,
+  "seconds": 0.9081372920190915,
+  "binary_sha256": "522629ad6078274a3e0b6a4e7f6bed748a0d5402923d6952462e98b0931d0209",
+  "skipped_coverage": "The all-primitives test needs not/xor, which this selected catalog deliberately omits."
+}

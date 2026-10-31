@@ -1,0 +1,6 @@
+ROC_SECONDS 0.000292
+PAIR {"pair": 0, "order": ["before", "after"], "before": 0.031965334, "after": 0.030951041, "after_over_before": 0.9682689691276181}
+PAIR {"pair": 1, "order": ["after", "before"], "after": 0.030880917, "before": 0.0315625, "after_over_before": 0.9784052910891089}
+PAIR {"pair": 2, "order": ["before", "after"], "before": 0.031906792, "after": 0.030993958, "after_over_before": 0.9713906054861295}
+PAIR {"pair": 3, "order": ["after", "before"], "after": 0.03154475, "before": 0.031735792, "after_over_before": 0.9939802353128607}
+COMPLETE {"before_multiple_of_roc": 108.97702739726027, "after_multiple_of_roc": 106.5143390410959, "after_over_before": 0.9774017660879388, "profile_repetitions": 129}

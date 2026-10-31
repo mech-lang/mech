@@ -1,0 +1,60 @@
+{
+  "pr": 973,
+  "base": "eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b",
+  "round_parent_published_head": "7f7aad194537cdddb24d3a8b9f32c9a74ae0720d",
+  "production_commit": "b717a930396d3f694865f79149216581bedde2b5",
+  "candidate_build_source": "198b7818a0e0d0aac518678445a4bd31c08f3267",
+  "baseline_build_source": "13f319e7b0058c66f892e2566e0d56558831ab12",
+  "test_first_commit": "dafe97c6fb49fdcb715afb4f9b26cffe5f64a50a",
+  "public_api_test_correction": "82d8d31418c126986ccf2fbdd808b3070d52c310",
+  "same_account_recovery_test_commit": "a4a3a6c32daf7bcced6e7132dbf8c202c95b7deb",
+  "separate_ci_inventory_commit": "c4fdacb4c76f6ff47264006934553c7987ada2bb",
+  "production_source_unchanged_after_measured_build": true,
+  "pins": {
+    "source": {
+      "path": "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mec",
+      "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+      "bytes": 160857
+    },
+    "bytecode": {
+      "path": "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+      "bytes": 4138627
+    },
+    "allocator": {
+      "path": "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+      "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874",
+      "bytes": 189456
+    },
+    "reference": {
+      "path": "/private/tmp/mech-deflate-profiling-20261028/roc-profile",
+      "sha256": "3941ef59b2c9343d0493cc6b6d14ca4803e6bd27acfe520b1fb59d9b63026324",
+      "bytes": 283424
+    }
+  },
+  "reference_compiler": "d99c7b838fb05bb1047eb0c18d4d06d0f86f345d",
+  "reference_package": "671077457ff7ef3a3d44caf715a3fc595addf379",
+  "host": "Apple M1 Mac mini, 8 GiB, macOS 15.6.1 (24G90), aarch64",
+  "toolchain": "nightly-2026-03-03; rustc ec818fda361ca216eb186f5cf45131bd9c776bb4; LLVM 22.1.0",
+  "allocator_version": "mimalloc 2.1.7; exact original object",
+  "profile": "Unchanged selected-operation release manifest; opt3, warnings-as-errors, offline/locked, one job, incremental=0; coherent Core/Engine/Stdlib/Compute graph, all 173 common variants byte-identical. Core/GPU unit roots retain opt1 and warnings-as-errors.",
+  "algorithms_and_timing": "Complete level-12 eight-byte abcdefgh only; real 262144 U16 tree, 1500513 U32 cache, 305257 U64 node capacity, depth300/nice258, original near-EOF behavior, source allocation sites and evaluate_into boundaries, output capacity13 clear/reuse. No benchmark source change.",
+  "work": 60260219686,
+  "comparison_work": 47612,
+  "raw_bytes": [
+    75,
+    76,
+    74,
+    78,
+    73,
+    77,
+    75,
+    207,
+    0,
+    0
+  ],
+  "cleanup_bytes_nodes": [
+    0,
+    0
+  ]
+}

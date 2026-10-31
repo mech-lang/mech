@@ -1,0 +1,47 @@
+{
+  "classification": "Introduced benchmark-orchestration permission mistake, not compiler failure or environmental resource denial",
+  "exception": "PermissionError: [Errno13] Permission denied: primary/before",
+  "cause": "shutil.copyfile created a new executable copy with mode0644 rather than preserving execute bits",
+  "completed_reference_observations": 20000,
+  "mech_timing_observations": 0,
+  "immediately_committed_failed_receipts": "88d715b01",
+  "correction": [
+    {
+      "file": "before",
+      "sha256": "d18a0d65aed6f4ef819db28682e8529d4f824ec73ecb91275a3d8efe8a296c69",
+      "mode_before": "0o644",
+      "mode_after": "0o755",
+      "bytes_unchanged": true
+    },
+    {
+      "file": "current",
+      "sha256": "cc21071910424c624f2a359ee40592278e240cbe47a3a59c5c8005c42f41b61f",
+      "mode_before": "0o755",
+      "mode_after": "0o755",
+      "bytes_unchanged": true
+    },
+    {
+      "file": "frame-before",
+      "sha256": "b3da8bfa00583e12ed007a757cfba8ac0d30cc09a682da09009f92e526743508",
+      "mode_before": "0o644",
+      "mode_after": "0o755",
+      "bytes_unchanged": true
+    },
+    {
+      "file": "frame-after",
+      "sha256": "502e8baaacaf5c46a2f902e3a064f803dba5c7053097c963333bdd0a5300b528",
+      "mode_before": "0o644",
+      "mode_after": "0o755",
+      "bytes_unchanged": true
+    },
+    {
+      "file": "artifact-review",
+      "sha256": "1045c72854b0d567fcee7b219b6f1c04259508759250d9eb07e6cad23df460d3",
+      "mode_before": "0o644",
+      "mode_after": "0o755",
+      "bytes_unchanged": true
+    }
+  ],
+  "protocol_change": false,
+  "restart": "All eight pairs and a fresh common reference; no prior samples suppressed or overwritten"
+}

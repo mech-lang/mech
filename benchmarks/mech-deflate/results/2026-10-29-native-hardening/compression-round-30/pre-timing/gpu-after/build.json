@@ -1,0 +1,185 @@
+{
+  "command": [
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+    "--edition=2024",
+    "--crate-name",
+    "mech_gpu",
+    "--test",
+    "-C",
+    "opt-level=0",
+    "-C",
+    "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+    "-D",
+    "warnings",
+    "-L",
+    "dependency=/private/tmp/mech-live-control-target/release/deps",
+    "--cfg",
+    "feature=\"aot\"",
+    "--cfg",
+    "feature=\"canonical-native\"",
+    "--cfg",
+    "feature=\"canonical-native-program\"",
+    "--cfg",
+    "feature=\"canonical-native-program-runtime\"",
+    "--cfg",
+    "feature=\"canonical-native-runtime\"",
+    "--cfg",
+    "feature=\"jit\"",
+    "--extern",
+    "cranelift_codegen=/private/tmp/mech-live-control-target/release/deps/libcranelift_codegen-79250b96f7a4172f.rlib",
+    "--extern",
+    "cranelift_frontend=/private/tmp/mech-live-control-target/release/deps/libcranelift_frontend-796ddca52b1baa23.rlib",
+    "--extern",
+    "cranelift_jit=/private/tmp/mech-live-control-target/release/deps/libcranelift_jit-4d33b45d7690e2ef.rlib",
+    "--extern",
+    "cranelift_module=/private/tmp/mech-live-control-target/release/deps/libcranelift_module-8bb9481823a63cf0.rlib",
+    "--extern",
+    "cranelift_native=/private/tmp/mech-live-control-target/release/deps/libcranelift_native-448aa3dcdc0c0785.rlib",
+    "--extern",
+    "cranelift_object=/private/tmp/mech-live-control-target/release/deps/libcranelift_object-e9e960ce24552414.rlib",
+    "--extern",
+    "grapheme=/private/tmp/mech-live-control-target/release/deps/libgrapheme-2e22bda36eb1f0f8.rlib",
+    "--extern",
+    "hashbrown=/private/tmp/mech-live-control-target/release/deps/libhashbrown-d20f4ad24099052b.rlib",
+    "--extern",
+    "libloading=/private/tmp/mech-live-control-target/release/deps/liblibloading-836fe5ac7ed0962d.rlib",
+    "--extern",
+    "mech_compute=/private/tmp/mech-live-control-target/release/deps/libmech_compute-84cb0ef1d137eee3.rlib",
+    "--extern",
+    "mech_core=/private/tmp/mech-live-control-target/release/deps/libmech_core-4ff4856784490a86.rlib",
+    "--extern",
+    "mech_engine=/private/tmp/mech-live-control-target/release/deps/libmech_engine-0d214f77bb5acf15.rlib",
+    "--extern",
+    "miniz_oxide=/private/tmp/mech-live-control-target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+    "--extern",
+    "serde=/private/tmp/mech-live-control-target/release/deps/libserde-53e30a58b8778b4f.rlib",
+    "--extern",
+    "serde_json=/private/tmp/mech-live-control-target/release/deps/libserde_json-e0f8af30c3327a5b.rlib",
+    "--extern",
+    "sha2=/private/tmp/mech-live-control-target/release/deps/libsha2-f9316069bed82edc.rlib",
+    "--extern",
+    "toml_edit=/private/tmp/mech-live-control-target/release/deps/libtoml_edit-14168309fb56d330.rlib",
+    "--extern",
+    "web_time=/private/tmp/mech-live-control-target/release/deps/libweb_time-5004144e8c3d1139.rlib",
+    "--extern",
+    "wide=/private/tmp/mech-live-control-target/release/deps/libwide-24e8d1268668e37f.rlib",
+    "--extern",
+    "mech_syntax=/private/tmp/mech-live-control-target/release/deps/libmech_syntax-99fe397930ae7109.rlib",
+    "--extern",
+    "mech_runtime=/private/tmp/mech-live-control-target/release/deps/libmech_runtime-44999c02af6b18b6.rlib",
+    "--extern",
+    "mech_stdlib=/private/tmp/mech-live-control-target/release/deps/libmech_stdlib-6eec5c94a1151738.rlib",
+    "--extern",
+    "tempfile=/private/tmp/mech-live-control-target/release/deps/libtempfile-cd3db811e0a0846f.rlib",
+    "/private/tmp/mech-frame-reads-round30-20261029/after-unit-census/lib.rs",
+    "-o",
+    "/private/tmp/mech-frame-reads-round30-20261029/gpu-after/gpu-unit-tests"
+  ],
+  "exit": 0,
+  "seconds": 18.61217095796019,
+  "features": [
+    "aot",
+    "canonical-native",
+    "canonical-native-program",
+    "canonical-native-program-runtime",
+    "canonical-native-runtime",
+    "jit"
+  ],
+  "head": "42f710f47f06f6b5ee5214e21fb5ef48bfd9cc46",
+  "dirty": "",
+  "gpu_source_sha256": "eaf21f6b1ace29cb9d934a6689fbc76ca51e67f27555c2b594015ecc9d9ae970",
+  "libraries": {
+    "cranelift_codegen": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libcranelift_codegen-79250b96f7a4172f.rlib",
+      "sha256": "6f00c1438eb268885b2f8fc24a8b996af6a35a9a89c19d2b428e27bc0896c0c2"
+    },
+    "cranelift_frontend": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libcranelift_frontend-796ddca52b1baa23.rlib",
+      "sha256": "5b472bab525cc9d65bfe597275089f752a44cf04f074788e667e4429394fb6b6"
+    },
+    "cranelift_jit": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libcranelift_jit-4d33b45d7690e2ef.rlib",
+      "sha256": "4243914842bfbc3650e151f9784a89c9254a3a2110effc1882bf38fef5277d91"
+    },
+    "cranelift_module": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libcranelift_module-8bb9481823a63cf0.rlib",
+      "sha256": "1a8992feadc945257d1f8ef34c949bbd9e9b72c94ba1d2662c73cd747bccf31e"
+    },
+    "cranelift_native": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libcranelift_native-448aa3dcdc0c0785.rlib",
+      "sha256": "5805da39f0d7a35ee3868847003e74f4689926098ace1fc72da94b5f0c0ced89"
+    },
+    "cranelift_object": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libcranelift_object-e9e960ce24552414.rlib",
+      "sha256": "95d2d1cd4739810954b8f9035bb67e730de495690bcfd0d7aa6a7c9d7048943c"
+    },
+    "grapheme": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libgrapheme-2e22bda36eb1f0f8.rlib",
+      "sha256": "0a56aef46ba6db563417eafa1a43b16c9dcd03eae6c3ba7fc80a2ffb34b8bb0c"
+    },
+    "hashbrown": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libhashbrown-d20f4ad24099052b.rlib",
+      "sha256": "6461c3064638416c51802f7bbfb4753d7a742f258285cd24b62e760c94aec2f9"
+    },
+    "libloading": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/liblibloading-836fe5ac7ed0962d.rlib",
+      "sha256": "eda80a3fa641c93651d7b323c7ffab472f0b131a2908740cf34f0d80aecb3c0f"
+    },
+    "mech_compute": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libmech_compute-84cb0ef1d137eee3.rlib",
+      "sha256": "ba4671a953f03505d042b31d102658844e20c0f3beb64d8f089fb8cdc113acb1"
+    },
+    "mech_core": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libmech_core-4ff4856784490a86.rlib",
+      "sha256": "04c3a2dccc61a713bd1222e6497abe4cd86a8280631d6c158897522f29ecfdfd"
+    },
+    "mech_engine": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libmech_engine-0d214f77bb5acf15.rlib",
+      "sha256": "42f4d01e7c95d13cc14d74a15c9788fac2386b623b018c481b6c8181097bdd05"
+    },
+    "miniz_oxide": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+      "sha256": "49a1806c0b276e1f9d2c6620467506ed4dd39bbc959a93f884ab4fa7aaba35a3"
+    },
+    "serde": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libserde-53e30a58b8778b4f.rlib",
+      "sha256": "719e178acfe69acea9a91cbc644b344e669197b324d9477b434961547a02a044"
+    },
+    "serde_json": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libserde_json-e0f8af30c3327a5b.rlib",
+      "sha256": "b5a1c2826c3cfddfb9efd7336afc4b43c7b2f031ac28c6433cee1fe3610c9779"
+    },
+    "sha2": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libsha2-f9316069bed82edc.rlib",
+      "sha256": "8b4fa546c7c7ac1033b18f2e74d56266558de8566a865c492b56b32da75e9db2"
+    },
+    "toml_edit": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libtoml_edit-14168309fb56d330.rlib",
+      "sha256": "0a42925103563e2c957bd9cf07d3139f3a16d5c98b81ca57eab37a2cf7d1be60"
+    },
+    "web_time": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libweb_time-5004144e8c3d1139.rlib",
+      "sha256": "0ed8e9d96613352a31231a2be7fc16961c9104328222d9637a7822156b0821be"
+    },
+    "wide": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libwide-24e8d1268668e37f.rlib",
+      "sha256": "1819d502f34a41091edb95452fcb86b3e1952ae8e94158ffb8db0c892f115cb2"
+    },
+    "mech_syntax": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libmech_syntax-99fe397930ae7109.rlib",
+      "sha256": "038d0bd142e860066d9a398e7baaa1cb0bc920cd15ff3b4f2bc4bafa63f6e7f5"
+    },
+    "mech_runtime": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libmech_runtime-44999c02af6b18b6.rlib",
+      "sha256": "92261afc778026454725e49080c915c5d26e6286b06a713357c7559ff5b2f8d3"
+    },
+    "mech_stdlib": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libmech_stdlib-6eec5c94a1151738.rlib",
+      "sha256": "0f077a0a74fbde6d5c7dabad70250f71ce5c882a9202adce06d6b271681fa4b5"
+    },
+    "tempfile": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libtempfile-cd3db811e0a0846f.rlib",
+      "sha256": "a0f829cc5dfd2662446e6911e0dcec85ea3db820fea860a6c051d3e3c56ca9fa"
+    }
+  }
+}

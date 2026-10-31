@@ -213,14 +213,49 @@ fn bind_selected(
             node: template.origin().node(),
         })?
         .factory();
+    let selector = constant_record_selector(artifact, &template);
     bind_current(
         artifact.schemas(),
         template,
         factory,
+        None,
         input_parameters,
         output_parameters,
+        selector,
         limits,
     )
+}
+
+fn constant_record_selector(
+    artifact: &ProgramArtifact,
+    template: &NativeProgramLibraryTemplate,
+) -> Option<u64> {
+    use super::native_collection_templates::NativeCollectionLexicalSource as Source;
+    if template.primitive() != crate::native_artifact::NativeCollectionPrimitive::RecordFieldAccess
+    {
+        return None;
+    }
+    let constant = template
+        .root()
+        .and_then(|root| match root.sources().get(1) {
+            Some(crate::ArtifactSource::Constant(id)) => Some(*id),
+            _ => None,
+        })
+        .or_else(|| {
+            template
+                .lexical()
+                .and_then(|lexical| match lexical.sources().get(1) {
+                    Some(Source::Control(crate::ControlValue::Constant(id)))
+                    | Some(Source::Comprehension(crate::ComprehensionValue::Constant(id))) => {
+                        Some(*id)
+                    }
+                    _ => None,
+                })
+        })?;
+    match artifact.constants().get(constant)?.data() {
+        mech_core::ValueData::Id(id) => Some(*id),
+        _ => None,
+    }
 }
 
 pub(super) fn finite_limits(node: NodeId, limits: MemoryBudgetLimits) -> Result<(), Error> {
@@ -248,8 +283,10 @@ fn bind_current(
     schemas: &mech_core::SchemaTable,
     template: NativeProgramLibraryTemplate,
     factory: ResidentKernelFactory,
+    descriptor_templates: Option<&[ResolvedValueDescriptor]>,
     input_parameters: &[&[u64]],
     output_parameters: &[u64],
+    record_selector: Option<u64>,
     limits: MemoryBudgetLimits,
 ) -> Result<NativeCollectionCall, Error> {
     let node = template.origin().node();
@@ -262,22 +299,43 @@ fn bind_current(
     let ResolvedOperationContract::Declared(contract) = template.contract() else {
         return Err(invalid(node));
     };
-    let inputs = contract
+    let mut inputs = contract
         .inputs
         .iter()
         .zip(template.inputs())
         .zip(input_parameters)
         .map(|((port, schema), parameters)| layout(node, port.schema, schema, parameters))
         .collect::<Result<Box<[_]>, _>>()?;
+    if template.primitive() == crate::native_artifact::NativeCollectionPrimitive::RecordFieldAccess
+    {
+        // The maintained heterogeneous-record binder needs the actual field
+        // selector, just as resident activation does. It still checks the
+        // selected component's schema and validates the live Id at invocation.
+        inputs
+            .get_mut(1)
+            .ok_or_else(|| invalid(node))?
+            .resolved_selector = Some(mech_core::ResidentResolvedSelector::Id(
+            record_selector.ok_or_else(|| invalid(node))?,
+        ));
+    }
     let output = layout(
         node,
         contract.outputs[0].schema,
         template.output(),
         output_parameters,
     )?;
-    let descriptor = |schema: &Schema, layout: &ResidentPortLayout| {
-        ResolvedValueDescriptor::from_schema(schema.clone(), layout.shape_instance.clone())
-            .map_err(|_| invalid(node))
+    let descriptor = |index: usize, schema: &Schema, layout: &ResidentPortLayout| {
+        match descriptor_templates {
+            Some(templates) => {
+                let prototype = templates.get(index).ok_or_else(|| invalid(node))?;
+                debug_assert_eq!(prototype.schema(), schema);
+                prototype.with_current_shape(layout.shape_instance.clone())
+            }
+            None => {
+                ResolvedValueDescriptor::from_schema(schema.clone(), layout.shape_instance.clone())
+            }
+        }
+        .map_err(|_| invalid(node))
     };
     let semantic = ResolvedOperationDescriptor::from_resolved_contract(
         template.primitive().name().to_owned(),
@@ -290,9 +348,10 @@ fn bind_current(
             .inputs()
             .iter()
             .zip(&inputs)
-            .map(|(schema, layout)| descriptor(schema, layout))
+            .enumerate()
+            .map(|(index, (schema, layout))| descriptor(index, schema, layout))
             .collect::<Result<Box<[_]>, _>>()?,
-        Box::new([descriptor(template.output(), &output)?]),
+        Box::new([descriptor(inputs.len(), template.output(), &output)?]),
         template.selected_key().clone(),
         ExecutionTarget::Native,
     )

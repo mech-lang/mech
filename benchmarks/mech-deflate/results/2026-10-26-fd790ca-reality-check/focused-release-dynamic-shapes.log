@@ -1,0 +1,10 @@
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-deflate-reality-check/src/stdlib)
+   Compiling mech-logic v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/logic)
+   Compiling mech-range v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/range)
+   Compiling mech-compare v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/compare)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-deflate-reality-check/machines/math)
+   Compiling libloading v0.8.9
+   Compiling web-time v1.1.0
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-reality-check/hosts/gpu)
+   Compiling component-reality v0.0.0 (/private/tmp/mech-stack-landscape-20261026/reality-check/focused)
+    Finished `release` profile [optimized] target(s) in 3m 12s

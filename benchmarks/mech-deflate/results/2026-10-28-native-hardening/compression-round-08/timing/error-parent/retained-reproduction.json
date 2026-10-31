@@ -1,0 +1,24 @@
+[
+  {
+    "command": [
+      "/private/tmp/mech-native-precharge-round07-20261028/current",
+      "/private/tmp/mech-mixed-scalar-state-round08-20261028/error-parent/source.mbc",
+      "1"
+    ],
+    "exit": 101,
+    "binary_sha256": "97aa2b05a99ddc3efecc0fe04cda64a817bb8ef21bee0f8d61375e715b00d3d8",
+    "expected_failure": "native entry returned with compiled String loans",
+    "timing_claim": false
+  },
+  {
+    "command": [
+      "/private/tmp/mech-mixed-scalar-state-round08-20261028/current",
+      "/private/tmp/mech-mixed-scalar-state-round08-20261028/error-parent/source.mbc",
+      "1"
+    ],
+    "exit": 101,
+    "binary_sha256": "0fa38254f8f5773f49749201a07ad2032356d38b5d7f47a44f4c581a6bdc6570",
+    "expected_failure": "Integrity",
+    "timing_claim": false
+  }
+]

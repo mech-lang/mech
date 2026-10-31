@@ -1,0 +1,24 @@
+{
+  "removed": [
+    {
+      "path": "/private/tmp/mech-path-allocation-round52-20261031/owners/linked-primary/after/descriptor.json",
+      "bytes": 59787859,
+      "sha256": "1b4dbdd2fb0c1f9f51ae7e9dd0bc931bbc2804e6cb949653461d6348c31615c9",
+      "reason": "completed diagnostic duplicate; exact sources/commands/pins committed and identical baseline Object/image retained"
+    },
+    {
+      "path": "/private/tmp/mech-path-allocation-round52-20261031/owners/linked-primary/after/object.o",
+      "bytes": 13047400,
+      "sha256": "1a8bb46e9f78fec2147b3242fab5651e470f86ba0347f4f11c7f1aedd5008777",
+      "reason": "completed diagnostic duplicate; exact sources/commands/pins committed and identical baseline Object/image retained"
+    },
+    {
+      "path": "/private/tmp/mech-path-allocation-round52-20261031/owners/variants/after/libmech_gpu.rlib",
+      "bytes": 20460704,
+      "sha256": "84b4d8c7336ae909966327707b1731ecfb714dd7f97b65e3046c8a9856ba6a29",
+      "reason": "completed diagnostic duplicate; exact sources/commands/pins committed and identical baseline Object/image retained"
+    }
+  ],
+  "free_bytes_after": 716943360,
+  "preserved": "retained round-51 compiler libraries, primary worker, actual Object/image, reference and pinned allocator"
+}

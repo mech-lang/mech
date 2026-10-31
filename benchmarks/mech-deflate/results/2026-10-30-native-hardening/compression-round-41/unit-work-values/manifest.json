@@ -1,0 +1,21 @@
+{
+  "created_utc": "2026-10-31T00:52:56.877429+00:00",
+  "head": "f65c1a9852c65122035a0b393a7cf0b06d1a70de",
+  "files": [
+    {
+      "path": "work-values/run.json",
+      "sha256": "f86323b36710d3b09d8f1db4f22919c3e75a91401779fec3ef9c97b35f771ca5",
+      "bytes": 293
+    },
+    {
+      "path": "work-values/run.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "work-values/run.stdout",
+      "sha256": "bf952697bc88574bb22662388afbdaa89b88ff8b8c5c0b957356ae541b39930c",
+      "bytes": 3658
+    }
+  ]
+}

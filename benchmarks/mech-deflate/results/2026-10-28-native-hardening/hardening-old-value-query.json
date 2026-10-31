@@ -1,0 +1,36 @@
+{
+  "name": "hardening-old-value-query",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-engine",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "mech-gpu/canonical-native-program",
+    "--lib",
+    "old_value_query",
+    "--",
+    "--nocapture"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "ff26c8dff763b0b5300f9199709b6ee7b46fd8fa",
+  "dirty": " M src/engine/src/native_artifact/buffer_frames.rs\n M src/engine/src/native_artifact/iteration_validation.rs\n M src/engine/src/native_artifact/program_facts.rs\n M src/engine/src/native_artifact/unsigned_buffer_call.rs\n?? src/engine/src/native_artifact/old_value_reads.rs\n",
+  "exit": 0,
+  "seconds": 174.42245197296143,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/hardening-old-value-query.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

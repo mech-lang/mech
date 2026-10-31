@@ -1,0 +1,79 @@
+{
+  "stage": "Structural partition before current-frame recipe extension; preliminary frozen GPU library, not a final source revision or performance claim",
+  "source_base": "94e732bddb0a709a35cdb884e6d553141235f0cb",
+  "partition_tests_passed": 4,
+  "image_test_passed": 1,
+  "selection_expected_failed": 1,
+  "gpu_unit_compiles_passed": 2,
+  "release_build_exit": 0,
+  "release_build_seconds": 74.89209127426147,
+  "scope": "Original/decoded parent boundaries, reordered child array result, multiple-child and append rejection, caller-supplied metadata rejection, existing semantic control",
+  "performance_claim": false,
+  "files": [
+    {
+      "path": "build.json",
+      "sha256": "60f550e8e4f9586375293ccf4638f920a982f1181ec454915f17fa30c9df1122",
+      "bytes": 2090
+    },
+    {
+      "path": "build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "canonical_program_numeric_composition.rs",
+      "sha256": "db6939f801a8ee05d4bbd2b57a2dbe658e5fb57400dc30b8e29e2f98befbb58d",
+      "bytes": 14315
+    },
+    {
+      "path": "image.json",
+      "sha256": "6dd8524ccebe141f23ab93cb523d57068798cbb9999ea72426ba4fabffdd3454",
+      "bytes": 459
+    },
+    {
+      "path": "image.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "image.stdout",
+      "sha256": "162a8a958dab589d5bf9e4bbce04de79563ad694241fb403af17ddadf8fc5cc2",
+      "bytes": 221
+    },
+    {
+      "path": "partition.json",
+      "sha256": "1d7fe89c1bc5ce57b4ba07322d586bce0c1954c6666ad5203a5f833d4087ad08",
+      "bytes": 475
+    },
+    {
+      "path": "partition.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "partition.stdout",
+      "sha256": "41f7fbef08ec80b09c135550e13e968a9416fc22dffa6ebef5518158eb9bd8da",
+      "bytes": 2122
+    },
+    {
+      "path": "selection.json",
+      "sha256": "012fe5f2af72fb18ac67c8673743e3fe2d44eed0e713706b2e4fee2194313cd1",
+      "bytes": 506
+    },
+    {
+      "path": "selection.stderr",
+      "sha256": "c24749477c535ae2b834259188fe6e3c5d540d3849c50695bd7ab762ccd9b748",
+      "bytes": 414
+    },
+    {
+      "path": "selection.stdout",
+      "sha256": "aaa38186e85c2c75f4a9dc47785543cb0e58e365ca2c7c770508441fe0d51b8f",
+      "bytes": 69375
+    }
+  ]
+}

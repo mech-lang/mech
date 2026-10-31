@@ -1,0 +1,194 @@
+[
+  {
+    "path": "primary/build.py",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/build.py",
+    "sha256": "fe39fef6a83c1496bf8c3c90522284c3a6c7e533cc9162d012d51889647a933c",
+    "original_sha256": "fe39fef6a83c1496bf8c3c90522284c3a6c7e533cc9162d012d51889647a933c"
+  },
+  {
+    "path": "primary/run.py",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/run.py",
+    "sha256": "81bf3864b085e817454485227c57b67ae8479a14d65a8303e07d339d715a6bdc",
+    "original_sha256": "81bf3864b085e817454485227c57b67ae8479a14d65a8303e07d339d715a6bdc"
+  },
+  {
+    "path": "primary/inclusive-profile.py",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/inclusive-profile.py",
+    "sha256": "6434432f47a40239849982bd6f916379fcf85ea195b608f134eac8234561f341",
+    "original_sha256": "6434432f47a40239849982bd6f916379fcf85ea195b608f134eac8234561f341"
+  },
+  {
+    "path": "primary/results.json",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/results.json",
+    "sha256": "cadfd5c6bc3df4059e783bca33b40aaf5e55100e34382708ead2cbe434e20e16",
+    "original_sha256": "cadfd5c6bc3df4059e783bca33b40aaf5e55100e34382708ead2cbe434e20e16"
+  },
+  {
+    "path": "primary/commands.json",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/commands.json",
+    "sha256": "8e548bd8a3bfefb5e78e174e542a5f09278f37412b6c946d41f3d3be7ef4a4c3",
+    "original_sha256": "8e548bd8a3bfefb5e78e174e542a5f09278f37412b6c946d41f3d3be7ef4a4c3"
+  },
+  {
+    "path": "primary/current-build.json",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/current-build.json",
+    "sha256": "fc27a3dc269bac61c49f38945509944f9a97ff64d453ef9c3c0cc43b8f144237",
+    "original_sha256": "fc27a3dc269bac61c49f38945509944f9a97ff64d453ef9c3c0cc43b8f144237"
+  },
+  {
+    "path": "primary/current-build.log",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/current-build.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "primary/roc.stdout.gz",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/roc.stdout",
+    "sha256": "03a2ccc2be886c678ba6fd5b07c4eff5fcefee46eb4d2f51cb6e24882cff2f79",
+    "original_sha256": "5612f160a5e383e4fe5167ac8329533babc37fbb1140a3b52f7742d4c96c0976"
+  },
+  {
+    "path": "primary/roc.stderr",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/roc.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "primary/profile.stdout",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/profile.stdout",
+    "sha256": "24f7fa9bf930c137b9a73dc9cd38e9ede884b1f9a2e643a03aeb2fc66a332f06",
+    "original_sha256": "24f7fa9bf930c137b9a73dc9cd38e9ede884b1f9a2e643a03aeb2fc66a332f06"
+  },
+  {
+    "path": "primary/profile.stderr",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/profile.stderr",
+    "sha256": "9fc20e433f90f84acfb3939375f85189e79c65b92579ba4519cf131b8209c4f0",
+    "original_sha256": "9fc20e433f90f84acfb3939375f85189e79c65b92579ba4519cf131b8209c4f0"
+  },
+  {
+    "path": "primary/profile-command.json",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/profile-command.json",
+    "sha256": "4d47a8a168f25481706628e29f719a4beaddaa707bdc168ccd945f7ce54ced0d",
+    "original_sha256": "4d47a8a168f25481706628e29f719a4beaddaa707bdc168ccd945f7ce54ced0d"
+  },
+  {
+    "path": "primary/after.sample.txt.gz",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/after.sample.txt",
+    "sha256": "08359835b90a056fd52f9dad41ceec0e9916308d9d4144e812a97b05a270cda3",
+    "original_sha256": "ef6b2b0e7b18e394a34afce16102036949bab32745f048f227d688a6359c4605"
+  },
+  {
+    "path": "primary/after-inclusive-profile.json",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/after-inclusive-profile.json",
+    "sha256": "0a40fd786df1c491e138bf889c0ec0f095b8a4c6464be07cc162558fa98f1c27",
+    "original_sha256": "0a40fd786df1c491e138bf889c0ec0f095b8a4c6464be07cc162558fa98f1c27"
+  },
+  {
+    "path": "primary/inclusive-summary.txt",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/inclusive-summary.txt",
+    "sha256": "b8ee4b5233a36b1e8eb1156e8370db68a5931779a06e9b91d06815c281402dee",
+    "original_sha256": "b8ee4b5233a36b1e8eb1156e8370db68a5931779a06e9b91d06815c281402dee"
+  },
+  {
+    "path": "primary/outer.log",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/outer.log",
+    "sha256": "b72e30ce554ea534ff96b6dd01c9a5ed7a373b7882729c8672c92f438fd86421",
+    "original_sha256": "b72e30ce554ea534ff96b6dd01c9a5ed7a373b7882729c8672c92f438fd86421"
+  },
+  {
+    "path": "primary/pair1-after.stderr",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/pair1-after.stderr",
+    "sha256": "4beecde8602a5e53ad9bf02ce866a27cbe396ba7dc0382abe21c74929d731298",
+    "original_sha256": "4beecde8602a5e53ad9bf02ce866a27cbe396ba7dc0382abe21c74929d731298"
+  },
+  {
+    "path": "primary/pair1-before.stdout",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/pair1-before.stdout",
+    "sha256": "72146c906d5acba9707996946df1750e725478c1023634db6a771e4dbf9b627d",
+    "original_sha256": "72146c906d5acba9707996946df1750e725478c1023634db6a771e4dbf9b627d"
+  },
+  {
+    "path": "primary/pair2-before.stdout",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/pair2-before.stdout",
+    "sha256": "73007c73b5feac0eb97c652ec325fbf95d036f295068cfcb094a0cbcc5bf88c9",
+    "original_sha256": "73007c73b5feac0eb97c652ec325fbf95d036f295068cfcb094a0cbcc5bf88c9"
+  },
+  {
+    "path": "primary/pair0-after.stderr",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/pair0-after.stderr",
+    "sha256": "2bc2bb74d64fc04cc9e7a09c6f36f6711ca6643f26cde7bbf6fb46e272095fd3",
+    "original_sha256": "2bc2bb74d64fc04cc9e7a09c6f36f6711ca6643f26cde7bbf6fb46e272095fd3"
+  },
+  {
+    "path": "primary/pair2-before.stderr",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/pair2-before.stderr",
+    "sha256": "c92689a0a694f2e2f0546ba6bdfe90d04cbd840b34219a348926557dadbb0a4f",
+    "original_sha256": "c92689a0a694f2e2f0546ba6bdfe90d04cbd840b34219a348926557dadbb0a4f"
+  },
+  {
+    "path": "primary/pair0-after.stdout",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/pair0-after.stdout",
+    "sha256": "59e522c879d12d84dee1e32999c398731cc1987c366a62d541405e689c71abfd",
+    "original_sha256": "59e522c879d12d84dee1e32999c398731cc1987c366a62d541405e689c71abfd"
+  },
+  {
+    "path": "primary/pair1-before.stderr",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/pair1-before.stderr",
+    "sha256": "402b66244768237a97b6acd71d7538f47b03bbc871806cb5e7774e4f9ab54c54",
+    "original_sha256": "402b66244768237a97b6acd71d7538f47b03bbc871806cb5e7774e4f9ab54c54"
+  },
+  {
+    "path": "primary/pair1-after.stdout",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/pair1-after.stdout",
+    "sha256": "738a8f3701b51cc2ebe3e6671004432110e1920bd8bef53ed7c2eb3809320ca3",
+    "original_sha256": "738a8f3701b51cc2ebe3e6671004432110e1920bd8bef53ed7c2eb3809320ca3"
+  },
+  {
+    "path": "primary/pair0-before.stderr",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/pair0-before.stderr",
+    "sha256": "ca4ad82b2017dbac75dbc80d11e2931f08a7c911ae1fcaf7386a28f19bdbeceb",
+    "original_sha256": "ca4ad82b2017dbac75dbc80d11e2931f08a7c911ae1fcaf7386a28f19bdbeceb"
+  },
+  {
+    "path": "primary/pair3-after.stdout",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/pair3-after.stdout",
+    "sha256": "d1e6cc25d8bad1ad32a7a60e622d6138fc70c140cd976b28d565b298a7676ab6",
+    "original_sha256": "d1e6cc25d8bad1ad32a7a60e622d6138fc70c140cd976b28d565b298a7676ab6"
+  },
+  {
+    "path": "primary/pair3-before.stderr",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/pair3-before.stderr",
+    "sha256": "4bcc3e12515bd2c13b380b5ee9280dda5920f70a2c657ed2d14ea19bd95f3ef6",
+    "original_sha256": "4bcc3e12515bd2c13b380b5ee9280dda5920f70a2c657ed2d14ea19bd95f3ef6"
+  },
+  {
+    "path": "primary/pair2-after.stdout",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/pair2-after.stdout",
+    "sha256": "d23d62f7efdd512662878c6e03036eaeefed6b9a523045c1a755313fda862d3b",
+    "original_sha256": "d23d62f7efdd512662878c6e03036eaeefed6b9a523045c1a755313fda862d3b"
+  },
+  {
+    "path": "primary/pair2-after.stderr",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/pair2-after.stderr",
+    "sha256": "668eb998dd340b8cdbe507e2087490638dcfece4f97b7a4edef0959ca8b04025",
+    "original_sha256": "668eb998dd340b8cdbe507e2087490638dcfece4f97b7a4edef0959ca8b04025"
+  },
+  {
+    "path": "primary/pair3-before.stdout",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/pair3-before.stdout",
+    "sha256": "0a78b621faf7fb1018503b359db3b816672b57ae83a8c135c144bdbbddd2a019",
+    "original_sha256": "0a78b621faf7fb1018503b359db3b816672b57ae83a8c135c144bdbbddd2a019"
+  },
+  {
+    "path": "primary/pair3-after.stderr",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/pair3-after.stderr",
+    "sha256": "3d0b72620fefe0c42051f1f54759fff9dffcd7ce10be7c36504a1bcd4651d00d",
+    "original_sha256": "3d0b72620fefe0c42051f1f54759fff9dffcd7ce10be7c36504a1bcd4651d00d"
+  },
+  {
+    "path": "primary/pair0-before.stdout",
+    "source": "/private/tmp/mech-scalar-records-round19-20261029/primary/pair0-before.stdout",
+    "sha256": "2f262ceb2c69a0a63b92002f9ef06c0b24b659c461bb2ffb0ab4fbe9c61a3ed7",
+    "original_sha256": "2f262ceb2c69a0a63b92002f9ef06c0b24b659c461bb2ffb0ab4fbe9c61a3ed7"
+  }
+]

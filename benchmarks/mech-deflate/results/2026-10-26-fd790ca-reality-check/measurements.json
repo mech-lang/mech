@@ -1,0 +1,1426 @@
+{
+  "started": "2026-10-26T20:22:17.221388+00:00",
+  "finished": "2026-10-26T20:23:00.572973+00:00",
+  "mech_executable": "/private/tmp/mech-live-control-target/release/component-reality",
+  "mech_executable_sha256": "0a846e666f3d6cae88dd18e892349114b011066c45d6a3e96a54d468dd1ea7b0",
+  "runs": [
+    {
+      "engine": "roc-0",
+      "round": 0,
+      "command": [
+        "/private/tmp/mech-stack-landscape-20261026/reality-check/roc-components",
+        "0"
+      ],
+      "returncode": 0,
+      "wall_seconds": 0.009154167026281357,
+      "raw": "roc-0-round-0.log"
+    },
+    {
+      "engine": "roc-1",
+      "round": 0,
+      "command": [
+        "/private/tmp/mech-stack-landscape-20261026/reality-check/roc-components",
+        "1"
+      ],
+      "returncode": 0,
+      "wall_seconds": 0.017199042020365596,
+      "raw": "roc-1-round-0.log"
+    },
+    {
+      "engine": "roc-2",
+      "round": 0,
+      "command": [
+        "/private/tmp/mech-stack-landscape-20261026/reality-check/roc-components",
+        "2"
+      ],
+      "returncode": 0,
+      "wall_seconds": 0.006061541964299977,
+      "raw": "roc-2-round-0.log"
+    },
+    {
+      "engine": "roc-3",
+      "round": 0,
+      "command": [
+        "/private/tmp/mech-stack-landscape-20261026/reality-check/roc-components",
+        "3"
+      ],
+      "returncode": 0,
+      "wall_seconds": 0.016848083003424108,
+      "raw": "roc-3-round-0.log"
+    },
+    {
+      "engine": "rust",
+      "round": 0,
+      "command": [
+        "/private/tmp/mech-stack-landscape-20261026/reality-check/rust-init",
+        "262144",
+        "1500513"
+      ],
+      "returncode": 0,
+      "wall_seconds": 0.010736208059825003,
+      "raw": "rust-round-0.log"
+    },
+    {
+      "engine": "mech",
+      "round": 0,
+      "command": [
+        "/private/tmp/mech-live-control-target/release/component-reality"
+      ],
+      "returncode": 0,
+      "wall_seconds": 21.710116042057052,
+      "raw": "mech-round-0.log"
+    },
+    {
+      "engine": "mech",
+      "round": 1,
+      "command": [
+        "/private/tmp/mech-live-control-target/release/component-reality"
+      ],
+      "returncode": 0,
+      "wall_seconds": 21.522210291936062,
+      "raw": "mech-round-1.log"
+    },
+    {
+      "engine": "roc-3",
+      "round": 1,
+      "command": [
+        "/private/tmp/mech-stack-landscape-20261026/reality-check/roc-components",
+        "3"
+      ],
+      "returncode": 0,
+      "wall_seconds": 0.01724691700655967,
+      "raw": "roc-3-round-1.log"
+    },
+    {
+      "engine": "roc-2",
+      "round": 1,
+      "command": [
+        "/private/tmp/mech-stack-landscape-20261026/reality-check/roc-components",
+        "2"
+      ],
+      "returncode": 0,
+      "wall_seconds": 0.006082833977416158,
+      "raw": "roc-2-round-1.log"
+    },
+    {
+      "engine": "roc-1",
+      "round": 1,
+      "command": [
+        "/private/tmp/mech-stack-landscape-20261026/reality-check/roc-components",
+        "1"
+      ],
+      "returncode": 0,
+      "wall_seconds": 0.017190667102113366,
+      "raw": "roc-1-round-1.log"
+    },
+    {
+      "engine": "roc-0",
+      "round": 1,
+      "command": [
+        "/private/tmp/mech-stack-landscape-20261026/reality-check/roc-components",
+        "0"
+      ],
+      "returncode": 0,
+      "wall_seconds": 0.008875458035618067,
+      "raw": "roc-0-round-1.log"
+    },
+    {
+      "engine": "rust",
+      "round": 1,
+      "command": [
+        "/private/tmp/mech-stack-landscape-20261026/reality-check/rust-init",
+        "262144",
+        "1500513"
+      ],
+      "returncode": 0,
+      "wall_seconds": 0.009543250082060695,
+      "raw": "rust-round-1.log"
+    }
+  ],
+  "observations": [
+    {
+      "engine": "roc",
+      "case": "initialization",
+      "rep": 0,
+      "nanoseconds": 460000,
+      "warmup": true,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "initialization",
+      "rep": 1,
+      "nanoseconds": 37000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "initialization",
+      "rep": 2,
+      "nanoseconds": 37000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "initialization",
+      "rep": 3,
+      "nanoseconds": 37000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "initialization",
+      "rep": 4,
+      "nanoseconds": 37000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "initialization",
+      "rep": 5,
+      "nanoseconds": 36000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "initialization",
+      "rep": 6,
+      "nanoseconds": 36000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "initialization",
+      "rep": 7,
+      "nanoseconds": 36000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "search",
+      "rep": 0,
+      "nanoseconds": 508000,
+      "warmup": true,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "search",
+      "rep": 1,
+      "nanoseconds": 92000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "search",
+      "rep": 2,
+      "nanoseconds": 92000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "search",
+      "rep": 3,
+      "nanoseconds": 92000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "search",
+      "rep": 4,
+      "nanoseconds": 103000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "search",
+      "rep": 5,
+      "nanoseconds": 92000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "search",
+      "rep": 6,
+      "nanoseconds": 95000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "search",
+      "rep": 7,
+      "nanoseconds": 99000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "skip",
+      "rep": 0,
+      "nanoseconds": 48000,
+      "warmup": true,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "skip",
+      "rep": 1,
+      "nanoseconds": 11000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "skip",
+      "rep": 2,
+      "nanoseconds": 11000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "skip",
+      "rep": 3,
+      "nanoseconds": 11000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "skip",
+      "rep": 4,
+      "nanoseconds": 11000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "skip",
+      "rep": 5,
+      "nanoseconds": 11000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "skip",
+      "rep": 6,
+      "nanoseconds": 11000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "skip",
+      "rep": 7,
+      "nanoseconds": 11000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "six-position",
+      "rep": 0,
+      "nanoseconds": 449000,
+      "warmup": true,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "six-position",
+      "rep": 1,
+      "nanoseconds": 36000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "six-position",
+      "rep": 2,
+      "nanoseconds": 36000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "six-position",
+      "rep": 3,
+      "nanoseconds": 36000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "six-position",
+      "rep": 4,
+      "nanoseconds": 36000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "six-position",
+      "rep": 5,
+      "nanoseconds": 36000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "six-position",
+      "rep": 6,
+      "nanoseconds": 36000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "roc",
+      "case": "six-position",
+      "rep": 7,
+      "nanoseconds": 36000,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "rust",
+      "case": "raw-buffer-initialization",
+      "rep": 0,
+      "nanoseconds": 425084,
+      "allocations": 2,
+      "requested_bytes": 6526340,
+      "warmup": true,
+      "round": 0
+    },
+    {
+      "engine": "rust",
+      "case": "raw-buffer-initialization",
+      "rep": 1,
+      "nanoseconds": 277709,
+      "allocations": 2,
+      "requested_bytes": 6526340,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "rust",
+      "case": "raw-buffer-initialization",
+      "rep": 2,
+      "nanoseconds": 299500,
+      "allocations": 2,
+      "requested_bytes": 6526340,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "rust",
+      "case": "raw-buffer-initialization",
+      "rep": 3,
+      "nanoseconds": 233208,
+      "allocations": 2,
+      "requested_bytes": 6526340,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "rust",
+      "case": "raw-buffer-initialization",
+      "rep": 4,
+      "nanoseconds": 249584,
+      "allocations": 2,
+      "requested_bytes": 6526340,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "rust",
+      "case": "raw-buffer-initialization",
+      "rep": 5,
+      "nanoseconds": 232083,
+      "allocations": 2,
+      "requested_bytes": 6526340,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "rust",
+      "case": "raw-buffer-initialization",
+      "rep": 6,
+      "nanoseconds": 229583,
+      "allocations": 2,
+      "requested_bytes": 6526340,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "engine": "rust",
+      "case": "raw-buffer-initialization",
+      "rep": 7,
+      "nanoseconds": 232500,
+      "allocations": 2,
+      "requested_bytes": 6526340,
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 44716,
+      "case": "initialization",
+      "engine": "mech",
+      "nanoseconds": 657807041,
+      "rep": 0,
+      "requested_bytes": 61187209,
+      "result": "Ok(NativeProgramExecutionReport { work: 5981116713, comparison_work: 13053617, visits: 12338685, transport_bytes: 265888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": true,
+      "round": 0
+    },
+    {
+      "allocations": 44665,
+      "case": "initialization",
+      "engine": "mech",
+      "nanoseconds": 660864750,
+      "rep": 1,
+      "requested_bytes": 61183945,
+      "result": "Ok(NativeProgramExecutionReport { work: 5981116713, comparison_work: 13053617, visits: 12338685, transport_bytes: 265888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 44665,
+      "case": "initialization",
+      "engine": "mech",
+      "nanoseconds": 657112000,
+      "rep": 2,
+      "requested_bytes": 61183945,
+      "result": "Ok(NativeProgramExecutionReport { work: 5981116713, comparison_work: 13053617, visits: 12338685, transport_bytes: 265888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 44665,
+      "case": "initialization",
+      "engine": "mech",
+      "nanoseconds": 658382958,
+      "rep": 3,
+      "requested_bytes": 61183945,
+      "result": "Ok(NativeProgramExecutionReport { work: 5981116713, comparison_work: 13053617, visits: 12338685, transport_bytes: 265888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 44665,
+      "case": "initialization",
+      "engine": "mech",
+      "nanoseconds": 656953542,
+      "rep": 4,
+      "requested_bytes": 61183945,
+      "result": "Ok(NativeProgramExecutionReport { work: 5981116713, comparison_work: 13053617, visits: 12338685, transport_bytes: 265888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 44665,
+      "case": "initialization",
+      "engine": "mech",
+      "nanoseconds": 656422500,
+      "rep": 5,
+      "requested_bytes": 61183945,
+      "result": "Ok(NativeProgramExecutionReport { work: 5981116713, comparison_work: 13053617, visits: 12338685, transport_bytes: 265888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 48551,
+      "case": "search",
+      "engine": "mech",
+      "nanoseconds": 231300125,
+      "rep": 0,
+      "requested_bytes": 64881572,
+      "result": "Ok(NativeProgramExecutionReport { work: 1228048746, comparison_work: 62944670, visits: 4800, transport_bytes: 132880, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": true,
+      "round": 0
+    },
+    {
+      "allocations": 48515,
+      "case": "search",
+      "engine": "mech",
+      "nanoseconds": 230980834,
+      "rep": 1,
+      "requested_bytes": 64879268,
+      "result": "Ok(NativeProgramExecutionReport { work: 1228048746, comparison_work: 62944670, visits: 4800, transport_bytes: 132880, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 48515,
+      "case": "search",
+      "engine": "mech",
+      "nanoseconds": 231060458,
+      "rep": 2,
+      "requested_bytes": 64879268,
+      "result": "Ok(NativeProgramExecutionReport { work: 1228048746, comparison_work: 62944670, visits: 4800, transport_bytes: 132880, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 48515,
+      "case": "search",
+      "engine": "mech",
+      "nanoseconds": 230608417,
+      "rep": 3,
+      "requested_bytes": 64879268,
+      "result": "Ok(NativeProgramExecutionReport { work: 1228048746, comparison_work: 62944670, visits: 4800, transport_bytes: 132880, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 48515,
+      "case": "search",
+      "engine": "mech",
+      "nanoseconds": 230645083,
+      "rep": 4,
+      "requested_bytes": 64879268,
+      "result": "Ok(NativeProgramExecutionReport { work: 1228048746, comparison_work: 62944670, visits: 4800, transport_bytes: 132880, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 48515,
+      "case": "search",
+      "engine": "mech",
+      "nanoseconds": 230684584,
+      "rep": 5,
+      "requested_bytes": 64879268,
+      "result": "Ok(NativeProgramExecutionReport { work: 1228048746, comparison_work: 62944670, visits: 4800, transport_bytes: 132880, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 39530,
+      "case": "skip",
+      "engine": "mech",
+      "nanoseconds": 69038584,
+      "rep": 0,
+      "requested_bytes": 9876042,
+      "result": "Ok(NativeProgramExecutionReport { work: 572835177, comparison_work: 8925941, visits: 4656, transport_bytes: 106216, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": true,
+      "round": 0
+    },
+    {
+      "allocations": 39497,
+      "case": "skip",
+      "engine": "mech",
+      "nanoseconds": 68958917,
+      "rep": 1,
+      "requested_bytes": 9873930,
+      "result": "Ok(NativeProgramExecutionReport { work: 572835177, comparison_work: 8925941, visits: 4656, transport_bytes: 106216, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 39497,
+      "case": "skip",
+      "engine": "mech",
+      "nanoseconds": 68623250,
+      "rep": 2,
+      "requested_bytes": 9873930,
+      "result": "Ok(NativeProgramExecutionReport { work: 572835177, comparison_work: 8925941, visits: 4656, transport_bytes: 106216, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 39497,
+      "case": "skip",
+      "engine": "mech",
+      "nanoseconds": 69027417,
+      "rep": 3,
+      "requested_bytes": 9873930,
+      "result": "Ok(NativeProgramExecutionReport { work: 572835177, comparison_work: 8925941, visits: 4656, transport_bytes: 106216, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 39497,
+      "case": "skip",
+      "engine": "mech",
+      "nanoseconds": 68586334,
+      "rep": 4,
+      "requested_bytes": 9873930,
+      "result": "Ok(NativeProgramExecutionReport { work: 572835177, comparison_work: 8925941, visits: 4656, transport_bytes: 106216, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 39497,
+      "case": "skip",
+      "engine": "mech",
+      "nanoseconds": 68933542,
+      "rep": 5,
+      "requested_bytes": 9873930,
+      "result": "Ok(NativeProgramExecutionReport { work: 572835177, comparison_work: 8925941, visits: 4656, transport_bytes: 106216, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 294080,
+      "case": "six-position",
+      "engine": "mech",
+      "nanoseconds": 1296074875,
+      "rep": 0,
+      "requested_bytes": 285480992,
+      "result": "Err(Value(Base(WorkLimit { phase: Setup, required: 10000306764, limit: 10000000000 })))",
+      "warmup": true,
+      "round": 0
+    },
+    {
+      "allocations": 294030,
+      "case": "six-position",
+      "engine": "mech",
+      "nanoseconds": 1290895875,
+      "rep": 1,
+      "requested_bytes": 285477792,
+      "result": "Err(Value(Base(WorkLimit { phase: Setup, required: 10000306764, limit: 10000000000 })))",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 294030,
+      "case": "six-position",
+      "engine": "mech",
+      "nanoseconds": 1295607958,
+      "rep": 2,
+      "requested_bytes": 285477792,
+      "result": "Err(Value(Base(WorkLimit { phase: Setup, required: 10000306764, limit: 10000000000 })))",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 294030,
+      "case": "six-position",
+      "engine": "mech",
+      "nanoseconds": 1290157000,
+      "rep": 3,
+      "requested_bytes": 285477792,
+      "result": "Err(Value(Base(WorkLimit { phase: Setup, required: 10000306764, limit: 10000000000 })))",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 294030,
+      "case": "six-position",
+      "engine": "mech",
+      "nanoseconds": 1290102459,
+      "rep": 4,
+      "requested_bytes": 285477792,
+      "result": "Err(Value(Base(WorkLimit { phase: Setup, required: 10000306764, limit: 10000000000 })))",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 294030,
+      "case": "six-position",
+      "engine": "mech",
+      "nanoseconds": 1290734833,
+      "rep": 5,
+      "requested_bytes": 285477792,
+      "result": "Err(Value(Base(WorkLimit { phase: Setup, required: 10000306764, limit: 10000000000 })))",
+      "warmup": false,
+      "round": 0
+    },
+    {
+      "allocations": 44716,
+      "case": "initialization",
+      "engine": "mech",
+      "nanoseconds": 657897041,
+      "rep": 0,
+      "requested_bytes": 61187209,
+      "result": "Ok(NativeProgramExecutionReport { work: 5981116713, comparison_work: 13053617, visits: 12338685, transport_bytes: 265888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": true,
+      "round": 1
+    },
+    {
+      "allocations": 44665,
+      "case": "initialization",
+      "engine": "mech",
+      "nanoseconds": 657183625,
+      "rep": 1,
+      "requested_bytes": 61183945,
+      "result": "Ok(NativeProgramExecutionReport { work: 5981116713, comparison_work: 13053617, visits: 12338685, transport_bytes: 265888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "allocations": 44665,
+      "case": "initialization",
+      "engine": "mech",
+      "nanoseconds": 656967250,
+      "rep": 2,
+      "requested_bytes": 61183945,
+      "result": "Ok(NativeProgramExecutionReport { work: 5981116713, comparison_work: 13053617, visits: 12338685, transport_bytes: 265888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "allocations": 44665,
+      "case": "initialization",
+      "engine": "mech",
+      "nanoseconds": 656454458,
+      "rep": 3,
+      "requested_bytes": 61183945,
+      "result": "Ok(NativeProgramExecutionReport { work: 5981116713, comparison_work: 13053617, visits: 12338685, transport_bytes: 265888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "allocations": 44665,
+      "case": "initialization",
+      "engine": "mech",
+      "nanoseconds": 657411416,
+      "rep": 4,
+      "requested_bytes": 61183945,
+      "result": "Ok(NativeProgramExecutionReport { work: 5981116713, comparison_work: 13053617, visits: 12338685, transport_bytes: 265888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "allocations": 44665,
+      "case": "initialization",
+      "engine": "mech",
+      "nanoseconds": 657863458,
+      "rep": 5,
+      "requested_bytes": 61183945,
+      "result": "Ok(NativeProgramExecutionReport { work: 5981116713, comparison_work: 13053617, visits: 12338685, transport_bytes: 265888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "allocations": 48551,
+      "case": "search",
+      "engine": "mech",
+      "nanoseconds": 231744417,
+      "rep": 0,
+      "requested_bytes": 64881572,
+      "result": "Ok(NativeProgramExecutionReport { work: 1228048746, comparison_work: 62944670, visits: 4800, transport_bytes: 132880, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": true,
+      "round": 1
+    },
+    {
+      "allocations": 48515,
+      "case": "search",
+      "engine": "mech",
+      "nanoseconds": 230622584,
+      "rep": 1,
+      "requested_bytes": 64879268,
+      "result": "Ok(NativeProgramExecutionReport { work: 1228048746, comparison_work: 62944670, visits: 4800, transport_bytes: 132880, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "allocations": 48515,
+      "case": "search",
+      "engine": "mech",
+      "nanoseconds": 230770959,
+      "rep": 2,
+      "requested_bytes": 64879268,
+      "result": "Ok(NativeProgramExecutionReport { work: 1228048746, comparison_work: 62944670, visits: 4800, transport_bytes: 132880, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "allocations": 48515,
+      "case": "search",
+      "engine": "mech",
+      "nanoseconds": 230510916,
+      "rep": 3,
+      "requested_bytes": 64879268,
+      "result": "Ok(NativeProgramExecutionReport { work: 1228048746, comparison_work: 62944670, visits: 4800, transport_bytes: 132880, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "allocations": 48515,
+      "case": "search",
+      "engine": "mech",
+      "nanoseconds": 230364917,
+      "rep": 4,
+      "requested_bytes": 64879268,
+      "result": "Ok(NativeProgramExecutionReport { work: 1228048746, comparison_work: 62944670, visits: 4800, transport_bytes: 132880, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "allocations": 48515,
+      "case": "search",
+      "engine": "mech",
+      "nanoseconds": 230804333,
+      "rep": 5,
+      "requested_bytes": 64879268,
+      "result": "Ok(NativeProgramExecutionReport { work: 1228048746, comparison_work: 62944670, visits: 4800, transport_bytes: 132880, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "allocations": 39530,
+      "case": "skip",
+      "engine": "mech",
+      "nanoseconds": 68908833,
+      "rep": 0,
+      "requested_bytes": 9876042,
+      "result": "Ok(NativeProgramExecutionReport { work: 572835177, comparison_work: 8925941, visits: 4656, transport_bytes: 106216, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": true,
+      "round": 1
+    },
+    {
+      "allocations": 39497,
+      "case": "skip",
+      "engine": "mech",
+      "nanoseconds": 68745083,
+      "rep": 1,
+      "requested_bytes": 9873930,
+      "result": "Ok(NativeProgramExecutionReport { work: 572835177, comparison_work: 8925941, visits: 4656, transport_bytes: 106216, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "allocations": 39497,
+      "case": "skip",
+      "engine": "mech",
+      "nanoseconds": 68646209,
+      "rep": 2,
+      "requested_bytes": 9873930,
+      "result": "Ok(NativeProgramExecutionReport { work: 572835177, comparison_work: 8925941, visits: 4656, transport_bytes: 106216, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "allocations": 39497,
+      "case": "skip",
+      "engine": "mech",
+      "nanoseconds": 68702125,
+      "rep": 3,
+      "requested_bytes": 9873930,
+      "result": "Ok(NativeProgramExecutionReport { work: 572835177, comparison_work: 8925941, visits: 4656, transport_bytes: 106216, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "allocations": 39497,
+      "case": "skip",
+      "engine": "mech",
+      "nanoseconds": 68622625,
+      "rep": 4,
+      "requested_bytes": 9873930,
+      "result": "Ok(NativeProgramExecutionReport { work: 572835177, comparison_work: 8925941, visits: 4656, transport_bytes: 106216, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "allocations": 39497,
+      "case": "skip",
+      "engine": "mech",
+      "nanoseconds": 68613083,
+      "rep": 5,
+      "requested_bytes": 9873930,
+      "result": "Ok(NativeProgramExecutionReport { work: 572835177, comparison_work: 8925941, visits: 4656, transport_bytes: 106216, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "allocations": 294080,
+      "case": "six-position",
+      "engine": "mech",
+      "nanoseconds": 1272953917,
+      "rep": 0,
+      "requested_bytes": 285480992,
+      "result": "Err(Value(Base(WorkLimit { phase: Setup, required: 10000306764, limit: 10000000000 })))",
+      "warmup": true,
+      "round": 1
+    },
+    {
+      "allocations": 294030,
+      "case": "six-position",
+      "engine": "mech",
+      "nanoseconds": 1267448583,
+      "rep": 1,
+      "requested_bytes": 285477792,
+      "result": "Err(Value(Base(WorkLimit { phase: Setup, required: 10000306764, limit: 10000000000 })))",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "allocations": 294030,
+      "case": "six-position",
+      "engine": "mech",
+      "nanoseconds": 1270215250,
+      "rep": 2,
+      "requested_bytes": 285477792,
+      "result": "Err(Value(Base(WorkLimit { phase: Setup, required: 10000306764, limit: 10000000000 })))",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "allocations": 294030,
+      "case": "six-position",
+      "engine": "mech",
+      "nanoseconds": 1267427291,
+      "rep": 3,
+      "requested_bytes": 285477792,
+      "result": "Err(Value(Base(WorkLimit { phase: Setup, required: 10000306764, limit: 10000000000 })))",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "allocations": 294030,
+      "case": "six-position",
+      "engine": "mech",
+      "nanoseconds": 1267330292,
+      "rep": 4,
+      "requested_bytes": 285477792,
+      "result": "Err(Value(Base(WorkLimit { phase: Setup, required: 10000306764, limit: 10000000000 })))",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "allocations": 294030,
+      "case": "six-position",
+      "engine": "mech",
+      "nanoseconds": 1267266250,
+      "rep": 5,
+      "requested_bytes": 285477792,
+      "result": "Err(Value(Base(WorkLimit { phase: Setup, required: 10000306764, limit: 10000000000 })))",
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "six-position",
+      "rep": 0,
+      "nanoseconds": 445000,
+      "warmup": true,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "six-position",
+      "rep": 1,
+      "nanoseconds": 36000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "six-position",
+      "rep": 2,
+      "nanoseconds": 35000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "six-position",
+      "rep": 3,
+      "nanoseconds": 36000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "six-position",
+      "rep": 4,
+      "nanoseconds": 36000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "six-position",
+      "rep": 5,
+      "nanoseconds": 35000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "six-position",
+      "rep": 6,
+      "nanoseconds": 36000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "six-position",
+      "rep": 7,
+      "nanoseconds": 36000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "skip",
+      "rep": 0,
+      "nanoseconds": 43000,
+      "warmup": true,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "skip",
+      "rep": 1,
+      "nanoseconds": 10000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "skip",
+      "rep": 2,
+      "nanoseconds": 11000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "skip",
+      "rep": 3,
+      "nanoseconds": 12000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "skip",
+      "rep": 4,
+      "nanoseconds": 12000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "skip",
+      "rep": 5,
+      "nanoseconds": 12000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "skip",
+      "rep": 6,
+      "nanoseconds": 12000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "skip",
+      "rep": 7,
+      "nanoseconds": 11000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "search",
+      "rep": 0,
+      "nanoseconds": 514000,
+      "warmup": true,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "search",
+      "rep": 1,
+      "nanoseconds": 104000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "search",
+      "rep": 2,
+      "nanoseconds": 103000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "search",
+      "rep": 3,
+      "nanoseconds": 99000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "search",
+      "rep": 4,
+      "nanoseconds": 98000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "search",
+      "rep": 5,
+      "nanoseconds": 99000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "search",
+      "rep": 6,
+      "nanoseconds": 99000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "search",
+      "rep": 7,
+      "nanoseconds": 102000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "initialization",
+      "rep": 0,
+      "nanoseconds": 422000,
+      "warmup": true,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "initialization",
+      "rep": 1,
+      "nanoseconds": 36000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "initialization",
+      "rep": 2,
+      "nanoseconds": 36000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "initialization",
+      "rep": 3,
+      "nanoseconds": 35000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "initialization",
+      "rep": 4,
+      "nanoseconds": 35000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "initialization",
+      "rep": 5,
+      "nanoseconds": 36000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "initialization",
+      "rep": 6,
+      "nanoseconds": 36000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "roc",
+      "case": "initialization",
+      "rep": 7,
+      "nanoseconds": 35000,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "rust",
+      "case": "raw-buffer-initialization",
+      "rep": 0,
+      "nanoseconds": 365334,
+      "allocations": 2,
+      "requested_bytes": 6526340,
+      "warmup": true,
+      "round": 1
+    },
+    {
+      "engine": "rust",
+      "case": "raw-buffer-initialization",
+      "rep": 1,
+      "nanoseconds": 257458,
+      "allocations": 2,
+      "requested_bytes": 6526340,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "rust",
+      "case": "raw-buffer-initialization",
+      "rep": 2,
+      "nanoseconds": 239417,
+      "allocations": 2,
+      "requested_bytes": 6526340,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "rust",
+      "case": "raw-buffer-initialization",
+      "rep": 3,
+      "nanoseconds": 228125,
+      "allocations": 2,
+      "requested_bytes": 6526340,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "rust",
+      "case": "raw-buffer-initialization",
+      "rep": 4,
+      "nanoseconds": 247792,
+      "allocations": 2,
+      "requested_bytes": 6526340,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "rust",
+      "case": "raw-buffer-initialization",
+      "rep": 5,
+      "nanoseconds": 231709,
+      "allocations": 2,
+      "requested_bytes": 6526340,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "rust",
+      "case": "raw-buffer-initialization",
+      "rep": 6,
+      "nanoseconds": 231875,
+      "allocations": 2,
+      "requested_bytes": 6526340,
+      "warmup": false,
+      "round": 1
+    },
+    {
+      "engine": "rust",
+      "case": "raw-buffer-initialization",
+      "rep": 7,
+      "nanoseconds": 231417,
+      "allocations": 2,
+      "requested_bytes": 6526340,
+      "warmup": false,
+      "round": 1
+    }
+  ],
+  "summary": [
+    {
+      "engine": "mech",
+      "case": "initialization",
+      "samples": 10,
+      "median_ns": 657147812.5,
+      "min_ns": 656422500,
+      "max_ns": 660864750,
+      "median_allocations": 44665.0,
+      "median_requested_bytes": 61183945.0
+    },
+    {
+      "engine": "mech",
+      "case": "search",
+      "samples": 10,
+      "median_ns": 230664833.5,
+      "min_ns": 230364917,
+      "max_ns": 231060458,
+      "median_allocations": 48515.0,
+      "median_requested_bytes": 64879268.0
+    },
+    {
+      "engine": "mech",
+      "case": "six-position",
+      "samples": 10,
+      "median_ns": 1280158854.5,
+      "min_ns": 1267266250,
+      "max_ns": 1295607958,
+      "median_allocations": 294030.0,
+      "median_requested_bytes": 285477792.0
+    },
+    {
+      "engine": "mech",
+      "case": "skip",
+      "samples": 10,
+      "median_ns": 68674167.0,
+      "min_ns": 68586334,
+      "max_ns": 69027417,
+      "median_allocations": 39497.0,
+      "median_requested_bytes": 9873930.0
+    },
+    {
+      "engine": "roc",
+      "case": "initialization",
+      "samples": 14,
+      "median_ns": 36000.0,
+      "min_ns": 35000,
+      "max_ns": 37000
+    },
+    {
+      "engine": "roc",
+      "case": "search",
+      "samples": 14,
+      "median_ns": 99000.0,
+      "min_ns": 92000,
+      "max_ns": 104000
+    },
+    {
+      "engine": "roc",
+      "case": "six-position",
+      "samples": 14,
+      "median_ns": 36000.0,
+      "min_ns": 35000,
+      "max_ns": 36000
+    },
+    {
+      "engine": "roc",
+      "case": "skip",
+      "samples": 14,
+      "median_ns": 11000.0,
+      "min_ns": 10000,
+      "max_ns": 12000
+    },
+    {
+      "engine": "rust",
+      "case": "raw-buffer-initialization",
+      "samples": 14,
+      "median_ns": 232854.0,
+      "min_ns": 228125,
+      "max_ns": 299500,
+      "median_allocations": 2.0,
+      "median_requested_bytes": 6526340.0
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "name": "hardening-packed-red-capacity",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "canonical-native-program",
+    "--test",
+    "canonical_artifact_program",
+    "collection_qualification::nonuniform_packed_collections_retain_admitted_capacity_and_recover",
+    "--",
+    "--exact",
+    "--nocapture"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "a2ca12e2302313622ae252391cad7df12140a78c",
+  "dirty": " M hosts/gpu/tests/support/canonical_program_comprehensions.rs\n",
+  "exit": 101,
+  "seconds": 29.79472517967224,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/hardening-packed-red-capacity.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

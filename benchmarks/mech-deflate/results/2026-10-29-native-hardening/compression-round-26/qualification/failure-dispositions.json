@@ -1,0 +1,31 @@
+{
+  "failures": [
+    {
+      "attempt": "first-alias-facts",
+      "classification": "introduced diagnostic build error, fixed",
+      "disposition": "NativeMatchValue has no public new constructor; query existing checked plan Value identities instead. No production API change."
+    },
+    {
+      "attempt": "red",
+      "classification": "expected parent allocation regression plus invalid test quota",
+      "disposition": "All measured results correct; changed stores allocate two payloads. A zero clone quota rejects source uniform construction before the intended store."
+    },
+    {
+      "attempt": "red-corrected",
+      "classification": "expected parent allocation regression plus invalid test quota",
+      "disposition": "Quota64 still rejects logical initializer clones at required68; use direct physical allocation scaling under existing NoLimits rather than guessing a quota."
+    },
+    {
+      "attempt": "red-final",
+      "classification": "expected parent missing-optimization witness",
+      "disposition": "One semantic/recovery test passes; real-buffer allocation test fails1047424 versus523712 expected for changed U16 store. Values, no-op and both live-pin variants execute before the assertion. After implementation both tests and all224 components pass."
+    },
+    {
+      "attempt": "initial qualification count",
+      "classification": "introduced diagnostic selector overlap, corrected",
+      "disposition": "Runtime selector includes test-only ownership diagnostic, yielding302 passes and repeating the current census. Preserve that receipt and first copy summary; final same maintained cohort explicitly skips diagnostic and passes301. Latest complete raw ownership trace is retained; original protected timing/scalar packets are untouched."
+    }
+  ],
+  "inherited": "Existing resident public nested-record and alternate stale-length lowering failures remain documented at parent; unchanged frontend/resident semantics not reopened. Collection-source retirement remains deliberately conservative and accounts for the remaining four tree copies, an optimization gap rather than a failing check.",
+  "introduced_unresolved": []
+}

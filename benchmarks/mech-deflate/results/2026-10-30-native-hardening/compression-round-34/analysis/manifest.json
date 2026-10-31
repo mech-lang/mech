@@ -1,0 +1,76 @@
+{
+  "created_utc": "2026-10-30T15:54:02.517385+00:00",
+  "head": "735cec2a0cc8cd93410cc35496b55b5230c50cdb",
+  "files": [
+    {
+      "path": "binary-sizes.json",
+      "sha256": "ca77b68cdd6454408bb7ec4ec7fa54a3de9a15cc1973b184e4a82b347ab0109a",
+      "bytes": 1586
+    },
+    {
+      "path": "candidate-0.asm",
+      "sha256": "96b481d67e285f7b12fb04d537794bfd327756d9b4cdc647c3a7933e9cf604fe",
+      "bytes": 9717
+    },
+    {
+      "path": "candidate-1.asm",
+      "sha256": "96b481d67e285f7b12fb04d537794bfd327756d9b4cdc647c3a7933e9cf604fe",
+      "bytes": 9717
+    },
+    {
+      "path": "candidate-2.asm",
+      "sha256": "327f19432740bcd28c07b275d71e4f10de8c2d3d7fffedfe44bb49b4338ce665",
+      "bytes": 10982
+    },
+    {
+      "path": "object/build.json",
+      "sha256": "68e985b6ef81733fa730d642ef9811d42cf6a4b696781513c6ea7947aaa1da3a",
+      "bytes": 1637
+    },
+    {
+      "path": "object/comparison.json",
+      "sha256": "44b40ce35a60e1cfe2bb3609b1955f80ab712b2f570ef9993e82d8f4e112ffd9",
+      "bytes": 743
+    },
+    {
+      "path": "object/inspect.rs",
+      "sha256": "10af48266f6646cdd5f2437ffee28261db9e13d19bb2ad41de56cfefa1875915",
+      "bytes": 1023
+    },
+    {
+      "path": "object/run.json",
+      "sha256": "a674890fd1c435ef64976991afb2cf4fd6e163db8d23e7da8308a189ec9cd86d",
+      "bytes": 197
+    },
+    {
+      "path": "object/run.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "object/run.stdout",
+      "sha256": "2241b89ee78b44a4114df62197440391c076aa282de3bcbcd286397e7bedf87b",
+      "bytes": 43
+    },
+    {
+      "path": "order-analysis.json",
+      "sha256": "a111ebe672cdcb9514c823896029e10432104df54ae6126ed52cd2543e4f7158",
+      "bytes": 285
+    },
+    {
+      "path": "partition-profile.py",
+      "sha256": "a8db171e06d95adbd2b2c47159ba8cfbd1450251faa6be02894b9378311b8ddf",
+      "bytes": 2494
+    },
+    {
+      "path": "partitioned-profile.json",
+      "sha256": "a0b9075ed074f30166c0283cb6c023fa8742dd089f2742a46e176b1e173189fe",
+      "bytes": 10978
+    },
+    {
+      "path": "wrapper-samples.json",
+      "sha256": "f6a110c23add1db1301cd84fd2d0f0036c41c31f07f3e2950cf7f5c4743a11a9",
+      "bytes": 217
+    }
+  ]
+}

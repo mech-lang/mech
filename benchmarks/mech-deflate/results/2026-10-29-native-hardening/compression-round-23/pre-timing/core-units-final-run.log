@@ -1,0 +1,9 @@
+
+running 4 tests
+test memory_plan::budget::tests::aggregate_admission_still_enforces_simultaneous_resource_limits ... ok
+test memory_plan::budget::tests::first_call_rejection_keeps_equality_unset_and_full_width_limits ... ok
+test memory_plan::budget::tests::first_call_rejection_preserves_all_limit_subsets_and_diagnostic_order ... ok
+test memory_plan::budget::tests::per_call_limits_cannot_be_applied_to_aggregate_totals ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 345 filtered out; finished in 0.01s
+

@@ -1,0 +1,23 @@
+{
+  "name": "hardening-definition-composition",
+  "command": [
+    "/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-561ab00dcd3ceccb",
+    "proof_storage_qualification::",
+    "--nocapture"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "51c8f05afd77ffbab39863ed0d173b48d932896f",
+  "dirty": " M hosts/gpu/src/native_artifact/compiler/mod.rs\n M hosts/gpu/src/native_artifact/program/compiler.rs\n M hosts/gpu/src/native_artifact/program/limits.rs\n M hosts/gpu/src/native_artifact/program/linked.rs\n M hosts/gpu/tests/support/canonical_program_compress.rs\n M hosts/gpu/tests/support/canonical_program_no_limits.rs\n M hosts/gpu/tests/support/canonical_program_proof_storage.rs\n M src/engine/src/native_artifact/definition_set.rs\n M src/engine/src/native_artifact/iteration_validation.rs\n M src/engine/src/native_artifact/mod.rs\n M src/engine/src/native_artifact/program.rs\n M src/engine/src/native_artifact/program_image_plan.rs\n M src/engine/src/resident/general/native_lowering.rs\n M src/engine/src/resident/general/native_match_lowering.rs\n",
+  "exit": 0,
+  "seconds": 22.27851104736328,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/hardening-definition-composition.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

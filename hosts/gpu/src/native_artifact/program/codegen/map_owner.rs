@@ -34,23 +34,32 @@ fn store(
     Ok(())
 }
 
-/// Only a live owner selects native paths. Retained map helpers admit their
-/// boundary in the helper callback itself, avoiding a separate round trip.
-/// Refused entry keeps the original canonical callbacks and work prices.
+/// A paid scalar entry or a live map owner selects native paths. Retained map
+/// helpers admit their boundary inside their helper callback. Refused scalar
+/// funding or owner entry keeps the original ordered callbacks and prices.
 pub(in crate::native_artifact) fn admission(
     b: &mut FunctionBuilder<'_>,
     locals: Value,
     owner: Option<&NativeMapOwnerWords>,
     layout: &crate::native_artifact::program::prepare::map_admission::Layout,
     site: usize,
+    hooks: Option<&Hooks>,
 ) -> Result<Option<Block>, NativeCompileError> {
+    if layout
+        .group(site)
+        .is_some_and(|group| group.owner.is_none() && group.start() as usize != site)
+    {
+        let hooks = hooks.ok_or_else(|| backend("scalar admission lacks checked hooks"))?;
+        let active = load(b, hooks.result, 0)?;
+        return Ok(Some(admission_branch(b, active)));
+    }
     let Some(owner) = owner else {
         return Ok(None);
     };
     let index = layout
         .group(site)
         .filter(|group| group.start() as usize != site)
-        .map(|group| group.owner)
+        .and_then(|group| group.owner)
         .or_else(|| owner.call_region(site))
         .or_else(|| owner.span_site(site).map(|id| owner.spans()[id].region()));
     let Some(index) = index else {
@@ -61,12 +70,16 @@ pub(in crate::native_artifact) fn admission(
         .checked_add(index)
         .ok_or_else(|| backend("map admission flag overflow"))?;
     let active = load(b, locals, flag)?;
+    Ok(Some(admission_branch(b, active)))
+}
+
+fn admission_branch(b: &mut FunctionBuilder<'_>, active: Value) -> Block {
     let active = b.ins().icmp_imm(IntCC::NotEqual, active, 0);
     let ordinary = b.create_block();
     let joined = b.create_block();
     b.ins().brif(active, joined, &[], ordinary, &[]);
     b.switch_to_block(ordinary);
-    Ok(Some(joined))
+    joined
 }
 
 /// Return the common continuation when a native branch skips the ordinary

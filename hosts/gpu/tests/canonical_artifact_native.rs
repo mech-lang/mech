@@ -97,6 +97,10 @@ fn reference(
                 shape_values: Box::new([]),
                 data: match value {
                     NativeScalarValue::Bool(v) => ValueDataDraft::Bool(*v),
+                    NativeScalarValue::U8(v) => ValueDataDraft::U8(*v),
+                    NativeScalarValue::U16(v) => ValueDataDraft::U16(*v),
+                    NativeScalarValue::U32(v) => ValueDataDraft::U32(*v),
+
                     NativeScalarValue::U64(v) => ValueDataDraft::U64(*v),
                     NativeScalarValue::I64(v) => ValueDataDraft::I64(*v),
                     NativeScalarValue::F64(v) => ValueDataDraft::F64(*v),
@@ -130,6 +134,10 @@ fn reference(
         .map(
             |index| match instance.copied_output(index).unwrap().data() {
                 ValueData::Bool(v) => NativeScalarValue::Bool(*v),
+                ValueData::U8(v) => NativeScalarValue::U8(*v),
+                ValueData::U16(v) => NativeScalarValue::U16(*v),
+                ValueData::U32(v) => NativeScalarValue::U32(*v),
+
                 ValueData::U64(v) => NativeScalarValue::U64(*v),
                 ValueData::I64(v) => NativeScalarValue::I64(*v),
                 ValueData::F64(v) => NativeScalarValue::F64(*v),

@@ -1,0 +1,76 @@
+{
+  "created_utc": "2026-10-30T21:08:48.618907+00:00",
+  "head": "a375716052c9c721b999c0bedbde59355da24450",
+  "files": [
+    {
+      "path": "build-final.py",
+      "sha256": "7fa3b5a6095a1b32c49f9572f0b5935d9bc8aedcde516cd77bf24276fc6f03e5",
+      "bytes": 2115
+    },
+    {
+      "path": "build-harnesses.py",
+      "sha256": "18b414776ab36c6edb8477ed9a8c2aae5401f2ca44be117173f667195219788c",
+      "bytes": 2332
+    },
+    {
+      "path": "final-libraries.json",
+      "sha256": "88060ba568418d55948e8b61c945e1d540f3755ed57266ed0620b990b6c490e0",
+      "bytes": 10844
+    },
+    {
+      "path": "final-release.json",
+      "sha256": "6e2e62d322d9bced47bc0dca123a49d9cf14cfddc70cc2614dbb7aafbec27cf1",
+      "bytes": 731
+    },
+    {
+      "path": "final-release.log",
+      "sha256": "452ee1988ba7df27743b56cb1cfc8eff01f85718b832678a48684d6e9412a787",
+      "bytes": 167355
+    },
+    {
+      "path": "final-release.stderr",
+      "sha256": "93bb6e9b05ade981a00d09cd671fbbf49c9ccb957837df3754022ed6224d1f7c",
+      "bytes": 615
+    },
+    {
+      "path": "primary/current-build.json",
+      "sha256": "8b182a33350f5e69161c9a9fb41fbdc95eda315d746d532eed111dd5b1568265",
+      "bytes": 13751
+    },
+    {
+      "path": "primary/current-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "primary/current-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "workers/after-build.json",
+      "sha256": "28d0752ca6d8ae23b423bbcd03739b948da907f10b83c291ceb7487a95250145",
+      "bytes": 13786
+    },
+    {
+      "path": "workers/before-build.json",
+      "sha256": "fcc1729eeacbefda2bd49aab754512cbe203518135baa4b3c749d113f18c08a0",
+      "bytes": 13880
+    },
+    {
+      "path": "workers/run.py",
+      "sha256": "916a8e92b55165e54142347a9cf27f9c5de1502da67996a4840a5b230c727902",
+      "bytes": 10432
+    },
+    {
+      "path": "workers/session.rs",
+      "sha256": "a0062c6170db0005d96eba239232cfdbdd41054945c2e4a574afa8acb8939575",
+      "bytes": 6293
+    },
+    {
+      "path": "workers/source-adaptation.json",
+      "sha256": "281d03e22fd7babad5d88d83aa81e361400c4831a5095978cc5b3361094c85b6",
+      "bytes": 707
+    }
+  ]
+}

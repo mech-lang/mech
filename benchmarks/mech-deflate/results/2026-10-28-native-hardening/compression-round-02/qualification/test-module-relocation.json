@@ -1,0 +1,10 @@
+{
+  "old_revision": "335de1c16743343fa6745d7ed2e638f6f1626fa9",
+  "old_path": "src/engine/src/resident/numeric/packed_indexed_assign/tests.rs",
+  "new_path": "src/engine/src/resident/numeric/packed_indexed_assign_tests.rs",
+  "bytes_identical": true,
+  "sha256": "b320841bb85917ea4ee47b024a9d4d5c2505233b992895da989c51efdd5eff87",
+  "logical_module": "resident::numeric::packed_indexed_assign::tests",
+  "reason": "existing module-layout guard prohibits file/directory collisions",
+  "implementation_change": "Only a cfg(test) path attribute; timed numeric implementation is unchanged."
+}

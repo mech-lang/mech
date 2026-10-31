@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T12:30:07.313110+00:00",
+  "head": "ecd034760866cc82a1c7fefb5ed8a28bc5f26681",
+  "files": [
+    {
+      "path": "numeric-ci/admission-list.json",
+      "sha256": "f29e17e578b3d3f5320bacfb8b759c35b500c80910ea9ea7d0e4c49c94df9c83",
+      "bytes": 396
+    },
+    {
+      "path": "numeric-ci/admission-list.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "numeric-ci/admission-list.stdout",
+      "sha256": "ec6d469386e217b811207c021221c9b4260554b2847ce1e2f5029e6c60051bbf",
+      "bytes": 1120
+    },
+    {
+      "path": "numeric-ci.py",
+      "sha256": "fc3bf12c3e7b2b8f93eaf5e5012cd2c0539ac52c5979807a3da45b4835523603",
+      "bytes": 1788
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+[
+  {
+    "command": [
+      "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+      "--edition=2024",
+      "-D",
+      "warnings",
+      "/private/tmp/mech-independent-tables-round09-20261028/transform.rs",
+      "-o",
+      "/private/tmp/mech-independent-tables-round09-20261028/transform"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-independent-tables-round09-20261028/transform",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mec",
+      "/private/tmp/mech-independent-tables-round09-20261028/independent-cost-tables.mec"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-mixed-scalar-state-round08-20261028/produce",
+      "/private/tmp/mech-independent-tables-round09-20261028/independent-cost-tables.mec",
+      "/private/tmp/mech-independent-tables-round09-20261028/independent-cost-tables.mbc"
+    ],
+    "exit": 0
+  }
+]

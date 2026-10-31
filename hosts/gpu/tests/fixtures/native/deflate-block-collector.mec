@@ -1,0 +1,60 @@
+// Block statistics from CompressOptimal.merge_match_len_freqs and
+// CompressLazy.merge_observations, pinned at
+// 671077457ff7ef3a3d44caf715a3fc595addf379. Concatenate after shared helpers.
+// Counters retain their original U32 representation and checked merge addition.
+// These functions are components of the block collector, not its complete loop.
+
+<optimal-merged-frequencies> := <{total<[u32]> fresh<[u32]>}>
+<optimal-merged-observations> := <{new-observations<[u32]> observations<[u32]> num-new-observations<u64> num-observations<u64>}>
+
+optimal-counter(counters<[u32]>, index<u64>) => (out<u32>) :=
+  out := ((index < sequence/length(counters))? | true => counters[index + 1u64] | false => 0u32).
+
+optimal-merge-frequency(total<[u32]>, fresh<[u32]>, index<u64>, amount<u32>) => (out<optimal-merged-frequencies>) :=
+  merged := optimal-counter(total, index) + amount
+  ~next-total := total
+  next-total[index + 1u64] = merged
+  ~next-fresh := fresh
+  next-fresh[index + 1u64] = 0u32
+  out := {total: next-total, fresh: next-fresh}.
+
+optimal-merge-frequency-if(total<[u32]>, fresh<[u32]>, index<u64>) => (out<optimal-merged-frequencies>) :=
+  amount := optimal-counter(fresh, index)
+  out := ((amount != 0u32)?
+    | true => optimal-merge-frequency(total, fresh, index, amount)
+    | false => {total: total, fresh: fresh}).
+
+optimal-merge-frequencies-loop(total<[u32]>, fresh<[u32]>, index<u64>) => (out<optimal-merged-frequencies>) :=
+  merged := ((index <= 258u64)?
+    | true => optimal-merge-frequency-if(total, fresh, index)
+    | false => {total: total, fresh: fresh})
+  next-total := merged.total
+  next-fresh := merged.fresh
+  out := ((index <= 258u64)?
+    | false => {total: next-total, fresh: next-fresh}
+    | true => optimal-merge-frequencies-loop(next-total, next-fresh, index + 1u64)).
+
+optimal-merge-frequencies(total<[u32]>, fresh<[u32]>) => (out<optimal-merged-frequencies>) :=
+  out := optimal-merge-frequencies-loop(total, fresh, 0u64).
+
+optimal-merge-observation(new-observations<[u32]>, new-base<u64>, observations<[u32]>, index<u64>) => (out<optimal-merged-frequencies>) :=
+  merged := optimal-counter(observations, index) + optimal-counter(new-observations, new-base + index)
+  ~next-total := observations
+  next-total[index + 1u64] = merged
+  ~next-fresh := new-observations
+  next-fresh[new-base + index + 1u64] = 0u32
+  out := {total: next-total, fresh: next-fresh}.
+
+optimal-merge-observations-loop(new-observations<[u32]>, new-base<u64>, observations<[u32]>, index<u64>) => (out<optimal-merged-frequencies>) :=
+  merged := ((index < 10u64)?
+    | true => optimal-merge-observation(new-observations, new-base, observations, index)
+    | false => {total: observations, fresh: new-observations})
+  next-total := merged.total
+  next-fresh := merged.fresh
+  out := ((index < 10u64)?
+    | false => {total: next-total, fresh: next-fresh}
+    | true => optimal-merge-observations-loop(next-fresh, new-base, next-total, index + 1u64)).
+
+optimal-merge-observations(new-observations<[u32]>, new-base<u64>, observations<[u32]>, num-new-observations<u64>, num-observations<u64>) => (out<optimal-merged-observations>) :=
+  merged := optimal-merge-observations-loop(new-observations, new-base, observations, 0u64)
+  out := {new-observations: merged.fresh, observations: merged.total, num-new-observations: 0u64, num-observations: num-observations + num-new-observations}.

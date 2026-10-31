@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T11:21:30.910626+00:00",
+  "head": "bbbe7128d2f1779f24f773dd41bee70d38859b56",
+  "files": [
+    {
+      "path": "numeric-ci/constructor-execute.json",
+      "sha256": "d4a320935032697b18f3830272c9ea7a49df943d6994f9ab8c54a0a87d6f783f",
+      "bytes": 367
+    },
+    {
+      "path": "numeric-ci/constructor-execute.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "numeric-ci/constructor-execute.stdout",
+      "sha256": "b566ccaafbe165c9abe0479f5fa59df43619544bfd0f69b223a7421b64c5d350",
+      "bytes": 275
+    },
+    {
+      "path": "numeric-ci.py",
+      "sha256": "c1388d59b4e1d816fb2da04d082387bfb738eeb8224e4c8d39bb43689ae72631",
+      "bytes": 1527
+    }
+  ]
+}

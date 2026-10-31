@@ -8,7 +8,7 @@ fn cases() -> Vec<(SchemaBody, SequenceStorage)> {
         ($kind:ident, $width:ident, $storage:ident, $ty:ty) => {
             cases.push((
                 SchemaBody::$kind(IntegerWidth::$width),
-                SequenceStorage::$storage(vec![<$ty>::MIN, 0, 1, <$ty>::MAX].into_boxed_slice()),
+                SequenceStorage::$storage(vec![<$ty>::MIN, 0, 1, <$ty>::MAX].into()),
             ));
         };
     }
@@ -151,7 +151,7 @@ fn concrete_length_sink_preserves_saturation_and_empty_sequences() {
     for (schema, sequence) in [
         (
             SchemaBody::UnsignedInteger(IntegerWidth::W64),
-            SequenceStorage::U64(Box::new([])),
+            SequenceStorage::U64(Vec::new()),
         ),
         (SchemaBody::String, SequenceStorage::String(Box::new([]))),
         (
@@ -169,6 +169,75 @@ fn concrete_length_sink_preserves_saturation_and_empty_sequences() {
         let mut length = LengthSnapshotSink { len: 19 };
         encode_sequence(&schema, &sequence, &mut length);
         assert_eq!(length.len, 19);
+    }
+}
+
+#[test]
+fn packed_length_uses_initialized_elements_with_spare_capacity_and_after_clear() {
+    for (schema, mut sequence) in [
+        (
+            SchemaBody::UnsignedInteger(IntegerWidth::W8),
+            SequenceStorage::U8(Vec::with_capacity(64)),
+        ),
+        (
+            SchemaBody::UnsignedInteger(IntegerWidth::W16),
+            SequenceStorage::U16(Vec::with_capacity(64)),
+        ),
+        (
+            SchemaBody::UnsignedInteger(IntegerWidth::W32),
+            SequenceStorage::U32(Vec::with_capacity(64)),
+        ),
+        (
+            SchemaBody::UnsignedInteger(IntegerWidth::W64),
+            SequenceStorage::U64(Vec::with_capacity(64)),
+        ),
+    ] {
+        for clear in [false, true] {
+            macro_rules! exercise {
+                ($values:expr) => {{
+                    if clear {
+                        $values.clear();
+                    } else {
+                        $values.extend([1, 2, 3]);
+                    }
+                    assert_eq!($values.capacity(), 64);
+                }};
+            }
+            match &mut sequence {
+                SequenceStorage::U8(values) => exercise!(values),
+                SequenceStorage::U16(values) => exercise!(values),
+                SequenceStorage::U32(values) => exercise!(values),
+                SequenceStorage::U64(values) => exercise!(values),
+                _ => unreachable!(),
+            }
+            let mut actual = LengthSnapshotSink { len: 7 };
+            encode_sequence(&schema, &sequence, &mut actual);
+            let mut bytes = VecSnapshotSink::new();
+            encode_sequence(&schema, &sequence, &mut bytes);
+            assert_eq!(actual.len, 7 + bytes.finish().len());
+        }
+    }
+}
+
+#[test]
+fn packed_length_saturates_without_materializing_impossible_sequences() {
+    for width in [1, 2, 4, 8, 16] {
+        for count in [
+            0,
+            1,
+            7,
+            usize::MAX / width,
+            usize::MAX / width + usize::from(width > 1),
+            usize::MAX,
+        ] {
+            for initial in [0, 7, usize::MAX - 1, usize::MAX] {
+                let mut sink = LengthSnapshotSink { len: initial };
+                sink.add_fixed_width(count, width);
+                let expected = ((initial as u128) + (count as u128) * (width as u128))
+                    .min(usize::MAX as u128) as usize;
+                assert_eq!(sink.len, expected);
+            }
+        }
     }
 }
 

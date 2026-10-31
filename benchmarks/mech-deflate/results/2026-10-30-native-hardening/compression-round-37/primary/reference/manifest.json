@@ -1,0 +1,21 @@
+{
+  "scope": "Fresh reference only; shared by the four groups",
+  "observations": 20000,
+  "files": [
+    {
+      "path": "reference.json",
+      "sha256": "dac27a043baa1d8d61673cddb5996028fc99d597ebf89e44214a9020d7a47d69",
+      "bytes": 251
+    },
+    {
+      "path": "reference.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "reference.stdout",
+      "sha256": "0a627194351979d7ba71c703d6fad3e84af2ca4f75e9ad89d9214b7d354b7924",
+      "bytes": 628890
+    }
+  ]
+}

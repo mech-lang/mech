@@ -1,0 +1,84 @@
+{
+  "compiler": "915f039cfd7e2647cc3a1d349ab1070c3f292d19",
+  "reviewed_measurement_head": "901c100f403777330236ad332cbd62cc70ea2635",
+  "exit": 0,
+  "executed_diagnostic_tests": 1,
+  "semantic_observations": 12,
+  "forms": [
+    "original",
+    "decoded"
+  ],
+  "parent": {
+    "iteration": 0,
+    "header": 4,
+    "selected": false,
+    "rejection": "not a leaf: child loop or activation boundary"
+  },
+  "child": {
+    "iteration": 1,
+    "header": 42,
+    "selected": true,
+    "successful_backedge_helpers": 0,
+    "first_change_boundary": 83
+  },
+  "reused_successful_build": "../attempt-03",
+  "compiler_or_compressor_changed": false,
+  "performance_claim": false,
+  "files": [
+    {
+      "path": "build-command.json",
+      "sha256": "56c3149d467c51dc55e03ccd0d8e755002285d81e5a4388432c730da5db90b94",
+      "bytes": 1716
+    },
+    {
+      "path": "build-environment.json",
+      "sha256": "be0df049ca64182475f31273f45aafc745b385f53b7dbe1853efd88e2fe9229f",
+      "bytes": 79
+    },
+    {
+      "path": "huffman.mec",
+      "sha256": "f1a918de00774c512668c284836692e521db219147b991b75aada72303dabec4",
+      "bytes": 1503
+    },
+    {
+      "path": "libraries.json",
+      "sha256": "bd7a1a12c29bfa2a6cbb9989705ba495fdeb7dd84c87336eca23746c39ab5028",
+      "bytes": 4583
+    },
+    {
+      "path": "qualification.rs",
+      "sha256": "c5ea5fa2cbe818bd1bcfa5f6f83aee49dfc138e19e551defe301fda0becb5a09",
+      "bytes": 36416
+    },
+    {
+      "path": "reused-build.json",
+      "sha256": "9ac6d5967f662387ea3bacc49e1d774362e7cb4cf38b21f7cc9683ce7171878a",
+      "bytes": 292
+    },
+    {
+      "path": "run.py",
+      "sha256": "e6dcd8c03e63c0c57f38d10a406b78ea7fd155cd8967fd1a152c35ef169c83b7",
+      "bytes": 1044
+    },
+    {
+      "path": "witness.json",
+      "sha256": "e37c58a564f70fa3dbec843d39bba7f64fe513ea15ecf8a34a9ed88e3381173f",
+      "bytes": 298
+    },
+    {
+      "path": "witness.rs",
+      "sha256": "46ef8748ffdb7c378c7b78c1a4974c22eb6057e29f58b11f2a5a51c98151c79c",
+      "bytes": 6215
+    },
+    {
+      "path": "witness.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "witness.stdout",
+      "sha256": "e474334403d0aed66bb205b28dcad48ec78826de350c610b9a81601283ed04cd",
+      "bytes": 5958
+    }
+  ]
+}

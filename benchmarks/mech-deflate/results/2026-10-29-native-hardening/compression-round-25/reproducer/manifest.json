@@ -1,0 +1,97 @@
+{
+  "schema": "mech.optimization.receipts.v1",
+  "base": "25edefcc657cc410dc4be8b71dfd50da8818041b",
+  "performance_observations": 0,
+  "files": [
+    {
+      "path": "red/focused.json",
+      "sha256": "ca712cfeb71753a7bd2570560898ded95cd48372c01bd8a283b929a08112112b",
+      "bytes": 357
+    },
+    {
+      "path": "red/nested-component-qualification.rs",
+      "sha256": "d98ef68322b64ddbe5e5e2cd5a7ce0ad969fda6dae6bbbdd5bb6461faef5c060",
+      "bytes": 36255
+    },
+    {
+      "path": "red/nested-component-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "red/nested-component-build.json",
+      "sha256": "ed239e59cea8ee687b50348cd94430edec7ca647f1507c1bc54780df7fb3cd79",
+      "bytes": 4444
+    },
+    {
+      "path": "red/qualify.py",
+      "sha256": "1fb23756325a400db07e70582390714d38da4fd00604f77dea1e2bb5b22c436b",
+      "bytes": 3595
+    },
+    {
+      "path": "red/focused.log",
+      "sha256": "b3ce54ca584ae4de12e085b76dbe90fd679b212c3b0bd3fa7e3d98fe718eaf28",
+      "bytes": 861
+    },
+    {
+      "path": "red-corrected/focused.json",
+      "sha256": "a08ef51e9b6565c50bd2d7bc921d5daaba5f80dfc0c864d6674740c081101995",
+      "bytes": 367
+    },
+    {
+      "path": "red-corrected/nested-component-qualification.rs",
+      "sha256": "d98ef68322b64ddbe5e5e2cd5a7ce0ad969fda6dae6bbbdd5bb6461faef5c060",
+      "bytes": 36255
+    },
+    {
+      "path": "red-corrected/nested-component-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "red-corrected/nested-component-build.json",
+      "sha256": "ec59d2e81e97edc51597a752efcbe99ba6fcc4d71e4b48d7b2e1ce5116b4fafe",
+      "bytes": 4464
+    },
+    {
+      "path": "red-corrected/qualify.py",
+      "sha256": "1fb23756325a400db07e70582390714d38da4fd00604f77dea1e2bb5b22c436b",
+      "bytes": 3595
+    },
+    {
+      "path": "red-corrected/focused.log",
+      "sha256": "4098ea81c3898b03dec438d11219953bea0675fcbeafdad4bbce961ed0bce9cb",
+      "bytes": 1529
+    },
+    {
+      "path": "red-final/focused.json",
+      "sha256": "2a1b117b9b346567db6c09736232a10a2439567ae6deecd149074b32e2dd8fc1",
+      "bytes": 363
+    },
+    {
+      "path": "red-final/nested-component-qualification.rs",
+      "sha256": "d98ef68322b64ddbe5e5e2cd5a7ce0ad969fda6dae6bbbdd5bb6461faef5c060",
+      "bytes": 36255
+    },
+    {
+      "path": "red-final/nested-component-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "red-final/nested-component-build.json",
+      "sha256": "45c7ce228e13fe4205f8444105678f586640ef9bc48a42702f163e1fa651bcf3",
+      "bytes": 4455
+    },
+    {
+      "path": "red-final/qualify.py",
+      "sha256": "1fb23756325a400db07e70582390714d38da4fd00604f77dea1e2bb5b22c436b",
+      "bytes": 3595
+    },
+    {
+      "path": "red-final/focused.log",
+      "sha256": "fb504cb93b58c60af4be12d0b06aca7603f1f3be2e244273405666b53b055d84",
+      "bytes": 1945
+    }
+  ]
+}

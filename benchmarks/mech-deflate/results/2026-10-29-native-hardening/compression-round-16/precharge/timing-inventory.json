@@ -1,0 +1,268 @@
+[
+  {
+    "path": "precharge/DESIGN.md",
+    "sha256": "fe15a65ce5705707b10afce0b13adb3698a608a000d0b5b4352839338c137526",
+    "original_sha256": "fe15a65ce5705707b10afce0b13adb3698a608a000d0b5b4352839338c137526",
+    "original_bytes": 2081,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/DESIGN.md"
+  },
+  {
+    "path": "precharge/partition-profile.py",
+    "sha256": "e7255a9ada9c30c42d258090d7392ad838e7090fc380259741924dc305459372",
+    "original_sha256": "e7255a9ada9c30c42d258090d7392ad838e7090fc380259741924dc305459372",
+    "original_bytes": 3119,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/partition-profile.py"
+  },
+  {
+    "path": "precharge/partitioned-profile.json",
+    "sha256": "c5d6d1f0703e525d5e2b4dd487362218d8d091f457d05aff2f66dd591651a5f6",
+    "original_sha256": "c5d6d1f0703e525d5e2b4dd487362218d8d091f457d05aff2f66dd591651a5f6",
+    "original_bytes": 17403,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/final-partitioned-profile.json"
+  },
+  {
+    "path": "precharge/primary/build.py",
+    "sha256": "fb29d8560a423092bdc23e83fc318e9f377084068cf10009098f9eba9b21c5e6",
+    "original_sha256": "fb29d8560a423092bdc23e83fc318e9f377084068cf10009098f9eba9b21c5e6",
+    "original_bytes": 3076,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/build.py"
+  },
+  {
+    "path": "precharge/primary/run.py",
+    "sha256": "49de7af5af9cddbc1612ecd92eea1686d71d1fe9b30ab78bd2c52aab28f02140",
+    "original_sha256": "49de7af5af9cddbc1612ecd92eea1686d71d1fe9b30ab78bd2c52aab28f02140",
+    "original_bytes": 7299,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/run.py"
+  },
+  {
+    "path": "precharge/primary/current-build.json",
+    "sha256": "c2da01ae0ef1ee4973b516669b7c4c625ce29b0b2bc020fc276e9740ed1f97cc",
+    "original_sha256": "c2da01ae0ef1ee4973b516669b7c4c625ce29b0b2bc020fc276e9740ed1f97cc",
+    "original_bytes": 3454,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/current-build.json"
+  },
+  {
+    "path": "precharge/primary/current-build.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/current-build.log"
+  },
+  {
+    "path": "precharge/primary/commands.json",
+    "sha256": "3ca77969cf74975ed68f284f6f506ffa9509d80523fd9c978bc719a20b7b46d5",
+    "original_sha256": "3ca77969cf74975ed68f284f6f506ffa9509d80523fd9c978bc719a20b7b46d5",
+    "original_bytes": 767,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/commands.json"
+  },
+  {
+    "path": "precharge/primary/results.json",
+    "sha256": "7a3568febdf0d75a43d647e367aa25fd3fe69b0ec2816c7ffebfd5ed8d84f04a",
+    "original_sha256": "7a3568febdf0d75a43d647e367aa25fd3fe69b0ec2816c7ffebfd5ed8d84f04a",
+    "original_bytes": 10486,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/results.json"
+  },
+  {
+    "path": "precharge/primary/outer.log",
+    "sha256": "41ed5deba3b97f04225a3e4591ec6327b60eed6a054af78b1ae447a5ed080897",
+    "original_sha256": "41ed5deba3b97f04225a3e4591ec6327b60eed6a054af78b1ae447a5ed080897",
+    "original_bytes": 343,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/outer.log"
+  },
+  {
+    "path": "precharge/primary/before.stdout",
+    "sha256": "8c8fa3d146fd82bf560b126395ddf00d65e2ffdcccba580eb1a18d5b96647839",
+    "original_sha256": "8c8fa3d146fd82bf560b126395ddf00d65e2ffdcccba580eb1a18d5b96647839",
+    "original_bytes": 1742,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/before.stdout"
+  },
+  {
+    "path": "precharge/primary/before.stderr",
+    "sha256": "3749dddd28c365575a84de524be88bbc946f8bc15c0d3b87a96792de12ae8a43",
+    "original_sha256": "3749dddd28c365575a84de524be88bbc946f8bc15c0d3b87a96792de12ae8a43",
+    "original_bytes": 128,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/before.stderr"
+  },
+  {
+    "path": "precharge/primary/after.stdout",
+    "sha256": "a0e4e1306d1c3600be8a3a38681000706eb87c7b5f81f18578566566592e775a",
+    "original_sha256": "a0e4e1306d1c3600be8a3a38681000706eb87c7b5f81f18578566566592e775a",
+    "original_bytes": 1742,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/after.stdout"
+  },
+  {
+    "path": "precharge/primary/after.stderr",
+    "sha256": "bd8960de6994701796d106a341de01c3a09aed2292cbc408f05e5108b40037db",
+    "original_sha256": "bd8960de6994701796d106a341de01c3a09aed2292cbc408f05e5108b40037db",
+    "original_bytes": 128,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/after.stderr"
+  },
+  {
+    "path": "precharge/primary/roc.stdout.gz",
+    "sha256": "25df4539aaf8cd95e780351d62e65d35c205df4c2111600c5366fb315e264fb1",
+    "original_sha256": "bf99e4a08e66e7434cbb340468035c91069f7ccd146845a22438fccba5910c2c",
+    "original_bytes": 628890,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/roc.stdout"
+  },
+  {
+    "path": "precharge/primary/roc.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/roc.stderr"
+  },
+  {
+    "path": "precharge/primary/profile.stdout",
+    "sha256": "2b414a28337a340320ea0fac46f0850474d533414a2ecf0d020cbf205d7d5adf",
+    "original_sha256": "2b414a28337a340320ea0fac46f0850474d533414a2ecf0d020cbf205d7d5adf",
+    "original_bytes": 38811,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/profile.stdout"
+  },
+  {
+    "path": "precharge/primary/profile.stderr",
+    "sha256": "a3485f0ffec4af341ba1dc340092f34fdf144cfcdf46ef8004ebb7beb3ba62c5",
+    "original_sha256": "a3485f0ffec4af341ba1dc340092f34fdf144cfcdf46ef8004ebb7beb3ba62c5",
+    "original_bytes": 1512,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/profile.stderr"
+  },
+  {
+    "path": "precharge/primary/profile-command.json",
+    "sha256": "461c8b09f0082bc9bffe62d6b83c8e8ecd560153d79a326cd1e6e5a85fac2dda",
+    "original_sha256": "461c8b09f0082bc9bffe62d6b83c8e8ecd560153d79a326cd1e6e5a85fac2dda",
+    "original_bytes": 719,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/profile-command.json"
+  },
+  {
+    "path": "precharge/primary/after.sample.txt.gz",
+    "sha256": "9ac2a52abfcf643f47a83a58337ca66e0d88d03f781b69e84c101ae45273d1a1",
+    "original_sha256": "5fb84a6ff808cfaa7958f6f9e6a0a1b9772a5af5914a1f890f50752cca956364",
+    "original_bytes": 1644357,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/after.sample.txt"
+  },
+  {
+    "path": "precharge/primary/inclusive-profile.py",
+    "sha256": "6434432f47a40239849982bd6f916379fcf85ea195b608f134eac8234561f341",
+    "original_sha256": "6434432f47a40239849982bd6f916379fcf85ea195b608f134eac8234561f341",
+    "original_bytes": 1687,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/inclusive-profile.py"
+  },
+  {
+    "path": "precharge/primary/inclusive-summary.txt",
+    "sha256": "1a69e0515df8bc6395e6a0953da37c91639ebaa58fe2bdcb35ed5dbb15849a05",
+    "original_sha256": "1a69e0515df8bc6395e6a0953da37c91639ebaa58fe2bdcb35ed5dbb15849a05",
+    "original_bytes": 5276,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/inclusive-summary.txt"
+  },
+  {
+    "path": "precharge/primary/after-inclusive-profile.json",
+    "sha256": "0011960d3641aa62192d91fb797f6973b0b17e9125cb9462c4fb35c6a7b05b13",
+    "original_sha256": "0011960d3641aa62192d91fb797f6973b0b17e9125cb9462c4fb35c6a7b05b13",
+    "original_bytes": 16375,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/after-inclusive-profile.json"
+  },
+  {
+    "path": "precharge/qualification/round16-record-precharge-release.json",
+    "sha256": "af5546a450520cc652884bb5927e6dcc06131e78c916056a7b4f274e77d821c8",
+    "original_sha256": "af5546a450520cc652884bb5927e6dcc06131e78c916056a7b4f274e77d821c8",
+    "original_bytes": 1054,
+    "source": "/private/tmp/mech-linear-restack-20261026/validation/round16-record-precharge-release.json"
+  },
+  {
+    "path": "precharge/qualification/round16-record-precharge-release.log.gz",
+    "sha256": "4ac71cfa61c9de5e7544e2cbcb33880d59cad9846a8341e71f8ae05efd7df363",
+    "original_sha256": "bb9d66279047657d4e51ff15e8802dcf263280266c17090e75110234760e182f",
+    "original_bytes": 158291,
+    "source": "/private/tmp/mech-linear-restack-20261026/validation/round16-record-precharge-release.log"
+  },
+  {
+    "path": "precharge/qualification/engine-units/build.py",
+    "sha256": "94bf24aa1f207eac65553cfce5ce9ba9a829fad10dd3da3f5c49cfde9c44aac8",
+    "original_sha256": "94bf24aa1f207eac65553cfce5ce9ba9a829fad10dd3da3f5c49cfde9c44aac8",
+    "original_bytes": 2965,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/engine-units/build.py"
+  },
+  {
+    "path": "precharge/qualification/engine-units/build.json",
+    "sha256": "b8c67d507894ae09221205c1fe92b6ed638d7c8f8961d5c9ddd9a73570e5467e",
+    "original_sha256": "b8c67d507894ae09221205c1fe92b6ed638d7c8f8961d5c9ddd9a73570e5467e",
+    "original_bytes": 16661,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/engine-units/build.json"
+  },
+  {
+    "path": "precharge/qualification/engine-units/build.log.gz",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/engine-units/build.log"
+  },
+  {
+    "path": "precharge/qualification/engine-units/run.json",
+    "sha256": "76d4638256d2d1de8bf769be37438bad6bfb57bf5e13c485572bbb3a8899774d",
+    "original_sha256": "76d4638256d2d1de8bf769be37438bad6bfb57bf5e13c485572bbb3a8899774d",
+    "original_bytes": 365,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/engine-units/run.json"
+  },
+  {
+    "path": "precharge/qualification/engine-units/run.log.gz",
+    "sha256": "a12140d43271a1048119647334d2330e3c0047d025934fcdccfa39e883527017",
+    "original_sha256": "e2903d8be1ef3876980f3be1f16e4272f71a3b11dbfebc468700e9d4a0915deb",
+    "original_bytes": 14378,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/engine-units/run.log"
+  },
+  {
+    "path": "precharge/qualification/engine-units/outer.log.gz",
+    "sha256": "c0ea23ca1ff3aa2823cdc8e4e43faa0c1bc379c1c8678ee39b46091724cc73c5",
+    "original_sha256": "a825541c53018c809a02a9c62e4e4c11762a8f0466d287accd3cb0a43d0f7062",
+    "original_bytes": 4744,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/engine-units/outer.log"
+  },
+  {
+    "path": "precharge/qualification/focused/qualify.py",
+    "sha256": "008dab6efe909e1cca5c1359a5c27f8a473bdbdd25723d59e537c934277ecd42",
+    "original_sha256": "008dab6efe909e1cca5c1359a5c27f8a473bdbdd25723d59e537c934277ecd42",
+    "original_bytes": 3507,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/components/qualify.py"
+  },
+  {
+    "path": "precharge/qualification/focused/component-v2-build.json",
+    "sha256": "b947d11ea1bc2507cf80e2a5c797b5064ebf58f6380265acbbfeae90f0774299",
+    "original_sha256": "b947d11ea1bc2507cf80e2a5c797b5064ebf58f6380265acbbfeae90f0774299",
+    "original_bytes": 4458,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/components/component-v2-build.json"
+  },
+  {
+    "path": "precharge/qualification/focused/component-v2-build.log.gz",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/components/component-v2-build.log"
+  },
+  {
+    "path": "precharge/qualification/focused/component-v2-run.json",
+    "sha256": "cf81c5a76249656e854d79ceb43e6c7f2f5981900484894b5936eca679d3db92",
+    "original_sha256": "cf81c5a76249656e854d79ceb43e6c7f2f5981900484894b5936eca679d3db92",
+    "original_bytes": 614,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/components/component-v2-run.json"
+  },
+  {
+    "path": "precharge/qualification/focused/component-v2-run.log.gz",
+    "sha256": "4f0238104ffc5982b7888f8bddcee5509a486ec19d4dd77ddc0702a6b795d196",
+    "original_sha256": "51aa2b107b7fcbeca91456826b3c99a1f8c4a41fe7cfe55d713aeee4981fc951",
+    "original_bytes": 1351,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/components/component-v2-run.log"
+  },
+  {
+    "path": "precharge/qualification/static-checks.log.gz",
+    "sha256": "5f05f6bda086f544f8deb0ecd499d028be5cd47792e65493d9ac2485d44ce88b",
+    "original_sha256": "a181eff42c0d2aca60b13e3315172ed155d2ad49121875c15322638a179abd1e",
+    "original_bytes": 1252,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/static-checks.log"
+  },
+  {
+    "path": "precharge/qualification/initial-formatting-difference.log",
+    "sha256": "cd58f4a02e0087c176850080865d498aae6669b205a90b1a6e07b108de715e97",
+    "original_sha256": "cd58f4a02e0087c176850080865d498aae6669b205a90b1a6e07b108de715e97",
+    "original_bytes": 2066,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/format-before.log"
+  }
+]

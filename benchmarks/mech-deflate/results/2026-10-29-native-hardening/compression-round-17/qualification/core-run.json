@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-binding-descriptors-round17-20261029/core-tests",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.37348783295601606,
+  "binary_sha256": "90b6b050050a9d532c729d1e1a6d45564287390eaebe29e191c63442b55183f7"
+}

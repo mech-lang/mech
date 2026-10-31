@@ -1,0 +1,32 @@
+{
+  "before": "/private/tmp/mech-nested-frames-round20-20261029/fixed-object-audit/complete-object.o",
+  "after": "/private/tmp/mech-multi-results-round21-20261029/object-audit/complete-object.o",
+  "sections": {
+    "__TEXT,__text": {
+      "before": {
+        "bytes": 10843932,
+        "sha256": "36e3f9f6487dfc38f728dc0a0a8c28b329a7e6ab4b41c5c5db88d424b9e064fb",
+        "offset": 368
+      },
+      "after": {
+        "bytes": 12924196,
+        "sha256": "b9a9e2e8c013e7792480c5bb5f8e5970b2ef88e3ebc39483db177b7056648e61",
+        "offset": 368
+      },
+      "identical": false
+    },
+    "__TEXT,__const": {
+      "before": {
+        "bytes": 192,
+        "sha256": "93561986a0c6112a0449417fbc3eb4333047bc887e9428006e4e35b270c3b315",
+        "offset": 10844304
+      },
+      "after": {
+        "bytes": 192,
+        "sha256": "a5dba921704d60f7d0a0ea8d93572ad2575237a21d959d20c962f1cef27a9246",
+        "offset": 12924568
+      },
+      "identical": false
+    }
+  }
+}

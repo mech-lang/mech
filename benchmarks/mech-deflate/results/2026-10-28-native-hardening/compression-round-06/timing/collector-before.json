@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-packed-length-round05-20261028/component-v2-tests",
+    "collector_qualification",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 4.888554416014813,
+  "binary_sha256": "481f7c362fcb80e82c0a5fc4b0ad501359a87402ace468a6d78c58352afaa177",
+  "compiler": "ced2c71c36d002a044b40f1f5cfb8ae293e92572",
+  "source": "Same unchanged permanent collector cases and finite policies, retained before binary."
+}

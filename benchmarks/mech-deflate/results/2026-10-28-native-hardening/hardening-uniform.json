@@ -1,0 +1,23 @@
+{
+  "name": "hardening-uniform",
+  "command": [
+    "/private/tmp/mech-live-control-target/debug/deps/canonical_artifact_program-561ab00dcd3ceccb",
+    "uniform_words_qualification::",
+    "--nocapture"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "a2ca12e2302313622ae252391cad7df12140a78c",
+  "dirty": " M hosts/gpu/src/native_artifact/program/runtime/collections/data.rs\n M hosts/gpu/src/native_artifact/program/runtime/collections/mod.rs\n M hosts/gpu/src/native_artifact/program/runtime/collections/uniform_words.rs\n M hosts/gpu/tests/support/canonical_program_comprehensions.rs\n?? hosts/gpu/src/native_artifact/program/runtime/collections/data_tests.rs\n",
+  "exit": 0,
+  "seconds": 5.91457986831665,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/hardening-uniform.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

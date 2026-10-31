@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-31T15:58:01.811566+00:00",
+  "head": "0558e009e4c3cc279cebce9f1f3b0722fc85b8a1",
+  "files": [
+    {
+      "path": "snapshot-controls/after/control-source.rs",
+      "sha256": "73a6c71efbb31957011b605a99b9d85c33f59bb20a3b97c94d87c117e1914095",
+      "bytes": 75567
+    },
+    {
+      "path": "snapshot-controls/after/run.json",
+      "sha256": "31062c251eb31c23f69c470c788d51ff12f6fbd89373c73294f16983efeeb9ff",
+      "bytes": 1355
+    },
+    {
+      "path": "snapshot-controls/after/run.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "snapshot-controls/after/run.stdout",
+      "sha256": "cfbfef30685c2d7275233a9534d363531b9d8adb233eaa850c9bfdf71017a709",
+      "bytes": 262
+    },
+    {
+      "path": "snapshot-controls/locals-snapshot-source.rs",
+      "sha256": "924c25d0c2bffbf1ff7ccefb7642d527d805a0f1de59a7a39bab8cd691e63ec9",
+      "bytes": 4452
+    },
+    {
+      "path": "snapshot-controls/runtime-tests-source.rs",
+      "sha256": "a967d0d2fcdbb32e0ce934ab758381cc2e0caeb727f9f00830f3fe83d0dcdef7",
+      "bytes": 54505
+    },
+    {
+      "path": "snapshot-controls.py",
+      "sha256": "26a717d1315eb328dc1c55888a909804872c47ade1a3869df7dd5a5bf2b96896",
+      "bytes": 5260
+    }
+  ]
+}

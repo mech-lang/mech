@@ -1,0 +1,2447 @@
+{
+  "schema": "mech.exclusive-private-numeric-publication.v1",
+  "implementation": {
+    "production_head": "b717a930396d3f694865f79149216581bedde2b5",
+    "baseline_libraries": {
+      "serde": {
+        "path": "/private/tmp/mech-registration-locks-round55-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+        "sha256": "c92969536946485cace85c825d49406183f604d7279483af096a2d10d94e2998",
+        "features": [
+          "alloc",
+          "default",
+          "derive",
+          "serde_derive",
+          "std"
+        ],
+        "profile": {
+          "opt_level": "3",
+          "debuginfo": 0,
+          "debug_assertions": false,
+          "overflow_checks": false,
+          "test": false
+        }
+      },
+      "serde_json": {
+        "path": "/private/tmp/mech-registration-locks-round55-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+        "sha256": "e887a7afbab6cadfb0337bc7bebfa21c68b83933509274961faefac4b412444b",
+        "features": [
+          "alloc",
+          "default",
+          "raw_value",
+          "std",
+          "unbounded_depth"
+        ],
+        "profile": {
+          "opt_level": "3",
+          "debuginfo": 0,
+          "debug_assertions": false,
+          "overflow_checks": false,
+          "test": false
+        }
+      },
+      "mech_core": {
+        "path": "/private/tmp/mech-registration-locks-round55-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+        "sha256": "fcfb662ec412ba0b041b8b580ffafcd29efe9560496307d2cf33e37dffceae6c",
+        "features": [
+          "atom",
+          "base64",
+          "baselib",
+          "bincode",
+          "bool",
+          "brotli",
+          "byteorder",
+          "c64",
+          "compiler",
+          "complex",
+          "crc32fast",
+          "dot_indexing",
+          "enum",
+          "f32",
+          "f64",
+          "floats",
+          "formulas",
+          "full",
+          "functions",
+          "i128",
+          "i16",
+          "i32",
+          "i64",
+          "i8",
+          "indexmap",
+          "invariant_define",
+          "kind_annotation",
+          "kind_define",
+          "libm",
+          "logical_indexing",
+          "map",
+          "math_pow",
+          "matrix",
+          "matrixd",
+          "mika",
+          "nalgebra",
+          "native-plan",
+          "num-rational",
+          "num-traits",
+          "numbers",
+          "pretty_print",
+          "program",
+          "r64",
+          "range",
+          "rational",
+          "record",
+          "resident-execution",
+          "row_vectord",
+          "semantic-compiler",
+          "serde",
+          "serde_derive",
+          "serde_json",
+          "set",
+          "signed_ints",
+          "statements",
+          "statements_default",
+          "std",
+          "string",
+          "subscript",
+          "subscript_default",
+          "subscript_formula",
+          "subscript_range",
+          "subscript_slice",
+          "swizzle",
+          "symbol_table",
+          "table",
+          "tabled",
+          "tuple",
+          "u128",
+          "u16",
+          "u32",
+          "u64",
+          "u8",
+          "unsigned_ints",
+          "variable_assign",
+          "variable_define",
+          "variables",
+          "vectord"
+        ],
+        "profile": {
+          "opt_level": "3",
+          "debuginfo": 0,
+          "debug_assertions": false,
+          "overflow_checks": false,
+          "test": false
+        }
+      },
+      "mech_syntax": {
+        "path": "/private/tmp/mech-registration-locks-round55-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+        "sha256": "d86df9a0ebed4c3d79a2d58cb86e004e34630626e81a5a49dedcdd76446505d2",
+        "features": [
+          "atom",
+          "baselib",
+          "bool",
+          "c64",
+          "compiler",
+          "complex",
+          "dot_indexing",
+          "enum",
+          "f32",
+          "f64",
+          "floats",
+          "formulas",
+          "full",
+          "functions",
+          "i128",
+          "i16",
+          "i32",
+          "i64",
+          "i8",
+          "invariant_define",
+          "kind_annotation",
+          "kind_define",
+          "logical_indexing",
+          "map",
+          "matrix",
+          "matrix_horzcat",
+          "matrix_vertcat",
+          "matrixd",
+          "mika",
+          "numbers",
+          "pretty_print",
+          "program",
+          "r64",
+          "rational",
+          "record",
+          "row_vectord",
+          "semantic-compiler",
+          "serde",
+          "set",
+          "signed_ints",
+          "statements",
+          "statements_default",
+          "string",
+          "subscript",
+          "subscript_default",
+          "subscript_formula",
+          "subscript_range",
+          "subscript_slice",
+          "swizzle",
+          "symbol_table",
+          "table",
+          "tuple",
+          "u128",
+          "u16",
+          "u32",
+          "u64",
+          "u8",
+          "unsigned_ints",
+          "variable_assign",
+          "variable_define",
+          "variables",
+          "vectord"
+        ],
+        "profile": {
+          "opt_level": "3",
+          "debuginfo": 0,
+          "debug_assertions": false,
+          "overflow_checks": false,
+          "test": false
+        }
+      },
+      "mech_engine": {
+        "path": "/private/tmp/mech-registration-locks-round55-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+        "sha256": "ad289049244792a78bd65271a59ef9ed54d6e0aa3b593c30733db90dca1c46e8",
+        "features": [
+          "access",
+          "artifact-codec",
+          "assign",
+          "async",
+          "atom",
+          "bool",
+          "c64",
+          "combinatorics_default",
+          "combinatorics_n_choose_k",
+          "compare_default",
+          "compare_eq",
+          "compare_gt",
+          "compare_gte",
+          "compare_lt",
+          "compare_lte",
+          "compare_neq",
+          "compare_seq",
+          "compare_sneq",
+          "compiler",
+          "compiler_default",
+          "complex",
+          "convert",
+          "dot_indexing",
+          "enum",
+          "f32",
+          "f64",
+          "floats",
+          "formulas",
+          "full_compiler",
+          "functions",
+          "i128",
+          "i16",
+          "i32",
+          "i64",
+          "i8",
+          "indexmap",
+          "integer_bits",
+          "invariant_define",
+          "kind_annotation",
+          "kind_define",
+          "logic_and",
+          "logic_default",
+          "logic_not",
+          "logic_or",
+          "logic_xor",
+          "logical_indexing",
+          "map",
+          "map_ops",
+          "math_acos",
+          "math_acosh",
+          "math_acot",
+          "math_acsc",
+          "math_add",
+          "math_add_assign",
+          "math_asec",
+          "math_asin",
+          "math_asinh",
+          "math_atan",
+          "math_atan2",
+          "math_atanh",
+          "math_cos",
+          "math_cosh",
+          "math_cot",
+          "math_csc",
+          "math_default",
+          "math_div",
+          "math_div_assign",
+          "math_mod",
+          "math_mul",
+          "math_mul_assign",
+          "math_neg",
+          "math_ops_assign_default",
+          "math_ops_default",
+          "math_pow",
+          "math_root_default",
+          "math_sec",
+          "math_sin",
+          "math_sinh",
+          "math_sqrt",
+          "math_sub",
+          "math_sub_assign",
+          "math_tan",
+          "math_tanh",
+          "math_trig_default",
+          "matrix",
+          "matrix_comprehensions",
+          "matrix_default",
+          "matrix_dot",
+          "matrix_horzcat",
+          "matrix_matmul",
+          "matrix_solve",
+          "matrix_transpose",
+          "matrix_vertcat",
+          "matrixd",
+          "mika",
+          "nalgebra",
+          "native-artifact",
+          "native-capture-pages",
+          "native-plan",
+          "numbers",
+          "pretty_print",
+          "program",
+          "pure_text",
+          "r64",
+          "range_default",
+          "range_exclusive",
+          "range_exclusive_increment",
+          "range_inclusive",
+          "range_inclusive_increment",
+          "rational",
+          "record",
+          "resident-artifact",
+          "resident-ekf",
+          "row_vectord",
+          "runtime",
+          "runtime_default",
+          "semantic-compiler",
+          "sequence_buffers",
+          "sequence_sort",
+          "serde",
+          "set",
+          "set_cartesian_product",
+          "set_comprehensions",
+          "set_default",
+          "set_difference",
+          "set_disjoint",
+          "set_element_of",
+          "set_equals",
+          "set_insert",
+          "set_intersection",
+          "set_membership_default",
+          "set_modify_default",
+          "set_not_element_of",
+          "set_not_equals",
+          "set_operations_default",
+          "set_powerset",
+          "set_proper_subset",
+          "set_proper_superset",
+          "set_relations_default",
+          "set_remove",
+          "set_setdata_default",
+          "set_size",
+          "set_subset",
+          "set_superset",
+          "set_symmetric_difference",
+          "set_union",
+          "signed_ints",
+          "source",
+          "source_default",
+          "state_machines",
+          "statements",
+          "statements_default",
+          "stats_default",
+          "stats_sum",
+          "std",
+          "string",
+          "string_concat",
+          "string_default",
+          "subscript",
+          "subscript_default",
+          "subscript_formula",
+          "subscript_range",
+          "subscript_slice",
+          "swizzle",
+          "symbol_table",
+          "table",
+          "trace",
+          "tuple",
+          "u128",
+          "u16",
+          "u32",
+          "u64",
+          "u8",
+          "unsigned_ints",
+          "variable_assign",
+          "variable_define",
+          "variables",
+          "vectord"
+        ],
+        "profile": {
+          "opt_level": "3",
+          "debuginfo": 0,
+          "debug_assertions": false,
+          "overflow_checks": false,
+          "test": false
+        }
+      },
+      "miniz_oxide": {
+        "path": "/private/tmp/mech-registration-locks-round55-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+        "sha256": "681adce5cb63aef90b398ba24c2c9ef63c9a250f4af390a66e565bb36860d2e3",
+        "features": [
+          "default",
+          "with-alloc"
+        ],
+        "profile": {
+          "opt_level": "3",
+          "debuginfo": 0,
+          "debug_assertions": false,
+          "overflow_checks": false,
+          "test": false
+        }
+      },
+      "mech_gpu": {
+        "path": "/private/tmp/mech-registration-locks-round55-20261031/variants/after/libmech_gpu.rlib",
+        "sha256": "27dda7f3eb3f27622253ba83b801c6e72f055ffb89b97dd7bd88e3c8289a2dfd",
+        "features": [
+          "aot",
+          "canonical-native",
+          "canonical-native-program",
+          "canonical-native-program-runtime",
+          "canonical-native-runtime",
+          "jit"
+        ],
+        "profile": {
+          "opt_level": "3",
+          "debuginfo": 0,
+          "debug_assertions": false,
+          "overflow_checks": false,
+          "test": false
+        }
+      },
+      "mech_stdlib": {
+        "path": "/private/tmp/mech-registration-locks-round55-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+        "sha256": "86620b72843ad633e7c3dd059800fc4987527bf98e30c52121c8a687d2faffc8",
+        "features": [
+          "access",
+          "assign",
+          "atom",
+          "bool",
+          "c64",
+          "compare_eq",
+          "compare_gt",
+          "compare_gte",
+          "compare_lt",
+          "compare_lte",
+          "compare_neq",
+          "compiler",
+          "convert",
+          "enum",
+          "f32",
+          "f64",
+          "full_values",
+          "i128",
+          "i16",
+          "i32",
+          "i64",
+          "i8",
+          "integer_bits",
+          "invariant_define",
+          "logic_and",
+          "logic_or",
+          "map",
+          "math_add",
+          "math_div",
+          "math_mod",
+          "math_mul",
+          "math_sub",
+          "matrix_comprehensions",
+          "matrixd",
+          "mech-compare",
+          "mech-logic",
+          "mech-math",
+          "mech-range",
+          "native-plan",
+          "r64",
+          "range_inclusive",
+          "record",
+          "row_vectord",
+          "runtime",
+          "semantic-compiler",
+          "set",
+          "source",
+          "string",
+          "table",
+          "tuple",
+          "u128",
+          "u16",
+          "u32",
+          "u64",
+          "u8",
+          "variable_define",
+          "variables",
+          "vectord"
+        ],
+        "profile": {
+          "opt_level": "3",
+          "debuginfo": 0,
+          "debug_assertions": false,
+          "overflow_checks": false,
+          "test": false
+        }
+      }
+    },
+    "changes": [
+      "Initialize the unpublished private numeric data registry via checked exclusive access, before exposing a weak wrapper owner.",
+      "Retirement uses exclusive outer-registry access only when Arc::get_mut excludes strong aliases and weak data identities. Shared/weak registries retain their original locked path."
+    ],
+    "unchanged": [
+      "Value/owner layout, Arc and Mutex types, public APIs, schemas, charges, admission limits, image/work revisions and benchmark source."
+    ],
+    "acceptance": "Parent 3/4 pass with actual publication allocation 1 vs expected 0; initial private-API integration-test compilation error corrected and preserved separately."
+  },
+  "primary": {
+    "configuration": "Matched linked compressor; identical tiny setup JIT helpers; unchanged evaluate_into timer. Both programs ready before measurements.",
+    "reference_seconds": 0.00029,
+    "fixed_reference_seconds": 0.0003,
+    "groups": [
+      {
+        "group": 0,
+        "medians": {
+          "before": 0.0038384165,
+          "after": 0.0038229795
+        },
+        "after_over_before": 0.9959782894847393
+      },
+      {
+        "group": 1,
+        "medians": {
+          "before": 0.0038664165,
+          "after": 0.0038141875
+        },
+        "after_over_before": 0.9864916260314945
+      },
+      {
+        "group": 2,
+        "medians": {
+          "before": 0.003829667,
+          "after": 0.0038370005
+        },
+        "after_over_before": 1.0019149184511342
+      },
+      {
+        "group": 3,
+        "medians": {
+          "before": 0.0038281455,
+          "after": 0.0038109375
+        },
+        "after_over_before": 0.9955048730514554
+      }
+    ],
+    "primary_observations": 3968,
+    "all_observations": 3984,
+    "observations_per_variant": 1984,
+    "medians": {
+      "before": {
+        "seconds": 0.003840979,
+        "multiple_of_reference": 13.244755172413793,
+        "multiple_of_fixed_reference": 12.803263333333334
+      },
+      "after": {
+        "seconds": 0.0038249795,
+        "multiple_of_reference": 13.18958448275862,
+        "multiple_of_fixed_reference": 12.749931666666667
+      }
+    },
+    "comparisons": {
+      "after_over_before": {
+        "pooled_ratio": 0.9958345255207071,
+        "improving_groups": 3,
+        "improving_blocks": 43,
+        "median_block_ratio": 0.9958751246627355,
+        "geometric_block_ratio": 0.994493445505339
+      }
+    }
+  },
+  "cpu": {
+    "reference": {
+      "observations": 32,
+      "instructions": {
+        "median": 1364372.0,
+        "min": 1364164,
+        "max": 1749602
+      },
+      "cycles": {
+        "median": 930675.0,
+        "min": 904157,
+        "max": 1405088
+      },
+      "rss_after": {
+        "median": 14761984.0,
+        "min": 14761984,
+        "max": 14761984
+      },
+      "physical_after": {
+        "median": 14418880.0,
+        "min": 14418880,
+        "max": 14418880
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "before": {
+      "observations": 32,
+      "instructions": {
+        "median": 43117063.0,
+        "min": 43112850,
+        "max": 43132707
+      },
+      "cycles": {
+        "median": 12139909.0,
+        "min": 11929510,
+        "max": 13214935
+      },
+      "rss_after": {
+        "median": 319651840.0,
+        "min": 319651840,
+        "max": 319651840
+      },
+      "physical_after": {
+        "median": 228804288.0,
+        "min": 228804288,
+        "max": 228804288
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "after": {
+      "observations": 32,
+      "instructions": {
+        "median": 42996202.5,
+        "min": 42992524,
+        "max": 43006009
+      },
+      "cycles": {
+        "median": 12075044.5,
+        "min": 11937836,
+        "max": 13108972
+      },
+      "rss_after": {
+        "median": 319586304.0,
+        "min": 319586304,
+        "max": 319586304
+      },
+      "physical_after": {
+        "median": 228755200.0,
+        "min": 228755200,
+        "max": 228755200
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    }
+  },
+  "allocation": {
+    "reference": {
+      "observations": 32,
+      "allocation_requests": {
+        "median": 95.0,
+        "min": 95,
+        "max": 95
+      },
+      "requested_bytes": {
+        "median": 9021923.0,
+        "min": 9021923,
+        "max": 9021923
+      },
+      "reallocations": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "relocating_reallocations": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "live_usable_before": {
+        "median": 32.0,
+        "min": 32,
+        "max": 32
+      },
+      "live_usable_after": {
+        "median": 32.0,
+        "min": 32,
+        "max": 32
+      },
+      "peak_live_usable": {
+        "median": 9257360.0,
+        "min": 9257360,
+        "max": 9257360
+      },
+      "incremental_peak_live_usable": {
+        "median": 9257328.0,
+        "min": 9257328,
+        "max": 9257328
+      }
+    },
+    "before": {
+      "observations": 8,
+      "allocation_requests": {
+        "median": 8941.0,
+        "min": 8941,
+        "max": 8941
+      },
+      "requested_bytes": {
+        "median": 98254595.0,
+        "min": 98254595,
+        "max": 98254595
+      },
+      "reallocations": {
+        "median": 540.0,
+        "min": 540,
+        "max": 540
+      },
+      "relocating_reallocations": {
+        "median": 458.0,
+        "min": 458,
+        "max": 458
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 13905.0,
+        "min": 13905,
+        "max": 13905
+      },
+      "live_usable_before": {
+        "median": 142982512.0,
+        "min": 142982512,
+        "max": 142982512
+      },
+      "live_usable_after": {
+        "median": 142983016.0,
+        "min": 142983016,
+        "max": 142983016
+      },
+      "peak_live_usable": {
+        "median": 163467016.0,
+        "min": 163467016,
+        "max": 163467016
+      },
+      "incremental_peak_live_usable": {
+        "median": 20484504.0,
+        "min": 20484504,
+        "max": 20484504
+      }
+    },
+    "after": {
+      "observations": 8,
+      "allocation_requests": {
+        "median": 8773.0,
+        "min": 8773,
+        "max": 8773
+      },
+      "requested_bytes": {
+        "median": 98243843.0,
+        "min": 98243843,
+        "max": 98243843
+      },
+      "reallocations": {
+        "median": 540.0,
+        "min": 540,
+        "max": 540
+      },
+      "relocating_reallocations": {
+        "median": 458.0,
+        "min": 458,
+        "max": 458
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 13905.0,
+        "min": 13905,
+        "max": 13905
+      },
+      "live_usable_before": {
+        "median": 142982512.0,
+        "min": 142982512,
+        "max": 142982512
+      },
+      "live_usable_after": {
+        "median": 142983016.0,
+        "min": 142983016,
+        "max": 142983016
+      },
+      "peak_live_usable": {
+        "median": 163464584.0,
+        "min": 163464584,
+        "max": 163464584
+      },
+      "incremental_peak_live_usable": {
+        "median": 20482072.0,
+        "min": 20482072,
+        "max": 20482072
+      }
+    }
+  },
+  "static": {
+    "before": {
+      "source": "13f319e7b0058c66f892e2566e0d56558831ab12",
+      "libraries": {
+        "serde": {
+          "path": "/private/tmp/mech-registration-locks-round55-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+          "sha256": "c92969536946485cace85c825d49406183f604d7279483af096a2d10d94e2998",
+          "features": [
+            "alloc",
+            "default",
+            "derive",
+            "serde_derive",
+            "std"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "serde_json": {
+          "path": "/private/tmp/mech-registration-locks-round55-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+          "sha256": "e887a7afbab6cadfb0337bc7bebfa21c68b83933509274961faefac4b412444b",
+          "features": [
+            "alloc",
+            "default",
+            "raw_value",
+            "std",
+            "unbounded_depth"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_core": {
+          "path": "/private/tmp/mech-registration-locks-round55-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+          "sha256": "fcfb662ec412ba0b041b8b580ffafcd29efe9560496307d2cf33e37dffceae6c",
+          "features": [
+            "atom",
+            "base64",
+            "baselib",
+            "bincode",
+            "bool",
+            "brotli",
+            "byteorder",
+            "c64",
+            "compiler",
+            "complex",
+            "crc32fast",
+            "dot_indexing",
+            "enum",
+            "f32",
+            "f64",
+            "floats",
+            "formulas",
+            "full",
+            "functions",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "indexmap",
+            "invariant_define",
+            "kind_annotation",
+            "kind_define",
+            "libm",
+            "logical_indexing",
+            "map",
+            "math_pow",
+            "matrix",
+            "matrixd",
+            "mika",
+            "nalgebra",
+            "native-plan",
+            "num-rational",
+            "num-traits",
+            "numbers",
+            "pretty_print",
+            "program",
+            "r64",
+            "range",
+            "rational",
+            "record",
+            "resident-execution",
+            "row_vectord",
+            "semantic-compiler",
+            "serde",
+            "serde_derive",
+            "serde_json",
+            "set",
+            "signed_ints",
+            "statements",
+            "statements_default",
+            "std",
+            "string",
+            "subscript",
+            "subscript_default",
+            "subscript_formula",
+            "subscript_range",
+            "subscript_slice",
+            "swizzle",
+            "symbol_table",
+            "table",
+            "tabled",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "unsigned_ints",
+            "variable_assign",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_syntax": {
+          "path": "/private/tmp/mech-registration-locks-round55-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+          "sha256": "d86df9a0ebed4c3d79a2d58cb86e004e34630626e81a5a49dedcdd76446505d2",
+          "features": [
+            "atom",
+            "baselib",
+            "bool",
+            "c64",
+            "compiler",
+            "complex",
+            "dot_indexing",
+            "enum",
+            "f32",
+            "f64",
+            "floats",
+            "formulas",
+            "full",
+            "functions",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "invariant_define",
+            "kind_annotation",
+            "kind_define",
+            "logical_indexing",
+            "map",
+            "matrix",
+            "matrix_horzcat",
+            "matrix_vertcat",
+            "matrixd",
+            "mika",
+            "numbers",
+            "pretty_print",
+            "program",
+            "r64",
+            "rational",
+            "record",
+            "row_vectord",
+            "semantic-compiler",
+            "serde",
+            "set",
+            "signed_ints",
+            "statements",
+            "statements_default",
+            "string",
+            "subscript",
+            "subscript_default",
+            "subscript_formula",
+            "subscript_range",
+            "subscript_slice",
+            "swizzle",
+            "symbol_table",
+            "table",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "unsigned_ints",
+            "variable_assign",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_engine": {
+          "path": "/private/tmp/mech-registration-locks-round55-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+          "sha256": "ad289049244792a78bd65271a59ef9ed54d6e0aa3b593c30733db90dca1c46e8",
+          "features": [
+            "access",
+            "artifact-codec",
+            "assign",
+            "async",
+            "atom",
+            "bool",
+            "c64",
+            "combinatorics_default",
+            "combinatorics_n_choose_k",
+            "compare_default",
+            "compare_eq",
+            "compare_gt",
+            "compare_gte",
+            "compare_lt",
+            "compare_lte",
+            "compare_neq",
+            "compare_seq",
+            "compare_sneq",
+            "compiler",
+            "compiler_default",
+            "complex",
+            "convert",
+            "dot_indexing",
+            "enum",
+            "f32",
+            "f64",
+            "floats",
+            "formulas",
+            "full_compiler",
+            "functions",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "indexmap",
+            "integer_bits",
+            "invariant_define",
+            "kind_annotation",
+            "kind_define",
+            "logic_and",
+            "logic_default",
+            "logic_not",
+            "logic_or",
+            "logic_xor",
+            "logical_indexing",
+            "map",
+            "map_ops",
+            "math_acos",
+            "math_acosh",
+            "math_acot",
+            "math_acsc",
+            "math_add",
+            "math_add_assign",
+            "math_asec",
+            "math_asin",
+            "math_asinh",
+            "math_atan",
+            "math_atan2",
+            "math_atanh",
+            "math_cos",
+            "math_cosh",
+            "math_cot",
+            "math_csc",
+            "math_default",
+            "math_div",
+            "math_div_assign",
+            "math_mod",
+            "math_mul",
+            "math_mul_assign",
+            "math_neg",
+            "math_ops_assign_default",
+            "math_ops_default",
+            "math_pow",
+            "math_root_default",
+            "math_sec",
+            "math_sin",
+            "math_sinh",
+            "math_sqrt",
+            "math_sub",
+            "math_sub_assign",
+            "math_tan",
+            "math_tanh",
+            "math_trig_default",
+            "matrix",
+            "matrix_comprehensions",
+            "matrix_default",
+            "matrix_dot",
+            "matrix_horzcat",
+            "matrix_matmul",
+            "matrix_solve",
+            "matrix_transpose",
+            "matrix_vertcat",
+            "matrixd",
+            "mika",
+            "nalgebra",
+            "native-artifact",
+            "native-capture-pages",
+            "native-plan",
+            "numbers",
+            "pretty_print",
+            "program",
+            "pure_text",
+            "r64",
+            "range_default",
+            "range_exclusive",
+            "range_exclusive_increment",
+            "range_inclusive",
+            "range_inclusive_increment",
+            "rational",
+            "record",
+            "resident-artifact",
+            "resident-ekf",
+            "row_vectord",
+            "runtime",
+            "runtime_default",
+            "semantic-compiler",
+            "sequence_buffers",
+            "sequence_sort",
+            "serde",
+            "set",
+            "set_cartesian_product",
+            "set_comprehensions",
+            "set_default",
+            "set_difference",
+            "set_disjoint",
+            "set_element_of",
+            "set_equals",
+            "set_insert",
+            "set_intersection",
+            "set_membership_default",
+            "set_modify_default",
+            "set_not_element_of",
+            "set_not_equals",
+            "set_operations_default",
+            "set_powerset",
+            "set_proper_subset",
+            "set_proper_superset",
+            "set_relations_default",
+            "set_remove",
+            "set_setdata_default",
+            "set_size",
+            "set_subset",
+            "set_superset",
+            "set_symmetric_difference",
+            "set_union",
+            "signed_ints",
+            "source",
+            "source_default",
+            "state_machines",
+            "statements",
+            "statements_default",
+            "stats_default",
+            "stats_sum",
+            "std",
+            "string",
+            "string_concat",
+            "string_default",
+            "subscript",
+            "subscript_default",
+            "subscript_formula",
+            "subscript_range",
+            "subscript_slice",
+            "swizzle",
+            "symbol_table",
+            "table",
+            "trace",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "unsigned_ints",
+            "variable_assign",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "miniz_oxide": {
+          "path": "/private/tmp/mech-registration-locks-round55-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+          "sha256": "681adce5cb63aef90b398ba24c2c9ef63c9a250f4af390a66e565bb36860d2e3",
+          "features": [
+            "default",
+            "with-alloc"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_gpu": {
+          "path": "/private/tmp/mech-registration-locks-round55-20261031/variants/after/libmech_gpu.rlib",
+          "sha256": "27dda7f3eb3f27622253ba83b801c6e72f055ffb89b97dd7bd88e3c8289a2dfd",
+          "features": [
+            "aot",
+            "canonical-native",
+            "canonical-native-program",
+            "canonical-native-program-runtime",
+            "canonical-native-runtime",
+            "jit"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_stdlib": {
+          "path": "/private/tmp/mech-registration-locks-round55-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+          "sha256": "86620b72843ad633e7c3dd059800fc4987527bf98e30c52121c8a687d2faffc8",
+          "features": [
+            "access",
+            "assign",
+            "atom",
+            "bool",
+            "c64",
+            "compare_eq",
+            "compare_gt",
+            "compare_gte",
+            "compare_lt",
+            "compare_lte",
+            "compare_neq",
+            "compiler",
+            "convert",
+            "enum",
+            "f32",
+            "f64",
+            "full_values",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "integer_bits",
+            "invariant_define",
+            "logic_and",
+            "logic_or",
+            "map",
+            "math_add",
+            "math_div",
+            "math_mod",
+            "math_mul",
+            "math_sub",
+            "matrix_comprehensions",
+            "matrixd",
+            "mech-compare",
+            "mech-logic",
+            "mech-math",
+            "mech-range",
+            "native-plan",
+            "r64",
+            "range_inclusive",
+            "record",
+            "row_vectord",
+            "runtime",
+            "semantic-compiler",
+            "set",
+            "source",
+            "string",
+            "table",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        }
+      },
+      "pins": {
+        "object.o": {
+          "sha256": "1a8bb46e9f78fec2147b3242fab5651e470f86ba0347f4f11c7f1aedd5008777",
+          "bytes": 13047400
+        },
+        "descriptor.json": {
+          "sha256": "1b4dbdd2fb0c1f9f51ae7e9dd0bc931bbc2804e6cb949653461d6348c31615c9",
+          "bytes": 59787859
+        },
+        "metadata.json": {
+          "sha256": "a1d3f2710f3c2bb40eeb7cd10529b87ad6eae1d3786b3811823ee07ea3c3cac9",
+          "bytes": 2542212
+        }
+      },
+      "typed_ir_version": 132,
+      "abi_version": 37,
+      "code_bytes": 13046668,
+      "stack_bytes": 108368
+    },
+    "after": {
+      "source": "198b7818a0e0d0aac518678445a4bd31c08f3267",
+      "libraries": {
+        "serde": {
+          "path": "/private/tmp/mech-buffer-liveness-round56-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+          "sha256": "c92969536946485cace85c825d49406183f604d7279483af096a2d10d94e2998",
+          "features": [
+            "alloc",
+            "default",
+            "derive",
+            "serde_derive",
+            "std"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "serde_json": {
+          "path": "/private/tmp/mech-buffer-liveness-round56-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+          "sha256": "e887a7afbab6cadfb0337bc7bebfa21c68b83933509274961faefac4b412444b",
+          "features": [
+            "alloc",
+            "default",
+            "raw_value",
+            "std",
+            "unbounded_depth"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_core": {
+          "path": "/private/tmp/mech-buffer-liveness-round56-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+          "sha256": "7a96b9958cb66565c35f517546d7f0e0121a4514583ee65a4b2baf2a9b5b2003",
+          "features": [
+            "atom",
+            "base64",
+            "baselib",
+            "bincode",
+            "bool",
+            "brotli",
+            "byteorder",
+            "c64",
+            "compiler",
+            "complex",
+            "crc32fast",
+            "dot_indexing",
+            "enum",
+            "f32",
+            "f64",
+            "floats",
+            "formulas",
+            "full",
+            "functions",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "indexmap",
+            "invariant_define",
+            "kind_annotation",
+            "kind_define",
+            "libm",
+            "logical_indexing",
+            "map",
+            "math_pow",
+            "matrix",
+            "matrixd",
+            "mika",
+            "nalgebra",
+            "native-plan",
+            "num-rational",
+            "num-traits",
+            "numbers",
+            "pretty_print",
+            "program",
+            "r64",
+            "range",
+            "rational",
+            "record",
+            "resident-execution",
+            "row_vectord",
+            "semantic-compiler",
+            "serde",
+            "serde_derive",
+            "serde_json",
+            "set",
+            "signed_ints",
+            "statements",
+            "statements_default",
+            "std",
+            "string",
+            "subscript",
+            "subscript_default",
+            "subscript_formula",
+            "subscript_range",
+            "subscript_slice",
+            "swizzle",
+            "symbol_table",
+            "table",
+            "tabled",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "unsigned_ints",
+            "variable_assign",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_syntax": {
+          "path": "/private/tmp/mech-buffer-liveness-round56-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+          "sha256": "1ea20c07f50d96e51360d9a892d9ad25a6569341f334f85c638ee4b084c48ecd",
+          "features": [
+            "atom",
+            "baselib",
+            "bool",
+            "c64",
+            "compiler",
+            "complex",
+            "dot_indexing",
+            "enum",
+            "f32",
+            "f64",
+            "floats",
+            "formulas",
+            "full",
+            "functions",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "invariant_define",
+            "kind_annotation",
+            "kind_define",
+            "logical_indexing",
+            "map",
+            "matrix",
+            "matrix_horzcat",
+            "matrix_vertcat",
+            "matrixd",
+            "mika",
+            "numbers",
+            "pretty_print",
+            "program",
+            "r64",
+            "rational",
+            "record",
+            "row_vectord",
+            "semantic-compiler",
+            "serde",
+            "set",
+            "signed_ints",
+            "statements",
+            "statements_default",
+            "string",
+            "subscript",
+            "subscript_default",
+            "subscript_formula",
+            "subscript_range",
+            "subscript_slice",
+            "swizzle",
+            "symbol_table",
+            "table",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "unsigned_ints",
+            "variable_assign",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_engine": {
+          "path": "/private/tmp/mech-buffer-liveness-round56-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+          "sha256": "a807373c7f393d6dfdc8e09c287634a07a934af55fb064ee85b5ed7919990a6c",
+          "features": [
+            "access",
+            "artifact-codec",
+            "assign",
+            "async",
+            "atom",
+            "bool",
+            "c64",
+            "combinatorics_default",
+            "combinatorics_n_choose_k",
+            "compare_default",
+            "compare_eq",
+            "compare_gt",
+            "compare_gte",
+            "compare_lt",
+            "compare_lte",
+            "compare_neq",
+            "compare_seq",
+            "compare_sneq",
+            "compiler",
+            "compiler_default",
+            "complex",
+            "convert",
+            "dot_indexing",
+            "enum",
+            "f32",
+            "f64",
+            "floats",
+            "formulas",
+            "full_compiler",
+            "functions",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "indexmap",
+            "integer_bits",
+            "invariant_define",
+            "kind_annotation",
+            "kind_define",
+            "logic_and",
+            "logic_default",
+            "logic_not",
+            "logic_or",
+            "logic_xor",
+            "logical_indexing",
+            "map",
+            "map_ops",
+            "math_acos",
+            "math_acosh",
+            "math_acot",
+            "math_acsc",
+            "math_add",
+            "math_add_assign",
+            "math_asec",
+            "math_asin",
+            "math_asinh",
+            "math_atan",
+            "math_atan2",
+            "math_atanh",
+            "math_cos",
+            "math_cosh",
+            "math_cot",
+            "math_csc",
+            "math_default",
+            "math_div",
+            "math_div_assign",
+            "math_mod",
+            "math_mul",
+            "math_mul_assign",
+            "math_neg",
+            "math_ops_assign_default",
+            "math_ops_default",
+            "math_pow",
+            "math_root_default",
+            "math_sec",
+            "math_sin",
+            "math_sinh",
+            "math_sqrt",
+            "math_sub",
+            "math_sub_assign",
+            "math_tan",
+            "math_tanh",
+            "math_trig_default",
+            "matrix",
+            "matrix_comprehensions",
+            "matrix_default",
+            "matrix_dot",
+            "matrix_horzcat",
+            "matrix_matmul",
+            "matrix_solve",
+            "matrix_transpose",
+            "matrix_vertcat",
+            "matrixd",
+            "mika",
+            "nalgebra",
+            "native-artifact",
+            "native-capture-pages",
+            "native-plan",
+            "numbers",
+            "pretty_print",
+            "program",
+            "pure_text",
+            "r64",
+            "range_default",
+            "range_exclusive",
+            "range_exclusive_increment",
+            "range_inclusive",
+            "range_inclusive_increment",
+            "rational",
+            "record",
+            "resident-artifact",
+            "resident-ekf",
+            "row_vectord",
+            "runtime",
+            "runtime_default",
+            "semantic-compiler",
+            "sequence_buffers",
+            "sequence_sort",
+            "serde",
+            "set",
+            "set_cartesian_product",
+            "set_comprehensions",
+            "set_default",
+            "set_difference",
+            "set_disjoint",
+            "set_element_of",
+            "set_equals",
+            "set_insert",
+            "set_intersection",
+            "set_membership_default",
+            "set_modify_default",
+            "set_not_element_of",
+            "set_not_equals",
+            "set_operations_default",
+            "set_powerset",
+            "set_proper_subset",
+            "set_proper_superset",
+            "set_relations_default",
+            "set_remove",
+            "set_setdata_default",
+            "set_size",
+            "set_subset",
+            "set_superset",
+            "set_symmetric_difference",
+            "set_union",
+            "signed_ints",
+            "source",
+            "source_default",
+            "state_machines",
+            "statements",
+            "statements_default",
+            "stats_default",
+            "stats_sum",
+            "std",
+            "string",
+            "string_concat",
+            "string_default",
+            "subscript",
+            "subscript_default",
+            "subscript_formula",
+            "subscript_range",
+            "subscript_slice",
+            "swizzle",
+            "symbol_table",
+            "table",
+            "trace",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "unsigned_ints",
+            "variable_assign",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "miniz_oxide": {
+          "path": "/private/tmp/mech-buffer-liveness-round56-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+          "sha256": "681adce5cb63aef90b398ba24c2c9ef63c9a250f4af390a66e565bb36860d2e3",
+          "features": [
+            "default",
+            "with-alloc"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_gpu": {
+          "path": "/private/tmp/mech-buffer-liveness-round56-20261031/variants/after/libmech_gpu.rlib",
+          "sha256": "b6f52b3b1fd30feb137a3480a1493f975067b0b9dfed5b1e903285b7582d4dc7",
+          "features": [
+            "aot",
+            "canonical-native",
+            "canonical-native-program",
+            "canonical-native-program-runtime",
+            "canonical-native-runtime",
+            "jit"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        },
+        "mech_stdlib": {
+          "path": "/private/tmp/mech-buffer-liveness-round56-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+          "sha256": "bae4c1097b4ceefcf2379c2161cb646930b077e047973eeb05a53f609853f6d2",
+          "features": [
+            "access",
+            "assign",
+            "atom",
+            "bool",
+            "c64",
+            "compare_eq",
+            "compare_gt",
+            "compare_gte",
+            "compare_lt",
+            "compare_lte",
+            "compare_neq",
+            "compiler",
+            "convert",
+            "enum",
+            "f32",
+            "f64",
+            "full_values",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "integer_bits",
+            "invariant_define",
+            "logic_and",
+            "logic_or",
+            "map",
+            "math_add",
+            "math_div",
+            "math_mod",
+            "math_mul",
+            "math_sub",
+            "matrix_comprehensions",
+            "matrixd",
+            "mech-compare",
+            "mech-logic",
+            "mech-math",
+            "mech-range",
+            "native-plan",
+            "r64",
+            "range_inclusive",
+            "record",
+            "row_vectord",
+            "runtime",
+            "semantic-compiler",
+            "set",
+            "source",
+            "string",
+            "table",
+            "tuple",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "variable_define",
+            "variables",
+            "vectord"
+          ],
+          "profile": {
+            "opt_level": "3",
+            "debuginfo": 0,
+            "debug_assertions": false,
+            "overflow_checks": false,
+            "test": false
+          }
+        }
+      },
+      "pins": {
+        "object.o": {
+          "sha256": "1a8bb46e9f78fec2147b3242fab5651e470f86ba0347f4f11c7f1aedd5008777",
+          "bytes": 13047400
+        },
+        "descriptor.json": {
+          "sha256": "1b4dbdd2fb0c1f9f51ae7e9dd0bc931bbc2804e6cb949653461d6348c31615c9",
+          "bytes": 59787859
+        },
+        "metadata.json": {
+          "sha256": "a1d3f2710f3c2bb40eeb7cd10529b87ad6eae1d3786b3811823ee07ea3c3cac9",
+          "bytes": 2542212
+        }
+      },
+      "typed_ir_version": 132,
+      "abi_version": 37,
+      "code_bytes": 13046668,
+      "stack_bytes": 108368
+    }
+  },
+  "validation": {
+    "fresh_rust_tests": 1025,
+    "cohorts": [
+      {
+        "receipt": "units-after/runtime.json",
+        "tests": 326
+      },
+      {
+        "receipt": "units-after/work-values.json",
+        "tests": 32
+      },
+      {
+        "receipt": "units-after/preparation.json",
+        "tests": 2
+      },
+      {
+        "receipt": "qualification/path-mechanism.json",
+        "tests": 1
+      },
+      {
+        "receipt": "qualification/components.json",
+        "tests": 234
+      },
+      {
+        "receipt": "qualification/composition.json",
+        "tests": 8
+      },
+      {
+        "receipt": "core-after/all.json",
+        "tests": 364
+      },
+      {
+        "receipt": "core-qualification/summary.json",
+        "tests": 54
+      },
+      {
+        "receipt": "allocation-after-recovery/run.json",
+        "tests": 4
+      }
+    ],
+    "linked_executions": 12,
+    "scalar_controls": 12,
+    "scalar_worst_after_over_before": 1.009120781962336,
+    "frame_allocation_cases": 8,
+    "listed_and_executed_ci_tests": 31,
+    "python_tests": 132,
+    "architecture_checks": 10,
+    "inherited_skip": "complete_unchanged_knucleotide_body_uses_the_owned_emitted_map; reduced selected catalog lacks its stats import",
+    "no_local_all_features_or_hosted_pass_claimed": true,
+    "additional_listed_and_executed_core_ci_tests": {
+      "unique_admission": 9,
+      "numeric_matrix": 5,
+      "constructor_allocation": 4
+    },
+    "all_golden_values_and_allowances_unchanged": true,
+    "finite_work_comparison_byte_node_cleanup_preserved": true,
+    "final_test_refinement": "Exact injected AllocationFailed and successful same-account retry; final source freshly fails on retained parent, passes all four constructor tests on candidate and lists/executes all four again. Production source and completed performance binaries unchanged.",
+    "adverse_observations_retained": "Prepared pair 2 is 0.191491845% slower. Three other pairs improve; 43/64 blocks improve. The R55 adverse cycle cohort remains in its original packet; no results are replaced."
+  },
+  "allocation_target": {
+    "baseline_requests": 8941,
+    "predicted_requests": 8773,
+    "predicted_removed_requests": 168,
+    "predicted_removed_bytes": 10752,
+    "evidence": "168 independent 64-byte platform Mutex allocations with PrivateUnsignedMatrix::finish ancestry in the R55 complete-call census. The narrowed change should remove them without moving requests to retirement. All other exact size/kind bins should agree. A fresh full census will confirm or refute this prediction.",
+    "large_capacity_work_deferred": "Separate path-sensitive old-owner analysis and private-frame alias inventory required; current proofs unchanged."
+  },
+  "profiles": {
+    "scope": "Fresh matched serial sample windows. Each Mech worker completes 695 calls; reference 20,000. Sampling includes harness and is excluded from primary elapsed. Weights are samples, not instructions or exact timer fractions; ancestry unions overlap. Opaque reference hashes are not assigned unsupported source names.",
+    "profiles": {
+      "baseline": {
+        "sha256": "a6c64bd99f8fb5222b429cdc9b9a7ad949571bf8cb59a7784c64c1fe4412a075",
+        "total_exclusive_weights": 1316,
+        "exclusive_top": [
+          [
+            "mech_canonical_program_entry_v1",
+            170
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+            63
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+            58
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+            48
+          ],
+          [
+            "_tlv_get_addr",
+            43
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation18retire_tail_locals",
+            31
+          ],
+          [
+            "_platform_memmove",
+            29
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+            26
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+            25
+          ],
+          [
+            "_RNvMs3_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+            25
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget17charge_in_context",
+            22
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation15action_required",
+            21
+          ],
+          [
+            "_RNvNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime5hooks5admit",
+            20
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+            20
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames7project",
+            19
+          ]
+        ],
+        "frame_exclusive_top": [
+          [
+            "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+            48
+          ],
+          [
+            "_tlv_get_addr",
+            20
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+            20
+          ],
+          [
+            "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+            15
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames7project",
+            13
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+            13
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames4pack",
+            12
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_record_child0EBa_",
+            10
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+            10
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget17charge_in_context",
+            9
+          ],
+          [
+            "_RINvNtNtCskIfnrfrMWVM_9mech_core8snapshot8encoding19visit_sequence_workuNCNvMNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget15frame_footprintNtB1d_28PreparedNativeFrameFootprint5value0EB1j_",
+            9
+          ],
+          [
+            "_RNvNtNtCskIfnrfrMWVM_9mech_core6schema5shape18evaluate_dimension",
+            8
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls8prepared15frame_admissionNtB2_20FrameAdmissionRecipe9try_admit",
+            8
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames6retire",
+            8
+          ],
+          [
+            "_RINvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB3_12BufferFrames11copy_fieldsKb1_EBb_",
+            8
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls8prepared13buffer_framesNtB6_25NativePreparedLibraryCall25admit_buffer_record_child",
+            7
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext17try_charge_prefix",
+            7
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames10check_copy",
+            7
+          ],
+          [
+            "_RNvMNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget15frame_footprintNtB2_28PreparedNativeFrameFootprint5value",
+            7
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+            7
+          ]
+        ],
+        "ancestry_unions": {
+          "registration admission/removal": {
+            "weights": 36,
+            "percent": 2.735562310030395
+          },
+          "host mutex lifecycle": {
+            "weights": 6,
+            "percent": 0.45592705167173253
+          },
+          "frame copy actions": {
+            "weights": 31,
+            "percent": 2.3556231003039514
+          },
+          "capacity-buffer calls": {
+            "weights": 14,
+            "percent": 1.0638297872340425
+          },
+          "memory move/copy": {
+            "weights": 30,
+            "percent": 2.2796352583586628
+          },
+          "frame actions": {
+            "weights": 342,
+            "percent": 25.987841945288753
+          },
+          "tail cleanup": {
+            "weights": 55,
+            "percent": 4.179331306990881
+          },
+          "canonical construction/admission": {
+            "weights": 42,
+            "percent": 3.1914893617021276
+          },
+          "schema closure": {
+            "weights": 1,
+            "percent": 0.07598784194528875
+          },
+          "projection accounting": {
+            "weights": 29,
+            "percent": 2.2036474164133737
+          },
+          "thread-local lookup": {
+            "weights": 43,
+            "percent": 3.2674772036474162
+          }
+        },
+        "ancestry_groups_overlap": true
+      },
+      "candidate": {
+        "sha256": "223dc7d8653d1929f393074cb8c40bf8823a5fb5b75b3db7123f334f458a1c18",
+        "total_exclusive_weights": 1314,
+        "exclusive_top": [
+          [
+            "mech_canonical_program_entry_v1",
+            161
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+            54
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+            51
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+            46
+          ],
+          [
+            "_tlv_get_addr",
+            42
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget17charge_in_context",
+            32
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+            31
+          ],
+          [
+            "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation18retire_tail_locals",
+            31
+          ],
+          [
+            "_RNvMs3_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+            31
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+            28
+          ],
+          [
+            "_platform_memmove",
+            24
+          ],
+          [
+            "_RNvNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+            23
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+            22
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+            22
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation14selected_callsNtB4_10Invocation21prepared_library_call",
+            21
+          ]
+        ],
+        "frame_exclusive_top": [
+          [
+            "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+            46
+          ],
+          [
+            "_tlv_get_addr",
+            23
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+            22
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+            16
+          ],
+          [
+            "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+            13
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+            11
+          ],
+          [
+            "_RINvNtNtCskIfnrfrMWVM_9mech_core8snapshot8encoding19visit_sequence_workuNCNvMNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget15frame_footprintNtB1d_28PreparedNativeFrameFootprint5value0EB1j_",
+            11
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+            10
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls8prepared15frame_admissionNtB2_20FrameAdmissionRecipe9try_admit",
+            10
+          ],
+          [
+            "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget17charge_in_context",
+            10
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames10check_copy",
+            9
+          ],
+          [
+            "_RNvMsa_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_19ResidentBudgetMeter19charge_compute_work",
+            8
+          ],
+          [
+            "_RNvMNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget15frame_footprintNtB2_28PreparedNativeFrameFootprint5value",
+            8
+          ],
+          [
+            "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_record_child0EBa_",
+            7
+          ],
+          [
+            "_RINvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB3_12BufferFrames11copy_fieldsKb1_EBb_",
+            7
+          ],
+          [
+            "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames6retire",
+            7
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation5joinsNtB6_10Invocation25selected_join_coexistence",
+            7
+          ],
+          [
+            "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext17try_charge_prefix",
+            6
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation5ValueECs7fdMCt8k5K6_8mech_gpu",
+            6
+          ],
+          [
+            "_RINvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB3_12BufferFrames4copyKb1_EBb_",
+            6
+          ]
+        ],
+        "ancestry_unions": {
+          "registration admission/removal": {
+            "weights": 33,
+            "percent": 2.5114155251141552
+          },
+          "host mutex lifecycle": {
+            "weights": 3,
+            "percent": 0.228310502283105
+          },
+          "frame copy actions": {
+            "weights": 24,
+            "percent": 1.82648401826484
+          },
+          "capacity-buffer calls": {
+            "weights": 21,
+            "percent": 1.5981735159817352
+          },
+          "memory move/copy": {
+            "weights": 24,
+            "percent": 1.82648401826484
+          },
+          "frame actions": {
+            "weights": 334,
+            "percent": 25.41856925418569
+          },
+          "tail cleanup": {
+            "weights": 53,
+            "percent": 4.033485540334856
+          },
+          "canonical construction/admission": {
+            "weights": 37,
+            "percent": 2.8158295281582952
+          },
+          "schema closure": {
+            "weights": 2,
+            "percent": 0.15220700152207
+          },
+          "projection accounting": {
+            "weights": 43,
+            "percent": 3.2724505327245055
+          },
+          "thread-local lookup": {
+            "weights": 42,
+            "percent": 3.1963470319634704
+          }
+        },
+        "ancestry_groups_overlap": true
+      },
+      "reference": {
+        "sha256": "ec052eecf82787e339f13f37c360e848b8b4ea9ad6a91c72cc7cdb5d4abe5112",
+        "total_exclusive_weights": 1515,
+        "exclusive_top": [
+          [
+            "roc__p5794f552e2e0fcba87a322629fdca7c0.fast",
+            1428
+          ],
+          [
+            "roc__p1a804bfda1f5e4235a696be5d06bcb43.fast",
+            39
+          ],
+          [
+            "roc__pa6e6a0bf5ace6ced425a6feecccd5c1b.fast",
+            11
+          ],
+          [
+            "roc__p9d8198fedbd801212718a09deebc5774.fast",
+            7
+          ],
+          [
+            "__write_nocancel",
+            6
+          ],
+          [
+            "roc__pe21b3db7436f4bcdc21a284b2c2e5c88.fast",
+            3
+          ],
+          [
+            "roc__p499ff7eb2f98e9031bc9d0002db086b6.fast",
+            2
+          ],
+          [
+            "roc__p5577dd3f98103e165031983d14e7560c.fast",
+            2
+          ],
+          [
+            "mi_segment_span_allocate",
+            2
+          ],
+          [
+            "list.listAppendRangeWithinUnsafe",
+            2
+          ],
+          [
+            "roc__p81003bf97431a8821d5be871f2471565.fast",
+            2
+          ],
+          [
+            "_tlv_get_addr",
+            2
+          ],
+          [
+            "_pthread_mutex_firstfit_lock_slow",
+            1
+          ],
+          [
+            "mi_segments_page_alloc",
+            1
+          ],
+          [
+            "dev_wrappers.roc_builtins_str_concat",
+            1
+          ]
+        ],
+        "frame_exclusive_top": [],
+        "ancestry_unions": {
+          "registration admission/removal": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "host mutex lifecycle": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "frame copy actions": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "capacity-buffer calls": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "memory move/copy": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "frame actions": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "tail cleanup": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "canonical construction/admission": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "schema closure": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "projection accounting": {
+            "weights": 0,
+            "percent": 0.0
+          },
+          "thread-local lookup": {
+            "weights": 2,
+            "percent": 0.132013201320132
+          }
+        },
+        "ancestry_groups_overlap": true
+      }
+    }
+  },
+  "changes_percent": {
+    "primary_seconds": -0.4165474479292941,
+    "instructions": -0.28030782152299594,
+    "cycles": -0.5343079589805844,
+    "rss_after": -0.02050230650948448,
+    "physical_after": -0.021454143376897772,
+    "pageins": null,
+    "allocation_requests": -1.878984453640531,
+    "requested_bytes": -0.010942999663277053,
+    "reallocations": 0.0,
+    "relocating_reallocations": 0.0,
+    "relocating_realloc_copy_upper_bound": 0.0,
+    "live_usable_before": 0.0,
+    "live_usable_after": 0.0,
+    "peak_live_usable": -0.0014877619103348394,
+    "incremental_peak_live_usable": -0.01187238900195453
+  },
+  "scope": "Complete eight-byte level-12 only. Same source/bytecode, algorithm, source allocation sites, buffer sizes, allocator and timing boundaries. Coherent before and after graphs; identical common dependencies and feature/profile selection. Four independently prepared executable pairs. Counter, heap, stack-census and sample runs are separate serialized diagnostics. Post-call OS memory is not peak RSS; retained compiler/catalog/image storage is included. No larger-input or minimum standalone memory claim."
+}

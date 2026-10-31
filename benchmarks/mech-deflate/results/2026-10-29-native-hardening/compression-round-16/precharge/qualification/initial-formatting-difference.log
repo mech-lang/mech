@@ -1,0 +1,50 @@
+Diff in /private/tmp/mech-deflate-linear-stack/src/engine/src/resident/native_projection_meter_tests.rs:382:
+         prefix += part;
+     }
+     for cap in caps {
+-        for (policy, account, call) in
+-            [(cap, enough, enough), (enough, cap, enough), (enough, enough, cap)]
+-        {
++        for (policy, account, call) in [
++            (cap, enough, enough),
++            (enough, cap, enough),
++            (enough, enough, cap),
++        ] {
+             assert_eq!(
+                 resident_schema_precharge(&schemas, false, policy, account, call, base, false),
+                 resident_schema_precharge(&schemas, true, policy, account, call, base, false),
+Diff in /private/tmp/mech-deflate-linear-stack/src/engine/src/resident/native_projection_meter_tests.rs:394:
+     }
+     assert_eq!(
+         resident_schema_precharge(
+-            &schemas, false, u64::MAX, u64::MAX, u64::MAX, u64::MAX - 1, false
++            &schemas,
++            false,
++            u64::MAX,
++            u64::MAX,
++            u64::MAX,
++            u64::MAX - 1,
++            false
+         ),
+         resident_schema_precharge(
+-            &schemas, true, u64::MAX, u64::MAX, u64::MAX, u64::MAX - 1, false
++            &schemas,
++            true,
++            u64::MAX,
++            u64::MAX,
++            u64::MAX,
++            u64::MAX - 1,
++            false
+         )
+     );
+ }
+Diff in /private/tmp/mech-deflate-linear-stack/src/engine/src/resident/native_projection_meter_tests.rs:407:
+     let schemas = layout_fixture();
+     let full = schemas.clone_allocation_bound_bytes().unwrap();
+     for cap in [full - 1, full, full + 1] {
+-        for (policy, account, call) in [(cap, full, full), (full, cap, full), (full, full, cap)]
+-        {
++        for (policy, account, call) in [(cap, full, full), (full, cap, full), (full, full, cap)] {
+             assert_eq!(
+                 resident_schema_precharge(&schemas, false, policy, account, call, 0, true),
+                 resident_schema_precharge(&schemas, true, policy, account, call, 0, true)

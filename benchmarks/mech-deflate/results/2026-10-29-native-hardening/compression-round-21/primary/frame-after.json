@@ -1,0 +1,6 @@
+{
+  "sha256": "b801dce635b4c6e5f84565e9f878d2f162c638a30f2adaa9ca41435e07608014",
+  "production": "337c0d307d370d0f278706d1d772739d1cafd174",
+  "source": "hosts/gpu/examples/native_frame_transport.rs",
+  "build_receipt": "/private/tmp/mech-linear-restack-20261026/validation/round21-multi-result-release.json"
+}

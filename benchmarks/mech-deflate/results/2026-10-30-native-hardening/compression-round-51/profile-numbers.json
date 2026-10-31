@@ -1,0 +1,284 @@
+{
+  "scope": "Fresh serial sample windows. Mech workers complete 695 calls each; reference 20,000. Sampling includes harness and is excluded from primary elapsed. Weights are samples, not instructions or exact timer fractions; ancestry unions overlap. Opaque reference hashes are not assigned unsupported source names.",
+  "profiles": {
+    "baseline": {
+      "sha256": "5021f3c3cc50474a7d4dc80636f1200214f5e1bcc2de0b4415af92fcfc354bd9",
+      "total_exclusive_weights": 1287,
+      "exclusive_top": [
+        [
+          "mech_canonical_program_entry_v1",
+          154
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+          58
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+          50
+        ],
+        [
+          "_RNvMs_NtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+          36
+        ],
+        [
+          "_tlv_get_addr",
+          35
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          34
+        ],
+        [
+          "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+          32
+        ],
+        [
+          "_platform_memmove",
+          27
+        ],
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget17charge_in_context",
+          27
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation18retire_tail_locals",
+          23
+        ],
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+          23
+        ],
+        [
+          "write",
+          23
+        ],
+        [
+          "_RNvMs3_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+          19
+        ],
+        [
+          "_RNvNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          17
+        ],
+        [
+          "_RNvNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime5hooks5admit",
+          17
+        ]
+      ],
+      "ancestry_unions": {
+        "frame actions": {
+          "weights": 341,
+          "percent": 26.495726495726494
+        },
+        "tail cleanup": {
+          "weights": 55,
+          "percent": 4.273504273504273
+        },
+        "canonical construction/admission": {
+          "weights": 74,
+          "percent": 5.74980574980575
+        },
+        "schema closure": {
+          "weights": 20,
+          "percent": 1.554001554001554
+        },
+        "projection accounting": {
+          "weights": 50,
+          "percent": 3.885003885003885
+        },
+        "thread-local lookup": {
+          "weights": 35,
+          "percent": 2.7195027195027195
+        }
+      },
+      "ancestry_groups_overlap": true
+    },
+    "candidate": {
+      "sha256": "e72a44a61e8a7c178211eafb9790d55f81b57419b9b3336ccb07d655066ba5b0",
+      "total_exclusive_weights": 1137,
+      "exclusive_top": [
+        [
+          "mech_canonical_program_entry_v1",
+          146
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+          46
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+          42
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          41
+        ],
+        [
+          "_RNvMs_NtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+          32
+        ],
+        [
+          "_tlv_get_addr",
+          32
+        ],
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+          27
+        ],
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget17charge_in_context",
+          26
+        ],
+        [
+          "_RNvNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10retirement3run",
+          22
+        ],
+        [
+          "_RNvMs3_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+          21
+        ],
+        [
+          "_RNvNtNtCskIfnrfrMWVM_9mech_core6schema5shape18evaluate_dimension",
+          20
+        ],
+        [
+          "_platform_memmove",
+          19
+        ],
+        [
+          "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames14retire_prepaid",
+          18
+        ],
+        [
+          "_RNvNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          16
+        ],
+        [
+          "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+          16
+        ]
+      ],
+      "ancestry_unions": {
+        "frame actions": {
+          "weights": 276,
+          "percent": 24.274406332453825
+        },
+        "tail cleanup": {
+          "weights": 58,
+          "percent": 5.101143359718558
+        },
+        "canonical construction/admission": {
+          "weights": 68,
+          "percent": 5.980650835532102
+        },
+        "schema closure": {
+          "weights": 22,
+          "percent": 1.9349164467897977
+        },
+        "projection accounting": {
+          "weights": 29,
+          "percent": 2.550571679859279
+        },
+        "thread-local lookup": {
+          "weights": 32,
+          "percent": 2.8144239226033423
+        }
+      },
+      "ancestry_groups_overlap": true
+    },
+    "reference": {
+      "sha256": "15297ff3c420ab986601d12e558a9d1afeb7a2acbd60e09f023e359cf2deb1af",
+      "total_exclusive_weights": 1512,
+      "exclusive_top": [
+        [
+          "roc__p5794f552e2e0fcba87a322629fdca7c0.fast",
+          1427
+        ],
+        [
+          "roc__p1a804bfda1f5e4235a696be5d06bcb43.fast",
+          28
+        ],
+        [
+          "roc__pa6e6a0bf5ace6ced425a6feecccd5c1b.fast",
+          14
+        ],
+        [
+          "roc__p499ff7eb2f98e9031bc9d0002db086b6.fast",
+          5
+        ],
+        [
+          "roc__p5577dd3f98103e165031983d14e7560c.fast",
+          5
+        ],
+        [
+          "roc__p9d8198fedbd801212718a09deebc5774.fast",
+          4
+        ],
+        [
+          "roc__pe21b3db7436f4bcdc21a284b2c2e5c88.fast",
+          4
+        ],
+        [
+          "list.listAppendRangeWithinUnsafe",
+          4
+        ],
+        [
+          "roc__pbc0b899c3413ab96a977414bc5843477.fast",
+          3
+        ],
+        [
+          "roc__p251d42c9b11261f4b6c38feff48bfd2d.fast",
+          2
+        ],
+        [
+          "roc__p7f95ed46022205c5413858b3de8531cb.fast",
+          2
+        ],
+        [
+          "mi_free",
+          2
+        ],
+        [
+          "_tlv_get_addr",
+          2
+        ],
+        [
+          "mach_absolute_time",
+          2
+        ],
+        [
+          "dev_wrappers.roc_builtins_str_concat",
+          1
+        ]
+      ],
+      "ancestry_unions": {
+        "frame actions": {
+          "weights": 0,
+          "percent": 0.0
+        },
+        "tail cleanup": {
+          "weights": 0,
+          "percent": 0.0
+        },
+        "canonical construction/admission": {
+          "weights": 0,
+          "percent": 0.0
+        },
+        "schema closure": {
+          "weights": 0,
+          "percent": 0.0
+        },
+        "projection accounting": {
+          "weights": 0,
+          "percent": 0.0
+        },
+        "thread-local lookup": {
+          "weights": 2,
+          "percent": 0.13227513227513227
+        }
+      },
+      "ancestry_groups_overlap": true
+    }
+  }
+}

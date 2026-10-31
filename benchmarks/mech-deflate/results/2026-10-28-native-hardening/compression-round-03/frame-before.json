@@ -1,0 +1,6 @@
+{
+  "source": "/private/tmp/mech-live-control-target/release/examples/native_frame_transport",
+  "sha256": "ce5244ec0b11a326f36900101cd0bb9657d5f5a79d5fab64f2de8dcbcf185c37",
+  "compiler": "335de1c16743343fa6745d7ed2e638f6f1626fa9",
+  "purpose": "protected scalar controls; no timing collected yet"
+}

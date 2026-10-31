@@ -1,0 +1,14 @@
+{
+  "before then after": {
+    "blocks": 32,
+    "median_ratio": 0.9931118958719857,
+    "geometric_ratio": 0.9888643245752151,
+    "improving": 26
+  },
+  "after then before": {
+    "blocks": 32,
+    "median_ratio": 0.9906439038404136,
+    "geometric_ratio": 0.9842750523405409,
+    "improving": 29
+  }
+}

@@ -20,8 +20,30 @@ pub fn generate_linked_program_application(
     catalog: &FunctionCatalog,
     source_provenance: &[u8],
 ) -> Result<GeneratedLinkedApplication, NativeApplicationError> {
+    generate_linked_program_application_with_limits(
+        workspace,
+        directory,
+        binary_name,
+        artifact,
+        catalog,
+        source_provenance,
+        Default::default(),
+    )
+}
+
+/// Caller-supplied compilation policy for the same checked application path.
+/// These limits neither enter the runtime image nor grant launch authority.
+pub fn generate_linked_program_application_with_limits(
+    workspace: &Path,
+    directory: &Path,
+    binary_name: &str,
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    source_provenance: &[u8],
+    limits: crate::native_artifact::NativeCompileLimits,
+) -> Result<GeneratedLinkedApplication, NativeApplicationError> {
     let workspace = prepare_destination(workspace, directory, binary_name)?;
-    let object = crate::native_artifact::emit_program_object(artifact, catalog)
+    let object = crate::native_artifact::emit_program_object_with_limits(artifact, catalog, limits)
         .map_err(NativeApplicationError::Compile)?;
     let bytecode = encode_program_artifact_bytecode_v1(artifact)
         .map_err(|error| NativeApplicationError::Encoding(format!("{error:?}")))?;
@@ -84,6 +106,31 @@ pub fn generate_linked_hosted_program_application(
         catalog,
         source_provenance,
         false,
+        Default::default(),
+    )
+}
+
+/// Explicit finite compilation policy for the ordinary resource-hosted path.
+/// Runtime resources and budgets remain separately supplied at launch.
+#[cfg(feature = "canonical-native-program-host")]
+pub fn generate_linked_hosted_program_application_with_limits(
+    workspace: &Path,
+    directory: &Path,
+    binary_name: &str,
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    source_provenance: &[u8],
+    limits: crate::native_artifact::NativeCompileLimits,
+) -> Result<GeneratedLinkedApplication, NativeApplicationError> {
+    generate_hosted(
+        workspace,
+        directory,
+        binary_name,
+        artifact,
+        catalog,
+        source_provenance,
+        false,
+        limits,
     )
 }
 
@@ -110,6 +157,7 @@ pub fn generate_linked_benchmark_program_application(
         catalog,
         source_provenance,
         true,
+        Default::default(),
     )
 }
 
@@ -122,6 +170,7 @@ fn generate_hosted(
     catalog: &FunctionCatalog,
     source_provenance: &[u8],
     benchmark_policy: bool,
+    limits: crate::native_artifact::NativeCompileLimits,
 ) -> Result<GeneratedLinkedApplication, NativeApplicationError> {
     let workspace = prepare_destination(workspace, directory, binary_name)?;
     if !artifact.inputs().is_empty() {
@@ -133,7 +182,7 @@ fn generate_hosted(
     // and shared canonical effect order. No provider/input is observed here.
     let resources = mech_runtime::CanonicalNativeResourceMetadata::prepare(artifact, usize::MAX)
         .map_err(|error| NativeApplicationError::Encoding(format!("{error:?}")))?;
-    let object = crate::native_artifact::emit_program_object(artifact, catalog)
+    let object = crate::native_artifact::emit_program_object_with_limits(artifact, catalog, limits)
         .map_err(NativeApplicationError::Compile)?;
     let bytecode = encode_program_artifact_bytecode_v1(artifact)
         .map_err(|error| NativeApplicationError::Encoding(format!("{error:?}")))?;

@@ -1,0 +1,40 @@
+{
+  "scope": "R56 read-only prospective optimization audit. No performance saving claimed; not disjoint from known allocation ledger families.",
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "470994025019fc8a5b0087b20244b4e96fd733f1fe19505810eb481bf5efe112",
+      "bytes": 3651
+    },
+    {
+      "path": "dead-constant-design.md",
+      "sha256": "f0609bbe6555c489d1e296a570424551b2ae8b84849b87e177ad66a49fb6ce20",
+      "bytes": 9268
+    },
+    {
+      "path": "dead-constants.json",
+      "sha256": "cc856a3a8e1efcf34da1d10cb48d28a8cf08576ffaab458462f3329c8b99cab6",
+      "bytes": 55590
+    },
+    {
+      "path": "dead_constants.py",
+      "sha256": "d00d7b1e34b7c4491bbf0a3dfb75aba1ca810c8241ad53593e646d61d7240c3d",
+      "bytes": 6722
+    },
+    {
+      "path": "meter-first-violation.patch",
+      "sha256": "d15fb77ccaa9c9b0d1ce3cd85584a983fc33091747afb609735134b026899fe7",
+      "bytes": 1798
+    },
+    {
+      "path": "scoped-ledger-audit.md",
+      "sha256": "d9ef7a2692c153a3f1943f99f284259d9428034a07a9f5f1985147d734fae0c4",
+      "bytes": 5859
+    },
+    {
+      "path": "tls-caller-samples.json",
+      "sha256": "20f1b7b98aef584c51b89e25c6ccac0613245ef8074237c9f2cb3d6b28efa707",
+      "bytes": 1536
+    }
+  ]
+}

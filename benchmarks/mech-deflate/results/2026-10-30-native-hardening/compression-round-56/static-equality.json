@@ -1,0 +1,17 @@
+{
+  "object.o": {
+    "sha256": "1a8bb46e9f78fec2147b3242fab5651e470f86ba0347f4f11c7f1aedd5008777",
+    "bytes": 13047400,
+    "byte_identical": true
+  },
+  "descriptor.json": {
+    "sha256": "1b4dbdd2fb0c1f9f51ae7e9dd0bc931bbc2804e6cb949653461d6348c31615c9",
+    "bytes": 59787859,
+    "byte_identical": true
+  },
+  "metadata.json": {
+    "sha256": "a1d3f2710f3c2bb40eeb7cd10529b87ad6eae1d3786b3811823ee07ea3c3cac9",
+    "bytes": 2542212,
+    "byte_identical": true
+  }
+}

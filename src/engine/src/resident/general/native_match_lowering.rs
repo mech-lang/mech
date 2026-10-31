@@ -174,6 +174,10 @@ fn scalar_constant(
 ) -> Result<NativeScalarValue, Error> {
     match (ty.kind(), constant.data()) {
         (NativeScalarKind::Bool, mech_core::ValueData::Bool(v)) => Ok(NativeScalarValue::Bool(*v)),
+        (NativeScalarKind::U8, mech_core::ValueData::U8(v)) => Ok(NativeScalarValue::U8(*v)),
+        (NativeScalarKind::U16, mech_core::ValueData::U16(v)) => Ok(NativeScalarValue::U16(*v)),
+        (NativeScalarKind::U32, mech_core::ValueData::U32(v)) => Ok(NativeScalarValue::U32(*v)),
+
         (NativeScalarKind::U64, mech_core::ValueData::U64(v)) => Ok(NativeScalarValue::U64(*v)),
         (NativeScalarKind::I64, mech_core::ValueData::I64(v)) => Ok(NativeScalarValue::I64(*v)),
         (NativeScalarKind::F64, mech_core::ValueData::F64(v)) => Ok(NativeScalarValue::F64(*v)),
@@ -350,6 +354,69 @@ impl Builder<'_> {
     ) -> Result<NativeProgramType, Error> {
         program_type(self.artifact, id, self.allow_collections)
     }
+    /// A constant tuple selector becomes the same checked structural child
+    /// operation used by pattern binding. Callers select it only after the
+    /// actual maintained access factory and its exact contract were certified.
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
+    fn tuple_scalar_projection(
+        &mut self,
+        at: NativeMatchOrigin,
+        arguments: &[NativeMatchValue],
+        output: NativeMatchValue,
+    ) -> Result<u32, Error> {
+        use crate::native_artifact::{NativeStructuralObservation as O, NativeStructuralStep as S};
+        let [source, selector] = arguments else {
+            return Err(Error::InvalidBinding {
+                node: Some(at.node()),
+            });
+        };
+        let ordinal = self
+            .constants
+            .iter()
+            .find_map(|(id, value)| (*value == *selector).then_some(*id))
+            .and_then(|id| self.artifact.constants().get(id))
+            .and_then(|value| mech_core::canonical_positional_ordinal(value.data()).ok())
+            .and_then(|ordinal| ordinal.checked_sub(1))
+            .and_then(|ordinal| u32::try_from(ordinal).ok())
+            .ok_or_else(|| {
+                unsupported(
+                    at.node(),
+                    "native tuple projection requires a valid constant ordinal",
+                )
+            })?;
+        let mech_core::SchemaBody::Tuple(fields) = self.ty(*source).definition().body() else {
+            return Err(Error::InvalidBinding {
+                node: Some(at.node()),
+            });
+        };
+        if !fields.get(ordinal as usize).is_some_and(|body| {
+            crate::native_artifact::structural_values::carrier_component_matches(
+                self.ty(output).definition().body(),
+                body,
+            )
+        }) {
+            return Err(Error::WitnessTypeMismatch { node: at.node() });
+        }
+        let id = self.block(at, NativeMatchAction::None)?;
+        self.blocks[id as usize].action = NativeIterationAction::Structural {
+            source: *source,
+            path: Box::new([S::TupleItem { ordinal }]),
+            observation: if self.ty(output).definition().body()
+                == &mech_core::SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)
+            {
+                O::U64
+            } else {
+                O::CanonicalValue
+            },
+            output,
+        };
+        Ok(id)
+    }
+
     pub(super) fn primitive(
         &mut self,
         at: NativeMatchOrigin,
@@ -358,7 +425,11 @@ impl Builder<'_> {
         arguments: &[NativeMatchValue],
         output: NativeMatchValue,
     ) -> Result<u32, Error> {
-        #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+        #[cfg(any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        ))]
         if self.allow_collections {
             use crate::native_artifact::{
                 NativeProgramLibraryTemplate, native_collection_lexical_template,
@@ -383,13 +454,34 @@ impl Builder<'_> {
                     });
                 }
             };
+            let unsigned_cast = arguments.len() == 1
+                && self
+                    .ty(output)
+                    .scalar_kind()
+                    .is_some_and(|kind| kind.unsigned_maximum().is_some())
+                && self
+                    .ty(arguments[0])
+                    .scalar_kind()
+                    .is_some_and(|kind| kind.unsigned_maximum().is_some())
+                && self.ty(output).scalar_kind() != self.ty(arguments[0]).scalar_kind();
             match template {
+                // The actual conversion factory supplied this private proof.
+                // All word widths now fit scalar native storage, so the same
+                // binder must additionally seal its precise checked scalar op.
+                #[cfg(feature = "convert")]
+                Ok(template) if template.primitive() == crate::native_artifact::NativeCollectionPrimitive::UnsignedWordConversion => {}
+                Err(error) if unsigned_cast => return Err(error),
                 Ok(template) => {
                     validate_library_types(&template, arguments, output, &self.values).map_err(
                         |_| Error::InvalidBinding {
                             node: Some(at.node()),
                         },
                     )?;
+                    if template.primitive()
+                        == crate::native_artifact::NativeCollectionPrimitive::TupleScalarProjection
+                    {
+                        return self.tuple_scalar_projection(at, arguments, output);
+                    }
                     let id = self.block(at, NativeMatchAction::None)?;
                     self.blocks[id as usize].action = NativeIterationAction::LibraryCall {
                         template,
@@ -481,6 +573,58 @@ impl Builder<'_> {
         arguments: &[NativeMatchValue],
         bindings: &BTreeMap<u32, NativeMatchValue>,
     ) -> Result<(u32, u32, NativeMatchValue), Error> {
+        let (entry, returned) =
+            self.control_block_tail(owner, declaration, block, arguments, bindings, None)?;
+        let (exit, value) =
+            returned.ok_or_else(|| unsupported(owner, "non-returning native block"))?;
+        Ok((entry, exit, value))
+    }
+
+    pub(super) fn assertion(
+        &mut self,
+        at: NativeMatchOrigin,
+        arguments: &[NativeMatchValue],
+        output: NativeMatchValue,
+    ) -> Result<(u32, u32), Error> {
+        let [condition] = arguments else {
+            return Err(Error::InvalidBinding {
+                node: Some(at.node()),
+            });
+        };
+        if self.ty(*condition).scalar_kind() != Some(NativeScalarKind::Bool)
+            || self.ty(output).scalar_kind() != Some(NativeScalarKind::Bool)
+        {
+            return Err(Error::InvalidBinding {
+                node: Some(at.node()),
+            });
+        }
+        let entry = self.block(at, NativeMatchAction::None)?;
+        let returned = self.block(
+            at,
+            NativeMatchAction::Copy {
+                source: *condition,
+                output,
+            },
+        )?;
+        let failed = self.block(at, NativeMatchAction::None)?;
+        self.blocks[entry as usize].terminator = NativeMatchTerminator::Branch {
+            condition: *condition,
+            yes: returned,
+            no: failed,
+        }
+        .into();
+        self.blocks[failed as usize].terminator = NativeMatchTerminator::IntegrityFailure.into();
+        Ok((entry, returned))
+    }
+    fn control_block_tail(
+        &mut self,
+        owner: NodeId,
+        declaration: &MatchDeclaration,
+        block: &ControlBlock,
+        arguments: &[NativeMatchValue],
+        bindings: &BTreeMap<u32, NativeMatchValue>,
+        tail_target: Option<super::native_tail_lowering::TailTarget>,
+    ) -> Result<(u32, Option<(u32, NativeMatchValue)>), Error> {
         let scrutinee = *arguments
             .get(declaration.scrutinee as usize)
             .ok_or(Error::InvalidBinding { node: Some(owner) })?;
@@ -507,7 +651,7 @@ impl Builder<'_> {
                 Ok(value)
             })
             .collect::<Result<Vec<_>, Error>>()?;
-        self.lower_block(owner, block, parameters)
+        self.lower_block_tail(owner, block, parameters, tail_target)
     }
     pub(super) fn lower_block(
         &mut self,
@@ -515,6 +659,18 @@ impl Builder<'_> {
         block: &ControlBlock,
         parameters: Vec<NativeMatchValue>,
     ) -> Result<(u32, u32, NativeMatchValue), Error> {
+        let (entry, returned) = self.lower_block_tail(owner, block, parameters, None)?;
+        let (exit, value) =
+            returned.ok_or_else(|| unsupported(owner, "non-returning native block"))?;
+        Ok((entry, exit, value))
+    }
+    fn lower_block_tail(
+        &mut self,
+        owner: NodeId,
+        block: &ControlBlock,
+        parameters: Vec<NativeMatchValue>,
+        tail_target: Option<super::native_tail_lowering::TailTarget>,
+    ) -> Result<(u32, Option<(u32, NativeMatchValue)>), Error> {
         let at = origin(owner, Some(block.id.0), None);
         let entry = self.block(at, NativeMatchAction::None)?;
         let mut tail = entry;
@@ -531,6 +687,7 @@ impl Builder<'_> {
                 .collect::<Result<Vec<_>, _>>()?;
             let result = self.value(self.type_for_schema(operation.schema)?)?;
             let (start, end) = match &operation.body {
+                ControlOperationBody::Assert => self.assertion(at, &args, result)?,
                 ControlOperationBody::Operation {
                     operation,
                     contract,
@@ -538,7 +695,36 @@ impl Builder<'_> {
                     let id = self.primitive(at, operation, *contract, &args, result)?;
                     (id, id)
                 }
-                ControlOperationBody::Match(nested) => self.matched(at, nested, &args, result)?,
+                ControlOperationBody::Match(nested) => {
+                    let selected_tail = tail_target.filter(|_| {
+                        operation.node as usize + 1 == block.operations.len()
+                            && block.yield_value
+                                == ControlValue::Local {
+                                    block: block.id,
+                                    node: operation.node,
+                                }
+                            && !super::native_tail_lowering::has_own_recur(nested)
+                    });
+                    if let Some(target) = selected_tail {
+                        let (start, returned) = self.matched_body_flow(
+                            at,
+                            nested,
+                            &args,
+                            result,
+                            Some(target.nested()?),
+                        )?;
+                        let Some(end) = returned else {
+                            // Every selected child arm jumps to the owning
+                            // loop. There is no return value or continuation
+                            // here; do not fabricate an unreachable copy.
+                            self.link(tail, start);
+                            return Ok((entry, None));
+                        };
+                        (start, end)
+                    } else {
+                        self.matched(at, nested, &args, result)?
+                    }
+                }
                 ControlOperationBody::Iteration(nested) if self.allow_iteration => {
                     self.iteration(at, nested, &args, result)?
                 }
@@ -552,7 +738,7 @@ impl Builder<'_> {
             locals.push(result);
         }
         let yielded = self.read(block.yield_value, block, &parameters, &locals, owner)?;
-        Ok((entry, tail, yielded))
+        Ok((entry, Some((tail, yielded))))
     }
     pub(super) fn iteration(
         &mut self,
@@ -682,7 +868,7 @@ impl Builder<'_> {
         arguments: &[NativeMatchValue],
         output: NativeMatchValue,
     ) -> Result<(u32, u32), Error> {
-        if self.allow_collections && super::native_tail_lowering::has_direct_recur(declaration) {
+        if self.allow_collections && super::native_tail_lowering::has_own_recur(declaration) {
             return self.tail_match(at, declaration, arguments, output);
         }
         self.matched_body(at, declaration, arguments, output, None)
@@ -694,8 +880,21 @@ impl Builder<'_> {
         declaration: &MatchDeclaration,
         arguments: &[NativeMatchValue],
         output: NativeMatchValue,
-        tail: Option<(NativeMatchValue, u32)>,
+        tail: Option<super::native_tail_lowering::TailTarget>,
     ) -> Result<(u32, u32), Error> {
+        let (entry, returned) = self.matched_body_flow(at, declaration, arguments, output, tail)?;
+        let exit = returned
+            .ok_or_else(|| unsupported(at.node(), "native tail loop has no return path"))?;
+        Ok((entry, exit))
+    }
+    fn matched_body_flow(
+        &mut self,
+        at: NativeMatchOrigin,
+        declaration: &MatchDeclaration,
+        arguments: &[NativeMatchValue],
+        output: NativeMatchValue,
+        tail: Option<super::native_tail_lowering::TailTarget>,
+    ) -> Result<(u32, Option<u32>), Error> {
         let owner = at.node();
         // An unguarded binding/wildcard is exhaustive for the exact validated
         // scrutinee type. Such a partial declaration cannot read a previous
@@ -703,15 +902,18 @@ impl Builder<'_> {
         // (sticky) Match still requires persistent-state support and rejects.
         let exhaustive = declaration.arms.iter().any(|arm| {
             arm.guard.is_none()
-                && matches!(
-                    &arm.pattern,
-                    MatchPattern::Wildcard
-                        | MatchPattern::Bind
-                        | MatchPattern::Structural(crate::CollectionPattern::Wildcard)
-                        | MatchPattern::Structural(crate::CollectionPattern::Bind { .. })
-                )
+                && match &arm.pattern {
+                    MatchPattern::Wildcard | MatchPattern::Bind => true,
+                    MatchPattern::Structural(pattern) => {
+                        super::native_tail_lowering::irrefutable_pattern(pattern)
+                    }
+                    _ => false,
+                }
         });
-        if declaration.partial && !exhaustive && tail.is_none() {
+        // Only the owning loop's root carries the separate enum-coverage proof
+        // from tail_match. An outer target does not prove a child's partial
+        // match total and cannot waive its ordinary coverage check.
+        if declaration.partial && !exhaustive && !tail.is_some_and(|target| target.ancestor == 0) {
             return Err(unsupported(owner, "partial or sticky Match"));
         }
         let scrutinee = *arguments
@@ -727,6 +929,7 @@ impl Builder<'_> {
         }
         let entry = self.block(at, NativeMatchAction::None)?;
         let join = self.block(at, NativeMatchAction::None)?;
+        let mut returns = false;
         let mut test = entry;
         for arm in &declaration.arms {
             let next = self.block(at, NativeMatchAction::None)?;
@@ -763,39 +966,49 @@ impl Builder<'_> {
                 }
                 _ => return Err(unsupported(owner, "aggregate or computed scalar pattern")),
             };
-            let body = if let Some((next_state, latch)) = tail
-                && let Some(prefix) = super::native_tail_lowering::tail_prefix(&arm.body)?
+            let body = if let Some(target) = tail
+                && let Some(prefix) =
+                    super::native_tail_lowering::tail_prefix(&arm.body, target.ancestor)?
             {
                 let (body, end, state) =
                     self.control_block(owner, declaration, &prefix, arguments, &bindings)?;
-                if self.ty(state) != self.ty(next_state) {
+                if self.ty(state) != self.ty(target.next) {
                     return Err(Error::InvalidBinding { node: Some(owner) });
                 }
                 let copy = self.block(
                     origin(owner, Some(arm.body.id.0), None),
                     NativeMatchAction::Copy {
                         source: state,
-                        output: next_state,
+                        output: target.next,
                     },
                 )?;
                 self.link(end, copy);
-                self.link(copy, latch);
+                self.link(copy, target.latch);
                 body
             } else {
-                let (body, body_tail, yielded) =
-                    self.control_block(owner, declaration, &arm.body, arguments, &bindings)?;
-                if self.ty(yielded) != self.ty(output) {
-                    return Err(Error::InvalidBinding { node: Some(owner) });
-                }
-                let copy = self.block(
-                    origin(owner, Some(arm.body.id.0), None),
-                    NativeMatchAction::Copy {
-                        source: yielded,
-                        output,
-                    },
+                let (body, returned) = self.control_block_tail(
+                    owner,
+                    declaration,
+                    &arm.body,
+                    arguments,
+                    &bindings,
+                    tail,
                 )?;
-                self.link(body_tail, copy);
-                self.link(copy, join);
+                if let Some((body_tail, yielded)) = returned {
+                    if self.ty(yielded) != self.ty(output) {
+                        return Err(Error::InvalidBinding { node: Some(owner) });
+                    }
+                    let copy = self.block(
+                        origin(owner, Some(arm.body.id.0), None),
+                        NativeMatchAction::Copy {
+                            source: yielded,
+                            output,
+                        },
+                    )?;
+                    self.link(body_tail, copy);
+                    self.link(copy, join);
+                    returns = true;
+                }
                 body
             };
             let selected = if let Some(guard) = &arm.guard {
@@ -845,7 +1058,10 @@ impl Builder<'_> {
         // Keep a typed fail-closed terminal even though validated exhaustive
         // patterns make this path unreachable for admitted scalar inputs.
         self.blocks[test as usize].terminator = NativeMatchTerminator::Reject.into();
-        Ok((entry, join))
+        if !returns {
+            self.blocks[join as usize].terminator = NativeMatchTerminator::Reject.into();
+        }
+        Ok((entry, returns.then_some(join)))
     }
 }
 
@@ -918,6 +1134,7 @@ fn lower_scalar_control_artifact(
         catalog,
         allow_iteration,
         false,
+        crate::native_artifact::DEFAULT_NATIVE_DEFINITION_TABLE_BYTES,
     )?)
 }
 
@@ -931,7 +1148,45 @@ pub fn lower_native_program_artifact(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramArtifactPlan, Error> {
-    lower_control_artifact(artifact, catalog, true, true)
+    lower_native_program_artifact_with_definition_table_limit(
+        artifact,
+        catalog,
+        crate::native_artifact::DEFAULT_NATIVE_DEFINITION_TABLE_BYTES,
+    )
+}
+
+/// Uses the caller's explicit current-visit definition-table allowance.
+/// Each validation estimates one table using all plan blocks and definition
+/// cells before allocating its rows. This is not a phase-wide memory budget:
+/// graph inventories, queues, row clones and coexisting nested scope tables
+/// are not included. It grants no runtime memory or execution authority.
+pub fn lower_native_program_artifact_with_definition_table_limit(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    definition_table_byte_limit: u64,
+) -> Result<NativeProgramArtifactPlan, Error> {
+    lower_control_artifact(artifact, catalog, true, true, definition_table_byte_limit)
+}
+
+// Keep the validator's reason at the public lowering boundary. These checks
+// still reject the same plans; callers can now identify the rejecting stage.
+fn checked_plan_step(stage: &'static str, result: Result<(), &'static str>) -> Result<(), Error> {
+    result.map_err(|reason| Error::InvalidPlan { stage, reason })
+}
+
+fn checked_visit_step(
+    stage: &'static str,
+    result: Result<(), crate::native_artifact::iteration_validation::ValidationError>,
+) -> Result<(), Error> {
+    use crate::native_artifact::iteration_validation::ValidationError;
+    result.map_err(|error| match error {
+        ValidationError::Invalid(reason) => Error::InvalidPlan { stage, reason },
+        ValidationError::DefinitionTableLimit { required, limit } => Error::DefinitionTableLimit {
+            stage,
+            required,
+            limit,
+        },
+    })
 }
 
 fn lower_control_artifact(
@@ -939,6 +1194,7 @@ fn lower_control_artifact(
     catalog: &FunctionCatalog,
     allow_iteration: bool,
     allow_collections: bool,
+    definition_table_byte_limit: u64,
 ) -> Result<NativeProgramArtifactPlan, Error> {
     if !allow_collections && !artifact.requirements().is_empty() {
         return Err(Error::UnsupportedProgram {
@@ -1215,6 +1471,7 @@ fn lower_control_artifact(
         })?;
     }
     let mut plan = NativeProgramArtifactPlan {
+        definition_table_byte_limit,
         revision: artifact.revision(),
         resource_requirements,
         observations: observations.into(),
@@ -1241,29 +1498,43 @@ fn lower_control_artifact(
     };
     if allow_iteration {
         let checked = if allow_collections {
-            plan.validate_current_visits()
+            plan.validate_current_visits_detailed()
         } else {
             // Frozen scalar views retain their original proof and acquire no
             // managed phase boundary or generated phase dispatch.
-            crate::native_artifact::iteration_validation::validate(&plan)
+            crate::native_artifact::iteration_validation::validate_detailed(&plan)
         };
-        checked.map_err(|_| Error::InvalidBinding { node: None })?;
+        checked_visit_step("current visits before lowering", checked)?;
     }
     if allow_collections {
-        crate::native_artifact::range_cursor::lower(&mut plan)
-            .map_err(|_| Error::InvalidBinding { node: None })?;
-        crate::native_artifact::text_join_sink::lower(&mut plan)
-            .map_err(|_| Error::InvalidBinding { node: None })?;
-        crate::native_artifact::guarded_histogram_query::lower(&mut plan)
-            .map_err(|_| Error::InvalidBinding { node: None })?;
-        crate::native_artifact::histogram_sink::lower(&mut plan)
-            .map_err(|_| Error::InvalidBinding { node: None })?;
-        crate::native_artifact::string_span_projection::lower(&mut plan)
-            .map_err(|_| Error::InvalidBinding { node: None })?;
-        crate::native_artifact::string_element_map_projection::lower(&mut plan)
-            .map_err(|_| Error::InvalidBinding { node: None })?;
-        plan.validate_current_visits()
-            .map_err(|_| Error::InvalidBinding { node: None })?;
+        checked_plan_step(
+            "range cursor lowering",
+            crate::native_artifact::range_cursor::lower(&mut plan),
+        )?;
+        checked_plan_step(
+            "text join sink lowering",
+            crate::native_artifact::text_join_sink::lower(&mut plan),
+        )?;
+        checked_plan_step(
+            "guarded histogram query lowering",
+            crate::native_artifact::guarded_histogram_query::lower(&mut plan),
+        )?;
+        checked_plan_step(
+            "histogram sink lowering",
+            crate::native_artifact::histogram_sink::lower(&mut plan),
+        )?;
+        checked_plan_step(
+            "string span projection lowering",
+            crate::native_artifact::string_span_projection::lower(&mut plan),
+        )?;
+        checked_plan_step(
+            "string element map projection lowering",
+            crate::native_artifact::string_element_map_projection::lower(&mut plan),
+        )?;
+        checked_visit_step(
+            "current visits after lowering",
+            plan.validate_current_visits_detailed(),
+        )?;
     }
     Ok(plan)
 }
@@ -1299,6 +1570,162 @@ mod iteration_proof_tests {
         let (artifact, catalog) = artifact(source);
         lower_scalar_iteration_artifact(&artifact, &catalog).unwrap()
     }
+    #[test]
+    fn plan_rejection_preserves_stage_and_validator_reason() {
+        let (artifact, catalog) = artifact("input<u64>");
+        let valid = lower_native_program_artifact(&artifact, &catalog).unwrap();
+        checked_plan_step(
+            "current visits before lowering",
+            valid.validate_current_visits(),
+        )
+        .unwrap();
+        let mut invalid = valid;
+        invalid.entry = u32::MAX;
+        let reason = invalid.validate_current_visits().unwrap_err();
+        for stage in [
+            "current visits before lowering",
+            "current visits after lowering",
+        ] {
+            let error = checked_plan_step(stage, invalid.validate_current_visits()).unwrap_err();
+            assert_eq!(error, Error::InvalidPlan { stage, reason });
+            let message = error.to_string();
+            assert!(message.contains(stage));
+            assert!(message.contains(reason));
+        }
+    }
+
+    #[test]
+    fn visit_admission_distinguishes_invalid_metadata_from_analysis_limit() {
+        let (artifact, catalog) = artifact("input<u64>");
+        let valid = lower_native_program_artifact(&artifact, &catalog).unwrap();
+        let mut invalid_entry = valid.clone();
+        invalid_entry.entry = u32::MAX;
+        assert_eq!(
+            crate::native_artifact::iteration_validation::validate(&invalid_entry),
+            Err("current-visit entry is outside the control blocks")
+        );
+        let mut missing_scope = valid.clone();
+        missing_scope.value_scopes = Box::new([]);
+        assert_eq!(
+            crate::native_artifact::iteration_validation::validate(&missing_scope),
+            Err("current-visit scope count differs from value count")
+        );
+        // The proof rejects the estimated storage before building its fact sets.
+        // Keep the test's own metadata small while crossing the default 64 MiB cap.
+        let mut oversized = valid;
+        oversized.blocks = vec![oversized.blocks[0].clone(); 4096].into();
+        oversized.values = vec![oversized.values[0].clone(); 131072].into();
+        oversized.value_scopes =
+            vec![NativeIterationValueScope::Immutable { iteration: None }; 131072].into();
+        let reason = "current-visit definition table exceeds its configured byte limit";
+        assert_eq!(
+            crate::native_artifact::iteration_validation::validate(&oversized),
+            Err(reason)
+        );
+        assert_eq!(
+            checked_visit_step(
+                "current visits before lowering",
+                crate::native_artifact::iteration_validation::validate_detailed(&oversized)
+            ),
+            Err(Error::DefinitionTableLimit {
+                stage: "current visits before lowering",
+                required: 67_239_936,
+                limit: 67_108_864,
+            })
+        );
+    }
+
+    #[test]
+    fn composed_definition_chain_admits_larger_proof_without_accepting_future_reads() {
+        let (artifact, catalog) = artifact("input<u64>");
+        let mut valid = lower_native_program_artifact(&artifact, &catalog).unwrap();
+        assert!(valid.iterations().is_empty() && valid.collections().is_empty());
+        let boundary = valid.activation_boundary.unwrap() as usize;
+        let NativeIterationTerminator::Scalar(NativeMatchTerminator::Jump(complete)) =
+            valid.blocks[boundary].terminator
+        else {
+            panic!("boundary jump")
+        };
+        let mut blocks = valid.blocks.into_vec();
+        let mut values = valid.values.into_vec();
+        let mut scopes = valid.value_scopes.into_vec();
+        let first = blocks.len();
+        let mut previous = valid.inputs[0].value();
+        let ty = values[previous.get() as usize].clone();
+        for _ in 0..24576 {
+            let output = NativeMatchValue(values.len() as u32);
+            values.push(ty.clone());
+            scopes.push(NativeIterationValueScope::Immutable { iteration: None });
+            let mut block = blocks[boundary].clone();
+            block.action = NativeIterationAction::Scalar(NativeMatchAction::Copy {
+                source: previous,
+                output,
+            });
+            block.terminator = NativeMatchTerminator::Jump(blocks.len() as u32 + 1).into();
+            blocks.push(block);
+            previous = output;
+        }
+        blocks.last_mut().unwrap().terminator = NativeMatchTerminator::Jump(complete).into();
+        blocks[boundary].terminator = NativeMatchTerminator::Jump(first as u32).into();
+        // Even the packed payload alone crosses the former 64 MiB allowance.
+        let payload = blocks.len() * values.len().div_ceil(64) * 8;
+        assert!(payload > 64 * 1024 * 1024 && payload < 512 * 1024 * 1024);
+        valid.blocks = blocks.into();
+        valid.values = values.into();
+        valid.value_scopes = scopes.into();
+        valid.outputs[0].value = previous;
+        assert!(matches!(
+            valid.validate_current_visits_detailed(),
+            Err(
+                crate::native_artifact::iteration_validation::ValidationError::DefinitionTableLimit { .. }
+            )
+        ));
+        let bounded_image = serde_json::to_vec(&valid).unwrap();
+        valid.definition_table_byte_limit = u64::MAX;
+        // Resource policy does not change the selected semantic image.
+        assert_eq!(serde_json::to_vec(&valid).unwrap(), bounded_image);
+        valid.validate_current_visits().unwrap();
+        // A generous storage allowance must still reject a type-correct read
+        // of a value that only a later block defines.
+        let NativeIterationAction::Scalar(NativeMatchAction::Copy { source, .. }) =
+            &mut valid.blocks[first].action
+        else {
+            panic!("first copy")
+        };
+        *source = previous;
+        assert!(valid.validate_current_visits().is_err());
+    }
+
+    #[cfg(feature = "map_ops")]
+    #[test]
+    fn large_mapless_program_has_no_map_write_uses() {
+        let (artifact, catalog) = artifact("input<u64>");
+        let mut valid = lower_native_program_artifact(&artifact, &catalog).unwrap();
+        let boundary = valid.activation_boundary.unwrap() as usize;
+        let NativeIterationTerminator::Scalar(NativeMatchTerminator::Jump(complete)) =
+            valid.blocks[boundary].terminator
+        else {
+            panic!("boundary jump")
+        };
+        let mut blocks = valid.blocks.into_vec();
+        let first = blocks.len() as u32;
+        let mut empty = blocks[boundary].clone();
+        empty.action = NativeIterationAction::Scalar(NativeMatchAction::None);
+        for _ in 0..16385 {
+            let next = blocks.len() as u32 + 1;
+            empty.terminator = NativeMatchTerminator::Jump(next).into();
+            blocks.push(empty.clone());
+        }
+        blocks.last_mut().unwrap().terminator = NativeMatchTerminator::Jump(complete).into();
+        blocks[boundary].terminator = NativeMatchTerminator::Jump(first).into();
+        valid.blocks = blocks.into();
+        valid.validate_current_visits().unwrap();
+        assert!(valid.map_write_uses().unwrap().is_empty());
+        // An absent map write does not bypass validation of the underlying CFG.
+        valid.entry = u32::MAX;
+        assert!(valid.map_write_uses().is_err());
+    }
+
     #[test]
     fn mixed_current_visit_proof_rejects_stale_managed_carriers_and_cross_scope_edges() {
         for count in [0, 25] {
@@ -1337,7 +1764,11 @@ mod iteration_proof_tests {
     #[cfg(all(
         feature = "semantic-compiler",
         feature = "resident-artifact",
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     ))]
     fn closed_tail_plans() -> Vec<NativeProgramArtifactPlan> {
         // Real canonical enum packing and structural pattern sites. Bool is
@@ -1375,7 +1806,11 @@ mod iteration_proof_tests {
     #[cfg(all(
         feature = "semantic-compiler",
         feature = "resident-artifact",
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     ))]
     #[test]
     fn tail_current_visit_proof_rejects_forged_roles_edges_and_stale_return_slots() {
@@ -1452,7 +1887,11 @@ mod iteration_proof_tests {
     #[cfg(all(
         feature = "semantic-compiler",
         feature = "resident-artifact",
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     ))]
     #[test]
     fn tail_proof_keeps_nominal_enum_identity_and_validates_tag_and_projection_paths() {

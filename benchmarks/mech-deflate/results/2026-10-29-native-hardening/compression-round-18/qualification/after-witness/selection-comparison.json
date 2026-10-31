@@ -1,0 +1,8 @@
+{
+  "basis": "Current IR120 selection mapped to retained round16 dynamic sites; exact primitive/origin checked, not a fresh call trace",
+  "total_sites": 43,
+  "total_calls_in_retained_trace": 53,
+  "private_sites": 7,
+  "private_calls_in_retained_trace": 7,
+  "remaining_canonical_calls_in_retained_trace": 46
+}

@@ -1,0 +1,56 @@
+{
+  "created_utc": "2026-10-30T23:59:47.515225+00:00",
+  "head": "b49545f6f5a050cbb7ee33eb9d9bab09508fcf26",
+  "files": [
+    {
+      "path": "refined/counters/allocation_profile.c",
+      "sha256": "d4e2ef8c1c635bf0e87a72ec6308abb2ba1b845d5da502a6d204135f07b7c27e",
+      "bytes": 4893
+    },
+    {
+      "path": "refined/counters/allocation_profile.h",
+      "sha256": "56852a08a6cb3fbba88daa10b8674cdb938933833722f0ed3bfcc8ae9ae9b31a",
+      "bytes": 384
+    },
+    {
+      "path": "refined/counters/allocation_profile.rs",
+      "sha256": "d9c4bc779939567f5dced46d7c7f7030726b4c0e17df72efc3339cdfe2514b19",
+      "bytes": 1306
+    },
+    {
+      "path": "refined/counters/cpu_usage.rs",
+      "sha256": "3f3e2ac6cead2a6758f96afe77f4fa56da054f1d5e1e1e163f9d79ed8dc12817",
+      "bytes": 385
+    },
+    {
+      "path": "refined/counters/reference-cpu/run.json",
+      "sha256": "56c89878e7f9a178ae4bb8bd4f8f4f89f4baee42dc3f2ae6aa6641e90c255ea0",
+      "bytes": 369
+    },
+    {
+      "path": "refined/counters/reference-cpu/run.stderr",
+      "sha256": "2bbb2f41a6fac5476ff13590e24bd50312bb74b6cf4e61c86c4441861d5663a6",
+      "bytes": 16343
+    },
+    {
+      "path": "refined/counters/reference-cpu/run.stdout",
+      "sha256": "224e3441f9e68df0956301e54c77d28869e5a0fec5878a35c49c3779e6597d03",
+      "bytes": 628890
+    },
+    {
+      "path": "refined/counters/usage.c",
+      "sha256": "883fe6a7baf228bc881b4b76aef13f352da38f19c8e7a5b3ca938dbd1dddfd0e",
+      "bytes": 448
+    },
+    {
+      "path": "refined/counters/usage.h",
+      "sha256": "ca6ac3c2cd82bfb367c07aa9e26b1aea3b025e48ea44db76dbded2be45b5fb9f",
+      "bytes": 233
+    },
+    {
+      "path": "refined/counters.py",
+      "sha256": "424becb34828e3f7be25e84fc06d4d987b684e5d2fcb3011feac278dbac045bc",
+      "bytes": 4760
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-compression-round02-20261028/check-source",
+    "/private/tmp/mech-compression-round02-20261028/scalar-selection-matrix-value.mec",
+    "/private/tmp/mech-compression-round02-20261028/matrix-selection-free-value.mec",
+    "/private/tmp/mech-compression-round02-20261028/matrix-selection-fixed-value.mec",
+    "/private/tmp/mech-compression-round02-20261028/matrix-selector-free-value.mec"
+  ],
+  "exit": 0
+}

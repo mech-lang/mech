@@ -1,0 +1,347 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "case": "exclusive",
+      "form": "original",
+      "passed": true,
+      "paired_median_time_ratio": 0.4654435019101414,
+      "ratios": {
+        "allocation_requests": 0.3119266055045872,
+        "requested_bytes": 0.2111736509174486
+      },
+      "baseline_medians": {
+        "seconds": 0.00030695850000000003,
+        "allocation_requests": 4578.0,
+        "requested_bytes": 289771.0
+      },
+      "candidate_medians": {
+        "seconds": 0.00014191650000000002,
+        "allocation_requests": 1428.0,
+        "requested_bytes": 61192.0
+      }
+    },
+    {
+      "case": "exclusive",
+      "form": "decoded",
+      "passed": true,
+      "paired_median_time_ratio": 0.46396802030616024,
+      "ratios": {
+        "allocation_requests": 0.3119266055045872,
+        "requested_bytes": 0.2111736509174486
+      },
+      "baseline_medians": {
+        "seconds": 0.000305521,
+        "allocation_requests": 4578.0,
+        "requested_bytes": 289771.0
+      },
+      "candidate_medians": {
+        "seconds": 0.000141625,
+        "allocation_requests": 1428.0,
+        "requested_bytes": 61192.0
+      }
+    },
+    {
+      "case": "aliased",
+      "form": "original",
+      "passed": true,
+      "paired_median_time_ratio": 0.4681841204961767,
+      "ratios": {
+        "allocation_requests": 0.3368421052631579,
+        "requested_bytes": 0.2424538253388981
+      },
+      "baseline_medians": {
+        "seconds": 0.0003140415,
+        "allocation_requests": 4750.0,
+        "requested_bytes": 305254.0
+      },
+      "candidate_medians": {
+        "seconds": 0.00014625,
+        "allocation_requests": 1600.0,
+        "requested_bytes": 74010.0
+      }
+    },
+    {
+      "case": "aliased",
+      "form": "decoded",
+      "passed": true,
+      "paired_median_time_ratio": 0.46780025618104215,
+      "ratios": {
+        "allocation_requests": 0.3368421052631579,
+        "requested_bytes": 0.2424538253388981
+      },
+      "baseline_medians": {
+        "seconds": 0.0003131255,
+        "allocation_requests": 4750.0,
+        "requested_bytes": 305254.0
+      },
+      "candidate_medians": {
+        "seconds": 0.00014608349999999998,
+        "allocation_requests": 1600.0,
+        "requested_bytes": 74010.0
+      }
+    },
+    {
+      "case": "scalar-loop",
+      "form": "original",
+      "passed": true,
+      "paired_median_time_ratio": 1.0044735675143324,
+      "ratios": {
+        "allocation_requests": 1.0,
+        "requested_bytes": 1.0
+      },
+      "baseline_medians": {
+        "seconds": 0.000740646,
+        "allocation_requests": 16400.0,
+        "requested_bytes": 2404800.0
+      },
+      "candidate_medians": {
+        "seconds": 0.0007433755000000001,
+        "allocation_requests": 16400.0,
+        "requested_bytes": 2404800.0
+      }
+    },
+    {
+      "case": "scalar-loop",
+      "form": "decoded",
+      "passed": true,
+      "paired_median_time_ratio": 1.0029349957148677,
+      "ratios": {
+        "allocation_requests": 1.0,
+        "requested_bytes": 1.0
+      },
+      "baseline_medians": {
+        "seconds": 0.000739167,
+        "allocation_requests": 16400.0,
+        "requested_bytes": 2404800.0
+      },
+      "candidate_medians": {
+        "seconds": 0.000738604,
+        "allocation_requests": 16400.0,
+        "requested_bytes": 2404800.0
+      }
+    },
+    {
+      "case": "scalar-u64",
+      "form": "original",
+      "passed": true,
+      "paired_median_time_ratio": 1.0086414737463736,
+      "ratios": {
+        "allocation_requests": 1.0,
+        "requested_bytes": 1.0
+      },
+      "baseline_medians": {
+        "seconds": 0.010540916000000001,
+        "allocation_requests": 360000.0,
+        "requested_bytes": 48040000.0
+      },
+      "candidate_medians": {
+        "seconds": 0.0106269585,
+        "allocation_requests": 360000.0,
+        "requested_bytes": 48040000.0
+      }
+    },
+    {
+      "case": "scalar-u64",
+      "form": "decoded",
+      "passed": true,
+      "paired_median_time_ratio": 1.0112994570490492,
+      "ratios": {
+        "allocation_requests": 1.0,
+        "requested_bytes": 1.0
+      },
+      "baseline_medians": {
+        "seconds": 0.010609979,
+        "allocation_requests": 360000.0,
+        "requested_bytes": 48040000.0
+      },
+      "candidate_medians": {
+        "seconds": 0.0107215415,
+        "allocation_requests": 360000.0,
+        "requested_bytes": 48040000.0
+      }
+    },
+    {
+      "case": "scalar-i64",
+      "form": "original",
+      "passed": true,
+      "paired_median_time_ratio": 1.0198675459152218,
+      "ratios": {
+        "allocation_requests": 1.0,
+        "requested_bytes": 1.0
+      },
+      "baseline_medians": {
+        "seconds": 0.010577,
+        "allocation_requests": 360000.0,
+        "requested_bytes": 48040000.0
+      },
+      "candidate_medians": {
+        "seconds": 0.0107430415,
+        "allocation_requests": 360000.0,
+        "requested_bytes": 48040000.0
+      }
+    },
+    {
+      "case": "scalar-i64",
+      "form": "decoded",
+      "passed": true,
+      "paired_median_time_ratio": 1.001674720776326,
+      "ratios": {
+        "allocation_requests": 1.0,
+        "requested_bytes": 1.0
+      },
+      "baseline_medians": {
+        "seconds": 0.010697438,
+        "allocation_requests": 360000.0,
+        "requested_bytes": 48040000.0
+      },
+      "candidate_medians": {
+        "seconds": 0.010721125000000001,
+        "allocation_requests": 360000.0,
+        "requested_bytes": 48040000.0
+      }
+    },
+    {
+      "case": "scalar-f64",
+      "form": "original",
+      "passed": true,
+      "paired_median_time_ratio": 1.0085470079840082,
+      "ratios": {
+        "allocation_requests": 1.0,
+        "requested_bytes": 1.0
+      },
+      "baseline_medians": {
+        "seconds": 0.010517917,
+        "allocation_requests": 360000.0,
+        "requested_bytes": 48040000.0
+      },
+      "candidate_medians": {
+        "seconds": 0.0106063955,
+        "allocation_requests": 360000.0,
+        "requested_bytes": 48040000.0
+      }
+    },
+    {
+      "case": "scalar-f64",
+      "form": "decoded",
+      "passed": true,
+      "paired_median_time_ratio": 1.0088609142967568,
+      "ratios": {
+        "allocation_requests": 1.0,
+        "requested_bytes": 1.0
+      },
+      "baseline_medians": {
+        "seconds": 0.010596603999999999,
+        "allocation_requests": 360000.0,
+        "requested_bytes": 48040000.0
+      },
+      "candidate_medians": {
+        "seconds": 0.0106891455,
+        "allocation_requests": 360000.0,
+        "requested_bytes": 48040000.0
+      }
+    },
+    {
+      "case": "scalar-bool",
+      "form": "original",
+      "passed": true,
+      "paired_median_time_ratio": 1.0081650560232494,
+      "ratios": {
+        "allocation_requests": 1.0,
+        "requested_bytes": 1.0
+      },
+      "baseline_medians": {
+        "seconds": 0.0105962915,
+        "allocation_requests": 360000.0,
+        "requested_bytes": 48040000.0
+      },
+      "candidate_medians": {
+        "seconds": 0.0106781875,
+        "allocation_requests": 360000.0,
+        "requested_bytes": 48040000.0
+      }
+    },
+    {
+      "case": "scalar-bool",
+      "form": "decoded",
+      "passed": true,
+      "paired_median_time_ratio": 1.0132290074190344,
+      "ratios": {
+        "allocation_requests": 1.0,
+        "requested_bytes": 1.0
+      },
+      "baseline_medians": {
+        "seconds": 0.0105910625,
+        "allocation_requests": 360000.0,
+        "requested_bytes": 48040000.0
+      },
+      "candidate_medians": {
+        "seconds": 0.010719167,
+        "allocation_requests": 360000.0,
+        "requested_bytes": 48040000.0
+      }
+    }
+  ],
+  "scalar_slopes": [
+    {
+      "role": "baseline",
+      "form": "original",
+      "zero_per_visit_allocation": true,
+      "costs": [
+        [
+          164,
+          24048
+        ],
+        [
+          164,
+          24048
+        ]
+      ]
+    },
+    {
+      "role": "baseline",
+      "form": "decoded",
+      "zero_per_visit_allocation": true,
+      "costs": [
+        [
+          164,
+          24048
+        ],
+        [
+          164,
+          24048
+        ]
+      ]
+    },
+    {
+      "role": "candidate",
+      "form": "original",
+      "zero_per_visit_allocation": true,
+      "costs": [
+        [
+          164,
+          24048
+        ],
+        [
+          164,
+          24048
+        ]
+      ]
+    },
+    {
+      "role": "candidate",
+      "form": "decoded",
+      "zero_per_visit_allocation": true,
+      "costs": [
+        [
+          164,
+          24048
+        ],
+        [
+          164,
+          24048
+        ]
+      ]
+    }
+  ]
+}

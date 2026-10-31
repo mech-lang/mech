@@ -1,0 +1,48 @@
+{
+  "compiler": "915f039cfd7e2647cc3a1d349ab1070c3f292d19",
+  "exit": 1,
+  "classification": "introduced diagnostic harness missing imports; no compiler change; no test executed",
+  "performance_claim": false,
+  "files": [
+    {
+      "path": "build-command.json",
+      "sha256": "56c3149d467c51dc55e03ccd0d8e755002285d81e5a4388432c730da5db90b94",
+      "bytes": 1716
+    },
+    {
+      "path": "build.json",
+      "sha256": "e3cc0350c62665eec0fc0efcae547d1313a57551dde66067c3a5b1d52bd9d712",
+      "bytes": 1883
+    },
+    {
+      "path": "build.stderr",
+      "sha256": "a9bfc8c1a3fef67aaf312d0bda3065026a0273c0fccaa725ceef674873de7d25",
+      "bytes": 4345
+    },
+    {
+      "path": "build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "huffman.mec",
+      "sha256": "f1a918de00774c512668c284836692e521db219147b991b75aada72303dabec4",
+      "bytes": 1503
+    },
+    {
+      "path": "qualification.rs",
+      "sha256": "c5ea5fa2cbe818bd1bcfa5f6f83aee49dfc138e19e551defe301fda0becb5a09",
+      "bytes": 36416
+    },
+    {
+      "path": "run.py",
+      "sha256": "e6643bd13c4961f80f47ccb54d2006ce9e7ef94c8a6a07f9fdc00fccb497a726",
+      "bytes": 934
+    },
+    {
+      "path": "witness.rs",
+      "sha256": "9352a3053419a6ba52e7a6cf4d4c82f8db7b877783bb8dceb0ea1426313803e1",
+      "bytes": 4644
+    }
+  ]
+}

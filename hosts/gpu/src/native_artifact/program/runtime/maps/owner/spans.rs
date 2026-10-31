@@ -95,10 +95,10 @@ impl State<'_> {
                 .reserve_nodes(2)?;
             let handle = ctx.arena_current_handle(proof.source().get())?;
             let owner = ctx.arena_get(handle)?.clone();
-            let crate::native_artifact::program::runtime::session::CallCacheEntry::Repeated(
+            let Some(crate::native_artifact::program::runtime::session::CallCacheEntry::Repeated(
                 cache,
                 _,
-            ) = &ctx.caches().entries[site]
+            )) = ctx.caches().entry(site)
             else {
                 return Err(invalid("map key selection lacks repeated cache"));
             };

@@ -1,0 +1,62 @@
+warning: patch `mech-combinatorics v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/combinatorics)` was not used in the crate graph
+warning: patch `mech-compare v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/compare)` was not used in the crate graph
+warning: patch `mech-logic v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/logic)` was not used in the crate graph
+warning: patch `mech-math v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/math)` was not used in the crate graph
+warning: patch `mech-matrix v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/matrix)` was not used in the crate graph
+warning: patch `mech-range v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/range)` was not used in the crate graph
+warning: patch `mech-set v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/set)` was not used in the crate graph
+warning: patch `mech-stats v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/stats)` was not used in the crate graph
+warning: patch `mech-string v0.3.5 (/private/tmp/mech-deflate-linear-stack/machines/string)` was not used in the crate graph
+help: Check that the patched package version and available features are compatible
+      with the dependency requirements. If the patch has a different version from
+      what is locked in the Cargo.lock file, run `cargo update` to use the new
+      version. This may also occur with an optional dependency that is not enabled.
+   Compiling unicode-ident v1.0.27
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling syn v3.0.9
+   Compiling synstructure v0.14.0
+   Compiling zerofrom-derive v0.1.8
+   Compiling zerofrom v0.1.8
+   Compiling yoke-derive v0.8.4
+   Compiling yoke v0.8.4
+   Compiling zerovec-derive v0.11.7
+   Compiling zerovec v0.11.9
+   Compiling displaydoc v0.2.7
+   Compiling libc v0.2.189
+   Compiling serde_core v1.0.229
+   Compiling syn v2.0.119
+   Compiling tinystr v0.8.5
+   Compiling icu_properties_data v2.4.0
+   Compiling icu_locale_core v2.4.0
+   Compiling zerotrie v0.2.5
+   Compiling potential_utf v0.1.6
+   Compiling serde_derive v1.0.229
+   Compiling equivalent v1.0.3
+   Compiling crc32fast v1.5.3
+   Compiling serde_json v1.0.154
+   Compiling icu_collections v2.4.0
+   Compiling serde v1.0.229
+   Compiling simba v0.9.1
+   Compiling num-rational v0.4.2
+   Compiling icu_provider v2.4.0
+   Compiling nalgebra-macros v0.3.0
+   Compiling cpufeatures v0.3.1
+   Compiling indexmap v2.14.2
+   Compiling grapheme_macro v2.0.0
+   Compiling bincode v2.0.1
+   Compiling sha2 v0.11.1
+   Compiling nalgebra v0.34.2
+   Compiling icu_properties v2.4.0
+   Compiling unicode-normalization v0.1.26
+   Compiling cpufeatures v0.2.17
+   Compiling smallvec v1.16.4
+   Compiling mech-core v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/core)
+   Compiling grapheme v1.3.0
+   Compiling sha2 v0.10.9
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/engine)
+   Compiling hashbrown v0.15.5
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/compute)
+   Compiling compression-application v0.0.0 (/private/tmp/mech-public-finite-20261028/original)
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/gpu)
+    Finished `dev` profile [unoptimized] target(s) in 1m 14s

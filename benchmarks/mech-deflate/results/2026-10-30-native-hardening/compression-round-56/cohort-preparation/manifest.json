@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-31T13:05:36.657635+00:00",
+  "head": "c4fdacb4c76f6ff47264006934553c7987ada2bb",
+  "files": [
+    {
+      "path": "allocation-target.json",
+      "sha256": "ca2443cb1d27ed0150b1733c55c85ebf082104350cdd9cdb12b0002c9cce165d",
+      "bytes": 613
+    },
+    {
+      "path": "analyze.py",
+      "sha256": "9bbf0f0cf1a336a5a1a0487328633076b20bef70863e63f70698890c072b3a0d",
+      "bytes": 4869
+    },
+    {
+      "path": "baseline-pin.json",
+      "sha256": "2059c539fc1d933b9e91fc21da0e397809e41f4b1bd02bff9c7c2c7c43f9e72e",
+      "bytes": 20998
+    },
+    {
+      "path": "driver-preparation.json",
+      "sha256": "c57d3f6e6bc5636988a40356266e94d9ba889a5914d2b0733d63b3de9db26f7c",
+      "bytes": 1278
+    },
+    {
+      "path": "numeric-ci.py",
+      "sha256": "80253ee59f41bf9409ca7605c0ecae53e2628a4e352864dd9475589991c0e8f6",
+      "bytes": 1788
+    },
+    {
+      "path": "run-primary.py",
+      "sha256": "e3df3bc3b06c70187fd76bf6005ffc5f6be4ccf6fb0fa132ea056988ce76f35d",
+      "bytes": 7431
+    }
+  ]
+}

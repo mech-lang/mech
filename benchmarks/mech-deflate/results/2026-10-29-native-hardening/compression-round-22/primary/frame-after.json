@@ -1,0 +1,6 @@
+{
+  "sha256": "f4f537967c3d01b8629ca169c9b326ab8d29c53322a5298783af008ab0ec68be",
+  "production": "c8700e178ab42682b3b7b79d306510e6f50dbf67",
+  "source": "hosts/gpu/examples/native_frame_transport.rs",
+  "build_receipt": "/private/tmp/mech-linear-restack-20261026/validation/round22-scalar-admission-release.json"
+}

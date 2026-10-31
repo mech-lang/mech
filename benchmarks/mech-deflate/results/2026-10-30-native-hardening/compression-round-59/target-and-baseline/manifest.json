@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T14:37:58.813628+00:00",
+  "head": "7658ace6877bc48bc7445ce967ca48994149c5d3",
+  "files": [
+    {
+      "path": "allocation-target.json",
+      "sha256": "5618a82ac5482e5f89919a53475dc87a50df7a140dbc7f0c5d95c8cabf8efc7b",
+      "bytes": 1596
+    },
+    {
+      "path": "census.json",
+      "sha256": "270e93b8b9d7341872a9dc4baf54c5108a9ffeaa3286fa44c3f4734915e1129e",
+      "bytes": 15629773
+    },
+    {
+      "path": "linked-primary/before/binding.json",
+      "sha256": "47b2b1dfe531d78da8364ae07a75aa1fde3c6be81d5cbbfae6b5c0860dd4c997",
+      "bytes": 19233
+    },
+    {
+      "path": "linked-primary/before/metadata.json",
+      "sha256": "a1d3f2710f3c2bb40eeb7cd10529b87ad6eae1d3786b3811823ee07ea3c3cac9",
+      "bytes": 2542212
+    },
+    {
+      "path": "linked-primary/before/worker-build.json",
+      "sha256": "00b1e1334e737292f150686b07a36b3a9fb210985815d0c2f5720fb809bcdf59",
+      "bytes": 20259
+    }
+  ]
+}

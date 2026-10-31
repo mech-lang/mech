@@ -1,0 +1,35 @@
+// Final level-12 parse selection from CompressOptimal.roc:1107-1201,
+// pinned at 671077457ff7ef3a3d44caf715a3fc595addf379.
+// Include literal choice, cost models, optimal path, tally and optimization.
+// See deflate-huffman-LICENSES.md for attribution and licenses.
+<optimal-selected-block> := <{nodes<[u64]> costs<optimal-costs> tallied<optimal-tally> seqs<[block-sequence]> use-items<u64> used-only-literals<u64>}>
+
+optimal-select-literals(input<[u8]>, begin<u64>, length<u64>, nodes<[u64]>, costs<optimal-costs>, seqs<[block-sequence]>, length-slots<[u8]>, extra-lengths<[u8]>, extra-offsets<[u8]>, reversed<[u8]>) => (out<optimal-selected-block>) :=
+  relits := optimal-choose-all-literals(input, begin, length, reversed)
+  next-costs := optimal-set-costs-from-codes(relits.litlen-lens, relits.offset-lens, costs.literal, costs.length, costs.offset-slot, length-slots, extra-lengths, extra-offsets)
+  ~next-seqs := seqs
+  next-seqs[1u64] = {litrunlen-and-length: bt-narrow32(length), offset: 0u16, offset-slot: 0u16}
+  tallied := {freqs-litlen: relits.freqs-litlen, freqs-offset: relits.freqs-offset, litlen-lens: relits.litlen-lens, litlen-codewords: relits.litlen-codewords, offset-lens: relits.offset-lens, offset-codewords: relits.offset-codewords}
+  out := {nodes: nodes, costs: next-costs, tallied: tallied, seqs: next-seqs, use-items: 0u64, used-only-literals: 1u64}.
+
+optimal-select-static(length<u64>, cache<[u32]>, cache-end<u64>, nodes<[u64]>, costs<optimal-costs>, seqs<[block-sequence]>, static-litlen-lens<[u8]>, static-offset-lens<[u8]>, length-slots<[u8]>, extra-lengths<[u8]>, extra-offsets<[u8]>, offset-slots<[u8]>, reversed<[u8]>) => (out<optimal-selected-block>) :=
+  next-costs := optimal-set-costs-from-codes(static-litlen-lens, static-offset-lens, costs.literal, costs.length, costs.offset-slot, length-slots, extra-lengths, extra-offsets)
+  path := optimal-find-min-cost-path(length, cache, cache-end, nodes, next-costs.literal, next-costs.length, next-costs.offset-slot, offset-slots)
+  tallied := optimal-tally-and-build-codes(path.nodes, length, length-slots, offset-slots, reversed)
+  out := {nodes: path.nodes, costs: next-costs, tallied: tallied, seqs: seqs, use-items: 1u64, used-only-literals: 0u64}.
+
+optimal-select-saved(length<u64>, cache<[u32]>, cache-end<u64>, nodes<[u64]>, saved<optimal-costs>, seqs<[block-sequence]>, length-slots<[u8]>, extra-lengths<[u8]>, extra-offsets<[u8]>, offset-slots<[u8]>, reversed<[u8]>) => (out<optimal-selected-block>) :=
+  path := optimal-find-min-cost-path(length, cache, cache-end, nodes, saved.literal, saved.length, saved.offset-slot, offset-slots)
+  tallied := optimal-tally-and-build-codes(path.nodes, length, length-slots, offset-slots, reversed)
+  next-costs := optimal-set-costs-from-codes(tallied.litlen-lens, tallied.offset-lens, saved.literal, saved.length, saved.offset-slot, length-slots, extra-lengths, extra-offsets)
+  out := {nodes: path.nodes, costs: next-costs, tallied: tallied, seqs: seqs, use-items: 1u64, used-only-literals: 0u64}.
+
+optimal-select-block(input<[u8]>, begin<u64>, length<u64>, cache<[u32]>, cache-end<u64>, optimized<optimal-optimization>, seqs<[block-sequence]>, only-literals-cost<u64>, static-cost<u64>, static-litlen-lens<[u8]>, static-offset-lens<[u8]>, length-slots<[u8]>, extra-lengths<[u8]>, extra-offsets<[u8]>, offset-slots<[u8]>, reversed<[u8]>) => (out<optimal-selected-block>) :=
+  alternative := bt-minimum(only-literals-cost, static-cost) < optimized.best-true-cost
+  out := (alternative?
+    | true => ((only-literals-cost < static-cost)?
+      | true => optimal-select-literals(input, begin, length, optimized.nodes, optimized.costs, seqs, length-slots, extra-lengths, extra-offsets, reversed)
+      | false => optimal-select-static(length, cache, cache-end, optimized.nodes, optimized.costs, seqs, static-litlen-lens, static-offset-lens, length-slots, extra-lengths, extra-offsets, offset-slots, reversed))
+    | false => ((optimized.actual-cost >= optimized.best-true-cost + 1u64)?
+      | true => optimal-select-saved(length, cache, cache-end, optimized.nodes, optimized.saved, seqs, length-slots, extra-lengths, extra-offsets, offset-slots, reversed)
+      | false => {nodes: optimized.nodes, costs: optimized.costs, tallied: optimized.tallied, seqs: seqs, use-items: 1u64, used-only-literals: 0u64})).

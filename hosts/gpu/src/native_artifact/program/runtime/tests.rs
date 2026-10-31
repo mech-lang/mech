@@ -997,7 +997,7 @@ fn managed_link_metadata_rederives_semantics_and_rejects_mutations_without_an_en
 }
 #[test]
 fn worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-    assert_eq!(VERSION, 33);
+    assert_eq!(VERSION, 37);
     assert_eq!(
         crate::native_artifact::program::protocol::abi::PHASE_CAPTURE_TAIL,
         3
@@ -1043,4 +1043,378 @@ fn worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
         core::mem::size_of::<Frame>(),
         core::mem::size_of::<NativeEntryFrame>() + 64
     );
+}
+
+#[path = "numeric_fuel_tests.rs"]
+mod numeric_fuel;
+
+#[path = "numeric_first_change_tests.rs"]
+mod numeric_first_change;
+
+thread_local! {
+    static NUMERIC_FUEL_OBSERVATIONS: std::cell::RefCell<Vec<Vec<u64>>> = const { std::cell::RefCell::new(Vec::new()) };
+    static NUMERIC_NORMAL_EXIT_WORK: std::cell::RefCell<Vec<u64>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+// Observe the real cold reconciliation without changing fuel, source execution,
+// arguments, or the account. Unsafe access stays in this existing audited owner.
+unsafe extern "C" fn observe_numeric_fuel(
+    context: *mut c_void,
+    site: u64,
+    operation: u64,
+    first: u64,
+    second: u64,
+    third: u64,
+    result: *mut u64,
+) -> u64 {
+    let closing = operation == crate::native_artifact::program::protocol::abi::CLOSED_TAIL_END
+        && matches!(third, 0 | 1);
+    // SAFETY: live execute-owned context; this read ends before helper borrows it.
+    let before = closing.then(|| {
+        unsafe { &*context.cast::<Invocation<'_, '_, '_>>() }
+            .state
+            .library
+            .used()
+            .0
+    });
+    // SAFETY: identical synchronous context and words from the generated entry.
+    let status =
+        unsafe { super::hooks::helper(context, site, operation, first, second, third, result) };
+    if let Some(before) = before
+        && status == STATUS_OK
+    {
+        // SAFETY: the production helper returned; its exclusive borrow ended.
+        let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        if third == 0 {
+            NUMERIC_NORMAL_EXIT_WORK
+                .with(|rows| rows.borrow_mut().push(ctx.state.library.used().0));
+            return status;
+        }
+        let metadata = ctx.descriptor.metadata();
+        if let Some(id) = metadata
+            .closed_tails
+            .sites
+            .get(site as usize)
+            .copied()
+            .flatten()
+            && let Some(region) = metadata.closed_tails.regions.get(id)
+            && region.numeric.is_some()
+            && let Some(fields) = metadata.buffer_frames.fields(region.tail.carrier())
+        {
+            let mut bits = vec![
+                ctx.state.library.used().0 - before,
+                region.compute,
+                u64::from(ctx.closed_tail.is_none()),
+            ];
+            bits.extend(fields.iter().enumerate().filter_map(|(ordinal, _)| {
+                ctx.state.buffer_frames.test_scalar_bits(
+                    &metadata.buffer_frames,
+                    region.tail.carrier(),
+                    ordinal,
+                )
+            }));
+            if let Some(proof) = &region.numeric
+                && proof.writes()
+            {
+                for array in &proof.arrays {
+                    let owner = ctx
+                        .state
+                        .buffer_frames
+                        .managed_owner(&metadata.buffer_frames, region.tail.carrier(), array.field)
+                        .unwrap();
+                    let ValueData::Matrix(matrix) = owner.data() else {
+                        panic!("numeric fuel owner is not a matrix")
+                    };
+                    let mech_core::snapshot::SequenceView::U32(words) = matrix.elements() else {
+                        panic!("numeric write fuel fixture is U32")
+                    };
+                    bits.push(words.len() as u64);
+                    bits.extend(words.iter().copied().map(u64::from));
+                }
+            }
+            NUMERIC_FUEL_OBSERVATIONS.with(|rows| rows.borrow_mut().push(bits));
+        }
+    }
+    status
+}
+fn execute_observed_numeric_fuel(
+    jit: &crate::native_artifact::JitProgramArtifact,
+    args: &[Value],
+    outputs: &mut [Option<Value>],
+    caps: NativeProgramExecutionLimits,
+    memory: &ManagedMemoryBudget,
+) -> (
+    Result<NativeProgramExecutionReport, NativeProgramExecutionError>,
+    Vec<Vec<u64>>,
+) {
+    NUMERIC_FUEL_OBSERVATIONS.with(|rows| rows.borrow_mut().clear());
+    NUMERIC_NORMAL_EXIT_WORK.with(|rows| rows.borrow_mut().clear());
+    let entry = jit.test_checked_entry();
+    let outcome = execute(
+        jit.descriptor(),
+        |raw| {
+            // SAFETY: exact retained JIT entry and live execute-owned frame. The
+            // observer forwards every helper unchanged, then restores the wire.
+            let original = unsafe { (*raw).helper };
+            unsafe {
+                (*raw).helper = observe_numeric_fuel;
+            }
+            let status = unsafe { entry(raw) };
+            unsafe {
+                (*raw).helper = original;
+            }
+            status
+        },
+        args,
+        outputs,
+        caps,
+        memory,
+    );
+    let rows = NUMERIC_FUEL_OBSERVATIONS.with(|rows| core::mem::take(&mut *rows.borrow_mut()));
+    (outcome, rows)
+}
+
+#[derive(Debug)]
+struct NumericFirstChangeObservation {
+    scalars: Vec<u64>,
+    incoming: u64,
+    status: u64,
+}
+thread_local! {
+    static NUMERIC_FIRST_CHANGES: std::cell::RefCell<Vec<NumericFirstChangeObservation>> = const { std::cell::RefCell::new(Vec::new()) };
+    static DENY_NUMERIC_CALLBACK_CAPACITY: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+unsafe extern "C" fn observe_first_change(
+    context: *mut c_void,
+    site: u64,
+    operation: u64,
+    first: u64,
+    second: u64,
+    third: u64,
+    result: *mut u64,
+) -> u64 {
+    let mut old_capacity = None;
+    let transition = if operation == GlobalHelper::NumericWritePrepare.raw() {
+        // SAFETY: the generated entry is suspended at its synchronous helper;
+        // this borrow ends before forwarding to the real owning callback.
+        let ctx = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
+        let metadata = ctx.descriptor.metadata();
+        let id = metadata.closed_tails.sites[site as usize].unwrap();
+        let region = &metadata.closed_tails.regions[id];
+        let proof = region.numeric.as_ref().unwrap();
+        let scalars = proof
+            .fields(region.tail.carrier().get())
+            .unwrap()
+            .iter()
+            .flatten()
+            .map(|field| ctx.read_borrowed_word(2 + field).unwrap())
+            .collect();
+        let incoming = ctx.read_borrowed_word(3 + proof.words).unwrap();
+        if DENY_NUMERIC_CALLBACK_CAPACITY.with(|deny| deny.replace(false)) {
+            old_capacity = Some(ctx.argument_capacity);
+            // Test the real callback's checked index-word read, with the
+            // original backing intact. This is not the generated capacity guard.
+            ctx.argument_capacity = 2 + proof.words;
+        }
+        Some((scalars, incoming))
+    } else {
+        None
+    };
+    // SAFETY: unchanged live context, ABI arguments and result lane.
+    let status = unsafe {
+        crate::native_artifact::program::runtime::hooks::helper(
+            context, site, operation, first, second, third, result,
+        )
+    };
+    if let Some(capacity) = old_capacity {
+        // SAFETY: production callback returned and its exclusive borrow ended.
+        unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() }.argument_capacity = capacity;
+    }
+    if let Some((scalars, incoming)) = transition {
+        NUMERIC_FIRST_CHANGES.with(|rows| {
+            rows.borrow_mut().push(NumericFirstChangeObservation {
+                scalars,
+                incoming,
+                status,
+            })
+        });
+    }
+    status
+}
+
+fn execute_observed_numeric_first_change(
+    jit: &crate::native_artifact::JitProgramArtifact,
+    args: &[Value],
+    outputs: &mut [Option<Value>],
+    caps: NativeProgramExecutionLimits,
+    memory: &ManagedMemoryBudget,
+    deny_capacity: bool,
+) -> (
+    Result<NativeProgramExecutionReport, NativeProgramExecutionError>,
+    Vec<NumericFirstChangeObservation>,
+) {
+    NUMERIC_FIRST_CHANGES.with(|rows| rows.borrow_mut().clear());
+    DENY_NUMERIC_CALLBACK_CAPACITY.with(|deny| deny.set(deny_capacity));
+    let entry = jit.test_checked_entry();
+    let outcome = execute(
+        jit.descriptor(),
+        |raw| {
+            // SAFETY: exact retained JIT and owning synchronous execution frame;
+            // the observer forwards every helper and restores immutable wire fields.
+            let original = unsafe { (*raw).helper };
+            unsafe {
+                (*raw).helper = observe_first_change;
+            }
+            let status = unsafe { entry(raw) };
+            unsafe {
+                (*raw).helper = original;
+            }
+            status
+        },
+        args,
+        outputs,
+        caps,
+        memory,
+    );
+    assert!(
+        !DENY_NUMERIC_CALLBACK_CAPACITY.with(|deny| deny.get()),
+        "must reach the actual first-change helper"
+    );
+    let rows = NUMERIC_FIRST_CHANGES.with(|rows| core::mem::take(&mut *rows.borrow_mut()));
+    (outcome, rows)
+}
+
+#[path = "locals_snapshot_tests.rs"]
+mod locals_snapshot;
+
+type LocalsSnapshotAdmit = unsafe extern "C" fn(*mut c_void, u64) -> u64;
+struct LocalsSnapshotProbe {
+    frame: *mut Frame,
+    original: *mut u64,
+    decoy: *mut u64,
+    admit: LocalsSnapshotAdmit,
+    switch_site: u64,
+    restore_site: u64,
+    switched: bool,
+    restored: bool,
+    visits: Vec<u64>,
+}
+thread_local! {
+    static LOCALS_SNAPSHOT_PROBE: std::cell::RefCell<Option<LocalsSnapshotProbe>> = const { std::cell::RefCell::new(None) };
+}
+
+unsafe extern "C" fn observe_locals_snapshot(context: *mut c_void, site: u64) -> u64 {
+    let admit = LOCALS_SNAPSHOT_PROBE.with(|probe| probe.borrow().as_ref().unwrap().admit);
+    // SAFETY: the owning test retains the exact callback and invocation context;
+    // no frame or invocation borrow crosses this unchanged real admission.
+    let status = unsafe { admit(context, site) };
+    if status == STATUS_OK {
+        LOCALS_SNAPSHOT_PROBE.with(|probe| {
+            let mut probe = probe.borrow_mut();
+            let probe = probe.as_mut().unwrap();
+            probe.visits.push(site);
+            // SAFETY: the generated entry is suspended in this callback. The
+            // frame and both equally sized, disjoint local banks remain live.
+            // Only the ABI pointer changes; the invocation's actual storage and
+            // admitted capacity stay intact. No scalar value is a host pointer.
+            unsafe {
+                assert_eq!((*probe.frame).base.context, context);
+                if site == probe.switch_site {
+                    assert!(!probe.switched);
+                    assert_eq!((*probe.frame).base.locals, probe.original);
+                    (*probe.frame).base.locals = probe.decoy;
+                    probe.switched = true;
+                } else if site == probe.restore_site {
+                    assert!(probe.switched && !probe.restored);
+                    assert_eq!((*probe.frame).base.locals, probe.decoy);
+                    (*probe.frame).base.locals = probe.original;
+                    probe.restored = true;
+                }
+            }
+        });
+    }
+    status
+}
+
+fn execute_observed_locals_snapshot(
+    jit: &crate::native_artifact::JitProgramArtifact,
+    args: &[Value],
+    outputs: &mut [Option<Value>],
+    memory: &ManagedMemoryBudget,
+    switch_site: u32,
+    restore_site: u32,
+) -> Result<NativeProgramExecutionReport, NativeProgramExecutionError> {
+    let entry = jit.test_checked_entry();
+    let mut observed_turns = 0;
+    let outcome = execute(
+        jit.descriptor(),
+        |raw| {
+            // SAFETY: execute owns this initialized frame for the synchronous
+            // checked entry. Activation keeps its ordinary unmodified frame.
+            if unsafe { (*raw).phase } != crate::native_artifact::program::protocol::abi::PHASE_TURN
+            {
+                return unsafe { entry(raw) };
+            }
+            // SAFETY: these metadata/pointer reads end before native execution.
+            let (original, count, admit) = unsafe {
+                (
+                    (*raw).base.locals,
+                    (*raw).base.local_count,
+                    (*raw).base.admit_next,
+                )
+            };
+            let mut decoy = vec![0u64; usize::try_from(count).unwrap()];
+            assert!(!decoy.is_empty());
+            LOCALS_SNAPSHOT_PROBE.with(|probe| {
+                assert!(probe.borrow().is_none());
+                *probe.borrow_mut() = Some(LocalsSnapshotProbe {
+                    frame: raw,
+                    original,
+                    decoy: decoy.as_mut_ptr(),
+                    admit,
+                    switch_site: u64::from(switch_site),
+                    restore_site: u64::from(restore_site),
+                    switched: false,
+                    restored: false,
+                    visits: Vec::new(),
+                });
+            });
+            // SAFETY: the decoy backing outlives the complete checked entry;
+            // the observer restores locals during the third source callback.
+            // Callback wiring is restored before execute validates the frame.
+            let status = unsafe {
+                (*raw).base.admit_next = observe_locals_snapshot;
+                let status = entry(raw);
+                (*raw).base.admit_next = admit;
+                status
+            };
+            let probe = LOCALS_SNAPSHOT_PROBE.with(|probe| probe.borrow_mut().take().unwrap());
+            assert!(
+                probe.switched && probe.restored,
+                "both source callbacks must execute: switch={} restore={} visits={:?} switched={} restored={}",
+                probe.switch_site,
+                probe.restore_site,
+                probe.visits,
+                probe.switched,
+                probe.restored
+            );
+            // SAFETY: the entry returned and no callback owns the frame. This
+            // asserts restoration already happened inside the entry, rather
+            // than hiding a failed restoration in the outer driver.
+            assert_eq!(unsafe { (*raw).base.locals }, original);
+            assert!(
+                decoy.iter().all(|word| *word == 0),
+                "entry must retain its original local bank"
+            );
+            observed_turns += 1;
+            status
+        },
+        args,
+        outputs,
+        limits(),
+        memory,
+    );
+    assert_eq!(observed_turns, 1);
+    assert!(LOCALS_SNAPSHOT_PROBE.with(|probe| probe.borrow().is_none()));
+    outcome
 }

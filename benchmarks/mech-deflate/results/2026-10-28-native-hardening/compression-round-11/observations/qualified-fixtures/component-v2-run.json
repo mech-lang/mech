@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-readonly-numeric-round11-20261028/qualified-fixtures/component-v2-tests",
+    "numeric_tail_qualification",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 101,
+  "seconds": 7.232309125014581,
+  "binary_sha256": "9570ba239e1c4ba3573fc987e98b63926702c0a7c5f046f19e703b6431725b8b",
+  "skipped": []
+}

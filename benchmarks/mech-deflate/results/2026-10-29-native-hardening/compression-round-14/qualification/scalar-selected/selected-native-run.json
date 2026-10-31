@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-frame-admission-round14-20261029/final-primary/selected-native-tests",
+    "--nocapture",
+    "--test-threads=1",
+    "--skip",
+    "all_certified_scalar_primitives_match_ordinary_resident_original_and_decoded"
+  ],
+  "exit": 0,
+  "seconds": 0.9129388339351863,
+  "binary_sha256": "5341ed55d3c7cb814e322d01e82829f51d1b38708a3492ddec7f0e0d9d3ccfc2",
+  "skipped_coverage": "The all-primitives test needs not/xor, which this selected catalog deliberately omits."
+}

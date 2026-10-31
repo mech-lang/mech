@@ -1,0 +1,25 @@
+# Private scalar named results: baseline and acceptance
+
+Published base37407827c92f9fe885b439b164637f0e23aa7daf; production1d2ef606f0cb576eee343b4806fd1c75e69a7b7a. Existing draft #973, parent eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b. Prior protected whole eight-byte result111.149597× Roc=1×. The requested next assignment is scalar-record lowering, with nested frame composition following its publication. The latest bot review request6495640889 is still pending at baseline capture; the last completed review6493894129 names d48231ef04. Do not label the pending review complete or mark the PR ready.
+
+The current lowered-program disposition proves all three named sites are private, parameterless {best:u32,item:u32,cache-ptr:u64} components:
+
+| Pack site | Retained executions | Pack → returned → result values | Consumers |
+| --- | ---: | --- | --- |
+|12797|8|7554→7409→7406|12800 best,12802 item,12807 cache-ptr|
+|15674|16|9045→8900→8897|15677 best,15679 item,15684 cache-ptr|
+|27273|8|15125→14980→14977|27276 best,27278 item,27283 cache-ptr|
+
+Each result has exactly the three constant Id selectors with unique matching field ordinals0/1/2. Copies and LoopReturned roles are explicit; none is a public input/output. NativeScalarAggregates::words rejects Record first. Its pack/observation analysis also lacks records/selected RecordFieldAccess. BufferFrames does not admit this scalar-only shape. Existing scalar-result field access already exists, so adding another managed accessor would not address the gap. The32 executions are mapped retained round16 dynamic counts, not a fresh current call trace.
+
+Exact compressor source: deflate-optimal-path.mec:56–80 returns optimal-matches and immediately consumes its three fields; the analogous optimal-choice record is at39–54. Keep the pinned compiler input byte-identical. Reuse and factor the existing constant selector proof, extend NativeScalarAggregates and its existing Observe emission, and preserve complete-component escape/copy/result transport and bounded32-field scalar layout. Unsupported schemas/selectors/consumers/escapes stay canonical. Do not implement this slice by enlarging BufferFrames eligibility or adding an executor.
+
+Four permanent regression tests compile and fail against the current libraries at the expected missing native record selection. They cover state-machine return/copies/branch merges and all fields; every supported scalar kind/high bits/NaN payload/signed zero/fresh visits;32/33-field boundary plus public/nested escape fallback; and assertion/arithmetic order, checked overflow, exact/one-short work, unchanged publication/aliases/cleanup and retry. Expected values and existing allowances are unchanged. One selected witness deliberately funds its ordinary native frame/control but allows only1 unit per nonexistent library call, establishing that qualifying construction/access must no longer invoke a canonical call.
+
+The identical opt3 System/probe standalone driver records12 original/decoded visits, including overflow then recovery. Steady successes request855 allocations/133634 bytes;64-step success has1144 ordinary visits and13154766 work. The initial original row requests862 versus decoded861 and later855, so retain all observations rather than presenting only a steady minimum. Overflow has the same precise Control::Arithmetic origin and176 allocations/32883 bytes, preserves prior publication/aliases and retained demand, then succeeds on retry. Final bytes/nodes are zero. Diagnostic seconds are excluded from primary.
+
+Accounting review: the existing aggregate emitter uses admitted native word lanes, keeps original control visits and rejects ordinary helpers at selected aggregate sites. Parameterless scalar packs and proven constant exact selectors have no remaining runtime shape/lookup failure. Frame storage/control/native scalar work still require finite admission; eliminated canonical allocation/binding/lookup must not be fabricated or funded as if executed. Reuse that policy with an explicit IR identity decision, then verify current errors, exact/one-short work and cleanup. Do not assume knowing an offset alone removes every obligation.
+
+After the bounded implementation and focused tests, immediately run one fixed balanced protected whole-program series:4 alternating-order pairs,3 primary observations per process, unchanged allocator/harness/source/reference; report every row, paired/pooled results and a separate fresh profile. Commit the full packet, including a small/negative result, before any further optimization. Then complete maintained component/scalar/image/Object qualification and publish before nested composition.
+
+No production compiler change is in this baseline commit. No large compression input or allowance increase ran. Round18 opaque canonical siblings do not complete nested private frame composition. Inherited scalar observations remain round10 decoded-U641.0526036 and round17 initial original zero-step loop1.052454987 with its non-reproducing fixed follow-up. The1× goal remains active.

@@ -1,0 +1,67 @@
+{
+  "arrayvec": {
+    "added": [],
+    "removed": []
+  },
+  "blake3": {
+    "added": [
+      "default",
+      "std"
+    ],
+    "removed": []
+  },
+  "cc": {
+    "added": [],
+    "removed": []
+  },
+  "constant_time_eq": {
+    "added": [
+      "std"
+    ],
+    "removed": []
+  },
+  "find-msvc-tools": {
+    "added": [],
+    "removed": []
+  },
+  "getrandom": {
+    "added": [],
+    "removed": []
+  },
+  "mech-runtime": {
+    "added": [
+      "canonical-native-resources",
+      "compiler",
+      "resident-external",
+      "resident-routing",
+      "resident-routing-source",
+      "runtime",
+      "semantic-compiler",
+      "source",
+      "string"
+    ],
+    "removed": []
+  },
+  "r-efi": {
+    "added": [],
+    "removed": []
+  },
+  "shlex": {
+    "added": [
+      "default",
+      "std"
+    ],
+    "removed": []
+  },
+  "uuid": {
+    "added": [
+      "default",
+      "js",
+      "rng",
+      "serde",
+      "std",
+      "v7"
+    ],
+    "removed": []
+  }
+}

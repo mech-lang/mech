@@ -412,7 +412,11 @@ fn rejected_artifact_record(
     before_epoch: u64,
     failure: ArtifactResidentExecutionError,
 ) -> MResult<ResidentTurnRecord> {
-    let resource_message = match &failure {
+    let failure_message = match &failure {
+        ArtifactResidentExecutionError::LexicalIntegrity { node, block, local } => Some(format!(
+            "resident lexical invariant failed at {node:?}, block {}, local {local}",
+            block.0
+        )),
         ArtifactResidentExecutionError::ResourceAdmission { violation, .. } => Some(format!(
             "resident admission denied: {:?}; required {}, limit {}",
             violation.dimension, violation.required, violation.limit
@@ -514,6 +518,14 @@ fn rejected_artifact_record(
             "ResidentExternalPublicationUnauthorized",
             "resident external publication requires the bound coordinator authority",
         ),
+        // A reached false Bool rejects the candidate during integrity checking.
+        // Keep this stable kind distinct from document-level integrity failures;
+        // failure_message above retains the exact lexical node/block/local.
+        ArtifactResidentExecutionError::LexicalIntegrity { .. } => (
+            TurnFailurePhase::Integrity,
+            "ResidentLexicalIntegrity",
+            "resident lexical invariant failed",
+        ),
         ArtifactResidentExecutionError::Integrity { .. } => (
             TurnFailurePhase::Integrity,
             "ResidentIntegrity",
@@ -532,7 +544,7 @@ fn rejected_artifact_record(
             Some(TurnFailureRecord {
                 phase,
                 kind: kind.to_string(),
-                message: resource_message.unwrap_or_else(|| message.to_string()),
+                message: failure_message.unwrap_or_else(|| message.to_string()),
             }),
         )?,
         body: ResidentEkfReceipt::rejected(before_epoch),
@@ -578,6 +590,169 @@ mod tests {
     use mech_engine::__resident_ekf::ResidentEkfBatch;
 
     const INPUT: [f64; 4] = [1.0, 0.1, 24.0, -0.6];
+
+    #[cfg(all(feature = "full_source", feature = "resident-routing-source"))]
+    #[test]
+    fn artifact_recorded_assertion_rejection_preserves_publication_and_recovers() {
+        use mech_core::{ReactiveInstanceId, ValueDataDraft};
+        use mech_engine::__resident::{
+            ActivationFacts, CapturedValueInput, ResidentActivationOptions, activate_with_options,
+        };
+        use mech_syntax::document::{ParseConfig, Revision};
+
+        let catalog = mech_stdlib::source_catalog();
+        let source = crate::SourceDocument::parse_resolved(
+            "recorded-assertion.mec",
+            Revision(0),
+            "checked(n<u64>) => (out<u64>) :=\n  positive! := n > 0u64\n  out := 12u64 / n.\nchecked(input<u64>)\n",
+            ParseConfig::default(),
+        )
+        .unwrap();
+        assert!(source.is_strictly_clean());
+        let compiled = crate::RuntimeBuilder::new()
+            .function_catalog(catalog.clone())
+            .build_compiler()
+            .unwrap()
+            .compile_document(&source)
+            .unwrap();
+        let original = compiled.artifact();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(original).unwrap(),
+        )
+        .unwrap();
+        for artifact in [original, &decoded] {
+            let memory = mech_core::ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let mut instance = activate_with_options(
+                ReactiveInstanceId::new(1, 0),
+                artifact,
+                &catalog,
+                &ActivationFacts::default(),
+                ResidentActivationOptions {
+                    memory_budget: Some(memory.clone()),
+                    ..ResidentActivationOptions::default()
+                },
+            )
+            .unwrap();
+            let slot = instance.plan.inputs[0].slot;
+            let schema = artifact.inputs()[0].schema;
+            let mut recorder = ResidentTurnRecorder::new(3, 0).unwrap();
+            for (turn, number, expected) in [(0, 3, Some(4)), (1, 0, None), (2, 2, Some(6))] {
+                let value = mech_core::snapshot::ValueDraft {
+                    schema,
+                    shape_values: Box::new([]),
+                    data: ValueDataDraft::U64(number),
+                }
+                .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+                    artifact.schemas(),
+                ))
+                .unwrap();
+                let before = instance.published_epoch().get();
+                let prior = (before != 0).then(|| instance.copied_output(0).unwrap());
+                let permit = recorder.take_admission_permit(turn).unwrap();
+                let captured = [CapturedValueInput {
+                    slot,
+                    value: &value,
+                }];
+                let memory_before = memory.used_bytes();
+                if let Some(expected) = expected {
+                    let prepared = instance.prepare_turn_values(&captured).unwrap();
+                    let summary = prepared.summary();
+                    assert_eq!(summary.before_epoch.get(), before);
+                    recorder
+                        .prepare_artifact_commit(permit, prepared)
+                        .unwrap()
+                        .commit();
+                    assert_eq!(instance.published_epoch(), summary.after_epoch);
+                    assert!(instance.published_epoch().get() > before);
+                    assert_eq!(
+                        instance
+                            .copied_output(0)
+                            .unwrap()
+                            .canonical_data_draft()
+                            .unwrap(),
+                        ValueDataDraft::U64(expected)
+                    );
+                    let recorded = recorder.inspect_last().unwrap();
+                    assert!(recorded.accepted);
+                    assert_eq!(
+                        recorded.body,
+                        accepted_artifact_record((turn + 1) as u64, summary)
+                            .unwrap()
+                            .body
+                    );
+                } else {
+                    let failure = match instance.prepare_turn_values(&captured) {
+                        Err(failure) => failure,
+                        Ok(prepared) => {
+                            prepared.abort();
+                            panic!("assertion must reject before division")
+                        }
+                    };
+                    assert!(matches!(
+                        failure,
+                        ArtifactResidentExecutionError::LexicalIntegrity { .. }
+                    ));
+                    // Rejection may retire earlier scratch, but must retain no
+                    // new candidate allocations or disturb published aliases.
+                    assert!(memory.used_bytes() <= memory_before);
+                    recorder
+                        .prepare_artifact_rejected(permit, before, failure)
+                        .unwrap()
+                        .append();
+                    assert_eq!(instance.published_epoch().get(), before);
+                    assert!(
+                        instance
+                            .copied_output(0)
+                            .unwrap()
+                            .snapshot_eq(
+                                artifact.schemas(),
+                                prior.as_ref().unwrap(),
+                                artifact.schemas()
+                            )
+                            .unwrap()
+                    );
+                    let recorded = recorder.inspect_last().unwrap();
+                    assert!(!recorded.accepted);
+                    assert_eq!(recorded.failure_phase, Some(TurnFailurePhase::Integrity));
+                    assert_eq!(recorded.failure_kind, Some("ResidentLexicalIntegrity"));
+                    assert_eq!(recorded.body, ResidentEkfReceipt::rejected(before));
+                }
+                assert_eq!(recorder.recorded_ledger_len(), turn + 1);
+            }
+            drop(instance);
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+
+    #[test]
+    fn artifact_lexical_assertion_failure_records_preserve_phase_and_origin() {
+        let error = ArtifactResidentExecutionError::LexicalIntegrity {
+            node: mech_core::NodeId::new(7),
+            block: mech_engine::ControlBlockId(11),
+            local: 13,
+        };
+        let record = rejected_artifact_record(1, 3, error.clone()).unwrap();
+        assert_eq!(record.header.status, TurnRecordStatus::Rejected);
+        assert_eq!(record.body, ResidentEkfReceipt::rejected(3));
+        let failure = record.header.failure.unwrap();
+        assert_eq!(failure.phase, TurnFailurePhase::Integrity);
+        assert_eq!(failure.kind, "ResidentLexicalIntegrity");
+        assert_eq!(
+            failure.message,
+            "resident lexical invariant failed at NodeId(7), block 11, local 13"
+        );
+        let mut recorder = ResidentTurnRecorder::new(1, 0).unwrap();
+        let permit = recorder.take_admission_permit(0).unwrap();
+        recorder
+            .prepare_artifact_rejected(permit, 3, error)
+            .unwrap()
+            .append();
+        let recorded = recorder.inspect_last().unwrap();
+        assert!(!recorded.accepted);
+        assert_eq!(recorded.failure_phase, Some(TurnFailurePhase::Integrity));
+        assert_eq!(recorded.failure_kind, Some("ResidentLexicalIntegrity"));
+        assert_eq!(recorded.body, ResidentEkfReceipt::rejected(3));
+    }
 
     #[test]
     fn artifact_resource_failure_records_preserve_limit_details() {

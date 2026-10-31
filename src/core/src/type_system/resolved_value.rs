@@ -66,6 +66,22 @@ impl ResolvedValueDescriptor {
         Self::new(resolved_type, schema, shape)
     }
 
+    /// Reuse this schema's validated semantic type with a fresh shape. Type
+    /// derivation depends on the immutable schema and its declarations, never
+    /// on current parameter values. Bounds and all body extents are checked
+    /// again; this retains no value or execution admission.
+    pub fn with_current_shape(&self, shape: ShapeInstance) -> Result<Self, TypeResolutionError> {
+        let shape = self
+            .schema
+            .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
+            .map_err(TypeResolutionError::semantic)?;
+        Ok(Self {
+            resolved_type: self.resolved_type.clone(),
+            schema: self.schema.clone(),
+            shape,
+        })
+    }
+
     pub const fn resolved_type(&self) -> &ResolvedType {
         &self.resolved_type
     }

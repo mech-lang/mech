@@ -1,0 +1,4 @@
+
+thread 'main' (19785547) panicked at /private/tmp/mech-record-boundaries-round18-20261029/audit.rs:6:294:
+called `Result::unwrap()` on an `Err` value: DefinitionTableLimit { stage: "current visits before lowering", required: 120162192, limit: 67108864 }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

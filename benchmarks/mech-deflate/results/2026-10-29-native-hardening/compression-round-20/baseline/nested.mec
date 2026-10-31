@@ -1,0 +1,17 @@
++> sequence
+<costs> := <{literal<[u32]> length<[u32]> offset<[u32]>}>
+<selected> := <{nodes<[u64]> costs<costs> marker<u64>}>
+<planned> := <{selected<selected> saved<costs>}>
+wrap(nodes<[u64]>, values<[u32]>, marker<u64>) => (out<planned>) :=
+  costs := {literal: values, length: values, offset: values}
+  selected := {nodes: nodes, costs: costs, marker: marker}
+  out := {selected: selected, saved: costs}.
+checked(capacity<u64>, marker<u64>, allowed<bool>, divisor<u64>) => (out<[u64]>) :=
+  returned := wrap(sequence/with-capacity(0u64, capacity), [7u32], marker)
+  current! := returned.selected.marker == marker
+  same! := returned.selected.costs.literal[1u64] == returned.saved.length[1u64]
+  other! := returned.saved.offset[1u64] == 7u32
+  enabled! := allowed
+  word := marker + 12u64 / divisor
+  out := sequence/append(returned.selected.nodes, word).
+checked(capacity<u64>, marker<u64>, allowed<bool>, divisor<u64>)

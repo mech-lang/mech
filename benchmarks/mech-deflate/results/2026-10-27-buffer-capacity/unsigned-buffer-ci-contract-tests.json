@@ -1,0 +1,28 @@
+{
+  "name": "unsigned-buffer-ci-contract-tests",
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests/ci",
+    "-p",
+    "test_ci_*contract.py"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "62860ea6232b5db46233ac34c48b4eb19235cafc",
+  "dirty": " M .github/workflows/ci-full.yml\n",
+  "exit": 0,
+  "seconds": 4.088191986083984,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/unsigned-buffer-ci-contract-tests.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

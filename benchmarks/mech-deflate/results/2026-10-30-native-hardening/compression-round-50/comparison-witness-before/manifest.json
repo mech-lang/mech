@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-10-31T07:34:18.246782+00:00",
+  "head": "cf658cafff0de4c2152b27577f4c61606bdb4124",
+  "files": [
+    {
+      "path": "comparison-witness/before/build.json",
+      "sha256": "ea95748c3010fb8aa026d2e30ab49bbffc19e870a80ab6b3a46f10d78db87762",
+      "bytes": 14077
+    },
+    {
+      "path": "comparison-witness/before/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "comparison-witness/before/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "comparison-witness/before/run.json",
+      "sha256": "c67b02a46cfaf19459a91da95633b53a525b6439ba5096d4b485da0f8572a510",
+      "bytes": 1359
+    },
+    {
+      "path": "comparison-witness/before/run.stderr",
+      "sha256": "f8ce0308f5784c99f0257ce15bc4fdcecb2872d8e552f146d2c800a42172d620",
+      "bytes": 115
+    },
+    {
+      "path": "comparison-witness/before/run.stdout",
+      "sha256": "ff41280b22749ce4c3c2136ad0738ef4e539a749fd85c8e01f9f553240246a4e",
+      "bytes": 740
+    },
+    {
+      "path": "comparison-witness/before/worker.rs",
+      "sha256": "0504f5f5a9a487add317609d722e2aa5a75b631150445d8785bf74885bc46f02",
+      "bytes": 6975
+    },
+    {
+      "path": "comparison-witness.py",
+      "sha256": "eefa376ba0c00142aa8c87a13dc94ed3cbd87fab6de546f9a297abe30673c845",
+      "bytes": 2074
+    }
+  ]
+}

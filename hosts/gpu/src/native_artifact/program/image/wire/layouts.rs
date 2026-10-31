@@ -54,8 +54,10 @@ struct TailRegion {
     tail: NativeTailLoop,
     borrowed: Option<usize>,
     map: Option<usize>,
+    numeric: Option<native::program::prepare::readonly_numeric::Proof>,
     packed: Option<native::program::prepare::packed_map::Proof>,
     words: usize,
+    shadow: Option<usize>,
     compute: u64,
     comparison: u64,
 }
@@ -66,8 +68,10 @@ impl From<TailRegion> for native::program::prepare::tail::Region {
             tail: w.tail,
             borrowed: w.borrowed,
             map: w.map,
+            numeric: w.numeric,
             packed: w.packed,
             words: w.words,
+            shadow: w.shadow,
             compute: w.compute,
             comparison: w.comparison,
         }
@@ -81,6 +85,7 @@ pub(in crate::native_artifact::program::image::decode::wire) struct Tails {
     initializers: Vec<Option<usize>>,
     exits: Vec<Option<usize>>,
     words: usize,
+    logical_words: usize,
 }
 impl From<Tails> for native::program::prepare::tail::Layout {
     fn from(w: Tails) -> Self {
@@ -90,6 +95,7 @@ impl From<Tails> for native::program::prepare::tail::Layout {
             initializers: w.initializers,
             exits: w.exits,
             words: w.words,
+            logical_words: w.logical_words,
         }
     }
 }

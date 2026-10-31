@@ -67,10 +67,17 @@ impl NativePreparedLibraryCall {
             .resident_factory(&key.module_path, &key.operation_name)
             .ok_or("prepared image factory is not linked")?
             .factory();
+        #[cfg(feature = "sequence_buffers")]
+        let frame_geometry =
+            super::buffer_frames::FrameGeometry::derive(&template, &schemas, wire.binding_bytes);
+        #[cfg(feature = "sequence_buffers")]
+        let record_selector = super::record_selector::RecordSelector::derive(&template);
+        let descriptor_templates = super::descriptor_templates(&template);
         let call = Self {
             template,
             schemas,
             factory,
+            descriptor_templates,
             binding_bytes: wire.binding_bytes,
             binding_work: wire.binding_work,
             binding_nodes: wire.binding_nodes,
@@ -80,6 +87,12 @@ impl NativePreparedLibraryCall {
             lookup_work: wire.lookup_work,
             output_follows_input: wire.output_follows_input,
             cache_identity: Arc::new(()),
+            #[cfg(feature = "sequence_buffers")]
+            frame_geometry,
+            #[cfg(feature = "sequence_buffers")]
+            record_selector,
+            #[cfg(feature = "sequence_buffers")]
+            frame_composition: None,
             span_selector_metadata_bytes: wire.span_selector_metadata_bytes,
             span_selector_work: wire.span_selector_work,
             #[cfg(feature = "pure_text")]

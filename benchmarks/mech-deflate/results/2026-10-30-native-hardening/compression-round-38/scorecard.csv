@@ -1,0 +1,13 @@
+metric,unit,reference,before,after,after_multiple_of_reference,after_change_percent,scope
+primary_elapsed,seconds,0.000291,0.0046224375,0.0046378545,15.937644329896905,0.3335253316026465,four independent pairs; 3968 primary calls; slightly slower pooled median
+instructions,count,1364372.0,50664319.5,50672317.5,37.13966388932051,0.015786257624550437,"independent diagnostic cohort, not primary elapsed"
+cycles,count,931804.0,14651785.5,15782050.0,16.9370919206185,7.714175859317618,"independent diagnostic cohort, not primary elapsed"
+allocation_requests,count,95.0,14002.0,13994.0,147.30526315789473,-0.05713469504357027,"independent diagnostic cohort, not primary elapsed"
+requested_bytes,bytes,9021923.0,108355555.0,98586819.0,10.92747289020312,-9.015445493311347,"independent diagnostic cohort, not primary elapsed"
+incremental_peak_live_usable,bytes,9257328.0,25819968.0,20575432.0,2.2226102391532416,-20.31193841913359,"independent diagnostic cohort, not primary elapsed"
+linked_instructions,count,1364372.0,,50686564.5,37.15010605611959,,linked compressor; two tiny setup helpers retain JIT outside compression
+linked_cycles,count,931804.0,,14266775.0,15.310918390562822,,linked compressor; two tiny setup helpers retain JIT outside compression
+linked_rss_after,bytes,14778368.0,,318963712.0,21.583148558758314,,linked compressor; two tiny setup helpers retain JIT outside compression
+linked_physical_after,bytes,14418816.0,,228001472.0,15.812773531474429,,linked compressor; two tiny setup helpers retain JIT outside compression
+linked_live_usable_before,bytes,32.0,,141537520.0,4423047.5,,linked compressor; two tiny setup helpers retain JIT outside compression
+linked_incremental_peak_live_usable,bytes,9257328.0,,20575432.0,2.2226102391532416,,linked compressor; two tiny setup helpers retain JIT outside compression

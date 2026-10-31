@@ -1,0 +1,14 @@
+{
+  "o": {
+    "before_sha256": "565e297462e4c333fcd419ea077e78e14869b90b42ea93b9c7ecc09556bcb007",
+    "after_sha256": "bf557a6bc5bb3086e8d89a28c575bff1380e86343975f3c64e792ecbec7a213d",
+    "before_bytes": 11542304,
+    "after_bytes": 10844664
+  },
+  "json": {
+    "before_sha256": "2aaf255774b46fe2629a99b17e03c0bdc9af93dd25f4112b0abfce1e8c84bf15",
+    "after_sha256": "28e9ba51fe81421f0bfb453134b2b1bd40227d06201f5484d8349a59e72efe44",
+    "before_bytes": 1704995,
+    "after_bytes": 1704996
+  }
+}

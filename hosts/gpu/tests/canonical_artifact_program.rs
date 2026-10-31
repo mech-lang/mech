@@ -16,6 +16,69 @@ use mech_syntax::document::{
     parse_canonical_document,
 };
 
+#[path = "../../../src/core/tests/support/allocation_probe.rs"]
+pub mod allocation_probe;
+
+#[global_allocator]
+static ALLOCATOR: allocation_probe::ProbeAllocator = allocation_probe::ProbeAllocator;
+
+#[path = "support/canonical_program_binding_pressure.rs"]
+mod binding_pressure_qualification;
+
+#[path = "support/canonical_program_argument_transport.rs"]
+mod argument_transport_qualification;
+
+#[path = "support/canonical_program_shared_transport.rs"]
+mod shared_transport_qualification;
+
+#[path = "support/canonical_program_uniform_words.rs"]
+mod uniform_words_qualification;
+
+#[path = "support/canonical_program_sequence_capacity.rs"]
+mod sequence_capacity_qualification;
+
+#[path = "support/canonical_program_buffer_frames.rs"]
+mod buffer_frame_qualification;
+
+#[path = "support/canonical_program_numeric_tail.rs"]
+mod numeric_tail_qualification;
+
+#[path = "support/canonical_program_numeric_writes.rs"]
+mod numeric_write_qualification;
+
+#[path = "support/canonical_program_numeric_results.rs"]
+mod numeric_result_qualification;
+
+#[path = "support/canonical_program_numeric_composition.rs"]
+mod numeric_composition_qualification;
+
+#[path = "support/canonical_program_multi_results.rs"]
+mod multi_result_qualification;
+
+#[path = "support/canonical_program_scalar_paths.rs"]
+mod scalar_path_qualification;
+
+#[path = "support/canonical_program_numeric_predicates.rs"]
+mod numeric_predicate_qualification;
+
+#[path = "support/canonical_program_scalar_state.rs"]
+mod scalar_state_qualification;
+
+#[path = "support/canonical_program_scalar_records.rs"]
+mod scalar_record_qualification;
+
+#[path = "support/canonical_program_record_buffers.rs"]
+mod record_buffer_qualification;
+
+#[path = "support/canonical_program_nested_frames.rs"]
+mod nested_frame_qualification;
+
+#[path = "support/canonical_program_proof_storage.rs"]
+mod proof_storage_qualification;
+
+#[path = "support/canonical_program_optimal_path.rs"]
+mod optimal_path_qualification;
+
 #[path = "support/canonical_program_linked.rs"]
 mod linked_qualification;
 
@@ -59,6 +122,104 @@ mod string_span_qualification;
 
 #[path = "support/canonical_program_access.rs"]
 mod access_qualification;
+
+#[path = "support/canonical_program_huffman.rs"]
+mod huffman_qualification;
+
+#[path = "support/canonical_program_level12_huffman.rs"]
+mod level12_huffman_qualification;
+
+#[path = "support/canonical_program_tally.rs"]
+mod tally_qualification;
+
+#[path = "support/canonical_program_costs.rs"]
+mod costs_qualification;
+
+#[path = "support/canonical_program_default_costs.rs"]
+mod default_costs_qualification;
+
+#[path = "support/canonical_program_header.rs"]
+mod header_qualification;
+
+#[path = "support/canonical_program_block_choice.rs"]
+mod block_choice_qualification;
+#[path = "support/canonical_program_block_header_writer.rs"]
+mod block_header_writer_qualification;
+#[path = "support/canonical_program_stored_writer.rs"]
+mod stored_writer_qualification;
+
+#[path = "support/canonical_program_literal_choice.rs"]
+mod literal_choice_qualification;
+
+#[path = "support/canonical_program_optimization.rs"]
+mod optimization_qualification;
+
+#[path = "support/canonical_program_path_writer.rs"]
+mod path_writer_qualification;
+#[path = "support/canonical_program_sequence_writer.rs"]
+mod sequence_writer_qualification;
+#[path = "support/canonical_program_writer_tables.rs"]
+mod writer_tables_qualification;
+
+#[path = "support/canonical_program_function_axes.rs"]
+mod function_axes_qualification;
+
+#[path = "support/canonical_program_word_reads.rs"]
+mod word_read_qualification;
+
+#[path = "support/canonical_program_record_words.rs"]
+mod record_word_qualification;
+
+#[path = "support/canonical_program_unsigned_lengths.rs"]
+mod unsigned_length_qualification;
+
+#[path = "support/canonical_program_narrow_words.rs"]
+mod narrow_word_qualification;
+
+#[path = "support/canonical_program_matchfinder.rs"]
+mod matchfinder_qualification;
+
+#[path = "support/canonical_program_function_broadcast.rs"]
+mod function_broadcast_qualification;
+
+#[path = "support/canonical_program_local_buffers.rs"]
+mod local_buffer_qualification;
+
+#[path = "support/canonical_program_dynamic_buffers.rs"]
+mod dynamic_buffer_qualification;
+
+#[path = "support/canonical_program_dynamic_projections.rs"]
+mod dynamic_projection_qualification;
+
+#[path = "support/canonical_program_packed_fields.rs"]
+mod packed_field_qualification;
+
+#[path = "support/canonical_program_packed_updates.rs"]
+mod packed_update_qualification;
+
+#[path = "support/canonical_program_nested_tail.rs"]
+mod nested_tail_qualification;
+
+#[path = "support/canonical_program_binary_tree.rs"]
+mod binary_tree_qualification;
+
+#[path = "support/canonical_program_collector.rs"]
+mod collector_qualification;
+
+#[path = "support/canonical_program_block_statistics.rs"]
+mod block_statistics_qualification;
+
+#[path = "support/canonical_program_full_block.rs"]
+mod full_block_qualification;
+
+#[path = "support/canonical_program_recursive_statements.rs"]
+mod recursive_statement_qualification;
+
+#[path = "support/canonical_program_lexical_invariants.rs"]
+mod lexical_invariant_qualification;
+
+#[path = "support/canonical_program_unsigned_conversion.rs"]
+mod unsigned_conversion_qualification;
 
 #[path = "support/canonical_program_nested_conversion.rs"]
 mod nested_conversion_qualification;
@@ -147,6 +308,16 @@ fn inputs(
                 .1
                 .clone();
             let shape_values = match &data {
+                ValueDataDraft::Matrix(_)
+                    if artifact
+                        .schemas()
+                        .get(input.schema)
+                        .unwrap()
+                        .dimension_parameters()
+                        .is_empty() =>
+                {
+                    Box::new([])
+                }
                 ValueDataDraft::Matrix(values) => mech_core::shape_for_resolved_extents(
                     artifact.schemas().get(input.schema).unwrap(),
                     &[1, values.len() as u64],
@@ -682,3 +853,21 @@ fn generated_arithmetic_denial_after_a_library_call_keeps_prior_typed_roots() {
 mod closed_tail_qualification;
 #[path = "support/canonical_program_string_matrix.rs"]
 mod string_matrix_qualification;
+
+#[path = "support/canonical_program_selected_matrix.rs"]
+mod selected_matrix_qualification;
+
+#[path = "support/canonical_program_flush_block.rs"]
+mod flush_block_qualification;
+
+#[path = "support/canonical_program_selection.rs"]
+mod selection_qualification;
+
+#[path = "support/canonical_program_selected_record_axes.rs"]
+mod selected_record_axes_qualification;
+
+#[path = "support/canonical_program_compress.rs"]
+mod compress_qualification;
+
+#[path = "support/canonical_program_no_limits.rs"]
+mod no_limits_qualification;

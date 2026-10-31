@@ -1,0 +1,21 @@
+{
+  "created_utc": "2026-10-31T01:08:44.438256+00:00",
+  "head": "7b76b61a6fc3bdaed23c08bae753a7567b381ff7",
+  "files": [
+    {
+      "path": "candidate-source/candidate.patch",
+      "sha256": "bc614eb51e2d1a712affd34c70807dca35663fe9e39594261f1dffb5da36b4a3",
+      "bytes": 36638
+    },
+    {
+      "path": "candidate-source/revisions.json",
+      "sha256": "b73abe62dec5ff65098c7b3f87da8778c59877026c3b685ffc92332e6a4e0e7e",
+      "bytes": 553
+    },
+    {
+      "path": "linked-acceptance.py",
+      "sha256": "9496db008774be9d178852e9d471e083ad31f9093de073f54bda5c75ec0c8c78",
+      "bytes": 6768
+    }
+  ]
+}

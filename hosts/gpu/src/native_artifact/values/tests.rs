@@ -3,6 +3,9 @@ use mech_core::snapshot::{MapEntryDraft, SnapshotValidationContext};
 use mech_core::{
     SchemaBody, SchemaDraft, SchemaTableBuilder, ValueData, ValueDataDraft, ValueDraft,
 };
+#[cfg(feature = "canonical-native-program-runtime")]
+#[path = "copy_tests.rs"]
+mod copy_tests;
 const TRANSPORT_LIMIT: u64 = 1024 * 1024;
 
 #[cfg(feature = "canonical-native-program-runtime")]
@@ -87,6 +90,69 @@ fn arena_transport_preserves_shared_account_census_and_external_roots() {
     assert_eq!(budget.retained_snapshot_nodes(), 0);
     drop((arena, raw_a, raw_b, raw_map, work, foreign_work));
     assert_eq!(budget.used_bytes(), 0);
+}
+
+#[cfg(feature = "canonical-native-program-runtime")]
+#[test]
+fn prepared_publication_is_bound_to_arena_generation_type_budget_and_retained_bound() {
+    let budget = ManagedMemoryBudget::new(16 * 1024 * 1024);
+    let (ty, raw) = text("unchanged");
+    let original = admit(&raw, &budget);
+    let (_, replacement) = text("updated");
+    let replacement = admit(&replacement, &budget);
+    let types = [ty];
+    let mut work = NativeWorkMeter::new(100_000_000).unwrap();
+    let mut arena = NativeValueArena::new(&types, TRANSPORT_LIMIT, &budget, &mut work).unwrap();
+    let mut other = NativeValueArena::new(&types, TRANSPORT_LIMIT, &budget, &mut work).unwrap();
+    let ticket = arena.prepare_put(0, &original, &mut work).unwrap();
+    assert_eq!(
+        other.put_prepared(ticket, replacement.clone()).unwrap_err(),
+        NativeValueError::StaleHandle
+    );
+    let ticket = arena.prepare_put(0, &original, &mut work).unwrap();
+    arena.put(0, &original, &mut work).unwrap();
+    assert_eq!(
+        arena.put_prepared(ticket, replacement.clone()).unwrap_err(),
+        NativeValueError::StaleHandle
+    );
+    let ticket = arena.prepare_put(0, &original, &mut work).unwrap();
+    let (_, large) = text(&"x".repeat(16384));
+    let large = admit(&large, &budget);
+    assert_eq!(
+        arena.put_prepared(ticket, large).unwrap_err(),
+        NativeValueError::UnadmittedPayload
+    );
+    let ticket = arena.prepare_put(0, &original, &mut work).unwrap();
+    let foreign = ManagedMemoryBudget::new(1_000_000);
+    let foreign_value = admit(&raw, &foreign);
+    assert_eq!(
+        arena.put_prepared(ticket, foreign_value).unwrap_err(),
+        NativeValueError::UnadmittedPayload
+    );
+    let (wrong_ty, wrong) = value(SchemaBody::Bool, ValueDataDraft::Bool(true));
+    assert_ne!(ty.key, wrong_ty.key);
+    let wrong = admit(&wrong, &budget);
+    let ticket = arena.prepare_put(0, &original, &mut work).unwrap();
+    assert_eq!(
+        arena.put_prepared(ticket, wrong).unwrap_err(),
+        NativeValueError::TypeMismatch
+    );
+    let ticket = arena.prepare_put(0, &original, &mut work).unwrap();
+    let rest = budget
+        .reserve_capacity(budget.limit_bytes() - budget.used_bytes())
+        .unwrap();
+    arena.put_prepared(ticket, replacement.clone()).unwrap();
+    drop(rest);
+    assert!(
+        arena
+            .copy_current(0, &mut work)
+            .unwrap()
+            .shares_frozen_storage(&replacement)
+    );
+    drop((arena, other, original, replacement));
+    assert_eq!(budget.used_bytes(), 0);
+    assert_eq!(budget.retained_snapshot_nodes(), 0);
+    assert_eq!(foreign.used_bytes(), 0);
 }
 
 fn value(body: SchemaBody, data: ValueDataDraft) -> (NativeValueSlot, Value) {

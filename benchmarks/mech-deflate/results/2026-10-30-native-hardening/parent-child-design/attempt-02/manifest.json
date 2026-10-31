@@ -1,0 +1,48 @@
+{
+  "compiler": "915f039cfd7e2647cc3a1d349ab1070c3f292d19",
+  "exit": 1,
+  "classification": "introduced diagnostic runner omitted existing CARGO_MANIFEST_DIR environment; no compiler change; no test executed",
+  "performance_claim": false,
+  "files": [
+    {
+      "path": "build-command.json",
+      "sha256": "56c3149d467c51dc55e03ccd0d8e755002285d81e5a4388432c730da5db90b94",
+      "bytes": 1716
+    },
+    {
+      "path": "build.json",
+      "sha256": "93502cce5913307c1f5e841b874851f370414850d10987a1fdff0034aa38fe79",
+      "bytes": 1883
+    },
+    {
+      "path": "build.stderr",
+      "sha256": "2c361d6d22542c03d4d4e3db69b93b1954088c3928d95efa75daabf3463fed51",
+      "bytes": 472
+    },
+    {
+      "path": "build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "huffman.mec",
+      "sha256": "f1a918de00774c512668c284836692e521db219147b991b75aada72303dabec4",
+      "bytes": 1503
+    },
+    {
+      "path": "qualification.rs",
+      "sha256": "c5ea5fa2cbe818bd1bcfa5f6f83aee49dfc138e19e551defe301fda0becb5a09",
+      "bytes": 36416
+    },
+    {
+      "path": "run.py",
+      "sha256": "e6643bd13c4961f80f47ccb54d2006ce9e7ef94c8a6a07f9fdc00fccb497a726",
+      "bytes": 934
+    },
+    {
+      "path": "witness.rs",
+      "sha256": "46ef8748ffdb7c378c7b78c1a4974c22eb6057e29f58b11f2a5a51c98151c79c",
+      "bytes": 6215
+    }
+  ]
+}

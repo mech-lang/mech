@@ -1,0 +1,6 @@
+{"count":0,"form":"original","result":{"Err":"Kernel { node: NodeId(2), error: InvalidInput }"}}
+{"count":3,"form":"original","result":{"Err":"Kernel { node: NodeId(2), error: InvalidInput }"}}
+{"count":1,"form":"original","result":{"Err":"Kernel { node: NodeId(2), error: InvalidInput }"}}
+{"count":0,"form":"decoded","result":{"Err":"Kernel { node: NodeId(2), error: InvalidInput }"}}
+{"count":3,"form":"decoded","result":{"Err":"Kernel { node: NodeId(2), error: InvalidInput }"}}
+{"count":1,"form":"decoded","result":{"Err":"Kernel { node: NodeId(2), error: InvalidInput }"}}

@@ -1,0 +1,16 @@
+{
+  "core_schema_snapshot_tests": 96,
+  "core_memory_runtime_tests": 47,
+  "core_memory_safety_tests": 23,
+  "selected_native_scalar_tests": 8,
+  "selected_native_bit_tests": 3,
+  "total_distinct_rust_tests": 177,
+  "all_passed": true,
+  "protected_scalar_controls": "all passed; exact allocations/bytes, ratios <=1.05",
+  "full_gpu_component_and_linked_rerun": false,
+  "runtime_only_applications_rebuilt": false,
+  "no_std_check": "passed",
+  "full_input_timing": false,
+  "architecture_catalog_routing_inventory_warning_boundary_format_checks": 12,
+  "static_outcome": "passed"
+}

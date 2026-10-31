@@ -1,0 +1,11 @@
+{
+  "created_utc": "2026-10-31T14:15:39.113844+00:00",
+  "head": "9b859e456835434c2dcbd13abda36ac0871c9e74",
+  "files": [
+    {
+      "path": "investigation.json",
+      "sha256": "8b1100bbf40c301a86712166c012ccde92658b514a07b74a14bb0cf7b5fc4fd1",
+      "bytes": 1652
+    }
+  ]
+}

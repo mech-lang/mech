@@ -1,0 +1,8 @@
+{
+  "compiler_source": "6027e8016150f0510b23fcdda20430a40837e1da",
+  "source_scorecard": "compression-round-46/scorecard.json",
+  "json_byte_identical": true,
+  "csv_byte_identical": true,
+  "new_performance_measurement": false,
+  "scope": "Regenerated only from retained measurements; static inventory reused after exact generated Object SHA-256 agreement."
+}

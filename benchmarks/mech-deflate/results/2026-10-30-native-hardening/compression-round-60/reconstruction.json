@@ -1,0 +1,13 @@
+{
+  "archives": 53,
+  "verified_file_occurrences": 454,
+  "unique_paths": 373,
+  "paths_with_multiple_preserved_versions": 1,
+  "scope": "Every archived version is hash-verified before chronological overlay. Numerical replay only; no compiler or compressor invocation and no required executable.",
+  "byte_identical_outputs": [
+    "scorecard.json",
+    "scorecard.csv",
+    "profile-numbers.json",
+    "validation.json"
+  ]
+}

@@ -58,6 +58,7 @@ fn selected_template(
         M::CanonicalFinalize => (6, 0, 0),
         M::CanonicalSortUnique => (7, 0, 0),
         M::PackedStringMatrixOrCanonicalFinalize => (8, 0, 0),
+        M::PackedUnsignedMatrixUpdateOrCanonicalFinalize => (9, 0, 0),
     };
     for number in [tag as u64, a as u64, b as u64] {
         word(hash, number);
@@ -203,7 +204,56 @@ fn selected_template(
 // no runtime frame, resource price or library/storage ABI changes.
 // IR94 reads the two initialized narrow-slot words together; wide slots retain
 // separate full-width accesses. Runtime storage and original prices are unchanged.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 94;
+// IR95 adds the maintained U64 word primitives. IR96 additionally selects
+// checked unsigned scalar conversions through the original conversion leaf.
+// IR97 includes pure indexed matrix replacements in local transition code.
+// IR98 selects witnessed constant tuple reads as checked structural projections.
+// IR99 represents U8/U16/U32 scalars and exact checked unsigned casts.
+// IR100 admits witnessed tuple/record construction with runtime-shaped unsigned
+// buffers. Component parameters are resolved in their own schema arenas.
+// IR101 carries live unsigned buffer dimensions through structural projections
+// and lowers structurally total ordinary tail recursion on real argument values.
+// IR102 routes selected nested tail calls to the exact lexical target and does
+// not manufacture result copies for branches that only recur.
+// IR103 admits ordinary recursive statement frames and up to 32 lexical control
+// levels, with canonical identity conformance for compound function outputs.
+// IR104 preserves lexical Assert operations as checked branches with distinct
+// integrity-failure terminals; no document constraint is hoisted out of a visit.
+// Exact-width unsigned comparison primitives retain their semantic kinds.
+// IR106 admits record-field access through the maintained snapshot selector.
+// IR107 binds pure uniform unsigned construction to its same-plan header.
+// IR108 selects checked U32 counter addition through the maintained scalar leaf.
+// IR109 derives original-site last-use candidates for packed buffer calls.
+// The cache is rebuilt from the validated plan, not accepted as image authority.
+// IR110 adds checked U8 addition and U32 subtraction.
+// IR111 adds bulk little-endian byte append with an explicit count operand.
+// IR112 admits scalar selection of fixed-schema record/tuple matrix elements.
+// IR113 admits fixed record/tuple matrix arguments across control frames.
+// IR114 retains immutable aggregate-matrix leaves in private buffer frames.
+// IR115 adds a borrowed packed source range to selected unsigned-buffer calls.
+// IR116 adds independently rederived read-only numeric leaf/view/carrier proofs.
+// IR117 adds current-version proofs, fixed private unsigned writes and prepaid publication.
+// IR118 derives private flat one-array/scalar terminal result recipes.
+// IR119 admits repeated current-Bool correlation in the existing numeric
+// version proof. Images rederive the eligibility from the restored plan.
+// IR120 admits opaque canonical tuple/record siblings in the existing private
+// managed-owner frame. The unchanged component use checks remain authoritative.
+// IR121 derives private flat scalar records and constant named observations
+// through the existing scalar aggregate storage, escape proof and emitter.
+// IR122 composes private structural spans in the existing scalar/owner lanes;
+// current leaf shape/admission recipes are rederived on image loading.
+// IR123 retains the constructor for dynamic opaque siblings or incompatible
+// structural bindings that the private leaf-shape recipe cannot represent.
+// IR127 adds proved reserved-capacity appends, current length/capacity lanes,
+// header capacity fallback and final initialized-prefix reconciliation.
+// IR128 derives dead canonical alias candidates through structural transport;
+// original last-use barriers, runtime identity and Core exclusivity remain.
+// IR129 composes exact private flat scalar aggregate results and their shared
+// word-bank actions with numeric leaves. The restored plan rederives selection.
+// IR131 checks a single-use child continuation; IR130 composes current parent frame sources around already-qualified children.
+// IR132 assigns one numeric scratch bank while keeping independent region
+// readiness/fuel and original logical setup prices. Images rederive both homes.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 132;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -338,7 +388,55 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 94;
 // Policy69 admits the actual composition-state layout and requires a bounded
 // chunk/table computation to fit the original prepaid join envelope. Source
 // operation prices, finite allowances and later map charges are unchanged.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 69;
+// Policy70 returns selected linear U64 matrix reads into the already admitted
+// scalar frame, with current source/active-call admission and no temporary Values.
+// Policy71 also returns selected U8/U16/U32 reads into native scalar words.
+// Policy72 resolves eligible aggregate output shapes from current children
+// inside the existing prepaid binding envelope, including cache rebindings.
+// Policy73 prepays schema closure and dimension witnesses before projecting a
+// runtime-shaped child, alongside its packed-to-draft expansion and publication.
+// Policy74 transports scalar Tail carriers in native words and retires their
+// other managed locals after the generated latch, as for native aggregates.
+// Policy75 charges each assertion's actual generated branch/copy/failure visit
+// and seals integrity status to the precise admitted failure terminal.
+// Policy76 stores collected unsigned words at their exact widths and admits
+// their packed publication and relocating growth without scalar draft arrays.
+// Computed cursor words and transferred packed output have no payload clone;
+// their source checks and arithmetic/construction work remain charged.
+// Policy77 projects unsigned matrix arguments with one admitted packed copy
+// through the existing typed constructor, without scalar draft expansion.
+// Policy78 keeps selected unsigned aggregate fields packed in the maintained
+// access leaf, with unchanged selector/shape checks and copy admission.
+// Policy79 constructs plain unsigned indexed updates in packed storage after
+// the existing routing, bounds, finalization and publication admission.
+// Policy80 admits optional binding caches only when the unchanged finite call
+// scope can coexist, otherwise invoking the same maintained leaf uncached.
+// Policy81 shares already-prepaid immutable arena owners for generated copies,
+// charging fixed alias work without repaying the one payload destruction.
+// Policy82 charges one admitted typed fill rather than unexecuted per-word
+// control/helper visits. Byte work, clone limits and publication stay funded.
+// Policy83 reads selected unsigned-matrix length into its admitted native word
+// without constructing an unused general binding or canonical scalar owner.
+// Policy84 returns selected scalar record fields into their native lane without
+// general call binding, dimension closure or a canonical scalar result owner.
+// Policy85 funds selected packed-buffer operations, actual capacity/copy
+// coexistence, consuming ownership transfer and checked fresh publication.
+// Policy86 admits the complete old backing when consuming growth reallocates,
+// and enforces the copy-byte quota through ResourceDemand's correct field.
+// Policy87 retains nonescaping buffer argument frames in planned handle lanes.
+// Policy88 uses the core composite binding witness for frame metadata admission.
+// Policy89 retains private record fields through validated reference transport.
+// Policy90 packs current-visit proof rows within the existing finite byte bound.
+// Policy91 admits numeric views once per invocation and prices native leaf bodies
+// with the existing finite conservative closed-tail envelopes. Elided frame and
+// library transactions no longer debit their physical canonical construction.
+// Policy92 funds fixed-shape publication before entry, charges store comparisons,
+// and settles/reopens the same account only at a first changed write.
+// Policy93 also funds synchronization of the actual private terminal frame.
+// Policy95 includes checked child-edge transitions within source admission.
+// Policy94 settles acyclic parent envelopes and reached lexical retirements
+// before ordinary child entry; it does not renew a child or parent allowance.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 95;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
@@ -688,6 +786,7 @@ pub(in crate::native_artifact) fn typed_ir_sha256(
                     M::CanonicalFinalize => (6, 0, 0),
                     M::CanonicalSortUnique => (7, 0, 0),
                     M::PackedStringMatrixOrCanonicalFinalize => (8, 0, 0),
+                    M::PackedUnsignedMatrixUpdateOrCanonicalFinalize => (9, 0, 0),
                 };
                 for n in [tag, a as u64, b as u64] {
                     word(&mut hash, n);

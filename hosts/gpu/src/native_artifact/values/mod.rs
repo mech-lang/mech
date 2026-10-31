@@ -23,6 +23,12 @@ pub struct NativeValueHandle {
     generation: u64,
 }
 
+#[cfg(feature = "canonical-native-program-runtime")]
+pub(in crate::native_artifact) struct PreparedValuePut {
+    handle: NativeValueHandle,
+    retained: u64,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum NativeValueError {
     Base(NativeExecutionError),
@@ -97,6 +103,72 @@ impl<'a> NativeValueArena<'a> {
             budget: budget.clone(),
             work_identity: work.identity(),
         })
+    }
+
+    /// Prepay one fixed-shape native producer's eventual slot installation.
+    /// The ticket binds this arena generation, exact type, same account and
+    /// retained bound. Installing it performs no new resource admission.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn prepare_put(
+        &self,
+        slot: u32,
+        example: &Value,
+        work: &mut NativeWorkMeter,
+    ) -> Result<PreparedValuePut, NativeValueError> {
+        self.check_work(work)?;
+        let index = slot as usize;
+        let ty = self.types.get(index).ok_or(NativeValueError::InvalidSlot)?;
+        if example.schema() != ty.schema || example.schema_key() != ty.key {
+            return Err(NativeValueError::TypeMismatch);
+        }
+        let retained = example
+            .memory_budget_retained_bytes(&self.budget)
+            .ok_or(NativeValueError::UnadmittedPayload)?;
+        let generation = self.generations.values()[index]
+            .checked_add(1)
+            .ok_or(NativeValueError::GenerationExhausted)?;
+        let retirement = retained
+            .checked_mul(4)
+            .and_then(|n| n.checked_add(64))
+            .ok_or(NativeExecutionError::Descriptor {
+                reason: "native value retirement work overflows",
+            })?;
+        work.charge(NativeExecutionPhase::Setup, retirement)?;
+        Ok(PreparedValuePut {
+            handle: NativeValueHandle {
+                domain: self.values.domain_id(),
+                slot,
+                generation,
+            },
+            retained,
+        })
+    }
+
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn put_prepared(
+        &mut self,
+        ticket: PreparedValuePut,
+        value: Value,
+    ) -> Result<(), NativeValueError> {
+        let index = ticket.handle.slot as usize;
+        let ty = self.types.get(index).ok_or(NativeValueError::InvalidSlot)?;
+        if ticket.handle.domain != self.values.domain_id()
+            || self.generations.values()[index].checked_add(1) != Some(ticket.handle.generation)
+        {
+            return Err(NativeValueError::StaleHandle);
+        }
+        if value.schema() != ty.schema || value.schema_key() != ty.key {
+            return Err(NativeValueError::TypeMismatch);
+        }
+        if !value
+            .memory_budget_retained_bytes(&self.budget)
+            .is_some_and(|bytes| bytes <= ticket.retained)
+        {
+            return Err(NativeValueError::UnadmittedPayload);
+        }
+        self.values.values_mut()[index] = Some(value);
+        self.generations.values_mut()[index] = ticket.handle.generation;
+        Ok(())
     }
 
     /// All fallible checks precede replacing an existing slot. No payload
@@ -207,6 +279,51 @@ impl<'a> NativeValueArena<'a> {
             .ok_or(NativeValueError::StaleHandle)
     }
 
+    /// Generated reference copy of an already admitted current owner. Every
+    /// populated source was inserted by put (or this operation), so its one
+    /// eventual payload/schema destruction is already prepaid. Adding an Arc
+    /// alias needs only fixed read, publication and alias-retirement work; it
+    /// creates no new payload or budget wrapper. Destination retirement was
+    /// prepaid by its own insertion. All checks precede either replacement.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn copy_current_to(
+        &mut self,
+        source: u32,
+        target: u32,
+        work: &mut NativeWorkMeter,
+    ) -> Result<NativeValueHandle, NativeValueError> {
+        self.check_work(work)?;
+        work.charge(NativeExecutionPhase::Setup, 32)?;
+        let value = self
+            .values
+            .values()
+            .get(source as usize)
+            .ok_or(NativeValueError::InvalidSlot)?
+            .as_ref()
+            .ok_or(NativeValueError::StaleHandle)?;
+        work.charge(NativeExecutionPhase::Setup, 32)?;
+        let index = target as usize;
+        let ty = self.types.get(index).ok_or(NativeValueError::InvalidSlot)?;
+        if value.schema() != ty.schema || value.schema_key() != ty.key {
+            return Err(NativeValueError::TypeMismatch);
+        }
+        value
+            .memory_budget_retained_bytes(&self.budget)
+            .ok_or(NativeValueError::UnadmittedPayload)?;
+        let generation = self.generations.values()[index]
+            .checked_add(1)
+            .ok_or(NativeValueError::GenerationExhausted)?;
+        work.charge(NativeExecutionPhase::Setup, 32)?;
+        let value = value.clone();
+        self.values.values_mut()[index] = Some(value);
+        self.generations.values_mut()[index] = generation;
+        Ok(NativeValueHandle {
+            domain: self.values.domain_id(),
+            slot: target,
+            generation,
+        })
+    }
+
     /// Private read inside an already prepaid generated operation. The caller
     /// must include this fixed-size slot/generation/refcount work in that
     /// operation's complete bound before entering this leaf. It cannot publish
@@ -286,6 +403,39 @@ impl<'a> NativeValueArena<'a> {
             .transpose()
     }
 
+    /// Pure current-entry availability, geometry and retirement previews.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn native_entry_preview(
+        &self,
+        slot: u32,
+        work: &NativeWorkMeter,
+    ) -> Result<Option<&Value>, NativeValueError> {
+        // Pure current availability/geometry preview, analogous to private
+        // frame current_leaf. It grants neither mutation nor an entry loan.
+        // The caller must fund and validate its selected view before execution.
+        self.check_work(work)?;
+        self.values
+            .values()
+            .get(slot as usize)
+            .map(Option::as_ref)
+            .ok_or(NativeValueError::InvalidSlot)
+    }
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn native_retirement_available(
+        &self,
+        slot: u32,
+        work: &NativeWorkMeter,
+    ) -> Result<bool, NativeValueError> {
+        self.check_work(work)?;
+        let index = slot as usize;
+        let value = self
+            .values
+            .values()
+            .get(index)
+            .ok_or(NativeValueError::InvalidSlot)?;
+        Ok(value.is_none() || self.generations.values()[index] != u64::MAX)
+    }
+
     /// Only the certified generated caller may retire a lexical local. Payload
     /// retirement was prepaid by put; invalidate its handle before releasing it.
     #[cfg(feature = "canonical-native-program-runtime")]
@@ -296,6 +446,24 @@ impl<'a> NativeValueArena<'a> {
     ) -> Result<(), NativeValueError> {
         self.check_work(work)?;
         work.charge(NativeExecutionPhase::Setup, 32)?;
+        self.retire_current_value(slot)
+    }
+
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn retire_current_prepaid(
+        &mut self,
+        slot: u32,
+        paid: &mut crate::native_artifact::work::PaidRetirements<'_>,
+    ) -> Result<(), NativeValueError> {
+        self.check_work(paid.meter())?;
+        paid.pay(32)?;
+        self.retire_current_value(slot)
+    }
+
+    #[cfg(feature = "canonical-native-program-runtime")]
+    fn retire_current_value(&mut self, slot: u32) -> Result<(), NativeValueError> {
+        #[cfg(test)]
+        PHYSICAL_RETIREMENTS.with(|count| count.set(count.get() + 1));
         let index = slot as usize;
         let value = self
             .values
@@ -310,6 +478,11 @@ impl<'a> NativeValueArena<'a> {
             *value = None;
         }
         Ok(())
+    }
+
+    #[cfg(all(test, feature = "canonical-native-program-runtime"))]
+    pub(in crate::native_artifact) fn take_retirement_effect_count() -> u64 {
+        PHYSICAL_RETIREMENTS.with(|count| count.replace(0))
     }
 
     /// Retirement only, not an ownership/last-use proof. The generated caller
@@ -391,6 +564,11 @@ impl<'a> NativeValueArena<'a> {
             .take()
             .ok_or(NativeValueError::StaleHandle)
     }
+}
+
+#[cfg(all(test, feature = "canonical-native-program-runtime"))]
+thread_local! {
+    static PHYSICAL_RETIREMENTS: core::cell::Cell<u64> = const { core::cell::Cell::new(0) };
 }
 
 #[cfg(test)]

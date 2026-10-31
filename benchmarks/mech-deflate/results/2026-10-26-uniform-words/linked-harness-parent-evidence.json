@@ -1,0 +1,20 @@
+{
+  "base": "fd790ca0fce74b8eb8563cc4442d3a0041672c70",
+  "files": [
+    {
+      "path": "hosts/gpu/src/native_artifact/templates/linked_program_main.rs.in",
+      "parent_sha256": "56442f656093ee8d630125f0395609f3584ac8791f8c1a99bd0f4a5c33507833",
+      "current_sha256": "56442f656093ee8d630125f0395609f3584ac8791f8c1a99bd0f4a5c33507833",
+      "byte_identical_to_clean_parent": true
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/launch/managed.rs",
+      "parent_sha256": "d67acb2009db78f9847f60e4ed904a0a89d4ec01e18472e1c2bf85c070db9770",
+      "current_sha256": "d67acb2009db78f9847f60e4ed904a0a89d4ec01e18472e1c2bf85c070db9770",
+      "byte_identical_to_clean_parent": true
+    }
+  ],
+  "old_retry_test_result": "inherited-linked-harness-reproducer.log",
+  "failure_before_native_execution": true,
+  "evidence": "The unchanged parent shell delegates to run_program_application; the old helper searches the shell for an inline evaluate_into statement, which is absent."
+}

@@ -37,6 +37,9 @@ pub(in crate::native_artifact) enum GlobalHelper {
     ParallelEnter,
     FrozenMapCopy,
     FrozenMapRead,
+    NumericWritePrepare,
+    NumericSegmentBegin,
+    NumericSegmentEnd,
 }
 impl GlobalHelper {
     // Decoding classifies only. Site, phase, lane, admission and cursor checks
@@ -71,6 +74,9 @@ impl GlobalHelper {
             value if value == u64::MAX - 23 => Self::ParallelEnter,
             value if value == u64::MAX - 24 => Self::FrozenMapCopy,
             value if value == u64::MAX - 25 => Self::FrozenMapRead,
+            value if value == u64::MAX - 26 => Self::NumericWritePrepare,
+            value if value == u64::MAX - 27 => Self::NumericSegmentBegin,
+            value if value == u64::MAX - 28 => Self::NumericSegmentEnd,
             value => Self::Output(OutputIndex(value - 3)),
         }
     }
@@ -105,6 +111,9 @@ impl GlobalHelper {
             Self::ParallelEnter => u64::MAX - 23,
             Self::FrozenMapCopy => u64::MAX - 24,
             Self::FrozenMapRead => u64::MAX - 25,
+            Self::NumericWritePrepare => u64::MAX - 26,
+            Self::NumericSegmentBegin => u64::MAX - 27,
+            Self::NumericSegmentEnd => u64::MAX - 28,
         }
     }
     #[cfg(feature = "canonical-native-program")]

@@ -1,0 +1,55 @@
+START full-components.py
+hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })","witness":"repeated-buffer-returns","words":31}
+{"allocation_requests":130,"artifact":"decoded","elapsed_seconds":0.0000375,"permitted":true,"requested_allocation_bytes":16254,"result":"Ok(NativeProgramExecutionReport { work: 48139212, comparison_work: 0, visits: 326, transport_bytes: 1224, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })","witness":"repeated-buffer-returns","words":1500513}
+{"allocation_requests":130,"artifact":"decoded","elapsed_seconds":0.000021458,"permitted":false,"requested_allocation_bytes":16254,"result":"Err(Control(Integrity { origin: NativeMatchOrigin { node: NodeId(0), block: Some(0), local: Some(0) } }))","witness":"repeated-buffer-returns","words":1500513}
+{"allocation_requests":130,"artifact":"decoded","elapsed_seconds":0.000040084,"permitted":true,"requested_allocation_bytes":16254,"result":"Ok(NativeProgramExecutionReport { work: 72146924, comparison_work: 0, visits: 326, transport_bytes: 1224, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })","witness":"repeated-buffer-returns","words":1500513}
+ok
+test tail_qualification::atomic_structural_state_bindings_execute_and_suspending_machines_stay_closed ... ok
+test tail_qualification::huffman_bit_reversal_runs_word_primitives_inside_a_native_tail_loop ... ok
+test tail_qualification::native_aggregate_state_width_boundary_and_permuted_fields_preserve_values ... ok
+test tail_qualification::raw_string_literal_patterns_are_structural_observations_not_library_calls ... ok
+test tail_qualification::tail_work_denial_after_managed_state_transitions_is_atomic_and_recovers ... ok
+test uniform_words_qualification::repeated_uniform_calls_read_the_current_word_and_count ... ok
+test uniform_words_qualification::uniform_constructor_keeps_range_overflow_before_output_rejection ... ok
+test uniform_words_qualification::uniform_optimizer_leaves_selected_assertions_in_the_ordinary_body ... ok
+test uniform_words_qualification::uniform_unsigned_values_keep_clone_quotas_prior_outputs_and_recovery ... ok
+test uniform_words_qualification::uniform_word_facts_keep_the_exact_region_and_reject_effects_or_varying_yields ... ok
+test word_read_qualification::selected_u64_read_keeps_owner_admission_exact_call_limits_and_no_allocation ... ok
+test word_read_qualification::u64_read_budget_denials_preserve_previous_publication_and_recover ... ok
+test word_read_qualification::u64_read_selection_requires_the_maintained_factory ... ok
+test word_read_qualification::u64_reads_use_linear_column_major_order_and_already_admitted_scalar_storage ... ok
+test word_read_qualification::u64_scalar_reads_keep_wide_words_live_extents_errors_and_recovery ... ok
+test word_read_qualification::unsigned_linear_reads_match_resident_current_shapes_and_recover ... ok
+
+test result: ok. 198 passed; 0 failed; 0 ignored; 0 measured; 238 filtered out; finished in 73.82s
+
+DEFLATE_TABLE entries=262144 operation=initial-nodes(count<u64>) report=NativeProgramExecutionReport { work: 63766136, comparison_work: 0, visits: 10, transport_bytes: 3048, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }
+DEFLATE_TABLE entries=262144 operation=initial-nodes(count<u64>) report=NativeProgramExecutionReport { work: 63766136, comparison_work: 0, visits: 10, transport_bytes: 3048, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }
+DEFLATE_TABLE entries=262144 operation=rebase-nodes(nodes<[u16]>) report=NativeProgramExecutionReport { work: 1184916800, comparison_work: 0, visits: 3413001, transport_bytes: 3880, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }
+DEFLATE_TABLE entries=262144 operation=rebase-nodes(nodes<[u16]>) report=NativeProgramExecutionReport { work: 1184916800, comparison_work: 0, visits: 3413001, transport_bytes: 3880, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }
+DEFLATE_RESIDENT_DEFAULT_DENIAL case=extend-35 Kernel { node: NodeId(5), error: ResourceLimit { phase: Admission, dimension: ComputeWork, required: 16842945, limit: 16777216 } }
+DEFLATE_RESIDENT_DEFAULT_DENIAL case=extend-35 Kernel { node: NodeId(5), error: ResourceLimit { phase: Admission, dimension: ComputeWork, required: 16842945, limit: 16777216 } }
+
+START after/build-witness.py
+
+
+START after/build-audit.py
+
+
+START object-audit/build.py
+Traceback (most recent call last):
+  File "/private/tmp/mech-nested-frames-round20-20261029/object-audit/build.py", line 8, in <module>
+    (r/'object-build.log').write_text(p.stdout+p.stderr);(r/'object-build.json').write_text(json.dumps({'command':c,'exit':p.returncode,'seconds':time.monotonic()-a,'libraries':b['libraries']},indent=2)+'\n');p.check_returncode()
+                                                                                                                                                                                                                 ~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 509, in check_returncode
+    raise CalledProcessError(self.returncode, self.args, self.stdout,
+                             self.stderr)
+subprocess.CalledProcessError: Command '['/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc', '--edition=2024', '-C', 'opt-level=3', '-D', 'warnings', '-L', 'dependency=/private/tmp/mech-live-control-target/release/deps', '--extern', 'serde=/private/tmp/mech-live-control-target/release/deps/libserde-53e30a58b8778b4f.rlib', '--extern', 'serde_json=/private/tmp/mech-live-control-target/release/deps/libserde_json-e0f8af30c3327a5b.rlib', '--extern', 'mech_core=/private/tmp/mech-live-control-target/release/deps/libmech_core-4ff4856784490a86.rlib', '--extern', 'mech_syntax=/private/tmp/mech-live-control-target/release/deps/libmech_syntax-99fe397930ae7109.rlib', '--extern', 'mech_engine=/private/tmp/mech-live-control-target/release/deps/libmech_engine-0d214f77bb5acf15.rlib', '--extern', 'miniz_oxide=/private/tmp/mech-live-control-target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib', '--extern', 'mech_gpu=/private/tmp/mech-live-control-target/release/deps/libmech_gpu-7fa2845c539b987a.rlib', '--extern', 'mech_stdlib=/private/tmp/mech-live-control-target/release/deps/libmech_stdlib-6eec5c94a1151738.rlib', '/private/tmp/mech-nested-frames-round20-20261029/object-audit/object-evidence.rs', '-o', '/private/tmp/mech-nested-frames-round20-20261029/object-audit/object-evidence']' returned non-zero exit status 1.
+Traceback (most recent call last):
+  File "/private/tmp/mech-nested-frames-round20-20261029/qualify-all.py", line 6, in <module>
+    subprocess.run(['python3',str(r/script)],check=True,cwd='/private/tmp/mech-deflate-linear-stack')
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['python3', '/private/tmp/mech-nested-frames-round20-20261029/object-audit/build.py']' returned non-zero exit status 1.

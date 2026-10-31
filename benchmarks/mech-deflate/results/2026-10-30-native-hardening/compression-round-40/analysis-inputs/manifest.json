@@ -1,0 +1,16 @@
+{
+  "created_utc": "2026-10-31T00:09:28.727093+00:00",
+  "head": "f06fe15783556a7387c6575c29181dd41ab44f4a",
+  "files": [
+    {
+      "path": "analysis-inputs/baseline-census.json",
+      "sha256": "bf7d0e0753447dd63b1682f6317fb81293e894be25e5428b8dec53848b81aad0",
+      "bytes": 2422292
+    },
+    {
+      "path": "analysis-inputs/baseline-descriptor.json",
+      "sha256": "c34838f0b42997bcdcbfb86df1eddad94303fb3083c34c89829ab4a8f8ae9a05",
+      "bytes": 59784245
+    }
+  ]
+}

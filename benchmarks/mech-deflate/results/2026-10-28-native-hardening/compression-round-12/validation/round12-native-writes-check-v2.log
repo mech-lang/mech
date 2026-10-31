@@ -1,0 +1,4 @@
+    Checking mech-gpu v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/gpu)
+    Checking mech-stdlib v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/stdlib)
+    Checking mech-compression-native-profile v0.0.0 (/private/tmp/mech-deflate-linear-stack/benchmarks/mech-deflate/native-profile)
+    Finished `dev` profile [unoptimized] target(s) in 4.04s

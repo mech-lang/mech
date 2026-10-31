@@ -1,0 +1,33 @@
+{
+  "name": "hardening-frame-probe-build-fixed",
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "canonical-native-program",
+    "--example",
+    "native_frame_transport",
+    "--release"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "39442acb64ed47500ec26d5c4037cc37d0015ebe",
+  "dirty": " M docs/design/native-compression-hardening.md\n M hosts/gpu/Cargo.toml\n M hosts/gpu/tests/support/canonical_program_compress.rs\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-ci-head-39442acb.json\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-frame-debug-diagnostic.json\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-frame-debug-link-command.json\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-frame-debug-link-fixed.log\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/hardening-frame-debug-link.log\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/profiling/\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/review-39442acb.json\n?? benchmarks/mech-deflate/results/2026-10-28-native-hardening/shared-assembly.json\n?? benchmarks/native-frame-transport/\n?? hosts/gpu/examples/native_frame_transport.rs\n?? hosts/gpu/tests/fixtures/native/deflate_assembly.rs\n",
+  "exit": 101,
+  "seconds": 0.5355587005615234,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/hardening-frame-probe-build-fixed.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

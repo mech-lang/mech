@@ -1,0 +1,35 @@
+{
+  "name": "sequence-operations-reviewed-runtime-contracts",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-engine",
+    "--no-default-features",
+    "--features",
+    "semantic-compiler,resident-artifact,sequence_buffers",
+    "--test",
+    "sequence_buffer_contract",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "aad1f6528dd49815be930bf42f044296968fa38e",
+  "dirty": "?? benchmarks/mech-deflate/results/2026-10-27-sequence-operations/\n",
+  "exit": 0,
+  "seconds": 1.0440778732299805,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/sequence-operations-reviewed-runtime-contracts.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

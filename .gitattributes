@@ -1,3 +1,7 @@
 # Grammar fixtures are byte-exact parser inputs. Trailing spaces and blank
 # physical lines encode syntax consumed by parser and renderer contracts.
 src/syntax/tests/fixtures/grammar/** -whitespace
+
+# Compressor inputs and raw streams are byte-exact binary fixtures.
+hosts/gpu/tests/fixtures/native/deflate-boundary-*.input binary
+hosts/gpu/tests/fixtures/native/deflate-boundary-*.deflate binary

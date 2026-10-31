@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-numeric-writes-round12-20261028/unit-tests2",
+    "numeric_fuel_exit_synchronizes",
+    "numeric_write_fuel_exit",
+    "prepared_publication_is_bound",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 101,
+  "seconds": 1.0426720830146223,
+  "binary_sha256": "e61ff41a3b5010eeaf7c71e3871ba5367c4cf883d80ace54363536eec0e6b714"
+}

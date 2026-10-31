@@ -1,0 +1,23 @@
+{
+  "name": "unsigned-buffer-static-contracts",
+  "command": [
+    "python3",
+    "-c",
+    "import subprocess; commands=[[\"cargo\",\"fmt\",\"--all\",\"--\",\"--check\"],[\"python3\",\"scripts/check-native-build-analysis-layout.py\"],[\"python3\",\"scripts/check-warning-policy.py\"],[\"python3\",\"scripts/check-production-resident-routing.py\"],[\"python3\",\"scripts/check-source-catalog-entrypoints.py\"],[\"git\",\"diff\",\"--check\"]]; [subprocess.run(command,check=True) for command in commands]"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "62860ea6232b5db46233ac34c48b4eb19235cafc",
+  "dirty": "",
+  "exit": 0,
+  "seconds": 21.785650968551636,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/unsigned-buffer-static-contracts.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

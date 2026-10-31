@@ -1,0 +1,58 @@
+# Flat named record results in native numeric loops
+
+Base9fa5dfb3dc780672dbe33139f870780fc4d1682a (clean automated review6505025879). PR parent eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b. This extends the existing result eligibility proof; it adds no executor, owner, result cache or runtime ABI field. IR/work/ABI/bytecode126/93/36/14. The typed IR revision changes because region selection changes; work prices and finite admission are unchanged.
+
+Production **dbb935b3285cb4862e3056ca0675bc59b530f9b3** admits `SchemaBody::Record` alongside Tuple through the existing `ResultRecipe::Frame`. Exact private-use closure, constant record selectors, field order/schema, invariant shape, carrier-root provenance, and every-field terminal freshness remain authoritative. Existing native emission, all-owner freezing and terminal field synchronization are reused unchanged. Nested/composite fields, unsupported selectors/geometry, unknown or stale roots and public escape retain their existing routes. Current finite checks, failure atomicity, aliases, cleanup and retry remain in force.
+
+Preimplementation witnesses and reached census **afa2fa4dc6fff3d8dcfbfb261c602d334a3dbaff** establish the missing guard. The generic record and unchanged pinned table builder pass values/errors/aliases/cleanup on the parent before failing the native-selection requirement. The tuple control already qualifies. The existing eligibility expectation for a now-supported record changes in **a82bd4c36fc26fb0383e77b5f5281d6f336f5c1a**; no semantic expected value or resource allowance changes. **4be4cb08c5d5d4ab082171f2574877615841e6cd** explicitly covers two distinct record fields mapped to the same current root, original/decoded values, image rederivation, changing arguments, prior-publication preservation, cleanup and recovery.
+
+## Complete-compression measurement
+
+Protected eight-byte `abcdefgh`, pinned level12, same mimalloc2.1.7 and evaluate_into-only harness. Before **66.478307560×Roc /19.345187500ms**, after **49.901201031× /14.521249500ms**. Fresh common reference **0.291000ms**,20000 observations. **24.936113956% less elapsed time**,1.332198548× speedup. These are twelve primary observations/control from four alternating-order pairs; every pair improves. All40 observations are retained. Warm-ups and the separate276-repetition diagnostic sample are excluded. No larger-input throughput or statistical interval claim.
+
+Exact10 raw bytes, independent inflation, capacity13 and final zero bytes/nodes pass every observation. Output reserve/clear/rebind/JIT/verify/drop stay outside the measured boundary; copies that execution still performs remain timed. The pinned source, algorithms/tables, search limits, real262144/U16 tree and1500513/U32 cache, source allocation sites and timing boundaries are unchanged. Mech performs compression. Source revision671077457ff7ef3a3d44caf715a3fc595addf379; reference compiler d99c7b838fb05bb1047eb0c18d4d06d0f86f345d. Source/artifact SHA256331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9 /a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7. Fresh source compilation reproduces all4138627 artifact bytes; decoded reencoding agrees.
+
+Source operations and work prices remain; selecting a different maintained route legitimately changes executed debits: **222049095608→174947248798**, comparison60590→49862. The census and all performance visits agree with their own route's exact totals. Timing/profile receipts were committed immediately in **ba2373d33f72b536afee7845130c488ba6450a14** before any further optimization; scalar measurements immediately in **cb9c1dcc1f129ea1cbe6b38465de45babbb2a2dd**. [All raw timing/profile](timing/manifest.json),[scalar controls](scalar/manifest.json).
+
+## Exact candidate dispositions and execution evidence
+
+All five originally result-kind-rejected candidates now qualify. Numeric regions **215→220** (45 read-only,175 writes). The result recipe maps each ordinal to an exact carrier-array root; it does not infer a root from matching width or name. Below, numeric roots are those in the selected region's arrays list.
+
+| Header / iteration | Origin block/local, node0 | Source operation; result | Returned→caller value | Returned ordinal→root | Immediate caller consumers |
+|---|---|---|---|---|---|
+|5031/48|531/1|optimal-merge-observations-loop; total/fresh U32|3507→3504|0→1,1→0|5099 project1;5100 project0|
+|5105/49|531/7|optimal-merge-frequencies-loop; total/fresh U32|3548→3545|0→0,1→1|5180 project0;5181 project1|
+|5311/51|571/1|optimal-merge-frequencies-loop; total/fresh U32|3644→3641|0→0,1→1|5386 copies to3638|
+|5397/52|584/1|optimal-merge-observations-loop; total/fresh U32|3683→3680|0→1,1→0|5465 project1;5466 project0|
+|39196/433|4743/10|block-full-length-at; codewords U32/lens U8|21426→21423|0→5,1→6|39369/70 and39696/97 project0/1|
+
+The terminal record producers reach those returned slots through copies at5097,5178,5384,5463,39353 respectively; full actions, exact schemas, lanes, sources, roots and direct caller copies/projections are retained in candidate-consumers/mapping.json and complete-object.json inside the qualification archive. All five first rejection reasons before are `numeric result is not a scalar, array, or private flat tuple`; afterward each has proof_eligible=true, selected=true, rejection=null. The observation loops carry their fresh and total arrays in the opposite order from the returned fields. The eight-byte run reaches51,52 and433;48/49 are unreached. Region52 contributes181 old helpers as well as the larger51/433 counts; no elapsed credit is assigned to unreached candidates.
+
+One complete second-visit runtime census, actual checked JIT entry plus maintained runtime, reports admission callbacks **92138→67665**, helper callbacks **54239→39927**, private frame helpers **42191→31525**. Region433 helpers10764→2, region51 3377→0 and region52 181→2; fixed entry/terminal callbacks remain where needed while ordinary per-step helpers disappear. Test-only wrappers count then delegate the saved callbacks unchanged and restore them before frame-integrity checks. Diagnostic allocations/elapsed values are not benchmark observations. No alternative evaluator. Exact bytes/inflation/aliases/capacity/cleanup still pass.
+
+Compared with the retained IR125 Object from round22 (round23 did not repeat Object emission), Object text is **13267988→13408532 bytes** (+140544); complete Object13268720→13409264; stack101456→103104 (+1648). This is not a fresh paired round23 Object audit. The Object audit is emission evidence; census and JIT execution establish execution. Fresh sample has1270 disjoint weights:314 frame actions,327 selected calls,209 ordinary visits,200 other helpers,220 remaining. Prior sample has1315; these are separately sampled ancestry weights, not precise elapsed fractions or removable-time promises. Append/capacity-changing recurrences and child/activation boundaries remain. First reported static dispositions:220 selected,18 array-field changes/unknown forwarding,76 child/activation boundaries,6 frame escape/unknown private fields.
+
+## Qualification, exact configurations and failures
+
+**229 unique scoped maintained Rust tests pass:**217 in the complete component cohort (81.68s), the additional repeated-root record test1 (0.20s), selected scalar8, bits3. Focused14 and corrected eligibility1 are overlapping subsets, not added to this total. Eight new record tests cover two/three unsigned widths, scalar siblings, field name/order/schema/root association, same input backing, repeated current root, stale second result, late assertion/division/short-array failure after an earlier mutation, finite limits, original/decoded, restored image proof/corruption, unchanged publication/input aliases, cleanup and retry. The unchanged real tree/cache payload expectations retain one initial payload for internal consumers and two for canonical public tuple materialization; no 1→8/64-step allocation slope.
+
+All12 protected scalar controls pass unchanged≤1.05(max1.009020338), with identical requests/bytes and zero loop allocation slope. All12 architecture/catalog/inventory/unsafe/warnings/format checks pass (205.777s); module-layout/format/diff checks are repeated after the additional test. Warnings remain errors, unsafe allowlist unchanged. Same production features/profile for Core/Engine/GPU/Stdlib/Math/Compare/Logic, verified against the successful parent build. Nightly2026-03-03,aarch64-apple-darwin,locked/offline,jobs1,incremental0; opt3 production dependencies,-Dwarnings,opt1 external harness,opt0 diagnostic actual GPU test root. Focused default release rebuild73.085s; no math/catalog expansion.
+
+Commands/configurations, library/executable/source hashes, exact original/decoded observations, selection metadata, all failed attempts, profiling scripts and complete logs are retained in [qualification/manifest.json](qualification/manifest.json). Main commands:
+
+```text
+python3 /private/tmp/mech-linear-restack-20261026/run-check.py round24-flat-record-release cargo build --release --locked --offline --manifest-path benchmarks/mech-deflate/native-profile/Cargo.toml --message-format=json --bin native_frame_transport --bin artifact_review
+python3 /private/tmp/mech-frame-loops-round24-20261029/components/qualify.py
+python3 /private/tmp/mech-frame-loops-round24-20261029/full-components-final.py
+python3 /private/tmp/mech-frame-loops-round24-20261029/repeated-root-corrected/qualify.py
+python3 /private/tmp/mech-frame-loops-round24-20261029/primary/qualify-selected.py
+python3 /private/tmp/mech-linear-restack-20261026/run-check.py round24-architecture python3 /private/tmp/mech-final-static-20261028.py
+python3 /private/tmp/mech-frame-loops-round24-20261029/primary/run.py
+python3 /private/tmp/mech-frame-loops-round24-20261029/primary/scalar-controls.py
+```
+
+The first full cohort has216 passes/one failure: its old eligibility assertion deliberately expected record rejection. Updated only that selection assertion, then all217 pass. The additional repeated-root fixture initially violates the language's existing exact ordered record schema by reversing its constructor fields; construction order is corrected, no compiler/source-semantics change. The corrected witness passes. Parent red missing-specialization failures and earlier debugger/import/syntax setup attempts remain in BASELINE.md and their archives. No failed timing was discarded or replaced. No current introduced compiler/component/scalar/architecture failure remains.
+
+The inherited resident public nested-record failure remains documented in round20 and is not reopened. CI remains cancelled by user direction, not green; keep PR973 draft and request a fresh exact review on publication. Skipped: larger/full-input timing,new linked/AOT execution,all-certified scalar primitives needing omitted not/xor,absent-stats coverage,unchanged Core/Engine units(last349/227 at parent),303 GPU internal tests(last passed round22). The test-only full-program census is separately one passing diagnostic and is not counted as broad unit qualification. Earlier assertion/corpus/CI/parser packages remain closed.
+
+The record-result result is published before append support. Next bounded work is a reserved-capacity unsigned append recurrence, starting with an explicit Core initialized-length/capacity/shape/publication/failure design and an unchanged real compressor witness. Fixed-shape `PrivateUnsignedMatrix` must not be treated as appendable by indexed replacement. No zero-filled path matrix, whole-buffer concatenation per append, source rewrite or fresh repetition output is introduced. The1× objective remains active.

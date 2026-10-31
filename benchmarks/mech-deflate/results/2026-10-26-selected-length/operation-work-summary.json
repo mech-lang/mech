@@ -1,0 +1,162 @@
+{
+  "helpers": 3112,
+  "last_work": 9997392944,
+  "helper_work": 9978037724,
+  "by_operation": [
+    {
+      "tag": "0",
+      "operation": "core/composite-pack",
+      "calls": 136,
+      "work": 3630769009
+    },
+    {
+      "tag": "0",
+      "operation": "sequence/length",
+      "calls": 242,
+      "work": 1899082953
+    },
+    {
+      "tag": "18446744073709551600",
+      "operation": "-",
+      "calls": 729,
+      "work": 1474231422
+    },
+    {
+      "tag": "0",
+      "operation": "access/column",
+      "calls": 86,
+      "work": 1460742952
+    },
+    {
+      "tag": "0",
+      "operation": "core/assign/indexed-axis",
+      "calls": 35,
+      "work": 839213780
+    },
+    {
+      "tag": "2",
+      "operation": "-",
+      "calls": 9,
+      "work": 672860136
+    },
+    {
+      "tag": "0",
+      "operation": "access/scalar",
+      "calls": 1608,
+      "work": 1028768
+    },
+    {
+      "tag": "1",
+      "operation": "-",
+      "calls": 267,
+      "work": 108704
+    }
+  ],
+  "top_sites": [
+    {
+      "site": "615",
+      "tag": "0",
+      "operation": "core/composite-pack",
+      "calls": 56,
+      "work": 1036023800
+    },
+    {
+      "site": "60",
+      "tag": "18446744073709551600",
+      "operation": "-",
+      "calls": 6,
+      "work": 523043580
+    },
+    {
+      "site": "1830",
+      "tag": "0",
+      "operation": "core/composite-pack",
+      "calls": 28,
+      "work": 518011900
+    },
+    {
+      "site": "478",
+      "tag": "0",
+      "operation": "sequence/length",
+      "calls": 56,
+      "work": 471359784
+    },
+    {
+      "site": "544",
+      "tag": "0",
+      "operation": "sequence/length",
+      "calls": 56,
+      "work": 471359784
+    },
+    {
+      "site": "20",
+      "tag": "2",
+      "operation": "-",
+      "calls": 1,
+      "work": 409565500
+    },
+    {
+      "site": "2518",
+      "tag": "0",
+      "operation": "core/composite-pack",
+      "calls": 5,
+      "work": 391794895
+    },
+    {
+      "site": "2497",
+      "tag": "0",
+      "operation": "core/composite-pack",
+      "calls": 5,
+      "work": 360009905
+    },
+    {
+      "site": "2473",
+      "tag": "0",
+      "operation": "core/assign/indexed-axis",
+      "calls": 5,
+      "work": 311145000
+    },
+    {
+      "site": "1469",
+      "tag": "18446744073709551600",
+      "operation": "-",
+      "calls": 3,
+      "work": 261513678
+    },
+    {
+      "site": "2500",
+      "tag": "0",
+      "operation": "access/column",
+      "calls": 5,
+      "work": 245132890
+    },
+    {
+      "site": "1693",
+      "tag": "0",
+      "operation": "sequence/length",
+      "calls": 28,
+      "work": 235679892
+    },
+    {
+      "site": "1759",
+      "tag": "0",
+      "operation": "sequence/length",
+      "calls": 28,
+      "work": 235679892
+    },
+    {
+      "site": "2439",
+      "tag": "0",
+      "operation": "access/column",
+      "calls": 5,
+      "work": 199199504
+    },
+    {
+      "site": "24",
+      "tag": "2",
+      "operation": "-",
+      "calls": 1,
+      "work": 192068864
+    }
+  ]
+}

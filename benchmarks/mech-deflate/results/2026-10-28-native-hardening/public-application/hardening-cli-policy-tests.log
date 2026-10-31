@@ -1,0 +1,304 @@
+   Compiling syn v2.0.119
+   Compiling smallvec v1.15.2
+   Compiling synstructure v0.13.2
+   Compiling zerofrom-derive v0.1.7
+   Compiling zerofrom v0.1.8
+   Compiling yoke-derive v0.8.2
+   Compiling yoke v0.8.3
+   Compiling zerovec-derive v0.11.3
+   Compiling zerovec v0.11.6
+   Compiling displaydoc v0.2.6
+   Compiling jobserver v0.1.35
+   Compiling cc v1.3.0
+   Compiling tinystr v0.8.3
+   Compiling bytes v1.12.1
+   Compiling icu_locale_core v2.2.0
+   Compiling zerotrie v0.2.4
+   Compiling potential_utf v0.1.5
+   Compiling icu_collections v2.2.0
+   Compiling icu_provider v2.2.0
+   Compiling errno v0.3.14
+   Compiling icu_properties v2.2.0
+   Compiling pin-project-lite v0.2.17
+   Compiling parking_lot_core v0.9.12
+   Compiling signal-hook-registry v1.4.8
+   Compiling scopeguard v1.2.0
+   Compiling lock_api v0.4.14
+   Compiling mio v1.2.2
+   Compiling futures-core v0.3.33
+   Compiling parking_lot v0.12.5
+   Compiling nalgebra-macros v0.3.0
+   Compiling tokio-macros v2.7.1
+   Compiling socket2 v0.6.5
+   Compiling futures-sink v0.3.33
+   Compiling tokio v1.53.1
+   Compiling nalgebra v0.34.2
+   Compiling once_cell v1.21.4
+   Compiling mech-core v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/core)
+   Compiling slab v0.4.12
+   Compiling grapheme_macro v2.0.0
+   Compiling cmake v0.1.58
+   Compiling fs_extra v1.3.0
+   Compiling dunce v1.0.5
+   Compiling pkg-config v0.3.33
+   Compiling aws-lc-sys v0.43.0
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/syntax)
+   Compiling grapheme v1.3.0
+   Compiling mech-bytecode v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/bytecode)
+   Compiling http v1.4.2
+   Compiling icu_normalizer_data v2.2.0
+   Compiling httparse v1.10.1
+   Compiling futures-io v0.3.33
+   Compiling futures-task v0.3.33
+   Compiling futures-util v0.3.33
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/engine)
+   Compiling blake3 v1.8.5
+   Compiling percent-encoding v2.3.2
+   Compiling zerocopy v0.8.55
+   Compiling tracing-core v0.1.36
+   Compiling aws-lc-rs v1.17.3
+   Compiling tracing v0.1.44
+   Compiling icu_normalizer v2.2.0
+   Compiling tokio-util v0.7.19
+   Compiling zeroize v1.9.0
+   Compiling regalloc2 v0.15.2
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/runtime)
+   Compiling ppv-lite86 v0.2.21
+   Compiling idna_adapter v1.2.2
+   Compiling form_urlencoded v1.2.2
+   Compiling http v0.2.12
+   Compiling try-lock v0.2.5
+   Compiling tower-service v0.3.3
+   Compiling want v0.3.1
+   Compiling cranelift-codegen v0.131.3
+   Compiling idna v1.1.0
+   Compiling rustls-pki-types v1.15.1
+   Compiling http-body v1.1.0
+   Compiling futures-channel v0.3.33
+   Compiling getrandom v0.2.17
+   Compiling serde v1.0.229
+   Compiling system-configuration-sys v0.6.0
+   Compiling rustls v0.23.42
+   Compiling simd-adler32 v0.3.10
+   Compiling untrusted v0.9.0
+   Compiling rustls-webpki v0.103.13
+   Compiling miniz_oxide v0.8.9
+   Compiling rand_core v0.6.4
+   Compiling url v2.5.8
+   Compiling thiserror v1.0.69
+   Compiling getrandom v0.3.4
+   Compiling mime v0.3.17
+   Compiling subtle v2.6.1
+   Compiling objc2 v0.6.4
+   Compiling atomic-waker v1.1.2
+   Compiling h2 v0.4.15
+   Compiling rand_chacha v0.3.1
+   Compiling core-foundation v0.9.4
+   Compiling sha1 v0.10.7
+   Compiling thiserror-impl v1.0.69
+   Compiling rustix v1.1.4
+   Compiling num-conv v0.2.2
+   Compiling signal-hook v0.3.18
+   Compiling unicase v2.9.0
+   Compiling objc2-encode v4.1.0
+   Compiling utf8parse v0.2.2
+   Compiling time-core v0.1.9
+   Compiling time-macros v0.2.32
+   Compiling anstyle-parse v1.0.0
+   Compiling mime_guess v2.0.5
+   Compiling system-configuration v0.7.0
+   Compiling cranelift-module v0.131.3
+   Compiling rand v0.8.7
+   Compiling toml v0.5.11
+   Compiling hyper v1.11.0
+   Compiling flate2 v1.1.9
+   Compiling core-foundation v0.10.1
+   Compiling security-framework-sys v2.17.0
+   Compiling sync_wrapper v1.0.2
+   Compiling convert_case v0.10.0
+   Compiling multer v2.1.0
+   Compiling encoding_rs v0.8.35
+   Compiling powerfmt v0.2.0
+   Compiling ryu v1.0.23
+   Compiling portable-atomic v1.14.0
+   Compiling tower-layer v0.3.3
+   Compiling httpdate v1.0.3
+   Compiling ipnet v2.12.0
+   Compiling colorchoice v1.0.5
+   Compiling data-encoding v2.11.0
+   Compiling anstyle-query v1.1.5
+   Compiling compression-core v0.4.32
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling utf-8 v0.7.6
+   Compiling deranged v0.5.8
+   Compiling time v0.3.54
+   Compiling tungstenite v0.21.0
+   Compiling anstream v1.0.0
+   Compiling compression-codecs v0.4.38
+   Compiling hyper-util v0.1.20
+   Compiling tower v0.5.3
+   Compiling derive_more-impl v2.1.1
+   Compiling security-framework v3.7.0
+   Compiling rand_core v0.9.5
+   Compiling winres v0.1.12
+   Compiling block2 v0.6.2
+   Compiling tokio-rustls v0.26.4
+   Compiling cranelift-native v0.131.3
+   Compiling headers-core v0.2.0
+   Compiling h2 v0.3.27
+   Compiling http-body v0.4.6
+   Compiling mech-terminal v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/terminal)
+   Compiling vte v0.15.0
+   Compiling pin-project-internal v1.1.13
+   Compiling filetime v0.2.29
+   Compiling socket2 v0.5.10
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/stdlib)
+   Compiling strsim v0.11.1
+   Compiling litrs v1.0.0
+   Compiling crc-catalog v2.5.0
+   Compiling bit-vec v0.7.0
+   Compiling spin v0.9.9
+   Compiling base64 v0.21.7
+   Compiling headers v0.3.9
+   Compiling clap_builder v4.6.2
+   Compiling bit-set v0.6.0
+   Compiling crc v3.4.0
+   Compiling document-features v0.2.12
+   Compiling hyper v0.14.32
+   Compiling filetime_creation v0.2.0
+   Compiling pin-project v1.1.13
+   Compiling vt100 v0.16.2
+   Compiling cranelift-jit v0.131.3
+   Compiling hyper-rustls v0.27.9
+   Compiling dispatch2 v0.3.1
+   Compiling signal-hook-mio v0.2.5
+   Compiling cranelift-object v0.131.3
+   Compiling mech v0.3.6 (/private/tmp/mech-deflate-linear-stack)
+   Compiling rand_chacha v0.9.0
+   Compiling mech-time v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/time)
+   Compiling rustls-platform-verifier v0.7.0
+   Compiling derive_more v2.1.1
+   Compiling tower-http v0.6.11
+   Compiling async-compression v0.4.42
+   Compiling tokio-tungstenite v0.21.0
+   Compiling nt-time v0.8.1
+   Compiling serde_urlencoded v0.7.1
+   Compiling http-body-util v0.1.4
+   Compiling cranelift-frontend v0.131.3
+   Compiling mech-console v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/console)
+   Compiling mech-scene v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/scene)
+   Compiling mech-timer v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/timer)
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/compute)
+   Compiling console v0.16.4
+   Compiling lzma-rust v0.1.7
+   Compiling csv-core v0.1.13
+   Compiling include_dir_macros v0.7.4
+   Compiling unit-prefix v0.5.2
+   Compiling scoped-tls v1.0.1
+   Compiling minimal-lexical v0.2.1
+   Compiling nom v7.1.3
+   Compiling include_dir v0.7.4
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-linear-stack/hosts/gpu)
+   Compiling warp v0.3.7
+   Compiling tempfile v3.27.0
+   Compiling indicatif v0.18.6
+   Compiling csv v1.4.0
+   Compiling sevenz-rust v0.6.1
+   Compiling mech-build v0.3.5 (/private/tmp/mech-deflate-linear-stack/src/build)
+   Compiling reqwest v0.13.4
+   Compiling crossbeam-channel v0.5.16
+   Compiling crossterm v0.29.0
+   Compiling rand v0.9.5
+   Compiling ctrlc v3.5.2
+   Compiling clap v4.6.4
+error[E0432]: unresolved import `mech_runtime::ProgramCompiler`
+  --> src/cli/module_execution.rs:10:5
+   |
+10 |     ProgramCompiler, RunResourceGrantConfig, RuntimeValueSnapshot,
+   |     ^^^^^^^^^^^^^^^ no `ProgramCompiler` in the root
+
+error[E0425]: cannot find type `MResult` in this scope
+   --> src/cli/app/tests/mod.rs:405:39
+    |
+405 |     fn options(arguments: &[&str]) -> MResult<BuildOptions> {
+    |                                       ^^^^^^^
+    |
+   --> /rustc/ec818fda361ca216eb186f5cf45131bd9c776bb4/library/core/src/result.rs:557:0
+    |
+    = note: similarly named enum `Result` defined here
+help: an enum with a similar name exists
+    |
+405 -     fn options(arguments: &[&str]) -> MResult<BuildOptions> {
+405 +     fn options(arguments: &[&str]) -> Result<BuildOptions> {
+    |
+help: consider importing one of these type aliases
+    |
+403 +     use crate::MResult;
+    |
+403 +     use mech_core::MResult;
+    |
+403 +     use mech_engine::MResult;
+    |
+
+error[E0425]: cannot find type `CanonicalCompilationSources` in crate `mech_runtime`
+   --> src/cli/commands/build.rs:181:33
+    |
+181 |         _sources: mech_runtime::CanonicalCompilationSources,
+    |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^ not found in `mech_runtime`
+
+error[E0425]: cannot find type `RetainedCanonicalCompilation` in crate `mech_runtime`
+   --> src/cli/commands/build.rs:202:52
+    |
+202 |     fn from_compilation(compilation: mech_runtime::RetainedCanonicalCompilation) -> Self {
+    |                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not found in `mech_runtime`
+
+error[E0425]: cannot find function `source_native_plan_catalog` in crate `mech_stdlib`
+   --> src/cli/commands/build.rs:474:40
+    |
+474 |         function_catalog: mech_stdlib::source_native_plan_catalog(),
+    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+   ::: src/stdlib/src/catalog.rs:129:1
+    |
+129 | pub fn build_native_plan_catalog() -> MResult<FunctionCatalog> {
+    | -------------------------------------------------------------- similarly named function `build_native_plan_catalog` defined here
+    |
+help: a function with a similar name exists
+    |
+474 -         function_catalog: mech_stdlib::source_native_plan_catalog(),
+474 +         function_catalog: mech_stdlib::build_native_plan_catalog(),
+    |
+
+error[E0425]: cannot find type `CanonicalCompilationSource` in crate `mech_runtime`
+  --> src/cli/commands/build_cranelift.rs:46:41
+   |
+46 | fn source_record(source: &mech_runtime::CanonicalCompilationSource) -> Json {
+   |                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^ not found in `mech_runtime`
+
+error[E0425]: cannot find type `CanonicalCompilationSources` in crate `mech_runtime`
+  --> src/cli/commands/build_cranelift.rs:58:36
+   |
+58 |     sources: Option<&mech_runtime::CanonicalCompilationSources>,
+   |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^ not found in `mech_runtime`
+
+error[E0425]: cannot find function `source_catalog` in crate `mech_stdlib`
+   --> src/cli/commands/build_cranelift.rs:122:40
+    |
+122 |             let catalog = mech_stdlib::source_catalog();
+    |                                        ^^^^^^^^^^^^^^ not found in `mech_stdlib`
+
+error[E0425]: cannot find function `source_catalog` in crate `mech_stdlib`
+   --> src/cli/module_execution.rs:263:40
+    |
+263 |         .function_catalog(mech_stdlib::source_catalog())
+    |                                        ^^^^^^^^^^^^^^ not found in `mech_stdlib`
+
+error[E0599]: no method named `build_compiler` found for struct `RuntimeBuilder` in the current scope
+   --> src/cli/module_execution.rs:168:17
+    |
+168 |     Ok((builder.build_compiler()?, canonical_roots))
+    |                 ^^^^^^^^^^^^^^ method not found in `RuntimeBuilder`
+
+Some errors have detailed explanations: E0425, E0432, E0599.
+For more information about an error, try `rustc --explain E0425`.
+error: could not compile `mech` (lib test) due to 10 previous errors

@@ -1,0 +1,32 @@
+{
+  "command": [
+    "/private/tmp/mech-predicate-versions-round15-20261029/focused-v2/component-v2-tests",
+    "packed_update_qualification",
+    "buffer_frame_qualification",
+    "sequence_capacity_qualification",
+    "collection_qualification",
+    "uniform_words_qualification",
+    "word_read_qualification",
+    "narrow_word_qualification",
+    "matchfinder_qualification",
+    "assembled_compressor_source_preserves_its_pinned_bytes",
+    "scalar_state_qualification",
+    "tail_qualification",
+    "costs_qualification",
+    "default_costs_qualification",
+    "pinned_min_cost_paths_keep_exact_nodes_and_real_reservation",
+    "path_checks_preserve_entry_order_publication_aliases_and_recovery",
+    "argument_transport_qualification",
+    "shared_transport_qualification",
+    "numeric_write_qualification",
+    "numeric_tail_qualification",
+    "numeric_result_qualification",
+    "numeric_predicate_qualification",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 150.31372966687195,
+  "binary_sha256": "ce3e1f66f92e0122bd0b581ed4015d64e308b9881dd5bfc34a85ce599753023d",
+  "scope": "Same maintained round13 component cohort and unchanged allowances, plus current-predicate version selection, freshness and failure/retry cases. Linked generated-project test is not in this cohort."
+}

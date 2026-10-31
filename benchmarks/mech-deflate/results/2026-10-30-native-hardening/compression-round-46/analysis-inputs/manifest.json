@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-10-31T04:11:50.316686+00:00",
+  "head": "d4db0ad1be2b60aaba78ef2d24d632814bb9d85d",
+  "files": [
+    {
+      "path": "analysis-commits.json",
+      "sha256": "233843ec8ef4495f0307aee730a6f07d6cc642a49ee4d62190fc07048b06eed0",
+      "bytes": 9299
+    },
+    {
+      "path": "analysis-implementation.patch",
+      "sha256": "a41781f369b98237b99cb9c270018a6b07e616513e9e1fb18479a7dd9a092f18",
+      "bytes": 19646
+    },
+    {
+      "path": "auxiliary-dependencies.json",
+      "sha256": "97025f550e04e411d18da8e89868365fae69c90004a0a7a5d3376c00758af18e",
+      "bytes": 616
+    },
+    {
+      "path": "cargo-release.json",
+      "sha256": "af06fb34df6ea2dbfd731e3f615699f3ab63768960bb7d764bbf31e154901ca0",
+      "bytes": 938
+    },
+    {
+      "path": "cleanup.json",
+      "sha256": "66ffc192d80550044af974211fb1c1ca8d3e038539865d9d91ed03edffbf4cb7",
+      "bytes": 423
+    },
+    {
+      "path": "final-libraries.json",
+      "sha256": "645f02a3fb5e034e43f48c29c670f6299f5d6755c792ca7bacd5b499ea5d2de9",
+      "bytes": 10804
+    },
+    {
+      "path": "final-release.json",
+      "sha256": "32295d367a4d880dd9fd8ba060e6f36ba8cb36e30110a7e9c884e7648bb97106",
+      "bytes": 4801
+    },
+    {
+      "path": "small-allocations/attribution.json",
+      "sha256": "d6ad6693bbf5070da9af1d5d758185e2a81d55e3fc6108d03e9437f7a087189c",
+      "bytes": 1506033
+    }
+  ]
+}

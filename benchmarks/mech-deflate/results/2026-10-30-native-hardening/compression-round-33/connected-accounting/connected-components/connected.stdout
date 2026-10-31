@@ -1,0 +1,20 @@
+
+running 5 tests
+test numeric_composition_qualification::child_results_keep_current_arrays_indices_publication_and_recovery ... FAILED
+test numeric_composition_qualification::parent_partition_declines_multiple_children_and_append_owners ... negative parent append=false
+negative parent append=true
+ok
+test numeric_composition_qualification::parent_partition_follows_reordered_child_results ... FAILED
+test numeric_composition_qualification::parent_partition_keeps_exact_child_result_mapping_and_single_entry_boundaries ... FAILED
+test numeric_composition_qualification::parent_segments_are_emitted_around_the_selected_native_child ... FAILED
+
+failures:
+
+failures:
+    numeric_composition_qualification::child_results_keep_current_arrays_indices_publication_and_recovery
+    numeric_composition_qualification::parent_partition_follows_reordered_child_results
+    numeric_composition_qualification::parent_partition_keeps_exact_child_result_mapping_and_single_entry_boundaries
+    numeric_composition_qualification::parent_segments_are_emitted_around_the_selected_native_child
+
+test result: FAILED. 1 passed; 4 failed; 0 ignored; 0 measured; 468 filtered out; finished in 0.78s
+

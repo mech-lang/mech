@@ -1,0 +1,52 @@
+{
+  "scope": "Static inspection of retained executable binaries; no new performance observations",
+  "review_base": "6123fdf46b749c5b5793591be7f9ed92f38269da",
+  "clean_review": "https://github.com/mech-lang/mech/pull/973#issuecomment-6526753449",
+  "files": [
+    {
+      "path": "baseline-0.asm",
+      "sha256": "f4760ddc72e9e0ceca757a5cfe3b76140ba2fbe7cd7a02b62af2734929437ecb",
+      "bytes": 8314
+    },
+    {
+      "path": "baseline-1.asm",
+      "sha256": "7f4dbdfd15d185bfafeef832a4166a0e85fd7c646238748b53dad33d6d830ee8",
+      "bytes": 5257
+    },
+    {
+      "path": "baseline-2.asm",
+      "sha256": "756e6859742176381e356487491648fe18a7e2151335e7c8b3aa96172c9efe29",
+      "bytes": 7477
+    },
+    {
+      "path": "reference-0.asm",
+      "sha256": "ba0c29f666013c8b7a25447948ca7ea073e5026db46ec215bcb5bffad4c8aeb1",
+      "bytes": 889705
+    },
+    {
+      "path": "baseline-0.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "baseline-1.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "baseline-2.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "reference-0.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "binary-inspection.json",
+      "sha256": "45b36e9a05281aab002d4442728c2b3f2bf1dc13155fb396da66925b744d17dd",
+      "bytes": 77133
+    }
+  ]
+}

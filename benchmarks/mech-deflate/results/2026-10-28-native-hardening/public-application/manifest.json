@@ -1,0 +1,154 @@
+{
+  "implementation_commit": "c24984b402a1228cccf934a478965143b539f611",
+  "receipt_head": "3465e13cf3263a047b0c158eab7a9d3d15c99ebb",
+  "forms": {
+    "original": {
+      "files": {
+        "application.mec": {
+          "bytes": 160992,
+          "sha256": "345324ce551aaa2485dcd0fe4262da96e660d6b31f5f772bff89b034e9b1997f"
+        },
+        "program.mecb": {
+          "bytes": 4140067,
+          "sha256": "a2daaaf746d6bcc8668c5439f84a782ecea2aff376546566c01d4fc0f8c6f585"
+        },
+        "program.o": {
+          "bytes": 2999872,
+          "sha256": "08ae7972b06ba71e6d6e07d17a744b6d12d0b05ac549651d3e7bcfe2e4e55353"
+        },
+        "native-descriptor.bin": {
+          "bytes": 1788405,
+          "sha256": "460aa860d1fb42b984ca2a371bf1194b80aae80c5f94731aec1d8fbf9a4ee3b5"
+        },
+        "object-identity.bin": {
+          "bytes": 192,
+          "sha256": "1270240b41378e366aa726fff528486981fb8bb6b9887679efef385b6538879c"
+        },
+        "compression-application": {
+          "bytes": 35743504,
+          "sha256": "bc20be6ea0ae1f00d3273974002ec99dc3a714589952cfb58b48833de17abb13"
+        },
+        "Cargo.toml": {
+          "bytes": 1976,
+          "sha256": "451e17e041e4f83b2e6debacec01541d9742cf217122842100ac6726352c255c"
+        },
+        "Cargo.lock": {
+          "bytes": 32025,
+          "sha256": "a6501055ecb0d4e61ba44285820ed3c9f79303a7dc633dacae759e7680d911a6"
+        },
+        "compiler-policy.json": {
+          "bytes": 171,
+          "sha256": "7af778d9aed247327a1e39876d777e439a90ae91618b4c8e27c92e6127fecfa2"
+        },
+        "cases.json": {
+          "bytes": 10599,
+          "sha256": "2b8798377fa525410181f0ede45259177a38ad48d64cceda6dc5afcd5b17e620"
+        }
+      },
+      "runtime_closure_pass": true,
+      "observations": {
+        "binary_sha256": "bc20be6ea0ae1f00d3273974002ec99dc3a714589952cfb58b48833de17abb13",
+        "launch_sha256": "fc0b49564e4340cdfd12411defd8da6b821af19388c0e2656c9a8e07dc06c164",
+        "cases_sha256": "2b8798377fa525410181f0ede45259177a38ad48d64cceda6dc5afcd5b17e620",
+        "passed": true,
+        "cases": [
+          {
+            "name": "eight-literals",
+            "command": [
+              "/private/tmp/mech-public-finite-20261028/original/compression-application",
+              "--policy",
+              "/private/tmp/mech-deflate-linear-stack/benchmarks/mech-deflate/public-application/launch-policy.json",
+              "--",
+              "/private/tmp/mech-public-finite-20261028/original/cases/eight-literals.json"
+            ],
+            "exit": 0,
+            "process_seconds": 65.01577145897318,
+            "input_bytes": 8,
+            "exact_bytes": true,
+            "independent_inflation": true
+          }
+        ],
+        "selected_cases": [
+          "eight-literals"
+        ],
+        "total_corpus_cases": 9,
+        "complete_small_corpus": false,
+        "timing_boundary": "whole process including image restore, input import, native execution, canonical output export and cleanup; qualification, not compression-only benchmark"
+      }
+    },
+    "decoded": {
+      "files": {
+        "application.mec": {
+          "bytes": 160992,
+          "sha256": "345324ce551aaa2485dcd0fe4262da96e660d6b31f5f772bff89b034e9b1997f"
+        },
+        "program.mecb": {
+          "bytes": 4140067,
+          "sha256": "a2daaaf746d6bcc8668c5439f84a782ecea2aff376546566c01d4fc0f8c6f585"
+        },
+        "program.o": {
+          "bytes": 2999872,
+          "sha256": "08ae7972b06ba71e6d6e07d17a744b6d12d0b05ac549651d3e7bcfe2e4e55353"
+        },
+        "native-descriptor.bin": {
+          "bytes": 1788405,
+          "sha256": "460aa860d1fb42b984ca2a371bf1194b80aae80c5f94731aec1d8fbf9a4ee3b5"
+        },
+        "object-identity.bin": {
+          "bytes": 192,
+          "sha256": "1270240b41378e366aa726fff528486981fb8bb6b9887679efef385b6538879c"
+        },
+        "compression-application": {
+          "bytes": 35743504,
+          "sha256": "bc20be6ea0ae1f00d3273974002ec99dc3a714589952cfb58b48833de17abb13"
+        },
+        "Cargo.toml": {
+          "bytes": 1976,
+          "sha256": "451e17e041e4f83b2e6debacec01541d9742cf217122842100ac6726352c255c"
+        },
+        "Cargo.lock": {
+          "bytes": 32025,
+          "sha256": "a6501055ecb0d4e61ba44285820ed3c9f79303a7dc633dacae759e7680d911a6"
+        },
+        "compiler-policy.json": {
+          "bytes": 171,
+          "sha256": "7af778d9aed247327a1e39876d777e439a90ae91618b4c8e27c92e6127fecfa2"
+        },
+        "cases.json": {
+          "bytes": 10599,
+          "sha256": "2b8798377fa525410181f0ede45259177a38ad48d64cceda6dc5afcd5b17e620"
+        }
+      },
+      "runtime_closure_pass": true,
+      "observations": {
+        "binary_sha256": "bc20be6ea0ae1f00d3273974002ec99dc3a714589952cfb58b48833de17abb13",
+        "launch_sha256": "fc0b49564e4340cdfd12411defd8da6b821af19388c0e2656c9a8e07dc06c164",
+        "cases_sha256": "2b8798377fa525410181f0ede45259177a38ad48d64cceda6dc5afcd5b17e620",
+        "passed": true,
+        "cases": [
+          {
+            "name": "eight-literals",
+            "command": [
+              "/private/tmp/mech-public-finite-20261028/decoded/compression-application",
+              "--policy",
+              "/private/tmp/mech-deflate-linear-stack/benchmarks/mech-deflate/public-application/launch-policy.json",
+              "--",
+              "/private/tmp/mech-public-finite-20261028/decoded/cases/eight-literals.json"
+            ],
+            "exit": 0,
+            "process_seconds": 63.35846724989824,
+            "input_bytes": 8,
+            "exact_bytes": true,
+            "independent_inflation": true
+          }
+        ],
+        "selected_cases": [
+          "eight-literals"
+        ],
+        "total_corpus_cases": 9,
+        "complete_small_corpus": false,
+        "timing_boundary": "whole process including image restore, input import, native execution, canonical output export and cleanup; qualification, not compression-only benchmark"
+      }
+    }
+  }
+}

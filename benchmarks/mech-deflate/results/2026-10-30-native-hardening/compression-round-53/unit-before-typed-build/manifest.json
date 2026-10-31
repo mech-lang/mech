@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T09:51:42.740905+00:00",
+  "head": "1bc5d3e26f7ed8183ac9952ad55566c94bbe9e7f",
+  "files": [
+    {
+      "path": "test-source-before-typed.rs",
+      "sha256": "fecf85f231f2a8876df755845bc5f17edaf7b296b1708127f8b123477d6bf39f",
+      "bytes": 19742
+    },
+    {
+      "path": "units-before-typed/build.json",
+      "sha256": "4db261de86e17d713978fa2fe836fb3a2bf2cc42a016bd66dacef6af555cdf17",
+      "bytes": 5128
+    },
+    {
+      "path": "units-before-typed/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "units-before-typed/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "units.py",
+      "sha256": "c4941f31b81975a35cb88b7879d8021c6344c22aa9da0e56db08ea176d3d546d",
+      "bytes": 2277
+    }
+  ]
+}

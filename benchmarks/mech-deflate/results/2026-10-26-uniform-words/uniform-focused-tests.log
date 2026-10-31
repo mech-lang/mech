@@ -1,0 +1,13 @@
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-deflate-reality-check/src/engine)
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-deflate-reality-check/src/compute)
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-deflate-reality-check/hosts/gpu)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-deflate-reality-check/src/stdlib)
+   Compiling component-reality v0.0.0 (/private/tmp/mech-stack-landscape-20261026/reality-check/focused)
+error[E0599]: no variant named `LexicalIntegrity` found for enum `NativeProgramExecutionError`
+   --> /private/tmp/mech-deflate-reality-check/hosts/gpu/tests/support/canonical_program_uniform_words.rs:134:52
+    |
+134 |                 assert!(matches!(result,Err(Error::LexicalIntegrity {..})),"{result:?}");
+    |                                                    ^^^^^^^^^^^^^^^^ variant not found in `NativeProgramExecutionError`
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `component-reality` (bin "component-reality" test) due to 1 previous error

@@ -1,0 +1,15 @@
+use super::*;
+#[test]
+fn repeated_tuple_buffer_state_remains_canonical_at_exit() {
+ let source = "+> sequence\nstep(state<([u64], u64)>) => <([u64], u64)>\n  | (words, n) => (words, n + 1u64).\n(values<[u64]>, 1u64) |3> step\n";
+ for artifact in artifacts(source).0 {
+  let plan = mech_engine::native_artifact::lower_native_program_artifact(&artifact,&catalog()).unwrap();
+  eprintln!("iteration frames {:?}",plan.facts().buffer_frames());
+  let jit = JitProgramArtifact::compile(&artifact,&catalog()).unwrap();
+  let memory = ManagedMemoryBudget::new(32*1024*1024);
+  let args = inputs(&artifact,&[("values",ValueDataDraft::Matrix(vec![ValueDataDraft::U64(7),ValueDataDraft::U64(11)].into()))],&memory);
+  let mut output = vec![None;artifact.outputs().len()];
+  jit.evaluate_into(&args,&mut output,limits(),&memory).unwrap();
+  assert_eq!(output.last().unwrap().as_ref().unwrap().canonical_data_draft().unwrap(),ValueDataDraft::Tuple(vec![ValueDataDraft::Matrix(vec![ValueDataDraft::U64(7),ValueDataDraft::U64(11)].into()),ValueDataDraft::U64(4)].into()));
+ }
+}

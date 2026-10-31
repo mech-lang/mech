@@ -1,0 +1,391 @@
+{
+  "method": "Disjoint exclusive weight=count minus immediate child weights; inclusive subtree attribution uses frame action > selected call > other helper > ordinary visit > remaining. Two 2-second sample windows, profiling excluded from primary. Weights are not a promise of removable elapsed time; repeated harness includes untimed surrounding work.",
+  "observations": {
+    "before": {
+      "sha256": "8aeca6f4135eb1b687b69cb8b743469f817b59b399b1cd1174ffb11c6191c393",
+      "total": 1290,
+      "disjoint_categories": {
+        "remaining": 352,
+        "ordinary_visits": 219,
+        "other_helpers": 286,
+        "selected_library_calls": 106,
+        "frame_actions": 327
+      },
+      "top_exclusive": [
+        {
+          "symbol": "???",
+          "weights": 140,
+          "percent": 10.852713178294573
+        },
+        {
+          "symbol": "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+          "weights": 58,
+          "percent": 4.496124031007752
+        },
+        {
+          "symbol": "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime7sessionNtB2_13CallCacheLane3new",
+          "weights": 58,
+          "percent": 4.496124031007752
+        },
+        {
+          "symbol": "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames6retire",
+          "weights": 51,
+          "percent": 3.953488372093023
+        },
+        {
+          "symbol": "_tlv_get_addr",
+          "weights": 49,
+          "percent": 3.798449612403101
+        },
+        {
+          "symbol": "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+          "weights": 43,
+          "percent": 3.3333333333333335
+        },
+        {
+          "symbol": "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget32charge_control_account_at_limits",
+          "weights": 42,
+          "percent": 3.255813953488372
+        },
+        {
+          "symbol": "_RNvMNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact4workNtB2_15NativeWorkMeter6charge",
+          "weights": 37,
+          "percent": 2.868217054263566
+        },
+        {
+          "symbol": "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          "weights": 35,
+          "percent": 2.7131782945736433
+        },
+        {
+          "symbol": "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames13retire_fields",
+          "weights": 28,
+          "percent": 2.1705426356589146
+        },
+        {
+          "symbol": "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+          "weights": 27,
+          "percent": 2.0930232558139537
+        },
+        {
+          "symbol": "_RNvMs_NtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+          "weights": 25,
+          "percent": 1.937984496124031
+        },
+        {
+          "symbol": "_platform_memmove",
+          "weights": 24,
+          "percent": 1.8604651162790697
+        },
+        {
+          "symbol": "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks5admit",
+          "weights": 23,
+          "percent": 1.7829457364341086
+        },
+        {
+          "symbol": "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+          "weights": 21,
+          "percent": 1.627906976744186
+        },
+        {
+          "symbol": "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          "weights": 20,
+          "percent": 1.550387596899225
+        },
+        {
+          "symbol": "_RNvMs1_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena14retire_current",
+          "weights": 18,
+          "percent": 1.3953488372093024
+        },
+        {
+          "symbol": "_RNvMs3_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+          "weights": 18,
+          "percent": 1.3953488372093024
+        },
+        {
+          "symbol": "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames7project",
+          "weights": 16,
+          "percent": 1.2403100775193798
+        },
+        {
+          "symbol": "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+          "weights": 14,
+          "percent": 1.0852713178294573
+        },
+        {
+          "symbol": "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation16readonly_numericNtB4_10Invocation19begin_numeric_views",
+          "weights": 13,
+          "percent": 1.0077519379844961
+        },
+        {
+          "symbol": "_RNvMNtCs40e1XR8pRG7_7seahash6bufferNtB2_5State4hash",
+          "weights": 13,
+          "percent": 1.0077519379844961
+        },
+        {
+          "symbol": "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+          "weights": 12,
+          "percent": 0.9302325581395349
+        },
+        {
+          "symbol": "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultTNtNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation5ValuebENtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMNtNtB3h_8prepared12word_updatesNtB4M_25NativePreparedLibraryCall23unsigned_matrix_replace0EBa_",
+          "weights": 11,
+          "percent": 0.8527131782945736
+        },
+        {
+          "symbol": "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames4copy",
+          "weights": 11,
+          "percent": 0.8527131782945736
+        },
+        {
+          "symbol": "_RNvMs1_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena12copy_current",
+          "weights": 11,
+          "percent": 0.8527131782945736
+        },
+        {
+          "symbol": "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCskIfnrfrMWVM_9mech_core8snapshot8encoding19ValueFootprintErrorEBM_",
+          "weights": 11,
+          "percent": 0.8527131782945736
+        },
+        {
+          "symbol": "_RNvMs1_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena3put",
+          "weights": 11,
+          "percent": 0.8527131782945736
+        },
+        {
+          "symbol": "_RINvMNtCsgDHHaSskbIF_4core6optionINtB3_6OptionRSNtNtNtCs1qJAwyMG1lC_11mech_engine15native_artifact13buffer_frames22NativeBufferFrameFieldE6map_orjNCNCNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2r_12BufferFrames11field_count00EB2z_",
+          "weights": 10,
+          "percent": 0.7751937984496124
+        },
+        {
+          "symbol": "_RNvMNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget15frame_footprintNtB2_28PreparedNativeFrameFootprint5value",
+          "weights": 10,
+          "percent": 0.7751937984496124
+        },
+        {
+          "symbol": "_RNvMs4_NtNtCskIfnrfrMWVM_9mech_core8snapshot8encodingNtB5_14ValueFootprint11checked_add",
+          "weights": 10,
+          "percent": 0.7751937984496124
+        },
+        {
+          "symbol": "_RNvNtNtCskIfnrfrMWVM_9mech_core6schema5shape18evaluate_dimension",
+          "weights": 10,
+          "percent": 0.7751937984496124
+        },
+        {
+          "symbol": "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+          "weights": 10,
+          "percent": 0.7751937984496124
+        },
+        {
+          "symbol": "_RNvMs_NtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls8prepared13buffer_framesNtB6_25NativePreparedLibraryCall27check_buffer_record_ordinal",
+          "weights": 10,
+          "percent": 0.7751937984496124
+        },
+        {
+          "symbol": "_RNvMs7_NtNtCskIfnrfrMWVM_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+          "weights": 10,
+          "percent": 0.7751937984496124
+        }
+      ],
+      "frame_read_static_proof_exclusive": 0,
+      "proof_callers": {}
+    },
+    "after": {
+      "sha256": "018d8573fb854da80aa843977135314ce694d598f5b33fcaf03d743e597b8c17",
+      "total": 1464,
+      "disjoint_categories": {
+        "remaining": 374,
+        "ordinary_visits": 279,
+        "other_helpers": 294,
+        "frame_actions": 380,
+        "selected_library_calls": 137
+      },
+      "top_exclusive": [
+        {
+          "symbol": "???",
+          "weights": 132,
+          "percent": 9.01639344262295
+        },
+        {
+          "symbol": "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames6retire",
+          "weights": 62,
+          "percent": 4.2349726775956285
+        },
+        {
+          "symbol": "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime7sessionNtB2_13CallCacheLane3new",
+          "weights": 60,
+          "percent": 4.098360655737705
+        },
+        {
+          "symbol": "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget32charge_control_account_at_limits",
+          "weights": 57,
+          "percent": 3.8934426229508197
+        },
+        {
+          "symbol": "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+          "weights": 55,
+          "percent": 3.7568306010928962
+        },
+        {
+          "symbol": "_tlv_get_addr",
+          "weights": 55,
+          "percent": 3.7568306010928962
+        },
+        {
+          "symbol": "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          "weights": 47,
+          "percent": 3.210382513661202
+        },
+        {
+          "symbol": "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+          "weights": 37,
+          "percent": 2.5273224043715845
+        },
+        {
+          "symbol": "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+          "weights": 35,
+          "percent": 2.390710382513661
+        },
+        {
+          "symbol": "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks5admit",
+          "weights": 31,
+          "percent": 2.1174863387978142
+        },
+        {
+          "symbol": "_RNvMNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact4workNtB2_15NativeWorkMeter6charge",
+          "weights": 30,
+          "percent": 2.0491803278688523
+        },
+        {
+          "symbol": "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+          "weights": 26,
+          "percent": 1.7759562841530054
+        },
+        {
+          "symbol": "_RNvMs3_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+          "weights": 25,
+          "percent": 1.7076502732240437
+        },
+        {
+          "symbol": "_RNvMs_NtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+          "weights": 24,
+          "percent": 1.639344262295082
+        },
+        {
+          "symbol": "_platform_memmove",
+          "weights": 24,
+          "percent": 1.639344262295082
+        },
+        {
+          "symbol": "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames13retire_fields",
+          "weights": 23,
+          "percent": 1.5710382513661203
+        },
+        {
+          "symbol": "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7prepare13frame_scalars4read",
+          "weights": 23,
+          "percent": 1.5710382513661203
+        },
+        {
+          "symbol": "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          "weights": 20,
+          "percent": 1.366120218579235
+        },
+        {
+          "symbol": "_RNvMs1_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena14retire_current",
+          "weights": 19,
+          "percent": 1.2978142076502732
+        },
+        {
+          "symbol": "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+          "weights": 17,
+          "percent": 1.1612021857923498
+        },
+        {
+          "symbol": "_RNvMs4_NtNtCskIfnrfrMWVM_9mech_core8snapshot8encodingNtB5_14ValueFootprint11checked_add",
+          "weights": 16,
+          "percent": 1.092896174863388
+        },
+        {
+          "symbol": "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+          "weights": 16,
+          "percent": 1.092896174863388
+        },
+        {
+          "symbol": "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+          "weights": 15,
+          "percent": 1.0245901639344261
+        },
+        {
+          "symbol": "_RNvMNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls8prepared15frame_admissionNtB2_20FrameAdmissionRecipe9try_admit",
+          "weights": 15,
+          "percent": 1.0245901639344261
+        },
+        {
+          "symbol": "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation16readonly_numericNtB4_10Invocation19begin_numeric_views",
+          "weights": 15,
+          "percent": 1.0245901639344261
+        },
+        {
+          "symbol": "mi_free",
+          "weights": 14,
+          "percent": 0.9562841530054644
+        },
+        {
+          "symbol": "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation14selected_callsNtB4_10Invocation21prepared_library_call",
+          "weights": 14,
+          "percent": 0.9562841530054644
+        },
+        {
+          "symbol": "_RNvNtNtCskIfnrfrMWVM_9mech_core6schema5shape18evaluate_dimension",
+          "weights": 14,
+          "percent": 0.9562841530054644
+        },
+        {
+          "symbol": "_RINvMNtCsgDHHaSskbIF_4core6optionINtB3_6OptionRSNtNtNtCs1qJAwyMG1lC_11mech_engine15native_artifact13buffer_frames22NativeBufferFrameFieldE6map_orjNCNCNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2r_12BufferFrames11field_count00EB2z_",
+          "weights": 13,
+          "percent": 0.8879781420765027
+        },
+        {
+          "symbol": "_RNvXsl_NtCskIfnrfrMWVM_9mech_core6schemaNtB5_10SchemaBodyNtNtCsgDHHaSskbIF_4core3cmp9PartialEq2eq",
+          "weights": 13,
+          "percent": 0.8879781420765027
+        },
+        {
+          "symbol": "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultTNtNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation5ValuebENtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMNtNtB3h_8prepared12word_updatesNtB4M_25NativePreparedLibraryCall23unsigned_matrix_replace0EBa_",
+          "weights": 13,
+          "percent": 0.8879781420765027
+        },
+        {
+          "symbol": "_RNvMNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget15frame_footprintNtB2_28PreparedNativeFrameFootprint5value",
+          "weights": 13,
+          "percent": 0.8879781420765027
+        },
+        {
+          "symbol": "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation5ValueECs29QkOtpKx6e_8mech_gpu",
+          "weights": 12,
+          "percent": 0.819672131147541
+        },
+        {
+          "symbol": "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCskIfnrfrMWVM_9mech_core8snapshot8encoding19ValueFootprintErrorEBM_",
+          "weights": 12,
+          "percent": 0.819672131147541
+        },
+        {
+          "symbol": "write",
+          "weights": 12,
+          "percent": 0.819672131147541
+        }
+      ],
+      "frame_read_static_proof_exclusive": 23,
+      "proof_callers": {
+        "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation15action_required": 4,
+        "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit": 12,
+        "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper": 4,
+        "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks6helper": 1,
+        "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks5admit": 2
+      }
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "scope": "Derived descriptive summary of both immediately committed worker groups",
+  "summary": {
+    "groups": [
+      {
+        "group": 0,
+        "before": {
+          "median_seconds": 0.005694042,
+          "multiple_of_roc": 19.979094736842107
+        },
+        "after": {
+          "median_seconds": 0.005622125,
+          "multiple_of_roc": 19.726754385964913
+        },
+        "pooled_ratio": 0.9873697805530764,
+        "median_block_ratio": 0.9879422001796632,
+        "geometric_block_ratio": 0.9886900889333039,
+        "improving_blocks": 15
+      },
+      {
+        "group": 1,
+        "before": {
+          "median_seconds": 0.005751146,
+          "multiple_of_roc": 20.17945964912281
+        },
+        "after": {
+          "median_seconds": 0.005652916500000001,
+          "multiple_of_roc": 19.83479473684211
+        },
+        "pooled_ratio": 0.9829200128113598,
+        "median_block_ratio": 0.9854689144539879,
+        "geometric_block_ratio": 0.9870311326029383,
+        "improving_blocks": 13
+      }
+    ],
+    "reference_seconds": 0.000285,
+    "primary_observations": 1984,
+    "all_observations": 1992,
+    "scope": "Descriptive confirmation, not a replacement for the original independent-process campaign; only two independent worker groups",
+    "before": {
+      "median_seconds": 0.0057197085,
+      "multiple_of_roc": 20.069152631578948
+    },
+    "after": {
+      "median_seconds": 0.0056370835,
+      "multiple_of_roc": 19.779240350877192
+    },
+    "pooled_ratio": 0.985554333756694,
+    "median_block_ratio": 0.9863303338058602,
+    "geometric_block_ratio": 0.9878602625235711,
+    "improving_blocks": 28
+  },
+  "files": [
+    {
+      "path": "summary.json",
+      "sha256": "ea586840bdc94e6ab8b6eb64306aeec95c8ac8619648e2e9315c6e2522d92d5c",
+      "bytes": 1456
+    }
+  ]
+}

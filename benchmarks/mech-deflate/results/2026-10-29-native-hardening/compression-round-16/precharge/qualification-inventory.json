@@ -1,0 +1,569 @@
+[
+  {
+    "path": "precharge/qualification/full-components.py",
+    "sha256": "cf3a413c1fc7f77a33c32b2411d28f54d41a78f2fe20855e7a04625db5fd9038",
+    "original_sha256": "cf3a413c1fc7f77a33c32b2411d28f54d41a78f2fe20855e7a04625db5fd9038",
+    "original_bytes": 1680,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/full-components.py"
+  },
+  {
+    "path": "precharge/qualification/full-components.json",
+    "sha256": "fbb3fe2f1157107c5e71402acf072b102a841721819def94877deb017f8a4592",
+    "original_sha256": "fbb3fe2f1157107c5e71402acf072b102a841721819def94877deb017f8a4592",
+    "original_bytes": 1406,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/full-components.json"
+  },
+  {
+    "path": "precharge/qualification/full-components.log.gz",
+    "sha256": "4d19abf413a54c694efe618ca82fb4dab98f32c124a1b404d39e14c4a6f14ffd",
+    "original_sha256": "8696aea4c45ecf33c46b9e469bbce08ff5e7a0b0de3ad93d96a46a984298420a",
+    "original_bytes": 186006,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/full-components.log"
+  },
+  {
+    "path": "precharge/qualification/engine-units/nonnative-check.py",
+    "sha256": "18836abedacd2d5d0e54f91b7f1567d16866b97ddf7bd1cac9985d25a644b856",
+    "original_sha256": "18836abedacd2d5d0e54f91b7f1567d16866b97ddf7bd1cac9985d25a644b856",
+    "original_bytes": 2519,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/engine-units/nonnative-check.py"
+  },
+  {
+    "path": "precharge/qualification/engine-units/nonnative-build.json",
+    "sha256": "3247d123e41949295a56551721c529766d7ccc8a65d574063061566bde3fc93c",
+    "original_sha256": "3247d123e41949295a56551721c529766d7ccc8a65d574063061566bde3fc93c",
+    "original_bytes": 16639,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/engine-units/nonnative-build.json"
+  },
+  {
+    "path": "precharge/qualification/engine-units/nonnative-build.log.gz",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/engine-units/nonnative-build.log"
+  },
+  {
+    "path": "precharge/qualification/object-audit/object-evidence.rs",
+    "sha256": "a5ee5c96f9dedc3871737b9058a5201e1c4c5507f8434e00e8d5c468a60fdcb8",
+    "original_sha256": "a5ee5c96f9dedc3871737b9058a5201e1c4c5507f8434e00e8d5c468a60fdcb8",
+    "original_bytes": 2238,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/object-audit/object-evidence.rs"
+  },
+  {
+    "path": "precharge/qualification/object-audit/build.py",
+    "sha256": "564998d6bfe0689bab8a0be9dc29069b90f55f2fea340c187f1de25efcd09d8c",
+    "original_sha256": "564998d6bfe0689bab8a0be9dc29069b90f55f2fea340c187f1de25efcd09d8c",
+    "original_bytes": 1143,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/object-audit/build.py"
+  },
+  {
+    "path": "precharge/qualification/object-audit/object-build.json",
+    "sha256": "f1bb914a02d92f67c0890bd3608e47a2040c6bda50fc6672b1bdbb443afcddb2",
+    "original_sha256": "f1bb914a02d92f67c0890bd3608e47a2040c6bda50fc6672b1bdbb443afcddb2",
+    "original_bytes": 3195,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/object-audit/object-build.json"
+  },
+  {
+    "path": "precharge/qualification/object-audit/object-build.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/object-audit/object-build.log"
+  },
+  {
+    "path": "precharge/qualification/object-audit/object-run.json",
+    "sha256": "fdcf3db7a70e2e0b4cd73b4cb94e52f0aee36709e61ed2ff19618c2b4adba486",
+    "original_sha256": "fdcf3db7a70e2e0b4cd73b4cb94e52f0aee36709e61ed2ff19618c2b4adba486",
+    "original_bytes": 420,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/object-audit/object-run.json"
+  },
+  {
+    "path": "precharge/qualification/object-audit/object-run.stdout.gz",
+    "sha256": "25e5b2b92527623eb49430bd7a0ebcd7576933114152f99009b5f252d4a6af32",
+    "original_sha256": "b52b0c5e5da9bc96a00e976f36f4ccd0486d50ef11408a05fe2ef69e0b20b3ec",
+    "original_bytes": 40126,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/object-audit/object-run.stdout"
+  },
+  {
+    "path": "precharge/qualification/object-audit/object-run.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/object-audit/object-run.stderr"
+  },
+  {
+    "path": "precharge/qualification/object-audit/identity.json",
+    "sha256": "36e34a3b9ee89f2060f5c8f794046a28d07ca5fcb675db6615ef6b4e6c9cb60e",
+    "original_sha256": "36e34a3b9ee89f2060f5c8f794046a28d07ca5fcb675db6615ef6b4e6c9cb60e",
+    "original_bytes": 477,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/object-audit/identity.json"
+  },
+  {
+    "path": "precharge/qualification/selected/qualify-selected.py",
+    "sha256": "ec4ae85da0dcc07cec6b8fab0a4d017a721851b39d1aef21ca51c0b2f7b7cda8",
+    "original_sha256": "ec4ae85da0dcc07cec6b8fab0a4d017a721851b39d1aef21ca51c0b2f7b7cda8",
+    "original_bytes": 1800,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/qualify-selected.py"
+  },
+  {
+    "path": "precharge/qualification/selected/selected-native-build.json",
+    "sha256": "c78ff6f4c795bc9faf720584ccb32994f528df65f77b47d90de433b5913844e2",
+    "original_sha256": "c78ff6f4c795bc9faf720584ccb32994f528df65f77b47d90de433b5913844e2",
+    "original_bytes": 3346,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/selected-native-build.json"
+  },
+  {
+    "path": "precharge/qualification/selected/selected-native-build.log.gz",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/selected-native-build.log"
+  },
+  {
+    "path": "precharge/qualification/selected/selected-native-run.json",
+    "sha256": "291b5f555a2778073e33a5f4fbeed8583de01303d94985ba5e05bab4d2fba349",
+    "original_sha256": "291b5f555a2778073e33a5f4fbeed8583de01303d94985ba5e05bab4d2fba349",
+    "original_bytes": 497,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/selected-native-run.json"
+  },
+  {
+    "path": "precharge/qualification/selected/selected-native-run.log.gz",
+    "sha256": "760f84a9d5cbad1719290bdcc171da026894b4c1bb4e209d2ff5ac48684164b7",
+    "original_sha256": "f28abeca9d118ed020ce207689c1476258d3e5c94fae517923707678ca6a23f8",
+    "original_bytes": 782,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/selected-native-run.log"
+  },
+  {
+    "path": "precharge/qualification/selected/selected-bits-build.json",
+    "sha256": "f088d053f62ea52d7934ebf20cec67a5fd1f88f5466f185d1246912c5d407221",
+    "original_sha256": "f088d053f62ea52d7934ebf20cec67a5fd1f88f5466f185d1246912c5d407221",
+    "original_bytes": 3342,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/selected-bits-build.json"
+  },
+  {
+    "path": "precharge/qualification/selected/selected-bits-build.log.gz",
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/selected-bits-build.log"
+  },
+  {
+    "path": "precharge/qualification/selected/selected-bits-run.json",
+    "sha256": "5f1a3adff828e590dd1fda774f1619810213927ff6ba826c65588196f3f802c3",
+    "original_sha256": "5f1a3adff828e590dd1fda774f1619810213927ff6ba826c65588196f3f802c3",
+    "original_bytes": 313,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/selected-bits-run.json"
+  },
+  {
+    "path": "precharge/qualification/selected/selected-bits-run.log.gz",
+    "sha256": "508cd332b94d4f2b1aa13839643c291239ec2d381583bb0dc1148d9e4943a99c",
+    "original_sha256": "b3ef961bc298fd729d192ceee433a5d20e81d65c79bb2bd84add34b9efc69aab",
+    "original_bytes": 347,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/selected-bits-run.log"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-f64-0-decoded-after.stdout",
+    "sha256": "e4cc305ac8a689ba05525f845d57b40fd6aab0fa7af5b4d3e1a3b9a7a34b3e54",
+    "original_sha256": "e4cc305ac8a689ba05525f845d57b40fd6aab0fa7af5b4d3e1a3b9a7a34b3e54",
+    "original_bytes": 1619,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-f64-0-decoded-after.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-loop-64-original-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-loop-64-original-before.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-i64-0-decoded-before.stdout",
+    "sha256": "8f6c2d992893893ed2478331927c677c0f0a7a74a6eb4ab4d94b03d1b9354560",
+    "original_sha256": "8f6c2d992893893ed2478331927c677c0f0a7a74a6eb4ab4d94b03d1b9354560",
+    "original_bytes": 1618,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-i64-0-decoded-before.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-loop-0-decoded-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-loop-0-decoded-after.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-commands.json",
+    "sha256": "874068abb2381fb666601f65124f9c62dfa9745259c90cfefc4b05be4e70ba9d",
+    "original_sha256": "874068abb2381fb666601f65124f9c62dfa9745259c90cfefc4b05be4e70ba9d",
+    "original_bytes": 4851,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-commands.json"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-loop-64-decoded-before.stdout",
+    "sha256": "b6a263c26e146ffe4f01b9f8a47dbb9d6b22ad8224f0ee60dcca0effe3180f3f",
+    "original_sha256": "b6a263c26e146ffe4f01b9f8a47dbb9d6b22ad8224f0ee60dcca0effe3180f3f",
+    "original_bytes": 2019,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-loop-64-decoded-before.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-u64-0-decoded-before.stdout",
+    "sha256": "be23525b02ce92d8ed8d4981e5ebde8633105b2abbe0ec2bf6beb9643b611750",
+    "original_sha256": "be23525b02ce92d8ed8d4981e5ebde8633105b2abbe0ec2bf6beb9643b611750",
+    "original_bytes": 1614,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-u64-0-decoded-before.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-results.json",
+    "sha256": "e00175726011a2e13da26a1ef1c4dfdc7088669d25aaf679818dac20faac18b6",
+    "original_sha256": "e00175726011a2e13da26a1ef1c4dfdc7088669d25aaf679818dac20faac18b6",
+    "original_bytes": 73021,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-results.json"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-loop-64-decoded-after.stdout",
+    "sha256": "fe04b2c4cc29452017ce1ce51bd7429a0f6224d2261703505ba7eed38b437eee",
+    "original_sha256": "fe04b2c4cc29452017ce1ce51bd7429a0f6224d2261703505ba7eed38b437eee",
+    "original_bytes": 2021,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-loop-64-decoded-after.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-bool-0-decoded-before.stdout",
+    "sha256": "b7a63f5034df174df7c1ad3c0a25a439ccb0551af72af6163b9852336662b5dd",
+    "original_sha256": "b7a63f5034df174df7c1ad3c0a25a439ccb0551af72af6163b9852336662b5dd",
+    "original_bytes": 1625,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-bool-0-decoded-before.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-bool-0-decoded-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-bool-0-decoded-after.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-loop-0-decoded-before.stdout",
+    "sha256": "e8f4008103abb747d077d07ffc9b982831c92fdf1fab56feabdc2c102b46f3e3",
+    "original_sha256": "e8f4008103abb747d077d07ffc9b982831c92fdf1fab56feabdc2c102b46f3e3",
+    "original_bytes": 2005,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-loop-0-decoded-before.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-f64-0-decoded-before.stdout",
+    "sha256": "5913858e28bdbb27e7f70f2df95f19cf238c412609d7be21b3b7f0d0efe5eb64",
+    "original_sha256": "5913858e28bdbb27e7f70f2df95f19cf238c412609d7be21b3b7f0d0efe5eb64",
+    "original_bytes": 1616,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-f64-0-decoded-before.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-f64-0-original-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-f64-0-original-before.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-loop-0-decoded-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-loop-0-decoded-before.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-bool-0-decoded-after.stdout",
+    "sha256": "eab53fc8b59222f635f931566d0ce578bd846ebd8476b1f26906a9a3043a8f23",
+    "original_sha256": "eab53fc8b59222f635f931566d0ce578bd846ebd8476b1f26906a9a3043a8f23",
+    "original_bytes": 1621,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-bool-0-decoded-after.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-f64-0-decoded-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-f64-0-decoded-before.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-f64-0-original-before.stdout",
+    "sha256": "8793d4389776763d3c7f14848b25bfeace73d424c41e3c2b6194c98df06a87aa",
+    "original_sha256": "8793d4389776763d3c7f14848b25bfeace73d424c41e3c2b6194c98df06a87aa",
+    "original_bytes": 1625,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-f64-0-original-before.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-loop-64-decoded-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-loop-64-decoded-after.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-u64-0-decoded-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-u64-0-decoded-before.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-bool-0-decoded-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-bool-0-decoded-before.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-loop-64-decoded-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-loop-64-decoded-before.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/frame-before.json",
+    "sha256": "d8670429862d711c58f6a1226fa6fff3e3f71c4427898c970df9ab09961844c3",
+    "original_sha256": "d8670429862d711c58f6a1226fa6fff3e3f71c4427898c970df9ab09961844c3",
+    "original_bytes": 252,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/frame-before.json"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-f64-0-decoded-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-f64-0-decoded-after.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-loop-0-decoded-after.stdout",
+    "sha256": "1ea6b678c4a7ff95b181cc72ee7bc67d0aaeca23acfa822cbf6286e6641b85be",
+    "original_sha256": "1ea6b678c4a7ff95b181cc72ee7bc67d0aaeca23acfa822cbf6286e6641b85be",
+    "original_bytes": 2009,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-loop-0-decoded-after.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-i64-0-decoded-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-i64-0-decoded-before.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-loop-64-original-before.stdout",
+    "sha256": "490afd86aec92d998b5443fb28cca2cdf98cbe1209d44f84f050cc47c17bdbe1",
+    "original_sha256": "490afd86aec92d998b5443fb28cca2cdf98cbe1209d44f84f050cc47c17bdbe1",
+    "original_bytes": 2024,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-loop-64-original-before.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-bool-0-original-after.stdout",
+    "sha256": "200a19efd5037d10c5fd9cea62ca7d8d38bc34f400378d327632acce4f95150f",
+    "original_sha256": "200a19efd5037d10c5fd9cea62ca7d8d38bc34f400378d327632acce4f95150f",
+    "original_bytes": 1631,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-bool-0-original-after.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-u64-0-original-after.stdout",
+    "sha256": "208f844b8dc34eff41b8ac0edf9897bde9a6c8071cad77d0059e7b193273298e",
+    "original_sha256": "208f844b8dc34eff41b8ac0edf9897bde9a6c8071cad77d0059e7b193273298e",
+    "original_bytes": 1624,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-u64-0-original-after.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-i64-0-original-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-i64-0-original-before.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-u64-0-decoded-after.stdout",
+    "sha256": "fd342e68102431577ef81b85123cd54ed65ec17f93f409b997afe2d304a464e7",
+    "original_sha256": "fd342e68102431577ef81b85123cd54ed65ec17f93f409b997afe2d304a464e7",
+    "original_bytes": 1616,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-u64-0-decoded-after.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-f64-0-original-after.stdout",
+    "sha256": "c714f9b0be5ba5966fc81dd7365878b8acd9744d003836e708196b5906b7488c",
+    "original_sha256": "c714f9b0be5ba5966fc81dd7365878b8acd9744d003836e708196b5906b7488c",
+    "original_bytes": 1624,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-f64-0-original-after.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-loop-0-original-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-loop-0-original-before.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-loop-0-original-after.stdout",
+    "sha256": "15443f9e224a271fb4c348f5f92e4b8b5201b3501a699b71fbba15bbc247e3d5",
+    "original_sha256": "15443f9e224a271fb4c348f5f92e4b8b5201b3501a699b71fbba15bbc247e3d5",
+    "original_bytes": 2014,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-loop-0-original-after.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-i64-0-original-after.stdout",
+    "sha256": "c40b61ab4bb946be8e0ac9b0c8d0a01b010387ba88818845078f08130be2fc72",
+    "original_sha256": "c40b61ab4bb946be8e0ac9b0c8d0a01b010387ba88818845078f08130be2fc72",
+    "original_bytes": 1621,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-i64-0-original-after.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-i64-0-decoded-after.stdout",
+    "sha256": "3859107c8fe32ea05172c6f8cc7082ef1f7c479a23026ffc32c0ab8463449848",
+    "original_sha256": "3859107c8fe32ea05172c6f8cc7082ef1f7c479a23026ffc32c0ab8463449848",
+    "original_bytes": 1617,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-i64-0-decoded-after.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-loop-64-original-after.stdout",
+    "sha256": "ba6730e0f9b7fe4ca117ae9f3132c09aec4b145a97bd2ca6c27396306f5b8792",
+    "original_sha256": "ba6730e0f9b7fe4ca117ae9f3132c09aec4b145a97bd2ca6c27396306f5b8792",
+    "original_bytes": 2026,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-loop-64-original-after.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-u64-0-original-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-u64-0-original-before.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-bool-0-original-before.stdout",
+    "sha256": "09882f77b83fa14d57994387c8a0593a2371d5c55970ad68548fef0e90c74d36",
+    "original_sha256": "09882f77b83fa14d57994387c8a0593a2371d5c55970ad68548fef0e90c74d36",
+    "original_bytes": 1630,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-bool-0-original-before.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-loop-64-original-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-loop-64-original-after.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-u64-0-original-before.stdout",
+    "sha256": "7b781002c05f661d57eb6d4be0ec4b7157eec55fd6b65bad28362546e90237ae",
+    "original_sha256": "7b781002c05f661d57eb6d4be0ec4b7157eec55fd6b65bad28362546e90237ae",
+    "original_bytes": 1625,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-u64-0-original-before.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-bool-0-original-before.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-bool-0-original-before.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-i64-0-original-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-i64-0-original-after.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-i64-0-decoded-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-i64-0-decoded-after.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-controls.py",
+    "sha256": "bbd452952661afb485c4b61f41ca54f6b9d75eb8c9e0d9d480f6e35e0d4d202c",
+    "original_sha256": "bbd452952661afb485c4b61f41ca54f6b9d75eb8c9e0d9d480f6e35e0d4d202c",
+    "original_bytes": 3238,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-controls.py"
+  },
+  {
+    "path": "precharge/qualification/scalar/frame-after.json",
+    "sha256": "047f1b21c03b24c40f11704e12035b4cd47bae6fa6c73fe63712383364d51249",
+    "original_sha256": "047f1b21c03b24c40f11704e12035b4cd47bae6fa6c73fe63712383364d51249",
+    "original_bytes": 342,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/frame-after.json"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-u64-0-decoded-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-u64-0-decoded-after.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-f64-0-original-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-f64-0-original-after.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-i64-0-original-before.stdout",
+    "sha256": "82ea7fab0393bcd5f7b7c9d01478d64ef2573034521873863bbbe4d8383ade86",
+    "original_sha256": "82ea7fab0393bcd5f7b7c9d01478d64ef2573034521873863bbbe4d8383ade86",
+    "original_bytes": 1619,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-i64-0-original-before.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-loop-0-original-before.stdout",
+    "sha256": "611564dbff23cd9a796d4222afb73e44cca7f558a501196ae24727be8dc7a4e5",
+    "original_sha256": "611564dbff23cd9a796d4222afb73e44cca7f558a501196ae24727be8dc7a4e5",
+    "original_bytes": 2015,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-loop-0-original-before.stdout"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-loop-0-original-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-loop-0-original-after.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-bool-0-original-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-bool-0-original-after.stderr"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-outer.log",
+    "sha256": "dfdb37a97d10253a7d21ec8d24e58a279c29a8cb8c39ab0bb69bffbe787d529f",
+    "original_sha256": "dfdb37a97d10253a7d21ec8d24e58a279c29a8cb8c39ab0bb69bffbe787d529f",
+    "original_bytes": 1427,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-outer.log"
+  },
+  {
+    "path": "precharge/qualification/scalar/scalar-scalar-u64-0-original-after.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "original_bytes": 0,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/primary/scalar-scalar-u64-0-original-after.stderr"
+  },
+  {
+    "path": "precharge/profile/validated-invoke-analyze.py",
+    "sha256": "14311eb3f37e31fd343203f312b79a5ab2c1134aeea97274e8ef3e4f808cc655",
+    "original_sha256": "14311eb3f37e31fd343203f312b79a5ab2c1134aeea97274e8ef3e4f808cc655",
+    "original_bytes": 1522,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/validated-invoke-analyze.py"
+  },
+  {
+    "path": "precharge/profile/validated-invoke-costs.json",
+    "sha256": "187265f0291bd6a268635eb33140efa13a75f4f3510764af1a783011ca18aa79",
+    "original_sha256": "187265f0291bd6a268635eb33140efa13a75f4f3510764af1a783011ca18aa79",
+    "original_bytes": 824596,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/validated-invoke-costs.json"
+  },
+  {
+    "path": "precharge/profile/cached-invoke-analyze.py",
+    "sha256": "18c1540562d1e765003eee6d19321edbcdba7b59422d08f4c588f006aa25cb14",
+    "original_sha256": "18c1540562d1e765003eee6d19321edbcdba7b59422d08f4c588f006aa25cb14",
+    "original_bytes": 1449,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/cached-invoke-analyze.py"
+  },
+  {
+    "path": "precharge/profile/cached-invoke-costs.json",
+    "sha256": "195f8945f2b71440080bdd7ff757d5077fff273cf1329ce12290834c3c4a174a",
+    "original_sha256": "195f8945f2b71440080bdd7ff757d5077fff273cf1329ce12290834c3c4a174a",
+    "original_bytes": 928112,
+    "source": "/private/tmp/mech-record-precharge-round16-20261029/cached-invoke-costs.json"
+  }
+]

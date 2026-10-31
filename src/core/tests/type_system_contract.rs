@@ -999,3 +999,6 @@ fn alpha_equivalent_dynamic_outputs_close_in_one_constraint_environment() {
 
     assert_eq!(resolution.outputs.as_ref(), &[expected]);
 }
+
+#[path = "support/type_system_descriptor_shapes.rs"]
+mod descriptor_shapes;

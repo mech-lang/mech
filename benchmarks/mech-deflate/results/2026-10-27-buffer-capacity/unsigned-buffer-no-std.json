@@ -1,0 +1,31 @@
+{
+  "name": "unsigned-buffer-no-std",
+  "command": [
+    "cargo",
+    "check",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-core",
+    "--no-default-features",
+    "--features",
+    "no_std",
+    "--lib"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "d0271b90ae51db78630cda2a76c01c61a75719da",
+  "dirty": " M benchmarks/mech-deflate/results/2026-10-27-buffer-capacity/REPORT.md\n?? benchmarks/mech-deflate/results/2026-10-27-buffer-capacity/github-linear-stack-verification.json\n?? benchmarks/mech-deflate/results/2026-10-27-buffer-capacity/unsigned-buffer-ci-contract-tests.json\n?? benchmarks/mech-deflate/results/2026-10-27-buffer-capacity/unsigned-buffer-ci-contract-tests.log\n?? benchmarks/mech-deflate/results/2026-10-27-buffer-capacity/unsigned-buffer-ci-inventory-tests-with-dependencies.json\n?? benchmarks/mech-deflate/results/2026-10-27-buffer-capacity/unsigned-buffer-ci-inventory-tests-with-dependencies.log\n?? benchmarks/mech-deflate/results/2026-10-27-buffer-capacity/unsigned-buffer-ci-inventory-tests.json\n?? benchmarks/mech-deflate/results/2026-10-27-buffer-capacity/unsigned-buffer-ci-inventory-tests.log\n?? benchmarks/mech-deflate/results/2026-10-27-buffer-capacity/unsigned-buffer-ci-inventory.json\n?? benchmarks/mech-deflate/results/2026-10-27-buffer-capacity/unsigned-buffer-ci-inventory.log\n?? benchmarks/mech-deflate/results/2026-10-27-buffer-capacity/unsigned-buffer-components.json\n?? benchmarks/mech-deflate/results/2026-10-27-buffer-capacity/unsigned-buffer-components.log\n?? benchmarks/mech-deflate/results/2026-10-27-buffer-capacity/unsigned-buffer-exact-ci-step.json\n?? benchmarks/mech-deflate/results/2026-10-27-buffer-capacity/unsigned-buffer-exact-ci-step.log\n?? benchmarks/mech-deflate/results/2026-10-27-buffer-capacity/unsigned-buffer-live-ci-inventory.json\n?? benchmarks/mech-deflate/results/2026-10-27-buffer-capacity/unsigned-buffer-live-ci-inventory.log\n?? benchmarks/mech-deflate/results/2026-10-27-buffer-capacity/unsigned-buffer-static-contracts.json\n?? benchmarks/mech-deflate/results/2026-10-27-buffer-capacity/unsigned-buffer-static-contracts.log\n",
+  "exit": 0,
+  "seconds": 2.4364678859710693,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/unsigned-buffer-no-std.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

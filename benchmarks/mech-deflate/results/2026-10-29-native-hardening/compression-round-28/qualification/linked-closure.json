@@ -1,0 +1,694 @@
+{
+  "executed": true,
+  "runtime_only": true,
+  "performance_observations": 0,
+  "units": [
+    {
+      "name": "unicode_ident",
+      "features": []
+    },
+    {
+      "name": "proc_macro2",
+      "features": [
+        "default",
+        "proc-macro"
+      ]
+    },
+    {
+      "name": "quote",
+      "features": [
+        "default",
+        "proc-macro"
+      ]
+    },
+    {
+      "name": "syn",
+      "features": [
+        "clone-impls",
+        "default",
+        "derive",
+        "extra-traits",
+        "fold",
+        "full",
+        "parsing",
+        "printing",
+        "proc-macro",
+        "visit"
+      ]
+    },
+    {
+      "name": "typenum",
+      "features": [
+        "const-generics"
+      ]
+    },
+    {
+      "name": "synstructure",
+      "features": [
+        "default",
+        "proc-macro"
+      ]
+    },
+    {
+      "name": "autocfg",
+      "features": []
+    },
+    {
+      "name": "zerofrom_derive",
+      "features": []
+    },
+    {
+      "name": "zerofrom",
+      "features": [
+        "derive"
+      ]
+    },
+    {
+      "name": "yoke_derive",
+      "features": []
+    },
+    {
+      "name": "stable_deref_trait",
+      "features": []
+    },
+    {
+      "name": "yoke",
+      "features": [
+        "derive",
+        "zerofrom"
+      ]
+    },
+    {
+      "name": "libm",
+      "features": [
+        "arch",
+        "default"
+      ]
+    },
+    {
+      "name": "hybrid_array",
+      "features": []
+    },
+    {
+      "name": "zerovec_derive",
+      "features": []
+    },
+    {
+      "name": "zerovec",
+      "features": [
+        "derive",
+        "yoke"
+      ]
+    },
+    {
+      "name": "num_traits",
+      "features": [
+        "i128",
+        "libm",
+        "std"
+      ]
+    },
+    {
+      "name": "displaydoc",
+      "features": []
+    },
+    {
+      "name": "cfg_if",
+      "features": []
+    },
+    {
+      "name": "version_check",
+      "features": []
+    },
+    {
+      "name": "block_buffer",
+      "features": []
+    },
+    {
+      "name": "crypto_common",
+      "features": []
+    },
+    {
+      "name": "digest",
+      "features": [
+        "block-api",
+        "default"
+      ]
+    },
+    {
+      "name": "zmij",
+      "features": []
+    },
+    {
+      "name": "libc",
+      "features": [
+        "default",
+        "std"
+      ]
+    },
+    {
+      "name": "serde_core",
+      "features": [
+        "alloc",
+        "result",
+        "std"
+      ]
+    },
+    {
+      "name": "itoa",
+      "features": []
+    },
+    {
+      "name": "memchr",
+      "features": [
+        "alloc",
+        "std"
+      ]
+    },
+    {
+      "name": "bytemuck",
+      "features": []
+    },
+    {
+      "name": "safe_arch",
+      "features": [
+        "bytemuck",
+        "default"
+      ]
+    },
+    {
+      "name": "generic_array",
+      "features": [
+        "more_lengths"
+      ]
+    },
+    {
+      "name": "tinystr",
+      "features": [
+        "zerovec"
+      ]
+    },
+    {
+      "name": "syn",
+      "features": [
+        "clone-impls",
+        "derive",
+        "parsing",
+        "printing",
+        "proc-macro"
+      ]
+    },
+    {
+      "name": "writeable",
+      "features": []
+    },
+    {
+      "name": "litemap",
+      "features": []
+    },
+    {
+      "name": "alloc_no_stdlib",
+      "features": []
+    },
+    {
+      "name": "alloc_stdlib",
+      "features": []
+    },
+    {
+      "name": "icu_locale_core",
+      "features": [
+        "zerovec"
+      ]
+    },
+    {
+      "name": "serde_derive",
+      "features": [
+        "default"
+      ]
+    },
+    {
+      "name": "paste",
+      "features": []
+    },
+    {
+      "name": "wide",
+      "features": [
+        "default",
+        "std"
+      ]
+    },
+    {
+      "name": "zerotrie",
+      "features": [
+        "yoke",
+        "zerofrom"
+      ]
+    },
+    {
+      "name": "approx",
+      "features": [
+        "std"
+      ]
+    },
+    {
+      "name": "num_complex",
+      "features": [
+        "std"
+      ]
+    },
+    {
+      "name": "num_integer",
+      "features": [
+        "i128",
+        "std"
+      ]
+    },
+    {
+      "name": "potential_utf",
+      "features": [
+        "zerovec"
+      ]
+    },
+    {
+      "name": "rawpointer",
+      "features": []
+    },
+    {
+      "name": "tinyvec_macros",
+      "features": []
+    },
+    {
+      "name": "utf8_iter",
+      "features": []
+    },
+    {
+      "name": "equivalent",
+      "features": []
+    },
+    {
+      "name": "virtue",
+      "features": []
+    },
+    {
+      "name": "bincode_derive",
+      "features": []
+    },
+    {
+      "name": "icu_collections",
+      "features": []
+    },
+    {
+      "name": "tinyvec",
+      "features": [
+        "alloc",
+        "default",
+        "tinyvec_macros"
+      ]
+    },
+    {
+      "name": "matrixmultiply",
+      "features": [
+        "avx512",
+        "default",
+        "std"
+      ]
+    },
+    {
+      "name": "num_rational",
+      "features": [
+        "std"
+      ]
+    },
+    {
+      "name": "simba",
+      "features": [
+        "std",
+        "wide"
+      ]
+    },
+    {
+      "name": "icu_provider",
+      "features": [
+        "baked"
+      ]
+    },
+    {
+      "name": "serde",
+      "features": [
+        "alloc",
+        "default",
+        "derive",
+        "serde_derive",
+        "std"
+      ]
+    },
+    {
+      "name": "brotli_decompressor",
+      "features": [
+        "alloc-stdlib",
+        "std"
+      ]
+    },
+    {
+      "name": "icu_properties_data",
+      "features": []
+    },
+    {
+      "name": "crypto_common",
+      "features": [
+        "std"
+      ]
+    },
+    {
+      "name": "block_buffer",
+      "features": []
+    },
+    {
+      "name": "cpufeatures",
+      "features": []
+    },
+    {
+      "name": "nalgebra_macros",
+      "features": []
+    },
+    {
+      "name": "unicode_segmentation",
+      "features": []
+    },
+    {
+      "name": "unty",
+      "features": []
+    },
+    {
+      "name": "hashbrown",
+      "features": []
+    },
+    {
+      "name": "indexmap",
+      "features": [
+        "default",
+        "serde",
+        "std"
+      ]
+    },
+    {
+      "name": "bincode",
+      "features": [
+        "alloc",
+        "bincode_derive",
+        "default",
+        "derive",
+        "serde",
+        "std"
+      ]
+    },
+    {
+      "name": "grapheme_macro",
+      "features": []
+    },
+    {
+      "name": "nalgebra",
+      "features": [
+        "default",
+        "macros",
+        "matrixmultiply",
+        "nalgebra-macros",
+        "std"
+      ]
+    },
+    {
+      "name": "sha2",
+      "features": []
+    },
+    {
+      "name": "digest",
+      "features": [
+        "alloc",
+        "block-buffer",
+        "core-api",
+        "default",
+        "std"
+      ]
+    },
+    {
+      "name": "icu_properties",
+      "features": [
+        "compiled_data",
+        "default"
+      ]
+    },
+    {
+      "name": "brotli",
+      "features": [
+        "alloc-stdlib",
+        "default",
+        "std"
+      ]
+    },
+    {
+      "name": "serde_json",
+      "features": [
+        "default",
+        "raw_value",
+        "std",
+        "unbounded_depth"
+      ]
+    },
+    {
+      "name": "unicode_normalization",
+      "features": [
+        "default",
+        "std"
+      ]
+    },
+    {
+      "name": "crc32fast",
+      "features": [
+        "default",
+        "std"
+      ]
+    },
+    {
+      "name": "libc",
+      "features": []
+    },
+    {
+      "name": "cpufeatures",
+      "features": []
+    },
+    {
+      "name": "seahash",
+      "features": [
+        "default"
+      ]
+    },
+    {
+      "name": "byteorder",
+      "features": [
+        "default",
+        "std"
+      ]
+    },
+    {
+      "name": "smallvec",
+      "features": []
+    },
+    {
+      "name": "base64",
+      "features": [
+        "alloc",
+        "default",
+        "std"
+      ]
+    },
+    {
+      "name": "mech_core",
+      "features": [
+        "base64",
+        "bincode",
+        "bool",
+        "brotli",
+        "byteorder",
+        "crc32fast",
+        "f64",
+        "floats",
+        "functions",
+        "indexmap",
+        "map",
+        "matrix",
+        "matrixd",
+        "nalgebra",
+        "num-traits",
+        "numbers",
+        "program",
+        "range",
+        "resident-execution",
+        "row_vectord",
+        "selective-convert",
+        "serde",
+        "serde_derive",
+        "serde_json",
+        "std",
+        "string",
+        "symbol_table",
+        "tuple",
+        "u32",
+        "u64",
+        "unsigned_ints",
+        "vectord"
+      ]
+    },
+    {
+      "name": "grapheme",
+      "features": []
+    },
+    {
+      "name": "sha2",
+      "features": [
+        "default",
+        "std"
+      ]
+    },
+    {
+      "name": "cpufeatures",
+      "features": []
+    },
+    {
+      "name": "serde_core",
+      "features": [
+        "std"
+      ]
+    },
+    {
+      "name": "serde_json",
+      "features": [
+        "default",
+        "std"
+      ]
+    },
+    {
+      "name": "sha2",
+      "features": []
+    },
+    {
+      "name": "mech_engine",
+      "features": [
+        "artifact-codec",
+        "assign",
+        "bool",
+        "convert",
+        "f64",
+        "floats",
+        "functions",
+        "indexmap",
+        "integer_bits",
+        "map",
+        "map_ops",
+        "matrix",
+        "matrix_horzcat",
+        "matrix_vertcat",
+        "matrixd",
+        "nalgebra",
+        "native-artifact",
+        "native-capture-pages",
+        "numbers",
+        "program",
+        "pure_text",
+        "resident-artifact",
+        "resident-ekf",
+        "row_vectord",
+        "runtime",
+        "sequence_buffers",
+        "std",
+        "string",
+        "symbol_table",
+        "u64",
+        "unsigned_ints",
+        "vectord"
+      ]
+    },
+    {
+      "name": "allocator_api2",
+      "features": [
+        "alloc"
+      ]
+    },
+    {
+      "name": "foldhash",
+      "features": []
+    },
+    {
+      "name": "adler2",
+      "features": []
+    },
+    {
+      "name": "miniz_oxide",
+      "features": [
+        "default",
+        "with-alloc"
+      ]
+    },
+    {
+      "name": "hashbrown",
+      "features": [
+        "allocator-api2",
+        "default",
+        "default-hasher",
+        "equivalent",
+        "inline-more",
+        "raw-entry"
+      ]
+    },
+    {
+      "name": "mech_compute",
+      "features": [
+        "default",
+        "runtime-values"
+      ]
+    },
+    {
+      "name": "web_time",
+      "features": []
+    },
+    {
+      "name": "mech_gpu",
+      "features": [
+        "canonical-native-program-runtime",
+        "canonical-native-runtime"
+      ]
+    },
+    {
+      "name": "lexical-retry",
+      "features": []
+    }
+  ],
+  "driver_template_sha256": "a055f1277d94bc67f2a44b6e3e3143f15eac002e6609a84c4088c37696583f3b",
+  "generated_source_sha256": "93e917922fa4057f846d080f8502b280b89ee06ae42ea078e8f4c4147d409431",
+  "driver_sha256": "5d640cfb1ea7f018625b7836c72da5b1a6827ce2dc05625849047793e4b0b8d4",
+  "binary_sha256": "844c103b96012c8f64a417724106f447b6728458039285c1d0a9a2d31b847ec4",
+  "valid_reject_valid": [
+    3,
+    0,
+    2
+  ],
+  "successful_outputs": [
+    4,
+    6
+  ],
+  "error_before_division": true,
+  "prior_publication_alias_and_cleanup_recovery_asserted": true,
+  "orchestration": "Same public generator/Object/descriptor and maintained retry driver; direct Cargo CLI instead of mech_build Rust test launcher.",
+  "pins": {
+    "Cargo.toml": "56dc9e648a498da815e50ad9be7a34ccd5a3bef08eede042212272dd96d5fdde",
+    "application.mec": "93e917922fa4057f846d080f8502b280b89ee06ae42ea078e8f4c4147d409431",
+    "build.rs": "662562876871debb8e067161c0aaad47a5e2de48a7b401439a9f388b4ec03a43",
+    "factory-profile.json": "37da5b8455f00f3b6e0e4579be1c9745ee15ffda90f47987de5240baf4cd2538",
+    "native-descriptor.bin": "06b45334dad06005cec403b9b2f623827c4d0e0aa8319a653703a608cba0df90",
+    "native-descriptor.json": "0d7427089b61d1f02a52dc0e246be28d24f8ab62d5d33a447e514c7bfbc75bbd",
+    "object-identity.bin": "388ca4e932d3591c3532d340028bbbea5d521a524f01de59acc22012be5bd7f1",
+    "program.mecb": "c2554b843138f4d65d055d01d02d55058e38e8a156dba758264916d1fc82f66f",
+    "program.o": "22425b3af3181941ff5d7eae67e3216969d9842094b6076522cb463bfdd8c063",
+    "rust-toolchain.toml": "19219593d7dba33a75623287af94da940a93fac92eeef99e8fff9b7fd804fcf9",
+    "src/main.rs": "292df19f8713c6e8079dac2972175401420c733a90ccfd3871ae136069d698f6"
+  }
+}

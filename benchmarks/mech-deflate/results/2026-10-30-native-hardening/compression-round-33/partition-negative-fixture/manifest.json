@@ -1,0 +1,46 @@
+{
+  "build_exit": 0,
+  "test_exit": 101,
+  "passed": 3,
+  "failed": 1,
+  "classification": "introduced unsupported negative test source; unchanged Engine artifact validation rejects repeated callee schema instantiation before GPU preparation",
+  "failure": "recursive call must preserve its lexical target input and output schemas",
+  "performance_claim": false,
+  "files": [
+    {
+      "path": "build.json",
+      "sha256": "35592d33ea9281129fbc5d6b64b165b818cf71f133b23969da06ee4fcf5dd50c",
+      "bytes": 2089
+    },
+    {
+      "path": "build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "canonical_program_numeric_composition.rs",
+      "sha256": "1d69db95f965b14b88ba1dcc88e0b2c62f81c67b4540f20dfee29188241ec0a0",
+      "bytes": 13587
+    },
+    {
+      "path": "partition.json",
+      "sha256": "e36e3facc7deacab8626fb691512e12f7a4f9557e71d493969f51f1e3d280f94",
+      "bytes": 477
+    },
+    {
+      "path": "partition.stderr",
+      "sha256": "57f8f2462c8787ae0f88687c8ed0c5dc99fb2b92952fddb21f3017de01e584cc",
+      "bytes": 462
+    },
+    {
+      "path": "partition.stdout",
+      "sha256": "f5a6281d2bc95bbc5887d0a48aceb398b9a526e9aefe622cf04d049051c7f7da",
+      "bytes": 2196
+    }
+  ]
+}

@@ -10,6 +10,8 @@ pub(in crate::native_artifact) mod compiler;
 #[cfg(feature = "canonical-native-program-runtime")]
 pub(in crate::native_artifact) mod image;
 #[cfg(feature = "canonical-native-program-runtime")]
+pub(in crate::native_artifact) mod limits;
+#[cfg(feature = "canonical-native-program-runtime")]
 pub(in crate::native_artifact) mod linked;
 #[cfg(feature = "canonical-native-program-runtime")]
 pub(in crate::native_artifact) mod runtime;

@@ -11,6 +11,32 @@ use mech_engine::native_artifact::{
 };
 use std::sync::Arc;
 
+pub(in crate::native_artifact) mod call_cache;
+pub(in crate::native_artifact) mod call_routes;
+pub(in crate::native_artifact) mod cleanup_effects;
+pub(in crate::native_artifact) mod composition;
+pub(in crate::native_artifact) mod frame_retirement;
+
+/// Recomputed both on source preparation and independent build-image loading.
+pub(in crate::native_artifact) fn prepare_frame_composition(
+    plan: &NativeProgramArtifactPlan,
+    frames: &mech_engine::native_artifact::NativeBufferFrames,
+    calls: &mut [Option<NativePreparedLibraryCall>],
+) -> Result<(), String> {
+    for (site, call) in calls.iter_mut().enumerate() {
+        let (Some(call), Some(action)) = (call, frames.action(site)) else {
+            continue;
+        };
+        let NativeIterationAction::LibraryCall { operands, .. } = plan.blocks()[site].action()
+        else {
+            continue;
+        };
+        call.prepare_buffer_frame_composition(frames, action.operation(), operands)
+            .map_err(str::to_owned)?;
+    }
+    Ok(())
+}
+
 #[derive(Debug)]
 pub(in crate::native_artifact) struct ProgramMetadata {
     pub(in crate::native_artifact) plan: NativeProgramArtifactPlan,
@@ -19,6 +45,11 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     // by validate_query_stages before this immutable descriptor can escape.
     // Runtime stage lookup never rebinds or clones those selected templates.
     pub(in crate::native_artifact) calls: Box<[Option<NativePreparedLibraryCall>]>,
+    // Complete prepared-call inventory, independently rederived on image load.
+    pub(in crate::native_artifact) call_cache: call_cache::Layout,
+    pub(in crate::native_artifact) compositions: composition::Layout,
+    // Derived from these exact calls/proofs, including independent image load.
+    pub(in crate::native_artifact) call_routes: Box<[call_routes::LibraryCallRoute]>,
     pub(in crate::native_artifact) types: Box<[NativeValueSlot]>,
     pub(in crate::native_artifact) visits: Box<[NativeIterationVisit]>,
     pub(in crate::native_artifact) retirements: RetirementTables,
@@ -31,6 +62,18 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     pub(in crate::native_artifact) max_library_inputs: usize,
     // Derived from this SAME immutable plan; callers cannot inject a region
     // from another artifact or rebind one to a different selected factory.
+    // Same-plan last-use candidates are recomputed on every image load. The
+    // runtime still checks exact current owners and exclusive core storage.
+    pub(in crate::native_artifact) buffer_frames: mech_engine::native_artifact::NativeBufferFrames,
+    // Derived from these exact frame lanes, including independent image load.
+    pub(in crate::native_artifact) frame_retirements: frame_retirement::FrameRetirements,
+    pub(in crate::native_artifact) cleanup_effects: cleanup_effects::Layout,
+    pub(in crate::native_artifact) unsigned_buffer_calls:
+        Box<[Option<mech_engine::native_artifact::NativeUnsignedBufferCall>]>,
+    // Pure derived cache. Recomputed from the validated plan on image load;
+    // it is neither serialized authority nor another preparation pipeline.
+    pub(in crate::native_artifact) uniform_word_collections:
+        Box<[mech_engine::native_artifact::NativeUniformWordCollection]>,
     pub(in crate::native_artifact) window_regions:
         Box<[mech_engine::native_artifact::NativeWindowRegion]>,
     pub(in crate::native_artifact) string_map_regions:
@@ -69,6 +112,7 @@ impl PreparedNativeProgram {
         plan.validate_current_visits().map_err(str::to_owned)?;
         let facts = plan.facts();
         let scalar_aggregates = facts.scalar_aggregates();
+        let buffer_frames = facts.buffer_frames();
         let parallel =
             native::program::prepare::parallel::Layout::derive(&facts, &scalar_aggregates)
                 .map_err(str::to_owned)?;
@@ -82,6 +126,7 @@ impl PreparedNativeProgram {
         let borrowed_strings =
             native::program::prepare::borrowed::Layout::derive(&plan, &scalar_aggregates)?;
         let string_map_regions = plan.string_map_regions().into_boxed_slice();
+        let unsigned_buffer_calls = facts.unsigned_buffer_calls().into_boxed_slice();
         let selected_joins =
             native::program::prepare::selected_join::Layout::derive(&plan, &string_map_regions)?;
         let line_matrices = native::program::prepare::line_matrix::Layout::derive(&plan)?;
@@ -135,26 +180,7 @@ impl PreparedNativeProgram {
             |site| native::program::prepare::map_owner::extra_work(&map_owner_words, site),
             "map owner visit work overflow",
         )?;
-        let closed_tails = native::program::prepare::tail::Layout::derive(
-            &plan,
-            &borrowed_strings,
-            &analysis_visits,
-            &scalar_aggregates,
-            &map_owner_words,
-        )?;
-        compose_work(
-            &mut analysis_visits,
-            &mut visits,
-            |site| Ok(closed_tails.extra_work(site)),
-            "closed Tail work overflow",
-        )?;
-        let map_admission = native::program::prepare::map_admission::Layout::derive(
-            &plan,
-            &map_owner_words,
-            &analysis_visits,
-        )?;
-        let visits = visits.into();
-        let calls = plan
+        let mut calls = plan
             .blocks()
             .iter()
             .map(|block| match block.action() {
@@ -248,6 +274,48 @@ impl PreparedNativeProgram {
             })
             .collect::<Result<Box<[_]>, _>>()?;
         query_stages::validate_query_stages(&plan, &calls).map_err(str::to_owned)?;
+        prepare_frame_composition(&plan, &buffer_frames, &mut calls)?;
+        let closed_tails = native::program::prepare::tail::Layout::derive(
+            &plan,
+            &borrowed_strings,
+            &analysis_visits,
+            &scalar_aggregates,
+            &map_owner_words,
+            &buffer_frames,
+            &calls,
+        )?;
+        compose_work(
+            &mut analysis_visits,
+            &mut visits,
+            |site| Ok(closed_tails.extra_work(site)),
+            "closed Tail work overflow",
+        )?;
+        let map_admission = native::program::prepare::map_admission::Layout::derive(
+            &plan,
+            Some(&map_owner_words),
+            &analysis_visits,
+            &closed_tails,
+        )?;
+        let visits: Box<[NativeIterationVisit]> = visits.into();
+        let frame_retirements =
+            frame_retirement::FrameRetirements::derive(&buffer_frames, plan.values().len())?;
+        let cleanup_effects = cleanup_effects::Layout::derive(
+            &plan,
+            &retirements,
+            &buffer_frames,
+            &frame_retirements,
+        )?;
+        let compositions = composition::Layout::derive(
+            &plan,
+            &buffer_frames,
+            &scalar_aggregates,
+            &calls,
+            &closed_tails,
+            &visits,
+            &frame_retirements,
+            &map_admission,
+        )?;
+        let uniform_word_collections = facts.uniform_unsigned_collections().into_boxed_slice();
         let window_regions = plan.window_regions().into_boxed_slice();
         let occupied_frame =
             frame_prefix_words(&plan, &scalar_aggregates, &borrowed_strings, &closed_tails)
@@ -287,13 +355,23 @@ impl PreparedNativeProgram {
                     .as_ref()
                     .map_or(0, native::program::prepare::map_owner::initial_words),
             )
+            .max(
+                closed_tails
+                    .regions
+                    .iter()
+                    .filter_map(|r| r.numeric.as_ref())
+                    .map(|p| p.words + if p.writes() { 4 } else { 2 })
+                    .max()
+                    .unwrap_or(0),
+            )
             .max(usize::from(!parallel.regions.is_empty()))
             .max(if closed_tails.regions.is_empty() {
                 0
             } else {
                 4
-            });
-        let types = plan
+            })
+            .max(compositions.argument_words());
+        let types: Box<[_]> = plan
             .values()
             .iter()
             .chain(
@@ -304,6 +382,7 @@ impl PreparedNativeProgram {
                 key: ty.schema_key(),
             })
             .collect();
+        validate_type_slots(&plan, artifact.schemas(), &types).map_err(str::to_owned)?;
         let constant_bytes = plan
             .constants()
             .iter()
@@ -341,11 +420,17 @@ impl PreparedNativeProgram {
             .transpose()
             .map_err(str::to_owned)?
             .unwrap_or_default();
+        let call_routes =
+            call_routes::derive(&plan, &buffer_frames, &unsigned_buffer_calls, &calls);
+        let call_cache = call_cache::Layout::derive(&plan, &calls)?;
         let (scalar_aggregates, line_retention_frontiers) = facts.into_preparation_inventories();
         let metadata = ProgramMetadata {
             plan,
             schemas: Arc::new(artifact.schemas().clone()),
             calls,
+            call_cache,
+            compositions,
+            call_routes,
             types,
             visits,
             retirements,
@@ -354,6 +439,11 @@ impl PreparedNativeProgram {
             scalar_bytes,
             observation_schema_bytes,
             max_library_inputs,
+            uniform_word_collections,
+            unsigned_buffer_calls,
+            buffer_frames,
+            frame_retirements,
+            cleanup_effects,
             window_regions,
             string_map_regions,
             scalar_aggregates,
@@ -431,12 +521,47 @@ impl ProgramMetadata {
             &self.closed_tails,
         )
         .ok_or("local count overflow")?;
-        self.map_owner_words
+        let words = self
+            .map_owner_words
             .as_ref()
-            .map_or(Ok(prefix), native::program::prepare::map_owner::local_words)
+            .map_or(Ok(prefix), native::program::prepare::map_owner::local_words)?;
+        words
+            .checked_add(self.compositions.words)
+            .ok_or("parent local words overflow")
     }
 }
 
+/// Bind each retained key to this exact value index, complete definition and
+/// authoritative schema-table entry. Preparation and independent image loading
+/// share this check; a key valid elsewhere in the table grants no slot authority.
+pub(in crate::native_artifact) fn validate_type_slots(
+    plan: &NativeProgramArtifactPlan,
+    schemas: &SchemaTable,
+    slots: &[NativeValueSlot],
+) -> Result<(), &'static str> {
+    if slots.len() != plan.values().len() + plan.transport_output_count() {
+        return Err("native type-slot count differs from plan");
+    }
+    for (ty, slot) in plan
+        .values()
+        .iter()
+        .chain((0..plan.transport_output_count()).map(|i| plan.transport_output_type(i)))
+        .zip(slots)
+    {
+        let entry = schemas
+            .entry(ty.schema())
+            .ok_or("native plan type lacks schema entry")?;
+        if slot.schema != ty.schema()
+            || slot.key != entry.key()
+            || ty.definition() != entry.schema()
+        {
+            return Err("native type slot differs from exact plan definition and schema key");
+        }
+    }
+    Ok(())
+}
+
+pub(in crate::native_artifact) mod readonly_numeric;
 pub(in crate::native_artifact) mod retirement;
 
 pub(in crate::native_artifact) fn constant_admission_total(bounds: &[u64]) -> Result<u64, String> {

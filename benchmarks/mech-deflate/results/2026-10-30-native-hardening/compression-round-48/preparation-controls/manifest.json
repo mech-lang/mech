@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-10-31T05:25:58.447634+00:00",
+  "head": "214d3de83a8368919050e6815495f2d0aa1d8514",
+  "files": [
+    {
+      "path": "add-ci-step.py",
+      "sha256": "325fec2816761ace948125eb9a687be90cd8a37da38eaf014ddf63ca5a52a5a7",
+      "bytes": 1182
+    },
+    {
+      "path": "admission-ci-guard/listed.stdout",
+      "sha256": "f111513fb7a3e4b5762b76cd2b6a5c6ec72dee3d8ccaf8c166045ea8acbdd5cb",
+      "bytes": 763
+    },
+    {
+      "path": "admission-ci-guard/receipt.json",
+      "sha256": "0a5966d58bc01c49ac9473f30afe6726d757fc05bc17a58fd790472457b70770",
+      "bytes": 792
+    },
+    {
+      "path": "apply-candidate.py",
+      "sha256": "51e33a49cb1774e0f2aa4f09414f5f02be10dd0cd42e5b823137cd29ff946fa7",
+      "bytes": 2070
+    },
+    {
+      "path": "cleanup-domain-audit.md",
+      "sha256": "f1ec3579379c35185dbab88f031a45d080ea8a82eabe05c46a8e9983219429c8",
+      "bytes": 4975
+    },
+    {
+      "path": "completed-census-cleanup.json",
+      "sha256": "5dc201a499a7e5991e0f316ea09416a50c8a65e6b19c3678bbcbca0e17328d48",
+      "bytes": 3728
+    },
+    {
+      "path": "implementation.json",
+      "sha256": "e48effd6824b5abe61cb63419b50b49c3bbe5688c4cfca948d3528ab6a6a4cb7",
+      "bytes": 259
+    },
+    {
+      "path": "prior-ci-completed.json",
+      "sha256": "5f209364806bf98e23a395391fe38e0266201567f7f03a0b8fc831246988db05",
+      "bytes": 12823
+    }
+  ]
+}

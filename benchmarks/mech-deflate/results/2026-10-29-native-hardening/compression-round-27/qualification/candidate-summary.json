@@ -1,0 +1,324 @@
+{
+  "performance_observations": 0,
+  "scope": "Exact plan/object inventory plus actual checked callback census. Containing-iteration counts are not predicted elapsed benefit. The sixth region is unreached in the protected eight-byte run.",
+  "candidates": [
+    {
+      "iteration": 142,
+      "header": 13110,
+      "origin": {
+        "block": 74,
+        "local": 192,
+        "node": 0
+      },
+      "returned": 7686,
+      "caller_result": 7683,
+      "result_type": "Schema { dimension_parameters: [], body: Tuple([SignedInteger(W64), SignedInteger(W64)]) }",
+      "scalar_result_slot": [
+        22994,
+        2
+      ],
+      "source_function": "optimal-default-frequencies",
+      "before_disposition": {
+        "header": 13110,
+        "iteration": 142,
+        "origin": {
+          "block": 74,
+          "local": 192,
+          "node": 0
+        },
+        "parent": 21,
+        "proof_eligible": false,
+        "rejection": "numeric result frame escapes or lacks exact private fields",
+        "selected": false
+      },
+      "after_disposition": {
+        "header": 13110,
+        "iteration": 142,
+        "origin": {
+          "block": 74,
+          "local": 192,
+          "node": 0
+        },
+        "parent": 21,
+        "proof_eligible": true,
+        "rejection": null,
+        "selected": true
+      },
+      "before": {
+        "admits": 6570,
+        "helpers": 3028,
+        "frame_helpers": 2524
+      },
+      "after": {
+        "admits": 0,
+        "helpers": 0,
+        "frame_helpers": 0
+      }
+    },
+    {
+      "iteration": 424,
+      "header": 38158,
+      "origin": {
+        "block": 74,
+        "local": 310,
+        "node": 0
+      },
+      "returned": 20898,
+      "caller_result": 20895,
+      "result_type": "Schema { dimension_parameters: [], body: Tuple([UnsignedInteger(W64), UnsignedInteger(W64)]) }",
+      "scalar_result_slot": [
+        23256,
+        2
+      ],
+      "source_function": "block-cost-literals (first call)",
+      "before_disposition": {
+        "header": 38158,
+        "iteration": 424,
+        "origin": {
+          "block": 74,
+          "local": 310,
+          "node": 0
+        },
+        "parent": 21,
+        "proof_eligible": false,
+        "rejection": "numeric result frame escapes or lacks exact private fields",
+        "selected": false
+      },
+      "after_disposition": {
+        "header": 38158,
+        "iteration": 424,
+        "origin": {
+          "block": 74,
+          "local": 310,
+          "node": 0
+        },
+        "parent": 21,
+        "proof_eligible": true,
+        "rejection": null,
+        "selected": true
+      },
+      "before": {
+        "admits": 5057,
+        "helpers": 2887,
+        "frame_helpers": 2311
+      },
+      "after": {
+        "admits": 0,
+        "helpers": 0,
+        "frame_helpers": 0
+      }
+    },
+    {
+      "iteration": 425,
+      "header": 38251,
+      "origin": {
+        "block": 74,
+        "local": 314,
+        "node": 0
+      },
+      "returned": 20943,
+      "caller_result": 20940,
+      "result_type": "Schema { dimension_parameters: [], body: Tuple([UnsignedInteger(W64), UnsignedInteger(W64)]) }",
+      "scalar_result_slot": [
+        23264,
+        2
+      ],
+      "source_function": "block-cost-literals (second call)",
+      "before_disposition": {
+        "header": 38251,
+        "iteration": 425,
+        "origin": {
+          "block": 74,
+          "local": 314,
+          "node": 0
+        },
+        "parent": 21,
+        "proof_eligible": false,
+        "rejection": "numeric result frame escapes or lacks exact private fields",
+        "selected": false
+      },
+      "after_disposition": {
+        "header": 38251,
+        "iteration": 425,
+        "origin": {
+          "block": 74,
+          "local": 314,
+          "node": 0
+        },
+        "parent": 21,
+        "proof_eligible": true,
+        "rejection": null,
+        "selected": true
+      },
+      "before": {
+        "admits": 3937,
+        "helpers": 2247,
+        "frame_helpers": 1799
+      },
+      "after": {
+        "admits": 0,
+        "helpers": 0,
+        "frame_helpers": 0
+      }
+    },
+    {
+      "iteration": 426,
+      "header": 38367,
+      "origin": {
+        "block": 74,
+        "local": 323,
+        "node": 0
+      },
+      "returned": 21000,
+      "caller_result": 20997,
+      "result_type": "Schema { dimension_parameters: [], body: Tuple([UnsignedInteger(W64), UnsignedInteger(W64)]) }",
+      "scalar_result_slot": [
+        23272,
+        2
+      ],
+      "source_function": "block-cost-lengths",
+      "before_disposition": {
+        "header": 38367,
+        "iteration": 426,
+        "origin": {
+          "block": 74,
+          "local": 323,
+          "node": 0
+        },
+        "parent": 21,
+        "proof_eligible": false,
+        "rejection": "numeric result frame escapes or lacks exact private fields",
+        "selected": false
+      },
+      "after_disposition": {
+        "header": 38367,
+        "iteration": 426,
+        "origin": {
+          "block": 74,
+          "local": 323,
+          "node": 0
+        },
+        "parent": 21,
+        "proof_eligible": true,
+        "rejection": null,
+        "selected": true
+      },
+      "before": {
+        "admits": 1672,
+        "helpers": 877,
+        "frame_helpers": 645
+      },
+      "after": {
+        "admits": 0,
+        "helpers": 0,
+        "frame_helpers": 0
+      }
+    },
+    {
+      "iteration": 427,
+      "header": 38521,
+      "origin": {
+        "block": 74,
+        "local": 327,
+        "node": 0
+      },
+      "returned": 21070,
+      "caller_result": 21067,
+      "result_type": "Schema { dimension_parameters: [], body: Tuple([UnsignedInteger(W64), UnsignedInteger(W64)]) }",
+      "scalar_result_slot": [
+        23280,
+        2
+      ],
+      "source_function": "block-cost-offsets",
+      "before_disposition": {
+        "header": 38521,
+        "iteration": 427,
+        "origin": {
+          "block": 74,
+          "local": 327,
+          "node": 0
+        },
+        "parent": 21,
+        "proof_eligible": false,
+        "rejection": "numeric result frame escapes or lacks exact private fields",
+        "selected": false
+      },
+      "after_disposition": {
+        "header": 38521,
+        "iteration": 427,
+        "origin": {
+          "block": 74,
+          "local": 327,
+          "node": 0
+        },
+        "parent": 21,
+        "proof_eligible": true,
+        "rejection": null,
+        "selected": true
+      },
+      "before": {
+        "admits": 1367,
+        "helpers": 726,
+        "frame_helpers": 546
+      },
+      "after": {
+        "admits": 0,
+        "helpers": 0,
+        "frame_helpers": 0
+      }
+    },
+    {
+      "iteration": 429,
+      "header": 38883,
+      "origin": {
+        "block": 4745,
+        "local": 51,
+        "node": 0
+      },
+      "returned": 21271,
+      "caller_result": 21268,
+      "result_type": "Schema { dimension_parameters: [], body: Tuple([UnsignedInteger(W64), UnsignedInteger(W64)]) }",
+      "scalar_result_slot": [
+        23292,
+        2
+      ],
+      "source_function": "block-write-precode-lens",
+      "before_disposition": {
+        "header": 38883,
+        "iteration": 429,
+        "origin": {
+          "block": 4745,
+          "local": 51,
+          "node": 0
+        },
+        "parent": 21,
+        "proof_eligible": false,
+        "rejection": "numeric result frame escapes or lacks exact private fields",
+        "selected": false
+      },
+      "after_disposition": {
+        "header": 38883,
+        "iteration": 429,
+        "origin": {
+          "block": 4745,
+          "local": 51,
+          "node": 0
+        },
+        "parent": 21,
+        "proof_eligible": true,
+        "rejection": null,
+        "selected": true
+      },
+      "before": {
+        "admits": 0,
+        "helpers": 0,
+        "frame_helpers": 0
+      },
+      "after": {
+        "admits": 0,
+        "helpers": 0,
+        "frame_helpers": 0
+      }
+    }
+  ]
+}

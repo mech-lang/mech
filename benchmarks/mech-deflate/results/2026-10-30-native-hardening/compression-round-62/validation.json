@@ -1,0 +1,1440 @@
+{
+  "all_required_checks_pass": true,
+  "checks": [
+    {
+      "receipt": "units-after/build.json",
+      "command": [
+        "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+        "-L",
+        "dependency=/private/tmp/mech-pointer-locality-round62-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-vector-address-round60-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "--edition=2024",
+        "--crate-name",
+        "mech_gpu",
+        "--test",
+        "-C",
+        "opt-level=1",
+        "-C",
+        "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+        "-D",
+        "warnings",
+        "-L",
+        "dependency=/private/tmp/mech-live-control-target/release/deps",
+        "--cfg",
+        "feature=\"aot\"",
+        "--cfg",
+        "feature=\"canonical-native\"",
+        "--cfg",
+        "feature=\"canonical-native-program\"",
+        "--cfg",
+        "feature=\"canonical-native-program-runtime\"",
+        "--cfg",
+        "feature=\"canonical-native-runtime\"",
+        "--cfg",
+        "feature=\"jit\"",
+        "--extern",
+        "cranelift_codegen=/private/tmp/mech-live-control-target/release/deps/libcranelift_codegen-79250b96f7a4172f.rlib",
+        "--extern",
+        "cranelift_frontend=/private/tmp/mech-live-control-target/release/deps/libcranelift_frontend-796ddca52b1baa23.rlib",
+        "--extern",
+        "cranelift_jit=/private/tmp/mech-live-control-target/release/deps/libcranelift_jit-4d33b45d7690e2ef.rlib",
+        "--extern",
+        "cranelift_module=/private/tmp/mech-live-control-target/release/deps/libcranelift_module-8bb9481823a63cf0.rlib",
+        "--extern",
+        "cranelift_native=/private/tmp/mech-live-control-target/release/deps/libcranelift_native-448aa3dcdc0c0785.rlib",
+        "--extern",
+        "cranelift_object=/private/tmp/mech-live-control-target/release/deps/libcranelift_object-e9e960ce24552414.rlib",
+        "--extern",
+        "grapheme=/private/tmp/mech-live-control-target/release/deps/libgrapheme-2e22bda36eb1f0f8.rlib",
+        "--extern",
+        "hashbrown=/private/tmp/mech-live-control-target/release/deps/libhashbrown-d20f4ad24099052b.rlib",
+        "--extern",
+        "libloading=/private/tmp/mech-live-control-target/release/deps/liblibloading-836fe5ac7ed0962d.rlib",
+        "--extern",
+        "mech_compute=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_compute-84cb0ef1d137eee3.rlib",
+        "--extern",
+        "mech_core=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+        "--extern",
+        "mech_engine=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+        "--extern",
+        "miniz_oxide=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+        "--extern",
+        "serde=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+        "--extern",
+        "serde_json=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+        "--extern",
+        "sha2=/private/tmp/mech-live-control-target/release/deps/libsha2-f9316069bed82edc.rlib",
+        "--extern",
+        "toml_edit=/private/tmp/mech-live-control-target/release/deps/libtoml_edit-14168309fb56d330.rlib",
+        "--extern",
+        "web_time=/private/tmp/mech-live-control-target/release/deps/libweb_time-5004144e8c3d1139.rlib",
+        "--extern",
+        "wide=/private/tmp/mech-live-control-target/release/deps/libwide-24e8d1268668e37f.rlib",
+        "--extern",
+        "mech_syntax=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+        "--extern",
+        "mech_runtime=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_runtime-44999c02af6b18b6.rlib",
+        "--extern",
+        "mech_stdlib=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+        "--extern",
+        "tempfile=/private/tmp/mech-live-control-target/release/deps/libtempfile-cd3db811e0a0846f.rlib",
+        "-L",
+        "dependency=/private/tmp/mech-record-lookup-round42-20261030/diagnostic-libs/after",
+        "-L",
+        "dependency=/private/tmp/mech-record-lookup-round42-20261030/final-library",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "/private/tmp/mech-deflate-linear-stack/hosts/gpu/src/lib.rs",
+        "-o",
+        "/private/tmp/mech-pointer-locality-round62-20261031/units-after/gpu-unit-tests"
+      ],
+      "exit": 0,
+      "expected_tests": null,
+      "observed_tests": null,
+      "inventory_only": false,
+      "passed": true,
+      "compiler_source": "84d95bc779f5ca31e42931d34d7ab148387a7dd6",
+      "phase": "after"
+    },
+    {
+      "receipt": "units-after/vector-address-inventory.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/units-after/gpu-unit-tests",
+        "native_artifact::program::codegen::numeric_words::tests::unit_dimension_addresses_emit_no_division_and_keep_general_geometry",
+        "--exact",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": true,
+      "passed": true,
+      "compiler_source": "84d95bc779f5ca31e42931d34d7ab148387a7dd6",
+      "phase": "after"
+    },
+    {
+      "receipt": "units-after/vector-address.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/units-after/gpu-unit-tests",
+        "native_artifact::program::codegen::numeric_words::tests::unit_dimension_addresses_emit_no_division_and_keep_general_geometry",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": false,
+      "passed": true,
+      "compiler_source": "84d95bc779f5ca31e42931d34d7ab148387a7dd6",
+      "phase": "after"
+    },
+    {
+      "receipt": "units-after/first-change-inventory.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/units-after/gpu-unit-tests",
+        "delayed_numeric_first_changes_preserve_current_scalars_two_arrays_and_retry",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": true,
+      "passed": true,
+      "compiler_source": "84d95bc779f5ca31e42931d34d7ab148387a7dd6",
+      "phase": "after"
+    },
+    {
+      "receipt": "units-after/first-change.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/units-after/gpu-unit-tests",
+        "delayed_numeric_first_changes_preserve_current_scalars_two_arrays_and_retry",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": false,
+      "passed": true,
+      "compiler_source": "84d95bc779f5ca31e42931d34d7ab148387a7dd6",
+      "phase": "after"
+    },
+    {
+      "receipt": "units-after/preparation-inventory.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/units-after/gpu-unit-tests",
+        "cleanup_effects::tests::",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 2,
+      "observed_tests": 2,
+      "inventory_only": true,
+      "passed": true
+    },
+    {
+      "receipt": "units-after/preparation.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/units-after/gpu-unit-tests",
+        "cleanup_effects::tests::",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 2,
+      "observed_tests": 2,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "units-after/runtime-inventory.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/units-after/gpu-unit-tests",
+        "native_artifact::program::runtime::",
+        "--skip",
+        "complete_unchanged_knucleotide_body_uses_the_owned_emitted_map",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 328,
+      "observed_tests": 328,
+      "inventory_only": true,
+      "passed": true,
+      "compiler_source": "84d95bc779f5ca31e42931d34d7ab148387a7dd6",
+      "phase": "after"
+    },
+    {
+      "receipt": "units-after/runtime.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/units-after/gpu-unit-tests",
+        "native_artifact::program::runtime::",
+        "--skip",
+        "complete_unchanged_knucleotide_body_uses_the_owned_emitted_map",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 328,
+      "observed_tests": 328,
+      "inventory_only": false,
+      "passed": true,
+      "compiler_source": "84d95bc779f5ca31e42931d34d7ab148387a7dd6",
+      "phase": "after"
+    },
+    {
+      "receipt": "units-after/work-values-inventory.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/units-after/gpu-unit-tests",
+        "native_artifact::work::",
+        "native_artifact::memory::",
+        "native_artifact::values::",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 32,
+      "observed_tests": 32,
+      "inventory_only": true,
+      "passed": true
+    },
+    {
+      "receipt": "units-after/work-values.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/units-after/gpu-unit-tests",
+        "native_artifact::work::",
+        "native_artifact::memory::",
+        "native_artifact::values::",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 32,
+      "observed_tests": 32,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "qualification/component-build.json",
+      "command": [
+        "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+        "-L",
+        "dependency=/private/tmp/mech-pointer-locality-round62-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-pointer-locality-round62-20261031/variants/after",
+        "-L",
+        "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after",
+        "-L",
+        "dependency=/private/tmp/mech-vector-address-round60-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-vector-address-round60-20261031/variants/after",
+        "--edition=2024",
+        "-C",
+        "opt-level=1",
+        "-D",
+        "warnings",
+        "-L",
+        "dependency=/private/tmp/mech-live-control-target/release/deps",
+        "--extern",
+        "serde=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+        "--extern",
+        "serde_json=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+        "--extern",
+        "mech_core=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+        "--extern",
+        "mech_syntax=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+        "--extern",
+        "mech_engine=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+        "--extern",
+        "miniz_oxide=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+        "--extern",
+        "mech_gpu=/private/tmp/mech-pointer-locality-round62-20261031/variants/after/libmech_gpu.rlib",
+        "--extern",
+        "mech_stdlib=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+        "--extern",
+        "sha2=/private/tmp/mech-live-control-target/release/deps/libsha2-f9316069bed82edc.rlib",
+        "--extern",
+        "grapheme=/private/tmp/mech-live-control-target/release/deps/libgrapheme-2e22bda36eb1f0f8.rlib",
+        "--extern",
+        "tempfile=/private/tmp/mech-live-control-target/release/deps/libtempfile-cd3db811e0a0846f.rlib",
+        "--test",
+        "--cfg",
+        "feature=\"canonical-native-program\"",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after",
+        "/private/tmp/mech-numeric-composition-round33-20261030/partition/qualification.rs",
+        "-o",
+        "/private/tmp/mech-pointer-locality-round62-20261031/qualification/tests"
+      ],
+      "exit": 0,
+      "expected_tests": null,
+      "observed_tests": null,
+      "inventory_only": false,
+      "passed": true,
+      "compiler_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448",
+      "test_source_head": "31d6759da8a74a2132cde2b7a4a59d588f1c26d0"
+    },
+    {
+      "receipt": "qualification/path-mechanism-inventory.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/qualification/tests",
+        "optimal_path_qualification::path_scan_emits_native_pieces_around_its_nested_scalar_child",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": true,
+      "passed": true,
+      "compiler_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448",
+      "test_source_head": "e320912ea717643509ac94a8dd3ffd62ddedceb1"
+    },
+    {
+      "receipt": "qualification/path-mechanism.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/qualification/tests",
+        "optimal_path_qualification::path_scan_emits_native_pieces_around_its_nested_scalar_child",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": false,
+      "passed": true,
+      "compiler_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448",
+      "test_source_head": "e8ba53412a8eb29228d5daa70fe7d75f5289658f"
+    },
+    {
+      "receipt": "qualification/components-inventory.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/qualification/tests",
+        "scalar_path_qualification",
+        "multi_result_qualification",
+        "nested_frame_qualification",
+        "scalar_record_qualification",
+        "record_buffer_qualification",
+        "packed_update_qualification",
+        "buffer_frame_qualification",
+        "sequence_capacity_qualification",
+        "collection_qualification",
+        "uniform_words_qualification",
+        "word_read_qualification",
+        "narrow_word_qualification",
+        "matchfinder_qualification",
+        "assembled_compressor_source_preserves_its_pinned_bytes",
+        "scalar_state_qualification",
+        "tail_qualification",
+        "costs_qualification",
+        "default_costs_qualification",
+        "block_choice_qualification",
+        "pinned_min_cost_paths_keep_exact_nodes_and_real_reservation",
+        "path_checks_preserve_entry_order_publication_aliases_and_recovery",
+        "argument_transport_qualification",
+        "shared_transport_qualification",
+        "numeric_write_qualification",
+        "numeric_tail_qualification",
+        "numeric_result_qualification",
+        "numeric_predicate_qualification",
+        "dynamic_projection_qualification",
+        "binding_pressure_qualification",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 236,
+      "observed_tests": 236,
+      "inventory_only": true,
+      "passed": true,
+      "compiler_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448",
+      "test_source_head": "b96479bc8ad6767050871cfa177d6ac9dd2a6d61"
+    },
+    {
+      "receipt": "qualification/components.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/qualification/tests",
+        "scalar_path_qualification",
+        "multi_result_qualification",
+        "nested_frame_qualification",
+        "scalar_record_qualification",
+        "record_buffer_qualification",
+        "packed_update_qualification",
+        "buffer_frame_qualification",
+        "sequence_capacity_qualification",
+        "collection_qualification",
+        "uniform_words_qualification",
+        "word_read_qualification",
+        "narrow_word_qualification",
+        "matchfinder_qualification",
+        "assembled_compressor_source_preserves_its_pinned_bytes",
+        "scalar_state_qualification",
+        "tail_qualification",
+        "costs_qualification",
+        "default_costs_qualification",
+        "block_choice_qualification",
+        "pinned_min_cost_paths_keep_exact_nodes_and_real_reservation",
+        "path_checks_preserve_entry_order_publication_aliases_and_recovery",
+        "argument_transport_qualification",
+        "shared_transport_qualification",
+        "numeric_write_qualification",
+        "numeric_tail_qualification",
+        "numeric_result_qualification",
+        "numeric_predicate_qualification",
+        "dynamic_projection_qualification",
+        "binding_pressure_qualification",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 236,
+      "observed_tests": 236,
+      "inventory_only": false,
+      "passed": true,
+      "compiler_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448",
+      "test_source_head": "a3dd7d8f1bfdcdd0a2dc4894022458b0f328ec1f"
+    },
+    {
+      "receipt": "qualification/composition-inventory.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/qualification/tests",
+        "numeric_composition_qualification",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 8,
+      "observed_tests": 8,
+      "inventory_only": true,
+      "passed": true,
+      "compiler_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448",
+      "test_source_head": "71cbf5d0381b7c8725ce1acb53cf9858245d5909"
+    },
+    {
+      "receipt": "qualification/composition.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/qualification/tests",
+        "numeric_composition_qualification",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 8,
+      "observed_tests": 8,
+      "inventory_only": false,
+      "passed": true,
+      "compiler_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448",
+      "test_source_head": "4c0116fb897fbc8af0c6733cf577c5e291090280"
+    },
+    {
+      "receipt": "ci/workflow-python.json",
+      "command": [
+        "/private/tmp/mech-profile-ci-python-20261030/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "tests.ci.test_ci_full_contract",
+        "tests.ci.test_ci_test_inventory"
+      ],
+      "exit": 0,
+      "expected_tests": 132,
+      "observed_tests": 132,
+      "inventory_only": false,
+      "passed": true,
+      "test_source_head": "799a7807a69133decd8947afa9df4b75e011e8d6"
+    },
+    {
+      "receipt": "linked-acceptance/emit-build.json",
+      "command": [
+        "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+        "-L",
+        "dependency=/private/tmp/mech-pointer-locality-round62-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-pointer-locality-round62-20261031/variants/after",
+        "--edition=2024",
+        "-C",
+        "opt-level=3",
+        "-D",
+        "warnings",
+        "-L",
+        "dependency=/private/tmp/mech-live-control-target/release/deps",
+        "--extern",
+        "serde=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+        "--extern",
+        "serde_json=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+        "--extern",
+        "mech_core=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+        "--extern",
+        "mech_syntax=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+        "--extern",
+        "mech_engine=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+        "--extern",
+        "miniz_oxide=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+        "--extern",
+        "mech_gpu=/private/tmp/mech-pointer-locality-round62-20261031/variants/after/libmech_gpu.rlib",
+        "--extern",
+        "mech_stdlib=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+        "-C",
+        "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+        "-L",
+        "dependency=/private/tmp/mech-pointer-locality-round62-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-pointer-locality-round62-20261031/variants/after",
+        "/private/tmp/mech-pointer-locality-round62-20261031/linked-acceptance/emit.rs",
+        "-o",
+        "/private/tmp/mech-pointer-locality-round62-20261031/linked-acceptance/emit"
+      ],
+      "exit": 0,
+      "expected_tests": null,
+      "observed_tests": null,
+      "inventory_only": false,
+      "passed": true,
+      "compiler_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448"
+    },
+    {
+      "receipt": "linked-acceptance/emit.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/linked-acceptance/emit"
+      ],
+      "exit": 0,
+      "expected_tests": null,
+      "observed_tests": null,
+      "inventory_only": false,
+      "passed": true,
+      "compiler_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448"
+    },
+    {
+      "receipt": "linked-acceptance/worker-build.json",
+      "command": [
+        "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+        "-L",
+        "dependency=/private/tmp/mech-pointer-locality-round62-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-pointer-locality-round62-20261031/variants/after",
+        "--edition=2024",
+        "-C",
+        "opt-level=3",
+        "-D",
+        "warnings",
+        "-L",
+        "dependency=/private/tmp/mech-live-control-target/release/deps",
+        "--extern",
+        "serde=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+        "--extern",
+        "serde_json=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+        "--extern",
+        "mech_core=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+        "--extern",
+        "mech_syntax=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+        "--extern",
+        "mech_engine=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+        "--extern",
+        "miniz_oxide=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+        "--extern",
+        "mech_gpu=/private/tmp/mech-pointer-locality-round62-20261031/variants/after/libmech_gpu.rlib",
+        "--extern",
+        "mech_stdlib=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+        "-C",
+        "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+        "-L",
+        "dependency=/private/tmp/mech-pointer-locality-round62-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-pointer-locality-round62-20261031/variants/after",
+        "-C",
+        "link-arg=/private/tmp/mech-pointer-locality-round62-20261031/linked-acceptance/object.o",
+        "/private/tmp/mech-pointer-locality-round62-20261031/linked-acceptance/worker.rs",
+        "-o",
+        "/private/tmp/mech-pointer-locality-round62-20261031/linked-acceptance/worker"
+      ],
+      "exit": 0,
+      "expected_tests": null,
+      "observed_tests": null,
+      "inventory_only": false,
+      "passed": true,
+      "compiler_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448"
+    },
+    {
+      "receipt": "linked-acceptance/run.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/linked-acceptance/worker"
+      ],
+      "exit": 0,
+      "expected_tests": null,
+      "observed_tests": null,
+      "inventory_only": false,
+      "passed": true,
+      "compiler_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448"
+    },
+    {
+      "receipt": "snapshot-controls/parent/build.json",
+      "command": [
+        "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+        "-L",
+        "dependency=/private/tmp/mech-pointer-locality-round62-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-vector-address-round60-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "--edition=2024",
+        "--crate-name",
+        "mech_gpu",
+        "--test",
+        "-C",
+        "opt-level=1",
+        "-C",
+        "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+        "-D",
+        "warnings",
+        "-L",
+        "dependency=/private/tmp/mech-live-control-target/release/deps",
+        "--cfg",
+        "feature=\"aot\"",
+        "--cfg",
+        "feature=\"canonical-native\"",
+        "--cfg",
+        "feature=\"canonical-native-program\"",
+        "--cfg",
+        "feature=\"canonical-native-program-runtime\"",
+        "--cfg",
+        "feature=\"canonical-native-runtime\"",
+        "--cfg",
+        "feature=\"jit\"",
+        "--extern",
+        "cranelift_codegen=/private/tmp/mech-live-control-target/release/deps/libcranelift_codegen-79250b96f7a4172f.rlib",
+        "--extern",
+        "cranelift_frontend=/private/tmp/mech-live-control-target/release/deps/libcranelift_frontend-796ddca52b1baa23.rlib",
+        "--extern",
+        "cranelift_jit=/private/tmp/mech-live-control-target/release/deps/libcranelift_jit-4d33b45d7690e2ef.rlib",
+        "--extern",
+        "cranelift_module=/private/tmp/mech-live-control-target/release/deps/libcranelift_module-8bb9481823a63cf0.rlib",
+        "--extern",
+        "cranelift_native=/private/tmp/mech-live-control-target/release/deps/libcranelift_native-448aa3dcdc0c0785.rlib",
+        "--extern",
+        "cranelift_object=/private/tmp/mech-live-control-target/release/deps/libcranelift_object-e9e960ce24552414.rlib",
+        "--extern",
+        "grapheme=/private/tmp/mech-live-control-target/release/deps/libgrapheme-2e22bda36eb1f0f8.rlib",
+        "--extern",
+        "hashbrown=/private/tmp/mech-live-control-target/release/deps/libhashbrown-d20f4ad24099052b.rlib",
+        "--extern",
+        "libloading=/private/tmp/mech-live-control-target/release/deps/liblibloading-836fe5ac7ed0962d.rlib",
+        "--extern",
+        "mech_compute=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_compute-84cb0ef1d137eee3.rlib",
+        "--extern",
+        "mech_core=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+        "--extern",
+        "mech_engine=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+        "--extern",
+        "miniz_oxide=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+        "--extern",
+        "serde=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+        "--extern",
+        "serde_json=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+        "--extern",
+        "sha2=/private/tmp/mech-live-control-target/release/deps/libsha2-f9316069bed82edc.rlib",
+        "--extern",
+        "toml_edit=/private/tmp/mech-live-control-target/release/deps/libtoml_edit-14168309fb56d330.rlib",
+        "--extern",
+        "web_time=/private/tmp/mech-live-control-target/release/deps/libweb_time-5004144e8c3d1139.rlib",
+        "--extern",
+        "wide=/private/tmp/mech-live-control-target/release/deps/libwide-24e8d1268668e37f.rlib",
+        "--extern",
+        "mech_syntax=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+        "--extern",
+        "mech_runtime=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_runtime-44999c02af6b18b6.rlib",
+        "--extern",
+        "mech_stdlib=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+        "--extern",
+        "tempfile=/private/tmp/mech-live-control-target/release/deps/libtempfile-cd3db811e0a0846f.rlib",
+        "-L",
+        "dependency=/private/tmp/mech-record-lookup-round42-20261030/diagnostic-libs/after",
+        "-L",
+        "dependency=/private/tmp/mech-record-lookup-round42-20261030/final-library",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "/private/tmp/mech-deflate-linear-stack/hosts/gpu/src/lib.rs",
+        "-o",
+        "/private/tmp/mech-pointer-locality-round62-20261031/snapshot-controls/parent/gpu-unit-tests"
+      ],
+      "exit": 0,
+      "expected_tests": null,
+      "observed_tests": null,
+      "inventory_only": false,
+      "passed": true,
+      "test_source_head": "93eabe82add1fdd6792383dc6fd9c72565d1532e",
+      "production_control_sha256": "22926f75336340ddc10a6455591b928ab77849bd737b7216b1565edcb60880c7",
+      "baseline_build_source": "6f412525daf0f7284d4ef6bc2bd8e21f95d22e96",
+      "candidate_build_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448",
+      "phase": "parent"
+    },
+    {
+      "receipt": "snapshot-controls/parent/inventory.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/snapshot-controls/parent/gpu-unit-tests",
+        "native_artifact::program::runtime::tests::locals_snapshot::entry_locals_snapshot_survives_callback_pointer_change_and_fresh_invocations",
+        "--exact",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": true,
+      "passed": true,
+      "test_source_head": "93eabe82add1fdd6792383dc6fd9c72565d1532e",
+      "production_control_sha256": "22926f75336340ddc10a6455591b928ab77849bd737b7216b1565edcb60880c7",
+      "baseline_build_source": "6f412525daf0f7284d4ef6bc2bd8e21f95d22e96",
+      "candidate_build_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448",
+      "phase": "parent"
+    },
+    {
+      "receipt": "snapshot-controls/parent/run.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/snapshot-controls/parent/gpu-unit-tests",
+        "native_artifact::program::runtime::tests::locals_snapshot::entry_locals_snapshot_survives_callback_pointer_change_and_fresh_invocations",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": false,
+      "passed": true,
+      "test_source_head": "93eabe82add1fdd6792383dc6fd9c72565d1532e",
+      "production_control_sha256": "22926f75336340ddc10a6455591b928ab77849bd737b7216b1565edcb60880c7",
+      "baseline_build_source": "6f412525daf0f7284d4ef6bc2bd8e21f95d22e96",
+      "candidate_build_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448",
+      "phase": "parent"
+    },
+    {
+      "receipt": "snapshot-controls/after/build.json",
+      "command": [
+        "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+        "-L",
+        "dependency=/private/tmp/mech-pointer-locality-round62-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-vector-address-round60-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "--edition=2024",
+        "--crate-name",
+        "mech_gpu",
+        "--test",
+        "-C",
+        "opt-level=1",
+        "-C",
+        "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+        "-D",
+        "warnings",
+        "-L",
+        "dependency=/private/tmp/mech-live-control-target/release/deps",
+        "--cfg",
+        "feature=\"aot\"",
+        "--cfg",
+        "feature=\"canonical-native\"",
+        "--cfg",
+        "feature=\"canonical-native-program\"",
+        "--cfg",
+        "feature=\"canonical-native-program-runtime\"",
+        "--cfg",
+        "feature=\"canonical-native-runtime\"",
+        "--cfg",
+        "feature=\"jit\"",
+        "--extern",
+        "cranelift_codegen=/private/tmp/mech-live-control-target/release/deps/libcranelift_codegen-79250b96f7a4172f.rlib",
+        "--extern",
+        "cranelift_frontend=/private/tmp/mech-live-control-target/release/deps/libcranelift_frontend-796ddca52b1baa23.rlib",
+        "--extern",
+        "cranelift_jit=/private/tmp/mech-live-control-target/release/deps/libcranelift_jit-4d33b45d7690e2ef.rlib",
+        "--extern",
+        "cranelift_module=/private/tmp/mech-live-control-target/release/deps/libcranelift_module-8bb9481823a63cf0.rlib",
+        "--extern",
+        "cranelift_native=/private/tmp/mech-live-control-target/release/deps/libcranelift_native-448aa3dcdc0c0785.rlib",
+        "--extern",
+        "cranelift_object=/private/tmp/mech-live-control-target/release/deps/libcranelift_object-e9e960ce24552414.rlib",
+        "--extern",
+        "grapheme=/private/tmp/mech-live-control-target/release/deps/libgrapheme-2e22bda36eb1f0f8.rlib",
+        "--extern",
+        "hashbrown=/private/tmp/mech-live-control-target/release/deps/libhashbrown-d20f4ad24099052b.rlib",
+        "--extern",
+        "libloading=/private/tmp/mech-live-control-target/release/deps/liblibloading-836fe5ac7ed0962d.rlib",
+        "--extern",
+        "mech_compute=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_compute-84cb0ef1d137eee3.rlib",
+        "--extern",
+        "mech_core=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+        "--extern",
+        "mech_engine=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+        "--extern",
+        "miniz_oxide=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+        "--extern",
+        "serde=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+        "--extern",
+        "serde_json=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+        "--extern",
+        "sha2=/private/tmp/mech-live-control-target/release/deps/libsha2-f9316069bed82edc.rlib",
+        "--extern",
+        "toml_edit=/private/tmp/mech-live-control-target/release/deps/libtoml_edit-14168309fb56d330.rlib",
+        "--extern",
+        "web_time=/private/tmp/mech-live-control-target/release/deps/libweb_time-5004144e8c3d1139.rlib",
+        "--extern",
+        "wide=/private/tmp/mech-live-control-target/release/deps/libwide-24e8d1268668e37f.rlib",
+        "--extern",
+        "mech_syntax=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+        "--extern",
+        "mech_runtime=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_runtime-44999c02af6b18b6.rlib",
+        "--extern",
+        "mech_stdlib=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+        "--extern",
+        "tempfile=/private/tmp/mech-live-control-target/release/deps/libtempfile-cd3db811e0a0846f.rlib",
+        "-L",
+        "dependency=/private/tmp/mech-record-lookup-round42-20261030/diagnostic-libs/after",
+        "-L",
+        "dependency=/private/tmp/mech-record-lookup-round42-20261030/final-library",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "/private/tmp/mech-deflate-linear-stack/hosts/gpu/src/lib.rs",
+        "-o",
+        "/private/tmp/mech-pointer-locality-round62-20261031/snapshot-controls/after/gpu-unit-tests"
+      ],
+      "exit": 0,
+      "expected_tests": null,
+      "observed_tests": null,
+      "inventory_only": false,
+      "passed": true,
+      "test_source_head": "93eabe82add1fdd6792383dc6fd9c72565d1532e",
+      "production_control_sha256": "73a6c71efbb31957011b605a99b9d85c33f59bb20a3b97c94d87c117e1914095",
+      "baseline_build_source": "6f412525daf0f7284d4ef6bc2bd8e21f95d22e96",
+      "candidate_build_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448",
+      "phase": "after"
+    },
+    {
+      "receipt": "snapshot-controls/after/inventory.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/snapshot-controls/after/gpu-unit-tests",
+        "native_artifact::program::runtime::tests::locals_snapshot::entry_locals_snapshot_survives_callback_pointer_change_and_fresh_invocations",
+        "--exact",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": true,
+      "passed": true,
+      "test_source_head": "93eabe82add1fdd6792383dc6fd9c72565d1532e",
+      "production_control_sha256": "73a6c71efbb31957011b605a99b9d85c33f59bb20a3b97c94d87c117e1914095",
+      "baseline_build_source": "6f412525daf0f7284d4ef6bc2bd8e21f95d22e96",
+      "candidate_build_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448",
+      "phase": "after"
+    },
+    {
+      "receipt": "snapshot-controls/after/run.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/snapshot-controls/after/gpu-unit-tests",
+        "native_artifact::program::runtime::tests::locals_snapshot::entry_locals_snapshot_survives_callback_pointer_change_and_fresh_invocations",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": false,
+      "passed": true,
+      "test_source_head": "93eabe82add1fdd6792383dc6fd9c72565d1532e",
+      "production_control_sha256": "73a6c71efbb31957011b605a99b9d85c33f59bb20a3b97c94d87c117e1914095",
+      "baseline_build_source": "6f412525daf0f7284d4ef6bc2bd8e21f95d22e96",
+      "candidate_build_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448",
+      "phase": "after"
+    },
+    {
+      "receipt": "snapshot-controls/after/runtime-inventory.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/snapshot-controls/after/gpu-unit-tests",
+        "native_artifact::program::runtime::",
+        "--skip",
+        "complete_unchanged_knucleotide_body_uses_the_owned_emitted_map",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 329,
+      "observed_tests": 329,
+      "inventory_only": true,
+      "passed": true,
+      "test_source_head": "93eabe82add1fdd6792383dc6fd9c72565d1532e",
+      "production_control_sha256": "73a6c71efbb31957011b605a99b9d85c33f59bb20a3b97c94d87c117e1914095",
+      "baseline_build_source": "6f412525daf0f7284d4ef6bc2bd8e21f95d22e96",
+      "candidate_build_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448",
+      "phase": "after"
+    },
+    {
+      "receipt": "snapshot-controls/after/ci-inventory.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/snapshot-controls/after/gpu-unit-tests",
+        "composition_tests",
+        "parent_continuation_is_single_use",
+        "native_runtime_consolidation",
+        "buffer_frames::tests::batching",
+        "buffer_frames::tests::transfer",
+        "work::retirement::tests",
+        "exhausted_retirement_generation",
+        "cleanup_effects::tests",
+        "numeric_shadow",
+        "numeric_words::tests",
+        "numeric_first_change",
+        "entry_locals_snapshot",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 35,
+      "observed_tests": 35,
+      "inventory_only": true,
+      "passed": true,
+      "test_source_head": "93eabe82add1fdd6792383dc6fd9c72565d1532e",
+      "production_control_sha256": "73a6c71efbb31957011b605a99b9d85c33f59bb20a3b97c94d87c117e1914095",
+      "baseline_build_source": "6f412525daf0f7284d4ef6bc2bd8e21f95d22e96",
+      "candidate_build_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448",
+      "phase": "after"
+    },
+    {
+      "receipt": "snapshot-controls/after/ci-run.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/snapshot-controls/after/gpu-unit-tests",
+        "composition_tests",
+        "parent_continuation_is_single_use",
+        "native_runtime_consolidation",
+        "buffer_frames::tests::batching",
+        "buffer_frames::tests::transfer",
+        "work::retirement::tests",
+        "exhausted_retirement_generation",
+        "cleanup_effects::tests",
+        "numeric_shadow",
+        "numeric_words::tests",
+        "numeric_first_change",
+        "entry_locals_snapshot",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 35,
+      "observed_tests": 35,
+      "inventory_only": false,
+      "passed": true,
+      "test_source_head": "93eabe82add1fdd6792383dc6fd9c72565d1532e",
+      "production_control_sha256": "73a6c71efbb31957011b605a99b9d85c33f59bb20a3b97c94d87c117e1914095",
+      "baseline_build_source": "6f412525daf0f7284d4ef6bc2bd8e21f95d22e96",
+      "candidate_build_source": "ded89a9c0014fe66734be22ee6a3170e7ec10448",
+      "phase": "after"
+    },
+    {
+      "receipt": "ci/results.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/units-after/gpu-unit-tests",
+        "composition_tests",
+        "parent_continuation_is_single_use",
+        "native_runtime_consolidation",
+        "buffer_frames::tests::batching",
+        "buffer_frames::tests::transfer",
+        "work::retirement::tests",
+        "exhausted_retirement_generation",
+        "cleanup_effects::tests",
+        "numeric_shadow",
+        "numeric_words::tests",
+        "numeric_first_change",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 34,
+      "observed_tests": 34,
+      "inventory_only": true,
+      "passed": true
+    },
+    {
+      "receipt": "ci/results.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/units-after/gpu-unit-tests",
+        "composition_tests",
+        "parent_continuation_is_single_use",
+        "native_runtime_consolidation",
+        "buffer_frames::tests::batching",
+        "buffer_frames::tests::transfer",
+        "work::retirement::tests",
+        "exhausted_retirement_generation",
+        "cleanup_effects::tests",
+        "numeric_shadow",
+        "numeric_words::tests",
+        "numeric_first_change",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 34,
+      "observed_tests": 34,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "python3",
+        "scripts/check-production-resident-routing.py"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "python3",
+        "scripts/check-source-catalog-entrypoints.py"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "python3",
+        "scripts/check-native-host-catalog.py"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "python3",
+        "scripts/check-native-build-analysis-layout.py"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "python3",
+        "scripts/check-rust-module-layout.py"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "python3",
+        "scripts/check-runtime-factory-safety.py"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "python3",
+        "scripts/check-warning-policy.py"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "sh",
+        "scripts/check-unsafe-boundaries.sh"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "receipt": "primary/scalar-results.json",
+      "cases": 12,
+      "passed": true
+    },
+    {
+      "receipt": "frame-allocation/results.json",
+      "cases": 8,
+      "passed": true
+    },
+    {
+      "receipt": "linked-acceptance/run.stdout",
+      "cases": 12,
+      "passed": true
+    }
+  ],
+  "architecture_initial": [
+    {
+      "command": [
+        "python3",
+        "scripts/check-production-resident-routing.py"
+      ],
+      "exit": 0,
+      "seconds": 0.2738845420535654
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-source-catalog-entrypoints.py"
+      ],
+      "exit": 0,
+      "seconds": 0.06143762497231364
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-native-host-catalog.py"
+      ],
+      "exit": 0,
+      "seconds": 0.5875738749746233
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-native-build-analysis-layout.py"
+      ],
+      "exit": 0,
+      "seconds": 0.025080624967813492
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-rust-module-layout.py"
+      ],
+      "exit": 0,
+      "seconds": 0.2003591249231249
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-runtime-factory-safety.py"
+      ],
+      "exit": 0,
+      "seconds": 0.9628343749791384
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-warning-policy.py"
+      ],
+      "exit": 0,
+      "seconds": 13.924942042212933
+    },
+    {
+      "command": [
+        "sh",
+        "scripts/check-unsafe-boundaries.sh"
+      ],
+      "exit": 0,
+      "seconds": 39.01006833394058
+    },
+    {
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit": 1,
+      "seconds": 6.689777874853462
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit": 0,
+      "seconds": 0.02602983289398253
+    }
+  ],
+  "architecture_final": [
+    {
+      "command": [
+        "python3",
+        "scripts/check-production-resident-routing.py"
+      ],
+      "exit": 0,
+      "seconds": 0.27600841596722603
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-source-catalog-entrypoints.py"
+      ],
+      "exit": 0,
+      "seconds": 0.061033207923173904
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-native-host-catalog.py"
+      ],
+      "exit": 0,
+      "seconds": 0.5640266248956323
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-native-build-analysis-layout.py"
+      ],
+      "exit": 0,
+      "seconds": 0.023894166108220816
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-rust-module-layout.py"
+      ],
+      "exit": 0,
+      "seconds": 0.1910258331336081
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-runtime-factory-safety.py"
+      ],
+      "exit": 0,
+      "seconds": 1.1268389581236988
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-warning-policy.py"
+      ],
+      "exit": 0,
+      "seconds": 13.616014749975875
+    },
+    {
+      "command": [
+        "sh",
+        "scripts/check-unsafe-boundaries.sh"
+      ],
+      "exit": 0,
+      "seconds": 37.89109962503426
+    },
+    {
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit": 0,
+      "seconds": 6.641781875165179
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit": 0,
+      "seconds": 0.025768708204850554
+    }
+  ],
+  "prior_failures": [
+    {
+      "receipt": "architecture-initial/results.json",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit": 1,
+      "classification": "introduced production formatting failure",
+      "corrected_receipt": "architecture/results.json",
+      "correction_commit": "88b2a605a",
+      "disposition": "The initial architecture batch passed nine checks and failed the formatter at index8. The same architecture commands are rerun after the pinned formatter correction; final acceptance requires every rerun to pass. The initial command, output and result remain separately preserved."
+    },
+    {
+      "receipt": "snapshot preflight attempt1 (root report; no separate raw receipt supplied)",
+      "classification": "introduced harness preflight mismatch; zero builds and zero performance observations",
+      "disposition": "The first candidate-production comparison rejected formatting whitespace before building. It was replaced by an exact comparison against the measured producer normalized with the pinned rustfmt; no benchmark sample was discarded."
+    },
+    {
+      "receipt": "snapshot preflight attempt2 (root report; no separate raw receipt supplied)",
+      "classification": "introduced harness preflight mismatch; zero builds and zero performance observations",
+      "disposition": "The second candidate-production comparison rejected trailing commas before building. The final harness compares pinned-rustfmt output byte-for-byte with current production before qualification. No benchmark sample was discarded."
+    },
+    {
+      "receipt": "snapshot-parent-run: snapshot-controls/parent/run.json",
+      "archive": "snapshot-parent-run/receipts.tar.gz",
+      "archived_path": "snapshot-controls/parent/run.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/snapshot-controls/parent/gpu-unit-tests",
+        "native_artifact::program::runtime::tests::locals_snapshot::entry_locals_snapshot_survives_callback_pointer_change_and_fresh_invocations",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 101,
+      "test_source_head": "88b2a605adc1960549a7a86acf9547fc3091b1e4",
+      "baseline_build_source": "6f412525daf0f7284d4ef6bc2bd8e21f95d22e96",
+      "executed_tests": 1,
+      "passed_tests": 0,
+      "failed_tests": 1,
+      "classification": "introduced test-fixture callback assumption; reproduced on unchanged parent production",
+      "attempt": 1,
+      "corrected_receipt": "snapshot-controls/parent/run.json",
+      "correction_commit": "93eabe82add1fdd6792383dc6fd9c72565d1532e",
+      "disposition": "The initial fixture expected a callback at every scalar primitive. Recorded visits were [1,2,5] while primitive sites were [2,3,4]: one admission group covers sites2 through4. The final fixture uses default compilation and derives restore site5 from the descriptor admission frontier, crossing the interior source blocks. Acceptance requires the final focused test to pass on both parent and candidate. This failed execution and its source remain in the named archive; no compression timing observation is affected."
+    },
+    {
+      "receipt": "snapshot-corrected-parent-run: snapshot-controls/parent/run.json",
+      "archive": "snapshot-corrected-parent-run/receipts.tar.gz",
+      "archived_path": "snapshot-controls/parent/run.json",
+      "command": [
+        "/private/tmp/mech-pointer-locality-round62-20261031/snapshot-controls/parent/gpu-unit-tests",
+        "native_artifact::program::runtime::tests::locals_snapshot::entry_locals_snapshot_survives_callback_pointer_change_and_fresh_invocations",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 101,
+      "test_source_head": "aedddce1b5336e7d168962b302c5712672d26aa5",
+      "baseline_build_source": "6f412525daf0f7284d4ef6bc2bd8e21f95d22e96",
+      "executed_tests": 1,
+      "passed_tests": 0,
+      "failed_tests": 1,
+      "classification": "introduced test-fixture callback assumption; reproduced on unchanged parent production",
+      "attempt": 2,
+      "corrected_receipt": "snapshot-controls/parent/run.json",
+      "correction_commit": "93eabe82add1fdd6792383dc6fd9c72565d1532e",
+      "disposition": "Disabling ScalarLoops did not change ordinary scalar admission groups, so the second fixture repeated the same incorrect callback assumption. Recorded visits were [1,2,5] while primitive sites were [2,3,4]: one admission group covers sites2 through4. The final fixture uses default compilation and derives restore site5 from the descriptor admission frontier, crossing the interior source blocks. Acceptance requires the final focused test to pass on both parent and candidate. This failed execution and its source remain in the named archive; no compression timing observation is affected."
+    },
+    {
+      "receipt": "second snapshot attempt archive-stage collision (root report; no separate raw receipt supplied)",
+      "classification": "introduced harness archival collision after a successful build",
+      "disposition": "The second fixture build succeeded, then archiving collided with a preserved prior stage name. The corrected attempt received its own archive prefix and resumed using the already successful build. Original stages remain preserved. This was not a compiler/test-build failure and no performance observation was discarded."
+    },
+    {
+      "receipt": "Final replay after adding current-workflow and compiled-artifact receipts",
+      "classification": "introduced report-assembly staleness; no compiler or timing failure",
+      "disposition": "The earlier 65-archive replay passed. Adding the final workflow receipt changed validation.checks[18].test_source_head from absent to 799a7807a69133decd8947afa9df4b75e011e8d6, so replay correctly rejected the stale scorecard. Recompute validation and scorecard from all final receipts before the final byte-identical replay. Both earlier report and newer receipt remain archived."
+    }
+  ],
+  "runtime_coverage": {
+    "original_batch": {
+      "receipt": "units-after/runtime.json",
+      "executed_tests": 328
+    },
+    "added_regression": {
+      "receipt": "snapshot-controls/after/run.json",
+      "executed_tests": 1
+    },
+    "current_inventory": {
+      "receipt": "snapshot-controls/after/runtime-inventory.json",
+      "listed_tests": 329
+    },
+    "scope": "The current 329-test inventory is covered by the earlier complete 328-test batch plus the new focused test after formatting-only producer normalization. There is no claimed new 329-test execution batch; the current CI selection executes 35 tests separately."
+  },
+  "skipped_coverage": [
+    {
+      "test": "complete_unchanged_knucleotide_body_uses_the_owned_emitted_map",
+      "disposition": "Existing runtime selection exclusion retained; unrelated complete knucleotide body is not requalified here."
+    },
+    {
+      "coverage": "full remote CI",
+      "disposition": "Not awaited as requested. Local exact inventory and architecture checks reported separately."
+    },
+    {
+      "coverage": "larger compression inputs/full-scale timing",
+      "disposition": "Not run; this optimization is measured on the complete pinned eight-byte level-12 call only."
+    }
+  ],
+  "scope": "Counts are observed from actual archived inventories and execution receipts, never inferred from source annotations. Test batches overlap; counts must not be summed as unique tests."
+}

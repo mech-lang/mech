@@ -1,0 +1,71 @@
+{
+  "created_utc": "2026-10-31T15:18:22.082800+00:00",
+  "head": "ab23725b51fa8afd860a9f197d94062a2cfe85d1",
+  "files": [
+    {
+      "path": "binary-audit/after/audit.json",
+      "sha256": "ef651299e539e9fedaf6b2582f5c6f91736c365fb43125211ab3657fc8e84e6f",
+      "bytes": 10582
+    },
+    {
+      "path": "binary-audit/after/disassembly-command.json",
+      "sha256": "acd2c2c5f35887caba682c71dcfbb174e028573522debfe42248531a6a2c7b58",
+      "bytes": 179
+    },
+    {
+      "path": "binary-audit/after/objdump.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "binary-audit/after/site797-helper-anchor-context.asm",
+      "sha256": "9b0dcec5647aef12d6c4f97931c5cb99d3730d38073775829630ac9926cf75a3",
+      "bytes": 50098
+    },
+    {
+      "path": "binary-audit/before/audit.json",
+      "sha256": "e868b3efea9eb0e065f3433e380282c674f1d0681aee922638fe445ca3d114b7",
+      "bytes": 10571
+    },
+    {
+      "path": "binary-audit/before/disassembly-command.json",
+      "sha256": "2c35fc145658df9e0ad56bc868cfaa532641bb103c806cd2e750d04ba0b84c78",
+      "bytes": 175
+    },
+    {
+      "path": "binary-audit/before/objdump.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "binary-audit/before/site797-helper-anchor-context.asm",
+      "sha256": "8fabeab3c067b59457c38f8175924c7530ce9d33f7861f01dd081bee373ee651",
+      "bytes": 50255
+    },
+    {
+      "path": "binary-audit/comparison.json",
+      "sha256": "62d743244b4707fc2d05d1a9fbb7baf16f9854f5fe38a201a925f0fa0f5cd809",
+      "bytes": 2562
+    },
+    {
+      "path": "binary-audit/stack-accesses/after.json",
+      "sha256": "d43de7d2838c588919fa54af902a4e2c096fb224628787854c9c7738a66ae5c2",
+      "bytes": 2116548
+    },
+    {
+      "path": "binary-audit/stack-accesses/before.json",
+      "sha256": "95043c3fdf52e71b5ba7d836e7953034f66390b1a249331468f932a7fa11ce39",
+      "bytes": 2290184
+    },
+    {
+      "path": "binary-audit/stack-accesses/pointer-delta.json",
+      "sha256": "f548515183ba914ac1daa8b030743c1c3e498333408c5f10bff0c9ba837342a2",
+      "bytes": 1838
+    },
+    {
+      "path": "binary-audit.json",
+      "sha256": "5369e2233ff3b5296f6bc3fff7ac9e503320d628385ea3c3c6a4fdc8af611843",
+      "bytes": 4585
+    }
+  ]
+}

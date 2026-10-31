@@ -1,0 +1,49 @@
+
+running 11 tests
+test numeric_write_qualification::cases::numeric_writes_all_unsigned_widths_rectangular_geometry_and_empty_visits ... ok
+test numeric_write_qualification::cases::numeric_writes_noop_changes_preserve_the_original_backing ... ok
+test numeric_write_qualification::cases::numeric_writes_real_buffers_allocate_once_and_not_per_store ... {"count":262144,"requested_bytes":561208,"requests":261,"steps":1,"visits":6,"width":16,"witness":"private-real-buffer","work":48027014}
+{"count":262144,"requested_bytes":560888,"requests":256,"steps":8,"visits":6,"width":16,"witness":"private-real-buffer","work":48155478}
+FAILED
+test numeric_write_qualification::cases::numeric_writes_refuse_old_reads_old_returns_and_discarded_updates ... ok
+test numeric_write_qualification::cases::recovery::numeric_writes_distinct_fields_with_actual_aliases_remain_independent ... ok
+test numeric_write_qualification::cases::recovery::numeric_writes_finite_exact_one_short_failure_then_success ... ok
+test numeric_write_qualification::cases::recovery::numeric_writes_first_copy_uses_original_clone_admission_and_recovers ... ok
+test numeric_write_qualification::cases::recovery::numeric_writes_late_assertion_arithmetic_load_failures_leave_publication_and_retry ... ok
+test numeric_write_qualification::cases::recovery::numeric_writes_refresh_owners_and_scalars_under_an_ordinary_parent ... ok
+test numeric_write_qualification::numeric_write_baseline_observes_transport_in_generic_and_pinned_huffman_loops ... {"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000025292,"form":"original","requested_bytes":35890,"requests":250,"steps":0,"visits":6,"witness":"generic","work":11767638}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000015708,"form":"original","requested_bytes":38610,"requests":276,"steps":1,"visits":6,"witness":"generic","work":33394566}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000015084,"form":"original","requested_bytes":38610,"requests":276,"steps":8,"visits":6,"witness":"generic","work":33541062}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000015167,"form":"original","requested_bytes":38610,"requests":276,"steps":64,"visits":6,"witness":"generic","work":34713030}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.0000155,"form":"original","requested_bytes":38610,"requests":276,"steps":256,"visits":6,"witness":"generic","work":38731206}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000013833,"form":"decoded","requested_bytes":35890,"requests":250,"steps":0,"visits":6,"witness":"generic","work":11767638}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000015417,"form":"decoded","requested_bytes":38610,"requests":276,"steps":1,"visits":6,"witness":"generic","work":33394566}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000015042,"form":"decoded","requested_bytes":38610,"requests":276,"steps":8,"visits":6,"witness":"generic","work":33541062}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000014542,"form":"decoded","requested_bytes":38610,"requests":276,"steps":64,"visits":6,"witness":"generic","work":34713030}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000014625,"form":"decoded","requested_bytes":38610,"requests":276,"steps":256,"visits":6,"witness":"generic","work":38731206}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000018167,"form":"original","requested_bytes":41162,"requests":254,"steps":0,"visits":6,"witness":"pinned-huffman-count","work":17170492}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000017667,"form":"original","requested_bytes":44906,"requests":280,"steps":1,"visits":6,"witness":"pinned-huffman-count","work":38910076}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000016959,"form":"original","requested_bytes":44906,"requests":280,"steps":8,"visits":6,"witness":"pinned-huffman-count","work":39319660}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000017417,"form":"original","requested_bytes":44906,"requests":280,"steps":64,"visits":6,"witness":"pinned-huffman-count","work":42596332}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000019667,"form":"original","requested_bytes":44906,"requests":280,"steps":256,"visits":6,"witness":"pinned-huffman-count","work":53830636}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.0000155,"form":"decoded","requested_bytes":41162,"requests":254,"steps":0,"visits":6,"witness":"pinned-huffman-count","work":17170492}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000017166,"form":"decoded","requested_bytes":44906,"requests":280,"steps":1,"visits":6,"witness":"pinned-huffman-count","work":38910076}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000016583,"form":"decoded","requested_bytes":44906,"requests":280,"steps":8,"visits":6,"witness":"pinned-huffman-count","work":39319660}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000017209,"form":"decoded","requested_bytes":44906,"requests":280,"steps":64,"visits":6,"witness":"pinned-huffman-count","work":42596332}
+{"allocator":"System/probe; not primary compression timing","diagnostic_seconds":0.000019125,"form":"decoded","requested_bytes":44906,"requests":280,"steps":256,"visits":6,"witness":"pinned-huffman-count","work":53830636}
+ok
+test numeric_write_qualification::numeric_write_recurrence_selects_native_frame_and_typed_store_execution ... ok
+
+failures:
+
+failures:
+    numeric_write_qualification::cases::numeric_writes_real_buffers_allocate_once_and_not_per_store
+
+test result: FAILED. 10 passed; 1 failed; 0 ignored; 0 measured; 383 filtered out; finished in 4.57s
+
+
+thread 'numeric_write_qualification::cases::numeric_writes_real_buffers_allocate_once_and_not_per_store' (18896686) panicked at /private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_numeric_write_cases.rs:252:13:
+assertion `left == right` failed
+  left: (261, 561208, 6)
+ right: (256, 560888, 6)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

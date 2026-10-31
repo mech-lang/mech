@@ -1,0 +1,37 @@
+{
+  "name": "checked-u32-linked-image",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "mech-gpu",
+    "--no-default-features",
+    "--features",
+    "canonical-native-program",
+    "--test",
+    "canonical_artifact_program",
+    "--",
+    "linked_qualification::linked_checked_u32_add_restores_its_operation_and_recovers",
+    "--exact",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-reality-check",
+  "head": "4a85f1d339832607147fae08d013e3aa60dd24a5",
+  "dirty": " M hosts/gpu/src/native_artifact/abi.rs\n M hosts/gpu/src/native_artifact/compiler/mod.rs\n M hosts/gpu/src/native_artifact/identity/mod.rs\n M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/tests/canonical_artifact_program.rs\n M hosts/gpu/tests/support/canonical_program_linked.rs\n M hosts/gpu/tests/support/canonical_program_narrow_words.rs\n M src/engine/src/native_artifact/program_image_read.rs\n M src/engine/src/native_scalar.rs\n M src/engine/src/resident/numeric/mod.rs\n?? benchmarks/mech-deflate/matchfinder/block-statistics-reference.roc\n?? hosts/gpu/tests/fixtures/native/deflate-block-collector.mec\n?? hosts/gpu/tests/support/canonical_program_block_statistics.rs\n",
+  "exit": 0,
+  "seconds": 114.84910798072815,
+  "log": "/private/tmp/mech-stack-landscape-20261026/reality-check/checked-u32-linked-image.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

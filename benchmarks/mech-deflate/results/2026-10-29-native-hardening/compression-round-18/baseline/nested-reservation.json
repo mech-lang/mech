@@ -1,0 +1,8 @@
+{"actual_capacity":8,"form":"original","private_frame_fields":0,"requested_capacity":16,"visits":8,"width":64,"witness":"nested-record-reservation","work":67939149}
+{"actual_capacity":8,"form":"original","private_frame_fields":0,"requested_capacity":305257,"visits":8,"width":64,"witness":"nested-record-reservation","work":80148789}
+{"actual_capacity":8,"form":"decoded","private_frame_fields":0,"requested_capacity":16,"visits":8,"width":64,"witness":"nested-record-reservation","work":67939149}
+{"actual_capacity":8,"form":"decoded","private_frame_fields":0,"requested_capacity":305257,"visits":8,"width":64,"witness":"nested-record-reservation","work":80148789}
+{"actual_capacity":64,"form":"original","private_frame_fields":0,"requested_capacity":16,"visits":8,"width":8,"witness":"nested-record-reservation","work":67974445}
+{"actual_capacity":64,"form":"original","private_frame_fields":0,"requested_capacity":6633832,"visits":8,"width":8,"witness":"nested-record-reservation","work":101143525}
+{"actual_capacity":64,"form":"decoded","private_frame_fields":0,"requested_capacity":16,"visits":8,"width":8,"witness":"nested-record-reservation","work":67974445}
+{"actual_capacity":64,"form":"decoded","private_frame_fields":0,"requested_capacity":6633832,"visits":8,"width":8,"witness":"nested-record-reservation","work":101143525}

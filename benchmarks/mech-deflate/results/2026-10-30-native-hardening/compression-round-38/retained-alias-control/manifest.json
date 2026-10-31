@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-30T20:02:33.904709+00:00",
+  "head": "c40387e2e15aff9f5ee93648ef4995bd7487a2fa",
+  "files": [
+    {
+      "path": "retained-alias-control/build.json",
+      "sha256": "aaee778a119eae69f265c30d5bde0eadd953c6a35fef7cbe1cfe32741572503e",
+      "bytes": 2071
+    },
+    {
+      "path": "retained-alias-control/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "retained-alias-control/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "retained-alias-control/run.json",
+      "sha256": "d8ff105697bc56ad84b5b427338a8d704f37880b5f7182a2ab83f028a0f49721",
+      "bytes": 495
+    },
+    {
+      "path": "retained-alias-control/run.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "retained-alias-control/run.stdout",
+      "sha256": "f3cbfda4a4d4515455dd08ac9ecac86b631f79cd5d79e302ffc0d7598e1c558d",
+      "bytes": 227
+    }
+  ]
+}

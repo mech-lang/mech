@@ -1,0 +1,1314 @@
+{
+  "performance_observations": 0,
+  "method": "Actual post-change complete eight-byte invocation; counts by containing iteration, not elapsed attribution.",
+  "iterations": [
+    {
+      "iteration": "142",
+      "admits": 6570,
+      "helpers": 3028,
+      "frame_helpers": 2524
+    },
+    {
+      "iteration": "424",
+      "admits": 5057,
+      "helpers": 2887,
+      "frame_helpers": 2311
+    },
+    {
+      "iteration": "425",
+      "admits": 3937,
+      "helpers": 2247,
+      "frame_helpers": 1799
+    },
+    {
+      "iteration": "25",
+      "admits": 1129,
+      "helpers": 838,
+      "frame_helpers": 685
+    },
+    {
+      "iteration": "21",
+      "admits": 1274,
+      "helpers": 1043,
+      "frame_helpers": 656
+    },
+    {
+      "iteration": "426",
+      "admits": 1672,
+      "helpers": 877,
+      "frame_helpers": 645
+    },
+    {
+      "iteration": "190",
+      "admits": 848,
+      "helpers": 610,
+      "frame_helpers": 550
+    },
+    {
+      "iteration": "427",
+      "admits": 1367,
+      "helpers": 726,
+      "frame_helpers": 546
+    },
+    {
+      "iteration": "168",
+      "admits": 931,
+      "helpers": 799,
+      "frame_helpers": 515
+    },
+    {
+      "iteration": "170",
+      "admits": 1212,
+      "helpers": 638,
+      "frame_helpers": 474
+    },
+    {
+      "iteration": "220",
+      "admits": 658,
+      "helpers": 516,
+      "frame_helpers": 472
+    },
+    {
+      "iteration": "188",
+      "admits": 920,
+      "helpers": 514,
+      "frame_helpers": 360
+    },
+    {
+      "iteration": "434",
+      "admits": 539,
+      "helpers": 348,
+      "frame_helpers": 292
+    },
+    {
+      "iteration": "239",
+      "admits": 442,
+      "helpers": 316,
+      "frame_helpers": 284
+    },
+    {
+      "iteration": "70",
+      "admits": 424,
+      "helpers": 305,
+      "frame_helpers": 275
+    },
+    {
+      "iteration": "320",
+      "admits": 424,
+      "helpers": 305,
+      "frame_helpers": 275
+    },
+    {
+      "iteration": "136",
+      "admits": 606,
+      "helpers": 319,
+      "frame_helpers": 237
+    },
+    {
+      "iteration": "300",
+      "admits": 606,
+      "helpers": 319,
+      "frame_helpers": 237
+    },
+    {
+      "iteration": "100",
+      "admits": 329,
+      "helpers": 258,
+      "frame_helpers": 236
+    },
+    {
+      "iteration": "398",
+      "admits": 329,
+      "helpers": 258,
+      "frame_helpers": 236
+    },
+    {
+      "iteration": "33",
+      "admits": 280,
+      "helpers": 224,
+      "frame_helpers": 224
+    },
+    {
+      "iteration": "68",
+      "admits": 460,
+      "helpers": 257,
+      "frame_helpers": 180
+    },
+    {
+      "iteration": "318",
+      "admits": 460,
+      "helpers": 257,
+      "frame_helpers": 180
+    },
+    {
+      "iteration": "237",
+      "admits": 416,
+      "helpers": 234,
+      "frame_helpers": 168
+    },
+    {
+      "iteration": "119",
+      "admits": 221,
+      "helpers": 158,
+      "frame_helpers": 142
+    },
+    {
+      "iteration": "417",
+      "admits": 221,
+      "helpers": 158,
+      "frame_helpers": 142
+    },
+    {
+      "iteration": "117",
+      "admits": 208,
+      "helpers": 117,
+      "frame_helpers": 84
+    },
+    {
+      "iteration": "415",
+      "admits": 208,
+      "helpers": 117,
+      "frame_helpers": 84
+    },
+    {
+      "iteration": "None",
+      "admits": 144,
+      "helpers": 105,
+      "frame_helpers": 20
+    },
+    {
+      "iteration": "184",
+      "admits": 32,
+      "helpers": 18,
+      "frame_helpers": 14
+    },
+    {
+      "iteration": "203",
+      "admits": 32,
+      "helpers": 18,
+      "frame_helpers": 14
+    },
+    {
+      "iteration": "233",
+      "admits": 32,
+      "helpers": 18,
+      "frame_helpers": 14
+    },
+    {
+      "iteration": "182",
+      "admits": 22,
+      "helpers": 12,
+      "frame_helpers": 8
+    },
+    {
+      "iteration": "201",
+      "admits": 22,
+      "helpers": 12,
+      "frame_helpers": 8
+    },
+    {
+      "iteration": "217",
+      "admits": 30,
+      "helpers": 16,
+      "frame_helpers": 8
+    },
+    {
+      "iteration": "231",
+      "admits": 22,
+      "helpers": 12,
+      "frame_helpers": 8
+    },
+    {
+      "iteration": "64",
+      "admits": 16,
+      "helpers": 9,
+      "frame_helpers": 7
+    },
+    {
+      "iteration": "83",
+      "admits": 16,
+      "helpers": 9,
+      "frame_helpers": 7
+    },
+    {
+      "iteration": "113",
+      "admits": 16,
+      "helpers": 9,
+      "frame_helpers": 7
+    },
+    {
+      "iteration": "314",
+      "admits": 16,
+      "helpers": 9,
+      "frame_helpers": 7
+    },
+    {
+      "iteration": "333",
+      "admits": 16,
+      "helpers": 9,
+      "frame_helpers": 7
+    },
+    {
+      "iteration": "411",
+      "admits": 16,
+      "helpers": 9,
+      "frame_helpers": 7
+    },
+    {
+      "iteration": "62",
+      "admits": 11,
+      "helpers": 6,
+      "frame_helpers": 4
+    },
+    {
+      "iteration": "81",
+      "admits": 11,
+      "helpers": 6,
+      "frame_helpers": 4
+    },
+    {
+      "iteration": "97",
+      "admits": 15,
+      "helpers": 8,
+      "frame_helpers": 4
+    },
+    {
+      "iteration": "111",
+      "admits": 11,
+      "helpers": 6,
+      "frame_helpers": 4
+    },
+    {
+      "iteration": "312",
+      "admits": 11,
+      "helpers": 6,
+      "frame_helpers": 4
+    },
+    {
+      "iteration": "331",
+      "admits": 11,
+      "helpers": 6,
+      "frame_helpers": 4
+    },
+    {
+      "iteration": "395",
+      "admits": 15,
+      "helpers": 8,
+      "frame_helpers": 4
+    },
+    {
+      "iteration": "409",
+      "admits": 11,
+      "helpers": 6,
+      "frame_helpers": 4
+    },
+    {
+      "iteration": "1",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "2",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "3",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "4",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "5",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "6",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "7",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "8",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "9",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "10",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "11",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "12",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "13",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "14",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "15",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "16",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "17",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "18",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "19",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "20",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "52",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "53",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "54",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "55",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "56",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "57",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "58",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "59",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "60",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "61",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "66",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "67",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "71",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "72",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "73",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "74",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "75",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "76",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "77",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "78",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "96",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "98",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "99",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "102",
+      "admits": 0,
+      "helpers": 4,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "103",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "104",
+      "admits": 0,
+      "helpers": 6,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "105",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "106",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "107",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "108",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "109",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "110",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "115",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "116",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "120",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "121",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "122",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "123",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "129",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "130",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "131",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "132",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "133",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "134",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "135",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "137",
+      "admits": 280,
+      "helpers": 0,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "139",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "140",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "143",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "144",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "145",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "162",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "163",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "164",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "165",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "166",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "167",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "169",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "171",
+      "admits": 560,
+      "helpers": 0,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "173",
+      "admits": 2,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "174",
+      "admits": 2,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "175",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "176",
+      "admits": 2,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "177",
+      "admits": 2,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "178",
+      "admits": 2,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "179",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "180",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "181",
+      "admits": 0,
+      "helpers": 4,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "186",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "187",
+      "admits": 2,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "191",
+      "admits": 0,
+      "helpers": 4,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "192",
+      "admits": 2,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "193",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "194",
+      "admits": 0,
+      "helpers": 4,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "195",
+      "admits": 2,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "196",
+      "admits": 2,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "197",
+      "admits": 2,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "198",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "216",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "218",
+      "admits": 2,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "219",
+      "admits": 2,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "222",
+      "admits": 0,
+      "helpers": 8,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "223",
+      "admits": 0,
+      "helpers": 4,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "224",
+      "admits": 0,
+      "helpers": 12,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "225",
+      "admits": 2,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "226",
+      "admits": 2,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "227",
+      "admits": 2,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "228",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "229",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "230",
+      "admits": 0,
+      "helpers": 4,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "235",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "236",
+      "admits": 2,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "240",
+      "admits": 0,
+      "helpers": 4,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "241",
+      "admits": 2,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "242",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "243",
+      "admits": 0,
+      "helpers": 4,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "249",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "250",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "251",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "296",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "297",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "298",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "299",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "301",
+      "admits": 280,
+      "helpers": 0,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "303",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "304",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "305",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "306",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "307",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "308",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "309",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "310",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "311",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "316",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "317",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "321",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "322",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "323",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "324",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "325",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "326",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "327",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "328",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "394",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "396",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "397",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "400",
+      "admits": 0,
+      "helpers": 4,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "401",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "402",
+      "admits": 0,
+      "helpers": 6,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "403",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "404",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "405",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "406",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "407",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "408",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "413",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "414",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "418",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "419",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "420",
+      "admits": 0,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "421",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "431",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "432",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "433",
+      "admits": 0,
+      "helpers": 2,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "446",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "447",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "448",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    },
+    {
+      "iteration": "449",
+      "admits": 1,
+      "helpers": 1,
+      "frame_helpers": 0
+    }
+  ]
+}

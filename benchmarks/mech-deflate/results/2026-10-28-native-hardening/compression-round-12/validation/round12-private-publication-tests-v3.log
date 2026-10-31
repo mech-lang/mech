@@ -1,0 +1,15 @@
+    Finished `test` profile [unoptimized] target(s) in 0.23s
+     Running unittests src/lib.rs (/private/tmp/mech-live-control-target/debug/deps/mech_core-8cc6a27eafb44e54)
+
+running 8 tests
+test snapshot::validation::owned_unsigned_matrix::tests::aliases_and_cross_account_imports_block_consumption_then_allow_recovery ... ok
+test snapshot::validation::owned_unsigned_matrix::tests::output_bytes_reuse_the_original_input_sized_reservation_across_repetitions ... ok
+test snapshot::validation::owned_unsigned_matrix::tests::path_nodes_clear_append_and_refreeze_reuse_the_actual_305257_slot_allocation ... ok
+test snapshot::validation::owned_unsigned_matrix::tests::private_fixed_shape_updates_publish_fresh_identity_without_new_admission ... ok
+test snapshot::validation::owned_unsigned_matrix::tests::private_update_preparation_rejects_geometry_and_allocation_without_leaking ... ok
+test snapshot::validation::owned_unsigned_matrix::tests::reserved_buffer_construction_rejects_wrong_element_kinds_and_logical_extents ... ok
+test snapshot::validation::owned_unsigned_matrix::tests::reserved_words_preserve_capacity_and_charge_it_but_encode_only_initialized_elements ... ok
+test snapshot::validation::owned_unsigned_matrix::tests::wrong_account_and_failed_capacity_admission_preserve_the_previous_publication ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 334 filtered out; finished in 0.03s
+

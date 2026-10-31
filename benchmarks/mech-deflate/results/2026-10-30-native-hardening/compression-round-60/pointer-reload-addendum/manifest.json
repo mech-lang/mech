@@ -1,0 +1,86 @@
+{
+  "created_utc": "2026-10-31T15:16:59.889694+00:00",
+  "head": "d9a47bbbfacfdc6aa4f82d233fea4536249fb140",
+  "files": [
+    {
+      "path": "pointer-reload-addendum.md",
+      "sha256": "83f1af6f60c0e90a7e41e10ae2451cc278c1242ae52bd0ced9a17dcb2b20f6f2",
+      "bytes": 3367
+    },
+    {
+      "path": "pointer-reload-evidence/audit-stack-reloads.py",
+      "sha256": "3ca025a60b1439260122962fca8f8d7e9e9baa3dcf64d15bbbea0d8cb8aab6bb",
+      "bytes": 1822
+    },
+    {
+      "path": "pointer-reload-evidence/compare-native-objects.py",
+      "sha256": "961a7b06487f8933af9c1b2db0cb6c592565517c112e23d985a40f4f8baecbcf",
+      "bytes": 8169
+    },
+    {
+      "path": "pointer-reload-evidence/manifest.json",
+      "sha256": "4d40db89c64a3d493955aa02aac837e84df6e0c520a46696f3bda9501406da18",
+      "bytes": 2377
+    },
+    {
+      "path": "pointer-reload-evidence/r60-stack-audit/README.md",
+      "sha256": "b60904b0b74a2c17cc01ec079db8ffe6e03d69621a7d28cb27883b0697637b45",
+      "bytes": 8361
+    },
+    {
+      "path": "pointer-reload-evidence/r60-stack-audit/after-same-source796.asm",
+      "sha256": "067a5887607c3c730ebbe0888045b4d0b76a634c843a5b970c5a524c2a614d71",
+      "bytes": 883
+    },
+    {
+      "path": "pointer-reload-evidence/r60-stack-audit/after.json",
+      "sha256": "073258ca97141005b224237bb045f128a1c4ea8c0281be1a088f5c2819195399",
+      "bytes": 2289853
+    },
+    {
+      "path": "pointer-reload-evidence/r60-stack-audit/backend-source-hashes.json",
+      "sha256": "b9fb8fb28e28ee6ed2c76ca98c953b11fcbe4838b7722bb5d0f885318e628508",
+      "bytes": 789
+    },
+    {
+      "path": "pointer-reload-evidence/r60-stack-audit/before-same-source796.asm",
+      "sha256": "c4b685266bf0d77bf0cfe35495c13e20e55b1c722433770ae109b2cc1d02d2e1",
+      "bytes": 757
+    },
+    {
+      "path": "pointer-reload-evidence/r60-stack-audit/before.json",
+      "sha256": "f600536e0a0ecd90f076e5c840b104debcc0ce96bb85542412016ff292fa7033",
+      "bytes": 2267042
+    },
+    {
+      "path": "pointer-reload-evidence/r60-stack-audit/candidate-site797-direct-load.asm",
+      "sha256": "3a818b31d4aa1aad452e2527efbd6d6714563b7c2d005e3ff650143ba2ce240a",
+      "bytes": 132
+    },
+    {
+      "path": "pointer-reload-evidence/r60-stack-audit/cranelift-register-allocation.rs",
+      "sha256": "05cae6db5425b4dead43325b5e82dea60c18af4d441564c600db24e2a25d3c28",
+      "bytes": 2975
+    },
+    {
+      "path": "pointer-reload-evidence/r60-stack-audit/pointer-delta.json",
+      "sha256": "a56c082825a457b9404726dcfd0604a02d6ba14443e9883df56e764a618a3148",
+      "bytes": 1196
+    },
+    {
+      "path": "pointer-reload-evidence/r60-stack-audit/regalloc2-data_structures.rs",
+      "sha256": "40c0e54872e38059553c5707ccead545f0253fcff29e30d8f02fe17325a20922",
+      "bytes": 29713
+    },
+    {
+      "path": "pointer-reload-evidence/r60-stack-audit/regalloc2-process.rs",
+      "sha256": "ab0cede2177d791c8e61e772ec3825614aa25c08c9e2b027786b5270ef00941c",
+      "bytes": 59928
+    },
+    {
+      "path": "reconstruction.json",
+      "sha256": "4e72d5ecb248753135629f7aa4e46d04ee4987c79b5d1f60e5ab6aa339f84e14",
+      "bytes": 427
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "base": "851507304181308ddbadcd96bec24859e8deeed4",
+  "head": "4b722986c7eaa47011c4e36562baec0e1fe87cf3",
+  "source_semantics_and_syntax_unchanged": true,
+  "tracked_name_status": [
+    "M\thosts/gpu/src/native_artifact/program/image/identity.rs",
+    "M\thosts/gpu/src/native_artifact/program/image/wire/mod.rs",
+    "M\thosts/gpu/src/native_artifact/program/prepare/mod.rs",
+    "A\thosts/gpu/src/native_artifact/program/runtime/buffer_frames.rs",
+    "A\thosts/gpu/src/native_artifact/program/runtime/invocation/buffer_frames.rs",
+    "M\thosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs",
+    "M\thosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs",
+    "M\thosts/gpu/src/native_artifact/program/runtime/mod.rs",
+    "M\thosts/gpu/src/native_artifact/program/runtime/session/mod.rs",
+    "M\thosts/gpu/src/native_artifact/program/runtime/state.rs",
+    "M\thosts/gpu/tests/canonical_artifact_program.rs",
+    "A\thosts/gpu/tests/support/canonical_program_buffer_frames.rs",
+    "M\thosts/gpu/tests/support/canonical_program_linked.rs",
+    "A\tsrc/engine/src/native_artifact/buffer_frames.rs",
+    "M\tsrc/engine/src/native_artifact/mod.rs",
+    "A\tsrc/engine/src/resident/general/native_collection_buffer_frames.rs",
+    "M\tsrc/engine/src/resident/general/native_collection_prepared.rs"
+  ],
+  "binary_diff_sha256": "8d8fe1a2c0c343c543413d4bb0a313be96d672812fb27d30378fba412fc0260b"
+}

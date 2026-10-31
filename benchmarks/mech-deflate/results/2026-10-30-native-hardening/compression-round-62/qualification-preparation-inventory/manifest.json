@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T15:42:13.464495+00:00",
+  "head": "0ae7cae96ca59b9334524d72e3479922e5751cc6",
+  "files": [
+    {
+      "path": "qualify-all.py",
+      "sha256": "9e8c0f364235fb67ad030db1f13d49a3011471ac8bf0d50e07e42fc20fbdba46",
+      "bytes": 2056
+    },
+    {
+      "path": "units-after/preparation-inventory.json",
+      "sha256": "f3f700ca5b50f519b6bb89b825a12e007f340e9a7f9f0c842c5a0b7378ca0653",
+      "bytes": 351
+    },
+    {
+      "path": "units-after/preparation-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "units-after/preparation-inventory.stdout",
+      "sha256": "404b5a99b1dbd8ff60c1fbd3370000aa89210c8bb888c3faa6f9100430f0fc69",
+      "bytes": 300
+    }
+  ]
+}

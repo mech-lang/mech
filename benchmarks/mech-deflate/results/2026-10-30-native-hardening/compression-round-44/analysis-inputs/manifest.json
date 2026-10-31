@@ -1,0 +1,51 @@
+{
+  "created_utc": "2026-10-31T03:30:18.777683+00:00",
+  "head": "0fe9b1d0ed2ddec31db8de70a68643e085cdb580",
+  "files": [
+    {
+      "path": "auxiliary-dependencies.json",
+      "sha256": "154815dd052736649c8db3ac80edf7ff7c02ab9c93e3cb9ed87e0b7ca5203e47",
+      "bytes": 628
+    },
+    {
+      "path": "final-libraries.json",
+      "sha256": "4c34cfd57b13d2d50603c366a55cb3c0292c6118f4ae5cf9e02ae8c1eba88fc1",
+      "bytes": 10806
+    },
+    {
+      "path": "final-release.json",
+      "sha256": "b0df58bedb8b68c39c38675322340044301720a1614e3a261adf6a22f44527d0",
+      "bytes": 4765
+    },
+    {
+      "path": "linked-primary/after/binding.json",
+      "sha256": "c5d09f12fc6c1bac63b417b765a82ad85c66e314355fe94e6b968ca056913205",
+      "bytes": 13698
+    },
+    {
+      "path": "linked-primary/after/metadata.json",
+      "sha256": "d47f456a2a2be1c9408a2c2c7afb0d8cf00e67aabf6587f0445a645067680db4",
+      "bytes": 2542212
+    },
+    {
+      "path": "linked-primary/before/binding.json",
+      "sha256": "65b9f63ceed3c9969edd89dfd6c03d6661f8ec0c9c3c07ab4c2d8ab645beb3bf",
+      "bytes": 13698
+    },
+    {
+      "path": "linked-primary/before/metadata.json",
+      "sha256": "d47f456a2a2be1c9408a2c2c7afb0d8cf00e67aabf6587f0445a645067680db4",
+      "bytes": 2542212
+    },
+    {
+      "path": "linked-primary/summary.json",
+      "sha256": "728a5cf3ad1ff84130c26be7832f175ca3f61ba9f42f9bfd9bbdb60c784591f4",
+      "bytes": 1636
+    },
+    {
+      "path": "source.patch",
+      "sha256": "9bcde2735da03a3b91b44d1cb6147c52579e8423cf37c63d155ff97a6509abdd",
+      "bytes": 10938
+    }
+  ]
+}

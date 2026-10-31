@@ -1,0 +1,58 @@
+{
+  "locals": {
+    "before_slot": "0x1a6d0",
+    "after_slot": "0x1a8d8",
+    "before_loads": 118456,
+    "after_loads": 181076,
+    "delta": 62620
+  },
+  "context": {
+    "before_slot": "0x1a6c8",
+    "after_slot": "0x1a8d0",
+    "before_loads": 55450,
+    "after_loads": 55450,
+    "delta": 0
+  },
+  "admit_callback": {
+    "before_slot": "0x1a6c0",
+    "after_slot": "0x1a8c8",
+    "before_loads": 39938,
+    "after_loads": 39938,
+    "delta": 0
+  },
+  "helper": {
+    "before_slot": "0x1a6b8",
+    "after_slot": "0x1a8c0",
+    "before_loads": 15518,
+    "after_loads": 15518,
+    "delta": 0
+  },
+  "result": {
+    "before_slot": "0x1a6b0",
+    "after_slot": "0x1a8b8",
+    "before_loads": 27564,
+    "after_loads": 27564,
+    "delta": 0
+  },
+  "arguments": {
+    "before_slot": "0x1a6a8",
+    "after_slot": "0x1a8b0",
+    "before_loads": 15523,
+    "after_loads": 31255,
+    "delta": 15732
+  },
+  "argument_capacity": {
+    "before_slot": "0x1a6a0",
+    "after_slot": "0x1a8a8",
+    "before_loads": 8336,
+    "after_loads": 8348,
+    "delta": 12
+  },
+  "frame": {
+    "before_slot": "0x0",
+    "after_slot": "0x0",
+    "before_loads": 113038,
+    "after_loads": 113038,
+    "delta": 0
+  }
+}

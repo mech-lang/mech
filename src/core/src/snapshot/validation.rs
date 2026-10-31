@@ -17,6 +17,21 @@ pub use string_matrix::StringMatrixSnapshotConstructor;
 
 #[path = "numeric_matrix.rs"]
 mod numeric_matrix;
+pub use numeric_matrix::UnsignedMatrixBuffer;
+
+#[path = "owned_unsigned_matrix.rs"]
+mod owned_unsigned_matrix;
+pub use owned_unsigned_matrix::{OwnedSnapshotUnsignedMatrix, UnsignedMatrixOwnershipTransfer};
+
+#[path = "private_unsigned_matrix.rs"]
+mod private_unsigned_matrix;
+pub use private_unsigned_matrix::{
+    PrivateUnsignedAppendPreparation, PrivateUnsignedMatrix, UnsignedMatrixViewMut,
+};
+
+#[cfg(test)]
+#[path = "unique_admission_tests.rs"]
+mod unique_admission_tests;
 
 #[cfg(test)]
 #[path = "frozen_identity_tests.rs"]
@@ -70,6 +85,17 @@ fn with_budget_gate<T, R>(gate: &SnapshotBudgetGate<T>, apply: impl FnOnce(&mut 
     #[cfg(any(not(feature = "no_std"), feature = "std"))]
     let mut value = gate.lock().unwrap_or_else(|error| error.into_inner());
     apply(&mut value)
+}
+
+fn with_exclusive_budget_gate<T, R>(
+    gate: &mut SnapshotBudgetGate<T>,
+    apply: impl FnOnce(&mut T) -> R,
+) -> R {
+    #[cfg(all(feature = "no_std", not(feature = "std")))]
+    let value = gate.get_mut();
+    #[cfg(any(not(feature = "no_std"), feature = "std"))]
+    let value = gate.get_mut().unwrap_or_else(|error| error.into_inner());
+    apply(value)
 }
 
 #[cfg(all(test, any(not(feature = "no_std"), feature = "std")))]
@@ -426,6 +452,7 @@ struct SnapshotBudgetOwnership {
 struct SnapshotBudgetRegistration {
     budget: crate::ManagedMemoryBudget,
     schemas: Weak<SchemaTable>,
+    shape: Arc<ShapeInstance>,
     owner: SharedOwnershipCell<Weak<FrozenSnapshotStorage>>,
     links: SnapshotBudgetGate<SnapshotBudgetLinks>,
 }
@@ -455,11 +482,12 @@ struct FrozenSnapshotData {
     // inline cell is included in every concrete owner/weak-shell admission.
     // Sharing/importing a root shares the fact, not resource authority.
     string_ascii_without_crlf: SharedOwnershipCell<bool>,
+    // The cached pair is (schema/shape prefix, completed token).
     // This receipt fingerprint is not validation, ownership or capability
     // authority. Retain its exact deterministic algorithm, but walk payloads
     // only if a receipt requests it. The admitted immutable owner contains the
     // complete once-cell; initialization neither allocates nor changes data.
-    resident_token: SharedOwnershipCell<u64>,
+    resident_token: SharedOwnershipCell<(u64, u64)>,
     // The same immutable shape owner is shared by every ordinary Value clone.
     // Physical and imported-root tickets retain its real allocation as part
     // of this data owner, rather than charging a detached metadata copy.
@@ -484,20 +512,27 @@ impl FrozenSnapshotData {
         &self,
         budget: &crate::ManagedMemoryBudget,
         schemas: &Arc<SchemaTable>,
+        shape: &Arc<ShapeInstance>,
     ) -> Option<Arc<FrozenSnapshotStorage>> {
-        self.with_budget_imports(|imports| Self::find_budget_import(imports, budget, schemas))
+        self.with_budget_imports(|imports| {
+            Self::find_budget_import(imports, budget, schemas, shape)
+        })
     }
 
     fn find_budget_import(
         imports: &Option<Arc<SnapshotBudgetRegistration>>,
         budget: &crate::ManagedMemoryBudget,
         schemas: &Arc<SchemaTable>,
+        shape: &Arc<ShapeInstance>,
     ) -> Option<Arc<FrozenSnapshotStorage>> {
         let mut current = imports.clone();
         while let Some(import) = current {
             #[cfg(all(test, any(not(feature = "no_std"), feature = "std")))]
             IMPORT_LOOKUP_STEPS.with(|steps| steps.set(steps.get() + 1));
-            if import.budget == *budget && Weak::ptr_eq(&import.schemas, &Arc::downgrade(schemas)) {
+            if import.budget == *budget
+                && Weak::ptr_eq(&import.schemas, &Arc::downgrade(schemas))
+                && Arc::ptr_eq(&import.shape, shape)
+            {
                 if let Some(owner) = import.owner.get().and_then(Weak::upgrade) {
                     return Some(owner);
                 }
@@ -512,12 +547,35 @@ impl FrozenSnapshotStorage {
     // Shared by ordinary destruction and consuming ownership transfer. Only
     // unlink here: the caller keeps the charge alive until backing is retired
     // or transferred. Ordinary field-drop order remains data before charge.
-    fn unlink_budget_registration(&self) {
-        let Some(ownership) = &self.memory_budget else {
+    fn unlink_budget_registration(&mut self) {
+        let Some(ownership) = &mut self.memory_budget else {
             return;
         };
-        let registration = &ownership.registration;
-        self.data.with_budget_imports(|imports| {
+        let registration = &mut ownership.registration;
+        let unlink = |imports: &mut Option<Arc<SnapshotBudgetRegistration>>| {
+            if imports
+                .as_ref()
+                .is_some_and(|head| Arc::ptr_eq(head, registration))
+            {
+                // Remove the registry's own strong reference while its gate
+                // excludes lookup/link changes. Arc::get_mut checks BOTH
+                // strong and weak exclusivity; counts alone grant no access.
+                *imports = None;
+                if let Some(exclusive) = Arc::get_mut(registration) {
+                    let next = with_exclusive_budget_gate(&mut exclusive.links, |links| {
+                        links.previous = Weak::new();
+                        links.next.take()
+                    });
+                    if let Some(next) = &next {
+                        next.with_links(|links| links.previous = Weak::new());
+                    }
+                    *imports = next;
+                    return;
+                }
+                // A shared/weak observer keeps the ordinary locked path. Put
+                // back the exact head before following its original links.
+                *imports = Some(registration.clone());
+            }
             // At most this node and its two neighbors, regardless of foreign
             // registry growth since admission. Detach the strong next link so
             // retiring this registration cannot recursively retire the list.
@@ -536,7 +594,17 @@ impl FrozenSnapshotStorage {
                     links.previous = previous.as_ref().map(Arc::downgrade).unwrap_or_default();
                 });
             }
-        });
+        };
+        // Destruction and consuming transfer already hold this wrapper
+        // exclusively. A checked exclusive data borrow also excludes every
+        // strong alias and weak identity; otherwise retain the registry lock.
+        // This keeps private publication's lock allocation from being deferred
+        // to destruction, without changing any shared registry access.
+        if let Some(data) = Arc::get_mut(&mut self.data) {
+            with_exclusive_budget_gate(&mut data.budget_imports, unlink);
+        } else {
+            self.data.with_budget_imports(unlink);
+        }
         // This wrapper still owns the registration Arc. Its admitted node is
         // freed outside the registry gate during normal field destruction.
     }
@@ -681,7 +749,9 @@ impl Value {
                 reason: "immutable snapshot has no retained schema context".into(),
             }
         })?;
-        if reuse_existing && let Some(owner) = self.root.data.budget_import(&budget, &schemas) {
+        if reuse_existing
+            && let Some(owner) = self.root.data.budget_import(&budget, &schemas, &self.shape)
+        {
             self.root = owner;
             return Ok(self);
         }
@@ -700,9 +770,10 @@ impl Value {
             registration_bytes,
             core::mem::align_of::<SnapshotBudgetRegistration>() as u32,
         )?;
-        let registration = Arc::try_new(SnapshotBudgetRegistration {
+        let mut registration = Arc::try_new(SnapshotBudgetRegistration {
             budget: budget.clone(),
             schemas: Arc::downgrade(&schemas),
+            shape: self.shape.clone(),
             owner: SharedOwnershipCell::new(),
             links: SnapshotBudgetGate::default(),
         })
@@ -713,32 +784,54 @@ impl Value {
             space: crate::MemorySpace::Host,
         })?;
         let data = self.root.data.clone();
-        budget.check_snapshot_import_allocation(
-            core::mem::size_of::<FrozenSnapshotStorage>() as u64,
-            core::mem::align_of::<FrozenSnapshotStorage>() as u32,
-        )?;
-        let mut prepared = Arc::try_new(FrozenSnapshotStorage {
-            data: data.clone(),
-            memory_budget: None,
-        })
-        .map_err(|_| crate::MemoryRuntimeError::AllocationFailed {
-            object: None,
-            requested: core::mem::size_of::<FrozenSnapshotStorage>() as u64,
-            alignment: core::mem::align_of::<FrozenSnapshotStorage>() as u32,
-            space: crate::MemorySpace::Host,
-        })?;
+        // A consumed unadmitted wrapper may already be the unique owner.
+        // Data can still be shared: keep the existing registry gate and its
+        // concurrent import recheck for both representations.
+        let reuse_root =
+            Arc::get_mut(&mut self.root).is_some_and(|root| root.memory_budget.is_none());
+        let mut prepared = if reuse_root {
+            None
+        } else {
+            budget.check_snapshot_import_allocation(
+                core::mem::size_of::<FrozenSnapshotStorage>() as u64,
+                core::mem::align_of::<FrozenSnapshotStorage>() as u32,
+            )?;
+            Some(
+                Arc::try_new(FrozenSnapshotStorage {
+                    data: data.clone(),
+                    memory_budget: None,
+                })
+                .map_err(|_| crate::MemoryRuntimeError::AllocationFailed {
+                    object: None,
+                    requested: core::mem::size_of::<FrozenSnapshotStorage>() as u64,
+                    alignment: core::mem::align_of::<FrozenSnapshotStorage>() as u32,
+                    space: crate::MemorySpace::Host,
+                })?,
+            )
+        };
         let owner = data.with_budget_imports(|imports| {
             if reuse_existing
                 && let Some(existing) =
-                    FrozenSnapshotData::find_budget_import(imports, &budget, &schemas)
+                    FrozenSnapshotData::find_budget_import(imports, &budget, &schemas, &self.shape)
             {
-                return Ok(existing);
+                return Ok(Some(existing));
             }
+            // This unpublished registration is still exclusive. Initialize
+            // its links directly rather than constructing a separate host
+            // lock backing. The old head remains installed through all
+            // fallible admission, and neighboring links still use their lock.
+            with_exclusive_budget_gate(
+                &mut Arc::get_mut(&mut registration)
+                    .expect("unpublished registration has no shared or weak owner")
+                    .links,
+                |links| links.next = imports.clone(),
+            );
             // All physical construction has succeeded under the reservation.
             // No user code runs under this short metadata gate.
             let node_charge = budget.retain_snapshot_nodes(retained_nodes)?;
             let charge = reservation.split_capacity(admitted_bytes)?;
-            Arc::get_mut(&mut prepared)
+            let target = prepared.as_mut().unwrap_or(&mut self.root);
+            Arc::get_mut(target)
                 .expect("unpublished import has no shared or weak wrapper owner")
                 .memory_budget = Some(SnapshotBudgetOwnership {
                 schemas,
@@ -747,15 +840,16 @@ impl Value {
                 node_charge,
                 registration: registration.clone(),
             });
-            let _ = registration.owner.set(Arc::downgrade(&prepared));
+            let _ = registration.owner.set(Arc::downgrade(target));
             if let Some(next) = imports.as_ref() {
                 next.with_links(|links| links.previous = Arc::downgrade(&registration));
             }
-            registration.with_links(|links| links.next = imports.take());
             *imports = Some(registration);
-            Ok::<_, crate::MemoryRuntimeError>(prepared.clone())
+            Ok::<_, crate::MemoryRuntimeError>(prepared.as_ref().map(Arc::clone))
         })?;
-        self.root = owner;
+        if let Some(owner) = owner {
+            self.root = owner;
+        }
         Ok(self)
     }
 
@@ -823,7 +917,12 @@ impl Value {
             return Ok(0);
         }
         if let Some(schemas) = &self.schemas {
-            if self.root.data.budget_import(budget, schemas).is_some() {
+            if self
+                .root
+                .data
+                .budget_import(budget, schemas, &self.shape)
+                .is_some()
+            {
                 return Ok(0);
             }
         }
@@ -925,7 +1024,22 @@ impl Value {
             core::mem::size_of::<ShapeInstance>(),
             core::mem::align_of::<ShapeInstance>(),
         ))?;
+        // Rebound metadata owns a separate shape; the shared payload still
+        // retains its original shape owner. Admit both actual allocations.
+        let rebound_shape_bytes = if Arc::ptr_eq(&self.shape, &self.root.data.shape) {
+            0
+        } else {
+            Self::shared_owner_allocation_bytes(
+                core::mem::size_of::<ShapeInstance>(),
+                core::mem::align_of::<ShapeInstance>(),
+            )
+            .checked_add(
+                (self.root.data.shape.parameter_values().len() as u64)
+                    .checked_mul(core::mem::size_of::<u64>() as u64)?,
+            )?
+        };
         owner_bytes
+            .checked_add(rebound_shape_bytes)?
             .checked_add(schema_bytes)?
             .checked_add(Self::nested_budget_owner_bytes(self.data(), schemas)?)
     }
@@ -980,8 +1094,10 @@ impl Value {
     pub fn memory_budget_retained_bytes(&self, budget: &crate::ManagedMemoryBudget) -> Option<u64> {
         let ownership = self.root.memory_budget.as_ref()?;
         let schemas = self.schemas.as_ref()?;
-        (ownership.reservation.budget() == *budget && Arc::ptr_eq(schemas, &ownership.schemas))
-            .then_some(ownership.required_bytes)
+        (ownership.reservation.budget() == *budget
+            && Arc::ptr_eq(schemas, &ownership.schemas)
+            && Arc::ptr_eq(&self.shape, &ownership.registration.shape))
+        .then_some(ownership.required_bytes)
     }
 
     /// Constant-time node witness for this exact admitted account and schema
@@ -1001,7 +1117,6 @@ impl Value {
     }
 
     pub fn shape(&self) -> &ShapeInstance {
-        debug_assert!(Arc::ptr_eq(&self.shape, &self.root.data.shape));
         &self.shape
     }
 
@@ -1121,6 +1236,26 @@ impl Value {
                 });
             }
         }
+        // Primitive matrix elements contain no nested schema identities.
+        // Equal closed geometry permits sharing the immutable payload while
+        // independently validating and retaining the destination metadata.
+        if equivalent_at_shape
+            && matches!(target_schema.body(), SchemaBody::Matrix { element, .. }
+            if matches!(element.as_ref(), SchemaBody::UnsignedInteger(_) | SchemaBody::SignedInteger(_)
+                | SchemaBody::FloatingPoint(_) | SchemaBody::Bool))
+        {
+            let mut parameters = context.try_vec_with_capacity(shape.parameter_values().len())?;
+            parameters.extend_from_slice(shape.parameter_values());
+            let shape =
+                context.try_arc(target_schema.instantiate_shape(parameters.into_boxed_slice())?)?;
+            return Ok(Self {
+                schema,
+                schema_key: target_entry.key(),
+                shape,
+                root: self.root.clone(),
+                schemas: Some(context.try_clone_schemas()?),
+            });
+        }
         self.rebound_draft_after_validation(schema, shape, source_schema, target_schema, context)?
             .finalize(context)
     }
@@ -1218,14 +1353,24 @@ impl Value {
     /// No schema lookup, encoding, allocation or authority is introduced here.
     #[doc(hidden)]
     pub fn resident_token(&self) -> u64 {
-        *self.root.data.resident_token.get_or_init(|| {
-            let mut token = token_bytes(RESIDENT_TOKEN_SEED, self.schema_key.as_bytes());
-            token = token_word(token, self.shape.parameter_values().len() as u64);
-            for value in self.shape.parameter_values() {
-                token = token_word(token, *value);
-            }
-            token_data(token, &self.root.data.data)
-        })
+        let mut prefix = token_bytes(RESIDENT_TOKEN_SEED, self.schema_key.as_bytes());
+        prefix = token_word(prefix, self.shape.parameter_values().len() as u64);
+        for value in self.shape.parameter_values() {
+            prefix = token_word(prefix, *value);
+        }
+        // Metadata rebinding shares the payload, not its schema/shape prefix.
+        // Preserve the exact token algorithm and never reuse a cached result
+        // computed with a different prefix. The inline cache cannot grow.
+        let (cached_prefix, cached_token) = *self
+            .root
+            .data
+            .resident_token
+            .get_or_init(|| (prefix, token_data(prefix, &self.root.data.data)));
+        if cached_prefix == prefix {
+            cached_token
+        } else {
+            token_data(prefix, &self.root.data.data)
+        }
     }
 
     pub fn validate_against<'a>(
@@ -4090,7 +4235,7 @@ fn finalize_scalar_sequence(
                 };
                 packed.push(value);
             }
-            Ok(SequenceStorage::$storage(packed.into_boxed_slice()))
+            Ok(SequenceStorage::$storage(packed.into()))
         }};
     }
 

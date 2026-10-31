@@ -1,0 +1,272 @@
+{
+  "before": {
+    "admits": 14894,
+    "helper_calls": 9500
+  },
+  "after": {
+    "admits": 13678,
+    "helper_calls": 9156
+  },
+  "parents": [
+    {
+      "iteration": 70,
+      "child": 71,
+      "before": {
+        "admits": 424,
+        "helpers": 305
+      },
+      "after": {
+        "admits": 223,
+        "helpers": 248
+      },
+      "parent_entry_ready": [
+        {
+          "count": 15,
+          "operation": 18446744073709551588,
+          "ready": 1,
+          "site": 7030
+        },
+        {
+          "count": 14,
+          "operation": 18446744073709551588,
+          "ready": 1,
+          "site": 7043
+        },
+        {
+          "count": 15,
+          "operation": 18446744073709551588,
+          "ready": 1,
+          "site": 7118
+        }
+      ],
+      "child_entry_ready": [
+        {
+          "count": 14,
+          "operation": 18446744073709551608,
+          "ready": 1,
+          "site": 7059
+        }
+      ],
+      "child_initialize": 7059,
+      "child_exit": 7111,
+      "child_successor": 7112
+    },
+    {
+      "iteration": 119,
+      "child": 120,
+      "before": {
+        "admits": 221,
+        "helpers": 158
+      },
+      "after": {
+        "admits": 118,
+        "helpers": 129
+      },
+      "parent_entry_ready": [
+        {
+          "count": 8,
+          "operation": 18446744073709551588,
+          "ready": 1,
+          "site": 11209
+        },
+        {
+          "count": 7,
+          "operation": 18446744073709551588,
+          "ready": 1,
+          "site": 11222
+        },
+        {
+          "count": 8,
+          "operation": 18446744073709551588,
+          "ready": 1,
+          "site": 11297
+        }
+      ],
+      "child_entry_ready": [
+        {
+          "count": 7,
+          "operation": 18446744073709551608,
+          "ready": 1,
+          "site": 11238
+        }
+      ],
+      "child_initialize": 11238,
+      "child_exit": 11290,
+      "child_successor": 11291
+    },
+    {
+      "iteration": 190,
+      "child": 191,
+      "before": {
+        "admits": 848,
+        "helpers": 610
+      },
+      "after": {
+        "admits": 446,
+        "helpers": 496
+      },
+      "parent_entry_ready": [
+        {
+          "count": 30,
+          "operation": 18446744073709551588,
+          "ready": 1,
+          "site": 17360
+        },
+        {
+          "count": 28,
+          "operation": 18446744073709551588,
+          "ready": 1,
+          "site": 17373
+        },
+        {
+          "count": 30,
+          "operation": 18446744073709551588,
+          "ready": 1,
+          "site": 17448
+        }
+      ],
+      "child_entry_ready": [
+        {
+          "count": 28,
+          "operation": 18446744073709551608,
+          "ready": 1,
+          "site": 17389
+        }
+      ],
+      "child_initialize": 17389,
+      "child_exit": 17441,
+      "child_successor": 17442
+    },
+    {
+      "iteration": 239,
+      "child": 240,
+      "before": {
+        "admits": 442,
+        "helpers": 316
+      },
+      "after": {
+        "admits": 236,
+        "helpers": 258
+      },
+      "parent_entry_ready": [
+        {
+          "count": 16,
+          "operation": 18446744073709551588,
+          "ready": 1,
+          "site": 21539
+        },
+        {
+          "count": 14,
+          "operation": 18446744073709551588,
+          "ready": 1,
+          "site": 21552
+        },
+        {
+          "count": 16,
+          "operation": 18446744073709551588,
+          "ready": 1,
+          "site": 21627
+        }
+      ],
+      "child_entry_ready": [
+        {
+          "count": 14,
+          "operation": 18446744073709551608,
+          "ready": 1,
+          "site": 21568
+        }
+      ],
+      "child_initialize": 21568,
+      "child_exit": 21620,
+      "child_successor": 21621
+    },
+    {
+      "iteration": 320,
+      "child": 321,
+      "before": {
+        "admits": 424,
+        "helpers": 305
+      },
+      "after": {
+        "admits": 223,
+        "helpers": 248
+      },
+      "parent_entry_ready": [
+        {
+          "count": 15,
+          "operation": 18446744073709551588,
+          "ready": 1,
+          "site": 28959
+        },
+        {
+          "count": 14,
+          "operation": 18446744073709551588,
+          "ready": 1,
+          "site": 28972
+        },
+        {
+          "count": 15,
+          "operation": 18446744073709551588,
+          "ready": 1,
+          "site": 29047
+        }
+      ],
+      "child_entry_ready": [
+        {
+          "count": 14,
+          "operation": 18446744073709551608,
+          "ready": 1,
+          "site": 28988
+        }
+      ],
+      "child_initialize": 28988,
+      "child_exit": 29040,
+      "child_successor": 29041
+    },
+    {
+      "iteration": 417,
+      "child": 418,
+      "before": {
+        "admits": 221,
+        "helpers": 158
+      },
+      "after": {
+        "admits": 118,
+        "helpers": 129
+      },
+      "parent_entry_ready": [
+        {
+          "count": 8,
+          "operation": 18446744073709551588,
+          "ready": 1,
+          "site": 37603
+        },
+        {
+          "count": 7,
+          "operation": 18446744073709551588,
+          "ready": 1,
+          "site": 37616
+        },
+        {
+          "count": 8,
+          "operation": 18446744073709551588,
+          "ready": 1,
+          "site": 37691
+        }
+      ],
+      "child_entry_ready": [
+        {
+          "count": 7,
+          "operation": 18446744073709551608,
+          "ready": 1,
+          "site": 37632
+        }
+      ],
+      "child_initialize": 37632,
+      "child_exit": 37684,
+      "child_successor": 37685
+    }
+  ],
+  "head": "2de2b627d1656c50adfc99ab75f4f3242e354c29",
+  "historical_before": "Retained R29 census; identical generated object and selection through R32; not a fresh R32 instrumentation campaign."
+}

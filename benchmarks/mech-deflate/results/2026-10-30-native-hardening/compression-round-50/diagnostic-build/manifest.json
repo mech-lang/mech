@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-31T07:35:51.107613+00:00",
+  "head": "087898fcad52d845d9a0b3edf1cc56ddea814c2e",
+  "files": [
+    {
+      "path": "probe/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "probe/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "probe/run.py",
+      "sha256": "34d949632cc01dcfbd82586f3c4348d8e2e542281118c5d17d10db04a09c2b20",
+      "bytes": 4752
+    },
+    {
+      "path": "probe/source/native_artifact/program/runtime/buffer_frames.rs",
+      "sha256": "dcd75f74bcddb4fcfd0b8fa06213e19376f0b4fdf157b597018a6c4fc5976263",
+      "bytes": 23914
+    },
+    {
+      "path": "probe/source/native_artifact/program/runtime/retirement.rs",
+      "sha256": "5084544d1093c9225720d40b5091728eafe0e12627a2f828d74cb09fe4c1923c",
+      "bytes": 6547
+    },
+    {
+      "path": "probe/source-pin.json",
+      "sha256": "c4758ffc068f39feaa601f91876e000675b766ee14bd3df03d91f61021d42ac0",
+      "bytes": 807
+    },
+    {
+      "path": "probe/variants/after/build.json",
+      "sha256": "f617d24e663c7d1cef130b2db9c77252218cf7c6aa681156209f1668197b6d5d",
+      "bytes": 5102
+    }
+  ]
+}

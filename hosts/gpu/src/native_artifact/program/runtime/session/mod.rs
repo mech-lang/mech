@@ -1,6 +1,7 @@
 //! Owning two-phase state for ONE generated CFG invocation. Raw frame pointers
 //! are reconstructed from admitted owned backing for each synchronous entry;
 //! neither caller pointers nor self-referential borrowed state are retained.
+use crate::native_artifact::abi::STATUS_INTEGRITY;
 use crate::native_artifact::program::protocol::abi::{
     PHASE_ACTIVATION, PHASE_CAPTURE_TAIL, PHASE_PREFIX, PHASE_TURN, PHASE_WORKER, STATUS_ACTIVATED,
     STATUS_INPUT_PENDING, STATUS_INPUT_SCANNED, STATUS_WORKER_RESULT,
@@ -189,18 +190,30 @@ pub(in crate::native_artifact::program::runtime) enum CallCacheEntry {
     Repeated(NativePreparedLibraryCallCache, u64),
 }
 
-/// Empty per-site slots are native invocation metadata, not prebound calls.
+/// Empty prepared-call slots are invocation metadata, not prebound calls.
 /// Their complete concrete backing is admitted during setup. Once slots have
 /// no cache owner; repeated slots separately admit lazy bound metadata.
-pub(in crate::native_artifact::program::runtime) struct CallCacheLane {
-    pub(in crate::native_artifact::program::runtime) entries: Box<[CallCacheEntry]>,
+pub(in crate::native_artifact::program::runtime) struct CallCacheLane<'plan> {
+    layout: &'plan crate::native_artifact::program::prepare::call_cache::Layout,
+    entries: Box<[CallCacheEntry]>,
     metadata_nodes: u64,
     metadata_valid: bool,
     library: Option<NativeLibraryWorkBudget>,
     _reservation: mech_core::ManagedMemoryReservation,
     _nodes: mech_core::ManagedNodeReservation,
 }
-impl CallCacheLane {
+impl<'plan> CallCacheLane<'plan> {
+    #[inline]
+    pub(in crate::native_artifact::program::runtime) fn entry(
+        &self,
+        site: usize,
+    ) -> Option<&CallCacheEntry> {
+        self.entries.get(self.layout.slot(site)?)
+    }
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    pub(in crate::native_artifact::program::runtime) fn test_entries(&self) -> &[CallCacheEntry] {
+        &self.entries
+    }
     /// Reconcile only the cache that can change at this boundary. A failed
     /// reconciliation leaves the lane unusable, never a stale lower bound.
     pub(in crate::native_artifact::program::runtime) fn with_repeated<T>(
@@ -213,9 +226,13 @@ impl CallCacheLane {
     ) -> Result<T, NativeCollectionInvocationError> {
         self.check_account(work)?;
         work.charge(256, 0)?;
+        let slot = self
+            .layout
+            .slot(site)
+            .ok_or(NativeCollectionInvocationError::InvalidInput)?;
         let CallCacheEntry::Repeated(cache, nodes) = self
             .entries
-            .get_mut(site)
+            .get_mut(slot)
             .ok_or(NativeCollectionInvocationError::InvalidInput)?
         else {
             return Err(NativeCollectionInvocationError::InvalidInput);
@@ -247,7 +264,7 @@ impl CallCacheLane {
         limits: MemoryBudgetLimits,
         work: &NativeLibraryWorkBudget,
     ) -> Result<bool, NativeCollectionInvocationError> {
-        match self.entries.get(site) {
+        match self.entry(site) {
             Some(CallCacheEntry::Once) => call.invoke_current(inputs, output, limits, work),
             Some(CallCacheEntry::Repeated(..)) => self.with_repeated(site, work, |cache| {
                 call.invoke_current_cached(cache, inputs, output, limits, work)
@@ -294,13 +311,13 @@ impl CallCacheLane {
         )
     }
     fn new(
-        descriptor: &NativeProgramDescriptor,
+        descriptor: &'plan NativeProgramDescriptor,
         limit: u64,
         memory: &ManagedMemoryBudget,
         work: &mut NativeWorkMeter,
     ) -> Result<Self, NativeProgramExecutionError> {
-        let blocks = descriptor.metadata().plan.blocks();
-        let count = blocks.len();
+        let layout = &descriptor.metadata().call_cache;
+        let count = layout.len();
         let bytes = Self::metadata_bytes(count)?;
         if bytes > limit {
             return Err(NativeExecutionError::TransportLimit {
@@ -326,14 +343,14 @@ impl CallCacheLane {
         // Phase resume retains the same previous/current/progress state and
         // cannot replay a root block. No new execution authority is created.
         let entries = call_cache_allocation::allocate(count, bytes, |ordinal| {
-            let block = &blocks[ordinal];
-            if block.iteration().is_none() {
+            if !layout.repeated()[ordinal] {
                 CallCacheEntry::Once
             } else {
                 CallCacheEntry::Repeated(NativePreparedLibraryCallCache::default(), 0)
             }
         })?;
         Ok(Self {
+            layout,
             entries: entries.into_boxed_slice(),
             metadata_nodes: 0,
             metadata_valid: true,
@@ -368,6 +385,7 @@ struct SetupGeometry {
     locals: usize,
     progress: usize,
     words: usize,
+    logical_words: usize,
     bytes: u64,
 }
 
@@ -385,9 +403,14 @@ impl<'a> Prepared<'a> {
             crate::native_artifact::program::runtime::collections::State::metadata_bytes(
                 descriptor,
             )?;
-        let call_caches = CallCacheLane::metadata_bytes(descriptor.metadata().plan.blocks().len())?;
+        let call_caches = CallCacheLane::metadata_bytes(descriptor.metadata().call_cache.len())?;
         let line_matrices = u64::from(!descriptor.metadata().line_matrices.regions.is_empty());
+        let frames = super::buffer_frames::BufferFrames::metadata_nodes(
+            &descriptor.metadata().buffer_frames,
+        )?;
         let total = fixed
+            .checked_add(frames)
+            .ok_or_else(|| invalid("worker frame node count overflow"))?
             .checked_add(collections)
             .and_then(|n| n.checked_add(call_caches))
             .and_then(|n| n.checked_add(line_matrices))
@@ -438,6 +461,15 @@ impl<'a> Prepared<'a> {
                 .and_then(|bytes| bytes.checked_add(admitted))
                 .ok_or_else(|| invalid("worker fixed backing admission overflow"))?;
         }
+        let frames = &descriptor.metadata().buffer_frames;
+        if frames.elements() != 0 {
+            bytes = bytes
+                .checked_sub(super::buffer_frames::BufferFrames::raw_bytes(frames)?)
+                .and_then(|n| {
+                    n.checked_add(super::buffer_frames::BufferFrames::admission_bytes(frames).ok()?)
+                })
+                .ok_or_else(|| invalid("private frame admission overflow"))?;
+        }
         // This immutable sum is established at prepare/decode time, so a
         // repeated dispatch never performs an unfunded constants-table scan.
         bytes
@@ -464,7 +496,27 @@ impl<'a> Prepared<'a> {
             .and_then(|n| n.checked_add(descriptor.metadata().max_library_inputs.max(1)))
             .and_then(|n| n.checked_add(descriptor.metadata().retirements.words().len()))
             .ok_or_else(|| invalid("transport count overflow"))?;
-        let bytes = transport_bytes(words)?
+        let tails = &descriptor.metadata().closed_tails;
+        let saved = tails
+            .logical_words
+            .checked_sub(tails.words)
+            .ok_or_else(|| invalid("numeric physical words exceed logical envelope"))?;
+        let logical_words = words
+            .checked_add(saved)
+            .ok_or_else(|| invalid("logical transport count overflow"))?;
+        // Keep the original combined transport threshold and setup price;
+        // physical planned storage below allocates only the compact bank.
+        let word_and_frame_bytes = transport_bytes(logical_words)?
+            .checked_add(super::buffer_frames::BufferFrames::raw_bytes(
+                &descriptor.metadata().buffer_frames,
+            )?)
+            .ok_or_else(|| invalid("private frame transport overflow"))?;
+        let word_and_frame_bytes = word_and_frame_bytes
+            .checked_add(super::buffer_frames::BufferFrames::metadata_bytes(
+                &descriptor.metadata().buffer_frames,
+            ))
+            .ok_or_else(|| invalid("private frame metadata overflow"))?;
+        let bytes = word_and_frame_bytes
             .checked_add(amount(
                 descriptor.metadata().types.len(),
                 (core::mem::size_of::<Option<Value>>() + 8) as u64,
@@ -488,7 +540,11 @@ impl<'a> Prepared<'a> {
                     .ok()?,
                 )
             })
-            .and_then(|n| n.checked_add(CallCacheLane::metadata_bytes(plan.blocks().len()).ok()?))
+            .and_then(|n| {
+                n.checked_add(
+                    CallCacheLane::metadata_bytes(descriptor.metadata().call_cache.len()).ok()?,
+                )
+            })
             .and_then(|n| {
                 n.checked_add(
                     crate::native_artifact::program::runtime::lines::State::metadata_bytes(
@@ -502,6 +558,7 @@ impl<'a> Prepared<'a> {
             locals,
             progress,
             words,
+            logical_words,
             bytes,
         })
     }
@@ -554,6 +611,7 @@ impl<'a> Prepared<'a> {
             locals,
             progress,
             words,
+            logical_words,
             bytes,
         } = Self::setup_geometry(descriptor)?;
         if bytes > limits.execution.max_transport_bytes {
@@ -568,7 +626,7 @@ impl<'a> Prepared<'a> {
         } else {
             NativeWorkMeter::new(limits.execution.max_work)?
         };
-        work.charge(NativeExecutionPhase::Setup, amount(words, 4, 256)?)?;
+        work.charge(NativeExecutionPhase::Setup, amount(logical_words, 4, 256)?)?;
         work.charge(
             NativeExecutionPhase::Setup,
             amount(
@@ -602,6 +660,12 @@ impl<'a> Prepared<'a> {
             .copy_from_slice(descriptor.metadata().retirements.words());
         let mut arena = NativeValueArena::new(
             &descriptor.metadata().types,
+            limits.execution.max_transport_bytes,
+            memory,
+            &mut work,
+        )?;
+        let buffer_frames = super::buffer_frames::BufferFrames::new(
+            &descriptor.metadata().buffer_frames,
             limits.execution.max_transport_bytes,
             memory,
             &mut work,
@@ -670,11 +734,13 @@ impl<'a> Prepared<'a> {
                 line_matrices,
                 arena,
                 call_inputs,
+                buffer_frames,
                 call_caches,
                 library,
                 control: ControlState::new(work),
                 stats: RuntimeStats::default(),
                 consumed: false,
+                scalar_path: None,
                 output_cursor: 0,
             }),
         })
@@ -748,8 +814,8 @@ impl<'a> Prepared<'a> {
                     let kind = descriptor.metadata().plan.values()[slot as usize]
                         .scalar_kind()
                         .ok_or_else(|| invalid("worker scalar capture type"))?;
-                    if kind == NativeScalarKind::Bool && word > 1 {
-                        return Err(invalid("worker Bool capture"));
+                    if !kind.accepts_bits(word) {
+                        return Err(invalid("worker scalar capture exceeds its type"));
                     }
                     prepared.storage.values_mut()[locals_start + slot as usize] = word;
                 }
@@ -1192,6 +1258,7 @@ impl<'a> Prepared<'a> {
             window_hashes: None,
             borrowed_strings: None,
             closed_tail: None,
+            parent_continuation: Default::default(),
             selected_join: None,
             prefix: prefix_input.map(|input| {
                 crate::native_artifact::program::runtime::invocation::prefix::State::new(
@@ -1266,6 +1333,7 @@ impl<'a> Prepared<'a> {
             return Err(invalid("program entry changed immutable frame"));
         }
         if phase == PHASE_ACTIVATION && status == STATUS_ACTIVATED {
+            let previous = context.admission_predecessor(u64::from(boundary))?;
             if f.error_node != u64::from(boundary)
                 || context.state.control.completed
                 || context.state.control.current.is_some()
@@ -1276,7 +1344,7 @@ impl<'a> Prepared<'a> {
                     .collections
                     .as_ref()
                     .is_some_and(|state| !state.is_complete())
-                || context.state.control.previous.is_none_or(|previous| {
+                || previous.is_none_or(|previous| {
                     !descriptor.metadata().visits[previous as usize]
                         .successors()
                         .contains(&Some(boundary))
@@ -1356,11 +1424,16 @@ impl<'a> Prepared<'a> {
                     )?;
                     self.paused = Some(site);
                 }
-                STATUS_ARITHMETIC | STATUS_REJECT => {
+                STATUS_ARITHMETIC | STATUS_REJECT | STATUS_INTEGRITY => {
                     let id = context.failure_site(f.error_node)?;
                     let site = &descriptor.metadata().visits[id as usize];
                     return Err(if status == STATUS_ARITHMETIC && site.arithmetic {
                         NativeIterationExecutionError::Arithmetic {
+                            origin: site.origin,
+                        }
+                        .into()
+                    } else if status == STATUS_INTEGRITY && site.integrity {
+                        NativeIterationExecutionError::Integrity {
                             origin: site.origin,
                         }
                         .into()

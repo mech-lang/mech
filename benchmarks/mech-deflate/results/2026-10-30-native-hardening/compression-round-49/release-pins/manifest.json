@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T06:40:45.494307+00:00",
+  "head": "beb37291a5c0577a07b9dc3fbe473330667dc9ee",
+  "files": [
+    {
+      "path": "auxiliary-dependencies.json",
+      "sha256": "5d2c440e52e7bdf292c59d8173e82e345cb1910215f6824396bbcdb2fce0a4b7",
+      "bytes": 5954
+    },
+    {
+      "path": "final-libraries.json",
+      "sha256": "2b01c3bf75bec0f00ee7b94d5ddc36666a94b6e6b3e70125356bd82607a567c1",
+      "bytes": 10910
+    },
+    {
+      "path": "final-release.json",
+      "sha256": "263c788d151fbd463c8c74cf5421c292ab3623eec9795277886cb3877c28803b",
+      "bytes": 5136
+    },
+    {
+      "path": "variants/before/libraries.json",
+      "sha256": "2918371a2f18eec1b593f61833d417521621d6df6bc4fa13ce95f201315eb044",
+      "bytes": 10912
+    }
+  ]
+}

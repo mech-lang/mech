@@ -1,0 +1,23 @@
+{"command": ["cargo", "+nightly-2026-03-03", "fmt", "--all", "--", "--check"], "exit": 0, "seconds": 7.371632540947758}
+{"command": ["git", "diff", "--check"], "exit": 0, "seconds": 0.037904915981926024}
+warning policy contract passed
+{"command": ["python3", "scripts/check-warning-policy.py"], "exit": 0, "seconds": 14.369836124940775}
+Rust module layout contract passed
+{"command": ["python3", "scripts/check-rust-module-layout.py"], "exit": 0, "seconds": 0.17547175008803606}
+Native build analysis layout contract passed
+{"command": ["python3", "scripts/check-native-build-analysis-layout.py"], "exit": 0, "seconds": 0.02887049992568791}
+value execution boundary audit passed
+{"command": ["python3", "scripts/check-value-execution-boundary.py"], "exit": 0, "seconds": 23.874787290929817}
+ProgramArtifact and bytecode-v1 boundary: OK
+{"command": ["python3", "scripts/check-program-artifact-contract.py"], "exit": 0, "seconds": 0.03178708301857114}
+type-memory boundary contract passed
+{"command": ["python3", "scripts/check-type-memory-boundary.py"], "exit": 0, "seconds": 11.39838529098779}
+interactive architecture contract passed
+{"command": ["python3", "scripts/check-interactive-architecture.py"], "exit": 0, "seconds": 0.3269369169138372}
+Production resident-routing contract passed
+{"command": ["python3", "scripts/check-production-resident-routing.py"], "exit": 0, "seconds": 0.18109020800329745}
+Compiler-planning quarantine passed
+{"command": ["python3", "scripts/check-compiler-planning-quarantine.py"], "exit": 0, "seconds": 117.61586566700134}
+unsafe boundary audit passed
+{"command": ["scripts/check-unsafe-boundaries.sh"], "exit": 0, "seconds": 36.51255687500816}
+{"checks": [{"command": ["cargo", "+nightly-2026-03-03", "fmt", "--all", "--", "--check"], "exit": 0, "seconds": 7.371632540947758}, {"command": ["git", "diff", "--check"], "exit": 0, "seconds": 0.037904915981926024}, {"command": ["python3", "scripts/check-warning-policy.py"], "exit": 0, "seconds": 14.369836124940775}, {"command": ["python3", "scripts/check-rust-module-layout.py"], "exit": 0, "seconds": 0.17547175008803606}, {"command": ["python3", "scripts/check-native-build-analysis-layout.py"], "exit": 0, "seconds": 0.02887049992568791}, {"command": ["python3", "scripts/check-value-execution-boundary.py"], "exit": 0, "seconds": 23.874787290929817}, {"command": ["python3", "scripts/check-program-artifact-contract.py"], "exit": 0, "seconds": 0.03178708301857114}, {"command": ["python3", "scripts/check-type-memory-boundary.py"], "exit": 0, "seconds": 11.39838529098779}, {"command": ["python3", "scripts/check-interactive-architecture.py"], "exit": 0, "seconds": 0.3269369169138372}, {"command": ["python3", "scripts/check-production-resident-routing.py"], "exit": 0, "seconds": 0.18109020800329745}, {"command": ["python3", "scripts/check-compiler-planning-quarantine.py"], "exit": 0, "seconds": 117.61586566700134}, {"command": ["scripts/check-unsafe-boundaries.sh"], "exit": 0, "seconds": 36.51255687500816}]}

@@ -1,0 +1,657 @@
+{
+  "baseline_compiler": "552e537fcbcfc3811ce442c982010b5e1e999e6c",
+  "source_pins": {
+    "baseline-census.json": "bf7d0e0753447dd63b1682f6317fb81293e894be25e5428b8dec53848b81aad0",
+    "baseline-descriptor.json": "c34838f0b42997bcdcbfb86df1eddad94303fb3083c34c89829ab4a8f8ae9a05"
+  },
+  "project_visits_by_kind": {
+    "managed_unsigned_matrix": 2173,
+    "scalar": 1829,
+    "other_managed_or_composite": 13
+  },
+  "managed_unsigned_visits_by_width": {
+    "W8": 460,
+    "W32": 1110,
+    "W16": 50,
+    "W64": 553
+  },
+  "linear_structural_managed_runs": 67,
+  "maximum_per_field_admissions_combined": 706,
+  "maximum_per_field_helpers_combined": 706,
+  "largest_runs": [
+    {
+      "source": 8823,
+      "iteration": 170,
+      "sites": [
+        15304,
+        15305,
+        15306,
+        15307,
+        15308
+      ],
+      "ordinals": [
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "visits": [
+        18,
+        18,
+        18,
+        18,
+        18
+      ],
+      "maximum_per_field_visits_combined": 72
+    },
+    {
+      "source": 21520,
+      "iteration": 434,
+      "sites": [
+        39385,
+        39386,
+        39387,
+        39388,
+        39389,
+        39390,
+        39391,
+        39392,
+        39393
+      ],
+      "ordinals": [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "visits": [
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9
+      ],
+      "maximum_per_field_visits_combined": 72
+    },
+    {
+      "source": 9930,
+      "iteration": 190,
+      "sites": [
+        17357,
+        17358,
+        17359
+      ],
+      "ordinals": [
+        0,
+        1,
+        2
+      ],
+      "visits": [
+        30,
+        30,
+        30
+      ],
+      "maximum_per_field_visits_combined": 60
+    },
+    {
+      "source": 7332,
+      "iteration": 136,
+      "sites": [
+        12427,
+        12428,
+        12429,
+        12430,
+        12431
+      ],
+      "ordinals": [
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "visits": [
+        9,
+        9,
+        9,
+        9,
+        9
+      ],
+      "maximum_per_field_visits_combined": 36
+    },
+    {
+      "source": 14903,
+      "iteration": 300,
+      "sites": [
+        26903,
+        26904,
+        26905,
+        26906,
+        26907
+      ],
+      "ordinals": [
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "visits": [
+        9,
+        9,
+        9,
+        9,
+        9
+      ],
+      "maximum_per_field_visits_combined": 36
+    },
+    {
+      "source": 12143,
+      "iteration": 239,
+      "sites": [
+        21536,
+        21537,
+        21538
+      ],
+      "ordinals": [
+        0,
+        1,
+        2
+      ],
+      "visits": [
+        16,
+        16,
+        16
+      ],
+      "maximum_per_field_visits_combined": 32
+    },
+    {
+      "source": 4524,
+      "iteration": 70,
+      "sites": [
+        7027,
+        7028,
+        7029
+      ],
+      "ordinals": [
+        0,
+        1,
+        2
+      ],
+      "visits": [
+        15,
+        15,
+        15
+      ],
+      "maximum_per_field_visits_combined": 30
+    },
+    {
+      "source": 16010,
+      "iteration": 320,
+      "sites": [
+        28956,
+        28957,
+        28958
+      ],
+      "ordinals": [
+        0,
+        1,
+        2
+      ],
+      "visits": [
+        15,
+        15,
+        15
+      ],
+      "maximum_per_field_visits_combined": 30
+    },
+    {
+      "source": 879,
+      "iteration": 25,
+      "sites": [
+        853,
+        854,
+        855,
+        856
+      ],
+      "ordinals": [
+        11,
+        12,
+        13,
+        14
+      ],
+      "visits": [
+        8,
+        8,
+        8,
+        8
+      ],
+      "maximum_per_field_visits_combined": 24
+    },
+    {
+      "source": 6737,
+      "iteration": 119,
+      "sites": [
+        11206,
+        11207,
+        11208
+      ],
+      "ordinals": [
+        0,
+        1,
+        2
+      ],
+      "visits": [
+        8,
+        8,
+        8
+      ],
+      "maximum_per_field_visits_combined": 16
+    },
+    {
+      "source": 9822,
+      "iteration": 188,
+      "sites": [
+        17156,
+        17157
+      ],
+      "ordinals": [
+        0,
+        1
+      ],
+      "visits": [
+        16,
+        16
+      ],
+      "maximum_per_field_visits_combined": 16
+    },
+    {
+      "source": 9830,
+      "iteration": 188,
+      "sites": [
+        17330,
+        17331
+      ],
+      "ordinals": [
+        0,
+        1
+      ],
+      "visits": [
+        16,
+        16
+      ],
+      "maximum_per_field_visits_combined": 16
+    },
+    {
+      "source": 20607,
+      "iteration": 417,
+      "sites": [
+        37600,
+        37601,
+        37602
+      ],
+      "ordinals": [
+        0,
+        1,
+        2
+      ],
+      "visits": [
+        8,
+        8,
+        8
+      ],
+      "maximum_per_field_visits_combined": 16
+    },
+    {
+      "source": 11136,
+      "iteration": 220,
+      "sites": [
+        19670,
+        19671
+      ],
+      "ordinals": [
+        2,
+        3
+      ],
+      "visits": [
+        14,
+        14
+      ],
+      "maximum_per_field_visits_combined": 14
+    },
+    {
+      "source": 11146,
+      "iteration": 220,
+      "sites": [
+        20130,
+        20131
+      ],
+      "ordinals": [
+        0,
+        1
+      ],
+      "visits": [
+        14,
+        14
+      ],
+      "maximum_per_field_visits_combined": 14
+    },
+    {
+      "source": 8776,
+      "iteration": 168,
+      "sites": [
+        15238,
+        15239,
+        15240,
+        15241,
+        15242,
+        15243,
+        15244
+      ],
+      "ordinals": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "visits": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "maximum_per_field_visits_combined": 12
+    },
+    {
+      "source": 8776,
+      "iteration": 168,
+      "sites": [
+        15247,
+        15248,
+        15249,
+        15250,
+        15251,
+        15252,
+        15253
+      ],
+      "ordinals": [
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "visits": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "maximum_per_field_visits_combined": 12
+    },
+    {
+      "source": 11182,
+      "iteration": 220,
+      "sites": [
+        20041,
+        20042
+      ],
+      "ordinals": [
+        0,
+        1
+      ],
+      "visits": [
+        12,
+        12
+      ],
+      "maximum_per_field_visits_combined": 12
+    },
+    {
+      "source": 770,
+      "iteration": 21,
+      "sites": [
+        650,
+        651,
+        652,
+        653,
+        654,
+        655,
+        656,
+        657,
+        658
+      ],
+      "ordinals": [
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "visits": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "maximum_per_field_visits_combined": 8
+    },
+    {
+      "source": 879,
+      "iteration": 25,
+      "sites": [
+        842,
+        843
+      ],
+      "ordinals": [
+        0,
+        1
+      ],
+      "visits": [
+        8,
+        8
+      ],
+      "maximum_per_field_visits_combined": 8
+    },
+    {
+      "source": 1854,
+      "iteration": 33,
+      "sites": [
+        2403,
+        2404
+      ],
+      "ordinals": [
+        0,
+        1
+      ],
+      "visits": [
+        8,
+        8
+      ],
+      "maximum_per_field_visits_combined": 8
+    },
+    {
+      "source": 4416,
+      "iteration": 68,
+      "sites": [
+        6826,
+        6827
+      ],
+      "ordinals": [
+        0,
+        1
+      ],
+      "visits": [
+        8,
+        8
+      ],
+      "maximum_per_field_visits_combined": 8
+    },
+    {
+      "source": 4424,
+      "iteration": 68,
+      "sites": [
+        7000,
+        7001
+      ],
+      "ordinals": [
+        0,
+        1
+      ],
+      "visits": [
+        8,
+        8
+      ],
+      "maximum_per_field_visits_combined": 8
+    },
+    {
+      "source": 12035,
+      "iteration": 237,
+      "sites": [
+        21335,
+        21336
+      ],
+      "ordinals": [
+        0,
+        1
+      ],
+      "visits": [
+        8,
+        8
+      ],
+      "maximum_per_field_visits_combined": 8
+    },
+    {
+      "source": 12043,
+      "iteration": 237,
+      "sites": [
+        21509,
+        21510
+      ],
+      "ordinals": [
+        0,
+        1
+      ],
+      "visits": [
+        8,
+        8
+      ],
+      "maximum_per_field_visits_combined": 8
+    },
+    {
+      "source": 15902,
+      "iteration": 318,
+      "sites": [
+        28755,
+        28756
+      ],
+      "ordinals": [
+        0,
+        1
+      ],
+      "visits": [
+        8,
+        8
+      ],
+      "maximum_per_field_visits_combined": 8
+    },
+    {
+      "source": 15910,
+      "iteration": 318,
+      "sites": [
+        28929,
+        28930
+      ],
+      "ordinals": [
+        0,
+        1
+      ],
+      "visits": [
+        8,
+        8
+      ],
+      "maximum_per_field_visits_combined": 8
+    },
+    {
+      "source": 5730,
+      "iteration": 100,
+      "sites": [
+        9340,
+        9341
+      ],
+      "ordinals": [
+        2,
+        3
+      ],
+      "visits": [
+        7,
+        7
+      ],
+      "maximum_per_field_visits_combined": 7
+    },
+    {
+      "source": 5740,
+      "iteration": 100,
+      "sites": [
+        9800,
+        9801
+      ],
+      "ordinals": [
+        0,
+        1
+      ],
+      "visits": [
+        7,
+        7
+      ],
+      "maximum_per_field_visits_combined": 7
+    },
+    {
+      "source": 19600,
+      "iteration": 398,
+      "sites": [
+        35734,
+        35735
+      ],
+      "ordinals": [
+        2,
+        3
+      ],
+      "visits": [
+        7,
+        7
+      ],
+      "maximum_per_field_visits_combined": 7
+    }
+  ],
+  "scope": "Read-only analysis of the already executed baseline census and same-build image, not a new timing or selector proof. Runs require further entry/predecessor, liveness, resource, alias, error-order, cleanup and retry acceptance before any bulk transport implementation. The count is an opportunity ceiling, not a promised speedup."
+}

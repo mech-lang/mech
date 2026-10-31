@@ -1,0 +1,863 @@
+diff --git a/hosts/gpu/src/native_artifact/codegen/control/mod.rs b/hosts/gpu/src/native_artifact/codegen/control/mod.rs
+index b2c282ccf..3966099ab 100644
+--- a/hosts/gpu/src/native_artifact/codegen/control/mod.rs
++++ b/hosts/gpu/src/native_artifact/codegen/control/mod.rs
+@@ -918,6 +918,12 @@ impl<'plan> CfgDefinition<'plan> {
+                 b.switch_to_block(joined);
+             }
+             #[cfg(feature = "canonical-native-program")]
++            if let Some(hooks) = &hooks {
++                crate::native_artifact::program::codegen::numeric_segments::emit_entry(
++                    &controls, b, frame, locals, plan, index, hooks, &blocks, error, report,
++                )?;
++            }
++            #[cfg(feature = "canonical-native-program")]
+             if let crate::native_artifact::codegen::control::plan::CodePlan::Program(prepared) =
+                 plan
+                 && let NativeIterationTerminator::Header {
+diff --git a/hosts/gpu/src/native_artifact/codegen/control/report/mod.rs b/hosts/gpu/src/native_artifact/codegen/control/report/mod.rs
+index 843674de8..bd9d88dbe 100644
+--- a/hosts/gpu/src/native_artifact/codegen/control/report/mod.rs
++++ b/hosts/gpu/src/native_artifact/codegen/control/report/mod.rs
+@@ -27,6 +27,7 @@ pub(in crate::native_artifact) struct CodegenReport {
+         Vec<crate::native_artifact::program::codegen::readonly_numeric::Report>,
+     pub numeric_write_loops:
+         Vec<crate::native_artifact::program::codegen::readonly_numeric::Report>,
++    pub numeric_segments: Vec<crate::native_artifact::program::codegen::numeric_segments::Report>,
+     substitutions: usize,
+     tag_records: usize,
+     guarded_records: usize,
+diff --git a/hosts/gpu/src/native_artifact/program/codegen/mod.rs b/hosts/gpu/src/native_artifact/program/codegen/mod.rs
+index dc2fb5611..adfa7f191 100644
+--- a/hosts/gpu/src/native_artifact/program/codegen/mod.rs
++++ b/hosts/gpu/src/native_artifact/program/codegen/mod.rs
+@@ -33,5 +33,9 @@ pub(in crate::native_artifact) mod tail;
+ #[cfg(feature = "canonical-native-program")]
+ pub(in crate::native_artifact) mod window;
+ 
++#[cfg(feature = "canonical-native-program")]
++pub(in crate::native_artifact) mod numeric_segments;
++#[cfg(feature = "canonical-native-program")]
++pub(in crate::native_artifact) mod numeric_words;
+ #[cfg(feature = "canonical-native-program")]
+ pub(in crate::native_artifact) mod readonly_numeric;
+diff --git a/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs b/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs
+index 244d3755e..5e1064401 100644
+--- a/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs
++++ b/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs
+@@ -16,11 +16,7 @@ use crate::native_artifact::{NativeCompileError, abi::STATUS_ABI};
+ use cranelift_codegen::ir::condcodes::IntCC;
+ use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, types};
+ use cranelift_frontend::FunctionBuilder;
+-use mech_engine::native_artifact::{
+-    NativeBufferFrameOperation as Frame, NativeIterationAction as Action,
+-    NativeIterationTerminator as Term, NativeMatchAction as Scalar,
+-    NativeMatchTerminator as Branch,
+-};
++use mech_engine::native_artifact::{NativeIterationAction as Action, NativeMatchAction as Scalar};
+ use std::collections::{BTreeMap, BTreeSet};
+ #[path = "numeric_boundary.rs"]
+ mod boundary;
+@@ -48,78 +44,12 @@ fn slots(
+     proof: &Proof,
+     base: usize,
+ ) -> Result<BTreeSet<usize>, NativeCompileError> {
+-    let mut slots = BTreeSet::from_iter(base..base + 3 + proof.words);
+-    for &site in &proof.sites {
+-        match code.blocks()[site].action() {
+-            Action::Scalar(Scalar::Primitive {
+-                operands, output, ..
+-            }) => {
+-                slots.extend(operands.iter().map(|v| v.get() as usize));
+-                slots.insert(output.get() as usize);
+-            }
+-            Action::Scalar(Scalar::Copy { source, output }) if code.kind(*output).is_some() => {
+-                slots.extend([source.get() as usize, output.get() as usize]);
+-            }
+-            Action::Structural { output, .. } | Action::LibraryCall { output, .. }
+-                if code.kind(*output).is_some() =>
+-            {
+-                slots.insert(output.get() as usize);
+-            }
+-            _ => {}
+-        }
+-        match proof.action(site) {
+-            Some(Operation::Read { index, .. }) => {
+-                slots.insert(*index as usize);
+-            }
+-            Some(Operation::Write {
+-                index, incoming, ..
+-            }) => {
+-                slots.extend([*index as usize, *incoming as usize]);
+-            }
+-            Some(Operation::Append { incoming, .. }) => {
+-                slots.insert(*incoming as usize);
+-            }
+-            _ => {}
+-        }
+-        if let CodePlan::Program(program) = code {
+-            if let Some(action) = program.metadata().scalar_aggregates.action(site) {
+-                aggregates::aggregate_words(
+-                    &program.metadata().scalar_aggregates,
+-                    action,
+-                    &mut slots,
+-                )
+-                .ok_or_else(|| backend("numeric aggregate lost exact word lanes"))?;
+-            }
+-            if let Some(frame) = program.metadata().buffer_frames.action(site) {
+-                match frame.operation() {
+-                    Frame::Pack { .. } => {
+-                        if let Action::LibraryCall { operands, .. } = code.blocks()[site].action() {
+-                            slots.extend(
+-                                operands
+-                                    .iter()
+-                                    .filter(|v| code.kind(**v).is_some())
+-                                    .map(|v| v.get() as usize),
+-                            );
+-                        }
+-                    }
+-                    Frame::Project { output, .. } if code.kind(*output).is_some() => {
+-                        slots.insert(output.get() as usize);
+-                    }
+-                    _ => {}
+-                }
+-            }
+-        }
+-        match code.blocks()[site].terminator() {
+-            Term::Scalar(Branch::Branch { condition, .. }) => {
+-                slots.insert(condition.get() as usize);
+-            }
+-            Term::Scalar(Branch::LiteralBranch { left, right, .. }) => {
+-                slots.extend([left.get() as usize, right.get() as usize]);
+-            }
+-            _ => {}
+-        }
+-    }
+-    Ok(slots)
++    super::numeric_words::source_slots(
++        code,
++        proof.sites.iter().copied(),
++        &proof.actions,
++        base..base + 3 + proof.words,
++    )
+ }
+ 
+ pub(in crate::native_artifact) fn emit_entry(
+@@ -271,52 +201,7 @@ pub(in crate::native_artifact) fn emit_entry(
+                 )?;
+             }
+             Some(Operation::Frame) => {
+-                let operation = program
+-                    .metadata()
+-                    .buffer_frames
+-                    .action(site)
+-                    .ok_or_else(|| backend("numeric frame lost fields"))?
+-                    .operation();
+-                match operation {
+-                    Frame::Pack { output } => {
+-                        let Action::LibraryCall { operands, .. } = code.blocks()[site].action()
+-                        else {
+-                            return Err(backend("numeric pack lost operands"));
+-                        };
+-                        for (field, operand) in
+-                            proof.fields(output.get()).unwrap().iter().zip(operands)
+-                        {
+-                            if let Some(field) = field {
+-                                let value = words.read(b, operand.get() as usize);
+-                                words.write(b, shadow + field, value);
+-                            }
+-                        }
+-                    }
+-                    Frame::Copy { source, output } => {
+-                        // Read every old scalar before writing any next-state lane.
+-                        let copied = proof
+-                            .fields(source.get())
+-                            .unwrap()
+-                            .iter()
+-                            .zip(proof.fields(output.get()).unwrap())
+-                            .filter_map(|(from, to)| from.zip(*to))
+-                            .map(|(from, to)| (to, words.read(b, shadow + from)))
+-                            .collect::<Vec<_>>();
+-                        for (to, value) in copied {
+-                            words.write(b, shadow + to, value);
+-                        }
+-                    }
+-                    Frame::Project {
+-                        source,
+-                        ordinal,
+-                        output,
+-                    } => {
+-                        if let Some(field) = proof.fields(source.get()).unwrap()[*ordinal] {
+-                            let value = words.read(b, shadow + field);
+-                            words.write(b, output.get() as usize, value);
+-                        }
+-                    }
+-                }
++                super::numeric_words::frame_words(b, &words, shadow, code, site, &proof.frames)?;
+             }
+             Some(Operation::ArrayCopy) => {}
+             Some(Operation::Length { array, output }) => {
+@@ -400,21 +285,11 @@ pub(in crate::native_artifact) fn emit_entry(
+                 // one-based column-major. A valid ordinal proves rows > 0.
+                 let rows = words.read(b, view + 2);
+                 let columns = words.read(b, view + 3);
+-                let row = b.ins().urem(ordinal, rows);
+-                let column = b.ins().udiv(ordinal, rows);
+-                let row = b.ins().imul(row, columns);
+-                let physical = b.ins().iadd(row, column);
+                 let width = proof.arrays[*array].width;
+-                let at = b.ins().imul_imm(physical, i64::from(width));
+-                let base = words.read(b, view);
+-                let address = b.ins().iadd(base, at);
+-                let ty = match width {
+-                    1 => types::I8,
+-                    2 => types::I16,
+-                    4 => types::I32,
+-                    8 => types::I64,
+-                    _ => return Err(backend("numeric load width differs")),
+-                };
++                let (address, ty) =
++                    super::numeric_words::linear_address(b, ordinal, rows, columns, width, |b| {
++                        words.read(b, view)
++                    })?;
+                 let value = b.ins().load(ty, MemFlags::new(), address, 0);
+                 let value = if width < 8 {
+                     b.ins().uextend(types::I64, value)
+diff --git a/hosts/gpu/src/native_artifact/program/compiler.rs b/hosts/gpu/src/native_artifact/program/compiler.rs
+index dfa209942..7ae4ea9c1 100644
+--- a/hosts/gpu/src/native_artifact/program/compiler.rs
++++ b/hosts/gpu/src/native_artifact/program/compiler.rs
+@@ -280,6 +280,7 @@ impl NativeProgramObject {
+             Some(serde_json::json!({"iteration":iteration,"header":tail.header(),"parent":tail.parent(),"origin":tail.origin(),"proof_eligible":result.is_ok(),"selected":prepared.closed_tails.regions.iter().any(|region| region.iteration as usize == iteration && region.numeric.is_some()),"rejection":result.err()}))
+         }).collect::<Vec<_>>());
+         metadata["numeric_parent_partitions"] = serde_json::json!(prepared.compositions);
++        metadata["compiled_numeric_segments"] = serde_json::json!(&self.codegen.numeric_segments);
+         metadata["compiled_readonly_numeric_loops"] =
+             serde_json::json!(&self.codegen.readonly_numeric_loops);
+         metadata["compiled_numeric_write_loops"] =
+diff --git a/hosts/gpu/src/native_artifact/program/image/identity.rs b/hosts/gpu/src/native_artifact/program/image/identity.rs
+index 7cf6f9303..9a7d0dbf4 100644
+--- a/hosts/gpu/src/native_artifact/program/image/identity.rs
++++ b/hosts/gpu/src/native_artifact/program/image/identity.rs
+@@ -250,7 +250,8 @@ fn selected_template(
+ // original last-use barriers, runtime identity and Core exclusivity remain.
+ // IR129 composes exact private flat scalar aggregate results and their shared
+ // word-bank actions with numeric leaves. The restored plan rederives selection.
+-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 129;
++// IR130 composes current parent frame sources around already-qualified children.
++pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 130;
+ // Shared immutable schema arenas and the admitted two-phase entry protocol
+ // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
+ // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
+@@ -430,7 +431,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 129;
+ // Policy92 funds fixed-shape publication before entry, charges store comparisons,
+ // and settles/reopens the same account only at a first changed write.
+ // Policy93 also funds synchronization of the actual private terminal frame.
+-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 93;
++// Policy94 settles acyclic parent envelopes and reached lexical retirements
++// before ordinary child entry; it does not renew a child or parent allowance.
++pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 94;
+ pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
+ const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
+ #[derive(Clone, Debug)]
+diff --git a/hosts/gpu/src/native_artifact/program/image/wire/mod.rs b/hosts/gpu/src/native_artifact/program/image/wire/mod.rs
+index 391a54026..2a1672aee 100644
+--- a/hosts/gpu/src/native_artifact/program/image/wire/mod.rs
++++ b/hosts/gpu/src/native_artifact/program/image/wire/mod.rs
+@@ -265,7 +265,13 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
+         &buffer_frames,
+         &calls,
+         &closed_tails,
++        &visits,
++        &frame_retirements,
++        &w.map_admission,
+     )?;
++    if w.max_library_inputs < compositions.argument_words() {
++        return Err("restored parent native argument bank is too small".into());
++    }
+     let descriptor = NativeProgramDescriptor {
+         metadata: native::program::prepare::ProgramMetadata {
+             plan,
+diff --git a/hosts/gpu/src/native_artifact/program/prepare/composition.rs b/hosts/gpu/src/native_artifact/program/prepare/composition.rs
+index 0edea16fa..95d6d2647 100644
+--- a/hosts/gpu/src/native_artifact/program/prepare/composition.rs
++++ b/hosts/gpu/src/native_artifact/program/prepare/composition.rs
+@@ -7,8 +7,11 @@ use mech_engine::native_artifact::{
+     NativeMatchAction as Scalar, NativePreparedLibraryCall, NativeProgramArtifactPlan as Plan,
+ };
+ use std::collections::{BTreeMap, BTreeSet, VecDeque};
++use std::num::NonZeroUsize;
+ #[path = "composition/frames.rs"]
+ pub(in crate::native_artifact) mod frames;
++#[path = "composition/numeric.rs"]
++pub(in crate::native_artifact) mod numeric;
+ 
+ #[derive(Debug, Eq, PartialEq, serde::Serialize)]
+ pub(in crate::native_artifact) struct Segment {
+@@ -17,6 +20,7 @@ pub(in crate::native_artifact) struct Segment {
+     /// Exact last executed source site and its next, still ordinary frontier.
+     pub exits: Vec<(u32, u32)>,
+     pub frame_plan: Option<frames::Layout>,
++    pub numeric: Option<numeric::Layout>,
+     pub rejection: Option<&'static str>,
+ }
+ #[derive(Debug, Eq, PartialEq, serde::Serialize)]
+@@ -32,8 +36,37 @@ pub(in crate::native_artifact) struct Parent {
+ #[derive(Debug, Default, Eq, PartialEq, serde::Serialize)]
+ pub(in crate::native_artifact) struct Layout {
+     pub parents: Vec<Parent>,
++    #[serde(skip)]
++    entries: Box<[Option<NonZeroUsize>]>,
++    #[serde(skip)]
++    regions: Vec<(usize, usize)>,
++    #[serde(skip)]
++    pub words: usize,
+ }
+ impl Layout {
++    pub(in crate::native_artifact) fn entry(&self, site: usize) -> Option<usize> {
++        self.entries.get(site)?.map(|v| v.get() - 1)
++    }
++    pub(in crate::native_artifact) fn region(&self, index: usize) -> Option<(&Parent, &Segment)> {
++        let &(parent, segment) = self.regions.get(index)?;
++        let parent = self.parents.get(parent)?;
++        Some((parent, parent.segments.get(segment)?))
++    }
++    pub(in crate::native_artifact) fn argument_words(&self) -> usize {
++        self.regions
++            .iter()
++            .map(|&(p, s)| {
++                let segment = &self.parents[p].segments[s];
++                segment
++                    .numeric
++                    .as_ref()
++                    .unwrap()
++                    .words
++                    .max(segment.frame_plan.as_ref().unwrap().sources.len())
++            })
++            .max()
++            .unwrap_or(0)
++    }
+     /// Source preparation and independently validated image loading use this
+     /// same pure derivation. No serialized candidate inventory is accepted.
+     pub(in crate::native_artifact) fn derive(
+@@ -41,8 +74,11 @@ impl Layout {
+         frames: &NativeBufferFrames,
+         calls: &[Option<NativePreparedLibraryCall>],
+         closed: &tail::Layout,
++        visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
++        retirements: &super::frame_retirement::FrameRetirements,
++        admissions: &super::map_admission::Layout,
+     ) -> Result<Self, &'static str> {
+-        if calls.len() != plan.blocks().len() {
++        if calls.len() != plan.blocks().len() || visits.len() != plan.blocks().len() {
+             return Err("composition factories differ from source blocks");
+         }
+         let facts = plan.facts();
+@@ -185,6 +221,7 @@ impl Layout {
+                     sites: Vec::new(),
+                     exits: Vec::new(),
+                     frame_plan: None,
++                    numeric: None,
+                     rejection: None,
+                 });
+                 segment.sites.push(site);
+@@ -196,8 +233,23 @@ impl Layout {
+             }
+             let mut segments = segments.into_values().collect::<Vec<_>>();
+             for segment in &mut segments {
+-                match frames::Layout::derive(plan, frames, segment) {
+-                    Ok(proof) => segment.frame_plan = Some(proof),
++                match frames::Layout::derive(plan, &facts, frames, segment) {
++                    Ok(mut proof) => {
++                        match numeric::Layout::derive(
++                            plan,
++                            &facts,
++                            frames,
++                            calls,
++                            visits,
++                            retirements,
++                            segment,
++                            &mut proof,
++                        ) {
++                            Ok(numeric) => segment.numeric = Some(numeric),
++                            Err(reason) => segment.rejection = Some(reason),
++                        }
++                        segment.frame_plan = Some(proof);
++                    }
+                     Err(reason) => segment.rejection = Some(reason),
+                 }
+             }
+@@ -224,7 +276,44 @@ impl Layout {
+                 segments,
+             });
+         }
+-        Ok(Self { parents })
++        let mut regions = Vec::new();
++        let mut words = 0usize;
++        for (parent, proof) in parents.iter().enumerate() {
++            for (segment, part) in proof.segments.iter().enumerate() {
++                let Some(numeric) = &part.numeric else {
++                    continue;
++                };
++                // Two new boundary calls must replace more existing calls.
++                // This is a profitability choice, never a source-size allowance.
++                let saved = part.sites.len().saturating_sub(1) + numeric.actions.len();
++                if saved <= 2 || admissions.group(part.entry as usize).is_some() {
++                    continue;
++                }
++                words = words.max(
++                    numeric
++                        .words
++                        .checked_add(1)
++                        .ok_or("parent native scratch overflows")?,
++                );
++                regions.push((parent, segment));
++            }
++        }
++        let entries = if regions.is_empty() {
++            Box::default()
++        } else {
++            let mut entries = vec![None; plan.blocks().len()];
++            for (id, &(parent, segment)) in regions.iter().enumerate() {
++                entries[parents[parent].segments[segment].entry as usize] =
++                    NonZeroUsize::new(id.checked_add(1).ok_or("parent region index overflows")?);
++            }
++            entries.into_boxed_slice()
++        };
++        Ok(Self {
++            parents,
++            entries,
++            regions,
++            words,
++        })
+     }
+ }
+ 
+diff --git a/hosts/gpu/src/native_artifact/program/prepare/composition/frames.rs b/hosts/gpu/src/native_artifact/program/prepare/composition/frames.rs
+index 16b258608..66b73d3c6 100644
+--- a/hosts/gpu/src/native_artifact/program/prepare/composition/frames.rs
++++ b/hosts/gpu/src/native_artifact/program/prepare/composition/frames.rs
+@@ -19,7 +19,7 @@ pub(in crate::native_artifact) enum Source {
+ pub(in crate::native_artifact) struct Exit {
+     pub from: u32,
+     pub to: u32,
+-    pub frames: Vec<u32>,
++    pub frames: Vec<NativeMatchValue>,
+ }
+ #[derive(Debug, Eq, PartialEq, serde::Serialize)]
+ pub(in crate::native_artifact) struct Layout {
+@@ -114,12 +114,12 @@ impl Origins<'_, '_> {
+ }
+ 
+ impl Layout {
+-    pub(super) fn derive(
+-        plan: &Plan,
++    pub(super) fn derive<'p>(
++        plan: &'p Plan,
++        facts: &Facts<'p>,
+         frames: &NativeBufferFrames,
+         segment: &Segment,
+     ) -> Result<Self, &'static str> {
+-        let facts = plan.facts();
+         let members = segment.sites.iter().copied().collect::<BTreeSet<_>>();
+         let mut writes = BTreeMap::<u32, Vec<usize>>::new();
+         let mut written_values = BTreeMap::<u32, NativeMatchValue>::new();
+@@ -154,7 +154,7 @@ impl Layout {
+             .collect::<Vec<_>>();
+         let mut origins = Origins {
+             plan,
+-            facts: &facts,
++            facts,
+             frames,
+             members: &members,
+             writes,
+@@ -273,7 +273,10 @@ impl Layout {
+             exits.push(Exit {
+                 from,
+                 to,
+-                frames: current[&from].intersection(&external).copied().collect(),
++                frames: current[&from]
++                    .intersection(&external)
++                    .map(|v| written_values[v])
++                    .collect(),
+             });
+         }
+         Ok(Self {
+diff --git a/hosts/gpu/src/native_artifact/program/prepare/mod.rs b/hosts/gpu/src/native_artifact/program/prepare/mod.rs
+index c18408175..dbdbce51d 100644
+--- a/hosts/gpu/src/native_artifact/program/prepare/mod.rs
++++ b/hosts/gpu/src/native_artifact/program/prepare/mod.rs
+@@ -294,7 +294,18 @@ impl PreparedNativeProgram {
+             &analysis_visits,
+             &closed_tails,
+         )?;
+-        let visits = visits.into();
++        let visits: Box<[NativeIterationVisit]> = visits.into();
++        let frame_retirements =
++            frame_retirement::FrameRetirements::derive(&buffer_frames, plan.values().len())?;
++        let compositions = composition::Layout::derive(
++            &plan,
++            &buffer_frames,
++            &calls,
++            &closed_tails,
++            &visits,
++            &frame_retirements,
++            &map_admission,
++        )?;
+         let uniform_word_collections = facts.uniform_unsigned_collections().into_boxed_slice();
+         let window_regions = plan.window_regions().into_boxed_slice();
+         let occupied_frame =
+@@ -349,7 +360,8 @@ impl PreparedNativeProgram {
+                 0
+             } else {
+                 4
+-            });
++            })
++            .max(compositions.argument_words());
+         let types: Box<[_]> = plan
+             .values()
+             .iter()
+@@ -401,11 +413,7 @@ impl PreparedNativeProgram {
+             .unwrap_or_default();
+         let call_routes =
+             call_routes::derive(&plan, &buffer_frames, &unsigned_buffer_calls, &calls);
+-        let frame_retirements =
+-            frame_retirement::FrameRetirements::derive(&buffer_frames, plan.values().len())?;
+         let call_cache = call_cache::Layout::derive(&plan, &calls)?;
+-        let compositions =
+-            composition::Layout::derive(&plan, &buffer_frames, &calls, &closed_tails)?;
+         let (scalar_aggregates, line_retention_frontiers) = facts.into_preparation_inventories();
+         let metadata = ProgramMetadata {
+             plan,
+@@ -503,9 +511,13 @@ impl ProgramMetadata {
+             &self.closed_tails,
+         )
+         .ok_or("local count overflow")?;
+-        self.map_owner_words
++        let words = self
++            .map_owner_words
+             .as_ref()
+-            .map_or(Ok(prefix), native::program::prepare::map_owner::local_words)
++            .map_or(Ok(prefix), native::program::prepare::map_owner::local_words)?;
++        words
++            .checked_add(self.compositions.words)
++            .ok_or("parent local words overflow")
+     }
+ }
+ 
+diff --git a/hosts/gpu/src/native_artifact/program/prepare/readonly_numeric.rs b/hosts/gpu/src/native_artifact/program/prepare/readonly_numeric.rs
+index 8c2bbd1ff..84a5b36ca 100644
+--- a/hosts/gpu/src/native_artifact/program/prepare/readonly_numeric.rs
++++ b/hosts/gpu/src/native_artifact/program/prepare/readonly_numeric.rs
+@@ -102,7 +102,7 @@ impl Proof {
+     }
+ }
+ 
+-fn width(body: &SchemaBody) -> Option<u8> {
++pub(super) fn width(body: &SchemaBody) -> Option<u8> {
+     let SchemaBody::Matrix {
+         element,
+         dimensions,
+diff --git a/hosts/gpu/src/native_artifact/program/protocol/abi.rs b/hosts/gpu/src/native_artifact/program/protocol/abi.rs
+index 1d5c31c39..0c265bf93 100644
+--- a/hosts/gpu/src/native_artifact/program/protocol/abi.rs
++++ b/hosts/gpu/src/native_artifact/program/protocol/abi.rs
+@@ -18,7 +18,8 @@
+ use crate::native_artifact::abi::NativeEntryFrame;
+ use crate::native_artifact::program::protocol::GlobalHelper;
+ use core::ffi::c_void;
+-pub(in crate::native_artifact) const VERSION: u64 = 36;
++// ABI37 adds settled, nonoverlapping parent numeric segments on the same entry.
++pub(in crate::native_artifact) const VERSION: u64 = 37;
+ pub(in crate::native_artifact) const JOIN_MAP_MISSING_BYTE: u8 = 0x80;
+ pub(in crate::native_artifact) const PHASE_ACTIVATION: u64 = 0;
+ pub(in crate::native_artifact) const PHASE_TURN: u64 = 1;
+diff --git a/hosts/gpu/src/native_artifact/program/protocol/mod.rs b/hosts/gpu/src/native_artifact/program/protocol/mod.rs
+index 6dc889ebe..1271feb20 100644
+--- a/hosts/gpu/src/native_artifact/program/protocol/mod.rs
++++ b/hosts/gpu/src/native_artifact/program/protocol/mod.rs
+@@ -38,6 +38,8 @@ pub(in crate::native_artifact) enum GlobalHelper {
+     FrozenMapCopy,
+     FrozenMapRead,
+     NumericWritePrepare,
++    NumericSegmentBegin,
++    NumericSegmentEnd,
+ }
+ impl GlobalHelper {
+     // Decoding classifies only. Site, phase, lane, admission and cursor checks
+@@ -73,6 +75,8 @@ impl GlobalHelper {
+             value if value == u64::MAX - 24 => Self::FrozenMapCopy,
+             value if value == u64::MAX - 25 => Self::FrozenMapRead,
+             value if value == u64::MAX - 26 => Self::NumericWritePrepare,
++            value if value == u64::MAX - 27 => Self::NumericSegmentBegin,
++            value if value == u64::MAX - 28 => Self::NumericSegmentEnd,
+             value => Self::Output(OutputIndex(value - 3)),
+         }
+     }
+@@ -108,6 +112,8 @@ impl GlobalHelper {
+             Self::FrozenMapCopy => u64::MAX - 24,
+             Self::FrozenMapRead => u64::MAX - 25,
+             Self::NumericWritePrepare => u64::MAX - 26,
++            Self::NumericSegmentBegin => u64::MAX - 27,
++            Self::NumericSegmentEnd => u64::MAX - 28,
+         }
+     }
+     #[cfg(feature = "canonical-native-program")]
+diff --git a/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs b/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs
+index d6da47aaf..1dd4d01e8 100644
+--- a/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs
++++ b/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs
+@@ -8,6 +8,7 @@ use mech_core::{MemoryBudgetLimits, Value};
+ use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeMatchValue};
+ 
+ mod buffer_frames;
++mod numeric_segments;
+ mod numeric_writes;
+ mod readonly_numeric;
+ mod selected_calls;
+@@ -393,6 +394,12 @@ impl Invocation<'_, '_, '_> {
+                 .map_err(|_| invalid("numeric materialization site overflow"))?;
+             return self.prepare_numeric_write(site, args);
+         }
++        if tag == GlobalHelper::NumericSegmentEnd {
++            return self.end_numeric_segment(
++                usize::try_from(site).map_err(|_| invalid("parent segment site overflow"))?,
++                args,
++            );
++        }
+         if self.closed_tail.is_some() {
+             return Err(invalid(
+                 "ordinary helper while closed Tail fuel is outstanding",
+@@ -438,6 +445,9 @@ impl Invocation<'_, '_, '_> {
+         if tag == GlobalHelper::ClosedTailBegin {
+             return self.begin_closed_tail(site, args);
+         }
++        if tag == GlobalHelper::NumericSegmentBegin {
++            return self.begin_numeric_segment(site, args);
++        }
+         if matches!(
+             tag,
+             GlobalHelper::MapOwnerBegin
+diff --git a/hosts/gpu/src/native_artifact/program/runtime/invocation/tail.rs b/hosts/gpu/src/native_artifact/program/runtime/invocation/tail.rs
+index 4ae291120..a4c886c95 100644
+--- a/hosts/gpu/src/native_artifact/program/runtime/invocation/tail.rs
++++ b/hosts/gpu/src/native_artifact/program/runtime/invocation/tail.rs
+@@ -6,12 +6,17 @@ use crate::native_artifact::program::runtime::{
+     NativeProgramExecutionError as Error, amount, invalid,
+ };
+ 
++#[derive(Clone, Copy)]
++pub(super) enum Region {
++    Tail(usize),
++    Segment(usize),
++}
+ pub(in crate::native_artifact::program::runtime) struct State {
+-    region: usize,
+-    used: (u64, u64),
+-    remaining: (u64, u64),
+-    entry: u32,
+-    partial: bool,
++    pub(super) region: Region,
++    pub(super) used: (u64, u64),
++    pub(super) remaining: (u64, u64),
++    pub(super) entry: u32,
++    pub(super) partial: bool,
+ }
+ impl Invocation<'_, '_, '_> {
+     pub(in crate::native_artifact::program::runtime) fn begin_closed_tail(
+@@ -97,7 +102,7 @@ impl Invocation<'_, '_, '_> {
+             self.write_borrowed_word(1, remaining.1)?;
+         }
+         self.closed_tail = Some(State {
+-            region,
++            region: Region::Tail(region),
+             used: self.state.library.used(),
+             remaining,
+             entry: self
+@@ -121,7 +126,10 @@ impl Invocation<'_, '_, '_> {
+             .ok_or_else(|| invalid("closed Tail exit without entry"))?;
+         let descriptor = self.descriptor;
+         let layout = &descriptor.metadata().closed_tails;
+-        let proof = &layout.regions[state.region];
++        let Region::Tail(region) = state.region else {
++            return Err(invalid("closed Tail exit received a parent segment loan"));
++        };
++        let proof = &layout.regions[region];
+         if self.state.control.previous != Some(state.entry)
+             || self.state.control.current != Some(proof.iteration)
+             || self.progress[proof.iteration as usize * 2..][..2] != [0, 1]
+@@ -145,7 +153,7 @@ impl Invocation<'_, '_, '_> {
+             if args[1] != 0 {
+                 return Err(invalid("closed map comparison lane changed"));
+             }
+-            (0, 0, self.reconcile_closed(state.region, args[0], args[2])?)
++            (0, 0, self.reconcile_closed(region, args[0], args[2])?)
+         } else {
+             let compute = state
+                 .remaining
+@@ -185,13 +193,13 @@ impl Invocation<'_, '_, '_> {
+                     proof.tail.latch()
+                 }
+             }
+-            2 | 3 if layout.sites.get(site).copied().flatten() == Some(state.region) => site as u32,
++            2 | 3 if layout.sites.get(site).copied().flatten() == Some(region) => site as u32,
+             5 if proof.numeric.as_ref().and_then(|p| p.action(site)).is_some_and(|a| matches!(a,
+                 crate::native_artifact::program::prepare::readonly_numeric::Operation::Write { .. }
+                 | crate::native_artifact::program::prepare::readonly_numeric::Operation::Append { .. })) => site as u32,
+             _ => return Err(invalid("closed Tail exit outside its proved boundary")),
+         };
+-        self.synchronize_numeric_carrier(state.region, site, args[2])?;
++        self.synchronize_numeric_carrier(region, site, args[2])?;
+         self.state
+             .library
+             .charge(compute, comparison)
+@@ -235,7 +243,7 @@ impl Invocation<'_, '_, '_> {
+         self.write_borrowed_word(0, remaining.0)?;
+         self.write_borrowed_word(1, remaining.1)?;
+         self.closed_tail = Some(State {
+-            region,
++            region: Region::Tail(region),
+             used: self.state.library.used(),
+             remaining,
+             entry: site as u32,
+diff --git a/hosts/gpu/src/native_artifact/values/mod.rs b/hosts/gpu/src/native_artifact/values/mod.rs
+index 835c16bd2..b0b64f485 100644
+--- a/hosts/gpu/src/native_artifact/values/mod.rs
++++ b/hosts/gpu/src/native_artifact/values/mod.rs
+@@ -403,6 +403,39 @@ impl<'a> NativeValueArena<'a> {
+             .transpose()
+     }
+ 
++    /// Pure current-entry availability, geometry and retirement previews.
++    #[cfg(feature = "canonical-native-program-runtime")]
++    pub(in crate::native_artifact) fn native_entry_preview(
++        &self,
++        slot: u32,
++        work: &NativeWorkMeter,
++    ) -> Result<Option<&Value>, NativeValueError> {
++        // Pure current availability/geometry preview, analogous to private
++        // frame current_leaf. It grants neither mutation nor an entry loan.
++        // The caller must fund and validate its selected view before execution.
++        self.check_work(work)?;
++        self.values
++            .values()
++            .get(slot as usize)
++            .map(Option::as_ref)
++            .ok_or(NativeValueError::InvalidSlot)
++    }
++    #[cfg(feature = "canonical-native-program-runtime")]
++    pub(in crate::native_artifact) fn native_retirement_available(
++        &self,
++        slot: u32,
++        work: &NativeWorkMeter,
++    ) -> Result<bool, NativeValueError> {
++        self.check_work(work)?;
++        let index = slot as usize;
++        let value = self
++            .values
++            .values()
++            .get(index)
++            .ok_or(NativeValueError::InvalidSlot)?;
++        Ok(value.is_none() || self.generations.values()[index] != u64::MAX)
++    }
++
+     /// Only the certified generated caller may retire a lexical local. Payload
+     /// retirement was prepaid by put; invalidate its handle before releasing it.
+     #[cfg(feature = "canonical-native-program-runtime")]
+diff --git a/hosts/gpu/tests/support/canonical_program_numeric_composition.rs b/hosts/gpu/tests/support/canonical_program_numeric_composition.rs
+index 32959826a..b0d71fe9a 100644
+--- a/hosts/gpu/tests/support/canonical_program_numeric_composition.rs
++++ b/hosts/gpu/tests/support/canonical_program_numeric_composition.rs
+@@ -184,12 +184,43 @@ fn parent_partition_keeps_exact_child_result_mapping_and_single_entry_boundaries
+         assert_eq!(parent["iteration"], 0);
+         assert_eq!(parent["child"], 1);
+         assert_eq!(parent["returned_arrays"], serde_json::json!([[0, 1]]));
++        println!(
++            "{}",
++            serde_json::json!({"witness":"parent-current-frame-recipes", "parent":parent})
++        );
+         let plan = object.descriptor().plan();
+         let mech_engine::native_artifact::NativeControlLoop::Tail(tail) = &plan.iterations()[0]
+         else {
+             panic!()
+         };
+         let facts = plan.facts();
++        let frames = facts.buffer_frames();
++        let mech_engine::native_artifact::NativeControlLoop::Tail(child) = &plan.iterations()[1]
++        else {
++            panic!()
++        };
++        let returned_schema = plan.values()[child.result().get() as usize].schema();
++        let current_lens = plan
++            .blocks()
++            .iter()
++            .enumerate()
++            .find_map(|(site, block)| {
++                if block.iteration() != Some(0) {
++                    return None;
++                }
++                match frames.action(site)?.operation() {
++                    mech_engine::native_artifact::NativeBufferFrameOperation::Project {
++                        source,
++                        ordinal: 0,
++                        output,
++                    } if plan.values()[source.get() as usize].schema() == returned_schema => {
++                        Some(output.get())
++                    }
++                    _ => None,
++                }
++            })
++            .unwrap();
++        let mut checked_current_result = false;
+         let mut all = std::collections::BTreeSet::new();
+         for segment in parent["segments"].as_array().unwrap() {
+             let entry = segment["entry"].as_u64().unwrap() as u32;
+@@ -200,6 +231,37 @@ fn parent_partition_keeps_exact_child_result_mapping_and_single_entry_boundaries
+                 .map(|v| v.as_u64().unwrap() as u32)
+                 .collect::<std::collections::BTreeSet<_>>();
+             assert!(sites.contains(&entry));
++            if let Some(recipe) = segment["frame_plan"].as_object() {
++                let expected = segment["sites"]
++                    .as_array()
++                    .unwrap()
++                    .iter()
++                    .filter_map(|site| {
++                        let at = site.as_u64().unwrap() as usize;
++                        let action = frames.action(at)?;
++                        (!action.retire().is_empty()).then(|| {
++                            serde_json::json!([
++                                at,
++                                action.retire().iter().map(|v| v.get()).collect::<Vec<_>>()
++                            ])
++                        })
++                    })
++                    .collect::<Vec<_>>();
++                assert_eq!(recipe["retirements"], serde_json::json!(expected));
++                if let Some(next) = recipe["frames"]
++                    .as_array()
++                    .unwrap()
++                    .iter()
++                    .find(|f| f["value"] == tail.next().get())
++                {
++                    let root = next["arrays"][1].as_u64().unwrap() as usize;
++                    assert_eq!(
++                        recipe["sources"][root],
++                        serde_json::json!({"Value":current_lens})
++                    );
++                    checked_current_result = true;
++                }
++            }
+             for &site in &sites {
+                 assert!(all.insert(site), "overlapping native pieces");
+                 assert_eq!(plan.blocks()[site as usize].iteration(), Some(0));
+@@ -235,6 +297,10 @@ fn parent_partition_keeps_exact_child_result_mapping_and_single_entry_boundaries
+             }
+         }
+         assert!(all.len() > 30);
++        assert!(
++            checked_current_result,
++            "parent next frame has no proved current child buffer"
++        );
+         if let Some(prior) = prior {
+             assert_eq!(prior, *parent);
+         }

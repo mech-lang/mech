@@ -1,0 +1,4 @@
+ROC_SECONDS 0.000288
+before {"median_seconds": 0.099590208, "multiple_of_roc": 345.7993333333333}
+after {"median_seconds": 0.0722695, "multiple_of_roc": 250.93576388888889}
+COMPLETE {"before_multiple_of_roc": 345.7993333333333, "after_multiple_of_roc": 250.93576388888889, "after_over_before": 0.7256687324119255, "profile_repetitions": 56}

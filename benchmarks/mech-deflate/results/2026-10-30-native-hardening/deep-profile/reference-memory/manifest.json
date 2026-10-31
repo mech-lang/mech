@@ -1,0 +1,96 @@
+{
+  "created_utc": "2026-10-30T19:00:47.787979+00:00",
+  "head": "51346073352ffefacafa561f2146c0908f5341ce",
+  "files": [
+    {
+      "path": "allocation_profile.c",
+      "sha256": "d4e2ef8c1c635bf0e87a72ec6308abb2ba1b845d5da502a6d204135f07b7c27e",
+      "bytes": 4893
+    },
+    {
+      "path": "allocation_profile.h",
+      "sha256": "56852a08a6cb3fbba88daa10b8674cdb938933833722f0ed3bfcc8ae9ae9b31a",
+      "bytes": 384
+    },
+    {
+      "path": "build-reference.py",
+      "sha256": "e19dc5fffd33777c1e39a1010757cccd32e41634e50afc5798ce6542ca73d838",
+      "bytes": 4327
+    },
+    {
+      "path": "package-verification.json",
+      "sha256": "852fa03afedda2c351398296220e7e1ff9ebce7e673ad04e9bbfd43472943ae1",
+      "bytes": 2466
+    },
+    {
+      "path": "reference-memory-identity.json",
+      "sha256": "ad25327e2aed4d6ee8e2eebef469f1e8c62d6bdec472b51c36c2955fd05c5353",
+      "bytes": 425
+    },
+    {
+      "path": "reference-memory-run/run.json",
+      "sha256": "ecd8701928110887b26425e1bde3f715d8b28eeaf57bf24e29c753e249051aed",
+      "bytes": 167
+    },
+    {
+      "path": "reference-memory-run/run.stderr",
+      "sha256": "6e5dfcbb55d53ea6978d4c45684be42f4da4654b9d95217a44aebe5aa977fa04",
+      "bytes": 19641
+    },
+    {
+      "path": "reference-memory-run/run.stdout",
+      "sha256": "19efb402396a0b967a594ce78dcf7037df148378d5aa87b6fae4ca7ac1fb5ef6",
+      "bytes": 628890
+    },
+    {
+      "path": "reference-profile-host.c",
+      "sha256": "9f0ec74f723e25aba72dc2a1d5cf209b75f03b19e5c98e803440eab73bfa5d37",
+      "bytes": 3739
+    },
+    {
+      "path": "roc-memory-app-build.json",
+      "sha256": "6b73fae3a183bbc111e778a3ba8b0771b7b78c0bbf06ae8a65a15874a1f844b0",
+      "bytes": 358
+    },
+    {
+      "path": "roc-memory-app-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "roc-memory-app-build.stdout",
+      "sha256": "9c76e880d4dfb9d06f3db44d9d6df7d035b9f1739f052e20c98651759ddd3ad0",
+      "bytes": 89
+    },
+    {
+      "path": "roc-memory-host-build.json",
+      "sha256": "c60d254f416ec379cc53d87c197c023a1cf342b16c46ae1e27b95c25525acbee",
+      "bytes": 549
+    },
+    {
+      "path": "roc-memory-host-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "roc-memory-probe-build.json",
+      "sha256": "35ff3ba2fafb08f9910fdce3b4d55ca7526b0cdf2fde0fc367fdd7a9e0ed4e44",
+      "bytes": 471
+    },
+    {
+      "path": "roc-memory-probe-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "usage.c",
+      "sha256": "883fe6a7baf228bc881b4b76aef13f352da38f19c8e7a5b3ca938dbd1dddfd0e",
+      "bytes": 448
+    },
+    {
+      "path": "usage.h",
+      "sha256": "ca6ac3c2cd82bfb367c07aa9e26b1aea3b025e48ea44db76dbded2be45b5fb9f",
+      "bytes": 233
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "created_utc": "2026-10-31T08:18:39.851361+00:00",
+  "head": "87737fbac3deefd07c2e32c6ea2c9272c1960c5a",
+  "files": [
+    {
+      "path": "counters/allocation_profile.c",
+      "sha256": "d4e2ef8c1c635bf0e87a72ec6308abb2ba1b845d5da502a6d204135f07b7c27e",
+      "bytes": 4893
+    },
+    {
+      "path": "counters/allocation_profile.h",
+      "sha256": "56852a08a6cb3fbba88daa10b8674cdb938933833722f0ed3bfcc8ae9ae9b31a",
+      "bytes": 384
+    },
+    {
+      "path": "counters/allocation_profile.rs",
+      "sha256": "d9c4bc779939567f5dced46d7c7f7030726b4c0e17df72efc3339cdfe2514b19",
+      "bytes": 1306
+    },
+    {
+      "path": "counters/before/memory-build.json",
+      "sha256": "9603515843a0d51dca16f7acdc13e6c263401f87f6cf0c27988b59b8e5989c89",
+      "bytes": 20471
+    },
+    {
+      "path": "counters/before/memory-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "counters/before/memory-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "counters/before/memory.rs",
+      "sha256": "08ea8df0794f98ee6f1b5865debf756a67ffc114e7009cc43cc21bf442f2ff8f",
+      "bytes": 6766
+    },
+    {
+      "path": "counters/before-memory/run.json",
+      "sha256": "f101b4e4ebd1265b566ef18ee3afb27e491f7e05287d86676cb004458c73512a",
+      "bytes": 512
+    },
+    {
+      "path": "counters/before-memory/run.stderr",
+      "sha256": "b0385974f643d8cf4717351cd008004e4ac58bc520cf183021d6729175550c72",
+      "bytes": 8901
+    },
+    {
+      "path": "counters/before-memory/run.stdout",
+      "sha256": "a2f3ed23d64d7750992e7b88c8a95e38d55feb394a41571f2c54c66f024e6172",
+      "bytes": 3955
+    },
+    {
+      "path": "counters/cpu_usage.rs",
+      "sha256": "3f3e2ac6cead2a6758f96afe77f4fa56da054f1d5e1e1e163f9d79ed8dc12817",
+      "bytes": 385
+    },
+    {
+      "path": "counters/usage.c",
+      "sha256": "883fe6a7baf228bc881b4b76aef13f352da38f19c8e7a5b3ca938dbd1dddfd0e",
+      "bytes": 448
+    },
+    {
+      "path": "counters/usage.h",
+      "sha256": "ca6ac3c2cd82bfb367c07aa9e26b1aea3b025e48ea44db76dbded2be45b5fb9f",
+      "bytes": 233
+    },
+    {
+      "path": "counters.py",
+      "sha256": "99341826506f2dec40492333620ce4fb6bbc56d838c8cacd6952fa867a43e024",
+      "bytes": 5072
+    }
+  ]
+}

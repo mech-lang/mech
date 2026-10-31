@@ -1,0 +1,91 @@
+[
+  {
+    "label": "roc",
+    "command": [
+      "/private/tmp/mech-deflate-profiling-20261028/roc-profile",
+      "12"
+    ],
+    "exit": 0,
+    "process_seconds": 6.082597666885704
+  },
+  {
+    "label": "pair0-before",
+    "command": [
+      "/private/tmp/mech-budget-checks-round23-20261029/final-primary/before",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 26.174968166043982
+  },
+  {
+    "label": "pair0-after",
+    "command": [
+      "/private/tmp/mech-budget-checks-round23-20261029/final-primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 26.157114750007167
+  },
+  {
+    "label": "pair1-after",
+    "command": [
+      "/private/tmp/mech-budget-checks-round23-20261029/final-primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 25.327228750102222
+  },
+  {
+    "label": "pair1-before",
+    "command": [
+      "/private/tmp/mech-budget-checks-round23-20261029/final-primary/before",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 25.45485966699198
+  },
+  {
+    "label": "pair2-before",
+    "command": [
+      "/private/tmp/mech-budget-checks-round23-20261029/final-primary/before",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 25.137759207980707
+  },
+  {
+    "label": "pair2-after",
+    "command": [
+      "/private/tmp/mech-budget-checks-round23-20261029/final-primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 25.333801625063643
+  },
+  {
+    "label": "pair3-after",
+    "command": [
+      "/private/tmp/mech-budget-checks-round23-20261029/final-primary/current",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 25.24890625011176
+  },
+  {
+    "label": "pair3-before",
+    "command": [
+      "/private/tmp/mech-budget-checks-round23-20261029/final-primary/before",
+      "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+      "3"
+    ],
+    "exit": 0,
+    "process_seconds": 25.600373417139053
+  }
+]

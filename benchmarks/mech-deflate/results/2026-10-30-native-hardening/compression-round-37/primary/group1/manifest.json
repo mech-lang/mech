@@ -1,0 +1,269 @@
+{
+  "scope": "All observations from this fixed worker group, including partial evidence on failure",
+  "receipt": {
+    "group": 1,
+    "head": "bc333b77cc351fc855c4549568f43b0c7a1812d8",
+    "created_utc": "2026-10-30T18:29:23.446119+00:00",
+    "reference_seconds": 0.000282,
+    "source_sha256": "a0062c6170db0005d96eba239232cfdbdd41054945c2e4a574afa8acb8939575",
+    "artifact_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+    "preparation_order": [
+      "after",
+      "before"
+    ],
+    "blocks": [
+      {
+        "block": 0,
+        "order": [
+          "after",
+          "before"
+        ],
+        "after": 0.004673084,
+        "before": 0.004685292,
+        "after_over_before": 0.9973943993245246
+      },
+      {
+        "block": 1,
+        "order": [
+          "before",
+          "after"
+        ],
+        "before": 0.004675417,
+        "after": 0.004763667,
+        "after_over_before": 1.018875321709272
+      },
+      {
+        "block": 2,
+        "order": [
+          "after",
+          "before"
+        ],
+        "after": 0.004622333,
+        "before": 0.00468075,
+        "after_over_before": 0.9875197350851894
+      },
+      {
+        "block": 3,
+        "order": [
+          "before",
+          "after"
+        ],
+        "before": 0.004652375,
+        "after": 0.004645875,
+        "after_over_before": 0.9986028641285364
+      },
+      {
+        "block": 4,
+        "order": [
+          "after",
+          "before"
+        ],
+        "after": 0.004580375,
+        "before": 0.004653792,
+        "after_over_before": 0.9842242627087759
+      },
+      {
+        "block": 5,
+        "order": [
+          "before",
+          "after"
+        ],
+        "before": 0.004648834,
+        "after": 0.004593084,
+        "after_over_before": 0.9880077455981435
+      },
+      {
+        "block": 6,
+        "order": [
+          "after",
+          "before"
+        ],
+        "after": 0.00460025,
+        "before": 0.004629208,
+        "after_over_before": 0.9937445022993134
+      },
+      {
+        "block": 7,
+        "order": [
+          "before",
+          "after"
+        ],
+        "before": 0.004620084,
+        "after": 0.004599833,
+        "after_over_before": 0.9956167463621874
+      },
+      {
+        "block": 8,
+        "order": [
+          "after",
+          "before"
+        ],
+        "after": 0.004574667,
+        "before": 0.004671208,
+        "after_over_before": 0.9793327550389537
+      },
+      {
+        "block": 9,
+        "order": [
+          "before",
+          "after"
+        ],
+        "before": 0.004607416,
+        "after": 0.004611417,
+        "after_over_before": 1.0008683826248812
+      },
+      {
+        "block": 10,
+        "order": [
+          "after",
+          "before"
+        ],
+        "after": 0.004614417,
+        "before": 0.004640334,
+        "after_over_before": 0.9944148416902748
+      },
+      {
+        "block": 11,
+        "order": [
+          "before",
+          "after"
+        ],
+        "before": 0.004609458,
+        "after": 0.004579834,
+        "after_over_before": 0.9935732140308035
+      },
+      {
+        "block": 12,
+        "order": [
+          "after",
+          "before"
+        ],
+        "after": 0.004576166,
+        "before": 0.004630916,
+        "after_over_before": 0.9881772850122956
+      },
+      {
+        "block": 13,
+        "order": [
+          "before",
+          "after"
+        ],
+        "before": 0.004631708,
+        "after": 0.004578416,
+        "after_over_before": 0.9884940933236724
+      },
+      {
+        "block": 14,
+        "order": [
+          "after",
+          "before"
+        ],
+        "after": 0.004622959,
+        "before": 0.004618,
+        "after_over_before": 1.0010738414898226
+      },
+      {
+        "block": 15,
+        "order": [
+          "before",
+          "after"
+        ],
+        "before": 0.004654291,
+        "after": 0.004578833,
+        "after_over_before": 0.9837874340044489
+      }
+    ],
+    "primary_per_worker": 496,
+    "statistical_scope": "16 descriptive block pairs within one worker pair; not 16 independent executable pairs",
+    "timed_boundary": "Unchanged evaluate_into-only line; readiness, stdin wait, clear/rebind, verify and drops outside",
+    "summary": {
+      "before": {
+        "median_seconds": 0.0046413545,
+        "multiple_of_roc": 16.458703900709217,
+        "multiple_of_fixed_roc": 15.471181666666668
+      },
+      "after": {
+        "median_seconds": 0.0046054170000000005,
+        "multiple_of_roc": 16.33126595744681,
+        "multiple_of_fixed_roc": 15.351390000000004
+      },
+      "pooled_ratio": 0.9922571094278622,
+      "median_block_ratio": 0.9936588581650585,
+      "geometric_block_ratio": 0.9933160090876281,
+      "improving_blocks": 13
+    },
+    "exit": 0,
+    "workers": {
+      "after": {
+        "command": [
+          "/private/tmp/mech-action-retirement-round37-20261030/workers/after",
+          "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+          "496"
+        ],
+        "binary_sha256": "d776a11dc66ec603bedbc8e0aa1a758aae4c8ff941015326c6d19554c0ea0161",
+        "exit": 0
+      },
+      "before": {
+        "command": [
+          "/private/tmp/mech-action-retirement-round37-20261030/workers/before",
+          "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+          "496"
+        ],
+        "binary_sha256": "d94ea8611755f169f569c547dd58f9bd4d69d046aae041bb7d6d6015c9a4922b",
+        "exit": 0
+      }
+    }
+  },
+  "files": [
+    {
+      "path": "after-build.json",
+      "sha256": "373064f3ab5125ea4c63a00de30d4b10519c8e14bd7e6a579d7e926c597c5cd8",
+      "bytes": 13793
+    },
+    {
+      "path": "before-build.json",
+      "sha256": "a71955efd766f58d18e2d6d050e0d656fb8ef87195c67c415c6e7f060d1e2827",
+      "bytes": 13714
+    },
+    {
+      "path": "group1/after.stderr",
+      "sha256": "c7d034969f0b72d209240a613901304fed61b640500052fe0e7216f482c0c32d",
+      "bytes": 6930
+    },
+    {
+      "path": "group1/after.stdout",
+      "sha256": "48ef8fc440e8172f12cbe33e10b5d60c27f812560ddb88f15bbaca6318e01d24",
+      "bytes": 174053
+    },
+    {
+      "path": "group1/before.stderr",
+      "sha256": "5196bb8e4bb00deabcedf53073773e0ae8becc82d202ae7b937f3a0fc34054ff",
+      "bytes": 6930
+    },
+    {
+      "path": "group1/before.stdout",
+      "sha256": "0fd47f4bf928538ec98386eba6d1af43cecf454f04ae3d997ec11362ad86df29",
+      "bytes": 174019
+    },
+    {
+      "path": "group1/results.json",
+      "sha256": "5bda53a0c27d4501f3399b733008c57ece0a6bc6e0cd884ab75101e4892d2c25",
+      "bytes": 496531
+    },
+    {
+      "path": "run.py",
+      "sha256": "095e9220be8057d2c4bc64eaf817a0708c7b8d60a3e21caef3db4c074ba8eb68",
+      "bytes": 10271
+    },
+    {
+      "path": "session.rs",
+      "sha256": "a0062c6170db0005d96eba239232cfdbdd41054945c2e4a574afa8acb8939575",
+      "bytes": 6293
+    },
+    {
+      "path": "source-adaptation.json",
+      "sha256": "e375dcc8701e76d1161c248bd9a1c8c473094a57210bcca8f0ecb6fbc8eedfa7",
+      "bytes": 316
+    }
+  ]
+}

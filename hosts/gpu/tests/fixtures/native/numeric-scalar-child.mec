@@ -1,0 +1,12 @@
+// Scalar child transport around ordinary recursion, as in optimal-path-scan.
++> sequence
+<scalar-answer> := <{number<u64> flag<bool>}>
+scalar-child(number<u64>, left<u64>, flag<bool>, allowed<bool>, divisor<u64>) => (out<scalar-answer>) :=
+  allowed! := allowed
+  out := ((left > 0u64)? | true => scalar-child(number + 1u64, left - 1u64, flag == false, allowed, divisor) | false => {number: number / divisor, flag: flag}).
+scalar-parent(words<[u64]>, left<u64>, number<u64>, flag<bool>, repeats<u64>, allowed<bool>, divisor<u64>) => (out<u64>) :=
+  more := left > 0u64
+  answer := (more? | true => scalar-child(number, repeats, flag, allowed, divisor) | false => {number: number, flag: flag})
+  marked := (answer.flag? | true => answer.number | false => answer.number + 100u64)
+  out := (more? | true => scalar-parent(words, left - 1u64, marked + sequence/length(words), answer.flag == false, repeats, allowed, divisor) | false => number).
+scalar-parent(words<[u64]>, steps<u64>, start<u64>, flag<bool>, repeats<u64>, allowed<bool>, divisor<u64>)

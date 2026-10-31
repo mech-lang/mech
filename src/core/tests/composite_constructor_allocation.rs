@@ -9,6 +9,7 @@ use std::sync::Arc;
 struct ObservedAllocator;
 thread_local! {
     static TRACK: Cell<bool> = const { Cell::new(false) };
+    static REQUESTS: Cell<usize> = const { Cell::new(0) };
     static TOTAL: Cell<usize> = const { Cell::new(0) };
     static LARGEST: Cell<usize> = const { Cell::new(0) };
 }
@@ -17,6 +18,7 @@ thread_local! {
 unsafe impl GlobalAlloc for ObservedAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         if TRACK.try_with(Cell::get).unwrap_or(false) {
+            REQUESTS.with(|value| value.set(value.get() + 1));
             TOTAL.with(|value| value.set(value.get() + layout.size()));
             LARGEST.with(|value| value.set(value.get().max(layout.size())));
         }
@@ -29,6 +31,7 @@ unsafe impl GlobalAlloc for ObservedAllocator {
     }
     unsafe fn realloc(&self, pointer: *mut u8, layout: Layout, size: usize) -> *mut u8 {
         if TRACK.try_with(Cell::get).unwrap_or(false) {
+            REQUESTS.with(|value| value.set(value.get() + 1));
             TOTAL.with(|value| value.set(value.get() + size));
             LARGEST.with(|value| value.set(value.get().max(size)));
         }
@@ -119,4 +122,345 @@ fn long_record_labels_are_not_allocated_again_during_a_bound_construction() {
         observations[0], observations[1],
         "schema label length must not affect turn allocations"
     );
+}
+
+fn measured_requests<T>(run: impl FnOnce() -> T) -> (T, usize) {
+    struct Reset;
+    impl Drop for Reset {
+        fn drop(&mut self) {
+            TRACK.with(|value| value.set(false));
+        }
+    }
+    REQUESTS.with(|value| value.set(0));
+    TRACK.with(|value| assert!(!value.replace(true)));
+    let reset = Reset;
+    let value = run();
+    let requests = REQUESTS.with(Cell::get);
+    drop(reset);
+    (value, requests)
+}
+
+#[test]
+fn independent_snapshot_registration_allocates_only_retained_metadata_owners() {
+    use mech_core::{IntegerWidth, ManagedMemoryBudget};
+
+    for shared in [false, true] {
+        for matrix in [false, true] {
+            for _ in 0..3 {
+                let mut builder = SchemaTableBuilder::new();
+                let handle = builder
+                    .insert(
+                        SchemaDraft {
+                            body: if matrix {
+                                SchemaBody::Matrix {
+                                    element: Box::new(SchemaBody::UnsignedInteger(
+                                        IntegerWidth::W8,
+                                    )),
+                                    dimensions: [
+                                        mech_core::DimensionExpr::Constant(1),
+                                        mech_core::DimensionExpr::Constant(3),
+                                    ]
+                                    .into(),
+                                }
+                            } else {
+                                SchemaBody::String
+                            },
+                            dimension_parameters: Box::new([]),
+                        }
+                        .finalize()
+                        .unwrap(),
+                    )
+                    .unwrap();
+                let built = builder.finish().unwrap();
+                let schema = built.resolve(handle).unwrap();
+                let schemas = Arc::new(built.table);
+                let value = ValueDraft {
+                    schema,
+                    shape_values: Box::new([]),
+                    data: if matrix {
+                        ValueDataDraft::Matrix(
+                            [7, 8, 9]
+                                .map(ValueDataDraft::U8)
+                                .into_iter()
+                                .collect::<Vec<_>>()
+                                .into(),
+                        )
+                    } else {
+                        ValueDataDraft::String("kept immutable".into())
+                    },
+                }
+                .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+                .unwrap();
+                let expected = value.canonical_data_draft().unwrap();
+                let nodes = value.retained_footprint(&schemas).unwrap().node_count;
+                let identity = value.frozen_storage_identity();
+                let alias = shared.then(|| value.clone());
+                let budget = ManagedMemoryBudget::new(1_000_000);
+                // This also warms the immutable payload's shared registry. A
+                // fresh independent registration still needs its own owners.
+                let bytes = value.memory_budget_admission_bytes(&budget).unwrap();
+                let mut reservation = budget.reserve_capacity(bytes).unwrap();
+                let ((), requests) = measured_requests(|| {
+                    let owned = value
+                        .into_independent_memory_budget(&mut reservation)
+                        .unwrap();
+                    assert!(identity.matches(&owned));
+                    assert_eq!(budget.used_bytes(), bytes);
+                    assert_eq!(budget.retained_snapshot_nodes(), nodes);
+                    // Include complete destruction: deferring a lock allocation
+                    // from insertion to removal must not satisfy this test.
+                    drop(owned);
+                });
+                assert_eq!(
+                    requests,
+                    if shared { 2 } else { 1 },
+                    "independent import and retirement allocate only retained metadata owners"
+                );
+                assert_eq!(reservation.capacity_bytes(), 0);
+                assert_eq!((budget.used_bytes(), budget.retained_nodes()), (0, 0));
+                if let Some(alias) = alias {
+                    assert_eq!(alias.canonical_data_draft().unwrap(), expected);
+                    assert!(alias.memory_budget_retained_bytes(&budget).is_none());
+                    assert!(identity.matches(&alias));
+                } else {
+                    // A weak identity retains no strong payload or admission.
+                    assert_eq!(budget.retained_snapshot_nodes(), 0);
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn numeric_matrix_validation_allocates_only_the_three_retained_owners() {
+    use mech_core::{
+        DimensionExpr as D, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+        DimensionParameterOrigin, IntegerWidth, Value,
+    };
+    for fixed in [false, true] {
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W32)),
+                        dimensions: [
+                            D::Constant(1),
+                            if fixed {
+                                D::Constant(3)
+                            } else {
+                                D::Parameter(DimensionParameterId::new(0))
+                            },
+                        ]
+                        .into(),
+                    },
+                    dimension_parameters: if fixed {
+                        Box::new([])
+                    } else {
+                        [DimensionParameterDeclaration {
+                            id: DimensionParameterId::new(0),
+                            origin: DimensionParameterOrigin::Explicit,
+                            lifetime: DimensionLifetime::Activation,
+                            lower_bound: D::Constant(1),
+                            upper_bound: Some(D::Constant(8)),
+                        }]
+                        .into()
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let id = built.resolve(handle).unwrap();
+        let schemas = Arc::new(built.table);
+        for seed in [7u32, 19, 31] {
+            let shape = schemas
+                .get(id)
+                .unwrap()
+                .instantiate_shape(if fixed { Box::new([]) } else { [3].into() })
+                .unwrap();
+            let words: Box<[u32]> = [seed, seed + 1, seed + 2].into();
+            let pointer = words.as_ptr();
+            let (result, requests) = measured_requests(|| {
+                Value::from_u32_matrix(id, shape, words, Arc::clone(&schemas))
+            });
+            let value = result.unwrap();
+            assert_eq!(
+                requests, 3,
+                "validation must borrow shape/schema; only retained owners allocate"
+            );
+            let ValueData::Matrix(matrix) = value.data() else {
+                panic!("matrix")
+            };
+            let mech_core::snapshot::SequenceView::U32(words) = matrix.elements() else {
+                panic!("u32")
+            };
+            assert_eq!(words.as_ptr(), pointer);
+            assert_eq!(words, [seed, seed + 1, seed + 2]);
+            value.validate_against(&schemas).unwrap();
+        }
+    }
+}
+
+#[test]
+fn private_numeric_publication_and_exclusive_retirement_do_not_allocate() {
+    use mech_core::snapshot::{
+        SequenceView, UnsignedMatrixBuffer, UnsignedMatrixOwnershipTransfer, UnsignedMatrixViewMut,
+    };
+    use mech_core::{
+        DimensionExpr as D, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+        DimensionParameterOrigin, IntegerWidth, ManagedMemoryBudget, Value,
+    };
+
+    macro_rules! check {
+        ($variant:ident, $width:ident, $capacity:expr, $word:expr) => {
+            for fixed in [false, true] {
+                for keep_alias in [false, true] {
+                    let mut builder = SchemaTableBuilder::new();
+                    let handle = builder
+                        .insert(
+                            SchemaDraft {
+                                body: SchemaBody::Matrix {
+                                    element: Box::new(SchemaBody::UnsignedInteger(
+                                        IntegerWidth::$width,
+                                    )),
+                                    dimensions: [
+                                        D::Constant(1),
+                                        if fixed {
+                                            D::Constant(3)
+                                        } else {
+                                            D::Parameter(DimensionParameterId::new(0))
+                                        },
+                                    ]
+                                    .into(),
+                                },
+                                dimension_parameters: if fixed {
+                                    Box::new([])
+                                } else {
+                                    [DimensionParameterDeclaration {
+                                        id: DimensionParameterId::new(0),
+                                        origin: DimensionParameterOrigin::Explicit,
+                                        lifetime: DimensionLifetime::Turn,
+                                        lower_bound: D::Constant(0),
+                                        upper_bound: None,
+                                    }]
+                                    .into()
+                                },
+                            }
+                            .finalize()
+                            .unwrap(),
+                        )
+                        .unwrap();
+                    let built = builder.finish().unwrap();
+                    let id = built.resolve(handle).unwrap();
+                    let schemas = Arc::new(built.table);
+                    let shape = schemas
+                        .get(id)
+                        .unwrap()
+                        .instantiate_shape(if fixed { Box::new([]) } else { [3].into() })
+                        .unwrap();
+                    let mut words = Vec::with_capacity($capacity);
+                    words.extend_from_slice(&[$word; 3]);
+                    let pointer = words.as_ptr();
+                    let raw = Value::from_unsigned_matrix_buffer(
+                        id,
+                        shape.clone(),
+                        UnsignedMatrixBuffer::$variant(words),
+                        schemas.clone(),
+                    )
+                    .unwrap();
+                    let probe = Value::from_unsigned_matrix_buffer(
+                        id,
+                        shape.clone(),
+                        UnsignedMatrixBuffer::$variant(vec![$word; 3]),
+                        schemas.clone(),
+                    )
+                    .unwrap();
+                    let old_identity = raw.frozen_storage_identity();
+                    let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
+                    let bytes = raw.memory_budget_admission_bytes(&memory).unwrap();
+                    let mut reservation = memory.reserve_capacity(bytes).unwrap();
+                    let value = raw.into_memory_budget(&mut reservation).unwrap();
+                    drop(reservation);
+                    let UnsignedMatrixOwnershipTransfer::Owned(owned) =
+                        value.try_into_owned_unsigned_matrix(&memory).unwrap()
+                    else {
+                        panic!("exclusive packed owner")
+                    };
+                    let mut private = owned.into_private_updates(shape).unwrap();
+                    let UnsignedMatrixViewMut::$variant(words) = private.elements_mut() else {
+                        panic!("original unsigned kind")
+                    };
+                    assert_eq!(words.as_ptr(), pointer);
+                    words[2] += 1;
+                    let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                    let rest = memory
+                        .reserve_capacity(memory.limit_bytes() - memory.used_bytes())
+                        .unwrap();
+                    memory.inject_snapshot_import_failure_after(0);
+
+                    let (published, requests) = measured_requests(|| private.finish());
+                    assert_eq!(requests, 0, "private publication must not allocate a lock");
+                    assert!(!old_identity.matches(&published));
+                    published.validate_against(&schemas).unwrap();
+                    let ValueData::Matrix(matrix) = published.data() else {
+                        panic!("published matrix")
+                    };
+                    let SequenceView::$variant(words) = matrix.elements() else {
+                        panic!("published unsigned kind")
+                    };
+                    assert_eq!(words.as_ptr(), pointer);
+                    assert_eq!(words, [$word, $word, $word + 1]);
+                    let alias = keep_alias.then(|| published.clone());
+                    let ((), requests) = measured_requests(|| drop(published));
+                    assert_eq!(
+                        requests, 0,
+                        "publication must not defer a lock to retirement"
+                    );
+                    if let Some(alias) = alias {
+                        assert_eq!(memory.retained_snapshot_nodes(), retained.1);
+                        let ((), requests) = measured_requests(|| drop(alias));
+                        assert_eq!(
+                            requests, 0,
+                            "last immutable alias must retire without allocation"
+                        );
+                    }
+                    drop(rest);
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        (0, 0)
+                    );
+                    let bytes = probe.memory_budget_admission_bytes(&memory).unwrap();
+                    let mut reservation = memory.reserve_capacity(bytes).unwrap();
+                    let retry = probe.clone();
+                    assert!(
+                        matches!(
+                            probe.into_memory_budget(&mut reservation),
+                            Err(mech_core::MemoryRuntimeError::AllocationFailed { .. })
+                        ),
+                        "publication and retirement must leave the injected failure armed"
+                    );
+                    drop(reservation);
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        (0, 0)
+                    );
+                    let bytes = retry.memory_budget_admission_bytes(&memory).unwrap();
+                    let mut reservation = memory.reserve_capacity(bytes).unwrap();
+                    let recovered = retry.into_memory_budget(&mut reservation).unwrap();
+                    recovered.validate_against(&schemas).unwrap();
+                    drop((recovered, reservation));
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        (0, 0)
+                    );
+                }
+            }
+        };
+    }
+    check!(U8, W8, 13, 7u8);
+    check!(U16, W16, 262144, 32769u16);
+    check!(U32, W32, 1500513, 0x80000000u32);
+    check!(U64, W64, 305257, 0x8000000000000000u64);
 }

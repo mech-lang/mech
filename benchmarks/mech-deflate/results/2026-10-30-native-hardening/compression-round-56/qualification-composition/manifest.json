@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T13:29:16.945160+00:00",
+  "head": "0ddcd3bfae774394d2b3f50dd78d8e683c5afca2",
+  "files": [
+    {
+      "path": "qualification/composition.json",
+      "sha256": "b66dbbb7b1949dcbc4f3f7647fba350c0819a72d7be2ac1d7cfe8e7d470517bb",
+      "bytes": 539
+    },
+    {
+      "path": "qualification/composition.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "qualification/composition.stdout",
+      "sha256": "360ba361707ee28043496544ac188acd8f125d117c2a5100a467d52a0d236f23",
+      "bytes": 149832
+    },
+    {
+      "path": "qualify.py",
+      "sha256": "b25f351a14da8ea268d11211e489cd030d486fcdbc6d0f6f9e6a1ed6e8bccd06",
+      "bytes": 2669
+    }
+  ]
+}

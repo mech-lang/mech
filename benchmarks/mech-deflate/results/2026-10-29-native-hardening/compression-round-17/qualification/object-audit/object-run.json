@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-binding-descriptors-round17-20261029/object-audit/object-evidence",
+    "/private/tmp/mech-linear-restack-20261026/complete-compressor-borrowed-caller.mbc",
+    "/private/tmp/mech-binding-descriptors-round17-20261029/object-audit/complete-object"
+  ],
+  "exit": 0,
+  "seconds": 25.7070005829446,
+  "binary_sha256": "c6e444005f6956e1c9e9ebf71b851eb465f16c7b60cd264f580f02d092fcb86c"
+}

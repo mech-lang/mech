@@ -1,0 +1,31 @@
+{
+  "name": "frame-transport-record-return-current-negative",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "--manifest-path",
+    "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+    "pending_record_return",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "4b722986c7eaa47011c4e36562baec0e1fe87cf3",
+  "dirty": "?? benchmarks/mech-deflate/results/2026-10-27-frame-transport/\n",
+  "exit": 101,
+  "seconds": 2.853255033493042,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/frame-transport-record-return-current-negative.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

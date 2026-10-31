@@ -1,0 +1,32 @@
+{
+  "before": "/private/tmp/mech-scalar-results-round27-20261029/object-audit/complete-object.o",
+  "after": "/private/tmp/mech-child-loops-round28-20261029/object-audit/complete-object.o",
+  "sections": {
+    "__TEXT,__text": {
+      "before": {
+        "bytes": 12923596,
+        "sha256": "0ad019551aa5e0c624f4dac56091567f1e6fbb721c92edf11883c05a1d6c476d",
+        "offset": 368
+      },
+      "after": {
+        "bytes": 13669120,
+        "sha256": "65216d1d6eeecce9377d5060ed7c69f0bf70049b4b2a93216551d015dfba775c",
+        "offset": 368
+      },
+      "identical": false
+    },
+    "__TEXT,__const": {
+      "before": {
+        "bytes": 192,
+        "sha256": "e87b3917dc754990d51a35aa140a3b86f64c8613c8e7eaaf8dca989b12a62774",
+        "offset": 12923968
+      },
+      "after": {
+        "bytes": 192,
+        "sha256": "b63aad6b2ed9a59f8605b2da3fda3609dd043be5c5f718979cba80fd95e30ab0",
+        "offset": 13669488
+      },
+      "identical": false
+    }
+  }
+}

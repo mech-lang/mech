@@ -1,0 +1,21 @@
+{
+  "compiler_revision": "3e262c87aac0c0ae49b689561cd53bcfa4b34eaa",
+  "files": {
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "f20985f27e3afdf7620b36bddcf53f51600080247f96db26342708b47469d4ee",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/unsigned_buffers.rs": "0cd13661e98d45c4685438328dfc1f9970e36e157d026e07a1937ef3e4c59a72",
+    "hosts/gpu/tests/support/canonical_program_linked.rs": "d05b0fee3fc573ff3a66716e41cffcc8643396e1cd32523981ecf1fa93d105b5",
+    "hosts/gpu/tests/support/canonical_program_sequence_capacity.rs": "faba816653f51c248db661eab7ddc962fa3e738bc595861a39a12def62bbeee6",
+    "src/core/src/operation_contract/maintained.rs": "f086f88256ce1aed0200d8320b0c6bdcbe4f8dac7bb8375521b5787b5e4205ce",
+    "src/core/src/type_system/scheme.rs": "453cfca40eadd1def262d717be708bddd6ed19cd5c8a85948792b0fbcc601d35",
+    "src/engine/src/intrinsics/sequence_buffers.rs": "83f76b7e3509e1101a7ec343f2d8d9413d3295496a7258bc5770e01c5ec0994c",
+    "src/engine/src/lib.rs": "75478fffaac79034e93a5208013a0993b44336cdd338b4b3ed4cc8817827d459",
+    "src/engine/src/native_artifact/unsigned_buffer_call.rs": "c326ef0a84f84027460bdbf83a1c4574e995366f302f8146066fe463985e5bc6",
+    "src/engine/src/resident/general/native_collection_invocation.rs": "98fc30d1a823078a00008c912f07bd69a1c13f05cc5dec2da333987019573281",
+    "src/engine/src/resident/general/native_collection_prepared.rs": "3487246e86a0bbeec8cbc49a47094aaee9caf74b4564b41ae0efa02a9ba56bc5",
+    "src/engine/src/resident/general/native_collection_templates.rs": "d19be9c922f42c9392ea1a73f71995cbaa40f1d8efdf4cb664b10572d2a12dc2",
+    "src/engine/src/resident/general/native_collection_unsigned_buffers.rs": "542aedf41e516c011e415ff188031d6be988109529d3835afe697d079e5125d9",
+    "src/engine/src/resident/native_collection_semantics.rs": "7865d6b3ce91c7a1327586567c1226245b265d704b527fab61f357e8be5ef55d",
+    "src/engine/src/resident/sequence_buffers.rs": "46507ec2a40e099c0f061879f69eb63637682054dc2b6d08bf64c9fd98377b1e",
+    "src/engine/tests/sequence_buffer_contract.rs": "943a9baf40c7e3ab63e9f6b6a954920926b86adbd9c6832e40d55c386557c829"
+  }
+}

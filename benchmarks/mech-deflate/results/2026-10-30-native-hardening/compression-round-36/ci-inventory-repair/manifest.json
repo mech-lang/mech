@@ -1,0 +1,80 @@
+{
+  "finding": "https://github.com/mech-lang/mech/pull/973#discussion_r4426176445",
+  "introduced_in": "2de2b627d1656c50adfc99ab75f4f3242e354c29",
+  "clean_base": "eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b",
+  "classification": "Inherited from published stack at the start of this optimization round; introduced by the earlier composition inventory step",
+  "results": "Clean-base selected contract passes; published contract fails; repaired workflow and inventory suite 132 pass; published Rust guard lists and executes five tests",
+  "environmental_failure": "System Python lacks yaml; configured existing CI environment passes",
+  "files": [
+    {
+      "path": "after.json",
+      "sha256": "7b5a4547c6da33ba846ba110a091363e6e9393bd2468a51be0ea21b78670f415",
+      "bytes": 196
+    },
+    {
+      "path": "after.stderr",
+      "sha256": "d9e7e071bb9cd9ea66e51ce2bc542b34d6865c20158390d0d4f197b31282d117",
+      "bytes": 1244
+    },
+    {
+      "path": "after.stdout",
+      "sha256": "4fac2ba2647565d6939ec845d86dded082e930cb8aba023379a4e5113a180d0e",
+      "bytes": 201
+    },
+    {
+      "path": "before.json",
+      "sha256": "5c9ce5105222347ad23617e553064450267e0b57453c60c1d5a5e173c01f4515",
+      "bytes": 225
+    },
+    {
+      "path": "clean-base.log",
+      "sha256": "6ea00af9c03c8b0db72ae95c1e975bac5cd5ed91649cab5f5c14274076114818",
+      "bytes": 283
+    },
+    {
+      "path": "configured.json",
+      "sha256": "f9df77d1fe909c97824f141b2b08e197b5ca5392d2e981f98c95c962034a6a28",
+      "bytes": 244
+    },
+    {
+      "path": "configured.stderr",
+      "sha256": "924d50bc28599e31f2c534274dad9499dd7804bde2e8fdbf2b385767b98903cf",
+      "bytes": 270
+    },
+    {
+      "path": "configured.stdout",
+      "sha256": "bfd006e1954fa7c84b0f2ced983d2adfc3458c759859572bbba2dfa347d67ac5",
+      "bytes": 201
+    },
+    {
+      "path": "execute.stderr",
+      "sha256": "f8e88928e3a284241a6585737e2bf9254a95067b73b09adcb27601d08fdebf2f",
+      "bytes": 47
+    },
+    {
+      "path": "execute.stdout",
+      "sha256": "6f94e557138501a0c59d698645b4c4452ab7b762639ec69206be41aef4181a2b",
+      "bytes": 2946
+    },
+    {
+      "path": "list.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "list.stdout",
+      "sha256": "938eaf2fbea016c90e587e8ffd69819055cdf79c0c66fdb39b5ed76606e05da0",
+      "bytes": 662
+    },
+    {
+      "path": "published.log",
+      "sha256": "7fcd61a3b145e65aef06205f9e72495128c86b5f2f7abed90da9f63f4a55ccae",
+      "bytes": 1002
+    },
+    {
+      "path": "rust-receipts.json",
+      "sha256": "52b1648fb66d6b56cfaa414818b28f21e82ed30914eca337973d1672c6491a1d",
+      "bytes": 803
+    }
+  ]
+}

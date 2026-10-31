@@ -460,8 +460,10 @@ impl NativePreparedLibraryCall {
             &self.schemas,
             self.template.clone(),
             self.factory,
+            self.descriptor_templates.as_deref(),
             &[&[]],
             shape.parameter_values(),
+            None,
             limits,
         )
         .map_err(InvokeError::Binding)?;

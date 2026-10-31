@@ -123,14 +123,45 @@ impl Value {
         self,
         budget: &crate::ManagedMemoryBudget,
     ) -> crate::MemoryRuntimeResult<StringOwnershipTransfer> {
-        if !matches!(self.data(), ValueData::String(_))
-            || !self.shape.parameter_values().is_empty()
-            || self.memory_budget_retained_bytes(budget).is_none()
+        if !matches!(self.data(), ValueData::String(_)) || !self.shape.parameter_values().is_empty()
+        {
+            return Ok(StringOwnershipTransfer::Unavailable(self));
+        }
+        match self.try_into_owned_snapshot(budget)? {
+            Err(value) => Ok(StringOwnershipTransfer::Unavailable(value)),
+            Ok(OwnedSnapshotParts {
+                data,
+                schemas,
+                reservation,
+                schema,
+                key,
+            }) => {
+                let ValueData::String(text) = data else {
+                    return Err(transfer_invariant("exclusive String changed data kind"));
+                };
+                Ok(StringOwnershipTransfer::Owned(OwnedSnapshotString {
+                    text: text.into_string(),
+                    schemas,
+                    reservation,
+                    schema,
+                    key,
+                }))
+            }
+        }
+    }
+
+    // Shared consuming handoff for already-checked plain payload families.
+    // The caller proves its data/schema kind before consuming any ownership.
+    pub(super) fn try_into_owned_snapshot(
+        self,
+        budget: &crate::ManagedMemoryBudget,
+    ) -> crate::MemoryRuntimeResult<Result<OwnedSnapshotParts, Value>> {
+        if self.memory_budget_retained_bytes(budget).is_none()
             || self.root.data.ownership.get().is_some()
             || Arc::strong_count(&self.root) != 1
             || Arc::strong_count(&self.root.data) != 1
         {
-            return Ok(StringOwnershipTransfer::Unavailable(self));
+            return Ok(Err(self));
         }
         let Self {
             schema,
@@ -142,7 +173,7 @@ impl Value {
         let mut storage = match Arc::try_unwrap(root) {
             Ok(storage) => storage,
             Err(root) => {
-                return Ok(StringOwnershipTransfer::Unavailable(Self {
+                return Ok(Err(Self {
                     schema,
                     schema_key,
                     shape,
@@ -159,11 +190,11 @@ impl Value {
         let ownership = storage
             .memory_budget
             .take()
-            .ok_or_else(|| transfer_invariant("exclusive String lost its admission"))?;
+            .ok_or_else(|| transfer_invariant("exclusive snapshot lost its admission"))?;
         let data = storage.data.clone();
         drop(storage); // The now-unlinked wrapper no longer owns the charge.
         let frozen = Arc::try_unwrap(data)
-            .map_err(|_| transfer_invariant("exclusive String gained a frozen data owner"))?;
+            .map_err(|_| transfer_invariant("exclusive snapshot gained a frozen data owner"))?;
         let FrozenSnapshotData {
             data,
             string_ascii_without_crlf,
@@ -172,9 +203,6 @@ impl Value {
             ownership: physical,
             budget_imports,
         } = frozen;
-        let ValueData::String(text) = data else {
-            return Err(transfer_invariant("exclusive String changed data kind"));
-        };
         // Retire stale import/shape/token metadata before allowing any capacity
         // credit. The original weak data shell may remain cache-owned, but has
         // zero strong owners and cannot match a new frozen allocation.
@@ -195,14 +223,23 @@ impl Value {
         } = ownership;
         drop((registration, node_charge));
         drop(schemas);
-        Ok(StringOwnershipTransfer::Owned(OwnedSnapshotString {
-            text: text.into_string(),
+        Ok(Ok(OwnedSnapshotParts {
+            data,
             schemas: admitted_schemas,
             reservation,
             schema,
             key: schema_key,
         }))
     }
+}
+
+// Backing/schema owners retire before the transferred charge.
+pub(super) struct OwnedSnapshotParts {
+    pub(super) data: ValueData,
+    pub(super) schemas: Arc<SchemaTable>,
+    pub(super) reservation: crate::ManagedMemoryReservation,
+    pub(super) schema: SchemaId,
+    pub(super) key: SchemaKey,
 }
 
 fn transfer_invariant(reason: &str) -> crate::MemoryRuntimeError {

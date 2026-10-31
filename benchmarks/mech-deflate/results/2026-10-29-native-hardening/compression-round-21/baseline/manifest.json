@@ -1,0 +1,62 @@
+[
+  {
+    "file": "baseline.json",
+    "sha256": "7c1271d10a703516c9dbe9bb50bf83c69c074da7599a65790a38e1f80015e93b",
+    "original_sha256": "7c1271d10a703516c9dbe9bb50bf83c69c074da7599a65790a38e1f80015e93b",
+    "compressed": false
+  },
+  {
+    "file": "red/nested-component-run.log",
+    "sha256": "66d82a7d8cff28a67431c4062c3b5cd6e15452a663cc903ee2244c319f1fd8b8",
+    "original_sha256": "66d82a7d8cff28a67431c4062c3b5cd6e15452a663cc903ee2244c319f1fd8b8",
+    "compressed": false
+  },
+  {
+    "file": "red/nested-component-run.json",
+    "sha256": "2b43a6efda68fb67c0c867e6894293b14312f85e97b199217eef0cfa5b642deb",
+    "original_sha256": "2b43a6efda68fb67c0c867e6894293b14312f85e97b199217eef0cfa5b642deb",
+    "compressed": false
+  },
+  {
+    "file": "red/nested-component-build.json",
+    "sha256": "747e37c3596f32f4f51647cf98419c7d8a6fd10de1b7a602b270ee0269be159e",
+    "original_sha256": "747e37c3596f32f4f51647cf98419c7d8a6fd10de1b7a602b270ee0269be159e",
+    "compressed": false
+  },
+  {
+    "file": "red-second/nested-component-run.log",
+    "sha256": "19e4ce36d33f0a873106be236c918edf25821950a30c3f1d4aa41f4cae59d3fc",
+    "original_sha256": "19e4ce36d33f0a873106be236c918edf25821950a30c3f1d4aa41f4cae59d3fc",
+    "compressed": false
+  },
+  {
+    "file": "red-second/nested-component-run.json",
+    "sha256": "3eb21ba1d8276f9e2da7316d28f1a8541fbb32fa59115760e091e5cd9c9fa4f9",
+    "original_sha256": "3eb21ba1d8276f9e2da7316d28f1a8541fbb32fa59115760e091e5cd9c9fa4f9",
+    "compressed": false
+  },
+  {
+    "file": "red-third/nested-component-run.log",
+    "sha256": "d1d62bb477470a848b35af638d88e589bffffe80fef4c4fbb97c4f2ae6797939",
+    "original_sha256": "d1d62bb477470a848b35af638d88e589bffffe80fef4c4fbb97c4f2ae6797939",
+    "compressed": false
+  },
+  {
+    "file": "red-third/nested-component-run.json",
+    "sha256": "047756e6e2d205d13916521c5bcaff1e88b8755d02e5d01d4c3339dd07478a60",
+    "original_sha256": "047756e6e2d205d13916521c5bcaff1e88b8755d02e5d01d4c3339dd07478a60",
+    "compressed": false
+  },
+  {
+    "file": "red-third/nested-component-build.json",
+    "sha256": "021b147eae7008c5e4d1388d9b3ab397eda96460d508f48fd26ec130bbea4511",
+    "original_sha256": "021b147eae7008c5e4d1388d9b3ab397eda96460d508f48fd26ec130bbea4511",
+    "compressed": false
+  },
+  {
+    "file": "red-third/qualify.py",
+    "sha256": "ef98d3338f713aae287fe6bf83091e92627ec44d1bb969a1c7871f56a805108e",
+    "original_sha256": "ef98d3338f713aae287fe6bf83091e92627ec44d1bb969a1c7871f56a805108e",
+    "compressed": false
+  }
+]

@@ -1,0 +1,51 @@
+{
+  "created_utc": "2026-10-31T12:26:13.343732+00:00",
+  "head": "9c428050b20bc7842054349a4b0b9702c0e52132",
+  "files": [
+    {
+      "path": "allocation_analysis.py",
+      "sha256": "2a09a78fa5209e941ef95e9b93a75659ce1503c7dbaa63be5acb54261f6d02c8",
+      "bytes": 2391
+    },
+    {
+      "path": "attribution-comparison.json",
+      "sha256": "54b46f4b3c91b275080f3e4c872176929bfc1136d1f24d98e3039fa8b24fced7",
+      "bytes": 2887
+    },
+    {
+      "path": "finish-early.py",
+      "sha256": "faefc9017071079183c6c22af2afaf8c48894af8b4eb5661098a4be1fcd6a4b2",
+      "bytes": 405
+    },
+    {
+      "path": "finish-qualification.py",
+      "sha256": "27d712e2c08b3e948222f6b50af6daba6b47934cce40f3ec13f40a67b059c3ce",
+      "bytes": 341
+    },
+    {
+      "path": "implementation.json",
+      "sha256": "89ab50e3593e1dff38cb40d076ce3fb4339333f290409f5676726bddcbf6ce07",
+      "bytes": 491
+    },
+    {
+      "path": "investigation-completed.json",
+      "sha256": "d96fbf75914e5fa75c241dbbbcd09c5c0c010b4b525247d1b933e6009dc41e18",
+      "bytes": 7934
+    },
+    {
+      "path": "profile-numbers.json",
+      "sha256": "93f2c3224d518e5a374a989ed8feaf3bd9342c8a167f804461eb6e2d6d6b4ed4",
+      "bytes": 17653
+    },
+    {
+      "path": "profile_analysis.py",
+      "sha256": "54b5f96c2c2d02b87557b0e920bab100426d359e13a94c58f45d6b5736b1d89a",
+      "bytes": 3171
+    },
+    {
+      "path": "static-equality.json",
+      "sha256": "2eda689b53de673478671b0a047e9c4d7f2513866e2df5d1811c80183c447eef",
+      "bytes": 1054
+    }
+  ]
+}

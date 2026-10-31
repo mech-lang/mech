@@ -10,6 +10,17 @@ use crate::native_artifact::{
 };
 use std::{borrow::Cow, cell::OnceCell};
 
+#[path = "predicate_facts.rs"]
+mod predicates;
+
+#[cfg(feature = "sequence_buffers")]
+#[path = "old_value_reads.rs"]
+mod old_value_reads;
+
+#[path = "uniform_word_collection.rs"]
+mod uniform_words;
+pub use uniform_words::NativeUniformWordCollection;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum NativeProgramReadRole {
     Action(u32),
@@ -76,7 +87,11 @@ pub struct NativeProgramFacts<'p> {
     definitions: OnceCell<Result<Vec<Vec<NativeProgramDefinition>>, &'static str>>,
     #[cfg(any(feature = "pure_text", feature = "map_ops"))]
     fusion_reads: OnceCell<Result<Vec<Vec<Read>>, &'static str>>,
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     aggregates: OnceCell<crate::native_artifact::NativeScalarAggregates>,
     #[cfg(feature = "pure_text")]
     retention: OnceCell<Vec<crate::native_artifact::NativeTextLineRetentionFrontier>>,
@@ -90,7 +105,11 @@ impl Plan {
             definitions: OnceCell::new(),
             #[cfg(any(feature = "pure_text", feature = "map_ops"))]
             fusion_reads: OnceCell::new(),
-            #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+            #[cfg(any(
+                feature = "pure_text",
+                feature = "map_ops",
+                feature = "sequence_buffers"
+            ))]
             aggregates: OnceCell::new(),
             #[cfg(feature = "pure_text")]
             retention: OnceCell::new(),
@@ -98,7 +117,11 @@ impl Plan {
     }
 }
 impl<'p> NativeProgramFacts<'p> {
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     pub(in crate::native_artifact) fn actions(
         &self,
     ) -> Result<&super::SemanticActions<'p>, &'static str> {
@@ -112,12 +135,20 @@ impl<'p> NativeProgramFacts<'p> {
             .map(Vec::as_slice)
             .map_err(|e| *e)
     }
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     pub fn scalar_aggregates(&self) -> &crate::native_artifact::NativeScalarAggregates {
         self.aggregates
             .get_or_init(|| crate::native_artifact::scalar_aggregates::derive(self.plan(), self))
     }
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     pub fn into_scalar_aggregates(self) -> crate::native_artifact::NativeScalarAggregates {
         self.scalar_aggregates();
         self.aggregates

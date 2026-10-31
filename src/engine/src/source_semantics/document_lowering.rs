@@ -806,7 +806,9 @@ fn compile_collected_document(
             // next-value calculation. Replacement migrates that same cell.
             let value = match binding {
                 PendingBinding::MutableState(state) => PendingValue::State(state),
-                PendingBinding::Value(_) => builder.read_document_binding(binding, &last.syntax)?,
+                PendingBinding::Value(_) | PendingBinding::MutableLocal(_) => {
+                    builder.read_document_binding(binding, &last.syntax)?
+                }
             };
             builder.publish_interactive_binding(&name, value, &last.syntax);
         }
@@ -1359,8 +1361,15 @@ fn compile_document_units_inner(
                     });
                 }
                 let name = format!("{}!", node_text(&name)?);
-                builder.publish(&name, None, value, invariant.syntax());
-                builder.constraints.push(PendingConstraint { name, value });
+                if builder.control_depth != 0
+                    || !builder.active_functions.is_empty()
+                    || builder.local_mutation_depth != 0
+                {
+                    builder.lexical_assertion(value, name, invariant.syntax())?;
+                } else {
+                    builder.publish(&name, None, value, invariant.syntax());
+                    builder.constraints.push(PendingConstraint { name, value });
+                }
                 refresh_deferred_inline(builder, deferred_inline, presentation, &mut last)?;
             }
             DocumentUnit::Comment(inline) => {
@@ -2005,7 +2014,7 @@ impl SemanticBuilder {
         syntax: &SyntaxNode,
     ) -> Result<PendingValue, SourceSemanticError> {
         let value = match binding {
-            PendingBinding::Value(value) => value,
+            PendingBinding::Value(value) | PendingBinding::MutableLocal(value) => value,
             PendingBinding::MutableState(state) => self.current_state_value(state),
         };
         if matches!(value, PendingValue::State(_)) {
@@ -2064,7 +2073,7 @@ impl SemanticBuilder {
             remap(&mut constraint.value);
         }
         for binding in self.bindings.values_mut() {
-            if let PendingBinding::Value(value) = binding {
+            if let PendingBinding::Value(value) | PendingBinding::MutableLocal(value) = binding {
                 remap(value);
             }
         }
@@ -2133,6 +2142,13 @@ impl SemanticBuilder {
             );
             let value = self.emit_resource_write(&key, &expression, syntax, "resource/assign")?;
             return Ok((value, syntax.clone()));
+        }
+        let stem = self.required(target.stem(), target.syntax(), "an assignment target stem")?;
+        let name = node_text(stem.syntax())?;
+        if let Some(PendingBinding::MutableLocal(current)) = self.bindings.get(&name).copied() {
+            return self
+                .document_local_assignment(&name, current, &target, &expression, operation, syntax)
+                .map(|value| (value, syntax.clone()));
         }
         let state = self.assignment_state(&target)?;
         if self.activation_assignment_depth == 0 {

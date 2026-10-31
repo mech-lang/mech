@@ -1,0 +1,19 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--release",
+    "--locked",
+    "--offline",
+    "--manifest-path",
+    "benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--message-format=json",
+    "--bin",
+    "native_frame_transport",
+    "--bin",
+    "artifact_review"
+  ],
+  "sha256": "502e8baaacaf5c46a2f902e3a064f803dba5c7053097c963333bdd0a5300b528",
+  "head": "42f710f47f06f6b5ee5214e21fb5ef48bfd9cc46",
+  "original_path": "/private/tmp/mech-live-control-target/release/native_frame_transport"
+}

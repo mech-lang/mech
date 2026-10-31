@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+    "--edition=2024",
+    "--test",
+    "-C",
+    "opt-level=1",
+    "-D",
+    "warnings",
+    "-L",
+    "dependency=/private/tmp/mech-live-control-target/release/deps",
+    "--extern",
+    "mech_core=/private/tmp/mech-live-control-target/release/deps/libmech_core-4ff4856784490a86.rlib",
+    "/private/tmp/mech-deflate-linear-stack/src/core/tests/type_system_contract.rs",
+    "-o",
+    "/private/tmp/mech-binding-descriptors-round17-20261029/core-tests"
+  ],
+  "exit": 0,
+  "seconds": 1.1352096660993993,
+  "core_sha256": "feb4c2084478f12d1173b7411bb465d9c154baf747cd78dd15db8f00b0b6b7c7"
+}

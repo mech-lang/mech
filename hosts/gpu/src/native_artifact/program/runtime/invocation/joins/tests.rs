@@ -283,11 +283,7 @@ fn actual_selected_join_global_exact_one_short_and_import_failures_keep_atomic_o
         PRESSURE.with(|slot| slot.set(None));
         accepted.unwrap();
         take();
-        for pressure in [
-            Pressure::Memory(true),
-            Pressure::Import(0),
-            Pressure::Import(1),
-        ] {
+        for pressure in [Pressure::Memory(true), Pressure::Import(0)] {
             let prior = outputs.clone();
             let before = memory.used_bytes();
             PRESSURE.with(|slot| slot.set(Some(pressure)));
@@ -323,8 +319,51 @@ fn actual_selected_join_global_exact_one_short_and_import_failures_keep_atomic_o
                 .unwrap();
             take();
         }
+        // Fresh join output now reuses its exclusive unadmitted wrapper.
+        // Registration is still fallible; the removed wrapper allocation must
+        // leave the next injected failure armed through successful publication.
+        let expected = outputs[0].as_ref().unwrap().canonical_data_draft().unwrap();
+        PRESSURE.with(|slot| slot.set(Some(Pressure::Import(1))));
+        let accepted = jit.evaluate_into(&args, &mut outputs, limits(), &memory);
+        PRESSURE.with(|slot| slot.set(None));
+        accepted.unwrap();
+        take();
+        assert_eq!(
+            outputs[0].as_ref().unwrap().canonical_data_draft().unwrap(),
+            expected
+        );
+        {
+            let prior = outputs.clone();
+            let before = memory.used_bytes();
+            // This fixture's next real registration belongs to the next join.
+            // No new injection replaces the failure left armed above.
+            let error = jit
+                .evaluate_into(&args, &mut outputs, limits(), &memory)
+                .unwrap_err();
+            assert!(
+                matches!(
+                    error,
+                    Error::Library {
+                        origin: actual_origin,
+                        error: InvokeError::Memory(
+                            mech_core::MemoryRuntimeError::AllocationFailed { .. }
+                        ),
+                    } if actual_origin == jit.descriptor().metadata().plan.blocks()[
+                        jit.descriptor().metadata().selected_joins.regions[0].consumer() as usize
+                    ].origin()
+                ),
+                "{error:?}"
+            );
+            assert!(take().selection_slot_empty);
+            assert_eq!(memory.used_bytes(), before);
+            preserved(&outputs, &prior);
+            jit.evaluate_into(&args, &mut outputs, limits(), &memory)
+                .unwrap();
+            take();
+        }
         drop((outputs, args));
         assert_eq!(memory.used_bytes(), 0);
+        assert_eq!(memory.retained_nodes(), 0);
     }
 }
 

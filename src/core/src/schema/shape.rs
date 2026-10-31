@@ -17,6 +17,20 @@ impl Schema {
         &self,
         parameter_values: Box<[u64]>,
     ) -> Result<ShapeInstance, SemanticModelError> {
+        self.validate_shape_parameters(&parameter_values)?;
+        Ok(ShapeInstance { parameter_values })
+    }
+
+    /// A shape carries parameter values, not a schema identity. Revalidate all
+    /// bounds and body extents against this schema without copying either one.
+    pub(crate) fn validate_shape(&self, shape: &ShapeInstance) -> Result<(), SemanticModelError> {
+        self.validate_shape_parameters(shape.parameter_values())
+    }
+
+    fn validate_shape_parameters(
+        &self,
+        parameter_values: &[u64],
+    ) -> Result<(), SemanticModelError> {
         if parameter_values.len() != self.dimension_parameters.len() {
             return Err(SemanticModelError::ShapeParameterCountMismatchV1 {
                 expected: self.dimension_parameters.len() as u32,
@@ -45,11 +59,32 @@ impl Schema {
             }
         }
         evaluate_body_extents(&self.body, &parameter_values)?;
-        Ok(ShapeInstance { parameter_values })
+        Ok(())
     }
 }
 
 impl ShapeInstance {
+    /// Update unpublished shape metadata without constructing another owner.
+    /// Failure restores the previous validated instance, including its bounds.
+    pub(crate) fn update_parameter_checked(
+        &mut self,
+        schema: &Schema,
+        parameter: DimensionParameterId,
+        value: u64,
+    ) -> Result<(), SemanticModelError> {
+        let at = parameter.get() as usize;
+        let old = *self
+            .parameter_values
+            .get(at)
+            .ok_or(SemanticModelError::UnknownDimensionParameterV1 { id: parameter })?;
+        self.parameter_values[at] = value;
+        if let Err(error) = schema.validate_shape_parameters(&self.parameter_values) {
+            self.parameter_values[at] = old;
+            return Err(error);
+        }
+        Ok(())
+    }
+
     pub fn parameter_values(&self) -> &[u64] {
         &self.parameter_values
     }

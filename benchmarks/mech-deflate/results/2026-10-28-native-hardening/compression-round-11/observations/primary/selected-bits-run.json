@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-readonly-numeric-round11-20261028/primary/selected-bits-tests",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.9302930000703782,
+  "binary_sha256": "781110027a81c73af731cc1142f5ede6e5f8700c49e323aa00180625bcfa57a7",
+  "skipped_coverage": null
+}

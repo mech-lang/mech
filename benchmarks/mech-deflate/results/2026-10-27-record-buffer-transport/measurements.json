@@ -1,0 +1,116 @@
+[
+  {
+    "allocation_requests": 43322,
+    "artifact": "original",
+    "cache_u32_words": 1500513,
+    "compile_seconds": 2.028823458,
+    "completed_prefix_positions": 6,
+    "depth": 300,
+    "elapsed_seconds": 13.797855,
+    "failing_binding": null,
+    "failing_operation": null,
+    "input_bytes": 320,
+    "nice": 258,
+    "requested_allocation_bytes": 81179314,
+    "requested_positions": 6,
+    "result": "Ok(NativeProgramExecutionReport { work: 5831028251, comparison_work: 191243570, visits: 19781, transport_bytes: 307400, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+    "retained_after": 6565306,
+    "retained_before": 19379,
+    "success": true,
+    "table_u16_entries": 262144,
+    "witness": "real-buffer-collector-prefix"
+  },
+  {
+    "allocation_requests": 43321,
+    "artifact": "decoded",
+    "cache_u32_words": 1500513,
+    "compile_seconds": 2.018827208,
+    "completed_prefix_positions": 6,
+    "depth": 300,
+    "elapsed_seconds": 13.75094025,
+    "failing_binding": null,
+    "failing_operation": null,
+    "input_bytes": 320,
+    "nice": 258,
+    "requested_allocation_bytes": 81179250,
+    "requested_positions": 6,
+    "result": "Ok(NativeProgramExecutionReport { work: 5831028251, comparison_work: 191243570, visits: 19781, transport_bytes: 307400, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })",
+    "retained_after": 6565306,
+    "retained_before": 19379,
+    "success": true,
+    "table_u16_entries": 262144,
+    "witness": "real-buffer-collector-prefix"
+  },
+  {
+    "artifact": "original",
+    "capacity": 16,
+    "elapsed_seconds": 0.000178167,
+    "requested_bytes": 30634,
+    "requests": 282,
+    "width": 64,
+    "witness": "private-record-reserved-buffer"
+  },
+  {
+    "artifact": "original",
+    "capacity": 305257,
+    "elapsed_seconds": 0.000216583,
+    "requested_bytes": 2472562,
+    "requests": 282,
+    "width": 64,
+    "witness": "private-record-reserved-buffer"
+  },
+  {
+    "artifact": "decoded",
+    "capacity": 16,
+    "elapsed_seconds": 0.000158959,
+    "requested_bytes": 30634,
+    "requests": 282,
+    "width": 64,
+    "witness": "private-record-reserved-buffer"
+  },
+  {
+    "artifact": "decoded",
+    "capacity": 305257,
+    "elapsed_seconds": 0.000165167,
+    "requested_bytes": 2472562,
+    "requests": 282,
+    "width": 64,
+    "witness": "private-record-reserved-buffer"
+  },
+  {
+    "artifact": "original",
+    "capacity": 16,
+    "elapsed_seconds": 0.0001665,
+    "requested_bytes": 30522,
+    "requests": 282,
+    "width": 8,
+    "witness": "private-record-reserved-buffer"
+  },
+  {
+    "artifact": "original",
+    "capacity": 6633832,
+    "elapsed_seconds": 0.000193125,
+    "requested_bytes": 6664338,
+    "requests": 282,
+    "width": 8,
+    "witness": "private-record-reserved-buffer"
+  },
+  {
+    "artifact": "decoded",
+    "capacity": 16,
+    "elapsed_seconds": 0.000157708,
+    "requested_bytes": 30522,
+    "requests": 282,
+    "width": 8,
+    "witness": "private-record-reserved-buffer"
+  },
+  {
+    "artifact": "decoded",
+    "capacity": 6633832,
+    "elapsed_seconds": 0.000173791,
+    "requested_bytes": 6664338,
+    "requests": 282,
+    "width": 8,
+    "witness": "private-record-reserved-buffer"
+  }
+]

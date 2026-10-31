@@ -1,0 +1,8 @@
+{
+  "exit": 0,
+  "wall_seconds": 41.61249216692522,
+  "sampled_compression": true,
+  "profiling_wall_stop": false,
+  "compiler_budgets": "NoLimits unchanged; wall stop belongs only to this profiling experiment",
+  "compression_timing_is_profiled": true
+}

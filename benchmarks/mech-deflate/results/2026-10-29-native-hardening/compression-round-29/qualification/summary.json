@@ -1,0 +1,10 @@
+{
+  "calls": 200,
+  "changed": 180,
+  "core_transfers": 36,
+  "copied_calls": 144,
+  "copied_bytes": 2157068,
+  "compiler_declined_calls": 88,
+  "copied_with_frame_aliases": 0,
+  "copied_with_arena_aliases": 144
+}

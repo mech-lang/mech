@@ -12,7 +12,7 @@ use crate::native_artifact::{
 use cranelift_module::{DataDescription, Linkage, Module};
 use mech_core::{FunctionCatalog, ManagedMemoryBudget, Value};
 use mech_engine::ProgramArtifact;
-use mech_engine::native_artifact::lower_native_program_artifact;
+use mech_engine::native_artifact::lower_native_program_artifact_with_definition_table_limit;
 
 // Keep generated function placement independent of unrelated host link-size
 // changes on AArch64. 128-byte alignment covers both 64- and 128-byte cache
@@ -86,7 +86,12 @@ impl JitProgramArtifact {
         options: &crate::native_artifact::codegen::options::OptimizationOptions,
     ) -> Result<Self, NativeCompileError> {
         host_supported()?;
-        let plan = lower_native_program_artifact(artifact, catalog).map_err(backend)?;
+        let plan = lower_native_program_artifact_with_definition_table_limit(
+            artifact,
+            catalog,
+            limits.max_definition_table_bytes,
+        )
+        .map_err(backend)?;
         let mut module = codegen_backend::jit(PROGRAM_CODEGEN_FLAGS)?;
         preflight(&plan, &module, limits)?;
         let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
@@ -107,7 +112,7 @@ impl JitProgramArtifact {
             },
         );
         module.finalize_definitions().map_err(backend)?;
-        // SAFETY: define_cfg emits exactly the private ABI16 signature, and
+        // SAFETY: define_cfg emits this module's current private entry signature, and
         // this owner retains the module for every synchronous invocation.
         let entry = unsafe {
             std::mem::transmute::<*const u8, Entry>(module.get_finalized_function(function))
@@ -224,7 +229,7 @@ impl NativeProgramObject {
             "borrowed_string_regions": self.descriptor.metadata().borrowed_strings.regions.len(),
             "closed_tail_regions": self.descriptor.metadata().closed_tails.regions.len(),
             "private_frozen_map_candidates": self.descriptor.metadata().frozen_maps.regions.len(),
-            "retained_map_scalar_admission_groups": self.descriptor.metadata().map_admission.groups.len(),
+            "retained_map_scalar_admission_groups": self.descriptor.metadata().map_admission.groups.iter().filter(|group| group.owner.is_some()).count(),
             "selected_matrix_join_regions": self.descriptor.metadata().selected_joins.regions.len(),
             "private_line_matrix_regions": self.descriptor.metadata().line_matrices.regions.len(),
             "compiled_header_continuation_regions": usize::from(self.descriptor.metadata().prefix.is_some()),
@@ -238,6 +243,25 @@ impl NativeProgramObject {
             "compiled_loop_invariants": &self.codegen.loop_invariants,
             "linked": false, "executed": false, "timing_samples": 0,
         });
+        metadata["ordinary_scalar_admission_groups"] = serde_json::json!(
+            self.descriptor
+                .metadata()
+                .map_admission
+                .groups
+                .iter()
+                .filter(|group| group.owner.is_none())
+                .count()
+        );
+        metadata["ordinary_scalar_admission_sites"] = serde_json::json!(
+            self.descriptor
+                .metadata()
+                .map_admission
+                .groups
+                .iter()
+                .filter(|group| group.owner.is_none())
+                .map(|group| group.sites.len())
+                .sum::<usize>()
+        );
         metadata["compiled_bound_call_shim"] = serde_json::json!(&self.codegen.bound_call_shim);
         metadata["compiled_preserving_call_regions"] =
             serde_json::json!(&self.codegen.preserving_call_regions);
@@ -246,6 +270,21 @@ impl NativeProgramObject {
         metadata["compiled_loop_constants"] = serde_json::json!(&self.codegen.loop_constants);
         metadata["compiled_steady_loops"] = serde_json::json!(&self.codegen.steady_loops);
         metadata["compiled_join_map_copies"] = serde_json::json!(&self.codegen.join_map_copies);
+        metadata["readonly_numeric_regions"] = serde_json::json!(self.descriptor.metadata().closed_tails.regions.iter().filter_map(|r| r.numeric.as_ref().filter(|p| !p.writes()).map(|p| serde_json::json!({"iteration":r.iteration,"parent":r.tail.parent(),"header":r.tail.header(),"compute_per_traversal":r.compute,"proof":p}))).collect::<Vec<_>>());
+        metadata["numeric_write_regions"] = serde_json::json!(self.descriptor.metadata().closed_tails.regions.iter().filter_map(|r| r.numeric.as_ref().filter(|p| p.writes()).map(|p| serde_json::json!({"iteration":r.iteration,"parent":r.tail.parent(),"header":r.tail.header(),"compute_per_traversal":r.compute,"proof":p}))).collect::<Vec<_>>());
+        let prepared = self.descriptor.metadata();
+        metadata["readonly_numeric_candidates"] = serde_json::json!(prepared.plan.iterations().iter().enumerate().filter_map(|(iteration, control)| {
+            let mech_engine::native_artifact::NativeControlLoop::Tail(tail) = control else { return None };
+            if prepared.buffer_frames.fields(tail.carrier()).is_none() { return None }
+            let result = crate::native_artifact::program::prepare::readonly_numeric::derive(&prepared.plan, tail, &prepared.buffer_frames, &prepared.scalar_aggregates, &prepared.calls);
+            Some(serde_json::json!({"iteration":iteration,"header":tail.header(),"parent":tail.parent(),"origin":tail.origin(),"proof_eligible":result.is_ok(),"selected":prepared.closed_tails.regions.iter().any(|region| region.iteration as usize == iteration && region.numeric.is_some()),"rejection":result.err()}))
+        }).collect::<Vec<_>>());
+        metadata["numeric_parent_partitions"] = serde_json::json!(prepared.compositions);
+        metadata["compiled_numeric_segments"] = serde_json::json!(&self.codegen.numeric_segments);
+        metadata["compiled_readonly_numeric_loops"] =
+            serde_json::json!(&self.codegen.readonly_numeric_loops);
+        metadata["compiled_numeric_write_loops"] =
+            serde_json::json!(&self.codegen.numeric_write_loops);
         metadata["compiled_scalar_loops"] = serde_json::json!(&self.codegen.scalar_loops);
         metadata
     }
@@ -275,7 +314,12 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
     options: &crate::native_artifact::codegen::options::OptimizationOptions,
 ) -> Result<NativeProgramObject, NativeCompileError> {
     host_supported()?;
-    let plan = lower_native_program_artifact(artifact, catalog).map_err(backend)?;
+    let plan = lower_native_program_artifact_with_definition_table_limit(
+        artifact,
+        catalog,
+        limits.max_definition_table_bytes,
+    )
+    .map_err(backend)?;
     let mut module = codegen_backend::object("mech_canonical_program", PROGRAM_CODEGEN_FLAGS)?;
     preflight(&plan, &module, limits)?;
     let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;

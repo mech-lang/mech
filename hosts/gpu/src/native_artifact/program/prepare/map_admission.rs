@@ -1,22 +1,24 @@
 //! Prepay an acyclic native path between observable runtime boundaries.
 //! Branches and scalar joins remain generated instructions. A selected map
-//! helper may anchor a path, but no other helper or loop header is hidden.
+//! helper may anchor its owner's path. Ordinary scalar paths contain no helper
+//! or progress transition, and require a successful funding preview at entry.
 use crate::native_artifact::iteration_abi::{NativeIterationVisit, Progress};
 use mech_engine::native_artifact::{
-    NativeIterationAction as Action, NativeMapOwnerWords, NativeMatchAction as Scalar,
-    NativeProgramArtifactPlan,
+    NativeIterationAction as Action, NativeIterationTerminator as Terminator, NativeMapOwnerWords,
+    NativeMatchAction as Scalar, NativeMatchTerminator as Term, NativeProgramArtifactPlan,
 };
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Frontier {
     pub site: u32,
     pub previous: u32,
 }
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Group {
-    pub owner: usize,
+    /// None selects only scalar instructions; it grants no ownership rights.
+    pub owner: Option<usize>,
     pub sites: Box<[u32]>,
     pub frontier: Box<[Frontier]>,
     pub work: u64,
@@ -33,7 +35,7 @@ impl Group {
     }
 }
 
-#[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Layout {
     pub groups: Box<[Group]>,
@@ -50,12 +52,10 @@ impl Layout {
 
     pub fn derive(
         plan: &NativeProgramArtifactPlan,
-        owners: &NativeMapOwnerWords,
+        owners: Option<&NativeMapOwnerWords>,
         visits: &[NativeIterationVisit],
+        closed: &super::tail::Layout,
     ) -> Result<Self, &'static str> {
-        if owners.regions().is_empty() {
-            return Ok(Self::default());
-        }
         let count = plan.blocks().len();
         if visits.len() != count {
             return Err("map admission visit inventory differs");
@@ -74,30 +74,46 @@ impl Layout {
         let mut known = vec![false; count];
         for (site, block) in plan.blocks().iter().enumerate() {
             let visit = visits[site];
-            let owner = owners
-                .regions()
-                .iter()
-                .position(|region| block.iteration() == Some(region.iteration()));
-            let Some(owner) = owner else {
-                known[site] = true;
-                continue;
-            };
-            let helper = owners.call_region(site) == Some(owner)
-                || owners
-                    .span_site(site)
-                    .is_some_and(|id| owners.spans()[id].region() == owner);
-            let native = owners.action_region(site) == Some(owner)
-                || matches!(
-                    block.action(),
-                    Action::Scalar(Scalar::None | Scalar::Primitive { .. })
-                )
-                || matches!(block.action(), Action::Scalar(Scalar::Copy { output, .. })
+            let owner = owners.and_then(|owners| {
+                owners
+                    .regions()
+                    .iter()
+                    .position(|region| block.iteration() == Some(region.iteration()))
+            });
+            let helper = owner.is_some_and(|owner| {
+                let owners = owners.unwrap();
+                owners.call_region(site) == Some(owner)
+                    || owners
+                        .span_site(site)
+                        .is_some_and(|id| owners.spans()[id].region() == owner)
+            });
+            let scalar = matches!(
+                block.action(),
+                Action::Scalar(Scalar::None | Scalar::Primitive { .. })
+            ) || matches!(block.action(), Action::Scalar(Scalar::Copy { output, .. })
                     if plan.values()[output.get() as usize].scalar_kind().is_some());
+            let native = scalar
+                || owner.is_some_and(|owner| owners.unwrap().action_region(site) == Some(owner));
             if (!native && !helper)
                 || visit.complete
                 || visit.reject
+                || visit.integrity
                 || plan.activation_boundary() == Some(site as u32)
                 || matches!(visit.progress, Progress::Initialize(_) | Progress::Exit(_))
+            {
+                known[site] = true;
+                continue;
+            }
+            if owner.is_none()
+                && (!scalar
+                    || !matches!(visit.progress, Progress::Normal)
+                    || closed.sites.get(site).copied().flatten().is_some()
+                    || !matches!(
+                        block.terminator(),
+                        Terminator::Scalar(
+                            Term::Jump(_) | Term::Branch { .. } | Term::LiteralBranch { .. }
+                        )
+                    ))
             {
                 known[site] = true;
                 continue;
@@ -124,6 +140,7 @@ impl Layout {
                 roots[site] = Some(
                     if common.is_some_and(|root| {
                         selected[root] == selected[site]
+                            && plan.blocks()[root].iteration() == plan.blocks()[site].iteration()
                             && predecessors[site]
                                 .iter()
                                 .all(|&prior| roots[prior] == Some(root))
@@ -175,6 +192,16 @@ impl Layout {
                 }
             }
             frontier.sort_unstable_by_key(|edge| edge.site);
+            // The callback must recover the actual source predecessor. A
+            // scalar path with ambiguous exits keeps its ordinary visits.
+            if selected[first] == Some(None)
+                && (frontier.iter().any(|edge| edge.site as usize == first)
+                    || frontier.windows(2).any(|pair| {
+                        pair[0].site == pair[1].site && pair[0].previous != pair[1].previous
+                    }))
+            {
+                continue;
+            }
             frontier.dedup_by_key(|edge| edge.site);
             work = work
                 .checked_add(
@@ -193,6 +220,9 @@ impl Layout {
                 frontier: frontier.into_boxed_slice(),
                 work,
             });
+        }
+        if groups.is_empty() {
+            return Ok(Self::default());
         }
         Ok(Self {
             groups: groups.into_boxed_slice(),

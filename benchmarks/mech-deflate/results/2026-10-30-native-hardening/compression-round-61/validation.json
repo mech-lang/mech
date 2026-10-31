@@ -1,0 +1,1025 @@
+{
+  "all_required_checks_pass": true,
+  "checks": [
+    {
+      "receipt": "units-parent/build.json",
+      "command": [
+        "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+        "-L",
+        "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-vector-address-round60-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "--edition=2024",
+        "--crate-name",
+        "mech_gpu",
+        "--test",
+        "-C",
+        "opt-level=1",
+        "-C",
+        "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+        "-D",
+        "warnings",
+        "-L",
+        "dependency=/private/tmp/mech-live-control-target/release/deps",
+        "--cfg",
+        "feature=\"aot\"",
+        "--cfg",
+        "feature=\"canonical-native\"",
+        "--cfg",
+        "feature=\"canonical-native-program\"",
+        "--cfg",
+        "feature=\"canonical-native-program-runtime\"",
+        "--cfg",
+        "feature=\"canonical-native-runtime\"",
+        "--cfg",
+        "feature=\"jit\"",
+        "--extern",
+        "cranelift_codegen=/private/tmp/mech-live-control-target/release/deps/libcranelift_codegen-79250b96f7a4172f.rlib",
+        "--extern",
+        "cranelift_frontend=/private/tmp/mech-live-control-target/release/deps/libcranelift_frontend-796ddca52b1baa23.rlib",
+        "--extern",
+        "cranelift_jit=/private/tmp/mech-live-control-target/release/deps/libcranelift_jit-4d33b45d7690e2ef.rlib",
+        "--extern",
+        "cranelift_module=/private/tmp/mech-live-control-target/release/deps/libcranelift_module-8bb9481823a63cf0.rlib",
+        "--extern",
+        "cranelift_native=/private/tmp/mech-live-control-target/release/deps/libcranelift_native-448aa3dcdc0c0785.rlib",
+        "--extern",
+        "cranelift_object=/private/tmp/mech-live-control-target/release/deps/libcranelift_object-e9e960ce24552414.rlib",
+        "--extern",
+        "grapheme=/private/tmp/mech-live-control-target/release/deps/libgrapheme-2e22bda36eb1f0f8.rlib",
+        "--extern",
+        "hashbrown=/private/tmp/mech-live-control-target/release/deps/libhashbrown-d20f4ad24099052b.rlib",
+        "--extern",
+        "libloading=/private/tmp/mech-live-control-target/release/deps/liblibloading-836fe5ac7ed0962d.rlib",
+        "--extern",
+        "mech_compute=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_compute-84cb0ef1d137eee3.rlib",
+        "--extern",
+        "mech_core=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+        "--extern",
+        "mech_engine=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+        "--extern",
+        "miniz_oxide=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+        "--extern",
+        "serde=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+        "--extern",
+        "serde_json=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+        "--extern",
+        "sha2=/private/tmp/mech-live-control-target/release/deps/libsha2-f9316069bed82edc.rlib",
+        "--extern",
+        "toml_edit=/private/tmp/mech-live-control-target/release/deps/libtoml_edit-14168309fb56d330.rlib",
+        "--extern",
+        "web_time=/private/tmp/mech-live-control-target/release/deps/libweb_time-5004144e8c3d1139.rlib",
+        "--extern",
+        "wide=/private/tmp/mech-live-control-target/release/deps/libwide-24e8d1268668e37f.rlib",
+        "--extern",
+        "mech_syntax=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+        "--extern",
+        "mech_runtime=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_runtime-44999c02af6b18b6.rlib",
+        "--extern",
+        "mech_stdlib=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+        "--extern",
+        "tempfile=/private/tmp/mech-live-control-target/release/deps/libtempfile-cd3db811e0a0846f.rlib",
+        "-L",
+        "dependency=/private/tmp/mech-record-lookup-round42-20261030/diagnostic-libs/after",
+        "-L",
+        "dependency=/private/tmp/mech-record-lookup-round42-20261030/final-library",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "/private/tmp/mech-deflate-linear-stack/hosts/gpu/src/lib.rs",
+        "-o",
+        "/private/tmp/mech-first-change-spill-round61-20261031/units-parent/gpu-unit-tests"
+      ],
+      "exit": 0,
+      "expected_tests": null,
+      "observed_tests": null,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "units-parent/vector-address-inventory.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/units-parent/gpu-unit-tests",
+        "native_artifact::program::codegen::numeric_words::tests::unit_dimension_addresses_emit_no_division_and_keep_general_geometry",
+        "--exact",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": true,
+      "passed": true
+    },
+    {
+      "receipt": "units-parent/vector-address.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/units-parent/gpu-unit-tests",
+        "native_artifact::program::codegen::numeric_words::tests::unit_dimension_addresses_emit_no_division_and_keep_general_geometry",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "units-after/build.json",
+      "command": [
+        "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+        "-L",
+        "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-vector-address-round60-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "--edition=2024",
+        "--crate-name",
+        "mech_gpu",
+        "--test",
+        "-C",
+        "opt-level=1",
+        "-C",
+        "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+        "-D",
+        "warnings",
+        "-L",
+        "dependency=/private/tmp/mech-live-control-target/release/deps",
+        "--cfg",
+        "feature=\"aot\"",
+        "--cfg",
+        "feature=\"canonical-native\"",
+        "--cfg",
+        "feature=\"canonical-native-program\"",
+        "--cfg",
+        "feature=\"canonical-native-program-runtime\"",
+        "--cfg",
+        "feature=\"canonical-native-runtime\"",
+        "--cfg",
+        "feature=\"jit\"",
+        "--extern",
+        "cranelift_codegen=/private/tmp/mech-live-control-target/release/deps/libcranelift_codegen-79250b96f7a4172f.rlib",
+        "--extern",
+        "cranelift_frontend=/private/tmp/mech-live-control-target/release/deps/libcranelift_frontend-796ddca52b1baa23.rlib",
+        "--extern",
+        "cranelift_jit=/private/tmp/mech-live-control-target/release/deps/libcranelift_jit-4d33b45d7690e2ef.rlib",
+        "--extern",
+        "cranelift_module=/private/tmp/mech-live-control-target/release/deps/libcranelift_module-8bb9481823a63cf0.rlib",
+        "--extern",
+        "cranelift_native=/private/tmp/mech-live-control-target/release/deps/libcranelift_native-448aa3dcdc0c0785.rlib",
+        "--extern",
+        "cranelift_object=/private/tmp/mech-live-control-target/release/deps/libcranelift_object-e9e960ce24552414.rlib",
+        "--extern",
+        "grapheme=/private/tmp/mech-live-control-target/release/deps/libgrapheme-2e22bda36eb1f0f8.rlib",
+        "--extern",
+        "hashbrown=/private/tmp/mech-live-control-target/release/deps/libhashbrown-d20f4ad24099052b.rlib",
+        "--extern",
+        "libloading=/private/tmp/mech-live-control-target/release/deps/liblibloading-836fe5ac7ed0962d.rlib",
+        "--extern",
+        "mech_compute=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_compute-84cb0ef1d137eee3.rlib",
+        "--extern",
+        "mech_core=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+        "--extern",
+        "mech_engine=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+        "--extern",
+        "miniz_oxide=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+        "--extern",
+        "serde=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+        "--extern",
+        "serde_json=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+        "--extern",
+        "sha2=/private/tmp/mech-live-control-target/release/deps/libsha2-f9316069bed82edc.rlib",
+        "--extern",
+        "toml_edit=/private/tmp/mech-live-control-target/release/deps/libtoml_edit-14168309fb56d330.rlib",
+        "--extern",
+        "web_time=/private/tmp/mech-live-control-target/release/deps/libweb_time-5004144e8c3d1139.rlib",
+        "--extern",
+        "wide=/private/tmp/mech-live-control-target/release/deps/libwide-24e8d1268668e37f.rlib",
+        "--extern",
+        "mech_syntax=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+        "--extern",
+        "mech_runtime=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_runtime-44999c02af6b18b6.rlib",
+        "--extern",
+        "mech_stdlib=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+        "--extern",
+        "tempfile=/private/tmp/mech-live-control-target/release/deps/libtempfile-cd3db811e0a0846f.rlib",
+        "-L",
+        "dependency=/private/tmp/mech-record-lookup-round42-20261030/diagnostic-libs/after",
+        "-L",
+        "dependency=/private/tmp/mech-record-lookup-round42-20261030/final-library",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "/private/tmp/mech-deflate-linear-stack/hosts/gpu/src/lib.rs",
+        "-o",
+        "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests"
+      ],
+      "exit": 0,
+      "expected_tests": null,
+      "observed_tests": null,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "units-after/vector-address-inventory.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+        "native_artifact::program::codegen::numeric_words::tests::unit_dimension_addresses_emit_no_division_and_keep_general_geometry",
+        "--exact",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": true,
+      "passed": true
+    },
+    {
+      "receipt": "units-after/vector-address.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+        "native_artifact::program::codegen::numeric_words::tests::unit_dimension_addresses_emit_no_division_and_keep_general_geometry",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "units-parent/first-change-inventory.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/units-parent/gpu-unit-tests",
+        "delayed_numeric_first_changes_preserve_current_scalars_two_arrays_and_retry",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": true,
+      "passed": true
+    },
+    {
+      "receipt": "units-parent/first-change.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/units-parent/gpu-unit-tests",
+        "delayed_numeric_first_changes_preserve_current_scalars_two_arrays_and_retry",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "units-after/first-change-inventory.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+        "delayed_numeric_first_changes_preserve_current_scalars_two_arrays_and_retry",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": true,
+      "passed": true
+    },
+    {
+      "receipt": "units-after/first-change.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+        "delayed_numeric_first_changes_preserve_current_scalars_two_arrays_and_retry",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "units-after/preparation-inventory.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+        "cleanup_effects::tests::",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 2,
+      "observed_tests": 2,
+      "inventory_only": true,
+      "passed": true
+    },
+    {
+      "receipt": "units-after/preparation.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+        "cleanup_effects::tests::",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 2,
+      "observed_tests": 2,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "units-after/runtime-inventory.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+        "native_artifact::program::runtime::",
+        "--skip",
+        "complete_unchanged_knucleotide_body_uses_the_owned_emitted_map",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 328,
+      "observed_tests": 328,
+      "inventory_only": true,
+      "passed": true
+    },
+    {
+      "receipt": "units-after/runtime.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+        "native_artifact::program::runtime::",
+        "--skip",
+        "complete_unchanged_knucleotide_body_uses_the_owned_emitted_map",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 328,
+      "observed_tests": 328,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "units-after/work-values-inventory.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+        "native_artifact::work::",
+        "native_artifact::memory::",
+        "native_artifact::values::",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 32,
+      "observed_tests": 32,
+      "inventory_only": true,
+      "passed": true
+    },
+    {
+      "receipt": "units-after/work-values.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+        "native_artifact::work::",
+        "native_artifact::memory::",
+        "native_artifact::values::",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 32,
+      "observed_tests": 32,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "qualification/component-build.json",
+      "command": [
+        "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+        "-L",
+        "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after",
+        "-L",
+        "dependency=/private/tmp/mech-vector-address-round60-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-vector-address-round60-20261031/variants/after",
+        "--edition=2024",
+        "-C",
+        "opt-level=1",
+        "-D",
+        "warnings",
+        "-L",
+        "dependency=/private/tmp/mech-live-control-target/release/deps",
+        "--extern",
+        "serde=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+        "--extern",
+        "serde_json=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+        "--extern",
+        "mech_core=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+        "--extern",
+        "mech_syntax=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+        "--extern",
+        "mech_engine=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+        "--extern",
+        "miniz_oxide=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+        "--extern",
+        "mech_gpu=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/libmech_gpu.rlib",
+        "--extern",
+        "mech_stdlib=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+        "--extern",
+        "sha2=/private/tmp/mech-live-control-target/release/deps/libsha2-f9316069bed82edc.rlib",
+        "--extern",
+        "grapheme=/private/tmp/mech-live-control-target/release/deps/libgrapheme-2e22bda36eb1f0f8.rlib",
+        "--extern",
+        "tempfile=/private/tmp/mech-live-control-target/release/deps/libtempfile-cd3db811e0a0846f.rlib",
+        "--test",
+        "--cfg",
+        "feature=\"canonical-native-program\"",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after",
+        "/private/tmp/mech-numeric-composition-round33-20261030/partition/qualification.rs",
+        "-o",
+        "/private/tmp/mech-first-change-spill-round61-20261031/qualification/tests"
+      ],
+      "exit": 0,
+      "expected_tests": null,
+      "observed_tests": null,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "qualification/path-mechanism-inventory.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/qualification/tests",
+        "optimal_path_qualification::path_scan_emits_native_pieces_around_its_nested_scalar_child",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": true,
+      "passed": true
+    },
+    {
+      "receipt": "qualification/path-mechanism.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/qualification/tests",
+        "optimal_path_qualification::path_scan_emits_native_pieces_around_its_nested_scalar_child",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 1,
+      "observed_tests": 1,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "qualification/components-inventory.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/qualification/tests",
+        "scalar_path_qualification",
+        "multi_result_qualification",
+        "nested_frame_qualification",
+        "scalar_record_qualification",
+        "record_buffer_qualification",
+        "packed_update_qualification",
+        "buffer_frame_qualification",
+        "sequence_capacity_qualification",
+        "collection_qualification",
+        "uniform_words_qualification",
+        "word_read_qualification",
+        "narrow_word_qualification",
+        "matchfinder_qualification",
+        "assembled_compressor_source_preserves_its_pinned_bytes",
+        "scalar_state_qualification",
+        "tail_qualification",
+        "costs_qualification",
+        "default_costs_qualification",
+        "block_choice_qualification",
+        "pinned_min_cost_paths_keep_exact_nodes_and_real_reservation",
+        "path_checks_preserve_entry_order_publication_aliases_and_recovery",
+        "argument_transport_qualification",
+        "shared_transport_qualification",
+        "numeric_write_qualification",
+        "numeric_tail_qualification",
+        "numeric_result_qualification",
+        "numeric_predicate_qualification",
+        "dynamic_projection_qualification",
+        "binding_pressure_qualification",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 236,
+      "observed_tests": 236,
+      "inventory_only": true,
+      "passed": true
+    },
+    {
+      "receipt": "qualification/components.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/qualification/tests",
+        "scalar_path_qualification",
+        "multi_result_qualification",
+        "nested_frame_qualification",
+        "scalar_record_qualification",
+        "record_buffer_qualification",
+        "packed_update_qualification",
+        "buffer_frame_qualification",
+        "sequence_capacity_qualification",
+        "collection_qualification",
+        "uniform_words_qualification",
+        "word_read_qualification",
+        "narrow_word_qualification",
+        "matchfinder_qualification",
+        "assembled_compressor_source_preserves_its_pinned_bytes",
+        "scalar_state_qualification",
+        "tail_qualification",
+        "costs_qualification",
+        "default_costs_qualification",
+        "block_choice_qualification",
+        "pinned_min_cost_paths_keep_exact_nodes_and_real_reservation",
+        "path_checks_preserve_entry_order_publication_aliases_and_recovery",
+        "argument_transport_qualification",
+        "shared_transport_qualification",
+        "numeric_write_qualification",
+        "numeric_tail_qualification",
+        "numeric_result_qualification",
+        "numeric_predicate_qualification",
+        "dynamic_projection_qualification",
+        "binding_pressure_qualification",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 236,
+      "observed_tests": 236,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "qualification/composition-inventory.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/qualification/tests",
+        "numeric_composition_qualification",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 8,
+      "observed_tests": 8,
+      "inventory_only": true,
+      "passed": true
+    },
+    {
+      "receipt": "qualification/composition.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/qualification/tests",
+        "numeric_composition_qualification",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 8,
+      "observed_tests": 8,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "ci/workflow-python.json",
+      "command": [
+        "/private/tmp/mech-profile-ci-python-20261030/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "tests.ci.test_ci_full_contract",
+        "tests.ci.test_ci_test_inventory"
+      ],
+      "exit": 0,
+      "expected_tests": 132,
+      "observed_tests": 132,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "linked-acceptance/emit-build.json",
+      "command": [
+        "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+        "-L",
+        "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after",
+        "--edition=2024",
+        "-C",
+        "opt-level=3",
+        "-D",
+        "warnings",
+        "-L",
+        "dependency=/private/tmp/mech-live-control-target/release/deps",
+        "--extern",
+        "serde=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+        "--extern",
+        "serde_json=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+        "--extern",
+        "mech_core=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+        "--extern",
+        "mech_syntax=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+        "--extern",
+        "mech_engine=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+        "--extern",
+        "miniz_oxide=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+        "--extern",
+        "mech_gpu=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/libmech_gpu.rlib",
+        "--extern",
+        "mech_stdlib=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+        "-C",
+        "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+        "-L",
+        "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after",
+        "/private/tmp/mech-first-change-spill-round61-20261031/linked-acceptance/emit.rs",
+        "-o",
+        "/private/tmp/mech-first-change-spill-round61-20261031/linked-acceptance/emit"
+      ],
+      "exit": 0,
+      "expected_tests": null,
+      "observed_tests": null,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "linked-acceptance/emit.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/linked-acceptance/emit"
+      ],
+      "exit": 0,
+      "expected_tests": null,
+      "observed_tests": null,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "linked-acceptance/worker-build.json",
+      "command": [
+        "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+        "-L",
+        "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after",
+        "--edition=2024",
+        "-C",
+        "opt-level=3",
+        "-D",
+        "warnings",
+        "-L",
+        "dependency=/private/tmp/mech-live-control-target/release/deps",
+        "--extern",
+        "serde=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+        "--extern",
+        "serde_json=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+        "--extern",
+        "mech_core=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+        "--extern",
+        "mech_syntax=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+        "--extern",
+        "mech_engine=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+        "--extern",
+        "miniz_oxide=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+        "--extern",
+        "mech_gpu=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/libmech_gpu.rlib",
+        "--extern",
+        "mech_stdlib=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+        "-C",
+        "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+        "-L",
+        "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-cached-schema-key-round59-20261031/variants/after/dependency",
+        "-L",
+        "dependency=/private/tmp/mech-first-change-spill-round61-20261031/variants/after",
+        "-C",
+        "link-arg=/private/tmp/mech-first-change-spill-round61-20261031/linked-acceptance/object.o",
+        "/private/tmp/mech-first-change-spill-round61-20261031/linked-acceptance/worker.rs",
+        "-o",
+        "/private/tmp/mech-first-change-spill-round61-20261031/linked-acceptance/worker"
+      ],
+      "exit": 0,
+      "expected_tests": null,
+      "observed_tests": null,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "linked-acceptance/run.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/linked-acceptance/worker"
+      ],
+      "exit": 0,
+      "expected_tests": null,
+      "observed_tests": null,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "ci/results.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+        "composition_tests",
+        "parent_continuation_is_single_use",
+        "native_runtime_consolidation",
+        "buffer_frames::tests::batching",
+        "buffer_frames::tests::transfer",
+        "work::retirement::tests",
+        "exhausted_retirement_generation",
+        "cleanup_effects::tests",
+        "numeric_shadow",
+        "numeric_words::tests",
+        "numeric_first_change",
+        "--list"
+      ],
+      "exit": 0,
+      "expected_tests": 34,
+      "observed_tests": 34,
+      "inventory_only": true,
+      "passed": true
+    },
+    {
+      "receipt": "ci/results.json",
+      "command": [
+        "/private/tmp/mech-first-change-spill-round61-20261031/units-after/gpu-unit-tests",
+        "composition_tests",
+        "parent_continuation_is_single_use",
+        "native_runtime_consolidation",
+        "buffer_frames::tests::batching",
+        "buffer_frames::tests::transfer",
+        "work::retirement::tests",
+        "exhausted_retirement_generation",
+        "cleanup_effects::tests",
+        "numeric_shadow",
+        "numeric_words::tests",
+        "numeric_first_change",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "expected_tests": 34,
+      "observed_tests": 34,
+      "inventory_only": false,
+      "passed": true
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "python3",
+        "scripts/check-production-resident-routing.py"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "python3",
+        "scripts/check-source-catalog-entrypoints.py"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "python3",
+        "scripts/check-native-host-catalog.py"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "python3",
+        "scripts/check-native-build-analysis-layout.py"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "python3",
+        "scripts/check-rust-module-layout.py"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "python3",
+        "scripts/check-runtime-factory-safety.py"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "python3",
+        "scripts/check-warning-policy.py"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "receipt": "architecture-audit-fixed/result.json",
+      "command": [
+        "sh",
+        "scripts/check-unsafe-boundaries.sh"
+      ],
+      "exit": 0,
+      "passed": true,
+      "supersedes_failed_receipt": "architecture/results.json"
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "receipt": "primary/scalar-results.json",
+      "cases": 12,
+      "passed": true
+    },
+    {
+      "receipt": "frame-allocation/results.json",
+      "cases": 8,
+      "passed": true
+    },
+    {
+      "receipt": "linked-acceptance/run.stdout",
+      "cases": 12,
+      "passed": true
+    }
+  ],
+  "architecture_initial": [
+    {
+      "command": [
+        "python3",
+        "scripts/check-production-resident-routing.py"
+      ],
+      "exit": 0,
+      "seconds": 0.27101108292117715
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-source-catalog-entrypoints.py"
+      ],
+      "exit": 0,
+      "seconds": 0.06182762491516769
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-native-host-catalog.py"
+      ],
+      "exit": 0,
+      "seconds": 0.574894999852404
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-native-build-analysis-layout.py"
+      ],
+      "exit": 0,
+      "seconds": 0.023994165938347578
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-rust-module-layout.py"
+      ],
+      "exit": 0,
+      "seconds": 0.19331691600382328
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-runtime-factory-safety.py"
+      ],
+      "exit": 0,
+      "seconds": 0.9812697090674192
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-warning-policy.py"
+      ],
+      "exit": 0,
+      "seconds": 13.634867958026007
+    },
+    {
+      "command": [
+        "sh",
+        "scripts/check-unsafe-boundaries.sh"
+      ],
+      "exit": 1,
+      "seconds": 2.1451956250239164
+    },
+    {
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit": 0,
+      "seconds": 6.669588666874915
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit": 0,
+      "seconds": 0.023176874965429306
+    }
+  ],
+  "prior_failures": [
+    {
+      "receipt": "units-parent-initial/build.json",
+      "exit": 1,
+      "compiler_source": "ce5c852c809f1675a5d383b54ef0810b16efaebc",
+      "classification": "introduced test-only compilation failure, corrected before measurements",
+      "corrected_receipt": "units-parent/build.json",
+      "corrected_source": "bf7dd0f6bd306171b4f101b728f3b5614ac86f99",
+      "disposition": "The new test had ambiguous boxed shape inference. The explicit shape type correction compiled successfully; unchanged parent production then passed the new exact regression before the spill removal was applied. The original failed command and stderr remain archived."
+    },
+    {
+      "receipt": "architecture/results.json",
+      "command": [
+        "sh",
+        "scripts/check-unsafe-boundaries.sh"
+      ],
+      "exit": 1,
+      "classification": "introduced review-evidence layout failure; compiler/runtime production unchanged",
+      "corrected_receipt": "architecture-audit-fixed/result.json",
+      "corrected_exit": 0,
+      "corrected_source": null,
+      "disposition": "The unsafe-boundary scan found unsafe text in duplicated external regalloc.rs dependency snapshots copied as review evidence. Their public duplicate source files were removed, with evidence retained in compressed archives. No allowlist or production source was changed. The exact same unsafe-boundary command was rerun; its observed result is required for acceptance."
+    }
+  ],
+  "skipped_coverage": [
+    {
+      "test": "complete_unchanged_knucleotide_body_uses_the_owned_emitted_map",
+      "disposition": "Existing runtime selection exclusion retained; unrelated complete knucleotide body is not requalified here."
+    },
+    {
+      "coverage": "full remote CI",
+      "disposition": "Not awaited as requested. Local exact inventory and architecture checks reported separately."
+    },
+    {
+      "coverage": "larger compression inputs/full-scale timing",
+      "disposition": "Not run; this optimization is measured on the complete pinned eight-byte level-12 call only."
+    }
+  ],
+  "scope": "Counts are observed from actual archived inventories and execution receipts, never inferred from source annotations. Test batches overlap; counts must not be summed as unique tests."
+}

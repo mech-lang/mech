@@ -1,0 +1,89 @@
+{
+  "features": [
+    "access",
+    "assign",
+    "atom",
+    "bool",
+    "c64",
+    "compare_eq",
+    "compare_gt",
+    "compare_gte",
+    "compare_lt",
+    "compare_lte",
+    "compare_neq",
+    "compiler",
+    "convert",
+    "enum",
+    "f32",
+    "f64",
+    "full_values",
+    "i128",
+    "i16",
+    "i32",
+    "i64",
+    "i8",
+    "integer_bits",
+    "invariant_define",
+    "logic_and",
+    "logic_or",
+    "map",
+    "math_add",
+    "math_div",
+    "math_mod",
+    "math_mul",
+    "math_sub",
+    "matrix_comprehensions",
+    "matrixd",
+    "mech-compare",
+    "mech-logic",
+    "mech-math",
+    "mech-range",
+    "native-plan",
+    "r64",
+    "range_inclusive",
+    "record",
+    "row_vectord",
+    "runtime",
+    "semantic-compiler",
+    "set",
+    "source",
+    "string",
+    "table",
+    "tuple",
+    "u128",
+    "u16",
+    "u32",
+    "u64",
+    "u8",
+    "variable_define",
+    "variables",
+    "vectord"
+  ],
+  "libraries": {
+    "mech_compare": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libmech_compare-242da402436c67de.rlib",
+      "sha256": "5e342306a86040d52d60b80821791b2eadb90f54b7fd80e067a73a1c44bec414"
+    },
+    "mech_core": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libmech_core-4ff4856784490a86.rlib",
+      "sha256": "feb4c2084478f12d1173b7411bb465d9c154baf747cd78dd15db8f00b0b6b7c7"
+    },
+    "mech_engine": {
+      "path": "/private/tmp/mech-nested-frames-round20-20261029/parent-control/libs/libmech_engine.rlib",
+      "sha256": "1279c176fdadf505a438a4a1905215b16a5403c771237a536fa0b9fb01c841d4"
+    },
+    "mech_logic": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libmech_logic-fc734b60da098e05.rlib",
+      "sha256": "8165df652c115665cfef1480966b33d057b9c6e7d01d24813aa19f9af62474c3"
+    },
+    "mech_math": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libmech_math.rlib",
+      "sha256": "420ae46dae7630805df68f614c52849391ddfcc1670dce5848679c7c030fd13c"
+    },
+    "mech_range": {
+      "path": "/private/tmp/mech-live-control-target/release/deps/libmech_range-72a710fe21180622.rlib",
+      "sha256": "cc3461e079840aae4cd959bb0c9626ef94cfa500798038f2a093917d73973aca"
+    }
+  },
+  "output_sha256": "afa965454ac556a112180c3599b4c312778091ca66c7cdc1b21f68fa1e75b342"
+}

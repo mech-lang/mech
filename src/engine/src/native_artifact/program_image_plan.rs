@@ -150,6 +150,9 @@ fn restore(
         collections::collection(v, catalog, schemas)
     })?;
     let plan = NativeProgramArtifactPlan {
+        // An image contains semantic selection, not its producer's budget.
+        // Shape/ownership proofs and same-Object binding still run on load.
+        definition_table_byte_limit: u64::MAX,
         revision: w.revision,
         resource_requirements,
         observations,

@@ -1,0 +1,18 @@
+
+running 2 tests
+test collector_qualification::real_buffer_collector_initialization_keeps_its_full_zeroed_state ... {"allocation_requests":44680,"artifact":"original","elapsed_seconds":0.090624625,"requested_allocation_bytes":43885729,"result":"Ok(NativeProgramExecutionReport { work: 1298546729, comparison_work: 13053617, visits: 76, transport_bytes: 265888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })","witness":"real-buffer-collector-initialization"}
+{"allocation_requests":44679,"artifact":"decoded","elapsed_seconds":0.089634667,"requested_allocation_bytes":43885665,"result":"Ok(NativeProgramExecutionReport { work: 1298546729, comparison_work: 13053617, visits: 76, transport_bytes: 265888, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 })","witness":"real-buffer-collector-initialization"}
+ok
+test collector_qualification::real_buffer_collector_prefix_carries_consecutive_search_and_skip_updates ... {"allocation_requests":661549,"artifact":"original","cache_u32_words":1500513,"compile_seconds":2.0303295,"completed_prefix_positions":null,"depth":300,"elapsed_seconds":13.314608458,"failing_binding":{"inputs":1,"metadata_bytes":966656,"output":"UnsignedInteger(W64)"},"failing_operation":"sequence/length","input_bytes":320,"nice":258,"requested_allocation_bytes":412755498,"requested_positions":6,"result":"Err(Library { origin: NativeMatchOrigin { node: NodeId(0), block: Some(36), local: Some(11) }, error: Kernel(ResourceLimit { phase: Admission, dimension: ComputeWork, required: 10005126192, limit: 10000000000 }) })","retained_after":19379,"retained_before":19379,"success":false,"table_u16_entries":262144,"witness":"real-buffer-collector-prefix"}
+
+thread 'collector_qualification::real_buffer_collector_prefix_carries_consecutive_search_and_skip_updates' (16015511) panicked at hosts/gpu/tests/support/canonical_program_collector.rs:194:16:
+called `Result::unwrap()` on an `Err` value: Library { origin: NativeMatchOrigin { node: NodeId(0), block: Some(36), local: Some(11) }, error: Kernel(ResourceLimit { phase: Admission, dimension: ComputeWork, required: 10005126192, limit: 10000000000 }) }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    collector_qualification::real_buffer_collector_prefix_carries_consecutive_search_and_skip_updates
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 256 filtered out; finished in 50.47s

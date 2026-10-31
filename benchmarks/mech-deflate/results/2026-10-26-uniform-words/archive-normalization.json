@@ -1,0 +1,45 @@
+{
+  "change": "Trailing whitespace and final blank lines normalized for repository checks; original receipts remain at their recorded external paths. No diagnostic or measurement content changed.",
+  "files": [
+    {
+      "file": "inherited-linked-harness-reproducer.log",
+      "original_sha256": "a397d8aa6c704e96a9e4ba177fe99462227644dd9bed7dc3824ccee8ead4420c",
+      "archived_sha256": "eb590ca44ac92122de602f135c2ccf600b667b449e0a8ab8cccd67f6a1a76a02"
+    },
+    {
+      "file": "initialization-baseline-hotspots.txt",
+      "original_sha256": "48a5a67e67e085326eeebfa5d5c7feb1ee32805d77e1b86f38cf9447a21b898b",
+      "archived_sha256": "e47eba091cfccb5a5411e9776b2465fef4581c858935cd66643df9fd74168a4e"
+    },
+    {
+      "file": "uniform-final-real-buffer-witness.log",
+      "original_sha256": "9000eb45d2d7e381678e36d95f1438633566cdfab23d16629f5760e3dab11f12",
+      "archived_sha256": "abd44a6d0f4e3329d69ea66ce56677d6fa2a173e2aef85399614d07be679f5b0"
+    },
+    {
+      "file": "uniform-focused-fresh-calls.log",
+      "original_sha256": "5e695cc3103aa2d177fe5f3df07792c082c08f3eab0a80d7355d884e643f9688",
+      "archived_sha256": "90b21fb497060606e5658cb64efa77202fd0bdc9deb97799ba3d097133def45a"
+    },
+    {
+      "file": "uniform-focused-pair-result.log",
+      "original_sha256": "8507a74b80b54e9661f007343f941511b5d3cf41ccb9724c1deab56591c5ad9b",
+      "archived_sha256": "1f37e557b5d2a25cb1e2e858c30bf5dfdec13e69a84135b8332fad26373304e5"
+    },
+    {
+      "file": "uniform-focused-tests-corrected.log",
+      "original_sha256": "2559aee9b11a5709531a29399e70df3b429be0e1726048298b819a33b509d13c",
+      "archived_sha256": "aed7b8f4797193b39cb61fcabb1df1575a0e18d08960af1e70b39369f9a29b6c"
+    },
+    {
+      "file": "uniform-linked-and-focused-final.log",
+      "original_sha256": "6808666a4c6ac75fa891f7bc55d9c7de4f4da8ec03c145170a7ad3d0256ee10b",
+      "archived_sha256": "c61c31e03773086d1dc3f686c2bbcc4ae270f215f3126880c8a53b656ca26612"
+    },
+    {
+      "file": "uniform-linked-retry-current-launcher.log",
+      "original_sha256": "864d030483217aafe36ae19f957cdb3a12c2632ad26be38ae4c3d430ce6059f4",
+      "archived_sha256": "cb942188213598e2fa1a4e2f8cec442f1089395e470bca1b7425ffa5464aeaa2"
+    }
+  ]
+}

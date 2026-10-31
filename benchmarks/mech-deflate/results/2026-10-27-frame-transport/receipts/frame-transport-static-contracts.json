@@ -1,0 +1,23 @@
+{
+  "name": "frame-transport-static-contracts",
+  "command": [
+    "python3",
+    "-c",
+    "import subprocess; commands=[[\"python3\",\"scripts/check-native-build-analysis-layout.py\"],[\"python3\",\"scripts/check-warning-policy.py\"],[\"python3\",\"scripts/check-production-resident-routing.py\"],[\"python3\",\"scripts/check-source-catalog-entrypoints.py\"],[\"git\",\"diff\",\"--check\"]]; [subprocess.run(command,check=True) for command in commands]"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "356e7275cc7e852aeea9713a4f533e8540983b9d",
+  "dirty": "",
+  "exit": 0,
+  "seconds": 15.486127853393555,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/frame-transport-static-contracts.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

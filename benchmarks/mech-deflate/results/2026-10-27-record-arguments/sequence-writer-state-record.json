@@ -1,0 +1,31 @@
+{
+  "name": "sequence-writer-state-record",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-j1",
+    "--manifest-path",
+    "/private/tmp/mech-sequence-buffer-driver/Cargo.toml",
+    "sequence_writer_component_probe",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/private/tmp/mech-deflate-linear-stack",
+  "head": "610d5642100f35330512567591918a12fb393141",
+  "dirty": " M hosts/gpu/src/native_artifact/program/image/identity.rs\n M hosts/gpu/tests/support/canonical_program_linked.rs\n M hosts/gpu/tests/support/canonical_program_record_buffers.rs\n M src/engine/src/artifact/control.rs\n M src/engine/src/native_artifact/structural_values.rs\n M src/engine/src/resident/general/native_collection_templates.rs\n M src/engine/src/resident/structural_values.rs\n?? hosts/gpu/tests/fixtures/native/deflate-path-writer.mec\n?? hosts/gpu/tests/fixtures/native/deflate-sequence-writer.mec\n",
+  "exit": 0,
+  "seconds": 62.66455411911011,
+  "log": "/private/tmp/mech-linear-restack-20261026/validation/sequence-writer-state-record.log",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+    "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+  }
+}

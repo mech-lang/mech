@@ -1,0 +1,15 @@
+
+running 1 test
+test numeric_write_qualification::cases::paths::numeric_writes_unchanged_values_still_observe_selected_output_element_limits ... FAILED
+
+failures:
+
+failures:
+    numeric_write_qualification::cases::paths::numeric_writes_unchanged_values_still_observe_selected_output_element_limits
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 396 filtered out; finished in 0.15s
+
+
+thread 'numeric_write_qualification::cases::paths::numeric_writes_unchanged_values_still_observe_selected_output_element_limits' (18914575) panicked at /private/tmp/mech-deflate-linear-stack/hosts/gpu/tests/support/canonical_program_numeric_write_paths.rs:115:49:
+called `Result::unwrap_err()` on an `Ok` value: NativeProgramExecutionReport { work: 11702746, comparison_work: 2, visits: 6, transport_bytes: 5488, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0 }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

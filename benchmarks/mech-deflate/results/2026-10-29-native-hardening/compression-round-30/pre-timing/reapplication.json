@@ -1,0 +1,87 @@
+{
+  "base": "8a63d13dbb2554317c9ae606db7c7f761303c1b4",
+  "prior_prototype": "46aece8b8427a0d68e0db3b389316de5aca0804b",
+  "method": "Every affected current GPU source/test file must first equal the original prototype parent. Restore exact final qualified file contents; shared accounting and separate CI correction remain untouched.",
+  "files": [
+    {
+      "path": "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+      "source_commit": "46aece8b8427a0d68e0db3b389316de5aca0804b",
+      "sha256": "7569fc4c3b86e7b949deba0da8b6c834b9c596a838603be4df06373916024251"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/codegen/control/report/mod.rs",
+      "source_commit": "46aece8b8427a0d68e0db3b389316de5aca0804b",
+      "sha256": "763612dc2721c36d9525a6816e442f342ee29d89647cca57230a3e8b6efe6eb7"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/frame_scalars.rs",
+      "source_commit": "46aece8b8427a0d68e0db3b389316de5aca0804b",
+      "sha256": "88ee77bd89fd3c53d0d063ac387269e8af5fdaa12d742123ea6966dfc66c9e29"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+      "source_commit": "46aece8b8427a0d68e0db3b389316de5aca0804b",
+      "sha256": "789a407aee69549a0002174c33726bf5c0143dea05a85f4b7de7d9fda03ee860"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compiler.rs",
+      "source_commit": "46aece8b8427a0d68e0db3b389316de5aca0804b",
+      "sha256": "f81311c986f2d9f1800e735e90da19f1ffb5d2215dadb67a7457f8f6d0fca3ab"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/image/identity.rs",
+      "source_commit": "46aece8b8427a0d68e0db3b389316de5aca0804b",
+      "sha256": "f857b0893ec7658220731a108867159ce787eb0a67d19af31a373b0abf604568"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/image/wire/mod.rs",
+      "source_commit": "46aece8b8427a0d68e0db3b389316de5aca0804b",
+      "sha256": "63a45abe491cc7c49e7a1f8e951780f536fb481ab4b2b1335dcb37c32d7b92b1"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/prepare/frame_scalars.rs",
+      "source_commit": "46aece8b8427a0d68e0db3b389316de5aca0804b",
+      "sha256": "e3669f3e68441fc40abecbc3539641609e0fa4652d4f0778749055db090e92e9"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/prepare/map_admission.rs",
+      "source_commit": "46aece8b8427a0d68e0db3b389316de5aca0804b",
+      "sha256": "230aa0281be836bcc13381381804d06c52ec0ff8482809e289f0ebd322ee7339"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/prepare/mod.rs",
+      "source_commit": "46aece8b8427a0d68e0db3b389316de5aca0804b",
+      "sha256": "ce42a044534aca1622a485f14bb53a10c42766800a8003ab68148b0b6019ca80"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/buffer_frames.rs",
+      "source_commit": "46aece8b8427a0d68e0db3b389316de5aca0804b",
+      "sha256": "f540cf1cbd6f45c777a073b84f81771c881b6e56054a3c69437130e6eaefa5c4"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs",
+      "source_commit": "46aece8b8427a0d68e0db3b389316de5aca0804b",
+      "sha256": "f019b06212eaecc0f0c94681a403871a0d1247a7718889a71bcb79c1c87cbfeb"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/session/mod.rs",
+      "source_commit": "46aece8b8427a0d68e0db3b389316de5aca0804b",
+      "sha256": "b50b30898200f8ca20aadf5dee2ba39ba1cb04e56badbf4c7f631f8c207a2675"
+    },
+    {
+      "path": "hosts/gpu/tests/support/canonical_program_buffer_frames.rs",
+      "source_commit": "46aece8b8427a0d68e0db3b389316de5aca0804b",
+      "sha256": "8a2b814ef8832b0b8320b7d146fa4ef5785f22d729db590bcee48b26c9fe8bd4"
+    },
+    {
+      "path": "hosts/gpu/tests/support/canonical_program_frame_scalar_reads.rs",
+      "source_commit": "46aece8b8427a0d68e0db3b389316de5aca0804b",
+      "sha256": "b0846404d21253ba1a12392dc1e536168af8f35f18582448ab80334d3b7cd004"
+    },
+    {
+      "path": "hosts/gpu/tests/support/canonical_program_linked.rs",
+      "source_commit": "46aece8b8427a0d68e0db3b389316de5aca0804b",
+      "sha256": "4dc165baebccc24f2b9e0d267473fd09a78339a2177d91a7974ffd5afa57ba81"
+    }
+  ]
+}

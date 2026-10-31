@@ -1,7 +1,7 @@
 //! Native finite fuel for closed scalar/map Tail bodies, inside the same round.
 use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::codegen::options::OptimizationOptions;
-use crate::native_artifact::compiler::offset;
+use crate::native_artifact::compiler::{backend, offset};
 use crate::native_artifact::program::codegen::hooks::Hooks;
 use crate::native_artifact::program::prepare::tail::{Layout, Region};
 #[cfg(feature = "canonical-native-program-runtime")]
@@ -41,7 +41,7 @@ fn store(
         .store(flags(options, region), value, locals, offset(word)?);
     Ok(())
 }
-fn leave(
+pub(in crate::native_artifact) fn leave(
     options: OptimizationOptions,
     b: &mut FunctionBuilder,
     locals: Value,
@@ -61,6 +61,35 @@ fn leave(
     let comparison = load(options, b, locals, region, region.words + 2)?;
     let zero = b.ins().iconst(types::I64, 0);
     store(options, b, locals, region, region.words, zero)?;
+    if let Some(proof) = &region.numeric {
+        let shadow = region
+            .shadow
+            .ok_or_else(|| backend("numeric exit lacks scratch home"))?;
+        hooks.require_argument_words(b, proof.words + 2, error);
+        let terminal = proof
+            .result
+            .frame()
+            .filter(|_| mode == 0)
+            .and_then(|value| proof.fields(value))
+            .unwrap_or(&[]);
+        for slot in proof
+            .fields(region.tail.carrier().get())
+            .unwrap()
+            .iter()
+            .chain(terminal.iter())
+            .flatten()
+        {
+            let value = load(options, b, locals, region, shadow + slot)?;
+            b.ins()
+                .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
+        }
+        for (array, _) in proof.arrays.iter().enumerate().filter(|(_, a)| a.appends) {
+            let slot = proof.view(array) + 1;
+            let value = load(options, b, locals, region, shadow + slot)?;
+            b.ins()
+                .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
+        }
+    }
     let mode = b.ins().iconst(types::I64, mode);
     hooks.call_at(
         b,
@@ -124,6 +153,11 @@ pub(in crate::native_artifact) fn prepare(
         return Ok(());
     };
     let region = &layout.regions[region];
+    if region.numeric.is_some()
+        && !options.enabled(crate::native_artifact::codegen::options::OptimizationPass::ScalarLoops)
+    {
+        return Ok(());
+    }
     prepare_region(
         options,
         b,
@@ -218,11 +252,24 @@ fn prepare_region(
     hooks.call(b, site, GlobalHelper::decode(operation), [zero; 3], error);
     let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
     store(options, b, locals, region, region.words, ready)?;
-    for i in 0..if region.map.is_some() { 4 } else { 2 } {
+    for i in 0..if region.map.is_some() {
+        4
+    } else {
+        2 + region.numeric.as_ref().map_or(0, |p| p.words)
+    } {
         let word = b
             .ins()
             .load(types::I64, MemFlags::new(), hooks.arguments, offset(i)?);
-        store(options, b, locals, region, region.words + 1 + i, word)?;
+        let destination = if region.numeric.is_some() && i >= 2 {
+            region
+                .shadow
+                .ok_or_else(|| backend("numeric entry lacks scratch home"))?
+                + i
+                - 2
+        } else {
+            region.words + 1 + i
+        };
+        store(options, b, locals, region, destination, word)?;
     }
     Ok(())
 }

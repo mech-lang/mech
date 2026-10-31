@@ -1,0 +1,266 @@
+[
+  {
+    "command": [
+      "/private/tmp/mech-schema-bound-round03-20261028/frame-before",
+      "scalar-bool",
+      "original",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-live-control-target/release/native_frame_transport",
+      "scalar-bool",
+      "original",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-schema-bound-round03-20261028/frame-before",
+      "scalar-bool",
+      "decoded",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-live-control-target/release/native_frame_transport",
+      "scalar-bool",
+      "decoded",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-live-control-target/release/native_frame_transport",
+      "scalar-u64",
+      "original",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-schema-bound-round03-20261028/frame-before",
+      "scalar-u64",
+      "original",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-live-control-target/release/native_frame_transport",
+      "scalar-u64",
+      "decoded",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-schema-bound-round03-20261028/frame-before",
+      "scalar-u64",
+      "decoded",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-schema-bound-round03-20261028/frame-before",
+      "scalar-i64",
+      "original",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-live-control-target/release/native_frame_transport",
+      "scalar-i64",
+      "original",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-schema-bound-round03-20261028/frame-before",
+      "scalar-i64",
+      "decoded",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-live-control-target/release/native_frame_transport",
+      "scalar-i64",
+      "decoded",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-live-control-target/release/native_frame_transport",
+      "scalar-f64",
+      "original",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-schema-bound-round03-20261028/frame-before",
+      "scalar-f64",
+      "original",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-live-control-target/release/native_frame_transport",
+      "scalar-f64",
+      "decoded",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-schema-bound-round03-20261028/frame-before",
+      "scalar-f64",
+      "decoded",
+      "0",
+      "5",
+      "10000"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-schema-bound-round03-20261028/frame-before",
+      "scalar-loop",
+      "original",
+      "0",
+      "5",
+      "100"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-live-control-target/release/native_frame_transport",
+      "scalar-loop",
+      "original",
+      "0",
+      "5",
+      "100"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-schema-bound-round03-20261028/frame-before",
+      "scalar-loop",
+      "decoded",
+      "0",
+      "5",
+      "100"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-live-control-target/release/native_frame_transport",
+      "scalar-loop",
+      "decoded",
+      "0",
+      "5",
+      "100"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-live-control-target/release/native_frame_transport",
+      "scalar-loop",
+      "original",
+      "64",
+      "5",
+      "100"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-schema-bound-round03-20261028/frame-before",
+      "scalar-loop",
+      "original",
+      "64",
+      "5",
+      "100"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-live-control-target/release/native_frame_transport",
+      "scalar-loop",
+      "decoded",
+      "64",
+      "5",
+      "100"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "/private/tmp/mech-schema-bound-round03-20261028/frame-before",
+      "scalar-loop",
+      "decoded",
+      "64",
+      "5",
+      "100"
+    ],
+    "exit": 0
+  }
+]

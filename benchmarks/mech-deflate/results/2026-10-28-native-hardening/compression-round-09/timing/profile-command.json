@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/private/tmp/mech-mixed-scalar-state-round08-20261028/current",
+    "/private/tmp/mech-independent-tables-round09-20261028/independent-cost-tables.mbc",
+    "33"
+  ],
+  "repetitions": 33,
+  "sample_command": [
+    "sample",
+    "20090",
+    "2",
+    "-file",
+    "/private/tmp/mech-independent-tables-round09-20261028/after.sample.txt"
+  ],
+  "sample_exit": 0,
+  "output": "Sampling process 20090 for 2 seconds with 1 millisecond of run time between samples\nSampling completed, processing symbols...\nSample analysis of process 20090 written to file /private/tmp/mech-independent-tables-round09-20261028/after.sample.txt\n",
+  "all_observations_excluded_from_primary": true
+}

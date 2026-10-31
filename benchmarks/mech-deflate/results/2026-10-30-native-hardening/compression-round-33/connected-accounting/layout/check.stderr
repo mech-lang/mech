@@ -1,0 +1,2 @@
+Rust module layout contract failed:
+hosts/gpu/src/native_artifact/program/prepare/composition.rs: file/directory module collision

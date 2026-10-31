@@ -1,0 +1,29 @@
+{
+  "base": "610d5642100f35330512567591918a12fb393141",
+  "native_program_ir": 113,
+  "validation": {
+    "host_and_linked": "17 passed; 319 filtered; 89.57s test time, 194.79s including build",
+    "tuple_matrix": "1 passed; 338 filtered; 5.34s test time",
+    "engine_schema_boundaries": "2 passed; 1098 filtered; 0.01s test time",
+    "unique_maintained_tests": 20,
+    "static": "Four architecture/catalog checks, empty CI inventory gaps, formatting and diff checks pass"
+  },
+  "failures": {
+    "source_recursion_and_capture_rejection": "Inherited; fixed through shared source/artifact admission and native snapshot carriers",
+    "native_symbolic_record_matrix_projection": "The source-only first attempt exposed this missing half of the same argument support; fixed with independent-arena matching and existing snapshot path",
+    "unused_word_matrix_reexport": "Introduced during implementation; removed; warnings-as-errors retained",
+    "tuple_of_record_projection": "Inherited separate restriction exposed by incidental writer-helper packaging; helper now returns one state record, no compiler expansion",
+    "minimal_native_artifact_feature_profile": "Previously assigned inherited uniform_word_collection.rs primitive() feature gate; unchanged, not rerun"
+  },
+  "component_work_outside_patch": {
+    "sequence_writer": "14 byte/bit-state reference cases agree original/decoded with real reservation",
+    "path_writer": "12 byte/bit-state reference cases agree original/decoded through 320-byte supplied block",
+    "capacity": "Whole-record publication trims spare byte capacity; new component tests currently flag this. Initial internal writer/clear/append probe preserves capacity and allocation scaling after equal metadata warmup. Nonempty internal reuse qualification is pending. These component drafts and their registration are excluded from this patch."
+  },
+  "not_claimed": [
+    "Complete compressor",
+    "Full compression timing",
+    "Full workspace suite",
+    "Completed remote CI"
+  ]
+}

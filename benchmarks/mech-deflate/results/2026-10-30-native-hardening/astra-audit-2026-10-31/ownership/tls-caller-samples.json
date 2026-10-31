@@ -1,0 +1,50 @@
+{
+  "scope": "exclusive sample weights attributed to immediate callers; not dynamic call counts or instruction counts",
+  "total": 42,
+  "frame_vs_other": {
+    "other": 19,
+    "frame": 23
+  },
+  "callers": [
+    [
+      "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+      21
+    ],
+    [
+      "mi_malloc",
+      6
+    ],
+    [
+      "_RNvMsa_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_19ResidentBudgetMeter19charge_compute_work",
+      3
+    ],
+    [
+      "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget20observe_control_work",
+      3
+    ],
+    [
+      "_RNvMsa_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_19ResidentBudgetMeter21for_native_projection",
+      3
+    ],
+    [
+      "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget18unscoped_remaining",
+      2
+    ],
+    [
+      "_RNvMs4_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_18KernelCostEstimate21check_planning_limits",
+      1
+    ],
+    [
+      "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext17try_charge_prefix",
+      1
+    ],
+    [
+      "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext6charge",
+      1
+    ],
+    [
+      "_RNvMsa_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_19ResidentBudgetMeter25preview_compute_and_nodes",
+      1
+    ]
+  ]
+}

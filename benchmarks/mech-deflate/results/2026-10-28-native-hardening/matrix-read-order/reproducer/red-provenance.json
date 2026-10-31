@@ -1,0 +1,18 @@
+{
+  "published_head": "88b9b89a3a425c9842e1e3cbf33bd914c6f48ebe",
+  "reproduced_runtime": "1e0f5ea48aa4fc0fdff456cf8b113f4a065ef8cb",
+  "reproducer_test_commit": "57abc1daf9c2c1223e6aed15f21f22094ec195a2",
+  "production_files": {
+    "src/engine/src/resident/general/native_collection_word_reads.rs": {
+      "published_sha256": "9b9d76b93105ad76f0ca7165dfe139fd6d46bcd54fe56eadd7e448915fa5d904",
+      "reproduced_sha256": "9b9d76b93105ad76f0ca7165dfe139fd6d46bcd54fe56eadd7e448915fa5d904",
+      "identical": true
+    },
+    "src/engine/src/resident/numeric/mod.rs": {
+      "published_sha256": "20642dba0bfd5bc388eced80df502462493a9619284d37743655277b17908d77",
+      "reproduced_sha256": "20642dba0bfd5bc388eced80df502462493a9619284d37743655277b17908d77",
+      "identical": true
+    }
+  },
+  "result": "Four retained word-read tests pass; corrected U64 test and new U8-first dynamic-shape oracle test fail on the old implementation."
+}

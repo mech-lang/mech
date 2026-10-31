@@ -1,0 +1,133 @@
+{
+  "exit": 1,
+  "classification": "introduced unused imports after shared numeric-word emitter extraction; warnings-as-errors preserved",
+  "source_unchanged_during_build": true,
+  "performance_claim": false,
+  "files": [
+    {
+      "path": "build.json",
+      "sha256": "0940c4f37564420f1d07f4c64923514f39ac08fafa8142226b98920ffcddecf9",
+      "bytes": 7256
+    },
+    {
+      "path": "build.stderr",
+      "sha256": "48a1cdd13a6f1a9307f612fe9ffb4d40a7941a91b91949a59bfe35a3024ca37c",
+      "bytes": 752
+    },
+    {
+      "path": "build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+      "sha256": "62f4f69e2aa6d9e804d995a4fc91afd80d3d3cbdef43c2d31fb2ceb69aac71b2",
+      "bytes": 73977
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/codegen/control/report/mod.rs",
+      "sha256": "4bbd4e24c5e3e017f36bcdef8a79e51bbf6640b4a14dd3e5eda91e5b28fe872e",
+      "bytes": 21442
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+      "sha256": "74cec573b214047841e3fee5fa343f3140cd78c8859bcb9845c06c6e418d9ea4",
+      "bytes": 1772
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/codegen/numeric_segments.rs",
+      "sha256": "eda656efb8491bf311985b6a2b5058089e0fdc4b8771f2fb2179872bfa2e7de2",
+      "bytes": 11268
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs",
+      "sha256": "34ae16c84f78340dd5cc490d3fb53a3a2a4fa8104dab93e58710d59b77ed5177",
+      "bytes": 7208
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+      "sha256": "c3088da36894adca2e51517292eec96491bf167641198f543796f478e4ffea3b",
+      "bytes": 18715
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/compiler.rs",
+      "sha256": "4769ea37906ee9d92af0e82de8e5b3e4a3cd165aeab91b97d5cb5d4fdcd66e99",
+      "bytes": 18279
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/image/identity.rs",
+      "sha256": "c0139ff8614b853d0bcf7b5e91a3fad6601de1e75a078ceb8ff8aca25261fc24",
+      "bytes": 63063
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/image/wire/mod.rs",
+      "sha256": "8f6804b25246d7ad9a37873c5bcd045d7905fcab1c40fd8f390dddc3d2294e1b",
+      "bytes": 11423
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/prepare/composition/frames.rs",
+      "sha256": "28edcebce0116ba59980c09b6f5cccda83c21710f55db7c2c8431fbc9fac9877",
+      "bytes": 11888
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/prepare/composition/numeric.rs",
+      "sha256": "a1f4b3db7e8b4b7bcdec247a63733d3f1e6904036703e3ba086e9e38c50ac11e",
+      "bytes": 7955
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/prepare/composition.rs",
+      "sha256": "d0fec927aba1e9a4f9329a246617ace047ce21819fe9ee7f93d4d006b443eab7",
+      "bytes": 14445
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/prepare/mod.rs",
+      "sha256": "99301f08f251d698b8c6c4d3e665b0dec772d3af1701873e0ec618a259204d8e",
+      "bytes": 26118
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/prepare/readonly_numeric.rs",
+      "sha256": "d034ef91fedea10c05711c2cde02cb768f2e5a9a43228f39fb7a4bfe7ed047d8",
+      "bytes": 21148
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/protocol/abi.rs",
+      "sha256": "f93b077b02ae82f7622992d4bd3739ccc2b53c34ed69e6c569347a9b44d0d9fc",
+      "bytes": 5674
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/protocol/mod.rs",
+      "sha256": "d54c212efb8bd03a0d6c62c58122e65a22fed8500f18092be36c3d75954419fd",
+      "bytes": 5528
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs",
+      "sha256": "e4e1cb963206cafa3d2ab49f6454ecf3c53918fe0bff175a501df235b3e61f22",
+      "bytes": 58475
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_segments.rs",
+      "sha256": "68d8b3ebc7f20b35d22170fb3e8ac6b8e0368a90fd448ba8078e25c714564515",
+      "bytes": 15627
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/program/runtime/invocation/tail.rs",
+      "sha256": "f2dd71b808f148c829ffb27be04ad8bf2c0ca83c7946e0dcf160076e08262436",
+      "bytes": 10309
+    },
+    {
+      "path": "source/hosts/gpu/src/native_artifact/values/mod.rs",
+      "sha256": "5fef7104737369c0d18e19e452077b718a4c7a31aada420978810557c624f7f4",
+      "bytes": 20955
+    },
+    {
+      "path": "source/hosts/gpu/tests/support/canonical_program_numeric_composition.rs",
+      "sha256": "30202b7079577851c1dac47baeb3627f33c777a5606c343cc7f4e5df1148252e",
+      "bytes": 17006
+    },
+    {
+      "path": "source.diff",
+      "sha256": "62fd101a0ff3230c5266e2457f831794abbc1ca03e30976a8effa8b6fea52c7e",
+      "bytes": 38971
+    }
+  ]
+}

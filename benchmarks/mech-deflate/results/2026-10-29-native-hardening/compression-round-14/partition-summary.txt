@@ -1,0 +1,3 @@
+round13 1347 {'remaining': 89, 'other_invocation_helper': 377, 'selected_library_call': 196, 'buffer_frame_actions': 472, 'ordinary_control_visit': 213} {'other_admission': 80, 'managed_value_footprint': 124, 'native_scalar_footprint': 78, 'frame_shape_validation': 47}
+combined 1352 {'remaining': 122, 'other_invocation_helper': 440, 'selected_library_call': 229, 'buffer_frame_actions': 327, 'ordinary_control_visit': 234} {'other_admission': 146}
+footprint_only 1354 {'remaining': 122, 'other_invocation_helper': 397, 'selected_library_call': 211, 'buffer_frame_actions': 369, 'ordinary_control_visit': 255} {'other_admission': 134, 'frame_shape_validation': 62}

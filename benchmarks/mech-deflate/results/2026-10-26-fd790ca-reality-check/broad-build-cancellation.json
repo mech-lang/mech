@@ -1,0 +1,13 @@
+{
+  "reason": "Stopped overly broad integration-test release build in response to user steering; will use a focused executable. This is a cancellation, not a compiler test failure.",
+  "processes": [
+    {
+      "pid": 90318,
+      "process": "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc"
+    },
+    {
+      "pid": 89223,
+      "process": "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/cargo"
+    }
+  ]
+}

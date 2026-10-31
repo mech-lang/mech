@@ -1,0 +1,28 @@
+error[E0277]: no implementation for `u16 & i32`
+   --> /private/tmp/mech-deflate-linear-stack/src/core/src/memory_plan/budget.rs:269:37
+    |
+269 |             let limit = |bit| (mask & (1 << bit) != 0).then_some(0);
+    |                                     ^ no implementation for `u16 & i32`
+    |
+    = help: the trait `BitAnd<i32>` is not implemented for `u16`
+help: the following other types implement trait `BitAnd<Rhs>`
+   --> /rustc/ec818fda361ca216eb186f5cf45131bd9c776bb4/library/core/src/internal_macros.rs:22:8
+    |
+    = note: `&u16` implements `BitAnd<u16>`
+   ::: /rustc/ec818fda361ca216eb186f5cf45131bd9c776bb4/library/core/src/internal_macros.rs:33:8
+    |
+    = note: `u16` implements `BitAnd<&u16>`
+   ::: /rustc/ec818fda361ca216eb186f5cf45131bd9c776bb4/library/core/src/internal_macros.rs:44:8
+    |
+    = note: `&u16` implements `BitAnd`
+   --> /rustc/ec818fda361ca216eb186f5cf45131bd9c776bb4/library/core/src/ops/bit.rs:174:8
+    |
+    = note: `u16` implements `BitAnd`
+   ::: /rustc/ec818fda361ca216eb186f5cf45131bd9c776bb4/library/core/src/ops/bit.rs:187:0
+    |
+    = note: in this macro invocation
+    = note: this error originates in the macro `forward_ref_binop` which comes from the expansion of the macro `bitand_impl` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: aborting due to 1 previous error
+
+For more information about this error, try `rustc --explain E0277`.

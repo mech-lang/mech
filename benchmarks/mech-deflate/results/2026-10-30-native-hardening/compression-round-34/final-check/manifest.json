@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-30T15:55:54.100291+00:00",
+  "head": "7120ea57aa25ba33a8b258e25632d95ba90e6afc",
+  "files": [
+    {
+      "path": "final-check/diff.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "final-check/diff.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "final-check/format.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "final-check/format.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "final-check/results.json",
+      "sha256": "1c4031dd25cbee771baeb4428d9ce64787ea6ac9119fa579c1601758467a3ed7",
+      "bytes": 329
+    }
+  ]
+}

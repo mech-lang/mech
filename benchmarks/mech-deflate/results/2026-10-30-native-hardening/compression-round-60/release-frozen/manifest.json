@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-31T14:57:36.613190+00:00",
+  "head": "f7a35b2210fdec012aed82cf61b5a0eed81759a1",
+  "files": [
+    {
+      "path": "allocation-target.json",
+      "sha256": "bf0228f212ccd6faa7e46ef444294093dd58289bdf542f2e61341683f579b96d",
+      "bytes": 479
+    },
+    {
+      "path": "auxiliary-dependencies.json",
+      "sha256": "222678222457a308e8bea729f7bfeb3fc8ee735bb82e9df67cf6ebd2b9f32363",
+      "bytes": 5927
+    },
+    {
+      "path": "build-native.py",
+      "sha256": "118c5511ed430def91b668ff5ea2e558b1177331ae5f38c9ae5bbed17bcfb992",
+      "bytes": 3191
+    },
+    {
+      "path": "final-release.json",
+      "sha256": "f16529b8a9041e668a7d3c582baca989792d2609e6b110640be6ef8f4ec42a6a",
+      "bytes": 5511
+    },
+    {
+      "path": "implementation.json",
+      "sha256": "055c3a2132080d251104d701f4431771c43e25bdf55a7432df7802bc937157cb",
+      "bytes": 788
+    },
+    {
+      "path": "variants/after/libraries.json",
+      "sha256": "7553d041bfb9c4cd46bdbe7fb42fca88dcae13cd2ae99f849f5e3c4f58e93b81",
+      "bytes": 10917
+    }
+  ]
+}
