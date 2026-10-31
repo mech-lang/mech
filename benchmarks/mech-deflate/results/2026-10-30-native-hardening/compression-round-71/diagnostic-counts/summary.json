@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "observations": 4,
+  "consistent_per_call_counts": {
+    "shared_compute_debit_attempts": 39030,
+    "admit_callback_attempts": 12450,
+    "helper_callback_attempts": 8836,
+    "helper_Library": 2475,
+    "helper_Move": 1341,
+    "helper_Collection": 505,
+    "helper_Output": 1,
+    "helper_ClosedTailBegin": 270,
+    "helper_ClosedTailEnd": 270,
+    "helper_StructuralObservation": 2806,
+    "helper_NumericWritePrepare": 168,
+    "helper_NumericSegmentBegin": 500,
+    "helper_NumericSegmentEnd": 500,
+    "frame_Pack_selected": 847,
+    "frame_Copy_selected": 1139,
+    "frame_Project_selected": 3547,
+    "frame_Project_composite_child": 10,
+    "frame_Project_selected_scalar_word": 392,
+    "frame_Project_selected_managed_child": 339
+  },
+  "compiler_source": "c77e0e8ee2455280755e86cde6c8651a6e9920a7",
+  "instrumented_gpu_sha256": "05a7c2796906efa84b08f11e0359a1ac016b3446eb893966b6f130da115ad531",
+  "worker_sha256": "49c45ab42231ac5a29a5cb16aabf40fae6d81551cb256b8b4d7e85288921467e",
+  "patch_sha256": "2ab819aa6e79779f23a73a6fd7fbd1b7ce884b422f16ce61a1018e37f6512f8f",
+  "production_source_note": "Only a staged copy of current GPU production source is instrumented; the current R71 candidate Engine and frozen Core are linked, with the unchanged compressor Object/image. The current checked-total edit is included in this diagnostic, which is excluded from performance acceptance.",
+  "scope": "Dynamic mechanism counts only. Shared compute-debit attempts count the sole production call site of NativeLibraryWorkBudget::charge_compute_with_limit. Selected frame counts are subsets of helpers, not additive independent work. No retired-instruction attribution or timing gain follows from these counts. All instrumentation excluded from primary/counter/allocator acceptance."
+}
