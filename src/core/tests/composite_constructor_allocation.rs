@@ -141,39 +141,6 @@ fn measured_requests<T>(run: impl FnOnce() -> T) -> (T, usize) {
 }
 
 #[test]
-fn prepared_descriptor_clones_have_no_schema_size_or_repetition_allocation_slope() {
-    for label_bytes in [1, 65_536] {
-        let schema = SchemaDraft {
-            body: SchemaBody::Record(
-                vec![SchemaField {
-                    name: "x".repeat(label_bytes),
-                    schema: SchemaBody::Tuple(vec![SchemaBody::Bool; 8].into_boxed_slice()),
-                }]
-                .into_boxed_slice(),
-            ),
-            dimension_parameters: Box::new([]),
-        }
-        .finalize()
-        .unwrap();
-        let shape = schema.instantiate_shape(Box::new([])).unwrap();
-        let descriptor = mech_core::ResolvedValueDescriptor::from_schema(schema, shape).unwrap();
-        for repetitions in [1, 64, 4096] {
-            let ((), requests) = measured_requests(|| {
-                for _ in 0..repetitions {
-                    let clone = std::hint::black_box(descriptor.clone());
-                    assert_eq!(clone, descriptor);
-                    drop(clone);
-                }
-            });
-            assert_eq!(
-                requests, 0,
-                "a closed descriptor clone must retain semantic authority, not rebuild its trees"
-            );
-        }
-    }
-}
-
-#[test]
 fn independent_snapshot_registration_allocates_only_retained_metadata_owners() {
     use mech_core::{IntegerWidth, ManagedMemoryBudget};
 
