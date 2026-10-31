@@ -1853,7 +1853,8 @@
         "expected_tests": 132,
         "observed_tests": 132,
         "inventory_only": false,
-        "passed": true
+        "passed": true,
+        "test_source_head": "799a7807a69133decd8947afa9df4b75e011e8d6"
       },
       {
         "receipt": "linked-acceptance/emit-build.json",
@@ -2761,6 +2762,11 @@
         "receipt": "second snapshot attempt archive-stage collision (root report; no separate raw receipt supplied)",
         "classification": "introduced harness archival collision after a successful build",
         "disposition": "The second fixture build succeeded, then archiving collided with a preserved prior stage name. The corrected attempt received its own archive prefix and resumed using the already successful build. Original stages remain preserved. This was not a compiler/test-build failure and no performance observation was discarded."
+      },
+      {
+        "receipt": "Final replay after adding current-workflow and compiled-artifact receipts",
+        "classification": "introduced report-assembly staleness; no compiler or timing failure",
+        "disposition": "The earlier 65-archive replay passed. Adding the final workflow receipt changed validation.checks[18].test_source_head from absent to 799a7807a69133decd8947afa9df4b75e011e8d6, so replay correctly rejected the stale scorecard. Recompute validation and scorecard from all final receipts before the final byte-identical replay. Both earlier report and newer receipt remain archived."
       }
     ],
     "runtime_coverage": {
