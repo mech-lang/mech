@@ -264,3 +264,77 @@ mod recovery;
 
 #[path = "canonical_program_numeric_write_paths.rs"]
 mod paths;
+
+#[test]
+fn numeric_static_vector_writes_preserve_current_shapes_and_first_change_aliases() {
+    for (rows, columns) in [(1u64, 6u64), (6, 1), (2, 3)] {
+        let source = format!(
+            "<words> := <[u32]:{rows},{columns}>\n{}",
+            WRITE.replace("<[u32]>", "<words>")
+        );
+        selected(&source, true);
+        for artifact in artifacts(&source).0 {
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let mode = NativeProgramLimitMode::NoLimits;
+            let memory = mode.memory_budget();
+            let mut out = vec![None; artifact.outputs().len()];
+            for steps in [4, 7, 6] {
+                let args = inputs(
+                    &artifact,
+                    &[
+                        ("data", matrix((0..6).map(Data::U32))),
+                        ("steps", Data::U64(steps)),
+                    ],
+                    &memory,
+                );
+                let aliases = args.clone();
+                let before = args
+                    .iter()
+                    .map(|v| v.canonical_data_draft().unwrap())
+                    .collect::<Vec<_>>();
+                let prior = out.clone();
+                let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                let expected = reference_result(&artifact, &args);
+                let actual = jit.evaluate_into(&args, &mut out, mode.execution(), &memory);
+                if steps <= 6 {
+                    actual.unwrap();
+                    equal(&artifact, &out, &expected.unwrap());
+                    let wanted = matrix((0u64..6).map(|physical| {
+                        let logical = (physical % columns) * rows + physical / columns;
+                        Data::U32(physical as u32 + u32::from(logical < steps))
+                    }));
+                    assert_eq!(result(&out), wanted);
+                } else {
+                    assert!(expected.is_err());
+                    assert!(actual.is_err());
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        retained
+                    );
+                    assert!(out.iter().zip(&prior).all(|(now, old)| {
+                        now.as_ref()
+                            .unwrap()
+                            .shares_frozen_storage(old.as_ref().unwrap())
+                    }));
+                }
+                assert_eq!(
+                    args.iter()
+                        .map(|v| v.canonical_data_draft().unwrap())
+                        .collect::<Vec<_>>(),
+                    before
+                );
+                assert!(
+                    args.iter()
+                        .zip(&aliases)
+                        .all(|(now, old)| now.shares_frozen_storage(old))
+                );
+            }
+            drop(out);
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
+    }
+}

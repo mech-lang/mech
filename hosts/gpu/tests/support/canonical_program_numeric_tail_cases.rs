@@ -352,3 +352,102 @@ fn readonly_numeric_checked_visits_keep_error_order_publication_and_retry() {
         }
     }
 }
+
+#[test]
+fn numeric_static_vector_and_rectangular_reads_keep_bounds_aliases_and_retry() {
+    for (rows, columns) in [(1u64, 6u64), (6, 1), (2, 3), (1, 0)] {
+        let source = format!(
+            "<words> := <[u32]:{rows},{columns}>\nwalk(xs<words>, i<u64>, end<u64>, total<u64>) => (out<u64>) :=\n  more := i < end\n  word<u64> := (more? | true => xs[i + 1u64] | false => 0u32)\n  next := total + word\n  out := (more? | true => walk(xs, i + 1u64, end, next) | false => total).\nwalk(data<words>, 0u64, steps<u64>, seed<u64>)\n"
+        );
+        selected(&source, true, false);
+        let mut work = Vec::new();
+        for artifact in artifacts(&source).0 {
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let mut published = vec![None; artifact.outputs().len()];
+            let count = rows * columns;
+            let mut current_work = Vec::new();
+            // A real bounds failure occurs after a valid prefix. Recovery then
+            // uses fresh input owners and scalar arguments in the same image.
+            for (steps, seed, bump) in [
+                (0, 17, 0),
+                (count.min(4), 0, 10),
+                (count + 1, 0, 0),
+                (count, 3, 20),
+            ] {
+                let args = inputs(
+                    &artifact,
+                    &[
+                        (
+                            "data",
+                            matrix((0..count).map(|n| Data::U32((n + 1 + bump) as u32))),
+                        ),
+                        ("steps", Data::U64(steps)),
+                        ("seed", Data::U64(seed)),
+                    ],
+                    &memory,
+                );
+                let aliases = args.clone();
+                let contents = args
+                    .iter()
+                    .map(|v| v.canonical_data_draft().unwrap())
+                    .collect::<Vec<_>>();
+                let old = published.clone();
+                let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                let expected = reference_result(&artifact, &args);
+                let actual = jit.evaluate_into(&args, &mut published, witness_limits(), &memory);
+                if steps <= count {
+                    let report = actual.unwrap();
+                    current_work.push(report.work);
+                    super::super::equal(&artifact, &published, &expected.unwrap());
+                    let total = seed
+                        + (0..steps)
+                            .map(|logical| {
+                                let physical = (logical % rows) * columns + logical / rows;
+                                physical + 1 + bump
+                            })
+                            .sum::<u64>();
+                    assert_eq!(result(&published), Data::U64(total));
+                } else {
+                    assert!(expected.is_err());
+                    let error = format!("{:?}", actual.unwrap_err());
+                    assert!(
+                        !error.contains("Arithmetic"),
+                        "original bounds error must win: {error}"
+                    );
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        retained
+                    );
+                    assert!(published.iter().zip(&old).all(|(now, old)| {
+                        now.as_ref()
+                            .unwrap()
+                            .shares_frozen_storage(old.as_ref().unwrap())
+                    }));
+                }
+                assert_eq!(
+                    args.iter()
+                        .map(|v| v.canonical_data_draft().unwrap())
+                        .collect::<Vec<_>>(),
+                    contents
+                );
+                assert!(
+                    args.iter()
+                        .zip(&aliases)
+                        .all(|(now, old)| now.shares_frozen_storage(old))
+                );
+            }
+            work.push(current_work);
+            drop(published);
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
+        assert_eq!(
+            work[0], work[1],
+            "decoded geometry must retain the same finite work"
+        );
+    }
+}
