@@ -1,0 +1,76 @@
+{
+  "created_utc": "2026-10-31T15:05:36.360854+00:00",
+  "head": "0afee9bfc8afa8681865dc4c6cb57a03ac24556c",
+  "files": [
+    {
+      "path": "archive-recovery.json",
+      "sha256": "bc3f68a0be799ee0f8b10e516f8118dcff2546e518a73225283ec4e95d45bb23",
+      "bytes": 305
+    },
+    {
+      "path": "binary-audit/after/audit.json",
+      "sha256": "e868b3efea9eb0e065f3433e380282c674f1d0681aee922638fe445ca3d114b7",
+      "bytes": 10571
+    },
+    {
+      "path": "binary-audit/after/disassembly-command.json",
+      "sha256": "2c35fc145658df9e0ad56bc868cfaa532641bb103c806cd2e750d04ba0b84c78",
+      "bytes": 175
+    },
+    {
+      "path": "binary-audit/after/objdump.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "binary-audit/after/site797-helper-anchor-context.asm",
+      "sha256": "8fabeab3c067b59457c38f8175924c7530ce9d33f7861f01dd081bee373ee651",
+      "bytes": 50255
+    },
+    {
+      "path": "binary-audit/before/audit.json",
+      "sha256": "cca1a913900ed9ab4344f2b6b3dee7906189ec3366a1d63bfcf2097b3f01e197",
+      "bytes": 10586
+    },
+    {
+      "path": "binary-audit/before/disassembly-command.json",
+      "sha256": "8cab258e195754bbeed1a63e8a4a607c29c15fa5b5544fd694c070e58b017857",
+      "bytes": 178
+    },
+    {
+      "path": "binary-audit/before/objdump.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "binary-audit/before/site797-helper-anchor-context.asm",
+      "sha256": "b3d9eb55d6d63f7e92e43025c79e20379b1a0cff63a4fdf6c1c1bd59261c91a5",
+      "bytes": 50138
+    },
+    {
+      "path": "binary-audit/before/verified-R56-site797-command.json",
+      "sha256": "921751a20cf514df032b22575dbaee7f212cec14dfc02ca0baede29a9d2ed657",
+      "bytes": 185
+    },
+    {
+      "path": "binary-audit/before/verified-R56-site797.asm",
+      "sha256": "95aafb282b7992234ed2c59a1ec2b14c924072b53ffd9ea8959af9d47cd6af97",
+      "bytes": 7860
+    },
+    {
+      "path": "binary-audit/comparison.json",
+      "sha256": "3d88536dd57155597fec48aa194a1e793bb701efb91d6253c9514c05500024c5",
+      "bytes": 2567
+    },
+    {
+      "path": "binary-audit.json",
+      "sha256": "3d88536dd57155597fec48aa194a1e793bb701efb91d6253c9514c05500024c5",
+      "bytes": 2567
+    },
+    {
+      "path": "compare-native-objects.py",
+      "sha256": "961a7b06487f8933af9c1b2db0cb6c592565517c112e23d985a40f4f8baecbcf",
+      "bytes": 8169
+    }
+  ]
+}
