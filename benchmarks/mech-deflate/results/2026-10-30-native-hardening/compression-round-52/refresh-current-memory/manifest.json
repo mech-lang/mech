@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-31T09:15:46.091050+00:00",
+  "head": "6f4c584176fac10351bb5e0015a2a80162eaf272",
+  "files": [
+    {
+      "path": "finish-refresh.py",
+      "sha256": "5defde832474e42339569ea2aac316d116a5ea80094e6deaa379f7325a22bf92",
+      "bytes": 2780
+    },
+    {
+      "path": "refresh/current-memory/run.json",
+      "sha256": "c388493ee1722e91c51434bf8707f49cbfe9e9032936d661a93eb771f4b1fffd",
+      "bytes": 496
+    },
+    {
+      "path": "refresh/current-memory/run.stderr",
+      "sha256": "d030e2e11ff0de7324e48d17ca9d7643da4fc0544fb0f74e104d494150b64c3f",
+      "bytes": 8901
+    },
+    {
+      "path": "refresh/current-memory/run.stdout",
+      "sha256": "8a5add890ea595044ba4074b13d200f3172d4e0bc2e8ac55ba04b3154b544c39",
+      "bytes": 3956
+    },
+    {
+      "path": "refresh/memory-build.json",
+      "sha256": "649cc1de5ba25fc63acda0127b253975ce4c2f690e5f2a4d3bfbadcea4b00143",
+      "bytes": 20702
+    },
+    {
+      "path": "refresh/memory-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "refresh/memory-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}
