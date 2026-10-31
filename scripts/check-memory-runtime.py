@@ -237,6 +237,20 @@ def frozen_rebind_returns_preserve_ownership(body: str, schema_owner: str) -> bo
         "root": "self.root.clone()",
         "schemas": compact(schema_owner.split(":", 1)[1]),
     }
+    # Equivalent primitive matrix geometry can share the data owner while
+    # retaining a different, independently admitted target shape. Accept that
+    # local shape only at this complete checked preparation, immediately
+    # before its return; a shape marker elsewhere is not authority.
+    matrix_shape_preparation = (
+        "ifequivalent_at_shape&&matches!(target_schema.body(),"
+        "SchemaBody::Matrix{element,..}ifmatches!(element.as_ref(),"
+        "SchemaBody::UnsignedInteger(_)|SchemaBody::SignedInteger(_)|"
+        "SchemaBody::FloatingPoint(_)|SchemaBody::Bool)){"
+        "letmutparameters=context.try_vec_with_capacity(shape.parameter_values().len())?;"
+        "parameters.extend_from_slice(shape.parameter_values());"
+        "letshape=context.try_arc("
+        "target_schema.instantiate_shape(parameters.into_boxed_slice())?)?;"
+    )
     clones = shared = 0
     for returned in re.finditer(r"\breturn\b", body):
         call = re.match(r"return\s+(Ok|Err)\s*\(", body[returned.start():])
@@ -268,7 +282,10 @@ def frozen_rebind_returns_preserve_ownership(body: str, schema_owner: str) -> bo
             if name in actual:
                 return False
             actual[name] = expression if separator else name
-        if actual != expected:
+        expected_return = expected
+        if compact(body[:returned.start()]).endswith(matrix_shape_preparation):
+            expected_return = {**expected, "shape": "shape"}
+        if actual != expected_return:
             return False
         shared += 1
     return clones > 0 and shared > 0
