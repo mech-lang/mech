@@ -370,6 +370,13 @@ fn private_numeric_publication_and_exclusive_retirement_do_not_allocate() {
                         schemas.clone(),
                     )
                     .unwrap();
+                    let probe = Value::from_unsigned_matrix_buffer(
+                        id,
+                        shape.clone(),
+                        UnsignedMatrixBuffer::$variant(vec![$word; 3]),
+                        schemas.clone(),
+                    )
+                    .unwrap();
                     let old_identity = raw.frozen_storage_identity();
                     let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
                     let bytes = raw.memory_budget_admission_bytes(&memory).unwrap();
@@ -419,8 +426,18 @@ fn private_numeric_publication_and_exclusive_retirement_do_not_allocate() {
                             "last immutable alias must retire without allocation"
                         );
                     }
-                    assert!(memory.check_snapshot_import_allocation(1, 1).is_err());
                     drop(rest);
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        (0, 0)
+                    );
+                    let bytes = probe.memory_budget_admission_bytes(&memory).unwrap();
+                    let mut reservation = memory.reserve_capacity(bytes).unwrap();
+                    assert!(
+                        probe.into_memory_budget(&mut reservation).is_err(),
+                        "publication and retirement must leave the injected failure armed"
+                    );
+                    drop(reservation);
                     assert_eq!(
                         (memory.used_bytes(), memory.retained_snapshot_nodes()),
                         (0, 0)
