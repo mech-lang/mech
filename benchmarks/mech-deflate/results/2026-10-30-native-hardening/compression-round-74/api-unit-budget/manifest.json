@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-31T23:40:23.514465+00:00",
+  "head": "ea9f794bbcc12cef142a3a01dca8742f60731afe",
+  "files": [
+    {
+      "path": "api-check.py",
+      "sha256": "dc5d14f76423e7eabe91d97896d3047f61a9fb762fd194f04badb7e11b0e02c8",
+      "bytes": 3022
+    },
+    {
+      "path": "api-unit/budget.json",
+      "sha256": "fbd2f3ea28a86da9096e9b4d2d37d7c5378a4e8c5ec99335116073e30838863b",
+      "bytes": 56637
+    },
+    {
+      "path": "api-unit/budget.stderr",
+      "sha256": "ffd8f9348a9277ca488110a1a21ae9d43331915423208a831d17ba4d4769bf4d",
+      "bytes": 2544
+    },
+    {
+      "path": "api-unit/budget.stdout",
+      "sha256": "04027167983d5b7e65567f768e74056a577291fdd33257875be07adab341f309",
+      "bytes": 13627
+    },
+    {
+      "path": "api-unit/source/src/engine/src/resident/budget.rs",
+      "sha256": "957e667d51a867f04a193ee63e82a3e8020f2b09accd4e2c7cf3020dd524f63f",
+      "bytes": 172084
+    },
+    {
+      "path": "api-unit/source/src/engine/src/resident/native_work_context.rs",
+      "sha256": "f8ddd5709a2dbc15b1d40f04860ac9cb2993cdb37990ed90eca8cfa3c128bbad",
+      "bytes": 1469
+    },
+    {
+      "path": "api-unit/source/src/engine/src/resident/native_work_context_tests.rs",
+      "sha256": "17edb1ef8e8aa0c021531798a9386074ea4e1859ff08af8e3aacdd44d93fd4b0",
+      "bytes": 6972
+    }
+  ]
+}
