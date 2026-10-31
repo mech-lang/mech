@@ -116,6 +116,27 @@ class MemoryRuntimeCheckerTests(unittest.TestCase):
                      "} else {\n            cached_token")
         self.assert_failure(root, "do not preserve shared frozen ownership")
 
+    def test_shared_matrix_rebind_cannot_skip_target_shape_admission(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "context.try_arc(target_schema.instantiate_shape(parameters.into_boxed_slice())?)?",
+                     "Arc::new(target_schema.instantiate_shape(parameters.into_boxed_slice())?)")
+        self.assert_failure(root, "do not preserve shared frozen ownership")
+
+    def test_shared_matrix_rebind_cannot_skip_equal_primitive_geometry(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "if equivalent_at_shape\n            && matches!(target_schema.body()",
+                     "if true\n            && matches!(target_schema.body()")
+        self.assert_failure(root, "do not preserve shared frozen ownership")
+
+    def test_shared_matrix_rebind_cannot_keep_the_old_shape(self):
+        root = self.fixture()
+        self.replace(root, "src/core/src/snapshot/validation.rs",
+                     "                shape,\n                root: self.root.clone(),",
+                     "                shape: self.shape.clone(),\n                root: self.root.clone(),")
+        self.assert_failure(root, "do not preserve shared frozen ownership")
+
     def test_00e_each_finalizer_must_initialize_a_fresh_owner_cache(self):
         path = "src/core/src/snapshot/validation.rs"
         source = (REPOSITORY / path).read_text(encoding="utf-8")
