@@ -1,0 +1,66 @@
+{
+  "created_utc": "2026-10-31T05:46:37.529007+00:00",
+  "head": "a31b0e3cc5b1a4e5a842d5af9e5f33c2edfd3503",
+  "files": [
+    {
+      "path": "host-code/after-0.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "host-code/after-0.stdout",
+      "sha256": "e2d2933b1b75fa522667512bdbd0428da809cf1ecc5eb15c5fcea0c07938261e",
+      "bytes": 2465
+    },
+    {
+      "path": "host-code/after-1.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "host-code/after-1.stdout",
+      "sha256": "0c8431479c94fafa7fb1ff389f3d5619901a2257429b275e7bee57650d01486b",
+      "bytes": 73455
+    },
+    {
+      "path": "host-code/after.symbols",
+      "sha256": "bc5c97e78f661ce53c9eef51e38b77feb17cf934fba47b0b08656ffee5837ec2",
+      "bytes": 283
+    },
+    {
+      "path": "host-code/before-0.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "host-code/before-0.stdout",
+      "sha256": "f2cbfb5a3b5ba6a54d3654cc3b19885aa2378c4dd89289fcf03db7330fb8eb22",
+      "bytes": 2466
+    },
+    {
+      "path": "host-code/before-1.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "host-code/before-1.stdout",
+      "sha256": "9fbad68e97d13f80719a3f1eb5f324280282cd36c340a7ee4c9f397652ef1746",
+      "bytes": 70132
+    },
+    {
+      "path": "host-code/before.symbols",
+      "sha256": "51213e4d92f65d1e4b19a1e3647a2dafb624209cdf5c000a3b05d635acf2ee46",
+      "bytes": 283
+    },
+    {
+      "path": "host-code/result.json",
+      "sha256": "e1233e9459f173d488a25e6484bb23f571c6c081ec3fe6a57182edc3e63b0153",
+      "bytes": 31835
+    },
+    {
+      "path": "inspect-host.py",
+      "sha256": "ddb80143ed3450d8e2d95f0ece31e16499a9cfadf25e93b9986f24bf2fc8f10e",
+      "bytes": 2292
+    }
+  ]
+}
