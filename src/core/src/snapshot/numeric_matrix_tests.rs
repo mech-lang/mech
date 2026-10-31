@@ -267,3 +267,128 @@ fn typed_numeric_matrix_checks_kinds_constraints_and_parameter_shapes() {
         Value::from_u64_matrix(dynamic_id, fixed_shape, [1, 2].into(), dynamic_schemas).is_err()
     );
 }
+
+#[test]
+fn borrowed_numeric_matrix_validation_rechecks_foreign_bounds_and_extent_overflow() {
+    use crate::{
+        DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+        DimensionParameterOrigin,
+    };
+    fn parameterized(rows: u64, lower: u64, upper: Option<u64>) -> (SchemaId, Arc<SchemaTable>) {
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+                        dimensions: [
+                            DimensionExpr::Constant(rows),
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                        ]
+                        .into(),
+                    },
+                    dimension_parameters: [DimensionParameterDeclaration {
+                        id: DimensionParameterId::new(0),
+                        origin: DimensionParameterOrigin::Explicit,
+                        lifetime: DimensionLifetime::Activation,
+                        lower_bound: DimensionExpr::Constant(lower),
+                        upper_bound: upper.map(DimensionExpr::Constant),
+                    }]
+                    .into(),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        (built.resolve(handle).unwrap(), Arc::new(built.table))
+    }
+    let (foreign_id, foreign) = parameterized(1, 0, None);
+    for (rows, lower, upper, parameter) in [
+        (1, 2, Some(4), 1),
+        (1, 2, Some(4), 5),
+        (2, 0, None, u64::MAX),
+    ] {
+        let shape = foreign
+            .get(foreign_id)
+            .unwrap()
+            .instantiate_shape([parameter].into())
+            .unwrap();
+        let (id, schemas) = parameterized(rows, lower, upper);
+        let key = schemas.entry(id).unwrap().key();
+        // Shape/bound/overflow errors precede payload cardinality errors.
+        assert_eq!(
+            Value::from_u64_matrix(id, shape, Box::new([]), schemas).unwrap_err(),
+            SnapshotValueError::SnapshotSchemaDefinitionMismatch { key }
+        );
+    }
+}
+
+#[test]
+fn borrowed_numeric_matrix_validation_resolves_original_dimension_expressions() {
+    use crate::{
+        DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+        DimensionParameterOrigin,
+    };
+    let mut builder = SchemaTableBuilder::new();
+    let handle = builder
+        .insert(
+            SchemaDraft {
+                body: SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+                    dimensions: [
+                        DimensionExpr::Constant(2),
+                        DimensionExpr::Add(
+                            [
+                                DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                                DimensionExpr::Constant(1),
+                            ]
+                            .into(),
+                        ),
+                    ]
+                    .into(),
+                },
+                dimension_parameters: [DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(0),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime: DimensionLifetime::Activation,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: Some(DimensionExpr::Constant(8)),
+                }]
+                .into(),
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let built = builder.finish().unwrap();
+    let id = built.resolve(handle).unwrap();
+    let schemas = Arc::new(built.table);
+    for parameter in [0, 2, 8] {
+        let shape = schemas
+            .get(id)
+            .unwrap()
+            .instantiate_shape([parameter].into())
+            .unwrap();
+        let count = (2 * (parameter + 1)) as usize;
+        let expected = ValueDraft {
+            schema: id,
+            shape_values: [parameter].into(),
+            data: ValueDataDraft::Matrix(vec![ValueDataDraft::U64(7); count].into()),
+        }
+        .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+        .unwrap();
+        let actual =
+            Value::from_u64_matrix(id, shape, vec![7; count].into(), Arc::clone(&schemas)).unwrap();
+        assert_eq!(actual.shape(), expected.shape());
+        assert_eq!(
+            actual.canonical_data_draft().unwrap(),
+            expected.canonical_data_draft().unwrap()
+        );
+        assert_eq!(
+            actual.value_hash(&schemas).unwrap(),
+            expected.value_hash(&schemas).unwrap()
+        );
+        actual.validate_against(&schemas).unwrap();
+    }
+}
