@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T00:54:15.643654+00:00",
+  "head": "fc86a1722e35f3b8e280049cd294361310226a6b",
+  "files": [
+    {
+      "path": "build.py",
+      "sha256": "cd87c094c75b5882130ee5ad60f193bd972136646efca1a7b7bb2842b170aa00",
+      "bytes": 2082
+    },
+    {
+      "path": "final-libraries.json",
+      "sha256": "5f4d35065b48027e1f6979d1eb2e914632146c7440f4583d306624aea1cd9b7f",
+      "bytes": 10796
+    },
+    {
+      "path": "final-release.json",
+      "sha256": "b843b1ec567c178aa34b35044d5c6c030ad0fe5c0ca0922b533dab35ae92e417",
+      "bytes": 731
+    },
+    {
+      "path": "final-release.log",
+      "sha256": "21985334aaafea7ea20b425bc8583d8cead11e1ad597f556b187018b5a045b63",
+      "bytes": 167351
+    },
+    {
+      "path": "final-release.stderr",
+      "sha256": "f1765a23f6d753d2bc7b14ff574390cda9832131a1edd1079a699a79b34f05da",
+      "bytes": 275
+    }
+  ]
+}
