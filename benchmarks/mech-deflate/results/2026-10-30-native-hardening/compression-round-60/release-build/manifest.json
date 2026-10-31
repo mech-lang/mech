@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T14:57:36.457520+00:00",
+  "head": "aea11e1f17f05055535171fa1b0cb8b5ff2d4bcf",
+  "files": [
+    {
+      "path": "build-native.py",
+      "sha256": "118c5511ed430def91b668ff5ea2e558b1177331ae5f38c9ae5bbed17bcfb992",
+      "bytes": 3191
+    },
+    {
+      "path": "variants/after/host.json",
+      "sha256": "f16529b8a9041e668a7d3c582baca989792d2609e6b110640be6ef8f4ec42a6a",
+      "bytes": 5511
+    },
+    {
+      "path": "variants/after/host.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "variants/after/host.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}
