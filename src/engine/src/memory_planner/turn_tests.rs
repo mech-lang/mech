@@ -141,3 +141,158 @@ fn owned_turn_template_restores_limits_after_rejections_and_retries() {
         assert_eq!(call, original);
     }
 }
+
+fn scratch_template() -> CallMemoryPlan {
+    let original = template();
+    let mut target = original.target.clone();
+    target.limits = MemoryBudgetLimits::default();
+    let mut call = plan_call_memory(CallMemoryPlanningRequest {
+        bound_call: &original.bound_call,
+        input_storage: &original.input_storage,
+        output_storage: &original.output_storage,
+        input_witnesses: &original.input_witnesses,
+        output_witnesses: &original.output_witnesses,
+        published_output_witnesses: &original.output_witnesses,
+        implementation_memory: ImplementationMemoryClass::CanonicalFinalize,
+        target: &target,
+        regions: &original.output_regions,
+    })
+    .unwrap();
+    call.target.limits = original.target.limits;
+    assert!(
+        call.allocations
+            .iter()
+            .any(|a| matches!(a.owner, mech_core::MemoryObjectOwner::NodeScratch { .. }))
+    );
+    call
+}
+
+// Preserve the exact former native adapter as an independent input-projection
+// oracle. Both projections use the maintained general turn planner, not a
+// duplicate output expectation or a detached substitute plan.
+fn owned_single_call_projection(
+    original: &CallMemoryPlan,
+    node: mech_core::NodeId,
+    facts: &super::TurnMemoryFacts,
+) -> Result<super::TurnMemoryPlan, MemoryPlanError> {
+    let mut call = original.clone();
+    for allocation in &mut call.allocations {
+        if let mech_core::MemoryObjectOwner::NodeScratch { node: owner, .. } = &mut allocation.owner
+        {
+            *owner = node;
+        }
+    }
+    super::plan_turn_memory(
+        &super::ProgramMemoryPlan {
+            call_nodes: Box::new([node]),
+            allocations: call.allocations.clone(),
+            budget_limits: call.target.limits,
+            calls: Box::new([call]),
+            ..Default::default()
+        },
+        node,
+        facts,
+    )
+}
+
+#[test]
+fn borrowed_single_call_projection_keeps_current_facts_scratch_and_finite_violations() {
+    for node in [mech_core::NodeId(0), mech_core::NodeId(37)] {
+        let call = scratch_template();
+        let original = call.clone();
+        for bytes in [0, 13, 511] {
+            let facts = super::TurnMemoryFacts {
+                resolved_footprints: BTreeMap::from([
+                    ((node, PortDirection::Input, 0), footprint(&call, bytes + 1)),
+                    ((node, PortDirection::Output, 0), footprint(&call, bytes)),
+                    (
+                        (mech_core::NodeId(99), PortDirection::Input, 0),
+                        footprint(&call, 2000),
+                    ),
+                ]),
+                published_footprints: BTreeMap::from([((node, 0), footprint(&call, 7))]),
+                ..Default::default()
+            };
+            let owned = owned_single_call_projection(&call, node, &facts).unwrap();
+            let borrowed = super::plan_single_call_turn_memory(&call, node, &facts).unwrap();
+            assert_eq!(borrowed, owned);
+            assert!(
+                !borrowed.budget_violations.is_empty(),
+                "zero finite limits stay effective"
+            );
+            assert_eq!(
+                borrowed.call.as_ref().unwrap().inputs[0]
+                    .value
+                    .payload
+                    .current_bytes,
+                bytes + 1
+            );
+            assert_eq!(
+                borrowed.call.as_ref().unwrap().outputs[0]
+                    .value
+                    .payload
+                    .current_bytes,
+                bytes
+            );
+            assert!(
+                borrowed
+                    .allocations
+                    .iter()
+                    .filter_map(|a| match a.owner {
+                        mech_core::MemoryObjectOwner::NodeScratch { node, .. } => Some(node),
+                        _ => None,
+                    })
+                    .all(|owner| owner == node)
+            );
+            assert_eq!(
+                call, original,
+                "borrowing cannot retag or replace the prepared call"
+            );
+        }
+    }
+}
+
+#[test]
+fn borrowed_single_call_projection_keeps_error_precedence_immutable_input_and_retry() {
+    let node = mech_core::NodeId(37);
+    let call = scratch_template();
+    let original = call.clone();
+    let valid = super::TurnMemoryFacts {
+        resolved_footprints: BTreeMap::from([
+            ((node, PortDirection::Input, 0), footprint(&call, 11)),
+            ((node, PortDirection::Output, 0), footprint(&call, 13)),
+        ]),
+        published_footprints: BTreeMap::from([((node, 0), footprint(&call, 7))]),
+        ..Default::default()
+    };
+    let mut missing_and_overflow = valid.clone();
+    missing_and_overflow
+        .resolved_footprints
+        .remove(&(node, PortDirection::Input, 0));
+    missing_and_overflow.additional_demand.turn_peak_bytes = u64::MAX;
+    let mut overflow = valid.clone();
+    overflow.additional_demand.turn_peak_bytes = u64::MAX;
+    for (index, facts) in [missing_and_overflow, overflow].into_iter().enumerate() {
+        let expected = owned_single_call_projection(&call, node, &facts);
+        assert!(expected.is_err());
+        if index == 0 {
+            assert_eq!(
+                expected,
+                Err(MemoryPlanError::MissingFootprintWitness {
+                    stage: MemoryWitnessStage::Turn
+                })
+            );
+        }
+        assert_eq!(
+            super::plan_single_call_turn_memory(&call, node, &facts),
+            expected
+        );
+        assert_eq!(call, original);
+        let recovered = super::plan_single_call_turn_memory(&call, node, &valid).unwrap();
+        assert_eq!(
+            recovered,
+            owned_single_call_projection(&call, node, &valid).unwrap()
+        );
+        assert_eq!(call, original);
+    }
+}
