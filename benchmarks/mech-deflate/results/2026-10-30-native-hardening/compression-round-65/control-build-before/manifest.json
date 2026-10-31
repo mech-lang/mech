@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T17:20:31.614994+00:00",
+  "head": "f8d94ebeecb1e3549e2ad00f95f1b3c34c60617e",
+  "files": [
+    {
+      "path": "control-build.py",
+      "sha256": "54c648a4082f407becb3b47a98c8a724405265fb8ee130aa2bc8ea7fb50e45a7",
+      "bytes": 1624
+    },
+    {
+      "path": "primary/frame-before-build.json",
+      "sha256": "706fe58a69c75bf801caf666145f9423b3d22308d6508926c13a58484eb60d7c",
+      "bytes": 14004
+    },
+    {
+      "path": "primary/frame-before-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "primary/frame-before-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "primary/frame-before.json",
+      "sha256": "297e1cc604f96508df5a6fade04525bdfc8132f94be88fb931767fce336ecef7",
+      "bytes": 258
+    }
+  ]
+}
