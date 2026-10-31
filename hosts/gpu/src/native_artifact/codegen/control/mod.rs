@@ -247,6 +247,7 @@ struct CfgPrologue {
     frame: Value,
     error: cranelift_codegen::ir::Block,
     locals: Value,
+    locals_home: Option<cranelift_codegen::ir::StackSlot>,
     outputs: Value,
     user_context: Value,
     callback: Value,
@@ -481,6 +482,23 @@ impl<'plan> CfgDefinition<'plan> {
                 guard(b, valid, error, STATUS_ABI);
             }
         }
+        // Keep the checked entry pointer in this invocation's own stack frame.
+        // Reload it at source-block boundaries instead of asking register
+        // allocation to retain one SSA value throughout the entire program.
+        // This is a snapshot, not a fresh read of mutable callback-visible ABI
+        // memory; neither callbacks nor nested entries can replace its value.
+        let locals_home = if plan.is_program() {
+            use cranelift_codegen::ir::{StackSlotData, StackSlotKind};
+            let slot = b.create_sized_stack_slot(StackSlotData::new(
+                StackSlotKind::ExplicitSlot,
+                8,
+                3,
+            ));
+            b.ins().stack_store(locals, slot, 0);
+            Some(slot)
+        } else {
+            None
+        };
         let hooks = crate::native_artifact::program::codegen::hooks::Hooks::load(
             plan.is_program(),
             b,
@@ -588,6 +606,7 @@ impl<'plan> CfgDefinition<'plan> {
             frame,
             error,
             locals,
+            locals_home,
             outputs,
             user_context,
             callback,
@@ -638,6 +657,7 @@ impl<'plan> CfgDefinition<'plan> {
             frame,
             error,
             locals,
+            locals_home,
             outputs,
             user_context,
             callback,
@@ -780,6 +800,9 @@ impl<'plan> CfgDefinition<'plan> {
                 continue;
             }
             b.switch_to_block(blocks[index].expect("reachable block"));
+            let locals = locals_home
+                .map(|slot| b.ins().stack_load(types::I64, slot, 0))
+                .unwrap_or(locals);
             #[cfg(feature = "canonical-native-program")]
             if let Some(hooks) = &hooks {
                 crate::native_artifact::program::codegen::scalar_loop::emit_entry(
