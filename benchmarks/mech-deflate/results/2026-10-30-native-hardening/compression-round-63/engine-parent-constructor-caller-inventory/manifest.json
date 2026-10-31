@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-31T16:31:11.601109+00:00",
+  "head": "f70e722c0851a75d9e49b132cef2514c8f188467",
+  "files": [
+    {
+      "path": "engine-focused.py",
+      "sha256": "774c48367822d7f921e227c57d9df9a07669dfa4f2d9a218057c026fc11c4352",
+      "bytes": 5528
+    },
+    {
+      "path": "engine-parent-constructor/caller-inventory.json",
+      "sha256": "ee7de7fb47f3a7ef04a642913b3b16a97edb0368f9981ebe77192493c938d4af",
+      "bytes": 13071
+    },
+    {
+      "path": "engine-parent-constructor/caller-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-parent-constructor/caller-inventory.stdout",
+      "sha256": "7a7b35c226c388d6291da0cd5588bfa0efe2c3eb1f1912523cc7ffbea5d39c3e",
+      "bytes": 186
+    },
+    {
+      "path": "engine-parent-constructor/native_collection_buffer_frames.rs",
+      "sha256": "762ecd767ae9fc9d919fed1b50803ee6288cfcd962432b567686f46c13a8bd8c",
+      "bytes": 20606
+    },
+    {
+      "path": "engine-parent-constructor/native_collection_frame_composition.rs",
+      "sha256": "103d63837eb775d37db0bb6faa1802d9c09187560cd047de649e78f0331b70c9",
+      "bytes": 15352
+    },
+    {
+      "path": "engine-parent-constructor/native_collection_frame_shape.rs",
+      "sha256": "ad49ce01cdd28a701093ac938e9774b41b320a1ea9044e52c073e7fc77db1656",
+      "bytes": 39558
+    }
+  ]
+}
