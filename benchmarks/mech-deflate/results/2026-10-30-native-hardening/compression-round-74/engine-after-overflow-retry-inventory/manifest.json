@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-10-31T23:54:52.240407+00:00",
+  "head": "69aa96538b7f743ecf87a11a99855d2552ebf6d7",
+  "files": [
+    {
+      "path": "engine-after/budget.rs",
+      "sha256": "957e667d51a867f04a193ee63e82a3e8020f2b09accd4e2c7cf3020dd524f63f",
+      "bytes": 172084
+    },
+    {
+      "path": "engine-after/mod.rs",
+      "sha256": "1498299e0d0669899d074fd4c49b2106e89377d3cc294a78f97c2e84f635f7df",
+      "bytes": 6418
+    },
+    {
+      "path": "engine-after/native_work_context.rs",
+      "sha256": "f8ddd5709a2dbc15b1d40f04860ac9cb2993cdb37990ed90eca8cfa3c128bbad",
+      "bytes": 1469
+    },
+    {
+      "path": "engine-after/native_work_context_tests.rs",
+      "sha256": "17edb1ef8e8aa0c021531798a9386074ea4e1859ff08af8e3aacdd44d93fd4b0",
+      "bytes": 6972
+    },
+    {
+      "path": "engine-after/overflow-retry-inventory.json",
+      "sha256": "35a97781b4daedf62abb10111f7b8206a2549b340eda13bfa1bd8cbf413bbbc5",
+      "bytes": 13132
+    },
+    {
+      "path": "engine-after/overflow-retry-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-after/overflow-retry-inventory.stdout",
+      "sha256": "1f85e0efcf04411c80bf7cfc2476c30ebba99245fed8597920f8c47ecc0d5c59",
+      "bytes": 154
+    },
+    {
+      "path": "engine-focused.py",
+      "sha256": "55a82fd388bd12b6f7b21ddacde4a3ec49e9a4bcf7bb2a02b53b53365703ca71",
+      "bytes": 5992
+    }
+  ]
+}
