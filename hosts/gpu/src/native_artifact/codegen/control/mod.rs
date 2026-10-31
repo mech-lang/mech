@@ -489,11 +489,8 @@ impl<'plan> CfgDefinition<'plan> {
         // memory; neither callbacks nor nested entries can replace its value.
         let locals_home = if plan.is_program() {
             use cranelift_codegen::ir::{StackSlotData, StackSlotKind};
-            let slot = b.create_sized_stack_slot(StackSlotData::new(
-                StackSlotKind::ExplicitSlot,
-                8,
-                3,
-            ));
+            let slot =
+                b.create_sized_stack_slot(StackSlotData::new(StackSlotKind::ExplicitSlot, 8, 3));
             b.ins().stack_store(locals, slot, 0);
             Some(slot)
         } else {
