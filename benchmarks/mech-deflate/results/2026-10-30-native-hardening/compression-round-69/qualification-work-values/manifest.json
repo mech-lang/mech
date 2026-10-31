@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T21:05:16.493077+00:00",
+  "head": "48f43a1dece867f6ad9c8d9182e21dd115c2683b",
+  "files": [
+    {
+      "path": "qualify-all.py",
+      "sha256": "0a8defc57deaad8067135605323fb7ab41d9b12ac609a77e564e050058f4490c",
+      "bytes": 2395
+    },
+    {
+      "path": "units-after/work-values.json",
+      "sha256": "e37a2562663c71412c02ec11e33f58a230f6e30e3953b00f95902d2947440fd5",
+      "bytes": 449
+    },
+    {
+      "path": "units-after/work-values.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "units-after/work-values.stdout",
+      "sha256": "0912da538467007e2e759eb1a8304ff967f38643dba6e419f436271f7a83ecd7",
+      "bytes": 3795
+    }
+  ]
+}
