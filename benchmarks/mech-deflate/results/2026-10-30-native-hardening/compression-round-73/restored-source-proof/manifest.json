@@ -1,0 +1,16 @@
+{
+  "created_utc": "2026-10-31T23:20:20.030982+00:00",
+  "head": "f7798eb9acf705ce42bbd84e70365c85eea59905",
+  "files": [
+    {
+      "path": "findings-packet/baseline-to-restored-tests.patch",
+      "sha256": "dff75cd48558a76a5758e04932d152611b065602e9f291325298aa0e82189c35",
+      "bytes": 8823
+    },
+    {
+      "path": "findings-packet/restored-source-and-tls-proof.json",
+      "sha256": "e60a98173f2e673cd56ae107378cf28055363d066b00d9c084cbb555a39a6633",
+      "bytes": 1574
+    }
+  ]
+}
