@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T05:26:58.795512+00:00",
+  "head": "9d79e05a40075802461cc7ba37071ad1c7298773",
+  "files": [
+    {
+      "path": "core-qualification/memory_runtime.json",
+      "sha256": "d7fec8f66a2171b760fbc2935c693c1004987e69f4bb8a8b30d371758f6a76e0",
+      "bytes": 730
+    },
+    {
+      "path": "core-qualification/memory_runtime.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "core-qualification/memory_runtime.stdout",
+      "sha256": "1dbe1948fadb0adb517b2b25ee86ec31940d0f982c15a7d06dc8168f269bdc89",
+      "bytes": 3914
+    },
+    {
+      "path": "core-qualify.py",
+      "sha256": "f70b5f3dd1e7839d8c2d73b569bf30797be3003f7022dd207869786acfc9f09d",
+      "bytes": 2719
+    }
+  ]
+}
