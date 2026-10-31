@@ -1,4 +1,5 @@
 //! Scratch reuse keeps readiness, fuel, arguments and views invocation-current.
+use super::tests::artifact_source;
 use super::*;
 use crate::native_artifact::{JitProgramArtifact, NativeProgramDescriptor, NativeProgramLimitMode};
 use std::collections::BTreeSet;
