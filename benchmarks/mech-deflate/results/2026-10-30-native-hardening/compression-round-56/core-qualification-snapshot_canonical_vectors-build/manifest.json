@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T13:30:52.129163+00:00",
+  "head": "d3df739b0f1debd88c558e28fd69f861c2efc418",
+  "files": [
+    {
+      "path": "core-integrations.py",
+      "sha256": "73627ef627c881a93839dbea004b4119cbf44f974080f7ec739bb8d988b4e0b8",
+      "bytes": 1944
+    },
+    {
+      "path": "core-qualification/snapshot_canonical_vectors-build.json",
+      "sha256": "fc087ddfb2cd8503bc34eefcd462ff41a002f58e3176002742e75055fe1749cc",
+      "bytes": 9854
+    },
+    {
+      "path": "core-qualification/snapshot_canonical_vectors-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "core-qualification/snapshot_canonical_vectors-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}
