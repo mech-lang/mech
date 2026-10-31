@@ -1,0 +1,16 @@
+{
+  "created_utc": "2026-10-31T13:32:00.476025+00:00",
+  "head": "a4a3a6c32daf7bcced6e7132dbf8c202c95b7deb",
+  "files": [
+    {
+      "path": "allocation-regression.py",
+      "sha256": "e2a2c521a94d0cd9362e19e5b06cd67b22f57729490f52bd0c808d693b8ccc98",
+      "bytes": 2536
+    },
+    {
+      "path": "late-test-serialization.json",
+      "sha256": "08e126ccaf6d992c526811efc6e2cd44bbd70c30dbff88d00b8057c770ecce78",
+      "bytes": 759
+    }
+  ]
+}
