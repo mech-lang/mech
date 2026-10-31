@@ -804,6 +804,62 @@ mod tests {
                 ] {
                     let values = [Some(make(0, extent)), Some(right.clone())];
                     let aliases = values.clone();
+                    // Independently run the maintained constructor on the same
+                    // actual children before exercising private admission.
+                    let children = values.each_ref().map(|value| {
+                        let value = value.as_ref().unwrap();
+                        (value.schema(), value.shape().clone())
+                    });
+                    let ordinary =
+                        mech_core::snapshot::CompositeSnapshotConstructor::shape_for_children(
+                            contract.outputs[0].schema,
+                            &children,
+                            artifact.schemas(),
+                        )
+                        .and_then(|shape| {
+                            mech_core::snapshot::CompositeSnapshotConstructor::bind(
+                                contract.outputs[0].schema,
+                                shape,
+                                &children,
+                                artifact.schemas().clone().into(),
+                            )
+                        })
+                        .and_then(|constructor| {
+                            constructor.construct(
+                                values
+                                    .iter()
+                                    .map(|value| value.as_ref().unwrap().clone())
+                                    .collect(),
+                                None,
+                            )
+                        })
+                        .map(|value| {
+                            (
+                                value.shape().parameter_values().to_vec(),
+                                value.canonical_data_draft().unwrap(),
+                            )
+                        })
+                        .map_err(|error| format!("{error:?}"));
+                    assert_eq!(ordinary.is_ok(), accepts, "{name}: {ordinary:?}");
+                    if let Ok((shape, data)) = &ordinary {
+                        assert_eq!(shape, &[0]);
+                        assert_eq!(
+                            data,
+                            &Data::Tuple(
+                                vec![
+                                    Data::Matrix(Box::new([])),
+                                    Data::Record(
+                                        vec![mech_core::snapshot::NamedValueDraft {
+                                            name: "nested".into(),
+                                            value: Data::Matrix(Box::new([])),
+                                        }]
+                                        .into()
+                                    ),
+                                ]
+                                .into()
+                            )
+                        );
+                    }
                     let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
                     let run = |allowance| {
                         let mut limits = mech_core::TargetMemoryProfile::current_resident_cpu()
@@ -849,8 +905,9 @@ mod tests {
                     );
                     assert!(prefix.1.0 < full.1.0);
                     assert_eq!(run(u64::MAX).1, full);
-                    receipts.push((name, full, prefix));
+                    receipts.push((name, ordinary, full, prefix));
                 }
+                println!("shape-fallback-caller: {receipts:?}");
                 assert_eq!(&receipts, expected.get_or_insert_with(|| receipts.clone()));
                 drop(right);
                 assert_eq!(
