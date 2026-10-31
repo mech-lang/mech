@@ -302,3 +302,135 @@ fn numeric_matrix_validation_allocates_only_the_three_retained_owners() {
         }
     }
 }
+
+#[test]
+fn private_numeric_publication_and_exclusive_retirement_do_not_allocate() {
+    use mech_core::snapshot::{
+        SequenceView, UnsignedMatrixBuffer, UnsignedMatrixOwnershipTransfer, UnsignedMatrixViewMut,
+    };
+    use mech_core::{
+        DimensionExpr as D, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+        DimensionParameterOrigin, IntegerWidth, ManagedMemoryBudget, Value,
+    };
+
+    macro_rules! check {
+        ($variant:ident, $width:ident, $capacity:expr, $word:expr) => {
+            for fixed in [false, true] {
+                for keep_alias in [false, true] {
+                    let mut builder = SchemaTableBuilder::new();
+                    let handle = builder
+                        .insert(
+                            SchemaDraft {
+                                body: SchemaBody::Matrix {
+                                    element: Box::new(SchemaBody::UnsignedInteger(
+                                        IntegerWidth::$width,
+                                    )),
+                                    dimensions: [
+                                        D::Constant(1),
+                                        if fixed {
+                                            D::Constant(3)
+                                        } else {
+                                            D::Parameter(DimensionParameterId::new(0))
+                                        },
+                                    ]
+                                    .into(),
+                                },
+                                dimension_parameters: if fixed {
+                                    Box::new([])
+                                } else {
+                                    [DimensionParameterDeclaration {
+                                        id: DimensionParameterId::new(0),
+                                        origin: DimensionParameterOrigin::Explicit,
+                                        lifetime: DimensionLifetime::Turn,
+                                        lower_bound: D::Constant(0),
+                                        upper_bound: None,
+                                    }]
+                                    .into()
+                                },
+                            }
+                            .finalize()
+                            .unwrap(),
+                        )
+                        .unwrap();
+                    let built = builder.finish().unwrap();
+                    let id = built.resolve(handle).unwrap();
+                    let schemas = Arc::new(built.table);
+                    let shape = schemas
+                        .get(id)
+                        .unwrap()
+                        .instantiate_shape(if fixed { Box::new([]) } else { [3].into() })
+                        .unwrap();
+                    let mut words = Vec::with_capacity($capacity);
+                    words.extend_from_slice(&[$word; 3]);
+                    let pointer = words.as_ptr();
+                    let raw = Value::from_unsigned_matrix_buffer(
+                        id,
+                        shape.clone(),
+                        UnsignedMatrixBuffer::$variant(words),
+                        schemas.clone(),
+                    )
+                    .unwrap();
+                    let old_identity = raw.frozen_storage_identity();
+                    let memory = ManagedMemoryBudget::new(32 * 1024 * 1024);
+                    let bytes = raw.memory_budget_admission_bytes(&memory).unwrap();
+                    let mut reservation = memory.reserve_capacity(bytes).unwrap();
+                    let value = raw.into_memory_budget(&mut reservation).unwrap();
+                    drop(reservation);
+                    let UnsignedMatrixOwnershipTransfer::Owned(owned) =
+                        value.try_into_owned_unsigned_matrix(&memory).unwrap()
+                    else {
+                        panic!("exclusive packed owner")
+                    };
+                    let mut private = owned.into_private_updates(shape).unwrap();
+                    let UnsignedMatrixViewMut::$variant(words) = private.elements_mut() else {
+                        panic!("original unsigned kind")
+                    };
+                    assert_eq!(words.as_ptr(), pointer);
+                    words[2] += 1;
+                    let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                    let rest = memory
+                        .reserve_capacity(memory.limit_bytes() - memory.used_bytes())
+                        .unwrap();
+                    memory.inject_snapshot_import_failure_after(0);
+
+                    let (published, requests) = measured_requests(|| private.finish());
+                    assert_eq!(requests, 0, "private publication must not allocate a lock");
+                    assert!(!old_identity.matches(&published));
+                    published.validate_against(&schemas).unwrap();
+                    let ValueData::Matrix(matrix) = published.data() else {
+                        panic!("published matrix")
+                    };
+                    let SequenceView::$variant(words) = matrix.elements() else {
+                        panic!("published unsigned kind")
+                    };
+                    assert_eq!(words.as_ptr(), pointer);
+                    assert_eq!(words, [$word, $word, $word + 1]);
+                    let alias = keep_alias.then(|| published.clone());
+                    let ((), requests) = measured_requests(|| drop(published));
+                    assert_eq!(
+                        requests, 0,
+                        "publication must not defer a lock to retirement"
+                    );
+                    if let Some(alias) = alias {
+                        assert_eq!(memory.retained_snapshot_nodes(), retained.1);
+                        let ((), requests) = measured_requests(|| drop(alias));
+                        assert_eq!(
+                            requests, 0,
+                            "last immutable alias must retire without allocation"
+                        );
+                    }
+                    assert!(memory.check_snapshot_import_allocation(1, 1).is_err());
+                    drop(rest);
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        (0, 0)
+                    );
+                }
+            }
+        };
+    }
+    check!(U8, W8, 13, 7u8);
+    check!(U16, W16, 262144, 32769u16);
+    check!(U32, W32, 1500513, 0x80000000u32);
+    check!(U64, W64, 305257, 0x8000000000000000u64);
+}
