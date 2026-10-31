@@ -1,0 +1,21 @@
+{
+  "created_utc": "2026-10-31T12:54:43.286507+00:00",
+  "head": "49fdfa4563f6a05b2f628f9271ce853b8d2ad5db",
+  "files": [
+    {
+      "path": "diagnostic-correction.json",
+      "sha256": "59a01725beffc39cb63e863e51db089cbbad9cb58c6d8374f67a9c52b67d1897",
+      "bytes": 963
+    },
+    {
+      "path": "inspect.rs",
+      "sha256": "c464b576431337c3346da6c34556088e684d4bb159082fbca427c397decab27f",
+      "bytes": 1927
+    },
+    {
+      "path": "plan-diagnostic.py",
+      "sha256": "1b06b4f5070a95ec7aa0a65dc542c5e7726975b74b3dc41b3cadcd63e295a94c",
+      "bytes": 1400
+    }
+  ]
+}
