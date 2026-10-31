@@ -12,7 +12,7 @@ import sys
 
 packet = Path(__file__).resolve().parent
 root = packet.parent
-scorecard_path = root / "compression-round-43/scorecard.json"
+scorecard_path = root / "compression-round-46/scorecard.json"
 deep_path = root / "deep-profile/scorecard.json"
 static_path = packet / "static.json"
 score = json.loads(scorecard_path.read_text())

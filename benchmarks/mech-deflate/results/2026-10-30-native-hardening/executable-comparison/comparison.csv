@@ -1,13 +1,13 @@
 metric,unit,reference,mech,mech_over_reference,mech_minus_reference,previous_mech,change_percent,scope
-elapsed,seconds,0.000289,0.004290833,14.847173010380624,0.004001833,0.004371896,-1.8541840885510585,primary compression timer
-instructions,count,1364372.0,48601797.0,35.62210086398724,47237425.0,49519459.5,-1.8531351296352527,hardware counter delta at compression boundaries; separate coherent CPU cohort
-cycles,count,903706.5,13567326.5,15.012978771315687,12663620.0,13899757.0,-2.391628141412827,hardware counter delta at compression boundaries; separate coherent CPU cohort
-rss_after,bytes,14761984.0,319733760.0,21.659267480577135,304971776.0,319684608.0,0.015375153751540083,whole prepared task after compression
-physical_after,bytes,14402432.0,228706048.0,15.879682542503932,214303616.0,228706048.0,0.0,whole prepared task after compression
+elapsed,seconds,0.000289,0.0042081035,14.560911764705883,0.0039191035,0.0042935205,-1.9894396684492333,primary compression timer
+instructions,count,1364372.0,46993498.5,34.44331787811535,45629126.5,48599979.0,-3.3055168604085194,hardware counter delta at compression boundaries; separate coherent CPU cohort
+cycles,count,920543.0,13282488.5,14.428971270217687,12361945.5,13551678.0,-1.9863923862417643,hardware counter delta at compression boundaries; separate coherent CPU cohort
+rss_after,bytes,14778368.0,319799296.0,21.63968957871397,305020928.0,319668224.0,0.041002511403820385,whole prepared task after compression
+physical_after,bytes,14435264.0,228771584.0,15.84810530656038,214336320.0,228640512.0,0.05732667358617771,whole prepared task after compression
 allocation_requests,count,95.0,13994.0,147.30526315789473,13899.0,13994.0,0.0,tracked allocator; separate coherent memory cohort; peak excludes private heaps/direct VM
 requested_bytes,bytes,9021923.0,98586843.0,10.927475550389866,89564920.0,98586843.0,0.0,tracked allocator; separate coherent memory cohort; peak excludes private heaps/direct VM
 incremental_peak_live_usable,bytes,9257328.0,20575432.0,2.2226102391532416,11318104.0,20575432.0,0.0,tracked allocator; separate coherent memory cohort; peak excludes private heaps/direct VM
-peak_live_usable,bytes,9257360.0,163281512.0,17.63802120690996,154024152.0,163281512.0,0.0,tracked allocator; separate coherent memory cohort; peak excludes private heaps/direct VM
+peak_live_usable,bytes,9257360.0,163404680.0,17.651326080005532,154147320.0,163281512.0,0.07543291245368788,tracked allocator; separate coherent memory cohort; peak excludes private heaps/direct VM
 text_bytes,bytes,195456,13885696,71.04256712508186,13690240,,,scope differs: whole reference executable text versus generated Mech compressor entry
 call_sites,static sites,2212,55450,25.067811934900543,53238,,,disassembled sites including unreached/error paths and padding; not dynamic counts
 conditional_branch_sites,static sites,5389,110409,20.487845611430693,105020,,,disassembled sites including unreached/error paths and padding; not dynamic counts
