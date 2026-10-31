@@ -1,0 +1,12 @@
+<lookup-state> := <{buffer<[u8]> count<u64> flag<bool> signed<i64> ratio<f64>}>
+lookup-child(xs<[u8]>, number<u64>, flag<bool>, signed<i64>, ratio<f64>) => (out<lookup-state>) :=
+  out := {buffer: xs, count: number, flag: flag, signed: signed, ratio: ratio}.
+lookup-parent(xs<[u8]>, number<u64>, flag<bool>, signed<i64>, ratio<f64>, left<u64>, allowed<bool>, divisor<u64>) => (out<u64>) :=
+  permitted! := allowed
+  state := lookup-child(xs, number, flag, signed, ratio)
+  branch := (state.flag? | true => 1u64 | false => 3u64)
+  byte<u64> := state.buffer[1u64]
+  changed := ((state.signed < 0i64)? | true => branch + 5u64 | false => branch)
+  changed := ((state.ratio > 1.0f64)? | true => changed + 7u64 | false => changed)
+  out := ((left > 0u64)? | true => lookup-parent(state.buffer, state.count + byte + changed, state.flag == false, state.signed, state.ratio, left - 1u64, allowed, divisor) | false => state.count / divisor).
+lookup-parent(xs<[u8]>, number<u64>, flag<bool>, signed<i64>, ratio<f64>, left<u64>, allowed<bool>, divisor<u64>)
