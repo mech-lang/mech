@@ -27,6 +27,26 @@ pub(in crate::native_artifact::program::runtime) struct Captured {
     pub length: Option<usize>,
 }
 impl State {
+    /// The same current-owner census with disjoint borrows of transport and work.
+    #[inline]
+    pub fn coexistence(
+        &self,
+        layout: &crate::native_artifact::program::prepare::line_matrix::Layout,
+        skip: Option<NativeMatchValue>,
+        work: &mut NativeWorkMeter,
+        library: &mech_engine::native_artifact::NativeLibraryWorkBudget,
+    ) -> Result<ResourceDemand, Error> {
+        if self.views.is_empty() {
+            return Ok(ResourceDemand::default());
+        }
+        work.charge(
+            NativeExecutionPhase::Setup,
+            amount(self.views.len(), 256, 256)?,
+        )?;
+        let ordinal = skip.and_then(|value| layout.matrices[value.get() as usize]);
+        self.retained_demand(ordinal, &library.memory_budget())
+    }
+
     pub fn metadata_bytes(count: usize) -> Result<u64, Error> {
         if count == 0 {
             return Ok(0);
