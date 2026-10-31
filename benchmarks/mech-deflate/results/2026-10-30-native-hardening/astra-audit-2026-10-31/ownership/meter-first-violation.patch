@@ -1,0 +1,42 @@
+--- a/src/engine/src/resident/budget.rs
++++ b/src/engine/src/resident/budget.rs
+@@ -2998,7 +2998,7 @@
+             serial
+                 && self.check_native_projection_scope(identity).is_ok()
+                 && preview_control_work(next.demand).is_ok()
+-                && mech_core::evaluate_call_memory_budget(
++                && mech_core::first_call_memory_budget_violation(
+                     mech_core::MemoryObjectOwner::DirectCallPort {
+                         call: 0,
+                         direction: mech_core::PortDirection::Input,
+@@ -3009,7 +3009,7 @@
+                     0,
+                     limits,
+                 )
+-                .is_empty()
++                .is_none()
+         } else {
+             // A preview must not enter the detached test-only admission path,
+             // which can observe work. Production scans require a real turn.
+@@ -3174,7 +3174,7 @@
+             // Charge the same live invocation before continuing the borrowed
+             // traversal. A tighter call cannot replenish its enclosing ledger.
+             observe_control_work(next.demand)?;
+-            if let Some(violation) = mech_core::evaluate_call_memory_budget(
++            if let Some(violation) = mech_core::first_call_memory_budget_violation(
+                 mech_core::MemoryObjectOwner::DirectCallPort {
+                     call: 0,
+                     direction: mech_core::PortDirection::Input,
+@@ -3184,10 +3184,8 @@
+                 0,
+                 0,
+                 limits,
+-            )
+-            .first()
+-            {
+-                return Err(resource_budget_error(violation));
++            ) {
++                return Err(resource_budget_error(&violation));
+             }
+         } else {
+             next.check_planning_progress()?;
