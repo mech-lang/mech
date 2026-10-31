@@ -552,7 +552,7 @@ impl FrozenSnapshotStorage {
             return;
         };
         let registration = &mut ownership.registration;
-        self.data.with_budget_imports(|imports| {
+        let unlink = |imports: &mut Option<Arc<SnapshotBudgetRegistration>>| {
             if imports
                 .as_ref()
                 .is_some_and(|head| Arc::ptr_eq(head, registration))
@@ -594,7 +594,17 @@ impl FrozenSnapshotStorage {
                     links.previous = previous.as_ref().map(Arc::downgrade).unwrap_or_default();
                 });
             }
-        });
+        };
+        // Destruction and consuming transfer already hold this wrapper
+        // exclusively. A checked exclusive data borrow also excludes every
+        // strong alias and weak identity; otherwise retain the registry lock.
+        // This keeps private publication's lock allocation from being deferred
+        // to destruction, without changing any shared registry access.
+        if let Some(data) = Arc::get_mut(&mut self.data) {
+            with_exclusive_budget_gate(&mut data.budget_imports, unlink);
+        } else {
+            self.data.with_budget_imports(unlink);
+        }
         // This wrapper still owns the registration Arc. Its admitted node is
         // freed outside the registry gate during normal field destruction.
     }
