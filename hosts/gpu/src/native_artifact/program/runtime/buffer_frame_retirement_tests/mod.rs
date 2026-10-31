@@ -1,6 +1,7 @@
 use super::*;
 use crate::native_artifact::program::prepare::frame_retirement::{FrameRetirements, Operation};
 mod batching;
+mod transfer;
 
 const NESTED: &str = "+> sequence\n<child> := <{data<[u32]> n<u64> flag<bool>}>\n<parent> := <{first<child> sibling<child>}>\nwrap(data<[u32]>, n<u64>, flag<bool>) => (out<parent>) :=\n  a := {data: data, n: n, flag: flag}\n  b := {data: data, n: n + 1u64, flag: flag == false}\n  out := {first: a, sibling: b}.\np := wrap(data<[u32]>, n<u64>, flag<bool>)\n(p.first.n + p.sibling.n, p.first.data, p.sibling.flag == true)\n";
 
