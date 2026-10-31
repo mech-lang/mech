@@ -61,3 +61,5 @@ Acceptance for any follow-up: same source/typed-IR pins and exact output, all ex
 `../audit-stack-reloads.py` streams the retained R59/R60 Objects into `before.json` and `after.json`. It recognizes exact generated ARM64 scalar SP-relative loads/stores, reconstructs the common `w16` high-offset sequence, and retains counts/examples. It does not count vector or pair stack accesses; those opcode totals are unchanged in the separate full Object comparison. `pointer-delta.json` derives the role-level deltas. `../compare-native-objects.py` supplies full opcode/text/stack comparison and input hashes; the parent retained that output under R60's `binary-audit/`.
 
 No compiler build, dependency edit, compressor run or benchmark was performed by this audit agent. All dependency-source snapshots are evidence, not replacement production files.
+
+The complete `before.json` and `after.json` slot histograms are retained in `../../pointer-reload-addendum/receipts.tar.gz`, under `pointer-reload-evidence/r60-stack-audit/`. They are omitted as duplicate expanded files here so the review diff stays readable. The manifest retains their exact hashes.
