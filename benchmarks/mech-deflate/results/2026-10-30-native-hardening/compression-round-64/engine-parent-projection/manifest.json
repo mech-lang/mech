@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-31T16:50:27.873026+00:00",
+  "head": "9527fa256368e66b319a00d5df556cb235e368a4",
+  "files": [
+    {
+      "path": "engine-focused.py",
+      "sha256": "995b2350feabab23fe255dd7bec85cea625d9335fdb935abe33ce10ce4305f4b",
+      "bytes": 4889
+    },
+    {
+      "path": "engine-parent/budget.rs",
+      "sha256": "d512d059d64715993c55a4d022a5f12369c4bab73ce1b447e2ed9bb35f82ed0d",
+      "bytes": 171561
+    },
+    {
+      "path": "engine-parent/native_projection_meter_tests.rs",
+      "sha256": "20e35bbf8d88ada49bc8ad181e2a37a9e761d826ac95d25d4e4b2ebb722c56c5",
+      "bytes": 20714
+    },
+    {
+      "path": "engine-parent/projection.json",
+      "sha256": "e6029090bfc134481d3fd236c3e445de9bdc47671b4ef854c32aaf06903a2459",
+      "bytes": 13006
+    },
+    {
+      "path": "engine-parent/projection.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-parent/projection.stdout",
+      "sha256": "f6abd9e85f6ebb014494ad7d59837cd455143ac30ac0f66932e612018277df01",
+      "bytes": 1643
+    }
+  ]
+}
