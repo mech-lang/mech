@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T17:55:42.744409+00:00",
+  "head": "d840086d436b8c98429d8c84c163a16698cb7a2b",
+  "files": [
+    {
+      "path": "engine-after/shape-inventory.json",
+      "sha256": "df8c553bae93b0cb0d9e9305d0458aba11d8cf2f9e2d0b69b63b562b9db583ca",
+      "bytes": 12769
+    },
+    {
+      "path": "engine-after/shape-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-after/shape-inventory.stdout",
+      "sha256": "2ac64ce5d5554bcae45ed2b51363c214cb8c21fa6409d3bd049e23be70d5c5c0",
+      "bytes": 945
+    },
+    {
+      "path": "engine-focused.py",
+      "sha256": "19a54c7e9c4df2b68e8f9f306e287fc488f9579d2394e7846880ee394a21305e",
+      "bytes": 4373
+    }
+  ]
+}
