@@ -1048,6 +1048,9 @@ fn worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
 #[path = "numeric_fuel_tests.rs"]
 mod numeric_fuel;
 
+#[path = "numeric_first_change_tests.rs"]
+mod numeric_first_change;
+
 thread_local! {
     static NUMERIC_FUEL_OBSERVATIONS: std::cell::RefCell<Vec<Vec<u64>>> = const { std::cell::RefCell::new(Vec::new()) };
     static NUMERIC_NORMAL_EXIT_WORK: std::cell::RefCell<Vec<u64>> = const { std::cell::RefCell::new(Vec::new()) };
@@ -1167,5 +1170,116 @@ fn execute_observed_numeric_fuel(
         memory,
     );
     let rows = NUMERIC_FUEL_OBSERVATIONS.with(|rows| core::mem::take(&mut *rows.borrow_mut()));
+    (outcome, rows)
+}
+
+#[derive(Debug)]
+struct NumericFirstChangeObservation {
+    scalars: Vec<u64>,
+    incoming: u64,
+    status: u64,
+}
+thread_local! {
+    static NUMERIC_FIRST_CHANGES: std::cell::RefCell<Vec<NumericFirstChangeObservation>> = const { std::cell::RefCell::new(Vec::new()) };
+    static DENY_NUMERIC_CALLBACK_CAPACITY: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+unsafe extern "C" fn observe_first_change(
+    context: *mut c_void,
+    site: u64,
+    operation: u64,
+    first: u64,
+    second: u64,
+    third: u64,
+    result: *mut u64,
+) -> u64 {
+    let mut old_capacity = None;
+    let transition = if operation == GlobalHelper::NumericWritePrepare.raw() {
+        // SAFETY: the generated entry is suspended at its synchronous helper;
+        // this borrow ends before forwarding to the real owning callback.
+        let ctx = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
+        let metadata = ctx.descriptor.metadata();
+        let id = metadata.closed_tails.sites[site as usize].unwrap();
+        let region = &metadata.closed_tails.regions[id];
+        let proof = region.numeric.as_ref().unwrap();
+        let scalars = proof
+            .fields(region.tail.carrier().get())
+            .unwrap()
+            .iter()
+            .flatten()
+            .map(|field| ctx.read_borrowed_word(2 + field).unwrap())
+            .collect();
+        let incoming = ctx.read_borrowed_word(3 + proof.words).unwrap();
+        if DENY_NUMERIC_CALLBACK_CAPACITY.with(|deny| deny.replace(false)) {
+            old_capacity = Some(ctx.argument_capacity);
+            // Test the real callback's checked index-word read, with the
+            // original backing intact. This is not the generated capacity guard.
+            ctx.argument_capacity = 2 + proof.words;
+        }
+        Some((scalars, incoming))
+    } else {
+        None
+    };
+    // SAFETY: unchanged live context, ABI arguments and result lane.
+    let status = unsafe {
+        crate::native_artifact::program::runtime::hooks::helper(
+            context, site, operation, first, second, third, result,
+        )
+    };
+    if let Some(capacity) = old_capacity {
+        // SAFETY: production callback returned and its exclusive borrow ended.
+        unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() }.argument_capacity = capacity;
+    }
+    if let Some((scalars, incoming)) = transition {
+        NUMERIC_FIRST_CHANGES.with(|rows| {
+            rows.borrow_mut().push(NumericFirstChangeObservation {
+                scalars,
+                incoming,
+                status,
+            })
+        });
+    }
+    status
+}
+
+fn execute_observed_numeric_first_change(
+    jit: &crate::native_artifact::JitProgramArtifact,
+    args: &[Value],
+    outputs: &mut [Option<Value>],
+    caps: NativeProgramExecutionLimits,
+    memory: &ManagedMemoryBudget,
+    deny_capacity: bool,
+) -> (
+    Result<NativeProgramExecutionReport, NativeProgramExecutionError>,
+    Vec<NumericFirstChangeObservation>,
+) {
+    NUMERIC_FIRST_CHANGES.with(|rows| rows.borrow_mut().clear());
+    DENY_NUMERIC_CALLBACK_CAPACITY.with(|deny| deny.set(deny_capacity));
+    let entry = jit.test_checked_entry();
+    let outcome = execute(
+        jit.descriptor(),
+        |raw| {
+            // SAFETY: exact retained JIT and owning synchronous execution frame;
+            // the observer forwards every helper and restores immutable wire fields.
+            let original = unsafe { (*raw).helper };
+            unsafe {
+                (*raw).helper = observe_first_change;
+            }
+            let status = unsafe { entry(raw) };
+            unsafe {
+                (*raw).helper = original;
+            }
+            status
+        },
+        args,
+        outputs,
+        caps,
+        memory,
+    );
+    assert!(
+        !DENY_NUMERIC_CALLBACK_CAPACITY.with(|deny| deny.get()),
+        "must reach the actual first-change helper"
+    );
+    let rows = NUMERIC_FIRST_CHANGES.with(|rows| core::mem::take(&mut *rows.borrow_mut()));
     (outcome, rows)
 }
