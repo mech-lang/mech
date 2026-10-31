@@ -712,13 +712,13 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-program --lib -- \
             composition_tests parent_continuation_is_single_use native_runtime_consolidation \
-            buffer_frames::tests::batching buffer_frames::tests::transfer work::retirement::tests exhausted_retirement_generation cleanup_effects::tests numeric_shadow \
+            buffer_frames::tests::batching buffer_frames::tests::transfer work::retirement::tests exhausted_retirement_generation cleanup_effects::tests numeric_shadow numeric_words::tests \
             --list | tee native-composition-tests.txt
-          test "$(rg -c ': test$' native-composition-tests.txt)" -eq 32
+          test "$(rg -c ': test$' native-composition-tests.txt)" -eq 33
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-program --lib -- \
             composition_tests parent_continuation_is_single_use native_runtime_consolidation \
-            buffer_frames::tests::batching buffer_frames::tests::transfer work::retirement::tests exhausted_retirement_generation cleanup_effects::tests numeric_shadow \
+            buffer_frames::tests::batching buffer_frames::tests::transfer work::retirement::tests exhausted_retirement_generation cleanup_effects::tests numeric_shadow numeric_words::tests \
             --test-threads=1
       - name: Execute secured canonical reference bytecode admission
         if: ${{ matrix.suite == 'cli' }}
