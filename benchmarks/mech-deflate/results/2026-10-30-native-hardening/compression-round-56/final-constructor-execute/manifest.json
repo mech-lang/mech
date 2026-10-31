@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T13:34:16.539835+00:00",
+  "head": "5a482ed1758dc31ba04465459dfd36c1086d7977",
+  "files": [
+    {
+      "path": "final-constructor-ci/constructor-execute.json",
+      "sha256": "000c887b5a61c1a9d6b910284eb434e7f04a00d090faebf0dc52de43f8fddcdb",
+      "bytes": 374
+    },
+    {
+      "path": "final-constructor-ci/constructor-execute.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "final-constructor-ci/constructor-execute.stdout",
+      "sha256": "f99274eacd71ec5d410f8ba38829c9c6941a043ce91395bec154a947daddbca4",
+      "bytes": 442
+    },
+    {
+      "path": "final-constructor-ci.py",
+      "sha256": "daa500204e00b7062e6062ba69a0c58569b366e67f0d276542051f627743af03",
+      "bytes": 1321
+    }
+  ]
+}
