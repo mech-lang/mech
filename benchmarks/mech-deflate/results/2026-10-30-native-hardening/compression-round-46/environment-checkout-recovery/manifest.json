@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T04:03:37.746234+00:00",
+  "head": "c9a4d8489a50b3f000680175dd5208debbf7b053",
+  "files": [
+    {
+      "path": "checkout-recovery.json",
+      "sha256": "1df4e5a96fb4462dc7092966c7fac529690a08d5fe7df6b24a53fd3c0b62a617",
+      "bytes": 124987
+    },
+    {
+      "path": "interrupted-component-archive/failure.json",
+      "sha256": "51d373f1fcdbb73ad3eed84a71ec98d1962154faa5730d247ab66b00f90c55b8",
+      "bytes": 415
+    },
+    {
+      "path": "interrupted-component-archive/receipts.tar.gz",
+      "sha256": "d91a63e69e8eb461e45510935f6710aa75149efc2be426f8d01d910a1ef20013",
+      "bytes": 2196
+    },
+    {
+      "path": "post-diagnostic-cleanup.json",
+      "sha256": "068802260215d83ff3a0f6c7b4456603489de70789fa4655b8dda82ece7a8694",
+      "bytes": 2851
+    }
+  ]
+}
