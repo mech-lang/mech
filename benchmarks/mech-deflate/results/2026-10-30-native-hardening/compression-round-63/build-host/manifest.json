@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T16:35:53.232342+00:00",
+  "head": "7c87f4df0a3907fcccadd12f1cd4a92265dbcf86",
+  "files": [
+    {
+      "path": "build-changed.py",
+      "sha256": "6050c15a146b346a496d1819b24d17923c73cf2e25ba07c3d05c8c2d8c1cc2b2",
+      "bytes": 7151
+    },
+    {
+      "path": "variants/after/host.json",
+      "sha256": "2ce716a841ff83e6ce29d95138ac8845fa20938e7361ba9f0f704c0e639b77b1",
+      "bytes": 5005
+    },
+    {
+      "path": "variants/after/host.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "variants/after/host.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}
