@@ -140,21 +140,23 @@ impl Invocation<'_, '_, '_> {
                     .ok_or_else(|| invalid("private projection field missing"))?;
                 if layout.children(*field).is_some() {
                     if let NativeIterationAction::LibraryCall { operands, .. } = action {
-                        // Keep the original paid read before factory/coexistence
-                        // errors. Coexistence only reads live geometry; it cannot
-                        // replace the arena owner. Borrow it for admission below.
-                        self.state
+                        // Preserve the original paid read and error order. Lend
+                        // only geometry/work fields while this owner stays read.
+                        let selector = self
+                            .state
                             .arena
                             .read_current(operands[1].get(), &mut self.state.control.work)?;
                         let call = descriptor.metadata().calls[site]
                             .as_ref()
                             .ok_or_else(|| invalid("private child lost selected factory"))?;
-                        let coexistence = self.selected_join_coexistence(None)?;
-                        let selector = self
-                            .state
-                            .arena
-                            .native_entry_preview(operands[1].get(), &self.state.control.work)?
-                            .ok_or(NativeValueError::StaleHandle)?;
+                        let coexistence = super::joins::coexistence(
+                            self.state.collections.as_ref(),
+                            &self.state.line_matrices,
+                            descriptor,
+                            &self.state.library,
+                            &mut self.state.control.work,
+                            None,
+                        )?;
                         call.admit_buffer_frame_composition(
                             &[None, None],
                             &[0, 0],
@@ -184,21 +186,23 @@ impl Invocation<'_, '_, '_> {
                         &mut self.state.control.work,
                     )?;
                     if let NativeIterationAction::LibraryCall { operands, .. } = action {
-                        // Keep the original paid read before factory/coexistence
-                        // errors. Coexistence only reads live geometry; it cannot
-                        // replace the arena owner. Borrow it for admission below.
-                        self.state
+                        // Preserve the original paid read and error order. Lend
+                        // only geometry/work fields while this owner stays read.
+                        let selector = self
+                            .state
                             .arena
                             .read_current(operands[1].get(), &mut self.state.control.work)?;
                         let call = descriptor.metadata().calls[site]
                             .as_ref()
                             .ok_or_else(|| invalid("private record field lost selected factory"))?;
-                        let coexistence = self.selected_join_coexistence(None)?;
-                        let selector = self
-                            .state
-                            .arena
-                            .native_entry_preview(operands[1].get(), &self.state.control.work)?
-                            .ok_or(NativeValueError::StaleHandle)?;
+                        let coexistence = super::joins::coexistence(
+                            self.state.collections.as_ref(),
+                            &self.state.line_matrices,
+                            descriptor,
+                            &self.state.library,
+                            &mut self.state.control.work,
+                            None,
+                        )?;
                         match &value {
                             super::super::buffer_frames::Field::Managed(value) => call
                                 .admit_buffer_record_field(
