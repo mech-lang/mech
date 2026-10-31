@@ -705,6 +705,17 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features semantic-compiler,resident-artifact,sequence_buffers \
             --test sequence_buffer_contract -- --test-threads=1
+      - name: Inventory and execute projection budget contracts
+        if: ${{ matrix.suite == 'native' }}
+        shell: bash
+        run: |
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact,sequence_buffers \
+            --lib -- native_projection_meter_tests --list | tee native-projection-budget-tests.txt
+          test "$(rg -c ': test$' native-projection-budget-tests.txt)" -eq 12
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact,sequence_buffers \
+            --lib -- native_projection_meter_tests --test-threads=1
       - name: Inventory and execute private frame shape contracts
         if: ${{ matrix.suite == 'native' }}
         shell: bash
