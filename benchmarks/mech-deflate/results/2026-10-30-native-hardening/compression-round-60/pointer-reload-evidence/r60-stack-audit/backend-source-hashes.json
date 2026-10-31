@@ -1,0 +1,14 @@
+{
+  "regalloc2-data_structures.rs": {
+    "original_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/regalloc2-0.15.2/src/ion/data_structures.rs",
+    "sha256": "40c0e54872e38059553c5707ccead545f0253fcff29e30d8f02fe17325a20922"
+  },
+  "regalloc2-process.rs": {
+    "original_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/regalloc2-0.15.2/src/ion/process.rs",
+    "sha256": "ab0cede2177d791c8e61e772ec3825614aa25c08c9e2b027786b5270ef00941c"
+  },
+  "cranelift-register-allocation.rs": {
+    "original_path": "/Users/coreymontella/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cranelift-codegen-0.131.3/src/machinst/compile.rs",
+    "sha256": "05cae6db5425b4dead43325b5e82dea60c18af4d441564c600db24e2a25d3c28"
+  }
+}
