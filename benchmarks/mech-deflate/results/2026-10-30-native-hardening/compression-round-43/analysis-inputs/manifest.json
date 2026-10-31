@@ -1,0 +1,61 @@
+{
+  "created_utc": "2026-10-31T03:07:31.138081+00:00",
+  "head": "67296892ac93bb3e6faddfefa6ab427c874cfdf4",
+  "files": [
+    {
+      "path": "auxiliary-dependencies.json",
+      "sha256": "ca1a4b96ae035bb7900fdaca868fa6d6856fc6bdc2e86bc07a066cd183951931",
+      "bytes": 628
+    },
+    {
+      "path": "commits.json",
+      "sha256": "7241c4bf8a62dd441310bb87d381fe55a29c30f3db78d87f6bd112e7657df21b",
+      "bytes": 5226
+    },
+    {
+      "path": "final-libraries.json",
+      "sha256": "0f709b0fde2573723dd8aec883fc2901a3ea5190c2bfa166fecfbacf1b8391fe",
+      "bytes": 10806
+    },
+    {
+      "path": "final-release.json",
+      "sha256": "e1f886cd472a1fd26b92f894f349b50e0dc59c7129b67775b38e8ba7c909e4b1",
+      "bytes": 4765
+    },
+    {
+      "path": "linked-primary/after/binding.json",
+      "sha256": "65b9f63ceed3c9969edd89dfd6c03d6661f8ec0c9c3c07ab4c2d8ab645beb3bf",
+      "bytes": 13698
+    },
+    {
+      "path": "linked-primary/after/metadata.json",
+      "sha256": "d47f456a2a2be1c9408a2c2c7afb0d8cf00e67aabf6587f0445a645067680db4",
+      "bytes": 2542212
+    },
+    {
+      "path": "linked-primary/before/binding.json",
+      "sha256": "dcdeceee554bc657c0d4c8c80e5be803818b9073ae63d2ad6058c09869af4990",
+      "bytes": 13703
+    },
+    {
+      "path": "linked-primary/before/metadata.json",
+      "sha256": "d47f456a2a2be1c9408a2c2c7afb0d8cf00e67aabf6587f0445a645067680db4",
+      "bytes": 2542212
+    },
+    {
+      "path": "linked-primary/summary.json",
+      "sha256": "07ec7a4181ceab572b4b436872ec984ce85fc5c0e35391e359b7c3fdbc4e987a",
+      "bytes": 1617
+    },
+    {
+      "path": "pins.json",
+      "sha256": "2bcaf338385c000b2e3b41daaac1e99a71d47f6732a4f299bfbef42dfe1bd33f",
+      "bytes": 2473
+    },
+    {
+      "path": "source.patch",
+      "sha256": "4ba5de467d22becd26db94922042652a38ca4250cd17f07568f445e3720fbc30",
+      "bytes": 11946
+    }
+  ]
+}
