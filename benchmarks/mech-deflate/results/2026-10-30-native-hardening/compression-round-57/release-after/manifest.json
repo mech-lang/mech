@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T14:04:32.298767+00:00",
+  "head": "abed9d621f8706166490266afc33eb5342fe12dd",
+  "files": [
+    {
+      "path": "implementation.json",
+      "sha256": "78dae73e8913a012c11d85d2e6194d2c5137539be4ffe3957dfc423816d61bc3",
+      "bytes": 694
+    },
+    {
+      "path": "variants/after/host.json",
+      "sha256": "ca5abc193c43dcf7f3712981aae98e3bc2865516f97f2f8638d81ec331bcff9e",
+      "bytes": 5354
+    },
+    {
+      "path": "variants/after/host.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "variants/after/host.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "variants/after/libraries.json",
+      "sha256": "0e14114b4873c64b434805162dc9ba8b3076bcbf078ea846a4cf87a90a22b21d",
+      "bytes": 10908
+    }
+  ]
+}
