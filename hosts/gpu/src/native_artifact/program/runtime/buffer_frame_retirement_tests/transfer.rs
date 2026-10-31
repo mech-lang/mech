@@ -361,7 +361,7 @@ fn checked_nested_frame_calls_preserve_publication_on_failure_and_recover() {
                         "allowed" => ValueDataDraft::Bool(allowed),
                         name => panic!("unexpected input {name}"),
                     };
-                    let shape_values = if matches!(data, ValueDataDraft::Matrix(_)) {
+                    let shape_values: Box<[u64]> = if matches!(data, ValueDataDraft::Matrix(_)) {
                         vec![
                             1;
                             artifact
