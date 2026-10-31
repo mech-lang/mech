@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T00:02:37.926038+00:00",
+  "head": "53179ae2fe1fbdda8aa0a00e99467f1f119371aa",
+  "files": [
+    {
+      "path": "source-patches/README.json",
+      "sha256": "76f2f7975ac44cc33405826f536bd480b43a778c1297fd2af1d32646f174ee57",
+      "bytes": 464
+    },
+    {
+      "path": "source-patches/initial.patch",
+      "sha256": "a628e3248607a672c9bc36e3ec303992aed18bd38b90f1f4d75e0f775b922675",
+      "bytes": 21096
+    },
+    {
+      "path": "source-patches/refined.patch",
+      "sha256": "21ebe29b64ad069289ac712bc2c490df336fc55c1bc5a2741c8ece88a32b0574",
+      "bytes": 24123
+    },
+    {
+      "path": "unchanged-source/complete-compressor-borrowed-caller.mbc",
+      "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+      "bytes": 4138627
+    },
+    {
+      "path": "unchanged-source/complete-compressor-borrowed-caller.mec",
+      "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+      "bytes": 160857
+    }
+  ]
+}
