@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-31T16:24:59.331591+00:00",
+  "head": "234d440243ad424d700d174571ce5f3454d99ad6",
+  "files": [
+    {
+      "path": "engine-focused.py",
+      "sha256": "4557f36dc075fecc784d9bdc2c65eead0fe992a0a9b7588bc3d572877712d8d6",
+      "bytes": 5546
+    },
+    {
+      "path": "engine-parent-overlay/build.json",
+      "sha256": "e59586c41a2d15a10e59e91199832a9eef6488ee4d84fac6a67967db35d91124",
+      "bytes": 23038
+    },
+    {
+      "path": "engine-parent-overlay/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-parent-overlay/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-parent-overlay/native_collection_buffer_frames.rs",
+      "sha256": "762ecd767ae9fc9d919fed1b50803ee6288cfcd962432b567686f46c13a8bd8c",
+      "bytes": 20606
+    },
+    {
+      "path": "engine-parent-overlay/native_collection_frame_composition.rs",
+      "sha256": "103d63837eb775d37db0bb6faa1802d9c09187560cd047de649e78f0331b70c9",
+      "bytes": 15352
+    },
+    {
+      "path": "engine-parent-overlay/native_collection_frame_shape.rs",
+      "sha256": "ea8fb1a70161ab042da42a78272b4a7de3ae9515c5053c52fae6112140679980",
+      "bytes": 36612
+    }
+  ]
+}
