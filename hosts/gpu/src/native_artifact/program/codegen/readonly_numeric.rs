@@ -289,10 +289,20 @@ pub(in crate::native_artifact) fn emit_entry(
                 let rows = words.read(b, view + 2);
                 let columns = words.read(b, view + 3);
                 let width = proof.arrays[*array].width;
-                let (address, ty) =
-                    super::numeric_words::linear_address(b, ordinal, rows, columns, width, |b| {
-                        words.read(b, view)
-                    })?;
+                let Action::LibraryCall { template, .. } =
+                    code.blocks()[proof.arrays[*array].witness].action()
+                else {
+                    return Err(backend("numeric address lost its entry witness"));
+                };
+                let (address, ty) = super::numeric_words::linear_address(
+                    b,
+                    ordinal,
+                    rows,
+                    columns,
+                    width,
+                    template.inputs()[0].body(),
+                    |b| words.read(b, view),
+                )?;
                 let value = b.ins().load(ty, MemFlags::new(), address, 0);
                 let value = if width < 8 {
                     b.ins().uextend(types::I64, value)
