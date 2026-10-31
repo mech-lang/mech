@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-10-31T20:49:33.580994+00:00",
+  "head": "f8ddc8e6d6e1fb0be888d65e06635abfe42a9863",
+  "files": [
+    {
+      "path": "core-after/bound_call_tests.rs",
+      "sha256": "62220f7f518c5471e4eb1c848b0e5b687c04fb477176b8cf0bfdc4127452a3a6",
+      "bytes": 6109
+    },
+    {
+      "path": "core-after/composite_constructor_allocation.rs",
+      "sha256": "c19fa18a853588a94f54025d8de9cbebffb3da200d6f07602d575d295df3ace1",
+      "bytes": 24091
+    },
+    {
+      "path": "core-after/descriptor.json",
+      "sha256": "130fd192d86d6c0fe68412ea64a9fa9b4f10e59410640d22a9ce63d02bca07b5",
+      "bytes": 1483
+    },
+    {
+      "path": "core-after/descriptor.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "core-after/descriptor.stdout",
+      "sha256": "3a1f6037676df5290a0449d66cfdcde5619a23016f4a357ea854da9a6f735565",
+      "bytes": 350
+    },
+    {
+      "path": "core-after/mod.rs",
+      "sha256": "73ed381169c366fa517ac47115e5ff697366d5f3a15c4cf466ea009ba4da6126",
+      "bytes": 128186
+    },
+    {
+      "path": "core-after/specialization.rs",
+      "sha256": "fa2d123a8d939b5dbc60e87a4801b85361518aeb25d69230c5d09cbfeb456238",
+      "bytes": 75413
+    },
+    {
+      "path": "core-focused.py",
+      "sha256": "776ac20aad886a734a3c213a4ba12dd13f65ad313a121821ed9e3893c2587bdf",
+      "bytes": 3813
+    }
+  ]
+}
