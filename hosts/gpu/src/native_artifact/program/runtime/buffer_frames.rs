@@ -569,6 +569,26 @@ impl BufferFrames {
     pub(super) fn has_retirement_backing(&self) -> bool {
         self.inner.is_some()
     }
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    pub(super) fn retirement_is_empty(
+        &self,
+        recipes: &crate::native_artifact::program::prepare::frame_retirement::FrameRetirements,
+        value: u32,
+    ) -> bool {
+        let Some((_, operations)) = recipes.get(value as usize) else {
+            return true;
+        };
+        let Some(inner) = &self.inner else {
+            return false;
+        };
+        use crate::native_artifact::program::prepare::frame_retirement::Operation;
+        operations.iter().all(|op| match op {
+            Operation::Scalars(words) => inner.words.values()[words.clone()]
+                .iter()
+                .all(|&word| word == 0),
+            Operation::Managed(at) => inner.owners.values()[*at].is_none(),
+        })
+    }
     pub(super) fn retire_prepaid(
         &mut self,
         recipes: &crate::native_artifact::program::prepare::frame_retirement::FrameRetirements,
