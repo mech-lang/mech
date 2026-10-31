@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-31T01:02:06.545585+00:00",
+  "head": "b542f191df1df30ee4c1cecbd383131976619d5d",
+  "files": [
+    {
+      "path": "confirmation-primary/group1/after.stderr",
+      "sha256": "951dd09d3ef0a453f44fb5bdd730b39c37fb38df1c68150b62651ffc65ba1074",
+      "bytes": 6953
+    },
+    {
+      "path": "confirmation-primary/group1/after.stdout",
+      "sha256": "6a5a3a2d36459a658302e2caf992afdf4b0be3e614ac5d27151d162a2ebc068a",
+      "bytes": 174063
+    },
+    {
+      "path": "confirmation-primary/group1/before.stderr",
+      "sha256": "3005c044194ae90f64a89443d4c895d134c2c8ceeed34e655564cb93db3de0fe",
+      "bytes": 6953
+    },
+    {
+      "path": "confirmation-primary/group1/before.stdout",
+      "sha256": "e49de2b1ea89e3e64348e03dfb69386f86cf9f8b36f4c5b35c41a676bfb06d2e",
+      "bytes": 174040
+    },
+    {
+      "path": "confirmation-primary/group1/results.json",
+      "sha256": "6b3f1d80670001f7826f1702be28619aaefbe6fc64cc87e33d472873e87db638",
+      "bytes": 495704
+    },
+    {
+      "path": "run-confirmation.py",
+      "sha256": "ec0ce3c0862939c79400a1922d459fda6e7b78a7d1ee1a5b3f29bf58f3669767",
+      "bytes": 7470
+    }
+  ]
+}
