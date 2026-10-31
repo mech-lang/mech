@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T15:06:48.949856+00:00",
+  "head": "e06555ec25c26dfe557dbbb1071ce0d33ced3b34",
+  "files": [
+    {
+      "path": "ci/inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "ci/inventory.stdout",
+      "sha256": "9fcd73735a77fc860e20610d897bd59e074de2c43a23d55a283ffd06a999c744",
+      "bytes": 4446
+    },
+    {
+      "path": "ci/results.json",
+      "sha256": "3f8556f5195ab22909d09e73ee6c8fdf1cb46b8332a9f996a6d62bbc14ea7a80",
+      "bytes": 881
+    },
+    {
+      "path": "ci.py",
+      "sha256": "5b8351c04110ca85b33373be90f6ec08d3bf87e532aed659f891a770486c7028",
+      "bytes": 1811
+    }
+  ]
+}
