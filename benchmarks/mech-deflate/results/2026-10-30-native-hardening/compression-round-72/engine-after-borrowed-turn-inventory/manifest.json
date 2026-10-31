@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-31T22:38:26.122131+00:00",
+  "head": "8aca17fa656144b3fee1eafcff0540cb75d09867",
+  "files": [
+    {
+      "path": "engine-after/borrowed-turn-inventory.json",
+      "sha256": "4f78ef9956ac6593b154b927d943c764896ca166bd19e1e09b2033c4bbe11897",
+      "bytes": 12933
+    },
+    {
+      "path": "engine-after/borrowed-turn-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-after/borrowed-turn-inventory.stdout",
+      "sha256": "9120169b2a98ebdfb354657625ff86ddd76441fc77fa5e1e86966d6d44a0f51c",
+      "bytes": 780
+    },
+    {
+      "path": "engine-after/budget.rs",
+      "sha256": "37a99d64cc4af653767bcdbc7bb03fa753cfd00e18d9c12a45ea2fa3c06f1484",
+      "bytes": 173571
+    },
+    {
+      "path": "engine-after/native_compute_debit_tests.rs",
+      "sha256": "95fd1cf752d3a688eb0b3239875140daa17b53a9442ce512a1934cad1e3e790b",
+      "bytes": 7153
+    },
+    {
+      "path": "engine-focused.py",
+      "sha256": "d1fbe6ae6425139ee45b70268c2622ead842a65867cdd566b74fb6e701bae054",
+      "bytes": 5255
+    }
+  ]
+}
