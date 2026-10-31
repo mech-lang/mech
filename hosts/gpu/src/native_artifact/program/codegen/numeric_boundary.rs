@@ -20,7 +20,6 @@ pub(super) fn materialize(
         .shadow
         .ok_or_else(|| backend("numeric materialization lacks scratch home"))?;
     set_origin(b, frame, site as u64);
-    words.spill_all(b, locals)?;
     let zero = b.ins().iconst(types::I64, 0);
     // No active generated loan survives a failed cold call.
     b.ins()
