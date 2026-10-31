@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T10:38:28.584689+00:00",
+  "head": "e26250995d3f2384ba3693a61b98c90559c587e8",
+  "files": [
+    {
+      "path": "census.json",
+      "sha256": "6cf3d38e56fc9243868b33a3bcd9951a7e7584452e63305807ec18d61dd38ece",
+      "bytes": 22208043
+    },
+    {
+      "path": "consumer-pin.json",
+      "sha256": "24bee65df1637b4ffe97aff985f4261c44a51d8ba3e074e2a3c7fb601d4feea9",
+      "bytes": 184
+    },
+    {
+      "path": "run.py",
+      "sha256": "20733a4e8d3d17e195fa95e245519b29a701ecb8680a10f67883062d50078245",
+      "bytes": 5366
+    },
+    {
+      "path": "symbolize.json",
+      "sha256": "6383b3ea04f40a8d4486b6f4a0545e2d0e2451c290814755a2a1d76f11dfa978",
+      "bytes": 34398
+    },
+    {
+      "path": "symbols.json",
+      "sha256": "039612d684cce8088e717a6fe102b39f58761bcadeab7c23f1424c6415d1a4a3",
+      "bytes": 204423
+    }
+  ]
+}
