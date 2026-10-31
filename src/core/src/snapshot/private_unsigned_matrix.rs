@@ -123,15 +123,24 @@ impl PrivateUnsignedMatrix {
             ownership,
             append: _,
         } = self;
-        let registration = ownership.registration.clone();
-        Arc::get_mut(&mut value.root)
-            .expect("private wrapper has no aliases")
-            .memory_budget = Some(ownership);
-        let _ = registration.owner.set(Arc::downgrade(&value.root));
-        value.root.data.with_budget_imports(|imports| {
+        let root = Arc::get_mut(&mut value.root).expect("private wrapper has no aliases");
+        let data = Arc::get_mut(&mut root.data).expect("private data has no aliases or identities");
+        // No data identity or publication escapes the private phase. Exclusive
+        // access initializes the already-admitted registry without allocating
+        // a platform lock. Install it before exposing the wrapper's weak owner.
+        with_exclusive_budget_gate(&mut data.budget_imports, |imports| {
             debug_assert!(imports.is_none());
-            *imports = Some(registration);
+            *imports = Some(ownership.registration.clone());
         });
+        root.memory_budget = Some(ownership);
+        let _ = value
+            .root
+            .memory_budget
+            .as_ref()
+            .expect("private publication retains its admission")
+            .registration
+            .owner
+            .set(Arc::downgrade(&value.root));
         value
     }
 }
