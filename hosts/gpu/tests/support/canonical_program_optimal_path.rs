@@ -117,59 +117,6 @@ fn path_scan_emits_native_pieces_around_its_nested_scalar_child() {
 }
 
 #[test]
-fn path_match_search_groups_existing_private_scalar_aggregate_steps() {
-    for artifact in artifacts(SOURCE).0 {
-        let object = super::emit_program_object(&artifact, &mech_stdlib::source_catalog()).unwrap();
-        let image: serde_json::Value =
-            serde_json::from_slice(&object.descriptor().encode_build_owned_image().unwrap())
-                .unwrap();
-        let aggregates = object.descriptor().plan().scalar_aggregates();
-        let metadata = object.metadata();
-        let parent = metadata["numeric_parent_partitions"]["parents"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|parent| parent["scalar_child"] == true)
-            .unwrap();
-        let child = parent["child"].as_u64().unwrap() as u32;
-        assert!(
-            image["descriptor"]["map_admission"]["groups"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .any(|group| group["owner"].is_null()
-                    && group["sites"].as_array().unwrap().iter().any(|site| {
-                        let site = site.as_u64().unwrap() as usize;
-                        aggregates.action(site).is_some()
-                            && object.descriptor().plan().blocks()[site].iteration() == Some(child)
-                    })),
-            "the unchanged match-choice search must group its existing scalar aggregate steps"
-        );
-        let groups = image["descriptor"]["map_admission"]["groups"]
-            .as_array()
-            .unwrap();
-        let parent_iteration = parent["iteration"].as_u64().unwrap() as u32;
-        assert!(groups.iter().any(|group| group["owner"].is_null()
-            && group["sites"].as_array().unwrap().iter().any(|site| {
-                let site = site.as_u64().unwrap() as usize;
-                object.descriptor().plan().blocks()[site].iteration() == Some(parent_iteration)
-                    && matches!(aggregates.action(site),
-                        Some(mech_engine::native_artifact::NativeScalarAggregateAction::Pack { .. }))
-            })), "the scalar state packs after a numeric piece must retain ordinary grouping");
-        for segment in metadata["compiled_numeric_segments"].as_array().unwrap() {
-            let sites = segment["source_sites"].as_array().unwrap();
-            for group in groups {
-                let members = group["sites"].as_array().unwrap();
-                assert!(
-                    !members.iter().any(|site| sites.contains(site)),
-                    "a numeric piece and ordinary admission group must have separate entry authority"
-                );
-            }
-        }
-    }
-}
-
-#[test]
 fn pinned_min_cost_paths_keep_exact_nodes_and_real_reservation() {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "../fixtures/native/deflate-optimal-path-reference.json"

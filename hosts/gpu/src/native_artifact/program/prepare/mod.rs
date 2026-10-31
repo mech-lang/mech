@@ -291,7 +291,6 @@ impl PreparedNativeProgram {
         let map_admission = native::program::prepare::map_admission::Layout::derive(
             &plan,
             Some(&map_owner_words),
-            &scalar_aggregates,
             &analysis_visits,
             &closed_tails,
         )?;
@@ -307,14 +306,6 @@ impl PreparedNativeProgram {
             &visits,
             &frame_retirements,
             &map_admission,
-        )?;
-        let map_admission = map_admission.outside_composed_pieces(
-            &compositions,
-            &plan,
-            Some(&map_owner_words),
-            &scalar_aggregates,
-            &analysis_visits,
-            &closed_tails,
         )?;
         let uniform_word_collections = facts.uniform_unsigned_collections().into_boxed_slice();
         let window_regions = plan.window_regions().into_boxed_slice();
