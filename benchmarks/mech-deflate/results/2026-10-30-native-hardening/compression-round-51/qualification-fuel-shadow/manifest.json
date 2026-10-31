@@ -1,0 +1,21 @@
+{
+  "created_utc": "2026-10-31T08:13:54.862369+00:00",
+  "head": "454380f00fe5232ae5c9198c4de7b3b67139372e",
+  "files": [
+    {
+      "path": "units-after/fuel-shadow.json",
+      "sha256": "0a6e8ec710f7ba279a4507a0e8e7cd5ad5b0287891d0d7d012089c7b02ace276",
+      "bytes": 489
+    },
+    {
+      "path": "units-after/fuel-shadow.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "units-after/fuel-shadow.stdout",
+      "sha256": "9d89c2a516996bc686e95cfb5b53586779cc3cecde74ba474d66ee03e85064db",
+      "bytes": 17656
+    }
+  ]
+}
