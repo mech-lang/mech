@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T03:23:06.113446+00:00",
+  "head": "ed5024bd5f54f6a45434425f269334caaf2e6600",
+  "files": [
+    {
+      "path": "linked-build.py",
+      "sha256": "28a453a2d37390e19409315e5d3cc1e2eddcda74f4f248e342d6bc10c8d50cde",
+      "bytes": 6038
+    },
+    {
+      "path": "linked-primary/before/binding.json",
+      "sha256": "65b9f63ceed3c9969edd89dfd6c03d6661f8ec0c9c3c07ab4c2d8ab645beb3bf",
+      "bytes": 13698
+    },
+    {
+      "path": "linked-primary/before/metadata.json",
+      "sha256": "d47f456a2a2be1c9408a2c2c7afb0d8cf00e67aabf6587f0445a645067680db4",
+      "bytes": 2542212
+    },
+    {
+      "path": "linked-primary/before/worker-build.json",
+      "sha256": "426242f8604aa323ee13f8925fd838dc366531c6a0e3274f818cf9ec0dc3d6ce",
+      "bytes": 14630
+    },
+    {
+      "path": "linked-primary/before/worker.rs",
+      "sha256": "11b7d5308eb13d9b37c6a54b8e324228d404fa2aef81745aa7b60a7c26b988a5",
+      "bytes": 6938
+    }
+  ]
+}
