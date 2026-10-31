@@ -114,9 +114,11 @@ fn completed_children_keep_original_prices_returns_and_current_scope_effects() {
 
 #[test]
 fn collection_boundaries_and_scalar_only_programs_keep_original_inventories() {
+    let crossing = "+> text\ninner(n<u64>, token<string>) => <string> | (n, token) => ((n > 0u64)? | true => inner(n - 1u64, token) | false => token).\nouter(n<u64>, token<string>) => (out<string>) :=\n  joined := text/join([inner(k, token) | k <- [1u64, 2u64]], \"\")\n  out := ((n > 0u64)? | true => outer(n - 1u64, joined) | false => joined).\nouter(n<u64>, token<string>)\n";
     for source in [
         "seed<u64> + 1u64\n",
         "+> text\n[text/join([inner | inner <- values], outer) | outer <- values<[string]>]\n",
+        crossing,
     ] {
         for plan in plans(source) {
             let frames = plan.facts().buffer_frames();
@@ -124,6 +126,11 @@ fn collection_boundaries_and_scalar_only_programs_keep_original_inventories() {
             let tables = RetirementTables::derive(&plan, &plan.scalar_aggregates()).unwrap();
             let layout = Layout::derive(&plan, &tables, &frames, &recipes).unwrap();
             assert!(layout.boundaries.is_empty());
+            if source == crossing {
+                assert!(plan.iterations().iter().any(|control| {
+                    matches!(control, NativeControlLoop::Tail(tail) if tail.parent().is_some_and(|parent| matches!(plan.iterations()[parent as usize], NativeControlLoop::Collection(_))))
+                }), "fixture must actually cross a collection boundary");
+            }
         }
     }
 }
