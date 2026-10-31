@@ -182,7 +182,7 @@ impl Invocation<'_, '_, '_> {
                         &mut self.state.control.work,
                     )?;
                 } else {
-                    let value = self.state.buffer_frames.project(
+                    let projection = self.state.buffer_frames.checked_projection(
                         layout,
                         *source,
                         *ordinal,
@@ -197,7 +197,7 @@ impl Invocation<'_, '_, '_> {
                             .as_ref()
                             .ok_or_else(|| invalid("private record field lost selected factory"))?;
                         let coexistence = self.selected_join_coexistence(None)?;
-                        match &value {
+                        match self.state.buffer_frames.borrow_projection(&projection)? {
                             super::super::buffer_frames::Field::Managed(value) => call
                                 .admit_buffer_record_field(
                                     &selector,
@@ -211,8 +211,8 @@ impl Invocation<'_, '_, '_> {
                                 .admit_buffer_record_word(
                                     &selector,
                                     *ordinal,
-                                    *schema,
-                                    *value,
+                                    schema,
+                                    value,
                                     self.limits,
                                     &self.state.library,
                                     coexistence,
@@ -224,7 +224,7 @@ impl Invocation<'_, '_, '_> {
                         })?;
                     }
                     let ty = &descriptor.metadata().plan.values()[output.get() as usize];
-                    match value {
+                    match self.state.buffer_frames.borrow_projection(&projection)? {
                         super::super::buffer_frames::Field::Scalar { schema, value } => {
                             if schema != ty.schema() || ty.scalar_kind() != Some(value.kind()) {
                                 return Err(invalid("private frame scalar field schema differs"));
@@ -243,7 +243,7 @@ impl Invocation<'_, '_, '_> {
                             }
                             self.state.arena.put(
                                 output.get(),
-                                &value,
+                                value,
                                 &mut self.state.control.work,
                             )?;
                         }
