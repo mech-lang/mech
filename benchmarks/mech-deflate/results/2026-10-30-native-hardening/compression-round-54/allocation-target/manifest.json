@@ -1,0 +1,21 @@
+{
+  "created_utc": "2026-10-31T10:57:03.932904+00:00",
+  "head": "9c2b2f793fba45fff83ffe9fd257c93f745ccc2e",
+  "files": [
+    {
+      "path": "allocation-target.json",
+      "sha256": "6e00fc6cfe954c46a00d32c30b0e9ec2b75de5c47c1d11f18ca63bf40e5f9b05",
+      "bytes": 1677
+    },
+    {
+      "path": "cleanup.json",
+      "sha256": "c7f68da7891e6532738ce3430bea9097c1fb2a279a2f809e905bb160e0a79bb2",
+      "bytes": 267
+    },
+    {
+      "path": "completed-old-build-cleanup.json",
+      "sha256": "4d8a5254d712b856d0c9c80ffec0c16c0fb4e41daa73780e72b5052f4c438a80",
+      "bytes": 37828
+    }
+  ]
+}
