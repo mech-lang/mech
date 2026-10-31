@@ -1,0 +1,59 @@
+{
+  "fresh_rust_tests": 1025,
+  "cohorts": [
+    {
+      "receipt": "units-after/runtime.json",
+      "tests": 326
+    },
+    {
+      "receipt": "units-after/work-values.json",
+      "tests": 32
+    },
+    {
+      "receipt": "units-after/preparation.json",
+      "tests": 2
+    },
+    {
+      "receipt": "qualification/path-mechanism.json",
+      "tests": 1
+    },
+    {
+      "receipt": "qualification/components.json",
+      "tests": 234
+    },
+    {
+      "receipt": "qualification/composition.json",
+      "tests": 8
+    },
+    {
+      "receipt": "core-after/all.json",
+      "tests": 364
+    },
+    {
+      "receipt": "core-qualification/summary.json",
+      "tests": 54
+    },
+    {
+      "receipt": "allocation-after-recovery/run.json",
+      "tests": 4
+    }
+  ],
+  "linked_executions": 12,
+  "scalar_controls": 12,
+  "scalar_worst_after_over_before": 1.009120781962336,
+  "frame_allocation_cases": 8,
+  "listed_and_executed_ci_tests": 31,
+  "python_tests": 132,
+  "architecture_checks": 10,
+  "inherited_skip": "complete_unchanged_knucleotide_body_uses_the_owned_emitted_map; reduced selected catalog lacks its stats import",
+  "no_local_all_features_or_hosted_pass_claimed": true,
+  "additional_listed_and_executed_core_ci_tests": {
+    "unique_admission": 9,
+    "numeric_matrix": 5,
+    "constructor_allocation": 4
+  },
+  "all_golden_values_and_allowances_unchanged": true,
+  "finite_work_comparison_byte_node_cleanup_preserved": true,
+  "final_test_refinement": "Exact injected AllocationFailed and successful same-account retry; final source freshly fails on retained parent, passes all four constructor tests on candidate and lists/executes all four again. Production source and completed performance binaries unchanged.",
+  "adverse_observations_retained": "Prepared pair 2 is 0.191491845% slower. Three other pairs improve; 43/64 blocks improve. The R55 adverse cycle cohort remains in its original packet; no results are replaced."
+}
