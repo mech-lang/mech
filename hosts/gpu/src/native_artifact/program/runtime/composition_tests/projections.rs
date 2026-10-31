@@ -18,6 +18,7 @@ struct Counts {
 thread_local! {
     static COUNTS: RefCell<Counts> = RefCell::new(Counts::default());
     static DECLINE: Cell<bool> = const { Cell::new(false) };
+    static PROBE: Cell<u8> = const { Cell::new(0) };
     static ADMIT: Cell<Option<Admit>> = const { Cell::new(None) };
     static HELPER: Cell<Option<Helper>> = const { Cell::new(None) };
 }
@@ -48,6 +49,40 @@ unsafe extern "C" fn helper(
         }
         return 0;
     }
+    if operation == BATCH {
+        let probe = PROBE.with(|value| value.replace(0));
+        // SAFETY: the owning checked entry retains this synchronous context and
+        // result lane. Each probe delegates rejection to the real callback.
+        unsafe {
+            match probe {
+                1 => {
+                    return HELPER.with(Cell::get).unwrap()(
+                        context, site, operation, 1, b, c, output,
+                    );
+                }
+                2 => {
+                    return HELPER.with(Cell::get).unwrap()(
+                        context,
+                        site + 1,
+                        operation,
+                        a,
+                        b,
+                        c,
+                        output,
+                    );
+                }
+                3 => {
+                    let original = HELPER.with(Cell::get).unwrap();
+                    let status = original(context, site, operation, a, b, c, output);
+                    if status != 0 {
+                        return status;
+                    }
+                    return original(context, site, operation, a, b, c, output);
+                }
+                _ => {}
+            }
+        }
+    }
     // SAFETY: unchanged arguments/result lane from the retained emitted entry.
     unsafe { HELPER.with(Cell::get).unwrap()(context, site, operation, a, b, c, output) }
 }
@@ -59,12 +94,14 @@ fn run(
     memory: &ManagedMemoryBudget,
     policy: NativeProgramExecutionLimits,
     decline: bool,
+    probe: u8,
 ) -> (
     Result<NativeProgramExecutionReport, NativeProgramExecutionError>,
     Counts,
 ) {
     COUNTS.with(|v| *v.borrow_mut() = Counts::default());
     DECLINE.with(|v| v.set(decline));
+    PROBE.with(|v| v.set(probe));
     let entry = jit.test_checked_entry();
     let result = execute(
         descriptor,
@@ -80,6 +117,8 @@ fn run(
                 let status = entry(frame);
                 (*frame).base.admit_next = previous.0;
                 (*frame).helper = previous.1;
+                ADMIT.with(|v| v.set(None));
+                HELPER.with(|v| v.set(None));
                 status
             }
         },
@@ -168,6 +207,7 @@ fn managed_projections_keep_current_fields_ordered_errors_aliases_and_retry() {
                         &memory,
                         mode.execution(),
                         decline,
+                        0,
                     );
                     if let Some(error) = error {
                         let receipt = format!("{:?}", result.unwrap_err());
@@ -226,7 +266,62 @@ fn managed_projections_keep_current_fields_ordered_errors_aliases_and_retry() {
                             .all(|(a, b)| a.shares_frozen_storage(b))
                     );
                 }
-                drop(published);
+                let args = arguments(&artifact, &memory, 5, 2, true, true, 1, false);
+                let before = contents(&args);
+                for probe in [1, 2, 3] {
+                    let prior = published.clone();
+                    let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                    let (rejected, counts) = run(
+                        &jit,
+                        descriptor,
+                        &args,
+                        &mut published,
+                        &memory,
+                        mode.execution(),
+                        false,
+                        probe,
+                    );
+                    assert!(
+                        matches!(
+                            rejected,
+                            Err(NativeProgramExecutionError::Base(
+                                NativeExecutionError::Descriptor { .. }
+                            ))
+                        ),
+                        "{rejected:?}"
+                    );
+                    assert!(counts.batches > 0);
+                    assert!(published.iter().zip(&prior).all(|(a, b)| {
+                        a.as_ref()
+                            .unwrap()
+                            .shares_frozen_storage(b.as_ref().unwrap())
+                    }));
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        retained
+                    );
+                    assert_eq!(contents(&args), before);
+                    let (recovered, _) = run(
+                        &jit,
+                        descriptor,
+                        &args,
+                        &mut published,
+                        &memory,
+                        mode.execution(),
+                        false,
+                        0,
+                    );
+                    recovered.unwrap();
+                    assert_eq!(
+                        published[0]
+                            .as_ref()
+                            .unwrap()
+                            .canonical_data_draft()
+                            .unwrap(),
+                        Data::U64(94_434)
+                    );
+                }
+                drop((args, published));
                 assert_eq!(
                     (memory.used_bytes(), memory.retained_snapshot_nodes()),
                     (0, 0)
