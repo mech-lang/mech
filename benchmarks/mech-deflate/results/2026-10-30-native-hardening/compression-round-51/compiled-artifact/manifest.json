@@ -1,0 +1,21 @@
+{
+  "created_utc": "2026-10-31T08:38:15.793417+00:00",
+  "head": "a08a8ac149d55854e55c9af333e24ddf85f07d63",
+  "files": [
+    {
+      "path": "compiled-artifact/descriptor.json.gz",
+      "sha256": "0f0e8d5779b0b6826205fa8df6b18b87a2aae8032ba70fbb18e57dae2cd0ca31",
+      "bytes": 2174492
+    },
+    {
+      "path": "compiled-artifact/object.o.gz",
+      "sha256": "b82d403f890b8ea023e80542ca9558f61a34e1abe528a25daea3380dc46e7506",
+      "bytes": 2833188
+    },
+    {
+      "path": "compiled-artifact/payload.json",
+      "sha256": "737668d9df87875d60e67cc5747247b6104ebc4330928fe6cbb1f2575abceb5a",
+      "bytes": 1010
+    }
+  ]
+}
