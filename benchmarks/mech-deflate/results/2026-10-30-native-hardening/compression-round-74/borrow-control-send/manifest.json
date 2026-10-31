@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T23:54:54.558000+00:00",
+  "head": "37151adb6ac365f6de3bd7a7646b66dd20ca9ad0",
+  "files": [
+    {
+      "path": "borrow-controls/send.json",
+      "sha256": "91b2f28de8f0fe0ea33841e5b82cdf8108e364909a50834af6180863d8180867",
+      "bytes": 13259
+    },
+    {
+      "path": "borrow-controls/send.rs",
+      "sha256": "03810e17ee0a009eb6568eab67efcbe15581e46414465d53b141f73486d5a58c",
+      "bytes": 202
+    },
+    {
+      "path": "borrow-controls/send.stderr",
+      "sha256": "2ab89ed8badf08c603ece64bb694d47367bbbcef76c27ce4313efa3371e5279f",
+      "bytes": 6963
+    },
+    {
+      "path": "borrow-controls/send.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "borrow-controls.py",
+      "sha256": "4c30c457a35d482f7b688421f7337af627330618bcac7ecd9d7549fd77815e53",
+      "bytes": 3868
+    }
+  ]
+}
