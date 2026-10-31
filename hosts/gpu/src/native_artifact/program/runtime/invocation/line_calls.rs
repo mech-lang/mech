@@ -1,5 +1,26 @@
 //! Synchronous invocation orchestration for this owner.
 use super::*;
+
+/// The same current-owner census with disjoint borrows of transport and work.
+#[inline]
+pub(super) fn coexistence(
+    state: &crate::native_artifact::program::runtime::lines::State,
+    layout: &crate::native_artifact::program::prepare::line_matrix::Layout,
+    skip: Option<NativeMatchValue>,
+    work: &mut NativeWorkMeter,
+    library: &NativeLibraryWorkBudget,
+) -> Result<ResourceDemand, Error> {
+    if state.views.is_empty() {
+        return Ok(ResourceDemand::default());
+    }
+    work.charge(
+        NativeExecutionPhase::Setup,
+        amount(state.views.len(), 256, 256)?,
+    )?;
+    let ordinal = skip.and_then(|value| layout.matrices[value.get() as usize]);
+    state.retained_demand(ordinal, &library.memory_budget())
+}
+
 impl Invocation<'_, '_, '_> {
     pub(in crate::native_artifact::program::runtime) fn line_matrix(
         &self,
@@ -19,19 +40,13 @@ impl Invocation<'_, '_, '_> {
         &mut self,
         skip: Option<NativeMatchValue>,
     ) -> Result<ResourceDemand, Error> {
-        if self.state.line_matrices.views.is_empty() {
-            return Ok(ResourceDemand::default());
-        }
-        self.state.control.work.charge(
-            NativeExecutionPhase::Setup,
-            amount(self.state.line_matrices.views.len(), 256, 256)?,
-        )?;
-        let ordinal = skip.and_then(|value| {
-            self.descriptor.metadata().line_matrices.matrices[value.get() as usize]
-        });
-        self.state
-            .line_matrices
-            .retained_demand(ordinal, &self.state.library.memory_budget())
+        coexistence(
+            &self.state.line_matrices,
+            &self.descriptor.metadata().line_matrices,
+            skip,
+            &mut self.state.control.work,
+            &self.state.library,
+        )
     }
     pub(in crate::native_artifact::program::runtime) fn line_matrix_call(
         &mut self,
