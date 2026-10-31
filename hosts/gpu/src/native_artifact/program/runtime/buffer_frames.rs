@@ -33,13 +33,6 @@ pub(super) enum Field<'a> {
     },
     Managed(&'a Value),
 }
-pub(super) enum Projection {
-    Scalar {
-        schema: mech_core::SchemaId,
-        value: NativeScalarValue,
-    },
-    Managed(FrameField),
-}
 impl BufferFrames {
     fn word_count(layout: &Layout) -> Result<usize, NativeProgramExecutionError> {
         layout
@@ -343,20 +336,6 @@ impl BufferFrames {
         self.check_copy(layout, source, target)?;
         self.copy_fields::<false>(layout, source, target)
     }
-    fn projection_field(
-        &self,
-        layout: &Layout,
-        source: NativeMatchValue,
-        ordinal: usize,
-        work: &mut NativeWorkMeter,
-    ) -> Result<FrameField, NativeProgramExecutionError> {
-        let field = layout
-            .fields(source)
-            .and_then(|f| f.get(ordinal))
-            .ok_or_else(|| invalid("private frame field outside layout"))?;
-        work.charge(NativeExecutionPhase::Setup, 64)?;
-        Ok(*field)
-    }
     pub(super) fn project(
         &self,
         layout: &Layout,
@@ -364,37 +343,11 @@ impl BufferFrames {
         ordinal: usize,
         work: &mut NativeWorkMeter,
     ) -> Result<Field<'_>, NativeProgramExecutionError> {
-        let field = self.projection_field(layout, source, ordinal, work)?;
-        self.borrow_field(field)
-    }
-    /// Preserve the original check/debit before selector and selected-call
-    /// admission. Only immutable lane metadata crosses those checks; borrowing
-    /// the actual owner afterward avoids an intermediate Value clone.
-    pub(super) fn checked_projection(
-        &self,
-        layout: &Layout,
-        source: NativeMatchValue,
-        ordinal: usize,
-        work: &mut NativeWorkMeter,
-    ) -> Result<Projection, NativeProgramExecutionError> {
-        let field = self.projection_field(layout, source, ordinal, work)?;
-        Ok(match self.borrow_field(field)? {
-            Field::Scalar { schema, value } => Projection::Scalar { schema, value },
-            Field::Managed(_) => Projection::Managed(field),
-        })
-    }
-    pub(super) fn borrow_projection(
-        &self,
-        projection: &Projection,
-    ) -> Result<Field<'_>, NativeProgramExecutionError> {
-        match *projection {
-            // The same checked word was held by the old owned Field across
-            // these synchronous selected-call checks. No frame writes occur.
-            Projection::Scalar { schema, value } => Ok(Field::Scalar { schema, value }),
-            Projection::Managed(field) => self.borrow_field(field),
-        }
-    }
-    fn borrow_field(&self, field: FrameField) -> Result<Field<'_>, NativeProgramExecutionError> {
+        let field = layout
+            .fields(source)
+            .and_then(|f| f.get(ordinal))
+            .ok_or_else(|| invalid("private frame field outside layout"))?;
+        work.charge(NativeExecutionPhase::Setup, 64)?;
         let inner = self
             .inner
             .as_ref()

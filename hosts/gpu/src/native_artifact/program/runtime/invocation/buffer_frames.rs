@@ -182,7 +182,7 @@ impl Invocation<'_, '_, '_> {
                         &mut self.state.control.work,
                     )?;
                 } else {
-                    let projection = self.state.buffer_frames.checked_projection(
+                    let value = self.state.buffer_frames.project(
                         layout,
                         *source,
                         *ordinal,
@@ -196,8 +196,15 @@ impl Invocation<'_, '_, '_> {
                         let call = descriptor.metadata().calls[site]
                             .as_ref()
                             .ok_or_else(|| invalid("private record field lost selected factory"))?;
-                        let coexistence = self.selected_join_coexistence(None)?;
-                        match self.state.buffer_frames.borrow_projection(&projection)? {
+                        let coexistence = super::joins::coexistence(
+                            self.state.collections.as_ref(),
+                            &self.state.line_matrices,
+                            &descriptor.metadata().line_matrices,
+                            None,
+                            &mut self.state.control.work,
+                            &self.state.library,
+                        )?;
+                        match &value {
                             super::super::buffer_frames::Field::Managed(value) => call
                                 .admit_buffer_record_field(
                                     &selector,
@@ -211,8 +218,8 @@ impl Invocation<'_, '_, '_> {
                                 .admit_buffer_record_word(
                                     &selector,
                                     *ordinal,
-                                    schema,
-                                    value,
+                                    *schema,
+                                    *value,
                                     self.limits,
                                     &self.state.library,
                                     coexistence,
@@ -224,7 +231,7 @@ impl Invocation<'_, '_, '_> {
                         })?;
                     }
                     let ty = &descriptor.metadata().plan.values()[output.get() as usize];
-                    match self.state.buffer_frames.borrow_projection(&projection)? {
+                    match value {
                         super::super::buffer_frames::Field::Scalar { schema, value } => {
                             if schema != ty.schema() || ty.scalar_kind() != Some(value.kind()) {
                                 return Err(invalid("private frame scalar field schema differs"));
