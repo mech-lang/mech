@@ -15,7 +15,6 @@ pub(in crate::native_artifact) mod call_cache;
 pub(in crate::native_artifact) mod call_routes;
 pub(in crate::native_artifact) mod composition;
 pub(in crate::native_artifact) mod frame_retirement;
-pub(in crate::native_artifact) mod projections;
 
 /// Recomputed both on source preparation and independent build-image loading.
 pub(in crate::native_artifact) fn prepare_frame_composition(
@@ -48,7 +47,6 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     // Complete prepared-call inventory, independently rederived on image load.
     pub(in crate::native_artifact) call_cache: call_cache::Layout,
     pub(in crate::native_artifact) compositions: composition::Layout,
-    pub(in crate::native_artifact) projections: projections::Layout,
     // Derived from these exact calls/proofs, including independent image load.
     pub(in crate::native_artifact) call_routes: Box<[call_routes::LibraryCallRoute]>,
     pub(in crate::native_artifact) types: Box<[NativeValueSlot]>,
@@ -309,15 +307,6 @@ impl PreparedNativeProgram {
             &frame_retirements,
             &map_admission,
         )?;
-        let projections = projections::Layout::derive(
-            &plan,
-            &buffer_frames,
-            &visits,
-            &closed_tails,
-            &compositions,
-            Some(&map_owner_words),
-            &parallel,
-        )?;
         let uniform_word_collections = facts.uniform_unsigned_collections().into_boxed_slice();
         let window_regions = plan.window_regions().into_boxed_slice();
         let occupied_frame =
@@ -433,7 +422,6 @@ impl PreparedNativeProgram {
             calls,
             call_cache,
             compositions,
-            projections,
             call_routes,
             types,
             visits,

@@ -270,15 +270,6 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
         &frame_retirements,
         &w.map_admission,
     )?;
-    let projections = native::program::prepare::projections::Layout::derive(
-        &plan,
-        &buffer_frames,
-        &visits,
-        &closed_tails,
-        &compositions,
-        w.map_owner_words.as_ref(),
-        &w.parallel,
-    )?;
     if w.max_library_inputs < compositions.argument_words() {
         return Err("restored parent native argument bank is too small".into());
     }
@@ -289,7 +280,6 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
             calls,
             call_cache,
             compositions,
-            projections,
             call_routes,
             types,
             visits,

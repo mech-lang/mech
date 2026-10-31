@@ -1098,25 +1098,6 @@ impl<'plan> CfgDefinition<'plan> {
                         .as_ref()
                         .ok_or_else(|| backend("structural observation without managed hooks"))?;
                     let zero = b.ins().iconst(types::I64, 0);
-                    #[cfg(feature = "canonical-native-program")]
-                    if let crate::native_artifact::codegen::control::plan::CodePlan::Program(
-                        program,
-                    ) = plan
-                        && let Some(batch) = program.metadata().projections.entry(index)
-                    {
-                        hooks.call(b, index, GlobalHelper::ProjectionBatch, [zero; 3], error);
-                        let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
-                        let ordinary = b.create_block();
-                        b.ins().brif(
-                            ready,
-                            blocks[batch.successor as usize]
-                                .ok_or_else(|| backend("projection successor is not emitted"))?,
-                            &[],
-                            ordinary,
-                            &[],
-                        );
-                        b.switch_to_block(ordinary);
-                    }
                     hooks.call(
                         b,
                         index,

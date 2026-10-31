@@ -280,7 +280,6 @@ impl NativeProgramObject {
             Some(serde_json::json!({"iteration":iteration,"header":tail.header(),"parent":tail.parent(),"origin":tail.origin(),"proof_eligible":result.is_ok(),"selected":prepared.closed_tails.regions.iter().any(|region| region.iteration as usize == iteration && region.numeric.is_some()),"rejection":result.err()}))
         }).collect::<Vec<_>>());
         metadata["numeric_parent_partitions"] = serde_json::json!(prepared.compositions);
-        metadata["frame_projection_batches"] = serde_json::json!(prepared.projections);
         metadata["compiled_numeric_segments"] = serde_json::json!(&self.codegen.numeric_segments);
         metadata["compiled_readonly_numeric_loops"] =
             serde_json::json!(&self.codegen.readonly_numeric_loops);
