@@ -1,0 +1,131 @@
+{
+  "created_utc": "2026-10-31T03:57:17.318652+00:00",
+  "head": "b50e3346ddfc08a02b50863c4f3231e4f58dfad0",
+  "files": [
+    {
+      "path": "small-allocations/adapter-failure.json",
+      "sha256": "1d89ef7742d36d15bb791f7edd6057a0cbfce239c64b4fce4164438c378cb307",
+      "bytes": 415
+    },
+    {
+      "path": "small-allocations/allocation_profile.rs",
+      "sha256": "391d373491b43e504b078cea7beea5c993f459f01709a6a1ae6efb1eba59a833",
+      "bytes": 1390
+    },
+    {
+      "path": "small-allocations/probe-build.json",
+      "sha256": "6ffda0e6db88563853cf84a218615d8dd516030be52d80b043e5804d54c026e9",
+      "bytes": 12289
+    },
+    {
+      "path": "small-allocations/probe-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "small-allocations/probe-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "small-allocations/resolved0.json",
+      "sha256": "93c57abb0a8a930eb6245c820df8519a31c7cfe96dbada16fc93ff4c1e81ab84",
+      "bytes": 22352734
+    },
+    {
+      "path": "small-allocations/resolved1.json",
+      "sha256": "e3542b1bd5bc4da01bf4208e6b9798e4c32b2fa041cd6afc0278cd4a73fdc3da",
+      "bytes": 22352741
+    },
+    {
+      "path": "small-allocations/run0.json",
+      "sha256": "413e58e8bbe67189926c2b6c6ce884143c2ca0d3baa441187cb47249f1e29032",
+      "bytes": 12214
+    },
+    {
+      "path": "small-allocations/run0.stderr",
+      "sha256": "c2297a433dc93016f1d5978657b776e38508347701aa958f9f9d20b50dd60397",
+      "bytes": 9604118
+    },
+    {
+      "path": "small-allocations/run0.stdout",
+      "sha256": "6f6f4d977f2a0a87b22c1c1f68584fcc8c1f6a199c17f5e4bff1630afef01115",
+      "bytes": 1181
+    },
+    {
+      "path": "small-allocations/run1.json",
+      "sha256": "6079bcf8f3475b48b76d34919adb5521c195e2b66e53785567bc21b2f557fd82",
+      "bytes": 12213
+    },
+    {
+      "path": "small-allocations/run1.stderr",
+      "sha256": "64d31d4f0cdc92a6dc456fd39034f466e989bf5faa87554e75d4aff753e2606f",
+      "bytes": 9604855
+    },
+    {
+      "path": "small-allocations/run1.stdout",
+      "sha256": "a4667588bb0dd758d8a1e454a3cc9c174a88cf6de2a0d65bc8437f0ca8f63164",
+      "bytes": 1183
+    },
+    {
+      "path": "small-allocations/small_allocations.c",
+      "sha256": "d9476d92edfd39a5c1585e19a5cc3546d036907e08b254bb9f6be3257c9600ef",
+      "bytes": 4669
+    },
+    {
+      "path": "small-allocations/symbols0.json",
+      "sha256": "14f62538ccbb8b7a0d6fac78c691675ac5d7db4c4bc116c623fee5ef2afb8b63",
+      "bytes": 39061
+    },
+    {
+      "path": "small-allocations/symbols0.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "small-allocations/symbols0.stdout",
+      "sha256": "5316716b1d8fe6a88961b5cf197ee7de1eba96830a5aafef2a43b662284f00a1",
+      "bytes": 167133
+    },
+    {
+      "path": "small-allocations/symbols1.json",
+      "sha256": "b07a24808d6d70c1ff87461eb4a24bd5628c1846b7224fab8521965ec58aba1f",
+      "bytes": 39061
+    },
+    {
+      "path": "small-allocations/symbols1.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "small-allocations/symbols1.stdout",
+      "sha256": "5316716b1d8fe6a88961b5cf197ee7de1eba96830a5aafef2a43b662284f00a1",
+      "bytes": 167133
+    },
+    {
+      "path": "small-allocations/worker-build.json",
+      "sha256": "74da8a07ee1670e84e277ed8072429a92ca6c84ef1aa377d778f416d842ae07f",
+      "bytes": 14120
+    },
+    {
+      "path": "small-allocations/worker-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "small-allocations/worker-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "small-allocations/worker.rs",
+      "sha256": "66d68e9756fa2687e34d6a6daf4b190f3c9ddf273cb4cc4f94ebedce1541a20c",
+      "bytes": 7049
+    },
+    {
+      "path": "small-allocations.py",
+      "sha256": "7bebc3329bcb0ca9c38b901ba9f530e835d24e66494ece2227ffac4738dbc912",
+      "bytes": 3955
+    }
+  ]
+}
