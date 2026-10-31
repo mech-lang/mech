@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-31T15:58:04.288172+00:00",
+  "head": "886d08a2fd0de00f6a37e7fd3215ce8c7c6f3a04",
+  "files": [
+    {
+      "path": "snapshot-controls/after/ci-run.json",
+      "sha256": "adca80bd0a838442444df87b1505f2c7fa8f043b86e1091ae71f76ae4c2bc860",
+      "bytes": 1584
+    },
+    {
+      "path": "snapshot-controls/after/ci-run.stderr",
+      "sha256": "f8e88928e3a284241a6585737e2bf9254a95067b73b09adcb27601d08fdebf2f",
+      "bytes": 47
+    },
+    {
+      "path": "snapshot-controls/after/ci-run.stdout",
+      "sha256": "9e736dc6b39941f2bcafd48cbb3294284eeecdbd497027a5b963c15607a16695",
+      "bytes": 11271
+    },
+    {
+      "path": "snapshot-controls/after/control-source.rs",
+      "sha256": "73a6c71efbb31957011b605a99b9d85c33f59bb20a3b97c94d87c117e1914095",
+      "bytes": 75567
+    },
+    {
+      "path": "snapshot-controls/locals-snapshot-source.rs",
+      "sha256": "924c25d0c2bffbf1ff7ccefb7642d527d805a0f1de59a7a39bab8cd691e63ec9",
+      "bytes": 4452
+    },
+    {
+      "path": "snapshot-controls/runtime-tests-source.rs",
+      "sha256": "a967d0d2fcdbb32e0ce934ab758381cc2e0caeb727f9f00830f3fe83d0dcdef7",
+      "bytes": 54505
+    },
+    {
+      "path": "snapshot-controls.py",
+      "sha256": "26a717d1315eb328dc1c55888a909804872c47ade1a3869df7dd5a5bf2b96896",
+      "bytes": 5260
+    }
+  ]
+}
