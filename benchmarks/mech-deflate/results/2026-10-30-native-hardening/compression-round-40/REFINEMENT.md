@@ -1,5 +1,8 @@
 # Rebuild ordinary groups around selected pieces
 
+Outcome: the refinement also regresses all four matched triplets. It is removed;
+the experiment and its complete source patch remain archived. See `CLOSURE.md`.
+
 The first valid candidate (`411c2e1f01d9435a1c78d28f3a0a123dcd2ba56e`)
 regresses in all four independently prepared pairs: 4.370542→4.409583 ms,
 15.22837×→15.36440× the SAME fresh 0.287 ms reference (+0.89328%). Only 5/64

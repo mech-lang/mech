@@ -1,0 +1,13 @@
+metric,unit,reference,baseline,initial,refined,current_multiple_of_reference,scope
+primary_elapsed,seconds,0.000291,0.004387083,0.0044197915,0.0044207295,15.075886597938142,four matched triplets; 5952 primary calls; baseline retained
+instructions,count,1364372.0,49008490.5,49214104.5,49203529.5,35.920181959172425,separate diagnostic cohorts; current is baseline
+cycles,count,935346.5,13808872.5,13892111.0,13887614.5,14.76337645995361,separate diagnostic cohorts; current is baseline
+rss_after,bytes,14761984.0,318717952.0,318750720.0,319127552.0,21.590455049944506,separate diagnostic cohorts; current is baseline
+physical_after,bytes,14402432.0,227755776.0,227788544.0,228099840.0,15.813702574676277,separate diagnostic cohorts; current is baseline
+allocation_requests,count,95.0,13994.0,13994.0,13994.0,147.30526315789473,separate diagnostic cohorts; current is baseline
+requested_bytes,bytes,9021923.0,98586843.0,98586843.0,98586843.0,10.927475550389866,separate diagnostic cohorts; current is baseline
+incremental_peak_live_usable,bytes,9257328.0,20575432.0,20575432.0,20575432.0,2.2226102391532416,separate diagnostic cohorts; current is baseline
+code_bytes,static,not function-matched,13885696,13885352,13883072,not comparable,generated compressor; reference whole executable text is 195456 bytes
+stack_bytes,static,not function-matched,108400,108448,108528,not comparable,generated compressor; reference whole executable text is 195456 bytes
+native_pieces,static,not function-matched,67,67,67,not comparable,generated compressor; reference whole executable text is 195456 bytes
+ordinary_scalar_admission_sites,static,not function-matched,8642,8406,8414,not comparable,generated compressor; reference whole executable text is 195456 bytes
