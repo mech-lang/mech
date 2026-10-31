@@ -12,6 +12,7 @@ pub(super) mod continuation;
 mod helper_fallbacks;
 mod numeric_segments;
 mod numeric_writes;
+mod projections;
 mod readonly_numeric;
 mod selected_calls;
 mod unsigned_buffers;
@@ -506,6 +507,8 @@ impl Invocation<'_, '_, '_> {
             self.finish_join_map_chunk(site, args)
         } else if self.window_region.is_some() {
             Err(invalid("helper while compiled String loans are active"))
+        } else if tag == GlobalHelper::ProjectionBatch {
+            self.project_frame_batch(site, args)
         } else if tag == GlobalHelper::StructuralObservation {
             if self.state.consumed || args != [0; 3] {
                 return Err(invalid("duplicate or malformed structural observation"));

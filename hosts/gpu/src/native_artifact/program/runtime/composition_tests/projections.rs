@@ -7,8 +7,7 @@ use std::ffi::c_void;
 
 const SOURCE: &str =
     include_str!("../../../../../tests/fixtures/native/frame-projection-batch.mec");
-// Proposed private tag: the red test runs before its typed protocol exists.
-const BATCH: u64 = u64::MAX - 29;
+const BATCH: u64 = crate::native_artifact::program::protocol::GlobalHelper::ProjectionBatch.raw();
 type Admit = unsafe extern "C" fn(*mut c_void, u64) -> u64;
 #[derive(Default, Debug)]
 struct Counts {
@@ -139,6 +138,7 @@ fn managed_projections_keep_current_fields_ordered_errors_aliases_and_retry() {
         assert_eq!(restored.encode_build_owned_image().unwrap(), image);
         for descriptor in [jit.descriptor(), &restored] {
             let mut reference_work = Vec::new();
+            let mut reference_errors = Vec::new();
             for decline in [false, true] {
                 let memory = mode.memory_budget();
                 let mut published = vec![None; artifact.outputs().len()];
@@ -170,7 +170,13 @@ fn managed_projections_keep_current_fields_ordered_errors_aliases_and_retry() {
                         decline,
                     );
                     if let Some(error) = error {
-                        assert!(format!("{:?}", result.unwrap_err()).contains(error));
+                        let receipt = format!("{:?}", result.unwrap_err());
+                        assert!(receipt.contains(error), "{receipt}");
+                        if decline {
+                            assert_eq!(Some(receipt), reference_errors[case]);
+                        } else {
+                            reference_errors.push(Some(receipt));
+                        }
                         assert!(published.iter().zip(&prior).all(|(a, b)| {
                             a.as_ref()
                                 .unwrap()
@@ -197,7 +203,10 @@ fn managed_projections_keep_current_fields_ordered_errors_aliases_and_retry() {
                                 .unwrap(),
                             Data::U64(expected)
                         );
-                        assert!(counts.batches > 0, "real bulk projection must execute: {counts:?}");
+                        assert!(
+                            counts.batches > 0,
+                            "real bulk projection must execute: {counts:?}"
+                        );
                         if decline {
                             assert_eq!(Some(report.work), reference_work[case]);
                         } else {
@@ -206,6 +215,7 @@ fn managed_projections_keep_current_fields_ordered_errors_aliases_and_retry() {
                                 "bulk transport must combine callbacks: {counts:?}"
                             );
                             reference_work.push(Some(report.work));
+                            reference_errors.push(None);
                         }
                     }
                     assert_eq!(contents(&args), before);
