@@ -100,6 +100,9 @@ mod frame_composition;
 mod frame_shape;
 #[path = "native_collection_histogram.rs"]
 mod histogram;
+#[cfg(feature = "sequence_buffers")]
+#[path = "native_collection_record_selector.rs"]
+mod record_selector;
 #[path = "native_collection_record_words.rs"]
 mod record_words;
 #[path = "native_collection_string_map_entry.rs"]
@@ -166,6 +169,9 @@ pub struct NativePreparedLibraryCall {
     #[cfg(feature = "sequence_buffers")]
     #[serde(skip)]
     frame_geometry: Option<Box<buffer_frames::FrameGeometry>>,
+    #[cfg(feature = "sequence_buffers")]
+    #[serde(skip)]
+    record_selector: Option<record_selector::RecordSelector>,
     #[cfg(feature = "sequence_buffers")]
     #[serde(skip)]
     frame_composition: Option<Box<frame_composition::Composition>>,
@@ -389,6 +395,8 @@ pub fn prepare_native_program_library_call(
     #[cfg(feature = "sequence_buffers")]
     let frame_geometry =
         buffer_frames::FrameGeometry::derive(&template, artifact.schemas(), binding_bytes);
+    #[cfg(feature = "sequence_buffers")]
+    let record_selector = record_selector::RecordSelector::derive(&template);
     let descriptor_templates = descriptor_templates(&template);
     Ok(NativePreparedLibraryCall {
         template,
@@ -406,6 +414,8 @@ pub fn prepare_native_program_library_call(
         cache_identity: Arc::new(()),
         #[cfg(feature = "sequence_buffers")]
         frame_geometry,
+        #[cfg(feature = "sequence_buffers")]
+        record_selector,
         #[cfg(feature = "sequence_buffers")]
         frame_composition: None,
         span_selector_metadata_bytes,

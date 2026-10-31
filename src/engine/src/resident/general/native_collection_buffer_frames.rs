@@ -244,19 +244,24 @@ impl NativePreparedLibraryCall {
         else {
             return Err(InvokeError::InvalidInput);
         };
-        let actual = crate::resident::numeric::named_schema_ordinal(
-            fields.iter().map(|f| f.name.as_str()),
-            *selected,
-            |characters| {
-                context.charge(
-                    characters
-                        .checked_mul(16)
-                        .and_then(|n| n.checked_add(64))
-                        .ok_or(mech_core::ResidentKernelError::InvalidShape)?,
-                    characters,
-                )
-            },
-        )?;
+        let charge = |characters: u64| {
+            context.charge(
+                characters
+                    .checked_mul(16)
+                    .and_then(|n| n.checked_add(64))
+                    .ok_or(mech_core::ResidentKernelError::InvalidShape)?,
+                characters,
+            )
+        };
+        let actual = if let Some(prepared) = &self.record_selector {
+            prepared.ordinal(*selected, charge)
+        } else {
+            crate::resident::numeric::named_schema_ordinal(
+                fields.iter().map(|f| f.name.as_str()),
+                *selected,
+                charge,
+            )
+        }?;
         if actual != ordinal {
             return Err(InvokeError::InvalidInput);
         }
