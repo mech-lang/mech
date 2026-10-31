@@ -70,6 +70,8 @@ impl NativePreparedLibraryCall {
         #[cfg(feature = "sequence_buffers")]
         let frame_geometry =
             super::buffer_frames::FrameGeometry::derive(&template, &schemas, wire.binding_bytes);
+        #[cfg(feature = "sequence_buffers")]
+        let record_selector = super::record_selector::RecordSelector::derive(&template);
         let descriptor_templates = super::descriptor_templates(&template);
         let call = Self {
             template,
@@ -87,6 +89,8 @@ impl NativePreparedLibraryCall {
             cache_identity: Arc::new(()),
             #[cfg(feature = "sequence_buffers")]
             frame_geometry,
+            #[cfg(feature = "sequence_buffers")]
+            record_selector,
             #[cfg(feature = "sequence_buffers")]
             frame_composition: None,
             span_selector_metadata_bytes: wire.span_selector_metadata_bytes,
