@@ -143,8 +143,9 @@ impl ManagedMemoryBudget {
     }
 
     /// One-shot account-scoped fixture for immutable import allocation tests.
-    /// Zero fails the next allocation; one lets the registration allocation
-    /// succeed and rejects the subsequent owning-wrapper allocation.
+    /// Zero fails the next allocation. One lets registration succeed and
+    /// rejects a replacement wrapper when one is needed. Exclusive unadmitted
+    /// roots reuse their wrapper and leave that next failure armed.
     #[doc(hidden)]
     pub fn inject_snapshot_import_failure_after(&self, successful_steps: u32) {
         self.account
