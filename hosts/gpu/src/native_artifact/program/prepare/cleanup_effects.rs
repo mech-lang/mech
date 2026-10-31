@@ -189,4 +189,5 @@ fn independent_slots(
 }
 
 #[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "cleanup_effects_tests.rs"]
 mod tests;
