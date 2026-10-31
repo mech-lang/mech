@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T13:26:30.328404+00:00",
+  "head": "9de92f8d18bac36c480a9f2f4f75d54718781cb8",
+  "files": [
+    {
+      "path": "allocation_analysis.py",
+      "sha256": "59d9a54941856c7891716d93da8f9f8575bf7e8da7ba5aa38c889d244baa82e4",
+      "bytes": 2489
+    },
+    {
+      "path": "attribution-comparison.json",
+      "sha256": "93ba98d1c56b0e4c3cde9917a7944c4e87481c298a715d69c4d3b08c94ae1b23",
+      "bytes": 2888
+    },
+    {
+      "path": "profile-numbers.json",
+      "sha256": "71433ba7bbc37304ef4d5ea9e293545a3a0df0d01e1bcc33d872dfa035979a02",
+      "bytes": 18355
+    },
+    {
+      "path": "profile_analysis.py",
+      "sha256": "54b5f96c2c2d02b87557b0e920bab100426d359e13a94c58f45d6b5736b1d89a",
+      "bytes": 3171
+    }
+  ]
+}
