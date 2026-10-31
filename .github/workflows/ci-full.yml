@@ -410,6 +410,18 @@ jobs:
           cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --lib -- \
             snapshot::validation::owned_unsigned_matrix::tests:: \
             snapshot::validation::owned_string::tests:: --test-threads=1
+      - name: Execute numeric matrix validation and constructor allocation regressions
+        run: |
+          MATRIX_TESTS=$(cargo +nightly-2026-03-03 test --locked -p mech-core \
+            --all-features --lib -- snapshot::validation::numeric_matrix::tests:: --list)
+          test "$(printf '%s\n' "$MATRIX_TESTS" | awk '/^snapshot::validation::numeric_matrix::tests::.*: test$/ { count += 1 } END { print count + 0 }')" -eq 5
+          cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --lib -- \
+            snapshot::validation::numeric_matrix::tests:: --test-threads=1
+          CONSTRUCTOR_TESTS=$(cargo +nightly-2026-03-03 test --locked --release -p mech-core \
+            --all-features --test composite_constructor_allocation -- --list)
+          test "$(printf '%s\n' "$CONSTRUCTOR_TESTS" | awk '/: test$/ { count += 1 } END { print count + 0 }')" -eq 2
+          cargo +nightly-2026-03-03 test --locked --release -p mech-core --all-features \
+            --test composite_constructor_allocation -- --nocapture --test-threads=1
       - name: Execute the retained release-mode memory safety boundary
         run: |
           RUSTFLAGS="${RUSTFLAGS:-} -C debug-assertions=no" \
