@@ -1,0 +1,1745 @@
+{
+  "scope": "Current-state refresh of retained round 51; no new production optimization or before/after gain. Only full eight-byte level-12 compression. Separate primary, hardware, memory, and sample cohorts.",
+  "elapsed": {
+    "reference_seconds": 0.000291,
+    "reference_observations": 20000,
+    "current_seconds": 0.003985770499999999,
+    "current_multiple": 13.696805841924395,
+    "independent_preparations": [
+      {
+        "preparation": 0,
+        "seconds": 0.0039793334999999996,
+        "multiple_of_reference": 13.674685567010307
+      },
+      {
+        "preparation": 1,
+        "seconds": 0.0039910625,
+        "multiple_of_reference": 13.714991408934706
+      },
+      {
+        "preparation": 2,
+        "seconds": 0.0039852705,
+        "multiple_of_reference": 13.695087628865977
+      }
+    ],
+    "steady_observations": 1536,
+    "excluded_warmup_profile_observations": 6
+  },
+  "cpu": {
+    "observations_per_label": 32,
+    "uncorrected_boundary_overhead": true,
+    "medians": {
+      "reference": {
+        "instructions": 1364372.0,
+        "cycles": 884130.0,
+        "rss_after": 14794752.0,
+        "physical_after": 14451648.0,
+        "lifetime_peak_physical": 14451648.0,
+        "pageins": 0.0
+      },
+      "current": {
+        "instructions": 45493321.5,
+        "cycles": 13149330.0,
+        "rss_after": 319651840.0,
+        "physical_after": 228886272.0,
+        "lifetime_peak_physical": 228886272.0,
+        "pageins": 0.0
+      }
+    },
+    "instruction_multiple": 33.3437812414796,
+    "cycle_multiple": 14.872620542227953
+  },
+  "memory": {
+    "reference_observations": 32,
+    "current_steady_observations": 8,
+    "medians": {
+      "reference": {
+        "allocation_requests": 95.0,
+        "requested_bytes": 9021923.0,
+        "deallocation_calls": 95.0,
+        "reallocations": 0.0,
+        "relocating_reallocations": 0.0,
+        "relocating_realloc_copy_upper_bound": 0.0,
+        "live_usable_before": 32.0,
+        "live_usable_after": 32.0,
+        "peak_live_usable": 9257360.0,
+        "incremental_peak_live_usable": 9257328.0,
+        "rss_after": 14794752.0,
+        "physical_after": 14435200.0,
+        "pageins": 0.0
+      },
+      "current": {
+        "allocation_requests": 13484.0,
+        "requested_bytes": 98480739.0,
+        "deallocation_calls": 12263.0,
+        "reallocations": 1213.0,
+        "relocating_reallocations": 458.0,
+        "relocating_realloc_copy_upper_bound": 13905.0,
+        "live_usable_before": 142982576.0,
+        "live_usable_after": 142983144.0,
+        "peak_live_usable": 163500552.0,
+        "incremental_peak_live_usable": 20517976.0,
+        "rss_after": 319717376.0,
+        "physical_after": 229099200.0,
+        "pageins": 0.0
+      }
+    },
+    "large_current_allocations": [
+      {
+        "bytes": 439808,
+        "count": 1
+      },
+      {
+        "bytes": 1437504,
+        "count": 1
+      },
+      {
+        "bytes": 179688,
+        "count": 2
+      },
+      {
+        "bytes": 361024,
+        "count": 1
+      },
+      {
+        "bytes": 97296,
+        "count": 1
+      },
+      {
+        "bytes": 75600,
+        "count": 1
+      },
+      {
+        "bytes": 95648,
+        "count": 1
+      },
+      {
+        "bytes": 124344,
+        "count": 1
+      },
+      {
+        "bytes": 524288,
+        "count": 5
+      },
+      {
+        "bytes": 6002052,
+        "count": 1
+      },
+      {
+        "bytes": 2442056,
+        "count": 35
+      }
+    ],
+    "peak_scope": "Tracked allocator live high water; prepared compiler/catalog/image state included. Post-call OS memory is not peak RSS. Whole input prepared outside timer; no streaming or large-input claim."
+  },
+  "path_attribution": {
+    "performance_claimed": false,
+    "per_complete_call_large_reservations": 35,
+    "per_operation": {
+      "SequenceWithCapacity": 1,
+      "SequenceAppend": 32,
+      "SequenceClear": 2
+    },
+    "requested_bytes": 85471960,
+    "derived_initialized_bytes_copied_by_these_fallback_appends": 66944,
+    "copy_scope": "Derived from reached lengths and unchanged U64 primitive implementation; clears/initial reservation copy zero elements. Not total program copy volume.",
+    "allocations": [
+      {
+        "site": 468,
+        "operation": "SequenceWithCapacity",
+        "source": "None",
+        "length": null,
+        "capacity": null,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 12806,
+        "operation": "SequenceAppend",
+        "source": "Some(7335)",
+        "length": 258,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 12806,
+        "operation": "SequenceAppend",
+        "source": "Some(7335)",
+        "length": 259,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 12806,
+        "operation": "SequenceAppend",
+        "source": "Some(7335)",
+        "length": 260,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 12806,
+        "operation": "SequenceAppend",
+        "source": "Some(7335)",
+        "length": 261,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 12806,
+        "operation": "SequenceAppend",
+        "source": "Some(7335)",
+        "length": 262,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 12806,
+        "operation": "SequenceAppend",
+        "source": "Some(7335)",
+        "length": 263,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 12806,
+        "operation": "SequenceAppend",
+        "source": "Some(7335)",
+        "length": 264,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 12806,
+        "operation": "SequenceAppend",
+        "source": "Some(7335)",
+        "length": 265,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 15262,
+        "operation": "SequenceClear",
+        "source": "Some(8782)",
+        "length": 266,
+        "capacity": 305257,
+        "may_consume": true,
+        "retirement_slots": [
+          715,
+          779,
+          7326,
+          7331,
+          7334,
+          7335,
+          7561,
+          7565,
+          7568,
+          7580,
+          8770,
+          8782,
+          8817,
+          8822,
+          8825,
+          8826,
+          9052,
+          9056,
+          9059,
+          12714,
+          12728,
+          14897,
+          14902,
+          14905,
+          14906,
+          15132,
+          15136,
+          15139,
+          17104,
+          17135,
+          17140,
+          17143,
+          17144,
+          17370,
+          17374,
+          17377,
+          19471,
+          19473,
+          19489,
+          22407
+        ],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 15683,
+        "operation": "SequenceAppend",
+        "source": "Some(8826)",
+        "length": 258,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 15683,
+        "operation": "SequenceAppend",
+        "source": "Some(8826)",
+        "length": 259,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 15683,
+        "operation": "SequenceAppend",
+        "source": "Some(8826)",
+        "length": 260,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 15683,
+        "operation": "SequenceAppend",
+        "source": "Some(8826)",
+        "length": 261,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 15683,
+        "operation": "SequenceAppend",
+        "source": "Some(8826)",
+        "length": 262,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 15683,
+        "operation": "SequenceAppend",
+        "source": "Some(8826)",
+        "length": 263,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 15683,
+        "operation": "SequenceAppend",
+        "source": "Some(8826)",
+        "length": 264,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 15683,
+        "operation": "SequenceAppend",
+        "source": "Some(8826)",
+        "length": 265,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 15683,
+        "operation": "SequenceAppend",
+        "source": "Some(8826)",
+        "length": 258,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 15683,
+        "operation": "SequenceAppend",
+        "source": "Some(8826)",
+        "length": 259,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 15683,
+        "operation": "SequenceAppend",
+        "source": "Some(8826)",
+        "length": 260,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 15683,
+        "operation": "SequenceAppend",
+        "source": "Some(8826)",
+        "length": 261,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 15683,
+        "operation": "SequenceAppend",
+        "source": "Some(8826)",
+        "length": 262,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 15683,
+        "operation": "SequenceAppend",
+        "source": "Some(8826)",
+        "length": 263,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 15683,
+        "operation": "SequenceAppend",
+        "source": "Some(8826)",
+        "length": 264,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 15683,
+        "operation": "SequenceAppend",
+        "source": "Some(8826)",
+        "length": 265,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 26861,
+        "operation": "SequenceClear",
+        "source": "Some(14746)",
+        "length": 266,
+        "capacity": 305257,
+        "may_consume": true,
+        "retirement_slots": [
+          8817,
+          8822,
+          8825,
+          8826,
+          9052,
+          9056,
+          9059,
+          12714,
+          14746
+        ],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 27282,
+        "operation": "SequenceAppend",
+        "source": "Some(14906)",
+        "length": 258,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 27282,
+        "operation": "SequenceAppend",
+        "source": "Some(14906)",
+        "length": 259,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 27282,
+        "operation": "SequenceAppend",
+        "source": "Some(14906)",
+        "length": 260,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 27282,
+        "operation": "SequenceAppend",
+        "source": "Some(14906)",
+        "length": 261,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 27282,
+        "operation": "SequenceAppend",
+        "source": "Some(14906)",
+        "length": 262,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 27282,
+        "operation": "SequenceAppend",
+        "source": "Some(14906)",
+        "length": 263,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 27282,
+        "operation": "SequenceAppend",
+        "source": "Some(14906)",
+        "length": 264,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      },
+      {
+        "site": 27282,
+        "operation": "SequenceAppend",
+        "source": "Some(14906)",
+        "length": 265,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "requested_bytes": 2442056
+      }
+    ],
+    "known_owner_census": [
+      {
+        "site": 12385,
+        "operation": "SequenceClear",
+        "source": "Some(779)",
+        "length": 0,
+        "capacity": 305257,
+        "may_consume": true,
+        "retirement_slots": [
+          715,
+          779,
+          8817,
+          8822,
+          8825,
+          8826,
+          9052,
+          9056,
+          9059,
+          12714,
+          12728,
+          14897,
+          14902,
+          14905,
+          14906,
+          15132,
+          15136,
+          15139,
+          17104,
+          17135,
+          17140,
+          17143,
+          17144,
+          17370,
+          17374,
+          17377,
+          19471,
+          19473,
+          19489,
+          22407
+        ],
+        "canonical": [],
+        "frames": []
+      },
+      {
+        "site": 12806,
+        "operation": "SequenceAppend",
+        "source": "Some(7335)",
+        "length": 258,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "canonical": [
+          7335,
+          7382
+        ],
+        "frames": []
+      },
+      {
+        "site": 15262,
+        "operation": "SequenceClear",
+        "source": "Some(8782)",
+        "length": 266,
+        "capacity": 305257,
+        "may_consume": true,
+        "retirement_slots": [
+          715,
+          779,
+          7326,
+          7331,
+          7334,
+          7335,
+          7561,
+          7565,
+          7568,
+          7580,
+          8770,
+          8782,
+          8817,
+          8822,
+          8825,
+          8826,
+          9052,
+          9056,
+          9059,
+          12714,
+          12728,
+          14897,
+          14902,
+          14905,
+          14906,
+          15132,
+          15136,
+          15139,
+          17104,
+          17135,
+          17140,
+          17143,
+          17144,
+          17370,
+          17374,
+          17377,
+          19471,
+          19473,
+          19489,
+          22407
+        ],
+        "canonical": [
+          7571,
+          7575
+        ],
+        "frames": [
+          "OWNER_FRAME slot=7167 lane=Managed { at: 1445 }"
+        ]
+      },
+      {
+        "site": 15683,
+        "operation": "SequenceAppend",
+        "source": "Some(8826)",
+        "length": 258,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "canonical": [
+          8826,
+          8873
+        ],
+        "frames": []
+      },
+      {
+        "site": 15262,
+        "operation": "SequenceClear",
+        "source": "Some(8782)",
+        "length": 266,
+        "capacity": 305257,
+        "may_consume": true,
+        "retirement_slots": [
+          715,
+          779,
+          7326,
+          7331,
+          7334,
+          7335,
+          7561,
+          7565,
+          7568,
+          7580,
+          8770,
+          8782,
+          8817,
+          8822,
+          8825,
+          8826,
+          9052,
+          9056,
+          9059,
+          12714,
+          12728,
+          14897,
+          14902,
+          14905,
+          14906,
+          15132,
+          15136,
+          15139,
+          17104,
+          17135,
+          17140,
+          17143,
+          17144,
+          17370,
+          17374,
+          17377,
+          19471,
+          19473,
+          19489,
+          22407
+        ],
+        "canonical": [],
+        "frames": []
+      },
+      {
+        "site": 15683,
+        "operation": "SequenceAppend",
+        "source": "Some(8826)",
+        "length": 258,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "canonical": [
+          8826,
+          8873
+        ],
+        "frames": []
+      },
+      {
+        "site": 26861,
+        "operation": "SequenceClear",
+        "source": "Some(14746)",
+        "length": 266,
+        "capacity": 305257,
+        "may_consume": true,
+        "retirement_slots": [
+          8817,
+          8822,
+          8825,
+          8826,
+          9052,
+          9056,
+          9059,
+          12714,
+          14746
+        ],
+        "canonical": [],
+        "frames": [
+          "OWNER_FRAME slot=8775 lane=Managed { at: 1786 }"
+        ]
+      },
+      {
+        "site": 27282,
+        "operation": "SequenceAppend",
+        "source": "Some(14906)",
+        "length": 258,
+        "capacity": 305257,
+        "may_consume": false,
+        "retirement_slots": [],
+        "canonical": [
+          14906,
+          14953
+        ],
+        "frames": []
+      }
+    ],
+    "owner_scope": "Canonical arena and private-frame holdings after existing candidate retirement only. Local source itself, caches and external holders are not counted; this grants no exclusive ownership proof."
+  },
+  "profiles": {
+    "current": {
+      "sha256": "68dfb370941c869750b5d8c9ffcb4affd30073e4e17a6667a812a58b7e0ff828",
+      "total_exclusive_weights": 1227,
+      "exclusive_top": [
+        [
+          "mech_canonical_program_entry_v1",
+          137
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+          54
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+          48
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          47
+        ],
+        [
+          "_tlv_get_addr",
+          41
+        ],
+        [
+          "_RNvMs3_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+          31
+        ],
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget17charge_in_context",
+          28
+        ],
+        [
+          "_RNvMs_NtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+          26
+        ],
+        [
+          "_platform_memmove",
+          24
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation14selected_callsNtB4_10Invocation21prepared_library_call",
+          24
+        ],
+        [
+          "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+          24
+        ],
+        [
+          "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+          21
+        ],
+        [
+          "_RNvNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10retirement3run",
+          20
+        ],
+        [
+          "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+          19
+        ],
+        [
+          "_RNvMs7_NtNtCskIfnrfrMWVM_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+          18
+        ]
+      ],
+      "frame_exclusive_top": [
+        [
+          "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+          48
+        ],
+        [
+          "_tlv_get_addr",
+          22
+        ],
+        [
+          "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+          21
+        ],
+        [
+          "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+          19
+        ],
+        [
+          "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_record_child0EBa_",
+          17
+        ],
+        [
+          "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+          17
+        ],
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget17charge_in_context",
+          12
+        ],
+        [
+          "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext17try_charge_prefix",
+          10
+        ],
+        [
+          "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames4copy",
+          9
+        ],
+        [
+          "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames10check_copy",
+          9
+        ],
+        [
+          "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+          9
+        ],
+        [
+          "_RNvMs4_NtNtCskIfnrfrMWVM_9mech_core8snapshot8encodingNtB5_14ValueFootprint11checked_add",
+          8
+        ],
+        [
+          "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation5ValueECs7fdMCt8k5K6_8mech_gpu",
+          8
+        ],
+        [
+          "_RNvMs_NtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls8prepared13buffer_framesNtB6_25NativePreparedLibraryCall25admit_buffer_record_child",
+          8
+        ],
+        [
+          "_RNvMsa_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_19ResidentBudgetMeter19charge_compute_work",
+          7
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls8prepared15frame_admissionNtB2_20FrameAdmissionRecipe9try_admit",
+          7
+        ],
+        [
+          "_RNvNtNtCskIfnrfrMWVM_9mech_core6schema5shape18evaluate_dimension",
+          7
+        ],
+        [
+          "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames4pack",
+          7
+        ],
+        [
+          "_RINvMNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls8prepared11frame_shapeNtB3_16FrameShapeRecipe15matches_currentNCNCNvMs_NtB5_13buffer_framesNtB5_25NativePreparedLibraryCall25admit_buffer_frame_inputs0s2_0EBd_",
+          6
+        ],
+        [
+          "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames7project",
+          6
+        ]
+      ],
+      "ancestry_unions": {
+        "frame copy actions": {
+          "weights": 29,
+          "percent": 2.363488182559087
+        },
+        "capacity-buffer calls": {
+          "weights": 15,
+          "percent": 1.2224938875305624
+        },
+        "memory move/copy": {
+          "weights": 26,
+          "percent": 2.1189894050529747
+        },
+        "frame actions": {
+          "weights": 345,
+          "percent": 28.117359413202934
+        },
+        "tail cleanup": {
+          "weights": 63,
+          "percent": 5.134474327628362
+        },
+        "canonical construction/admission": {
+          "weights": 67,
+          "percent": 5.460472697636511
+        },
+        "schema closure": {
+          "weights": 17,
+          "percent": 1.3854930725346373
+        },
+        "projection accounting": {
+          "weights": 38,
+          "percent": 3.0969845150774247
+        },
+        "thread-local lookup": {
+          "weights": 41,
+          "percent": 3.341483292583537
+        }
+      },
+      "ancestry_groups_overlap": true
+    },
+    "reference": {
+      "sha256": "3f66603da0a542ada5c24024c0838a084052346885de04d02d1b1c196dad4d11",
+      "total_exclusive_weights": 1519,
+      "exclusive_top": [
+        [
+          "roc__p5794f552e2e0fcba87a322629fdca7c0.fast",
+          1404
+        ],
+        [
+          "roc__p1a804bfda1f5e4235a696be5d06bcb43.fast",
+          44
+        ],
+        [
+          "roc__pa6e6a0bf5ace6ced425a6feecccd5c1b.fast",
+          21
+        ],
+        [
+          "roc__p499ff7eb2f98e9031bc9d0002db086b6.fast",
+          10
+        ],
+        [
+          "roc__pe21b3db7436f4bcdc21a284b2c2e5c88.fast",
+          6
+        ],
+        [
+          "roc__p5577dd3f98103e165031983d14e7560c.fast",
+          4
+        ],
+        [
+          "roc__p81003bf97431a8821d5be871f2471565.fast",
+          4
+        ],
+        [
+          "roc__p9d8198fedbd801212718a09deebc5774.fast",
+          4
+        ],
+        [
+          "roc__pf8d88d29f38eeb441b6a5ad4fe5ffba5.fast",
+          4
+        ],
+        [
+          "list.listAppendRangeWithinUnsafe",
+          3
+        ],
+        [
+          "roc__p251d42c9b11261f4b6c38feff48bfd2d.fast",
+          2
+        ],
+        [
+          "roc__p7f95ed46022205c5413858b3de8531cb.fast",
+          2
+        ],
+        [
+          "__write_nocancel",
+          2
+        ],
+        [
+          "mi_free",
+          2
+        ],
+        [
+          "dev_wrappers.roc_builtins_str_concat",
+          1
+        ]
+      ],
+      "frame_exclusive_top": [],
+      "ancestry_unions": {
+        "frame copy actions": {
+          "weights": 0,
+          "percent": 0.0
+        },
+        "capacity-buffer calls": {
+          "weights": 0,
+          "percent": 0.0
+        },
+        "memory move/copy": {
+          "weights": 1,
+          "percent": 0.06583278472679395
+        },
+        "frame actions": {
+          "weights": 0,
+          "percent": 0.0
+        },
+        "tail cleanup": {
+          "weights": 0,
+          "percent": 0.0
+        },
+        "canonical construction/admission": {
+          "weights": 0,
+          "percent": 0.0
+        },
+        "schema closure": {
+          "weights": 0,
+          "percent": 0.0
+        },
+        "projection accounting": {
+          "weights": 0,
+          "percent": 0.0
+        },
+        "thread-local lookup": {
+          "weights": 0,
+          "percent": 0.0
+        }
+      },
+      "ancestry_groups_overlap": true
+    }
+  },
+  "contracts": {
+    "work": 60260219686,
+    "source_comparison_work_prior_qualified": 47612,
+    "raw_output": [
+      75,
+      76,
+      74,
+      78,
+      73,
+      77,
+      75,
+      207,
+      0,
+      0
+    ],
+    "capacity": 13,
+    "managed_cleanup_bytes": 0,
+    "managed_cleanup_nodes": 0,
+    "input_alias_checks": true,
+    "independent_inflation": true,
+    "source_and_bytecode_unchanged": true
+  },
+  "compiler": {
+    "compiler_source": "e0c180a47fdeeabada8b6d8df0c57f3f5fdc3d6c",
+    "expected_work": 60260219686,
+    "pins": {
+      "object.o": {
+        "sha256": "1a8bb46e9f78fec2147b3242fab5651e470f86ba0347f4f11c7f1aedd5008777",
+        "bytes": 13047400
+      },
+      "descriptor.json": {
+        "sha256": "1b4dbdd2fb0c1f9f51ae7e9dd0bc931bbc2804e6cb949653461d6348c31615c9",
+        "bytes": 59787859
+      },
+      "metadata.json": {
+        "sha256": "a1d3f2710f3c2bb40eeb7cd10529b87ad6eae1d3786b3811823ee07ea3c3cac9",
+        "bytes": 2542212
+      }
+    },
+    "worker_sha256": "2afa1e42488e0cf0bc79fcb91ef6d40264d343e1b4a73f1bdc3ca23f12b7e3f7",
+    "worker_source_sha256": "9795a36f021cebbc1ca744c2fd859f455914029a5dc2e5b43fae9a7221a7ca41",
+    "original_worker_sha256": "a0062c6170db0005d96eba239232cfdbdd41054945c2e4a574afa8acb8939575",
+    "normalized_source_sha256": "61bec08e46c54f52df5577ac0f7caea9bc5bc6bd5fdcba9ae0b6f18ec42b7e7d",
+    "libraries": {
+      "serde": {
+        "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libserde-53e30a58b8778b4f.rlib",
+        "sha256": "c92969536946485cace85c825d49406183f604d7279483af096a2d10d94e2998",
+        "features": [
+          "alloc",
+          "default",
+          "derive",
+          "serde_derive",
+          "std"
+        ],
+        "profile": {
+          "opt_level": "3",
+          "debuginfo": 0,
+          "debug_assertions": false,
+          "overflow_checks": false,
+          "test": false
+        }
+      },
+      "serde_json": {
+        "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libserde_json-e0f8af30c3327a5b.rlib",
+        "sha256": "e887a7afbab6cadfb0337bc7bebfa21c68b83933509274961faefac4b412444b",
+        "features": [
+          "alloc",
+          "default",
+          "raw_value",
+          "std",
+          "unbounded_depth"
+        ],
+        "profile": {
+          "opt_level": "3",
+          "debuginfo": 0,
+          "debug_assertions": false,
+          "overflow_checks": false,
+          "test": false
+        }
+      },
+      "mech_core": {
+        "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+        "sha256": "d108019406335c7627061c0bf46cfda6e96adfc05fb97dae652499f1bbcbb873",
+        "features": [
+          "atom",
+          "base64",
+          "baselib",
+          "bincode",
+          "bool",
+          "brotli",
+          "byteorder",
+          "c64",
+          "compiler",
+          "complex",
+          "crc32fast",
+          "dot_indexing",
+          "enum",
+          "f32",
+          "f64",
+          "floats",
+          "formulas",
+          "full",
+          "functions",
+          "i128",
+          "i16",
+          "i32",
+          "i64",
+          "i8",
+          "indexmap",
+          "invariant_define",
+          "kind_annotation",
+          "kind_define",
+          "libm",
+          "logical_indexing",
+          "map",
+          "math_pow",
+          "matrix",
+          "matrixd",
+          "mika",
+          "nalgebra",
+          "native-plan",
+          "num-rational",
+          "num-traits",
+          "numbers",
+          "pretty_print",
+          "program",
+          "r64",
+          "range",
+          "rational",
+          "record",
+          "resident-execution",
+          "row_vectord",
+          "semantic-compiler",
+          "serde",
+          "serde_derive",
+          "serde_json",
+          "set",
+          "signed_ints",
+          "statements",
+          "statements_default",
+          "std",
+          "string",
+          "subscript",
+          "subscript_default",
+          "subscript_formula",
+          "subscript_range",
+          "subscript_slice",
+          "swizzle",
+          "symbol_table",
+          "table",
+          "tabled",
+          "tuple",
+          "u128",
+          "u16",
+          "u32",
+          "u64",
+          "u8",
+          "unsigned_ints",
+          "variable_assign",
+          "variable_define",
+          "variables",
+          "vectord"
+        ],
+        "profile": {
+          "opt_level": "3",
+          "debuginfo": 0,
+          "debug_assertions": false,
+          "overflow_checks": false,
+          "test": false
+        }
+      },
+      "mech_syntax": {
+        "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+        "sha256": "bc9c7570ccb0b0c1820350d5bdcb1ca54611253bf4915dc7bf157e21fd9907a4",
+        "features": [
+          "atom",
+          "baselib",
+          "bool",
+          "c64",
+          "compiler",
+          "complex",
+          "dot_indexing",
+          "enum",
+          "f32",
+          "f64",
+          "floats",
+          "formulas",
+          "full",
+          "functions",
+          "i128",
+          "i16",
+          "i32",
+          "i64",
+          "i8",
+          "invariant_define",
+          "kind_annotation",
+          "kind_define",
+          "logical_indexing",
+          "map",
+          "matrix",
+          "matrix_horzcat",
+          "matrix_vertcat",
+          "matrixd",
+          "mika",
+          "numbers",
+          "pretty_print",
+          "program",
+          "r64",
+          "rational",
+          "record",
+          "row_vectord",
+          "semantic-compiler",
+          "serde",
+          "set",
+          "signed_ints",
+          "statements",
+          "statements_default",
+          "string",
+          "subscript",
+          "subscript_default",
+          "subscript_formula",
+          "subscript_range",
+          "subscript_slice",
+          "swizzle",
+          "symbol_table",
+          "table",
+          "tuple",
+          "u128",
+          "u16",
+          "u32",
+          "u64",
+          "u8",
+          "unsigned_ints",
+          "variable_assign",
+          "variable_define",
+          "variables",
+          "vectord"
+        ],
+        "profile": {
+          "opt_level": "3",
+          "debuginfo": 0,
+          "debug_assertions": false,
+          "overflow_checks": false,
+          "test": false
+        }
+      },
+      "mech_engine": {
+        "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+        "sha256": "988fc423bc4da29bd9479bfc0482db1bf14f79291bad4ad7e19ceaa20cf1687a",
+        "features": [
+          "access",
+          "artifact-codec",
+          "assign",
+          "async",
+          "atom",
+          "bool",
+          "c64",
+          "combinatorics_default",
+          "combinatorics_n_choose_k",
+          "compare_default",
+          "compare_eq",
+          "compare_gt",
+          "compare_gte",
+          "compare_lt",
+          "compare_lte",
+          "compare_neq",
+          "compare_seq",
+          "compare_sneq",
+          "compiler",
+          "compiler_default",
+          "complex",
+          "convert",
+          "dot_indexing",
+          "enum",
+          "f32",
+          "f64",
+          "floats",
+          "formulas",
+          "full_compiler",
+          "functions",
+          "i128",
+          "i16",
+          "i32",
+          "i64",
+          "i8",
+          "indexmap",
+          "integer_bits",
+          "invariant_define",
+          "kind_annotation",
+          "kind_define",
+          "logic_and",
+          "logic_default",
+          "logic_not",
+          "logic_or",
+          "logic_xor",
+          "logical_indexing",
+          "map",
+          "map_ops",
+          "math_acos",
+          "math_acosh",
+          "math_acot",
+          "math_acsc",
+          "math_add",
+          "math_add_assign",
+          "math_asec",
+          "math_asin",
+          "math_asinh",
+          "math_atan",
+          "math_atan2",
+          "math_atanh",
+          "math_cos",
+          "math_cosh",
+          "math_cot",
+          "math_csc",
+          "math_default",
+          "math_div",
+          "math_div_assign",
+          "math_mod",
+          "math_mul",
+          "math_mul_assign",
+          "math_neg",
+          "math_ops_assign_default",
+          "math_ops_default",
+          "math_pow",
+          "math_root_default",
+          "math_sec",
+          "math_sin",
+          "math_sinh",
+          "math_sqrt",
+          "math_sub",
+          "math_sub_assign",
+          "math_tan",
+          "math_tanh",
+          "math_trig_default",
+          "matrix",
+          "matrix_comprehensions",
+          "matrix_default",
+          "matrix_dot",
+          "matrix_horzcat",
+          "matrix_matmul",
+          "matrix_solve",
+          "matrix_transpose",
+          "matrix_vertcat",
+          "matrixd",
+          "mika",
+          "nalgebra",
+          "native-artifact",
+          "native-capture-pages",
+          "native-plan",
+          "numbers",
+          "pretty_print",
+          "program",
+          "pure_text",
+          "r64",
+          "range_default",
+          "range_exclusive",
+          "range_exclusive_increment",
+          "range_inclusive",
+          "range_inclusive_increment",
+          "rational",
+          "record",
+          "resident-artifact",
+          "resident-ekf",
+          "row_vectord",
+          "runtime",
+          "runtime_default",
+          "semantic-compiler",
+          "sequence_buffers",
+          "sequence_sort",
+          "serde",
+          "set",
+          "set_cartesian_product",
+          "set_comprehensions",
+          "set_default",
+          "set_difference",
+          "set_disjoint",
+          "set_element_of",
+          "set_equals",
+          "set_insert",
+          "set_intersection",
+          "set_membership_default",
+          "set_modify_default",
+          "set_not_element_of",
+          "set_not_equals",
+          "set_operations_default",
+          "set_powerset",
+          "set_proper_subset",
+          "set_proper_superset",
+          "set_relations_default",
+          "set_remove",
+          "set_setdata_default",
+          "set_size",
+          "set_subset",
+          "set_superset",
+          "set_symmetric_difference",
+          "set_union",
+          "signed_ints",
+          "source",
+          "source_default",
+          "state_machines",
+          "statements",
+          "statements_default",
+          "stats_default",
+          "stats_sum",
+          "std",
+          "string",
+          "string_concat",
+          "string_default",
+          "subscript",
+          "subscript_default",
+          "subscript_formula",
+          "subscript_range",
+          "subscript_slice",
+          "swizzle",
+          "symbol_table",
+          "table",
+          "trace",
+          "tuple",
+          "u128",
+          "u16",
+          "u32",
+          "u64",
+          "u8",
+          "unsigned_ints",
+          "variable_assign",
+          "variable_define",
+          "variables",
+          "vectord"
+        ],
+        "profile": {
+          "opt_level": "3",
+          "debuginfo": 0,
+          "debug_assertions": false,
+          "overflow_checks": false,
+          "test": false
+        }
+      },
+      "miniz_oxide": {
+        "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+        "sha256": "681adce5cb63aef90b398ba24c2c9ef63c9a250f4af390a66e565bb36860d2e3",
+        "features": [
+          "default",
+          "with-alloc"
+        ],
+        "profile": {
+          "opt_level": "3",
+          "debuginfo": 0,
+          "debug_assertions": false,
+          "overflow_checks": false,
+          "test": false
+        }
+      },
+      "mech_gpu": {
+        "path": "/private/tmp/mech-shared-shadows-round51-20261031/variants/after/libmech_gpu.rlib",
+        "sha256": "51b1ae56b4ceaf5566b8364a83ea52f9201840a5ede790b4fc0edad68876a924",
+        "features": [
+          "aot",
+          "canonical-native",
+          "canonical-native-program",
+          "canonical-native-program-runtime",
+          "canonical-native-runtime",
+          "jit"
+        ],
+        "profile": {
+          "opt_level": "3",
+          "debuginfo": 0,
+          "debug_assertions": false,
+          "overflow_checks": false,
+          "test": false
+        }
+      },
+      "mech_stdlib": {
+        "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+        "sha256": "bf368096ebfcfaf5747d80b1f2a2118ab34f9e7fb330f243ab78799592afef77",
+        "features": [
+          "access",
+          "assign",
+          "atom",
+          "bool",
+          "c64",
+          "compare_eq",
+          "compare_gt",
+          "compare_gte",
+          "compare_lt",
+          "compare_lte",
+          "compare_neq",
+          "compiler",
+          "convert",
+          "enum",
+          "f32",
+          "f64",
+          "full_values",
+          "i128",
+          "i16",
+          "i32",
+          "i64",
+          "i8",
+          "integer_bits",
+          "invariant_define",
+          "logic_and",
+          "logic_or",
+          "map",
+          "math_add",
+          "math_div",
+          "math_mod",
+          "math_mul",
+          "math_sub",
+          "matrix_comprehensions",
+          "matrixd",
+          "mech-compare",
+          "mech-logic",
+          "mech-math",
+          "mech-range",
+          "native-plan",
+          "r64",
+          "range_inclusive",
+          "record",
+          "row_vectord",
+          "runtime",
+          "semantic-compiler",
+          "set",
+          "source",
+          "string",
+          "table",
+          "tuple",
+          "u128",
+          "u16",
+          "u32",
+          "u64",
+          "u8",
+          "variable_define",
+          "variables",
+          "vectord"
+        ],
+        "profile": {
+          "opt_level": "3",
+          "debuginfo": 0,
+          "debug_assertions": false,
+          "overflow_checks": false,
+          "test": false
+        }
+      }
+    },
+    "auxiliary_dependencies": {
+      "scope": "Freeze every selected Core-dependent transitive artifact before another Core rebuild. Mutable Cargo outputs are copied, never hardlinked.",
+      "files": [
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rlib",
+          "sha256": "d108019406335c7627061c0bf46cfda6e96adfc05fb97dae652499f1bbcbb873",
+          "bytes": 31889944
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_core-4ff4856784490a86.rmeta",
+          "sha256": "ca738d1db882558007231546fb0a04e5156394db19bd285ab39c5a06875f1752",
+          "bytes": 18054452
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rlib",
+          "sha256": "bc9c7570ccb0b0c1820350d5bdcb1ca54611253bf4915dc7bf157e21fd9907a4",
+          "bytes": 11757360
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_syntax-99fe397930ae7109.rmeta",
+          "sha256": "20009b30752c757be1389bb5f844c769e832baf5904285b4919bb5efd748a832",
+          "bytes": 8474814
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_bytecode-e4a500da16859bb9.rlib",
+          "sha256": "52305724b08178d2ec85ef9a6bb947c06959d5c1388833ffe0447c72b8729acb",
+          "bytes": 5760
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_bytecode-e4a500da16859bb9.rmeta",
+          "sha256": "710ecc4fb0f37b3606509213dd7990b9b9088b81217ed3536f5101b9cb139a28",
+          "bytes": 4797
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rlib",
+          "sha256": "988fc423bc4da29bd9479bfc0482db1bf14f79291bad4ad7e19ceaa20cf1687a",
+          "bytes": 115932120
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_engine-0d214f77bb5acf15.rmeta",
+          "sha256": "f1f2f25300cc42c37afb140aa76a2937fc9f290bda77d8668acfea2ccbebd9a9",
+          "bytes": 36058974
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_compute-84cb0ef1d137eee3.rlib",
+          "sha256": "6be16102ce349cb32ab8b90914c15e7fe81a96606bb38d928e323ecebd2dac82",
+          "bytes": 1532528
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_compute-84cb0ef1d137eee3.rmeta",
+          "sha256": "869154e8a8276412e506cf6e3915035fd66185eec11640923b2413c08c3d7b79",
+          "bytes": 679277
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_math.rlib",
+          "sha256": "dabd48323aaccaddfe3358421c1ec424bab1170d24e96a39c12043a898d5aa1d",
+          "bytes": 39852840
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_compare-242da402436c67de.rlib",
+          "sha256": "2ebc9850864756eaeb2e6c131ea74c2dd2f5271b93c6e2f9f25f6b64095dd154",
+          "bytes": 60631152
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_compare-242da402436c67de.rmeta",
+          "sha256": "2bd9b84bd1a7ddcda9d59014a3014bf87d3e9a30ecfeda2a0e5e782a8c5b9418",
+          "bytes": 5602165
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_range-72a710fe21180622.rlib",
+          "sha256": "c2fcf49f6467a71aa6728ca2685838dbb7254bcaa29b91965e40740cd59e60f8",
+          "bytes": 2927440
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_range-72a710fe21180622.rmeta",
+          "sha256": "629701f167d8fd89525511c3b0b4bbb83f8fb36782a5eff50b555fb3d7e081b5",
+          "bytes": 380557
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_logic-fc734b60da098e05.rlib",
+          "sha256": "eae83981d243af31d24294f5bcd62464262e4754b8033253741182dcd20f0954",
+          "bytes": 1923864
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_logic-fc734b60da098e05.rmeta",
+          "sha256": "a4c6d046b1572b3359ae99cbf71485c22610817e432e6c0b1e0e6d6a8ac164c4",
+          "bytes": 424616
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_gpu-7fa2845c539b987a.rlib",
+          "sha256": "8f9f8c78b9155cc55397fc3b2353d7e6f8d72e5df48e8295eaedbdeb778a09f0",
+          "bytes": 20356464
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_gpu-7fa2845c539b987a.rmeta",
+          "sha256": "a26ddc681a1357af758ec84d963966d667b6f06cf358063ec83c837f48db75b8",
+          "bytes": 7521271
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rlib",
+          "sha256": "bf368096ebfcfaf5747d80b1f2a2118ab34f9e7fb330f243ab78799592afef77",
+          "bytes": 170064
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_stdlib-6eec5c94a1151738.rmeta",
+          "sha256": "d255a5bc1f93447ae3477316e8e6006ba69feb6deac6f0512e28e65c67c7434d",
+          "bytes": 23027
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_runtime-44999c02af6b18b6.rlib",
+          "sha256": "f8e0e54c3bcb11fa73e6ef9b92002d19195a99ccf0b74bd882cf35f7c157f8b0",
+          "bytes": 16543352
+        },
+        {
+          "path": "/private/tmp/mech-unique-admission-round48-20261031/variants/after/dependency/libmech_runtime-44999c02af6b18b6.rmeta",
+          "sha256": "4cb2222e2dbf9830e0e27ad605250c83d65e9f076cc585fd07e8abf673aecbf0",
+          "bytes": 7525842
+        }
+      ]
+    },
+    "scope": "Fresh current-state profile only. No production compiler change in round 52, no before/after improvement claim. Exact retained round-51 executable/Object/image, common dependency graph, allocator, source, bytecode and timer.",
+    "retained_published_head": "70847471ba06c9e395f9628eb1b19c7b11ea82f6",
+    "measurement_head": "da036737b92eec841ee1bbfe65eba2d0bb1ca1fc"
+  }
+}

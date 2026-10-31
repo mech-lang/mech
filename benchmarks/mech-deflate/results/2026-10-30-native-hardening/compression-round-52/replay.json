@@ -1,0 +1,38 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-deflate-linear-stack/benchmarks/mech-deflate/results/2026-10-30-native-hardening/compression-round-52/reconstruct.py",
+    "/private/tmp/mech-path-allocation-round52-20261031/replay"
+  ],
+  "exit": 0,
+  "evidence_head": "883a3cb5a0473cf3527eebed8ac87e471c5b5d15",
+  "source": "Observed completed replay; original stdout reproduced in result. No additional replay or benchmark run.",
+  "result": {
+    "archives": 20,
+    "file_occurrences": 168,
+    "unique_paths": 156,
+    "multi_version_paths": 1,
+    "preserved_prior_versions": true,
+    "numerical_json_csv_profile_byte_equal": true,
+    "graph_witness_byte_equal": true,
+    "benchmarks_or_compilers_run": false
+  },
+  "outputs": [
+    {
+      "path": "metrics.json",
+      "sha256": "7def1031edc781a8989cd6efe568583d1686d627571ce257cc379eca0e05b9f4"
+    },
+    {
+      "path": "metrics.csv",
+      "sha256": "d3fe04b4437291a198b34ec1cb72d3dafe42fdbc3a24b42e123a97e24f4878e3"
+    },
+    {
+      "path": "profile.json",
+      "sha256": "1e8b279d2e98057ca8ecdea1652635cf953f77efdfcfdf34c7428b3901c04598"
+    },
+    {
+      "path": "graph-path.json",
+      "sha256": "9bc7dd9116146354c9e6df75d220c3fcf4da12db22a4b92d1181812eb3eaedf5"
+    }
+  ]
+}
