@@ -1,0 +1,103 @@
+{
+  "MSUB": {
+    "after": 16,
+    "before": 878,
+    "delta": -862
+  },
+  "UDIV": {
+    "after": 101,
+    "before": 1825,
+    "delta": -1724
+  },
+  "after": {
+    "descriptor.json": {
+      "path": "/private/tmp/mech-vector-address-round60-20261031/linked-primary/after/descriptor.json",
+      "sha256": "e35fb1e1fe3793cfa215aed86401c611a2838235a47b9ae87ccf598aca633114"
+    },
+    "metadata.json": {
+      "path": "/private/tmp/mech-vector-address-round60-20261031/linked-primary/after/metadata.json",
+      "sha256": "06a7bbee4ae717717aa60ccb5a9853f0ccc5ec34a86b3c854c93aa4505ad438e"
+    },
+    "object.o": {
+      "path": "/private/tmp/mech-vector-address-round60-20261031/linked-primary/after/object.o",
+      "sha256": "7a211a5fcdfbbc1ceb1ad93a305380712da0af560c30fb387a34673165f04bc5"
+    }
+  },
+  "before": {
+    "descriptor.json": {
+      "path": "/private/tmp/mech-cached-schema-key-round59-20261031/linked-primary/after/descriptor.json",
+      "sha256": "1b4dbdd2fb0c1f9f51ae7e9dd0bc931bbc2804e6cb949653461d6348c31615c9"
+    },
+    "metadata.json": {
+      "path": "/private/tmp/mech-cached-schema-key-round59-20261031/linked-primary/after/metadata.json",
+      "sha256": "a1d3f2710f3c2bb40eeb7cd10529b87ad6eae1d3786b3811823ee07ea3c3cac9"
+    },
+    "object.o": {
+      "path": "/private/tmp/mech-cached-schema-key-round59-20261031/linked-primary/after/object.o",
+      "sha256": "1a8bb46e9f78fec2147b3242fab5651e470f86ba0347f4f11c7f1aedd5008777"
+    }
+  },
+  "code_bytes": {
+    "after": 13806352,
+    "before": 13046668,
+    "delta": 759684
+  },
+  "opcode_delta": {
+    "add": 0,
+    "adds": 0,
+    "and": 0,
+    "b": -1105,
+    "b.eq": -21,
+    "b.hi": 33,
+    "b.hs": -7,
+    "b.lo": 7,
+    "b.ls": -33,
+    "b.ne": 21,
+    "blr": 0,
+    "cbnz": 0,
+    "cbz": -1724,
+    "clz": 0,
+    "cmp": 0,
+    "cset": 0,
+    "eor": 0,
+    "ldp": 0,
+    "ldr": 66154,
+    "ldrb": 0,
+    "ldur": -13,
+    "lsl": 0,
+    "lsr": 0,
+    "madd": -862,
+    "mov": 65922,
+    "movk": 66242,
+    "msub": -862,
+    "mul": 0,
+    "mvn": 0,
+    "orr": 0,
+    "pacibsp": 0,
+    "rbit": 0,
+    "retab": 0,
+    "smulh": 0,
+    "stp": 0,
+    "str": -401,
+    "strb": 0,
+    "stur": 18,
+    "sub": 0,
+    "subs": 0,
+    "udf": -1724,
+    "udiv": -1724,
+    "umulh": 0,
+    "uxtb": 0
+  },
+  "same_typed_ir": true,
+  "scope": "Static before/after encoded instructions; no dynamic or elapsed claims.",
+  "stack_bytes": {
+    "after": 108880,
+    "before": 108368,
+    "delta": 512
+  },
+  "static_instructions": {
+    "after": 3451588,
+    "before": 3261667,
+    "delta": 189921
+  }
+}
