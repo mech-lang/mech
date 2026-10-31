@@ -4,11 +4,10 @@ use alloc::{
     format,
     rc::Rc,
     string::{String, ToString},
-    sync::Arc,
     vec::Vec,
 };
 #[cfg(not(feature = "no_std"))]
-use std::{boxed::Box, rc::Rc, string::String, sync::Arc, vec::Vec};
+use std::{boxed::Box, rc::Rc, string::String, vec::Vec};
 
 use crate::{
     CallMemoryPlan, CallMemoryPlanningRequest, ConversionPlan, CurrentMemoryFootprint,
@@ -671,11 +670,8 @@ pub enum BoundImplementationId {
 pub struct BoundCall {
     operation: ResolvedOperationDescriptor,
     origin: BoundCallOrigin,
-    // Immutable certificates are retained together. Current extents acquire
-    // new arrays in with_current_descriptors; no Value or account authority
-    // is retained here. Individual descriptor layout/access stays unchanged.
-    inputs: Arc<[ResolvedValueDescriptor]>,
-    outputs: Arc<[ResolvedValueDescriptor]>,
+    inputs: Box<[ResolvedValueDescriptor]>,
+    outputs: Box<[ResolvedValueDescriptor]>,
     implementation: BoundImplementationId,
     target: ExecutionTarget,
 }
@@ -689,10 +685,7 @@ impl BoundCall {
         inputs: Box<[ResolvedValueDescriptor]>,
         outputs: Box<[ResolvedValueDescriptor]>,
     ) -> MResult<Self> {
-        for (expected, actual) in [
-            (self.inputs.as_ref(), inputs.as_ref()),
-            (self.outputs.as_ref(), outputs.as_ref()),
-        ] {
+        for (expected, actual) in [(&self.inputs, &inputs), (&self.outputs, &outputs)] {
             if expected.len() != actual.len()
                 || expected
                     .iter()
@@ -706,12 +699,9 @@ impl BoundCall {
             }
         }
         Ok(Self {
-            operation: self.operation.clone(),
-            origin: self.origin.clone(),
-            inputs: inputs.into(),
-            outputs: outputs.into(),
-            implementation: self.implementation.clone(),
-            target: self.target,
+            inputs,
+            outputs,
+            ..self.clone()
         })
     }
 
@@ -728,8 +718,8 @@ impl BoundCall {
         Ok(Self {
             operation: call.operation.clone(),
             origin: BoundCallOrigin::ResolvedOverload(call.overload_id),
-            inputs: inputs.into(),
-            outputs: outputs.into(),
+            inputs,
+            outputs,
             implementation: BoundImplementationId::Runtime(runtime_function),
             target,
         })
@@ -745,8 +735,8 @@ impl BoundCall {
         Ok(Self {
             operation,
             origin: BoundCallOrigin::SyntaxDirected,
-            inputs: inputs.into(),
-            outputs: outputs.into(),
+            inputs,
+            outputs,
             implementation: BoundImplementationId::Runtime(runtime_function),
             target,
         })
@@ -806,8 +796,8 @@ impl BoundCall {
         Ok(Self {
             operation,
             origin: BoundCallOrigin::ArtifactOperation,
-            inputs: inputs.into(),
-            outputs: outputs.into(),
+            inputs,
+            outputs,
             implementation: BoundImplementationId::Resident(resident_operation),
             target,
         })
