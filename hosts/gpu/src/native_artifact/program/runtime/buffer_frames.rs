@@ -574,12 +574,13 @@ impl BufferFrames {
         recipes: &crate::native_artifact::program::prepare::frame_retirement::FrameRetirements,
         value: u32,
         paid: &mut crate::native_artifact::work::PaidRetirements<'_>,
-    ) -> Result<(), NativeProgramExecutionError> {
-        if let Some((charge, operations)) = recipes.get(value as usize) {
-            paid.pay(charge)?;
-            self.apply_retirement(operations)?;
-        }
-        Ok(())
+    ) -> Result<bool, NativeProgramExecutionError> {
+        let Some((charge, operations)) = recipes.get(value as usize) else {
+            return Ok(false);
+        };
+        paid.pay(charge)?;
+        self.apply_retirement(operations)?;
+        Ok(true)
     }
     fn apply_retirement(
         &mut self,

@@ -17,8 +17,14 @@ pub(super) fn run(
         && let Some(mut paid) = work.try_retirement_batch(total)
     {
         for &slot in slots {
-            frames.retire_prepaid(recipes, slot as u32, &mut paid)?;
-            arena.retire_current_prepaid(slot as u32, &mut paid)?;
+            if frames.retire_prepaid(recipes, slot as u32, &mut paid)? {
+                // The same batch preview checked this selected container's
+                // canonical slot is empty. Only its frame can hold storage;
+                // retain the original arena price on the existing paid loan.
+                paid.pay(32)?;
+            } else {
+                arena.retire_current_prepaid(slot as u32, &mut paid)?;
+            }
         }
         paid.finish()?;
         #[cfg(all(test, feature = "canonical-native-program"))]
@@ -43,17 +49,21 @@ fn preview(
     let mut charges = slots.len();
     for &slot in slots {
         let slot = u32::try_from(slot).ok()?;
-        if !arena.native_retirement_available(slot, work).ok()? {
-            return None;
-        }
-        total = total.checked_add(32)?;
         if let Some((charge, _)) = recipes.get(slot as usize) {
-            if !frames.has_retirement_backing() {
+            // This recipe is derived only for selected frame containers, not
+            // their projected canonical fields. An unexpected canonical
+            // definition conservatively keeps the entire original ordered path.
+            if !frames.has_retirement_backing()
+                || arena.native_entry_preview(slot, work).ok()?.is_some()
+            {
                 return None;
             }
             total = total.checked_add(charge)?;
             charges = charges.checked_add(1)?;
+        } else if !arena.native_retirement_available(slot, work).ok()? {
+            return None;
         }
+        total = total.checked_add(32)?;
     }
     Some((total, charges))
 }
