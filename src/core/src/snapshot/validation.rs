@@ -11,30 +11,6 @@ use crate::{
 };
 use core::cell::{Cell, OnceCell};
 
-// Temporary isolated admission census. Removed before the primary candidate.
-static ADMISSION_CENSUS: [core::sync::atomic::AtomicUsize; 7] =
-    [const { core::sync::atomic::AtomicUsize::new(0) }; 7];
-fn admission_census_note(index: usize) {
-    ADMISSION_CENSUS[index].fetch_add(1, core::sync::atomic::Ordering::Relaxed);
-}
-// SAFETY: diagnostic-only names are unique to this exact owning build. These
-// functions expose counters only, without pointers, allocation or authority.
-#[unsafe(no_mangle)]
-extern "C" fn mech_snapshot_admission_census_reset() {
-    for value in &ADMISSION_CENSUS {
-        value.store(0, core::sync::atomic::Ordering::Relaxed);
-    }
-}
-// SAFETY: see the paired diagnostic-only reset symbol above.
-#[unsafe(no_mangle)]
-extern "C" fn mech_snapshot_admission_census_get(index: u32) -> u64 {
-    ADMISSION_CENSUS
-        .get(index as usize)
-        .map_or(u64::MAX, |value| {
-            value.load(core::sync::atomic::Ordering::Relaxed) as u64
-        })
-}
-
 #[path = "string_matrix.rs"]
 mod string_matrix;
 pub use string_matrix::StringMatrixSnapshotConstructor;
@@ -52,6 +28,10 @@ mod private_unsigned_matrix;
 pub use private_unsigned_matrix::{
     PrivateUnsignedAppendPreparation, PrivateUnsignedMatrix, UnsignedMatrixViewMut,
 };
+
+#[cfg(test)]
+#[path = "unique_admission_tests.rs"]
+mod unique_admission_tests;
 
 #[cfg(test)]
 #[path = "frozen_identity_tests.rs"]
@@ -713,12 +693,10 @@ impl Value {
         reservation: &mut crate::ManagedMemoryReservation,
         reuse_existing: bool,
     ) -> crate::MemoryRuntimeResult<Self> {
-        admission_census_note(0);
         let budget = reservation.budget();
         // Exact same account AND retained schema owner: no registry lookup,
         // allocation, reservation transfer or foreign-import-dependent work.
         if self.memory_budget_retained_bytes(&budget).is_some() {
-            admission_census_note(1);
             return Ok(self);
         }
         let schemas = self.schemas.clone().ok_or_else(|| {
@@ -730,7 +708,6 @@ impl Value {
         if reuse_existing
             && let Some(owner) = self.root.data.budget_import(&budget, &schemas, &self.shape)
         {
-            admission_census_note(2);
             self.root = owner;
             return Ok(self);
         }
@@ -762,16 +739,6 @@ impl Value {
             alignment: core::mem::align_of::<SnapshotBudgetRegistration>() as u32,
             space: crate::MemorySpace::Host,
         })?;
-        admission_census_note(3);
-        if let Some(root) = Arc::get_mut(&mut self.root) {
-            admission_census_note(4);
-            if root.memory_budget.is_none() {
-                admission_census_note(5);
-                if Arc::strong_count(&root.data) > 1 {
-                    admission_census_note(6);
-                }
-            }
-        }
         let data = self.root.data.clone();
         budget.check_snapshot_import_allocation(
             core::mem::size_of::<FrozenSnapshotStorage>() as u64,
