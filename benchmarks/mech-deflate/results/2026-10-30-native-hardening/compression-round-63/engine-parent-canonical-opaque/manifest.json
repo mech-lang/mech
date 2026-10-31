@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-31T16:29:56.844360+00:00",
+  "head": "b3fea5a0c276abc4a096b1e467fe693a802b4137",
+  "files": [
+    {
+      "path": "engine-focused.py",
+      "sha256": "774c48367822d7f921e227c57d9df9a07669dfa4f2d9a218057c026fc11c4352",
+      "bytes": 5528
+    },
+    {
+      "path": "engine-parent-canonical/native_collection_buffer_frames.rs",
+      "sha256": "762ecd767ae9fc9d919fed1b50803ee6288cfcd962432b567686f46c13a8bd8c",
+      "bytes": 20606
+    },
+    {
+      "path": "engine-parent-canonical/native_collection_frame_composition.rs",
+      "sha256": "103d63837eb775d37db0bb6faa1802d9c09187560cd047de649e78f0331b70c9",
+      "bytes": 15352
+    },
+    {
+      "path": "engine-parent-canonical/native_collection_frame_shape.rs",
+      "sha256": "5747a39a4ed87888abfd3c5970fa8b174ab45d4f829db5b1a7821dd59c9005df",
+      "bytes": 36704
+    },
+    {
+      "path": "engine-parent-canonical/opaque.json",
+      "sha256": "258ba4a58d039a5f8eaa4553bb15df15a410a00caad5751e90b8ebe18a5b6124",
+      "bytes": 13153
+    },
+    {
+      "path": "engine-parent-canonical/opaque.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-parent-canonical/opaque.stdout",
+      "sha256": "ae083f8f8953f8aa3a29e7e67b5475b2326779646434f4f41e314f745740aa2b",
+      "bytes": 276
+    }
+  ]
+}
