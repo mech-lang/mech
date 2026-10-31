@@ -14,7 +14,7 @@ fn pack_transfers_temporary_owners_after_validation_and_preserves_aliases_on_den
         )
         .unwrap();
         let plan = jit.descriptor().plan();
-        let layout = plan.facts().buffer_frames();
+        let layout = &plan.facts().buffer_frames();
         let (output, operands, fields) = plan
             .blocks()
             .iter()
