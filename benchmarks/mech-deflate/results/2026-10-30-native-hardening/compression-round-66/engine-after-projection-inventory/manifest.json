@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T17:55:41.399794+00:00",
+  "head": "0f4d9046d3d3ec088508a6f83eb38cfe7c719342",
+  "files": [
+    {
+      "path": "engine-after/projection-inventory.json",
+      "sha256": "83308b8ccbbd2d82fd15de231bc04a385a3f51a8b1b127c2152ad498764c890e",
+      "bytes": 12777
+    },
+    {
+      "path": "engine-after/projection-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-after/projection-inventory.stdout",
+      "sha256": "aa9aef5261803bddc5a1ae837e5b8fef8eae36cd407bf1b783d9bd12b7e31fb1",
+      "bytes": 1477
+    },
+    {
+      "path": "engine-focused.py",
+      "sha256": "19a54c7e9c4df2b68e8f9f306e287fc488f9579d2394e7846880ee394a21305e",
+      "bytes": 4373
+    }
+  ]
+}
