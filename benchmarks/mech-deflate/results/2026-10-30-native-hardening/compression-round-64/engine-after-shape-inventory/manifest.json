@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-31T16:56:42.116094+00:00",
+  "head": "c5001c19ed8561155006c60ffae6801653938b23",
+  "files": [
+    {
+      "path": "engine-after/budget.rs",
+      "sha256": "4632950b18e1cd6e1e7571cc14bfd68853addd656e91514812728314585bc743",
+      "bytes": 171542
+    },
+    {
+      "path": "engine-after/native_projection_meter_tests.rs",
+      "sha256": "20e35bbf8d88ada49bc8ad181e2a37a9e761d826ac95d25d4e4b2ebb722c56c5",
+      "bytes": 20714
+    },
+    {
+      "path": "engine-after/shape-inventory.json",
+      "sha256": "d52d65a2cb8135a7d3ac9449caa314159c310ef7e0b3e4cf996e7d78a0ec0df9",
+      "bytes": 12967
+    },
+    {
+      "path": "engine-after/shape-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-after/shape-inventory.stdout",
+      "sha256": "2ac64ce5d5554bcae45ed2b51363c214cb8c21fa6409d3bd049e23be70d5c5c0",
+      "bytes": 945
+    },
+    {
+      "path": "engine-focused.py",
+      "sha256": "995b2350feabab23fe255dd7bec85cea625d9335fdb935abe33ce10ce4305f4b",
+      "bytes": 4889
+    }
+  ]
+}
