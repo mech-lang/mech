@@ -379,6 +379,9 @@ fn observed_owned_call_preserves_overflow_before_resolution_and_allows_retry() {
     let (plan, template) = observed_plan();
     let retained_template = template.clone();
     let mut missing = plan.clone();
+    // Initial derivation resolves the call's witnesses. Use the actual
+    // deferred template to test missing-fact rejection during refinement.
+    missing.call = Some(template.clone());
     missing
         .facts
         .resolved_footprints
