@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T09:11:10.903003+00:00",
+  "head": "5f5298ed2eb47817d7ddea68c51095c2f74ddd7b",
+  "files": [
+    {
+      "path": "owners/census.json",
+      "sha256": "8be990b88c026e9bcff8a1701ef2ffe67414b7f9e2581e09502e9195d1979b28",
+      "bytes": 5841
+    },
+    {
+      "path": "owners/disk-recovery.json",
+      "sha256": "b7b32bad18be93d35cd14aee9b352bf9aa1b37dd1d56bcc5206999efe4a9918e",
+      "bytes": 522
+    },
+    {
+      "path": "owners/worker-build.json",
+      "sha256": "d05b1831fda5b0f0503f46a2f327a6d3162a69b849e87a6df3cc7eb2696f65c1",
+      "bytes": 2541
+    },
+    {
+      "path": "owners/worker-build.stderr",
+      "sha256": "cef0e0f064e0feff8dc11ffd89a13f829ed5c465acdddf8cb8111f5a7af93490",
+      "bytes": 6434
+    },
+    {
+      "path": "owners/worker-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}
