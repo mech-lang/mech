@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-10-31T23:54:51.354023+00:00",
+  "head": "c22d76b0320d128c7c315a7f1f4feeb64cc21a19",
+  "files": [
+    {
+      "path": "engine-after/budget.rs",
+      "sha256": "957e667d51a867f04a193ee63e82a3e8020f2b09accd4e2c7cf3020dd524f63f",
+      "bytes": 172084
+    },
+    {
+      "path": "engine-after/mod.rs",
+      "sha256": "1498299e0d0669899d074fd4c49b2106e89377d3cc294a78f97c2e84f635f7df",
+      "bytes": 6418
+    },
+    {
+      "path": "engine-after/native_work_context.rs",
+      "sha256": "f8ddd5709a2dbc15b1d40f04860ac9cb2993cdb37990ed90eca8cfa3c128bbad",
+      "bytes": 1469
+    },
+    {
+      "path": "engine-after/native_work_context_tests.rs",
+      "sha256": "17edb1ef8e8aa0c021531798a9386074ea4e1859ff08af8e3aacdd44d93fd4b0",
+      "bytes": 6972
+    },
+    {
+      "path": "engine-after/new-compute-inventory.json",
+      "sha256": "3e429570b7c1f4d7d57ee030af56fec73cc0c12f3a0b819dfcfdd3b9cfe2f4b3",
+      "bytes": 13084
+    },
+    {
+      "path": "engine-after/new-compute-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-after/new-compute-inventory.stdout",
+      "sha256": "f93f3dd1ae9a9446fd9d0f1819769ecbfb503f154a31f26275d9071e884c6b0b",
+      "bytes": 488
+    },
+    {
+      "path": "engine-focused.py",
+      "sha256": "55a82fd388bd12b6f7b21ddacde4a3ec49e9a4bcf7bb2a02b53b53365703ca71",
+      "bytes": 5992
+    }
+  ]
+}
