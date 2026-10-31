@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-31T13:21:10.260082+00:00",
+  "head": "05d36846206be953ec295d81becfe30f7f3b9c19",
+  "files": [
+    {
+      "path": "build-matched.py",
+      "sha256": "a11ddf68b9d2883f54e961db5ec6c8d1795b2bc3509ebb1ca27415d4c4b13527",
+      "bytes": 5322
+    },
+    {
+      "path": "variants/after/auxiliary.json",
+      "sha256": "e38b789788618badee9924ae8f33a213415c78ebac5dd4088eff2f14ad63b063",
+      "bytes": 5931
+    },
+    {
+      "path": "variants/after/common.json",
+      "sha256": "a6d98b4ff701bf09689c49c240a0b296eb032b66d67a4c9dca81dd47486e5918",
+      "bytes": 65414
+    },
+    {
+      "path": "variants/after/host.json",
+      "sha256": "ab84307e88cea54c3f0179ccb288e2e8e8d975fc4b78cd50a48b1764c3254ddb",
+      "bytes": 5312
+    },
+    {
+      "path": "variants/after/host.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "variants/after/host.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "variants/after/libraries.json",
+      "sha256": "c8e0e063e4737bff0579bda3bac757cc2c4791ae79db4c88487b68b66e60d47e",
+      "bytes": 10904
+    }
+  ]
+}
