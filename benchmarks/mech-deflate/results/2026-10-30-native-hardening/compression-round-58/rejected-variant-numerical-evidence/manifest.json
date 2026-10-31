@@ -1,0 +1,51 @@
+{
+  "created_utc": "2026-10-31T14:30:47.292232+00:00",
+  "head": "4aa5cdf2e905614561c9ce1ec5750f9313a3186f",
+  "files": [
+    {
+      "path": "allocation-target.json",
+      "sha256": "971b005b71409b94cb821dea3e77cafe88d5e1d58cf32157302149eb2f007b42",
+      "bytes": 605
+    },
+    {
+      "path": "allocation_analysis.py",
+      "sha256": "bc6effc3b29d59db562555f009468adc234f657960c8302c73387825bfef683d",
+      "bytes": 2467
+    },
+    {
+      "path": "analysis/scorecard.csv",
+      "sha256": "9a4c9c6c0026d7a213ff4e07e39d826acc0167b41deb97a55dfb62c5ae894f81",
+      "bytes": 1369
+    },
+    {
+      "path": "analysis/scorecard.json",
+      "sha256": "62ca1daf6c75ba76a45b026a09a0ffd4c78c7e9af7819025d2c0d4029622f236",
+      "bytes": 58992
+    },
+    {
+      "path": "analyze.py",
+      "sha256": "0768a9fd8e662035ec09eabafcc34ea3210e074b7b6117c6755c27861fc1a316",
+      "bytes": 4797
+    },
+    {
+      "path": "attribution-comparison.json",
+      "sha256": "87c94809ef80bb9233cb5b76f441baba7418550ee952cfab52ec8ce633bd7a84",
+      "bytes": 2728
+    },
+    {
+      "path": "profile-numbers.json",
+      "sha256": "852f6921cb03a8b243d16d8be38dfc7ff2e467799dbb37ad9b051776791d7df3",
+      "bytes": 18367
+    },
+    {
+      "path": "profile_analysis.py",
+      "sha256": "54b5f96c2c2d02b87557b0e920bab100426d359e13a94c58f45d6b5736b1d89a",
+      "bytes": 3171
+    },
+    {
+      "path": "validation.json",
+      "sha256": "8086a27f22db969948ef9495cbc0f938da1200be977e87c4b0728088ad5c8587",
+      "bytes": 951
+    }
+  ]
+}
