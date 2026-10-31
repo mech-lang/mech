@@ -1,7 +1,7 @@
 //! One cumulative, non-resettable native invocation work ledger.
 use crate::native_artifact::{NativeExecutionError, NativeExecutionPhase};
 use mech_core::{ManagedMemoryBudget, MemoryBudgetDimension, ResidentKernelError};
-use mech_engine::native_artifact::NativeLibraryWorkBudget;
+use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeLibraryWorkContext};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 static NEXT_WORK_LEDGER: AtomicU64 = AtomicU64::new(1);
@@ -162,6 +162,21 @@ impl NativeWorkMeter {
             error => NativeExecutionError::LibraryWork { phase, error },
         }
     }
+    #[inline]
+    pub(in crate::native_artifact) fn charge_scoped(
+        &mut self,
+        context: NativeLibraryWorkContext<'_>,
+        phase: NativeExecutionPhase,
+        amount: u64,
+    ) -> Result<(), NativeExecutionError> {
+        if let Some(budget) = &self.library {
+            return budget
+                .charge_compute_with_limit_scoped(context, amount, self.limit)
+                .map_err(|error| Self::library_error(phase, error));
+        }
+        self.charge(phase, amount)
+    }
+
     #[inline]
     pub(in crate::native_artifact) fn charge(
         &mut self,

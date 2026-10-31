@@ -5,7 +5,9 @@ use crate::native_artifact::program::runtime::maps::string::PublicationGeometry;
 use crate::native_artifact::program::runtime::session::CallCacheLane;
 use crate::native_artifact::{NativeValueHandle, NativeWorkMeter};
 use mech_core::{MemoryBudgetLimits, Value};
-use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeMatchValue};
+use mech_engine::native_artifact::{
+    NativeLibraryWorkBudget, NativeLibraryWorkContext, NativeMatchValue,
+};
 
 mod buffer_frames;
 pub(super) mod continuation;
@@ -158,6 +160,7 @@ impl<'borrow, 'state, 'visit, 'plan> MapExecution<'borrow, 'state, 'visit, 'plan
 
 pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visit, 'plan> {
     pub(in crate::native_artifact::program::runtime) state: &'state mut ExecutionState<'plan>,
+    pub(in crate::native_artifact::program::runtime) work_context: NativeLibraryWorkContext<'state>,
     pub(in crate::native_artifact::program::runtime) descriptor: &'plan NativeProgramDescriptor,
     pub(in crate::native_artifact::program::runtime) retirements: &'visit [u64],
     pub(in crate::native_artifact::program::runtime) progress: &'visit mut [u64],
@@ -706,6 +709,7 @@ impl Invocation<'_, '_, '_> {
         if group.is_some_and(|group| u64::from(group.start()) != site) {
             return Err(invalid("ordinary visit inside admitted scalar group"));
         }
+        let work_context = self.work_context;
         if previous.is_none() && self.worker.is_some() {
             let worker = self.worker.as_ref().unwrap();
             let region = self
@@ -720,8 +724,12 @@ impl Invocation<'_, '_, '_> {
             }
             self.control().visit_outlined_entry(site, region.begin)?;
         } else {
-            self.control()
-                .visit_from(site, group.map(|group| group.work), previous)?;
+            self.control().visit_from_scoped(
+                site,
+                group.map(|group| group.work),
+                previous,
+                work_context,
+            )?;
         }
         self.arm_parent_continuation(index)?;
         self.state.scalar_path = group
