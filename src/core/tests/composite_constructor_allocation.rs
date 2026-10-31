@@ -141,6 +141,95 @@ fn measured_requests<T>(run: impl FnOnce() -> T) -> (T, usize) {
 }
 
 #[test]
+fn independent_snapshot_registration_allocates_only_retained_metadata_owners() {
+    use mech_core::{IntegerWidth, ManagedMemoryBudget};
+
+    for shared in [false, true] {
+        for matrix in [false, true] {
+            for _ in 0..3 {
+                let mut builder = SchemaTableBuilder::new();
+                let handle = builder
+                    .insert(
+                        SchemaDraft {
+                            body: if matrix {
+                                SchemaBody::Matrix {
+                                    element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                                    dimensions: [
+                                        mech_core::DimensionExpr::Constant(1),
+                                        mech_core::DimensionExpr::Constant(3),
+                                    ]
+                                    .into(),
+                                }
+                            } else {
+                                SchemaBody::String
+                            },
+                            dimension_parameters: Box::new([]),
+                        }
+                        .finalize()
+                        .unwrap(),
+                    )
+                    .unwrap();
+                let built = builder.finish().unwrap();
+                let schema = built.resolve(handle).unwrap();
+                let schemas = Arc::new(built.table);
+                let value = ValueDraft {
+                    schema,
+                    shape_values: Box::new([]),
+                    data: if matrix {
+                        ValueDataDraft::Matrix(
+                            [7, 8, 9]
+                                .map(ValueDataDraft::U8)
+                                .into_iter()
+                                .collect::<Vec<_>>()
+                                .into(),
+                        )
+                    } else {
+                        ValueDataDraft::String("kept immutable".into())
+                    },
+                }
+                .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+                .unwrap();
+                let expected = value.canonical_data_draft().unwrap();
+                let nodes = value.retained_footprint(&schemas).unwrap().node_count;
+                let identity = value.frozen_storage_identity();
+                let alias = shared.then(|| value.clone());
+                let budget = ManagedMemoryBudget::new(1_000_000);
+                // This also warms the immutable payload's shared registry. A
+                // fresh independent registration still needs its own owners.
+                let bytes = value.memory_budget_admission_bytes(&budget).unwrap();
+                let mut reservation = budget.reserve_capacity(bytes).unwrap();
+                let ((), requests) = measured_requests(|| {
+                    let owned = value
+                        .into_independent_memory_budget(&mut reservation)
+                        .unwrap();
+                    assert!(identity.matches(&owned));
+                    assert_eq!(budget.used_bytes(), bytes);
+                    assert_eq!(budget.retained_snapshot_nodes(), nodes);
+                    // Include complete destruction: deferring a lock allocation
+                    // from insertion to removal must not satisfy this test.
+                    drop(owned);
+                });
+                assert_eq!(
+                    requests,
+                    if shared { 2 } else { 1 },
+                    "independent import and retirement allocate only retained metadata owners"
+                );
+                assert_eq!(reservation.capacity_bytes(), 0);
+                assert_eq!((budget.used_bytes(), budget.retained_nodes()), (0, 0));
+                if let Some(alias) = alias {
+                    assert_eq!(alias.canonical_data_draft().unwrap(), expected);
+                    assert!(alias.memory_budget_retained_bytes(&budget).is_none());
+                    assert!(identity.matches(&alias));
+                } else {
+                    // A weak identity retains no strong payload or admission.
+                    assert_eq!(budget.retained_snapshot_nodes(), 0);
+                }
+            }
+        }
+    }
+}
+
+#[test]
 fn numeric_matrix_validation_allocates_only_the_three_retained_owners() {
     use mech_core::{
         DimensionExpr as D, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
