@@ -1534,7 +1534,10 @@ impl<'plan> CfgDefinition<'plan> {
             // Selected acyclic parent bodies have their own independently
             // derived, runtime-funded instruction envelope. Keep their fixed
             // entry guard in this unchanged ordinary visit audit.
-            let emitted = (b.func.dfg.num_insts() - before - segment_ir) as u64;
+            // The entry-pointer reload precedes specialized region emission;
+            // include it in this visit's unchanged conservative template.
+            let emitted = (b.func.dfg.num_insts() - before - segment_ir
+                + usize::from(locals_home.is_some())) as u64;
             let bound = emission_template_bound(plan, index)?;
             if emitted.checked_add(128).is_none_or(|total| total > bound) {
                 return Err(NativeCompileError::InvalidPlan {
