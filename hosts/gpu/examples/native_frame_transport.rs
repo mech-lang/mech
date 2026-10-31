@@ -117,6 +117,8 @@ fn managed(case: &str, decoded: bool, steps: u64, samples: usize, repetitions: u
     let source = match case {
         "exclusive" => format!("+> sequence\n{body}walk(sequence/with-capacity(0u32, 64u64), steps<u64>, seed<u64>)\n"),
         "aliased" => format!("+> sequence\n{body}walk(values<[u32]>, steps<u64>, seed<u64>)\n"),
+        "private-update" => "walk(words<[u32]>, left<u64>, total<u64>) => (out<u64>) :=\n  old := words[1u64]\n  ~next := words\n  next[1u64] = old + 1u32\n  current<u64> := next[1u64]\n  out := ((left > 0u64)? | true => walk(next, left - 1u64, total + 3u64) | false => total + current).\nwalk([0u32], steps<u64>, seed<u64>)\n".to_owned(),
+        "private-append" => "+> sequence\nwalk(words<[u32]>, left<u64>, total<u64>) => (out<u64>) :=\n  next := sequence/append(words, 7u32)\n  out := ((left > 0u64)? | true => walk(next, left - 1u64, total + 3u64) | false => total + sequence/length(next)).\nwalk(sequence/with-capacity(0u32, 64u64), steps<u64>, seed<u64>)\n".to_owned(),
         "scalar-loop" => "walk(left<u64>, total<u64>) => <u64>\n  | (left, total) => ((left > 0u64)? | true => walk(left - 1u64, total + 3u64) | false => total).\nwalk(steps<u64>, seed<u64>)\n".to_owned(),
         _ => panic!("unknown managed case"),
     };
@@ -138,7 +140,14 @@ fn managed(case: &str, decoded: bool, steps: u64, samples: usize, repetitions: u
     );
     let aliases = args.clone();
     let retained = memory.used_bytes();
-    let expected = Data::U64(17 + steps * 3 + if case == "aliased" { 64 } else { 0 });
+    let expected = Data::U64(
+        17 + steps * 3
+            + match case {
+                "aliased" => 64,
+                "private-update" | "private-append" => steps + 1,
+                _ => 0,
+            },
+    );
     let policy = policy();
     for sample in 0..=samples {
         // Output containers and all previous publications stay outside timing.
@@ -270,7 +279,7 @@ fn main() {
     assert!(repetitions > 0);
     assert_eq!(allocation_probe::measured(|| ()).1, 0);
     match args[1].as_str() {
-        "exclusive" | "aliased" | "scalar-loop" => {
+        "exclusive" | "aliased" | "scalar-loop" | "private-update" | "private-append" => {
             managed(&args[1], decoded, steps, samples, repetitions)
         }
         _ => scalar(&args[1], decoded, samples, repetitions),

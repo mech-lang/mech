@@ -151,12 +151,28 @@ impl PrivateUnsignedMatrix {
         {
             return Err(SnapshotValueError::SnapshotSchemaDefinitionMismatch { key });
         }
-        let mut private = Self::prepare(schema, shape, words, schemas, reservation)?;
-        if row_parameter(&private.value) != Some(preparation.column) {
-            return Err(SnapshotValueError::SnapshotSchemaDefinitionMismatch { key });
+        Self::prepare(schema, shape, words, schemas, reservation)?
+            .with_append_preparation(preparation)
+    }
+
+    /// Extend the same unpublished owner into its already admitted append phase.
+    /// Neither the backing nor its publication metadata is reconstructed.
+    pub fn with_append_preparation(
+        mut self,
+        preparation: PrivateUnsignedAppendPreparation,
+    ) -> Result<Self, SnapshotValueError> {
+        if self.append.is_some()
+            || self.value.schema != preparation.schema
+            || self.value.schema_key != preparation.key
+            || self.memory_budget() != preparation.reservation.budget()
+            || row_parameter(&self.value) != Some(preparation.column)
+        {
+            return Err(SnapshotValueError::SnapshotSchemaDefinitionMismatch {
+                key: self.value.schema_key,
+            });
         }
-        private.append = Some(preparation);
-        Ok(private)
+        self.append = Some(preparation);
+        Ok(self)
     }
 
     pub fn capacity_elements(&self) -> usize {

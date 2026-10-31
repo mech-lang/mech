@@ -2,7 +2,7 @@
 //! validation/copy/error ordering. The rest of the recurrence uses native cells.
 use super::{Error, Invocation, invalid};
 use crate::native_artifact::program::prepare::readonly_numeric::Operation;
-use mech_core::snapshot::{UnsignedMatrixOwnershipTransfer, UnsignedMatrixViewMut};
+use mech_core::snapshot::UnsignedMatrixViewMut;
 use mech_engine::native_artifact::NativeIterationAction as Action;
 
 impl Invocation<'_, '_, '_> {
@@ -60,17 +60,16 @@ impl Invocation<'_, '_, '_> {
         )?;
         let coexistence = self.selected_join_coexistence(None)?;
         let result = if matches!(operation, Operation::Append { .. }) {
-            call.unsigned_buffer(
-                Some(source),
+            call.unsigned_matrix_append_private(
+                source,
                 incoming,
                 true,
                 self.limits,
                 &self.state.library,
                 coexistence,
             )
-            .map(|value| (value, true))
         } else {
-            call.unsigned_matrix_replace(
+            call.unsigned_matrix_replace_private(
                 source,
                 index,
                 incoming,
@@ -80,13 +79,10 @@ impl Invocation<'_, '_, '_> {
                 coexistence,
             )
         };
-        let (value, changed) = result.map_err(|error| Error::Library {
+        let mut private = result.map_err(|error| Error::Library {
             origin: metadata.plan.blocks()[site].origin(),
             error,
         })?;
-        if !changed {
-            return Err(invalid("numeric materialization did not change a cell"));
-        }
         let memory = self.state.library.memory_budget();
         let metadata_bytes = metadata
             .observation_schema_bytes
@@ -99,24 +95,17 @@ impl Invocation<'_, '_, '_> {
                 .ok_or_else(|| invalid("numeric materialization work overflows"))?,
         )?;
         let _metadata = memory.reserve_capacity(metadata_bytes)?;
-        let shape = value.shape().clone();
-        let UnsignedMatrixOwnershipTransfer::Owned(owned) =
-            value.try_into_owned_unsigned_matrix(&memory)?
-        else {
-            return Err(invalid("new numeric replacement is not exclusive"));
-        };
-        let mut private = if proof.arrays[*array].appends {
+        if proof.arrays[*array].appends {
             let preparation = self
                 .state
                 .buffer_frames
                 .append_preparation_mut(id, *array)?
                 .take()
                 .ok_or_else(|| invalid("numeric append lost its admitted preparation"))?;
-            owned.into_private_appends(shape, preparation)
-        } else {
-            owned.into_private_updates(shape)
+            private = private
+                .with_append_preparation(preparation)
+                .map_err(Error::Snapshot)?;
         }
-        .map_err(Error::Snapshot)?;
         let address = if let Some(capacity) = proof.capacity(*array) {
             let [address, length, cells] = private
                 .reserved_native_view()
