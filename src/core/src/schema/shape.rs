@@ -21,6 +21,12 @@ impl Schema {
         Ok(ShapeInstance { parameter_values })
     }
 
+    /// A shape carries parameter values, not a schema identity. Revalidate all
+    /// bounds and body extents against this schema without copying either one.
+    pub(crate) fn validate_shape(&self, shape: &ShapeInstance) -> Result<(), SemanticModelError> {
+        self.validate_shape_parameters(shape.parameter_values())
+    }
+
     fn validate_shape_parameters(
         &self,
         parameter_values: &[u64],

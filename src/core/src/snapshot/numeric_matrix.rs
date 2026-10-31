@@ -14,17 +14,14 @@ fn from_numeric_matrix(
         .entry(schema)
         .ok_or(SnapshotValueError::UnknownSnapshotSchema { schema })?;
     let mismatch = || SnapshotValueError::SnapshotSchemaDefinitionMismatch { key: entry.key() };
-    let checked = entry
+    entry
         .schema()
-        .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
+        .validate_shape(&shape)
         .map_err(|_| mismatch())?;
-    if checked != shape {
-        return Err(mismatch());
-    }
     let SchemaBody::Matrix {
         element,
         dimensions,
-    } = entry.schema().closed_body(&shape).map_err(|_| mismatch())?
+    } = entry.schema().body()
     else {
         return Err(mismatch());
     };
