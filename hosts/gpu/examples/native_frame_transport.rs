@@ -152,7 +152,10 @@ fn managed(case: &str, decoded: bool, steps: u64, samples: usize, repetitions: u
         "aliased" => format!("+> sequence\n{body}walk(values<[u32]>, steps<u64>, seed<u64>)\n"),
         "private-update" => private_update.to_owned(),
         "private-append" => private_append.to_owned(),
-        "private-tree" => private_update.replace("u32", "u16").replace("walk([0u16],", "walk(values<[u16]>,"),
+        "private-tree" => private_update.replace("u32", "u16")
+            .replace("  old := words[1u64]\n", "  old := words[1u64]\n  wide<u64> := old\n  incoming<u16> := wide + 1u64\n")
+            .replace("next[1u64] = old + 1u16", "next[1u64] = incoming")
+            .replace("walk([0u16],", "walk(values<[u16]>,"),
         "private-cache" => private_update.replace("walk([0u32],", "walk(values<[u32]>,"),
         "private-path" => private_append.replace("u32", "u64").replace("64u64", "305257u64"),
         "private-output" => private_append.replace("u32", "u8").replace("64u64", "13u64"),
