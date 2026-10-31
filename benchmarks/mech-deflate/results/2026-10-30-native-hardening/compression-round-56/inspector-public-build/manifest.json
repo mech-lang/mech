@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T12:54:50.551359+00:00",
+  "head": "cce97f8a91d55d828456c1f787cfb4ad6d93c037",
+  "files": [
+    {
+      "path": "inspect.rs",
+      "sha256": "c464b576431337c3346da6c34556088e684d4bb159082fbca427c397decab27f",
+      "bytes": 1927
+    },
+    {
+      "path": "plan-diagnostic.py",
+      "sha256": "1b06b4f5070a95ec7aa0a65dc542c5e7726975b74b3dc41b3cadcd63e295a94c",
+      "bytes": 1400
+    },
+    {
+      "path": "public-inspect-build.json",
+      "sha256": "2613811c000b0fde210ddfc63b9aa7f512fdf63e2da14934fefa1c61cde96071",
+      "bytes": 14064
+    },
+    {
+      "path": "public-inspect-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "public-inspect-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}
