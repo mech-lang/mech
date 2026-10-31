@@ -1,0 +1,21 @@
+{
+  "created_utc": "2026-10-31T05:24:48.355288+00:00",
+  "head": "e02058713586cdf706475dc736ebc6fb641445a9",
+  "files": [
+    {
+      "path": "core-after/regression.json",
+      "sha256": "31ea2e5b6302c6609c93e2541c1250c2559f93f24be079054b9d65c1cda1b02c",
+      "bytes": 216
+    },
+    {
+      "path": "core-after/regression.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "core-after/regression.stdout",
+      "sha256": "45f6c691877c17f63fd26c4d6eac20516109a9a4b1d615bbfe89ee03aaa0f906",
+      "bytes": 891
+    }
+  ]
+}
