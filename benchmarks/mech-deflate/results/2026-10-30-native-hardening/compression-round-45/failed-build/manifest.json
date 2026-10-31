@@ -1,0 +1,26 @@
+{
+  "head": "74df5a9a4921fe724e08cb13fee1116383a05ff8",
+  "created_utc": "2026-10-31T03:37:06.817384+00:00",
+  "files": [
+    {
+      "path": "source.patch",
+      "bytes": 15818,
+      "sha256": "f1bd5757497a6c1232de664dbb6465a90e1c2b20df8680056f7578151d1349f0"
+    },
+    {
+      "path": "units-after/build.stdout",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "units-after/build.stderr",
+      "bytes": 1330,
+      "sha256": "2d0d0e8e27ec84921cb3f6da5e7e96458a3dbaab3ea52346773bdac057c771a8"
+    },
+    {
+      "path": "units-after/build.json",
+      "bytes": 4711,
+      "sha256": "5cc7d70e103720238a5dc8591bb8fe1d3b7ccae184189580938a7c8154ce8bf7"
+    }
+  ]
+}
