@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-10-31T15:36:48.725801+00:00",
+  "head": "de798e7b7ae561448ba0229ca7e854a6b1e9a058",
+  "files": [
+    {
+      "path": "allocation-target.json",
+      "sha256": "d4a0c070a63cbce542480d47e6539070190d63588a26485bfe2da3a65cd1b18a",
+      "bytes": 553
+    },
+    {
+      "path": "auxiliary-dependencies.json",
+      "sha256": "222678222457a308e8bea729f7bfeb3fc8ee735bb82e9df67cf6ebd2b9f32363",
+      "bytes": 5927
+    },
+    {
+      "path": "build-native.py",
+      "sha256": "fe98e5e0aecabc864e313728f2a9f3489b7de1cde6c1e52f33eb0a4f847b7863",
+      "bytes": 3768
+    },
+    {
+      "path": "final-release.json",
+      "sha256": "5218b5d9b0135e6adfacc3a465f7952c19aa801f7970187b8f3fe74d73cccc0d",
+      "bytes": 5513
+    },
+    {
+      "path": "findings-packet/production.patch",
+      "sha256": "4f1b5c2eda534c992eeb979f3cd257d90f711e54341a279ef44a9e0608306769",
+      "bytes": 3389
+    },
+    {
+      "path": "implementation.json",
+      "sha256": "f51bc5bfb18811f8bb89ef9e1c8c8522c4ed7fac4f38a24b8355b2cb21eec0f8",
+      "bytes": 857
+    },
+    {
+      "path": "source-scope.json",
+      "sha256": "16595821087ef288f01864d5f0c633d6d2bc8c48791fe437a3ac86b77b17eb76",
+      "bytes": 586
+    },
+    {
+      "path": "variants/after/libraries.json",
+      "sha256": "2b37dc6ce9a08e9b1734af0e5aacf8db528ca16d517734acdeed2c60b3296d36",
+      "bytes": 10919
+    }
+  ]
+}
