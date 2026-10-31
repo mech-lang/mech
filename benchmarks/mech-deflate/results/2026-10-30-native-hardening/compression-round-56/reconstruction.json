@@ -1,0 +1,22 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-deflate-linear-stack/benchmarks/mech-deflate/results/2026-10-30-native-hardening/compression-round-56/reconstruct.py",
+    "/private/tmp/mech-round56-public-replay-final"
+  ],
+  "exit": 0,
+  "seconds": 0.8347169999033213,
+  "stdout": "{\n  \"archives\": 88,\n  \"verified_file_occurrences\": 591,\n  \"unique_paths\": 482,\n  \"paths_with_multiple_preserved_versions\": 3,\n  \"scope\": \"Every version is verified before chronological overlay. Numerical replay only; no binaries or benchmarks are rebuilt or rerun.\",\n  \"byte_identical_outputs\": [\n    \"scorecard.json\",\n    \"scorecard.csv\",\n    \"profile-numbers.json\",\n    \"attribution-comparison.json\"\n  ]\n}\n",
+  "stderr": "",
+  "archives": 88,
+  "verified_file_occurrences": 591,
+  "unique_paths": 482,
+  "paths_with_multiple_preserved_versions": 3,
+  "scope": "Every version is verified before chronological overlay. Numerical replay only; no binaries or benchmarks are rebuilt or rerun.",
+  "byte_identical_outputs": [
+    "scorecard.json",
+    "scorecard.csv",
+    "profile-numbers.json",
+    "attribution-comparison.json"
+  ]
+}

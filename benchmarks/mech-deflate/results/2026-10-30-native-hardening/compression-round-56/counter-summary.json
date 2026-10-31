@@ -1,0 +1,83 @@
+{
+  "reference": {
+    "cpu": {
+      "observations": 32,
+      "instructions": 1364372.0,
+      "cycles": 930675.0,
+      "rss_after": 14761984.0,
+      "physical_after": 14418880.0,
+      "pageins": 0.0
+    },
+    "memory": {
+      "observations": 32,
+      "allocation_requests": 95.0,
+      "requested_bytes": 9021923.0,
+      "reallocations": 0.0,
+      "relocating_reallocations": 0.0,
+      "relocating_realloc_copy_upper_bound": 0.0,
+      "live_usable_before": 32.0,
+      "live_usable_after": 32.0,
+      "peak_live_usable": 9257360.0,
+      "incremental_peak_live_usable": 9257328.0
+    }
+  },
+  "before": {
+    "cpu": {
+      "observations": 32,
+      "instructions": 43117063.0,
+      "cycles": 12139909.0,
+      "rss_after": 319651840.0,
+      "physical_after": 228804288.0,
+      "pageins": 0.0
+    },
+    "memory": {
+      "observations": 8,
+      "allocation_requests": 8941.0,
+      "requested_bytes": 98254595.0,
+      "reallocations": 540.0,
+      "relocating_reallocations": 458.0,
+      "relocating_realloc_copy_upper_bound": 13905.0,
+      "live_usable_before": 142982512.0,
+      "live_usable_after": 142983016.0,
+      "peak_live_usable": 163467016.0,
+      "incremental_peak_live_usable": 20484504.0
+    }
+  },
+  "after": {
+    "cpu": {
+      "observations": 32,
+      "instructions": 42996202.5,
+      "cycles": 12075044.5,
+      "rss_after": 319586304.0,
+      "physical_after": 228755200.0,
+      "pageins": 0.0
+    },
+    "memory": {
+      "observations": 8,
+      "allocation_requests": 8773.0,
+      "requested_bytes": 98243843.0,
+      "reallocations": 540.0,
+      "relocating_reallocations": 458.0,
+      "relocating_realloc_copy_upper_bound": 13905.0,
+      "live_usable_before": 142982512.0,
+      "live_usable_after": 142983016.0,
+      "peak_live_usable": 163464584.0,
+      "incremental_peak_live_usable": 20482072.0
+    }
+  },
+  "changes_percent": {
+    "instructions": -0.28030782152299594,
+    "cycles": -0.5343079589805844,
+    "rss_after": -0.02050230650948448,
+    "physical_after": -0.021454143376897772,
+    "allocation_requests": -1.878984453640531,
+    "requested_bytes": -0.010942999663277053,
+    "reallocations": 0.0,
+    "relocating_reallocations": 0.0,
+    "relocating_realloc_copy_upper_bound": 0.0,
+    "live_usable_before": 0.0,
+    "live_usable_after": 0.0,
+    "peak_live_usable": -0.0014877619103348394,
+    "incremental_peak_live_usable": -0.01187238900195453
+  }
+}
