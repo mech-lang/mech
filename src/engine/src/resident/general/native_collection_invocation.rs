@@ -1,6 +1,6 @@
 //! The individual maintained-leaf boundary, not a program dispatcher.
 use super::NativeCollectionCall;
-use crate::memory_planner::{ProgramMemoryPlan, TurnMemoryFacts, TurnMemoryPlan, plan_turn_memory};
+use crate::memory_planner::{TurnMemoryFacts, TurnMemoryPlan, plan_single_call_turn_memory};
 use crate::resident::budget::native_turn_plan_cache::{NativeTurnPlanCache, with_cached_turn_plan};
 use crate::resident::budget::{self, NativeLibraryWorkBudget, payload::ResidentPayloadOwner};
 use crate::resident::general::{ResidentRegion, live};
@@ -657,20 +657,10 @@ impl NativeCollectionCall {
     ) -> Result<TurnMemoryPlan, NativeCollectionInvocationError> {
         // Compose the actual NativeHost call and its actual allocation family,
         // rather than fabricating a detached test plan or changing a CPU label.
-        let node = self.template.origin().node();
-        let mut call = self.memory.clone();
-        for allocation in &mut call.allocations {
-            if let MemoryObjectOwner::NodeScratch { node: owner, .. } = &mut allocation.owner {
-                *owner = node;
-            }
-        }
-        let plan = ProgramMemoryPlan {
-            call_nodes: Box::new([node]),
-            allocations: call.allocations.clone(),
-            budget_limits: call.target.limits,
-            calls: Box::new([call]),
-            ..ProgramMemoryPlan::default()
-        };
-        Ok(plan_turn_memory(&plan, node, facts)?)
+        Ok(plan_single_call_turn_memory(
+            &self.memory,
+            self.template.origin().node(),
+            facts,
+        )?)
     }
 }
