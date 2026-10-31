@@ -1,0 +1,121 @@
+from pathlib import Path
+import csv,json,statistics,sys,math,hashlib
+r=Path(sys.argv[1]);out=Path(sys.argv[2]);out.mkdir(exist_ok=True,parents=True)
+summary=json.loads((r/'linked-primary/summary.json').read_text())
+assert summary['primary_observations']==3968 and summary['all_observations']==3984
+# Recompute the primary summary from all raw observations; no executable runs.
+reference_rows=[line.split('\t') for line in (r/'linked-primary/reference.stdout').read_text().splitlines() if line.startswith('rep\troc-deflate\t')]
+assert len(reference_rows)==20000
+assert statistics.median(int(row[3]) for row in reference_rows)/1e9==summary['reference_seconds']
+all_rows={label:[] for label in ['before','after']};all_blocks=[];groups=[]
+for group in range(4):
+ data=json.loads((r/f'linked-primary/group{group}/results.json').read_text());all_blocks+=data['blocks']
+ medians={}
+ for label in all_rows:
+  raw=data['all_observations'][label];assert len(raw)==498
+  journal=(r/f'linked-primary/group{group}/{label}.stdout').read_text().splitlines()
+  assert journal[0]=='SESSION_READY'
+  assert [json.loads(line) for line in journal if line.startswith('{')]==raw
+  assert all(v['exact_reference'] and v['independent_inflation'] and v['input_bytes']==8 and v['raw_bytes']==10 and v['capacity']==13 and v['work']==60260219686 for v in raw)
+  values=[v for v in raw if not v['warmup'] and not v['profile']];assert len(values)==496
+  all_rows[label]+=values;medians[label]=statistics.median(v['seconds'] for v in values)
+  assert len(data['blocks'])==16
+  for index,block in enumerate(data['blocks']):
+   assert block['block']==index
+   assert block['medians'][label]==statistics.median(v['seconds'] for v in values[index*31:(index+1)*31])
+   assert block['after_over_before']==block['medians']['after']/block['medians']['before']
+  assert (r/f'linked-primary/group{group}/{label}.stderr').read_text().endswith('CLEANUP bytes=0 nodes=0\n')
+ groups.append({'group':group,'medians':medians,'after_over_before':medians['after']/medians['before']})
+assert groups==summary['groups']
+for label,values in all_rows.items():
+ median=statistics.median(v['seconds'] for v in values);assert len(values)==1984
+ assert median==summary['medians'][label]['seconds'] and median/summary['reference_seconds']==summary['medians'][label]['multiple_of_reference']
+ratios=[block['after_over_before'] for block in all_blocks]
+assert len(ratios)==64 and sum(v<1 for v in ratios)==summary['comparisons']['after_over_before']['improving_blocks']
+assert statistics.median(ratios)==summary['comparisons']['after_over_before']['median_block_ratio']
+assert math.exp(statistics.mean(math.log(v) for v in ratios))==summary['comparisons']['after_over_before']['geometric_block_ratio']
+assert sum(v['after_over_before']<1 for v in groups)==summary['comparisons']['after_over_before']['improving_groups']
+
+def rows(label,kind):
+ p=r/'counters'/(label+'-'+kind)
+ if label=='reference' or kind=='memory':
+  values=[json.loads(s.removeprefix('ALLOC_PROBE ')) for s in (p/'run.stderr').read_text().splitlines() if s.startswith('ALLOC_PROBE ')]
+  if label!='reference':values=values[1:-1]
+ else:values=[json.loads(s) for s in (p/'run.stdout').read_text().splitlines() if s.startswith('{')];values=[v for v in values if not v['warmup'] and not v['profile']]
+ assert len(values)==(8 if kind=='memory' and label!='reference' else 32)
+ return values
+labels=['reference','before','after'];cpu_keys=['instructions','cycles','rss_after','physical_after','pageins'];memory_keys=['allocation_requests','requested_bytes','reallocations','relocating_reallocations','relocating_realloc_copy_upper_bound','live_usable_before','live_usable_after','peak_live_usable','incremental_peak_live_usable']
+result={'schema':'mech.private-numeric-lifetime.v1','implementation':json.loads((r/'implementation.json').read_text()),'primary':summary,'cpu':{},'allocation':{},'static':{},'validation':json.loads((r/'validation.json').read_text()),'allocation_target':json.loads((r/'allocation-target.json').read_text()),'profiles':json.loads((r/'profile-numbers.json').read_text())}
+for label in labels:
+ for kind,keys,section in [('cpu',cpu_keys,'cpu'),('memory',memory_keys,'allocation')]:
+  values=rows(label,kind);result[section][label]={'observations':len(values),**{key:{'median':statistics.median(v[key] for v in values),'min':min(v[key] for v in values),'max':max(v[key] for v in values)} for key in keys}}
+  if kind=='cpu':assert all(v['instructions']>0 and v['cycles']>0 and v['pageins']==0 for v in values)
+  if label!='reference' and kind=='cpu':assert all(v['exact_reference'] and v['independent_inflation'] and v['capacity']==13 and v['work']==60260219686 for v in values)
+ if label!='reference':
+  pin_root=r/'baseline' if label=='before' else r/'linked-primary/after';binding=json.loads((pin_root/'binding.json').read_text());meta=json.loads((pin_root/'metadata.json').read_text());result['static'][label]={'source':binding['compiler_source'],'libraries':binding['libraries'],'pins':binding['pins'],'normalized_source_sha256':binding['normalized_source_sha256'],'original_worker_sha256':binding['original_worker_sha256'],**{key:meta[key] for key in ['typed_ir_version','abi_version','code_bytes','stack_bytes']}}
+  for kind in ['cpu','memory']:
+   build=json.loads((r/'counters'/label/(kind+'-build.json')).read_text());assert build['libraries']==binding['libraries'] and build['compiler_source']==binding['compiler_source']
+  target=result['allocation_target']
+  if label=='before':
+   assert result['allocation'][label]['allocation_requests']['median']==target['baseline_requests']
+   assert result['allocation'][label]['requested_bytes']['median']==target['baseline_requested_bytes']
+result['diagnostic_cpu_elapsed']={label:{'observations':32,'median_seconds':statistics.median(v['seconds'] for v in rows(label,'cpu'))} for label in ['before','after']}
+result['diagnostic_cpu_elapsed']['change_percent']=100*(result['diagnostic_cpu_elapsed']['after']['median_seconds']/result['diagnostic_cpu_elapsed']['before']['median_seconds']-1)
+result['diagnostic_cpu_elapsed']['scope']='Elapsed observations from the separate CPU-counter diagnostic cohort; all excluded from primary timing. Preserve its measured direction independently of the matched primary result.'
+result['binary_audit']=json.loads((r/'binary-audit.json').read_text())
+for label in ['before','after']:
+ for name,pin in result['static'][label]['pins'].items():assert result['binary_audit'][label][name]['sha256']==pin['sha256'],(label,name)
+ for key in ['code_bytes','stack_bytes']:assert result['binary_audit'][key][label]==result['static'][label][key]
+result['decision']=json.loads((r/'decision.json').read_text())
+assert result['decision']['round']==66
+assert result['decision']['candidate_build_source']==result['implementation']['candidate_build_source']
+assert result['decision']['baseline_build_source']==result['implementation']['baseline_build_source']
+result['artifact_pin_equality']={name:result['static']['before']['pins'][name]==result['static']['after']['pins'][name] for name in result['static']['before']['pins']}
+# The runtime-only change must preserve all freshly emitted artifacts.
+assert all(result['artifact_pin_equality'].values())
+assert result['static']['before']['libraries'].keys()==result['static']['after']['libraries'].keys()
+assert result['static']['before']['typed_ir_version']==result['static']['after']['typed_ir_version']==132
+assert result['static']['before']['normalized_source_sha256']==result['static']['after']['normalized_source_sha256']
+assert result['static']['before']['original_worker_sha256']==result['static']['after']['original_worker_sha256']
+assert result['static']['before']['source']==result['implementation']['baseline_build_source']
+assert result['static']['after']['source']==result['implementation']['candidate_build_source']
+for name,before in result['static']['before']['libraries'].items():
+ after=result['static']['after']['libraries'][name];assert before['features']==after['features'] and before['profile']==after['profile']
+ if name not in ['mech_core','mech_syntax','mech_bytecode','mech_engine','mech_compute','mech_math','mech_range','mech_logic','mech_compare','mech_stdlib','mech_runtime','mech_gpu']:assert before['sha256']==after['sha256']
+families=json.loads((r/'allocation-comparison.json').read_text());result['allocation_comparison']=families
+for label in ['before','after']:
+ for key in ['allocation_requests','requested_bytes','reallocations']:
+  family_key='requests' if key=='allocation_requests' else key
+  assert result['allocation'][label][key]['median']==families[label][family_key],(label,key)
+result['census']={key:families['after'][key] for key in ['requests','requested_bytes','reallocations','unique_pcs','sha256']}
+result['census'].update(reconciled_to_heap_counters=True,scope='Fresh complete before and after allocation traces, independently reconciled to separate heap cohorts. Equal totals/histograms do not imply unchanged costs or identical call counts.')
+result['baseline_provenance']=json.loads((r/'baseline/provenance.json').read_text())
+old_aux=json.loads((r/'baseline/auxiliary-dependencies.json').read_text());new_aux=json.loads((r/'auxiliary-dependencies.json').read_text())
+old_by_name={Path(x['path']).name:x for x in old_aux['files']};new_by_name={Path(x['path']).name:x for x in new_aux['files']}
+changed=['mech_core','mech_syntax','mech_bytecode','mech_engine','mech_compute','mech_math','mech_range','mech_logic','mech_compare','mech_stdlib','mech_runtime','mech_gpu']
+unchanged=[]
+for name,pin in old_by_name.items():
+ if any(name.startswith('lib'+crate+'-') or name.startswith('lib'+crate+'.') for crate in changed):continue
+ assert name in new_by_name and pin['sha256']==new_by_name[name]['sha256'],name
+ unchanged.append({'name':name,'sha256':pin['sha256']})
+assert unchanged==[], 'All Core-dependent project artifacts must be rebuilt coherently'
+result['frozen_project_artifacts']=unchanged
+result['changes_percent']={'primary_seconds':100*(summary['comparisons']['after_over_before']['pooled_ratio']-1)}
+for section,keys in [('cpu',cpu_keys),('allocation',memory_keys)]:
+ for key in keys:
+  b=result[section]['before'][key]['median'];a=result[section]['after'][key]['median'];result['changes_percent'][key]=100*(a/b-1) if b else None
+result['reference_multiples']={section:{key:{label:result[section][label][key]['median']/result[section]['reference'][key]['median'] for label in ['before','after']} for key in keys if result[section]['reference'][key]['median']!=0} for section,keys in [('cpu',cpu_keys),('allocation',memory_keys)]}
+result['contrary_primary_groups']=[group for group in groups if group['after_over_before']>=1]
+result['contrary_counter_directions']={key:value for key,value in result['changes_percent'].items() if value is not None and value>0}
+result['source_pins']={'source_sha256':'331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9','bytecode_sha256':'a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7','allocator_sha256':'38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874','logical_work':60260219686,'comparison_work':47612,'input_bytes':8,'expected_output':[75,76,74,78,73,77,75,207,0,0],'output_capacity':13}
+result['lifetime_mechanism']=json.loads((r/'lifetime-mechanism.json').read_text())
+result['host_assembly']=json.loads((r/'host-assembly-comparison.json').read_text())
+result['private_lifetime_controls']=json.loads((r/'numeric-lifetime/results.json').read_text())
+result['real_buffer_lifetime_controls']=json.loads((r/'numeric-lifetime-real-final/results.json').read_text())
+result['scope']='Complete eight-byte level-12 only. Same source/bytecode, algorithm, source allocation sites, buffer sizes, allocator and timing boundaries. Baseline R65 graph and coherent rebuild of all twelve selected Core-dependent project crates; external artifact hashes, all features and optimized profiles retained. Fresh emitted Object/image/metadata are byte-identical. Four independently prepared executable pairs. Counter, heap, stack-census and sample runs are separate serialized diagnostics. Post-call OS memory is not peak RSS; retained compiler/catalog/image storage is included. No larger-input or minimum standalone memory claim.'
+(out/'scorecard.json').write_text(json.dumps(result,indent=2)+'\n')
+with (out/'scorecard.csv').open('w',newline='') as f:
+ writer=csv.writer(f);writer.writerow(['metric','reference','before','after','change_percent','scope']);writer.writerow(['seconds',summary['reference_seconds'],summary['medians']['before']['seconds'],summary['medians']['after']['seconds'],result['changes_percent']['primary_seconds'],'matched complete-compression primary'])
+ for section,keys in [('cpu',cpu_keys),('allocation',memory_keys)]:
+  for key in keys:writer.writerow([key,*[result[section][label][key]['median'] for label in labels],result['changes_percent'][key],'separate serialized diagnostics'])
+print(json.dumps({'primary':summary['medians'],'changes_percent':result['changes_percent'],'validation':result['validation']},indent=2))
