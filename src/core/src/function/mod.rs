@@ -3569,6 +3569,9 @@ impl PrettyPrint for Plan {
 #[path = "tests/mod.rs"]
 mod tests;
 
+#[cfg(test)]
+mod bound_call_tests;
+
 #[derive(Debug, Clone)]
 pub struct IncorrectNumberOfArguments {
     pub expected: usize,

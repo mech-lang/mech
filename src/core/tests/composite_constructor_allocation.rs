@@ -141,6 +141,79 @@ fn measured_requests<T>(run: impl FnOnce() -> T) -> (T, usize) {
 }
 
 #[test]
+fn bound_call_clones_do_not_reconstruct_their_port_schema_trees() {
+    use mech_core::{
+        AccessMode, AliasPolicy, BoundCall, ChangeDetectionPolicy, DeliveryMode, ExecutionTarget,
+        ExternalInteraction, InputPortLayout, InputPortPolicy, OperationContractDeclaration,
+        OutputConstruction, OutputPortPolicy, ResolvedOperationDescriptor, ResolvedValueDescriptor,
+        RuntimeFunctionId, ShapeRule,
+    };
+    for repetitions in [1, 64, 4096] {
+        let mut observations = Vec::new();
+        for label_bytes in [1, 65_536] {
+            let schema = SchemaDraft {
+                body: SchemaBody::Record(
+                    vec![SchemaField {
+                        name: "x".repeat(label_bytes),
+                        schema: SchemaBody::Tuple(vec![SchemaBody::Bool; 8].into_boxed_slice()),
+                    }]
+                    .into_boxed_slice(),
+                ),
+                dimension_parameters: Box::new([]),
+            }
+            .finalize()
+            .unwrap();
+            let shape = schema.instantiate_shape(Box::new([])).unwrap();
+            let descriptor = ResolvedValueDescriptor::from_schema(schema, shape).unwrap();
+            let call = BoundCall::syntax_directed(
+                ResolvedOperationDescriptor::from_name(
+                    "test/descriptor-identity",
+                    OperationContractDeclaration {
+                        inputs: InputPortLayout::Fixed(
+                            vec![InputPortPolicy {
+                                access: AccessMode::Read,
+                                delivery: DeliveryMode::Signal,
+                            }]
+                            .into_boxed_slice(),
+                        ),
+                        outputs: vec![OutputPortPolicy {
+                            access: AccessMode::Write,
+                            delivery: DeliveryMode::Signal,
+                            construction: OutputConstruction::FullWrite {
+                                shape: ShapeRule::SameAsInput { input: 0 },
+                            },
+                            alias: AliasPolicy::NoAlias,
+                            change_detection: ChangeDetectionPolicy::SemanticHash,
+                        }]
+                        .into_boxed_slice(),
+                        interaction: ExternalInteraction::Pure,
+                    },
+                )
+                .unwrap(),
+                [descriptor.clone()].into(),
+                [descriptor].into(),
+                RuntimeFunctionId::from_name("test/descriptor-identity"),
+                ExecutionTarget::DirectRuntime,
+            )
+            .unwrap();
+            TOTAL.with(|value| value.set(0));
+            let ((), requests) = measured_requests(|| {
+                for _ in 0..repetitions {
+                    let retained = std::hint::black_box(call.clone());
+                    assert_eq!(retained, call);
+                    drop(retained);
+                }
+            });
+            observations.push((requests, TOTAL.with(Cell::get)));
+        }
+        assert_eq!(
+            observations[0], observations[1],
+            "immutable call-port certificate copies must not reconstruct schema-sized trees"
+        );
+    }
+}
+
+#[test]
 fn independent_snapshot_registration_allocates_only_retained_metadata_owners() {
     use mech_core::{IntegerWidth, ManagedMemoryBudget};
 
