@@ -740,32 +740,44 @@ impl Value {
             space: crate::MemorySpace::Host,
         })?;
         let data = self.root.data.clone();
-        budget.check_snapshot_import_allocation(
-            core::mem::size_of::<FrozenSnapshotStorage>() as u64,
-            core::mem::align_of::<FrozenSnapshotStorage>() as u32,
-        )?;
-        let mut prepared = Arc::try_new(FrozenSnapshotStorage {
-            data: data.clone(),
-            memory_budget: None,
-        })
-        .map_err(|_| crate::MemoryRuntimeError::AllocationFailed {
-            object: None,
-            requested: core::mem::size_of::<FrozenSnapshotStorage>() as u64,
-            alignment: core::mem::align_of::<FrozenSnapshotStorage>() as u32,
-            space: crate::MemorySpace::Host,
-        })?;
+        // A consumed unadmitted wrapper may already be the unique owner.
+        // Data can still be shared: keep the existing registry gate and its
+        // concurrent import recheck for both representations.
+        let reuse_root =
+            Arc::get_mut(&mut self.root).is_some_and(|root| root.memory_budget.is_none());
+        let mut prepared = if reuse_root {
+            None
+        } else {
+            budget.check_snapshot_import_allocation(
+                core::mem::size_of::<FrozenSnapshotStorage>() as u64,
+                core::mem::align_of::<FrozenSnapshotStorage>() as u32,
+            )?;
+            Some(
+                Arc::try_new(FrozenSnapshotStorage {
+                    data: data.clone(),
+                    memory_budget: None,
+                })
+                .map_err(|_| crate::MemoryRuntimeError::AllocationFailed {
+                    object: None,
+                    requested: core::mem::size_of::<FrozenSnapshotStorage>() as u64,
+                    alignment: core::mem::align_of::<FrozenSnapshotStorage>() as u32,
+                    space: crate::MemorySpace::Host,
+                })?,
+            )
+        };
         let owner = data.with_budget_imports(|imports| {
             if reuse_existing
                 && let Some(existing) =
                     FrozenSnapshotData::find_budget_import(imports, &budget, &schemas, &self.shape)
             {
-                return Ok(existing);
+                return Ok(Some(existing));
             }
             // All physical construction has succeeded under the reservation.
             // No user code runs under this short metadata gate.
             let node_charge = budget.retain_snapshot_nodes(retained_nodes)?;
             let charge = reservation.split_capacity(admitted_bytes)?;
-            Arc::get_mut(&mut prepared)
+            let target = prepared.as_mut().unwrap_or(&mut self.root);
+            Arc::get_mut(target)
                 .expect("unpublished import has no shared or weak wrapper owner")
                 .memory_budget = Some(SnapshotBudgetOwnership {
                 schemas,
@@ -774,15 +786,17 @@ impl Value {
                 node_charge,
                 registration: registration.clone(),
             });
-            let _ = registration.owner.set(Arc::downgrade(&prepared));
+            let _ = registration.owner.set(Arc::downgrade(target));
             if let Some(next) = imports.as_ref() {
                 next.with_links(|links| links.previous = Arc::downgrade(&registration));
             }
             registration.with_links(|links| links.next = imports.take());
             *imports = Some(registration);
-            Ok::<_, crate::MemoryRuntimeError>(prepared.clone())
+            Ok::<_, crate::MemoryRuntimeError>(prepared.as_ref().map(Arc::clone))
         })?;
-        self.root = owner;
+        if let Some(owner) = owner {
+            self.root = owner;
+        }
         Ok(self)
     }
 

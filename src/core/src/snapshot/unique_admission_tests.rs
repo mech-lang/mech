@@ -12,28 +12,56 @@ fn fresh(matrix: bool) -> Value {
     };
     let mut builder = SchemaTableBuilder::new();
     let handle = builder
-        .insert(SchemaDraft { body, dimension_parameters: Box::new([]) }.finalize().unwrap())
+        .insert(
+            SchemaDraft {
+                body,
+                dimension_parameters: Box::new([]),
+            }
+            .finalize()
+            .unwrap(),
+        )
         .unwrap();
     let build = builder.finish().unwrap();
     let schema = build.resolve(handle).unwrap();
     let schemas = Arc::new(build.table);
     if matrix {
-        let shape = schemas.get(schema).unwrap().instantiate_shape(Box::new([])).unwrap();
+        let shape = schemas
+            .get(schema)
+            .unwrap()
+            .instantiate_shape(Box::new([]))
+            .unwrap();
         Value::from_unsigned_matrix_buffer(
-            schema, shape, UnsignedMatrixBuffer::U8(vec![7, 8, 9]), schemas,
-        ).unwrap()
+            schema,
+            shape,
+            UnsignedMatrixBuffer::U8(vec![7, 8, 9]),
+            schemas,
+        )
+        .unwrap()
     } else {
-        ValueDraft { schema, shape_values: Box::new([]), data: ValueDataDraft::String("first admission".into()) }
-            .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas)).unwrap()
+        ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::String("first admission".into()),
+        }
+        .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+        .unwrap()
     }
 }
 
 fn admit(value: Value, budget: &crate::ManagedMemoryBudget, independent: bool) -> Value {
-    let bytes = if independent { value.unshared_memory_budget_admission_bytes(budget) }
-        else { value.memory_budget_admission_bytes(budget) }.unwrap();
+    let bytes = if independent {
+        value.unshared_memory_budget_admission_bytes(budget)
+    } else {
+        value.memory_budget_admission_bytes(budget)
+    }
+    .unwrap();
     let mut claim = budget.reserve_capacity(bytes).unwrap();
-    let value = if independent { value.into_independent_memory_budget(&mut claim) }
-        else { value.into_memory_budget(&mut claim) }.unwrap();
+    let value = if independent {
+        value.into_independent_memory_budget(&mut claim)
+    } else {
+        value.into_memory_budget(&mut claim)
+    }
+    .unwrap();
     assert_eq!(claim.capacity_bytes(), 0);
     value
 }
@@ -49,15 +77,28 @@ fn first_admission_reuses_exclusive_wrapper_without_changing_metadata_or_data() 
             let identity = value.frozen_storage_identity();
             let canonical = value.canonical_data_draft().unwrap();
             let budget = crate::ManagedMemoryBudget::new(1_000_000);
-            let bytes = value.unshared_memory_budget_admission_bytes(&budget).unwrap();
+            let bytes = value
+                .unshared_memory_budget_admission_bytes(&budget)
+                .unwrap();
             let nodes = value.memory_budget_ownership_witness().unwrap().1;
             let value = admit(value, &budget, independent);
-            assert_eq!(Arc::as_ptr(&value.root), root, "first admission should reuse exclusive unadmitted wrapper");
+            assert_eq!(
+                Arc::as_ptr(&value.root),
+                root,
+                "first admission should reuse exclusive unadmitted wrapper"
+            );
             assert_eq!(Arc::as_ptr(&value.shape), shape);
             assert_eq!(Arc::as_ptr(value.schemas.as_ref().unwrap()), schemas);
-            assert!(Weak::ptr_eq(&identity.data, &Arc::downgrade(&value.root.data)));
+            assert!(Weak::ptr_eq(
+                &identity.data,
+                &Arc::downgrade(&value.root.data)
+            ));
             assert_eq!(value.canonical_data_draft().unwrap(), canonical);
-            assert_eq!(budget.used_bytes(), bytes, "conservative admission envelope stays unchanged");
+            assert_eq!(
+                budget.used_bytes(),
+                bytes,
+                "conservative admission envelope stays unchanged"
+            );
             assert_eq!(budget.retained_snapshot_nodes(), nodes);
             let mut zero = budget.reserve_capacity(0).unwrap();
             let again = value.clone().into_memory_budget(&mut zero).unwrap();
@@ -79,10 +120,15 @@ fn first_admission_keeps_registration_failure_but_removes_wrapper_failure_point(
         let bytes = raw.unshared_memory_budget_admission_bytes(&budget).unwrap();
         let mut claim = budget.reserve_capacity(bytes).unwrap();
         budget.inject_snapshot_import_failure_after(0);
-        let rejected = if independent { raw.into_independent_memory_budget(&mut claim) }
-            else { raw.into_memory_budget(&mut claim) };
-        assert!(matches!(rejected, Err(crate::MemoryRuntimeError::AllocationFailed { requested, .. })
-            if requested == Value::budget_registration_allocation_bytes()));
+        let rejected = if independent {
+            raw.into_independent_memory_budget(&mut claim)
+        } else {
+            raw.into_memory_budget(&mut claim)
+        };
+        assert!(
+            matches!(rejected, Err(crate::MemoryRuntimeError::AllocationFailed { requested, .. })
+            if requested == Value::budget_registration_allocation_bytes())
+        );
         assert_eq!(claim.capacity_bytes(), bytes);
         assert_eq!(budget.retained_nodes(), 0);
         assert_eq!(identity.data.strong_count(), 0);
@@ -91,13 +137,22 @@ fn first_admission_keeps_registration_failure_but_removes_wrapper_failure_point(
 
         let raw = fresh(true);
         let root = Arc::as_ptr(&raw.root);
-        let mut claim = budget.reserve_capacity(raw.unshared_memory_budget_admission_bytes(&budget).unwrap()).unwrap();
+        let mut claim = budget
+            .reserve_capacity(raw.unshared_memory_budget_admission_bytes(&budget).unwrap())
+            .unwrap();
         budget.inject_snapshot_import_failure_after(1);
-        let result = if independent { raw.into_independent_memory_budget(&mut claim) }
-            else { raw.into_memory_budget(&mut claim) };
-        let value = result.expect("unique first admission performs only the registration allocation");
+        let result = if independent {
+            raw.into_independent_memory_budget(&mut claim)
+        } else {
+            raw.into_memory_budget(&mut claim)
+        };
+        let value =
+            result.expect("unique first admission performs only the registration allocation");
         assert_eq!(Arc::as_ptr(&value.root), root);
-        assert!(budget.check_snapshot_import_allocation(1, 1).is_err(), "removed wrapper allocation must not consume the next injected failure");
+        assert!(
+            budget.check_snapshot_import_allocation(1, 1).is_err(),
+            "removed wrapper allocation must not consume the next injected failure"
+        );
         drop((value, claim));
         assert_eq!(budget.used_bytes(), 0);
         assert_eq!(budget.retained_nodes(), 0);
@@ -119,7 +174,10 @@ fn shared_or_weak_wrapper_retains_both_allocation_failures_and_aliases() {
             let bytes = raw.unshared_memory_budget_admission_bytes(&budget).unwrap();
             let mut claim = budget.reserve_capacity(bytes).unwrap();
             budget.inject_snapshot_import_failure_after(step);
-            assert!(matches!(raw.into_independent_memory_budget(&mut claim), Err(crate::MemoryRuntimeError::AllocationFailed { .. })));
+            assert!(matches!(
+                raw.into_independent_memory_budget(&mut claim),
+                Err(crate::MemoryRuntimeError::AllocationFailed { .. })
+            ));
             assert_eq!(claim.capacity_bytes(), bytes);
             assert_eq!(budget.retained_nodes(), 0);
             if let Some(alias) = alias {
@@ -150,7 +208,10 @@ fn unique_unadmitted_wrapper_may_share_data_with_foreign_admission() {
     let current = admit(raw, &b, false);
     assert_eq!(Arc::as_ptr(&current.root), original_root);
     assert!(current.shares_frozen_storage(&foreign));
-    assert!(Weak::ptr_eq(&identity.data, &Arc::downgrade(&current.root.data)));
+    assert!(Weak::ptr_eq(
+        &identity.data,
+        &Arc::downgrade(&current.root.data)
+    ));
     let mut zero = b.reserve_capacity(0).unwrap();
     let reused = foreign.clone().into_memory_budget(&mut zero).unwrap();
     assert!(Arc::ptr_eq(&current.root, &reused.root));
@@ -172,7 +233,9 @@ fn first_admission_preserves_byte_node_and_overflow_rejection_before_publication
         let raw = fresh(true);
         let identity = raw.frozen_storage_identity();
         let account = crate::ManagedMemoryBudget::new(1_000_000);
-        let bytes = raw.unshared_memory_budget_admission_bytes(&account).unwrap();
+        let bytes = raw
+            .unshared_memory_budget_admission_bytes(&account)
+            .unwrap();
         let nodes = raw.memory_budget_ownership_witness().unwrap().1;
         let overflow = (denial == 2).then(|| account.retain_snapshot_nodes(u64::MAX).unwrap());
         let budget = account.with_limits(bytes, if denial == 1 { nodes - 1 } else { u64::MAX });
@@ -180,12 +243,22 @@ fn first_admission_preserves_byte_node_and_overflow_rejection_before_publication
         let mut claim = budget.reserve_capacity(capacity).unwrap();
         let error = raw.into_memory_budget(&mut claim).unwrap_err();
         match denial {
-            0 => assert!(matches!(error, crate::MemoryRuntimeError::BudgetExceeded { requested, limit, .. } if requested == bytes && limit == capacity)),
-            1 => assert!(matches!(error, crate::MemoryRuntimeError::BudgetExceeded { requested, limit, .. } if requested == nodes && limit == nodes - 1)),
-            _ => assert!(matches!(error, crate::MemoryRuntimeError::AccountingInvariantViolation { .. })),
+            0 => assert!(
+                matches!(error, crate::MemoryRuntimeError::BudgetExceeded { requested, limit, .. } if requested == bytes && limit == capacity)
+            ),
+            1 => assert!(
+                matches!(error, crate::MemoryRuntimeError::BudgetExceeded { requested, limit, .. } if requested == nodes && limit == nodes - 1)
+            ),
+            _ => assert!(matches!(
+                error,
+                crate::MemoryRuntimeError::AccountingInvariantViolation { .. }
+            )),
         }
         assert_eq!(claim.capacity_bytes(), capacity);
-        assert_eq!(account.retained_snapshot_nodes(), if denial == 2 { u64::MAX } else { 0 });
+        assert_eq!(
+            account.retained_snapshot_nodes(),
+            if denial == 2 { u64::MAX } else { 0 }
+        );
         assert_eq!(identity.data.strong_count(), 0);
         drop((claim, overflow));
         assert_eq!(account.used_bytes(), 0);
@@ -207,16 +280,32 @@ fn concurrent_unique_wrappers_deduplicate_shared_data_in_one_account() {
     // Independent fresh wrappers share immutable data; no wrapper is shared.
     // The registry's existing synchronized recheck remains authoritative.
     let raw = fresh(true);
-    let sibling = Value { schema: raw.schema, schema_key: raw.schema_key, shape: raw.shape.clone(),
-        schemas: raw.schemas.clone(), root: Arc::new(FrozenSnapshotStorage { data: raw.root.data.clone(), memory_budget: None }) };
+    let sibling = Value {
+        schema: raw.schema,
+        schema_key: raw.schema_key,
+        shape: raw.shape.clone(),
+        schemas: raw.schemas.clone(),
+        root: Arc::new(FrozenSnapshotStorage {
+            data: raw.root.data.clone(),
+            memory_budget: None,
+        }),
+    };
     let account = crate::ManagedMemoryBudget::new(1_000_000);
-    let bytes = raw.unshared_memory_budget_admission_bytes(&account).unwrap();
+    let bytes = raw
+        .unshared_memory_budget_admission_bytes(&account)
+        .unwrap();
     let nodes = raw.memory_budget_ownership_witness().unwrap().1;
     let first = account.reserve_capacity(bytes).unwrap();
     let second = account.reserve_capacity(bytes).unwrap();
     let barrier = Arc::new(std::sync::Barrier::new(2));
-    let run = |value: Value, mut claim: crate::ManagedMemoryReservation, barrier: Arc<std::sync::Barrier>| {
-        std::thread::spawn(move || { barrier.wait(); let value = value.into_memory_budget(&mut claim).unwrap(); (value, claim) })
+    let run = |value: Value,
+               mut claim: crate::ManagedMemoryReservation,
+               barrier: Arc<std::sync::Barrier>| {
+        std::thread::spawn(move || {
+            barrier.wait();
+            let value = value.into_memory_budget(&mut claim).unwrap();
+            (value, claim)
+        })
     };
     let a = run(raw, first, barrier.clone());
     let b = run(sibling, second, barrier);
