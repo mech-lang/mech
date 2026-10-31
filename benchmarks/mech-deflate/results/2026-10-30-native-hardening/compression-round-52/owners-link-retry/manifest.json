@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T09:11:58.898196+00:00",
+  "head": "3569d89d24bf3b62022126f87ebf2197e837006a",
+  "files": [
+    {
+      "path": "owners/retry.py",
+      "sha256": "9084bb378b90265bd467159190ff54b38c668e90d0d050fb25246f50a9294656",
+      "bytes": 2428
+    },
+    {
+      "path": "owners/worker-build-retry.json",
+      "sha256": "f7fd46a8b59eea23403b1661f3ff6ff1639c9c7d50a2dba9b563a6ae5e70fee1",
+      "bytes": 2667
+    },
+    {
+      "path": "owners/worker-build-retry.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "owners/worker-build-retry.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}
