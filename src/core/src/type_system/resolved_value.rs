@@ -12,9 +12,9 @@ mod conversion_axes;
 use conversion_axes::ConversionAxisWitnesses;
 
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, collections::BTreeSet, format, string::String, vec, vec::Vec};
+use alloc::{boxed::Box, collections::BTreeSet, format, string::String, sync::Arc, vec, vec::Vec};
 #[cfg(not(feature = "no_std"))]
-use std::{boxed::Box, collections::BTreeSet, format, string::String, vec, vec::Vec};
+use std::{boxed::Box, collections::BTreeSet, format, string::String, sync::Arc, vec, vec::Vec};
 
 #[cfg(test)]
 #[path = "resolved_value_witness_tests.rs"]
@@ -34,11 +34,30 @@ pub enum ResolvedOutputSchemaRule {
 }
 
 /// A validated semantic type, canonical schema, and current shape.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct ResolvedValueDescriptor {
+    semantics: Arc<ResolvedValueSemantics>,
+    shape: ShapeInstance,
+}
+
+// Immutable semantic authority has the prepared descriptor's lifetime. A live
+// shape does not acquire its own copies of the type/schema trees, nor any
+// value, memory-account authority, reservation or executable factory state.
+#[derive(Debug, Eq, PartialEq)]
+struct ResolvedValueSemantics {
     resolved_type: ResolvedType,
     schema: Schema,
-    shape: ShapeInstance,
+}
+
+impl core::fmt::Debug for ResolvedValueDescriptor {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter
+            .debug_struct("ResolvedValueDescriptor")
+            .field("resolved_type", self.resolved_type())
+            .field("schema", self.schema())
+            .field("shape", self.shape())
+            .finish()
+    }
 }
 
 impl ResolvedValueDescriptor {
@@ -55,8 +74,10 @@ impl ResolvedValueDescriptor {
             return Err(descriptor_mismatch(&resolved_type, &derived));
         }
         Ok(Self {
-            resolved_type,
-            schema,
+            semantics: Arc::new(ResolvedValueSemantics {
+                resolved_type,
+                schema,
+            }),
             shape,
         })
     }
@@ -72,22 +93,21 @@ impl ResolvedValueDescriptor {
     /// again; this retains no value or execution admission.
     pub fn with_current_shape(&self, shape: ShapeInstance) -> Result<Self, TypeResolutionError> {
         let shape = self
-            .schema
+            .schema()
             .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
             .map_err(TypeResolutionError::semantic)?;
         Ok(Self {
-            resolved_type: self.resolved_type.clone(),
-            schema: self.schema.clone(),
+            semantics: Arc::clone(&self.semantics),
             shape,
         })
     }
 
-    pub const fn resolved_type(&self) -> &ResolvedType {
-        &self.resolved_type
+    pub fn resolved_type(&self) -> &ResolvedType {
+        &self.semantics.resolved_type
     }
 
-    pub const fn schema(&self) -> &Schema {
-        &self.schema
+    pub fn schema(&self) -> &Schema {
+        &self.semantics.schema
     }
 
     pub const fn shape(&self) -> &ShapeInstance {
@@ -118,7 +138,7 @@ impl ResolvedValueDescriptor {
 
     pub fn current_extents(&self) -> Result<Box<[u64]>, SemanticModelError> {
         let mut dimensions = Vec::new();
-        match self.schema.body() {
+        match self.schema().body() {
             SchemaBody::Matrix {
                 dimensions: matrix_dimensions,
                 ..
