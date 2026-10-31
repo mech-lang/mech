@@ -6,6 +6,9 @@ use mech_core::{
 #[cfg(feature = "canonical-native-program-runtime")]
 #[path = "copy_tests.rs"]
 mod copy_tests;
+#[cfg(feature = "canonical-native-program-runtime")]
+#[path = "current_read_tests.rs"]
+mod current_read_tests;
 const TRANSPORT_LIMIT: u64 = 1024 * 1024;
 
 #[cfg(feature = "canonical-native-program-runtime")]
