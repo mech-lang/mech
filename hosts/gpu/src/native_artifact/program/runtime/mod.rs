@@ -299,6 +299,9 @@ mod structural_projection_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 mod composition_tests;
 
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod numeric_shadow_tests;
+
 #[test]
 fn native_runtime_consolidation_preserves_the_charged_layout_envelope() {
     let persistent = core::mem::size_of::<ExecutionState<'_>>();
