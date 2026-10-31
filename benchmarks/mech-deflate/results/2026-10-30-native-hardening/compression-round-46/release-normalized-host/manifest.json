@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-10-31T03:51:26.614625+00:00",
+  "head": "1b8b25a06e35bb5419c2da560faa8ffac2e80207",
+  "files": [
+    {
+      "path": "cargo-libraries.json",
+      "sha256": "4401c3d5607cbcfe2e62c1076c2b9539e7c92c4e7b3de20cb5d9fbcb10f4f418",
+      "bytes": 10820
+    },
+    {
+      "path": "cargo-release.json",
+      "sha256": "af06fb34df6ea2dbfd731e3f615699f3ab63768960bb7d764bbf31e154901ca0",
+      "bytes": 938
+    },
+    {
+      "path": "final-libraries.json",
+      "sha256": "645f02a3fb5e034e43f48c29c670f6299f5d6755c792ca7bacd5b499ea5d2de9",
+      "bytes": 10804
+    },
+    {
+      "path": "final-release.json",
+      "sha256": "32295d367a4d880dd9fd8ba060e6f36ba8cb36e30110a7e9c884e7648bb97106",
+      "bytes": 4801
+    },
+    {
+      "path": "normalize-gpu.py",
+      "sha256": "1ba3043bb521d75388b4430e30d83317ef505aaeb67791e7d0b3b3d3216128c9",
+      "bytes": 2456
+    },
+    {
+      "path": "variants/after/build.json",
+      "sha256": "32295d367a4d880dd9fd8ba060e6f36ba8cb36e30110a7e9c884e7648bb97106",
+      "bytes": 4801
+    },
+    {
+      "path": "variants/after/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "variants/after/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}
