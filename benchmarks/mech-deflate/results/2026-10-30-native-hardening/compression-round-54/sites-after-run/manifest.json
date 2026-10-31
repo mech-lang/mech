@@ -1,0 +1,66 @@
+{
+  "created_utc": "2026-10-31T11:20:47.286510+00:00",
+  "head": "497ad8685f253a379a64867df695c7017afdee43",
+  "files": [
+    {
+      "path": "sites-after/allocation_profile.h",
+      "sha256": "56852a08a6cb3fbba88daa10b8674cdb938933833722f0ed3bfcc8ae9ae9b31a",
+      "bytes": 384
+    },
+    {
+      "path": "sites-after/allocation_profile.rs",
+      "sha256": "d9c4bc779939567f5dced46d7c7f7030726b4c0e17df72efc3339cdfe2514b19",
+      "bytes": 1306
+    },
+    {
+      "path": "sites-after/allocation_sites.c",
+      "sha256": "8e6a18a29b959e38fa794e9106e7bc3302d7105c32978389a9bd62410368ff31",
+      "bytes": 6374
+    },
+    {
+      "path": "sites-after/binding.json",
+      "sha256": "02bf6e10c49dfe6e5ceef19a7183100cd09165f24f303099a4c66201fef66765",
+      "bytes": 32731
+    },
+    {
+      "path": "sites-after/environment-before.txt",
+      "sha256": "36bccb2477058cdbe3db66cb8509c0407ce25ceea19e3b06f364ee7d5a98f9ef",
+      "bytes": 36631
+    },
+    {
+      "path": "sites-after/memory.rs",
+      "sha256": "4f60e70d15f997d58da235aa49b9554175281464a2e9dbedfc8113d30ddd40a5",
+      "bytes": 6772
+    },
+    {
+      "path": "sites-after/run.json",
+      "sha256": "c85c175de76571b56de7806c1fc6dc8e20517bf6e6e35ed980f60b4c46188a6d",
+      "bytes": 258
+    },
+    {
+      "path": "sites-after/run.stderr",
+      "sha256": "e9bddaec4621a1836e3094fe59eb16c75015d5b3a32f8ec80ab8c3b00a2c8b68",
+      "bytes": 3208206
+    },
+    {
+      "path": "sites-after/run.stdout",
+      "sha256": "b84faeb06066bc14b108f48dfdc9de503a443d4960db2fe97bb331a0197944a0",
+      "bytes": 1185
+    },
+    {
+      "path": "sites-after/usage.c",
+      "sha256": "883fe6a7baf228bc881b4b76aef13f352da38f19c8e7a5b3ca938dbd1dddfd0e",
+      "bytes": 448
+    },
+    {
+      "path": "sites-after/usage.h",
+      "sha256": "ca6ac3c2cd82bfb367c07aa9e26b1aea3b025e48ea44db76dbded2be45b5fb9f",
+      "bytes": 233
+    },
+    {
+      "path": "sites-after.py",
+      "sha256": "af17e7cb8887159189e8ffaf1828fdc787400e6d2921e0909ebf44d6851d089f",
+      "bytes": 5812
+    }
+  ]
+}
