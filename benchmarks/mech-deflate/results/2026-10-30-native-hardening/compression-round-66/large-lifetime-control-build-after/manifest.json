@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-31T18:11:16.905987+00:00",
+  "head": "2db68f085212264710ce5ccb7bca9859a33d11e7",
+  "files": [
+    {
+      "path": "large-control-build.py",
+      "sha256": "cfd08c37825202f2f5ff6173b356dae86ba50c2bee3a5268c3ff08605707b821",
+      "bytes": 1788
+    },
+    {
+      "path": "numeric-lifetime-large/frame-after-build.json",
+      "sha256": "cd4117cd2289ec12f86283754d02ca7a86a5910157595217d9c5ea2fb4027458",
+      "bytes": 14084
+    },
+    {
+      "path": "numeric-lifetime-large/frame-after-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "numeric-lifetime-large/frame-after-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "numeric-lifetime-large/frame-after.json",
+      "sha256": "a134513b01b35bcd8dd15addccb54b690ef5369d1fc32738e1be6e1602dc74d1",
+      "bytes": 284
+    },
+    {
+      "path": "numeric-lifetime-large/witness-source.rs",
+      "sha256": "c6625c0b9b02af2824b0d50325862510661186696e134171751c47608e7eeda8",
+      "bytes": 12067
+    }
+  ]
+}
