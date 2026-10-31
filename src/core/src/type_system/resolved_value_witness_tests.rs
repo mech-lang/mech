@@ -90,6 +90,90 @@ fn matrix(
 }
 
 #[test]
+fn prepared_descriptor_semantics_keep_current_shape_checks_and_retry() {
+    let schema = matrix(
+        vec![DimensionExpr::Constant(1), parameter(0)],
+        vec![declaration(
+            0,
+            DimensionExpr::Constant(2),
+            Some(DimensionExpr::Constant(4)),
+        )],
+    );
+    let prototype = super::ResolvedValueDescriptor::from_schema(
+        schema.clone(),
+        schema.instantiate_shape([2].into()).unwrap(),
+    )
+    .unwrap();
+    let original = prototype.clone();
+    let loose = matrix(
+        vec![DimensionExpr::Constant(1), parameter(0)],
+        vec![declaration(0, DimensionExpr::Constant(0), None)],
+    );
+    for extent in [2, 4, 3] {
+        let current = prototype
+            .with_current_shape(loose.instantiate_shape([extent].into()).unwrap())
+            .unwrap();
+        let independently_derived = super::ResolvedValueDescriptor::from_schema(
+            schema.clone(),
+            schema.instantiate_shape([extent].into()).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(current, independently_derived);
+        assert_eq!(current.current_extents().unwrap().as_ref(), &[1, extent]);
+        assert_eq!(prototype, original);
+        assert_eq!(prototype.shape().parameter_values(), &[2]);
+        assert_eq!(
+            prototype.with_current_shape(loose.instantiate_shape([5].into()).unwrap()),
+            Err(TypeResolutionError::semantic(
+                SemanticModelError::ShapeBoundViolationV1 {
+                    parameter: DimensionParameterId::new(0),
+                    value: 5,
+                    lower: 2,
+                    upper: Some(4),
+                }
+            ))
+        );
+        assert_eq!(prototype, original);
+    }
+    let survivor = prototype
+        .with_current_shape(schema.instantiate_shape([3].into()).unwrap())
+        .unwrap();
+    drop((prototype, original, schema));
+    assert_eq!(survivor.current_extents().unwrap().as_ref(), &[1, 3]);
+}
+
+#[test]
+fn shared_descriptor_semantics_do_not_share_current_lifetime_witnesses() {
+    for lifetime in [DimensionLifetime::Turn, DimensionLifetime::Activation] {
+        let mut dimension = declaration(0, DimensionExpr::Constant(0), None);
+        dimension.lifetime = lifetime;
+        let schema = matrix(
+            vec![DimensionExpr::Constant(1), parameter(0)],
+            vec![dimension],
+        );
+        let first = super::ResolvedValueDescriptor::from_schema(
+            schema.clone(),
+            schema.instantiate_shape([2].into()).unwrap(),
+        )
+        .unwrap();
+        let second = first
+            .with_current_shape(schema.instantiate_shape([3].into()).unwrap())
+            .unwrap();
+        assert_eq!(first.schema(), second.schema());
+        assert_eq!(first.resolved_type(), second.resolved_type());
+        assert_ne!(first, second);
+        assert_eq!(
+            first.has_same_type_contract(&second),
+            lifetime == DimensionLifetime::Turn
+        );
+        let retained = first.clone();
+        drop(first);
+        assert_eq!(retained.shape().parameter_values(), &[2]);
+        assert_eq!(second.shape().parameter_values(), &[3]);
+    }
+}
+
+#[test]
 fn direct_parameter_matches_old_search_for_zero_max_and_binary_boundaries() {
     let mut targets = vec![0, 1, 2, 3, u64::MAX];
     for shift in 0..u64::BITS {
