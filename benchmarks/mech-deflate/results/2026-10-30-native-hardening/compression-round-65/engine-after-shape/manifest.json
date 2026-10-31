@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T17:12:45.655706+00:00",
+  "head": "1ba2c994aa5544233d07ee31b855b1e55b6b8d86",
+  "files": [
+    {
+      "path": "engine-after/budget.rs",
+      "sha256": "ca5b4600cec799ff650dbe45602df40d76107f0f3cc93c7d5dfb84e189235d34",
+      "bytes": 171550
+    },
+    {
+      "path": "engine-after/shape.json",
+      "sha256": "b3c3ffaec42ba725d09bb2b5539b592797226554522acd2700228ddce2a67346",
+      "bytes": 12889
+    },
+    {
+      "path": "engine-after/shape.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-after/shape.stdout",
+      "sha256": "d28771ae11f6984fae093c69cfb3a3e9dacf48ad632a148a06cc764b67f71707",
+      "bytes": 2960
+    },
+    {
+      "path": "engine-focused.py",
+      "sha256": "3d4e05ae26bf7e8230e7103364ffe7ebfafde0363e1992f5fad581353ba84cc2",
+      "bytes": 4956
+    }
+  ]
+}
