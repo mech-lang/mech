@@ -335,21 +335,26 @@ fn actual_selected_join_global_exact_one_short_and_import_failures_keep_atomic_o
         {
             let prior = outputs.clone();
             let before = memory.used_bytes();
-            // The very next real registration is in ordinary constant setup,
-            // before the join consumer can arm another pressure injection.
+            // This fixture's next real registration belongs to the next join.
+            // No new injection replaces the failure left armed above.
             let error = jit
                 .evaluate_into(&args, &mut outputs, limits(), &memory)
                 .unwrap_err();
             assert!(
                 matches!(
                     error,
-                    Error::Base(crate::native_artifact::NativeExecutionError::Memory {
-                        error: mech_core::MemoryRuntimeError::AllocationFailed { .. }
-                    })
+                    Error::Library {
+                        origin: actual_origin,
+                        error: InvokeError::Memory(
+                            mech_core::MemoryRuntimeError::AllocationFailed { .. }
+                        ),
+                    } if actual_origin == jit.descriptor().metadata().plan.blocks()[
+                        jit.descriptor().metadata().selected_joins.regions[0].consumer() as usize
+                    ].origin()
                 ),
                 "{error:?}"
             );
-            assert!(LAST.with(Cell::get).is_none());
+            assert!(take().selection_slot_empty);
             assert_eq!(memory.used_bytes(), before);
             preserved(&outputs, &prior);
             jit.evaluate_into(&args, &mut outputs, limits(), &memory)
