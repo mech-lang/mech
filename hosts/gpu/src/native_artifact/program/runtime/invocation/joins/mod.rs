@@ -127,7 +127,7 @@ pub(super) fn coexistence(
     let mut prior = collections.map_or(Ok(ResourceDemand::default()), |state| {
         state.retained_demand()
     })?;
-    let lines = super::line_calls::coexistence(lines, layout, skip, work, library)?;
+    let lines = lines.coexistence(layout, skip, work, library)?;
     prior.turn_peak_bytes = add(prior.turn_peak_bytes, lines.turn_peak_bytes)?;
     prior.retained_nodes = add(prior.retained_nodes, lines.retained_nodes)?;
     Ok(prior)
