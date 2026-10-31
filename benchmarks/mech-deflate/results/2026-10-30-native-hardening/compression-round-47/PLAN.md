@@ -1,0 +1,13 @@
+# Unique-root first admission — isolated pilot
+
+Baseline is published `b71c596bdd2f59fbb2893aa8847769f767660677` (retained record-prefix optimization). Preserve this result and its coherent executables. The new brief changes the next priority from scalar record footprints to exclusive first admission, with physical cleanup-domain analysis as the separate compiler investigation.
+
+Real operation: ordinary canonical numeric results and other fresh Values pass through `Value::into_memory_budget_inner`, which currently allocates a registration and a second storage wrapper. The round-46 trace measures 1,010 registration/wrapper pairs per steady eight-byte compression, but root eligibility is unknown.
+
+First collect an exact diagnostic census at the original wrapper-allocation point using `Arc::get_mut` and absent ownership, after the existing admission decisions. Temporary counters/getters are diagnostic-only and will be removed before the primary candidate. Do not attribute instrumented timing to an optimization. Counts distinguish same-account and import hits, wrapper paths, exclusive roots, eligible unadmitted roots and eligible roots with shared data. Freeze Core-dependent transitive libraries before rebuilding so later baseline diagnostic consumers remain coherent.
+
+Then reuse the existing unique unadmitted root while preserving registry synchronization/deduplication for shared data. Keep all conservative resource envelopes, metadata/shape/schema ownership, tickets, node/byte limits and existing shared/import paths. Attach ownership and publish links only after fallible preparation succeeds. Fresh paths intentionally have one fewer allocation failure point; retain existing shared-source wrapper-failure coverage. No benchmark source, allocator, algorithm, tables, search limits, capacities or timing changes.
+
+Acceptance: exact census/allocation delta; canonical frozen data identity and aliases; shared roots/data and foreign imports; exact/one-short reservation/node denial; concurrent deduplication; failure atomicity/cleanup/retry; original/decoded execution. Then matched complete abcdefgh compression only, exact raw bytes, work 60,260,219,686 and comparison work 47,612, capacity-13 clear/reuse and zero cleanup. Reprofile both actual executables with numerical hardware/memory/hot-path results after the retained candidate, in separate serialized cohorts. Commit every measurement immediately.
+
+Do not bundle shape-witness construction, private registry lifecycle, cleanup elimination, storage coloring, shared code or scalar facts into this experiment. Any further compiler gap requires its actual operation, minimal witness and acceptance test.
