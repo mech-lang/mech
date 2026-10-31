@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-31T22:34:40.157785+00:00",
+  "head": "cbb33aaf56dbd1b43470255bed387492f160d52e",
+  "files": [
+    {
+      "path": "engine-focused.py",
+      "sha256": "d1fbe6ae6425139ee45b70268c2622ead842a65867cdd566b74fb6e701bae054",
+      "bytes": 5255
+    },
+    {
+      "path": "engine-parent/budget.rs",
+      "sha256": "d3101d673c6602cf3bf998e33a6e785e907595d0baca5b6145284227b787c85b",
+      "bytes": 171672
+    },
+    {
+      "path": "engine-parent/native_compute_debit_tests.rs",
+      "sha256": "95fd1cf752d3a688eb0b3239875140daa17b53a9442ce512a1934cad1e3e790b",
+      "bytes": 7153
+    },
+    {
+      "path": "engine-parent/overflow-retry-inventory.json",
+      "sha256": "6cf80359ce31ebf3189bd2e95d154b2bbf8186e1785fc5e7fe58b63023a56c96",
+      "bytes": 12982
+    },
+    {
+      "path": "engine-parent/overflow-retry-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-parent/overflow-retry-inventory.stdout",
+      "sha256": "1f85e0efcf04411c80bf7cfc2476c30ebba99245fed8597920f8c47ecc0d5c59",
+      "bytes": 154
+    }
+  ]
+}
