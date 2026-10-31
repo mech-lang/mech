@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-31T19:00:31.032499+00:00",
+  "head": "194d59fc82a4e0aa6b0354b5e2f1611aaa739312",
+  "files": [
+    {
+      "path": "engine-preflight/build.json",
+      "sha256": "af7664761340eeeb27e0f9e280bd2640b5d09dc01ffb81e3f8e778d44215a163",
+      "bytes": 23597
+    },
+    {
+      "path": "engine-preflight/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-preflight/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-preflight/native_collection_invocation.rs",
+      "sha256": "daa592b4b36dedff3cc96b7086e0ed08eb5af160a1908c0dab8204984896c1cf",
+      "bytes": 29163
+    },
+    {
+      "path": "engine-preflight/turn.rs",
+      "sha256": "0490f289c2e1c303df294be572fcec12c454f1e19cb119167f5bc7bbac44bb46",
+      "bytes": 40852
+    },
+    {
+      "path": "engine-preflight/turn_tests.rs",
+      "sha256": "abaffceb481b6a689e0f630cd6cef46855295d2c0c795ca51ceae7e44cac5702",
+      "bytes": 11369
+    },
+    {
+      "path": "engine-preflight.py",
+      "sha256": "5b1f2fe8aa4fb1dad2e7a0d6e98326d1585270636b03d288badb4c380a9b4979",
+      "bytes": 5476
+    }
+  ]
+}
