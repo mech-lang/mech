@@ -1,0 +1,1083 @@
+{
+  "schema": "mech.exact-record-prefix.v1",
+  "chosen": "candidate",
+  "stack_base": "eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b",
+  "published_start": "b12f6c5afb2c859f6cde29ba566ddf09e70d2f79",
+  "baseline_compiler": "b12f6c5afb2c859f6cde29ba566ddf09e70d2f79",
+  "candidate_implementation": "fead50f19bcec08deacc4622c4ded05ee91b8383",
+  "release": {
+    "command": [
+      "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+      "--crate-type",
+      "lib",
+      "-C",
+      "embed-bitcode=no",
+      "-C",
+      "strip=debuginfo",
+      "--edition=2024",
+      "--crate-name",
+      "mech_gpu",
+      "-C",
+      "opt-level=3",
+      "-C",
+      "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+      "-D",
+      "warnings",
+      "-L",
+      "dependency=/private/tmp/mech-live-control-target/release/deps",
+      "--cfg",
+      "feature=\"aot\"",
+      "--cfg",
+      "feature=\"canonical-native\"",
+      "--cfg",
+      "feature=\"canonical-native-program\"",
+      "--cfg",
+      "feature=\"canonical-native-program-runtime\"",
+      "--cfg",
+      "feature=\"canonical-native-runtime\"",
+      "--cfg",
+      "feature=\"jit\"",
+      "--extern",
+      "cranelift_codegen=/private/tmp/mech-live-control-target/release/deps/libcranelift_codegen-79250b96f7a4172f.rlib",
+      "--extern",
+      "cranelift_frontend=/private/tmp/mech-live-control-target/release/deps/libcranelift_frontend-796ddca52b1baa23.rlib",
+      "--extern",
+      "cranelift_jit=/private/tmp/mech-live-control-target/release/deps/libcranelift_jit-4d33b45d7690e2ef.rlib",
+      "--extern",
+      "cranelift_module=/private/tmp/mech-live-control-target/release/deps/libcranelift_module-8bb9481823a63cf0.rlib",
+      "--extern",
+      "cranelift_native=/private/tmp/mech-live-control-target/release/deps/libcranelift_native-448aa3dcdc0c0785.rlib",
+      "--extern",
+      "cranelift_object=/private/tmp/mech-live-control-target/release/deps/libcranelift_object-e9e960ce24552414.rlib",
+      "--extern",
+      "grapheme=/private/tmp/mech-live-control-target/release/deps/libgrapheme-2e22bda36eb1f0f8.rlib",
+      "--extern",
+      "hashbrown=/private/tmp/mech-live-control-target/release/deps/libhashbrown-d20f4ad24099052b.rlib",
+      "--extern",
+      "libloading=/private/tmp/mech-live-control-target/release/deps/liblibloading-836fe5ac7ed0962d.rlib",
+      "--extern",
+      "mech_compute=/private/tmp/mech-record-prefix-round46-20261031/frozen-compute/libmech_compute-84cb0ef1d137eee3.rlib",
+      "--extern",
+      "mech_core=/private/tmp/mech-record-prefix-round46-20261031/final-library/libmech_core-4ff4856784490a86.rlib",
+      "--extern",
+      "mech_engine=/private/tmp/mech-record-prefix-round46-20261031/final-library/libmech_engine-0d214f77bb5acf15.rlib",
+      "--extern",
+      "miniz_oxide=/private/tmp/mech-record-prefix-round46-20261031/final-library/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+      "--extern",
+      "serde=/private/tmp/mech-record-prefix-round46-20261031/final-library/libserde-53e30a58b8778b4f.rlib",
+      "--extern",
+      "serde_json=/private/tmp/mech-record-prefix-round46-20261031/final-library/libserde_json-e0f8af30c3327a5b.rlib",
+      "--extern",
+      "sha2=/private/tmp/mech-live-control-target/release/deps/libsha2-f9316069bed82edc.rlib",
+      "--extern",
+      "toml_edit=/private/tmp/mech-live-control-target/release/deps/libtoml_edit-14168309fb56d330.rlib",
+      "--extern",
+      "web_time=/private/tmp/mech-live-control-target/release/deps/libweb_time-5004144e8c3d1139.rlib",
+      "--extern",
+      "wide=/private/tmp/mech-live-control-target/release/deps/libwide-24e8d1268668e37f.rlib",
+      "--extern",
+      "mech_syntax=/private/tmp/mech-record-prefix-round46-20261031/final-library/libmech_syntax-99fe397930ae7109.rlib",
+      "--extern",
+      "mech_runtime=/private/tmp/mech-live-control-target/release/deps/libmech_runtime-44999c02af6b18b6.rlib",
+      "--extern",
+      "mech_stdlib=/private/tmp/mech-record-prefix-round46-20261031/final-library/libmech_stdlib-6eec5c94a1151738.rlib",
+      "--extern",
+      "tempfile=/private/tmp/mech-live-control-target/release/deps/libtempfile-cd3db811e0a0846f.rlib",
+      "-L",
+      "dependency=/private/tmp/mech-record-prefix-round46-20261031/frozen-compute",
+      "-L",
+      "dependency=/private/tmp/mech-record-prefix-round46-20261031/final-library",
+      "/private/tmp/mech-deflate-linear-stack/hosts/gpu/src/lib.rs",
+      "-o",
+      "/private/tmp/mech-record-prefix-round46-20261031/variants/after/libmech_gpu.rlib"
+    ],
+    "environment": {
+      "CARGO_MANIFEST_DIR": "/private/tmp/mech-deflate-linear-stack/hosts/gpu",
+      "CARGO_PKG_NAME": "mech-gpu",
+      "CARGO_PKG_VERSION": "0.3.5",
+      "CARGO_PKG_VERSION_MAJOR": "0",
+      "CARGO_PKG_VERSION_MINOR": "3",
+      "CARGO_PKG_VERSION_PATCH": "5",
+      "CARGO_PKG_DESCRIPTION": "Capability admission and fused WGSL lowering for typed Mech programs"
+    },
+    "cwd": "/private/tmp/mech-deflate-linear-stack",
+    "source_head": "6027e8016150f0510b23fcdda20430a40837e1da",
+    "exit": 0,
+    "seconds": 22.487634874880314,
+    "profile": "Exact retained host rustc flags/features, against freshly frozen matching Engine/Stdlib/Compute. Cargo selected-operation build recorded separately."
+  },
+  "input_bytes": 8,
+  "raw_output_bytes": 10,
+  "level": 12,
+  "primary": {
+    "configuration": "Matched linked compressor; identical tiny setup JIT helpers; unchanged evaluate_into timer. Both programs ready before measurements.",
+    "reference_seconds": 0.000289,
+    "fixed_reference_seconds": 0.0003,
+    "groups": [
+      {
+        "group": 0,
+        "medians": {
+          "before": 0.004269875,
+          "after": 0.0041941875
+        },
+        "after_over_before": 0.9822740712550133
+      },
+      {
+        "group": 1,
+        "medians": {
+          "before": 0.0043057914999999995,
+          "after": 0.004203458
+        },
+        "after_over_before": 0.9762335217578465
+      },
+      {
+        "group": 2,
+        "medians": {
+          "before": 0.004286438,
+          "after": 0.0041981245
+        },
+        "after_over_before": 0.9793969958273046
+      },
+      {
+        "group": 3,
+        "medians": {
+          "before": 0.0043190005,
+          "after": 0.004258875
+        },
+        "after_over_before": 0.9860788393055291
+      }
+    ],
+    "primary_observations": 3968,
+    "all_observations": 3984,
+    "observations_per_variant": 1984,
+    "medians": {
+      "before": {
+        "seconds": 0.0042935205,
+        "multiple_of_reference": 14.856472318339101,
+        "multiple_of_fixed_reference": 14.311735000000002
+      },
+      "after": {
+        "seconds": 0.0042081035,
+        "multiple_of_reference": 14.560911764705883,
+        "multiple_of_fixed_reference": 14.027011666666668
+      }
+    },
+    "comparisons": {
+      "after_over_before": {
+        "pooled_ratio": 0.9801056033155077,
+        "improving_groups": 4,
+        "improving_blocks": 60,
+        "median_block_ratio": 0.9794173738257332,
+        "geometric_block_ratio": 0.9809812103152502
+      }
+    }
+  },
+  "cpu": {
+    "reference": {
+      "instructions": {
+        "median": 1364372.0,
+        "min": 1364164,
+        "max": 1391596
+      },
+      "cycles": {
+        "median": 920543.0,
+        "min": 883536,
+        "max": 972722
+      },
+      "rss_after": {
+        "median": 14778368.0,
+        "min": 14778368,
+        "max": 14778368
+      },
+      "physical_after": {
+        "median": 14435264.0,
+        "min": 14435264,
+        "max": 14435264
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "observations": 32
+    },
+    "baseline": {
+      "instructions": {
+        "median": 48599979.0,
+        "min": 48595730,
+        "max": 48631552
+      },
+      "cycles": {
+        "median": 13551678.0,
+        "min": 13372317,
+        "max": 14576759
+      },
+      "rss_after": {
+        "median": 319668224.0,
+        "min": 319668224,
+        "max": 319668224
+      },
+      "physical_after": {
+        "median": 228640512.0,
+        "min": 228640512,
+        "max": 228640512
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "observations": 32
+    },
+    "candidate": {
+      "instructions": {
+        "median": 46993498.5,
+        "min": 46989066,
+        "max": 47068712
+      },
+      "cycles": {
+        "median": 13282488.5,
+        "min": 13107028,
+        "max": 14453747
+      },
+      "rss_after": {
+        "median": 319799296.0,
+        "min": 319799296,
+        "max": 319799296
+      },
+      "physical_after": {
+        "median": 228771584.0,
+        "min": 228771584,
+        "max": 228771584
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "observations": 32
+    }
+  },
+  "allocation": {
+    "reference": {
+      "allocation_requests": {
+        "median": 95.0,
+        "min": 95,
+        "max": 95
+      },
+      "requested_bytes": {
+        "median": 9021923.0,
+        "min": 9021923,
+        "max": 9021923
+      },
+      "reallocations": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "relocating_reallocations": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "live_usable_before": {
+        "median": 32.0,
+        "min": 32,
+        "max": 32
+      },
+      "live_usable_after": {
+        "median": 32.0,
+        "min": 32,
+        "max": 32
+      },
+      "peak_live_usable": {
+        "median": 9257360.0,
+        "min": 9257360,
+        "max": 9257360
+      },
+      "incremental_peak_live_usable": {
+        "median": 9257328.0,
+        "min": 9257328,
+        "max": 9257328
+      },
+      "observations": 32,
+      "large_allocation_histogram": {
+        "2442064": 1,
+        "524336": 1,
+        "6002100": 1
+      }
+    },
+    "baseline": {
+      "allocation_requests": {
+        "median": 13994.0,
+        "min": 13994,
+        "max": 13994
+      },
+      "requested_bytes": {
+        "median": 98586843.0,
+        "min": 98586843,
+        "max": 98586843
+      },
+      "reallocations": {
+        "median": 1213.0,
+        "min": 1213,
+        "max": 1213
+      },
+      "relocating_reallocations": {
+        "median": 458.0,
+        "min": 458,
+        "max": 458
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 13905.0,
+        "min": 13905,
+        "max": 13905
+      },
+      "live_usable_before": {
+        "median": 142706080.0,
+        "min": 142706080,
+        "max": 142706080
+      },
+      "live_usable_after": {
+        "median": 142706648.0,
+        "min": 142706648,
+        "max": 142706648
+      },
+      "peak_live_usable": {
+        "median": 163281512.0,
+        "min": 163281512,
+        "max": 163281512
+      },
+      "incremental_peak_live_usable": {
+        "median": 20575432.0,
+        "min": 20575432,
+        "max": 20575432
+      },
+      "observations": 8,
+      "large_allocation_histogram": {
+        "483344": 1,
+        "1437504": 1,
+        "179688": 2,
+        "361024": 1,
+        "97296": 1,
+        "75600": 1,
+        "95648": 1,
+        "124344": 1,
+        "524288": 5,
+        "6002052": 1,
+        "2442056": 35
+      }
+    },
+    "candidate": {
+      "allocation_requests": {
+        "median": 13994.0,
+        "min": 13994,
+        "max": 13994
+      },
+      "requested_bytes": {
+        "median": 98586843.0,
+        "min": 98586843,
+        "max": 98586843
+      },
+      "reallocations": {
+        "median": 1213.0,
+        "min": 1213,
+        "max": 1213
+      },
+      "relocating_reallocations": {
+        "median": 458.0,
+        "min": 458,
+        "max": 458
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 13905.0,
+        "min": 13905,
+        "max": 13905
+      },
+      "live_usable_before": {
+        "median": 142829248.0,
+        "min": 142829248,
+        "max": 142829248
+      },
+      "live_usable_after": {
+        "median": 142829816.0,
+        "min": 142829816,
+        "max": 142829816
+      },
+      "peak_live_usable": {
+        "median": 163404680.0,
+        "min": 163404680,
+        "max": 163404680
+      },
+      "incremental_peak_live_usable": {
+        "median": 20575432.0,
+        "min": 20575432,
+        "max": 20575432
+      },
+      "observations": 8,
+      "large_allocation_histogram": {
+        "483344": 1,
+        "1437504": 1,
+        "179688": 2,
+        "361024": 1,
+        "97296": 1,
+        "75600": 1,
+        "95648": 1,
+        "124344": 1,
+        "524288": 5,
+        "6002052": 1,
+        "2442056": 35
+      }
+    }
+  },
+  "static": {
+    "baseline": {
+      "abi_version": 37,
+      "typed_ir_version": 131,
+      "code_bytes": 13885696,
+      "stack_bytes": 108400,
+      "ordinary_scalar_admission_groups": 1372,
+      "ordinary_scalar_admission_sites": 8642,
+      "object_sha256": "3f0c0e1954afe1083254d928a8ff66977ee9203e64bfd281326c75f9ff5f09e9"
+    },
+    "candidate": {
+      "abi_version": 37,
+      "typed_ir_version": 131,
+      "code_bytes": 13885696,
+      "stack_bytes": 108400,
+      "ordinary_scalar_admission_groups": 1372,
+      "ordinary_scalar_admission_sites": 8642,
+      "object_sha256": "3f0c0e1954afe1083254d928a8ff66977ee9203e64bfd281326c75f9ff5f09e9"
+    }
+  },
+  "profiles": {
+    "baseline": {
+      "sha256": "76b150a47505d68c80e70a8a2a7422902b480c23c3398cd058ec71baa5ebf3be",
+      "total_weights": 1217,
+      "disjoint_categories": {
+        "remaining": 461,
+        "ordinary_control_visit": 174,
+        "other_invocation_helper": 159,
+        "selected_library_call": 110,
+        "buffer_frame_actions": 313
+      },
+      "exclusive_top_leaves": [
+        [
+          "mech_canonical_program_entry_v1",
+          151
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+          41
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+          41
+        ],
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+          40
+        ],
+        [
+          "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget32charge_control_account_at_limits",
+          40
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          38
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation18retire_tail_locals",
+          32
+        ],
+        [
+          "_tlv_get_addr",
+          31
+        ],
+        [
+          "_RNvMs_NtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+          30
+        ],
+        [
+          "write",
+          30
+        ],
+        [
+          "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+          24
+        ],
+        [
+          "_RNvNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          22
+        ],
+        [
+          "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames16apply_retirement",
+          21
+        ],
+        [
+          "_RNvMs3_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+          19
+        ],
+        [
+          "_platform_memmove",
+          15
+        ],
+        [
+          "_RNvNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime5hooks5admit",
+          14
+        ],
+        [
+          "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+          14
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation16readonly_numericNtB4_10Invocation19begin_numeric_views",
+          14
+        ],
+        [
+          "mi_free",
+          13
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation14selected_callsNtB4_10Invocation21prepared_library_call",
+          12
+        ],
+        [
+          "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+          12
+        ],
+        [
+          "_RNvMs0_NtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime11collections11string_spanNtB7_5State22validate_span_boundary",
+          12
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation10needs_move",
+          12
+        ],
+        [
+          "_RNvNtNtCskIfnrfrMWVM_9mech_core6schema5shape18evaluate_dimension",
+          11
+        ],
+        [
+          "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+          11
+        ],
+        [
+          "_RNvMs7_NtNtCskIfnrfrMWVM_9mech_core8snapshot10validationNtB5_5Value28memory_budget_retained_bytes",
+          11
+        ],
+        [
+          "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultTNtNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation5ValuebENtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMNtNtB3h_8prepared12word_updatesNtB4M_25NativePreparedLibraryCall23unsigned_matrix_replace0EBa_",
+          10
+        ],
+        [
+          "_RNvMs7_NtNtCskIfnrfrMWVM_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+          10
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls8prepared15frame_admissionNtB2_20FrameAdmissionRecipe9try_admit",
+          9
+        ],
+        [
+          "_RNvMsa_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_19ResidentBudgetMeter21for_native_projection",
+          9
+        ]
+      ]
+    },
+    "candidate": {
+      "sha256": "e2d6953771fc17ed06f0ac3f0f78d2267bebf72338d94fbcf7196ed469e9bcc7",
+      "total_weights": 1204,
+      "disjoint_categories": {
+        "remaining": 404,
+        "ordinary_control_visit": 183,
+        "other_invocation_helper": 174,
+        "selected_library_call": 133,
+        "buffer_frame_actions": 310
+      },
+      "exclusive_top_leaves": [
+        [
+          "mech_canonical_program_entry_v1",
+          127
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+          51
+        ],
+        [
+          "_tlv_get_addr",
+          49
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          44
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation18retire_tail_locals",
+          37
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+          35
+        ],
+        [
+          "_RNvMs_NtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+          27
+        ],
+        [
+          "_platform_memmove",
+          27
+        ],
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget17charge_in_context",
+          26
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation14selected_callsNtB4_10Invocation21prepared_library_call",
+          24
+        ],
+        [
+          "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames16apply_retirement",
+          21
+        ],
+        [
+          "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+          19
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation15action_required",
+          19
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocation16readonly_numericNtB4_10Invocation19begin_numeric_views",
+          18
+        ],
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+          17
+        ],
+        [
+          "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+          17
+        ],
+        [
+          "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+          15
+        ],
+        [
+          "_RNvNtNtCskIfnrfrMWVM_9mech_core6schema5shape18evaluate_dimension",
+          15
+        ],
+        [
+          "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultTNtNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation5ValuebENtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMNtNtB3h_8prepared12word_updatesNtB4M_25NativePreparedLibraryCall23unsigned_matrix_replace0EBa_",
+          14
+        ],
+        [
+          "_RNvMNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames7project",
+          14
+        ],
+        [
+          "_RNvMs7_NtNtCskIfnrfrMWVM_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+          12
+        ],
+        [
+          "_RNvXs2_NtNtCskIfnrfrMWVM_9mech_core8snapshot8encodingNtB5_18LengthSnapshotSinkNtB5_16SnapshotByteSink14write_sequence",
+          12
+        ],
+        [
+          "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+          12
+        ],
+        [
+          "_RNvMs3_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+          12
+        ],
+        [
+          "_RNvMs7_NtNtCskIfnrfrMWVM_9mech_core8snapshot10validationNtB5_5Value28memory_budget_retained_bytes",
+          11
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation10needs_move",
+          11
+        ],
+        [
+          "_platform_memset",
+          10
+        ],
+        [
+          "mi_free",
+          10
+        ],
+        [
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena3put",
+          10
+        ],
+        [
+          "_RNvMs0_NtNtNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact7program7runtime11collections11string_spanNtB7_5State22validate_span_boundary",
+          10
+        ]
+      ]
+    }
+  },
+  "changes_percent": {
+    "primary_seconds": -1.9894396684492333,
+    "instructions": -3.3055168604085194,
+    "cycles": -1.9863923862417643,
+    "rss_after": 0.041002511403820385,
+    "physical_after": 0.05732667358617771,
+    "pageins": null,
+    "allocation_requests": 0.0,
+    "requested_bytes": 0.0,
+    "reallocations": 0.0,
+    "relocating_reallocations": 0.0,
+    "relocating_realloc_copy_upper_bound": 0.0,
+    "live_usable_before": 0.08630886644773739,
+    "live_usable_after": 0.08630852292179636,
+    "peak_live_usable": 0.07543291245368788,
+    "incremental_peak_live_usable": 0.0
+  },
+  "diagnostic_scope": "Each hardware/memory variant uses the exact same coherent optimized libraries and unchanged same-build Object/image as its primary worker. Compute is explicitly frozen as well as all eight direct libraries; no Cargo artifact mutation. Hardware/memory instrumentation is separate and excluded from primary elapsed.",
+  "profile_scope": "Serial isolated 695-call original primary-worker main-thread samples after all counter workers finish. Disjoint weights include surrounding harness, not exact compression-timer percentages.",
+  "outcome": {
+    "primary_elapsed_change_percent": -1.9894396684492333,
+    "improving_preparations": 4,
+    "improving_blocks": 60,
+    "instructions_change_percent": -3.3055168604085194,
+    "cycles_change_percent": -1.9863923862417643,
+    "allocation_requests_change_percent": 0.0,
+    "prepared_heap_change_bytes": 123168.0,
+    "retained": true,
+    "reason": "Retain: all four independently prepared pairs and 60/64 descriptive blocks improve; elapsed \u22121.98944%, instructions \u22123.30552%, cycles \u22121.98639%."
+  },
+  "limitations": [
+    "Only complete eight-byte compression; no larger-input throughput claim.",
+    "Primary, CPU, allocation and sampling are separate cohorts; hardware reads include uncorrected boundary overhead.",
+    "Primary and diagnostic builds share exact per-variant coherent libraries and same-build Object/images; instrumentation and observations remain separate.",
+    "Prepared linked executables retain setup/compiler/catalog state; memory is not minimal runtime-only RAM.",
+    "Total bytes copied and branch/cache misses are unmeasured; requested capacity is not initialized copying.",
+    "Static generated Object and stack are unchanged; only Engine record-admission accounting changes."
+  ],
+  "coherence": {
+    "cargo_build": {
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--message-format=json",
+        "--bin",
+        "native_frame_transport",
+        "--bin",
+        "artifact_review",
+        "--features",
+        "mech-runtime/compiler",
+        "--verbose"
+      ],
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-live-control-target",
+        "RUSTUP_TOOLCHAIN": "nightly-2026-03-03"
+      },
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "source_head": "6027e8016150f0510b23fcdda20430a40837e1da",
+      "exit": 0,
+      "seconds": 498.53408233402297,
+      "profile": "Same selected-operation release consumer as baseline; opt3, warnings-as-errors, offline, locked, single build job."
+    },
+    "primary_gpu": {
+      "command": [
+        "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+        "--crate-type",
+        "lib",
+        "-C",
+        "embed-bitcode=no",
+        "-C",
+        "strip=debuginfo",
+        "--edition=2024",
+        "--crate-name",
+        "mech_gpu",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+        "-D",
+        "warnings",
+        "-L",
+        "dependency=/private/tmp/mech-live-control-target/release/deps",
+        "--cfg",
+        "feature=\"aot\"",
+        "--cfg",
+        "feature=\"canonical-native\"",
+        "--cfg",
+        "feature=\"canonical-native-program\"",
+        "--cfg",
+        "feature=\"canonical-native-program-runtime\"",
+        "--cfg",
+        "feature=\"canonical-native-runtime\"",
+        "--cfg",
+        "feature=\"jit\"",
+        "--extern",
+        "cranelift_codegen=/private/tmp/mech-live-control-target/release/deps/libcranelift_codegen-79250b96f7a4172f.rlib",
+        "--extern",
+        "cranelift_frontend=/private/tmp/mech-live-control-target/release/deps/libcranelift_frontend-796ddca52b1baa23.rlib",
+        "--extern",
+        "cranelift_jit=/private/tmp/mech-live-control-target/release/deps/libcranelift_jit-4d33b45d7690e2ef.rlib",
+        "--extern",
+        "cranelift_module=/private/tmp/mech-live-control-target/release/deps/libcranelift_module-8bb9481823a63cf0.rlib",
+        "--extern",
+        "cranelift_native=/private/tmp/mech-live-control-target/release/deps/libcranelift_native-448aa3dcdc0c0785.rlib",
+        "--extern",
+        "cranelift_object=/private/tmp/mech-live-control-target/release/deps/libcranelift_object-e9e960ce24552414.rlib",
+        "--extern",
+        "grapheme=/private/tmp/mech-live-control-target/release/deps/libgrapheme-2e22bda36eb1f0f8.rlib",
+        "--extern",
+        "hashbrown=/private/tmp/mech-live-control-target/release/deps/libhashbrown-d20f4ad24099052b.rlib",
+        "--extern",
+        "libloading=/private/tmp/mech-live-control-target/release/deps/liblibloading-836fe5ac7ed0962d.rlib",
+        "--extern",
+        "mech_compute=/private/tmp/mech-record-prefix-round46-20261031/frozen-compute/libmech_compute-84cb0ef1d137eee3.rlib",
+        "--extern",
+        "mech_core=/private/tmp/mech-record-prefix-round46-20261031/final-library/libmech_core-4ff4856784490a86.rlib",
+        "--extern",
+        "mech_engine=/private/tmp/mech-record-prefix-round46-20261031/final-library/libmech_engine-0d214f77bb5acf15.rlib",
+        "--extern",
+        "miniz_oxide=/private/tmp/mech-record-prefix-round46-20261031/final-library/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+        "--extern",
+        "serde=/private/tmp/mech-record-prefix-round46-20261031/final-library/libserde-53e30a58b8778b4f.rlib",
+        "--extern",
+        "serde_json=/private/tmp/mech-record-prefix-round46-20261031/final-library/libserde_json-e0f8af30c3327a5b.rlib",
+        "--extern",
+        "sha2=/private/tmp/mech-live-control-target/release/deps/libsha2-f9316069bed82edc.rlib",
+        "--extern",
+        "toml_edit=/private/tmp/mech-live-control-target/release/deps/libtoml_edit-14168309fb56d330.rlib",
+        "--extern",
+        "web_time=/private/tmp/mech-live-control-target/release/deps/libweb_time-5004144e8c3d1139.rlib",
+        "--extern",
+        "wide=/private/tmp/mech-live-control-target/release/deps/libwide-24e8d1268668e37f.rlib",
+        "--extern",
+        "mech_syntax=/private/tmp/mech-record-prefix-round46-20261031/final-library/libmech_syntax-99fe397930ae7109.rlib",
+        "--extern",
+        "mech_runtime=/private/tmp/mech-live-control-target/release/deps/libmech_runtime-44999c02af6b18b6.rlib",
+        "--extern",
+        "mech_stdlib=/private/tmp/mech-record-prefix-round46-20261031/final-library/libmech_stdlib-6eec5c94a1151738.rlib",
+        "--extern",
+        "tempfile=/private/tmp/mech-live-control-target/release/deps/libtempfile-cd3db811e0a0846f.rlib",
+        "-L",
+        "dependency=/private/tmp/mech-record-prefix-round46-20261031/frozen-compute",
+        "-L",
+        "dependency=/private/tmp/mech-record-prefix-round46-20261031/final-library",
+        "/private/tmp/mech-deflate-linear-stack/hosts/gpu/src/lib.rs",
+        "-o",
+        "/private/tmp/mech-record-prefix-round46-20261031/variants/after/libmech_gpu.rlib"
+      ],
+      "environment": {
+        "CARGO_MANIFEST_DIR": "/private/tmp/mech-deflate-linear-stack/hosts/gpu",
+        "CARGO_PKG_NAME": "mech-gpu",
+        "CARGO_PKG_VERSION": "0.3.5",
+        "CARGO_PKG_VERSION_MAJOR": "0",
+        "CARGO_PKG_VERSION_MINOR": "3",
+        "CARGO_PKG_VERSION_PATCH": "5",
+        "CARGO_PKG_DESCRIPTION": "Capability admission and fused WGSL lowering for typed Mech programs"
+      },
+      "cwd": "/private/tmp/mech-deflate-linear-stack",
+      "source_head": "6027e8016150f0510b23fcdda20430a40837e1da",
+      "exit": 0,
+      "seconds": 22.487634874880314,
+      "profile": "Exact retained host rustc flags/features, against freshly frozen matching Engine/Stdlib/Compute. Cargo selected-operation build recorded separately."
+    },
+    "source_changed": "Engine only; GPU rebuilt with exactly baseline flags against newly frozen matching dependencies.",
+    "metadata_heap_added_bytes": 123168.0
+  },
+  "validation": {
+    "distinct_rust_tests": 657,
+    "cohorts": [
+      {
+        "receipt": "engine-units/prefix.json",
+        "tests": 5,
+        "exit": 0
+      },
+      {
+        "receipt": "engine-units/budget.json",
+        "tests": 26,
+        "exit": 0
+      },
+      {
+        "receipt": "units-after/runtime.json",
+        "tests": 316,
+        "exit": 0
+      },
+      {
+        "receipt": "units-after/work-values.json",
+        "tests": 31,
+        "exit": 0
+      },
+      {
+        "receipt": "units-after/workers.json",
+        "tests": 36,
+        "exit": 0
+      },
+      {
+        "receipt": "qualification/path-mechanism.json",
+        "tests": 1,
+        "exit": 0
+      },
+      {
+        "receipt": "qualification/components.json",
+        "tests": 234,
+        "exit": 0
+      },
+      {
+        "receipt": "qualification/composition.json",
+        "tests": 8,
+        "exit": 0
+      }
+    ],
+    "linked_executions": 12,
+    "scalar_controls": 12,
+    "frame_allocation_cases": 8,
+    "ci_inventory": 18,
+    "python_tests": 132,
+    "architecture_checks": 10,
+    "inherited_skip": "complete_unchanged_knucleotide_body_uses_the_owned_emitted_map; reduced catalog omits its stats import"
+  },
+  "small_allocation_diagnostic": {
+    "scope": "Two fresh executions, steady-state sample 1; all traces outside primary timing. Lifetimes are request ages through next reallocation/free, not undisturbed nanoseconds. Phase 1 before linked entry, 2 inside generated entry, 3 after its return.",
+    "repetitions": 2,
+    "small_requests": 13944,
+    "small_bytes": 1457255,
+    "small_phase_requests": [
+      1709,
+      12232,
+      3
+    ],
+    "top_five": [
+      {
+        "constructor": "_RNvNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation15finalized_value",
+        "count": 2022,
+        "bytes": 204896,
+        "freed": 2020,
+        "survivors": 2,
+        "min": 32,
+        "max": 160,
+        "max_age_requests": 12235,
+        "total_age_requests": 1568172,
+        "phases": [
+          0,
+          2022,
+          0
+        ],
+        "free_phases": [
+          0,
+          2009,
+          11
+        ],
+        "mean_lifetime_in_requests": 776.3227722772277
+      },
+      {
+        "constructor": "_RNvMs7_NtNtCskIfnrfrMWVM_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+        "count": 2020,
+        "bytes": 218160,
+        "freed": 2018,
+        "survivors": 2,
+        "min": 104,
+        "max": 112,
+        "max_age_requests": 13778,
+        "total_age_requests": 13536911,
+        "phases": [
+          1000,
+          1020,
+          0
+        ],
+        "free_phases": [
+          0,
+          1016,
+          1002
+        ],
+        "mean_lifetime_in_requests": 6708.0827552031715
+      },
+      {
+        "constructor": "lazy mutex \u2192 _RNvMs7_NtNtCskIfnrfrMWVM_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+        "count": 1010,
+        "bytes": 64640,
+        "freed": 1009,
+        "survivors": 1,
+        "min": 64,
+        "max": 64,
+        "max_age_requests": 13776,
+        "total_age_requests": 6766942,
+        "phases": [
+          500,
+          510,
+          0
+        ],
+        "free_phases": [
+          0,
+          508,
+          501
+        ],
+        "mean_lifetime_in_requests": 6706.5827552031715
+      },
+      {
+        "constructor": "_RNvMs0_NtCskIfnrfrMWVM_9mech_core6schemaNtB5_6Schema11closed_body",
+        "count": 673,
+        "bytes": 5384,
+        "freed": 673,
+        "survivors": 0,
+        "min": 8,
+        "max": 8,
+        "max_age_requests": 3,
+        "total_age_requests": 2019,
+        "phases": [
+          0,
+          673,
+          0
+        ],
+        "free_phases": [
+          0,
+          673,
+          0
+        ],
+        "mean_lifetime_in_requests": 3.0
+      },
+      {
+        "constructor": "_RNvMs_NtCsgKscDXrlV49_5alloc3vecINtB4_3VecNtNtCskIfnrfrMWVM_9mech_core9dimension13DimensionExprE16into_boxed_sliceBI_",
+        "count": 673,
+        "bytes": 32304,
+        "freed": 673,
+        "survivors": 0,
+        "min": 48,
+        "max": 48,
+        "max_age_requests": 3,
+        "total_age_requests": 2019,
+        "phases": [
+          0,
+          673,
+          0
+        ],
+        "free_phases": [
+          0,
+          673,
+          0
+        ],
+        "mean_lifetime_in_requests": 3.0
+      }
+    ]
+  },
+  "reference_ratios": {
+    "instructions": 34.44331787811535,
+    "cycles": 14.428971270217687,
+    "rss_after": 21.63968957871397,
+    "physical_after": 15.84810530656038
+  }
+}
