@@ -1,0 +1,22 @@
+--- a/src/engine/src/memory_planner/turn.rs
++++ b/src/engine/src/memory_planner/turn.rs
+@@ -461,7 +461,7 @@
+     observed: ResourceDemand,
+     final_output: Option<CurrentMemoryFootprint>,
+ ) -> Result<TurnMemoryPlan, MemoryPlanError> {
+-    if let Some(mut call) = plan.call.clone() {
++    if let Some(mut call) = plan.call.take() {
+         if call.outputs.len() == 1
+             && (observed.persistent_bytes != 0
+                 || observed.output_elements != 0
+@@ -530,6 +530,10 @@
+             )?;
+             plan.demand = checked_demand_add(complete.demand, plan.facts.additional_demand)?;
+             plan.call = Some(scope_turn_call(complete, &call, &plan.allocations));
++        } else {
++            // This plan owns the unchanged call when no candidate refinement
++            // is needed. Retain it for the same final placement and admission.
++            plan.call = Some(call);
+         }
+     }
+     let observed = checked_demand_add(observed, plan.facts.additional_demand)?;

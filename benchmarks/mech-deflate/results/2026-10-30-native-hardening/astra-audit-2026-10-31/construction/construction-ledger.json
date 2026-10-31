@@ -1,0 +1,56 @@
+{
+  "reviewed_head": "46617b61f3ccf0e4a6ddf27fe37f9f4003016ac4",
+  "census": "/private/tmp/mech-buffer-liveness-round56-20261031/sites-after/census.json",
+  "families": {
+    "unsealed_bound_call_clone": {
+      "requests": 72,
+      "requested_bytes": 5404,
+      "seed_record_requests": 24,
+      "seed_matrix_requests": 48,
+      "outside_seed_requests": 0
+    },
+    "owned_call_reclone_in_refinement": {
+      "requests": 149,
+      "requested_bytes": 15286,
+      "seed_record_requests": 52,
+      "seed_matrix_requests": 97,
+      "outside_seed_requests": 0
+    },
+    "temporary_call_clone_in_base_planner": {
+      "requests": 151,
+      "requested_bytes": 15310,
+      "seed_record_requests": 53,
+      "seed_matrix_requests": 98,
+      "outside_seed_requests": 0
+    },
+    "temporary_one_call_program_wrapper": {
+      "requests": 157,
+      "requested_bytes": 19238,
+      "seed_record_requests": 56,
+      "seed_matrix_requests": 101,
+      "outside_seed_requests": 0
+    },
+    "discarded_scope_allocation_copy": {
+      "requests": 4,
+      "requested_bytes": 3840,
+      "seed_record_requests": 2,
+      "seed_matrix_requests": 2,
+      "outside_seed_requests": 0
+    },
+    "operation_descriptor_validation_clones": {
+      "requests": 30,
+      "requested_bytes": 657,
+      "seed_record_requests": 9,
+      "seed_matrix_requests": 21,
+      "outside_seed_requests": 0
+    },
+    "current_composite_constructor_rebuild": {
+      "requests": 11,
+      "requested_bytes": 1565,
+      "seed_record_requests": 11,
+      "seed_matrix_requests": 0,
+      "outside_seed_requests": 0
+    }
+  },
+  "overlaps": {}
+}

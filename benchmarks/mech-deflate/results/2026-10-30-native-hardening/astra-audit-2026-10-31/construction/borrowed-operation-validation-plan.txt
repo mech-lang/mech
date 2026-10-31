@@ -1,0 +1,44 @@
+Independent candidate: borrow operation identity during validation
+Patch: borrowed-operation-validation.patch
+Scope: Core only, src/core/src/function/specialization.rs.
+Status: unapplied; no compile, test, or benchmark run.
+
+Mechanism
+ResolvedOperationDescriptor::validate currently clones the canonical name and full operation contract solely to call Self::new. That constructor checks only whether the name is empty or hashes to a different OperationId. The patch makes validate perform that same borrowed check, and makes new construct the owned descriptor then call validate. There is one authoritative check, no unchecked constructor, and no newly cached permission.
+
+Exact R56 target
+30 requests / 657 requested bytes in ResolvedOperationDescriptor::validate beneath plan_call_memory: 9 requests at the seed record and 21 at the singleton matrix. Isolated R56 prediction: 8,773 -> 8,743 requests; 98,243,843 -> 98,243,186 requested bytes. Test real family disappearance; actual elapsed/instructions remain unmeasured.
+
+Error/ordering audit
+- validate keeps empty-name short-circuit before computing OperationId::from_name.
+- Same RuntimeOperationBindingMismatch type, operation=Some(id), exact reason format, message=None, and with_compiler_loc attachment. Its compiler-location line naturally moves to the shared borrowed check; it remains this source file and is populated for both new and validate. Do not assert an obsolete numeric source line.
+- new still converts canonical_name into Box<str> before checking it and already owns the contract argument. Struct assembly is infallible and invokes no user code; invalid input still returns the same error before any successful descriptor escapes.
+- validate still does NOT validate operation contract semantics. It previously cloned that contract but never inspected it. Declaration/storage/type checks remain where plan_call_memory and catalog binding already perform them.
+- Do not remove plan_call_memory's call to validate. ResolvedOperationDescriptor fields are public, and BoundCall::syntax_directed/artifact_operation_for_target do not universally establish a name/ID certificate. Existing public mutation must continue to be rejected dynamically.
+- No budget charge or reservation is moved/removed. Current planning entry validation occurs in exactly the same position before arity/target/storage checks. Only transient success-path copies disappear.
+- Existing alloc/no_std imports suffice; patch introduces no std-only dependency or new feature gate.
+
+Focused regression plan
+A. Add operation_descriptor_validation.rs as a functions-gated integration test, using the existing tests/support/allocation_probe.rs and its ProbeAllocator (no new unsafe allocation implementation).
+   1. successful_validation_borrows_name_and_contract:
+      Prepare descriptors outside the measured closure with small/large names and small/large port lists; repeatedly call black_box(&descriptor).validate() inside allocation_probe::measured. Assert success and zero allocation requests. Parent should fail; candidate should pass. Check descriptor remains structurally identical outside the measured interval. Values and contracts must be created before observation; assertions/reporting must follow it.
+   2. validation_and_construction_preserve_identity_errors:
+      Test empty name with matching empty-name hash, empty name with unrelated ID, valid nonempty name with wrong ID, valid name/ID, and a long Unicode name. Compare constructor and validate error kind, downcast RuntimeOperationBindingMismatch fields, reason and populated source location. For validate use the public struct fields to construct deliberately invalid descriptors; do not depend on bypassing a private constructor.
+   3. contract_validation_remains_at_the_original_boundary:
+      Use a correctly named descriptor with a deliberately invalid input/output contract relation: name validation succeeds as before; the existing call planner/catalog check rejects its contract at the original stage. Prefer extending an existing contract-before-factory test over inventing a second declaration validator.
+B. Use a conflicting-invalid-input planner case to confirm invalid name/ID still wins over arity/storage errors before any factory dispatch. This is semantic evidence beyond an allocation counter.
+
+Reusable tests
+Core function::tests::catalog:
+- operation_ids_reject_colliding_and_duplicate_specializers
+- operation_memory_contract_is_checked_before_factory_construction
+- canonical_invocation_validation_fails_before_factory_dispatch
+- bound_call_validation_maps_read_modify_write_base_to_the_output_port
+Core memory_plan integration:
+- resolved_external_contract_replans_every_derived_call_field
+- call_plans_cover_full_replace_build_and_read_modify_write_publication
+Core operation_contract_contract / operation_memory_requirement integration suites retain declaration checking separately.
+Retain current warnings-as-errors, minimal functions feature checks and existing no_std feature validation. A new integration target must be explicitly run with nonzero counts; schedule it in the appropriate current CI profile rather than assuming the outer source-format check runs it.
+
+Measurement acceptance
+Run the normal complete 8-byte original/decoded correctness and recovery qualification, then separate CPU/heap/census and matched elapsed. Confirm this validation subtree loses 30 requests / 657 bytes, independently of the 72-request bind_call and 149-request owned-refinement candidates. Preserve source/MBC/output/work pins and conservative resource envelopes. A count-only win is useful but must not be called an elapsed win without timing evidence.

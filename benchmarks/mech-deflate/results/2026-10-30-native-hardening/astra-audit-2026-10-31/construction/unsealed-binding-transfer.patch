@@ -1,0 +1,69 @@
+--- a/src/engine/src/resident/native_semantics.rs
++++ b/src/engine/src/resident/native_semantics.rs
+@@ -235,16 +235,19 @@
+         })
+         .cloned();
+     let accounting = kernel.work_accounting();
+-    let kernel = kernel
+-        .with_bound_call(bound_call.clone())
+-        .with_work_accounting(accounting);
+     if let Some(candidate) = candidate {
+-        kernel.with_lowering_witness(Arc::new(SealedWitness {
+-            semantics: candidate.semantics,
+-            bound_call,
+-        }))
++        kernel
++            .with_bound_call(bound_call.clone())
++            .with_work_accounting(accounting)
++            .with_lowering_witness(Arc::new(SealedWitness {
++                semantics: candidate.semantics,
++                bound_call,
++            }))
+     } else {
++        // No private seal retains a second copy of this binding.
+         kernel
++            .with_bound_call(bound_call)
++            .with_work_accounting(accounting)
+     }
+ }
+ 
+@@ -761,6 +764,39 @@
+     }
+ 
+     #[test]
++    fn unsealed_binding_transfers_its_existing_descriptors() {
++        let binding = Binding::scalar(NativeScalarOp::U64Add);
++        let request = binding.request();
++        let kernel = custom_factory(&request).unwrap();
++        assert!(kernel.lowering_witness::<CandidateWitness>().is_none());
++        let accounting = kernel.work_accounting();
++        let call = binding.call("math", "add");
++        let input_descriptors = call.inputs().as_ptr();
++        let output_descriptors = call.outputs().as_ptr();
++        let bound = bind_call(kernel, &request, call);
++        assert!(validated_scalar(&bound).is_none());
++        assert_eq!(bound.work_accounting(), accounting);
++        let retained = bound.bound_call().unwrap();
++        assert_eq!(retained.inputs().as_ptr(), input_descriptors);
++        assert_eq!(retained.outputs().as_ptr(), output_descriptors);
++
++        // An actual private candidate can be rejected by current metadata.
++        // It must take the same transfer path without retaining stale authority.
++        let mut binding = Binding::scalar(NativeScalarOp::U64Add);
++        let kernel = binding.bind(&catalog(), "math", "add");
++        assert!(kernel.lowering_witness::<CandidateWitness>().is_some());
++        binding.inputs[0].activation_fixed_shape = false;
++        let call = binding.call("math", "add");
++        let input_descriptors = call.inputs().as_ptr();
++        let output_descriptors = call.outputs().as_ptr();
++        let bound = bind_call(kernel, &binding.request(), call);
++        assert!(validated_scalar(&bound).is_none());
++        let retained = bound.bound_call().unwrap();
++        assert_eq!(retained.inputs().as_ptr(), input_descriptors);
++        assert_eq!(retained.outputs().as_ptr(), output_descriptors);
++    }
++
++    #[test]
+     fn genuine_candidate_is_bound_to_its_exact_request_not_just_schema_name() {
+         let mut binding = Binding::scalar(NativeScalarOp::U64Add);
+         let kernel = binding.bind(&catalog(), "math", "add");

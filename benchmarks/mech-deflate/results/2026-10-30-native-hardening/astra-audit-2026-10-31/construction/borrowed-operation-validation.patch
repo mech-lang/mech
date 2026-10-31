@@ -1,0 +1,57 @@
+--- a/src/core/src/function/specialization.rs
++++ b/src/core/src/function/specialization.rs
+@@ -532,25 +532,13 @@
+         canonical_name: impl Into<Box<str>>,
+         contract: OperationContractDeclaration,
+     ) -> MResult<Self> {
+-        let canonical_name = canonical_name.into();
+-        if canonical_name.is_empty() || OperationId::from_name(&canonical_name) != id {
+-            return Err(MechError::new(
+-                RuntimeOperationBindingMismatch {
+-                    operation: Some(id),
+-                    reason: format!(
+-                        "canonical operation name {canonical_name:?} does not match operation ID 0x{:016x}",
+-                        id.raw(),
+-                    ),
+-                },
+-                None,
+-            )
+-            .with_compiler_loc());
+-        }
+-        Ok(Self {
++        let descriptor = Self {
+             id,
+-            canonical_name,
++            canonical_name: canonical_name.into(),
+             contract,
+-        })
++        };
++        descriptor.validate()?;
++        Ok(descriptor)
+     }
+ 
+     pub fn from_name(
+@@ -601,7 +589,22 @@
+     }
+ 
+     pub fn validate(&self) -> MResult<()> {
+-        Self::new(self.id, self.canonical_name.clone(), self.contract.clone()).map(|_| ())
++        let id = self.id;
++        let canonical_name = &self.canonical_name;
++        if canonical_name.is_empty() || OperationId::from_name(canonical_name) != id {
++            return Err(MechError::new(
++                RuntimeOperationBindingMismatch {
++                    operation: Some(id),
++                    reason: format!(
++                        "canonical operation name {canonical_name:?} does not match operation ID 0x{:016x}",
++                        id.raw(),
++                    ),
++                },
++                None,
++            )
++            .with_compiler_loc());
++        }
++        Ok(())
+     }
+ }
+ 
