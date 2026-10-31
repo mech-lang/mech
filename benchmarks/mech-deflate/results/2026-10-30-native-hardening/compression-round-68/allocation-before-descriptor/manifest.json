@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-31T19:26:43.798548+00:00",
+  "head": "847b0c6a3ac5cbcd8bc3c8694d5a418ee4bee467",
+  "files": [
+    {
+      "path": "allocation-before/descriptor.json",
+      "sha256": "3f06de2693179ec6c66e47710d76b0dfc0a8cd1ba259765cdb2c14d0a42db280",
+      "bytes": 2913
+    },
+    {
+      "path": "allocation-before/descriptor.stderr",
+      "sha256": "2cd843eb6bfb4e0a3b91ea6e26aec96d7514e066f1b2d5de4d95d02e7797db79",
+      "bytes": 422
+    },
+    {
+      "path": "allocation-before/descriptor.stdout",
+      "sha256": "a17d2c78f38c4e4543de0a2ccf846b69af7e5803327c7489c2234b4c7c8b45b1",
+      "bytes": 314
+    },
+    {
+      "path": "allocation-target.json",
+      "sha256": "5c36b6d026867e43ff6d603138e895cef78129e19b64999a9698c071b5f92a9c",
+      "bytes": 515
+    },
+    {
+      "path": "allocation-test.py",
+      "sha256": "8b0666f2379c15c74316dda878471757d93607e6d86be9386b0635762983ed35",
+      "bytes": 3458
+    },
+    {
+      "path": "configuration.json",
+      "sha256": "cf04a61df47e1730e18e514b5945b5566acaa508607686945f1a6d3c5cb648fb",
+      "bytes": 895
+    }
+  ]
+}
