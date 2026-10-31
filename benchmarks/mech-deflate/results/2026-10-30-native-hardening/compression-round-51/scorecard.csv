@@ -1,0 +1,17 @@
+metric,reference,before,after,change_percent,scope
+seconds,0.000291,0.004015625,0.0040084375,-0.1789883268482506,matched primary
+confirmation_seconds,0.000286,0.004004104499999999,0.003979936999999999,-0.6035681636181067,independent longer cohort
+instructions,1364372.0,45224746.0,45494546.0,0.596576042682484,separate diagnostics
+cycles,909094.5,12702555.0,12680797.0,-0.17128837466163782,separate diagnostics
+rss_after,14794752.0,319651840.0,320110592.0,0.14351614556638026,separate diagnostics
+physical_after,14451648.0,228656832.0,229328576.0,0.29377823270113623,separate diagnostics
+pageins,0.0,0.0,0.0,,separate diagnostics
+allocation_requests,95.0,13484.0,13484.0,0.0,separate diagnostics
+requested_bytes,9021923.0,98529723.0,98480739.0,-0.049714947437740076,separate diagnostics
+reallocations,0.0,1213.0,1213.0,0.0,separate diagnostics
+relocating_reallocations,0.0,458.0,458.0,0.0,separate diagnostics
+relocating_realloc_copy_upper_bound,0.0,13905.0,13905.0,0.0,separate diagnostics
+live_usable_before,32.0,142982576.0,142982576.0,0.0,separate diagnostics
+live_usable_after,32.0,142983144.0,142983144.0,0.0,separate diagnostics
+peak_live_usable,9257360.0,163557896.0,163500552.0,-0.035060367858974484,separate diagnostics
+incremental_peak_live_usable,9257328.0,20575320.0,20517976.0,-0.27870283426940645,separate diagnostics
