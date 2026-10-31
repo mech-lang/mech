@@ -1,0 +1,16 @@
+{
+  "created_utc": "2026-10-31T03:03:47.893269+00:00",
+  "head": "e340066774c60e996a11117aa6803ac50379197d",
+  "files": [
+    {
+      "path": "host-code-adapter/before.symbols",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "bytes": 1
+    },
+    {
+      "path": "host-code-adapter/failure.json",
+      "sha256": "c21b3a71a2deaf30d998d9ab4b2bfc6a9e91ebbdc65d948270c0e4fb5d1e35dc",
+      "bytes": 185
+    }
+  ]
+}
