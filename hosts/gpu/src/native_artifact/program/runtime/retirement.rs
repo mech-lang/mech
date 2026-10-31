@@ -71,9 +71,15 @@ fn preview(
 #[cfg(all(test, feature = "canonical-native-program"))]
 thread_local! {
     static BATCHES: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+    static CHILD_EFFECTS: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
 }
 
 #[cfg(all(test, feature = "canonical-native-program"))]
 pub(super) fn take_observation() -> u64 {
     BATCHES.with(|count| count.replace(0))
+}
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+pub(super) fn take_child_observation() -> u64 {
+    CHILD_EFFECTS.with(|count| count.replace(0))
 }
