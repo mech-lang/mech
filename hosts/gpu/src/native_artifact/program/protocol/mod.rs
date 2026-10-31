@@ -40,7 +40,6 @@ pub(in crate::native_artifact) enum GlobalHelper {
     NumericWritePrepare,
     NumericSegmentBegin,
     NumericSegmentEnd,
-    ProjectionBatch,
 }
 impl GlobalHelper {
     // Decoding classifies only. Site, phase, lane, admission and cursor checks
@@ -78,7 +77,6 @@ impl GlobalHelper {
             value if value == u64::MAX - 26 => Self::NumericWritePrepare,
             value if value == u64::MAX - 27 => Self::NumericSegmentBegin,
             value if value == u64::MAX - 28 => Self::NumericSegmentEnd,
-            value if value == u64::MAX - 29 => Self::ProjectionBatch,
             value => Self::Output(OutputIndex(value - 3)),
         }
     }
@@ -116,7 +114,6 @@ impl GlobalHelper {
             Self::NumericWritePrepare => u64::MAX - 26,
             Self::NumericSegmentBegin => u64::MAX - 27,
             Self::NumericSegmentEnd => u64::MAX - 28,
-            Self::ProjectionBatch => u64::MAX - 29,
         }
     }
     #[cfg(feature = "canonical-native-program")]

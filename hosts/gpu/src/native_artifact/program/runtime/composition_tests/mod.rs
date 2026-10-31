@@ -4,7 +4,6 @@ use crate::native_artifact::{JitProgramArtifact, NativeProgramLimitMode};
 use mech_core::ValueDataDraft as Data;
 use mech_engine::ProgramArtifact;
 mod observe;
-mod projections;
 mod resources;
 mod scalar_child;
 
