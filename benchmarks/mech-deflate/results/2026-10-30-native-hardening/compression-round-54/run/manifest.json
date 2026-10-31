@@ -1,0 +1,66 @@
+{
+  "created_utc": "2026-10-31T10:38:21.549430+00:00",
+  "head": "6e64aea8ce790a02f2ac59dfd58ddb34a299ac48",
+  "files": [
+    {
+      "path": "allocation_profile.h",
+      "sha256": "56852a08a6cb3fbba88daa10b8674cdb938933833722f0ed3bfcc8ae9ae9b31a",
+      "bytes": 384
+    },
+    {
+      "path": "allocation_profile.rs",
+      "sha256": "d9c4bc779939567f5dced46d7c7f7030726b4c0e17df72efc3339cdfe2514b19",
+      "bytes": 1306
+    },
+    {
+      "path": "allocation_sites.c",
+      "sha256": "8e6a18a29b959e38fa794e9106e7bc3302d7105c32978389a9bd62410368ff31",
+      "bytes": 6374
+    },
+    {
+      "path": "binding.json",
+      "sha256": "0745abb5c458289b615ec7e1756aceca7c8f82e2ec96c0535bd32e19af29e715",
+      "bytes": 32727
+    },
+    {
+      "path": "environment-before.txt",
+      "sha256": "ca906e829960d07c957a54ebe3e053f485b1a0a4df815a0b4a19fc1cb89f0a5e",
+      "bytes": 54642
+    },
+    {
+      "path": "memory.rs",
+      "sha256": "d37d3d29f94c8cb0a98dc2d389674b94ed02842373bef94de5d5fd891998f469",
+      "bytes": 6758
+    },
+    {
+      "path": "run.json",
+      "sha256": "b16eebbc5df82be887bbb095fba73d8c11c34c35a3c62650b1c245f497b7059f",
+      "bytes": 246
+    },
+    {
+      "path": "run.py",
+      "sha256": "20733a4e8d3d17e195fa95e245519b29a701ecb8680a10f67883062d50078245",
+      "bytes": 5366
+    },
+    {
+      "path": "run.stderr",
+      "sha256": "25056f03d6f4401fe26cacb243a0d773b188de749f4f7ad6a581b369409bf7c9",
+      "bytes": 4304299
+    },
+    {
+      "path": "run.stdout",
+      "sha256": "65b6e7a58ba17ef17649ad1dd5c93c6de72a7bed0483d13f46cb01e31831f61f",
+      "bytes": 1186
+    },
+    {
+      "path": "usage.c",
+      "sha256": "883fe6a7baf228bc881b4b76aef13f352da38f19c8e7a5b3ca938dbd1dddfd0e",
+      "bytes": 448
+    },
+    {
+      "path": "usage.h",
+      "sha256": "ca6ac3c2cd82bfb367c07aa9e26b1aea3b025e48ea44db76dbded2be45b5fb9f",
+      "bytes": 233
+    }
+  ]
+}
