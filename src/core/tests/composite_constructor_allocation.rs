@@ -153,7 +153,9 @@ fn independent_snapshot_registration_allocates_only_retained_metadata_owners() {
                         SchemaDraft {
                             body: if matrix {
                                 SchemaBody::Matrix {
-                                    element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                                    element: Box::new(SchemaBody::UnsignedInteger(
+                                        IntegerWidth::W8,
+                                    )),
                                     dimensions: [
                                         mech_core::DimensionExpr::Constant(1),
                                         mech_core::DimensionExpr::Constant(3),

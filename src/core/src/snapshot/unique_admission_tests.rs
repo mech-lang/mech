@@ -112,6 +112,86 @@ fn first_admission_reuses_exclusive_wrapper_without_changing_metadata_or_data() 
 }
 
 #[test]
+fn registration_head_retirement_preserves_weak_observers_and_recovery() {
+    let raw = fresh(true);
+    let expected = raw.canonical_data_draft().unwrap();
+    let budget = crate::ManagedMemoryBudget::new(1_000_000);
+    let owned = admit(raw.clone(), &budget, true);
+    let registration = Arc::downgrade(&owned.root.memory_budget.as_ref().unwrap().registration);
+    drop(owned);
+    assert_eq!(registration.strong_count(), 0);
+    assert!(registration.upgrade().is_none());
+    assert_eq!((budget.used_bytes(), budget.retained_nodes()), (0, 0));
+    assert_eq!(budget.retained_snapshot_nodes(), 0);
+    assert_eq!(raw.canonical_data_draft().unwrap(), expected);
+    drop(admit(raw.clone(), &budget, false));
+    assert!(registration.upgrade().is_none());
+    assert_eq!((budget.used_bytes(), budget.retained_nodes()), (0, 0));
+    raw.root
+        .data
+        .with_budget_imports(|head| assert!(head.is_none()));
+}
+
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
+#[test]
+fn registration_link_exclusivity_keeps_concurrent_imports_and_retirements_safe() {
+    let raw = fresh(false);
+    let start = std::sync::Barrier::new(4);
+    std::thread::scope(|scope| {
+        for _ in 0..4 {
+            let raw = &raw;
+            let start = &start;
+            scope.spawn(move || {
+                let budget = crate::ManagedMemoryBudget::new(1_000_000);
+                let expected = raw.canonical_data_draft().unwrap();
+                start.wait();
+                for visit in 0..64 {
+                    let owned = admit(raw.clone(), &budget, visit % 2 == 0);
+                    let alias = owned.clone();
+                    std::thread::yield_now();
+                    drop(owned);
+                    assert!(alias.memory_budget_retained_bytes(&budget).is_some());
+                    assert_eq!(alias.canonical_data_draft().unwrap(), expected);
+                    drop(alias);
+                    assert_eq!((budget.used_bytes(), budget.retained_nodes()), (0, 0));
+                    assert_eq!(budget.retained_snapshot_nodes(), 0);
+                }
+            });
+        }
+    });
+    raw.root
+        .data
+        .with_budget_imports(|head| assert!(head.is_none()));
+}
+
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
+#[test]
+fn exclusive_registration_retirement_recovers_poisoned_gates() {
+    let raw = fresh(false);
+    let budget = crate::ManagedMemoryBudget::new(1_000_000);
+    let owned = admit(raw.clone(), &budget, true);
+    let poisoned = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        raw.root.data.with_budget_imports(|_| {
+            owned
+                .root
+                .memory_budget
+                .as_ref()
+                .unwrap()
+                .registration
+                .with_links(|_| panic!("test both gate recovery paths"));
+        });
+    }));
+    assert!(poisoned.is_err());
+    drop(owned);
+    assert_eq!((budget.used_bytes(), budget.retained_nodes()), (0, 0));
+    drop(admit(raw.clone(), &budget, false));
+    raw.root
+        .data
+        .with_budget_imports(|head| assert!(head.is_none()));
+    assert_eq!((budget.used_bytes(), budget.retained_nodes()), (0, 0));
+}
+
+#[test]
 fn first_admission_keeps_registration_failure_but_removes_wrapper_failure_point() {
     for independent in [false, true] {
         let budget = crate::ManagedMemoryBudget::new(1_000_000);

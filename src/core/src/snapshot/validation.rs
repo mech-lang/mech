@@ -87,6 +87,17 @@ fn with_budget_gate<T, R>(gate: &SnapshotBudgetGate<T>, apply: impl FnOnce(&mut 
     apply(&mut value)
 }
 
+fn with_exclusive_budget_gate<T, R>(
+    gate: &mut SnapshotBudgetGate<T>,
+    apply: impl FnOnce(&mut T) -> R,
+) -> R {
+    #[cfg(all(feature = "no_std", not(feature = "std")))]
+    let value = gate.get_mut();
+    #[cfg(any(not(feature = "no_std"), feature = "std"))]
+    let value = gate.get_mut().unwrap_or_else(|error| error.into_inner());
+    apply(value)
+}
+
 #[cfg(all(test, any(not(feature = "no_std"), feature = "std")))]
 std::thread_local! {
     static IMPORT_LOOKUP_STEPS: Cell<u64> = const { Cell::new(0) };
@@ -536,12 +547,35 @@ impl FrozenSnapshotStorage {
     // Shared by ordinary destruction and consuming ownership transfer. Only
     // unlink here: the caller keeps the charge alive until backing is retired
     // or transferred. Ordinary field-drop order remains data before charge.
-    fn unlink_budget_registration(&self) {
-        let Some(ownership) = &self.memory_budget else {
+    fn unlink_budget_registration(&mut self) {
+        let Some(ownership) = &mut self.memory_budget else {
             return;
         };
-        let registration = &ownership.registration;
+        let registration = &mut ownership.registration;
         self.data.with_budget_imports(|imports| {
+            if imports
+                .as_ref()
+                .is_some_and(|head| Arc::ptr_eq(head, registration))
+            {
+                // Remove the registry's own strong reference while its gate
+                // excludes lookup/link changes. Arc::get_mut checks BOTH
+                // strong and weak exclusivity; counts alone grant no access.
+                *imports = None;
+                if let Some(exclusive) = Arc::get_mut(registration) {
+                    let next = with_exclusive_budget_gate(&mut exclusive.links, |links| {
+                        links.previous = Weak::new();
+                        links.next.take()
+                    });
+                    if let Some(next) = &next {
+                        next.with_links(|links| links.previous = Weak::new());
+                    }
+                    *imports = next;
+                    return;
+                }
+                // A shared/weak observer keeps the ordinary locked path. Put
+                // back the exact head before following its original links.
+                *imports = Some(registration.clone());
+            }
             // At most this node and its two neighbors, regardless of foreign
             // registry growth since admission. Detach the strong next link so
             // retiring this registration cannot recursively retire the list.
@@ -726,7 +760,7 @@ impl Value {
             registration_bytes,
             core::mem::align_of::<SnapshotBudgetRegistration>() as u32,
         )?;
-        let registration = Arc::try_new(SnapshotBudgetRegistration {
+        let mut registration = Arc::try_new(SnapshotBudgetRegistration {
             budget: budget.clone(),
             schemas: Arc::downgrade(&schemas),
             shape: self.shape.clone(),
@@ -772,6 +806,16 @@ impl Value {
             {
                 return Ok(Some(existing));
             }
+            // This unpublished registration is still exclusive. Initialize
+            // its links directly rather than constructing a separate host
+            // lock backing. The old head remains installed through all
+            // fallible admission, and neighboring links still use their lock.
+            with_exclusive_budget_gate(
+                &mut Arc::get_mut(&mut registration)
+                    .expect("unpublished registration has no shared or weak owner")
+                    .links,
+                |links| links.next = imports.clone(),
+            );
             // All physical construction has succeeded under the reservation.
             // No user code runs under this short metadata gate.
             let node_charge = budget.retain_snapshot_nodes(retained_nodes)?;
@@ -790,7 +834,6 @@ impl Value {
             if let Some(next) = imports.as_ref() {
                 next.with_links(|links| links.previous = Arc::downgrade(&registration));
             }
-            registration.with_links(|links| links.next = imports.take());
             *imports = Some(registration);
             Ok::<_, crate::MemoryRuntimeError>(prepared.as_ref().map(Arc::clone))
         })?;
