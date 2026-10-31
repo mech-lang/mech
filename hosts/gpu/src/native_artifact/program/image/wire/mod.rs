@@ -259,6 +259,12 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
         &buffer_frames,
         plan.values().len(),
     )?;
+    let cleanup_effects = native::program::prepare::cleanup_effects::Layout::derive(
+        &plan,
+        &w.retirements,
+        &buffer_frames,
+        &frame_retirements,
+    )?;
     let call_cache = native::program::prepare::call_cache::Layout::derive(&plan, &calls)?;
     let compositions = native::program::prepare::composition::Layout::derive(
         &plan,
@@ -296,6 +302,7 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
             unsigned_buffer_calls,
             buffer_frames,
             frame_retirements,
+            cleanup_effects,
             window_regions: w.window_regions,
             string_map_regions: w.string_map_regions,
             scalar_aggregates: w.scalar_aggregates,
