@@ -1,12 +1,11 @@
 //! Prepay an acyclic native path between observable runtime boundaries.
 //! Branches and scalar joins remain generated instructions. A selected map
-//! helper may anchor its owner's path. Ordinary scalar/aggregate paths contain
-//! no helper or progress transition, and require successful funding at entry.
+//! helper may anchor its owner's path. Ordinary scalar paths contain no helper
+//! or progress transition, and require a successful funding preview at entry.
 use crate::native_artifact::iteration_abi::{NativeIterationVisit, Progress};
 use mech_engine::native_artifact::{
     NativeIterationAction as Action, NativeIterationTerminator as Terminator, NativeMapOwnerWords,
     NativeMatchAction as Scalar, NativeMatchTerminator as Term, NativeProgramArtifactPlan,
-    NativeScalarAggregates,
 };
 
 #[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -43,32 +42,6 @@ pub(in crate::native_artifact) struct Layout {
     pub sites: Box<[Option<usize>]>,
 }
 impl Layout {
-    /// Existing numeric pieces already replace their interior visits. Keep one
-    /// entry authority: derive ordinary groups around those pieces, rather than
-    /// skipping an entry a piece swallowed or discarding its useful suffix.
-    /// Reuse this pure selection after derivation and during image validation.
-    pub(in crate::native_artifact::program) fn outside_composed_pieces(
-        self,
-        pieces: &super::composition::Layout,
-        plan: &NativeProgramArtifactPlan,
-        owners: Option<&NativeMapOwnerWords>,
-        aggregates: &NativeScalarAggregates,
-        visits: &[NativeIterationVisit],
-        closed: &super::tail::Layout,
-    ) -> Result<Self, &'static str> {
-        let occupied = pieces
-            .parents
-            .iter()
-            .flat_map(|parent| parent.segments.iter())
-            .filter(|segment| pieces.entry(segment.entry as usize).is_some())
-            .flat_map(|segment| segment.sites.iter().copied())
-            .collect::<std::collections::BTreeSet<_>>();
-        if occupied.is_empty() {
-            return Ok(self);
-        }
-        Self::derive_excluding(plan, owners, aggregates, visits, closed, &occupied)
-    }
-
     pub fn group(&self, site: usize) -> Option<&Group> {
         self.sites
             .get(site)
@@ -80,27 +53,8 @@ impl Layout {
     pub fn derive(
         plan: &NativeProgramArtifactPlan,
         owners: Option<&NativeMapOwnerWords>,
-        aggregates: &NativeScalarAggregates,
         visits: &[NativeIterationVisit],
         closed: &super::tail::Layout,
-    ) -> Result<Self, &'static str> {
-        Self::derive_excluding(
-            plan,
-            owners,
-            aggregates,
-            visits,
-            closed,
-            &Default::default(),
-        )
-    }
-
-    fn derive_excluding(
-        plan: &NativeProgramArtifactPlan,
-        owners: Option<&NativeMapOwnerWords>,
-        aggregates: &NativeScalarAggregates,
-        visits: &[NativeIterationVisit],
-        closed: &super::tail::Layout,
-        excluded: &std::collections::BTreeSet<u32>,
     ) -> Result<Self, &'static str> {
         let count = plan.blocks().len();
         if visits.len() != count {
@@ -119,10 +73,6 @@ impl Layout {
         let mut roots = vec![None; count];
         let mut known = vec![false; count];
         for (site, block) in plan.blocks().iter().enumerate() {
-            if excluded.contains(&(site as u32)) {
-                known[site] = true;
-                continue;
-            }
             let visit = visits[site];
             let owner = owners.and_then(|owners| {
                 owners
@@ -141,11 +91,7 @@ impl Layout {
                 block.action(),
                 Action::Scalar(Scalar::None | Scalar::Primitive { .. })
             ) || matches!(block.action(), Action::Scalar(Scalar::Copy { output, .. })
-                    if plan.values()[output.get() as usize].scalar_kind().is_some())
-                // Reuse the complete connected proof consumed by the ordinary
-                // aggregate emitter. These steps already emit only native words;
-                // grouping grants no new representation or ownership rights.
-                || (owner.is_none() && aggregates.action(site).is_some());
+                    if plan.values()[output.get() as usize].scalar_kind().is_some());
             let native = scalar
                 || owner.is_some_and(|owner| owners.unwrap().action_region(site) == Some(owner));
             if (!native && !helper)

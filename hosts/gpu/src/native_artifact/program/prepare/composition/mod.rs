@@ -309,15 +309,7 @@ impl Layout {
                 // Two new boundary calls must replace more existing calls.
                 // This is a profitability choice, never a source-size allowance.
                 let saved = part.sites.len().saturating_sub(1) + numeric.actions.len();
-                // Retained owners keep their ordinary admission authority.
-                // Ordinary scalar groups are made disjoint after selecting the
-                // pieces; neither path can bypass the other's funded entry.
-                let owned_group = part.sites.iter().any(|&site| {
-                    admissions
-                        .group(site as usize)
-                        .is_some_and(|group| group.owner.is_some())
-                });
-                if saved <= 2 || admissions.group(part.entry as usize).is_some() || owned_group {
+                if saved <= 2 || admissions.group(part.entry as usize).is_some() {
                     continue;
                 }
                 words = words.max(
