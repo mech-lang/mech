@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T16:52:02.914397+00:00",
+  "head": "439a00d5a18ccb8187095f7d6309703f08a38e4a",
+  "files": [
+    {
+      "path": "core-focused/inventory.json",
+      "sha256": "73bed9a59b6e1f7ca94379367464119f4243459acfb67b1ca7f2d0cd8b92eea9",
+      "bytes": 702
+    },
+    {
+      "path": "core-focused/inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "core-focused/inventory.stdout",
+      "sha256": "68166dfc0295444c559397d31e633cb9b8fa7b933aff9c873c1255c08f49cc36",
+      "bytes": 225
+    },
+    {
+      "path": "core-focused.py",
+      "sha256": "01bfdfeb078d39ee60812857038fb30721fbab90cecb19133ead40bb3f445c4b",
+      "bytes": 2551
+    }
+  ]
+}
