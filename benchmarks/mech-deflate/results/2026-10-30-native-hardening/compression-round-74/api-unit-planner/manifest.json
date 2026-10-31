@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-31T23:40:23.816209+00:00",
+  "head": "aec2a4e9c1035bbc3bfe4771f7ee2003867a808c",
+  "files": [
+    {
+      "path": "api-check.py",
+      "sha256": "dc5d14f76423e7eabe91d97896d3047f61a9fb762fd194f04badb7e11b0e02c8",
+      "bytes": 3022
+    },
+    {
+      "path": "api-unit/planner.json",
+      "sha256": "48d90d806ea7c683f9eda2dab47b95531443b2eaed732914a3dc84148fb51d2c",
+      "bytes": 56634
+    },
+    {
+      "path": "api-unit/planner.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "api-unit/planner.stdout",
+      "sha256": "3718fc8c5be233cfc4987b883c4b04c8ffc75d3e6264991e1bf9df728885242d",
+      "bytes": 2446
+    },
+    {
+      "path": "api-unit/source/src/engine/src/resident/budget.rs",
+      "sha256": "957e667d51a867f04a193ee63e82a3e8020f2b09accd4e2c7cf3020dd524f63f",
+      "bytes": 172084
+    },
+    {
+      "path": "api-unit/source/src/engine/src/resident/native_work_context.rs",
+      "sha256": "f8ddd5709a2dbc15b1d40f04860ac9cb2993cdb37990ed90eca8cfa3c128bbad",
+      "bytes": 1469
+    },
+    {
+      "path": "api-unit/source/src/engine/src/resident/native_work_context_tests.rs",
+      "sha256": "17edb1ef8e8aa0c021531798a9386074ea4e1859ff08af8e3aacdd44d93fd4b0",
+      "bytes": 6972
+    }
+  ]
+}
