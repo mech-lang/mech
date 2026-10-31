@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-10-31T19:39:07.355691+00:00",
+  "head": "f07461f0e6958b13283008705012d925ece7aba4",
+  "files": [
+    {
+      "path": "engine-after/borrowed-turn.json",
+      "sha256": "39c07f9cc748dcc4a3248427f38cdc6a468a4a874a6ab06e1025fa3f4a41bc39",
+      "bytes": 13113
+    },
+    {
+      "path": "engine-after/borrowed-turn.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-after/borrowed-turn.stdout",
+      "sha256": "1b6774af08e969d0332cde161bfbffcb99722926bf338727822f19beef1f97ec",
+      "bytes": 574
+    },
+    {
+      "path": "engine-after/native_collection_invocation.rs",
+      "sha256": "daa592b4b36dedff3cc96b7086e0ed08eb5af160a1908c0dab8204984896c1cf",
+      "bytes": 29163
+    },
+    {
+      "path": "engine-after/turn.rs",
+      "sha256": "0490f289c2e1c303df294be572fcec12c454f1e19cb119167f5bc7bbac44bb46",
+      "bytes": 40852
+    },
+    {
+      "path": "engine-after/turn_tests.rs",
+      "sha256": "abaffceb481b6a689e0f630cd6cef46855295d2c0c795ca51ceae7e44cac5702",
+      "bytes": 11369
+    },
+    {
+      "path": "engine-focused.py",
+      "sha256": "0d11fb4f72773271c0a44d386adb8500d58612d5a81a303fe6ebf068e07a8476",
+      "bytes": 4807
+    }
+  ]
+}
