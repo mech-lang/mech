@@ -1,0 +1,7 @@
+# Next bounded allocation investigation
+
+The completed change removes 3,365 temporary requests with a measured 2.06% elapsed and 2.88% instruction benefit. Preserve this baseline. The fresh after trace still attributes **1,500 requests (140,000 requested bytes)** to constant admission in Prepared::new_with_budget, and **1,528** to execution-time admission. Treat these as exact request counts, not promised removable work or timing shares.
+
+First census the actual prepared constant imports by scalar kind and required uses. Determine which already have fully checked native scalar lanes and no ordinary Value observer, publication or alias identity requirement. Count eligible imports in the unchanged full compressor before choosing a change. Reuse maintained plan/type facts; do not special-case program names, literal values, table sizes or source node IDs.
+
+If redundant wrapper construction is demonstrated, use a minimal ordinary program that exercises eligible and ineligible constants through selected scalar paths, generic calls and publication. Require original/decoded agreement, fresh invocations, checked errors, exact/one-short admission, unchanged old publication and aliases, cleanup and retry before changing transport. Preserve logical funding/error order and all source buffer allocations. Rebuild a coherent graph, repeat the same complete eight-byte witness, commit every cohort and profile again. Do not start another compiler change merely from these allocation counts.

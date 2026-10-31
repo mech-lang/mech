@@ -1,0 +1,113 @@
+{
+  "before": {
+    "requests": 13484,
+    "requested_bytes": 98480739,
+    "complete_stack_events": 13484,
+    "unique_pcs": 1421,
+    "categories": [
+      {
+        "category": "typed-matrix construction (includes retained owners)",
+        "requests": 5384,
+        "requested_bytes": 355344
+      },
+      {
+        "category": "other",
+        "requests": 4672,
+        "requested_bytes": 97730227
+      },
+      {
+        "category": "budget admission: execution",
+        "requests": 1528,
+        "requested_bytes": 118192
+      },
+      {
+        "category": "budget admission: constant/setup",
+        "requests": 1500,
+        "requested_bytes": 140000
+      },
+      {
+        "category": "private frame preparation",
+        "requests": 227,
+        "requested_bytes": 125792
+      },
+      {
+        "category": "budget-registration removal",
+        "requests": 168,
+        "requested_bytes": 10752
+      },
+      {
+        "category": "other immutable owner construction",
+        "requests": 3,
+        "requested_bytes": 304
+      },
+      {
+        "category": "budget-import lookup",
+        "requests": 2,
+        "requested_bytes": 128
+      }
+    ],
+    "typed_matrix_sizes": {
+      "8": 1346,
+      "64": 673,
+      "96": 673,
+      "48": 673,
+      "32": 673,
+      "160": 673,
+      "112": 673
+    }
+  },
+  "after": {
+    "requests": 10119,
+    "requested_bytes": 98329987,
+    "complete_stack_events": 10119,
+    "unique_pcs": 1414,
+    "categories": [
+      {
+        "category": "other",
+        "requests": 4672,
+        "requested_bytes": 97730227
+      },
+      {
+        "category": "typed-matrix construction (includes retained owners)",
+        "requests": 2019,
+        "requested_bytes": 204592
+      },
+      {
+        "category": "budget admission: execution",
+        "requests": 1528,
+        "requested_bytes": 118192
+      },
+      {
+        "category": "budget admission: constant/setup",
+        "requests": 1500,
+        "requested_bytes": 140000
+      },
+      {
+        "category": "private frame preparation",
+        "requests": 227,
+        "requested_bytes": 125792
+      },
+      {
+        "category": "budget-registration removal",
+        "requests": 168,
+        "requested_bytes": 10752
+      },
+      {
+        "category": "other immutable owner construction",
+        "requests": 3,
+        "requested_bytes": 304
+      },
+      {
+        "category": "budget-import lookup",
+        "requests": 2,
+        "requested_bytes": 128
+      }
+    ],
+    "typed_matrix_sizes": {
+      "32": 673,
+      "160": 673,
+      "112": 673
+    }
+  },
+  "scope": "One second complete eight-byte call each; same respective optimized graph and Object/image as primary; all allocation/reallocation events reconcile exactly to counters. Categories use ordered mutually exclusive stack predicates, not elapsed samples. Raw PCs and same-executable atos results are preserved; unclassified requests stay other."
+}
