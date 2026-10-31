@@ -128,3 +128,10 @@ fn finite_boundaries(
         );
     }
 }
+
+#[test]
+fn record_lookup_finite_boundaries_preserve_publication_contents_and_retry() {
+    finite_boundaries(record_lookup::SOURCE, |artifact, memory| {
+        record_lookup::arguments(artifact, memory, record_lookup::VALID)
+    });
+}
