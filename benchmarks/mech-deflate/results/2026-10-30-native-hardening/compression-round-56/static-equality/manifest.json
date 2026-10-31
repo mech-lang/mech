@@ -1,0 +1,11 @@
+{
+  "created_utc": "2026-10-31T13:28:19.005218+00:00",
+  "head": "3fc392eb39322e0e9bd433b426df28a7f84fc720",
+  "files": [
+    {
+      "path": "static-equality.json",
+      "sha256": "681a41c58f92a46b7ea52f3f278d0865a588d813553ebb2bdcb1fa800b3a2165",
+      "bytes": 473
+    }
+  ]
+}
