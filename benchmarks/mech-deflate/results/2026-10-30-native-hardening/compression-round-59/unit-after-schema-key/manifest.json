@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T14:42:42.728524+00:00",
+  "head": "5bd07a9bf21980261222e52def0e877889fcdd60",
+  "files": [
+    {
+      "path": "schema-key-test-after.rs",
+      "sha256": "d41edf4bf90003183f164b502c081506ba70ad650662a30ea1aba02f29e9b6fe",
+      "bytes": 8142
+    },
+    {
+      "path": "units-after/schema-key.json",
+      "sha256": "afff9bdf8850dc708ca58cef0e122f87ca35fa92c67804b4729ea518484182d6",
+      "bytes": 929
+    },
+    {
+      "path": "units-after/schema-key.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "units-after/schema-key.stdout",
+      "sha256": "e3eeede42a73c43b9c706156b6235f17b9f04f621e39144023effe2168421da0",
+      "bytes": 1014
+    },
+    {
+      "path": "units.py",
+      "sha256": "eee83f44e65a54c0abe6277cccb9a3a1fd41c54be59b892ca513be8e01e9351c",
+      "bytes": 2896
+    }
+  ]
+}
