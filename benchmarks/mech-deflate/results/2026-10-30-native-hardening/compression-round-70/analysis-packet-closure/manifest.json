@@ -1,0 +1,66 @@
+{
+  "created_utc": "2026-10-31T21:53:40.370063+00:00",
+  "head": "8641c399685c9bb2e959d767db9318a5905a7e1e",
+  "files": [
+    {
+      "path": "analysis/scorecard.csv",
+      "sha256": "e80e4399c1127a0db2a8b77e28e58313c734c4e7a1a987c40175bc17073b9f97",
+      "bytes": 1383
+    },
+    {
+      "path": "analysis/scorecard.json",
+      "sha256": "d19a1bc4c59e42b504c52168b06337f85e4426afdd0a9fca28cd0d25d2d6a117",
+      "bytes": 1364286
+    },
+    {
+      "path": "complete-publication.py",
+      "sha256": "40b128e28dfeb53075215ef997dd5f935d668a30ec333c71e1c65039662c273d",
+      "bytes": 2198
+    },
+    {
+      "path": "findings-packet/audit-observed-plan.py",
+      "sha256": "83c5feb4052c2307d69caeb2a832e568ca384135852acd48c3d2aa313b0df897",
+      "bytes": 4678
+    },
+    {
+      "path": "findings-packet/publish-packet-initial.py",
+      "sha256": "bdfc2f625a7165adfa507c54358c1cce07869487c893a6dc2cb430924621f649",
+      "bytes": 2141
+    },
+    {
+      "path": "findings-packet/publish-packet-initial.stderr",
+      "sha256": "b2ba783293877c4e5f9d4f92626249a355af7909cd6c1f07b5e1d6b19427e8b8",
+      "bytes": 676
+    },
+    {
+      "path": "findings-packet/units-before-test-scope.py",
+      "sha256": "19274c1c82a5ca05909d6ea5c0a2c837a9bff18968f5ad21ddfbc4e15341ba4d",
+      "bytes": 3713
+    },
+    {
+      "path": "prior-failures.json",
+      "sha256": "f0407132c64b62babb063963dc91d1342a3384a673682912f96204bdc9868109",
+      "bytes": 2385
+    },
+    {
+      "path": "publish-packet.py",
+      "sha256": "c8d1b0fff39508713101fb1132a7a1457316bed9aed23ba6b46bc13e65994ebf",
+      "bytes": 2154
+    },
+    {
+      "path": "render-report.py",
+      "sha256": "4649ef2f4c23fcbcc394898530cef68facb175996c10368b6cff6851d5423dde",
+      "bytes": 12682
+    },
+    {
+      "path": "report.md",
+      "sha256": "71b373a8e621906d435f445fb4018e1b95429a22beeda0f3019075fda1ed8e41",
+      "bytes": 11655
+    },
+    {
+      "path": "validation.json",
+      "sha256": "843c8955346c10455b8c7f6b39870434de76e308eda5da1df0abd7fe689a15d7",
+      "bytes": 97198
+    }
+  ]
+}
