@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-10-31T15:11:58.010465+00:00",
+  "head": "19bd41958a809142847868225fcb9f8dddc76614",
+  "files": [
+    {
+      "path": "findings-packet/tests.patch",
+      "sha256": "87c49ba2dc19ab62b9d8845bfba16deb1d4838bbb40c97ac614ac6e421fd6c9d",
+      "bytes": 14068
+    },
+    {
+      "path": "units-after/first-change-inventory.json",
+      "sha256": "18a37054c1c28ae46e1ae26cbb943b035a0812ff56bb2fbe7e7bcba5df3ef57a",
+      "bytes": 12865
+    },
+    {
+      "path": "units-after/first-change-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "units-after/first-change-inventory.stdout",
+      "sha256": "ab026b22ddd2328bc4eb5f1a8e142b9bba36395f78fa19aa3bb663e9c910980f",
+      "bytes": 168
+    },
+    {
+      "path": "units-after/numeric-boundary-source.rs",
+      "sha256": "49c1ece5c4fee5efc0339876be676c338327152c381f64aeb687943635295415",
+      "bytes": 2703
+    },
+    {
+      "path": "units-after/numeric-first-change-source.rs",
+      "sha256": "784e21ab5a5af3e7457c6411a8db09d24b25d913ee7ebd046b311e6bf9001ca6",
+      "bytes": 9042
+    },
+    {
+      "path": "units-after/runtime-tests-source.rs",
+      "sha256": "0fa4ebfb49a1dff8c95db9f04fe8a0a1c1e4ca035c9cf92e73f2b248b88472d0",
+      "bytes": 48966
+    },
+    {
+      "path": "units.py",
+      "sha256": "a245a5c320ddbe65098fef4b143cfbef6130bead433c4594623b2bfc98c5df96",
+      "bytes": 4198
+    }
+  ]
+}
