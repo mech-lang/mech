@@ -1,8 +1,8 @@
 {
-  "archives": 65,
-  "verified_file_occurrences": 622,
-  "unique_paths": 411,
-  "paths_with_multiple_preserved_versions": 11,
+  "archives": 68,
+  "verified_file_occurrences": 676,
+  "unique_paths": 413,
+  "paths_with_multiple_preserved_versions": 19,
   "scope": "Every archived version is hash-verified before chronological overlay. Numerical replay only; no compiler or compressor invocation and no required executable.",
   "byte_identical_outputs": [
     "scorecard.json",
