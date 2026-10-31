@@ -112,22 +112,39 @@ fn require(
     Ok(())
 }
 
+/// Same ordered live-geometry observation through disjoint invocation fields.
+/// This view has no arena, so it cannot replace the selector being borrowed.
+#[inline]
+pub(super) fn coexistence(
+    collections: Option<&crate::native_artifact::program::runtime::collections::State>,
+    lines: &crate::native_artifact::program::runtime::lines::State,
+    descriptor: &crate::native_artifact::NativeProgramDescriptor,
+    library: &mech_engine::native_artifact::NativeLibraryWorkBudget,
+    work: &mut crate::native_artifact::NativeWorkMeter,
+    skip: Option<mech_engine::native_artifact::NativeMatchValue>,
+) -> Result<ResourceDemand, Error> {
+    let mut prior = collections.map_or(Ok(ResourceDemand::default()), |state| {
+        state.retained_demand()
+    })?;
+    let lines = super::line_calls::line_coexistence(lines, descriptor, library, work, skip)?;
+    prior.turn_peak_bytes = add(prior.turn_peak_bytes, lines.turn_peak_bytes)?;
+    prior.retained_nodes = add(prior.retained_nodes, lines.retained_nodes)?;
+    Ok(prior)
+}
+
 impl Invocation<'_, '_, '_> {
     pub(in crate::native_artifact::program::runtime) fn selected_join_coexistence(
         &mut self,
         skip: Option<mech_engine::native_artifact::NativeMatchValue>,
     ) -> Result<ResourceDemand, Error> {
-        let mut prior = self
-            .state
-            .collections
-            .as_ref()
-            .map_or(Ok(ResourceDemand::default()), |state| {
-                state.retained_demand()
-            })?;
-        let lines = self.line_matrix_coexistence(skip)?;
-        prior.turn_peak_bytes = add(prior.turn_peak_bytes, lines.turn_peak_bytes)?;
-        prior.retained_nodes = add(prior.retained_nodes, lines.retained_nodes)?;
-        Ok(prior)
+        coexistence(
+            self.state.collections.as_ref(),
+            &self.state.line_matrices,
+            self.descriptor,
+            &self.state.library,
+            &mut self.state.control.work,
+            skip,
+        )
     }
 
     pub(in crate::native_artifact::program::runtime) fn validate_selected_join_boundary(
