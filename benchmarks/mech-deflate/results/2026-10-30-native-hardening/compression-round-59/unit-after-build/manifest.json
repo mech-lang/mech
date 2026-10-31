@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-10-31T14:42:41.566478+00:00",
+  "head": "380871a906f9a8a473a1e26bb85e05171daabe65",
+  "files": [
+    {
+      "path": "schema-key-test-after.rs",
+      "sha256": "d41edf4bf90003183f164b502c081506ba70ad650662a30ea1aba02f29e9b6fe",
+      "bytes": 8142
+    },
+    {
+      "path": "units-after/build.json",
+      "sha256": "bc0033942bd99582a8c4f78bf1b319e8c82d7826f552449ee0b40cee9744d558",
+      "bytes": 5278
+    },
+    {
+      "path": "units-after/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "units-after/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "units.py",
+      "sha256": "eee83f44e65a54c0abe6277cccb9a3a1fd41c54be59b892ca513be8e01e9351c",
+      "bytes": 2896
+    }
+  ]
+}
