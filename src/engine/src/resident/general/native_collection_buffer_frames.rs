@@ -254,7 +254,7 @@ impl NativePreparedLibraryCall {
             )
         };
         let actual = if let Some(prepared) = &self.record_selector {
-            prepared.ordinal(*selected, charge)
+            prepared.ordinal_in_context(*selected, ordinal, context)
         } else {
             crate::resident::numeric::named_schema_ordinal(
                 fields.iter().map(|f| f.name.as_str()),

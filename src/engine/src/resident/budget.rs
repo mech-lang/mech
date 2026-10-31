@@ -384,6 +384,54 @@ impl NativeLibraryWorkBudget {
         CONTROL_WORK_CONTEXT.with(|context| self.charge_in_context(context, compute, comparison))
     }
 
+    /// Combine an exact successful prefix inside its existing call scope.
+    /// A miss is eligibility only: the caller must run its original ordered
+    /// debits, preserving their error and spent prefix. Worker credit can
+    /// change concurrently, so it always keeps that incremental path.
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
+    pub(in crate::resident) fn try_charge_scoped_prefix(
+        &self,
+        compute: u64,
+        comparison: u64,
+    ) -> bool {
+        CONTROL_WORK_CONTEXT.with(|context| {
+            if !context
+                .active
+                .borrow()
+                .as_ref()
+                .is_some_and(|current| std::rc::Rc::ptr_eq(current, &self.account))
+                || !context
+                    .scope
+                    .borrow()
+                    .as_ref()
+                    .is_some_and(|scope| std::rc::Rc::ptr_eq(&scope.total, &self.account))
+            {
+                return false;
+            }
+            let mut account = self.account.borrow_mut();
+            if account.worker.is_some() {
+                return false;
+            }
+            let Ok(next) = checked_local_control_account_work_at_limits(
+                &account,
+                compute,
+                comparison,
+                context.limits.get(),
+            ) else {
+                return false;
+            };
+            // No callbacks or fallible operation separate eligibility and
+            // commit. These are the same counters an ordinary debit assigns;
+            // observer high-water marks remain unchanged by direct charges.
+            account.used = next;
+            true
+        })
+    }
+
     /// Apply an additional caller compute ceiling before the existing account
     /// checks. This cannot grant fuel or replace any shared/relative/worker cap.
     /// Native callers retain ceiling/overflow precedence over a foreign scope.
