@@ -1,5 +1,8 @@
 # One entry authority for existing native scalar aggregates
 
+Outcome: both measured selections are rejected and the published source is
+restored. This file preserves the intermediate design; see `CLOSURE.md`.
+
 The complete compressor reaches 917 already-native aggregate actions at 99
 sites, including the unchanged nested optimal-path match-choice search. The
 ordinary acyclic admission selector recognized primitive scalar actions but

@@ -1,0 +1,1041 @@
+{
+  "schema": "mech.rejected-scalar-aggregate-admission.v1",
+  "chosen": "baseline",
+  "stack_base": "eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b",
+  "published_start": "39f0a3f662cc5b4608b5b2372955bf10992c6cbd",
+  "baseline_compiler": "552e537fcbcfc3811ce442c982010b5e1e999e6c",
+  "initial_compiler": "411c2e1f01d9435a1c78d28f3a0a123dcd2ba56e",
+  "refined_compiler": "97ab5892d136450fe260af8c16956f23488a7ec8",
+  "restore_published_source": "f06fe15783556a7387c6575c29181dd41ab44f4a",
+  "input_bytes": 8,
+  "raw_output_bytes": 10,
+  "level": 12,
+  "first_pairs": {
+    "configuration": "Matched linked compressor; identical tiny setup JIT helpers; unchanged evaluate_into timer. Both programs ready before measurements.",
+    "reference_seconds": 0.000287,
+    "fixed_reference_seconds": 0.0003,
+    "groups": [
+      {
+        "group": 0,
+        "medians": {
+          "before": 0.004355625,
+          "after": 0.0044133745
+        },
+        "after_over_before": 1.0132586023819774
+      },
+      {
+        "group": 1,
+        "medians": {
+          "before": 0.0043609165,
+          "after": 0.004406125
+        },
+        "after_over_before": 1.0103667428624237
+      },
+      {
+        "group": 2,
+        "medians": {
+          "before": 0.0043761045,
+          "after": 0.004408146
+        },
+        "after_over_before": 1.0073219229568215
+      },
+      {
+        "group": 3,
+        "medians": {
+          "before": 0.004393521,
+          "after": 0.004412
+        },
+        "after_over_before": 1.0042059660122258
+      }
+    ],
+    "primary_observations": 3968,
+    "all_observations": 3984,
+    "observations_per_variant": 1984,
+    "medians": {
+      "before": {
+        "seconds": 0.004370542,
+        "multiple_of_reference": 15.228369337979094,
+        "multiple_of_fixed_reference": 14.568473333333333
+      },
+      "after": {
+        "seconds": 0.004409583,
+        "multiple_of_reference": 15.364400696864113,
+        "multiple_of_fixed_reference": 14.69861
+      }
+    },
+    "comparisons": {
+      "after_over_before": {
+        "pooled_ratio": 1.0089327593694328,
+        "improving_groups": 0,
+        "improving_blocks": 5,
+        "median_block_ratio": 1.0097896142943563,
+        "geometric_block_ratio": 1.007483114532337
+      }
+    }
+  },
+  "primary": {
+    "configuration": "Matched linked compressor; identical tiny setup JIT helpers; unchanged evaluate_into timer. All three programs ready before measurements.",
+    "reference_seconds": 0.000291,
+    "fixed_reference_seconds": 0.0003,
+    "groups": [
+      {
+        "group": 0,
+        "medians": {
+          "baseline": 0.004390021,
+          "initial": 0.004413021,
+          "refined": 0.004415979
+        },
+        "initial_over_baseline": 1.0052391548924253,
+        "refined_over_baseline": 1.00591295576946,
+        "refined_over_initial": 1.000670289128468
+      },
+      {
+        "group": 1,
+        "medians": {
+          "baseline": 0.0044085835,
+          "initial": 0.00443225,
+          "refined": 0.004428771
+        },
+        "initial_over_baseline": 1.0053682775884816,
+        "refined_over_baseline": 1.0045791352256341,
+        "refined_over_initial": 0.9992150713520219
+      },
+      {
+        "group": 2,
+        "medians": {
+          "baseline": 0.0043759795,
+          "initial": 0.0044333954999999994,
+          "refined": 0.004399958000000001
+        },
+        "initial_over_baseline": 1.013120719601177,
+        "refined_over_baseline": 1.0054795732018398,
+        "refined_over_initial": 0.9924578125276667
+      },
+      {
+        "group": 3,
+        "medians": {
+          "baseline": 0.0043773125,
+          "initial": 0.004411083,
+          "refined": 0.004429771
+        },
+        "initial_over_baseline": 1.007714893556263,
+        "refined_over_baseline": 1.0119841797906821,
+        "refined_over_initial": 1.0042366013063007
+      }
+    ],
+    "primary_observations": 5952,
+    "all_observations": 5976,
+    "observations_per_variant": 1984,
+    "medians": {
+      "baseline": {
+        "seconds": 0.004387083,
+        "multiple_of_reference": 15.075886597938142,
+        "multiple_of_fixed_reference": 14.623610000000001
+      },
+      "initial": {
+        "seconds": 0.0044197915,
+        "multiple_of_reference": 15.188286941580754,
+        "multiple_of_fixed_reference": 14.732638333333334
+      },
+      "refined": {
+        "seconds": 0.0044207295,
+        "multiple_of_reference": 15.191510309278348,
+        "multiple_of_fixed_reference": 14.735765
+      }
+    },
+    "comparisons": {
+      "initial_over_baseline": {
+        "pooled_ratio": 1.0074556373790968,
+        "improving_groups": 0,
+        "improving_blocks": 10,
+        "median_block_ratio": 1.0063705535760947,
+        "geometric_block_ratio": 1.0098293482107958
+      },
+      "refined_over_baseline": {
+        "pooled_ratio": 1.0076694468739251,
+        "improving_groups": 0,
+        "improving_blocks": 10,
+        "median_block_ratio": 1.0072308368169782,
+        "geometric_block_ratio": 1.0086560493761065
+      },
+      "refined_over_initial": {
+        "pooled_ratio": 1.0002122272057403,
+        "improving_groups": 2,
+        "improving_blocks": 29,
+        "median_block_ratio": 1.0005497549977571,
+        "geometric_block_ratio": 0.9988381216719755
+      }
+    }
+  },
+  "cpu": {
+    "reference": {
+      "instructions": {
+        "median": 1364372.0,
+        "min": 1364164,
+        "max": 1391044
+      },
+      "cycles": {
+        "median": 935346.5,
+        "min": 887231,
+        "max": 970516
+      },
+      "rss_after": {
+        "median": 14761984.0,
+        "min": 14761984,
+        "max": 14761984
+      },
+      "physical_after": {
+        "median": 14402432.0,
+        "min": 14402432,
+        "max": 14402432
+      },
+      "lifetime_peak_physical": {
+        "median": 14402432.0,
+        "min": 14402432,
+        "max": 14402432
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "observations": 32
+    },
+    "baseline": {
+      "instructions": {
+        "median": 49008490.5,
+        "min": 49003733,
+        "max": 49016356
+      },
+      "cycles": {
+        "median": 13808872.5,
+        "min": 13633839,
+        "max": 14613424
+      },
+      "rss_after": {
+        "median": 318717952.0,
+        "min": 318717952,
+        "max": 318717952
+      },
+      "physical_after": {
+        "median": 227755776.0,
+        "min": 227755776,
+        "max": 227755776
+      },
+      "lifetime_peak_physical": {
+        "median": 227755776.0,
+        "min": 227755776,
+        "max": 227755776
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "observations": 32
+    },
+    "initial": {
+      "instructions": {
+        "median": 49214104.5,
+        "min": 49209856,
+        "max": 49257623
+      },
+      "cycles": {
+        "median": 13892111.0,
+        "min": 13674096,
+        "max": 14784897
+      },
+      "rss_after": {
+        "median": 318750720.0,
+        "min": 318750720,
+        "max": 318750720
+      },
+      "physical_after": {
+        "median": 227788544.0,
+        "min": 227788544,
+        "max": 227788544
+      },
+      "lifetime_peak_physical": {
+        "median": 227788544.0,
+        "min": 227788544,
+        "max": 227788544
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "observations": 32
+    },
+    "refined": {
+      "instructions": {
+        "median": 49203529.5,
+        "min": 49199283,
+        "max": 49211992
+      },
+      "cycles": {
+        "median": 13887614.5,
+        "min": 13691936,
+        "max": 14640130
+      },
+      "rss_after": {
+        "median": 319127552.0,
+        "min": 319127552,
+        "max": 319127552
+      },
+      "physical_after": {
+        "median": 228099840.0,
+        "min": 228099840,
+        "max": 228099840
+      },
+      "lifetime_peak_physical": {
+        "median": 228099840.0,
+        "min": 228099840,
+        "max": 228099840
+      },
+      "pageins": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "observations": 32
+    }
+  },
+  "allocation": {
+    "reference": {
+      "allocation_requests": {
+        "median": 95.0,
+        "min": 95,
+        "max": 95
+      },
+      "requested_bytes": {
+        "median": 9021923.0,
+        "min": 9021923,
+        "max": 9021923
+      },
+      "deallocation_calls": {
+        "median": 95.0,
+        "min": 95,
+        "max": 95
+      },
+      "reallocations": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "relocating_reallocations": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "live_usable_before": {
+        "median": 32.0,
+        "min": 32,
+        "max": 32
+      },
+      "live_usable_after": {
+        "median": 32.0,
+        "min": 32,
+        "max": 32
+      },
+      "peak_live_usable": {
+        "median": 9257360.0,
+        "min": 9257360,
+        "max": 9257360
+      },
+      "incremental_peak_live_usable": {
+        "median": 9257328.0,
+        "min": 9257328,
+        "max": 9257328
+      },
+      "observations": 32,
+      "large_allocation_histogram": {
+        "2442064": 1,
+        "524336": 1,
+        "6002100": 1
+      }
+    },
+    "baseline": {
+      "allocation_requests": {
+        "median": 13994.0,
+        "min": 13994,
+        "max": 13994
+      },
+      "requested_bytes": {
+        "median": 98586843.0,
+        "min": 98586843,
+        "max": 98586843
+      },
+      "deallocation_calls": {
+        "median": 12773.0,
+        "min": 12773,
+        "max": 12773
+      },
+      "reallocations": {
+        "median": 1213.0,
+        "min": 1213,
+        "max": 1213
+      },
+      "relocating_reallocations": {
+        "median": 458.0,
+        "min": 458,
+        "max": 458
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 13905.0,
+        "min": 13905,
+        "max": 13905
+      },
+      "live_usable_before": {
+        "median": 141595920.0,
+        "min": 141595920,
+        "max": 141595920
+      },
+      "live_usable_after": {
+        "median": 141596488.0,
+        "min": 141596488,
+        "max": 141596488
+      },
+      "peak_live_usable": {
+        "median": 162171352.0,
+        "min": 162171352,
+        "max": 162171352
+      },
+      "incremental_peak_live_usable": {
+        "median": 20575432.0,
+        "min": 20575432,
+        "max": 20575432
+      },
+      "observations": 8,
+      "large_allocation_histogram": {
+        "483344": 1,
+        "1437504": 1,
+        "179688": 2,
+        "361024": 1,
+        "97296": 1,
+        "75600": 1,
+        "95648": 1,
+        "124344": 1,
+        "524288": 5,
+        "6002052": 1,
+        "2442056": 35
+      }
+    },
+    "initial": {
+      "allocation_requests": {
+        "median": 13994.0,
+        "min": 13994,
+        "max": 13994
+      },
+      "requested_bytes": {
+        "median": 98586843.0,
+        "min": 98586843,
+        "max": 98586843
+      },
+      "deallocation_calls": {
+        "median": 12773.0,
+        "min": 12773,
+        "max": 12773
+      },
+      "reallocations": {
+        "median": 1213.0,
+        "min": 1213,
+        "max": 1213
+      },
+      "relocating_reallocations": {
+        "median": 458.0,
+        "min": 458,
+        "max": 458
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 13905.0,
+        "min": 13905,
+        "max": 13905
+      },
+      "live_usable_before": {
+        "median": 141592160.0,
+        "min": 141592160,
+        "max": 141592160
+      },
+      "live_usable_after": {
+        "median": 141592728.0,
+        "min": 141592728,
+        "max": 141592728
+      },
+      "peak_live_usable": {
+        "median": 162167592.0,
+        "min": 162167592,
+        "max": 162167592
+      },
+      "incremental_peak_live_usable": {
+        "median": 20575432.0,
+        "min": 20575432,
+        "max": 20575432
+      },
+      "observations": 8,
+      "large_allocation_histogram": {
+        "483344": 1,
+        "1437504": 1,
+        "179688": 2,
+        "361024": 1,
+        "97296": 1,
+        "75600": 1,
+        "95648": 1,
+        "124344": 1,
+        "524288": 5,
+        "6002052": 1,
+        "2442056": 35
+      }
+    },
+    "refined": {
+      "allocation_requests": {
+        "median": 13994.0,
+        "min": 13994,
+        "max": 13994
+      },
+      "requested_bytes": {
+        "median": 98586843.0,
+        "min": 98586843,
+        "max": 98586843
+      },
+      "deallocation_calls": {
+        "median": 12773.0,
+        "min": 12773,
+        "max": 12773
+      },
+      "reallocations": {
+        "median": 1213.0,
+        "min": 1213,
+        "max": 1213
+      },
+      "relocating_reallocations": {
+        "median": 458.0,
+        "min": 458,
+        "max": 458
+      },
+      "relocating_realloc_copy_upper_bound": {
+        "median": 13905.0,
+        "min": 13905,
+        "max": 13905
+      },
+      "live_usable_before": {
+        "median": 141592256.0,
+        "min": 141592256,
+        "max": 141592256
+      },
+      "live_usable_after": {
+        "median": 141592824.0,
+        "min": 141592824,
+        "max": 141592824
+      },
+      "peak_live_usable": {
+        "median": 162167688.0,
+        "min": 162167688,
+        "max": 162167688
+      },
+      "incremental_peak_live_usable": {
+        "median": 20575432.0,
+        "min": 20575432,
+        "max": 20575432
+      },
+      "observations": 8,
+      "large_allocation_histogram": {
+        "483344": 1,
+        "1437504": 1,
+        "179688": 2,
+        "361024": 1,
+        "97296": 1,
+        "75600": 1,
+        "95648": 1,
+        "124344": 1,
+        "524288": 5,
+        "6002052": 1,
+        "2442056": 35
+      }
+    }
+  },
+  "static": {
+    "baseline": {
+      "code_bytes": 13885696,
+      "stack_bytes": 108400,
+      "ordinary_scalar_admission_groups": 1372,
+      "ordinary_scalar_admission_sites": 8642,
+      "native_pieces": 67
+    },
+    "initial": {
+      "code_bytes": 13885352,
+      "stack_bytes": 108448,
+      "ordinary_scalar_admission_groups": 1285,
+      "ordinary_scalar_admission_sites": 8406,
+      "native_pieces": 67
+    },
+    "refined": {
+      "code_bytes": 13883072,
+      "stack_bytes": 108528,
+      "ordinary_scalar_admission_groups": 1289,
+      "ordinary_scalar_admission_sites": 8414,
+      "native_pieces": 67
+    }
+  },
+  "profiles": {
+    "baseline": {
+      "sha256": "5f79100ad44f533fecfbff349b0f2ccebeb32cb3c5d97d7cf7e0a36f1810377a",
+      "total_weights": 1301,
+      "disjoint_categories": {
+        "remaining": 444,
+        "ordinary_control_visit": 201,
+        "other_invocation_helper": 190,
+        "selected_library_call": 126,
+        "buffer_frame_actions": 340
+      },
+      "exclusive_top_leaves": [
+        [
+          "mech_canonical_program_entry_v1",
+          153
+        ],
+        [
+          "_tlv_get_addr",
+          51
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+          48
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          44
+        ],
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+          40
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation18retire_tail_locals",
+          37
+        ],
+        [
+          "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget32charge_control_account_at_limits",
+          32
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+          31
+        ],
+        [
+          "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+          31
+        ],
+        [
+          "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames16apply_retirement",
+          30
+        ],
+        [
+          "_platform_memmove",
+          28
+        ],
+        [
+          "_RNvMs_NtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+          27
+        ],
+        [
+          "_RNvMs3_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+          23
+        ],
+        [
+          "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          21
+        ],
+        [
+          "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+          18
+        ],
+        [
+          "_platform_memset",
+          14
+        ],
+        [
+          "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+          14
+        ],
+        [
+          "_RNvMs7_NtNtCskIfnrfrMWVM_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+          14
+        ],
+        [
+          "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation5ValueECs29QkOtpKx6e_8mech_gpu",
+          13
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation14selected_callsNtB4_10Invocation21prepared_library_call",
+          13
+        ],
+        [
+          "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames6retire",
+          13
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation16readonly_numericNtB4_10Invocation19begin_numeric_views",
+          13
+        ],
+        [
+          "_RNvMs_NtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls8prepared13buffer_framesNtB6_25NativePreparedLibraryCall27check_buffer_record_ordinal",
+          12
+        ],
+        [
+          "_RNvMNtCs40e1XR8pRG7_7seahash6bufferNtB2_5State4hash",
+          12
+        ],
+        [
+          "_RNvNtNtCskIfnrfrMWVM_9mech_core6schema5shape18evaluate_dimension",
+          12
+        ],
+        [
+          "_RNvMs1_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena12copy_current",
+          12
+        ],
+        [
+          "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames11copy_fields",
+          11
+        ],
+        [
+          "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks5admit",
+          10
+        ],
+        [
+          "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames4pack",
+          10
+        ],
+        [
+          "_RNvMNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact4workNtB2_15NativeWorkMeter6charge",
+          10
+        ]
+      ]
+    },
+    "initial": {
+      "sha256": "5f8362f028adb0c2301be150bca2397dabb95b7e6411665f70fa594a5315cdf4",
+      "total_weights": 1183,
+      "disjoint_categories": {
+        "remaining": 427,
+        "ordinary_control_visit": 154,
+        "other_invocation_helper": 155,
+        "selected_library_call": 111,
+        "buffer_frame_actions": 336
+      },
+      "exclusive_top_leaves": [
+        [
+          "mech_canonical_program_entry_v1",
+          144
+        ],
+        [
+          "_tlv_get_addr",
+          44
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+          43
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+          38
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          33
+        ],
+        [
+          "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10retirement3run",
+          28
+        ],
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+          26
+        ],
+        [
+          "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget32charge_control_account_at_limits",
+          26
+        ],
+        [
+          "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames14retire_prepaid",
+          25
+        ],
+        [
+          "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+          25
+        ],
+        [
+          "_platform_memmove",
+          23
+        ],
+        [
+          "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          21
+        ],
+        [
+          "_RNvMs_NtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+          21
+        ],
+        [
+          "_RNvMs3_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+          20
+        ],
+        [
+          "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+          18
+        ],
+        [
+          "_RNvMs7_NtNtCskIfnrfrMWVM_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+          16
+        ],
+        [
+          "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation5ValueECs29QkOtpKx6e_8mech_gpu",
+          15
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation14selected_callsNtB4_10Invocation21prepared_library_call",
+          14
+        ],
+        [
+          "_RNvMNtCs40e1XR8pRG7_7seahash6bufferNtB2_5State4hash",
+          14
+        ],
+        [
+          "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+          13
+        ],
+        [
+          "_RNvMs1_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena12copy_current",
+          13
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation15action_required",
+          13
+        ],
+        [
+          "_platform_memset",
+          12
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation16readonly_numericNtB4_10Invocation19begin_numeric_views",
+          12
+        ],
+        [
+          "_RNvMs7_NtNtCskIfnrfrMWVM_9mech_core8snapshot10validationNtB5_5Value28memory_budget_retained_bytes",
+          12
+        ],
+        [
+          "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks5admit",
+          11
+        ],
+        [
+          "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+          11
+        ],
+        [
+          "_RNvMs4_NtNtCskIfnrfrMWVM_9mech_core8snapshot8encodingNtB5_14ValueFootprint11checked_add",
+          11
+        ],
+        [
+          "mi_free",
+          10
+        ],
+        [
+          "_RNvNtNtCskIfnrfrMWVM_9mech_core6schema5shape18evaluate_dimension",
+          10
+        ]
+      ]
+    },
+    "refined": {
+      "sha256": "53dfcaada60cc5c5cb89bd979e24058757bc544988136fbcd11189352dc40157",
+      "total_weights": 1014,
+      "disjoint_categories": {
+        "remaining": 383,
+        "ordinary_control_visit": 157,
+        "other_invocation_helper": 139,
+        "selected_library_call": 101,
+        "buffer_frame_actions": 234
+      },
+      "exclusive_top_leaves": [
+        [
+          "mech_canonical_program_entry_v1",
+          137
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation6helper",
+          36
+        ],
+        [
+          "_tlv_get_addr",
+          32
+        ],
+        [
+          "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames14retire_prepaid",
+          31
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          30
+        ],
+        [
+          "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10retirement3run",
+          28
+        ],
+        [
+          "_RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+          24
+        ],
+        [
+          "_RNvNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget32charge_control_account_at_limits",
+          23
+        ],
+        [
+          "_platform_memmove",
+          20
+        ],
+        [
+          "_RNvMs_NtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime11collections4dataNtB4_15CollectedValues13fill_unsigned",
+          18
+        ],
+        [
+          "_RNvMs3_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+          18
+        ],
+        [
+          "_RNvMNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+          17
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+          16
+        ],
+        [
+          "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs1qJAwyMG1lC_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+          16
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation14selected_callsNtB4_10Invocation21prepared_library_call",
+          14
+        ],
+        [
+          "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMs_NtNtB2k_8prepared13buffer_framesNtB3R_25NativePreparedLibraryCall25admit_buffer_frame_inputs0EBa_",
+          13
+        ],
+        [
+          "_RINvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB6_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultTNtNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation5ValuebENtNtNtNtB8_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMNtNtB3h_8prepared12word_updatesNtB4M_25NativePreparedLibraryCall23unsigned_matrix_replace0EBa_",
+          12
+        ],
+        [
+          "_RNvMs7_NtNtCskIfnrfrMWVM_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+          12
+        ],
+        [
+          "_RNvNtNtCskIfnrfrMWVM_9mech_core11memory_plan6budget22evaluate_memory_budget",
+          12
+        ],
+        [
+          "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          11
+        ],
+        [
+          "_RNvMs1_NtNtCs29QkOtpKx6e_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena22retire_current_prepaid",
+          10
+        ],
+        [
+          "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames12current_leaf",
+          10
+        ],
+        [
+          "_RNvMNtNtNtCs1qJAwyMG1lC_11mech_engine8resident6budget15frame_footprintNtB2_28PreparedNativeFrameFootprint5value",
+          10
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocation16readonly_numericNtB4_10Invocation19begin_numeric_views",
+          10
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation15action_required",
+          10
+        ],
+        [
+          "_RNvMs0_NtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation10needs_move",
+          10
+        ],
+        [
+          "_RNvNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime5hooks5admit",
+          9
+        ],
+        [
+          "_platform_memset",
+          9
+        ],
+        [
+          "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCskIfnrfrMWVM_9mech_core8snapshot10validation5ValueECs29QkOtpKx6e_8mech_gpu",
+          9
+        ],
+        [
+          "_RNvMNtNtNtNtCs29QkOtpKx6e_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB2_12BufferFrames4pack",
+          9
+        ]
+      ]
+    }
+  },
+  "profile_scope": "Separate 695-call main-thread samples include outer harness; disjoint ancestry weights are not precise compression-timer percentages.",
+  "ratios_to_reference": {
+    "baseline": {
+      "instructions": 35.920181959172425,
+      "cycles": 14.76337645995361,
+      "allocation_requests": 147.30526315789473,
+      "requested_bytes": 10.927475550389866,
+      "incremental_peak_live_usable": 2.2226102391532416
+    },
+    "initial": {
+      "instructions": 36.070884260304375,
+      "cycles": 14.852368614198054,
+      "allocation_requests": 147.30526315789473,
+      "requested_bytes": 10.927475550389866,
+      "incremental_peak_live_usable": 2.2226102391532416
+    },
+    "refined": {
+      "instructions": 36.0631334416127,
+      "cycles": 14.847561304821262,
+      "allocation_requests": 147.30526315789473,
+      "requested_bytes": 10.927475550389866,
+      "incremental_peak_live_usable": 2.2226102391532416
+    }
+  },
+  "changes_from_baseline_percent": {
+    "baseline": {
+      "instructions": 0.0,
+      "cycles": 0.0,
+      "allocation_requests": 0.0,
+      "requested_bytes": 0.0,
+      "incremental_peak_live_usable": 0.0
+    },
+    "initial": {
+      "instructions": 0.4195477108196233,
+      "cycles": 0.602789981586116,
+      "allocation_requests": 0.0,
+      "requested_bytes": 0.0,
+      "incremental_peak_live_usable": 0.0
+    },
+    "refined": {
+      "instructions": 0.3979698170871071,
+      "cycles": 0.5702275837509596,
+      "allocation_requests": 0.0,
+      "requested_bytes": 0.0,
+      "incremental_peak_live_usable": 0.0
+    }
+  },
+  "limitations": [
+    "Both candidates regress all four matched triplets and are removed; prior confirmed gains stay.",
+    "Time, CPU, allocation and profile cohorts are separate. Initial-candidate CPU/profile rows precede the refinement cohorts.",
+    "Hardware counters include recorded empty-getter overhead without subtraction; logical work is a different quantity.",
+    "Additional tracked heap excludes preparation, direct VM and allocator-private heaps; whole-task footprint is separate.",
+    "Full compressor is linked; two tiny setup helpers retain JIT outside timing. No minimal runtime-only size claim.",
+    "Only eight-byte complete compression; no larger-input throughput, total-copy-byte, branch/cache-miss or parity claim."
+  ]
+}
