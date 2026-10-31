@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T05:27:01.036654+00:00",
+  "head": "4a68239f92d914ad6b9bc79d131d91e1fd9c4843",
+  "files": [
+    {
+      "path": "core-qualification/snapshot_serde_contract-build.json",
+      "sha256": "cfdb814de6c4c89528eb40ba08ede03afdd320151cc20a0a3f86c549e4e9eb48",
+      "bytes": 8164
+    },
+    {
+      "path": "core-qualification/snapshot_serde_contract-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "core-qualification/snapshot_serde_contract-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "core-qualify.py",
+      "sha256": "f70b5f3dd1e7839d8c2d73b569bf30797be3003f7022dd207869786acfc9f09d",
+      "bytes": 2719
+    }
+  ]
+}
