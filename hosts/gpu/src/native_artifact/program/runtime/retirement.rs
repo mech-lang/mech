@@ -23,6 +23,17 @@ pub(super) fn run(
         && charges > 1
         && let Some(mut paid) = work.try_retirement_batch(total)
     {
+        #[cfg(all(test, feature = "canonical-native-program"))]
+        if prepared.is_some() {
+            for &slot in slots.iter().filter(|s| !effects.contains(s)) {
+                assert!(frames.retirement_is_empty(recipes, slot as u32));
+                assert!(
+                    arena
+                        .native_entry_preview(slot as u32, paid.meter())?
+                        .is_none()
+                );
+            }
+        }
         // Empty completed-child storage has no owner, generation or visit
         // effect. Consume its ORIGINAL prices on this same exclusive receipt.
         paid.pay(prepared.map_or(0, |prepared| prepared.omitted_work))?;

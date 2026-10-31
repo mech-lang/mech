@@ -187,3 +187,6 @@ fn independent_slots(
     }
     Ok(independent)
 }
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod tests;
