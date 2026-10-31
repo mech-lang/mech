@@ -28,10 +28,12 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
         for _ in 0..2 {
             output.fill(None);
             super::retirement::take_observation();
+            super::retirement::take_child_observation();
             let report = jit
                 .evaluate_into(&args, &mut output, mode.execution(), &memory)
                 .unwrap();
             let batches = super::retirement::take_observation();
+            let omitted = super::retirement::take_child_observation();
             assert_eq!(contents(&args), before);
             assert_eq!(
                 output
@@ -52,6 +54,10 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert!(
                 batches > 0,
                 "original Huffman parent must use funded cleanup"
+            );
+            assert!(
+                omitted > 0,
+                "completed Huffman children must avoid repeated physical cleanup"
             );
         }
         drop((args, output));
