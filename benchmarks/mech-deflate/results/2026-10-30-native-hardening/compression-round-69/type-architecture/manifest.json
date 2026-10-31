@@ -1,0 +1,66 @@
+{
+  "created_utc": "2026-10-31T21:10:00.582195+00:00",
+  "head": "744cbc25f34ac157e18afaed0c93beeb95a79d48",
+  "files": [
+    {
+      "path": "type-architecture/memory-planner.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "type-architecture/memory-planner.stdout",
+      "sha256": "2735714dbcdd449212ec8780a49a1a43192230a72984043cced9b311807f251a",
+      "bytes": 28
+    },
+    {
+      "path": "type-architecture/memory-runtime.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "type-architecture/memory-runtime.stdout",
+      "sha256": "0b66ce89f3e8d72fa0cd91e51007a7a3c72a511c29feaa32ceba110951cd076a",
+      "bytes": 53
+    },
+    {
+      "path": "type-architecture/results.json",
+      "sha256": "5ff340bae6c3fbe3010a295b4ba3dde3e81924943087f71d9e7ad155756e2878",
+      "bytes": 706
+    },
+    {
+      "path": "type-architecture/semantic-type-authority.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "type-architecture/semantic-type-authority.stdout",
+      "sha256": "2cf6b925054aa478bf7dc750ea5fea44312ae29d59b7a26ed98d8078c897132e",
+      "bytes": 37
+    },
+    {
+      "path": "type-architecture/type-memory-boundary.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "type-architecture/type-memory-boundary.stdout",
+      "sha256": "8963997e58d67ca97dac9487eb7b984945bccebd3504a5d9a95c8f5d96f365d0",
+      "bytes": 37
+    },
+    {
+      "path": "type-architecture/type-system.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "type-architecture/type-system.stdout",
+      "sha256": "ea243d073bd4358ef286a54247fb852ce41a92482137300ea99537eae4e45d38",
+      "bytes": 41
+    },
+    {
+      "path": "type-architecture.py",
+      "sha256": "6dfe54eb3f26a8b14d5e12bd36a2e57668beb328dd11b7acbb3fff8273aabef5",
+      "bytes": 958
+    }
+  ]
+}
