@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-10-31T22:40:15.153866+00:00",
+  "head": "135b496b947c7a72b57537c6b430954846b3e01c",
+  "files": [
+    {
+      "path": "linked-primary/group2/after.stderr",
+      "sha256": "404f31c4f1eeb6b64f180ae4c998ce1fe5f5537752f13b0acf818ad038672621",
+      "bytes": 6953
+    },
+    {
+      "path": "linked-primary/group2/after.stdout",
+      "sha256": "a36d15cab20cab3f6131592173238713bf54eac71e2df0ae3c280df25cf00b80",
+      "bytes": 174076
+    },
+    {
+      "path": "linked-primary/group2/before.stderr",
+      "sha256": "5daf012e764eff6138f340ca1dc4fed39ec6bbd636ff0dfc0e26a276fb2a9e0c",
+      "bytes": 6952
+    },
+    {
+      "path": "linked-primary/group2/before.stdout",
+      "sha256": "08426b253d92891211556bc888dca599dba62892023c8526517d50fa45c7583b",
+      "bytes": 174056
+    },
+    {
+      "path": "linked-primary/group2/results.json",
+      "sha256": "d0ab6ec47dfb6f4886e8ff4930bc3b8d64d440b4a5cac79f5aa28143979fff61",
+      "bytes": 495740
+    },
+    {
+      "path": "run-primary.py",
+      "sha256": "e3df3bc3b06c70187fd76bf6005ffc5f6be4ccf6fb0fa132ea056988ce76f35d",
+      "bytes": 7431
+    }
+  ]
+}
