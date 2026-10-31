@@ -12,7 +12,7 @@ import sys
 
 packet = Path(__file__).resolve().parent
 root = packet.parent
-scorecard_path = root / "compression-round-42/scorecard.json"
+scorecard_path = root / "compression-round-43/scorecard.json"
 deep_path = root / "deep-profile/scorecard.json"
 static_path = packet / "static.json"
 score = json.loads(scorecard_path.read_text())
@@ -56,7 +56,7 @@ for metric in static["mech"]["categories"]:
 
 result = {
     "schema": "mech.retained-executable-comparison.v1",
-    "compiler_source": score["release"]["head"],
+    "compiler_source": score["release"]["source_head"],
     "implementation": score["candidate_implementation"],
     "previous_compiler_source": score["baseline_compiler"],
     "publication_start": score["published_start"],
@@ -64,7 +64,7 @@ result = {
     "reference_package_revision": deep["pins"]["reference_package_revision"],
     "input_bytes": 8, "raw_output_bytes": 10, "level": 12,
     "new_timing_claimed": False,
-    "description": "Latest measured linked-executable primary cohort plus separately configured coherent diagnostics. Static inventory reused only after proving emitted Object byte identity.",
+    "description": "Latest measured linked-executable primary cohort plus separate diagnostic cohorts with the exact same per-variant coherent libraries. Static inventory reused only after proving emitted Object byte identity.",
     "primary_counts": {"mech": score["primary"]["observations_per_variant"], "reference": 20000},
     "cpu_counts": {name: score["cpu"][name]["observations"] for name in ["baseline", "candidate", "reference"]},
     "allocation_counts": {name: score["allocation"][name]["observations"] for name in ["baseline", "candidate", "reference"]},
