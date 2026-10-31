@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T17:54:55.138204+00:00",
+  "head": "56b47e9f64a59d24306f6b14f1a9c6f258314967",
+  "files": [
+    {
+      "path": "engine-focused.py",
+      "sha256": "19a54c7e9c4df2b68e8f9f306e287fc488f9579d2394e7846880ee394a21305e",
+      "bytes": 4373
+    },
+    {
+      "path": "engine-parent/projection.json",
+      "sha256": "e0329423947786038d2179b8a196d9630e17bf00359a47c9cc00273904c54f5f",
+      "bytes": 12781
+    },
+    {
+      "path": "engine-parent/projection.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-parent/projection.stdout",
+      "sha256": "f6abd9e85f6ebb014494ad7d59837cd455143ac30ac0f66932e612018277df01",
+      "bytes": 1643
+    }
+  ]
+}
