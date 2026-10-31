@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T05:27:00.389450+00:00",
+  "head": "31f0a18f909a17a558c6d2363c341b4229b18862",
+  "files": [
+    {
+      "path": "core-qualification/snapshot_canonical_vectors-build.json",
+      "sha256": "a78706f21b067dcdf87e58e6a52d75943223b51999d52c48d3fdff935df599cc",
+      "bytes": 8172
+    },
+    {
+      "path": "core-qualification/snapshot_canonical_vectors-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "core-qualification/snapshot_canonical_vectors-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "core-qualify.py",
+      "sha256": "f70b5f3dd1e7839d8c2d73b569bf30797be3003f7022dd207869786acfc9f09d",
+      "bytes": 2719
+    }
+  ]
+}
