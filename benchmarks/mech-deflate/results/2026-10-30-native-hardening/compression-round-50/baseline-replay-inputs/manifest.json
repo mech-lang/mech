@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T07:53:33.781596+00:00",
+  "head": "d8a51961ef3fbc90f16d15839189c4d033f90b21",
+  "files": [
+    {
+      "path": "linked-primary/before/binding.json",
+      "sha256": "c8c79716021af98581abd0a4335cf42f7aca838f6cb2a6c8ab0a9f89ab95ea9f",
+      "bytes": 19262
+    },
+    {
+      "path": "linked-primary/before/metadata.json",
+      "sha256": "d47f456a2a2be1c9408a2c2c7afb0d8cf00e67aabf6587f0445a645067680db4",
+      "bytes": 2542212
+    },
+    {
+      "path": "linked-primary/before/worker-build.json",
+      "sha256": "5d0bac3cb6417db59e49a5eca0e22a09b53bdc8904963ef007b0a4abe54ed830",
+      "bytes": 20289
+    },
+    {
+      "path": "primary/frame-before.json",
+      "sha256": "7ffa719207f869211ef811a6b7124f5437353a794de14dc74e32fb1236991f5a",
+      "bytes": 273
+    }
+  ]
+}
