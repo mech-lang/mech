@@ -459,7 +459,7 @@ impl NativeLibraryWorkBudget {
         CONTROL_WORK_CONTEXT.with(|context| self.charge_in_context(context, compute, 0))
     }
 
-    #[inline]
+    #[inline(always)]
     fn charge_in_context(
         &self,
         context: &ControlWorkContext,
