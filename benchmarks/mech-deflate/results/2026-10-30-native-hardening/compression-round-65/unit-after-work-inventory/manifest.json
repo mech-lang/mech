@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-10-31T17:13:17.340891+00:00",
+  "head": "28abead5fe89a6db23ce8b40c26fb9bf4d341c1f",
+  "files": [
+    {
+      "path": "units-after/work-inventory.json",
+      "sha256": "dc0c0dd23a7fa1c766d1e54b1c84419187901d718256da584de1552fbedb262e",
+      "bytes": 12727
+    },
+    {
+      "path": "units-after/work-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "units-after/work-inventory.stdout",
+      "sha256": "ecd3543e20a1f805c164c3be46d71662adcaa21d9802742cd6fd553fedb5889d",
+      "bytes": 1278
+    },
+    {
+      "path": "units.py",
+      "sha256": "abe95ea0108925368158ded5148607d0505fcf67fef9e0a3d8c763a7d8e6113a",
+      "bytes": 4095
+    }
+  ]
+}
