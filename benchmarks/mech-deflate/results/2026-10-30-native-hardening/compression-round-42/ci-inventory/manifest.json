@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-10-31T02:37:26.122507+00:00",
+  "head": "122e9054085aed1f59292fb7bc58cd04664d6aed",
+  "files": [
+    {
+      "path": "ci/inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "ci/inventory.stdout",
+      "sha256": "445403dd2ca6f8beff7dd877b0d97c67294251c565b7f419b2d0525e1b7edf22",
+      "bytes": 2198
+    },
+    {
+      "path": "ci/results.json",
+      "sha256": "75e315eceb7abc9b9ae4de33e7a0f6032f7425ce1406cf16154c65a0622af773",
+      "bytes": 1177
+    },
+    {
+      "path": "ci/selected.stderr",
+      "sha256": "f8e88928e3a284241a6585737e2bf9254a95067b73b09adcb27601d08fdebf2f",
+      "bytes": 47
+    },
+    {
+      "path": "ci/selected.stdout",
+      "sha256": "1bcc107b0ee8955ca095b51936dfc79bf1a526688a53c3d9b4c39ed36b57b14c",
+      "bytes": 7873
+    },
+    {
+      "path": "ci/workflow-python.stderr",
+      "sha256": "353f5819b8aaac2864dfc86f6877b7c1e1b9017c82638b63e593b36f7791678e",
+      "bytes": 270
+    },
+    {
+      "path": "ci/workflow-python.stdout",
+      "sha256": "030cbc77805cfdd0efa92dbe8fce77099c7a9c41ed47822a94534d27e3516bac",
+      "bytes": 201
+    },
+    {
+      "path": "ci.py",
+      "sha256": "9aba39a989bcbfb9d943a2e373965382fc88e3b9948b92487445abe22f9440e7",
+      "bytes": 1779
+    }
+  ]
+}
