@@ -3620,6 +3620,17 @@
           "files": 51,
           "asset_id": 698209588,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-linked-named-2a668a3dbebf.tar.gz"
+        },
+        {
+          "event": "witness",
+          "source_revision": "460c9cb748fc377c1cbcfd57565a5373de05de14",
+          "asset": "r89-witness-b207413bcc95.tar.gz",
+          "sha256": "b207413bcc95150cae84da33e8536d1a85f7f08d27513b49d207a2c0accea9a1",
+          "manifest_sha256": "3b501e2320af14743c4ccc4822f1a4b33cbf202452fe62059b5d3e5a422ae992",
+          "bytes": 56902,
+          "files": 40,
+          "asset_id": 698209640,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-witness-b207413bcc95.tar.gz"
         }
       ]
     }
