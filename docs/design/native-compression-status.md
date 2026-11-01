@@ -94,11 +94,45 @@ Frame-action ancestry is 212/219, an overlapping union whose share increases.
 Samples are not retired-instruction counts or exact timer fractions. There is no
 fresh reference CPU sample in R87; fresh reference timing/counters are separate.
 
-Next inspect remaining projection/record-pack and retirement boundaries. Use the
-measured current operations to define a minimal acceptance witness before further
-compiler expansion. The weighted SSA inventory is 22,032 words, not a machine-store
-count. Do not forecast large gains from spill loops alone. Ordinary debit tuning
-stays closed without new mechanism evidence.
+The concrete next target is ordinary record-field access returning managed data.
+Composition currently allows managed projections only for Structural actions;
+normal Library RecordFieldAccess remains a boundary. The retained descriptor and
+R86 visits identify **323 executed flat-record/constant-selector candidates at
+173 sites** inside parent regions. Their historical callback estimate is1.82M
+instructions, not a predicted saving. A qualified changing-buffer/recursive-child
+witness has native pieces surrounding managed field site13, which remains
+ordinary. Eight original/decoded cases cover success, load rejection, prior
+publication, aliases, cleanup and recovery. Preserve selector validation,
+comparison/call budgets, output limits and lexical errors when extending the
+existing proof/factory/owner-alias path. Do not simply flip eligibility.
+
+The weighted SSA inventory is22,032 words, not a machine-store count. Do not
+forecast large gains from spill loops alone. Ordinary debit tuning stays closed
+without new mechanism evidence.
+
+## R88 rejected experiment: group native-piece retirement payments
+
+Candidate `36794bdeac6c70a13be317a14d2175bb1b4fbb94` reused the existing paid
+retirement loan for355 reached groups containing1,028 values, removing673 budget
+payments. Releases, order, prices, allocation counts and Object/image stayed the
+same. Its extra current-state/funding checks outweighed those fewer calls.
+
+Matched R87→candidate elapsed **9.789779×→9.801467×** a fresh0.287ms reference
+(**+0.119391%**); two pairs improve/two regress,25 blocks improve/39 adverse.
+Separate instructions **30,533,345.5→30,576,054.5 (+0.139877%)**, cycles+0.527157%.
+All observations remain archived. This is rejected because both measured time
+and instructions are adverse, not because a positive improvement is small.
+The differing reference clock does not establish a retained-source regression.
+
+Runtime revert `aed9189cf` and CI restore `ba05ace60` return compiler/runtime/feature/
+CI source exactly to R87. The actual restored47-test selection and132 workflow
+tests pass. R87 remains the retained performance endpoint above. Candidate tests
+(343 runtime/49 CI plus unchanged components/linked/scalar/frame/architecture
+gates) passed but are reported separately. Scalar maximum1.019358981 remained
+within1.05. Witness preparations included unqualified carrier/child forms, an
+exact-schema mismatch and an expected-count correction; all are preserved,
+without labeling them retained compiler failures. The qualified final witness
+establishes the next compiler operation before implementation expands.
 
 ## Fidelity and qualification
 
@@ -137,3 +171,5 @@ compact index and maintained harness; no history rewrite.
 Independent retrieval verifies R86's five packets/829 file versions and R87's
 20 packets/1,638 file versions. Their three/four numerical reports reproduce
 byte-identically without compiling or compressing.
+R88's rejected experiment and qualified next witness replay five reports from
+27 independently retrieved packets/1,927 file versions.
