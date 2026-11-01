@@ -5623,6 +5623,17 @@
           "files": 59,
           "asset_id": 698896365,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r93-linked-suffix-cbd7db4c96e8.tar.gz"
+        },
+        {
+          "event": "final-units",
+          "source_revision": "9075392a71ae8ad078c6428e0a827ee57de4e5f7",
+          "asset": "r93-final-units-6323521ed418.tar.gz",
+          "sha256": "6323521ed418b11dc7c7e2f9d0b4969a3aa3181e6ddc4596f12f27700c3c72bb",
+          "manifest_sha256": "d4a827561597f5c62c604be3c5af425c60ff53ac72406c9e20892be8d2132598",
+          "bytes": 82717,
+          "files": 59,
+          "asset_id": 698896445,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r93-final-units-6323521ed418.tar.gz"
         }
       ]
     }
