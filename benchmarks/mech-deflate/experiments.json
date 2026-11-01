@@ -585,6 +585,17 @@
           "files": 38,
           "asset_id": 697428683,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-closure-e1f53fed3ba7.tar.gz"
+        },
+        {
+          "event": "binary-size",
+          "source_revision": "e4d444b5fcd33a69c05837ad1cafbd4c50b9ae97",
+          "asset": "r80-binary-size-6af1c675dede.tar.gz",
+          "sha256": "6af1c675dede5d9727066b51fc09d23181720901383d03fda8b40162d1d0233e",
+          "manifest_sha256": "5f86f4d82deb6a3f69d8be640eb5637d390f8497f73821b426076ec544e8abe2",
+          "bytes": 107136,
+          "files": 46,
+          "asset_id": 697428726,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-binary-size-6af1c675dede.tar.gz"
         }
       ],
       "analysis": {
