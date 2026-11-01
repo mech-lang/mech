@@ -7251,6 +7251,17 @@
           "files": 64,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-current-census-a7ce3c52041f.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "fa1ffe75e78c7ace538d7d14aa5f3ebc74783166",
+          "asset": "r102-closure-87f669298372.tar.gz",
+          "sha256": "87f66929837202d65a37cdf60388ba986ff77c9da61406390dee778682441a27",
+          "manifest_sha256": "2e8b710da19ed6649351b9ddcadf2ad9072007458ec7ceb24ed4ae8dba6851fa",
+          "bytes": 9017553,
+          "files": 252,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-closure-87f669298372.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
