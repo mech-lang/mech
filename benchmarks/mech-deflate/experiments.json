@@ -4400,6 +4400,17 @@
           "files": 54,
           "asset_id": 698549544,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-linked-bounds-14211a465b27.tar.gz"
+        },
+        {
+          "event": "analysis-driver-stream-error",
+          "source_revision": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+          "asset": "r90-analysis-driver-stream-error-fcc65c1e0c4d.tar.gz",
+          "sha256": "fcc65c1e0c4d3f8f5955f3721fbc74a5f0cf965814e4555ba97012006bcbbb8f",
+          "manifest_sha256": "1f892b4cfd78e5a9c1017a29325e19fed0d7e3acc84031e9d07aa2ee081e9398",
+          "bytes": 54548,
+          "files": 38,
+          "asset_id": 698549633,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-analysis-driver-stream-error-fcc65c1e0c4d.tar.gz"
         }
       ]
     }
