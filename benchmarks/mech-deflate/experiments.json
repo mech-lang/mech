@@ -5612,6 +5612,17 @@
           "files": 815,
           "asset_id": 698896222,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r93-callback-census-3ece295b5982.tar.gz"
+        },
+        {
+          "event": "linked-suffix",
+          "source_revision": "9075392a71ae8ad078c6428e0a827ee57de4e5f7",
+          "asset": "r93-linked-suffix-cbd7db4c96e8.tar.gz",
+          "sha256": "cbd7db4c96e8f3fb2b423336eb55910413c17ab8451480b68c4ea173866f8d76",
+          "manifest_sha256": "cf47af42eb2b5b3d33cb892fc313601eb1b24cb4464db6ff84dfb82028e978c5",
+          "bytes": 93052,
+          "files": 59,
+          "asset_id": 698896365,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r93-linked-suffix-cbd7db4c96e8.tar.gz"
         }
       ]
     }
