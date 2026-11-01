@@ -7072,6 +7072,26 @@
           "validation.json": "c5e57e49aec09d6e89f6cdc2042982701300231b903da10be125eac24fbd2a8f"
         }
       }
+    },
+    "102": {
+      "base": "f0ea21e3a35283d08bc1908b5ad0a8593e930b3f",
+      "production": "fa1ffe75e78c7ace538d7d14aa5f3ebc74783166",
+      "compiler_source": "fa1ffe75e78c7ace538d7d14aa5f3ebc74783166",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "fa1ffe75e78c7ace538d7d14aa5f3ebc74783166",
+          "asset": "r102-initial-1c3eea228461.tar.gz",
+          "sha256": "1c3eea2284617c2edb1bfbb5affaa210b5142433a99e82b2b545fd80aa86d272",
+          "manifest_sha256": "f5cfb401ec359f04090f4c2d3dd6d425c5c4f718911c085cb9d42a3b7847cbe9",
+          "bytes": 54901,
+          "files": 27,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-initial-1c3eea228461.tar.gz"
+        }
+      ],
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
