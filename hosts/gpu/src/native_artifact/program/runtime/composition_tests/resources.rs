@@ -15,7 +15,7 @@ fn scalar_child_finite_boundaries_preserve_publication_contents_and_retry() {
     });
 }
 
-fn finite_boundaries(
+pub(super) fn finite_boundaries(
     source: &str,
     make_inputs: impl Fn(&ProgramArtifact, &ManagedMemoryBudget) -> Vec<Value>,
 ) {
