@@ -4937,7 +4937,7 @@
       "base": "fbf4c54a865e877f2026e7a825bab818889f628b",
       "production": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
       "compiler_source": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
-      "decision": "under measurement",
+      "decision": "retain: elapsed -2.639971%, instructions -1.287281%, cycles -2.053337%; exactly618 requests/66744 requested bytes/69216 peak bytes removed; native text and stack unchanged",
       "events": [
         {
           "event": "pinned-inputs",
@@ -5163,8 +5163,95 @@
           "files": 70,
           "asset_id": 698758684,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-final-checks-d497a65cb9e8.tar.gz"
+        },
+        {
+          "event": "baseline-census",
+          "source_revision": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
+          "asset": "r92-baseline-census-233ff62f77ec.tar.gz",
+          "sha256": "233ff62f77ec32bec34292c69988cab74875a58792919eae54f365dcb44e8e5c",
+          "manifest_sha256": "2afba72ab18bca8413df6ab04ac03812c7832d4b4fc798bbd33513bd501ea34b",
+          "bytes": 715523,
+          "files": 57,
+          "asset_id": 698786007,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-baseline-census-233ff62f77ec.tar.gz"
         }
-      ]
+      ],
+      "retained_production": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
+      "ci_coverage": "5691e6edf8df386e0fea9107df78c46caa588d4f",
+      "versions": [
+        138,
+        99,
+        38,
+        14
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "ec1c420f7cb40676bb0a0e5886b01ee7e3f798566982e1b9f668b4669a31469b",
+          "profile-numbers.json": "5b10a6fc78f74e4a97d5735de8885a87d09aaad33be198a660bbc28576912a4c",
+          "scorecard.json": "c99ab3676e097d2411c95478805b7db15d7d634ace0e9f37393edcdb47fba025",
+          "validation.json": "19ec6ff39972d073ebae8d687bc069566796abb1304f65b1f211074dcf8b0022"
+        }
+      },
+      "validation": {
+        "architecture_checks": 15,
+        "current_required_failures": [],
+        "frame_cases": 8,
+        "inherited": "unchanged coherent selected-operation Core/Engine dependencies; GPU-only release, optimized units and runtime-only config retain warnings-as-errors. No fresh full math/minimal/no_std build claim.",
+        "linked_constant_cases": 12,
+        "linked_existing_cases": 16,
+        "new_coverage": "literal U8/U32 arrays; all-path and unselected consumers; live scalar owners retained; original/decoded/restored setup; exact image-bounds reconstruction and changed-bounds rejection; finite setup, arithmetic failure, publication, aliases, cleanup and retry; actual linked original/decoded execution",
+        "overlapping_selections": [
+          {
+            "executed": 353,
+            "receipt": "final-units/runtime.json"
+          },
+          {
+            "executed": 33,
+            "receipt": "final-units/work-memory-values.json"
+          },
+          {
+            "executed": 62,
+            "receipt": "final-units/ci.json"
+          },
+          {
+            "executed": 1,
+            "receipt": "final-units/image.json"
+          },
+          {
+            "executed": 236,
+            "receipt": "qualification/components.json"
+          },
+          {
+            "executed": 8,
+            "receipt": "qualification/composition.json"
+          },
+          {
+            "executed": 1,
+            "receipt": "qualification/path-mechanism.json"
+          }
+        ],
+        "passed": true,
+        "pricing_golden": {
+          "delta": -235768,
+          "huffman_after": 88531834,
+          "huffman_before": 88767602,
+          "output_goldens_and_component_allowances": "unchanged",
+          "policy": 99
+        },
+        "resolved_preparation_failures": "A minimal branch fixture had unequal result shapes; corrected permanent fixture uses equal shapes. Test sum type inference fixed. Intended baseline ownership/image tests fail before repair. Exact work golden advances explicitly with99. Counter driver had a stale R90 byte expectation; corrected to R91 and resumed only the not-yet-run after-memory subject, without rerunning completed hardware.",
+        "scalar_cases": 12,
+        "scalar_max_ratio": 1.0036254947846304,
+        "skipped": "hosted CI cancelled by instruction; large/full-corpus timing, giant complete knucleotide. Raw native binaries stay local; no independent binary retrieval claim. PR stays draft.",
+        "unchanged_scalar_gate": 1.05,
+        "versions": [
+          138,
+          99,
+          38,
+          14
+        ],
+        "workflow_tests": 132
+      }
     }
   },
   "repository": "mech-lang/mech",
