@@ -1222,246 +1222,238 @@ impl<'a> Prepared<'a> {
             .work
             .charge(NativeExecutionPhase::Setup, transition_work);
         transitioned?;
-        mech_engine::native_artifact::with_native_work_context(|work_context| {
-            let (input_words, rest) = self
-                .storage
-                .values_mut()
-                .split_at_mut(plan.transport_input_count());
-            let (values, rest) = rest.split_at_mut(self.locals);
-            let (progress_words, rest) = rest.split_at_mut(self.progress);
-            let (output_words, rest) = rest.split_at_mut(plan.transport_output_count());
-            let (result, rest) = rest.split_at_mut(1);
-            let (arguments, retirements) =
-                rest.split_at_mut(descriptor.metadata().max_library_inputs.max(1));
-            let input_pointer = input_words.as_ptr();
-            let local_pointer = values.as_mut_ptr();
-            let output_pointer = output_words.as_mut_ptr();
-            let result_pointer = result.as_mut_ptr();
-            let argument_pointer = arguments.as_mut_ptr();
-            let mut context = Invocation {
-                // Native frame pointers/capacities name only the earlier lanes.
-                // This immutable final lane is private to the checked callback.
-                retirements,
-                descriptor,
-                progress: progress_words,
-                state: &mut state,
-                work_context,
+        let (input_words, rest) = self
+            .storage
+            .values_mut()
+            .split_at_mut(plan.transport_input_count());
+        let (values, rest) = rest.split_at_mut(self.locals);
+        let (progress_words, rest) = rest.split_at_mut(self.progress);
+        let (output_words, rest) = rest.split_at_mut(plan.transport_output_count());
+        let (result, rest) = rest.split_at_mut(1);
+        let (arguments, retirements) =
+            rest.split_at_mut(descriptor.metadata().max_library_inputs.max(1));
+        let input_pointer = input_words.as_ptr();
+        let local_pointer = values.as_mut_ptr();
+        let output_pointer = output_words.as_mut_ptr();
+        let result_pointer = result.as_mut_ptr();
+        let argument_pointer = arguments.as_mut_ptr();
+        let mut context = Invocation {
+            // Native frame pointers/capacities name only the earlier lanes.
+            // This immutable final lane is private to the checked callback.
+            retirements,
+            descriptor,
+            progress: progress_words,
+            state: &mut state,
 
-                limits: self.limits.library,
-                result: result_pointer,
-                arguments: argument_pointer,
-                argument_capacity: descriptor.metadata().max_library_inputs,
-                error: None,
-                activation_phase: phase == PHASE_ACTIVATION,
-                execution_limits: self.limits.execution,
-                worker: self.worker.take(),
-                parallel_batch: None,
-                window_region: None,
-                window_hashes: None,
-                borrowed_strings: None,
-                closed_tail: None,
-                parent_continuation: Default::default(),
-                selected_join: None,
-                prefix: prefix_input.map(|input| {
-                    crate::native_artifact::program::runtime::invocation::prefix::State::new(
-                        input,
-                        self.retention,
-                    )
-                }),
-                line_window,
-            };
-            let context_pointer = (&mut context as *mut Invocation<'_, '_, '_>).cast::<c_void>();
-            let mut frame = Frame {
-                base: NativeEntryFrame {
-                    version: VERSION,
-                    input_count: plan.transport_input_count() as u64,
-                    local_count: self.locals as u64,
-                    output_count: plan.transport_output_count() as u64,
-                    inputs: input_pointer,
-                    locals: local_pointer,
-                    outputs: output_pointer,
-                    context: context_pointer,
-                    admit_next: admit,
-                    error_node: NO_NODE,
-                },
-                helper,
-                result: result_pointer,
-                arguments: argument_pointer,
-                argument_capacity: descriptor.metadata().max_library_inputs as u64,
-                phase,
-                resume_site: context.worker.as_ref().map_or_else(
-                    || prefix_input.map_or(0, |input| u64::from(input.resume_site)),
-                    |worker| u64::from(descriptor.metadata().parallel.regions[worker.region].begin),
-                ),
-                available_lines: context.worker.as_ref().map_or_else(
-                    || prefix_input.map_or(0, |input| input.available),
-                    |worker| worker.index,
-                ),
-                input_eof: context.worker.as_ref().map_or_else(
-                    || prefix_input.map_or(0, |input| u64::from(input.eof)),
-                    |worker| worker.count,
-                ),
-            };
-            let phase_words = (frame.resume_site, frame.available_lines, frame.input_eof);
-            let status = entry(&mut frame);
-            if let Some(error) = context.error.take() {
-                return Err(error);
-            }
-            if context.window_hashes.is_some()
-                || context.window_region.is_some()
-                || context.borrowed_strings.is_some()
-                || context.closed_tail.is_some()
-                || context.selected_join.is_some()
+            limits: self.limits.library,
+            result: result_pointer,
+            arguments: argument_pointer,
+            argument_capacity: descriptor.metadata().max_library_inputs,
+            error: None,
+            activation_phase: phase == PHASE_ACTIVATION,
+            execution_limits: self.limits.execution,
+            worker: self.worker.take(),
+            parallel_batch: None,
+            window_region: None,
+            window_hashes: None,
+            borrowed_strings: None,
+            closed_tail: None,
+            parent_continuation: Default::default(),
+            selected_join: None,
+            prefix: prefix_input.map(|input| {
+                crate::native_artifact::program::runtime::invocation::prefix::State::new(
+                    input,
+                    self.retention,
+                )
+            }),
+            line_window,
+        };
+        let context_pointer = (&mut context as *mut Invocation<'_, '_, '_>).cast::<c_void>();
+        let mut frame = Frame {
+            base: NativeEntryFrame {
+                version: VERSION,
+                input_count: plan.transport_input_count() as u64,
+                local_count: self.locals as u64,
+                output_count: plan.transport_output_count() as u64,
+                inputs: input_pointer,
+                locals: local_pointer,
+                outputs: output_pointer,
+                context: context_pointer,
+                admit_next: admit,
+                error_node: NO_NODE,
+            },
+            helper,
+            result: result_pointer,
+            arguments: argument_pointer,
+            argument_capacity: descriptor.metadata().max_library_inputs as u64,
+            phase,
+            resume_site: context.worker.as_ref().map_or_else(
+                || prefix_input.map_or(0, |input| u64::from(input.resume_site)),
+                |worker| u64::from(descriptor.metadata().parallel.regions[worker.region].begin),
+            ),
+            available_lines: context.worker.as_ref().map_or_else(
+                || prefix_input.map_or(0, |input| input.available),
+                |worker| worker.index,
+            ),
+            input_eof: context.worker.as_ref().map_or_else(
+                || prefix_input.map_or(0, |input| u64::from(input.eof)),
+                |worker| worker.count,
+            ),
+        };
+        let phase_words = (frame.resume_site, frame.available_lines, frame.input_eof);
+        let status = entry(&mut frame);
+        if let Some(error) = context.error.take() {
+            return Err(error);
+        }
+        if context.window_hashes.is_some()
+            || context.window_region.is_some()
+            || context.borrowed_strings.is_some()
+            || context.closed_tail.is_some()
+            || context.selected_join.is_some()
+        {
+            return Err(invalid("native entry returned with compiled String loans"));
+        }
+        let f = &frame.base;
+        if f.version != VERSION
+            || f.input_count != plan.transport_input_count() as u64
+            || f.local_count != self.locals as u64
+            || f.output_count != plan.transport_output_count() as u64
+            || f.inputs != input_pointer
+            || f.locals != local_pointer
+            || f.outputs != output_pointer
+            || f.context != context_pointer
+            || f.admit_next as usize != admit as *const () as usize
+            || frame.helper as usize != helper as *const () as usize
+            || frame.result != result_pointer
+            || frame.arguments != argument_pointer
+            || frame.argument_capacity != descriptor.metadata().max_library_inputs as u64
+            || frame.phase != phase
+            || (frame.resume_site, frame.available_lines, frame.input_eof) != phase_words
+        {
+            return Err(invalid("program entry changed immutable frame"));
+        }
+        if phase == PHASE_ACTIVATION && status == STATUS_ACTIVATED {
+            let previous = context.admission_predecessor(u64::from(boundary))?;
+            if f.error_node != u64::from(boundary)
+                || context.state.control.completed
+                || context.state.control.current.is_some()
+                || context.progress.chunks_exact(2).any(|value| value[1] != 0)
+                || context.state.output_cursor != 0
+                || context
+                    .state
+                    .collections
+                    .as_ref()
+                    .is_some_and(|state| !state.is_complete())
+                || previous.is_none_or(|previous| {
+                    !descriptor.metadata().visits[previous as usize]
+                        .successors()
+                        .contains(&Some(boundary))
+                        || (context.action_required(previous as usize) && !context.state.consumed)
+                })
             {
-                return Err(invalid("native entry returned with compiled String loans"));
+                return Err(invalid("native entry omitted exact activation checkpoint"));
             }
-            let f = &frame.base;
-            if f.version != VERSION
-                || f.input_count != plan.transport_input_count() as u64
-                || f.local_count != self.locals as u64
-                || f.output_count != plan.transport_output_count() as u64
-                || f.inputs != input_pointer
-                || f.locals != local_pointer
-                || f.outputs != output_pointer
-                || f.context != context_pointer
-                || f.admit_next as usize != admit as *const () as usize
-                || frame.helper as usize != helper as *const () as usize
-                || frame.result != result_pointer
-                || frame.arguments != argument_pointer
-                || frame.argument_capacity != descriptor.metadata().max_library_inputs as u64
-                || frame.phase != phase
-                || (frame.resume_site, frame.available_lines, frame.input_eof) != phase_words
-            {
-                return Err(invalid("program entry changed immutable frame"));
-            }
-            if phase == PHASE_ACTIVATION && status == STATUS_ACTIVATED {
-                let previous = context.admission_predecessor(u64::from(boundary))?;
-                if f.error_node != u64::from(boundary)
-                    || context.state.control.completed
-                    || context.state.control.current.is_some()
-                    || context.progress.chunks_exact(2).any(|value| value[1] != 0)
-                    || context.state.output_cursor != 0
-                    || context
-                        .state
-                        .collections
+        } else {
+            match status {
+                STATUS_WORKER_RESULT if phase == PHASE_WORKER => {
+                    let worker = context
+                        .worker
                         .as_ref()
-                        .is_some_and(|state| !state.is_complete())
-                    || previous.is_none_or(|previous| {
-                        !descriptor.metadata().visits[previous as usize]
-                            .successors()
-                            .contains(&Some(boundary))
-                            || (context.action_required(previous as usize)
-                                && !context.state.consumed)
-                    })
-                {
-                    return Err(invalid("native entry omitted exact activation checkpoint"));
+                        .ok_or_else(|| invalid("worker state lost"))?;
+                    let region = &descriptor.metadata().parallel.regions[worker.region];
+                    if worker.result.is_none()
+                        || f.error_node != u64::from(region.push)
+                        || context.state.control.completed
+                        || context.state.output_cursor != 0
+                        || context.state.control.current != Some(region.iteration)
+                        || context.parallel_batch.is_some()
+                    {
+                        return Err(invalid("worker omitted exact source result frontier"));
+                    }
                 }
-            } else {
-                match status {
-                    STATUS_WORKER_RESULT if phase == PHASE_WORKER => {
-                        let worker = context
-                            .worker
-                            .as_ref()
-                            .ok_or_else(|| invalid("worker state lost"))?;
-                        let region = &descriptor.metadata().parallel.regions[worker.region];
-                        if worker.result.is_none()
-                            || f.error_node != u64::from(region.push)
-                            || context.state.control.completed
-                            || context.state.output_cursor != 0
-                            || context.state.control.current != Some(region.iteration)
-                            || context.parallel_batch.is_some()
-                        {
-                            return Err(invalid("worker omitted exact source result frontier"));
-                        }
+                STATUS_OK if phase == PHASE_TURN || phase == PHASE_CAPTURE_TAIL => {
+                    if !context.state.control.completed
+                        || f.error_node != NO_NODE
+                        || context.state.output_cursor != plan.transport_output_count()
+                        || context.state.control.previous.is_some_and(|site| {
+                            context.action_required(site as usize) && !context.state.consumed
+                        })
+                    {
+                        return Err(invalid("program omitted atomic completion"));
                     }
-                    STATUS_OK if phase == PHASE_TURN || phase == PHASE_CAPTURE_TAIL => {
-                        if !context.state.control.completed
-                            || f.error_node != NO_NODE
-                            || context.state.output_cursor != plan.transport_output_count()
-                            || context.state.control.previous.is_some_and(|site| {
-                                context.action_required(site as usize) && !context.state.consumed
-                            })
-                        {
-                            return Err(invalid("program omitted atomic completion"));
-                        }
-                        self.paused = None;
+                    self.paused = None;
+                }
+                STATUS_INPUT_PENDING if phase == PHASE_PREFIX => {
+                    let site = context
+                        .prefix
+                        .as_ref()
+                        .and_then(|prefix| prefix.paused)
+                        .ok_or_else(|| invalid("native entry forged an input checkpoint"))?;
+                    if f.error_node != u64::from(site) || prefix_input.is_none_or(|input| input.eof)
+                    {
+                        return Err(invalid("native entry returned the wrong input checkpoint"));
                     }
-                    STATUS_INPUT_PENDING if phase == PHASE_PREFIX => {
-                        let site = context
-                            .prefix
-                            .as_ref()
-                            .and_then(|prefix| prefix.paused)
-                            .ok_or_else(|| invalid("native entry forged an input checkpoint"))?;
-                        if f.error_node != u64::from(site)
-                            || prefix_input.is_none_or(|input| input.eof)
-                        {
-                            return Err(invalid(
-                                "native entry returned the wrong input checkpoint",
-                            ));
-                        }
-                        // check_prefix_header deliberately rejects an already
-                        // marked pause. Recheck its invariant without granting a visit.
-                        context.prefix.as_mut().unwrap().paused = None;
-                        context.check_prefix_header(site)?;
-                        crate::native_artifact::program::runtime::invocation::prefix::check_cleared(
+                    // check_prefix_header deliberately rejects an already
+                    // marked pause. Recheck its invariant without granting a visit.
+                    context.prefix.as_mut().unwrap().paused = None;
+                    context.check_prefix_header(site)?;
+                    crate::native_artifact::program::runtime::invocation::prefix::check_cleared(
                         descriptor, values, arguments,
                     )?;
-                        self.retention =
-                            Some(context.prefix.as_ref().unwrap().retained.ok_or_else(|| {
-                                invalid("native checkpoint omitted retention coordinates")
-                            })?);
-                        self.paused = Some(site);
+                    self.retention =
+                        Some(context.prefix.as_ref().unwrap().retained.ok_or_else(|| {
+                            invalid("native checkpoint omitted retention coordinates")
+                        })?);
+                    self.paused = Some(site);
+                }
+                STATUS_INPUT_SCANNED if phase == PHASE_PREFIX => {
+                    let site = context
+                        .prefix
+                        .as_ref()
+                        .and_then(|prefix| prefix.scanned)
+                        .ok_or_else(|| invalid("native entry forged scanner completion"))?;
+                    if f.error_node != u64::from(site)
+                        || prefix_input.is_none_or(|input| !input.eof)
+                    {
+                        return Err(invalid("native scanner returned wrong EOF checkpoint"));
                     }
-                    STATUS_INPUT_SCANNED if phase == PHASE_PREFIX => {
-                        let site = context
-                            .prefix
-                            .as_ref()
-                            .and_then(|prefix| prefix.scanned)
-                            .ok_or_else(|| invalid("native entry forged scanner completion"))?;
-                        if f.error_node != u64::from(site)
-                            || prefix_input.is_none_or(|input| !input.eof)
-                        {
-                            return Err(invalid("native scanner returned wrong EOF checkpoint"));
-                        }
-                        context.prefix.as_mut().unwrap().scanned = None;
-                        context.check_prefix_exit(site)?;
-                        crate::native_artifact::program::runtime::invocation::prefix::check_cleared(
+                    context.prefix.as_mut().unwrap().scanned = None;
+                    context.check_prefix_exit(site)?;
+                    crate::native_artifact::program::runtime::invocation::prefix::check_cleared(
                         descriptor, values, arguments,
                     )?;
-                        self.paused = Some(site);
-                    }
-                    STATUS_ARITHMETIC | STATUS_REJECT | STATUS_INTEGRITY => {
-                        let id = context.failure_site(f.error_node)?;
-                        let site = &descriptor.metadata().visits[id as usize];
-                        return Err(if status == STATUS_ARITHMETIC && site.arithmetic {
-                            NativeIterationExecutionError::Arithmetic {
-                                origin: site.origin,
-                            }
-                            .into()
-                        } else if status == STATUS_INTEGRITY && site.integrity {
-                            NativeIterationExecutionError::Integrity {
-                                origin: site.origin,
-                            }
-                            .into()
-                        } else if status == STATUS_REJECT && site.reject {
-                            NativeIterationExecutionError::Unmatched {
-                                origin: site.origin,
-                            }
-                            .into()
-                        } else {
-                            invalid("program failure status outside matching action")
-                        });
-                    }
-                    _ => return Err(NativeExecutionError::InvalidStatus { status }.into()),
+                    self.paused = Some(site);
                 }
+                STATUS_ARITHMETIC | STATUS_REJECT | STATUS_INTEGRITY => {
+                    let id = context.failure_site(f.error_node)?;
+                    let site = &descriptor.metadata().visits[id as usize];
+                    return Err(if status == STATUS_ARITHMETIC && site.arithmetic {
+                        NativeIterationExecutionError::Arithmetic {
+                            origin: site.origin,
+                        }
+                        .into()
+                    } else if status == STATUS_INTEGRITY && site.integrity {
+                        NativeIterationExecutionError::Integrity {
+                            origin: site.origin,
+                        }
+                        .into()
+                    } else if status == STATUS_REJECT && site.reject {
+                        NativeIterationExecutionError::Unmatched {
+                            origin: site.origin,
+                        }
+                        .into()
+                    } else {
+                        invalid("program failure status outside matching action")
+                    });
+                }
+                _ => return Err(NativeExecutionError::InvalidStatus { status }.into()),
             }
-            if context.parallel_batch.is_some() {
-                return Err(invalid("native phase left pending parallel results"));
-            }
-            self.worker = context.worker.take();
-            drop(context);
-            Ok::<(), NativeProgramExecutionError>(())
-        })?;
+        }
+        if context.parallel_batch.is_some() {
+            return Err(invalid("native phase left pending parallel results"));
+        }
+        self.worker = context.worker.take();
+        drop(context);
         self.state = Some(state);
         Ok(())
     }

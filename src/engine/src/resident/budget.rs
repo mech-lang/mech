@@ -270,12 +270,6 @@ impl Default for ControlWorkAccount {
     }
 }
 
-#[cfg(feature = "native-artifact")]
-#[path = "native_work_context.rs"]
-mod native_work_context;
-#[cfg(feature = "native-artifact")]
-pub use native_work_context::{NativeLibraryWorkContext, with_native_work_context};
-
 /// A shared library-work account for one native invocation, not permission to
 /// execute a call. Actual NativeHost call plans and payload admission remain
 /// mandatory. Clones retain the same spent work and can never renew limits.
@@ -446,12 +440,6 @@ impl NativeLibraryWorkBudget {
         compute: u64,
         limit: u64,
     ) -> Result<(), ResidentKernelError> {
-        self.check_compute_ceiling(compute, limit)?;
-        CONTROL_WORK_CONTEXT.with(|context| self.charge_in_context(context, compute, 0))
-    }
-
-    #[inline(always)]
-    fn check_compute_ceiling(&self, compute: u64, limit: u64) -> Result<(), ResidentKernelError> {
         let exceeded = |required| ResidentKernelError::ResourceLimit {
             phase: mech_core::ResidentResourcePhase::Admission,
             dimension: MemoryBudgetDimension::ComputeWork,
@@ -468,7 +456,7 @@ impl NativeLibraryWorkBudget {
         if required > limit {
             return Err(exceeded(required));
         }
-        Ok(())
+        CONTROL_WORK_CONTEXT.with(|context| self.charge_in_context(context, compute, 0))
     }
 
     #[inline(always)]
@@ -951,7 +939,6 @@ fn charge_control_account(
     })
 }
 
-#[inline(always)]
 fn charge_control_account_at_limits(
     account: &mut ControlWorkAccount,
     compute: u64,
