@@ -611,8 +611,8 @@ observations and separate695-call profiles remain. One environmental Git
 recording denial was repaired by committing the unchanged already sealed
 passing linked packet; no program rerun or allowance change.
 
-The fresh full5077-event allocation trace confirms3368B replacement requests
-and33632B final shape owners. Shape forwarding is the next672-request candidate,
+The fresh full5077-event allocation trace confirms336 eight-byte replacement requests
+and336 32-byte final shape owners. Shape forwarding is the next672-request candidate,
 then prepared schema headers; no allocation saving is claimed for R102. The
 independent instruction track remains prepared transfers/known-zero arguments/
 entry-local source reuse. Exact pins, all commands, source/readers, raw cohorts,

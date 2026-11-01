@@ -7101,8 +7101,8 @@
           "manifest_sha256": "f5cfb401ec359f04090f4c2d3dd6d425c5c4f718911c085cb9d42a3b7847cbe9",
           "bytes": 54901,
           "files": 27,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-initial-1c3eea228461.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r102-initial-1c3eea228461.tar.gz"
         },
         {
           "event": "primary-reference",
@@ -7112,8 +7112,8 @@
           "manifest_sha256": "65bcb5a1ec8eb694a931f85d82ff45caa6b0daaec82c45dbdc469a6d755e8105",
           "bytes": 194821,
           "files": 41,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-primary-reference-36e369e37b46.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r102-primary-reference-36e369e37b46.tar.gz"
         },
         {
           "event": "primary-group0",
@@ -7123,8 +7123,8 @@
           "manifest_sha256": "fddf37227ba4539ef294244b91f63959e219bdcdae450d6f366c1c76e8d006ed",
           "bytes": 137750,
           "files": 43,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-primary-group0-ec50fe74d743.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r102-primary-group0-ec50fe74d743.tar.gz"
         },
         {
           "event": "primary-group1",
@@ -7134,8 +7134,8 @@
           "manifest_sha256": "7879dc7cbdd04f412db59ee7e32bc6c2b1f830393f43fa7ea93b32bc683cadf9",
           "bytes": 137744,
           "files": 43,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-primary-group1-75bd6e6ec91b.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r102-primary-group1-75bd6e6ec91b.tar.gz"
         },
         {
           "event": "primary-group2",
@@ -7145,8 +7145,8 @@
           "manifest_sha256": "7687e9d32f41b8c7eb2b1c79c196ed6e53b024f4ac1aca78cf3592a97396e5c0",
           "bytes": 137908,
           "files": 43,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-primary-group2-d80202f99403.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r102-primary-group2-d80202f99403.tar.gz"
         },
         {
           "event": "primary-group3",
@@ -7156,8 +7156,8 @@
           "manifest_sha256": "f13cd7fb2815b433154971c9f8b5dcc24337b07e2f227748e2ccfbb1756b9d27",
           "bytes": 137884,
           "files": 43,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-primary-group3-87f6de0c9cc9.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r102-primary-group3-87f6de0c9cc9.tar.gz"
         },
         {
           "event": "primary-summary",
@@ -7167,8 +7167,7 @@
           "manifest_sha256": "db0c3230c1c371e47faf860619eb91fcae8eb554461889193986915d5a312a9d",
           "bytes": 109612,
           "files": 40,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-primary-summary-c97577700e82.tar.gz",
+          "publication": "published; server SHA-256 verified",
           "timing": {
             "primary_observations": 3968,
             "reference_seconds": 0.000287,
@@ -7184,7 +7183,8 @@
             "improving_groups": 4,
             "improving_blocks": 64,
             "adverse_blocks": 0
-          }
+          },
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r102-primary-summary-c97577700e82.tar.gz"
         },
         {
           "event": "counters",
@@ -7194,8 +7194,8 @@
           "manifest_sha256": "b950e893f02accb30c7a77a7098bad109c708f26d3b107a89b779dfc5145c0bc",
           "bytes": 307734,
           "files": 77,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-counters-f0c8d607f69c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r102-counters-f0c8d607f69c.tar.gz"
         },
         {
           "event": "isolated-profile",
@@ -7205,8 +7205,8 @@
           "manifest_sha256": "6a27ae04e66d4f4ec45d6cc98ee38bbec2e1e3bc51e8d37c1c37d7943b257819",
           "bytes": 317904,
           "files": 47,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-isolated-profile-b79080bbdfb0.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r102-isolated-profile-b79080bbdfb0.tar.gz"
         },
         {
           "event": "linked-multi",
@@ -7216,8 +7216,8 @@
           "manifest_sha256": "53faa454b23ad3f6ea7384819efd80f17e718615aada919574aeae461c34a33b",
           "bytes": 143766,
           "files": 55,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-linked-multi-a6f064d0f425.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r102-linked-multi-a6f064d0f425.tar.gz"
         },
         {
           "event": "frame-allocation",
@@ -7227,8 +7227,8 @@
           "manifest_sha256": "43a38119c49d99c87ec434097cc21f4f4fc5239ede1468ccb2577fb74982e4a0",
           "bytes": 115301,
           "files": 71,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-frame-allocation-de07192835ea.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r102-frame-allocation-de07192835ea.tar.gz"
         },
         {
           "event": "scalar-controls",
@@ -7238,8 +7238,8 @@
           "manifest_sha256": "edbbe5001cb74dad66cc7b5918de6680e80df65420d3f214d4420e90efba024a",
           "bytes": 127434,
           "files": 96,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-scalar-controls-1ab73ecb7306.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r102-scalar-controls-1ab73ecb7306.tar.gz"
         },
         {
           "event": "current-census",
@@ -7249,8 +7249,8 @@
           "manifest_sha256": "ce999906d987a37981185afb2f9f653a75a2621e9e5e43ee6ec69205bb600f68",
           "bytes": 707511,
           "files": 64,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-current-census-a7ce3c52041f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r102-current-census-a7ce3c52041f.tar.gz"
         },
         {
           "event": "closure",
@@ -7260,11 +7260,11 @@
           "manifest_sha256": "2e8b710da19ed6649351b9ddcadf2ad9072007458ec7ceb24ed4ae8dba6851fa",
           "bytes": 9017553,
           "files": 252,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-closure-87f669298372.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r102-closure-87f669298372.tar.gz"
         }
       ],
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "analysis": {
         "script": "analysis/analyze.py",
         "expected_outputs": {
