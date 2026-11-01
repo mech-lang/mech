@@ -6182,6 +6182,17 @@
           "files": 84,
           "asset_id": 699288013,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r97-scalar-controls-349df8615a0e.tar.gz"
+        },
+        {
+          "event": "isolated-profile",
+          "source_revision": "20f002f4ff5ff2186888b7efc8517261756b425e",
+          "asset": "r97-isolated-profile-025542c460c8.tar.gz",
+          "sha256": "025542c460c8ae9a7669ce2542aa2656117013638273faefead28e47b9366212",
+          "manifest_sha256": "61bd7cc01a1647512ee5a12b280e17dc434077952da1abcec4549496d60704eb",
+          "bytes": 259197,
+          "files": 39,
+          "asset_id": 699291208,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r97-isolated-profile-025542c460c8.tar.gz"
         }
       ]
     }
