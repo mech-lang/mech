@@ -5851,7 +5851,7 @@
       "base": "6c2db2f3a613cff6f010c5f234286fed5a2d0cc6",
       "production": "67a7c88e745092264a5a735933dd95cf48fc5446",
       "compiler_source": "67a7c88e745092264a5a735933dd95cf48fc5446",
-      "decision": "under measurement",
+      "decision": "retain allocation/instruction improvement: exactly628 requests/10306 requested bytes removed; instructions -0.250575%; elapsed essentially flat (two faster/two slower pairs), no established speedup",
       "events": [
         {
           "event": "initial",
@@ -6012,7 +6012,23 @@
           "asset_id": 699179088,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r95-closure-82ce1d8cab86.tar.gz"
         }
-      ]
+      ],
+      "retained_production": "67a7c88e745092264a5a735933dd95cf48fc5446",
+      "versions": [
+        140,
+        99,
+        38,
+        14
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "scorecard.json": "b6b395be20eccd02b8267f5ca1500afe7bf47c20522fe8f9239d9744bbc65505",
+          "mechanism.json": "795f0b2a1e76101e143d4d82f7c18f278209050c9713b9ddc6c7fbfd169c0c01",
+          "validation.json": "2def5e7a4f354abb24c7cda84edb95b8fd4a43da95ed2ff8313178581d1dbd6e",
+          "profile-numbers.json": "2c6249ad70d6e67b700bd2c8cd2f885af767c57fe12da860eef6c6e1d34cce3e"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
