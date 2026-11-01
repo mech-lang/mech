@@ -7158,6 +7158,33 @@
           "files": 43,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-primary-group3-87f6de0c9cc9.tar.gz"
+        },
+        {
+          "event": "primary-summary",
+          "source_revision": "fa1ffe75e78c7ace538d7d14aa5f3ebc74783166",
+          "asset": "r102-primary-summary-c97577700e82.tar.gz",
+          "sha256": "c97577700e827529360314ee59980a1575f2bcf362494346e2c4c974aadc65f1",
+          "manifest_sha256": "db0c3230c1c371e47faf860619eb91fcae8eb554461889193986915d5a312a9d",
+          "bytes": 109612,
+          "files": 40,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-primary-summary-c97577700e82.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.000287,
+            "medians": {
+              "after": 0.0023408125,
+              "before": 0.0024331455
+            },
+            "multiples_of_reference": {
+              "after": 8.15614111498258,
+              "before": 8.477858885017422
+            },
+            "after_over_before": 0.9620520022333231,
+            "improving_groups": 4,
+            "improving_blocks": 64,
+            "adverse_blocks": 0
+          }
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
