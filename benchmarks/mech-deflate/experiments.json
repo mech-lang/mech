@@ -7185,6 +7185,17 @@
             "improving_blocks": 64,
             "adverse_blocks": 0
           }
+        },
+        {
+          "event": "counters",
+          "source_revision": "fa1ffe75e78c7ace538d7d14aa5f3ebc74783166",
+          "asset": "r102-counters-f0c8d607f69c.tar.gz",
+          "sha256": "f0c8d607f69c48fc8c1bdb0bc382ef2dec93bce28600ad9c7fde59325d8841e2",
+          "manifest_sha256": "b950e893f02accb30c7a77a7098bad109c708f26d3b107a89b779dfc5145c0bc",
+          "bytes": 307734,
+          "files": 77,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-counters-f0c8d607f69c.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
