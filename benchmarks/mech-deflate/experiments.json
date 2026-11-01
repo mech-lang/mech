@@ -6577,6 +6577,17 @@
           "files": 77,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-frame-allocation-687939ccf967.tar.gz"
+        },
+        {
+          "event": "isolated-profile",
+          "source_revision": "5c219ed220879b05ee147bdf5d3f85680311eae2",
+          "asset": "r99-isolated-profile-8b5d16c2e035.tar.gz",
+          "sha256": "8b5d16c2e03501d4ea68efd6deafe1045430d6e072ed2d5e96739f2e600070b4",
+          "manifest_sha256": "adc443ca86745beb98c829908716d79bb4411fdfa2307844e116b4b25277ee6b",
+          "bytes": 322177,
+          "files": 54,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-isolated-profile-8b5d16c2e035.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
