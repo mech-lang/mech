@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-11-01T01:51:31.835241+00:00",
+  "head": "cb348c5d34b9c11feddd464fbb30159940c31e62",
+  "files": [
+    {
+      "path": "restore-production.py",
+      "sha256": "b4dfe5d2f4adcdeaca66a0c3b2896234b7e5eb77bf0031c5c75d26c269746575",
+      "bytes": 3947
+    },
+    {
+      "path": "restored/memory-runtime.json",
+      "sha256": "14b691f358b51978cb0f74f09bfff68cda2d225920c3a5a7546462c0f6023197",
+      "bytes": 350
+    },
+    {
+      "path": "restored/memory-runtime.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "restored/memory-runtime.stdout",
+      "sha256": "0b66ce89f3e8d72fa0cd91e51007a7a3c72a511c29feaa32ceba110951cd076a",
+      "bytes": 53
+    },
+    {
+      "path": "restored/rejected-source.patch",
+      "sha256": "5e7f287c3b98c85f9b9815a6778213e7ec4510cc60b264c26406d14cf7a784a9",
+      "bytes": 934
+    },
+    {
+      "path": "restored/source-proof.json",
+      "sha256": "b28bcf7ce86dd69b0610999d39aefa99756be66c402b85277c21bb3b3e194491",
+      "bytes": 58886
+    }
+  ]
+}
