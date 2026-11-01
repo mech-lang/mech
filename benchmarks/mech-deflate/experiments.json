@@ -5806,6 +5806,17 @@
           "files": 99,
           "asset_id": 698954786,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r94-scalar-controls-c17eac549ada.tar.gz"
+        },
+        {
+          "event": "linked-multi",
+          "source_revision": "c35698030a4e89f6d4548af1b17762ec737cd427",
+          "asset": "r94-linked-multi-32a49056328e.tar.gz",
+          "sha256": "32a49056328e9c2b67325d00c32b6a2be905575b7f4898357e87fe673963a06f",
+          "manifest_sha256": "51d0eb558fe970acddccd075fcaf5ad85a22b8ba0c8ba09a75fc3673bd7c0364",
+          "bytes": 99021,
+          "files": 61,
+          "asset_id": 698957210,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r94-linked-multi-32a49056328e.tar.gz"
         }
       ]
     }
