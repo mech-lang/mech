@@ -416,3 +416,39 @@ warnings-as-errors and produces byte-identical final Object/image/metadata.
 Four numerical reports replay without compilation via `replay-round --round 94`.
 Native binaries stay local; retrieved descriptors/excerpts and hash receipts do
 not establish independent Object retrieval. See the [current status](../../docs/design/native-compression-status.md).
+
+
+## R95: canonical shape parameter and witness storage
+
+Base `6c2db2f3a613cff6f010c5f234286fed5a2d0cc6`; compiler
+`67a7c88e745092264a5a735933dd95cf48fc5446`; separate CI `64810afee`.
+The canonical solver consumes its unpublished parameter Box, traverses borrowed
+witnesses, and uses inline Boolean scratch through 16 parameters with the same
+heap solver beyond 16. Tests exercise 17/65; this is not a dimension/program cap.
+Validation order, compound/min/max/shared witnesses and conservative prices stay.
+
+Fresh complete stack censuses reconcile 5,781→5,153 requests (−628), requested
+98,008,140→97,997,834B (−10,306). Shape-family requests 806→178: the retained
+initial owner becomes the final shape; 178 copies, 272 witness vectors and 178
+flag allocations disappear. All other size/kind bins agree after subtracting
+those allocations; no exact join of every other stack family is claimed.
+
+Matched elapsed 8.792392×→8.783390× reference (0.102381% lower median) is effectively
+flat: two pairs improve/two worsen, 33 blocks improve/31 worsen. Retained as a
+resource/instruction improvement, with no established elapsed speedup. Separate
+instructions 27,866,086.5→27,796,261 (−0.250575%), cycles −0.100447%; live peak
+17,782,744B and all large allocations/reallocations stay unchanged. Compressor
+Object/image/metadata and text/stack 15,641,476/143,424B are byte-identical.
+IR/work/private ABI/MBC remain 140/99/38/14; full logical work 42,449,879,781 and
+Huffman work 88,531,834 stay equal. Source, allocator and allowances do not change.
+
+Twelve project libraries were rebuilt coherently with unchanged selected
+operations/features and frozen external dependencies; build elapsed 361.432s.
+Core 376 units, 102 actual Rust consumers, shape contracts 10, a fresh minimal
+no_std check, runtime 355, work/memory 33, CI 64, image 1, unchanged components 236,
+connected 8, path 1, linked 40, scalar 12 at unchanged 1.05 (maximum 1.041001),
+frame 8, workflow 132 and architecture 15 pass. Failed test preparation is
+preserved: an unused-parameter fixture was pruned canonically, and a consumer
+driver initially used the wrong source argument position. Both are corrected.
+Four numerical reports replay with `replay-round --round 95`; native binaries
+stay local. See [current status](../../docs/design/native-compression-status.md).
