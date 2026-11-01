@@ -199,6 +199,17 @@
           "files": 81,
           "asset_id": 697350425,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-final-checks-5ca3b1aae3d9.tar.gz"
+        },
+        {
+          "event": "evidence-integrity",
+          "source_revision": "374edf1410b5f975d793fb69d8fcf390cbfa10a5",
+          "asset": "r79-evidence-integrity-017addf41b57.tar.gz",
+          "sha256": "017addf41b57dffe8c7e0d8ee1a11647ab315dc5e7decb01e06fe936a4646a72",
+          "manifest_sha256": "d519829f708a44564300c2e098aa65d0baebe6b067bd985d13ed2aa0eed82960",
+          "bytes": 97677,
+          "files": 81,
+          "asset_id": 697350481,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-evidence-integrity-017addf41b57.tar.gz"
         }
       ],
       "analysis": {
