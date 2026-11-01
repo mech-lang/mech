@@ -6428,7 +6428,7 @@
       "base": "64705927265fa331735ef39cdb3185471015054e",
       "production": "5c219ed220879b05ee147bdf5d3f85680311eae2",
       "compiler_source": "5c219ed220879b05ee147bdf5d3f85680311eae2",
-      "decision": "under measurement",
+      "decision": "Retain: -1.272220% matched elapsed, four real tree copies removed. Whole-call instructions +2.038056% remain adverse; no peak-live-heap improvement.",
       "events": [
         {
           "event": "initial",
@@ -6438,8 +6438,10 @@
           "manifest_sha256": "8bd7352ada85d96c8d3db8606095b4811cdbf36eb59a273ee4d6b46250a87c31",
           "bytes": 4440139,
           "files": 70,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-initial-6bfdecfa6b34.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-initial-6bfdecfa6b34.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-initial-6bfdecfa6b34.tar.gz.json",
+          "asset_digest": "sha256:6bfdecfa6b348125dd88a2b894396189aeec317092db04bd2bb0ec31c831253d"
         },
         {
           "event": "primary-reference",
@@ -6449,8 +6451,10 @@
           "manifest_sha256": "a0626b2c587adc5f173f2f540e3a7ad8ddcb7d128b1bbc7c7fb45431a13ebc5a",
           "bytes": 198228,
           "files": 43,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-primary-reference-26e1a0e261bb.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-primary-reference-26e1a0e261bb.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-primary-reference-26e1a0e261bb.tar.gz.json",
+          "asset_digest": "sha256:26e1a0e261bb755141b8611cd59225811a450e89e3c3f0f4c225c95e04534fc8"
         },
         {
           "event": "primary-group0",
@@ -6460,8 +6464,10 @@
           "manifest_sha256": "c16b355f353d5d9cbfa5d838825b5f4dc78b9a91aa0d6bf4336950552bae319f",
           "bytes": 140461,
           "files": 45,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-primary-group0-d7661edc295c.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-primary-group0-d7661edc295c.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-primary-group0-d7661edc295c.tar.gz.json",
+          "asset_digest": "sha256:d7661edc295c9d146437ef13069e9411a3cf14a732164b5a74e8aa52f36ec5cc"
         },
         {
           "event": "primary-group1",
@@ -6471,8 +6477,10 @@
           "manifest_sha256": "0f1b54dd064f58b74dff9c98e4d8db059944a1c3c1f054989287fb9ade7daa5f",
           "bytes": 140391,
           "files": 45,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-primary-group1-6241bdc92f7b.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-primary-group1-6241bdc92f7b.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-primary-group1-6241bdc92f7b.tar.gz.json",
+          "asset_digest": "sha256:6241bdc92f7bb33019affa7f9526b6ec59d5ae87d2088a18ef2392b1574e9519"
         },
         {
           "event": "primary-group2",
@@ -6482,8 +6490,10 @@
           "manifest_sha256": "6b31e1ef1acde03b8569e598a2d8b298ea5b444cda9a41fe3e16063d5f7a467c",
           "bytes": 140574,
           "files": 45,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-primary-group2-b0efe4416f95.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-primary-group2-b0efe4416f95.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-primary-group2-b0efe4416f95.tar.gz.json",
+          "asset_digest": "sha256:b0efe4416f956b0c3245ab48c543cef3a9cb954b32da61367d3837a67daa588c"
         },
         {
           "event": "primary-group3",
@@ -6493,8 +6503,10 @@
           "manifest_sha256": "5d157b99888e976e9864fd5a87ee5e8a59a93e02812ea24d118fb04de3ccd2cb",
           "bytes": 140451,
           "files": 45,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-primary-group3-0c1cf049f8de.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-primary-group3-0c1cf049f8de.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-primary-group3-0c1cf049f8de.tar.gz.json",
+          "asset_digest": "sha256:0c1cf049f8def27973876b8a0465b8d8148857881023c5af5311991c1c216b80"
         },
         {
           "event": "primary-summary",
@@ -6504,8 +6516,7 @@
           "manifest_sha256": "d2bd8969dea2426cba10b92e026f1b52a991180588284e72daeff41eee3a2750",
           "bytes": 112065,
           "files": 42,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-primary-summary-7e10130891b3.tar.gz",
+          "publication": "published; release digest verified",
           "timing": {
             "primary_observations": 3968,
             "reference_seconds": 0.000289,
@@ -6521,7 +6532,10 @@
             "improving_groups": 4,
             "improving_blocks": 61,
             "adverse_blocks": 3
-          }
+          },
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-primary-summary-7e10130891b3.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-primary-summary-7e10130891b3.tar.gz.json",
+          "asset_digest": "sha256:7e10130891b300ca9762314829f0ffe36bdd7b2ebe2473de94fe84fc99865c6a"
         },
         {
           "event": "counters",
@@ -6531,8 +6545,10 @@
           "manifest_sha256": "c6f768dcfd68d14839d3a7fd051ad950caa099fa0a7d5d638144b9c71fd3a9e7",
           "bytes": 311825,
           "files": 80,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-counters-98ea9cf1fe63.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-counters-98ea9cf1fe63.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-counters-98ea9cf1fe63.tar.gz.json",
+          "asset_digest": "sha256:98ea9cf1fe63d873aef453629db65ea37f3b1f962af38d816694ab425c3d443d"
         },
         {
           "event": "linked-multi",
@@ -6542,8 +6558,10 @@
           "manifest_sha256": "12c831b7d335fdf6ad9b5b6ae9bcd9ce54b2d9393f6490a5b3d0940102cb43a7",
           "bytes": 146438,
           "files": 58,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-linked-multi-139bb197e436.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-linked-multi-139bb197e436.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-linked-multi-139bb197e436.tar.gz.json",
+          "asset_digest": "sha256:139bb197e4364013e36181dab6852016b1817725496da15ff1be02fe0112abdf"
         },
         {
           "event": "tree-instructions",
@@ -6553,8 +6571,10 @@
           "manifest_sha256": "da67327353d6ad98bdd8c9a23aff0c5076a8c94eb26e61f8be20028e7bea2fcb",
           "bytes": 128752,
           "files": 64,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-tree-instructions-fd05d07349c1.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-tree-instructions-fd05d07349c1.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-tree-instructions-fd05d07349c1.tar.gz.json",
+          "asset_digest": "sha256:fd05d07349c1f370b01ca726ec7b8e060b25593fd0561758de61957897958d92"
         },
         {
           "event": "scalar-controls",
@@ -6564,8 +6584,10 @@
           "manifest_sha256": "eeee39e88659dbf215c07f179a70ba8d38fdfc939e10905f1a55e9a988b0803e",
           "bytes": 129882,
           "files": 99,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-scalar-controls-e90f4f513b05.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-scalar-controls-e90f4f513b05.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-scalar-controls-e90f4f513b05.tar.gz.json",
+          "asset_digest": "sha256:e90f4f513b05404a3b0e8ad10d2c8ff5d67cca30a8b77d25697d2d6a4b0d32b6"
         },
         {
           "event": "frame-allocation",
@@ -6575,8 +6597,10 @@
           "manifest_sha256": "6fad4ae3745f225d4f55b6758d081caceeac862383447f4d6697cf6b6f3bc065",
           "bytes": 121163,
           "files": 77,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-frame-allocation-687939ccf967.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-frame-allocation-687939ccf967.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-frame-allocation-687939ccf967.tar.gz.json",
+          "asset_digest": "sha256:687939ccf967a4ab6c65a7de591d5bcb1118802915ec547c4c162d475a62eee1"
         },
         {
           "event": "isolated-profile",
@@ -6586,8 +6610,10 @@
           "manifest_sha256": "adc443ca86745beb98c829908716d79bb4411fdfa2307844e116b4b25277ee6b",
           "bytes": 322177,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-isolated-profile-8b5d16c2e035.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-isolated-profile-8b5d16c2e035.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-isolated-profile-8b5d16c2e035.tar.gz.json",
+          "asset_digest": "sha256:8b5d16c2e03501d4ea68efd6deafe1045430d6e072ed2d5e96739f2e600070b4"
         },
         {
           "event": "closure",
@@ -6597,11 +6623,37 @@
           "manifest_sha256": "d66512e8b6f6f02755fc2ec03468d191d6d5e750d451716b71a49d504c8072f0",
           "bytes": 4612969,
           "files": 265,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-closure-71622cd5268c.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-closure-71622cd5268c.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r99-closure-71622cd5268c.tar.gz.json",
+          "asset_digest": "sha256:71622cd5268c77fa1781f7f664f1c91b692dc8da8b2275721cb4973040235e34"
         }
       ],
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "Published fourteen exact hash-listed evidence archives and sidecars after user authorized evidence uploads. Initial automatic approval rejection resolved; native binaries excluded.",
+      "test_revision": "348101721a2870ab2f503508491e7d3395c94b32",
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "scorecard.json": "cfbaef6b5885482f1ebf2bb2023a5228628b6453c81176e6ba92f314a7ed4071",
+          "mechanism.json": "98d8e80a18e293089e0aaebed5b029d700f15bbbb3efb9b825cdbd8e9506660b",
+          "validation.json": "c3d38f0837b5294026d835dbe31929c02f9a306dcf2cab614c9766d5b11ea3d0",
+          "profile-numbers.json": "39338fcadfcfadf951f14e6039bb046539381763e1f18d2d49e2c546858254d6"
+        }
+      },
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "scorecard.json",
+          "mechanism.json",
+          "validation.json",
+          "profile-numbers.json"
+        ],
+        "paths_with_multiple_preserved_versions": 2,
+        "round": 99,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 463,
+        "verified_archives": 14,
+        "verified_file_occurrences": 1032
+      }
     }
   },
   "repository": "mech-lang/mech",

@@ -522,3 +522,30 @@ rejection. Native binaries are excluded. The source/order/alias/retry controls
 and all adverse pairs remain in evidence. The next assigned experiment is the
 completed-collection lifetime blocker; the read-only current tree witness has
 confirmed old alias 882 survives all four copying updates.
+
+
+## R99: finite ordinary collection-source lifetime
+
+The Engine now places ordinary materialized collection-source reads at their
+actual generator boundaries and shape finish. The same old-value query preserves
+fresh definitions, backedges, later readers and unsupported-consumer conservatism.
+Existing Core ownership checks then permit four real tree updates to reuse
+storage: four 524,288-byte copies disappear. The full generated text remains
+byte-identical; IR143 identifies independently reconstructed ownership metadata.
+
+Fresh complete eight-byte elapsed **8.470875×→8.363107×** reference (−1.272220%);
+all four pairs improve, 61 blocks improve and three worsen. Separate instructions
+**27,389,660.5→27,947,877 (+2.038056%)** remain an explicit adverse result; cycles
+fall1.42%. Requests5153→5149, requested bytes−2,097,152; live peak, reallocations,
+text and stack stay equal. Separate tree-helper windows improve but are not a
+whole-call instruction partition. Profiles695 calls each are retained separately.
+
+Runtime356, work/memory33, CI65, image1, unchanged components236/connected8/path1,
+linked40, scalar12 (unchanged1.05 gate, maximum1.018146), frame8, workflow132 and
+architecture15 pass. Original/decoded/restored coverage retains later readers,
+external aliases, unused errors, prior publication, finite admission and retry.
+Five Engine-dependent crates rebuild coherently; Core/math dependencies stay
+frozen. No larger input, new all-features graph or green hosted CI is claimed.
+Compiler `5c219ed220879b05ee147bdf5d3f85680311eae2`; published parent `64705927265`.
+See [current status](../../docs/design/native-compression-status.md) and the
+compact index for exact archives, numerical replay hashes and publication state.
