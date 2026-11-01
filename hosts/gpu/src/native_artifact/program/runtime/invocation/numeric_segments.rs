@@ -4,8 +4,10 @@ use super::tail::{Region, State};
 use super::{Error, Invocation, invalid};
 use crate::native_artifact::NativeExecutionPhase;
 use crate::native_artifact::program::prepare::composition::frames::Source;
+use crate::native_artifact::program::prepare::readonly_numeric::Operation;
 use crate::native_artifact::program::runtime::amount;
 use mech_core::Value;
+use mech_engine::native_artifact::NativeIterationAction;
 
 // A sufficient bound only: an overflowing or too-large product must leave the
 // per-field and exact-footprint checks available. This carries no admission.
@@ -375,15 +377,41 @@ impl Invocation<'_, '_, '_> {
                 "parent native account, scope or entry changed during execution",
             ));
         }
-        let export = match args[0] {
-            0 => Some(
-                frames
-                    .exits
-                    .iter()
-                    .find(|e| e.from as usize == site && u64::from(e.to) == args[1])
-                    .ok_or_else(|| invalid("parent native exit is outside its proved frontier"))?,
+        let (export, retry_alias) = match args[0] {
+            0 => (
+                Some(
+                    frames
+                        .exits
+                        .iter()
+                        .find(|e| e.from as usize == site && u64::from(e.to) == args[1])
+                        .ok_or_else(|| {
+                            invalid("parent native exit is outside its proved frontier")
+                        })?,
+                ),
+                None,
             ),
-            2 | 3 if args[1] == 0 && segment.sites.contains(&(site as u32)) => None,
+            2 if args[1] == 0 && segment.sites.contains(&(site as u32)) => {
+                if !proof
+                    .actions
+                    .iter()
+                    .any(|(at, action)| *at == site && matches!(action, Operation::Read { .. }))
+                {
+                    return Err(invalid("parent bounds retry is outside a proved read"));
+                }
+                let NativeIterationAction::LibraryCall { operands, .. } =
+                    metadata.plan.blocks()[site].action()
+                else {
+                    return Err(invalid("parent bounds retry lost its original call"));
+                };
+                (
+                    None,
+                    frames
+                        .aliases
+                        .iter()
+                        .find(|alias| alias.value == operands[0]),
+                )
+            }
+            3 if args[1] == 0 && segment.sites.contains(&(site as u32)) => (None, None),
             _ => {
                 return Err(invalid(
                     "parent native exit mode differs from its source boundary",
@@ -429,6 +457,15 @@ impl Invocation<'_, '_, '_> {
                         self.state.call_inputs.values_mut()[alias.source] = Some(owner);
                     }
                 }
+            } else if let Some(alias) = retry_alias {
+                // The original reader needs this private operand to report its
+                // own index error. Keep it alive across reached retirements,
+                // using the same source bank and already funded alias escape.
+                let owner = self
+                    .segment_source(&frames.sources[alias.source])?
+                    .ok_or_else(|| invalid("parent bounds retry lost its current owner"))?
+                    .clone();
+                self.state.call_inputs.values_mut()[alias.source] = Some(owner);
             }
             let flags = frames.scalar_words + proof.views.len() * 4;
             for (at, (_, values)) in frames.retirements.iter().enumerate() {
@@ -498,6 +535,13 @@ impl Invocation<'_, '_, '_> {
                         }
                     }
                 }
+            } else if let Some(alias) = retry_alias {
+                let owner = self.state.call_inputs.values()[alias.source]
+                    .as_ref()
+                    .ok_or_else(|| invalid("parent bounds retry owner pin missing"))?;
+                self.state
+                    .arena
+                    .put(alias.value.get(), owner, &mut self.state.control.work)?;
             }
             Ok(())
         })();
