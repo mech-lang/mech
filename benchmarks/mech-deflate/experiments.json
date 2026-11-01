@@ -2015,6 +2015,17 @@
           "files": 420,
           "asset_id": 697886003,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r84-phase-diagnostic-769d11fd4463.tar.gz"
+        },
+        {
+          "event": "analysis",
+          "source_revision": "10f5bbbe94fed1b1887e9f4794f48ec90b13b154",
+          "asset": "r84-analysis-07ce261de9bc.tar.gz",
+          "sha256": "07ce261de9bcac439a5302a75fb91501ca69b6b7d4283b49cced14329029d229",
+          "manifest_sha256": "640255eaf7e4638990da83fcfdfdc16c59bdede21ed420f23e8d7d5e3007fea4",
+          "bytes": 57070,
+          "files": 37,
+          "asset_id": 697886053,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r84-analysis-07ce261de9bc.tar.gz"
         }
       ],
       "analysis": {
