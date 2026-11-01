@@ -1433,6 +1433,17 @@
             "improving_blocks": 60,
             "adverse_blocks": 4
           }
+        },
+        {
+          "event": "linked-multi",
+          "source_revision": "c0b5999f434650df9ff7fef6dc2c9f4c40d4fc42",
+          "asset": "r83-linked-multi-48c4e5869520.tar.gz",
+          "sha256": "48c4e5869520c8dbe9b1ba437f5d5a4032fd1dd14b172c2375fe717e97ed0648",
+          "manifest_sha256": "b7d9798a63ca49a1766f98ccfbcd0b5b32c668a4b6802adcbb22cda78d2d85a5",
+          "bytes": 86305,
+          "files": 49,
+          "asset_id": 697708066,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-linked-multi-48c4e5869520.tar.gz"
         }
       ]
     }
