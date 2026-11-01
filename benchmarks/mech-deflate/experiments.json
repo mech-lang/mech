@@ -833,6 +833,17 @@
           "files": 50,
           "asset_id": 697499224,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r81-linked-multi-21986c8fa706.tar.gz"
+        },
+        {
+          "event": "isolated-profile",
+          "source_revision": "c29854f6f1f404658c39bcb024296b01ec80a71d",
+          "asset": "r81-isolated-profile-cd5d260e6a51.tar.gz",
+          "sha256": "cd5d260e6a51e2698acc1adafac2b36088ec2bcb2859c80ab380a8021d4cb4b1",
+          "manifest_sha256": "2c497d02a47316a688117b604412fd8e584013c8c998c1d0119559329093af65",
+          "bytes": 315916,
+          "files": 46,
+          "asset_id": 697516915,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r81-isolated-profile-cd5d260e6a51.tar.gz"
         }
       ]
     }
