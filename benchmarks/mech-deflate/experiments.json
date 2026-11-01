@@ -4389,6 +4389,17 @@
           "files": 53,
           "asset_id": 698549459,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-linked-multi-d88222f808d6.tar.gz"
+        },
+        {
+          "event": "linked-bounds",
+          "source_revision": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+          "asset": "r90-linked-bounds-14211a465b27.tar.gz",
+          "sha256": "14211a465b27f989469b8dad2103b6aab63d1c01fe6c3b50c47fe928e9f02a8a",
+          "manifest_sha256": "a334890c638dd741790cf1fdf8b2c2f09bd1966373740e194354cae6e4ed46e2",
+          "bytes": 76277,
+          "files": 54,
+          "asset_id": 698549544,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-linked-bounds-14211a465b27.tar.gz"
         }
       ]
     }
