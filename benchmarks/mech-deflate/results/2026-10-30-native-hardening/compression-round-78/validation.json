@@ -1086,6 +1086,13 @@
         "classification": "introduced test placement",
         "reason": "Unsafe test observation and image restoration outside exact audited owner.",
         "disposition": "Move pointer handling into existing runtime/tests.rs. New regression file safe; no allowlist or warning-policy change."
+      },
+      {
+        "receipt": "replay.stderr",
+        "exit": 1,
+        "classification": "introduced packet export",
+        "reason": "Standalone replay derived all numerical outputs but could not compare diagnostic-counts/summary.json because it had only been archived, not exported at the packet top level.",
+        "disposition": "Export the already archived summary and repeat analysis-only replay; no compiler or performance rerun."
       }
     ],
     "unresolved": [],
