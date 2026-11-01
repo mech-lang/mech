@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-11-01T00:14:49.292593+00:00",
+  "head": "80f6bfad87be5750c58a41abb4e350fbda2765a8",
+  "files": [
+    {
+      "path": "borrow-controls/escape.json",
+      "sha256": "93ed2b0eedf28c1630ceba9f37fb75fce600acc35145d90af1f2e1bab183a690",
+      "bytes": 13259
+    },
+    {
+      "path": "borrow-controls/escape.rs",
+      "sha256": "9661b627970d57b49943962e477f21f796443c11002893ad8f6b9ac31d36a9ce",
+      "bytes": 128
+    },
+    {
+      "path": "borrow-controls/escape.stderr",
+      "sha256": "486be249e108a2ddaebbe5409d1e1e0560a3b05b53141a7db78ba727aee49dc9",
+      "bytes": 647
+    },
+    {
+      "path": "borrow-controls/escape.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "borrow-controls.py",
+      "sha256": "4c30c457a35d482f7b688421f7337af627330618bcac7ecd9d7549fd77815e53",
+      "bytes": 3868
+    }
+  ]
+}
