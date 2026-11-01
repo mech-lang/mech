@@ -2331,6 +2331,17 @@
           "files": 39,
           "asset_id": 697886214,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r85-inputs-c8d5e5aff62b.tar.gz"
+        },
+        {
+          "event": "binary-inspection",
+          "source_revision": "490ede99581fd233edd4c05d14f74641c9ae45c9",
+          "asset": "r85-binary-inspection-6a9742465815.tar.gz",
+          "sha256": "6a9742465815905d4e2ed2853e0af44e521b21d62b78bea792f40d9ec1b18901",
+          "manifest_sha256": "45d85ad225a63601c77c1d6a662a9acafc58de3821e2501fbdfad715829c2931",
+          "bytes": 53147,
+          "files": 41,
+          "asset_id": 697886276,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r85-binary-inspection-6a9742465815.tar.gz"
         }
       ],
       "analysis": {
