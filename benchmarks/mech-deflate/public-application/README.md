@@ -61,7 +61,7 @@ forwards the same compilation policy; hosted launch policy remains separate.
 
 Fresh source/decoded generation, linked execution, dependency closure, hashes,
 commands and limitations are retained in the
-[public-path receipts](../results/2026-10-28-native-hardening/public-application/).
+[public-path receipts](../EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/public-application` in the external bundle).
 Only the eight-literal case was freshly executed in each deployed form. The
 remaining eight cases, complete-program boundary inputs, repeated slides and
 full corpus are separate qualification gates.

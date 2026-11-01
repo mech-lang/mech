@@ -5,7 +5,7 @@ Declared before implementation and timing. Starting published compiler:
 `a98a68366c1d3f807f5ab0ff78a105b72244d3a14f1da8bbcf7aa8ab0e484e6f` as the
 before subject. Its numeric implementation is `335de1c16`.
 
-The [profile attribution](../results/2026-10-28-native-hardening/schema-bound-analysis/README.md)
+The [profile attribution](../EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/schema-bound-analysis/README.md` in the external bundle)
 finds 373 of 1138 main-thread samples inside repeated full-schema allocation
 bound calculation. This is runtime overhead in scalar result construction and
 buffer/snapshot admission, reached throughout the real compressor. The actual

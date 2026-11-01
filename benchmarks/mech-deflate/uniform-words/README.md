@@ -7,7 +7,7 @@ initializes them with `List.repeat` at `Matchfinder.roc:36` and
 12.3 million generated control visits before any match finding.
 
 The preserved optimized baseline is in
-[`2026-10-26-fd790ca-reality-check`](../results/2026-10-26-fd790ca-reality-check/REPORT.md).
+[`2026-10-26-fd790ca-reality-check`](../EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-26-fd790ca-reality-check/REPORT.md` in the external bundle).
 Initialization and returning the state took a median 657.148 ms. A three-second
 sample of that exact executable located the main cost in generated control
 visits, helper dispatch and resource-ledger operations. Physical copying was a
@@ -70,5 +70,5 @@ retained-capacity append/clear, complete block collection, parsing, block writin
 or `compress_into`. At the constructor checkpoint the six-position witness still
 failed. The subsequent selected-length fix completes it under the existing
 policy, with every expected word checked on both artifact forms; see the
-[current checkpoint](../results/2026-10-26-block-statistics/REPORT.md). There is
+[current checkpoint](../EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-26-block-statistics/REPORT.md` in the external bundle). There is
 still no complete compression time.

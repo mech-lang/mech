@@ -25,7 +25,7 @@ observable outputs and are not an optimization comparison or compressor timing.
 This new test uses the existing full-block output-element bound of 1,500,513.
 It retains a rejection/cleanup check for the generic 65,536 bound, which cannot
 hold a 65,535-byte payload plus its five-byte header. Existing test allowances
-and compiler defaults are unchanged. [Receipts and exact scope](../results/2026-10-27-stored-writer/review.json)
+and compiler defaults are unchanged. [Receipts and exact scope](../EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-27-stored-writer/review.json` in the external bundle)
 record both runs. Fixture compression is only golden-file storage and is decoded
 before measurement; the compiler executes the writer itself.
 
@@ -50,7 +50,7 @@ input before retiring destination slots, so self-append cannot free its source.
 The copied source range is charged as cloned bytes; there is no intermediate
 sublist allocation or repeated whole-output concatenation.
 
-The [requirement and receipts](../results/2026-10-27-range-append/requirement.json)
+The [requirement and receipts](../EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-27-range-append/requirement.json` in the external bundle)
 include the failing parent acceptance test. Original/decoded native tests retain
 6,633,832 bytes of output capacity and copy every byte at the 65,535/65,536 boundary.
 The 65,536-byte calls take approximately 0.23–0.29 ms in the unoptimized witness,
@@ -81,7 +81,7 @@ headers and partial-byte carry. Both use the real 6,633,832-byte output
 reservation. All cases pass original and decoded artifacts in the maintained
 canonical-native-program profile. The three tests take 65.50 seconds; these
 include compilation and qualification work and are not benchmark timings.
-[Receipts and scope](../results/2026-10-27-block-assembly/review.json)
+[Receipts and scope](../EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-27-block-assembly/review.json` in the external bundle)
 retain the initial test-helper shape failure and its correction without a
 compiler change.
 
@@ -103,7 +103,7 @@ Separate internal return/clear/append checks retain the 6,633,832-byte output
 reservation for every case. After equal metadata warmup, changing the reservation
 from 512 bytes changes allocated bytes by exactly 6,633,320. Publishing the whole
 result record canonicalizes nested storage, so capacity is qualified before that
-publication boundary. [Receipts and reproducibility evidence](../results/2026-10-27-writers/review.json)
+publication boundary. [Receipts and reproducibility evidence](../EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-27-writers/review.json` in the external bundle)
 include the unchanged reference cases and precise qualification scope.
 
 The next step connects block cost/type selection, header output, stored payloads,
@@ -118,7 +118,7 @@ sequence records. At compiler base `88605b57230b5a76c36f58f3977b3261fdbe47c8`,
 that combination fell back to canonical snapshot packing: a reservation of
 6,633,832 bytes became 64 after return, clear, and append. The minimal witness
 and unchanged-limit receipts are in
-[the mixed-frame evidence directory](../results/2026-10-27-mixed-buffer-frames/).
+[the mixed-frame evidence directory](../EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-27-mixed-buffer-frames` in the external bundle).
 
 Private frame eligibility now accepts an immutable matrix of fixed record or
 tuple elements beside an ordinary unsigned buffer. Existing ownership lanes,
@@ -147,7 +147,7 @@ packed unsigned-buffer copy path. Nonrecursive immutable captures are unchanged.
 Native program image IR is 113; the base is
 `610d5642100f35330512567591918a12fb393141`.
 
-[Requirements and failure evidence](../results/2026-10-27-record-arguments/requirement.json)
+[Requirements and failure evidence](../EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-27-record-arguments/requirement.json` in the external bundle)
 trace this to the level-12 all-literal writer's sequence-record loop. The draft
 sequence writer now matches 14 pinned cases in original and decoded execution,
 with the real 6633832-byte output reservation. The independently drafted path-node
@@ -176,7 +176,7 @@ outside this native subset. Native program image IR advances from 111 to 112;
 there is no new bytecode operation or runtime kernel.
 
 The base is `27bdd8b2c5b1ad35590121653589d06251ae5161`.
-[Reproducer and requirements](../results/2026-10-27-record-read/requirement.json)
+[Reproducer and requirements](../EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-27-record-read/requirement.json` in the external bundle)
 identify the original resident-success/native-rejection mismatch.
 The tests cover original/decoded artifacts, resident/native agreement, nested
 fields, index errors and overflow, unselected reads, aliases, unchanged prior
@@ -185,7 +185,7 @@ checks assertion-before-arithmetic failure and retry.
 
 This does not complete sequence writing. Passing a record matrix into a recursive
 function or lexical selected branch still rejects at source validation; its
-[separate reproducer and acceptance criteria](../results/2026-10-27-record-read/next-gap.json)
+[separate reproducer and acceptance criteria](../EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-27-record-read/next-gap.json` in the external bundle)
 are recorded before expanding compiler work. The drafted writer and 14 reference
 cases have not produced a Mech execution result. Full block writing/choice,
 compressor integration, complete byte/decompression checks and first timing
@@ -204,7 +204,7 @@ use the admitted copy fallback.
 
 The implementation revision is `3e262c87aac0c0ae49b689561cd53bcfa4b34eaa`, based on
 `8fd668d6eb11a49f32790dca11cb9f9b22e6db38`. Native program image IR is 111.
-[Receipts and failure dispositions](../results/2026-10-27-byte-append/review.json)
+[Receipts and failure dispositions](../EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-27-byte-append/review.json` in the external bundle)
 cover eight engine tests and twelve host/linked tests. The real 6633832-byte
 reservation and a 16-byte reservation each use 264 allocation requests in the
 append/append/zero-append/clear/append witness. Cumulative allocated bytes differ
@@ -478,7 +478,7 @@ positions search; the next three skip. This is a bounded state-update witness,
 not a complete block collector: observations, block decisions and carryover
 still need to be connected.
 
-The [current checkpoint](../results/2026-10-26-block-statistics/REPORT.md) records
+The [current checkpoint](../EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-26-block-statistics/REPORT.md` in the external bundle) records
 the completed original/decoded trace, full-vector agreement and unchanged
 allowances. The current compiler is `799f26b3765e8b807775a627b2ba23e1eb010a7c`.
 Earlier admission failures below are historical.

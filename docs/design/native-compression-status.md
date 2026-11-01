@@ -1,249 +1,127 @@
-# Complete compression: current compiler path
+# Native compression: current status
 
-The level-12 compressor is implemented as Mech source and executes as one
-compiled computation. It is not a native compression library call. The
-maintained source owner is
-[`deflate_assembly.rs`](../../hosts/gpu/tests/fixtures/native/deflate_assembly.rs),
-shared by correctness tests and the public application example. Its 25 source
-components and entry remain 160992 bytes with SHA-256
-`345324ce551aaa2485dcd0fe4262da96e660d6b31f5f772bff89b034e9b1997f`.
-The six deliberate Huffman initialization sites remain.
+This is the current-status owner. Historical experiment reports and all raw
+observations are in the verified [external evidence archive](../../benchmarks/mech-deflate/EXPERIMENTS.md).
+They are not additional current implementations or fresh qualification.
 
-The latest measured compiler is `1ec498a67fc862bac39188fdf5040eaacf6e954c`.
-The [round 13 closure](../../benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-13/CLOSURE.md)
-records **253.03× → 250.01× Roc**, or **1.19% less elapsed**, on unchanged
-eight-byte level-12 compression. Private one-array/scalar results now use the
-existing admitted frame lanes. The actual terminal scalar fields and current
-owner synchronize once after private cells freeze. Unchanged
-`huff-assign-symbols` selects under its ordinary parent; all 13 newly selected
-full-program regions are parented. The application and allocation sites are
-unchanged. Parity remains unmet.
+## Current measured checkpoint
 
-There are 247 scoped Rust passes, twelve static contracts and twelve fresh scalar
-pairs with exact allocation equality. Genuine mixed-result fuel exits, restored
-metadata and actual runtime-only linked recovery pass. The historical round-10
-1.0526036 scalar ratio against 1.05 remains unresolved. Physical output backing
-changes on both sides despite capacity 13. Larger complete inputs and full
-deployed-compressor timing were not refreshed. Predicate correlation for the
-cumulative loop is the next bounded candidate; multiple-array results, growth
-and child native regions remain separate. #973 stays draft, with CI cancelled
-by request.
+R78 is retained at published source checkpoint
+`6ab75037bc5d4ec138d735c7dcfe1c4b653d31fa`. Its production change is
+`453bb17592bcc843c367cc70312496bda0d940a4`; the actual optimized compiler build
+is `14d0c11ccda5a4a311dc017e3776d73a44a14e75`. Final qualification source
+`84f180ca2bdadf139eb570912d8c01aedb08c971` adds only tests/observation migration.
+The stack base is `eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`.
+[PR #973](https://github.com/mech-lang/mech/pull/973) remains draft. Publication
+CI run 41267325781 was completed/cancelled at the user's direction; green CI
+and merge readiness are not claimed.
 
-## Components and required capabilities
+Measurements cover **complete level-12 compression of `abcdefgh`**, with the
+pinned allocator and only `evaluate_into` inside the timer. They do not measure
+large-input throughput. The reference is Roc = 1×.
 
-| Source responsibility | Permanent entry points | General compiler capabilities |
-| --- | --- | --- |
-| Match finder and binary tree | node indexing/rebasing, tree search and skip, match extension | U16/U32 buffers, exact conversions, wrapping address arithmetic, checked reads, lexical checks |
-| Match and block collection | `optimal-collect-position`, prefix collection, observations, `optimal-end-block-check`, block loop/carry | Recursive carriers, current scalar arguments, search/skip state and cache headers |
-| Path selection | `optimal-find-min-cost-path`, `optimal-optimize-loop`, `optimal-choose-all-literals` | Checked integer costs, U64 reserved path nodes, append and clear with retained capacity |
-| Models and costs | `huff-make-code`, `optimal-tally-and-build-codes`, default/true costs, `optimal-select-block`, `optimal-plan-block` | Typed comprehensions, indexed updates, records, exact narrowing, comparisons and histograms |
-| Code words and payload | static/full length codes, path items, sequence writer | Exact bit operations, original reversal table, U8/U16/U32/U64 typed buffers |
-| Block emission | cost selection, dynamic headers, stored blocks, flush | Reserved output, little-endian append, checked shifts, native control flow |
-| Complete controller | `optimal-compress`, `deflate-compress-into` | Consecutive block decisions, carryover, window slides and reusable output |
+| Metric | Fresh reference | Matched parent | R78 |
+| --- | ---: | ---: | ---: |
+| Primary elapsed | 0.290000 ms | 3.5735000 ms / 12.322414× | **3.5681245 ms / 12.303878×** |
+| Retired instructions, separate cohort | 1,364,372 | 40,126,037.5 | **40,167,249 / 29.440101×** |
+| CPU cycles, separate cohort | 910,563.5 | 11,229,745.5 | 11,239,286.5 |
+| Allocation requests, including reallocations | 95 | 6,791 | **6,791** |
+| Requested bytes | 9,021,923 | 98,112,208 | **98,112,208** |
+| Incremental allocator peak usable bytes | 9,257,328 | 20,482,072 | **20,482,072** |
+| Generated compressor text | — | 11,800,572 bytes | **11,753,624 bytes** |
+| Generated entry stack | — | 107,344 bytes | **107,280 bytes** |
 
-The real tree has 262144 U16 entries; the cache has 1500513 U32 words. Search
-depth remains 300 and nice length 258. Near-EOF limits, tables, optimization
-passes, buffer sizes, allocation sites and timing boundaries are unchanged.
-Search and skip remain separate; skip has no cache argument or recording path.
+R78's pooled elapsed improvement is **0.150427%**, with three of four independently
+prepared pairs improving and one pair worsening 0.165241%. The 3,968 primary
+observations include 38 improving and 26 adverse within-pair blocks. These blocks
+are not independent experiments. Instructions worsen 0.102705%; cycles worsen
+0.084962%. Separate CPU-cohort elapsed also worsens slightly. No significance
+claim, per-function instruction attribution, or cross-cohort multiplication is
+made. Requested capacity is not initialized bytes copied, live memory, or peak RSS.
 
-## Owners and execution boundary
+R78 combines 807 managed moves and 2,790 structural observations with their
+preceding admission callback, preserving both operation bodies and charge order.
+External crossings fall 21,286→17,689, while all 12,450 logical admissions and
+39,030 shared debits remain. Actual host assembly exposes a contrary cost:
+the helper frame grows 144→320 bytes and adds unconditional register saves.
+This explains why fewer crossings alone do not establish fewer instructions.
 
-Source semantics produce the canonical `ProgramArtifact`; the codec validates
-decoded artifacts at the current revision and rejects older revisions. Engine
-native lowering derives private selected-binder proofs. Shared preparation
-feeds both JIT and Object emission. Generated applications restore and check
-their build-owned descriptor and linked identity independently, then use the
-same native runtime state. There is no compressor-specific executor, source
-name recognition, buffer-size recognition or compression intrinsic.
+## Complete computation and fidelity
 
-| Mechanical reasoning/storage | Owner | Consumer responsibility retained |
-| --- | --- | --- |
-| Dimension relations and mappings | `mech-core::schema::dimension_relations` | Source renaming, freshening and generalization have distinct policies |
-| Old-value read before redefinition | Engine `NativeProgramFacts` | Frames and consuming buffers retain separate eligibility and runtime ownership checks |
-| Per-site selected-call route | Shared native preparation and independent image restoration | Current loans, account identity, exclusivity and error ordering |
-| Mixed argument frames | Engine frame facts; host runtime word/owner arenas | Exact scalar kinds, current-visit validity, managed alias retention and retirement |
-| Flat frame shape recipe | Prepared resident library call | Fresh input extents and fixed/repeated-axis checks at each call; other relations use the core constructor |
-| Unsigned buffer backing | Core `UnsignedMatrixBuffer` and snapshot owner | Capacity, copy-on-write aliases and failure recovery |
-| Runtime resource accounting | Existing resident budget and native work ledger | Physical admission, logical output bounds, finite denial, cleanup and atomic publication |
+Mech performs compression itself as one compiled computation. The maintained
+[25-component assembly](../../hosts/gpu/tests/fixtures/native/deflate_assembly.rs)
+implements match finding, block collection, near-optimal parsing, Huffman models,
+bit writing and `deflate-compress-into`. It is not a native compression-library
+call. Its default complete entry remains separately pinned by its assembly test.
+The measured caller-output entry has these unchanged pins:
 
-Native self recursion uses supported structured loop carriers rather than a
-general native call stack. Direct and piped checked self-calls use fresh
-arguments; nonrecursive immutable captures retain their existing optimization.
-Do not infer support for arbitrary non-tail or mutual recursion from the
-qualified compressor's structured self-calls. Primitive Bool/U64/I64/F64 calls
-retain direct native scalar execution. Narrow native support is operation and
-binder specific: checked U8 addition, U32 addition/subtraction, unsigned
-comparisons/conversions and the documented word operations do not imply every
-narrow arithmetic operator is available. A decoded U8-add witness gap has a
-separate minimal reproducer in the hardening receipts.
+- Source SHA-256: `331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9`.
+- Bytecode SHA-256: `a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7`.
+- R78 Object SHA-256: `d74a85290e40bf7a464f0f34259dd5197f9fae2bbb22356a1aec89ea87eddfbf`.
+- Typed IR / work policy / private Program ABI / bytecode: **132 / 95 / 38 / 14**.
+  Frozen scalar ABI is independently **1**.
 
-## Qualification boundaries
+The tree is 262144 U16 entries; the cache is 1500513 U32 words; path capacity is
+305257 U64 entries. Depth 300, nice length 258, original near-EOF limits, tables,
+source allocation sites and timing boundaries remain. Search and skip stay
+separate; skip has no cache argument or recording path. Caller output capacity
+is 13, cleared/rebound outside timing. Its physical public-boundary handoff remains
+inside the measured computation.
 
-The [hardening work log](native-compression-hardening.md) and its linked receipts
-separate fresh exact-revision results from historical execution. Existing
-small-stream qualification includes stored, fixed and dynamic choices,
-nonempty prefixes and overlap. Complete stream tests compare exact pinned raw
-bytes, independently inflate them, retain input aliases and require zero
-managed bytes/nodes after release.
+Every measured eight-byte call checks exact raw bytes
+`[75,76,74,78,73,77,75,207,0,0]`, independent inflation and input aliases.
+Logical work is 60,260,219,686 and comparison work is 47,612; neither is a hardware
+instruction count. Final managed bytes and snapshot nodes are zero.
 
-Historical saved-decoded runs completed 16384-byte block-transition and
-33027-byte window-transition inputs. Those runs are slow baselines; they do
-not establish the final compiler's original/decoded/deployed boundary coverage.
-Repeated slides and full-corpus agreement remain unqualified. The cancelled
-full-corpus run supplies no timing result. Ignored long tests are not passes.
-No cancelled campaign is restarted by this work.
+## Maintained architecture and qualification
 
-The [native profile](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/profiling/REPORT.md)
-records complete-program indexed-copy and budget-traversal costs. The focused
-[frame protocol](../../benchmarks/native-frame-transport/protocol.json) has
-separate original/decoded mixed-buffer and scalar controls. A frame improvement
-does not measure its contribution to whole-compressor time.
+Source semantics and the canonical artifact codec feed Engine native facts and
+prepared proofs. Shared preparation serves JIT, Object emission and independent
+linked-image restoration. Scalar emission, private frames, Core snapshot owners
+and the existing resource ledger remain the maintained owners. Selection facts
+do not grant runtime ownership, funding or execution permission. No compressor
+names, artifact IDs or buffer sizes authorize an optimization.
 
-The [public application instructions](../../benchmarks/mech-deflate/public-application/README.md)
-build the complete program from source or decoded bytecode using explicit
-finite compilation limits. Both forms produced byte-identical Objects,
-descriptors and identities on the normal process stack. Generated runtime-only
-applications each executed the eight-literal input with exact raw bytes,
-independent inflation and complete managed cleanup. Their actual Cargo artifact
-inventories contain no parser, Cranelift, source compiler or JIT dependency.
-The other eight deployed small cases were not rerun. This does not qualify the
-final compiler's block/window transitions or full corpus.
+R78 has 44 passing required receipt checks. Executed selections overlap and are
+not summed as distinct tests: GPU runtime 331; work/memory/value 32; components
+236 with unchanged goldens/allowances; connected cases 8; native path witness 1;
+linked original/decoded recovery 12; scalar controls 12 at unchanged 1.05 ceiling;
+frame allocation/alias controls 8; exact GPU CI selection 37; Python workflow
+checks 132; Engine projection 12 and shape 6 using the unchanged accepted Engine
+binary; architecture 10 and type/memory 5. Formatting, warnings-as-errors and the
+unchanged unsafe allowlist pass. Runtime-only GPU compilation uses pinned
+feature-rich dependencies, not a freshly built minimal dependency graph.
 
-Compilation policy bounds code generation and one definition table; it is not
-a total compiler-memory bound and confers no runtime launch authority. Existing
-generic defaults remain unchanged. Compilation and launch policies are strict,
-separate JSON inputs; the public CLI also accepts `--native-compile-limits`.
+Original/decoded and restored-image controls cover current arguments, Boolean
+state, finite denials, ordered errors, aliases, unchanged prior publication,
+cleanup and retry. Earlier Core/Budget/planner receipts are explicitly inherited,
+not fresh R78 executions. All initial harness failures and their resolutions are
+preserved in the archive. The historical R10 scalar timing violation remains a
+historical unresolved observation; later passing cohorts do not erase it.
 
-## Historical source experiment and read-only slice
+Historical saved-decoded runs completed 16384-byte block and 33027-byte window
+transitions. They do not qualify the latest compiler at those sizes. Repeated
+slides, full-corpus agreement and current large-input timing remain unqualified.
+The cancelled full-corpus run has no timing result and is not restarted here.
 
-The [round 09 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-09/REPORT.md)
-uses exactly the same compiler executable with an optional one-dimensional
-cost-table source variant. Its fresh paired eight-byte result is **448.75× →
-421.53× Roc**, 0.130136250 s to 0.122244917 s against 0.000290 s: **6.06% less
-elapsed time**. This is a source improvement, not a compiler improvement. The
-pinned 25 components remain the default. Original/decoded vector tests and six
-focused Rust tests pass; bytecode grows 8.32% and nonstandard vector fallbacks
-perform an additional row copy. General multidimensional use is not qualified.
-No larger input, new scalar gate, or deployed application was run for this
-same-executable experiment. All failed attempts and actual coverage are retained.
+## Next bounded work
 
-The read-only packed unsigned leaf slice is implemented at compiler
-`06885e0d9a1466ba477d642ee9fd9fd8510b06f2` through the existing canonical
-Program, scalar emitter and closed-tail account. All-edge provenance retains
-invariant owners; per-invocation views and native scalar state support an ordinary
-suspended parent. Native loads preserve current matrix geometry, checked errors
-and short-input guards. Independent restoration rederives proofs and prices.
-The full Object selects 45 parented regions with 72 typed load sites and zero
-calls on successful hot backedges. Private writes and one-array/scalar results
-were completed in rounds 12 and 13. Growth and arbitrary nesting remain separate.
+Broader native parent composition is the main optimization project. The current
+exact-one-immediate-child restriction excludes larger reached parents. First
+support multiple ordinary child boundaries and acyclic pieces between them,
+using the existing frame, provenance, liveness, admission and numeric proofs.
+Reacquire current owners/views for each piece; no loan spans child execution.
+Acceptance requires fewer executed host operations and instructions, not merely
+more selected metadata.
 
-## Current small timing
+A separate bounded experiment targets exclusive first admission through the
+existing unique-root/data and empty-registry path, retaining the locked fallback
+for shared or weakly observed values. Its candidate allocation count is not a
+promised saving. Managed projections within native pieces and precise success
+boundary synchronization follow as separately measured changes. Ordinary debit
+function tuning is closed absent new mechanism evidence.
 
-The [round 13 closure](../../benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-13/CLOSURE.md)
-measures **253.03× → 250.01× Roc** (Roc = 1×): 0.073378958 → 0.072503125 seconds
-against a fresh 0.000290-second reference, **1.19% less elapsed**. This is a small
-observed gain with three primary observations per side. The same pinned source,
-artifact, allocator and evaluate_into-only boundary are used. Exact bytes,
-independent inflation, aliases and terminal cleanup pass. Logical work changes
-530905237224 → 527732164684 under IR118/work policy93.
-
-The caller retains capacity 13 and clears/rebinds outside timing, but
-`same_backing=false` on every call. Physical public-boundary copies remain timed.
-All 247 scoped Rust tests and twelve fresh scalar pairs pass; the maximum direct
-ratio is 1.0103051 against 1.05, with exact request/byte counts and zero loop
-allocation slope. The historical round-10 failure remains unresolved.
-
-The Object selects 149 native numeric regions, including 13 new parented mixed
-results. The separate profile still has frame handling on 472/1347 sampled
-ancestries and frame admission on 331. Overlapping ancestry is not additive time
-attribution. The unchanged cumulative loop remains rejected as an older array
-version after a same-condition merge. Predicate correlation is the next bounded
-candidate; its proof has not been weakened or bundled here.
-
-The [preceding private-write packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-12/REPORT.md)
-measures 345.68× → 251.38× against its own fresh reference, 27.28% less elapsed.
-Its 231 scoped Rust passes include actual mutation/fuel and linked recovery.
-The [earlier read-only packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-11/REPORT.md)
-measures 408.21× → 346.11×, 15.21% less elapsed, with 128 scoped passes. Each cohort
-keeps its own denominator, source boundaries and qualification scope.
-
-The preceding [key-reuse packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-10/REPORT.md)
-measures **448.70× → 404.86× Roc**, 0.129673750 s to 0.117005125 s against a
-fresh 0.000289 s reference: **9.77% less elapsed time**. Managed projections reuse
-the existing prepared key after exact slot/schema/definition alignment checks in
-preparation and restoration. No new cache or mutable-geometry reuse is added.
-All 41 scoped Rust tests and twelve static checks pass; logical work is unchanged.
-The scalar allocation gates pass, but one scalar timing gate is unresolved:
-decoded U64 measures 1.0526× against the unchanged 1.05 limit. It is retained
-without rerunning for acceptance. This patch has no blanket scalar-latency pass.
-The round-10 receipt predates native numeric selection; its coverage remains
-separate from the completed round-11 slice above.
-
-The [preceding mixed-state timing receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-08/REPORT.md)
-use the real tree/cache and unchanged 25 components. With **Roc = 1×**, mixed
-scalar state measures **490× → 455×**, 0.139637125 s to 0.129644084 s against a
-fresh 0.000285 s reference, or 7.16% less elapsed time. The existing private word
-layout now carries exact Bool/U8/U16/U32/U64/I64/F64 tuple/enum leaves. The actual
-program selects 91 private values and eight mixed optimal-path Tail carriers.
-This is a modest gain, short of the larger reduction still needed.
-
-The same qualification exposed an inherited closed-Tail failure exit that
-returned before unwinding its fuel loan and masked an assertion error. The
-retained old executable reproduces it; the corrected shared exit returns the
-original error, preserves publication, cleans up and recovers. All 109 scoped
-Rust tests, static checks and protected scalar gates pass. Complete logical work
-is 875610515844, distinct from executed instructions. Unsupported nested state
-and escaping results keep canonical storage; source and artifact stay unchanged.
-
-The [preceding metadata round](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-07/REPORT.md)
-measures **574× → 495×**, or 13.67% less elapsed time. Successful scans prepay the
-same debit once; tight bounds and worker loans keep ordered incremental charging.
-The separate table experiment below retains this pinned-source compiler baseline.
-
-The [preceding consuming-store change](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-06/REPORT.md)
-measures **1626× → 574×**, 0.465164708 s to 0.164188708 s against its fresh
-0.000286 s reference: **2.833× faster** than that paired Mech baseline. Native
-scalar operands, same-account ownership transfer and one-word changed detection
-avoid the old binding, payload-copy and full-equality path. External aliases keep
-their first necessary immutable copy; private recursive chains reuse backing.
-The actual six-position collector falls from 25682 to 8362 requests and 79457091
-to 35045914 requested bytes, with unchanged golden state and finite policy.
-Some copies remained at that checkpoint. Later numeric slices address part of
-the repeated construction and runtime transitions. Parity remains unmet.
-
-The [preceding length change](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-05/REPORT.md)
-measures **1727× → 1632×** against a different reference cohort. Numeric length
-counting now uses saturated multiplication; bytes/hashes and ordered work retain
-their paths. Its scoped core snapshot/memory tests remain separately recorded.
-
-The [preceding matrix-read repair](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/matrix-read-order/REPORT.md)
-measures **1695× → 1693×** against a different reference cohort. Its 0.16%
-difference is not a speedup claim. It makes all unsigned widths agree with
-resident column-major selection over canonical storage.
-
-The [preceding performance change](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-04/REPORT.md)
-removes a redundant full call-template clone. That isolated comparison improves
-**1796× → 1702×**, 0.517336500 s to 0.490266166 s, with a 0.000288 s reference
-and the same reduced catalog on both sides: 5.23% less elapsed time. Eight real
-buffer stores use 8833 rather than 9913 allocation requests. Reported logical
-work remains 941491317987. The prior 1904× anchor used a different denominator.
-There are three retained observations per subject. Preparation and verification
-remain outside the timer; only the eight-byte complete case was timed.
-
-The [focused build](../../benchmarks/mech-deflate/native-profile/README.md)
-uses the existing catalog feature gates. The length change's rebuild takes
-1007.38 seconds and rebuilds the machine libraries because core changed;
-the store change takes 454.37 seconds and reuses them. All 84 scoped native,
-component and collector tests pass at the store change. The length change's
-248 tests and no_std check retain their own revision, as do earlier selections.
-Protected scalar gates, exact source/artifact agreement, real-buffer witnesses,
-and architecture checks pass. Linked subprocess and generated runtime-only
-application qualification has not been refreshed for these changes. The PR
-remains draft pending fresh review; CI is cancelled by request.
-
-A separate matching-System-allocator, matching-instrumentation compiler control
-improves from **8659×** to **6599×**. That comparison spans the intervening
-hardening commits; it does not isolate the typed-frame change. The focused
-balanced frame comparison has its own scalar controls and acceptance gates.
-Allocator experiments are permitted; a compressor source change needs a
-specific performance justification and separately recorded fidelity review.
+The pinned baseline's algorithm and source remain. Any source experiment gets
+separate names, pins and measurements. Any representation/resource-policy change
+must be explicit: preserve source error order, current authority, published output
+atomicity and recovery. Do not conceal work by raising limits.

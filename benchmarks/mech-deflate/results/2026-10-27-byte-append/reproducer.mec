@@ -1,2 +1,0 @@
-+> sequence
-sequence/append-le-bytes(bytes<[u8]>, word<u64>, count<u8>)

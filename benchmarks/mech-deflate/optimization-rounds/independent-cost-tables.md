@@ -54,7 +54,7 @@ no compiler/type-system change is made. Original/decoded reference cost cases
 and the unchanged pinned assembly test pass before complete timing. Preserve
 these failed source forms as setup evidence, not a new compiler work package.
 
-Completed: see [round 09](../results/2026-10-28-native-hardening/compression-round-09/REPORT.md).
+Completed: see [round 09](../EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-09/REPORT.md` in the external bundle).
 The optional source variant measures 6.06% less elapsed time (448.75× → 421.53×
 reference) with bytecode growth of 8.32%. Six focused tests pass. The pinned-source
 compiler baseline remains separate; the assigned next change is native read-only

@@ -43,3 +43,8 @@ Cargo.lock
 
 # Regenerated local example verification reports
 /examples/function-application-prototype/*-current.json
+
+# Raw compression experiment evidence is archived outside source Git.
+/benchmarks/mech-deflate/.experiments/
+# Retired historical destination; use the external archive workflow.
+/benchmarks/mech-deflate/results/
