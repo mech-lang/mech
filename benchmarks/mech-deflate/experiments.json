@@ -5663,6 +5663,25 @@
           "profile-numbers.json": "975a051d0912445078cd7b8894ba96d801a27e53063b9c3fefeeaab96424a569"
         }
       }
+    },
+    "94": {
+      "base": "703128776c9eb44e6da9303fd8bf29ffed796586",
+      "production": "c35698030a4e89f6d4548af1b17762ec737cd427",
+      "compiler_source": "c35698030a4e89f6d4548af1b17762ec737cd427",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "c35698030a4e89f6d4548af1b17762ec737cd427",
+          "asset": "r94-initial-22870493cb03.tar.gz",
+          "sha256": "22870493cb0343c22b5252908b50cdaa5e42f61b627ee8e096ab1b2ae13ee507",
+          "manifest_sha256": "3423d1d974ea20fc556cb7c7f7a95499c2ea80cfe312bd5aadc4d48094c7c83c",
+          "bytes": 6597837,
+          "files": 720,
+          "asset_id": 698928175,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r94-initial-22870493cb03.tar.gz"
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",
