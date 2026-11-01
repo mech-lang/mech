@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-11-01T00:14:48.769754+00:00",
+  "head": "06c27d0707bfb98382c1fcb5612bd5117e03a51c",
+  "files": [
+    {
+      "path": "borrow-controls/valid.json",
+      "sha256": "1e2d41ab9ae9fc1421d15cf1de4f709d0a941bb2e777dce557e2153f5ff8808f",
+      "bytes": 13202
+    },
+    {
+      "path": "borrow-controls/valid.rs",
+      "sha256": "8c25f269205f1bd3ce5cf1991e2df8f5ca3f3cfc8f934d8b7fc0c10d6b3c3c24",
+      "bytes": 813
+    },
+    {
+      "path": "borrow-controls/valid.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "borrow-controls/valid.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "borrow-controls.py",
+      "sha256": "4c30c457a35d482f7b688421f7337af627330618bcac7ecd9d7549fd77815e53",
+      "bytes": 3868
+    }
+  ]
+}
