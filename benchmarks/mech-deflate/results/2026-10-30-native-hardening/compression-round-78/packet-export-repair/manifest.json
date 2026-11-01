@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-11-01T02:55:45.815361+00:00",
+  "head": "b2889df68917a97e1ed67f71f23c20c8ecbc23d3",
+  "files": [
+    {
+      "path": "analysis/scorecard.csv",
+      "sha256": "a910985573f5f7c7874f49129bc06b3d8874a638cf8166843dcaf57288e75ca9",
+      "bytes": 1346
+    },
+    {
+      "path": "analysis/scorecard.json",
+      "sha256": "1ac34caf95ae676b375f23daa28f8e34ddab5f145f8bdf73fd3aa6193028e672",
+      "bytes": 365141
+    },
+    {
+      "path": "diagnostic-counts/summary.json",
+      "sha256": "24fc65dd23003174f963b91e9e02034b967b1e64505fd0bed2a07342e0d133cf",
+      "bytes": 2488
+    },
+    {
+      "path": "prior-failures.json",
+      "sha256": "79012aa94b56d5d9c01a25d05d4a79cba74d618cafdaf842001a3fb5117c16f9",
+      "bytes": 3506
+    },
+    {
+      "path": "render-report.py",
+      "sha256": "83460a9641ae585895284c5010bb9712920d4b3e20c0667c5596fda990d0c109",
+      "bytes": 9108
+    },
+    {
+      "path": "replay.stderr",
+      "sha256": "b2bbb64e24647321b7cd6895af03c2f0d1b1e88a139e73a30b4f26c67e768f69",
+      "bytes": 1086
+    },
+    {
+      "path": "report.md",
+      "sha256": "369ba9f70c9eb35e69fe9b20ac55a5b21d38e14609692c916f75daa489a776a9",
+      "bytes": 8580
+    },
+    {
+      "path": "validation.json",
+      "sha256": "4edc10227e0c8a3094668370843a896f655721e7ff75f9f76d19a9a443e11f19",
+      "bytes": 46151
+    }
+  ]
+}
