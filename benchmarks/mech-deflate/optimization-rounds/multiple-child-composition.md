@@ -1,5 +1,7 @@
 # Native pieces around multiple ordinary children
 
+R79 is implemented, qualified and retained. The [current-status owner](../../../docs/design/native-compression-status.md) records the 9.79% elapsed /10.23% instruction reduction and code/stack tradeoff. Exact raw data is external and hash-indexed; the original design/baseline below remains historical evidence.
+
 The real complete compressor contains a reached parent with nine immediate
 children: one collection and eight Tail calls. At R78 it is diagnostic iteration
 25, with 818 directly owned source blocks, seven unsigned-array carrier fields

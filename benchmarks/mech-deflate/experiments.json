@@ -6,7 +6,7 @@
       "base": "0eb0c3d9d8a59fbf14b4ec3563944a276b56b8a4",
       "production": "c5e4d66188339025ddfcbf83f0ab1e9788f237f3",
       "compiler_source": "374edf1410b5f975d793fb69d8fcf390cbfa10a5",
-      "decision": "under measurement",
+      "decision": "retained: 9.794019% less matched elapsed and 10.234005% fewer instructions; requests unchanged; code/stack growth retained explicitly",
       "events": [
         {
           "event": "initial",
@@ -264,7 +264,30 @@
           "scorecard.json": "d51d67cbd197fe9e0b3965a67d84b1524ca29fa7bcac48427abc225fc538f255",
           "validation.json": "4dcda7a1ba5f3c8dd7d24651d1fe00608690f100aed55f239bad8ed1ce22beca"
         }
-      }
+      },
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "mechanism.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 2,
+        "round": 79,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 778,
+        "verified_archives": 21,
+        "verified_file_occurrences": 1165
+      },
+      "source_proof": {
+        "production_build_source": "374edf1410b5f975d793fb69d8fcf390cbfa10a5",
+        "production_implementation_unchanged": true,
+        "non_gpu_source_unchanged": true,
+        "unsafe_allowlist_unchanged": true,
+        "warning_exceptions_unchanged": true,
+        "protected_source_and_bytecode_pins": true
+      },
+      "obsolete_build_bytes_removed": 622760064
     }
   },
   "repository": "mech-lang/mech",
