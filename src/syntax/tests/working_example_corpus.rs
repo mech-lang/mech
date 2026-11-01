@@ -5,9 +5,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use mech_syntax::document::{
-    parse_canonical_document, reconstruct_source, validate_lossless, AstNode, CodeBlockSyntax,
-    CodeFenceScope, DocumentId, DocumentSyntax, ParseConfig, Revision, SyntaxKind, SyntaxNode,
-    TextRange, TextSize, TextSnapshot,
+    AstNode, CodeBlockSyntax, CodeFenceScope, DocumentId, DocumentStream, DocumentSyntax,
+    ParseConfig, Revision, StreamProgress, SyntaxKind, SyntaxNode, TextRange, TextSize,
+    TextSnapshot, parse_canonical_document, reconstruct_source, validate_lossless,
 };
 
 fn source_files(root: &Path, output: &mut Vec<PathBuf>) {
@@ -117,6 +117,21 @@ fn audit(path: &Path) -> Vec<String> {
     );
     let parse_elapsed = started.elapsed();
     let mut errors = Vec::new();
+    // The complete-file path defers tree construction; the retained path must
+    // still publish completed subtrees. Compare both against the authored corpus.
+    let mut stream = DocumentStream::new(DocumentId(0x5a17), ParseConfig::default());
+    stream.append(&text, 0).unwrap();
+    if stream.finish(u64::MAX).progress != StreamProgress::Finished {
+        errors.push("retained parse did not finish".to_owned());
+    } else {
+        let retained = stream.materialize().unwrap();
+        if retained.root.structural_hash != snapshot.root.structural_hash
+            || retained.stats != snapshot.stats
+            || retained.is_strictly_clean() != snapshot.is_strictly_clean()
+        {
+            errors.push("complete-file and retained parsing disagree".to_owned());
+        }
+    }
     if !snapshot.is_strictly_clean() {
         let diagnostics = snapshot
             .diagnostics
@@ -262,9 +277,11 @@ fn maintained_examples_parse_losslessly_with_authored_source_roles() {
         }
     }
     source_files(&repository.join("hosts/robot-arm/examples"), &mut paths);
-    assert!(paths
-        .iter()
-        .any(|path| path.ends_with("working/fizzbuzz.mec")));
+    assert!(
+        paths
+            .iter()
+            .any(|path| path.ends_with("working/fizzbuzz.mec"))
+    );
     let failures = paths
         .iter()
         .flat_map(|path| {

@@ -1,6 +1,7 @@
 use crate::document::{RuleId, SyntaxKind};
 
 pub(crate) mod continuation;
+mod sealed;
 pub(super) mod recognition;
 mod spec;
 pub(super) use spec::{Spec, specification};

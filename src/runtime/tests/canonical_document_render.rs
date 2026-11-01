@@ -1,14 +1,14 @@
 #![cfg(all(feature = "full_source", feature = "resident-routing-source"))]
 
 use mech_core::{CanonicalNominalPath, FunctionCatalogBuilder, ReactiveInstanceId};
-use mech_engine::resident::{activate, ActivationFacts};
+use mech_engine::resident::{ActivationFacts, activate};
 use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram, SourceDocumentOutputKind};
 use mech_runtime::{
     CanonicalDocumentRenderer, CanonicalRenderScope, CanonicalScopeResults, RuntimeValueSnapshot,
 };
 use mech_syntax::document::{
-    parse_canonical_document, AstNode, DocumentId, DocumentStream, DocumentSyntax, ParseConfig,
-    Revision, StreamProgress, TextSnapshot,
+    AstNode, DocumentId, DocumentStream, DocumentSyntax, ParseConfig, Revision, StreamProgress,
+    TextSnapshot, parse_canonical_document,
 };
 
 fn document(source: &str) -> DocumentSyntax {
@@ -231,9 +231,11 @@ fn renderer_rejects_results_from_an_older_document_revision() {
     let error = CanonicalDocumentRenderer
         .render_html(&current, &[stale])
         .unwrap_err();
-    assert!(error
-        .message
-        .contains("different canonical document revision"));
+    assert!(
+        error
+            .message
+            .contains("different canonical document revision")
+    );
 }
 
 #[test]
@@ -962,9 +964,11 @@ fn browser_source_mounts_match_compiled_canonical_output_anchors() {
     }
     assert!(html.contains("class='mech-inline-mech-code'"), "{html}");
     assert!(html.contains("class='mech-block-output'"), "{html}");
-    assert!(CanonicalDocumentRenderer
-        .render_html(&document, &[])
-        .is_err());
+    assert!(
+        CanonicalDocumentRenderer
+            .render_html(&document, &[])
+            .is_err()
+    );
 }
 
 #[test]
@@ -1057,10 +1061,12 @@ fn browser_source_preserves_program_mount_before_trailing_effects() {
     let program = CanonicalSourceFrontend
         .compile_document(&activation)
         .unwrap();
-    assert!(program
-        .document_outputs()
-        .iter()
-        .any(|output| output.kind == SourceDocumentOutputKind::Program && output.visible));
+    assert!(
+        program
+            .document_outputs()
+            .iter()
+            .any(|output| output.kind == SourceDocumentOutputKind::Program && output.visible)
+    );
 }
 
 #[test]
@@ -2024,11 +2030,13 @@ fn canonical_source_styles_preserve_atom_matrix_and_table_roles() {
         2,
         "{variables}"
     );
-    assert!(renderer
-        .render_repl_source_html(&document("café := 1\ncafé\n"))
-        .unwrap()
-        .unwrap()
-        .contains("data-mech-var-name='café'"));
+    assert!(
+        renderer
+            .render_repl_source_html(&document("café := 1\ncafé\n"))
+            .unwrap()
+            .unwrap()
+            .contains("data-mech-var-name='café'")
+    );
     for (source, roles) in [
         (
             "status := :ready\n",

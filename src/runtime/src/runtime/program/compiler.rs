@@ -171,6 +171,7 @@ fn admit_resolved_canonical_source(mut resolved: ResolvedSource) -> MResult<Reso
 /// transactions, retained reactive state, event history, and program
 /// ownership.
 pub struct ProgramCompiler {
+    retained_result_boundary: Option<mech_syntax::document::TextSize>,
     function_catalog: Arc<mech_core::FunctionCatalog>,
     source_resolver: Box<dyn SourceResolver>,
     resources: RuntimeResourceRegistry,
@@ -282,6 +283,7 @@ impl ProgramCompiler {
         max_source_bytes: Option<u64>,
     ) -> Self {
         Self {
+            retained_result_boundary: None,
             function_catalog,
             source_resolver,
             resources,
@@ -291,6 +293,16 @@ impl ProgramCompiler {
             program_config,
             max_source_bytes,
         }
+    }
+
+    /// Retain an interactive root's result at an unchanged authored prefix.
+    /// Dependencies and compute kernels keep their ordinary result contracts.
+    pub fn with_retained_result_boundary(
+        mut self,
+        boundary: mech_syntax::document::TextSize,
+    ) -> Self {
+        self.retained_result_boundary = Some(boundary);
+        self
     }
 
     pub fn compile_source(&mut self, source: &str) -> MResult<ProgramCompilationProduct> {
@@ -597,7 +609,7 @@ impl ProgramCompiler {
     }
 
     fn view(&self) -> ProgramCompilerView<'_> {
-        ProgramCompilerView::new(
+        let mut view = ProgramCompilerView::new(
             Arc::clone(&self.function_catalog),
             self.source_resolver.as_ref(),
             &self.resources,
@@ -606,13 +618,16 @@ impl ProgramCompiler {
             &self.module_manifests,
             self.program_config.limits.max_planning_steps,
             self.max_source_bytes,
-        )
+        );
+        view.retained_result_boundary = self.retained_result_boundary;
+        view
     }
 }
 
 /// A short-lived borrowed view used when an already constructed runtime loads
 /// source through the same compiler implementation.
 pub(crate) struct ProgramCompilerView<'a> {
+    retained_result_boundary: Option<mech_syntax::document::TextSize>,
     function_catalog: Arc<mech_core::FunctionCatalog>,
     source_resolver: &'a dyn SourceResolver,
     resources: &'a RuntimeResourceRegistry,
@@ -689,6 +704,7 @@ impl<'a> ProgramCompilerView<'a> {
         max_source_bytes: Option<u64>,
     ) -> Self {
         Self {
+            retained_result_boundary: None,
             function_catalog,
             source_resolver,
             resources,
@@ -1526,8 +1542,12 @@ impl<'a> ProgramCompilerView<'a> {
                     .or_else(|| module_namespace_for_import(&import.declaration))
             })
             .collect();
-        let prepared = canonical_frontend(document)
-            .with_imported_enum_qualifiers(context.enum_qualifiers()?)
+        let mut frontend =
+            canonical_frontend(document).with_imported_enum_qualifiers(context.enum_qualifiers()?);
+        if let Some(boundary) = self.retained_result_boundary {
+            frontend = frontend.with_retained_result_boundary(boundary);
+        }
+        let prepared = frontend
             .prepare_mixed_document_with_planning_contract_schema_drafts(
                 &document.document(),
                 Arc::clone(&self.function_catalog),
@@ -1620,7 +1640,12 @@ impl<'a> ProgramCompilerView<'a> {
         let document = resolved.source_document().ok_or_else(|| {
             canonical_compilation_error("canonical root has no retained document")
         })?;
-        let frontend = canonical_frontend(document);
+        let mut frontend = canonical_frontend(document);
+        if interactive && context.active.is_empty() {
+            if let Some(boundary) = self.retained_result_boundary {
+                frontend = frontend.with_retained_result_boundary(boundary);
+            }
+        }
         self.register_nominal_declarations(document, context)?;
         if context.active.iter().any(|entry| entry == uri) {
             return Err(canonical_compilation_error(format!(
@@ -2192,8 +2217,12 @@ impl<'a> ProgramCompilerView<'a> {
                     .or_else(|| module_namespace_for_import(&import.declaration))
             })
             .collect();
-        let mut programs = canonical_frontend(document)
-            .with_imported_enum_qualifiers(imported_enum_qualifiers)
+        let mut frontend =
+            canonical_frontend(document).with_imported_enum_qualifiers(imported_enum_qualifiers);
+        if let Some(boundary) = self.retained_result_boundary {
+            frontend = frontend.with_retained_result_boundary(boundary);
+        }
+        let mut programs = frontend
             .prepare_mixed_document_with_planning_contract_schema_drafts(
                 &document.document(),
                 Arc::clone(&self.function_catalog),

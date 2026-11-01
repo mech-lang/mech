@@ -417,6 +417,17 @@ harness = r'''<script>
       }
     };
     const recordStartupResources = () => {
+      const unusedRenderers = [];
+      const hasEquations = document.querySelector(
+        "[data-mech-equation], [data-katex], .mech-inline-equation, .mech-equation, .math-inline, .math-display",
+      );
+      const hasDiagrams = document.querySelector(".mermaid");
+      for (const element of document.querySelectorAll("script[src], link[href]")) {
+        const url = element.src || element.href;
+        if ((!hasEquations && /\/katex[@/]/.test(url)) ||
+            (!hasDiagrams && /\/mermaid[@/]/.test(url))) unusedRenderers.push(url);
+      }
+      root.dataset.mechUnusedRendererDownloads = JSON.stringify(unusedRenderers);
       root.dataset.mechStartupResources = JSON.stringify(
         performance.getEntriesByType("resource").map(entry => ({
           name: entry.name, duration: entry.duration, transferSize: entry.transferSize,
@@ -1543,6 +1554,7 @@ def record_startup(stage, dataset, *, require_running=False):
         "first_compute_completion_evidence": dataset.get("mechFirstComputeCompletionEvidence", ""),
         "budget_seconds": startup_budget,
         "resources": json.loads(dataset.get("mechStartupResources", "[]")),
+        "unused_renderer_downloads": json.loads(dataset.get("mechUnusedRendererDownloads", "[]")),
         "title_metadata_valid": dataset.get("mechTitleMetadataValid") == "true",
         "capability_rows_compact": dataset.get("mechCapabilityRowsCompact") == "true",
         "capability_row_ratios": json.loads(dataset.get("mechCapabilityRowRatios", "[]")),
@@ -1559,6 +1571,8 @@ def record_startup(stage, dataset, *, require_running=False):
         raise RuntimeError(f"EKF first compute completion exceeded its {startup_budget}s budget: {report!r}")
     if not report["title_metadata_valid"] or not report["capability_rows_compact"]:
         raise RuntimeError(f"EKF source presentation contract failed: {report!r}")
+    if report["unused_renderer_downloads"]:
+        raise RuntimeError(f"unused document renderers were downloaded during startup: {report!r}")
 flags = []
 if compute_backend != "wgpu":
     flags.append("--disable-gpu")
