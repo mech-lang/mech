@@ -1,7 +1,8 @@
 //! Mechanical graph query only. Consumers decide which reads and owners qualify.
 use super::{NativeProgramFacts, NativeProgramReadRole as Read};
 use crate::native_artifact::{
-    NativeControlLoop as Loop, NativeMatchValue, NativeProgramArtifactPlan as Plan,
+    NativeCollectionResult, NativeCollectionSource, NativeControlLoop as Loop, NativeMatchValue,
+    NativeProgramArtifactPlan as Plan,
 };
 
 impl NativeProgramFacts<'_> {
@@ -50,14 +51,51 @@ impl NativeProgramFacts<'_> {
         value: NativeMatchValue,
         frontier: u32,
     ) -> Result<bool, &'static str> {
-        let Some(reads) = self
-            .read_roles(value)?
-            .iter()
-            .map(|role| Self::control_read_site(self.plan(), *role))
-            .collect::<Option<Vec<_>>>()
-        else {
-            return Ok(true);
-        };
+        let mut reads = Vec::new();
+        for &role in self.read_roles(value)? {
+            if let Read::CollectionSource(iteration) = role {
+                let Some(Loop::Collection(generator)) =
+                    self.plan().iterations().get(iteration as usize)
+                else {
+                    return Ok(true);
+                };
+                let Some(collection) = self
+                    .plan()
+                    .collections()
+                    .get(generator.collection() as usize)
+                else {
+                    return Ok(true);
+                };
+                // Specialized consumers retain their independent ownership
+                // frontiers. Only the ordinary materialized lifecycle is finite
+                // here; this does not broaden private-frame eligibility.
+                if !matches!(generator.source(), NativeCollectionSource::Value(_))
+                    || !matches!(collection.result(), NativeCollectionResult::Materialized)
+                    || collection.string_span_projection().is_some()
+                    || collection.string_element_map_projection().is_some()
+                {
+                    return Ok(true);
+                }
+                // Keep the arena source through initialization, every active
+                // generator boundary, and source-pin release at Exit. A shape-
+                // preserving finish reads the arena source AFTER that release.
+                // Include finish for all ordinary results conservatively. CFG
+                // backedges and fresh definitions still use the same old-owner
+                // query below; the runtime's current exclusivity gate remains.
+                reads.extend([
+                    (generator.initialize(), false),
+                    (generator.header(), false),
+                    (generator.body(), false),
+                    (generator.latch(), false),
+                    (generator.exit(), false),
+                    (collection.finish(), false),
+                ]);
+            } else if let Some(site) = Self::control_read_site(self.plan(), role) {
+                reads.push(site);
+            } else {
+                return Ok(true);
+            }
+        }
         self.old_value_read_before_redefinition(
             value,
             frontier,
