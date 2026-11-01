@@ -7044,6 +7044,17 @@
           "files": 46,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-isolated-profile-c1343158ad03.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "af930a97154d8f71b6759540049c55708c8ba035",
+          "asset": "r101-closure-d6960109a534.tar.gz",
+          "sha256": "d6960109a53438200f6ebb5c799d086b77200187eda3e6882b9bb3d86bb0db9a",
+          "manifest_sha256": "3f1d82df463f44434af61f945ec834125813ffc8ee3b039f2c2bdc612372f8a0",
+          "bytes": 8886691,
+          "files": 106,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-closure-d6960109a534.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
