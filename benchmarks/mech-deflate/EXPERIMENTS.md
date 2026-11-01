@@ -218,3 +218,29 @@ increase 46,120/480 bytes from retained R81, with R83 Object/image/metadata unch
 Use `replay-round --round 83` with a fresh output directory. Full hashes, commands,
 failed/untimed attempts and separate profiles/counter cohorts stay in external
 packets. See [current status](../../docs/design/native-compression-status.md).
+
+
+## R84: wider zero branch through a shared resize
+
+Base `ff4cf633c153d559a7a3f5288b34f656f94a1cfe`; production `10f5bbbe9`.
+Actual code still calls outlined generic vector loops. Matched elapsed is
+0.168704% lower with 28 adverse blocks; retired instructions rise 2,056.5.
+Superseded by R85, not claimed as a standalone instruction win. New calibrated
+coarse windows put 29.43M of31.09M diagnostic instructions in native turn+callbacks;
+preparation is1.13M. Marker overhead and all failed driver/replay attempts remain.
+Use `replay-round --round 84` for four reproduced reports.
+
+## R85: distinct zero initializer exposes bulk zeroing
+
+Base `24f1019c83c1776ff64a4fb4ef288d644f696b2e`; actual optimized/production source
+`490ede99581fd233edd4c05d14f74641c9ae45c9`. A distinct zero initializer lowers all
+three wider unsigned fills to bzero; nonzero, capacity, admission and work stay.
+Four consistent censuses prove84 wider zero calls/6,576,864 initialized bytes.
+Direct retained R83→R85 elapsed10.090325×→9.980769× reference (−1.085752%), all
+four pairs improve,10 adverse blocks retained. Independent R84→R85 pairs improve
+1.236842%; never multiply cohorts. Instructions are effectively flat (+202.5),
+cycles improve2.281639%, heap and Object/image/metadata unchanged. All scalar/frame,
+component/linked and architecture gates pass. Use `replay-round --round 85` for
+four report hashes; full failures, raw observations, profiles and source pins
+remain external. The [current status](../../docs/design/native-compression-status.md)
+is authoritative. No source algorithm or limit changes.

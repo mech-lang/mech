@@ -2105,7 +2105,21 @@
         96,
         38,
         14
-      ]
+      ],
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "mechanism.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 1,
+        "round": 84,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 569,
+        "verified_archives": 15,
+        "verified_file_occurrences": 963
+      }
     },
     "85": {
       "base": "24f1019c83c1776ff64a4fb4ef288d644f696b2e",
@@ -2533,6 +2547,20 @@
           14
         ],
         "scope": "Current production matches the measured build. Source/bytecode/algorithm/source allocation sites/allocator/real capacities/work/timing boundaries unchanged."
+      },
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "mechanism.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 2,
+        "round": 85,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 763,
+        "verified_archives": 28,
+        "verified_file_occurrences": 1683
       }
     }
   },
