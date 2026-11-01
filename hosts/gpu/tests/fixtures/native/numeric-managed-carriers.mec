@@ -1,0 +1,15 @@
+// The compressor carries a matrix of block-sequence records through ordinary
+// child calls. Forwarding an immutable owner requires no numeric payload view.
++> sequence
+<carrier-sequence> := <{litrunlen-and-length<u32> offset<u16> offset-slot<u16>}>
+carrier-write(words<[u64]>, left<u64>, allowed<bool>, divisor<u64>) => (out<[u64]>) :=
+  allowed! := allowed
+  ~next := words
+  more := left > 0u64
+  next[1u64] = (words[1u64] + left) / divisor
+  out := (more? | true => carrier-write(next, left - 1u64, allowed, divisor) | false => next).
+carrier-parent(seqs<[carrier-sequence]>, label<string>, words<[u64]>, left<u64>, allowed<bool>, divisor<u64>) => (out<([carrier-sequence],string,[u64])>) :=
+  more := left > 0u64
+  step := (more? | true => carrier-write(words, 1u64, allowed, divisor) | false => words)
+  out := (more? | true => carrier-parent(seqs, label, step, left - 1u64, allowed, divisor) | false => (seqs, label, words)).
+carrier-parent(seqs<[carrier-sequence]>, label<string>, words<[u64]>, steps<u64>, allowed<bool>, divisor<u64>)
