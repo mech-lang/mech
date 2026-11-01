@@ -3313,6 +3313,17 @@
           "files": 43,
           "asset_id": 698091835,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-record-field-witness-dcd8b0ea8d45.tar.gz"
+        },
+        {
+          "event": "analysis",
+          "source_revision": "36794bdeac6c70a13be317a14d2175bb1b4fbb94",
+          "asset": "r88-analysis-570ca94467ec.tar.gz",
+          "sha256": "570ca94467ecdf893a6a85d9a6f0b6c1d6be6b87aa85ba47e7b824206aac5a74",
+          "manifest_sha256": "541d3e7295252481fb2b8495bb512d4e13afffb5a0ed1fc67094037fa7a69f40",
+          "bytes": 76865,
+          "files": 41,
+          "asset_id": 698091888,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-analysis-570ca94467ec.tar.gz"
         }
       ]
     }
