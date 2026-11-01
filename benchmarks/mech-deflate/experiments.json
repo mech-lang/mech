@@ -1206,6 +1206,17 @@
             "improving_blocks": 23,
             "adverse_blocks": 41
           }
+        },
+        {
+          "event": "diagnostic-counts",
+          "source_revision": "4fe3ca57b17b4bcab90948f8357f8fd8fd9d11da",
+          "asset": "r82-diagnostic-counts-e12685e8729c.tar.gz",
+          "sha256": "e12685e8729cd5c8a1462c11cecf0a4d48eb4ab79359c902fd32f6203737c213",
+          "manifest_sha256": "81ef1824e252fc84d84623834d5b011e7a1ed267ee175c3d559c9c8b7e604939",
+          "bytes": 1420073,
+          "files": 414,
+          "asset_id": 697676637,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r82-diagnostic-counts-e12685e8729c.tar.gz"
         }
       ]
     },
