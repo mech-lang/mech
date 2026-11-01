@@ -7229,6 +7229,17 @@
           "files": 71,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-frame-allocation-de07192835ea.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "fa1ffe75e78c7ace538d7d14aa5f3ebc74783166",
+          "asset": "r102-scalar-controls-1ab73ecb7306.tar.gz",
+          "sha256": "1ab73ecb73068f75a54c08769956c04c6948d30142c444dd0c03326b788c86a4",
+          "manifest_sha256": "edbbe5001cb74dad66cc7b5918de6680e80df65420d3f214d4420e90efba024a",
+          "bytes": 127434,
+          "files": 96,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-scalar-controls-1ab73ecb7306.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
