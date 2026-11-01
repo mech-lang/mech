@@ -5,6 +5,55 @@ outside source. This status, the maintained harness and the
 [compact evidence index](../../benchmarks/mech-deflate/EXPERIMENTS.md) retain the
 review and reproduction path.
 
+## R98: measured adjacent-seed experiment rejected
+
+The retained compiler remains R97. R98 built an immediately consumed child seed
+in empty carrier storage while preserving disjoint lanes and the original
+pack/initialize admission and charge order. The mechanism ran at all 112 reached
+packs across 89 static sites (543 top-level field visits), but the complete call
+became slower. The candidate was reverted in `77b095453`; compiler/runtime
+source is byte-identical to the published R97 checkpoint.
+
+Fresh matched eight-byte level-12 elapsed is **8.469835×→8.506293×** the fresh
+0.288ms reference: **2.4393125→2.4498125ms, +0.430449%**. One of four pairs
+improves; three worsen. There are 3,968 primary/3,984 total observations,
+21 improving and 43 adverse descriptive blocks. All observations remain.
+The older R97 8.378794× ratio used a different reference clock; it is not the
+baseline of this candidate comparison.
+
+Separate 32-call hardware cohorts retire **27,388,332→27,647,635 instructions
+(+0.946764%)** and **7,717,172→7,729,106 cycles (+0.154642%)**. Requests 5,153,
+requested 97,997,834B, reallocations 162 and incremental peak live 17,782,744 B
+are unchanged. Generated text 14,604,696 B and entry stack 135,728 B are unchanged.
+Fresh 695-call serial sample windows and the exact before/after frame-state
+traces are retained separately; samples are not instruction attribution.
+
+Candidate source: `1b32af2c7093aeef1c44bbd7e17f048ac71ab593`, based on published
+`b2b5dc28dc3dc0392cb8dbfa5874ffaff7375dff`. Candidate IR/work/private ABI/MBC:
+142/99/38/14. Retained source returns to R97's 141/99/38/14. The candidate passed
+runtime 355, work/memory 33, native CI 64 and image 1. The committed rebuild's unit
+binary is byte-identical to the tested precommit binary. The original/decoded
+record control compares direct and ordinary Copy paths with the same executable,
+including changed Boolean words, errors, aliases, prior publication and retry.
+An initial unused-variable build failure was fixed before measurement.
+The rejected candidate did not receive another component, linked, scalar or full
+architecture sweep. R97's retained qualification below remains applicable;
+no new green hosted CI claim is made.
+
+Twelve hash-indexed evidence packets contain commands, raw observations,
+diagnostic drivers, descriptors and portable numerical replay. An initial
+automatic archive-upload rejection was resolved by explicit user approval of the
+exact twelve archives and sidecars. Native Objects and binaries remain local.
+The compact index records the publication and rejection decision.
+
+The next bounded target is finite ordinary collection-source lifetime. A fresh
+read-only R97 trace at tree update 1038 finds arena aliases 882 and 908 before
+retirement, and 882 alone afterward, in each of four visits. No private frame
+owner matches. Each 262,144-entry U16 update allocates a different 524,288-byte
+backing, accounting for 2,097,152 initialized bytes copied. The collection-source
+role remains opaque in old-value analysis even after the branch and its shape
+finalization. This diagnosis is not yet a lifetime fix or a new performance win.
+
 ## Current measured checkpoint: R97
 
 Keeping private parent scratch in SSA improves complete pinned level-12
@@ -87,7 +136,7 @@ unused-constant, canonical-shape and exit-argument improvements remain retained.
 
 ## Qualification and evidence
 
-Passing current selections: runtime355, work/memory33, native CI64, image1,
+Passing current selections: runtime 355, work/memory 33, native CI 64, image 1,
 unchanged components236, connected8, path1, linked16+12+12, scalar12, frame8,
 workflow132 and architecture/type/memory15. The scalar gate remains 1.05;
 maximum observed ratio is 1.002924, with equal pure-scalar requests/bytes and zero

@@ -379,7 +379,7 @@ code−424484B and stack−4016B remain favorable contrary evidence; heap stays 
 Revert `5addc236c` restores the faster R92 source and CI inventory exactly. This
 rejects a measured elapsed regression, not a small positive gain. Three focused
 contracts fail on the clean parent and pass on the candidate; runtime354, CI63,
-image1 and12 linked cases pass. The candidate was rejected before broader scalar,
+image 1 and12 linked cases pass. The candidate was rejected before broader scalar,
 component and architecture qualification. Its full patch, failed preparation,
 profiles and all adverse observations remain external. Fresh retrieval verifies
 21 packets/2419 file versions/1642 paths and reproduces four reports exactly.
@@ -397,7 +397,7 @@ IR/work/private ABI/MBC140/99/38/14.
 
 Matched complete eight-byte elapsed8.640209×→8.573384× reference (−0.773422%);
 instructions−0.035224%, cycles−0.266766%; all4 pairs improve,15 adverse blocks
-retained. Requests5781, requested98008140B and live peak17782744B remain equal.
+retained. Requests 5781, requested98008140B and live peak17782744B remain equal.
 Code15911648→15641476B; entry stack143488→143424B. Logical work42449879781 and
 Huffman88531834 stay equal. No source/allocator/allowance changes.
 
@@ -407,7 +407,7 @@ paths. The actual ARM64 site699→700 example has20→1 argument STRs with the s
 20-word guard; that particular exit is cold in the eight-byte run. These counts
 are not retired-instruction or elapsed percentages.
 
-Current runtime355, work/memory33, CI64, image1, unchanged components236,
+Current runtime 355, work/memory 33, CI 64, image 1, unchanged components236,
 connected8, path1, linked16+12+12, scalar12 at unchanged1.05, frame8, workflow132
 and architecture15 pass. The original full-bank store loop fails the new emission
 control; poisoning omitted words preserves success/bounds/arithmetic exits,
@@ -486,8 +486,8 @@ IR/private ABI/MBC141/38/14; old images remain strictly rejected.
 
 Matched eight-byte elapsed8.498282×→8.378794× reference (−1.406025%); all4 pairs
 and55 blocks improve,9 adverse blocks retained. Separate instructions
-27,796,101→27,387,432.5 (−1.470237%), cycles−1.71%. Requests5153, bytes97997834,
-live peak17782744 and reallocations162 stay equal. Higher whole-process RSS and
+27,796,101→27,387,432.5 (−1.470237%), cycles−1.71%. Requests 5153, bytes97997834,
+live peak17782744 and reallocations 162 stay equal. Higher whole-process RSS and
 footprint remain explicit. Text15641476→14604696B, stack143424→135728B.
 
 Static IR omits4868 entry stores/reloads each plus200397 exit stores (210133
@@ -497,7 +497,7 @@ percentage. Poisoned-home success/read-retry/arithmetic controls pass; restoring
 old spills fails the isolated negative control. All aliases, publication, prices
 and recovery remain. No source algorithm, allocation site or allowance changes.
 
-Current runtime355, work/memory33, CI64, image1, unchanged components236,
+Current runtime 355, work/memory 33, CI 64, image 1, unchanged components236,
 connected8, path1, linked40, scalar12 (unchanged1.05 gate, maximum1.002924),
 frame8, workflow132 and architecture15 pass. Same coherent dependencies and
 selected features; no fresh Core/all-features graph claim. Profiles695 calls per
@@ -505,3 +505,20 @@ subject remain separate from hardware and elapsed. Every primary timing is
 externally archived and committed; four pure reports replay numerically.
 The next seed/carrier inventory is89 sites/112 packs/543 operand visits; these
 are unproved candidates. See [current status](../../docs/design/native-compression-status.md).
+
+## R98 rejected adjacent-seed placement
+
+R98's four matched eight-byte pairs measure **8.469835×→8.506293×** the fresh
+reference: +0.430449% elapsed. Separate instructions rise 0.946764%; allocations,
+requested bytes, live peak, generated text and entry stack stay equal. All 112
+reached handoffs use direct placement, so the mechanism's execution is established
+without a performance benefit. The source commit was reverted. Runtime 355,
+work/memory 33, native CI 64 and image 1 pass; broader candidate qualification is
+skipped after rejection. R97 remains retained.
+
+The compact index lists twelve immutable packets and four pure replay hashes.
+The exact 12 archives/sidecars were explicitly approved after an automatic upload
+rejection. Native binaries are excluded. The source/order/alias/retry controls
+and all adverse pairs remain in evidence. The next assigned experiment is the
+completed-collection lifetime blocker; the read-only current tree witness has
+confirmed old alias 882 survives all four copying updates.
