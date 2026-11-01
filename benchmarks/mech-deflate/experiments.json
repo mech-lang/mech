@@ -5053,6 +5053,17 @@
           "files": 38,
           "asset_id": 698745321,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-counter-driver-stale-baseline-2fbbb3e32e0e.tar.gz"
+        },
+        {
+          "event": "counters",
+          "source_revision": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
+          "asset": "r92-counters-00e6af12da6e.tar.gz",
+          "sha256": "00e6af12da6e4222259d699260c948150f583c156a22df1286f57299ba2aba10",
+          "manifest_sha256": "f9ef74e96e4947ee3788e79d2ea5dcf42066e3c1976f0b4f560ac1253fe96b37",
+          "bytes": 252610,
+          "files": 74,
+          "asset_id": 698745401,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-counters-00e6af12da6e.tar.gz"
         }
       ]
     }
