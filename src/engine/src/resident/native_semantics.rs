@@ -235,16 +235,20 @@ pub(super) fn bind_call(
         })
         .cloned();
     let accounting = kernel.work_accounting();
-    let kernel = kernel
-        .with_bound_call(bound_call.clone())
-        .with_work_accounting(accounting);
     if let Some(candidate) = candidate {
+        // The seal and executor each retain this exact call. Ordinary kernels
+        // have one consumer and can take the original metadata without a clone.
+        let kernel = kernel
+            .with_bound_call(bound_call.clone())
+            .with_work_accounting(accounting);
         kernel.with_lowering_witness(Arc::new(SealedWitness {
             semantics: candidate.semantics,
             bound_call,
         }))
     } else {
         kernel
+            .with_bound_call(bound_call)
+            .with_work_accounting(accounting)
     }
 }
 
