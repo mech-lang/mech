@@ -2826,6 +2826,17 @@
             "improving_blocks": 60,
             "adverse_blocks": 4
           }
+        },
+        {
+          "event": "counters",
+          "source_revision": "c2b334feed4326a66ce1f69ca4bc99b0cbe41bb2",
+          "asset": "r87-counters-c0be899ac903.tar.gz",
+          "sha256": "c0be899ac9037ffc07c530d1108cd8d2cdc70ec99dfab33d77f7a9d5b22b66cd",
+          "manifest_sha256": "5a9e9e9ec547b2c19d46d44e23bb3948603eb314135969e422b0fd9fede61c08",
+          "bytes": 260342,
+          "files": 85,
+          "asset_id": 697957577,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r87-counters-c0be899ac903.tar.gz"
         }
       ]
     }
