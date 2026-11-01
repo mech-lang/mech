@@ -6029,6 +6029,38 @@
           "profile-numbers.json": "2c6249ad70d6e67b700bd2c8cd2f885af767c57fe12da860eef6c6e1d34cce3e"
         }
       }
+    },
+    "96": {
+      "base": "5848625e2e3ade9d85c4db7f3380b20bae230559",
+      "production": "67a7c88e745092264a5a735933dd95cf48fc5446",
+      "compiler_source": "67a7c88e745092264a5a735933dd95cf48fc5446",
+      "retained_production": "67a7c88e745092264a5a735933dd95cf48fc5446",
+      "decision": "retain calibrated instruction diagnosis; no production change or new primary elapsed claim",
+      "versions": [
+        140,
+        99,
+        38,
+        14
+      ],
+      "analysis": {
+        "script": "analyze-ledger.py",
+        "expected_outputs": {
+          "instruction-ledger.json": "f2ed9e3256096e2de29a87c0b0f67a29dd7b2fa8fff7f2070c1aec90b5e0751c"
+        }
+      },
+      "events": [
+        {
+          "event": "instruction-ledger",
+          "source_revision": "67a7c88e745092264a5a735933dd95cf48fc5446",
+          "asset": "r96-instruction-ledger-d186066dce1c.tar.gz",
+          "sha256": "d186066dce1c64f4635f4048dfd7f3ec9e9c48dd143ba24afcb78eec1cf936fc",
+          "manifest_sha256": "70173deabba2f4e4814ccc66926a27b5126c675f61b446f34ee728d00fe7300e",
+          "bytes": 6171266,
+          "files": 74,
+          "asset_id": 699257453,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r96-instruction-ledger-d186066dce1c.tar.gz"
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",
