@@ -78,6 +78,11 @@ impl Invocation<'_, '_, '_> {
             let Some(owner) = self.segment_source(source)? else {
                 return Ok(Some(0));
             };
+            // Keep current schema-key validation even when a byte limit does
+            // not require traversing the payload's retained footprint below.
+            if owner.validate_against(&metadata.schemas).is_err() {
+                return Ok(Some(0));
+            }
             let Some(bytes) = owner.memory_budget_retained_bytes(&memory) else {
                 return Ok(Some(0));
             };
@@ -197,22 +202,27 @@ impl Invocation<'_, '_, '_> {
                 continue;
             }
             let mut bytes = 0u64;
-            for source in &frame.arrays {
-                let bound = if let Some(source) = source {
-                    let Some(owner) = self.segment_source(&frames.sources[*source])? else {
+            // Owners and numeric views have their own current-account/type
+            // checks. This pure footprint is needed only for a byte-limit
+            // preview; keep its exact walk and checked sum when a limit exists.
+            if self.limits.max_output_bytes.is_some() {
+                for source in &frame.arrays {
+                    let bound = if let Some(source) = source {
+                        let Some(owner) = self.segment_source(&frames.sources[*source])? else {
+                            return Ok(Some(0));
+                        };
+                        let Ok(footprint) = owner.retained_footprint(&metadata.schemas) else {
+                            return Ok(Some(0));
+                        };
+                        footprint.retained_bytes
+                    } else {
+                        scalar_bytes
+                    };
+                    let Some(next) = bytes.checked_add(bound) else {
                         return Ok(Some(0));
                     };
-                    let Ok(footprint) = owner.retained_footprint(&metadata.schemas) else {
-                        return Ok(Some(0));
-                    };
-                    footprint.retained_bytes
-                } else {
-                    scalar_bytes
-                };
-                let Some(next) = bytes.checked_add(bound) else {
-                    return Ok(Some(0));
-                };
-                bytes = next;
+                    bytes = next;
+                }
             }
             if self
                 .limits
