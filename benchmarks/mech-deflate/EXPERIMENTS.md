@@ -40,6 +40,9 @@ byte-identically**; their version/occurrence counts are in the compact receipt.
 
 Use **experiment.py** as the maintained archival/measurement entry. Put raw data
 under ignored `benchmarks/mech-deflate/.experiments/` or outside the checkout.
+Generated Rust/C workers and isolated source copies stay outside the checkout;
+keep the exact unsafe allowlist and warning checks unchanged. An ignored alias
+may retain existing experiment paths without adding code to the maintained tree.
 The `measure` command accepts a JSON specification of pinned inputs, exact worker
 commands, expected output/work fields and balanced sampling geometry. It uses the
 existing linked-worker session: prepare both workers, disclosed warmups, alternating
@@ -141,3 +144,20 @@ experiment, not only the selected report.
 | R76 | R76: keep successful debits separate from cold error transport | `benchmarks/mech-deflate/results/2026-10-30-native-hardening/compression-round-76/REPORT.md` | `2ef2b62db78f8fc69b181eff57738e3891593f6fe4fd1bd143bb8549d32739ff` |
 | R77 | R77: precise private failure return — rejected | `benchmarks/mech-deflate/results/2026-10-30-native-hardening/compression-round-77/REPORT.md` | `8b4850673b44a0ca08f4f7ecd994694ed03a6bb8381fd4c6c7d02d8528536ef1` |
 | R78 | R78 — adjacent admission/helper transport | `benchmarks/mech-deflate/results/2026-10-30-native-hardening/compression-round-78/REPORT.md` | `369ba9f70c9eb35e69fe9b20ac55a5b21d38e14609692c916f75daa489a776a9` |
+
+## Current external experiments
+
+R79 retains multi-child parent composition: **12.424308×→11.207469×** the fresh
+reference, **9.794019% less elapsed**, **10.234005% fewer retired instructions**.
+Requests remain6,791; code/stack grow. All adverse observations remain. The compact
+[experiment receipt index](experiments.json) identifies every immutable external
+packet and the four expected numerical replay hashes. The external `closure/REPORT.md`
+contains exact revisions, configurations, commands/counts and failure dispositions.
+
+```sh
+python3 benchmarks/mech-deflate/experiment.py replay-round --index benchmarks/mech-deflate/experiments.json --round 79 --output /tmp/mech-r79-replay
+```
+
+This retrieves and hash-verifies every preserved version before chronological
+overlay, then reconstructs the reports without compiling or compressing. Historical
+R76/R77/R78 replay above remains available independently.

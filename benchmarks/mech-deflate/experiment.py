@@ -7,6 +7,7 @@ Historical scripts remain in the verified archives; this is the maintained entry
 """
 
 import argparse
+import contextlib
 import gzip
 import hashlib
 import io
@@ -16,6 +17,7 @@ import math
 import os
 from pathlib import Path, PurePosixPath
 import select
+import shutil
 import statistics
 import subprocess
 import sys
@@ -190,6 +192,55 @@ def replay(args):
     write_json(args.output / "replay.json", result)
 
 
+def replay_round(args):
+    """Retrieve every immutable packet, verify all versions, then replay numbers."""
+    index = json.loads(args.index.read_text())
+    round = index["rounds"][str(args.round)]
+    args.output.mkdir(parents=True, exist_ok=False)
+    downloads, evidence = args.output / "downloads", args.output / "evidence"
+    downloads.mkdir()
+    evidence.mkdir()
+    occurrences, versions = 0, {}
+    for position, event in enumerate(round["events"]):
+        packet = downloads / str(position)
+        packet.mkdir()
+        subprocess.run(["gh", "release", "download", index["release_tag"], "--repo", index["repository"],
+                        "--pattern", event["asset"], "--dir", str(packet)], check=True)
+        receipt = {**event, "archive_name": event["asset"]}
+        receipt_path = packet / "receipt.json"
+        write_json(receipt_path, receipt)
+        extracted = packet / "extracted"
+        verification = argparse.Namespace(archive=packet / event["asset"], receipt=receipt_path,
+                                         extract=extracted, result=None)
+        with contextlib.redirect_stdout(io.StringIO()):
+            verify(verification)
+        manifest = json.loads((extracted / "MANIFEST.json").read_text())
+        for item in manifest["files"]:
+            source = extracted / item["path"]
+            target = evidence / item["path"]
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, target)
+            occurrences += 1
+            versions.setdefault(item["path"], set()).add(item["sha256"])
+        shutil.rmtree(extracted)
+        print(f"verified {event['event']}: {manifest['file_count']} files", flush=True)
+    analysis = round["analysis"]
+    script = evidence / safe_path(analysis["script"])
+    derived = args.output / "derived"
+    subprocess.run([sys.executable, str(script.resolve()), str(evidence.resolve()),
+                    str(derived.resolve())], check=True)
+    for name, digest in analysis["expected_outputs"].items():
+        if sha256(derived / safe_path(name)) != digest:
+            raise ValueError(f"replayed output differs from its committed hash: {name}")
+    result = {"round": args.round, "verified_archives": len(round["events"]),
+              "verified_file_occurrences": occurrences, "unique_paths": len(versions),
+              "paths_with_multiple_preserved_versions": sum(len(value) > 1 for value in versions.values()),
+              "byte_identical_outputs": list(analysis["expected_outputs"]),
+              "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing."}
+    write_json(args.output / "replay.json", result)
+    print(json.dumps(result, indent=2))
+
+
 def measure(args):
     """The existing linked-worker protocol; preparation and cleanup stay outside evaluate_into."""
     spec = json.loads(args.spec.read_text())
@@ -359,6 +410,11 @@ def main():
     command.add_argument("--rounds", type=int, nargs="+", default=[76, 77, 78])
     command.add_argument("--output", type=Path, required=True)
     command.set_defaults(run=replay)
+    command = commands.add_parser("replay-round", help="retrieve and reconstruct a hash-indexed external experiment")
+    command.add_argument("--index", type=Path, required=True)
+    command.add_argument("--round", type=int, required=True)
+    command.add_argument("--output", type=Path, required=True)
+    command.set_defaults(run=replay_round)
     command = commands.add_parser("measure", help="run balanced linked workers with all observations retained")
     command.add_argument("--spec", type=Path, required=True)
     command.add_argument("--output", type=Path, required=True)
