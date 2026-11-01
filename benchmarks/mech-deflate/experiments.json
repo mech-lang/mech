@@ -2342,6 +2342,17 @@
           "files": 41,
           "asset_id": 697886276,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r85-binary-inspection-6a9742465815.tar.gz"
+        },
+        {
+          "event": "fill-census",
+          "source_revision": "490ede99581fd233edd4c05d14f74641c9ae45c9",
+          "asset": "r85-fill-census-fb5c6cc29ed4.tar.gz",
+          "sha256": "fb5c6cc29ed41e7abf2c250b48deff9d653e95a467f8d3c9c021c1d547e7d479",
+          "manifest_sha256": "699af515766333b41740f356c6186bc44075c007e01f6246bef076a2903bfab7",
+          "bytes": 1406465,
+          "files": 415,
+          "asset_id": 697886339,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r85-fill-census-fb5c6cc29ed4.tar.gz"
         }
       ],
       "analysis": {
