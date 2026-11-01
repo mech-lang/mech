@@ -926,7 +926,17 @@ impl<'plan> CfgDefinition<'plan> {
                     error,
                 )?;
             }
-            admit(b, callback_signature, callback, user_context, index, error);
+            #[cfg(feature = "canonical-native-program")]
+            let admitted_helper = if admission_join.is_none() && map_admission_join.is_none() {
+                crate::native_artifact::program::codegen::ordinary_helpers::selected(plan, index)
+            } else {
+                None
+            };
+            #[cfg(not(feature = "canonical-native-program"))]
+            let admitted_helper: Option<GlobalHelper> = None;
+            if admitted_helper.is_none() {
+                admit(b, callback_signature, callback, user_context, index, error);
+            }
             #[cfg(feature = "canonical-native-program")]
             if let Some(joined) = map_admission_join {
                 b.ins().jump(joined, &[]);
@@ -1060,6 +1070,9 @@ impl<'plan> CfgDefinition<'plan> {
             )?;
             #[cfg(not(feature = "canonical-native-program"))]
             let aggregate = false;
+            if admitted_helper.is_some() && (segment_ir != 0 || owner_handled || aggregate) {
+                return Err(backend("composed helper overlaps a native action"));
+            }
             match block.action() {
                 _ if owner_handled => {}
                 _ if aggregate
@@ -1121,7 +1134,7 @@ impl<'plan> CfgDefinition<'plan> {
                     hooks.call(
                         b,
                         index,
-                        GlobalHelper::StructuralObservation,
+                        admitted_helper.unwrap_or(GlobalHelper::StructuralObservation),
                         [zero; 3],
                         error,
                     );
@@ -1214,7 +1227,13 @@ impl<'plan> CfgDefinition<'plan> {
                             .as_ref()
                             .ok_or_else(|| backend("missing managed move hook"))?;
                         let zero = b.ins().iconst(types::I64, 0);
-                        hooks.call(b, index, GlobalHelper::Move, [zero; 3], error);
+                        hooks.call(
+                            b,
+                            index,
+                            admitted_helper.unwrap_or(GlobalHelper::Move),
+                            [zero; 3],
+                            error,
+                        );
                     } else {
                         emit_scalar_action(b, locals, action, error)?;
                     }

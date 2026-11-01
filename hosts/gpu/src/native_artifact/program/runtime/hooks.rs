@@ -60,10 +60,7 @@ pub(in crate::native_artifact::program::runtime) unsafe extern "C" fn admit(
     if context.error.is_some() {
         return STATUS_ADMISSION;
     }
-    let outcome = context
-        .visit(site)
-        .map(|()| context.scalar_admission_word(site));
-    finish_callback(context, outcome)
+    admit_current(context, site)
 }
 pub(in crate::native_artifact::program::runtime) unsafe extern "C" fn helper(
     context: *mut c_void,
@@ -82,11 +79,39 @@ pub(in crate::native_artifact::program::runtime) unsafe extern "C" fn helper(
     if context.error.is_some() {
         return STATUS_ADMISSION;
     }
+    let operation = match GlobalHelper::decode(operation) {
+        GlobalHelper::AdmitMove => {
+            let status = admit_current(context, site);
+            if status != STATUS_OK {
+                return status;
+            }
+            GlobalHelper::Move.raw()
+        }
+        GlobalHelper::AdmitStructuralObservation => {
+            let status = admit_current(context, site);
+            if status != STATUS_OK {
+                return status;
+            }
+            GlobalHelper::StructuralObservation.raw()
+        }
+        _ => operation,
+    };
     let outcome = if result.is_null() || result != context.result {
         Err(invalid("helper result pointer mismatch"))
     } else {
         context.helper(site, operation, [first, second, third])
     };
+    finish_callback(context, outcome)
+}
+
+#[inline]
+fn admit_current(context: &mut Invocation<'_, '_, '_>, site: u64) -> u64 {
+    // Finish the complete original admission, including its optional scalar
+    // decision word, before validating any helper pointer or operand. A fused
+    // callback grants no permission beyond the same current visit.
+    let outcome = context
+        .visit(site)
+        .map(|()| context.scalar_admission_word(site));
     finish_callback(context, outcome)
 }
 
