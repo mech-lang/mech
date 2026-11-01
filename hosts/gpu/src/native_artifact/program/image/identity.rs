@@ -272,7 +272,8 @@ fn selected_template(
 // Slot ordinals, full capacity checks, local spills and conservative prices stay.
 // IR141 initializes private parent scratch directly from checked arguments and
 // spills only source homes. Exit exports, capacity guards and prices stay.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 141;
+// IR142 binds adjacent single-use seed placement and its original Copy debit.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 142;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
