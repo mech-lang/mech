@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-11-01T02:26:29.597878+00:00",
+  "head": "18cfa281a67681dbe4f4b4ffc05a4e576988feed",
+  "files": [
+    {
+      "path": "audit-callbacks.py",
+      "sha256": "a9f177b8dbf2e2c297666ea43bceec2a1c887b7ccb0a862284ad459b6edaff1b",
+      "bytes": 2708
+    },
+    {
+      "path": "callback-assembly/before/admit.asm",
+      "sha256": "2c3eb64c67e8be4db992a51a3db4c2b8da726f3405e9f1fb3d1ef2ee28d14c29",
+      "bytes": 6952
+    },
+    {
+      "path": "callback-assembly/before/admit.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "callback-assembly/before/audit.json",
+      "sha256": "edd59890c019a3eb73584129b1b04ed72d5fa91dab6ed2d5d7ebc8e080e4bb86",
+      "bytes": 30724
+    },
+    {
+      "path": "callback-assembly/before/helper.asm",
+      "sha256": "ba25ec6bc6f7d4dc7b6d1605018ab43d8081df0123eb034acdd4a411d81b30bb",
+      "bytes": 4740
+    },
+    {
+      "path": "callback-assembly/before/helper.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}
