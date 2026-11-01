@@ -256,3 +256,19 @@ All raw observations, calibration extremes, staged sources and commands remain
 external. Use `replay-round --round 86` for three reproduced reports. R85 remains
 the production/timing endpoint. The next bounded experiment targets repeated
 output byte-cap field walks while retaining the current fallback and charges.
+
+## R87: conservative current-capacity proof for output frames
+
+Base `f72db5372a6179d48855ca3c80825af111b042bc`; production/actual optimized source
+`c2b334feed4326a66ce1f69ca4bc99b0cbe41bb2`. A maximum-current-source-capacity times
+field-count proof avoids repeated output byte-cap queries when it fits; refusal
+or overflow retains the previous per-field/exact fallback and original charges.
+Four isolated calls agree:2,159 successful proofs bypass8,116 field visits;
+all2,596 current-source checks remain. Matched R85→R87 elapsed9.807058×→9.638890×
+reference (−1.714769%); all four pairs improve, four adverse blocks retained.
+Independent hardware instructions/cycles improve1.675857%/2.168121%; heap and
+Object/image/metadata remain unchanged. Two new bound regressions are inventoried
+and executed in CI (47 total); all scalar/frame/component/linked and architecture
+gates pass. The corrected diagnostic-selector failure and every raw observation
+remain external. Use `replay-round --round 87` for four numerical reports. The
+[current status](../../docs/design/native-compression-status.md) is authoritative.
