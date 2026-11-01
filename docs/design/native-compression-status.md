@@ -1,147 +1,150 @@
 # Native compression: current status
 
-Raw observations, complete stack censuses, historical scripts and failed attempts
-stay outside the source tree. Source keeps this status, one maintained harness and
-the [compact evidence index](../../benchmarks/mech-deflate/EXPERIMENTS.md).
+Raw observations, stack censuses, diagnostic code and rejected implementations
+remain outside the source tree. Source keeps this status, one maintained harness
+and the [compact evidence index](../../benchmarks/mech-deflate/EXPERIMENTS.md).
 
-## Current measured checkpoint: R92
+## Current measured checkpoint: R94
 
-Complete pinned eight-byte level-12 compression improves **9.012791×→8.774856×
-Roc**, or **2.639971% less elapsed**, against the freshly measured R91 compiler.
-The target remains1×; larger-input throughput is unestablished.
+Complete pinned eight-byte level-12 compression improves **8.640209×→8.573384×
+Roc**, or **0.773422% less elapsed**, against the freshly measured retained R92
+compiler. The target remains1×; larger-input throughput is unestablished.
 
-| Metric | R91, freshly measured | R92 |
+| Metric | R92, freshly measured | R94 |
 |---|---:|---:|
-| Elapsed |2.5686455ms|2.500834ms (−2.639971%)|
-| Elapsed / fresh0.285ms reference |9.012791×|8.774856×|
-| Instructions, separate32-call cohort |28,237,280|27,873,787 (−1.287281%)|
-| Cycles, same separate cohort |8,133,395.5|7,966,389.5 (−2.053337%)|
-| Requests including reallocations |6,399|5,781 (−618)|
-| Requested bytes |98,074,884|98,008,140 (−66,744)|
-| Incremental peak live allocator bytes |17,851,960|17,782,744 (−69,216)|
-| Generated compressor text / entry stack |15,911,648 /143,488B|unchanged|
+| Elapsed |2.4970205ms|2.477708ms (−0.773422%)|
+| Elapsed / fresh0.289ms reference |8.640209×|8.573384×|
+| Instructions, separate32-call cohort |27,875,625.5|27,865,806.5 (−0.035224%)|
+| Cycles, same separate cohort |7,852,197.5|7,831,250.5 (−0.266766%)|
+| Requests including reallocations |5,781|unchanged|
+| Requested allocator bytes |98,008,140|unchanged|
+| Incremental peak live allocator bytes |17,782,744|unchanged|
+| Generated compressor text |15,911,648B|15,641,476B (−270,172B)|
+| Entry stack |143,488B|143,424B (−64B)|
 
 Four prepared pairs contain3,968 primary/3,984 total observations. All four pairs
-and63 descriptive blocks improve; one adverse block is retained. No significance
-claim. Reference clocks vary between rounds: compare each matched pair, not a
-cross-round ratio. Elapsed, hardware, heap, tracing and sampling are separate
-cohorts, never multiplied. Requested capacity is not copied bytes or live memory.
-All162 reallocations and the entire large-request histogram remain unchanged.
+and49 descriptive blocks improve;15 adverse blocks remain. Pair ratios range
+0.975556–0.998231; the largest improvement includes a slower baseline pair. No
+significance claim. Reference clocks vary: compare each matched cohort, not
+ratios from different rounds. Elapsed, hardware, heap, fixed counters and samples
+are separate cohorts and never multiplied. Requested capacity is not initialized
+copy volume or live memory. All162 reallocations and the large-request histogram
+stay equal. Whole-executable RSS/footprint fall180224/131008B in the hardware
+cohort; these include prepared state and do not establish a managed-heap win.
 
-Base/prior published head: `fbf4c54a865e877f2026e7a825bab818889f628b`.
-Measured/retained compiler: **`312e0d7b68d4b85052584bbdbfa9319f124c4f57`**.
-Baseline compiler: `31d77c7c1f5fdeecc9095664af19092353df06b3`.
-Separate CI inventory: `5691e6edf8df386e0fea9107df78c46caa588d4f`.
+Base/prior evidence checkpoint: `703128776c9eb44e6da9303fd8bf29ffed796586`.
+Measured/retained compiler: **`c35698030a4e89f6d4548af1b17762ec737cd427`**.
+Initial exit-store patch: `7b25ab730f2e6eff4235d0c78e2d97d7ad0c93fb`.
+Baseline compiler: `312e0d7b68d4b85052584bbdbfa9319f124c4f57`.
+Separate CI inventory: `3b859a463affc22c3aefdb595575c972bc63fbf1`.
 Stack base: `eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`.
 [PR #973](https://github.com/mech-lang/mech/pull/973) stays draft until green CI and
 clean review. Publication CI is cancelled by instruction, not counted as passing.
 
-## What changed
+## The retained compiler change
 
-The canonical Engine all-path semantic read inventory finds500 constants:
-191 with a runtime reader,309 without (248U8,51U32,10Index). That inventory already
-covers expanded virtual actions, primitive/library operands, structural reads,
-branches, collection sources, loop seeds/next/returns, effects and outputs. The
-minimal `[1u8,2u8,3u8]` retains four immutable constants but only consumes the array.
+Parent exits previously copied every scratch word into the helper argument bank.
+The real exit consumer reads reached-retirement flags on every path and scalar
+fields of frames escaping through successful frontiers. Numeric views and private
+intermediate fields are not exit inputs. Code generation now derives the union
+of those consumed ordinals from the existing immutable proofs and emits only
+those argument stores. Original ordinals, the full bank-capacity guard, all
+source/local spills, current owner validation and ordinary fallback stay intact.
+No runtime permission cache, alternative evaluator or new authority is introduced.
 
-Preparation records zero admission bytes only for a constant with no reader.
-Invocation setup skips its independent ownership import and arena installation.
-All500 immutable constants remain in the same plan for compilation/provenance.
-Live scalar-only constants and consumers on unselected paths remain owned.
-There is no per-loop lazy check, new permission cache, reused account authority,
-interpreter or alternate preparation pipeline.
+IR/work/private ABI/MBC are **140/99/38/14**, scalar ABI1. Policy99 retains the
+original conservative finite prices. Full compressor logical work42,449,879,781
+and exact Huffman work88,531,834 stay equal; these are not instruction counts.
+The same canonical partition/proof derivation serves preparation and image
+loading. Original/decoded/restored forms retain source error origins, reached
+cleanup, aliases, publication and retry.
 
-Image loading independently reconstructs the exact bounds and rejects changed
-live/dead entries. Current account/funding checks remain for each materialized
-owner. Constant totals and worker preflight use the same tape; empty arena slots
-remain valid at retirement. Original/decoded/restored behavior and failure recovery
-are qualified.
+The independent diagnostic counts are identical before/after:5,633 source
+admissions,4,911 helpers,528 library callbacks,1,701 arena puts,938 selected native
+entries and938 exits; zero declines or failed entries. Four complete calls per
+subject reproduce those counts. Reached helper-word exports fall11,090→5,175,
+removing5,915 exports per complete call. This is not payload copying or a hardware
+instruction percentage.
 
-IR/work/private ABI/MBC are **138/99/38/14**, scalar ABI1. Policy99 explicitly omits
-physical construction/import/installation/owner-cleanup prices for unread roots.
-Logical work43,123,410,789→42,449,879,781; this is not hardware instructions.
-The exact Huffman work assertion88,767,602→88,531,834 is a235,768-unit policy99
-pricing change. Output goldens, component allowances, unsafe allowlists, warning
-policy and architecture rules stay unchanged.
+Across484 selected pieces,4,868 scratch words become2,415 union export words when
+counted once per piece. Emitted IR exit stores200,397→85,567 include cold and
+unreachable failure paths; they are not dynamic machine counts. Actual ARM64
+site699→700 demonstrates20 argument STRs becoming one at ordinal19, with the same
+20-word capacity guard and local spills. That particular exit is cold in the
+eight-byte call; the dynamic reduction above comes from the observed other exits.
 
-## Direct allocation and binary evidence
+The final Object SHA-256 is
+`f6759d4c388e059790ab8490c4d304e8ca51c402c1f11e6c0ebd8428c30ef124`.
+Its text SHA-256 is
+`b51241ae4b045d08b8fdf733e8284b3d725d7ff71ac4ef8bcea75e69a29fb8a8`.
+Native binaries remain local after the earlier automatic upload rejection.
+Numerical replay retrieves descriptors, excerpts and retained hashes; it does not
+independently retrieve Object bytes.
 
-Fresh complete before/after censuses reconcile every successful request, requested
-byte and reallocation with the independent heap counters. Constant setup is:
+## The measured suffix alternative was rejected
 
-| Exact stack family | Before | After |
-|---|---:|---:|
-| 104-byte registrations |500|191|
-| 112-byte ownership wrappers |500|191|
-| Combined requests |1,000|382|
+R93 implemented the requested ordinary scalar prefix / independently derived
+native suffix using the same graph partition and freshly derived origins,
+frames, liveness, retirements, exits and prices. The2380–2396 pilot executes
+natively. However, library callbacks elsewhere return528→535. Two independent
+elapsed cohorts are adverse:8.510311×→8.538823× (+0.335028%) and
+8.737647×→8.783405× (+0.523687%);7/8 pairs are slower.
 
-These account exactly for618 requests and66,744 bytes removed. After subtracting
-this family, all remaining size/kind histogram bins agree. Both censuses contain
-3,592 full stack/size/kind groups, with1,240/1,239 symbolized PCs. No exact
-cross-binary join of every other stack family is claimed; all raw stacks remain.
-
-The actual generated Mach-O `__TEXT,__text` is byte-identical, SHA-256
-`62ed89d66389e5ae65e730779ef534dc1a11fc5fa8bdbc1b5613dc16c5fd4401`.
-The improvement removes host setup/ownership work. Object identity changes with
-the explicit revision; generated text and entry stack do not grow. Fresh serial
-profiles cover695 Mech calls per subject and20,000 reference calls. CPU sample
-weights are not retired-instruction shares or exact timer fractions.
-
-Raw Object binaries remain local following the earlier automatic approval
-rejection of binary upload. Numerical replay verifies pinned build/hash receipts
-and retrieved descriptor/metadata, not independently retrieved Object bytes.
+Instructions−0.234727%, cycles−0.246734%, code−424484B and stack−4016B remain
+favorable contrary evidence. Heap is unchanged. Revert `5addc236c` restores the
+faster R92 source and CI inventory exactly. The complete working suffix patch,
+clean-parent negative controls, candidate runtime354/CI63/image1/linked12
+qualification, profiles and adverse observations remain external. Broader
+component/scalar/architecture qualification was skipped for the rejected variant.
+Fresh retrieval verifies21 packets/2419 file versions/1642 paths and reproduces
+four reports byte-identically. Rejection is for elapsed regression, not because
+a positive improvement was small. R91's whole-piece gain remains retained.
 
 ## Qualification and failure disposition
 
-Current-source passing overlapping selections: runtime353;work/memory33;native
-CI62;image1;unchanged components236;connected8;path1;linked16+12;scalar12
-(maximum1.003625 at unchanged1.05, equal pure-scalar allocations, zero loop
+Final-source passing overlapping selections: runtime355;work/memory33;native
+CI64;image1;unchanged components236;connected8;path1;linked16+12+12;scalar12
+(maximum1.009377 at unchanged1.05, equal pure-scalar allocations, zero loop
 allocation slope);frame8;workflow132;architecture/type/memory15. GPU-only release,
-optimized units and runtime-only config retain warnings-as-errors against the
+optimized units and runtime-only cfg retain warnings-as-errors against the
 coherent selected-operation Core/Engine graph. No fresh full math/minimal/no_std
 build claim. Hosted green CI, giant complete knucleotide and large/full-corpus
 timing remain skipped.
 
-Three new tests cover U8/U32 arrays, unchanged immutable constants, all-path and
-unselected consumers, live scalar ownership, original/decoded/restored setup,
-exact image-bound derivation/rejection, finite setup, source arithmetic origins,
-prior publication, aliases, cleanup and retry. Twelve new linked/AOT cases actually
-execute restored images, including unselected division, failure/recovery and zero
-setup work. Existing linked16 and all component output/allowance checks pass.
+New maintained tests inspect actual emitted IR-store counts and poison every
+omitted helper word before the real exit handler. Success, checked-read retry and
+arithmetic exits0/2/3 preserve current recursive values, published storage, aliases,
+cleanup and recovery through original/decoded/restored forms. The original
+full-bank emitter is a negative control: one test passes and the emission test
+fails90 versus15 stores. Twelve new actual linked cases add changing buffers,
+zero/unselected recursion, overflow, failed reads, declined native entry and retry.
+Existing16 linked child/assertion cases and12 constant-owner cases also pass.
 
-Resolved preparations: a diagnostic fixture's unequal branch shapes were correctly
-rejected; a test sum needed an explicit type; the intended negative baseline
-failed ownership/image tests; the work golden advanced explicitly with99; the
-counter driver retained a stale96-byte expectation from R90. That driver resumed
-only its not-yet-run after-memory subject; completed hardware observations were
-preserved unchanged. No required current local failure remains. Fresh retrieval verifies30 packets,
-1,437 file versions and437 paths, including one path with multiple preserved
-versions; all four numerical reports reproduce byte-identically. Historical
-failed and adverse observations stay externally retrievable.
+The runtime-only build initially rejected an ungated code-generation helper as
+unused. Its exact feature gate fixes the warning without suppression. Rebuilt
+Object, descriptor and metadata are byte-identical to before the feature-only
+repair. An inherited control-receipt description saidR91; the actual R92 path and
+hash never changed, and the original label receipt is preserved with its
+correction. No required current local failure remains.
 
-## Next bounded experiments
+## Pins and next bounded work
 
-R91's retained whole-piece composition variant is already measured independently.
-The next runtime experiment is the separately requested scalar-prefix/native-suffix
-split: leave the paid prefix executing, derive fresh suffix proofs at its frontier,
-and compare directly against the retained variant. Do not truncate an old proof,
-remove the scalar fallback, or multiply the earlier gains.
-
-Then target shape-solver temporary ownership and exact exit argument writes as
-separate changes/cohorts. Live scalar constants, direct child seed handoffs,
-predicate-sensitive last use and numeric outlining remain later work. Ordinary
-debit-function tuning stays closed.
-
-## Fidelity
-
-The [component assembly](../../hosts/gpu/tests/fixtures/native/deflate_assembly.rs)
-performs all compression as one compiled computation. Source SHA-256
+The unchanged source SHA-256 is
 `331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9`;
-MBC SHA-256
+bytecode SHA-256
 `a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7`.
-Algorithm, tables, source allocation sites, depth300, nice258, near-EOF checks,
-tree262144 U16/cache1500513 U32/path305257 U64, input aliases, pinned allocator,
-output capacity13 clear/rebind and evaluate_into timer remain unchanged. Search
-and skip stay separate; skip has no cache/recording path. Exact bytes
-`[75,76,74,78,73,77,75,207,0,0]` and independent inflation agree. Final managed
-bytes/nodes are zero. Physical public-output backing still changes.
+Full level12 still uses the262144-entry U16 tree,1500513-word U32 cache,
+305257-entry U64 path capacity, depth300, nice258 and original near-EOF rules.
+Search/skip stay separate. Mech compresses the eight input bytes and returns
+`[75,76,74,78,73,77,75,207,0,0]`, verified by independent inflate. Allocator,
+source allocation sites, input aliases, output capacity13 clear/rebind and
+`evaluate_into` timing boundary stay pinned. Final managed bytes/nodes are zero.
+Physical public-output backing still changes; physical output reuse is unproved.
+
+R92's618-request dead-constant reduction remains. The next allocation experiment
+is the canonical shape solver's lower-bound/witness/fixed-scratch temporaries,
+with the real current census as its acceptance witness. The628-request population
+is a candidate, not a promised saving. Source/local spill narrowing, child-seed
+handoffs, predicate-sensitive alias proof and numeric outlining remain later
+independent experiments. Each needs measured evidence; no compressor source
+specialization or hidden allowance increase is part of this checkpoint.
