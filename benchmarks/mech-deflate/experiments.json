@@ -4770,6 +4770,17 @@
           "files": 38,
           "asset_id": 698629012,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r91-baseline-overlap-a0fd9d4a08b3.tar.gz"
+        },
+        {
+          "event": "candidate-overlap",
+          "source_revision": "31d77c7c1f5fdeecc9095664af19092353df06b3",
+          "asset": "r91-candidate-overlap-f54b42c0fbeb.tar.gz",
+          "sha256": "f54b42c0fbeb807eef878f964350a9f47dc83a4e16704f6fe2e08232f48f5465",
+          "manifest_sha256": "5db1c9453e076f8619358bdd06c99b8686fd85a2cabb0fa0ba008efaebcc89fc",
+          "bytes": 64157,
+          "files": 38,
+          "asset_id": 698629072,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r91-candidate-overlap-f54b42c0fbeb.tar.gz"
         }
       ],
       "retained_production": "31d77c7c1f5fdeecc9095664af19092353df06b3",
