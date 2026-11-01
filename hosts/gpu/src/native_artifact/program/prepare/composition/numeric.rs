@@ -31,6 +31,7 @@ impl Layout {
     /// scalar fields of escaping frames on successful frontiers. Views and
     /// private intermediate fields are entry/interior words, not exit inputs.
     /// Keep original ordinals and the full argument-capacity contract.
+    #[cfg(feature = "canonical-native-program")]
     pub(in crate::native_artifact) fn exit_argument_words(
         &self,
         frames: &frames::Layout,
