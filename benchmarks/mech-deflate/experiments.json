@@ -1107,6 +1107,25 @@
         "hosted_ci": "cancel on publication by instruction; not a pass",
         "skipped": "Giant complete knucleotide, large/full-corpus, minimal/no_std graph; unchanged Core/Budget/planner/Engine integration receipts inherited."
       }
+    },
+    "82": {
+      "base": "84e1375e53375c11209f9933852fac9ee98eb2b7",
+      "production": "4fe3ca57b17b4bcab90948f8357f8fd8fd9d11da",
+      "compiler_source": "4fe3ca57b17b4bcab90948f8357f8fd8fd9d11da",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "4fe3ca57b17b4bcab90948f8357f8fd8fd9d11da",
+          "asset": "r82-initial-b4a119e483bb.tar.gz",
+          "sha256": "b4a119e483bb10ebf3fa1c2627621008ac029c32b578dbbe9e6a62fda6a093d3",
+          "manifest_sha256": "9eb3c171e38bf1d995f133dae18d4f140afce381a387dad92ce07f9c68e3fe9f",
+          "bytes": 8355894,
+          "files": 106,
+          "asset_id": 697647376,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r82-initial-b4a119e483bb.tar.gz"
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",
