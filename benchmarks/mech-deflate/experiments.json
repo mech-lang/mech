@@ -4219,6 +4219,17 @@
           "files": 49,
           "asset_id": 698517996,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-final-units-outlined-fada0175c4a9.tar.gz"
+        },
+        {
+          "event": "confirm-reference",
+          "source_revision": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+          "asset": "r90-confirm-reference-363198d7e153.tar.gz",
+          "sha256": "363198d7e153bc7e66b937367b977d9e5ca5c5adb9e2e3bdc374971c4689378a",
+          "manifest_sha256": "223fce3a0178d5137a07cd3ba096cc05190dafddc1525bcb33cf910bdd0c19ee",
+          "bytes": 136540,
+          "files": 38,
+          "asset_id": 698518316,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-confirm-reference-363198d7e153.tar.gz"
         }
       ]
     }
