@@ -188,6 +188,17 @@
           "files": 65,
           "asset_id": 697350379,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-qualification-af3d9dd445aa.tar.gz"
+        },
+        {
+          "event": "final-checks",
+          "source_revision": "374edf1410b5f975d793fb69d8fcf390cbfa10a5",
+          "asset": "r79-final-checks-5ca3b1aae3d9.tar.gz",
+          "sha256": "5ca3b1aae3d9107b27c2a15ac260c39dcb6b819827e2366a260b3f23ad5687b7",
+          "manifest_sha256": "dc4dfa9cc9313e1677c012ba59b60d88d5536a5806d795216dbda0cfb2f3316e",
+          "bytes": 90724,
+          "files": 81,
+          "asset_id": 697350425,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-final-checks-5ca3b1aae3d9.tar.gz"
         }
       ],
       "analysis": {
