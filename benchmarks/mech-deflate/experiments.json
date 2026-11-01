@@ -1962,6 +1962,25 @@
           }
         }
       ]
+    },
+    "85": {
+      "base": "24f1019c83c1776ff64a4fb4ef288d644f696b2e",
+      "production": "490ede99581fd233edd4c05d14f74641c9ae45c9",
+      "compiler_source": "490ede99581fd233edd4c05d14f74641c9ae45c9",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "490ede99581fd233edd4c05d14f74641c9ae45c9",
+          "asset": "r85-initial-f333b232dcb2.tar.gz",
+          "sha256": "f333b232dcb29da2958bd3d789c13e1a444ab71cd9e74a4a2610c91eeed0a085",
+          "manifest_sha256": "a0a7871f41ac9b391ec483880528399b977ff174c96ecd66f8fc03d9efde921a",
+          "bytes": 8341395,
+          "files": 67,
+          "asset_id": 697849356,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r85-initial-f333b232dcb2.tar.gz"
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",
