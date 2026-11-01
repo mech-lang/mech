@@ -3247,6 +3247,17 @@
           "files": 44,
           "asset_id": 698085421,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-pinned-inputs-b0afc9766539.tar.gz"
+        },
+        {
+          "event": "restored-baseline",
+          "source_revision": "36794bdeac6c70a13be317a14d2175bb1b4fbb94",
+          "asset": "r88-restored-baseline-fde14e53e194.tar.gz",
+          "sha256": "fde14e53e194ce1ad6156e303c4e514c4a928b9bb9818612547e8db7aff6be74",
+          "manifest_sha256": "3cce1bf25c4ba8b70eef903e9e5783f4acd1e4371afe0299c05b7d74e7f9f40e",
+          "bytes": 61824,
+          "files": 42,
+          "asset_id": 698085661,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-restored-baseline-fde14e53e194.tar.gz"
         }
       ]
     }
