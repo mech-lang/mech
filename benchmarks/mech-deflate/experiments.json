@@ -5174,6 +5174,17 @@
           "files": 57,
           "asset_id": 698786007,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-baseline-census-233ff62f77ec.tar.gz"
+        },
+        {
+          "event": "inventory",
+          "source_revision": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
+          "asset": "r92-inventory-da930890d7e6.tar.gz",
+          "sha256": "da930890d7e6d9a26db633d5198b37e4b34c08205e0ac03f0ca39c240ef317e1",
+          "manifest_sha256": "f6b24b1e597dfbfba3d48c2472c71e94ac78365dd492b36583ac089d62c54bec",
+          "bytes": 107345,
+          "files": 44,
+          "asset_id": 698786125,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-inventory-da930890d7e6.tar.gz"
         }
       ],
       "retained_production": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
