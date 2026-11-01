@@ -427,6 +427,21 @@ async fn load_browser_assets(
     let project_js = resources.project_js;
     let wasm_path = format!("{}/mech_wasm_bg.wasm", wasm_pkg);
     let js_path = format!("{}/mech_wasm.js", wasm_pkg);
+    let local_wasm = !wasm_pkg.is_empty() && std::path::Path::new(&wasm_path).exists();
+    let local_js = !wasm_pkg.is_empty() && std::path::Path::new(&js_path).exists();
+    if local_wasm != local_js {
+        return Err(browser_runtime_error(format!(
+            "browser runtime package `{wasm_pkg}` is incomplete; mech_wasm.js and mech_wasm_bg.wasm must come from the same build"
+        )));
+    }
+    if !local_wasm
+        && !(resources.mech_wasm.is_some_and(|bytes| !bytes.is_empty())
+            && resources.mech_js.is_some_and(|bytes| !bytes.is_empty()))
+    {
+        return Err(browser_runtime_error(format!(
+            "no browser runtime is available in `{wasm_pkg}` or embedded in this executable; build the matching runtime with `python3 scripts/build-wasm.py --profile browser`, then serve with `--wasm src/wasm/pkg` (or rebuild Mech to embed it). Older release runtimes cannot execute this branch's programs"
+        )));
+    }
     let wasm = load_resource(
         authority,
         &wasm_path,
@@ -465,6 +480,10 @@ async fn load_browser_assets(
         wasm,
         js,
     })
+}
+
+fn browser_runtime_error(message: String) -> MechError {
+    MechError::new(GenericError { msg: message }, None).with_compiler_loc()
 }
 
 fn validate_configured_browser_profile(
@@ -807,7 +826,7 @@ mod tests {
     }
 
     #[test]
-    fn missing_local_and_embedded_wasm_fails() {
+    fn missing_local_and_embedded_wasm_reports_how_to_build_the_matching_runtime() {
         let root = tempfile::tempdir().unwrap();
         let authority = authority_for(root.path());
         let error = format!(
@@ -822,9 +841,28 @@ mod tests {
                 .unwrap_err()
         );
         assert!(
-            error.contains("mech_wasm_bg.wasm") || error.contains("unused"),
+            error.contains("no browser runtime is available")
+                && error.contains("build-wasm.py --profile browser"),
             "{error}"
         );
+    }
+
+    #[test]
+    fn incomplete_local_package_does_not_mix_with_embedded_assets() {
+        for file in ["mech_wasm.js", "mech_wasm_bg.wasm"] {
+            let root = tempfile::tempdir().unwrap();
+            std::fs::write(root.path().join(file), b"local").unwrap();
+            let authority = authority_for(root.path());
+            let error = tokio::runtime::Runtime::new()
+                .unwrap()
+                .block_on(load_browser_assets(
+                    &authority,
+                    root.path().to_str().unwrap(),
+                    &defaults(None, Some(b"\0asm\x01\0\0\0"), Some(b"embedded-js")),
+                ))
+                .unwrap_err();
+            assert!(error.kind_message().contains("incomplete"), "{error:?}");
+        }
     }
 
     #[test]

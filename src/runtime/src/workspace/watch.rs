@@ -29,6 +29,14 @@ struct RuntimeWorkspaceWatchedPath {
     authorized_path: PathBuf,
     filter_paths: Vec<PathBuf>,
     recursive: bool,
+    scope: RuntimeWorkspaceWatchScope,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum RuntimeWorkspaceWatchScope {
+    Required,
+    Dependency,
+    RejectedSources,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -121,7 +129,7 @@ impl RuntimeWorkspaceWatcher {
             });
         }
 
-        let refresh = workspace.refresh(runtime, options)?;
+        let refresh = workspace.refresh_after_watch_events(runtime, options, &events)?;
         self.sync(workspace, runtime)?;
 
         Ok(RuntimeWorkspaceWatchPoll {
@@ -131,23 +139,51 @@ impl RuntimeWorkspaceWatcher {
     }
 
     pub fn sync(&mut self, workspace: &RuntimeWorkspace, runtime: &mut MechRuntime) -> MResult<()> {
-        let desired = preserve_existing_watch_authorizations(
+        let mut desired = preserve_existing_watch_authorizations(
             &self.watched_paths,
             desired_watch_paths(workspace),
         );
 
         if let Some(subject) = workspace.config().capability_subject.as_deref() {
-            for watch in &desired {
-                crate::check_fs_capability(
-                    runtime.capability_kernel_mut(),
-                    subject,
-                    crate::FS_WATCH,
-                    &watch.authorized_path,
-                )?;
+            let mut authorized = BTreeSet::new();
+            for watch in desired {
+                let result = if watch.scope == RuntimeWorkspaceWatchScope::RejectedSources {
+                    // A root-only grant does not authorize observing descendants.
+                    runtime
+                        .capability_kernel_mut()
+                        .check(&crate::CapabilityRequest::from_keys(
+                            subject,
+                            crate::FS_WATCH,
+                            crate::fs_resource_prefix_for_dir(&watch.authorized_path)?,
+                        ))
+                } else {
+                    crate::check_fs_capability(
+                        runtime.capability_kernel_mut(),
+                        subject,
+                        crate::FS_WATCH,
+                        &watch.authorized_path,
+                    )
+                };
+                match result {
+                    Ok(_) => {
+                        authorized.insert(watch);
+                    }
+                    Err(error)
+                        if watch.scope != RuntimeWorkspaceWatchScope::Required
+                            && error.kind_name() == "CapabilityDenied" => {}
+                    Err(error) => return Err(error),
+                }
             }
+            desired = authorized;
         }
 
-        let desired_keys: BTreeSet<_> = desired.iter().map(watch_key).collect();
+        let mut desired_keys: BTreeSet<_> = desired.iter().map(watch_key).collect();
+        let recursive_paths = desired_keys
+            .iter()
+            .filter(|key| key.recursive)
+            .map(|key| key.path.clone())
+            .collect::<BTreeSet<_>>();
+        desired_keys.retain(|key| key.recursive || !recursive_paths.contains(&key.path));
         let current_keys = self.watched_keys.clone();
 
         for key in current_keys.difference(&desired_keys) {
@@ -224,6 +260,7 @@ fn desired_watch_paths(workspace: &RuntimeWorkspace) -> BTreeSet<RuntimeWorkspac
                 authorized_path: path,
                 filter_paths: Vec::new(),
                 recursive: folder.recursive,
+                scope: RuntimeWorkspaceWatchScope::Required,
             });
         }
     }
@@ -232,6 +269,34 @@ fn desired_watch_paths(workspace: &RuntimeWorkspace) -> BTreeSet<RuntimeWorkspac
         for watch in local_workspace_target_watches(&workspace.config().root, &target.specifier) {
             paths.insert(watch);
         }
+    }
+
+    if let Some(snapshot) = workspace.snapshot() {
+        for source in snapshot.sources.values() {
+            let Some(path) = source.path.as_ref() else {
+                continue;
+            };
+            if event_allowed_by_watches(&paths, path) {
+                continue;
+            }
+            let Some(specifier) = path.to_str() else {
+                continue;
+            };
+            for mut watch in local_workspace_target_watches(&workspace.config().root, specifier) {
+                watch.scope = RuntimeWorkspaceWatchScope::Dependency;
+                paths.insert(watch);
+            }
+        }
+    }
+
+    if workspace.has_rejected_targets() {
+        paths.insert(RuntimeWorkspaceWatchedPath {
+            watch_path: workspace.config().root.clone(),
+            authorized_path: workspace.config().root.clone(),
+            filter_paths: Vec::new(),
+            recursive: true,
+            scope: RuntimeWorkspaceWatchScope::RejectedSources,
+        });
     }
 
     paths
@@ -279,6 +344,7 @@ fn local_workspace_target_watches(
             authorized_path: path,
             filter_paths: Vec::new(),
             recursive: false,
+            scope: RuntimeWorkspaceWatchScope::Required,
         }];
     }
 
@@ -303,6 +369,7 @@ fn local_workspace_target_watches(
             authorized_path,
             filter_paths: vec![normalized_filter_path],
             recursive: false,
+            scope: RuntimeWorkspaceWatchScope::Required,
         }];
     }
 
@@ -315,6 +382,7 @@ fn local_workspace_target_watches(
         authorized_path: authorized_path.clone(),
         filter_paths,
         recursive: false,
+        scope: RuntimeWorkspaceWatchScope::Required,
     }];
 
     if target_exists {
@@ -329,6 +397,7 @@ fn local_workspace_target_watches(
                     authorized_path,
                     filter_paths: vec![canonical_target],
                     recursive: false,
+                    scope: RuntimeWorkspaceWatchScope::Required,
                 });
             }
         }
@@ -367,6 +436,11 @@ fn push_unique_path(paths: &mut Vec<PathBuf>, path: PathBuf) {
 fn event_allowed_by_watches(watches: &BTreeSet<RuntimeWorkspaceWatchedPath>, path: &Path) -> bool {
     let normalized = normalize_workspace_watch_path(path);
     watches.iter().any(|watch| {
+        if watch.scope == RuntimeWorkspaceWatchScope::RejectedSources
+            && !matches!(crate::SourceKind::from_path(path), crate::SourceKind::Mech)
+        {
+            return false;
+        }
         if !watch.filter_paths.is_empty() {
             return watch
                 .filter_paths
@@ -501,7 +575,211 @@ fn watch_error(reason: impl Into<String>) -> MechError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::RuntimeBuilder;
+    use crate::{FileSourceResolver, RuntimeBuilder};
+
+    fn import_workspace(
+        dependency_source: &str,
+        root_watch: bool,
+    ) -> (PathBuf, RuntimeWorkspace, MechRuntime) {
+        let root = std::env::temp_dir().join(format!(
+            "mech-watch-import-repair-{}",
+            SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(root.join("lib")).unwrap();
+        let root = root.canonicalize().unwrap();
+        std::fs::write(
+            root.join("main.mec"),
+            "+> ./lib/support\nanswer := support/value\nanswer\n",
+        )
+        .unwrap();
+        std::fs::write(root.join("lib/support.mec"), dependency_source).unwrap();
+
+        let mut ids = crate::DefaultIdGenerator::new();
+        let mut authority = crate::HostFilesystemAuthority::new(
+            crate::MECH_TOOL_SUBJECT,
+            crate::SharedCapabilityKernel::new(),
+        );
+        let source_operations = [crate::FS_READ, crate::FS_RESOLVE, crate::FS_IMPORT];
+        authority
+            .grant_path(&mut ids, &root, true, source_operations)
+            .unwrap();
+        authority
+            .delegate_path_to(
+                &mut ids,
+                crate::SERVE_HOST_SUBJECT,
+                &root,
+                true,
+                source_operations,
+            )
+            .unwrap();
+        let watch_path = if root_watch {
+            root.clone()
+        } else {
+            root.join("main.mec")
+        };
+        authority
+            .grant_path(&mut ids, &watch_path, root_watch, [crate::FS_WATCH])
+            .unwrap();
+        authority
+            .delegate_path_to(
+                &mut ids,
+                crate::SERVE_HOST_SUBJECT,
+                &watch_path,
+                root_watch,
+                [crate::FS_WATCH],
+            )
+            .unwrap();
+
+        let mut runtime = RuntimeBuilder::new()
+            .capability_kernel(authority.kernel().clone())
+            .source_resolver(
+                FileSourceResolver::new(&root)
+                    .with_capabilities(authority.kernel().clone(), crate::SERVE_HOST_SUBJECT),
+            )
+            .build()
+            .unwrap();
+        let mut workspace = RuntimeWorkspace::open(
+            RuntimeWorkspaceConfig::new(&root)
+                .capability_subject(crate::SERVE_HOST_SUBJECT)
+                .target("main", "main.mec"),
+        )
+        .unwrap();
+        workspace.load(&mut runtime, module_options()).unwrap();
+        (root, workspace, runtime)
+    }
+
+    fn module_options() -> ModuleBuildOptions<'static> {
+        ModuleBuildOptions::new("test", "v0.4", "native", &[], &[])
+    }
+
+    fn poll_modified_path(
+        watcher: &mut RuntimeWorkspaceWatcher,
+        workspace: &mut RuntimeWorkspace,
+        runtime: &mut MechRuntime,
+        path: PathBuf,
+    ) -> RuntimeWorkspaceWatchPoll {
+        // Exercise the platform event boundary deterministically. The watcher
+        // registrations and authorization filters remain the production ones.
+        let (sender, receiver) = mpsc::channel();
+        sender
+            .send(Ok(Event {
+                kind: EventKind::Modify(notify::event::ModifyKind::Any),
+                paths: vec![path],
+                attrs: Default::default(),
+            }))
+            .unwrap();
+        watcher.receiver = receiver;
+        watcher.poll(workspace, runtime, module_options()).unwrap()
+    }
+
+    #[test]
+    fn file_only_import_watches_accepted_dependency_sources() {
+        let (root, mut workspace, mut runtime) = import_workspace("value := 42\n<+ value\n", true);
+        assert!(workspace.snapshot().unwrap().targets.contains_key("main"));
+        let mut watcher = RuntimeWorkspaceWatcher::open(&workspace, &mut runtime).unwrap();
+        assert!(watcher.watched_paths().contains(&root.join("lib")));
+        assert!(event_allowed_by_watches(
+            &watcher.watched_paths,
+            &root.join("lib/support.mec")
+        ));
+        assert!(!event_allowed_by_watches(
+            &watcher.watched_paths,
+            &root.join("lib/unrelated.mec")
+        ));
+
+        std::fs::write(root.join("lib/support.mec"), "value := 49\n<+ value\n").unwrap();
+        let poll = poll_modified_path(
+            &mut watcher,
+            &mut workspace,
+            &mut runtime,
+            root.join("lib/support.mec"),
+        );
+        let refresh = poll.refresh.unwrap();
+        assert_eq!(refresh.affected_targets, ["main"]);
+        assert!(refresh.snapshot.diagnostics.is_empty());
+        drop(watcher);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn file_only_rejected_import_recovers_from_authorized_source_event() {
+        let (root, mut workspace, mut runtime) = import_workspace("value := [\n<+ value\n", true);
+        assert!(workspace.has_rejected_targets());
+        let mut watcher = RuntimeWorkspaceWatcher::open(&workspace, &mut runtime).unwrap();
+        assert!(watcher.watched_keys.contains(&RuntimeWorkspaceWatchKey {
+            path: root.clone(),
+            recursive: true
+        }));
+        let idle = workspace.refresh(&mut runtime, module_options()).unwrap();
+        assert!(idle.changes.is_empty());
+        assert!(idle.affected_targets.is_empty());
+
+        let unrelated = poll_modified_path(
+            &mut watcher,
+            &mut workspace,
+            &mut runtime,
+            root.join("notes.txt"),
+        );
+        assert!(unrelated.events.is_empty());
+        assert!(unrelated.refresh.is_none());
+
+        std::fs::write(root.join("lib/support.mec"), "value := 42\n<+ value\n").unwrap();
+        let poll = poll_modified_path(
+            &mut watcher,
+            &mut workspace,
+            &mut runtime,
+            root.join("lib/support.mec"),
+        );
+        let refresh = poll.refresh.unwrap();
+        assert!(
+            refresh.changes.is_empty(),
+            "watch events must not fabricate source hashes"
+        );
+        assert_eq!(refresh.affected_targets, ["main"]);
+        assert!(refresh.snapshot.targets.contains_key("main"));
+        assert!(refresh.snapshot.diagnostics.is_empty());
+        assert!(!watcher.watched_keys.contains(&RuntimeWorkspaceWatchKey {
+            path: root.clone(),
+            recursive: true
+        }));
+        assert!(watcher.watched_paths().contains(&root.join("lib")));
+        let idle = watcher
+            .poll(&mut workspace, &mut runtime, module_options())
+            .unwrap();
+        assert!(idle.refresh.is_none());
+        drop(watcher);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn file_only_rejected_import_keeps_exact_target_scope_without_root_watch_authority() {
+        let (root, mut workspace, mut runtime) = import_workspace("value := [\n<+ value\n", false);
+        let mut watcher = RuntimeWorkspaceWatcher::open(&workspace, &mut runtime).unwrap();
+        assert!(watcher.watched_keys.iter().all(|key| !key.recursive));
+        assert!(event_allowed_by_watches(
+            &watcher.watched_paths,
+            &root.join("main.mec")
+        ));
+        assert!(!event_allowed_by_watches(
+            &watcher.watched_paths,
+            &root.join("lib/support.mec")
+        ));
+        std::fs::write(root.join("lib/support.mec"), "value := 42\n<+ value\n").unwrap();
+        let poll = poll_modified_path(
+            &mut watcher,
+            &mut workspace,
+            &mut runtime,
+            root.join("lib/support.mec"),
+        );
+        assert!(poll.events.is_empty());
+        assert!(poll.refresh.is_none());
+        assert!(workspace.has_rejected_targets());
+        drop(watcher);
+        std::fs::remove_dir_all(root).unwrap();
+    }
 
     fn single_target_watch(root: &Path, specifier: &str) -> RuntimeWorkspaceWatchedPath {
         let watches = local_workspace_target_watches(root, specifier);
@@ -1037,6 +1315,7 @@ mod tests {
             authorized_path: canonical_docs,
             filter_paths: Vec::new(),
             recursive: false,
+            scope: RuntimeWorkspaceWatchScope::Required,
         };
         let watches = [watch].into_iter().collect::<BTreeSet<_>>();
 
@@ -1075,6 +1354,7 @@ mod tests {
             authorized_path: canonical_docs,
             filter_paths: Vec::new(),
             recursive: true,
+            scope: RuntimeWorkspaceWatchScope::Required,
         };
         let watches = [watch].into_iter().collect::<BTreeSet<_>>();
 
@@ -1107,6 +1387,7 @@ mod tests {
             authorized_path: docs.clone(),
             filter_paths: Vec::new(),
             recursive: false,
+            scope: RuntimeWorkspaceWatchScope::Required,
         };
         let alias_docs = alias.join("docs");
         let alias_watch = RuntimeWorkspaceWatchedPath {
@@ -1114,6 +1395,7 @@ mod tests {
             authorized_path: alias_docs,
             filter_paths: Vec::new(),
             recursive: false,
+            scope: RuntimeWorkspaceWatchScope::Required,
         };
         let recursive_alias_watch = RuntimeWorkspaceWatchedPath {
             recursive: true,
@@ -1149,6 +1431,7 @@ mod tests {
             authorized_path: canonical_docs.clone(),
             filter_paths: Vec::new(),
             recursive: false,
+            scope: RuntimeWorkspaceWatchScope::Required,
         };
         let watches = [watch].into_iter().collect::<BTreeSet<_>>();
 
@@ -1178,6 +1461,7 @@ mod tests {
             authorized_path: docs.clone(),
             filter_paths: Vec::new(),
             recursive: false,
+            scope: RuntimeWorkspaceWatchScope::Required,
         };
         let watches = [watch].into_iter().collect::<BTreeSet<_>>();
         assert!(event_allowed_by_watches(&watches, &docs));
@@ -1225,6 +1509,7 @@ mod tests {
             authorized_path: docs.clone(),
             filter_paths: Vec::new(),
             recursive: true,
+            scope: RuntimeWorkspaceWatchScope::Required,
         };
         let watches = [watch].into_iter().collect::<BTreeSet<_>>();
         assert!(event_allowed_by_watches(&watches, &docs));
@@ -1387,6 +1672,7 @@ mod tests {
             authorized_path: app.clone(),
             filter_paths: vec![app.clone()],
             recursive: false,
+            scope: RuntimeWorkspaceWatchScope::Required,
         };
         let watches = [watch].into_iter().collect::<BTreeSet<_>>();
         assert!(event_allowed_by_watches(&watches, &app));

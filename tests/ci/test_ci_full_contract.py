@@ -131,6 +131,53 @@ def literal_assignment(source: str, name: str):
 
 
 class FullWorkflowContractTests(unittest.TestCase):
+    def test_served_result_smoke_uses_the_embedded_runner_before_package_removal(self):
+        browser = job_block(FULL, "project-browser")
+        steps = job_steps(FULL, "project-browser")
+        build = next(step for step in steps if "Build embedded browser server in dedicated target" in step)
+        self.assertIn('--features "serve,bundle_web,formatter,run"', build)
+        self.assertIn('"$CARGO_TARGET_DIR/embedded-browser-mech"', build)
+        smoke = next(step for step in steps if "scripts/smoke-served-program-results-browser.py" in step)
+        self.assertIn('MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech"', smoke)
+        self.assertNotIn("if:", smoke)
+        self.assertNotIn("continue-on-error", smoke)
+        self.assertLess(browser.index(build), browser.index(smoke))
+        self.assertLess(browser.index(smoke), browser.index("Remove generated browser package"))
+        self.assertLess(browser.index(smoke), browser.index("Retain matching browser runtime for distributions"))
+
+    def test_distributions_embed_the_validated_browser_runtime_on_every_platform(self):
+        producer = job_block(FULL, "project-browser")
+        self.assertIn("'distribution'", producer.splitlines()[0])
+        upload = next(
+            step for step in job_steps(FULL, "project-browser")
+            if "Retain matching browser runtime for distributions" in step
+        )
+        self.assertIn("uses: actions/upload-artifact@v4", upload)
+        self.assertIn("name: browser-runtime-for-distributions", upload)
+        self.assertIn("path: src/wasm/pkg", upload)
+        self.assertIn("if-no-files-found: error", upload)
+        self.assertLess(producer.index("Build browser project package"), producer.index(upload))
+        self.assertLess(
+            producer.index("Verify actual browser-package admission before publication"),
+            producer.index(upload),
+        )
+        self.assertLess(producer.index(upload), producer.index("Remove generated browser package"))
+
+        consumer = job_block(FULL, "release-package-dry-run")
+        self.assertIn("needs: project-browser", consumer)
+        restore = next(
+            step for step in job_steps(FULL, "release-package-dry-run")
+            if "Restore matching browser runtime before embedding" in step
+        )
+        self.assertIn("uses: actions/download-artifact@v4", restore)
+        self.assertIn("name: browser-runtime-for-distributions", restore)
+        self.assertIn("path: src/wasm/pkg", restore)
+        self.assertLess(consumer.index(restore), consumer.index("Build and package the exact distribution"))
+        self.assertNotIn("if:", restore)
+        self.assertIn("ubuntu-latest", consumer)
+        self.assertIn("windows-latest", consumer)
+        self.assertIn("macos-latest", consumer)
+
     def test_runtime_family_keeps_minimal_and_complete_source_profiles(self):
         block = job_block(FULL, "cargo-runtime")
         self.assertIn("run: cargo test -p mech-runtime --lib --tests", block)
