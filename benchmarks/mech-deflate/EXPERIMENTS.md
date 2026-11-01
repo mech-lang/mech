@@ -161,3 +161,14 @@ python3 benchmarks/mech-deflate/experiment.py replay-round --index benchmarks/me
 This retrieves and hash-verifies every preserved version before chronological
 overlay, then reconstructs the reports without compiling or compressing. Historical
 R76/R77/R78 replay above remains available independently.
+
+## R80: exclusive empty first admission
+
+Base `d68e5f0d97c7950b11aa2a798f805f9a56cc0096`, production/optimized source
+`e4d444b5fcd33a69c05837ad1cafbd4c50b9ae97`. Retained matched11.514359×→11.464732×
+reference (−0.430999% elapsed),−0.489492% instructions, exactly340 fewer64-byte
+requests. Object/image/metadata, source/bytecode and logical accounting are unchanged.
+Four pairs /3,968 primary observations; all16 adverse descriptive blocks retained.
+All raw commands, failures, profiles, traces, controls and replay code are immutable
+release packets indexed by `rounds.80` in [experiments.json](experiments.json).
+Use the same `replay-round --round 80` command with a fresh output directory.

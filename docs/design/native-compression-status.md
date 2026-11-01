@@ -1,137 +1,113 @@
 # Native compression: current status
 
-This is the current-status owner. Historical reports and raw evidence are in the
-[external experiment archive/index](../../benchmarks/mech-deflate/EXPERIMENTS.md).
-The source tree retains compact hash receipts, maintained code and tests.
+This is the current-status owner. [Experiment index and retrieval](../../benchmarks/mech-deflate/EXPERIMENTS.md)
+link immutable external packets; source retains maintained code, tests and compact hashes.
 
-## Current measured checkpoint: R79
+## Current measured checkpoint: R80
 
-Retain native pieces around multiple ordinary children. Complete pinned **eight-byte,
-level-12** compression improves **12.424308× → 11.207469× Roc**, or **9.794019% less
-elapsed time**. Larger-input throughput and parity remain unestablished.
+Retain exclusive empty first admission. Complete pinned **eight-byte, level-12**
+compression improves **11.514359× → 11.464732× Roc**, **0.430999% less elapsed time**.
+The preceding R79 multiple-child composition improvement is retained (9.794019%
+less matched elapsed and10.234005% fewer instructions in its own cohort).
+Larger-input throughput and parity remain unestablished.
 
-Round base is `0eb0c3d9d8a59fbf14b4ec3563944a276b56b8a4`; production is
-`c5e4d66188339025ddfcbf83f0ab1e9788f237f3`; the actual optimized compiler build
-source is `374edf1410b5f975d793fb69d8fcf390cbfa10a5`. Later changes contain tests,
-tooling and evidence. Stack base remains `eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`.
+Round base: `d68e5f0d97c7950b11aa2a798f805f9a56cc0096`.
+Production and actual optimized source: `e4d444b5fcd33a69c05837ad1cafbd4c50b9ae97`.
+New regression witness: `134c0132d`; test reuse/CI inventory: `e8b671df3`.
+Stack base: `eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`.
 [PR #973](https://github.com/mech-lang/mech/pull/973) stays draft; hosted CI is
-cancelled at the user's direction. No green-CI or merge-readiness claim is made.
+cancelled by instruction and is not counted as passing.
 
-| Metric | Fresh reference | Matched R78 parent | R79 |
-| --- | ---: | ---: | ---: |
-| Primary elapsed | 0.289000ms | 3.5906250ms /12.424308× | **3.2389585ms /11.207469×** |
-| Retired instructions, separate cohort | 1,364,372 | 40,167,971 | **36,057,179 (−10.234005%)** |
-| CPU cycles, separate cohort | 943,541.0 | 11,262,383.5 | **10,326,071.5 (−8.313622%)** |
-| Requests, including reallocations | 95 | 6,791 | **6,791** |
-| Requested bytes | 9,021,923 | 98,112,208 | **98,113,216 (+1,008)** |
-| Incremental allocator peak usable bytes | 9,257,328 | 20,482,072 | **20,482,648 (+576)** |
-| Generated text bytes | — | 11,753,624 | **14,660,740 (+2,907,116)** |
-| Generated entry stack bytes | — | 107,280 | **124,048 (+16,768)** |
+| Metric | Fresh reference | Matched R79 | R80 |
+|---|---:|---:|---:|
+| Primary elapsed |0.280000ms|3.2240205ms /11.514359×|**3.2101250ms /11.464732×**|
+| Retired instructions, separate cohort |1,364,372|36,055,951.5|**35,879,460.5 (−0.489492%)**|
+| CPU cycles, separate cohort |918,008|10,261,671.5|**10,192,981.5 (−0.669384%)**|
+| Allocation requests including reallocations |95|6,791|**6,451 (−340)**|
+| Requested bytes |9,021,923|98,113,216|**98,091,456 (−21,760)**|
+| Incremental allocator peak usable bytes |9,257,328|20,482,648|**20,481,304 (−1,344)**|
+| Generated text bytes |—|14,660,740|14,660,740|
+| Generated entry stack bytes |—|124,048|124,048|
 
-Four independently prepared pairs contain3,968 timed /3,984 total observations.
-All four pairs and63/64 blocks improve; the adverse block is retained. Within-pair
-blocks are descriptive, not independent experiments. The separate32-observation
-CPU cohort also improves; its elapsed is excluded from primary. Sample weights,
-retired instructions, logical work, requested capacity and live memory remain
-distinct quantities. OS RSS includes retained compiler/catalog/image storage.
+Four independently prepared pairs contain3,968 timed/3,984 total observations.
+All pairs and48/64 descriptive blocks improve;16 adverse blocks remain. No
+statistical-significance claim; blocks are not independent experiments. Hardware,
+heap and CPU samples are separate cohorts. Today’s0.280ms reference differs from
+R79’s0.289ms; comparing the old11.207469× directly with11.464732× would mix clocks.
 
-## Compiler change and architectural owners
+The complete symbolized allocation census reconciles all requests. Exactly340
+64-byte platform-lock allocations under ordinary snapshot first admission vanish;
+all other request-size/kind counts are unchanged. Reallocations stay162. Large
+requests remain five tree, one cache and35 path allocations. Requested capacity
+is not initialized/copied bytes. Post-call RSS319.52→319.55MB includes retained
+compiler/catalog/image storage and is not an isolated compression peak.
 
-The maintained composition pass now inventories multiple ordinary child edges
-and proves acyclic pieces between them. Child initialize/exit, mutation,
-publication and recovery stay ordinary. Each piece reuses existing frame,
-provenance, liveness, admission and numeric proofs, and reacquires current owners
-and views. No view, private owner or prepaid fuel spans child execution.
+## Architectural changes retained
 
-Nested control retains one usize pending-edge marker. Its expected suspended
-ancestor is derived once from immutable validated loop ancestry after selection.
-Runtime still checks exact edges, current progress and source visits. Collection
-initialization preserves its existing two-phase protocol. There is no additional
-continuation stack, executor or ledger. Unsupported managed sources and ambiguous
-provenance retain ordinary execution.
+R80 proves wrapper **and** data exclusivity with `Arc::get_mut`, excluding strong
+aliases and weak observers, and checks the current registry is empty. It uses the
+existing exclusive accessor, then reacquires actual exclusivity before publication.
+The same node-before-byte admission logic serves both paths. Registration
+construction, footprint, schema/shape, current funding, error order and recovery
+remain authoritative. Shared/weak/registered/foreign cases retain the ordinary
+locked recheck. No unsafe code, cached authority, new executor or ledger.
 
-Static emitted pieces expand67→566; the candidate inventory contains76 parents.
-Actual diagnostics count500→1,255 executed pieces, including82 in the nine-child
-pilot parent. Artifact IDs locate evidence and grant no production permission.
-Callbacks fall17,689→14,460; shared debit attempts39,030→32,738; frame packs847→336;
-frame copies1,139→925; scalar projections1,361→153. **Managed projections remain
-2,176**, the next structural target. Four instrumented calls agree; instrumentation
-is excluded from timing, hardware and allocation acceptance.
+R79 inventories multiple ordinary child boundaries and proves acyclic native
+pieces between them using existing frame, provenance, liveness, admission and
+numeric proofs. Child initialize/exit, mutation/publication/recovery stay ordinary;
+current owners/views are reacquired for each piece. One usize marker checks exact
+nested ancestry. No loan or prepaid fuel survives child execution.
 
-Source semantics/canonical codec feed Engine facts and private proofs. Shared
-preparation serves JIT, Object emission and independent image restoration. The
-scalar emitter, frame/owner arenas, Core snapshot ownership and existing resource
-ledger retain their responsibilities. Selection facts are not funding or alias
-permission. Fast Bool/U64/I64/F64 execution retains its unchanged1.05 gate.
+R79’s diagnostic calls count17,689→14,460 callbacks and500→1,255 executed pieces;
+static emitted pieces67→566. Managed projections remain2,176: the next structural
+target. R79 grew generated text11,753,624→14,660,740 and entry stack107,280→124,048;
+that tradeoff remains explicit. R80 Object/descriptor/metadata are byte-identical.
+TypedIR/work/privateABI/MBC stay**133/95/38/14**, frozen scalarABI**1**. Fresh R80
+compute**67,457,686,430** and comparisons**23,063** are unchanged. No prices or
+allowances increase.
 
-Typed IR / work policy / private Program ABI / bytecode are **133 /95 /38 /14**;
-frozen scalar ABI is independently **1**. Existing piece prices apply at newly
-selected sites. Actual charged compute work changes60,260,219,686→67,457,686,430;
-comparison work47,612→23,063. Those units are not hardware instructions. No prices
-or allowances are increased; exact/one-short finite boundaries and error-prefix,
-publication and retry controls pass.
+Fresh CPU samples contain1,307 baseline/1,321 candidate/1,518 reference exclusive
+weights. Registration ancestry33→31 and contrary frame ancestry211→240 are retained.
+Groups overlap; these are samples, not per-function instructions or exact timer
+fractions. Hardware counters provide the separate whole-call instruction result.
+The retained Mech worker is173.04MB, including compiler/catalog/image code, versus
+the283KB reference harness; these are not equivalent standalone artifact sizes.
+Raw Mach-O section reports and source/binary pins are externally retained.
 
-## Complete computation and fidelity
+## Computation, qualification and remaining scope
 
-Mech performs compression as one compiled computation. The maintained
-[25-component assembly](../../hosts/gpu/tests/fixtures/native/deflate_assembly.rs)
-implements match finding, collection, near-optimal parsing, Huffman models, bit
-writing and `deflate-compress-into`. Its default complete entry has its own
-assembly pin; the unchanged measured caller-output entry retains:
+Mech performs compression as one compiled computation through the maintained
+[25-component assembly](../../hosts/gpu/tests/fixtures/native/deflate_assembly.rs).
+Pinned measured source SHA-256:
+`331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9`;
+bytecode: `a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7`.
+Algorithms/tables, allocation sites, tree262144U16/cache1500513U32/path305257U64,
+depth300/nice258/near-EOF checks, input aliases, pinned allocator, output capacity13
+clear/rebind and evaluate_into-only timer remain unchanged. Search/skip stay
+separate, with no cache/recording path in skip. Raw bytes are
+`[75,76,74,78,73,77,75,207,0,0]`; independent inflation agrees and final managed
+bytes/nodes are zero. Physical public-boundary copies remain.
 
-- Source SHA-256 `331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9`.
-- Bytecode SHA-256 `a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7`.
-- Real tree262144 U16, cache1500513 U32 and path capacity305257 U64.
-- Depth300, nice258, near-EOF limits, tables, source allocation sites and pinned allocator.
-- Output capacity13 with clear/rebind outside the `evaluate_into` timer. Physical
-  public-boundary copies remain; this does not claim physical output reuse.
+All twelve Core-dependent project libraries were rebuilt coherently with retained
+selected-operation release features, not the entire math catalogue. Fresh passing
+selections overlap: Core373; ownership inventory/execution11; GPU runtime334;
+work/memory/values32; component236 with unchanged expectations; connected8; path1;
+native CI selection40; linked original/decoded16; scalar12 (max1.021116707 versus
+unchanged1.05, equal pure-scalar allocation and zero loop slope); frame8; workflow
+Python132; architecture/type/memory15. Current runtime-only GPU cfg compiles with
+warnings-as-errors against the coherent feature-rich dependencies. Allowlist and
+warning policy remain unchanged.
 
-Search and skip remain separate, with no cache argument or recording path in
-skip. Exact raw bytes are `[75,76,74,78,73,77,75,207,0,0]`; independent inflation
-and input aliases agree, and final managed bytes/nodes are zero. Large allocation
-histograms retain five tree requests, one cache request and35 path requests.
-Requested spare capacity is not initialized/copied byte volume.
+The initial baseline witness fails with two shared gates instead of zero; all
+current tests pass. The export runner’s obsolete output-path error was resolved
+before timing; all original artifact hashes were verified unchanged. No required
+local failure remains. Hosted CI, giant complete knucleotide unit, large/full-corpus
+compression and fresh minimal/no_std graph are skipped. Separate unchanged
+Budget/planner/Engine integration receipts remain inherited. Historical large-input
+and scalar results do not qualify this revision or erase adverse evidence.
 
-Fresh CPU samples contain1,294 parent /1,300 candidate /1,515 reference exclusive
-weights. Known frame-action ancestry falls320/1294→207/1300. Categories overlap
-and are not instruction counts. The candidate retains98 unresolved exclusive
-weights; zero named thread-local weights does not prove that work disappeared.
-Code/stack growth is a measured tradeoff, not an unreported win.
-
-## Qualification and remaining scope
-
-Fresh executed selections overlap: GPU runtime334; work/memory/values32; unchanged
-component236; connected8; native path witness1; exact CI inventory/execution40;
-scalar controls12 (max ratio1.0331314 against1.05, request/byte equality and zero
-loop allocation slope); frame controls8; new linked/AOT original/decoded cases16;
-Python workflow132; architecture10 and type/memory5. Runtime-only GPU cfg metadata
-compilation passes warnings-as-errors against pinned feature-rich dependencies,
-not a freshly built minimal graph. Unsafe allowlist and warning exceptions remain
-unchanged. Core/Budget/planner/Engine results retain their earlier receipts and
-are explicitly inherited, not new executions.
-
-The new witness covers collection, sequential/nested children, current buffer/
-Boolean visits, unselected paths, assertion/arithmetic/read order, unchanged prior
-outputs, aliases, cleanup and retry through original/decoded and restored images.
-Append-child controls exercise real growth and resident agreement. The former
-negative multiple-child eligibility test now verifies ordinary child boundaries;
-compression output goldens and allowances are unchanged.
-
-Initial collection-phase and runner errors remain archived with their fixes.
-Unexpected missing tracked files in the temporary checkout were restored only
-when absent and verified by Git blob. A recovered allocator wrapper reproduces
-the measured executable byte-identically. Raw generated Rust/C lives outside the
-source checkout, preserving the strict source audit. No required local failure
-remains. The historical R10 scalar timing violation remains a historical unresolved
-observation; subsequent passing controls do not erase it.
-
-Historical saved-decoded16384-byte block and33027-byte window results do not qualify
-this compiler at those sizes. Repeated slides, full-corpus agreement and fresh
-large-input timing remain unqualified. The cancelled full-corpus run has no result.
-The giant complete knucleotide unit and hosted CI are not counted as passes.
-
-Next: measure exclusive first admission using current root/data uniqueness and
-an empty registry, retaining the ordinary shared/weak fallback. Then extend managed
-projections within native pieces and synchronize precise live/modified state as
-separate measured changes. Ordinary debit-function tuning stays closed absent
-new mechanism evidence. A source variant requires separate names/pins/results.
+Historical evidence through R78 and all current raw packets are external, with
+verified manifests and numerical replay. No Git history rewrite. Next: managed
+projections within native pieces, then precise live-state synchronization as
+separate measured changes. Ordinary debit-function tuning stays closed without
+new mechanism evidence. A separately named source variant may be tried later.
