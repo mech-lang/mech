@@ -1566,6 +1566,17 @@
           "files": 38,
           "asset_id": 697713083,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-reference-profile-05e2b5b421bc.tar.gz"
+        },
+        {
+          "event": "counters",
+          "source_revision": "c0b5999f434650df9ff7fef6dc2c9f4c40d4fc42",
+          "asset": "r83-counters-040a4f4dfd77.tar.gz",
+          "sha256": "040a4f4dfd77cf06f2830c075da1a523a423926ba68cca94127d53d0bcd69d44",
+          "manifest_sha256": "a211ee67b03d1017d283620299144ce9ba4b06c9ad38cdcdd1e970ecfbd46bb0",
+          "bytes": 269358,
+          "files": 91,
+          "asset_id": 697748872,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-counters-040a4f4dfd77.tar.gz"
         }
       ],
       "analysis": {
