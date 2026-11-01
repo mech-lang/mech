@@ -3021,7 +3021,7 @@
       "base": "5ccd962fc5a7efeb27600fecd5aff969113ad91f",
       "production": "36794bdeac6c70a13be317a14d2175bb1b4fbb94",
       "compiler_source": "36794bdeac6c70a13be317a14d2175bb1b4fbb94",
-      "decision": "under measurement",
+      "decision": "rejected and reverted: elapsed +0.119391%, instructions +0.139877%, cycles +0.527157%; 673 fewer payments do not offset validation overhead",
       "events": [
         {
           "event": "linked-multi",
@@ -3324,8 +3324,144 @@
           "files": 41,
           "asset_id": 698091888,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-analysis-570ca94467ec.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "36794bdeac6c70a13be317a14d2175bb1b4fbb94",
+          "asset": "r88-closure-6bec2b58100a.tar.gz",
+          "sha256": "6bec2b58100ab7e05e230a1d22ee99b2586b6fb4ef376ebc6279f96b738e96b3",
+          "manifest_sha256": "0e4d3fac6c0710e81ccaea43046ce6fd0746fd0deaa6e8290baca95e925e1a3e",
+          "bytes": 64963,
+          "files": 36,
+          "asset_id": 698112487,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-closure-6bec2b58100a.tar.gz"
         }
-      ]
+      ],
+      "candidate": "36794bdeac6c70a13be317a14d2175bb1b4fbb94",
+      "retained_production": "c2b334feed4326a66ce1f69ca4bc99b0cbe41bb2",
+      "revert": "aed9189cf63e487e5c96de89a9d91cae186222f9",
+      "ci_restore": "ba05ace602058279cf52554e569f210c1f421403",
+      "versions": [
+        135,
+        96,
+        38,
+        14
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "ec2b105699caa747f908831829c7b8bc45022e86958eca74785803a664425490",
+          "opportunities.json": "2dbe6e8f4f43b23e985dca1cfd9db1b01dbe1d959823034686acd8fe8fb9420e",
+          "profile-numbers.json": "ac8079197d413c6c63ca1f742278735f702664b23628238d08b61e787942c266",
+          "scorecard.json": "c6105060b958f8143eb2957dd3ab90e0cae62d7ef9296920e0f9748048a5cb14",
+          "validation.json": "aa977970f87d97032b1f4e9e4ba0fba92cd34b513c73e14276d5cd9dcc0b92c0"
+        }
+      },
+      "validation": {
+        "architecture": 15,
+        "candidate_overlapping_selections": [
+          {
+            "executed": 343,
+            "receipt": "final-units/runtime.json"
+          },
+          {
+            "executed": 33,
+            "receipt": "final-units/work-memory-values.json"
+          },
+          {
+            "executed": 49,
+            "receipt": "final-units/ci.json"
+          },
+          {
+            "executed": 1,
+            "receipt": "final-units/image.json"
+          },
+          {
+            "executed": 236,
+            "receipt": "qualification/components.json"
+          },
+          {
+            "executed": 8,
+            "receipt": "qualification/composition.json"
+          },
+          {
+            "executed": 1,
+            "receipt": "qualification/path-mechanism.json"
+          }
+        ],
+        "candidate_tests_passed": true,
+        "frame_controls": 8,
+        "linked": 16,
+        "max_scalar_ratio": 1.019358980859533,
+        "retained_baseline_source_restored": true,
+        "round": 88,
+        "scalar_ceiling": 1.05,
+        "scalar_controls": 12,
+        "skipped": "Hosted CI cancelled by instruction; giant complete knucleotide; large/full-corpus; fresh minimal/no_std graph. Candidate tests are reported separately from the restored source-identical R87 runtime. Core/Budget/Engine integration inherited. No new retained timing endpoint.",
+        "versions": [
+          135,
+          96,
+          38,
+          14
+        ],
+        "workflow_python": 132
+      },
+      "restoration": {
+        "retained_production": "c2b334feed4326a66ce1f69ca4bc99b0cbe41bb2",
+        "prior_published": "5ccd962fc5a7efeb27600fecd5aff969113ad91f",
+        "revert": "aed9189cf63e487e5c96de89a9d91cae186222f9",
+        "ci_restore": "ba05ace602058279cf52554e569f210c1f421403",
+        "gpu_core_engine_workflow_source_identical_to_r87": true,
+        "retained_validation": {
+          "architecture": 15,
+          "frame_controls": 8,
+          "linked": 16,
+          "max_scalar_ratio": 1.01635048314265,
+          "overlapping_selections": [
+            {
+              "executed": 341,
+              "receipt": "final-units/runtime.json"
+            },
+            {
+              "executed": 33,
+              "receipt": "final-units/work-memory-values.json"
+            },
+            {
+              "executed": 47,
+              "receipt": "final-units/ci.json"
+            },
+            {
+              "executed": 1,
+              "receipt": "final-units/image.json"
+            },
+            {
+              "executed": 236,
+              "receipt": "qualification/components.json"
+            },
+            {
+              "executed": 8,
+              "receipt": "qualification/composition.json"
+            },
+            {
+              "executed": 1,
+              "receipt": "qualification/path-mechanism.json"
+            }
+          ],
+          "passed": true,
+          "round": 87,
+          "scalar_ceiling": 1.05,
+          "scalar_controls": 12,
+          "skipped": "Hosted CI cancelled by instruction; giant complete knucleotide; large/full-corpus; fresh minimal/no_std graph. Unchanged Core/Budget/Engine integration inherited. R86 diagnostics are separate, not primary timing.",
+          "versions": [
+            135,
+            96,
+            38,
+            14
+          ],
+          "workflow_python": 132
+        },
+        "scope": "No new production/timing endpoint. R88 candidate is rejected; runtime/compiler/feature/CI code exactly restored to the validated R87 checkpoint. Retained R87 timing is not reinterpreted using R88 reference clock."
+      }
     }
   },
   "repository": "mech-lang/mech",
