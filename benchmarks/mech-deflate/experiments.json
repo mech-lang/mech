@@ -6841,6 +6841,17 @@
           "files": 99,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-scalar-controls-clean-repeat-0ab759841374.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "bebe5a245d312796c630de76fc558fbcd2c2f2ff",
+          "asset": "r100-closure-d5200dbf5581.tar.gz",
+          "sha256": "d5200dbf55816f3fa179570c6d54288205e169be5f4a10ce43b46e3033972cef",
+          "manifest_sha256": "8869969a1b352259748d06c598d80c19cfcba2e0d478370a9257e42e10042b98",
+          "bytes": 4688110,
+          "files": 305,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-closure-d5200dbf5581.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
