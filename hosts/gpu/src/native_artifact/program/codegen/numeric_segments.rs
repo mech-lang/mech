@@ -24,6 +24,8 @@ pub(in crate::native_artifact) struct Report {
     pub source_sites: Vec<u32>,
     pub frontiers: Vec<(u32, u32)>,
     pub register_words: usize,
+    pub source_home_words: usize,
+    pub private_scratch_words: usize,
     pub typed_loads: Vec<(usize, u8)>,
     pub exit_argument_words: Vec<usize>,
     pub exit_argument_stores: usize,
@@ -35,6 +37,7 @@ pub(in crate::native_artifact) struct Report {
 fn end(
     b: &mut FunctionBuilder<'_>,
     words: &Words,
+    source_homes: &BTreeSet<usize>,
     locals: Value,
     shadow: usize,
     proof: &Layout,
@@ -46,7 +49,10 @@ fn end(
     frame: Value,
     error: Block,
 ) -> Result<usize, NativeCompileError> {
-    words.spill_all(b, locals)?;
+    // The runtime exit consumes only the argument exports below. Private SSA
+    // scratch has no ordinary continuation reader; source homes still include
+    // every original operand needed by a cold checked-read/arithmetic exit.
+    words.spill_live(b, locals, source_homes)?;
     set_origin(b, frame, site as u64);
     hooks.require_argument_words(b, proof.words, error);
     let mut stores = 0;
@@ -118,21 +124,34 @@ pub(in crate::native_artifact) fn emit_entry(
     // Only the selected body is excluded from that visit's instruction audit.
     let entry_ir = b.func.dfg.num_insts() - before;
     b.switch_to_block(selected);
-    for word in 0..proof.words {
-        let value = b
-            .ins()
-            .load(types::I64, MemFlags::new(), hooks.arguments, offset(word)?);
-        b.ins()
-            .store(MemFlags::new(), value, locals, offset(shadow + word)?);
-    }
-    let slots = numeric_words::source_slots(
+    let source_homes = numeric_words::source_slots(
         code,
         segment.sites.iter().map(|&s| s as usize),
         &proof.actions,
-        shadow..shadow + proof.words,
+        core::iter::empty(),
     )?;
+    let scratch = shadow..shadow + proof.words;
+    if source_homes.iter().any(|slot| scratch.contains(slot)) {
+        return Err(backend("parent private scratch overlaps source homes"));
+    }
+    let slots: BTreeSet<_> = source_homes
+        .iter()
+        .copied()
+        .chain(scratch.clone())
+        .collect();
     let register_words = slots.len();
-    let words = Words::new(b, locals, code, slots)?;
+    let words = Words::new_with(b, locals, code, slots, |b, slot| {
+        if scratch.contains(&slot) {
+            Ok(Some(b.ins().load(
+                types::I64,
+                MemFlags::new(),
+                hooks.arguments,
+                offset(slot - shadow)?,
+            )))
+        } else {
+            Ok(None)
+        }
+    })?;
     let blocks = segment
         .sites
         .iter()
@@ -187,6 +206,7 @@ pub(in crate::native_artifact) fn emit_entry(
                 exit_argument_stores += end(
                     b,
                     &words,
+                    &source_homes,
                     locals,
                     shadow,
                     proof,
@@ -288,6 +308,7 @@ pub(in crate::native_artifact) fn emit_entry(
         exit_argument_stores += end(
             b,
             &words,
+            &source_homes,
             locals,
             shadow,
             proof,
@@ -307,6 +328,7 @@ pub(in crate::native_artifact) fn emit_entry(
         exit_argument_stores += end(
             b,
             &words,
+            &source_homes,
             locals,
             shadow,
             proof,
@@ -362,6 +384,8 @@ pub(in crate::native_artifact) fn emit_entry(
         source_sites: segment.sites.clone(),
         frontiers: segment.exits.clone(),
         register_words,
+        source_home_words: source_homes.len(),
+        private_scratch_words: proof.words,
         typed_loads,
         exit_argument_words: exit_words,
         exit_argument_stores,
