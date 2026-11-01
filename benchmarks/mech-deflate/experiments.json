@@ -232,6 +232,17 @@
           "files": 46,
           "asset_id": 697350562,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-reference-profile-5bc5fd032aad.tar.gz"
+        },
+        {
+          "event": "analysis",
+          "source_revision": "374edf1410b5f975d793fb69d8fcf390cbfa10a5",
+          "asset": "r79-analysis-eef8af623538.tar.gz",
+          "sha256": "eef8af62353823b487f2d60cba42a655261b5758a5458cb05ba18c22dffc6e81",
+          "manifest_sha256": "74370f1e8c051c5bb70d5de1f061e8d5111164f6998edb777d6fd26ebfb4aa63",
+          "bytes": 90322,
+          "files": 43,
+          "asset_id": 697350617,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-analysis-eef8af623538.tar.gz"
         }
       ],
       "analysis": {
