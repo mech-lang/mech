@@ -168,7 +168,7 @@ Base `d68e5f0d97c7950b11aa2a798f805f9a56cc0096`, production/optimized source
 `e4d444b5fcd33a69c05837ad1cafbd4c50b9ae97`. Retained matched11.514359×→11.464732×
 reference (−0.430999% elapsed),−0.489492% instructions, exactly340 fewer64-byte
 requests. Object/image/metadata, source/bytecode and logical accounting are unchanged.
-Four pairs /3,968 primary observations; all16 adverse descriptive blocks retained.
+Four pairs /3,968 primary observations; all 16 adverse descriptive blocks retained.
 All raw commands, failures, profiles, traces, controls and replay code are immutable
 release packets indexed by `rounds.80` in [experiments.json](experiments.json).
 Use the same `replay-round --round 80` command with a fresh output directory.
@@ -181,8 +181,40 @@ optimized source `c29854f6f1f404658c39bcb024296b01ec80a71d`. Matched elapsed
 Four pairs /3,968 primary observations; all blocks improve. Initial adverse cycles
 and two additional predeclared hardware pairs remain separate. Actual callbacks
 14,460→10,759; canonical puts 3,039→2,178, with 816 real escapes preserved.
-IR134/work96/privateABI38/MBC14; source/bytecode and algorithm pins unchanged.
+IR134/work 96/privateABI38/MBC14; source/bytecode and algorithm pins unchanged.
 Policy96 pricing golden and private current-result recipe checks are explicit.
 52 backing copies disappear. Evidence, exact commands, every failed attempt and
 replay hashes are external packets in `rounds.81` of [experiments.json](experiments.json).
 Use `replay-round --round 81` with a fresh output directory.
+
+
+## R82: immutable managed owner transport
+
+Base `84e1375e53375c11209f9933852fac9ee98eb2b7`; production/optimized source
+`4fe3ca57b17b4bcab90948f8357f8fd8fd9d11da`. Matrices of records can be forwarded
+through the existing parent pieces; numeric views remain independently proved.
+Elapsed alone is0.280294% adverse, instructions 0.320138% better, heap unchanged.
+Callbacks10,759→10,712; all 21 moved projections escape canonically, without
+eliminating an arena installation. Retained with the directly measured R83 head;
+no R82 elapsed win claimed. Failed fixtures/test assertions and their corrections
+are preserved. Use `replay-round --round 82` for the numerical reports.
+
+## R83: prove byte caps from current admitted capacity
+
+Base `3831952d49a2f2d762f33e87dadc8f29349fc9d9`; production/optimized source
+`c0b5999f434650df9ff7fef6dc2c9f4c40d4fc42`. Current admitted capacity provides a
+conservative sufficient bound; tight/refused/overflowing cases retain exact
+footprint calculation. Current schema/account checks remain. NoLimits remains
+all maxima; an untimed None-only premise was corrected from actual counters.
+
+Direct retained R81→combined R83 elapsed10.144898×→9.969036× reference
+(−1.733503%, four pairs/3,968 primary observations,4 adverse blocks retained).
+Independent R82→R83 pairs improve 2.091294%; ratios/cohorts are not multiplied.
+Three-way hardware cohort shows 31,824,928.5→31,050,590.5 instructions from R81
+(−2.433118%); heap totals stay equal. Exact footprint walks 4,109→0, current key
+checks 2,596. Tight positive byte-cap, original/decoded/restored, limit/error/retry,
+scalar/frame, component/linked and architecture qualification pass. Code/stack
+increase 46,120/480 bytes from retained R81, with R83 Object/image/metadata unchanged.
+Use `replay-round --round 83` with a fresh output directory. Full hashes, commands,
+failed/untimed attempts and separate profiles/counter cohorts stay in external
+packets. See [current status](../../docs/design/native-compression-status.md).

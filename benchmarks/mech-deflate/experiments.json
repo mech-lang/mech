@@ -1329,6 +1329,20 @@
         "work": 96,
         "abi": 38,
         "bytecode": 14
+      },
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "mechanism.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 4,
+        "round": 82,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 583,
+        "verified_archives": 14,
+        "verified_file_occurrences": 1002
       }
     },
     "83": {
@@ -1832,6 +1846,20 @@
           "primary_observations": 3968,
           "reference_seconds": 0.000294
         }
+      },
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "mechanism.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 12,
+        "round": 83,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 877,
+        "verified_archives": 29,
+        "verified_file_occurrences": 1810
       }
     }
   },
