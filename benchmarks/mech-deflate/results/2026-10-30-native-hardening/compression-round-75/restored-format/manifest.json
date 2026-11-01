@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-11-01T00:25:35.032567+00:00",
+  "head": "444d139c83b274a582e2761528fa677490fbab20",
+  "files": [
+    {
+      "path": "restore-production.py",
+      "sha256": "7eb1063ef5811cb223fbff37c03c882f4552756197b446639f4045e9e832d957",
+      "bytes": 4816
+    },
+    {
+      "path": "restored/format.json",
+      "sha256": "35ffe985f13fde650627df91591a88b5e2a9bd192dbbd66e62f892556e02df47",
+      "bytes": 368
+    },
+    {
+      "path": "restored/format.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "restored/format.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "restored/rejected-source.patch",
+      "sha256": "6e710a7d61fe2a19b6d0c1c9c9961df4aead59640be3f7cade0e14ebe715423b",
+      "bytes": 46905
+    },
+    {
+      "path": "restored/source-proof.json",
+      "sha256": "1c4f48fb10e69cb974a0aba2a49754164f01e41d483b941fb035af038cfd79c8",
+      "bytes": 59553
+    }
+  ]
+}
