@@ -5119,6 +5119,17 @@
           "files": 54,
           "asset_id": 698747632,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-after-census-57e06b08e58b.tar.gz"
+        },
+        {
+          "event": "qualification",
+          "source_revision": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
+          "asset": "r92-qualification-33c5b53f2589.tar.gz",
+          "sha256": "33c5b53f25892a2e86b7bbeb1838e1a88a9a5f86bdf9318cb93e2892fe7aff78",
+          "manifest_sha256": "9af0c7ea3064b214e8710a5f7e93e919f3548ec957858a40073423606c74f4d7",
+          "bytes": 106683,
+          "files": 54,
+          "asset_id": 698752586,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-qualification-33c5b53f2589.tar.gz"
         }
       ]
     }
