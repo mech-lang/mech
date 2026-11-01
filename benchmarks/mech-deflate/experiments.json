@@ -4175,6 +4175,17 @@
           "files": 39,
           "asset_id": 698517680,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-first-reference-profile-23bd6d63943e.tar.gz"
+        },
+        {
+          "event": "outline-import-error",
+          "source_revision": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+          "asset": "r90-outline-import-error-4220678a462d.tar.gz",
+          "sha256": "4220678a462df6d824dd6cc1c6cda57fc07c0d4760e10ade9703991a8ef1f2e2",
+          "manifest_sha256": "df06ab3ece48784a309a5f48467711d8415e43fdd29577a47e3bd7b822f64990",
+          "bytes": 54014,
+          "files": 37,
+          "asset_id": 698517729,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-outline-import-error-4220678a462d.tar.gz"
         }
       ]
     }
