@@ -78,6 +78,20 @@ fn trial(
     optimized: bool,
     context: Context,
 ) -> Outcome {
+    trial_mode(
+        artifact, descriptor, slots, allowance, optimized, context, false,
+    )
+}
+
+fn trial_mode(
+    artifact: &mech_engine::ProgramArtifact,
+    descriptor: &crate::native_artifact::NativeProgramDescriptor,
+    slots: &[u64],
+    allowance: u64,
+    optimized: bool,
+    context: Context,
+    current_only: bool,
+) -> Outcome {
     let metadata = descriptor.metadata();
     let layout = &metadata.buffer_frames;
     let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
@@ -133,25 +147,47 @@ fn trial(
     if !matches!(context, Context::Foreign) {
         library.restrict(before + allowance, 1000).unwrap();
     }
+    let current_slots = slots.iter().map(|&slot| slot as u32).collect::<Vec<_>>();
     let mut run = || -> Result<bool, NativeProgramExecutionError> {
-        if optimized {
-            super::super::super::retirement::run(
-                slots,
-                &metadata.frame_retirements,
-                &mut frames,
-                &mut arena,
-                meter,
-                None,
-            )
-        } else {
-            // The maintained old entries are the oracle, including their error
-            // wrapping and every individual denied contribution.
-            meter.charge(NativeExecutionPhase::Setup, amount(slots.len(), 16, 64)?)?;
-            for &slot in slots {
-                frames.retire(&metadata.frame_retirements, slot as u32, meter)?;
-                arena.retire_current(slot as u32, meter)?;
+        if current_only {
+            if optimized
+                && super::super::super::retirement::try_current(
+                    &current_slots,
+                    &metadata.frame_retirements,
+                    &mut frames,
+                    &mut arena,
+                    meter,
+                )?
+            {
+                return Ok(true);
+            }
+            for &slot in &current_slots {
+                // The original native-piece path is the independent oracle.
+                if !frames.retire(&metadata.frame_retirements, slot, meter)? {
+                    arena.retire_current(slot, meter)?;
+                }
             }
             Ok(false)
+        } else {
+            if optimized {
+                super::super::super::retirement::run(
+                    slots,
+                    &metadata.frame_retirements,
+                    &mut frames,
+                    &mut arena,
+                    meter,
+                    None,
+                )
+            } else {
+                // The maintained old entries are the oracle, including their error
+                // wrapping and every individual denied contribution.
+                meter.charge(NativeExecutionPhase::Setup, amount(slots.len(), 16, 64)?)?;
+                for &slot in slots {
+                    frames.retire(&metadata.frame_retirements, slot as u32, meter)?;
+                    arena.retire_current(slot as u32, meter)?;
+                }
+                Ok(false)
+            }
         }
     };
     NativeValueArena::take_retirement_effect_count();
@@ -401,6 +437,113 @@ fn cleanup_batch_declines_unexpected_canonical_frame_definition_and_recovers() {
                 Context::Root
             )
             .selected
+        );
+    }
+}
+
+#[test]
+fn current_cleanup_batch_keeps_each_charge_prefix_and_duplicate_releases() {
+    for artifact in artifacts(NESTED) {
+        let (jit, original, _, _) = fixture(&artifact);
+        for duplicate in [false, true] {
+            let mut slots = original.clone();
+            if duplicate {
+                slots.push(slots[1]);
+            }
+            let recipes = &jit.descriptor().metadata().frame_retirements;
+            let mut total = 0;
+            let mut boundaries = vec![0];
+            for &slot in &slots {
+                total += recipes.get(slot as usize).map_or(32, |(price, _)| price);
+                boundaries.extend([total - 1, total]);
+            }
+            for allowance in boundaries.into_iter().chain([total + 1]) {
+                let mut selected = trial_mode(
+                    &artifact,
+                    jit.descriptor(),
+                    &slots,
+                    allowance,
+                    true,
+                    Context::Root,
+                    true,
+                );
+                assert_eq!(selected.selected, allowance >= total);
+                selected.selected = false;
+                assert_eq!(
+                    selected,
+                    trial_mode(
+                        &artifact,
+                        jit.descriptor(),
+                        &slots,
+                        allowance,
+                        false,
+                        Context::Root,
+                        true
+                    ),
+                    "current allowance={allowance} duplicate={duplicate}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn current_cleanup_batch_keeps_malformed_foreign_nested_paths_and_recovery() {
+    for artifact in artifacts(NESTED) {
+        let (jit, slots, full, _) = fixture(&artifact);
+        let mut malformed = slots.clone();
+        *malformed.last_mut().unwrap() = u64::from(u32::MAX);
+        for (input, context) in [
+            (&malformed, Context::Root),
+            (&slots, Context::Foreign),
+            (&slots, Context::Nested),
+            (&slots, Context::UnexpectedCanonical),
+        ] {
+            let selected = trial_mode(
+                &artifact,
+                jit.descriptor(),
+                input,
+                full * 2,
+                true,
+                context,
+                true,
+            );
+            assert!(!selected.selected);
+            assert_eq!(
+                selected,
+                trial_mode(
+                    &artifact,
+                    jit.descriptor(),
+                    input,
+                    full * 2,
+                    false,
+                    context,
+                    true
+                )
+            );
+        }
+        let mut selected = trial_mode(
+            &artifact,
+            jit.descriptor(),
+            &slots,
+            full,
+            true,
+            Context::Root,
+            true,
+        );
+        assert!(selected.selected);
+        selected.selected = false;
+        assert_eq!(
+            selected,
+            trial_mode(
+                &artifact,
+                jit.descriptor(),
+                &slots,
+                full,
+                false,
+                Context::Root,
+                true
+            )
         );
     }
 }
