@@ -6495,6 +6495,33 @@
           "files": 45,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-primary-group3-0c1cf049f8de.tar.gz"
+        },
+        {
+          "event": "primary-summary",
+          "source_revision": "5c219ed220879b05ee147bdf5d3f85680311eae2",
+          "asset": "r99-primary-summary-7e10130891b3.tar.gz",
+          "sha256": "7e10130891b300ca9762314829f0ffe36bdd7b2ebe2473de94fe84fc99865c6a",
+          "manifest_sha256": "d2bd8969dea2426cba10b92e026f1b52a991180588284e72daeff41eee3a2750",
+          "bytes": 112065,
+          "files": 42,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-primary-summary-7e10130891b3.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.000289,
+            "medians": {
+              "after": 0.0024169380000000004,
+              "before": 0.002448083
+            },
+            "multiples_of_reference": {
+              "after": 8.36310726643599,
+              "before": 8.470875432525952
+            },
+            "after_over_before": 0.9872778006301258,
+            "improving_groups": 4,
+            "improving_blocks": 61,
+            "adverse_blocks": 3
+          }
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
