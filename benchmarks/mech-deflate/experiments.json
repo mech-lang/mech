@@ -3653,6 +3653,17 @@
           "files": 55,
           "asset_id": 698209783,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-qualification-3a70c6a5b3fd.tar.gz"
+        },
+        {
+          "event": "counters",
+          "source_revision": "460c9cb748fc377c1cbcfd57565a5373de05de14",
+          "asset": "r89-counters-5b0c07fc8854.tar.gz",
+          "sha256": "5b0c07fc8854c8983888d2c58936523b4822fc0dba919f0d62bc92f37c904af5",
+          "manifest_sha256": "f022c4c01724b629a63997278078a920696eec59eb15036302a519fb95e114b2",
+          "bytes": 257379,
+          "files": 76,
+          "asset_id": 698212345,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-counters-5b0c07fc8854.tar.gz"
         }
       ]
     }
