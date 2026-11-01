@@ -66,6 +66,7 @@ fn mul(a: u64, b: u64) -> Result<u64, NativeIterationExecutionError> {
     a.checked_mul(b)
         .ok_or_else(|| invalid("iteration count/work overflow"))
 }
+#[inline(always)]
 fn charge(
     meter: &mut NativeWorkMeter,
     amount: u64,
