@@ -201,11 +201,29 @@ impl Invocation<'_, '_, '_> {
             if frames.inputs.contains(&frame.value) {
                 continue;
             }
-            let mut bytes = 0u64;
-            // Owners and numeric views have their own current-account/type
-            // checks. This pure footprint is needed only for a byte-limit
-            // preview; keep its exact walk and checked sum when a limit exists.
-            if self.limits.max_output_bytes.is_some() {
+            // Current admitted capacity includes the exact retained footprint
+            // and ownership headers. It is a conservative upper bound, never
+            // a permission or a reason to reject a tighter valid byte limit.
+            let mut upper = Some(0u64);
+            for source in &frame.arrays {
+                let bound = if let Some(source) = source {
+                    let Some(owner) = self.segment_source(&frames.sources[*source])? else {
+                        return Ok(Some(0));
+                    };
+                    owner.memory_budget_retained_bytes(&memory)
+                } else {
+                    Some(scalar_bytes)
+                };
+                upper = upper.and_then(|n| n.checked_add(bound?));
+                if upper.is_none() {
+                    break;
+                }
+            }
+            let mut bytes = upper.unwrap_or(0);
+            if upper.is_none_or(|n| n.max(8) > self.limits.max_output_bytes.unwrap_or(u64::MAX)) {
+                // A refused/overflowing upper bound proves nothing. Preserve
+                // the exact original walk, sum, overflow and byte-limit check.
+                bytes = 0;
                 for source in &frame.arrays {
                     let bound = if let Some(source) = source {
                         let Some(owner) = self.segment_source(&frames.sources[*source])? else {
