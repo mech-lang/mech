@@ -6588,6 +6588,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-isolated-profile-8b5d16c2e035.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "5c219ed220879b05ee147bdf5d3f85680311eae2",
+          "asset": "r99-closure-71622cd5268c.tar.gz",
+          "sha256": "71622cd5268c77fa1781f7f664f1c91b692dc8da8b2275721cb4973040235e34",
+          "manifest_sha256": "d66512e8b6f6f02755fc2ec03468d191d6d5e750d451716b71a49d504c8072f0",
+          "bytes": 4612969,
+          "files": 265,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-closure-71622cd5268c.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
