@@ -51,8 +51,12 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             );
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
-                report.work, 91_452_918,
-                "original cleanup prices must remain"
+                crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
+                96
+            );
+            assert_eq!(
+                report.work, 88_767_602,
+                "policy96 elides private projection transport; reached cleanup remains funded"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(

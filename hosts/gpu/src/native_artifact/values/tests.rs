@@ -10,6 +10,78 @@ const TRANSPORT_LIMIT: u64 = 1024 * 1024;
 
 #[cfg(feature = "canonical-native-program-runtime")]
 #[test]
+fn alias_preview_is_current_pure_and_keeps_ordinary_put_authoritative() {
+    let budget = ManagedMemoryBudget::new(1_000_000);
+    let (ty, raw) = text("alias");
+    let owned = admit(&raw, &budget);
+    let (_, wrong) = value(SchemaBody::Bool, ValueDataDraft::Bool(true));
+    let wrong = admit(&wrong, &budget);
+    let foreign = ManagedMemoryBudget::new(1_000_000);
+    let foreign_owner = admit(&raw, &foreign);
+    let types = [ty];
+    let mut work = NativeWorkMeter::new(1_000_000).unwrap();
+    let mut arena = NativeValueArena::new(&types, TRANSPORT_LIMIT, &budget, &mut work).unwrap();
+    let retained = (
+        budget.used_bytes(),
+        budget.retained_snapshot_nodes(),
+        work.used(),
+    );
+    let expected = owned.memory_budget_retained_bytes(&budget).unwrap() * 4 + 64;
+    assert_eq!(
+        arena.native_alias_put_work(0, &owned, &work).unwrap(),
+        Some(expected)
+    );
+    for rejected in [&raw, &wrong, &foreign_owner] {
+        assert_eq!(
+            arena.native_alias_put_work(0, rejected, &work).unwrap(),
+            None
+        );
+    }
+    assert_eq!(
+        (
+            budget.used_bytes(),
+            budget.retained_snapshot_nodes(),
+            work.used()
+        ),
+        retained
+    );
+    let other_work = NativeWorkMeter::new(1_000_000).unwrap();
+    assert!(matches!(
+        arena.native_alias_put_work(0, &owned, &other_work),
+        Err(NativeValueError::WrongWorkLedger)
+    ));
+    let handle = arena.put(0, &owned, &mut work).unwrap();
+    assert_eq!(arena.native_alias_put_work(0, &owned, &work).unwrap(), None);
+    assert!(
+        arena
+            .get(handle, &mut work)
+            .unwrap()
+            .shares_frozen_storage(&owned)
+    );
+    arena.retire_current(0, &mut work).unwrap();
+    assert_eq!(
+        arena.native_alias_put_work(0, &owned, &work).unwrap(),
+        Some(expected)
+    );
+    arena.generations.values_mut()[0] = u64::MAX;
+    assert_eq!(arena.native_alias_put_work(0, &owned, &work).unwrap(), None);
+    assert!(matches!(
+        arena.put(0, &owned, &mut work),
+        Err(NativeValueError::GenerationExhausted)
+    ));
+    drop((arena, owned, wrong, foreign_owner));
+    assert_eq!(
+        (budget.used_bytes(), budget.retained_snapshot_nodes()),
+        (0, 0)
+    );
+    assert_eq!(
+        (foreign.used_bytes(), foreign.retained_snapshot_nodes()),
+        (0, 0)
+    );
+}
+
+#[cfg(feature = "canonical-native-program-runtime")]
+#[test]
 fn arena_transport_preserves_shared_account_census_and_external_roots() {
     let budget = ManagedMemoryBudget::new(16 * 1024 * 1024);
     let (text_ty, raw_a) = text(&"λ".repeat(8192));
