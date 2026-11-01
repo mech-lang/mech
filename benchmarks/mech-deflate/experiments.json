@@ -5978,6 +5978,17 @@
           "files": 53,
           "asset_id": 699134569,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r95-reference-profile-7bca96108891.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "67a7c88e745092264a5a735933dd95cf48fc5446",
+          "asset": "r95-scalar-controls-985a67f293ba.tar.gz",
+          "sha256": "985a67f293ba60f60cd1eee1c36ef8bcfc51b10361c3109a46808d4c6d649004",
+          "manifest_sha256": "7948f91a25360371f4fe6433a5b555e766f2e93b54f2202987894f93f0574ade",
+          "bytes": 134482,
+          "files": 102,
+          "asset_id": 699156940,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r95-scalar-controls-985a67f293ba.tar.gz"
         }
       ]
     }
