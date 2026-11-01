@@ -1960,6 +1960,17 @@
             "improving_blocks": 36,
             "adverse_blocks": 28
           }
+        },
+        {
+          "event": "isolated-profile",
+          "source_revision": "10f5bbbe94fed1b1887e9f4794f48ec90b13b154",
+          "asset": "r84-isolated-profile-76f209795088.tar.gz",
+          "sha256": "76f2097950883bb1493ccc15a4297184bc365926c94ce9805e3f6c49ff205edf",
+          "manifest_sha256": "c547011f189c5359b3420ac55742a62f9744c33fb3e80c113e56278bdd8b2859",
+          "bytes": 270947,
+          "files": 38,
+          "asset_id": 697866721,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r84-isolated-profile-76f209795088.tar.gz"
         }
       ]
     },
