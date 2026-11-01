@@ -6451,6 +6451,17 @@
           "files": 43,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-primary-reference-26e1a0e261bb.tar.gz"
+        },
+        {
+          "event": "primary-group0",
+          "source_revision": "5c219ed220879b05ee147bdf5d3f85680311eae2",
+          "asset": "r99-primary-group0-d7661edc295c.tar.gz",
+          "sha256": "d7661edc295c9d146437ef13069e9411a3cf14a732164b5a74e8aa52f36ec5cc",
+          "manifest_sha256": "c16b355f353d5d9cbfa5d838825b5f4dc78b9a91aa0d6bf4336950552bae319f",
+          "bytes": 140461,
+          "files": 45,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-primary-group0-d7661edc295c.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
