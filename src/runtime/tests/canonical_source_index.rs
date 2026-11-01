@@ -79,6 +79,43 @@ fn canonical_import_requests_resolve_through_the_existing_resolver() {
 }
 
 #[test]
+fn title_front_matter_imports_are_root_bindings_in_source_order() {
+    let source = "Report\n======\nsection: Examples\n+> math/*\n+> wave := math/cos\n======\nanswer := wave(0)\n";
+    let index = index(source);
+    let imports = index.program_imports();
+    assert_eq!(imports.len(), 2);
+    assert_eq!(imports[0].kind, SourceImportKind::Wildcard);
+    assert_eq!(imports[0].module.as_deref(), Some("math"));
+    assert_eq!(
+        imports[1].alias,
+        Some(SourceImportAlias::Value("wave".into()))
+    );
+    assert_eq!(imports[1].item.as_deref(), Some("cos"));
+    assert_eq!(index.imports[0].occurrence.scope, SourceScope::Program);
+    assert_eq!(index.imports[1].occurrence.scope, SourceScope::Program);
+    assert_eq!(
+        index.imports[0]
+            .occurrence
+            .range
+            .as_ref()
+            .unwrap()
+            .start
+            .row,
+        4
+    );
+    assert_eq!(
+        index.imports[1]
+            .occurrence
+            .range
+            .as_ref()
+            .unwrap()
+            .start
+            .row,
+        5
+    );
+}
+
+#[test]
 fn scopes_share_named_fences_and_exclude_display_and_disabled_code() {
     let source = "```mech:worker\n+> math\nx := @env/HOME\n```\n\n```mech:worker\n<+ x\n```\n\n```mech:disabled\n+> skipped\n```\n\nShown `@display/VALUE`; evaluated {@live/VALUE}.\n";
     let index = index(source);

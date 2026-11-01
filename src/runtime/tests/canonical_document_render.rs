@@ -1,14 +1,14 @@
 #![cfg(all(feature = "full_source", feature = "resident-routing-source"))]
 
 use mech_core::{CanonicalNominalPath, FunctionCatalogBuilder, ReactiveInstanceId};
-use mech_engine::resident::{ActivationFacts, activate};
+use mech_engine::resident::{activate, ActivationFacts};
 use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram, SourceDocumentOutputKind};
 use mech_runtime::{
     CanonicalDocumentRenderer, CanonicalRenderScope, CanonicalScopeResults, RuntimeValueSnapshot,
 };
 use mech_syntax::document::{
-    AstNode, DocumentId, DocumentStream, DocumentSyntax, ParseConfig, Revision, StreamProgress,
-    TextSnapshot, parse_canonical_document,
+    parse_canonical_document, AstNode, DocumentId, DocumentStream, DocumentSyntax, ParseConfig,
+    Revision, StreamProgress, TextSnapshot,
 };
 
 fn document(source: &str) -> DocumentSyntax {
@@ -231,11 +231,9 @@ fn renderer_rejects_results_from_an_older_document_revision() {
     let error = CanonicalDocumentRenderer
         .render_html(&current, &[stale])
         .unwrap_err();
-    assert!(
-        error
-            .message
-            .contains("different canonical document revision")
-    );
+    assert!(error
+        .message
+        .contains("different canonical document revision"));
 }
 
 #[test]
@@ -964,11 +962,9 @@ fn browser_source_mounts_match_compiled_canonical_output_anchors() {
     }
     assert!(html.contains("class='mech-inline-mech-code'"), "{html}");
     assert!(html.contains("class='mech-block-output'"), "{html}");
-    assert!(
-        CanonicalDocumentRenderer
-            .render_html(&document, &[])
-            .is_err()
-    );
+    assert!(CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .is_err());
 }
 
 #[test]
@@ -1061,12 +1057,10 @@ fn browser_source_preserves_program_mount_before_trailing_effects() {
     let program = CanonicalSourceFrontend
         .compile_document(&activation)
         .unwrap();
-    assert!(
-        program
-            .document_outputs()
-            .iter()
-            .any(|output| output.kind == SourceDocumentOutputKind::Program && output.visible)
-    );
+    assert!(program
+        .document_outputs()
+        .iter()
+        .any(|output| output.kind == SourceDocumentOutputKind::Program && output.visible));
 }
 
 #[test]
@@ -1323,6 +1317,60 @@ fn browser_titles_preserve_lf_and_crlf_source() {
         .unwrap();
     assert!(html.contains("<h1 class='mech-document-title'>Fizz Buzz</h1>"));
     assert!(html.contains("mech-block-output"));
+}
+
+#[test]
+fn ekf_examples_keep_front_matter_imports_out_of_document_chrome() {
+    for source in [
+        include_str!("../../../examples/ekf/localization.mec"),
+        include_str!("../../../examples/working/ekf.mec"),
+    ] {
+        let mut header = String::new();
+        let mut delimiters = 0;
+        let mut imports = 0;
+        let mut fields = Vec::new();
+        for line in source.split_inclusive('\n') {
+            header.push_str(line);
+            let line = line.trim_end_matches(['\r', '\n']);
+            if line.len() >= 3 && line.chars().all(|character| character == '=') {
+                delimiters += 1;
+                if delimiters == 2 {
+                    break;
+                }
+            } else if delimiters == 1 {
+                if line.trim_start().starts_with("+>") {
+                    imports += 1;
+                } else if let Some((key, _)) = line.split_once(':') {
+                    fields.push(key.trim().to_uppercase());
+                }
+            }
+        }
+        assert_eq!(delimiters, 2, "the example must close its title metadata");
+        let document = document(&header);
+        let title = document.title().expect("the authored document title");
+        assert_eq!(
+            title.syntax().text().unwrap().lines().next(),
+            source.lines().next()
+        );
+        assert_eq!(
+            title
+                .front_matter()
+                .expect("title metadata")
+                .imports()
+                .len(),
+            imports
+        );
+        let slots = CanonicalDocumentRenderer
+            .format_browser_html_slots(&document)
+            .unwrap();
+        for field in fields {
+            assert!(slots.contains_key(field.as_str()), "missing {field} slot");
+        }
+        for name in ["INTRO", "CONTENT"] {
+            let body = slots.get(name).map(String::as_str).unwrap_or("");
+            assert!(body.trim().is_empty(), "header leaked into {name}: {body}");
+        }
+    }
 }
 
 #[test]
@@ -1854,6 +1902,47 @@ fn context_source_roles_and_long_capability_rows_survive_canonical_rendering() {
 }
 
 #[test]
+fn long_capability_source_projects_one_preformatted_line_per_row() {
+    let multiline = "@filters := compute://filters/kernel {\n  :read(a),\n  :read(b),\n  :write(c),\n  :write(turn)\n}\n0\n";
+    let compact =
+        "@filters := compute://filters/kernel {:read(a),:read(b),:write(c),:write(turn)}\n0\n";
+    for source in [compact, multiline] {
+        let doc = document(source);
+        for html in [
+            CanonicalDocumentRenderer.format_html(&doc).unwrap(),
+            CanonicalDocumentRenderer
+                .render_repl_source_html(&doc)
+                .unwrap()
+                .unwrap(),
+        ] {
+            let code = html
+                .split_once("<code>")
+                .unwrap()
+                .1
+                .split_once("</code>")
+                .unwrap()
+                .0;
+            let mut in_tag = false;
+            let visible = code
+                .chars()
+                .filter(|character| {
+                    if *character == '<' {
+                        in_tag = true;
+                        false
+                    } else if *character == '>' {
+                        in_tag = false;
+                        false
+                    } else {
+                        !in_tag
+                    }
+                })
+                .collect::<String>();
+            assert_eq!(visible, multiline, "{html}");
+        }
+    }
+}
+
+#[test]
 fn canonical_presentation_repeated_inline_and_fence_addresses_resolve_distinct_values() {
     let source = "~x := 1\n\nFirst {x}.\n\n~~~mech\nx += 1\nx\n~~~\n\nSecond {x}.\n\n~~~mech\nx += 1\nx\n~~~\n";
     let doc = document(source);
@@ -1935,13 +2024,11 @@ fn canonical_source_styles_preserve_atom_matrix_and_table_roles() {
         2,
         "{variables}"
     );
-    assert!(
-        renderer
-            .render_repl_source_html(&document("café := 1\ncafé\n"))
-            .unwrap()
-            .unwrap()
-            .contains("data-mech-var-name='café'")
-    );
+    assert!(renderer
+        .render_repl_source_html(&document("café := 1\ncafé\n"))
+        .unwrap()
+        .unwrap()
+        .contains("data-mech-var-name='café'"));
     for (source, roles) in [
         (
             "status := :ready\n",

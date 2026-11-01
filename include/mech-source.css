@@ -508,6 +508,15 @@
     margin-left: 2ch;
 }
 
+/* Canonical source already supplies capability newlines and indentation.
+ * Keep its role spans inline so the preserved text owns each visual row. */
+:where([data-mech-source]).mech-context-preformatted,
+:where([data-mech-source]) .mech-context-preformatted,
+:where([data-mech-source]).mech-context-preformatted > .mech-context-capability-row,
+:where([data-mech-source]) .mech-context-preformatted > .mech-context-capability-row {
+    display: inline;
+}
+
 :where([data-mech-source]).mech-fsm-specification-header,
 :where([data-mech-source]) .mech-fsm-specification-header {
     display: inline-flex;

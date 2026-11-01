@@ -567,4 +567,10 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn control_frames_keep_unicode_scan_state_indirect() {
+        // Control-only alternatives must not pay for an embedded Unicode scan.
+        assert!(core::mem::size_of::<Frame>() * 2 < core::mem::size_of::<LiteralScan<'static>>());
+    }
 }
