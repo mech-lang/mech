@@ -4153,6 +4153,17 @@
           "files": 73,
           "asset_id": 698517557,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-first-counters-867d6412690c.tar.gz"
+        },
+        {
+          "event": "first-profile",
+          "source_revision": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+          "asset": "r90-first-profile-b27e6b721ebf.tar.gz",
+          "sha256": "b27e6b721ebf5d19b4a368b3e72c4727d78da48ac20d21521d202ebb10f7ecc0",
+          "manifest_sha256": "2901abd06822aa334c1f1724a1d3920670570d1577542913f13958599d8bc927",
+          "bytes": 264711,
+          "files": 43,
+          "asset_id": 698517621,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-first-profile-b27e6b721ebf.tar.gz"
         }
       ]
     }
