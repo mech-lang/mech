@@ -6923,6 +6923,26 @@
         "verified_archives": 17,
         "verified_file_occurrences": 1249
       }
+    },
+    "101": {
+      "base": "c489e5fc30a4e9cea549cc1de66e2c94ab2f9eb9",
+      "production": "af930a97154d8f71b6759540049c55708c8ba035",
+      "compiler_source": "af930a97154d8f71b6759540049c55708c8ba035",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "af930a97154d8f71b6759540049c55708c8ba035",
+          "asset": "r101-initial-ae3d06efe088.tar.gz",
+          "sha256": "ae3d06efe0880313e9d38fa671e651d6244db76ca539004075ff488c71dcf0f4",
+          "manifest_sha256": "2e81bfa60153939a1b35e41db0bfca3f369bf8f039276a86b990bd77e9c4cf7c",
+          "bytes": 51228,
+          "files": 24,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-initial-ae3d06efe088.tar.gz"
+        }
+      ],
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
