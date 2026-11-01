@@ -365,3 +365,54 @@ remain external. Reproduce four reports with `replay-round --round 92` after
 retrieving all hash-verified packets. Raw Object binaries remain local; see the
 [current status](../../docs/design/native-compression-status.md) for scope and
 skipped coverage. The separate suffix-only experiment follows this checkpoint.
+
+
+## R93: ordinary scalar prefix / independently derived native suffix
+
+Candidate `9075392a71ae8ad078c6428e0a827ee57de4e5f7` implements the requested
+split through the same graph partition and fresh frame/numeric/exit proofs.
+The pilot2380–2396 executes natively, but full-call library callbacks528→535.
+Two separate matched cohorts are adverse:8.510311×→8.538823× (+0.335028%) and
+8.737647×→8.783405× (+0.523687%). Instructions−0.234727%, cycles−0.246734%,
+code−424484B and stack−4016B remain favorable contrary evidence; heap stays equal.
+
+Revert `5addc236c` restores the faster R92 source and CI inventory exactly. This
+rejects a measured elapsed regression, not a small positive gain. Three focused
+contracts fail on the clean parent and pass on the candidate; runtime354, CI63,
+image1 and12 linked cases pass. The candidate was rejected before broader scalar,
+component and architecture qualification. Its full patch, failed preparation,
+profiles and all adverse observations remain external. Fresh retrieval verifies
+21 packets/2419 file versions/1642 paths and reproduces four reports exactly.
+Replay with `replay-round --round 93`. IR139/work100 were experiment-only.
+
+## R94: export only exit-consumed native argument words
+
+Base `703128776c9eb44e6da9303fd8bf29ffed796586`; compiler
+`c35698030a4e89f6d4548af1b17762ec737cd427`; initial optimization `7b25ab730`;
+separate CI inventory `3b859a463`. Native exits export the union of reached
+retirement flags and escaping scalar fields. Numeric views/private intermediates
+stay in the existing SSA/local representation. Full argument guard, ordinals,
+all local spills, finite policy99 prices and ordinary fallback stay unchanged.
+IR/work/private ABI/MBC140/99/38/14.
+
+Matched complete eight-byte elapsed8.640209×→8.573384× reference (−0.773422%);
+instructions−0.035224%, cycles−0.266766%; all4 pairs improve,15 adverse blocks
+retained. Requests5781, requested98008140B and live peak17782744B remain equal.
+Code15911648→15641476B; entry stack143488→143424B. Logical work42449879781 and
+Huffman88531834 stay equal. No source/allocator/allowance changes.
+
+All938 actual native entries/exits and other callback counts stay identical.
+Reached word exports11090→5175; static IR exit stores200397→85567 include cold
+paths. The actual ARM64 site699→700 example has20→1 argument STRs with the same
+20-word guard; that particular exit is cold in the eight-byte run. These counts
+are not retired-instruction or elapsed percentages.
+
+Current runtime355, work/memory33, CI64, image1, unchanged components236,
+connected8, path1, linked16+12+12, scalar12 at unchanged1.05, frame8, workflow132
+and architecture15 pass. The original full-bank store loop fails the new emission
+control; poisoning omitted words preserves success/bounds/arithmetic exits,
+publication, aliases and retry. The runtime-only feature gate repair retains
+warnings-as-errors and produces byte-identical final Object/image/metadata.
+Four numerical reports replay without compilation via `replay-round --round 94`.
+Native binaries stay local; retrieved descriptors/excerpts and hash receipts do
+not establish independent Object retrieval. See the [current status](../../docs/design/native-compression-status.md).
