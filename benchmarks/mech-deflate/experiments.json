@@ -6249,7 +6249,7 @@
       "base": "b2b5dc28dc3dc0392cb8dbfa5874ffaff7375dff",
       "production": "1b32af2c7093aeef1c44bbd7e17f048ac71ab593",
       "compiler_source": "1b32af2c7093aeef1c44bbd7e17f048ac71ab593",
-      "decision": "under measurement",
+      "decision": "Rejected and reverted: +0.430449% elapsed and +0.946764% retired instructions; no heap savings. R97 retained.",
       "events": [
         {
           "event": "initial",
@@ -6259,8 +6259,9 @@
           "manifest_sha256": "f7bfb9af72cceff8b9aa1a9533e7d52f2016bfd8cfb128fc0be9ec61def51f84",
           "bytes": 4429288,
           "files": 93,
-          "publication": "local-only; external archive upload rejected by automatic approval review",
-          "local_archive": "/private/tmp/mech-child-seed-round98-20261101/archives/r98-initial-e5c5104b26e4.tar.gz"
+          "publication": "published after explicit approval",
+          "asset_id": 699449023,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r98-initial-e5c5104b26e4.tar.gz"
         },
         {
           "event": "primary-reference",
@@ -6270,8 +6271,9 @@
           "manifest_sha256": "1839a2259d0976a2da58e2bda8dd2ee5a2e647ad238f3386538fb8594b821d8d",
           "bytes": 151205,
           "files": 39,
-          "publication": "local-only; external archive upload rejected by automatic approval review",
-          "local_archive": "/private/tmp/mech-child-seed-round98-20261101/archives/r98-primary-reference-35529ca3352a.tar.gz"
+          "publication": "published after explicit approval",
+          "asset_id": 699449020,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r98-primary-reference-35529ca3352a.tar.gz"
         },
         {
           "event": "primary-group0",
@@ -6281,8 +6283,9 @@
           "manifest_sha256": "296c4cf0dc08e2b8a5acaa9b02b8ee53d6d6d27bb2eddeba30dfb8f2ee756413",
           "bytes": 91851,
           "files": 41,
-          "publication": "local-only; external archive upload rejected by automatic approval review",
-          "local_archive": "/private/tmp/mech-child-seed-round98-20261101/archives/r98-primary-group0-b7a399380666.tar.gz"
+          "publication": "published after explicit approval",
+          "asset_id": 699449019,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r98-primary-group0-b7a399380666.tar.gz"
         },
         {
           "event": "primary-group1",
@@ -6292,8 +6295,9 @@
           "manifest_sha256": "4f7e5352fbe369046c2f4ea3df00002383563dc1f4f0b261c1ba3a7d9b8896df",
           "bytes": 92129,
           "files": 41,
-          "publication": "local-only; external archive upload rejected by automatic approval review",
-          "local_archive": "/private/tmp/mech-child-seed-round98-20261101/archives/r98-primary-group1-64dc615e0c99.tar.gz"
+          "publication": "published after explicit approval",
+          "asset_id": 699449120,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r98-primary-group1-64dc615e0c99.tar.gz"
         },
         {
           "event": "primary-group2",
@@ -6303,8 +6307,9 @@
           "manifest_sha256": "a471ba1a80a47da8fa847ab29eb2bc4114846410673b3f9e12fe4c9ee6103058",
           "bytes": 92174,
           "files": 41,
-          "publication": "local-only; external archive upload rejected by automatic approval review",
-          "local_archive": "/private/tmp/mech-child-seed-round98-20261101/archives/r98-primary-group2-e929cb148125.tar.gz"
+          "publication": "published after explicit approval",
+          "asset_id": 699449124,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r98-primary-group2-e929cb148125.tar.gz"
         },
         {
           "event": "primary-group3",
@@ -6314,8 +6319,9 @@
           "manifest_sha256": "64a47425bf75d25a5cca938809ed22ea131f5debe310145af5afd09b053e678a",
           "bytes": 92039,
           "files": 41,
-          "publication": "local-only; external archive upload rejected by automatic approval review",
-          "local_archive": "/private/tmp/mech-child-seed-round98-20261101/archives/r98-primary-group3-3abdf80663ec.tar.gz"
+          "publication": "published after explicit approval",
+          "asset_id": 699449148,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r98-primary-group3-3abdf80663ec.tar.gz"
         },
         {
           "event": "primary-summary",
@@ -6325,8 +6331,7 @@
           "manifest_sha256": "527d062c6e8f9bf521378222205a1c570aeab14488386c80373abae2564657a7",
           "bytes": 64576,
           "files": 38,
-          "publication": "local-only; external archive upload rejected by automatic approval review",
-          "local_archive": "/private/tmp/mech-child-seed-round98-20261101/archives/r98-primary-summary-bdf83523a983.tar.gz",
+          "publication": "published after explicit approval",
           "timing": {
             "primary_observations": 3968,
             "reference_seconds": 0.000288,
@@ -6342,7 +6347,9 @@
             "improving_groups": 1,
             "improving_blocks": 21,
             "adverse_blocks": 43
-          }
+          },
+          "asset_id": 699449160,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r98-primary-summary-bdf83523a983.tar.gz"
         },
         {
           "event": "counters",
@@ -6352,8 +6359,9 @@
           "manifest_sha256": "7b5fea3d566ef58871ba72c02e22263bee538e9c835a60cefbd26388d2729534",
           "bytes": 264172,
           "files": 75,
-          "publication": "local-only; external archive upload rejected by automatic approval review",
-          "local_archive": "/private/tmp/mech-child-seed-round98-20261101/archives/r98-counters-96a876add494.tar.gz"
+          "publication": "published after explicit approval",
+          "asset_id": 699449170,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r98-counters-96a876add494.tar.gz"
         },
         {
           "event": "isolated-profile",
@@ -6363,8 +6371,9 @@
           "manifest_sha256": "84a46263b15ead274c9cd7985208f9420c315377893e0ad5e802d2264c38b969",
           "bytes": 269220,
           "files": 45,
-          "publication": "local-only; external archive upload rejected by automatic approval review",
-          "local_archive": "/private/tmp/mech-child-seed-round98-20261101/archives/r98-isolated-profile-773485e3a9b3.tar.gz"
+          "publication": "published after explicit approval",
+          "asset_id": 699449178,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r98-isolated-profile-773485e3a9b3.tar.gz"
         },
         {
           "event": "seed-trace",
@@ -6374,8 +6383,9 @@
           "manifest_sha256": "b2470ccd51f14883ebd9c883eb3910e9c05255d94e4ca2f85a100af0358c58b3",
           "bytes": 83999,
           "files": 47,
-          "publication": "local-only; external archive upload rejected by automatic approval review",
-          "local_archive": "/private/tmp/mech-child-seed-round98-20261101/archives/r98-seed-trace-6a286a06cbc6.tar.gz"
+          "publication": "published after explicit approval",
+          "asset_id": 699449190,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r98-seed-trace-6a286a06cbc6.tar.gz"
         },
         {
           "event": "seed-trace-after",
@@ -6385,8 +6395,9 @@
           "manifest_sha256": "8b7147dda799126ef9a169ad9fcccea23a8f0257be24e61a2196fdb9dfb6433f",
           "bytes": 83126,
           "files": 47,
-          "publication": "local-only; external archive upload rejected by automatic approval review",
-          "local_archive": "/private/tmp/mech-child-seed-round98-20261101/archives/r98-seed-trace-after-8061ecf65051.tar.gz"
+          "publication": "published after explicit approval",
+          "asset_id": 699449197,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r98-seed-trace-after-8061ecf65051.tar.gz"
         },
         {
           "event": "closure",
@@ -6396,11 +6407,22 @@
           "manifest_sha256": "97985422392eb4e2f9029efc708f364292a479105ce5d3b7b0bd493c3f57d53d",
           "bytes": 4411725,
           "files": 60,
-          "publication": "local-only; external archive upload rejected by automatic approval review",
-          "local_archive": "/private/tmp/mech-child-seed-round98-20261101/archives/r98-closure-d5ae620b76f0.tar.gz"
+          "publication": "published after explicit approval",
+          "asset_id": 699449199,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r98-closure-d5ae620b76f0.tar.gz"
         }
       ],
-      "archive_publication": "local-only pending archive approval"
+      "archive_publication": "Published exact twelve archives after explicit user approval; initial automatic upload rejection retained in evidence.",
+      "revert_commit": "77b09545384ce82a7e4636f9cc0a5755f1169636",
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "scorecard.json": "a72a8dcda4964242d8ea6758a9d231d1903a2ca789482dc01ef09bbe8eb7246b",
+          "mechanism.json": "11d17ae85905bbaed76bb07e62d572ac878deda9b4f4fb7ff4689ae58dca01a5",
+          "validation.json": "dca28f1e4cecf7bd82a579012c4f0ab03aeb1d2131c71ee455811db6db059eb1",
+          "profile-numbers.json": "f546072a1747ee2322e0ca9bfaa760a5fbcd164d5febb915e2b40cb0ad8fd002"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
