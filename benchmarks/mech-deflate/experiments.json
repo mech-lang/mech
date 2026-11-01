@@ -822,6 +822,17 @@
           "files": 68,
           "asset_id": 697480959,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r81-counters-32341846d09a.tar.gz"
+        },
+        {
+          "event": "linked-multi",
+          "source_revision": "c29854f6f1f404658c39bcb024296b01ec80a71d",
+          "asset": "r81-linked-multi-21986c8fa706.tar.gz",
+          "sha256": "21986c8fa7066711b0977414f30f9bb39debffa59a366130f3acc33bc1e109e2",
+          "manifest_sha256": "68d66d05c2a21628f2e8f1c350377e53877a9e57b6048db945070d649538267d",
+          "bytes": 95813,
+          "files": 50,
+          "asset_id": 697499224,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r81-linked-multi-21986c8fa706.tar.gz"
         }
       ]
     }
