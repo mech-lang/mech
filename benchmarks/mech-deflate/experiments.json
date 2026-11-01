@@ -4949,6 +4949,17 @@
           "files": 36,
           "asset_id": 698725869,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-pinned-inputs-ff8a91a57575.tar.gz"
+        },
+        {
+          "event": "initial",
+          "source_revision": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
+          "asset": "r92-initial-373d02f57dc5.tar.gz",
+          "sha256": "373d02f57dc56b5d8e7bdc85c5a2412373822bd309d0666fe0254010f9fb3e1e",
+          "manifest_sha256": "dbbcf3ae9d25af9303a6ea4d481688aece8d9d5ca31d2bfc84726ba512f97d44",
+          "bytes": 8647151,
+          "files": 67,
+          "asset_id": 698726201,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-initial-373d02f57dc5.tar.gz"
         }
       ]
     }
