@@ -5381,7 +5381,7 @@
       "base": "8ba374968f1cc240b49ec81eb9cd359e240c862c",
       "production": "9075392a71ae8ad078c6428e0a827ee57de4e5f7",
       "compiler_source": "9075392a71ae8ad078c6428e0a827ee57de4e5f7",
-      "decision": "under measurement",
+      "decision": "rejected: two slower elapsed cohorts despite a small instruction/code/stack reduction; retained R92 restored in 5addc236c",
       "events": [
         {
           "event": "initial",
@@ -5646,7 +5646,23 @@
           "asset_id": 698896526,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r93-analysis-c736161d9087.tar.gz"
         }
-      ]
+      ],
+      "retained_production": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
+      "versions": [
+        139,
+        100,
+        38,
+        14
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "scorecard.json": "1762fc6c8a5269330afe37528c423626da22f9d5e6c917ba79bd71f5ccfae25f",
+          "mechanism.json": "ac845b20b3779481c5b14a5fe9e361fe801f8867a5075695c1977c6a85e19916",
+          "validation.json": "a7620368297fba2c62c9a37995b5ff333a45244764748a288d34bd65e6258cbb",
+          "profile-numbers.json": "975a051d0912445078cd7b8894ba96d801a27e53063b9c3fefeeaab96424a569"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
