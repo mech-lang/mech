@@ -270,7 +270,9 @@ fn selected_template(
 // semantic consumer. Images rederive the exact constant ownership bounds.
 // IR140 exports only independently derived exit-consumed parent argument words.
 // Slot ordinals, full capacity checks, local spills and conservative prices stay.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 140;
+// IR141 initializes private parent scratch directly from checked arguments and
+// spills only source homes. Exit exports, capacity guards and prices stay.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 141;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

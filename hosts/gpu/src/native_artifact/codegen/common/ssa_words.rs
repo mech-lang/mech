@@ -17,6 +17,20 @@ impl Words {
         code: CodePlan<'_>,
         slots: BTreeSet<usize>,
     ) -> Result<Self, NativeCompileError> {
+        Self::new_with(b, locals, code, slots, |_, _| Ok(None))
+    }
+    /// Initialize private SSA inputs without first publishing them to source
+    /// homes. Ordinary source slots keep the same constant/local initialization.
+    pub(in crate::native_artifact) fn new_with(
+        b: &mut FunctionBuilder<'_>,
+        locals: Value,
+        code: CodePlan<'_>,
+        slots: BTreeSet<usize>,
+        mut initial: impl FnMut(
+            &mut FunctionBuilder<'_>,
+            usize,
+        ) -> Result<Option<Value>, NativeCompileError>,
+    ) -> Result<Self, NativeCompileError> {
         let constants = (0..code.constant_count())
             .map(|index| code.constant(index))
             .collect::<Result<Vec<_>, _>>()?
@@ -26,7 +40,9 @@ impl Words {
         let mut variables = BTreeMap::new();
         for slot in slots {
             let variable = b.declare_var(types::I64);
-            let value = if let Some(&word) = constants.get(&slot) {
+            let value = if let Some(value) = initial(b, slot)? {
+                value
+            } else if let Some(&word) = constants.get(&slot) {
                 b.ins().iconst(types::I64, word as i64)
             } else {
                 b.ins()

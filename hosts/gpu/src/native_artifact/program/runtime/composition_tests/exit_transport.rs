@@ -21,6 +21,15 @@ fn native_exit_store_inventory_omits_views_and_private_fields() {
                 .unwrap();
             let proof = segment.numeric.as_ref().unwrap();
             let frames = segment.frame_plan.as_ref().unwrap();
+            let source_homes = row["source_home_words"].as_u64().unwrap() as usize;
+            assert_eq!(
+                row["private_scratch_words"].as_u64().unwrap() as usize,
+                proof.words
+            );
+            assert_eq!(
+                row["register_words"].as_u64().unwrap() as usize,
+                source_homes + proof.words
+            );
             let words = row["exit_argument_words"]
                 .as_array()
                 .unwrap()
@@ -92,6 +101,11 @@ fn unused_exit_words_cannot_affect_current_results_errors_or_recovery() {
                 assert!(
                     observed.poisoned_exit_words > 0,
                     "the witness must exercise omitted words"
+                );
+                assert!(observed.poisoned_private_homes > 0);
+                assert_eq!(
+                    observed.checked_private_homes,
+                    observed.poisoned_private_homes
                 );
                 modes.extend(observed.exit_modes.keys().copied());
                 if let Some((index, name)) = failure {
