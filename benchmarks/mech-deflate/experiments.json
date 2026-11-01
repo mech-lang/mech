@@ -6938,8 +6938,8 @@
           "manifest_sha256": "2e81bfa60153939a1b35e41db0bfca3f369bf8f039276a86b990bd77e9c4cf7c",
           "bytes": 51228,
           "files": 24,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-initial-ae3d06efe088.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r101-initial-ae3d06efe088.tar.gz"
         },
         {
           "event": "primary-reference",
@@ -6949,8 +6949,8 @@
           "manifest_sha256": "fe66ac36c3e015c8b9d641cfdf6e64583adfc626a026090f31d19a53f7396e47",
           "bytes": 194101,
           "files": 40,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-primary-reference-d84f37a83f36.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r101-primary-reference-d84f37a83f36.tar.gz"
         },
         {
           "event": "primary-group0",
@@ -6960,8 +6960,8 @@
           "manifest_sha256": "ae3156453448fa98c0d1772cd5c8d438241afe9abd2d7fd3aa44d3995d79e94c",
           "bytes": 136424,
           "files": 42,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-primary-group0-25713235a0c9.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r101-primary-group0-25713235a0c9.tar.gz"
         },
         {
           "event": "primary-group1",
@@ -6971,8 +6971,8 @@
           "manifest_sha256": "9fee16757e6c4810ea9e3d469fab93d0f5e26d3e4116186f765a149b0ac4319e",
           "bytes": 136275,
           "files": 42,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-primary-group1-f978c5f01f51.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r101-primary-group1-f978c5f01f51.tar.gz"
         },
         {
           "event": "primary-group2",
@@ -6982,8 +6982,8 @@
           "manifest_sha256": "df139c20744feccbb002e74c95c8dcba8034b9b307ab1615b8894b300b6a19a1",
           "bytes": 136624,
           "files": 42,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-primary-group2-2a05c88bded2.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r101-primary-group2-2a05c88bded2.tar.gz"
         },
         {
           "event": "primary-group3",
@@ -6993,8 +6993,8 @@
           "manifest_sha256": "e750650f6ad58e7317dd12ec991e44304bf0ec247eadc57052fcbbc2d58657b3",
           "bytes": 136358,
           "files": 42,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-primary-group3-109fee4b10ff.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r101-primary-group3-109fee4b10ff.tar.gz"
         },
         {
           "event": "primary-summary",
@@ -7004,8 +7004,7 @@
           "manifest_sha256": "f8348d32abf9aca0c97e527e5806289de2d6e90862911bd90e0bab09178e53b2",
           "bytes": 108212,
           "files": 39,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-primary-summary-9a3b2fb47f5d.tar.gz",
+          "publication": "published; server SHA-256 verified",
           "timing": {
             "primary_observations": 3968,
             "reference_seconds": 0.000286,
@@ -7021,7 +7020,8 @@
             "improving_groups": 0,
             "improving_blocks": 21,
             "adverse_blocks": 43
-          }
+          },
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r101-primary-summary-9a3b2fb47f5d.tar.gz"
         },
         {
           "event": "counters",
@@ -7031,8 +7031,8 @@
           "manifest_sha256": "dfa418ee0ccd9952987dbe6dde7b8b1a497a681db63f8d2ad2b6e6cb9e8364ab",
           "bytes": 308306,
           "files": 76,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-counters-7e3aad38f7de.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r101-counters-7e3aad38f7de.tar.gz"
         },
         {
           "event": "isolated-profile",
@@ -7042,8 +7042,8 @@
           "manifest_sha256": "3e44f642d6f5c066d8dc3221e174cd55d887730827cc386b447bf766e180daaf",
           "bytes": 316855,
           "files": 46,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-isolated-profile-c1343158ad03.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r101-isolated-profile-c1343158ad03.tar.gz"
         },
         {
           "event": "closure",
@@ -7053,11 +7053,11 @@
           "manifest_sha256": "3f1d82df463f44434af61f945ec834125813ffc8ee3b039f2c2bdc612372f8a0",
           "bytes": 8886691,
           "files": 106,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-closure-d6960109a534.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r101-closure-d6960109a534.tar.gz"
         }
       ],
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "restoration": {
         "commit": "e6d215ad6dfa6f24b3594fbe568189d0d28aa6f6",
         "retained_source": "bebe5a245d312796c630de76fc558fbcd2c2f2ff",
