@@ -6566,6 +6566,17 @@
           "files": 99,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-scalar-controls-e90f4f513b05.tar.gz"
+        },
+        {
+          "event": "frame-allocation",
+          "source_revision": "5c219ed220879b05ee147bdf5d3f85680311eae2",
+          "asset": "r99-frame-allocation-687939ccf967.tar.gz",
+          "sha256": "687939ccf967a4ab6c65a7de591d5bcb1118802915ec547c4c162d475a62eee1",
+          "manifest_sha256": "6fad4ae3745f225d4f55b6758d081caceeac862383447f4d6697cf6b6f3bc065",
+          "bytes": 121163,
+          "files": 77,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-frame-allocation-687939ccf967.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
