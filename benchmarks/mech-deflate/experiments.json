@@ -3719,6 +3719,17 @@
           "files": 799,
           "asset_id": 698214754,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-callback-census-bcc9f9e181a6.tar.gz"
+        },
+        {
+          "event": "final-checks-formatting-failure",
+          "source_revision": "460c9cb748fc377c1cbcfd57565a5373de05de14",
+          "asset": "r89-final-checks-formatting-failure-5e3374f76163.tar.gz",
+          "sha256": "5e3374f76163d53fd917e5d0aadeb9201949a0a26d26a73707edef40c7438c0a",
+          "manifest_sha256": "83f63913e4d3915a58fea059e776f325a59d1ca7372637270ef6a3b47536e43f",
+          "bytes": 59211,
+          "files": 60,
+          "asset_id": 698222407,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-final-checks-formatting-failure-5e3374f76163.tar.gz"
         }
       ]
     }
