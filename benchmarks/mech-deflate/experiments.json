@@ -1233,12 +1233,12 @@
     },
     "83": {
       "base": "3831952d49a2f2d762f33e87dadc8f29349fc9d9",
-      "production": "5a00d5768323af744c938f315012de940433dcb0",
-      "compiler_source": "5a00d5768323af744c938f315012de940433dcb0",
-      "decision": "under measurement",
+      "production": "c0b5999f434650df9ff7fef6dc2c9f4c40d4fc42",
+      "compiler_source": "c0b5999f434650df9ff7fef6dc2c9f4c40d4fc42",
+      "decision": "under measurement: direct R82 and retained R81 comparisons predeclared; initial None-only guard was untimed and corrected from census evidence",
       "events": [
         {
-          "event": "linked-multi",
+          "event": "untimed-none-guard-linked-multi",
           "source_revision": "5a00d5768323af744c938f315012de940433dcb0",
           "asset": "r83-linked-multi-6a256faa6948.tar.gz",
           "sha256": "6a256faa69489b8a7f4005c11ce5fd7fae6f677f0c4d46d07b638c2c73c44fa2",
@@ -1247,6 +1247,17 @@
           "files": 41,
           "asset_id": 697676156,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-linked-multi-6a256faa6948.tar.gz"
+        },
+        {
+          "event": "initial",
+          "source_revision": "c0b5999f434650df9ff7fef6dc2c9f4c40d4fc42",
+          "asset": "r83-initial-ffb70e4861db.tar.gz",
+          "sha256": "ffb70e4861db3777bbe95dda89d0b04cda6ac996b8d8b2338ab168cae0507376",
+          "manifest_sha256": "02f918656a8d5520716a541c82918704b391f872ac3d0cf84d2853919d1227e1",
+          "bytes": 8337023,
+          "files": 60,
+          "asset_id": 697697141,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-initial-ffb70e4861db.tar.gz"
         }
       ]
     }
