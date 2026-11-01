@@ -1,0 +1,321 @@
+#!/usr/bin/env python3
+"""Archive, retrieve, replay and measure native-compression experiments.
+
+Raw evidence belongs in the ignored .experiments directory or external storage.
+Only the compact index and hash-addressed archive receipts belong in source Git.
+Historical scripts remain in the verified archives; this is the maintained entry.
+"""
+
+import argparse
+import gzip
+import hashlib
+import io
+import itertools
+import json
+import os
+from pathlib import Path, PurePosixPath
+import select
+import statistics
+import subprocess
+import sys
+import tarfile
+
+
+RESULTS = "benchmarks/mech-deflate/results/"
+
+
+def sha256(path):
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def write_json(path, value):
+    path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
+
+
+def git(root, *args):
+    return subprocess.check_output(["git", *args], cwd=root)
+
+
+def safe_path(value):
+    path = PurePosixPath(value)
+    if path.is_absolute() or ".." in path.parts or str(path) != value:
+        raise ValueError(f"unsafe archive path: {value}")
+    return path
+
+
+def pack(args):
+    root = args.root.resolve()
+    revision = git(root, "rev-parse", args.revision).decode().strip()
+    records = []
+    tracked = git(root, "ls-tree", "-r", "-z", revision).split(b"\0")
+    if args.input:
+        root = args.input.resolve()
+        if args.output.resolve().is_relative_to(root):
+            raise ValueError("archive output must be outside its input directory")
+        tracked = []
+        for path in sorted(root.rglob("*")):
+            if path.is_symlink():
+                raise ValueError(f"raw evidence must contain regular files: {path}")
+            if not path.is_file():
+                continue
+            data = path.read_bytes()
+            blob = hashlib.sha1(f"blob {len(data)}\0".encode() + data).hexdigest()
+            mode = "100755" if path.stat().st_mode & 0o111 else "100644"
+            tracked.append(f"{mode} blob {blob}\t{path.relative_to(root).as_posix()}".encode())
+    for row in tracked:
+        if not row:
+            continue
+        metadata, name = row.split(b"\t", 1)
+        mode, kind, blob = metadata.decode().split()
+        path = name.decode()
+        license_file = Path(path).name.upper().startswith(("LICENSE", "NOTICE", "COPYING"))
+        if not args.input and not path.startswith(RESULTS) and not license_file:
+            continue
+        safe_path(path)
+        if kind != "blob" or mode not in {"100644", "100755"}:
+            raise ValueError(f"unsupported archive entry: {mode} {path}")
+        data = (root / path).read_bytes()
+        actual_blob = hashlib.sha1(f"blob {len(data)}\0".encode() + data).hexdigest()
+        if actual_blob != blob:
+            raise ValueError(f"working file differs from {revision}: {path}")
+        records.append({"path": path, "bytes": len(data), "git_blob": blob,
+                        "sha256": hashlib.sha256(data).hexdigest(), "mode": mode})
+    if not records or (not args.input and not any(row["path"].startswith(RESULTS) for row in records)):
+        raise ValueError("no tracked historical evidence found")
+    manifest = {"format": 1, "source_revision": revision,
+                "evidence_root": "." if args.input else RESULTS.rstrip("/"), "files": records,
+                "file_count": len(records), "bytes": sum(row["bytes"] for row in records)}
+    encoded = (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode()
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    with args.output.open("xb") as output:
+        with gzip.GzipFile(filename="", mode="wb", fileobj=output, mtime=0, compresslevel=1) as compressed:
+            with tarfile.open(fileobj=compressed, mode="w|") as archive:
+                def add(name, data, mode=0o644):
+                    entry = tarfile.TarInfo(name)
+                    entry.size, entry.mode, entry.mtime = len(data), mode, 0
+                    archive.addfile(entry, io.BytesIO(data))
+                add("MANIFEST.json", encoded)
+                for row in records:
+                    add(row["path"], (root / row["path"]).read_bytes(), int(row["mode"], 8) & 0o777)
+    receipt = {"format": 1, "source_revision": revision,
+               "archive_name": args.output.name, "bytes": args.output.stat().st_size,
+               "sha256": sha256(args.output), "manifest_sha256": hashlib.sha256(encoded).hexdigest(),
+               "files": len(records), "uncompressed_bytes": manifest["bytes"],
+               "evidence_files": len(records) if args.input else sum(row["path"].startswith(RESULTS) for row in records)}
+    write_json(args.output.with_suffix(args.output.suffix + ".json"), receipt)
+    print(json.dumps(receipt, indent=2))
+
+
+def verify(args):
+    receipt = json.loads(args.receipt.read_text())
+    if args.archive.stat().st_size != receipt["bytes"] or sha256(args.archive) != receipt["sha256"]:
+        raise ValueError("archive size or SHA-256 mismatch")
+    if args.extract:
+        args.extract.mkdir(parents=True, exist_ok=False)
+    seen, checked, total = set(), 0, 0
+    with tarfile.open(args.archive, "r|gz") as archive:
+        first = archive.next()
+        if first is None or first.name != "MANIFEST.json" or not first.isfile():
+            raise ValueError("archive must start with MANIFEST.json")
+        encoded = archive.extractfile(first).read()
+        if hashlib.sha256(encoded).hexdigest() != receipt["manifest_sha256"]:
+            raise ValueError("manifest SHA-256 mismatch")
+        manifest = json.loads(encoded)
+        if manifest["source_revision"] != receipt["source_revision"]:
+            raise ValueError("manifest source revision mismatch")
+        expected = {row["path"]: row for row in manifest["files"]}
+        if len(expected) != len(manifest["files"]):
+            raise ValueError("duplicate manifest entries")
+        if args.extract:
+            (args.extract / "MANIFEST.json").write_bytes(encoded)
+        for member in iter(archive.next, None):
+            safe_path(member.name)
+            if not member.isfile() or member.name not in expected or member.name in seen:
+                raise ValueError(f"unexpected archive entry: {member.name}")
+            row = expected[member.name]
+            data = archive.extractfile(member).read()
+            blob = hashlib.sha1(f"blob {len(data)}\0".encode() + data).hexdigest()
+            if (len(data), hashlib.sha256(data).hexdigest(), blob) != (row["bytes"], row["sha256"], row["git_blob"]):
+                raise ValueError(f"content mismatch: {member.name}")
+            if member.mode != int(row["mode"], 8) & 0o777:
+                raise ValueError(f"mode mismatch: {member.name}")
+            if args.extract:
+                target = args.extract / member.name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(data)
+                target.chmod(member.mode)
+            seen.add(member.name)
+            checked += 1
+            total += len(data)
+    if seen != set(expected) or (checked, total) != (manifest["file_count"], manifest["bytes"]):
+        raise ValueError("incomplete evidence archive")
+    result = {"archive_sha256": receipt["sha256"], "source_revision": receipt["source_revision"],
+              "verified_files": checked, "verified_bytes": total, "all_git_blobs_match": True}
+    if args.result:
+        write_json(args.result, result)
+    print(json.dumps(result, indent=2))
+
+
+def fetch(args):
+    receipt = json.loads(args.receipt.read_text())
+    args.output.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["gh", "release", "download", receipt["release_tag"], "--repo", receipt["repository"],
+                    "--pattern", receipt["archive_name"], "--dir", str(args.output)], check=True)
+    args.archive = args.output / receipt["archive_name"]
+    args.extract = args.result = None
+    verify(args)
+
+
+def replay(args):
+    args.output.mkdir(parents=True, exist_ok=False)
+    result = {}
+    for number in args.rounds:
+        matches = list(args.evidence.glob(f"{RESULTS}**/compression-round-{number:02d}/reconstruct.py"))
+        if len(matches) != 1:
+            raise ValueError(f"expected exactly one replay for round {number}: {matches}")
+        completed = subprocess.run([sys.executable, str(matches[0].resolve()),
+                                    str((args.output / f"round-{number:02d}").resolve())],
+                                   capture_output=True, text=True)
+        (args.output / f"round-{number:02d}.stdout").write_text(completed.stdout)
+        (args.output / f"round-{number:02d}.stderr").write_text(completed.stderr)
+        completed.check_returncode()
+        result[str(number)] = json.loads(completed.stdout)
+        print(f"round {number}: {len(result[str(number)]['byte_identical_outputs'])} byte-identical outputs", flush=True)
+    write_json(args.output / "replay.json", result)
+
+
+def measure(args):
+    """The existing linked-worker protocol; preparation and cleanup stay outside evaluate_into."""
+    spec = json.loads(args.spec.read_text())
+    args.output.mkdir(parents=True, exist_ok=False)
+    for pin in spec["pins"]:
+        if sha256(Path(pin["path"])) != pin["sha256"]:
+            raise ValueError(f"input pin mismatch: {pin['path']}")
+    labels = ("before", "after")
+    groups = spec.get("groups", 4)
+    blocks = spec.get("blocks", 16)
+    samples = spec.get("samples", 31)
+    orders = list(itertools.permutations(labels))
+    write_json(args.output / "spec.json", spec)
+    summaries = []
+    for group in range(groups):
+        directory = args.output / f"group{group}"
+        directory.mkdir()
+        workers = {}
+        receipt = {"group": group, "blocks": [], "all_observations": {label: [] for label in labels}}
+        def request(label):
+            process, journal, _ = workers[label]
+            process.stdin.write("N")
+            process.stdin.flush()
+            while not select.select([process.stdout], [], [], 30)[0]:
+                if process.poll() is not None:
+                    raise RuntimeError(f"{label} exited before its observation")
+                print(f"waiting for {label} observation", flush=True)
+            line = process.stdout.readline()
+            journal.write(line)
+            journal.flush()
+            row = json.loads(line)
+            for key, expected in spec["expected"][label].items():
+                if row[key] != expected:
+                    raise ValueError(f"{label} {key}: {row[key]} != {expected}")
+            receipt["all_observations"][label].append(row)
+            return row
+        try:
+            for label in orders[group % 2]:
+                journal = (directory / f"{label}.stdout").open("w")
+                error = (directory / f"{label}.stderr").open("w")
+                process = subprocess.Popen(spec["commands"][label], stdin=subprocess.PIPE,
+                                           stdout=subprocess.PIPE, stderr=error, text=True, bufsize=1,
+                                           env={**os.environ, "MECH_BENCH_SESSION": "1"})
+                workers[label] = process, journal, error
+                while not select.select([process.stdout], [], [], 30)[0]:
+                    if process.poll() is not None:
+                        raise RuntimeError(f"{label} exited during preparation")
+                    print(f"preparing {label}", flush=True)
+                ready = process.stdout.readline()
+                journal.write(ready)
+                journal.flush()
+                if ready != "SESSION_READY\n":
+                    raise ValueError(f"unexpected {label} greeting: {ready}")
+            for label in orders[group % 2]:
+                if not request(label)["warmup"]:
+                    raise ValueError("missing disclosed warmup")
+            for block in range(blocks):
+                values = {}
+                order = orders[(block + group) % 2]
+                for label in order:
+                    rows = [request(label) for _ in range(samples)]
+                    if any(row["warmup"] or row["profile"] for row in rows):
+                        raise ValueError("nonprimary observation in primary block")
+                    values[label] = statistics.median(row["seconds"] for row in rows)
+                receipt["blocks"].append({"block": block, "order": order, "medians": values,
+                                           "after_over_before": values["after"] / values["before"]})
+                write_json(directory / "results.json", receipt)
+            for label in reversed(orders[group % 2]):
+                if not request(label)["profile"]:
+                    raise ValueError("missing untimed profile observation")
+            for label, (process, journal, error) in workers.items():
+                process.stdin.close()
+                if process.wait() != 0:
+                    raise RuntimeError(f"{label} failed during cleanup")
+                journal.close()
+                error.close()
+                if not (directory / f"{label}.stderr").read_text().endswith("CLEANUP bytes=0 nodes=0\n"):
+                    raise ValueError("incomplete managed cleanup")
+        except BaseException as failure:
+            receipt["failure"] = repr(failure)
+            raise
+        finally:
+            for process, journal, error in workers.values():
+                if process.poll() is None:
+                    process.terminate()
+                    process.wait()
+                journal.close()
+                error.close()
+            write_json(directory / "results.json", receipt)
+        medians = {label: statistics.median(row["seconds"] for row in receipt["all_observations"][label]
+                                           if not row["warmup"] and not row["profile"]) for label in labels}
+        summaries.append({"group": group, "medians": medians,
+                          "after_over_before": medians["after"] / medians["before"]})
+        print(json.dumps(summaries[-1]), flush=True)
+    write_json(args.output / "groups.json", summaries)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest="command", required=True)
+    command = commands.add_parser("pack", help="archive tracked evidence and licenses at an exact source revision")
+    command.add_argument("--root", type=Path, default=Path.cwd())
+    command.add_argument("--revision", default="HEAD")
+    command.add_argument("--input", type=Path, help="seal a new raw packet instead of tracked historical evidence")
+    command.add_argument("--output", type=Path, required=True)
+    command.set_defaults(run=pack)
+    command = commands.add_parser("verify", help="verify every file, Git blob and archive hash; optionally extract")
+    command.add_argument("archive", type=Path)
+    command.add_argument("--receipt", type=Path, required=True)
+    command.add_argument("--extract", type=Path)
+    command.add_argument("--result", type=Path)
+    command.set_defaults(run=verify)
+    command = commands.add_parser("fetch", help="retrieve the pinned external release asset and verify it")
+    command.add_argument("--receipt", type=Path, required=True)
+    command.add_argument("--output", type=Path, required=True)
+    command.set_defaults(run=fetch)
+    command = commands.add_parser("replay", help="reconstruct historical packets without compiling or compressing")
+    command.add_argument("evidence", type=Path)
+    command.add_argument("--rounds", type=int, nargs="+", default=[76, 77, 78])
+    command.add_argument("--output", type=Path, required=True)
+    command.set_defaults(run=replay)
+    command = commands.add_parser("measure", help="run balanced linked workers with all observations retained")
+    command.add_argument("--spec", type=Path, required=True)
+    command.add_argument("--output", type=Path, required=True)
+    command.set_defaults(run=measure)
+    args = parser.parse_args()
+    args.run(args)
+
+
+if __name__ == "__main__":
+    main()

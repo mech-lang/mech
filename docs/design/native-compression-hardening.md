@@ -1,5 +1,9 @@
 # Native compression hardening work log
 
+This is a historical implementation/work log. The current result and next work
+are owned by [native-compression-status.md](native-compression-status.md). Historical
+receipt paths below refer to the verified external evidence bundle.
+
 Baseline: `48911f96183db8ac804503a0c894b054d629382d`, fetched and verified
 against PR #973 before implementation. Parent: #939 at
 `eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`. The retained stack remains
@@ -24,8 +28,8 @@ The pinned reference implementation is `671077457ff7ef3a3d44caf715a3fc595addf379
 its compiler is `d99c7b838fb05bb1047eb0c18d4d06d0f86f345d`.
 
 Historical complete-stream, block-transition, and window-transition results
-are recorded in the [complete qualification](../../benchmarks/mech-deflate/results/2026-10-27-complete-compression/requirement.md)
-and [boundary qualification](../../benchmarks/mech-deflate/results/2026-10-27-boundary-compression/requirement.md).
+are recorded in the [complete qualification](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-27-complete-compression/requirement.md` in the external bundle)
+and [boundary qualification](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-27-boundary-compression/requirement.md` in the external bundle).
 The completed 16384-byte and 33027-byte runs used saved-decoded artifacts and
 NoLimits. Their original/decoded manual boundary test did not complete. The
 full-corpus attempt was cancelled without a result. Multiple slides, full-corpus
@@ -115,7 +119,7 @@ three and five for all four unsigned widths. Regressions also cover exact copy
 and output caps, unchanged prior publication, failure after completed collection
 construction, input aliases, retry, and zero managed bytes/nodes after cleanup.
 Commands, complete output, and unsuccessful development attempts are preserved
-in [the hardening receipts](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/).
+in [the hardening receipts](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening` in the external bundle).
 
 An initial test used narrow addition unnecessarily. Its decoded artifact lacks
 a lowering witness (`MissingSemanticWitness`); the collection-runtime changes
@@ -234,7 +238,7 @@ bytes, SHA-256 `345324ce551aaa2485dcd0fe4262da96e660d6b31f5f772bff89b034e9b1997f
 The pin has an ordinary Rust regression as well as the recorded byte comparison.
 Public finite-policy execution remains pending.
 
-The earlier [native profiles](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/profiling/REPORT.md)
+The earlier [native profiles](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/profiling/REPORT.md` in the external bundle)
 are retained separately from fresh compiler qualification and the declared
 frame comparison. They establish generic indexed-copy and budget-traversal
 costs without assigning all complete-compressor cost to frames.
@@ -265,7 +269,7 @@ Its optimized executable is SHA-256
 The exact probe source remains unchanged from the saved baseline. The
 predeclared balanced comparison passed every gate on its first cohort. No
 observation was discarded and no failed cohort was rerun. The complete
-[observations and executable/source manifests](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/frame-comparison/)
+[observations and executable/source manifests](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/frame-comparison` in the external bundle)
 are retained.
 
 At 64 visits, original/decoded exclusive frames drop from 4578 requests and
@@ -320,7 +324,7 @@ Both linked executables run the eight-literal input with exact bytes,
 independent decompression and complete managed cleanup under finite launch
 policy. This qualifies one deployed small case per form; it does not qualify
 the other eight small cases or final-head block/window/full-corpus execution.
-The [public-path report](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/public-application/REPORT.md)
+The [public-path report](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/public-application/REPORT.md` in the external bundle)
 retains build/run commands, hashes, source-generation times, successful
 executions and failed attempts. No compiler stack fix was necessary for the
 tested public entry points.
@@ -330,7 +334,7 @@ component/capability/owner map, recursion boundary, corrected narrow-operation
 scope and outstanding qualification gates. Historical receipts are preserved.
 
 Small complete-compression timing is recorded in
-[`af77b28409414b2d61e30ace29c98a37f152ff48`](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-01/REPORT.md).
+[`af77b28409414b2d61e30ace29c98a37f152ff48`](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-01/REPORT.md` in the external bundle).
 With Roc = 1×, that matched-allocator, uninstrumented baseline is 5756×.
 The corrected matching-System/instrumentation before/after control in
 `3465e13cf3263a047b0c158eab7a9d3d15c99ebb` is 8659× → 6599×. Allocator and
@@ -342,7 +346,7 @@ components remain byte-identical, and no long campaign was restarted.
 Protocol `e0b6b18c60ed6b244263227f97b6cbe0c2a9eeba` precedes implementation
 `335de1c16743343fa6745d7ed2e638f6f1626fa9`; timing and profile were committed
 as `0c2ed38dd037bd23aed8fc2f5d78a42b7d3f562b`. The
-[round 02 report](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-02/REPORT.md)
+[round 02 report](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-02/REPORT.md` in the external bundle)
 retains exact executable/source/allocator hashes and all observations.
 
 A proven single-destination, single-source packed unsigned assignment can
@@ -390,7 +394,7 @@ retaining the compiler/runtime feature configuration and scalar controls.
 The first selected build completes in 990.50 seconds; the full build was
 stopped unfinished at 1376.43 seconds. Neither is a clean-build comparison.
 
-The [round 03 report](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-03/REPORT.md)
+The [round 03 report](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-03/REPORT.md` in the external bundle)
 records **2753× → 1904× Roc**, 0.757143375 s → 0.523613000 s on the unchanged
 eight-byte input and matched allocator. This comparison includes both changes;
 it does not isolate a schema-summary effect. Exact source/artifact identity,
@@ -405,7 +409,7 @@ full corpus remains stopped.
 copy from current turn derivation. The already-owned local template is reused;
 its limits are restored before returning success or error. The core planner,
 current arguments, region/publication checks and logical charges are unchanged.
-The [round 04 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-04/REPORT.md)
+The [round 04 packet](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-04/REPORT.md` in the external bundle)
 records 120 passing scoped Rust tests and **1796× → 1702× Roc**, or 5.23% less
 elapsed time on the unchanged eight-byte case. Real-buffer stores eliminate
 1080 allocation requests and 124608 requested bytes per eight stores.
@@ -416,7 +420,7 @@ the resident oracle and adds all-width current-shape/recovery coverage. Two
 tests fail before production changes. `d19532830206dc51df584c1f39b5d42724305c34`
 reuses the numeric dimension owner and translates the selected ordinal into
 canonical storage order. All 80 final scoped Rust tests pass, including the
-69-test component cohort. The [repair packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/matrix-read-order/REPORT.md)
+69-test component cohort. The [repair packet](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/matrix-read-order/REPORT.md` in the external bundle)
 records **1695× → 1693× Roc** (0.16% elapsed difference, not a speedup claim).
 Both cohorts retain exact bytes, work, aliases, capacity and cleanup; protected
 scalar controls pass. Each iteration reuses all machine libraries and rebuilds
@@ -431,7 +435,7 @@ lets the length sink count fixed-width packed data from length and encoded
 width. Other sinks keep the original encoder, and variable/composite data keep
 their traversal. Saturation, canonical bytes and ordered work/admission remain.
 
-The [round 05 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-05/REPORT.md)
+The [round 05 packet](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-05/REPORT.md` in the external bundle)
 records **1727× → 1632× Roc**, 0.492213292 s to 0.464984292 s against a fresh
 0.000285 s reference, or 5.53% less elapsed time. It retains the unchanged source,
 artifact, allocator, eight-byte boundary and logical work. Binary inspection
@@ -461,7 +465,7 @@ one-short resource dimension. The constructor-private original factory, shared
 preparation/image derivation, existing owner transfer, scalar transport, index
 mapping and publication boundary remain. No new opcode or source rewrite is used.
 
-The [round 06 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-06/REPORT.md)
+The [round 06 packet](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-06/REPORT.md` in the external bundle)
 records **1626× → 574× Roc**, 0.465164708 s to 0.164188708 s against a fresh
 0.000286 s reference: **2.833× faster** than the paired Mech baseline. All
 bytes, inflation, aliases, capacity and cleanup checks pass. Work changes to
@@ -495,7 +499,7 @@ No account authority or resource allowance changes. Separate commit
 `03a6f6518d15e480e30270c1acbe9fa5cffb9e89` fixes an unused mapper import introduced
 by round 06 in a native-artifact profile without sequence_buffers.
 
-The [round 07 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-07/REPORT.md)
+The [round 07 packet](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-07/REPORT.md` in the external bundle)
 records **574× → 495× Roc**, 0.162907833 s to 0.140640417 s against a fresh
 0.000284 s reference, or 13.67% less elapsed time. Source, artifact, allocations,
 complete logical work, bytes, aliases, capacity and cleanup remain unchanged.
@@ -529,7 +533,7 @@ executable proves the error-masking bug is inherited. The first parent attempt
 used reused Cargo paths and is explicitly not parent evidence. Every setup and
 qualification failure remains in the packet with its disposition.
 
-The [round 08 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-08/REPORT.md)
+The [round 08 packet](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-08/REPORT.md` in the external bundle)
 records **490× → 455× Roc**, 0.139637125 s to 0.129644084 s against a fresh
 0.000285 s reference, or 7.16% less elapsed time. This is not the larger win being
 sought. The pinned source, artifact, tables, algorithm, allocation sites and timing
@@ -548,7 +552,7 @@ rewrite or claim parity. No cancelled full-input campaign is restarted.
 
 ## Optional independent cost-table source experiment
 
-The [round 09 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-09/REPORT.md)
+The [round 09 packet](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-09/REPORT.md` in the external bundle)
 records a separate source variant, using the unchanged compiler executable:
 **448.75× → 421.53× Roc**, 0.130136250 s to 0.122244917 s, fresh 0.000290 s
 reference. This 6.06% gain does not meet the requested larger reduction. Six
@@ -578,7 +582,7 @@ full-definition/table-key alignment. This fixes an inherited acceptance of two
 swapped, individually valid slots. Current owners, kinds, extents and finite
 admission stay fresh; no new cache or Engine type field is introduced.
 
-The [round 10 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-10/REPORT.md)
+The [round 10 packet](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-10/REPORT.md` in the external bundle)
 records **448.70× → 404.86× Roc**, or **9.77% less elapsed time**, on the unchanged
 pinned eight-byte compressor. Exact bytes, inflation, aliases, reserve13 capacity,
 cleanup and logical work 875610515844 agree. There are 41 scoped Rust passes and
@@ -603,7 +607,7 @@ CFGs for calls. `e57c6278eed2a3f3d2becf4da3bcab18ae65e174` corrects the first
 run's pre-entry account snapshot. IR116/work policy91 identifies the new work;
 canonical bytecode revision14 and source remain unchanged.
 
-The [round 11 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-11/REPORT.md)
+The [round 11 packet](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-11/REPORT.md` in the external bundle)
 records **408.21× → 346.11× Roc**, or **15.21% less elapsed**, 0.117155000 →
 0.099332833 s against a fresh 0.000287 s reference. Exact bytes, inflation,
 capacity 13, aliases and zero terminal bytes/nodes agree. The caller clears and
@@ -634,7 +638,7 @@ separate. #973 stays draft, review is requested and CI is cancelled by request.
 
 ## Native private unsigned indexed-write completion
 
-The [round 12 packet](../../benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-12/REPORT.md)
+The [round 12 packet](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-12/REPORT.md` in the external bundle)
 records final production compiler `d105f884bc79d464a205b3022da4abdc00da41aa`,
 based on `efa2ff81741362394553d5c7eae7d9dfc39766c4`. The unchanged eight-byte
 compression pair is **345.68× → 251.38× Roc**, 0.099901542 → 0.072649542 seconds
@@ -680,7 +684,7 @@ for closure and CI is cancelled by request.
 
 ## Private one-array/scalar result completion
 
-The [round 13 closure](../../benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-13/CLOSURE.md)
+The [round 13 closure](../../benchmarks/mech-deflate/EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-29-native-hardening/compression-round-13/CLOSURE.md` in the external bundle)
 records production compiler `1ec498a67fc862bac39188fdf5040eaacf6e954c`, based on
 `1087e7b8160894f542b81d46b887eb32a450125c`. The unchanged eight-byte pair is
 **253.03× → 250.01× Roc**, 0.073378958 → 0.072503125 seconds against 0.000290:

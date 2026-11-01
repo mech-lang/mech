@@ -11,7 +11,7 @@ must not be confused with a same-session regression.
 The maintained fixture is now `hosts/gpu/tests/fixtures/native/numeric-parent-child.mec`.
 Exact single-use continuation, ownership/funding contract, 574 scoped checks,
 copy/code-size costs and all raw evidence are in
-[the round-33 closure](../../results/2026-10-30-native-hardening/compression-round-33/CLOSURE.md).
+[the round-33 closure](../../EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-30-native-hardening/compression-round-33/CLOSURE.md` in the external bundle).
 The following records the original design gate and witness; its original
 one-test counts and implementation-next statements are historical.
 

@@ -31,7 +31,7 @@ scalar controls and independently rederive image proofs. Record every failed
 attempt. Repeat paired complete small-case timing and a separate profile, then
 commit the packet before another optimization. No larger input is queued.
 
-The [completed round 12 packet](../results/2026-10-28-native-hardening/compression-round-12/REPORT.md)
+The [completed round 12 packet](../EXPERIMENTS.md) (`benchmarks/mech-deflate/results/2026-10-28-native-hardening/compression-round-12/REPORT.md` in the external bundle)
 records production compiler `d105f884bc79d464a205b3022da4abdc00da41aa` and
 **345.68× → 251.38× Roc**, 27.28% less elapsed on unchanged eight-byte compression.
 All 231 scoped Rust tests, twelve static contracts and twelve fresh scalar pairs
