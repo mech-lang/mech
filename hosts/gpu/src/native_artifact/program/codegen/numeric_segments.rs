@@ -92,6 +92,14 @@ pub(in crate::native_artifact) fn emit_entry(
     let base = metadata.local_words().map_err(backend)? - metadata.compositions.words;
     let shadow = base + 1;
     let before = b.func.dfg.num_insts();
+    // The source visit has just published whether its ordinary scalar prefix
+    // was funded. NumericSegmentBegin uses the same result word for selection;
+    // preserve the prefix decision if its larger piece declines.
+    let scalar_ready = metadata
+        .map_admission
+        .group(site)
+        .filter(|group| group.owner.is_none() && group.start() as usize == site)
+        .map(|_| b.ins().load(types::I64, MemFlags::new(), hooks.result, 0));
     hooks.require_argument_words(b, proof.words, error);
     let zero = b.ins().iconst(types::I64, 0);
     hooks.call(b, site, GlobalHelper::NumericSegmentBegin, [zero; 3], error);
@@ -301,6 +309,12 @@ pub(in crate::native_artifact) fn emit_entry(
     if calls != 0 {
         return Err(backend("parent native interior contains a helper"));
     }
+    let before_decline = b.func.dfg.num_insts();
+    b.switch_to_block(ordinary);
+    if let Some(ready) = scalar_ready {
+        b.ins().store(MemFlags::new(), ready, hooks.result, 0);
+    }
+    let decline_ir = b.func.dfg.num_insts() - before_decline;
     let total_ir_instructions = b.func.dfg.num_insts() - before;
     if total_ir_instructions as u64 > proof.compute {
         return Err(backend(
@@ -317,6 +331,5 @@ pub(in crate::native_artifact) fn emit_entry(
         successful_interior_helpers: calls,
         total_ir_instructions,
     });
-    b.switch_to_block(ordinary);
-    Ok(total_ir_instructions - entry_ir)
+    Ok(total_ir_instructions - entry_ir - decline_ir)
 }

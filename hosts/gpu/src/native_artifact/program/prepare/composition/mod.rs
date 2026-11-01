@@ -343,7 +343,16 @@ impl Layout {
                 // Two new boundary calls must replace more existing calls.
                 // This is a profitability choice, never a source-size allowance.
                 let saved = part.sites.len().saturating_sub(1) + numeric.actions.len();
-                if saved <= 2 || admissions.group(part.entry as usize).is_some() {
+                // An ordinary scalar prefix has already paid its own source
+                // visits. The larger piece may follow it only when it owns the
+                // complete prefix. Owner groups and partial/interior overlaps
+                // retain their original boundaries and fallback protocol.
+                let conflict = admissions.group(part.entry as usize).is_some_and(|group| {
+                    group.owner.is_some()
+                        || group.start() != part.entry
+                        || !group.sites.iter().all(|site| part.sites.contains(site))
+                });
+                if saved <= 2 || conflict {
                     continue;
                 }
                 words = words.max(
