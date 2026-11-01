@@ -3994,6 +3994,17 @@
           "files": 30,
           "asset_id": 698451467,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-repair-patch-context-error-c6b89ba429a7.tar.gz"
+        },
+        {
+          "event": "repaired-bounds",
+          "source_revision": "3444655203c554824153771782d3b81bf3cc1edc",
+          "asset": "r90-repaired-bounds-91f210ed098a.tar.gz",
+          "sha256": "91f210ed098ae0cea9173578cc84b359c64cd44e605d4ae6ee693a5e077229a9",
+          "manifest_sha256": "0056d55451a20bc6183c4dca42a69cdd9b4a16e741585f43a6fb06049ebb7420",
+          "bytes": 45008,
+          "files": 32,
+          "asset_id": 698451531,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-repaired-bounds-91f210ed098a.tar.gz"
         }
       ]
     }
