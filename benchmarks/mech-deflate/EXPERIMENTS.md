@@ -291,3 +291,15 @@ buffer/recursive-child witness that leaves field site13 between selected pieces.
 The external `closure/NEXT.md` specifies current selector/resource/error/alias
 requirements. Use `replay-round --round 88` for five reports. R87 remains the
 retained timing endpoint; no new production or throughput result is claimed.
+
+
+R89 retains constant named managed projections inside parent pieces. The fresh
+matched result is9.616266×→9.080397× reference (−5.572531% elapsed), with−4.086419%
+retired instructions and−12.805932% incremental live allocator peak; requests and
+requested bytes remain unchanged. IR/work/private ABI/MBC136/97/38/14. Earlier
+overlapped hardware/control observations and both serial repeats stay archived.
+The compact R89 entry pins all packets and five report hashes. Replay with:
+
+```sh
+python3 benchmarks/mech-deflate/experiment.py replay-round --index benchmarks/mech-deflate/experiments.json --round 89 --output /tmp/mech-r89-retrieved
+```
