@@ -27,6 +27,39 @@ pub(in crate::native_artifact) struct Layout {
     pub retirement_work: u64,
 }
 impl Layout {
+    /// The exit consumer reads reached-retirement flags on every path, and
+    /// scalar fields of escaping frames on successful frontiers. Views and
+    /// private intermediate fields are entry/interior words, not exit inputs.
+    /// Keep original ordinals and the full argument-capacity contract.
+    pub(in crate::native_artifact) fn exit_argument_words(
+        &self,
+        frames: &frames::Layout,
+    ) -> Result<Vec<usize>, &'static str> {
+        let flags = self
+            .words
+            .checked_sub(frames.retirements.len())
+            .ok_or("parent exit retirement words exceed its argument bank")?;
+        let mut words = (flags..self.words).collect::<Vec<_>>();
+        for exit in &frames.exits {
+            for value in &exit.frames {
+                let recipe = frames
+                    .frames
+                    .iter()
+                    .find(|frame| frame.value == value.get())
+                    .ok_or("parent exit lacks its escaping frame recipe")?;
+                for &word in recipe.fields.iter().flatten() {
+                    if word >= frames.scalar_words {
+                        return Err("parent exit scalar word is outside its frame bank");
+                    }
+                    words.push(word);
+                }
+            }
+        }
+        words.sort_unstable();
+        words.dedup();
+        Ok(words)
+    }
+
     pub(super) fn derive(
         plan: &Plan,
         facts: &NativeProgramFacts<'_>,

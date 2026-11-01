@@ -6,6 +6,7 @@ use mech_engine::ProgramArtifact;
 mod admission_overlap;
 mod bounds_retry;
 mod child_cleanup;
+mod exit_transport;
 mod managed_carriers;
 mod managed_projections;
 mod multiple_children;

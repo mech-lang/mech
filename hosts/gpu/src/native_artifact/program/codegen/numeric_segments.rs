@@ -25,6 +25,9 @@ pub(in crate::native_artifact) struct Report {
     pub frontiers: Vec<(u32, u32)>,
     pub register_words: usize,
     pub typed_loads: Vec<(usize, u8)>,
+    pub exit_argument_words: Vec<usize>,
+    pub exit_argument_stores: usize,
+    pub exit_boundaries: usize,
     pub successful_interior_helpers: usize,
     pub total_ir_instructions: usize,
 }
@@ -35,24 +38,27 @@ fn end(
     locals: Value,
     shadow: usize,
     proof: &Layout,
+    exit_words: &[usize],
     hooks: &Hooks,
     site: usize,
     mode: u64,
     next: u64,
     frame: Value,
     error: Block,
-) -> Result<(), NativeCompileError> {
+) -> Result<usize, NativeCompileError> {
     words.spill_all(b, locals)?;
     set_origin(b, frame, site as u64);
     hooks.require_argument_words(b, proof.words, error);
-    for word in 0..proof.words {
+    let mut stores = 0;
+    for &word in exit_words {
         let value = words.read(b, shadow + word);
         b.ins()
             .store(MemFlags::new(), value, hooks.arguments, offset(word)?);
+        stores += 1;
     }
     let args = [mode, next, 0].map(|v| b.ins().iconst(types::I64, v as i64));
     hooks.call(b, site, GlobalHelper::NumericSegmentEnd, args, error);
-    Ok(())
+    Ok(stores)
 }
 
 pub(in crate::native_artifact) fn emit_entry(
@@ -89,6 +95,7 @@ pub(in crate::native_artifact) fn emit_entry(
         .frame_plan
         .as_ref()
         .ok_or_else(|| backend("parent emission lost frame proof"))?;
+    let exit_words = proof.exit_argument_words(frames).map_err(backend)?;
     let base = metadata.local_words().map_err(backend)? - metadata.compositions.words;
     let shadow = base + 1;
     let before = b.func.dfg.num_insts();
@@ -139,6 +146,8 @@ pub(in crate::native_artifact) fn emit_entry(
     let mut boundaries = exits.values().copied().collect::<BTreeSet<_>>();
     b.ins().jump(blocks[&(site as u32)], &[]);
     let mut typed_loads = Vec::new();
+    let mut exit_argument_stores = 0;
+    let mut exit_boundaries = 0;
     for &at in &segment.sites {
         let source = at as usize;
         b.switch_to_block(blocks[&at]);
@@ -175,9 +184,21 @@ pub(in crate::native_artifact) fn emit_entry(
                 boundaries.insert(bad);
                 b.ins().brif(valid, good, &[], bad, &[]);
                 b.switch_to_block(bad);
-                end(
-                    b, &words, locals, shadow, proof, hooks, source, 2, 0, frame, error,
+                exit_argument_stores += end(
+                    b,
+                    &words,
+                    locals,
+                    shadow,
+                    proof,
+                    &exit_words,
+                    hooks,
+                    source,
+                    2,
+                    0,
+                    frame,
+                    error,
                 )?;
+                exit_boundaries += 1;
                 let Action::LibraryCall { operands, .. } = code.blocks()[source].action() else {
                     return Err(backend("parent bounds exit lost its original call"));
                 };
@@ -264,19 +285,32 @@ pub(in crate::native_artifact) fn emit_entry(
         );
         b.switch_to_block(failure);
         let status = b.block_params(failure)[0];
-        end(
-            b, &words, locals, shadow, proof, hooks, source, 3, 0, frame, error,
-        )?;
-        b.ins().jump(error, &[status.into()]);
-    }
-    for (&(from, to), &block) in &exits {
-        b.switch_to_block(block);
-        end(
+        exit_argument_stores += end(
             b,
             &words,
             locals,
             shadow,
             proof,
+            &exit_words,
+            hooks,
+            source,
+            3,
+            0,
+            frame,
+            error,
+        )?;
+        exit_boundaries += 1;
+        b.ins().jump(error, &[status.into()]);
+    }
+    for (&(from, to), &block) in &exits {
+        b.switch_to_block(block);
+        exit_argument_stores += end(
+            b,
+            &words,
+            locals,
+            shadow,
+            proof,
+            &exit_words,
             hooks,
             from as usize,
             0,
@@ -284,6 +318,7 @@ pub(in crate::native_artifact) fn emit_entry(
             frame,
             error,
         )?;
+        exit_boundaries += 1;
         b.ins().jump(
             ordinary_blocks[to as usize]
                 .ok_or_else(|| backend("parent continuation is not emitted"))?,
@@ -328,6 +363,9 @@ pub(in crate::native_artifact) fn emit_entry(
         frontiers: segment.exits.clone(),
         register_words,
         typed_loads,
+        exit_argument_words: exit_words,
+        exit_argument_stores,
+        exit_boundaries,
         successful_interior_helpers: calls,
         total_ir_instructions,
     });
