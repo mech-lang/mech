@@ -4,6 +4,7 @@ use crate::native_artifact::{JitProgramArtifact, NativeProgramLimitMode};
 use mech_core::ValueDataDraft as Data;
 use mech_engine::ProgramArtifact;
 mod child_cleanup;
+mod managed_carriers;
 mod managed_projections;
 mod multiple_children;
 mod observe;
