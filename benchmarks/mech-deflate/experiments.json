@@ -18,6 +18,17 @@
           "files": 68,
           "asset_id": 697243580,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-initial-bcc4ac22e42f.tar.gz"
+        },
+        {
+          "event": "primary-reference",
+          "source_revision": "374edf1410b5f975d793fb69d8fcf390cbfa10a5",
+          "asset": "r79-primary-reference-02f21184e2a3.tar.gz",
+          "sha256": "02f21184e2a38977abb700383f9574a1795560e0c343acc3bd4c3e49d056d49f",
+          "manifest_sha256": "02d0b1db36fb95168bed57243322503c481e81fd9daaf624841dd29702e415ae",
+          "bytes": 106656,
+          "files": 7,
+          "asset_id": 697245486,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-primary-reference-02f21184e2a3.tar.gz"
         }
       ]
     }
