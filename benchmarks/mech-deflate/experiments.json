@@ -3708,6 +3708,17 @@
           "files": 40,
           "asset_id": 698214005,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-reference-profile-1cdf72961b02.tar.gz"
+        },
+        {
+          "event": "callback-census",
+          "source_revision": "460c9cb748fc377c1cbcfd57565a5373de05de14",
+          "asset": "r89-callback-census-bcc9f9e181a6.tar.gz",
+          "sha256": "bcc9f9e181a6b9a38cb8722371d0c793c53a42cc050dbe3d41d58a4d670bf38b",
+          "manifest_sha256": "d25ade0cefe5a943eaca781cf50e78e6e321649d2f3c7b616810033f16d0a3fe",
+          "bytes": 2811236,
+          "files": 799,
+          "asset_id": 698214754,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-callback-census-bcc9f9e181a6.tar.gz"
         }
       ]
     }
