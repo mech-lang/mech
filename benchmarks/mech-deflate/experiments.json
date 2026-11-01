@@ -7240,6 +7240,17 @@
           "files": 96,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-scalar-controls-1ab73ecb7306.tar.gz"
+        },
+        {
+          "event": "current-census",
+          "source_revision": "fa1ffe75e78c7ace538d7d14aa5f3ebc74783166",
+          "asset": "r102-current-census-a7ce3c52041f.tar.gz",
+          "sha256": "a7ce3c52041fc9e53fca77a9acc711cfbd50b03c09f7880768690302b8e5eafe",
+          "manifest_sha256": "ce999906d987a37981185afb2f9f653a75a2621e9e5e43ee6ec69205bb600f68",
+          "bytes": 707511,
+          "files": 64,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-current-census-a7ce3c52041f.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
