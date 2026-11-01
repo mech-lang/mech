@@ -155,6 +155,17 @@
           "files": 32,
           "asset_id": 697287034,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-linked-multi-6deaad77ad5c.tar.gz"
+        },
+        {
+          "event": "isolated-profile",
+          "source_revision": "374edf1410b5f975d793fb69d8fcf390cbfa10a5",
+          "asset": "r79-isolated-profile-7eadb6ea7721.tar.gz",
+          "sha256": "7eadb6ea772194f760775abfdc0b3705542b89a2eb89ca2590251f776d231d08",
+          "manifest_sha256": "360b995d386b3fbefefd089b24b44bf30152230eca62e323bbfb46dbb87d3cdd",
+          "bytes": 370954,
+          "files": 27,
+          "asset_id": 697289172,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-isolated-profile-7eadb6ea7721.tar.gz"
         }
       ]
     }
