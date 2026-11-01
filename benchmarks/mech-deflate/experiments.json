@@ -5042,6 +5042,17 @@
             "improving_blocks": 63,
             "adverse_blocks": 1
           }
+        },
+        {
+          "event": "counter-driver-stale-baseline",
+          "source_revision": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
+          "asset": "r92-counter-driver-stale-baseline-2fbbb3e32e0e.tar.gz",
+          "sha256": "2fbbb3e32e0e0fb2f59946e237174db1959bb1c2eee6d760d200d902a14f0e14",
+          "manifest_sha256": "ad13e7518eb25807bd898d161f520e14c0a4a1fd69095547fa1693973a4f6caa",
+          "bytes": 57032,
+          "files": 38,
+          "asset_id": 698745321,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-counter-driver-stale-baseline-2fbbb3e32e0e.tar.gz"
         }
       ]
     }
