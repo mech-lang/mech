@@ -3741,6 +3741,17 @@
           "files": 72,
           "asset_id": 698222499,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-final-checks-f97480afec24.tar.gz"
+        },
+        {
+          "event": "counters-serial-repeat",
+          "source_revision": "460c9cb748fc377c1cbcfd57565a5373de05de14",
+          "asset": "r89-counters-serial-repeat-d156eb79e6ee.tar.gz",
+          "sha256": "d156eb79e6ee5021116c9af13e24d15460ac60161577ffb593a15393eabd34e5",
+          "manifest_sha256": "a678aa3fc916ef2d35dac3e5f0380aa15c76d7bc24f4b5bef0248bcab7739a4b",
+          "bytes": 259468,
+          "files": 77,
+          "asset_id": 698225003,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-counters-serial-repeat-d156eb79e6ee.tar.gz"
         }
       ]
     }
