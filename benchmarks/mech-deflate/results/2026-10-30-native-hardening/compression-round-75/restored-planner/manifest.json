@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-11-01T00:25:05.450692+00:00",
+  "head": "1aa844007388bdbc73a1af53d30fb40e119ac0f2",
+  "files": [
+    {
+      "path": "restore-production.py",
+      "sha256": "7eb1063ef5811cb223fbff37c03c882f4552756197b446639f4045e9e832d957",
+      "bytes": 4816
+    },
+    {
+      "path": "restored/planner.json",
+      "sha256": "8a1b402a2f710b6c3db9b5040f2bcb3633af0e22b7c2d1f0d302a58722a4b4ad",
+      "bytes": 526
+    },
+    {
+      "path": "restored/planner.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "restored/planner.stdout",
+      "sha256": "2109d1263b0ee90e954a71c45e1633f0976c92fe207b1498b51d5b7bcb11ef6f",
+      "bytes": 2446
+    },
+    {
+      "path": "restored/rejected-source.patch",
+      "sha256": "6e710a7d61fe2a19b6d0c1c9c9961df4aead59640be3f7cade0e14ebe715423b",
+      "bytes": 46905
+    },
+    {
+      "path": "restored/source-proof.json",
+      "sha256": "1c4f48fb10e69cb974a0aba2a49754164f01e41d483b941fb035af038cfd79c8",
+      "bytes": 59553
+    }
+  ]
+}
