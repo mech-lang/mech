@@ -6000,6 +6000,17 @@
           "files": 65,
           "asset_id": 699157118,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r95-linked-multi-265918867954.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "67a7c88e745092264a5a735933dd95cf48fc5446",
+          "asset": "r95-closure-82ce1d8cab86.tar.gz",
+          "sha256": "82ce1d8cab869d6270e1f2466ecf4e742c92f0e50568f868bcc2bc15483d3b71",
+          "manifest_sha256": "dfd4648c6930036864b7bb3128ce8482b03cc7a24d152473e76babb715a4a3cc",
+          "bytes": 5907461,
+          "files": 403,
+          "asset_id": 699179088,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r95-closure-82ce1d8cab86.tar.gz"
         }
       ]
     }
