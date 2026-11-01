@@ -6133,6 +6133,33 @@
           "files": 35,
           "asset_id": 699283859,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r97-primary-group3-42b0986e4041.tar.gz"
+        },
+        {
+          "event": "primary-summary",
+          "source_revision": "20f002f4ff5ff2186888b7efc8517261756b425e",
+          "asset": "r97-primary-summary-92e8d6b0a4ce.tar.gz",
+          "sha256": "92e8d6b0a4ce83dca503f09a618e01ed45c91fc2e632442471fb19d94d5fedf4",
+          "manifest_sha256": "e05ba7319ae60ead8a403cbf18da19e85b3358c1a4f86375bf3eecbb806c35c8",
+          "bytes": 55131,
+          "files": 32,
+          "asset_id": 699283964,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r97-primary-summary-92e8d6b0a4ce.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.000291,
+            "medians": {
+              "after": 0.002438229,
+              "before": 0.002473
+            },
+            "multiples_of_reference": {
+              "after": 8.378793814432989,
+              "before": 8.498281786941579
+            },
+            "after_over_before": 0.9859397492923575,
+            "improving_groups": 4,
+            "improving_blocks": 55,
+            "adverse_blocks": 9
+          }
         }
       ]
     }
