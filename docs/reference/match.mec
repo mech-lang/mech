@@ -21,6 +21,7 @@ Notes:
 - `*` is a wildcard arm that matches anything.
 - Guards are boolean expressions evaluated after pattern binding.
 - A wildcard arm is typically included as an exhaustive fallback.
+- String literal patterns compare exact UTF-8 text. Composed and decomposed Unicode remain distinct; use a wildcard to handle other Strings.
 
 1. Optional-style matching
 -------------------------------------------------------------------------------

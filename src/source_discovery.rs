@@ -50,7 +50,19 @@ pub(crate) struct DiscoveryOptions {
 pub(crate) enum MissingPathPolicy {
     #[cfg(feature = "build")]
     Error,
+    #[cfg(any(test, feature = "formatter", feature = "run", feature = "serve"))]
     SkipBrokenSymlink,
+}
+
+impl MissingPathPolicy {
+    fn skips_broken_symlinks(self) -> bool {
+        match self {
+            #[cfg(feature = "build")]
+            Self::Error => false,
+            #[cfg(any(test, feature = "formatter", feature = "run", feature = "serve"))]
+            Self::SkipBrokenSymlink => true,
+        }
+    }
 }
 
 #[cfg(feature = "build")]
@@ -59,7 +71,10 @@ pub(crate) fn collect_sources(
     base_dir: &Path,
     options: DiscoveryOptions,
 ) -> MResult<Vec<SourceEntry>> {
-    Ok(collect_sources_with_events(roots, base_dir, options)?.entries)
+    let result = collect_sources_with_events(roots, base_dir, options)?;
+    // The build adapter requests paths only; reporting callers use the full result.
+    drop(result.events);
+    Ok(result.entries)
 }
 
 pub(crate) fn collect_sources_with_events(
@@ -103,12 +118,7 @@ fn collect_one(
 ) -> MResult<()> {
     let metadata = match fs::symlink_metadata(read_path) {
         Ok(metadata) => metadata,
-        Err(error)
-            if matches!(
-                options.missing_path_policy,
-                MissingPathPolicy::SkipBrokenSymlink
-            ) =>
-        {
+        Err(error) if options.missing_path_policy.skips_broken_symlinks() => {
             if explicit {
                 return Err(error.into());
             }
@@ -122,12 +132,7 @@ fn collect_one(
     if metadata.file_type().is_symlink() {
         let canonical = match canonicalize_for_read(read_path) {
             Ok(path) => path,
-            Err(error)
-                if matches!(
-                    options.missing_path_policy,
-                    MissingPathPolicy::SkipBrokenSymlink
-                ) =>
-            {
+            Err(error) if options.missing_path_policy.skips_broken_symlinks() => {
                 if explicit {
                     return Err(error);
                 }
@@ -229,12 +234,7 @@ fn collect_dir(
         let read_path = entry.path();
         let is_directory_symlink = match is_directory_symlink(&read_path) {
             Ok(value) => value,
-            Err(_error)
-                if matches!(
-                    options.missing_path_policy,
-                    MissingPathPolicy::SkipBrokenSymlink
-                ) =>
-            {
+            Err(_error) if options.missing_path_policy.skips_broken_symlinks() => {
                 events.push(SourceDiscoveryEvent::SkippedBrokenSymlink {
                     path: read_path.clone(),
                 });
@@ -250,12 +250,7 @@ fn collect_dir(
         }
         let is_dir = match read_path.canonicalize() {
             Ok(path) => path.is_dir(),
-            Err(_error)
-                if matches!(
-                    options.missing_path_policy,
-                    MissingPathPolicy::SkipBrokenSymlink
-                ) =>
-            {
+            Err(_error) if options.missing_path_policy.skips_broken_symlinks() => {
                 events.push(SourceDiscoveryEvent::SkippedBrokenSymlink {
                     path: read_path.clone(),
                 });

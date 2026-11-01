@@ -22,6 +22,16 @@ fn nodes(node: &SyntaxNode, kind: SyntaxKind) -> Vec<SyntaxNode> {
 fn direct(node: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
     node.children().find(|child| child.kind() == kind)
 }
+fn factor_structure(node: &SyntaxNode) -> Option<SyntaxNode> {
+    direct(node, SyntaxKind::Structure).or_else(|| {
+        let candidate = direct(node, SyntaxKind::Slice)?;
+        candidate
+            .flags()
+            .contains(crate::document::NodeFlags::PROVISIONAL)
+            .then(|| direct(&candidate, SyntaxKind::Structure))
+            .flatten()
+    })
+}
 fn owned_token(node: &SyntaxNode, kind: SyntaxKind) -> Option<crate::document::SyntaxToken> {
     node.children_with_tokens()
         .into_iter()
@@ -103,7 +113,7 @@ fn halted_tuple_does_not_select_a_provisional_parenthetical() {
                     if factor.range().start.0 != 0 {
                         continue;
                     }
-                    let Some(structure) = direct(&factor, SyntaxKind::Structure) else {
+                    let Some(structure) = factor_structure(&factor) else {
                         continue;
                     };
                     let Some(tuple) = direct(&structure, SyntaxKind::Tuple) else {
@@ -243,7 +253,7 @@ fn provisional_selection_flags_are_local_and_absent_from_clean_trees() {
         .into_iter()
         .next()
         .unwrap();
-    let structure = direct(&factor, SyntaxKind::Structure).unwrap();
+    let structure = factor_structure(&factor).unwrap();
     let tuple = direct(&structure, SyntaxKind::Tuple).unwrap();
     let parenthetical = direct(&tuple, SyntaxKind::ParentheticalExpression).unwrap();
     assert!(parenthetical.flags().contains(NodeFlags::PROVISIONAL));

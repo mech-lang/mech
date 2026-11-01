@@ -236,6 +236,11 @@ fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram, artifact: &ProgramA
                 // typed artifact bytecode included below.
                 hash.field("Comprehension");
             }
+            mech_engine::SourceNodeBody::Iteration(_) => {
+                // Count, lexical captures, body operations and carrier schemas
+                // are sealed by the typed artifact bytecode included below.
+                hash.field("Iteration");
+            }
             mech_engine::SourceNodeBody::Match(_) => {
                 // The complete typed control body is sealed by the artifact
                 // bytecode below, including captures, guards, operations and yields.
@@ -558,7 +563,7 @@ fn every_semantic_rule_meets_its_required_witness_outcome() {
         .iter()
         .filter(|rule| rule.disposition != CanonicalSemanticDisposition::Structural)
         .collect::<Vec<_>>();
-    assert_eq!(certified.len(), 53);
+    assert_eq!(certified.len(), 54);
 
     for rule in CANONICAL_SEMANTIC_RULES {
         let expected = match rule.disposition {

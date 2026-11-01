@@ -136,7 +136,10 @@ fn live_registry_project_runs_once_handles_ctrlc_and_cleans_up_after_failure() {
         "registry_synthetic_live{}",
         std::env::consts::EXE_SUFFIX
     ));
-    let output = Command::new(&executable).arg("--once").output().unwrap();
+    let output = Command::new(&executable)
+        .args(["--once", "--print-result"])
+        .output()
+        .unwrap();
     assert!(
         output.status.success(),
         "live --once project failed: stdout={} stderr={}",

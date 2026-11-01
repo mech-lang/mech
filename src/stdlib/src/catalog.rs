@@ -279,7 +279,8 @@ mod tests {
     #[cfg(all(feature = "native-plan", feature = "full_runtime"))]
     #[test]
     fn native_plan_catalog_adds_only_compiler_emitted_application_factories() {
-        use mech_core::RuntimeFunctionId;
+        use mech_core::{RuntimeFunctionId, RuntimeOperationBinding};
+        use std::collections::{BTreeMap, BTreeSet};
 
         let test = std::thread::Builder::new()
             .name("stdlib-native-plan-catalog-test".to_string())
@@ -289,11 +290,15 @@ mod tests {
             .stack_size(64 * 1024 * 1024)
             .spawn(|| {
                 let runtime = runtime_catalog();
-                assert_eq!(runtime.runtime_factory_count(), 9_110);
+                // Absolute distribution counts and retained-surface digests
+                // belong to tests/profile_contracts.rs. This test independently
+                // proves the exact native-plan extension of the selected
+                // runtime profile, including all shared factory metadata.
                 let runtime_entries = runtime
                     .runtime_entries()
-                    .map(|entry| (entry.id, entry.name.clone()))
-                    .collect::<Vec<_>>();
+                    .map(|entry| (entry.id, entry))
+                    .collect::<BTreeMap<_, _>>();
+                assert_eq!(runtime_entries.len(), runtime.runtime_factory_count());
                 assert!(
                     runtime
                         .runtime_entry(RuntimeFunctionId::from_name(
@@ -302,12 +307,48 @@ mod tests {
                         .is_some()
                 );
                 let native_plan = native_plan_catalog();
-                assert_eq!(native_plan.runtime_factory_count(), 9_163);
                 assert!(!Arc::ptr_eq(&runtime, &native_plan));
                 let native_plan_entries = native_plan
                     .runtime_entries()
-                    .map(|entry| (entry.id, entry.name.clone()))
-                    .collect::<Vec<_>>();
+                    .map(|entry| (entry.id, entry))
+                    .collect::<BTreeMap<_, _>>();
+                assert_eq!(native_plan_entries.len(), native_plan.runtime_factory_count());
+                for (id, retained) in &runtime_entries {
+                    let planned = native_plan_entries.get(id).unwrap_or_else(|| {
+                        panic!("native-plan catalog omitted runtime factory {}", retained.name)
+                    });
+                    assert_eq!(planned.name, retained.name);
+                    assert_eq!(planned.signature(), retained.signature(), "{}", retained.name);
+                    assert_eq!(
+                        planned.contract_kind(), retained.contract_kind(),
+                        "{}", retained.name
+                    );
+                    assert_eq!(
+                        planned.output_alias_policy(), retained.output_alias_policy(),
+                        "{}", retained.name
+                    );
+                    assert_eq!(
+                        planned.execution_capability(), retained.execution_capability(),
+                        "{}", retained.name
+                    );
+                    assert_eq!(
+                        planned.implementation_memory_class(),
+                        retained.implementation_memory_class(), "{}", retained.name
+                    );
+                    assert_eq!(
+                        planned.semantic_contract(), retained.semantic_contract(),
+                        "{}", retained.name
+                    );
+                    if let RuntimeOperationBinding::Fixed(operations) = retained.operation_binding() {
+                        for operation in operations.iter() {
+                            assert_eq!(
+                                planned.operation_contract(*operation),
+                                retained.operation_contract(*operation), "{}", retained.name
+                            );
+                        }
+                    }
+                    assert_eq!(planned.native_linkage, retained.native_linkage, "{}", retained.name);
+                }
                 let mut expected_native_plan_only = [
                     "HorizontalConcatenateFourArgs<f64>",
                     "HorizontalConcatenateNArgs<f64>",
@@ -317,7 +358,7 @@ mod tests {
                 ]
                 .into_iter()
                 .map(str::to_string)
-                .collect::<std::collections::BTreeSet<_>>();
+                .collect::<BTreeSet<_>>();
                 for scalar in [
                     "u8", "u16", "u32", "u64", "u128", "i8", "i16", "i32", "i64", "i128", "f32",
                     "f64", "bool", "string", "rational", "complex",
@@ -326,13 +367,25 @@ mod tests {
                         expected_native_plan_only.insert(format!("Assign<{scalar}{shape}>"));
                     }
                 }
+                assert_eq!(expected_native_plan_only.len(), 53);
+                let expected_native_plan_entries = expected_native_plan_only
+                    .iter()
+                    .map(|name| (RuntimeFunctionId::from_name(name), name.clone()))
+                    .collect::<BTreeMap<_, _>>();
+                assert_eq!(expected_native_plan_entries.len(), expected_native_plan_only.len());
                 assert_eq!(
                     native_plan_entries
                         .iter()
-                        .filter(|entry| !runtime_entries.contains(entry))
-                        .map(|(_, name)| name.clone())
-                        .collect::<std::collections::BTreeSet<_>>(),
-                    expected_native_plan_only,
+                        .filter_map(|(id, entry)| {
+                            (!runtime_entries.contains_key(id))
+                                .then(|| (*id, entry.name.clone()))
+                        })
+                        .collect::<BTreeMap<_, _>>(),
+                    expected_native_plan_entries,
+                );
+                assert_eq!(
+                    native_plan.runtime_factory_count(),
+                    runtime.runtime_factory_count() + expected_native_plan_only.len(),
                 );
                 assert!(
                     runtime
@@ -355,9 +408,13 @@ mod tests {
                 assert!(entry.native_linkage.is_some());
                 for name in expected_native_plan_only {
                     assert!(
+                        runtime.runtime_entry(RuntimeFunctionId::from_name(&name)).is_none(),
+                        "planning-only factory leaked into runtime catalog: {name}"
+                    );
+                    assert!(
                         native_plan
                             .runtime_entry(RuntimeFunctionId::from_name(&name))
-                            .expect("native-plan catalog must include compiler-emitted horzcat")
+                            .expect("native-plan catalog must include every declared planning-only factory")
                             .native_linkage
                             .is_some()
                     );

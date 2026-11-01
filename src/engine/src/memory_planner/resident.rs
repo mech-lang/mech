@@ -36,6 +36,52 @@ pub struct ResidentArenaProjection {
     pub element_offsets: BTreeMap<MemoryObjectOwner, usize>,
 }
 
+/// Installs the complete activation-owned metadata baseline for one resident
+/// plan. The value replaces, rather than increments, the prior baseline so a
+/// later footprint refinement can reapply the same authority without double
+/// counting it.
+pub fn set_resident_metadata_demand(
+    plan: &mut ProgramMemoryPlan,
+    owner: MemoryObjectOwner,
+    demand: ResourceDemand,
+) -> Result<(), MemoryPlanError> {
+    let supported = ResourceDemand {
+        persistent_bytes: demand.persistent_bytes,
+        retained_nodes: demand.retained_nodes,
+        ..ResourceDemand::default()
+    };
+    if demand != supported {
+        return Err(MemoryPlanError::DescriptorMismatch);
+    }
+    // Preserve the current value-footprint contribution as well as arenas and
+    // calls. Recomputing from allocations here would drop retained value nodes
+    // installed by plan_resident_arenas or a prior footprint refinement.
+    let mut peak = plan.peak;
+    peak.persistent_bytes = peak
+        .persistent_bytes
+        .checked_sub(plan.metadata_demand.persistent_bytes)
+        .ok_or(MemoryPlanError::DescriptorMismatch)?;
+    peak.retained_nodes = peak
+        .retained_nodes
+        .checked_sub(plan.metadata_demand.retained_nodes)
+        .ok_or(MemoryPlanError::DescriptorMismatch)?;
+    let peak = checked_demand_add(peak, demand)?;
+    let mut violations = plan.budget_violations.to_vec();
+    violations.retain(|violation| violation.owner != owner);
+    violations.extend(mech_core::evaluate_aggregate_memory_budget(
+        owner,
+        peak,
+        0,
+        plan.budget_limits,
+    ));
+    violations.sort();
+    violations.dedup();
+    plan.metadata_demand = demand;
+    plan.peak = peak;
+    plan.budget_violations = violations.into_boxed_slice();
+    Ok(())
+}
+
 /// Projects the current typed Resident arenas into the shared memory plan.
 ///
 /// Arena identities are stable by `(class, lane, state-buffer-index)`. The
@@ -303,6 +349,7 @@ pub fn plan_resident_arenas(
             arenas: arenas.into_boxed_slice(),
             transfers: Box::new([]),
             budget_limits: target.limits,
+            metadata_demand: ResourceDemand::default(),
             peak: demand,
             budget_violations,
         },
@@ -1226,5 +1273,86 @@ mod tests {
         assert_eq!(payload.current_bytes, 9);
         assert_eq!(payload.capacity_bytes, 9);
         assert!(projection.plan.budget_violations.is_empty());
+    }
+
+    #[test]
+    fn metadata_baseline_survives_refinement_and_replacement_once() {
+        let owner = MemoryObjectOwner::Slot(mech_core::CellSlotId::new(0));
+        let footprint = mech_core::CurrentMemoryFootprint {
+            logical_elements: 1,
+            payload_bytes: 9,
+            retained_nodes: 3,
+            ..mech_core::CurrentMemoryFootprint::default()
+        };
+        let mut plan = plan_resident_arenas(&[ResidentValuePlanInput {
+            owner: owner.clone(),
+            slot: Some(mech_core::CellSlotId::new(0)),
+            descriptor: string_descriptor(),
+            class: PlannedValueClass::Constant,
+            kind: ResidentValueKind::String,
+            elements: 1,
+            footprint,
+            lifetime: MemoryLifetime::Program,
+            producer: None,
+        }])
+        .unwrap()
+        .plan;
+        let base = plan.peak;
+        let metadata_owner = MemoryObjectOwner::NodeScratch {
+            node: mech_core::NodeId::new(7),
+            ordinal: u16::MAX,
+        };
+        let metadata = ResourceDemand {
+            persistent_bytes: 123,
+            retained_nodes: 5,
+            ..ResourceDemand::default()
+        };
+        for _ in 0..2 {
+            set_resident_metadata_demand(&mut plan, metadata_owner.clone(), metadata).unwrap();
+            assert_eq!(plan.peak, checked_demand_add(base, metadata).unwrap());
+        }
+        finalize_resident_current_footprints(
+            &mut plan,
+            &BTreeMap::from([(owner.clone(), footprint)]),
+        )
+        .unwrap();
+        assert_eq!(plan.peak, checked_demand_add(base, metadata).unwrap());
+        let grown = mech_core::CurrentMemoryFootprint {
+            payload_bytes: 19,
+            retained_nodes: 4,
+            ..footprint
+        };
+        finalize_resident_current_footprints(&mut plan, &BTreeMap::from([(owner, grown)])).unwrap();
+        assert_eq!(plan.peak.persistent_bytes, base.persistent_bytes + 10 + 123);
+        assert_eq!(plan.peak.retained_nodes, base.retained_nodes + 1 + 5);
+        let refined = plan.peak;
+        set_resident_metadata_demand(&mut plan, metadata_owner.clone(), metadata).unwrap();
+        assert_eq!(plan.peak, refined);
+        set_resident_metadata_demand(&mut plan, metadata_owner, ResourceDemand::default()).unwrap();
+        assert_eq!(plan.peak.persistent_bytes, base.persistent_bytes + 10);
+        assert_eq!(plan.peak.retained_nodes, base.retained_nodes + 1);
+    }
+
+    #[test]
+    fn metadata_nodes_are_admitted_at_the_exact_limit() {
+        let owner = MemoryObjectOwner::NodeScratch {
+            node: mech_core::NodeId::new(7),
+            ordinal: u16::MAX,
+        };
+        let metadata = ResourceDemand {
+            persistent_bytes: 123,
+            retained_nodes: 5,
+            ..ResourceDemand::default()
+        };
+        for limit in [None, Some(5), Some(4)] {
+            let mut plan = plan_resident_arenas(&[]).unwrap().plan;
+            plan.budget_limits.max_retained_nodes = limit;
+            set_resident_metadata_demand(&mut plan, owner.clone(), metadata).unwrap();
+            assert_eq!(plan.peak, metadata);
+            assert_eq!(plan.budget_violations.is_empty(), limit != Some(4));
+            finalize_resident_current_footprints(&mut plan, &BTreeMap::new()).unwrap();
+            assert_eq!(plan.peak, metadata);
+            assert_eq!(plan.budget_violations.is_empty(), limit != Some(4));
+        }
     }
 }

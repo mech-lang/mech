@@ -16,6 +16,18 @@ pub enum RunInputMode {
     Paths(Vec<String>),
 }
 
+/// Source selection ends at `--`; every following value belongs to the
+/// application, including empty, non-Unicode and flag-looking OS strings.
+pub(crate) fn payload_arguments_arg() -> Arg {
+    Arg::new("payload_arguments")
+        .value_name("ARG")
+        .help("Program payload arguments after --; launcher controls are excluded")
+        .last(true)
+        .num_args(0..)
+        .value_parser(clap::builder::OsStringValueParser::new())
+        .action(ArgAction::Append)
+}
+
 fn has_explicit_path_prefix(s: &str) -> bool {
     s.starts_with("./")
         || s.starts_with(".\\")
@@ -337,7 +349,7 @@ pub fn cli_host_capability_args() -> Vec<Arg> {
             .help("Enable one named CLI host capability profile for this run, e.g. :cli/stdout")
             .global(true)
             .num_args(1)
-            .value_parser([":cli/env", ":cli/stdout", ":cli/stderr"])
+            .value_parser([":cli/env", ":cli/args", ":cli/stdout", ":cli/stderr"])
             .action(ArgAction::Append),
     ]
 }
@@ -368,6 +380,64 @@ pub fn cli_host_capability_selection(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn default_cli_payload_is_empty_and_an_explicit_factory_keeps_its_snapshot() {
+        let grants = host_grants::EffectiveCliHostGrants {
+            args_read_paths: vec!["count".into(), "1".into()],
+            ..host_grants::EffectiveCliHostGrants::empty()
+        };
+        let request = |path: &str| mech_runtime::RuntimeResourceReadRequest {
+            base_uri: "cli://args".into(),
+            path: path.into(),
+            context_name: "args".into(),
+        };
+        let mut runtime = new_cli_runtime(RuntimeConfig::default(), &grants, &[], &[]).unwrap();
+        let count = runtime.read_resource(request("count")).unwrap();
+        assert!(matches!(count.value().data(), ValueData::U64(0)));
+        assert!(runtime.read_resource(request("1")).is_err());
+        runtime.shutdown().unwrap();
+
+        let custom = mech_terminal::CliHostFactory::with_arguments(vec![
+            std::ffi::OsString::from("custom"),
+            std::ffi::OsString::from("--trace"),
+        ])
+        .unwrap();
+        let mut runtime = cli_runtime_builder_with_cli_host_factory(
+            RuntimeConfig::default(),
+            &grants,
+            &[],
+            &[],
+            Vec::new(),
+            Box::new(custom),
+        )
+        .unwrap()
+        .build()
+        .unwrap();
+        let count = runtime.read_resource(request("count")).unwrap();
+        assert!(matches!(count.value().data(), ValueData::U64(2)));
+        let first = runtime.read_resource(request("1")).unwrap();
+        assert!(
+            matches!(first.value().data(), ValueData::String(value) if value.as_ref() == "custom")
+        );
+        runtime.shutdown().unwrap();
+    }
+
+    #[test]
+    fn args_profile_is_accepted_as_an_explicit_cli_capability() {
+        let matches = clap::Command::new("mech")
+            .args(cli_host_capability_args())
+            .try_get_matches_from([
+                "mech",
+                "--deny-default-capabilities",
+                "--capabilities",
+                ":cli/args",
+            ])
+            .unwrap();
+        let selection = cli_host_capability_selection(&matches, None);
+        assert!(!selection.include_defaults);
+        assert_eq!(selection.profiles, [":cli/args"]);
+    }
     use mech_runtime::{ConfigProfileOptions, parse_config_document};
 
     #[test]

@@ -11,6 +11,29 @@ use crate::{
 };
 use core::cell::{Cell, OnceCell};
 
+#[path = "string_matrix.rs"]
+mod string_matrix;
+pub use string_matrix::StringMatrixSnapshotConstructor;
+
+#[path = "numeric_matrix.rs"]
+mod numeric_matrix;
+
+#[cfg(test)]
+#[path = "frozen_identity_tests.rs"]
+mod frozen_identity_tests;
+
+#[cfg(test)]
+#[path = "resident_token_tests.rs"]
+mod resident_token_tests;
+
+#[path = "owned_string.rs"]
+mod owned_string;
+pub use owned_string::{OwnedSnapshotBytes, OwnedSnapshotString, StringOwnershipTransfer};
+
+#[path = "string_constructor.rs"]
+mod string_constructor;
+pub use string_constructor::StringSnapshotConstructor;
+
 #[cfg(feature = "no_std")]
 use alloc::{
     boxed::Box,
@@ -32,9 +55,24 @@ type SharedOwnershipCell<T> = core::cell::OnceCell<T>;
 type SharedOwnershipCell<T> = std::sync::OnceLock<T>;
 
 #[cfg(all(feature = "no_std", not(feature = "std")))]
-type SnapshotBudgetRegistry = core::cell::RefCell<Option<Box<SnapshotBudgetRegistration>>>;
+type SnapshotBudgetGate<T> = core::cell::RefCell<T>;
 #[cfg(any(not(feature = "no_std"), feature = "std"))]
-type SnapshotBudgetRegistry = std::sync::Mutex<Option<Box<SnapshotBudgetRegistration>>>;
+type SnapshotBudgetGate<T> = std::sync::Mutex<T>;
+type SnapshotBudgetRegistry = SnapshotBudgetGate<Option<Arc<SnapshotBudgetRegistration>>>;
+
+fn with_budget_gate<T, R>(gate: &SnapshotBudgetGate<T>, apply: impl FnOnce(&mut T) -> R) -> R {
+    #[cfg(all(feature = "no_std", not(feature = "std")))]
+    let mut value = gate.borrow_mut();
+    #[cfg(any(not(feature = "no_std"), feature = "std"))]
+    let mut value = gate.lock().unwrap_or_else(|error| error.into_inner());
+    apply(&mut value)
+}
+
+#[cfg(all(test, any(not(feature = "no_std"), feature = "std")))]
+std::thread_local! {
+    static IMPORT_LOOKUP_STEPS: Cell<u64> = const { Cell::new(0) };
+    static IMPORT_LINK_STEPS: Cell<u64> = const { Cell::new(0) };
+}
 
 pub struct SnapshotValidationContext<'a> {
     schemas: &'a SchemaTable,
@@ -248,11 +286,16 @@ impl<'a> SnapshotValidationContext<'a> {
         })
     }
 
-    fn try_boxed_str(&self, value: String) -> Result<Box<str>, SnapshotValueError> {
-        let bytes = u64::try_from(value.len()).unwrap_or(u64::MAX);
+    fn admit_string_backing(&self, length: usize) -> Result<(), SnapshotValueError> {
+        let bytes = u64::try_from(length).unwrap_or(u64::MAX);
         if let Some(authority) = self.construction_authority {
             authority.admit_snapshot_allocation(bytes, 1)?;
         }
+        Ok(())
+    }
+
+    fn try_boxed_str(&self, value: String) -> Result<Box<str>, SnapshotValueError> {
+        self.admit_string_backing(value.len())?;
         Ok(value.into_boxed_str())
     }
 
@@ -309,8 +352,33 @@ pub struct Value {
     schema_key: SchemaKey,
     shape: Arc<ShapeInstance>,
     root: Arc<FrozenSnapshotStorage>,
-    resident_token: u64,
     schemas: Option<Arc<SchemaTable>>,
+}
+
+/// Non-owning identity of one immutable canonical data allocation. The token
+/// neither retains a Value, its payload, nor its schema or budget owner.
+/// A live token does pin the complete Arc control-block/data shell after the
+/// last strong owner releases its contents; caches must admit that fixed shell.
+#[derive(Clone)]
+pub struct FrozenSnapshotIdentity {
+    data: Weak<FrozenSnapshotData>,
+}
+
+impl FrozenSnapshotIdentity {
+    /// Tests the same immutable data identity as Value::shares_frozen_storage.
+    /// The weak control block stays allocated until this token is dropped, so
+    /// equal payloads and later allocations cannot revive an old identity.
+    pub fn matches(&self, value: &Value) -> bool {
+        Weak::ptr_eq(&self.data, &Arc::downgrade(&value.root.data))
+    }
+}
+
+impl core::fmt::Debug for FrozenSnapshotIdentity {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter
+            .debug_struct("FrozenSnapshotIdentity")
+            .finish_non_exhaustive()
+    }
 }
 
 /// Detached immutable canonical ownership. Cloning a [`Value`] retains this
@@ -324,18 +392,37 @@ pub struct FrozenSnapshotStorage {
 
 #[derive(Debug)]
 struct SnapshotBudgetOwnership {
+    // Stable registration identity, not a position discovered by searching
+    // other budgets. This keeps removal bounded after arbitrary later imports.
+    // Field order frees this admitted node and schema owner before releasing
+    // their capacity claim (Rust drops fields in declaration order).
+    registration: Arc<SnapshotBudgetRegistration>,
     schemas: Arc<SchemaTable>,
     required_bytes: u64,
     reservation: crate::ManagedMemoryReservation,
-    identity: SharedOwnershipCell<Weak<FrozenSnapshotStorage>>,
 }
 
 #[derive(Debug)]
 struct SnapshotBudgetRegistration {
     budget: crate::ManagedMemoryBudget,
     schemas: Weak<SchemaTable>,
-    owner: Weak<FrozenSnapshotStorage>,
-    next: Option<Box<SnapshotBudgetRegistration>>,
+    owner: SharedOwnershipCell<Weak<FrozenSnapshotStorage>>,
+    links: SnapshotBudgetGate<SnapshotBudgetLinks>,
+}
+
+#[derive(Debug, Default)]
+struct SnapshotBudgetLinks {
+    previous: Weak<SnapshotBudgetRegistration>,
+    next: Option<Arc<SnapshotBudgetRegistration>>,
+}
+impl SnapshotBudgetRegistration {
+    // Every link access holds the shared data's outer registry gate first.
+    // Per-node safe interior mutability needs no raw pointers or unsafe Send.
+    fn with_links<T>(&self, apply: impl FnOnce(&mut SnapshotBudgetLinks) -> T) -> T {
+        #[cfg(all(test, any(not(feature = "no_std"), feature = "std")))]
+        IMPORT_LINK_STEPS.with(|steps| steps.set(steps.get() + 1));
+        with_budget_gate(&self.links, apply)
+    }
 }
 
 /// The immutable canonical tree and its one physical accounting ticket share
@@ -344,6 +431,11 @@ struct SnapshotBudgetRegistration {
 #[derive(Debug)]
 struct FrozenSnapshotData {
     data: ValueData,
+    // This receipt fingerprint is not validation, ownership or capability
+    // authority. Retain its exact deterministic algorithm, but walk payloads
+    // only if a receipt requests it. The admitted immutable owner contains the
+    // complete once-cell; initialization neither allocates nor changes data.
+    resident_token: SharedOwnershipCell<u64>,
     // The same immutable shape owner is shared by every ordinary Value clone.
     // Physical and imported-root tickets retain its real allocation as part
     // of this data owner, rather than charging a detached metadata copy.
@@ -359,16 +451,9 @@ struct FrozenSnapshotData {
 impl FrozenSnapshotData {
     fn with_budget_imports<T>(
         &self,
-        apply: impl FnOnce(&mut Option<Box<SnapshotBudgetRegistration>>) -> T,
+        apply: impl FnOnce(&mut Option<Arc<SnapshotBudgetRegistration>>) -> T,
     ) -> T {
-        #[cfg(all(feature = "no_std", not(feature = "std")))]
-        let mut imports = self.budget_imports.borrow_mut();
-        #[cfg(any(not(feature = "no_std"), feature = "std"))]
-        let mut imports = self
-            .budget_imports
-            .lock()
-            .unwrap_or_else(|error| error.into_inner());
-        apply(&mut imports)
+        with_budget_gate(&self.budget_imports, apply)
     }
 
     fn budget_import(
@@ -380,49 +465,62 @@ impl FrozenSnapshotData {
     }
 
     fn find_budget_import(
-        imports: &Option<Box<SnapshotBudgetRegistration>>,
+        imports: &Option<Arc<SnapshotBudgetRegistration>>,
         budget: &crate::ManagedMemoryBudget,
         schemas: &Arc<SchemaTable>,
     ) -> Option<Arc<FrozenSnapshotStorage>> {
-        let mut current = imports.as_deref();
+        let mut current = imports.clone();
         while let Some(import) = current {
+            #[cfg(all(test, any(not(feature = "no_std"), feature = "std")))]
+            IMPORT_LOOKUP_STEPS.with(|steps| steps.set(steps.get() + 1));
             if import.budget == *budget && Weak::ptr_eq(&import.schemas, &Arc::downgrade(schemas)) {
-                if let Some(owner) = import.owner.upgrade() {
+                if let Some(owner) = import.owner.get().and_then(Weak::upgrade) {
                     return Some(owner);
                 }
             }
-            current = import.next.as_deref();
+            current = import.with_links(|links| links.next.clone());
         }
         None
     }
 }
 
-impl Drop for FrozenSnapshotStorage {
-    fn drop(&mut self) {
-        let Some(owner) = self
-            .memory_budget
-            .as_ref()
-            .and_then(|ownership| ownership.identity.get())
-        else {
+impl FrozenSnapshotStorage {
+    // Shared by ordinary destruction and consuming ownership transfer. Only
+    // unlink here: the caller keeps the charge alive until backing is retired
+    // or transferred. Ordinary field-drop order remains data before charge.
+    fn unlink_budget_registration(&self) {
+        let Some(ownership) = &self.memory_budget else {
             return;
         };
-        let removed = self.data.with_budget_imports(|imports| {
-            let mut position = imports;
-            loop {
-                match position {
-                    Some(entry) if Weak::ptr_eq(&entry.owner, owner) => {
-                        let mut removed = position.take().expect("located immutable import");
-                        *position = removed.next.take();
-                        break Some(removed);
-                    }
-                    Some(entry) => position = &mut entry.next,
-                    None => break None,
-                }
+        let registration = &ownership.registration;
+        self.data.with_budget_imports(|imports| {
+            // At most this node and its two neighbors, regardless of foreign
+            // registry growth since admission. Detach the strong next link so
+            // retiring this registration cannot recursively retire the list.
+            let (previous, next) = registration.with_links(|links| {
+                let previous = links.previous.upgrade();
+                links.previous = Weak::new();
+                (previous, links.next.take())
+            });
+            if let Some(previous) = &previous {
+                previous.with_links(|links| links.next = next.clone());
+            } else {
+                *imports = next.clone();
+            }
+            if let Some(next) = &next {
+                next.with_links(|links| {
+                    links.previous = previous.as_ref().map(Arc::downgrade).unwrap_or_default();
+                });
             }
         });
-        // Free the exact admitted registration outside its registry lock,
-        // before field destruction releases this wrapper's reservation.
-        drop(removed);
+        // This wrapper still owns the registration Arc. Its admitted node is
+        // freed outside the registry gate during normal field destruction.
+    }
+}
+
+impl Drop for FrozenSnapshotStorage {
+    fn drop(&mut self) {
+        self.unlink_budget_registration();
     }
 }
 
@@ -439,6 +537,25 @@ impl core::fmt::Debug for Value {
 }
 
 impl Value {
+    /// Creates an opaque weak identity without allocating or retaining payload.
+    pub fn frozen_storage_identity(&self) -> FrozenSnapshotIdentity {
+        FrozenSnapshotIdentity {
+            data: Arc::downgrade(&self.root.data),
+        }
+    }
+
+    /// Complete allocation pinned by a weak frozen identity after all strong
+    /// owners drop: concrete FrozenSnapshotData storage plus the Arc header
+    /// and target-specific padding. This excludes payload/schema allocations
+    /// already destroyed with the last strong owner, and excludes the inline
+    /// token itself, which its owning cache must admit in its own metadata.
+    pub const fn frozen_storage_identity_allocation_bytes() -> u64 {
+        Self::shared_owner_allocation_bytes(
+            core::mem::size_of::<FrozenSnapshotData>(),
+            core::mem::align_of::<FrozenSnapshotData>(),
+        )
+    }
+
     #[doc(hidden)]
     pub fn shares_frozen_storage(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.root.data, &other.root.data)
@@ -485,17 +602,43 @@ impl Value {
     /// wrapper. The caller's other clones remain unchanged. Failed candidates
     /// release their own import claim even when the original data stays alive.
     pub fn into_memory_budget(
-        mut self,
+        self,
         reservation: &mut crate::ManagedMemoryReservation,
     ) -> crate::MemoryRuntimeResult<Self> {
+        self.into_memory_budget_inner(reservation, true)
+    }
+
+    /// Uses separately admitted wrapper ownership instead of searching for an
+    /// alias. Exact same-account/schema-owner values still reuse their wrapper
+    /// in constant time. Otherwise the caller must reserve the full unshared
+    /// ownership/claim bound, even if an alias exists. Immutable data and its
+    /// physical ticket remain shared; validation and reservation are unchanged.
+    #[doc(hidden)]
+    pub fn into_independent_memory_budget(
+        self,
+        reservation: &mut crate::ManagedMemoryReservation,
+    ) -> crate::MemoryRuntimeResult<Self> {
+        self.into_memory_budget_inner(reservation, false)
+    }
+
+    fn into_memory_budget_inner(
+        mut self,
+        reservation: &mut crate::ManagedMemoryReservation,
+        reuse_existing: bool,
+    ) -> crate::MemoryRuntimeResult<Self> {
         let budget = reservation.budget();
+        // Exact same account AND retained schema owner: no registry lookup,
+        // allocation, reservation transfer or foreign-import-dependent work.
+        if self.memory_budget_retained_bytes(&budget).is_some() {
+            return Ok(self);
+        }
         let schemas = self.schemas.clone().ok_or_else(|| {
             crate::MemoryRuntimeError::CandidateValidationFailed {
                 object: None,
                 reason: "immutable snapshot has no retained schema context".into(),
             }
         })?;
-        if let Some(owner) = self.root.data.budget_import(&budget, &schemas) {
+        if reuse_existing && let Some(owner) = self.root.data.budget_import(&budget, &schemas) {
             self.root = owner;
             return Ok(self);
         }
@@ -508,19 +651,20 @@ impl Value {
                 limit: reservation.capacity_bytes(),
             });
         }
+        let registration_bytes = Self::budget_registration_allocation_bytes();
         budget.check_snapshot_import_allocation(
-            core::mem::size_of::<SnapshotBudgetRegistration>() as u64,
+            registration_bytes,
             core::mem::align_of::<SnapshotBudgetRegistration>() as u32,
         )?;
-        let mut registration = Box::try_new(SnapshotBudgetRegistration {
+        let registration = Arc::try_new(SnapshotBudgetRegistration {
             budget: budget.clone(),
             schemas: Arc::downgrade(&schemas),
-            owner: Weak::new(),
-            next: None,
+            owner: SharedOwnershipCell::new(),
+            links: SnapshotBudgetGate::default(),
         })
         .map_err(|_| crate::MemoryRuntimeError::AllocationFailed {
             object: None,
-            requested: core::mem::size_of::<SnapshotBudgetRegistration>() as u64,
+            requested: registration_bytes,
             alignment: core::mem::align_of::<SnapshotBudgetRegistration>() as u32,
             space: crate::MemorySpace::Host,
         })?;
@@ -540,8 +684,9 @@ impl Value {
             space: crate::MemorySpace::Host,
         })?;
         let owner = data.with_budget_imports(|imports| {
-            if let Some(existing) =
-                FrozenSnapshotData::find_budget_import(imports, &budget, &schemas)
+            if reuse_existing
+                && let Some(existing) =
+                    FrozenSnapshotData::find_budget_import(imports, &budget, &schemas)
             {
                 return Ok(existing);
             }
@@ -554,16 +699,13 @@ impl Value {
                 schemas,
                 required_bytes: retained_bytes,
                 reservation: charge,
-                identity: SharedOwnershipCell::new(),
+                registration: registration.clone(),
             });
-            registration.owner = Arc::downgrade(&prepared);
-            let _ = prepared
-                .memory_budget
-                .as_ref()
-                .expect("prepared immutable ownership")
-                .identity
-                .set(registration.owner.clone());
-            registration.next = imports.take();
+            let _ = registration.owner.set(Arc::downgrade(&prepared));
+            if let Some(next) = imports.as_ref() {
+                next.with_links(|links| links.previous = Arc::downgrade(&registration));
+            }
+            registration.with_links(|links| links.next = imports.take());
             *imports = Some(registration);
             Ok::<_, crate::MemoryRuntimeError>(prepared.clone())
         })?;
@@ -577,7 +719,14 @@ impl Value {
         Self::shared_owner_allocation_bytes(
             core::mem::size_of::<FrozenSnapshotStorage>(),
             core::mem::align_of::<FrozenSnapshotStorage>(),
-        ) + core::mem::size_of::<SnapshotBudgetRegistration>() as u64
+        ) + Self::budget_registration_allocation_bytes()
+    }
+
+    const fn budget_registration_allocation_bytes() -> u64 {
+        Self::shared_owner_allocation_bytes(
+            core::mem::size_of::<SnapshotBudgetRegistration>(),
+            core::mem::align_of::<SnapshotBudgetRegistration>(),
+        )
     }
 
     /// Concrete shared-owner allocations retained by one finalized root.
@@ -624,6 +773,9 @@ impl Value {
         &self,
         budget: &crate::ManagedMemoryBudget,
     ) -> crate::MemoryRuntimeResult<u64> {
+        if self.memory_budget_retained_bytes(budget).is_some() {
+            return Ok(0);
+        }
         if let Some(schemas) = &self.schemas {
             if self.root.data.budget_import(budget, schemas).is_some() {
                 return Ok(0);
@@ -645,7 +797,7 @@ impl Value {
             .and_then(|owner| owner.memory_budget_retained_bytes(budget))
             .unwrap_or(0);
         (required - required.min(physical))
-            .checked_add(core::mem::size_of::<SnapshotBudgetRegistration>() as u64)
+            .checked_add(Self::budget_registration_allocation_bytes())
             .ok_or_else(|| crate::MemoryRuntimeError::CandidateValidationFailed {
                 object: None,
                 reason: "immutable snapshot import witness overflows".into(),
@@ -827,6 +979,39 @@ impl Value {
             .entry(schema)
             .ok_or(SnapshotValueError::UnknownSnapshotSchema { schema })?;
         let target_schema = target_entry.schema();
+        // Exact scalar String metadata needs no encoded-schema buffers or
+        // closed-body rebuild. Retained canonical bytes remain the authority.
+        // Require a supplied shared target owner so this path cannot allocate
+        // a schema-table clone before the caller's ownership admission.
+        if context.shared_schemas.get().is_some()
+            && source_schema.body() == &SchemaBody::String
+            && target_schema.body() == &SchemaBody::String
+            && source_schema.dimension_parameters().is_empty()
+            && target_schema.dimension_parameters().is_empty()
+            && self.shape.parameter_values().is_empty()
+            && shape.parameter_values().is_empty()
+        {
+            let source_entry = source_schemas
+                .entry(self.schema)
+                .expect("source schema was validated above");
+            if self.schema_key != target_entry.key()
+                || source_entry.canonical_bytes() != target_entry.canonical_bytes()
+            {
+                return Err(SnapshotValueError::SnapshotSchemaDefinitionMismatch {
+                    key: self.schema_key,
+                });
+            }
+            if core::ptr::eq(source_schemas, schemas) && schema == self.schema {
+                return Ok(self.clone());
+            }
+            return Ok(Self {
+                schema,
+                schema_key: target_entry.key(),
+                shape: self.shape.clone(),
+                root: self.root.clone(),
+                schemas: Some(context.try_clone_schemas()?),
+            });
+        }
         let exact_definition = self.schema_key == target_entry.key()
             && source_schema.canonical_bytes() == target_schema.canonical_bytes();
         let equivalent_at_shape =
@@ -862,7 +1047,6 @@ impl Value {
                     schema_key: target_entry.key(),
                     shape: self.shape.clone(),
                     root: self.root.clone(),
-                    resident_token: self.resident_token,
                     schemas: Some(context.try_clone_schemas()?),
                 });
             }
@@ -957,12 +1141,21 @@ impl Value {
         canonical_data_to_draft(schema.body(), &self.root.data.data, &SnapshotPath::root())
     }
 
-    /// Compact deterministic token computed when the finalized value is
-    /// constructed. Resident receipts use it without consulting schemas or
-    /// re-encoding immutable payloads during a turn.
+    /// Compact deterministic receipt token, computed at most once per immutable
+    /// owner on demand. The exact hash algorithm is unchanged. Construction and
+    /// import work bounds remain conservative for the complete payload walk;
+    /// callers must retain those bounds even when a token is never requested.
+    /// No schema lookup, encoding, allocation or authority is introduced here.
     #[doc(hidden)]
-    pub const fn resident_token(&self) -> u64 {
-        self.resident_token
+    pub fn resident_token(&self) -> u64 {
+        *self.root.data.resident_token.get_or_init(|| {
+            let mut token = token_bytes(RESIDENT_TOKEN_SEED, self.schema_key.as_bytes());
+            token = token_word(token, self.shape.parameter_values().len() as u64);
+            for value in self.shape.parameter_values() {
+                token = token_word(token, *value);
+            }
+            token_data(token, &self.root.data.data)
+        })
     }
 
     pub fn validate_against<'a>(
@@ -2295,12 +2488,6 @@ fn finalized_value(
     data: ValueData,
     schemas: Option<Arc<SchemaTable>>,
 ) -> Value {
-    let mut resident_token = token_bytes(RESIDENT_TOKEN_SEED, schema_key.as_bytes());
-    resident_token = token_word(resident_token, shape.parameter_values().len() as u64);
-    for value in shape.parameter_values() {
-        resident_token = token_word(resident_token, *value);
-    }
-    resident_token = token_data(resident_token, &data);
     let shape = Arc::new(shape);
     Value {
         schema,
@@ -2309,13 +2496,13 @@ fn finalized_value(
         root: Arc::new(FrozenSnapshotStorage {
             data: Arc::new(FrozenSnapshotData {
                 data,
+                resident_token: SharedOwnershipCell::new(),
                 shape,
                 ownership: SharedOwnershipCell::new(),
                 budget_imports: SnapshotBudgetRegistry::default(),
             }),
             memory_budget: None,
         }),
-        resident_token,
         schemas,
     }
 }
@@ -2328,18 +2515,28 @@ fn finalized_value_with_construction(
     schemas: Option<Arc<SchemaTable>>,
     context: &SnapshotValidationContext<'_>,
 ) -> Result<Value, SnapshotValueError> {
-    let mut resident_token = token_bytes(RESIDENT_TOKEN_SEED, schema_key.as_bytes());
-    resident_token = token_word(resident_token, shape.parameter_values().len() as u64);
-    for value in shape.parameter_values() {
-        resident_token = token_word(resident_token, *value);
-    }
-    resident_token = token_data(resident_token, &data);
+    let (shape, root) = prepared_snapshot_storage(shape, data, context)?;
+    Ok(Value {
+        schema,
+        schema_key,
+        shape,
+        root,
+        schemas,
+    })
+}
+
+fn prepared_snapshot_storage(
+    shape: ShapeInstance,
+    data: ValueData,
+    context: &SnapshotValidationContext<'_>,
+) -> Result<(Arc<ShapeInstance>, Arc<FrozenSnapshotStorage>), SnapshotValueError> {
     // Final Arc allocations are directly owned by the immutable tree. They
     // consume the admitted finalization byte allowance, not mutable-envelope
     // block registrations, and cannot grow that registry during construction.
     let shape = context.try_arc(shape)?;
     let data = context.try_arc(FrozenSnapshotData {
         data,
+        resident_token: SharedOwnershipCell::new(),
         shape: shape.clone(),
         ownership: SharedOwnershipCell::new(),
         budget_imports: SnapshotBudgetRegistry::default(),
@@ -2348,14 +2545,7 @@ fn finalized_value_with_construction(
         data,
         memory_budget: None,
     })?;
-    Ok(Value {
-        schema,
-        schema_key,
-        shape,
-        root,
-        resident_token,
-        schemas,
-    })
+    Ok((shape, root))
 }
 
 fn dynamic_canonical(
@@ -3390,7 +3580,20 @@ pub(super) fn finalize_value(
             })?;
     let shape = entry.schema().instantiate_shape(draft.shape_values)?;
     let path = SnapshotPath::root();
-    let data = finalize_data(entry.schema().body(), draft.data, &shape, context, &path)?;
+    let data = match (entry.schema().body(), draft.data) {
+        (SchemaBody::String, ValueDataDraft::String(text)) => {
+            return StringSnapshotConstructor::from_validated_shape(
+                draft.schema,
+                entry.key(),
+                shape,
+                text.len(),
+                context,
+            )?
+            .finish(text)
+            .map_err(|(_, error)| error);
+        }
+        (body, data) => finalize_data(body, data, &shape, context, &path)?,
+    };
     let schemas = context.try_clone_schemas()?;
     finalized_value_with_construction(
         draft.schema,
@@ -4139,6 +4342,152 @@ mod tests {
     };
     use core::cell::{Cell, RefCell};
 
+    #[cfg(any(not(feature = "no_std"), feature = "std"))]
+    #[test]
+    fn budget_registration_removal_and_same_owner_reuse_ignore_later_foreign_imports() {
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::String,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let schemas = Arc::new(build.table);
+        let raw = ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::String("small".into()),
+        }
+        .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+        .unwrap();
+        let account = crate::ManagedMemoryBudget::new(1_000_000);
+        let full_registration = Value::shared_owner_allocation_bytes(
+            core::mem::size_of::<SnapshotBudgetRegistration>(),
+            core::mem::align_of::<SnapshotBudgetRegistration>(),
+        );
+        assert_eq!(
+            raw.unshared_memory_budget_admission_bytes(&account)
+                .unwrap(),
+            raw.memory_budget_required_bytes().unwrap() + full_registration,
+            "fresh import admission includes the complete registration Arc allocation",
+        );
+        let admitted = raw.memory_budget_required_bytes().unwrap() + full_registration;
+        let short = crate::ManagedMemoryBudget::new(admitted - 1);
+        assert_eq!(raw.memory_budget_admission_bytes(&short).unwrap(), admitted);
+        assert!(short.reserve_capacity(admitted).is_err());
+        assert_eq!(short.used_bytes(), 0);
+        let mut short_reservation = short.reserve_capacity(admitted - 1).unwrap();
+        assert!(matches!(
+            raw.clone().into_independent_memory_budget(&mut short_reservation),
+            Err(crate::MemoryRuntimeError::BudgetExceeded { requested, limit, .. })
+                if requested == admitted && limit == admitted - 1
+        ));
+        assert_eq!(short_reservation.capacity_bytes(), admitted - 1);
+        drop(short_reservation);
+        assert_eq!(short.used_bytes(), 0);
+        let exact = crate::ManagedMemoryBudget::new(admitted);
+        let mut reservation = exact.reserve_capacity(admitted).unwrap();
+        let imported = raw
+            .clone()
+            .into_independent_memory_budget(&mut reservation)
+            .unwrap();
+        assert_eq!(reservation.capacity_bytes(), 0);
+        assert_eq!(
+            exact.used_bytes(),
+            admitted,
+            "the retained claim includes the Arc header"
+        );
+        drop(imported);
+        drop(reservation);
+        assert_eq!(exact.used_bytes(), 0);
+        let import = |budget: &crate::ManagedMemoryBudget| {
+            let mut reservation = budget
+                .reserve_capacity(raw.memory_budget_admission_bytes(budget).unwrap())
+                .unwrap();
+            raw.clone().into_memory_budget(&mut reservation).unwrap()
+        };
+        for later in [0, 1, 16] {
+            // An earlier node also exercises removal from the middle rather
+            // than relying only on the special tail/head cases.
+            let earlier_budget = crate::ManagedMemoryBudget::new(1_000_000);
+            let earlier = import(&earlier_budget);
+            let budget = crate::ManagedMemoryBudget::new(1_000_000);
+            let owned = import(&budget);
+            let retained = owned.memory_budget_retained_bytes(&budget).unwrap();
+            let foreign = (0..later)
+                .map(|_| {
+                    let account = crate::ManagedMemoryBudget::new(1_000_000);
+                    let value = import(&account);
+                    (account, value)
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(owned.memory_budget_retained_bytes(&budget), Some(retained));
+            IMPORT_LOOKUP_STEPS.with(|steps| steps.set(0));
+            IMPORT_LINK_STEPS.with(|steps| steps.set(0));
+            assert_eq!(owned.memory_budget_admission_bytes(&budget).unwrap(), 0);
+            let mut zero = budget.reserve_capacity(0).unwrap();
+            let reused = owned.clone().into_memory_budget(&mut zero).unwrap();
+            assert!(Arc::ptr_eq(&owned.root, &reused.root));
+            assert_eq!(zero.capacity_bytes(), 0);
+            drop(reused);
+            assert_eq!(IMPORT_LOOKUP_STEPS.with(Cell::get), 0);
+            assert_eq!(IMPORT_LINK_STEPS.with(Cell::get), 0);
+
+            // Raw compiled constants pay for an independent wrapper rather
+            // than search through arbitrary foreign registrations.
+            let mut capacity = budget
+                .reserve_capacity(raw.unshared_memory_budget_admission_bytes(&budget).unwrap())
+                .unwrap();
+            IMPORT_LOOKUP_STEPS.with(|steps| steps.set(0));
+            IMPORT_LINK_STEPS.with(|steps| steps.set(0));
+            let independent = raw
+                .clone()
+                .into_independent_memory_budget(&mut capacity)
+                .unwrap();
+            assert_eq!(IMPORT_LOOKUP_STEPS.with(Cell::get), 0);
+            assert!(IMPORT_LINK_STEPS.with(Cell::get) <= 2);
+            assert!(!Arc::ptr_eq(&owned.root, &independent.root));
+            assert!(owned.shares_frozen_storage(&independent));
+            assert!(independent.memory_budget_retained_bytes(&budget).is_some());
+            drop(independent);
+            drop(capacity);
+
+            IMPORT_LOOKUP_STEPS.with(|steps| steps.set(0));
+            IMPORT_LINK_STEPS.with(|steps| steps.set(0));
+            drop(owned);
+            assert_eq!(budget.used_bytes(), 0);
+            assert_eq!(IMPORT_LOOKUP_STEPS.with(Cell::get), 0);
+            assert!(IMPORT_LINK_STEPS.with(Cell::get) <= 3);
+            // Other registrations remain valid, including the earlier tail.
+            assert!(
+                earlier
+                    .memory_budget_retained_bytes(&earlier_budget)
+                    .is_some()
+            );
+            for (account, value) in &foreign {
+                assert!(value.memory_budget_retained_bytes(account).is_some());
+            }
+            // Drop the tail before the later heads to exercise both neighbors.
+            drop(earlier);
+            assert_eq!(earlier_budget.used_bytes(), 0);
+            for (account, value) in foreign {
+                drop(value);
+                assert_eq!(account.used_bytes(), 0);
+            }
+            assert!(
+                raw.root
+                    .data
+                    .with_budget_imports(|imports| imports.is_none())
+            );
+        }
+    }
+
     #[test]
     fn integer_interval_finalization_and_rebind_check_every_boundary() {
         let interval = crate::IntegerInterval::Unsigned {
@@ -4835,6 +5184,92 @@ mod tests {
                 .count(),
             1,
         );
+    }
+
+    #[test]
+    fn exact_shared_string_rebind_keeps_data_shape_and_target_arena() {
+        let string_schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::String,
+        }
+        .finalize()
+        .unwrap();
+        let mut source_builder = SchemaTableBuilder::new();
+        let source_handle = source_builder.insert(string_schema.clone()).unwrap();
+        source_builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Tuple(vec![SchemaBody::Bool; 2_048].into_boxed_slice()),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let source = source_builder.finish().unwrap();
+        let source_id = source.resolve(source_handle).unwrap();
+        let source = Arc::new(source.table);
+        let mut target_builder = SchemaTableBuilder::new();
+        target_builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Bool,
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let target_handle = target_builder.insert(string_schema).unwrap();
+        let target = target_builder.finish().unwrap();
+        let target_id = target.resolve(target_handle).unwrap();
+        let target = Arc::new(target.table);
+        for text in [String::new(), "é🧑‍🚀".into(), "ACGT".repeat(16_384)] {
+            let raw = ValueDraft {
+                schema: source_id,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::String(text.clone()),
+            }
+            .finalize(&SnapshotValidationContext::with_shared_schemas(&source))
+            .unwrap();
+            let rebound = raw
+                .rebind_with_context(
+                    target_id,
+                    raw.shape(),
+                    &SnapshotValidationContext::with_shared_schemas(&target),
+                )
+                .unwrap();
+            assert!(raw.shares_frozen_storage(&rebound));
+            assert!(Arc::ptr_eq(&raw.shape, &rebound.shape));
+            assert!(Arc::ptr_eq(&rebound.schemas().unwrap(), &target));
+            assert_eq!(rebound.schema(), target_id);
+            let ValueData::String(actual) = rebound.data() else {
+                panic!("String");
+            };
+            assert_eq!(actual.as_ref(), text.as_str());
+            let same = raw
+                .rebind_with_context(
+                    source_id,
+                    raw.shape(),
+                    &SnapshotValidationContext::with_shared_schemas(&source),
+                )
+                .unwrap();
+            assert!(Arc::ptr_eq(&raw.root, &same.root));
+            let budget = crate::ManagedMemoryBudget::new(1_000_000);
+            budget.inject_snapshot_import_failure_after(0);
+            let mut reservation = budget
+                .reserve_capacity(
+                    rebound.memory_budget_required_bytes().unwrap()
+                        + Value::memory_budget_claim_metadata_bytes(),
+                )
+                .unwrap();
+            assert!(matches!(
+                rebound.into_independent_memory_budget(&mut reservation),
+                Err(crate::MemoryRuntimeError::AllocationFailed { .. }),
+            ));
+            drop(reservation);
+            assert_eq!(budget.used_bytes(), 0);
+        }
     }
 
     #[test]

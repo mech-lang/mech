@@ -6,6 +6,10 @@ mod encoding;
 mod error;
 mod index;
 mod relations;
+mod set_conversion;
+pub(crate) use self::set_conversion::{
+    normalize_set_conversion_drafts, normalize_set_conversion_drafts_with_context,
+};
 mod sequence;
 pub(crate) mod validation;
 mod views;
@@ -26,8 +30,8 @@ pub use self::draft::{
 pub use self::encoding::{
     CanonicalDataWork, CanonicalDataWorkError, ValueFootprint, ValueFootprintError,
     canonical_data_payload_len, canonical_data_retained_footprint,
-    canonical_sequence_element_retained_footprint, prospective_string_value_footprint,
-    visit_canonical_data_work,
+    canonical_sequence_element_retained_footprint, prospective_packed_matrix_node_count,
+    prospective_string_value_footprint, visit_canonical_data_work,
 };
 pub use self::error::{
     SchemaDataKind, SnapshotPath, SnapshotPathSegment, SnapshotValueError, ValueDataKind,
@@ -40,8 +44,10 @@ pub use self::relations::{
 };
 pub use self::sequence::SequenceView;
 pub use self::validation::{
-    CompositeSnapshotConstructor, MatrixSnapshotConstructor, SnapshotCanonicalizationBudget,
-    SnapshotValidationContext, TableSnapshotBuilder, Value, build_f64_set_snapshot,
+    CompositeSnapshotConstructor, FrozenSnapshotIdentity, MatrixSnapshotConstructor,
+    OwnedSnapshotBytes, OwnedSnapshotString, SnapshotCanonicalizationBudget,
+    SnapshotValidationContext, StringMatrixSnapshotConstructor, StringOwnershipTransfer,
+    StringSnapshotConstructor, TableSnapshotBuilder, Value, build_f64_set_snapshot,
     build_f64_set_snapshot_after_remove, canonical_snapshot_data_draft,
     canonical_snapshot_data_draft_in, canonical_snapshot_data_draft_with_context,
     dynamic_canonical_allocation_bound_bytes, f64_set_snapshot_contains, rebuild_f64_set_snapshot,
@@ -55,3 +61,6 @@ mod composite_constructor_tests;
 
 #[cfg(test)]
 mod matrix_constructor_tests;
+
+#[cfg(test)]
+mod matrix_node_footprint_tests;

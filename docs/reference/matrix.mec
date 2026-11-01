@@ -545,3 +545,8 @@ m1 := [1 2; 3 4]
 m2 := [5 6]
 m := [m1; m2]  -- Evaluates to `[1 2; 3 4; 5 6]`
 ```
+Matrix-valued comprehensions follow the same one-level horizontal block rule
+as matrix literals. Blocks must agree on row count and contribute their widths
+in qualifier order. An explicit nested result kind, such as
+`blocks<[[f64]:2,1]:1,2>`, retains complete matrices as elements instead.
+See the comprehension reference for empty geometry and skipped-yield rules.

@@ -6,6 +6,12 @@ use super::{
 use crate::{FloatWidth, SchemaBody, SchemaTable};
 use core::cmp::Ordering;
 
+#[cfg(test)]
+#[path = "relations_matrix_tests.rs"]
+mod matrix_key_tests;
+#[path = "relations_matrix.rs"]
+mod matrix_keys;
+
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, vec::Vec};
 #[cfg(not(feature = "no_std"))]
@@ -634,6 +640,10 @@ pub(super) fn normalized_key_data(
                 .into_boxed_slice();
             ValueData::Record(value)
         }
+        (SchemaBody::Matrix { element, .. }, ValueData::Matrix(mut value)) => {
+            value.elements = matrix_keys::normalize(element, value.elements)?;
+            ValueData::Matrix(value)
+        }
         (SchemaBody::Set { element, .. }, ValueData::Set(mut value)) => {
             value.elements = value
                 .elements
@@ -924,7 +934,7 @@ fn compare_key_data_with_budget(
     if let Some(budget) = budget {
         let work = match (schema, left, right) {
             (SchemaBody::String, ValueData::String(left), ValueData::String(right)) => {
-                u64::try_from(left.len().max(right.len()).max(1)).unwrap_or(u64::MAX)
+                string_key_work(left, right)
             }
             _ => 1,
         };
@@ -949,7 +959,7 @@ fn compare_key_data_with_budget(
             rational_cmp(left, right)
         }
         (SchemaBody::String, ValueData::String(left), ValueData::String(right)) => {
-            left.as_bytes().cmp(right.as_bytes())
+            string_key_order(left, right)
         }
         (SchemaBody::Id, ValueData::Id(left), ValueData::Id(right))
         | (SchemaBody::Index, ValueData::Index(left), ValueData::Index(right)) => left.cmp(right),
@@ -994,6 +1004,9 @@ fn compare_key_data_with_budget(
             }
             order
         }
+        (SchemaBody::Matrix { element, .. }, ValueData::Matrix(left), ValueData::Matrix(right)) => {
+            matrix_keys::compare(element, &left.elements, &right.elements, budget)?
+        }
         (SchemaBody::Set { element, .. }, ValueData::Set(left), ValueData::Set(right)) => {
             let mut order = Ordering::Equal;
             for (left, right) in left.elements.iter().zip(right.elements.iter()) {
@@ -1007,6 +1020,14 @@ fn compare_key_data_with_budget(
         _ => unreachable!("validated key data changed representation"),
     };
     Ok(order)
+}
+
+fn string_key_work(left: &str, right: &str) -> u64 {
+    u64::try_from(left.len().max(right.len()).max(1)).unwrap_or(u64::MAX)
+}
+
+fn string_key_order(left: &str, right: &str) -> Ordering {
+    left.as_bytes().cmp(right.as_bytes())
 }
 
 fn rational_cmp(left: &super::Rational64Value, right: &super::Rational64Value) -> Ordering {

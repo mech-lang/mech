@@ -138,6 +138,32 @@ pub fn maintained_operation_contract(
         )
     };
     match name {
+        "sequence/sort-indices" if input_count == 4 => Some(full(ShapeRule::Declared)),
+        "map/histogram" | "map/keys" | "map/values" if input_count == 1 => {
+            Some(full(ShapeRule::Declared))
+        }
+        "text/lines" if input_count == 1 => Some(full(ShapeRule::Declared)),
+        "text/join" if input_count == 2 => Some(declaration(
+            fixed(),
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            ChangeDetectionPolicy::ExactScalar,
+        )),
+        "number/parse-u64" | "sequence/length" if input_count == 1 => Some(declaration(
+            fixed(),
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            ChangeDetectionPolicy::ExactScalar,
+        )),
+        "number/format" if input_count == 2 => Some(declaration(
+            fixed(),
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::SameAsInput { input: 0 },
+            },
+            change_detection,
+        )),
         "compare/neq" | "compare/eq" | "compare/sneq" | "compare/seq" | "compare/gt"
         | "compare/lt" | "compare/gte" | "compare/lte" | "compare/min" | "compare/max"
         | "logic/or" | "logic/and" | "logic/xor" | "string/concat"
@@ -292,6 +318,7 @@ pub fn maintained_operation_contract(
             ))
         }
         "option/some" => Some(full(ShapeRule::Declared)),
+        "convert/set" if input_count == 1 => Some(full(ShapeRule::Declared)),
         "convert/kind" | "core/assign" => Some(full(ShapeRule::SameAsInput { input: 0 })),
         "matrix/matmul" | "matrix/dot" => Some(declaration(
             fixed(),

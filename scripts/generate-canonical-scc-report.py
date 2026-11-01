@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Optional
 
-EXPECTED_RULES = 539
+EXPECTED_RULES = 543
 EXECUTABLE_ROOT = "expression"
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]

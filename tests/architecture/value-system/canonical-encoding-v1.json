@@ -344,6 +344,27 @@
         "zero-or-more-defining-module-namespace-segments",
         "declaration-name"
       ]
+    },
+    "standalone_segment_derivation": {
+      "admission": "explicit-host-opt-in-for-unrooted-document-or-session",
+      "existing_origin": "preserved-explicit-package-provenance-takes-precedence",
+      "forbidden_derivation_sources": [
+        "source-bytes",
+        "URI",
+        "filesystem-path",
+        "process-counter",
+        "process-local-numeric-hash"
+      ],
+      "identifier": "canonical-lowercase-hyphenated-UUIDv7",
+      "lifetime": "assigned-once-retained-through-edits-clears-resets-recompilation-and-artifact-transport",
+      "persistence": "origin-alongside-source-or-existing-provenance-bearing-bundle",
+      "segments": [
+        "mech:standalone",
+        "host-assigned-UUIDv7",
+        "declaration-name"
+      ],
+      "semantic_frontend_and_low_level_resolver_fallback": "excluded",
+      "source_only_reload": "new-independent-nominal-owner"
     }
   },
   "payload_encoding": {

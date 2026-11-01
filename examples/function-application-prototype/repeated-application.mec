@@ -1,0 +1,6 @@
+increment := 2.0
+step(x<f64>) => <f64> := x + increment
+seed := 1.0
+unchanged := seed |0> step
+result := unchanged |19> step |> math/sqrt
+io/write(string/concat(number/format(result, 6), "\n"))

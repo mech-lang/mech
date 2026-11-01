@@ -28,6 +28,7 @@ const PLANNING_WRITE_BASE_URI: &str = "counting://sink";
 #[cfg(feature = "semantic-compiler")]
 #[derive(Debug, Default)]
 struct PlanningWriteCounters {
+    schema_preflights: AtomicUsize,
     send_preflights: AtomicUsize,
     payload_plans: AtomicUsize,
     prepares: AtomicUsize,
@@ -59,6 +60,26 @@ impl RuntimeResourceProvider for PlanningWriteProvider {
         intent: RuntimeResourceWriteIntent,
     ) -> Option<&'static mech_core::OperationContractDeclaration> {
         (intent == RuntimeResourceWriteIntent::Send).then(crate::prepare_commit_compensate_contract)
+    }
+
+    fn preflight_write_schema(
+        &self,
+        request: RuntimeResourceWritePreflightRequest,
+        payload_schema: &mech_core::Schema,
+    ) -> mech_core::MResult<crate::ResourceSchemaPreflight> {
+        assert_eq!(request.base_uri, PLANNING_WRITE_BASE_URI);
+        assert_eq!(request.context_name, "sink");
+        assert_eq!(request.path, "sent");
+        assert_eq!(request.intent, RuntimeResourceWriteIntent::Send);
+        assert!(matches!(
+            payload_schema.body(),
+            mech_core::SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+        ));
+        self.counters
+            .schema_preflights
+            .fetch_add(1, Ordering::SeqCst);
+        // The schema cannot establish the numeric-domain constraint below.
+        Ok(crate::ResourceSchemaPreflight::DeferredToRuntime)
     }
 
     fn plan_write(&self, request: crate::RuntimeResourceWriteCommand) -> mech_core::MResult<()> {
@@ -283,6 +304,7 @@ fn provider_transaction_contract_reaches_the_source_program_artifact() {
         )
     }));
     assert_eq!(counters.send_preflights.load(Ordering::SeqCst), 1);
+    assert_eq!(counters.schema_preflights.load(Ordering::SeqCst), 1);
     assert_eq!(counters.prepares.load(Ordering::SeqCst), 0);
     assert_eq!(counters.deliveries.load(Ordering::SeqCst), 0);
 }
@@ -333,6 +355,7 @@ fn canonical_ordinary_and_interactive_compilation_preflight_payloads_without_liv
             };
             assert_eq!(result.is_ok(), accepted, "route={route}: {result:?}");
             assert_eq!(counters.payload_plans.load(Ordering::SeqCst), 1);
+            assert_eq!(counters.schema_preflights.load(Ordering::SeqCst), 1);
             assert_eq!(
                 counters.send_preflights.load(Ordering::SeqCst),
                 usize::from(accepted)

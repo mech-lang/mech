@@ -515,6 +515,13 @@ define_syntax_kinds! {
   UnorderedListItem => node,
   VariableAssign => node,
   WarningBlock => node,
+
+  // Ordinary application is a canonical syntax component, not the native
+  // sequence source normalizer. Preserve every preceding physical kind ID.
+  ApplicationExpression => node,
+  ApplicationStage => node,
+  ApplicationOperator => node,
+  FunctionDefineExpression => node,
 }
 
 #[cfg(test)]

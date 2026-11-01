@@ -132,6 +132,51 @@ pub struct SchemeResolution {
     score: OverloadScore,
 }
 
+/// Checks a supplied argument prefix without selecting a callable overload.
+/// Uses the SAME constraint environment as full resolution. Constraints whose
+/// operands still depend on unsupplied arguments and all output closing are
+/// deferred. Every surviving candidate is retained: later arguments can change
+/// overload ranking. This metadata result is not a call or conversion plan.
+pub fn match_type_overload_prefix(
+    origin: TypeConstraintOrigin,
+    candidates: &[TypeOverloadCandidate<'_>],
+    inputs: &[ResolvedType],
+) -> Result<Box<[u64]>, TypeResolutionError> {
+    let mut matches = Vec::new();
+    let mut failures = Vec::new();
+    for candidate in candidates {
+        match TypeConstraintEnvironment::new(origin.clone()).solve_scheme_inputs(
+            candidate.scheme,
+            inputs,
+            None,
+            true,
+        ) {
+            Ok(_) => matches.push(candidate.id),
+            Err(TypeResolutionError::Incompatible {
+                failures: candidate_failures,
+                ..
+            }) => failures.extend(candidate_failures.into_vec()),
+            Err(error @ TypeResolutionError::Ambiguous { .. }) => return Err(error),
+        }
+    }
+    if matches.is_empty() {
+        failures.sort_by(|left, right| format!("{left:?}").cmp(&format!("{right:?}")));
+        failures.dedup();
+        if failures.is_empty() {
+            failures.push(TypeConstraintFailure::InvalidScheme {
+                reason: "the overload prefix set is empty".into(),
+            });
+        }
+        return Err(TypeResolutionError::Incompatible {
+            origin,
+            failures: failures.into_boxed_slice(),
+        });
+    }
+    matches.sort_unstable();
+    matches.dedup();
+    Ok(matches.into_boxed_slice())
+}
+
 /// Resolves overloads by schemes and constraints. Runtime representations are
 /// intentionally absent from this API.
 pub fn resolve_type_overloads(
@@ -272,14 +317,26 @@ impl TypeConstraintEnvironment {
     }
 
     pub fn solve_scheme(
-        mut self,
+        self,
         scheme: &KindScheme,
         inputs: &[ResolvedType],
         expected_outputs: Option<&[ResolvedType]>,
     ) -> Result<SchemeResolution, TypeResolutionError> {
+        self.solve_scheme_inputs(scheme, inputs, expected_outputs, false)
+    }
+
+    fn solve_scheme_inputs(
+        mut self,
+        scheme: &KindScheme,
+        inputs: &[ResolvedType],
+        expected_outputs: Option<&[ResolvedType]>,
+        prefix_only: bool,
+    ) -> Result<SchemeResolution, TypeResolutionError> {
         let expected_input_count = match scheme.inputs() {
             InputKindScheme::Fixed(expected) => {
-                if expected.len() != inputs.len() {
+                if (!prefix_only && expected.len() != inputs.len())
+                    || (prefix_only && inputs.len() > expected.len())
+                {
                     return self.fail(TypeConstraintFailure::Arity {
                         expected: expected.len().to_string(),
                         actual: inputs.len(),
@@ -300,7 +357,7 @@ impl TypeConstraintEnvironment {
                             reason: "variadic input arity exceeds the host index range".into(),
                         })
                     })?;
-                if inputs.len() < minimum {
+                if !prefix_only && inputs.len() < minimum {
                     return self.fail(TypeConstraintFailure::Arity {
                         expected: format!("at least {minimum}"),
                         actual: inputs.len(),
@@ -382,6 +439,9 @@ impl TypeConstraintEnvironment {
             match constraint {
                 KindConstraint::Satisfies { kind, predicate } => {
                     let kind = self.substitute_kind(kind)?;
+                    if prefix_only && !self.prefix_kind_is_resolved(&kind)? {
+                        continue;
+                    }
                     if !self.known_predicates(&kind).contains(*predicate) {
                         return self.fail(TypeConstraintFailure::PredicateNotSatisfied {
                             kind: semantic_kind_name(&kind),
@@ -410,6 +470,12 @@ impl TypeConstraintEnvironment {
             {
                 let left = self.substitute_kind(left)?;
                 let right = self.substitute_kind(right)?;
+                if prefix_only
+                    && (!self.prefix_kind_is_resolved(&left)?
+                        || !self.prefix_kind_is_resolved(&right)?)
+                {
+                    continue;
+                }
                 let left_type = self.relation_type(left)?;
                 let right_type = self.relation_type(right)?;
                 let Some(promotion) = plan_numeric_promotion(&left_type, &right_type)? else {
@@ -431,23 +497,49 @@ impl TypeConstraintEnvironment {
         }
         for constraint in &scheme.constraints {
             if let KindConstraint::Convertible(source, target) = constraint {
+                if prefix_only
+                    && (!self.prefix_kind_is_resolved(source)?
+                        || !self.prefix_kind_is_resolved(target)?)
+                {
+                    continue;
+                }
                 self.require_conversion(source, target)?;
             }
         }
         for constraint in &scheme.constraints {
             match constraint {
                 KindConstraint::DimensionCompatible(left, right) => {
+                    if prefix_only
+                        && (!self.prefix_dimension_is_resolved(left)?
+                            || !self.prefix_dimension_is_resolved(right)?)
+                    {
+                        continue;
+                    }
                     self.require_dimension_compatible(left, right)?;
                     self.record_output_dimension_equivalence(left, right)?;
                 }
                 KindConstraint::DimensionLessEqual(left, right) => {
+                    if prefix_only
+                        && (!self.prefix_dimension_is_resolved(left)?
+                            || !self.prefix_dimension_is_resolved(right)?)
+                    {
+                        continue;
+                    }
                     self.require_dimension_less_equal(left, right)?;
                 }
                 _ => {}
             }
         }
-        self.validate_kind_parameter_bounds(&scheme.kind_parameters)?;
-        self.validate_dimension_parameter_bounds()?;
+        self.validate_kind_parameter_bounds(&scheme.kind_parameters, prefix_only)?;
+        self.validate_dimension_parameter_bounds(prefix_only)?;
+        if prefix_only {
+            return Ok(SchemeResolution {
+                outputs: Box::new([]),
+                conversions: Box::new([]),
+                conversion_count: self.conversion_count,
+                score: self.score,
+            });
+        }
 
         let conversions = expected_inputs
             .iter()
@@ -1223,9 +1315,42 @@ impl TypeConstraintEnvironment {
         .map_err(|error| error.with_origin(self.origin.clone()))
     }
 
+    // Unbound scheme variables depend on arguments not supplied by a prefix.
+    // Rigid dimensions imported from a supplied ResolvedType ARE known, even
+    // when turn-varying; ordinary interval/shape checks still apply to them.
+    fn prefix_dimension_is_resolved(
+        &self,
+        dimension: &DimensionExpr,
+    ) -> Result<bool, TypeResolutionError> {
+        let dimension = self.substitute_dimension(dimension)?;
+        let mut references = Vec::new();
+        collect_dimension_references(&dimension, &mut references);
+        Ok(references
+            .iter()
+            .all(|id| !self.bindable_dimensions.contains(id)))
+    }
+
+    fn prefix_kind_is_resolved(&self, kind: &KindExpr) -> Result<bool, TypeResolutionError> {
+        let kind = self.substitute_kind(kind)?;
+        let mut parameters = BTreeSet::new();
+        collect_kind_parameter_ids(&kind, &mut parameters);
+        if !parameters.is_empty() {
+            return Ok(false);
+        }
+        let mut dimensions = Vec::new();
+        collect_kind_dimension_references(&kind, &mut dimensions);
+        for dimension in dimensions {
+            if !self.prefix_dimension_is_resolved(&DimensionExpr::Parameter(dimension))? {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
     fn validate_kind_parameter_bounds(
         &self,
         parameters: &[crate::KindParameter],
+        prefix_only: bool,
     ) -> Result<(), TypeResolutionError> {
         for parameter in parameters {
             let Some(bound) = &parameter.upper_bound else {
@@ -1235,6 +1360,12 @@ impl TypeConstraintEnvironment {
                 continue;
             };
             let upper = self.substitute_kind(bound)?;
+            if prefix_only
+                && (!self.prefix_kind_is_resolved(&binding.kind)?
+                    || !self.prefix_kind_is_resolved(&upper)?)
+            {
+                continue;
+            }
             if !matches!(upper, KindExpr::Wildcard)
                 && !permitted_conversion(
                     &self.relation_type(binding.kind.clone())?,
@@ -1250,12 +1381,27 @@ impl TypeConstraintEnvironment {
         Ok(())
     }
 
-    fn validate_dimension_parameter_bounds(&self) -> Result<(), TypeResolutionError> {
+    fn validate_dimension_parameter_bounds(
+        &self,
+        prefix_only: bool,
+    ) -> Result<(), TypeResolutionError> {
         for id in &self.bindable_dimensions {
             let Some(value) = self.dimension_bindings.get(id) else {
                 continue;
             };
             let declaration = &self.dimensions[id.get() as usize];
+            if prefix_only
+                && (!self.prefix_dimension_is_resolved(value)?
+                    || !self.prefix_dimension_is_resolved(&declaration.lower_bound)?
+                    || declaration
+                        .upper_bound
+                        .as_ref()
+                        .map(|upper| self.prefix_dimension_is_resolved(upper))
+                        .transpose()?
+                        .is_some_and(|known| !known))
+            {
+                continue;
+            }
             let value = self.dimension_interval(value)?;
             let lower = self.dimension_interval(&declaration.lower_bound)?;
             if !prove_greater_equal(value, lower) {

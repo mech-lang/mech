@@ -6,10 +6,11 @@ use crate::{
     BytecodeValidationError, DimensionExpr, FloatWidth, IntegerWidth, KindExpr, KindId, MResult,
     MechError, SchemaBody, Value, ValueCell, ValueData, ValueDataDraft,
 };
+#[cfg(not(feature = "no_std"))]
 use std::collections::BTreeMap;
 
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, format, vec::Vec};
+use alloc::{boxed::Box, collections::BTreeMap, format, vec::Vec};
 
 fn wrong_arity(kind: &str, expected: usize, actual: usize) -> MechError {
     MechError::new(

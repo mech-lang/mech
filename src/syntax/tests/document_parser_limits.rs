@@ -268,13 +268,15 @@ fn recovery_byte_limit_abandons_to_resource_error_without_losing_bytes() {
 fn completed_prefix_survives_middle_fuel_and_event_exhaustion() {
     let text = "1. Stable\n--------\n\nA stable paragraph.\n\nx := 1\n\nfinal-item-with-enough-content-to-exhaust-the-limit\n";
     let prefix_end = text.find("final-item").unwrap();
+    // Application lookahead adds 11 steps and one event before this boundary.
+    // Earlier budgets remain exercised below; production limits are unchanged.
     for limits in [
         ParseLimits {
-            fuel: 390,
+            fuel: 401,
             ..ParseLimits::default()
         },
         ParseLimits {
-            max_events: 128,
+            max_events: 129,
             ..ParseLimits::default()
         },
     ] {
@@ -315,8 +317,9 @@ fn completed_prefix_survives_middle_fuel_and_event_exhaustion() {
 fn early_middle_and_late_fuel_exhaustion_have_exact_remainders() {
     let text = "1. Stable\n--------\n\nA stable paragraph.\n\nx := 1\n\nfinal-item-with-enough-content-to-exhaust-the-limit\n";
     // Canonical work includes rule selection and retained lookahead; byte offsets
-    // are not fuel units. These measured budgets preserve exact same remainders.
-    for (fuel, error_start) in [(0, 0), (390, 49), (648, 100)] {
+    // are not fuel units. Retain the old budgets and their now-earlier exact
+    // remainders, plus measured budgets at the original semantic boundaries.
+    for (fuel, error_start) in [(0, 0), (390, 46), (401, 49), (648, 89), (659, 100)] {
         let snapshot = parse_with_limits(
             text,
             ParseLimits {
@@ -325,6 +328,23 @@ fn early_middle_and_late_fuel_exhaustion_have_exact_remainders() {
             },
         );
         assert_only_remainder_is_error(text, &snapshot, error_start);
+        assert_eq!(snapshot.stats.parser_steps, fuel);
+    }
+}
+
+#[test]
+fn adjacent_event_limits_preserve_exact_unparsed_remainders() {
+    let text = "1. Stable\n--------\n\nA stable paragraph.\n\nx := 1\n\nfinal-item-with-enough-content-to-exhaust-the-limit\n";
+    for (max_events, error_start) in [(128, 47), (129, 49)] {
+        let snapshot = parse_with_limits(
+            text,
+            ParseLimits {
+                max_events,
+                ..ParseLimits::default()
+            },
+        );
+        assert_only_remainder_is_error(text, &snapshot, error_start);
+        assert!(snapshot.stats.events_emitted <= u64::from(max_events));
     }
 }
 

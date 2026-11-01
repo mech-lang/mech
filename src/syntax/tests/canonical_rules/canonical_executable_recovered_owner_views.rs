@@ -191,7 +191,18 @@ fn recovered_parenthetical_factors_keep_the_inner_expression() {
         for text in ["(1 + 2)", "((1 + 2))", "(1,2)", "(1,)", "([1,2],3)"] {
             sweep(rule, text, |p| {
                 for factor in nodes(&p.syntax(), SyntaxKind::Factor) {
-                    let Some(structure) = direct(&factor, SyntaxKind::Structure) else {
+                    // Postfix selection starts a candidate Slice before its
+                    // base. Only an unselected provisional candidate is
+                    // transparent to the retained parenthetical owner.
+                    let structure = direct(&factor, SyntaxKind::Structure).or_else(|| {
+                        let candidate = direct(&factor, SyntaxKind::Slice)?;
+                        candidate
+                            .flags()
+                            .contains(crate::document::NodeFlags::PROVISIONAL)
+                            .then(|| direct(&candidate, SyntaxKind::Structure))
+                            .flatten()
+                    });
+                    let Some(structure) = structure else {
                         continue;
                     };
                     let Some(tuple) = direct(&structure, SyntaxKind::Tuple) else {

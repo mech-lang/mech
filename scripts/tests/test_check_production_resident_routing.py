@@ -13,6 +13,42 @@ CHECK = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(CHECK)
 
 
+class CliFactorySeamTests(unittest.TestCase):
+    @staticmethod
+    def source(body):
+        return "pub fn register_cli_host_factories(builder: RuntimeBuilder) -> MResult<()> {\n" + body + "\n}"
+
+    def test_explicit_empty_snapshot_reaches_registration(self):
+        for prefix in ("", "mech_terminal::"):
+            source = self.source(
+                f"let cli_factory = {prefix}CliHostFactory::with_arguments(Vec::new())?;\n"
+                "register_cli_host_factories_with_cli_factory(builder, Box::new(cli_factory))"
+            )
+            self.assertTrue(CHECK.explicit_empty_cli_factory_is_registered(source))
+
+    def test_ambient_nonempty_or_unregistered_factories_are_rejected(self):
+        for body in (
+            "let cli_factory = CliHostFactory::new()?;\nregister_cli_host_factories_with_cli_factory(builder, Box::new(cli_factory))",
+            "let cli_factory = CliHostFactory::with_arguments(std::env::args_os().collect())?;\nregister_cli_host_factories_with_cli_factory(builder, Box::new(cli_factory))",
+            'let cli_factory = CliHostFactory::with_arguments(vec!["leaked".into()])?;\nregister_cli_host_factories_with_cli_factory(builder, Box::new(cli_factory))',
+            "let cli_factory = CliHostFactory::with_arguments(Vec::new())?;\nregister_cli_host_factories_with_cli_factory(builder, Box::new(other))",
+            "let cli_factory = CliHostFactory::with_arguments(Vec::new())?;\nOk(())",
+        ):
+            with self.subTest(body=body):
+                self.assertFalse(CHECK.explicit_empty_cli_factory_is_registered(self.source(body)))
+
+    def test_comments_literals_and_disabled_branches_cannot_claim_registration(self):
+        real = "let cli_factory = CliHostFactory::with_arguments(Vec::new())?;\nregister_cli_host_factories_with_cli_factory(builder, Box::new(cli_factory))"
+        for body in (
+            "// " + real.replace("\n", "\n// ") + "\nOk(())",
+            "/* " + real + " */\nOk(())",
+            'let _note = r#"' + real + '"#;\nOk(())',
+            "if false { " + real + " }\nOk(())",
+        ):
+            with self.subTest(body=body):
+                self.assertFalse(CHECK.explicit_empty_cli_factory_is_registered(self.source(body)))
+
+
 class BrowserProjectSeamTests(unittest.TestCase):
     def executor_fixture(self) -> Path:
         temporary = tempfile.TemporaryDirectory()

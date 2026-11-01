@@ -275,6 +275,25 @@ fn rejected_output_materialization_has_a_stable_execution_failure_record() {
 }
 
 #[test]
+fn rejected_projection_state_has_a_stable_execution_failure_record() {
+    let mut recorder = ResidentTurnRecorder::new(1, 0).unwrap();
+    let permit = recorder.take_admission_permit(0).unwrap();
+    recorder
+        .prepare_artifact_rejected(
+            permit,
+            0,
+            ArtifactExecutionError::InvalidProjectionState {
+                slot: CellSlotId(7),
+            },
+        )
+        .unwrap()
+        .append();
+    let record = recorder.inspect_last().unwrap();
+    assert_eq!(record.failure_phase, Some(TurnFailurePhase::Execution));
+    assert_eq!(record.failure_kind, Some("ResidentProjectionState"));
+}
+
+#[test]
 fn admission_exhaustion_precedes_candidate_execution() {
     let resident = ResidentEkfBatch::new(1);
     let mut recorder = ResidentTurnRecorder::new(1, 0).unwrap();

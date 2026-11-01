@@ -9,7 +9,7 @@ use crate::{
     CollectionPattern as Pattern, ComprehensionDeclaration, ComprehensionKind,
     ComprehensionStep as Step, ComprehensionValue as LexicalValue,
 };
-use mech_core::snapshot::ValueFootprint;
+use mech_core::{ValueData, snapshot::ValueFootprint};
 use std::sync::Arc;
 
 type Result<T> = core::result::Result<T, ResidentActivationError>;
@@ -252,6 +252,33 @@ fn fold_declaration(
     let mut locals = Vec::with_capacity(local_count);
     let mut values = Vec::new();
     let mut element_body = None;
+    let mut block_geometry =
+        if let ComprehensionKind::MatrixHorizontalBlocks { rows } = control.kind {
+            if charge(analysis, 0, 4).is_none() {
+                return Ok(None);
+            }
+            let rows = match rows {
+                crate::MatrixBlockRows::InferOrZero => None,
+                crate::MatrixBlockRows::Fixed(rows) => Some(rows),
+                crate::MatrixBlockRows::InputMatrixElements { input } => {
+                    let Some(source) =
+                        value(artifact, LexicalValue::Input(input), inputs, &[], analysis)
+                    else {
+                        return Ok(None);
+                    };
+                    let ValueData::Matrix(matrix) = source.data() else {
+                        return Ok(None);
+                    };
+                    let Ok(count) = u64::try_from(matrix.elements().len()) else {
+                        return Ok(None);
+                    };
+                    Some(count)
+                }
+            };
+            Some(collection::HorizontalBlockGeometry::new(rows))
+        } else {
+            None
+        };
     let mut footprint = ValueFootprint::zero();
     let mut finalization_work = 1u64;
     if !enumerate(
@@ -262,6 +289,7 @@ fn fold_declaration(
         &mut locals,
         &mut values,
         &mut element_body,
+        &mut block_geometry,
         &mut footprint,
         &mut finalization_work,
         schemas,
@@ -280,12 +308,30 @@ fn fold_declaration(
     if footprint.node_count > mech_core::RESIDENT_MAX_RETAINED_NODES {
         return Ok(None);
     }
-    let sort = if control.kind == ComprehensionKind::Set {
+    let string_set = control.kind == ComprehensionKind::Set
+        && matches!(schema.body(), SchemaBody::Set { element, .. }
+            if matches!(element.as_ref(), SchemaBody::String));
+    if string_set && charge(analysis, 0, count.checked_mul(2).unwrap_or(u64::MAX)).is_none() {
+        return Ok(None);
+    }
+    let sort = if string_set {
+        collection::collection_canonicalization_work(control.kind, &values).ok()
+    } else if control.kind == ComprehensionKind::Set {
         count.checked_mul(count.max(1).ilog2() as u64 + 1)
     } else {
         Some(0)
     };
-    let Some(work) = sort.and_then(|sort| sort.checked_add(finalization_work)) else {
+    let Some(sort) = sort else {
+        return Ok(None);
+    };
+    let Ok(normalization_bytes) = (if control.kind == ComprehensionKind::Set {
+        collection::collection_set_normalization_bytes(&values)
+    } else {
+        Ok(0)
+    }) else {
+        return Ok(None);
+    };
+    let Some(mut work) = sort.checked_add(finalization_work) else {
         return Ok(None);
     };
     let Some(bytes) = footprint
@@ -294,9 +340,8 @@ fn fold_declaration(
         .and_then(|bytes| {
             bytes.checked_add(count.checked_mul(core::mem::size_of::<ValueDataDraft>() as u64)?)
         })
-        .and_then(|bytes| {
-            bytes.checked_add(schema.clone_allocation_bound_bytes()?.checked_mul(4)?)
-        })
+        .and_then(|bytes| bytes.checked_add(schema.clone_allocation_bound_bytes()?.checked_mul(4)?))
+        .and_then(|bytes| bytes.checked_add(normalization_bytes))
     else {
         return Ok(None);
     };
@@ -365,6 +410,78 @@ fn fold_declaration(
             };
             (shape, ValueDataDraft::Matrix(values.into_boxed_slice()))
         }
+        ComprehensionKind::MatrixHorizontalBlocks { .. } => {
+            let Some(geometry) = block_geometry.take() else {
+                return Ok(None);
+            };
+            let Ok(count) = geometry.count() else {
+                return Ok(None);
+            };
+            if count > MAX_STATIC_SELECTOR_SOURCE_STEPS {
+                return Ok(None);
+            }
+            let rows = geometry.rows.unwrap_or(0);
+            let columns = geometry.columns;
+            let element = match element_body {
+                Some(element) => element,
+                None => {
+                    let yielded = match control.yield_value {
+                        LexicalValue::Constant(id) => {
+                            artifact.constants().get(id).map(Value::schema)
+                        }
+                        LexicalValue::Input(index) => {
+                            inputs.get(index as usize).map(|value| value.schema())
+                        }
+                        LexicalValue::Local(index) => {
+                            comprehension::locals(control).get(index as usize).copied()
+                        }
+                    };
+                    let Some(yielded) = yielded else {
+                        return Ok(None);
+                    };
+                    let Ok(SchemaBody::Matrix { element, .. }) =
+                        collection::lower_bound_yield_body(yielded, schemas)
+                    else {
+                        return Ok(None);
+                    };
+                    *element
+                }
+            };
+            let Ok((assembly_work, assembly_bytes)) = geometry.assembly_demand() else {
+                return Ok(None);
+            };
+            let Some(assembly_bytes) = (values.capacity() as u64)
+                .checked_mul(core::mem::size_of::<ValueDataDraft>() as u64)
+                .and_then(|n| n.checked_add(assembly_bytes))
+            else {
+                return Ok(None);
+            };
+            if !analysis.construction.charge_compute_with_comparison(
+                assembly_bytes,
+                assembly_work,
+                assembly_work,
+            ) {
+                return Ok(None);
+            }
+            let Some(next_work) = work.checked_add(assembly_work) else {
+                return Ok(None);
+            };
+            work = next_work;
+            let Ok(shape) = collection::completed_matrix_shape(
+                schema,
+                element,
+                Box::new([
+                    DimensionExpr::Constant(rows),
+                    DimensionExpr::Constant(columns),
+                ]),
+            ) else {
+                return Ok(None);
+            };
+            let Ok(assembled) = collection::assemble_horizontal_blocks(values, geometry) else {
+                return Ok(None);
+            };
+            (shape, ValueDataDraft::Matrix(assembled.into_boxed_slice()))
+        }
         ComprehensionKind::Set => {
             let SchemaBody::Set { element, .. } = schema.body() else {
                 return Ok(None);
@@ -400,6 +517,7 @@ fn enumerate(
     locals: &mut Vec<ClosedLexicalValue>,
     values: &mut Vec<ValueDataDraft>,
     element_body: &mut Option<SchemaBody>,
+    block_geometry: &mut Option<collection::HorizontalBlockGeometry>,
     footprint: &mut ValueFootprint,
     finalization_work: &mut u64,
     schemas: &Arc<mech_core::SchemaTable>,
@@ -416,9 +534,25 @@ fn enumerate(
                 let Some(source) = value(artifact, *source, inputs, locals, analysis) else {
                     return Ok(false);
                 };
+                let text = match source.data() {
+                    mech_core::ValueData::String(text) => Some(text.as_ref()),
+                    _ => None,
+                };
+                if let Some(text) = text {
+                    let Some(work) = (text.len() as u64)
+                        .checked_mul(4)
+                        .and_then(|n| n.checked_add(1))
+                    else {
+                        return Ok(false);
+                    };
+                    if charge(analysis, 0, work).is_none() {
+                        return Ok(false);
+                    }
+                }
                 let count = match source.data() {
                     mech_core::ValueData::Matrix(v) => v.elements().len(),
                     mech_core::ValueData::Set(v) => v.elements().len(),
+                    mech_core::ValueData::String(_) => 0,
                     _ => return Ok(false),
                 };
                 let Some(metrics) = crate::pattern_metrics(pattern) else {
@@ -427,8 +561,13 @@ fn enumerate(
                 if metrics.depth >= 64 {
                     return Ok(false);
                 }
-                let Some(element_schema) = projections.matrix_element(source.schema()) else {
-                    return Ok(false);
+                let element_schema = if text.is_some() {
+                    source.schema()
+                } else {
+                    let Some(schema) = projections.matrix_element(source.schema()) else {
+                        return Ok(false);
+                    };
+                    schema
                 };
                 let Ok((element, shape_values)) = collection::generator_element(
                     source.schema(),
@@ -439,33 +578,54 @@ fn enumerate(
                     return Ok(false);
                 };
                 let retained_locals = locals.len();
-                for ordinal in 0..count {
+                let mut graphemes = text.map(|text| grapheme::Graphemes::from_usvs(text).iter());
+                let mut next_ordinal = 0usize;
+                loop {
+                    let grapheme = if let Some(cursor) = &mut graphemes {
+                        let Some(item) = cursor.next() else { break };
+                        Some(item.as_str())
+                    } else {
+                        if next_ordinal >= count {
+                            break;
+                        }
+                        None
+                    };
+                    let ordinal = next_ordinal;
+                    let Some(next) = next_ordinal.checked_add(1) else {
+                        return Ok(false);
+                    };
+                    next_ordinal = next;
                     if charge(analysis, 0, metrics.nodes as u64 + 1).is_none() {
                         return Ok(false);
                     }
                     if !matches!(pattern, Pattern::Wildcard) {
                         // Every possible projection/binding clone is covered
                         // before the shared materializer copies the selected item.
-                        let selected = match source.data() {
-                            mech_core::ValueData::Matrix(matrix) => {
-                                canonical_sequence_element_retained_footprint(
-                                    &element,
-                                    matrix.elements(),
-                                    ordinal,
-                                )
+                        let selected = if let Some(text) = grapheme {
+                            collection::scalar_footprint(text.len()).ok()
+                        } else {
+                            match source.data() {
+                                mech_core::ValueData::Matrix(matrix) => {
+                                    canonical_sequence_element_retained_footprint(
+                                        &element,
+                                        matrix.elements(),
+                                        ordinal,
+                                    )
+                                }
+                                mech_core::ValueData::Set(set) => {
+                                    let Some(item) = set.elements().get(ordinal) else {
+                                        return Ok(false);
+                                    };
+                                    mech_core::snapshot::canonical_data_retained_footprint(
+                                        &element,
+                                        item.data(),
+                                    )
+                                }
+                                _ => unreachable!(),
                             }
-                            mech_core::ValueData::Set(set) => {
-                                let Some(item) = set.elements().get(ordinal) else {
-                                    return Ok(false);
-                                };
-                                mech_core::snapshot::canonical_data_retained_footprint(
-                                    &element,
-                                    item.data(),
-                                )
-                            }
-                            _ => unreachable!(),
+                            .ok()
                         };
-                        let Ok(selected) = selected else {
+                        let Some(selected) = selected else {
                             return Ok(false);
                         };
                         let copies = metrics.nodes as u64 * 4 + 4;
@@ -477,9 +637,20 @@ fn enumerate(
                         else {
                             return Ok(false);
                         };
+                        let Some(copy_work) =
+                            selected.node_count.checked_mul(copies).and_then(|work| {
+                                if grapheme.is_some() {
+                                    work.checked_add(selected.retained_bytes.checked_mul(copies)?)
+                                } else {
+                                    Some(work)
+                                }
+                            })
+                        else {
+                            return Ok(false);
+                        };
                         if !analysis.construction.charge_compute_with_comparison(
                             bytes,
-                            selected.node_count.saturating_mul(copies),
+                            copy_work,
                             selected.node_count.saturating_mul(copies),
                         ) {
                             return Ok(false);
@@ -488,7 +659,6 @@ fn enumerate(
                             mech_core::RESIDENT_MAX_COMPARISON_WORK
                                 .saturating_sub(analysis.construction.comparison_work.get()),
                         );
-                        let refs = [Some(source.as_ref().clone())];
                         analysis.collections.pattern_materializations.set(
                             analysis
                                 .collections
@@ -496,25 +666,34 @@ fn enumerate(
                                 .get()
                                 .saturating_add(1),
                         );
-                        let Some(item) = collection::collection_item(
-                            ResidentValueRef::Snapshot(&refs),
-                            ResidentRegion {
-                                kind: ResidentValueKind::Snapshot,
-                                offset: 0,
-                                len: 1,
-                                shape: ResidentShape {
-                                    rows: 1,
-                                    columns: 1,
+                        let item = if let Some(text) = grapheme {
+                            let Ok(item) = collection::string_grapheme_item(text) else {
+                                return Ok(false);
+                            };
+                            item
+                        } else {
+                            let refs = [Some(source.as_ref().clone())];
+                            let Some(item) = collection::collection_item(
+                                ResidentValueRef::Snapshot(&refs),
+                                ResidentRegion {
+                                    kind: ResidentValueKind::Snapshot,
+                                    offset: 0,
+                                    len: 1,
+                                    shape: ResidentShape {
+                                        rows: 1,
+                                        columns: 1,
+                                    },
                                 },
-                            },
-                            element_schema,
-                            &element,
-                            &shape_values,
-                            ordinal,
-                            &SnapshotValidationContext::with_shared_schemas(schemas)
-                                .with_canonicalization_budget(&budget),
-                        ) else {
-                            return Ok(false);
+                                element_schema,
+                                &element,
+                                &shape_values,
+                                ordinal,
+                                &SnapshotValidationContext::with_shared_schemas(schemas)
+                                    .with_canonicalization_budget(&budget),
+                            ) else {
+                                return Ok(false);
+                            };
+                            item
                         };
                         let Some(matched) = match_pattern(
                             artifact,
@@ -550,6 +729,7 @@ fn enumerate(
                         locals,
                         values,
                         element_body,
+                        block_geometry,
                         footprint,
                         finalization_work,
                         schemas,
@@ -656,6 +836,19 @@ fn enumerate(
     let Ok(body) = schema.closed_body(yielded.shape()) else {
         return Ok(false);
     };
+    let mut next_block = None;
+    let body = if let Some(geometry) = block_geometry.as_ref() {
+        let Ok((rows, columns, _)) = geometry.preview(&body) else {
+            return Ok(false);
+        };
+        next_block = Some((rows, columns));
+        let SchemaBody::Matrix { element, .. } = body else {
+            return Ok(false);
+        };
+        *element
+    } else {
+        body
+    };
     if element_body
         .as_ref()
         .is_some_and(|expected| expected != &body)
@@ -682,9 +875,20 @@ fn enumerate(
     ) else {
         return Ok(false);
     };
-    if !analysis
-        .construction
-        .charge_comparison_work(meter.estimate().comparison_work())
+    let measured = meter.estimate();
+    let Some(non_comparison_work) = measured
+        .compute_work()
+        .checked_sub(measured.comparison_work())
+    else {
+        return Ok(false);
+    };
+    if (non_comparison_work > 0
+        && !analysis
+            .construction
+            .charge_compute_chunk(0, non_comparison_work, 1))
+        || !analysis
+            .construction
+            .charge_comparison_work(measured.comparison_work())
     {
         return Ok(false);
     }
@@ -699,12 +903,60 @@ fn enumerate(
     {
         return Ok(false);
     }
+    let mut reservation = 1;
+    if let Some(geometry) = block_geometry.as_mut() {
+        if geometry.widths.len() == geometry.widths.capacity() {
+            let Some(capacity) = geometry.widths.capacity().checked_mul(2).map(|n| n.max(4)) else {
+                return Ok(false);
+            };
+            let Some(bytes) = (capacity as u64).checked_mul(16) else {
+                return Ok(false);
+            };
+            if charge(analysis, bytes, geometry.widths.len() as u64).is_none() {
+                return Ok(false);
+            }
+            geometry
+                .widths
+                .try_reserve_exact(capacity - geometry.widths.len())
+                .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+            if geometry.widths.capacity() > capacity
+                && charge(
+                    analysis,
+                    ((geometry.widths.capacity() - capacity) as u64).saturating_mul(8),
+                    0,
+                )
+                .is_none()
+            {
+                return Ok(false);
+            }
+        }
+        if values.len() == values.capacity() {
+            let Some(capacity) = values.capacity().checked_mul(2).map(|n| n.max(4)) else {
+                return Ok(false);
+            };
+            let Some(bytes) = (capacity as u64)
+                .checked_mul(core::mem::size_of::<ValueDataDraft>() as u64)
+                .and_then(|n| n.checked_mul(2))
+            else {
+                return Ok(false);
+            };
+            if charge(analysis, bytes, values.len() as u64).is_none() {
+                return Ok(false);
+            }
+            reservation = capacity - values.len();
+        }
+    }
     let Ok(data) = yielded.canonical_data_draft() else {
         return Ok(false);
     };
     values
-        .try_reserve_exact(1)
+        .try_reserve_exact(reservation)
         .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+    if let (Some(geometry), Some((rows, columns))) = (block_geometry.as_mut(), next_block) {
+        if geometry.push(rows, columns).is_err() {
+            return Ok(false);
+        }
+    }
     values.push(data);
     *footprint = footprint
         .checked_add(item_footprint)
@@ -787,7 +1039,7 @@ fn match_pattern(
                 .flatten())
         }
         Pattern::Enum { ordinal, payload } => {
-            let (actual, child) = match item.enum_variant(schemas) {
+            let (actual, child) = match item.enum_variant_matching(*ordinal, schemas) {
                 Ok(Some(pair)) => pair,
                 Ok(None) => return Ok(Some(false)),
                 Err(_) => return Ok(None),
@@ -950,7 +1202,7 @@ fn fold_match(
                 let Some(schema) = schemas.get(scrutinee.schema()) else {
                     return Ok(None);
                 };
-                if !crate::is_control_scalar_schema(schema) {
+                if !crate::is_control_literal_schema(schema) {
                     return Ok(None);
                 }
                 let remaining = mech_core::RESIDENT_MAX_COMPARISON_WORK
@@ -1231,6 +1483,7 @@ fn fold_block(
         .iter()
         .map(|parameter| {
             let selected = match parameter.source {
+                crate::ControlParameterSource::IterationCarrier => None,
                 crate::ControlParameterSource::Scrutinee => {
                     captures.get(control.scrutinee as usize)
                 }
@@ -1308,7 +1561,8 @@ fn fold_block(
                 analysis,
                 depth + 1,
             )?,
-            crate::ControlOperationBody::Recur(_)
+            crate::ControlOperationBody::Iteration(_)
+            | crate::ControlOperationBody::Recur(_)
             | crate::ControlOperationBody::Suspend
             | crate::ControlOperationBody::Publish => None,
         };

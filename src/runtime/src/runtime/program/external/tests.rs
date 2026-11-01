@@ -278,13 +278,22 @@ impl RuntimeResourceProvider for EffectProvider {
             None,
         ))
     }
-    fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
+    fn preflight_write(&self, request: crate::RuntimeResourceWritePreflightRequest) -> MResult<()> {
         if !self.base_uris().contains(&request.base_uri) || request.path.is_empty() {
             return Err(test_error(
                 "external test fixture write is outside its declared target",
             ));
         }
         Ok(())
+    }
+    fn plan_write(&self, request: RuntimeResourceWriteCommand) -> MResult<()> {
+        self.preflight_write(crate::RuntimeResourceWritePreflightRequest {
+            base_uri: request.base_uri,
+            path: request.path,
+            context_name: request.context_name,
+            operation: request.operation,
+            intent: request.intent,
+        })
     }
     fn prepare_write(
         &self,

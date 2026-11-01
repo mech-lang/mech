@@ -204,13 +204,15 @@ fn fuel_exhausted_at_string_recovery_opening_retains_its_selected_owner() {
         (
             rules::VARIABLE_DEFINE,
             "x := (|a<*>|1 |b<*>|\"unterminated| |)",
-            93,
+            // The UTF-8 recovery owner has started after the application
+            // operator probe, before consuming its opening quote.
+            95,
             SyntaxKind::VariableDefine,
         ),
         (
             rules::VARIABLE_DEFINE,
             "x := (|a<*>|1 |b<*>|\"unterminated| |)",
-            141,
+            144,
             SyntaxKind::VariableDefine,
         ),
     ] {

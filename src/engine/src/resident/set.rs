@@ -11,15 +11,18 @@ use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, CardinalitySpec, ChangeDetectionPolicy,
     DeliveryMode, ExternalInteraction, FunctionCatalogBuilder, ImplementationMemoryClass, MResult,
     OutputConstruction, ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError,
-    ResidentKernelInputs, ResidentShape, ResidentSnapshotOutput, ResidentValueKind,
-    ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody, SchemaId, SchemaKey,
-    SetValueRelation, ShapeInstance, ShapeRule, ValueData,
+    ResidentKernelInputs, ResidentKernelWorkAccounting, ResidentShape, ResidentSnapshotOutput,
+    ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody,
+    SchemaId, SchemaKey, SetValueRelation, ShapeInstance, ShapeRule, ValueData,
 };
 #[cfg(test)]
 use std::cmp::Ordering;
 use std::sync::Arc;
 
 const MAX_POWERSET_INPUT_CARDINALITY: usize = 16;
+
+#[path = "set_membership_output.rs"]
+pub(super) mod membership_output;
 
 #[cfg(test)]
 thread_local! {
@@ -116,8 +119,18 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         canonical,
         bind_symmetric_difference,
     )?;
-    builder.insert_resident_factory(["set"], "element-of", no_scratch, bind_element_of)?;
-    builder.insert_resident_factory(["set"], "not-element-of", no_scratch, bind_not_element_of)?;
+    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    super::native_collection_semantics::register_set_membership(builder)?;
+    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    {
+        builder.insert_resident_factory(["set"], "element-of", no_scratch, bind_element_of)?;
+        builder.insert_resident_factory(
+            ["set"],
+            "not-element-of",
+            no_scratch,
+            bind_not_element_of,
+        )?;
+    }
     builder.insert_resident_factory(["set"], "insert", canonical, bind_insert)?;
     builder.insert_resident_factory(["set"], "remove", canonical, bind_remove)?;
     Ok(())
@@ -515,22 +528,28 @@ fn bind_size(
         .with_snapshot_schemas(request.schemas.clone()))
 }
 
-fn bind_element_of(
+pub(super) fn bind_element_of(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_membership(request, element_of, element_of_schema_mismatch)
+    bind_membership(request, element_of, element_of_schema_mismatch, true)
 }
 
-fn bind_not_element_of(
+pub(super) fn bind_not_element_of(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_membership(request, not_element_of, not_element_of_schema_mismatch)
+    bind_membership(
+        request,
+        not_element_of,
+        not_element_of_schema_mismatch,
+        false,
+    )
 }
 
 fn bind_membership(
     request: &ResidentKernelBindRequest<'_>,
     kernel: mech_core::ResidentKernelExecutor,
     mismatch_kernel: mech_core::ResidentKernelExecutor,
+    allow_borrowed_string: bool,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_binary_contract(request, ChangeDetectionPolicy::ExactScalar)?;
     let element_schema_matches = set_element_schema_matches(
@@ -542,17 +561,61 @@ fn bind_membership(
         || request.inputs[1].kind != ResidentValueKind::Snapshot
         || request.inputs[1].shape != ResidentShape::SCALAR
         || !is_set(request.schemas.get(request.inputs[1].schema_id))
-        || request.output.kind != ResidentValueKind::Bool
+        || !matches!(
+            request.output.kind,
+            ResidentValueKind::Bool | ResidentValueKind::Snapshot
+        )
         || request.output.shape != ResidentShape::SCALAR
+        || !request
+            .schemas
+            .get(request.output.schema_id)
+            .is_some_and(|schema| {
+                schema.body() == &SchemaBody::Bool && schema.dimension_parameters().is_empty()
+            })
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
     if !element_schema_matches {
-        return Ok(BoundResidentKernel::new(mismatch_kernel, Box::new([])));
+        return Ok(membership_output::bind(
+            BoundResidentKernel::new(mismatch_kernel, Box::new([])),
+            request,
+        ));
     }
-    Ok(BoundResidentKernel::new(kernel, Box::new([]))
-        .with_snapshot_schemas(request.schemas.clone())
-        .with_retained_state(Arc::new(set_element_metadata(request, 0)?)))
+    if allow_borrowed_string
+        && request.output.kind == ResidentValueKind::Bool
+        && request.inputs[0].kind == ResidentValueKind::String
+        && request.schemas.get(request.inputs[0].schema_id).is_some_and(|schema| {
+            schema.body() == &SchemaBody::String && schema.dimension_parameters().is_empty()
+        })
+        && request.schemas.get(request.inputs[1].schema_id).is_some_and(|schema| {
+            matches!(schema.body(), SchemaBody::Set { element, .. } if element.as_ref() == &SchemaBody::String)
+                && schema.dimension_parameters().is_empty()
+        })
+        && request.schemas.get(request.output.schema_id).is_some_and(|schema| {
+            schema.body() == &SchemaBody::Bool && schema.dimension_parameters().is_empty()
+        })
+    {
+        // This actual maintained leaf borrows canonical String keys. It does
+        // not materialize a candidate Value or clone a schema arena/payload.
+        return Ok(BoundResidentKernel::new(borrowed_string_element_of, Box::new([]))
+            .with_snapshot_schemas(request.schemas.clone())
+            .with_retained_state(Arc::new(StringMembershipPlan {
+                set_schema: request.inputs[1].schema_id,
+                set_key: request.inputs[1].schema_key,
+            }))
+            .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered));
+    }
+    Ok(membership_output::bind(
+        BoundResidentKernel::new(kernel, Box::new([]))
+            .with_snapshot_schemas(request.schemas.clone())
+            .with_retained_state(Arc::new(set_element_metadata(request, 0)?)),
+        request,
+    )
+    // Both maintained membership executors admit the recursive candidate/set
+    // traversal and lookup before doing it. Canonical Bool publication also
+    // admits its own construction. Classify only after the final bind setters,
+    // which intentionally invalidate a previous accounting classification.
+    .with_work_accounting(ResidentKernelWorkAccounting::RuntimeMetered))
 }
 
 fn bind_mutation(
@@ -832,11 +895,7 @@ fn admit_set_candidate_operation(
     let Some(output_elements) = output_elements else {
         return PreparedMutationPlan::new(
             operation,
-            PublishedOutputFootprint {
-                elements: 1,
-                retained_bytes: checked_u64(core::mem::size_of::<u8>())?,
-                retained_nodes: 1,
-            },
+            membership_output::footprint(kernel)?,
             super::budget::MutationRetainedNodeFootprint {
                 current_persistent: current_persistent_nodes,
                 // `set_contains` clones and normalizes the candidate before
@@ -1985,11 +2044,110 @@ fn canonical_set_element_drafts(
         .map(Vec::into_boxed_slice)
 }
 
-fn write_membership(output: ResidentValueMut<'_>, next: bool) -> Result<bool, ResidentKernelError> {
+// The plan is private and immutable; public kernel mutations invalidate the
+// final accounting classification, while unchanged genuine clones retain it.
+#[derive(Clone, Copy, Debug)]
+struct StringMembershipPlan {
+    set_schema: SchemaId,
+    set_key: SchemaKey,
+}
+
+fn borrowed_string_element_of(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 2 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let Some(ResidentValueRef::String([candidate])) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let Some(ResidentValueRef::Snapshot([Some(set)])) = inputs.get(1) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
     let ResidentValueMut::Bool([target]) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
-    let next = u8::from(next);
+    let plan = kernel
+        .retained_state::<StringMembershipPlan>()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    if set.schema() != plan.set_schema || set.schema_key() != plan.set_key {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let schema = set
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    if !matches!(schema.body(), SchemaBody::Set { element, .. } if element.as_ref() == &SchemaBody::String)
+    {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let ValueData::Set(values) = set.data() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let elements = values.elements();
+    let mut meter = ResidentBudgetMeter::default();
+    // Each of the two planning traversals inspects only canonical metadata.
+    // Every recursive/key-byte bound is checked before lookup touches bytes.
+    meter.charge_compute_work(
+        checked_u64(elements.len())?
+            .checked_mul(2)
+            .and_then(|work| work.checked_add(1))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    super::budget::measure_canonical_value_footprint(&mut meter, set, schemas)?;
+    let candidate_work = checked_u64(candidate.len())?
+        .checked_add(8)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    for element in elements {
+        super::budget::measure_canonical_data_comparison_work(
+            &mut meter,
+            &SchemaBody::String,
+            element.data(),
+        )?;
+        // Binary search compares at most one candidate per existing element.
+        meter.charge_comparison_work(candidate_work)?;
+    }
+    let mut cost = meter.estimate();
+    cost.set_compute_work(
+        cost.compute_work()
+            .checked_add(cost.comparison_work())
+            .and_then(|work| work.checked_add(1))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    cost.set_retained_nodes(
+        cost.retained_nodes()
+            .checked_add(2)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    );
+    cost.set_output_elements(1);
+    cost.set_output_bytes(1);
+    PreparedKernel::new((), cost).admit()?.into_plan();
+
+    // Core normalized_key_data leaves Strings unchanged, and its String key
+    // comparator uses raw UTF8 lexical order. Retain the same binary search
+    // bounds without its owned candidate copy or Unicode normalization.
+    let mut lower = 0;
+    let mut upper = elements.len();
+    let mut found = false;
+    while lower < upper {
+        let middle = lower + (upper - lower) / 2;
+        let ValueData::String(key) = elements[middle].data() else {
+            return Err(ResidentKernelError::InvalidInput);
+        };
+        match key.as_bytes().cmp(candidate.as_bytes()) {
+            std::cmp::Ordering::Less => lower = middle + 1,
+            std::cmp::Ordering::Greater => upper = middle,
+            std::cmp::Ordering::Equal => {
+                found = true;
+                break;
+            }
+        }
+    }
+    let next = u8::from(found);
     let changed = *target != next;
     *target = next;
     Ok(changed)
@@ -2011,26 +2169,18 @@ fn element_of(
     let next = set
         .set_contains(schemas, element.value(), element.schemas(schemas))
         .map_err(|_| ResidentKernelError::InvalidInput)?;
-    write_membership(output, next)
+    membership_output::write(kernel, output, next)
 }
 
 fn element_of_schema_mismatch(
-    _kernel: &BoundResidentKernel,
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
     }
-    let ResidentValueMut::Bool(output) = output else {
-        return Err(ResidentKernelError::InvalidOutput);
-    };
-    let [target] = output else {
-        return Err(ResidentKernelError::InvalidOutput);
-    };
-    let changed = *target != 0;
-    *target = 0;
-    Ok(changed)
+    membership_output::write(kernel, output, false)
 }
 
 fn not_element_of(
@@ -2049,23 +2199,18 @@ fn not_element_of(
     let next = set
         .set_contains(schemas, element.value(), element.schemas(schemas))
         .map_err(|_| ResidentKernelError::InvalidInput)?;
-    write_membership(output, !next)
+    membership_output::write(kernel, output, !next)
 }
 
 fn not_element_of_schema_mismatch(
-    _kernel: &BoundResidentKernel,
+    kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
     }
-    let ResidentValueMut::Bool([target]) = output else {
-        return Err(ResidentKernelError::InvalidOutput);
-    };
-    let changed = *target != 1;
-    *target = 1;
-    Ok(changed)
+    membership_output::write(kernel, output, true)
 }
 
 fn insert(
@@ -2859,7 +3004,12 @@ mod tests {
                 &Inputs(&cartesian_inputs),
                 ResidentValueMut::Snapshot(&mut cartesian_output),
             ),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::RetainedNodes,
+                required: 198665,
+                limit: 65536
+            }),
         );
         assert!(cartesian_output[0].is_none());
 
@@ -2879,7 +3029,12 @@ mod tests {
                 &Inputs(&normalization_inputs),
                 ResidentValueMut::Snapshot(&mut normalization_output),
             ),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 440440,
+                limit: 65536
+            }),
         );
         assert!(normalization_output[0].is_none());
 
@@ -2898,7 +3053,12 @@ mod tests {
                 &Inputs(&long_product_inputs),
                 ResidentValueMut::Snapshot(&mut long_product_output),
             ),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 165_860,
+                limit: 65_536,
+            }),
         );
         assert!(long_product_output[0].is_none());
 
@@ -2936,7 +3096,12 @@ mod tests {
                 &Inputs(&planning_inputs),
                 ResidentValueMut::Snapshot(&mut planning_output),
             ),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 81_964,
+                limit: 65_536
+            }),
         );
         assert!(planning_output[0].is_none());
 
@@ -2954,7 +3119,12 @@ mod tests {
                 &Inputs(&empty_product_inputs),
                 ResidentValueMut::Snapshot(&mut empty_product_output),
             ),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 16_777_238,
+                limit: 65_536
+            }),
         );
         assert!(empty_product_output[0].is_none());
 
@@ -2972,7 +3142,12 @@ mod tests {
                 &Inputs(&empty_node_product_inputs),
                 ResidentValueMut::Snapshot(&mut empty_node_product_output),
             ),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 65_543,
+                limit: 65_536
+            }),
         );
         assert!(empty_node_product_output[0].is_none());
 
@@ -2987,7 +3162,12 @@ mod tests {
                 &Inputs(&long_key_inputs),
                 ResidentValueMut::Snapshot(&mut long_key_output),
             ),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 67_736,
+                limit: 65_536
+            }),
         );
         assert!(long_key_output[0].is_none());
 
@@ -3002,7 +3182,12 @@ mod tests {
                 &Inputs(&wrapper_inputs),
                 ResidentValueMut::Snapshot(&mut wrapper_output),
             ),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 72_239,
+                limit: 65_536
+            }),
         );
         assert!(wrapper_output[0].is_none());
 
@@ -3074,7 +3259,15 @@ mod tests {
         };
 
         let (result, output) = execute(22_000);
-        assert_eq!(result, Err(ResidentKernelError::InvalidShape),);
+        assert_eq!(
+            result,
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::RetainedNodes,
+                required: 66007,
+                limit: 65536
+            }),
+        );
         assert!(output[0].is_none());
 
         let (result, output) = execute(21_843);
@@ -3089,7 +3282,12 @@ mod tests {
         // populations and must be summed rather than replaced by a maximum.
         assert_eq!(
             admit_set_materialization(2_000, 0, 4_000, 1_024, 48_000, 24_000).unwrap_err(),
-            ResidentKernelError::InvalidShape,
+            ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::RetainedNodes,
+                required: 120000,
+                limit: 65536
+            },
         );
     }
 
@@ -3206,7 +3404,12 @@ mod tests {
 
         assert_eq!(
             kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::RetainedNodes,
+                required: 134416,
+                limit: 65536
+            }),
         );
         assert!(output[0].is_none());
     }
@@ -3275,7 +3478,12 @@ mod tests {
                     &Inputs(&membership_inputs),
                     ResidentValueMut::Bool(&mut output),
                 ),
-                Err(ResidentKernelError::InvalidShape),
+                Err(ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                    required: 16777226,
+                    limit: 65536
+                }),
             );
             assert_eq!(output, [initial]);
         }
@@ -3304,7 +3512,12 @@ mod tests {
                     &Inputs(&mutation_inputs),
                     ResidentValueMut::Snapshot(&mut output),
                 ),
-                Err(ResidentKernelError::InvalidShape),
+                Err(ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                    required: 16777226,
+                    limit: 65536
+                }),
             );
             let ValueData::Set(output) = output[0].as_ref().unwrap().data() else {
                 unreachable!()
@@ -3369,7 +3582,12 @@ mod tests {
         let mut output = [1_u8];
         assert_eq!(
             kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 65537,
+                limit: 65536
+            }),
         );
         assert_eq!(output, [1]);
     }
@@ -3440,7 +3658,12 @@ mod tests {
 
         assert_eq!(
             kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 65683,
+                limit: 65536
+            }),
         );
         assert!(
             output[0]
@@ -3498,7 +3721,12 @@ mod tests {
         let mut output = [1_u8];
         assert_eq!(
             kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
-            Err(ResidentKernelError::InvalidShape),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 65537,
+                limit: 65536
+            }),
         );
         assert_eq!(output, [1]);
     }
@@ -3542,6 +3770,255 @@ mod tests {
         assert_eq!(
             kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
             Err(ResidentKernelError::InvalidShape),
+        );
+        assert_eq!(output, [0]);
+    }
+    #[test]
+    fn borrowed_string_membership_matches_core_without_candidate_clones_and_recovers() {
+        use mech_core::{
+            DeclaredOperationContract, DimensionExpr, ResidentPortLayout, ResolvedInputPort,
+            ResolvedOutputPort, ResourceDemand,
+        };
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let text = builder.insert(schema(SchemaBody::String)).unwrap();
+        let boolean = builder.insert(schema(SchemaBody::Bool)).unwrap();
+        let set = builder
+            .insert(schema(SchemaBody::Set {
+                element: Box::new(SchemaBody::String),
+                cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+            }))
+            .unwrap();
+        for columns in 0..512 {
+            builder
+                .insert(schema(SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::Bool),
+                    dimensions: Box::new([
+                        DimensionExpr::Constant(1),
+                        DimensionExpr::Constant(columns),
+                    ]),
+                }))
+                .unwrap();
+        }
+        let build = builder.finish().unwrap();
+        let text = build.resolve(text).unwrap();
+        let boolean = build.resolve(boolean).unwrap();
+        let set = build.resolve(set).unwrap();
+        let (schemas, _) = build.into_parts();
+        assert!(schemas.clone_allocation_bound_bytes().unwrap() > 4096);
+        let layout = |id, kind| ResidentPortLayout {
+            schema_id: id,
+            schema_key: schemas.entry(id).unwrap().key(),
+            kind,
+            shape: ResidentShape::SCALAR,
+            shape_instance: schemas
+                .get(id)
+                .unwrap()
+                .instantiate_shape(Box::new([]))
+                .unwrap(),
+            activation_fixed_shape: true,
+            resolved_selector: None,
+        };
+        let contract = ResolvedOperationContract::Declared(DeclaredOperationContract {
+            inputs: Box::new([
+                ResolvedInputPort {
+                    schema: text,
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                ResolvedInputPort {
+                    schema: set,
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]),
+            outputs: Box::new([ResolvedOutputPort {
+                schema: boolean,
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                alias: AliasPolicy::NoAlias,
+                change_detection: ChangeDetectionPolicy::ExactScalar,
+            }]),
+            interaction: ExternalInteraction::Pure,
+        });
+        let request = ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &[
+                layout(text, ResidentValueKind::String),
+                layout(set, ResidentValueKind::Snapshot),
+            ],
+            output: layout(boolean, ResidentValueKind::Bool),
+        };
+        let kernel = bind_element_of(&request).unwrap();
+        assert!(kernel.retained_state::<StringMembershipPlan>().is_some());
+        assert_eq!(
+            kernel.work_accounting(),
+            ResidentKernelWorkAccounting::RuntimeMetered
+        );
+        assert_eq!(
+            kernel.clone().work_accounting(),
+            ResidentKernelWorkAccounting::RuntimeMetered
+        );
+        assert_eq!(
+            kernel
+                .clone()
+                .with_snapshot_schemas(schemas.clone())
+                .work_accounting(),
+            ResidentKernelWorkAccounting::Unclassified
+        );
+        assert_eq!(
+            bind_not_element_of(&request).unwrap().work_accounting(),
+            ResidentKernelWorkAccounting::RuntimeMetered
+        );
+        let snapshot_inputs = [
+            layout(text, ResidentValueKind::Snapshot),
+            layout(set, ResidentValueKind::Snapshot),
+        ];
+        let snapshot_request = ResidentKernelBindRequest {
+            inputs: &snapshot_inputs,
+            ..request
+        };
+        let snapshot_membership = bind_element_of(&snapshot_request).unwrap();
+        let snapshot_not_membership = bind_not_element_of(&snapshot_request).unwrap();
+        for bound in [&snapshot_membership, &snapshot_not_membership] {
+            assert_eq!(
+                bound.work_accounting(),
+                ResidentKernelWorkAccounting::RuntimeMetered
+            );
+            assert_eq!(
+                bound
+                    .clone()
+                    .with_snapshot_schemas(schemas.clone())
+                    .work_accounting(),
+                ResidentKernelWorkAccounting::Unclassified
+            );
+        }
+        let make_set = |values: &[&str]| {
+            ValueDraft {
+                schema: set,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Set(
+                    values
+                        .iter()
+                        .map(|value| ValueDataDraft::String((*value).into()))
+                        .collect(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap()
+        };
+        let sets = [make_set(&[]), make_set(&["", "é", "x", "é", "🧑‍🚀"])];
+        let queries = ["", "é", "é", "x", "y", "É", "🧑‍🚀", "\0"].map(str::to_owned);
+        let references = sets
+            .iter()
+            .map(|set| {
+                queries
+                    .iter()
+                    .map(|query| {
+                        let value = ValueDraft {
+                            schema: text,
+                            shape_values: Box::new([]),
+                            data: ValueDataDraft::String(query.clone()),
+                        }
+                        .finalize(&SnapshotValidationContext::new(&schemas))
+                        .unwrap();
+                        set.set_contains(&schemas, &value, &schemas).unwrap()
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+        for (which, set) in sets.iter().enumerate() {
+            let holder = [Some(set.clone())];
+            for (index, query) in queries.iter().enumerate() {
+                let candidate = [Some(
+                    ValueDraft {
+                        schema: text,
+                        shape_values: Box::new([]),
+                        data: ValueDataDraft::String(query.clone()),
+                    }
+                    .finalize(&SnapshotValidationContext::new(&schemas))
+                    .unwrap(),
+                )];
+                let inputs = Inputs(&[
+                    ResidentValueRef::Snapshot(&candidate),
+                    ResidentValueRef::Snapshot(&holder),
+                ]);
+                for (bound, expected) in [
+                    (&snapshot_membership, references[which][index]),
+                    (&snapshot_not_membership, !references[which][index]),
+                ] {
+                    let mut output = [u8::from(!expected)];
+                    assert!(
+                        bound
+                            .execute(&inputs, ResidentValueMut::Bool(&mut output))
+                            .unwrap()
+                    );
+                    assert_eq!(output, [u8::from(expected)]);
+                    assert!(
+                        !bound
+                            .execute(&inputs, ResidentValueMut::Bool(&mut output))
+                            .unwrap()
+                    );
+                }
+            }
+        }
+        let mut turn = super::super::budget::detached_turn_plan(ResourceDemand::default()).unwrap();
+        turn.budget_limits.max_temporary_bytes = Some(4096);
+        turn.budget_limits.max_cloned_bytes = Some(0);
+        // This direct leaf has no Snapshot publication or old-output witness.
+        // Inputs already exist; a finite scalar-stage allowance permits no candidate clones.
+        super::super::budget::with_resident_turn_plan(turn, || {
+            for (which, set) in sets.iter().enumerate() {
+                let holder = [Some(set.clone())];
+                for (index, query) in queries.iter().enumerate() {
+                    let mut output = [u8::from(!references[which][index])];
+                    let inputs = [
+                        ResidentValueRef::String(std::slice::from_ref(query)),
+                        ResidentValueRef::Snapshot(&holder),
+                    ];
+                    assert!(
+                        kernel
+                            .execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output))
+                            .unwrap()
+                    );
+                    assert_eq!(output, [u8::from(references[which][index])]);
+                }
+            }
+        });
+        // A conservative byte-comparison bound is denied before payload search.
+        let large = ["x".repeat(super::super::budget::MAX_RESIDENT_COMPARISON_WORK as usize + 1)];
+        let set = [Some(sets[1].clone())];
+        let mut output = [1];
+        assert_eq!(
+            kernel.execute(
+                &Inputs(&[
+                    ResidentValueRef::String(&large),
+                    ResidentValueRef::Snapshot(&set)
+                ]),
+                ResidentValueMut::Bool(&mut output)
+            ),
+            Err(ResidentKernelError::ResourceLimit {
+                phase: mech_core::ResidentResourcePhase::Admission,
+                dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                required: 65619,
+                limit: 65536
+            })
+        );
+        assert_eq!(output, [1]);
+        let absent = ["absent".to_owned()];
+        assert!(
+            kernel
+                .execute(
+                    &Inputs(&[
+                        ResidentValueRef::String(&absent),
+                        ResidentValueRef::Snapshot(&set)
+                    ]),
+                    ResidentValueMut::Bool(&mut output)
+                )
+                .unwrap()
         );
         assert_eq!(output, [0]);
     }

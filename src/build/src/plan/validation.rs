@@ -112,6 +112,7 @@ fn target_pointer_width(target: Option<&str>) -> MResult<u32> {
     Ok(width)
 }
 
+#[cfg(test)]
 pub(crate) fn validate_installer_path(value: &str) -> MResult<()> {
     let segments: Vec<_> = value.split("::").collect();
     if segments.len() >= 2

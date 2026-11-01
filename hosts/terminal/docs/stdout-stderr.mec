@@ -9,6 +9,7 @@ The CLI host exposes stdout and stderr as send-style output contexts.
 
 @out/line <- "Hello"
 @err/text <- "warning"
+@out/bytes <- [0u8 128u8 255u8]
 ```
 
 1. Paths
@@ -20,8 +21,29 @@ Supported paths:
 |------|----------|
 | `text` | Write text without adding a newline. |
 | `line` | Write text with a trailing newline. |
+| `bytes` | Write a canonical U8 row of shape 1,N unchanged, without a suffix. |
 
 2. Operations
 -------------------------------------------------------------------------------
 
 `cli/stdout` and `cli/stderr` support output writes. Use send syntax with `<-` for stream output.
+
+The text and line paths require scalar Strings. The bytes path accepts exactly
+a rank-two U8 matrix with one row, including an empty 1,0 row. Other element
+kinds, nested arrays, columns and multiple rows are rejected. A schema with a
+dynamic row extent is checked against the real payload before preparation.
+
+Byte paths require explicit write grants naming bytes. A text grant supplies no
+authority over bytes. The existing instance aliases and read-only/send-only
+directions apply to every path.
+
+Output is validated and retained as an after-commit effect. Preparation or a
+failed source turn emits no output; successful delivery preserves source order
+and counts every byte in the existing effect-cost contract. The standard backend
+writes all bytes and flushes, reporting write or flush errors. As with text, a
+delivery failure after commit cannot undo bytes already written to an external
+stream. At-most-once delivery and shutdown do not replay failed terminal output.
+
+Custom backends implement write_stdout_bytes() and write_stderr_bytes() for raw
+delivery. The default methods report unavailable; they never decode bytes or
+fall back to text. Existing text-only backends retain their text methods.

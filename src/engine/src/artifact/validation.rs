@@ -439,7 +439,8 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
             super::ExecutableNodeBody::Match(_)
             | super::ExecutableNodeBody::Activation(_)
             | super::ExecutableNodeBody::Comprehension(_)
-            | super::ExecutableNodeBody::Fsm(_) => {
+            | super::ExecutableNodeBody::Fsm(_)
+            | super::ExecutableNodeBody::Iteration(_) => {
                 let input_schemas = draft.bindings[inputs.clone()]
                     .iter()
                     .map(|binding| match binding {
@@ -505,6 +506,37 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
                             &input_schemas,
                             output.schema,
                         )?
+                    }
+                    super::ExecutableNodeBody::Iteration(control) => {
+                        // A repeated invocation owns immutable capture snapshots;
+                        // it cannot capture a mutable graph state cell directly.
+                        for capture in &control.captures {
+                            let binding = draft.bindings[inputs.clone()]
+                                .get(capture.input as usize)
+                                .ok_or(ArtifactBuildError::InvalidControl {
+                                    node: node.node,
+                                    reason: "unknown iteration capture",
+                                })?;
+                            if let BindingDeclaration::Input {
+                                source: ArtifactSource::Slot(slot),
+                                ..
+                            } = binding
+                            {
+                                if require_slot(draft, *slot)?.role == SlotRole::State {
+                                    return Err(ArtifactBuildError::InvalidControl {
+                                        node: node.node,
+                                        reason: "iteration cannot directly capture mutable state",
+                                    });
+                                }
+                            }
+                        }
+                        super::iteration::validate_iteration(
+                            draft,
+                            node.node,
+                            control,
+                            &input_schemas,
+                            output.schema,
+                        )?;
                     }
                     super::ExecutableNodeBody::Fsm(control) => {
                         super::fsm::validate_fsm(node.node, control, &input_schemas)?

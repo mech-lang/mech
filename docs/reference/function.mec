@@ -1,18 +1,25 @@
 functions
 ================================================================================
 
-%% A `function` maps input values to output values. In Mech, functions are branch-based and support pattern matching, recursion, and kind annotations.
+%% A `function` maps input values to output values. Mech supports pattern branches, named outputs, recursion, and kind annotations.
 
 1. Syntax
 -------------------------------------------------------------------------------
 
-Functions are defined with a signature, one or more guards, and a trailing `.`.
+Function signatures use `=>` between their inputs and outputs. A branch body selects an expression by matching a pattern:
 
 ```
 name(arg1<kind1>, arg2<kind2>, ...) => <return-kind>
   ├ pattern-1 => expression-1
   ├ pattern-2 => expression-2
   └ pattern-n => expression-n.
+```
+
+A statement body names its outputs, starts with `:=`, and ends with `.`:
+
+```mech:disabled
+double(x<u64>) => (output<u64>) :=
+  output := x + x.
 ```
 
 A function call uses regular call syntax:
@@ -30,9 +37,8 @@ name(arg1: value1, arg2: value2)
 2. Semantics
 -------------------------------------------------------------------------------
 
-- Branches are matched from top to bottom.
-- The first matching branch is selected.
-- Function bodies are expressions.
+- Branches are matched from top to bottom, selecting the first match.
+- A statement body binds each output declared in its signature.
 - Functions can call themselves recursively.
 - Calls are expressions, so they can be nested in formulas and broadcast over vectors/matrices.
 

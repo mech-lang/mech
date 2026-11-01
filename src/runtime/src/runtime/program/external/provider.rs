@@ -285,7 +285,7 @@ fn compare_contract(
     Ok(())
 }
 
-fn contract_matches(
+pub(super) fn contract_matches(
     artifact: &DeclaredOperationContract,
     provider: &OperationContractDeclaration,
 ) -> bool {

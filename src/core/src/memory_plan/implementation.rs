@@ -19,6 +19,10 @@ pub enum ImplementationMemoryClass {
     ExternalMarshalling,
     MatrixSolve,
     CanonicalFinalize,
+    /// Canonical String-matrix to String-matrix selection uses checked compact
+    /// construction, with the complete real workspace admitted by the kernel.
+    /// Other source/output schemas/storage retain the canonical finalizer bound.
+    PackedStringMatrixOrCanonicalFinalize,
     CanonicalSortUnique,
 }
 

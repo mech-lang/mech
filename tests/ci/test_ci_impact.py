@@ -292,10 +292,14 @@ class ImpactClassifierTests(unittest.TestCase):
             self.assertEqual(result["contract_families"], ["browser", "cli"])
             self.assertTrue(result["browser_canary_required"])
             self.assertFalse(result["native_validation_required"])
-        result = self.classify(["src/cli/commands/build.rs"])
-        self.assertTrue(result["native_validation_required"])
-        self.assertIn("linkage", result["contract_families"])
-        self.assertFalse(result["full_validation_required"])
+        for path in ("src/cli/commands/build.rs", "src/cli/commands/build_cranelift.rs",
+                     "src/cli/commands/build_cranelift_tests.rs", "tests/canonical_native_build.rs",
+                     "tests/support/canonical_native_build.rs"):
+            with self.subTest(path=path):
+                result = self.classify([path])
+                self.assertTrue(result["native_validation_required"])
+                self.assertTrue({"linkage", "artifact"} <= set(result["contract_families"]))
+                self.assertFalse(result["full_validation_required"])
 
     def test_cli_authority_keeps_artifact_memory_runtime_and_native_contracts(self):
         for path in ("src/cli/canonical_source.rs", "src/cli/host_grants.rs",

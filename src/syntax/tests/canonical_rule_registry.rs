@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use mech_syntax::document::RuleId;
 use mech_syntax::document::parser::{CANONICAL_RULE_COUNT, CANONICAL_RULES};
 
-const EXPECTED_RULES: usize = 539;
+const EXPECTED_RULES: usize = 543;
 const REGENERATE: &str = "python3 scripts/generate-canonical-rule-registry.py";
 
 fn repository_root() -> PathBuf {

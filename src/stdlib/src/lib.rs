@@ -4,6 +4,10 @@
 extern crate alloc;
 
 mod catalog;
+#[cfg(feature = "native-sequence")]
+mod native_sequence;
+#[cfg(feature = "native-sequence")]
+pub use native_sequence::{native_control_catalog, native_grid_catalog, native_sequence_catalog};
 
 pub use catalog::*;
 

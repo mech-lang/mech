@@ -19,6 +19,39 @@ fn parse_config_document(
 include!("config_profile.rs");
 
 #[test]
+fn comprehensions_remain_rejected_as_config_values_and_formula_operands() {
+    for expression in [
+        "{item | item <- [1 2]}",
+        "0 + {item | item <- [1 2]}",
+        "[item | item <- [1 2]]",
+        "0 + [item | item <- [1 2]]",
+    ] {
+        let text = format!("value := {expression}\nconfig := {{:}}\n");
+        let source = mech_runtime::resolver::SourceDocument::parse(
+            TextSnapshot::new(DocumentId(838), Revision(1), text.as_str()).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(
+            source.is_strictly_clean(),
+            "{expression}: {:?}",
+            source.snapshot().diagnostics
+        );
+        let error = mech_runtime::compile_config_document(
+            "comprehension.mcfg",
+            &source,
+            ConfigProfileOptions::default(),
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "ConfigProfileViolation");
+        assert!(
+            error
+                .kind_message()
+                .contains("comprehensions are not allowed")
+        );
+    }
+}
+
+#[test]
 fn selected_config_fences_reject_imports_and_exports() {
     for declaration in ["+> ./dependency.mec", "<+ config"] {
         let source = format!("~~~mech:config\n{declaration}\nconfig := {{:}}\n~~~\n");
@@ -166,5 +199,33 @@ fn scientific_components_preserve_value_and_retained_spelling() {
         .unwrap();
         assert_eq!(result.runtime.name.as_deref(), Some(expected), "{literal}");
         assert_eq!(source.source().to_contiguous_string(), text);
+    }
+}
+
+#[test]
+fn applications_remain_explicitly_outside_the_config_profile() {
+    for expression in ["1 |> identity", "1 |19> identity", "0 + (1 |0> identity)"] {
+        let text = format!("value := {expression}\nconfig := {{:}}\n");
+        let source = mech_runtime::resolver::SourceDocument::parse(
+            TextSnapshot::new(DocumentId(839), Revision(1), text.as_str()).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(
+            source.is_strictly_clean(),
+            "{expression}: {:?}",
+            source.snapshot().diagnostics
+        );
+        let error = mech_runtime::compile_config_document(
+            "application.mcfg",
+            &source,
+            ConfigProfileOptions::default(),
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "ConfigProfileViolation");
+        assert!(
+            error
+                .kind_message()
+                .contains("function application is not supported")
+        );
     }
 }

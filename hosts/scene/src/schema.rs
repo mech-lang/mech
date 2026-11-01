@@ -1,7 +1,11 @@
 use std::collections::{BTreeMap, HashSet};
 
 use mech_core::snapshot::SequenceView;
-use mech_core::{MResult, SchemaBody, ShapeInstance, Value, ValueData};
+use mech_core::{
+    CardinalitySpec, DimensionExpr, FloatWidth, MResult, Schema, SchemaBody, SchemaField,
+    ShapeInstance, Value, ValueData,
+};
+use mech_runtime::ResourceSchemaPreflight;
 
 use crate::scene_error;
 
@@ -76,24 +80,25 @@ pub struct SceneSnapshot {
     pub texts: Vec<TextElement>,
 }
 
+const SCENE_FIELDS: &[&str] = &[
+    "width",
+    "height",
+    "background",
+    "circles",
+    "lines",
+    "line-strips",
+    "texts",
+    "point-sets",
+];
+
 impl SceneSnapshot {
     pub fn from_value(value: &Value) -> MResult<Self> {
         let value = CanonicalNode::from_value(value)?;
         let record = value
             .as_record()
             .ok_or_else(|| scene_error("SceneSchema", "scene must be a record"))?;
-        let allowed = [
-            "width",
-            "height",
-            "background",
-            "circles",
-            "lines",
-            "line-strips",
-            "texts",
-            "point-sets",
-        ];
         for name in record.fields.keys() {
-            if !allowed.contains(&name.as_str()) {
+            if !SCENE_FIELDS.contains(&name.as_str()) {
                 return Err(scene_error(
                     "SceneSchema",
                     format!("unknown scene field `{name}`"),
@@ -152,6 +157,357 @@ impl SceneSnapshot {
             line_strips,
             texts,
         })
+    }
+}
+
+/// Checks only the structure carried by a declared payload schema. Content
+/// constraints remain with `SceneSnapshot::from_value` on the actual write.
+pub(crate) fn preflight_scene_schema(schema: &Schema) -> MResult<ResourceSchemaPreflight> {
+    let mut check = SceneSchemaPreflight::default();
+    if let Some(body) = check.required(schema.body()) {
+        let SchemaBody::Record(fields) = body else {
+            return Err(scene_error("SceneSchema", "scene must be a record"));
+        };
+        check.field_names(
+            fields,
+            SCENE_FIELDS,
+            &["width", "height", "background"],
+            "scene",
+        )?;
+        for field in fields {
+            match field.name.as_str() {
+                "width" | "height" => check.number(&field.schema, &field.name)?,
+                "background" => check.string_or_number(&field.schema, "scene.background")?,
+                "circles" => check.elements(&field.schema, SceneElementKind::Circle)?,
+                "lines" => check.elements(&field.schema, SceneElementKind::Line)?,
+                "texts" => check.elements(&field.schema, SceneElementKind::Text)?,
+                "point-sets" => check.elements(&field.schema, SceneElementKind::PointSet)?,
+                "line-strips" => check.elements(&field.schema, SceneElementKind::LineStrip)?,
+                _ => unreachable!("scene field names were checked"),
+            }
+        }
+    }
+    Ok(check.outcome())
+}
+
+pub(crate) fn preflight_points_schema(schema: &Schema) -> MResult<ResourceSchemaPreflight> {
+    let mut check = SceneSchemaPreflight::default();
+    // The direct points path accepts a matrix itself, unlike the replace
+    // record's optional/dynamic fields, which its value reader resolves.
+    check.positions(schema.body(), 1, "scene points")?;
+    Ok(check.outcome())
+}
+
+#[derive(Default)]
+struct SceneSchemaPreflight {
+    deferred: bool,
+}
+
+#[derive(Clone, Copy)]
+enum SceneElementKind {
+    Circle,
+    Line,
+    Text,
+    PointSet,
+    LineStrip,
+}
+
+impl SceneElementKind {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Circle => CircleElement::KIND,
+            Self::Line => LineElement::KIND,
+            Self::Text => TextElement::KIND,
+            Self::PointSet => "point-set",
+            Self::LineStrip => "line-strip",
+        }
+    }
+    fn fields(self) -> &'static [&'static str] {
+        match self {
+            Self::Circle => CircleElement::REQUIRED,
+            Self::Line => LineElement::REQUIRED,
+            Self::Text => TextElement::REQUIRED,
+            Self::PointSet => POINT_SET_FIELDS,
+            Self::LineStrip => LINE_STRIP_FIELDS,
+        }
+    }
+    fn accepts_record(self) -> bool {
+        matches!(self, Self::PointSet | Self::LineStrip)
+    }
+}
+
+impl SceneSchemaPreflight {
+    fn outcome(self) -> ResourceSchemaPreflight {
+        if self.deferred {
+            ResourceSchemaPreflight::DeferredToRuntime
+        } else {
+            ResourceSchemaPreflight::Validated
+        }
+    }
+
+    fn required<'a>(&mut self, mut body: &'a SchemaBody) -> Option<&'a SchemaBody> {
+        while let SchemaBody::Option(inner) = body {
+            self.deferred = true;
+            body = inner;
+        }
+        if matches!(body, SchemaBody::Dynamic) {
+            self.deferred = true;
+            None
+        } else {
+            Some(body)
+        }
+    }
+
+    fn field_names(
+        &self,
+        fields: &[SchemaField],
+        allowed: &[&str],
+        required: &[&str],
+        label: &str,
+    ) -> MResult<()> {
+        for field in fields {
+            if !allowed.contains(&field.name.as_str()) {
+                return Err(scene_error(
+                    "SceneSchema",
+                    format!("{label} has unknown field `{}`", field.name),
+                ));
+            }
+        }
+        for name in required {
+            if !fields.iter().any(|field| field.name == *name) {
+                return Err(scene_error(
+                    "SceneSchema",
+                    format!("{label} is missing required field `{name}`"),
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    fn number(&mut self, body: &SchemaBody, label: &str) -> MResult<()> {
+        if let Some(body) = self.required(body)
+            && !numeric_scene_schema(body)
+        {
+            return Err(scene_error(
+                "SceneSchema",
+                format!("field `{label}` must be numeric"),
+            ));
+        }
+        Ok(())
+    }
+
+    fn string(&mut self, body: &SchemaBody, label: &str) -> MResult<()> {
+        if let Some(body) = self.required(body)
+            && !matches!(body, SchemaBody::String)
+        {
+            return Err(scene_error(
+                "SceneSchema",
+                format!("field `{label}` must be a string"),
+            ));
+        }
+        Ok(())
+    }
+
+    fn string_or_number(&mut self, body: &SchemaBody, label: &str) -> MResult<()> {
+        if let Some(body) = self.required(body)
+            && !matches!(body, SchemaBody::String)
+            && !numeric_scene_schema(body)
+        {
+            return Err(scene_error(
+                "SceneSchema",
+                format!("field `{label}` must be a string or number"),
+            ));
+        }
+        Ok(())
+    }
+
+    fn elements(&mut self, body: &SchemaBody, kind: SceneElementKind) -> MResult<()> {
+        // None is an accepted empty collection, regardless of its Some arm.
+        if matches!(body, SchemaBody::Option(_) | SchemaBody::Dynamic) {
+            self.deferred = true;
+            return Ok(());
+        }
+        match body {
+            SchemaBody::Tuple(items) => {
+                for item in items {
+                    self.element(item, kind)?;
+                }
+            }
+            SchemaBody::Table { columns, rows } => {
+                self.field_names(columns, kind.fields(), kind.fields(), kind.name())?;
+                // The maintained reader checks column presence/names even for
+                // empty tables, but validates field kinds only for actual rows.
+                if matches!(rows, CardinalitySpec::Exact(rows) if constant_scene_extent(rows).is_some_and(|rows| rows > 0))
+                {
+                    self.element_fields(columns, kind)?;
+                } else {
+                    self.deferred = true;
+                }
+            }
+            SchemaBody::Record(_) if kind.accepts_record() => self.element(body, kind)?,
+            _ => {
+                return Err(scene_error(
+                    "SceneSchema",
+                    format!(
+                        "scene {} elements require a tuple or table{}",
+                        kind.name(),
+                        if kind.accepts_record() {
+                            " or record"
+                        } else {
+                            ""
+                        }
+                    ),
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    fn element(&mut self, body: &SchemaBody, kind: SceneElementKind) -> MResult<()> {
+        if let Some(body) = self.required(body) {
+            let SchemaBody::Record(fields) = body else {
+                return Err(scene_error(
+                    "SceneSchema",
+                    format!("scene {} element must be a record", kind.name()),
+                ));
+            };
+            self.field_names(fields, kind.fields(), kind.fields(), kind.name())?;
+            self.element_fields(fields, kind)?;
+        }
+        Ok(())
+    }
+
+    fn element_fields(&mut self, fields: &[SchemaField], kind: SceneElementKind) -> MResult<()> {
+        for field in fields {
+            let label = format!("{}.{}", kind.name(), field.name);
+            match field.name.as_str() {
+                "id" | "line-cap" | "line-join" | "font-family" | "text-anchor" | "value" => {
+                    self.string(&field.schema, &label)?
+                }
+                "fill" | "stroke" | "font-weight" => {
+                    self.string_or_number(&field.schema, &label)?
+                }
+                "positions" => {
+                    if let Some(body) = self.required(&field.schema) {
+                        self.positions(
+                            body,
+                            if matches!(kind, SceneElementKind::LineStrip) {
+                                2
+                            } else {
+                                1
+                            },
+                            &label,
+                        )?;
+                    }
+                }
+                "fills" => {
+                    if let Some(body) = self.required(&field.schema) {
+                        let SchemaBody::Tuple(items) = body else {
+                            return Err(scene_error(
+                                "SceneSchema",
+                                format!("field `{label}` must be a tuple of strings"),
+                            ));
+                        };
+                        for item in items {
+                            self.string(item, &label)?;
+                        }
+                    }
+                }
+                "closed" => {
+                    if let Some(body) = self.required(&field.schema)
+                        && !matches!(body, SchemaBody::Bool)
+                    {
+                        return Err(scene_error(
+                            "SceneSchema",
+                            format!("field `{label}` must be a bool"),
+                        ));
+                    }
+                }
+                _ => self.number(&field.schema, &label)?,
+            }
+        }
+        Ok(())
+    }
+
+    fn positions(&mut self, body: &SchemaBody, minimum_rows: u64, label: &str) -> MResult<()> {
+        let SchemaBody::Matrix {
+            element,
+            dimensions,
+        } = body
+        else {
+            return Err(scene_error(
+                "SceneSchema",
+                format!("{label} must be an f64 matrix"),
+            ));
+        };
+        let [rows, columns] = dimensions.as_ref() else {
+            return Err(scene_error(
+                "SceneSchema",
+                format!("{label} must have a two-dimensional shape"),
+            ));
+        };
+        if element.as_ref() != &SchemaBody::FloatingPoint(FloatWidth::W64) {
+            return Err(scene_error(
+                "SceneSchema",
+                format!("{label} must contain only f64 values"),
+            ));
+        }
+        match constant_scene_extent(rows) {
+            Some(rows) if rows < minimum_rows => {
+                return Err(scene_error(
+                    "SceneSchema",
+                    format!("{label} must have at least {minimum_rows} rows"),
+                ));
+            }
+            None => self.deferred = true,
+            _ => {}
+        }
+        match constant_scene_extent(columns) {
+            Some(columns) if columns != 2 => {
+                return Err(scene_error(
+                    "SceneSchema",
+                    format!("{label} must have exactly 2 columns"),
+                ));
+            }
+            None => self.deferred = true,
+            _ => {}
+        }
+        Ok(())
+    }
+}
+
+fn numeric_scene_schema(body: &SchemaBody) -> bool {
+    matches!(
+        body,
+        SchemaBody::UnsignedInteger(_)
+            | SchemaBody::SignedInteger(_)
+            | SchemaBody::IntegerInterval(_)
+            | SchemaBody::FloatingPoint(_)
+    )
+}
+
+fn constant_scene_extent(dimension: &DimensionExpr) -> Option<u64> {
+    match dimension {
+        DimensionExpr::Constant(value) => Some(*value),
+        DimensionExpr::Add(items) => items.iter().try_fold(0_u64, |sum, item| {
+            sum.checked_add(constant_scene_extent(item)?)
+        }),
+        DimensionExpr::Multiply(items) => items.iter().try_fold(1_u64, |product, item| {
+            product.checked_mul(constant_scene_extent(item)?)
+        }),
+        DimensionExpr::Min(items) => items
+            .iter()
+            .map(constant_scene_extent)
+            .collect::<Option<Vec<_>>>()?
+            .into_iter()
+            .min(),
+        DimensionExpr::Max(items) => items
+            .iter()
+            .map(constant_scene_extent)
+            .collect::<Option<Vec<_>>>()?
+            .into_iter()
+            .max(),
+        DimensionExpr::Hole | DimensionExpr::Parameter(_) => None,
     }
 }
 

@@ -22,6 +22,7 @@ pub(crate) use dynamic::bind_dynamic_resident_operation;
 pub mod module;
 #[cfg(all(feature = "semantic-compiler", feature = "native"))]
 pub mod native;
+mod receiver_members;
 pub mod resolver;
 
 pub use engine_catalog::*;
@@ -33,4 +34,5 @@ pub use external::*;
 pub use module::*;
 #[cfg(all(feature = "semantic-compiler", feature = "native"))]
 pub use native::*;
+pub use receiver_members::*;
 pub use resolver::*;

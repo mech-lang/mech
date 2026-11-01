@@ -9,6 +9,10 @@ use crate::memory_planner::{ProgramMemoryPlan, TurnMemoryPlan};
 pub struct ManagedProgramMemory {
     domain: MemoryDomain,
     realized: RealizedMemoryPlan,
+    // The plan's metadata is owned outside the arenas. Keep its capacity
+    // reservation separate from backing realization to charge it exactly once.
+    // An unbounded private account still records it when no budget is supplied.
+    _metadata_reservation: Option<mech_core::ManagedMemoryReservation>,
 }
 
 impl core::fmt::Debug for ManagedProgramMemory {
@@ -32,6 +36,14 @@ impl ManagedProgramMemory {
         plan: &ProgramMemoryPlan,
         budget: Option<&mech_core::ManagedMemoryBudget>,
     ) -> MemoryRuntimeResult<Self> {
+        let metadata_reservation = if plan.metadata_demand.persistent_bytes == 0 {
+            None
+        } else {
+            let metadata_budget = budget
+                .cloned()
+                .unwrap_or_else(|| mech_core::ManagedMemoryBudget::new(u64::MAX));
+            Some(metadata_budget.reserve_capacity(plan.metadata_demand.persistent_bytes)?)
+        };
         let domain = match budget {
             Some(budget) => MemoryDomain::with_memory_budget(budget.clone())?,
             None => MemoryDomain::new()?,
@@ -50,7 +62,11 @@ impl ManagedProgramMemory {
         );
         let reservation = domain.prepare_realization(view)?;
         let realized = domain.materialize(reservation)?;
-        Ok(Self { domain, realized })
+        Ok(Self {
+            domain,
+            realized,
+            _metadata_reservation: metadata_reservation,
+        })
     }
 
     pub const fn domain(&self) -> &MemoryDomain {
@@ -128,4 +144,36 @@ fn program_max_concurrent_leases(plan: &ProgramMemoryPlan) -> MemoryRuntimeResul
             identity: "program call access count",
         })
         .map(|count| count.unwrap_or(0))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn metadata_without_an_external_budget_is_reserved_once_and_released() {
+        for bytes in [0, 123] {
+            let demand = mech_core::ResourceDemand {
+                persistent_bytes: bytes,
+                ..Default::default()
+            };
+            let plan = ProgramMemoryPlan {
+                metadata_demand: demand,
+                peak: demand,
+                ..Default::default()
+            };
+            let memory = ManagedProgramMemory::realize_with_memory_budget(&plan, None).unwrap();
+            let account = memory._metadata_reservation.as_ref().map(|reservation| {
+                assert_eq!(reservation.capacity_bytes(), bytes);
+                let account = reservation.budget();
+                assert_eq!(account.used_bytes(), bytes);
+                account
+            });
+            assert_eq!(account.is_some(), bytes != 0);
+            memory.close().unwrap();
+            if let Some(account) = account {
+                assert_eq!(account.used_bytes(), 0);
+            }
+        }
+    }
 }

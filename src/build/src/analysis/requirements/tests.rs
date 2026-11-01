@@ -306,6 +306,10 @@ impl RuntimeResourceProvider for TestResourceProvider {
         self.groups.clone()
     }
 
+    fn semantic_read_contract(&self) -> Option<&'static mech_core::OperationContractDeclaration> {
+        Some(mech_runtime::resource_observation_contract())
+    }
+
     fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
         ValueCell::from_exact("planned".to_owned())?.snapshot()
     }
@@ -939,11 +943,11 @@ fn read_only_artifact_native_planning_validates_the_observation_value_type() {
             assert!(result.is_ok(), "{result:?}");
         } else {
             let error = result.unwrap_err();
-            assert_eq!(error.kind_name(), "NativeProgramArtifactInvalid");
+            assert_eq!(error.kind_name(), "ResidentProviderContractMismatch");
             assert!(
                 error
                     .display_message()
-                    .contains("does not match artifact input"),
+                    .contains("read representation differs from artifact schema or shape"),
                 "{error:?}"
             );
         }
@@ -1714,4 +1718,64 @@ fn malformed_planning_addressability_is_rejected() {
             error.kind_message()
         );
     }
+}
+
+// These validate the host contract resolver directly. Production native builds
+// admit ProgramArtifact bytecode only, so instruction fixtures are not plans.
+#[test]
+fn host_function_only_analysis_rejects_unaddressed_runtime_config() {
+    const HOST_FUNCTION: &str = "native-host-function";
+    let mut host_catalog = NativeHostCatalog::new();
+    host_catalog
+        .insert_function(NativeHostFunctionLinkage {
+            name: HOST_FUNCTION,
+            context: NativeHostFunctionContext::Standalone,
+            package: "mech-test-host",
+            crate_name: "mech_test_host",
+            cargo_features: &["provider"],
+            installer_path: "mech_test_host::install_native_host_function",
+        })
+        .unwrap();
+    let requirement = ApplicationRequirement::HostFunction(ExecutionHostFunctionRequest {
+        name: HOST_FUNCTION.to_owned(),
+    });
+    for (hosts, run_grants) in [
+        (vec![host("unused", "cli")], Vec::new()),
+        (
+            Vec::new(),
+            vec![grant("unused/output", &["write"], &["line"])],
+        ),
+    ] {
+        let config = NativeRuntimeConfig {
+            runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
+            hosts,
+            run_grants,
+        };
+        let error = analyze_requirements_with_production_resolver(
+            std::slice::from_ref(&requirement),
+            Some(&config),
+            &host_catalog,
+            None,
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "NativeRuntimeConfigUnsupported");
+    }
+}
+
+#[cfg(feature = "full-hosts")]
+#[test]
+fn standard_catalog_rejects_untrusted_host_functions() {
+    let error = analyze_requirements_with_production_resolver(
+        &[ApplicationRequirement::HostFunction(
+            ExecutionHostFunctionRequest {
+                name: "untrusted/arbitrary/function".to_owned(),
+            },
+        )],
+        None,
+        &standard_native_host_catalog().unwrap(),
+        None,
+    )
+    .unwrap_err();
+    assert_eq!(error.kind_name(), "NativeHostFunctionLinkageMissing");
 }

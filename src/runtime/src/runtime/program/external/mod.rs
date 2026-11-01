@@ -1,4 +1,4 @@
-#[cfg(feature = "resident-routing")]
+#[cfg(feature = "canonical-native-resources")]
 mod admission;
 mod authority;
 mod coordinator;
@@ -6,6 +6,7 @@ mod input_facts;
 mod outbox_delivery;
 mod provider;
 mod receipt;
+mod schema;
 #[cfg(any(test, feature = "resident_external_test_support"))]
 #[doc(hidden)]
 pub mod test_provider;
@@ -20,6 +21,7 @@ pub use input_facts::*;
 pub use outbox_delivery::*;
 pub use provider::*;
 pub use receipt::*;
+pub use schema::*;
 
 pub use crate::turn_record::{
     InputSequence, InputSequenceRange, LedgerSequence, TurnFailurePhase, TurnId,

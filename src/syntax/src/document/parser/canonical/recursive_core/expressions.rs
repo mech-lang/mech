@@ -5,6 +5,10 @@ use super::super::super::{Parser, marker::Marker};
 use super::{Attempt, Continuation};
 use crate::document::SyntaxKind;
 #[cfg(test)]
+pub(super) fn parse_application_expression(parser: &mut Parser<'_>) -> Attempt {
+    Continuation::new(rules::APPLICATION_EXPRESSION).drive(parser)
+}
+#[cfg(test)]
 pub(super) fn parse_expression(parser: &mut Parser<'_>) -> Attempt {
     Continuation::new(rules::EXPRESSION).drive(parser)
 }

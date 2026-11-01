@@ -127,7 +127,7 @@ pub(super) fn specification(rule: RuleId) -> Spec {
         rules::POWER => Spec::Leaf {
             kind: SyntaxKind::PowerOperation,
             alternatives: &[OperatorAtom::CanonicalRule(rules::CARET)],
-            guard: OperatorGuard::None,
+            guard: OperatorGuard::NotXor,
             spacing: Some(rules::WS0E),
         },
         rules::MATRIX_MULTIPLY => Spec::Leaf {

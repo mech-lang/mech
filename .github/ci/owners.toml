@@ -4,7 +4,7 @@ version = 1
 exclude_paths = ["*.md", "LICENSE"]
 full = true
 paths = ["src/core/**"]
-command = ["cargo", "test", "--locked", "--offline", "-p", "mech-core", "--lib", "--test", "type_memory_contract", "--test", "storage_capability", "--test", "operation_memory_requirement", "--test", "type_memory_boundary", "--test", "memory_runtime", "--test", "memory_safety", "--all-features"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-core", "--lib", "--test", "type_memory_contract", "--test", "binop_factory_inventory", "--test", "storage_capability", "--test", "operation_memory_requirement", "--test", "type_memory_boundary", "--test", "memory_runtime", "--test", "memory_safety", "--all-features"]
 standard = true
 cross_cutting = true
 
@@ -43,7 +43,7 @@ standard = true
 cross_cutting = true
 
 [owners.mech-gpu]
-families = ["memory", "numeric", "runtime", "artifact", "linkage", "browser"]
+families = ["memory", "numeric", "runtime", "artifact", "linkage", "native", "browser"]
 exclude_paths = ["*.md", "LICENSE"]
 browser_applications = true
 paths = ["hosts/gpu/**"]
@@ -70,7 +70,7 @@ standard = true
 cross_cutting = true
 
 [owners.mech-stdlib]
-families = ["numeric", "artifact", "linkage"]
+families = ["language", "numeric", "artifact", "linkage", "native"]
 exclude_paths = ["*.md", "LICENSE"]
 paths = ["src/stdlib/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "profile_contracts", "--test", "managed_functions", "--no-default-features", "--features", "standard_compiler"]
@@ -233,7 +233,7 @@ standard = false
 cross_cutting = false
 
 [owners.native-products]
-paths = ["src/cli/commands/build.rs", "src/cli/app/**", "src/cli/runtime_plan.rs", "src/cli/host_factories.rs", "tests/mech_build.rs", "tests/catalog_closure.rs", "tests/fixtures/native-*/**", "machines/*/src/catalog.rs", "machines/*/build.rs"]
+paths = ["src/cli/commands/build.rs", "src/cli/commands/build_cranelift.rs", "src/cli/commands/build_cranelift_tests.rs", "tests/canonical_native_build.rs", "tests/support/canonical_native_build.rs", "src/cli/app/**", "src/cli/runtime_plan.rs", "src/cli/host_factories.rs", "tests/mech_build.rs", "tests/catalog_closure.rs", "tests/fixtures/native-*/**", "machines/*/src/catalog.rs", "machines/*/build.rs"]
 exclude_paths = ["*.md", "LICENSE"]
 families = ["native", "linkage", "artifact"]
 command = []

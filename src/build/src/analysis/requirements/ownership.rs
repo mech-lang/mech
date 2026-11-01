@@ -9,7 +9,7 @@ use mech_runtime::{
 use crate::{
     NativeRuntimeConfig,
     error::{NativeBuildErrorKind, NativeHostAddressabilityInvalid, native_build_error},
-    host::{NativeHostCatalog, NativeHostLinkage, NativeTargetFamily},
+    host::{NativeHostCatalog, NativeHostFactoryInput, NativeHostLinkage, NativeTargetFamily},
     plan::{PlannedHostInstance, PlannedResourceOwner},
 };
 
@@ -20,6 +20,7 @@ pub(crate) struct MaterializedConfiguredHost<'catalog> {
     resource_providers: Vec<Box<dyn RuntimeResourceProvider>>,
     input_drivers: Vec<Box<dyn RuntimeHostInputDriver>>,
     linkage: &'catalog NativeHostLinkage,
+    factory_input: NativeHostFactoryInput,
 }
 
 impl MaterializedConfiguredHost<'_> {
@@ -36,6 +37,7 @@ impl MaterializedConfiguredHost<'_> {
                 .map(|feature| (*feature).to_owned())
                 .collect(),
             factory_path: self.linkage.factory_path.to_owned(),
+            factory_input: self.factory_input,
             settings: self.config.settings.clone(),
         }
     }
@@ -51,7 +53,7 @@ pub(crate) fn materialize_configured_hosts<'catalog>(
         .hosts
         .iter()
         .map(|host| {
-            let linkage = host_catalog.provider(&host.provider).ok_or_else(|| {
+            let (linkage, factory_input) = host_catalog.provider_registration(&host.provider).ok_or_else(|| {
                 native_build_error(
                     NativeBuildErrorKind::NativeHostProviderUnknown {
                         provider: host.provider.clone(),
@@ -117,6 +119,7 @@ pub(crate) fn materialize_configured_hosts<'catalog>(
                 resource_providers: installation.resource_providers,
                 input_drivers: installation.input_drivers,
                 linkage,
+                factory_input,
             })
         })
         .collect()

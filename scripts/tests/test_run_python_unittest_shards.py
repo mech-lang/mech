@@ -38,6 +38,23 @@ class PythonUnittestShardRunnerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             RUNNER.select_shard(["one"], 4, 4)
 
+    def test_nested_four_and_six_job_layouts_keep_the_complete_inventory(self):
+        for size in (1, 11, 347, 348):
+            test_ids = [f"test_{index}" for index in range(size)]
+            for outer_count in (4, 6):
+                shards = [
+                    worker
+                    for outer_index in range(outer_count)
+                    for worker in RUNNER.partition(
+                        RUNNER.select_shard(test_ids, outer_index, outer_count), 2
+                    )
+                ]
+                with self.subTest(size=size, outer_count=outer_count):
+                    self.assertCountEqual(
+                        (test_id for worker in shards for test_id in worker), test_ids
+                    )
+                    self.assertEqual(sum(map(len, shards)), len(test_ids))
+
 
 if __name__ == "__main__":
     unittest.main()

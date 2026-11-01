@@ -1,0 +1,64 @@
+Standard Input
+===============================================================================
+
+The CLI standard-input context exposes one read-only input snapshot through
+Unicode text and raw byte views.
+
+```mech
++> @in := cli/stdin
+text := @in/text
+bytes := @in/bytes
+```
+
+1. Snapshot semantics
+-------------------------------------------------------------------------------
+
+The text path returns exact UTF-8 text, including empty input, line endings and
+combining characters. The bytes path returns a canonical U8 row matrix of shape
+1,N, including 1,0 for empty input. All byte values are preserved without decoding.
+
+The standard backend acquires raw stdin through EOF once. Both views reuse that
+snapshot. Invalid UTF-8 is an error only for the text view: it does not prevent
+later byte reads. Input acquisition failures are retained for both views. There
+is no lossy conversion or numeric parsing.
+
+Each provider retains its first result, including an error. Later reads reuse
+that snapshot and do not consume stdin again. A new provider starts a new
+snapshot. Reads return the complete stream rather than one line at a time.
+
+2. Planning and capabilities
+-------------------------------------------------------------------------------
+
+Planning checks the context and exact text or bytes path. It supplies a String
+placeholder for text and an empty U8 row with dynamic width for bytes.
+It never reads stdin or waits for EOF. No input driver is required. Assignments
+and sends to stdin are rejected.
+
+Binding +> @in := cli/stdin grants no authority. Standard-input reads are excluded
+from default CLI capabilities. Explicitly grant the existing read capability:
+
+```mech
+config := {
+  run: {
+    grants: [{ target: "cli/stdin" operations: ["read"] paths: ["text" "bytes"] }]
+  }
+}
+```
+
+Granting text does not grant bytes. Configured CLI aliases use their instance
+target, such as term/stdin. The
+experimental native Sequence compiler lowers the default CLI context to a
+SnapshotTextRead observation. It retains the exact canonical cli://cli/stdin,
+stdin context, text path and read intent in its resource requirements; its
+launcher chooses the existing secure or trusted host policy.
+
+3. Embedding
+-------------------------------------------------------------------------------
+
+Custom raw backends implement stdin_bytes() and return Some(result) for a real
+raw acquisition, including failure. The provider derives text from those bytes
+and never calls stdin_text() on that route. None means a legacy text-only backend;
+it must not consume input. Such a backend can retain stdin_text() support, while
+byte reads fail explicitly without synthesizing a byte stream from a String.
+The provider caches acquisition and view results independently. No new stream
+size or input-consumption defaults are introduced by the byte paths.

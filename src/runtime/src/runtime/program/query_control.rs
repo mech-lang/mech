@@ -29,6 +29,9 @@ pub(super) fn node_bodies_semantically_equal(
         (ExecutableNodeBody::Comprehension(left), ExecutableNodeBody::Comprehension(right)) => {
             comparison.comprehension_declaration(left, right)
         }
+        (ExecutableNodeBody::Iteration(left), ExecutableNodeBody::Iteration(right)) => {
+            comparison.iteration_declaration(left, right)
+        }
         (ExecutableNodeBody::Fsm(left), ExecutableNodeBody::Fsm(right)) => left == right,
         _ => false,
     }
@@ -261,6 +264,27 @@ impl Comparison<'_> {
             })
     }
 
+    fn iteration_declaration(
+        &self,
+        left: &mech_engine::IterationDeclaration,
+        right: &mech_engine::IterationDeclaration,
+    ) -> bool {
+        left.count == right.count
+            && left.seed == right.seed
+            && self.schema(left.carrier, right.carrier)
+            && left.captures.len() == right.captures.len()
+            && left
+                .captures
+                .iter()
+                .zip(&right.captures)
+                .all(|(left, right)| {
+                    left.input == right.input
+                        && left.freeze_on_suspend == right.freeze_on_suspend
+                        && self.schema(left.schema, right.schema)
+                })
+            && self.block(&left.body, &right.body)
+    }
+
     fn comprehension_declaration(
         &self,
         left: &mech_engine::ComprehensionDeclaration,
@@ -335,6 +359,9 @@ impl Comparison<'_> {
                 ControlOperationBody::Comprehension(left),
                 ControlOperationBody::Comprehension(right),
             ) => self.comprehension_declaration(left, right),
+            (ControlOperationBody::Iteration(left), ControlOperationBody::Iteration(right)) => {
+                self.iteration_declaration(left, right)
+            }
             (ControlOperationBody::Recur(left), ControlOperationBody::Recur(right)) => {
                 left == right
             }
@@ -430,6 +457,56 @@ mod tests {
             .find(|node| matches!(node.body, ExecutableNodeBody::Activation(_)))
             .unwrap()
             .body
+    }
+
+    #[test]
+    fn iteration_reuse_resolves_owning_tables_and_checked_body_semantics() {
+        fn iteration(artifact: &ProgramArtifact) -> &ExecutableNodeBody {
+            &artifact
+                .nodes()
+                .iter()
+                .find(|node| matches!(node.body, ExecutableNodeBody::Iteration(_)))
+                .unwrap()
+                .body
+        }
+        let source = "step(x<u64>) => <u64> := x + captured\ncaptured := delta<u64> + 0u64\nseed<u64> |19> step\n";
+        let original = compile_document(source);
+        let shifted = compile_document(&format!("padding := 7u8\n{source}"));
+        assert!(node_bodies_semantically_equal(
+            &original,
+            iteration(&original),
+            &shifted,
+            iteration(&shifted)
+        ));
+        let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        assert!(node_bodies_semantically_equal(
+            &original,
+            iteration(&original),
+            &decoded,
+            iteration(&decoded)
+        ));
+        for changed in [
+            source.replace("|19>", "|0>"),
+            source.replace("x + captured", "x * captured"),
+        ] {
+            let changed = compile_document(&changed);
+            assert!(!node_bodies_semantically_equal(
+                &original,
+                iteration(&original),
+                &changed,
+                iteration(&changed)
+            ));
+        }
+        let nested = "inner(x<u64>) => <u64> := x + 1u64\nouter(x<u64>) => <u64> := x |3> inner\nseed<u64> |2> outer\n";
+        let original = compile_document(nested);
+        let changed = compile_document(&nested.replace("|3>", "|4>"));
+        assert!(!node_bodies_semantically_equal(
+            &original,
+            iteration(&original),
+            &changed,
+            iteration(&changed)
+        ));
     }
 
     #[test]

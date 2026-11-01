@@ -266,7 +266,7 @@ impl Continuation {
             }
             Phase::TailStart(tail) => {
                 self.comp(Phase::TailSpace(tail));
-                self.base(rules::SPACE_TAB0);
+                self.base(rules::WHITESPACE0);
             }
             Phase::TailSpace(tail) => {
                 if self.result == Attempt::Matched {
@@ -330,7 +330,7 @@ impl Continuation {
                     self.result = Attempt::NoMatch;
                 } else {
                     self.comp(Phase::TailTrailing(tail));
-                    self.base(rules::SPACE_TAB0);
+                    self.base(rules::WHITESPACE0);
                 }
             }
             Phase::TailTrailing(tail) => {

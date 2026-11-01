@@ -1,0 +1,86 @@
+# Underscore Addressing
+
+An underscore may follow an identifier's first character. Exact names always
+win: defining 'counts_keys' makes it an ordinary variable, not an address.
+The existing empty literal '_' and numeric separators such as '1_000' retain
+their meanings.
+
+For an otherwise unresolved read, 'receiver_item' can select one visible,
+pure, unary source-catalog operation named 'item' whose ordinary type scheme
+accepts 'receiver':
+
+    +> map
+    +> sequence
+    counts := {"a": 2u64, "b": 1u64}
+    keys := counts_keys
+    count := keys_length
+
+These reads lower to the same canonical operations as 'map/keys(counts)' and
+'sequence/length(keys)'. There is no property runtime and no separate native
+execution path. Existing result selection works, for example 'counts_keys[1u64]'.
+An annotated result definition still uses ordinary conformance:
+
+    keys<{string}> := counts_keys
+
+Suffix matching uses the exported canonical item, not an imported alias.
+For example, '+> len := sequence/length' makes 'text_length' visible and makes
+'len(text)' a valid explicit call; it does not invent 'text_len'. The metadata
+query reports 'length' as the item and 'len' among its visible call spellings.
+
+The suffixes are not a fixed list. A selected catalog exporting 'table/size'
+or 'matrix/length' can supply 'foo_size' or 'bar_length' through the same rule.
+The current standard catalog exposes 'sequence/length'; this syntax does not
+invent a missing 'matrix/length' or 'table/size' implementation.
+
+Resolution respects imported operation visibility, concrete receiver types and
+the catalog's existing kind, dimension, conversion and contract checks. Every
+underscore split with a known receiver is considered. If two operations or
+two splits are applicable, compilation reports their explicit qualified calls
+instead of choosing a namespace or the longest receiver name.
+
+Compiler resolution and future dot-style completion share the public
+'FunctionEnvironment::receiver_members' metadata query. It reads the selected
+catalog's module registrations, current import spellings and type signatures,
+and returns the member name, qualified operation identity, declared signature,
+structured compatibility status, and all original semantic contract variants.
+The query observes new module registrations without a separate editor list.
+It does not execute values or grant a runtime/native capability.
+
+The compiler explicitly requests 'ReceiverMemberRole::UnaryPureProjection',
+which remains pure, unary and single-output. Its resolved receiver conversions
+and output use ordinary full-call resolution and the same selected-output-rule
+consistency helper as explicit calls.
+
+Future completion callers request 'ReceiverMemberRole::Completion'. This role
+also returns visible functions requiring additional arguments, multi-output
+functions and external interactions when their first source argument can be
+the receiver. 'PrefixCompatible' means only that the supplied receiver prefix
+passed the ordinary core constraint environment; it does NOT select a callable
+overload, output schema, remaining arguments or runtime permission. Constraints
+depending on unsupplied arguments are deferred, and all compatible overload
+IDs remain because later arguments can change ranking. A source template
+needing additional arguments reports 'ArgumentsRequired', not a promise that
+the receiver is compatible. Contract metadata lets tooling describe external
+interactions without pretending it knows the user's execution grants.
+
+Either role can include hidden, unresolved and incompatible signatures for
+diagnostics. Source-module roots that shadow catalog spellings are supplied
+as scope metadata, as are exact callable names shadowed by document functions.
+A shadowed spelling does not hide an operation with another unshadowed alias;
+an exact function name is not treated as a module root. Underscore reads do
+not call document functions implicitly. The editor's actual completion UI is
+future work; this feature supplies its shared engine query rather than another
+semantic registry.
+
+Explicit local/state names and declared external input names take precedence.
+An occurrence annotation on an unresolved complete name still declares that
+exact external input; annotate a result definition to constrain an address.
+Names with no recognized receiver/item pair remain ordinary identifiers.
+Implicit receivers are not created, and Dynamic receivers need concrete kind
+annotations.
+
+This first form is unary read sugar only. 'receiver_item(arguments)' remains
+ordinary function-call syntax: it does not insert an implicit first argument,
+bind a method value, or change named-argument rules. Use an explicit call when
+additional arguments are needed. Chained projections can use intermediate
+bindings, as in 'keys' above.

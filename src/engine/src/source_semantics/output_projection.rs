@@ -357,6 +357,7 @@ fn retain_node_requirements(
             | crate::SourceNodeBody::Match(_)
             | crate::SourceNodeBody::Activation(_)
             | crate::SourceNodeBody::Comprehension(_)
+            | crate::SourceNodeBody::Iteration(_)
             | crate::SourceNodeBody::Fsm(_) => None,
         })
         .collect::<BTreeSet<_>>();

@@ -178,7 +178,37 @@ proptest! {
 #[test]
 fn canonical_newline_continuation_seed_has_an_owned_restart_control() {
     let limits = ParseLimits::default();
-    let raw = "x := ¡_\n1. Stable Heading\n----------------\nlater paragraph\n";
+    // Underscore is now an identifier continuation (ADDRESS-001). The old
+    // malformed seed is a complete definition, so its next heading must survive.
+    let accepted = "x := ¡_\n1. Stable Heading\n----------------\nlater paragraph\n";
+    let accepted_snapshot = parse_with_limits(accepted, limits);
+    assert_snapshot_invariants(accepted, &accepted_snapshot, limits);
+    assert_eq!(
+        count_kind(&accepted_snapshot.syntax(), SyntaxKind::VariableDefine),
+        1
+    );
+    assert_eq!(
+        count_kind(&accepted_snapshot.syntax(), SyntaxKind::UlSubtitle),
+        1
+    );
+    assert_eq!(
+        count_kind(&accepted_snapshot.syntax(), SyntaxKind::Error),
+        0
+    );
+
+    // Keep an independent, promoted example that really crosses a physical line.
+    let continued =
+        include_str!("fixtures/document/promoted-regressions/cross-line-definition.mec");
+    let continued_snapshot = parse_with_limits(continued, limits);
+    assert_snapshot_invariants(continued, &continued_snapshot, limits);
+    assert_eq!(
+        count_kind(&continued_snapshot.syntax(), SyntaxKind::VariableDefine),
+        1
+    );
+
+    // NUL is not an identifier continuation or an expression operator. Retain
+    // the unaccepted-tail ownership control instead of accepting a weaker tree.
+    let raw = "x := ¡\0\n1. Stable Heading\n----------------\nlater paragraph\n";
     let raw_snapshot = parse_with_limits(raw, limits);
     assert_snapshot_invariants(raw, &raw_snapshot, limits);
     assert_eq!(
@@ -192,10 +222,10 @@ fn canonical_newline_continuation_seed_has_an_owned_restart_control() {
         .expect("canonical continuation leaves the unaccepted document tail owned by Error");
     assert_eq!(
         error.text().unwrap(),
-        ":= ¡_\n1. Stable Heading\n----------------\nlater paragraph\n"
+        ":= ¡\0\n1. Stable Heading\n----------------\nlater paragraph\n"
     );
 
-    for prefix in ["¡_", "\"( [ { ```", "one\rtwo\nthree\r\nfour"] {
+    for prefix in ["¡_", "¡\0", "\"( [ { ```", "one\rtwo\nthree\r\nfour"] {
         let protected = format!(
             "x :=;\n{}\n1. Stable Heading\n----------------\nlater paragraph\n",
             comment_owned_mutation(prefix)

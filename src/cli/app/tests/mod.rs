@@ -7,6 +7,9 @@ use crate::cli::commands::build::{
 #[cfg(any(feature = "serve", feature = "build", feature = "run"))]
 use std::path::PathBuf;
 
+#[cfg(feature = "run")]
+mod payload_arguments;
+
 #[cfg(all(test, feature = "serve"))]
 mod filesystem_capability_cli_tests {
     use super::*;
@@ -234,6 +237,9 @@ mod build_input_tests {
                 .map(|path| path.display().to_string())
                 .collect(),
             emit: BuildEmit::Bytecode,
+            cranelift: false,
+            native_scalar: false,
+            native_loop_fma: false,
             name: Some("output".to_string()),
             output_path: Some(output_path.join("output.mecb")),
             target: None,

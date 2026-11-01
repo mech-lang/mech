@@ -67,6 +67,7 @@ enum Frame {
     ComplexSign(Node),
     ComplexSecond(Node),
     ComplexLast(Node),
+    ComplexBoundary(Node, ParserCheckpoint, bool),
     BasedPrefix(Based),
     BasedPayload(Based),
     HexElement(Based, TextSize, bool),
@@ -149,6 +150,15 @@ impl Continuation {
         } else {
             self.result = Attempt::NoMatch;
         }
+    }
+    fn complex_boundary(&mut self, parser: &mut Parser<'_>, node: Node) {
+        let checkpoint = parser.checkpoint();
+        let recovery = parser.replace_consuming_recovery(false);
+        self.push(Frame::ComplexBoundary(node, checkpoint, recovery));
+        self.push(Frame::Operation(Op::Any(&[
+            Op::Base(rules::ALPHANUMERIC),
+            Op::Base(rules::EMOJI),
+        ])));
     }
     fn finish_based(&mut self, parser: &mut Parser<'_>, body: Based, payload: bool) {
         if payload {
@@ -475,8 +485,7 @@ impl Continuation {
                 },
                 Frame::ComplexUnit(node) => {
                     if self.matched {
-                        node.complete(parser);
-                        self.result = Attempt::Matched;
+                        self.complex_boundary(parser, node);
                     } else {
                         self.push(Frame::ComplexSign(node));
                         self.push(Frame::Operation(Op::Any(&[
@@ -503,10 +512,20 @@ impl Continuation {
                 }
                 Frame::ComplexLast(node) => {
                     if self.matched {
-                        node.complete(parser);
-                        self.result = Attempt::Matched;
+                        self.complex_boundary(parser, node);
                     } else {
                         self.failed(parser, node, true);
+                    }
+                }
+                Frame::ComplexBoundary(node, checkpoint, recovery) => {
+                    let suffix_continues = self.matched;
+                    parser.replace_consuming_recovery(recovery);
+                    parser.rewind(checkpoint);
+                    if suffix_continues || parser.is_halted() {
+                        self.failed(parser, node, true);
+                    } else {
+                        node.complete(parser);
+                        self.result = Attempt::Matched;
                     }
                 }
                 Frame::BasedPrefix(body) => {
@@ -614,16 +633,24 @@ mod tests {
             (rules::NUMBER, "-"),
             (rules::NUMBER, "12"),
             (rules::NUMBER, "1_234u8"),
+            (rules::NUMBER, "7i64"),
+            (rules::NUMBER, "9223372036854775807i64"),
+            (rules::NUMBER, "2j64"),
+            (rules::NUMBER, "2i🦀"),
             (rules::NUMBER, "0x"),
             (rules::NUMBER, "0xG_2"),
             (rules::NUMBER, "2i"),
             (rules::NUMBER, "2+3j"),
             (rules::NUMBER, "2-3i"),
+            (rules::NUMBER, "2i+3j"),
+            (rules::NUMBER, "2+3j64"),
             (rules::NUMBER, "2+0x"),
             (rules::NUMBER, "2+0xAi"),
             (rules::COMPLEX_NUMBER, "2"),
             (rules::COMPLEX_NUMBER, "2i"),
             (rules::COMPLEX_NUMBER, "2+3j"),
+            (rules::COMPLEX_NUMBER, "7i64"),
+            (rules::COMPLEX_NUMBER, "2j🦀"),
             (rules::COMPLEX_NUMBER, "2+"),
             (rules::COMPLEX_NUMBER, "0x"),
             (rules::COMPLEX_NUMBER, "2+0b"),

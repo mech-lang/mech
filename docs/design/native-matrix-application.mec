@@ -1,0 +1,129 @@
+Native Matrix Producers and Function Application
+===============================================================================
+
+1. Scope
+-------------------------------------------------------------------------------
+
+The v0.4 native sequence AOT path now admits coefficient-producing matrix
+comprehensions, matrix transpose, matrix-vector multiplication, vector dot
+products, and invariant scalar vector comprehensions. Algorithms and coefficient
+formulas remain Mech source. The compiler follows canonical syntax and typed
+operations; it does not select behavior from program or function names.
+
+Function application and expression-bodied definitions are a separate source
+normalization step. This work reuses the existing shaped array forms:
+
+  rows := 0..3
+  columns := 0..2
+  A := [[number/to-f64((i + 1) * (j + 2)) | j <- columns]' | i <- rows]'
+  step(x<[f64]>) => <[f64]> := A' ** (A ** x)
+  x := [1.5 | j <- columns]'
+  y := x |> step
+  energy := y · y
+
+<[T]> denotes a vector of element kind T and any length. Runtime shape guards
+still enforce the dimensions required by each matrix multiplication.
+
+2. Shapes and ordinary array forms
+-------------------------------------------------------------------------------
+
+Comprehensions concatenate horizontally. A scalar comprehension is a row. Its
+transpose is a column. Nesting those columns over an outer generator constructs
+a matrix with the inner index on rows and the outer index on columns. The final
+transpose in the example gives the usual outer-index rows and inner-index columns.
+
+Each generator currently ranges over an exclusive, ascending u64 range 0..length.
+A previously declared range or range alias is also admitted. Matrix dimensions
+are snapshotted at construction, and immutable aliases and transpose views retain
+the shape. Named function definitions have document scope; parameter and local
+bindings shadow globals within the function.
+
+The native typed producer retains zero-length axes and its inferred f64 element
+kind. A generator declaring zero rows and n columns produces shape 0 by n, even
+when no element is evaluated. The converse n by 0 is also preserved. Existing
+resident untyped empty constructors collapse empty axes to 0 by 0; those legacy
+constructors are unchanged. This typed native shape contract must be carried into
+future authoritative shaped-array HIR work rather than inferred from allocation.
+
+3. Lowering and allocation elimination
+-------------------------------------------------------------------------------
+
+After application syntax normalization, the canonical AST identifies the two
+nested generators, pure entry expression, shape bindings, and matrix consumers.
+The compiler retains a shaped producer descriptor and generates a typed Mech
+coefficient function with u64 index parameters and one f64 output. Parameter order
+follows outer generator then inner generator. This preserves construction error
+order and lets the existing numeric graph optimizations apply directly.
+
+Transpose swaps the descriptor's dimensions and index interpretation. Matrix-vector
+multiplication checks the vector length and lowers to an existing native traversal
+that compiles the coefficient graph into its loop. Matrix coefficients and their
+transpose are not materialized. A dot product lowers to the existing dot reduction.
+An invariant, pure scalar comprehension lowers to a typed sequence fill.
+
+The native graph receives generic internal matrix traversal, dimension-validation,
+and coefficient-domain-validation operations. They are not user-facing benchmark
+functions. The existing scheduling, common-subexpression elimination, loop
+invariant motion, unsigned interval proofs, induction analysis, SIMD generation,
+row blocking, and buffer reuse apply to these graphs. No formula-specific rule is
+added by this source lowering.
+
+For integer-indexed coefficients, the backend evaluates each lane's unsigned
+prefix in original graph order, retaining interval proofs, induction values,
+invariants, common subexpressions, and checked fallback error order. Converted
+floating values are then packed, and the remaining floating-point DAG executes
+with SIMD. This avoids performing reciprocal, square-root, or other f64 suffix
+operations separately in each scalar lane. It changes neither expression topology
+nor per-lane floating-point rounding; scalar and tail paths remain scalar.
+
+
+4. Preserving errors and arithmetic
+-------------------------------------------------------------------------------
+
+Eliminating eager coefficient storage must not defer checked-arithmetic errors
+past observable IO or make those errors disappear when an iteration has zero
+steps. A domain-validation node therefore remains at the original matrix
+construction point. It participates in the source-ordered error/effect chain.
+
+The compiled validator first proves unsigned arithmetic safe over the declared
+index bounds. If the conservative proof cannot establish safety, a checked native
+scalar traversal validates each entry in source generator order. Empty domains
+evaluate no entries. Floating-point operations retain the existing IEEE behavior.
+
+Shape guards reject incompatible vector lengths before the associated product.
+The coefficient body retains its arithmetic operations. In particular, multiplying
+by an entry computed as 1.0 / denominator is not replaced with vector division:
+those expressions can round differently. Any future reassociation requires an
+explicit numerical optimization contract rather than an implicit syntax rule.
+
+5. Current boundaries
+-------------------------------------------------------------------------------
+
+The native slice currently requires one plain generator per nested comprehension,
+zero-based exclusive u64 ranges, f64 scalar coefficients, and pure scalar arithmetic
+with supported conversion and square-root calls. Invariant vector comprehensions
+must not depend on their generator index. Matrix consumers are matrix-vector
+multiplication, transpose/aliases, and vector dot products.
+
+Filtered, inclusive, stepped, or nonzero-start ranges; matrix materialization;
+matrix-matrix products; nonuniform vector comprehensions; and scalar coefficient
+captures are not yet lowered. Immutable shape captures in the iteration function
+are supported separately. Unsupported forms and unused materialized producers
+receive diagnostics. Source normalization is not yet canonical parser/formatter
+integration, and diagnostics can identify generated rather than original ranges.
+
+6. Validation
+-------------------------------------------------------------------------------
+
+The matrix normalizer's isolated tests cover rectangular orientation, transpose
+and range aliases, document-scope functions, lexical parameter shadowing, duplicate
+virtual bindings, inline producers, constructor validation placement, impurity,
+quoted markers, scalar parentheses, and unsupported forms.
+
+examples/function-application-prototype/verify_matrix.py independently checks
+scalar and SIMD executions, rectangular and empty shapes, SIMD tails, partition
+counts, captured dimensions and nested calls, coefficient overflow/division errors
+before IO, conservative proof fallback, shape errors, and spectral norm outputs.
+Other benchmark source migrations are validated against preserved baseline source
+and output. Source line counts apply to the visible Mech program; generated
+compiler support does not enter those counts.

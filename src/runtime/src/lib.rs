@@ -30,6 +30,8 @@ pub mod protocol;
 mod resident_recording;
 mod resource;
 mod resource_contract;
+#[cfg(all(feature = "runtime", feature = "string"))]
+mod resource_text_capture;
 #[cfg(feature = "runtime")]
 mod snapshot;
 
@@ -89,6 +91,11 @@ pub use self::operation::*;
 pub use self::protocol::*;
 pub use self::resource::*;
 pub use self::resource_contract::*;
+#[cfg(all(feature = "runtime", feature = "string"))]
+pub use self::resource_text_capture::{
+    RuntimeTextCaptureBuffer, RuntimeTextCaptureError, RuntimeTextCaptureSetupError,
+    RuntimeTextCaptureSummary,
+};
 #[cfg(feature = "runtime")]
 pub use self::snapshot::*;
 

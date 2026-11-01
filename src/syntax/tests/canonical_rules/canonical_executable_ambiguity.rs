@@ -246,8 +246,13 @@ fn shared_prefixes_select_the_exact_outer_structure() {
     }
 
     let set_factor = parse_raw(rules::FACTOR, "{x | x <- xs}");
-    assert_eq!(set_factor.outcome, CanonicalRuleOutcome::NoMatch);
-    assert_eq!(set_factor.consumed, TextRange::empty(TextSize::ZERO));
+    assert_eq!(set_factor.outcome, CanonicalRuleOutcome::Matched);
+    assert!(set_factor.is_strictly_clean());
+    assert_eq!(set_factor.consumed, set_factor.source.full_range());
+    assert!(contains_kind(
+        &set_factor.syntax(),
+        SyntaxKind::SetComprehension
+    ));
 
     for (text, kind) in [
         ("{x | x <- xs} + 1", SyntaxKind::SetComprehension),

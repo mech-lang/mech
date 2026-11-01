@@ -48582,6 +48582,56 @@
       "name": "YnVDS<f64>",
       "id_hex": "00794344d5179172",
       "owner": "mech-math"
+    },
+    {
+      "name": "NumberFormatMatrixCanonical",
+      "id_hex": "00417c7a5c2d07f0",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "NumberFormatScalarCanonical",
+      "id_hex": "00986ef101094a31",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "number/parse-u64",
+      "id_hex": "00375c524331ece1",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "sequence/length",
+      "id_hex": "005230d27927cb75",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "map/histogram",
+      "id_hex": "0089e5df42d13de4",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "map/keys",
+      "id_hex": "00545bda103af406",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "map/values",
+      "id_hex": "009afda241ea5663",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "sequence/sort-indices",
+      "id_hex": "0042124eb130c9e5",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "text/join",
+      "id_hex": "00e3a6bc3d9d2070",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "text/lines",
+      "id_hex": "00b0f523a4736fda",
+      "owner": "mech-engine::stdlib"
     }
   ]
 }

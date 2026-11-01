@@ -1,0 +1,24 @@
+{
+  "cli": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+  "direct_capture": true,
+  "nested_higher_order_capture": true,
+  "parameter_and_local_shadowing": true,
+  "global_in_local_initializer": true,
+  "immutable_vector_capture": true,
+  "four_scalar_captures": true,
+  "nine_scalar_captures_multiple_environment_appends": true,
+  "captured_vector_aliases_iteration_seed_without_mutation": true,
+  "five_records_map_captures": true,
+  "byte_translation_table_capture": true,
+  "integer_and_text_capture": true,
+  "records_map_capture_snapshot": true,
+  "function_before_global_before_application": true,
+  "rejected_cases": [
+    "not-yet-defined",
+    "undefined-global",
+    "caller-local-is-not-a-global",
+    "coefficient-capture-not-implemented",
+    "duplicate-parameter"
+  ],
+  "all_passed": true
+}

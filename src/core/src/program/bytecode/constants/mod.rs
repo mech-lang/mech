@@ -14,7 +14,7 @@ use alloc::{collections::BTreeSet, vec::Vec};
 #[cfg(not(feature = "no_std"))]
 use std::collections::BTreeSet;
 
-#[cfg(any(test, feature = "semantic-compiler"))]
+#[cfg(feature = "semantic-compiler")]
 use super::MatrixStorage;
 use super::{ByteReader, RuntimeType, checked_usize, invalid};
 

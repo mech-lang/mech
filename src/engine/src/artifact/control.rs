@@ -8,7 +8,7 @@ use crate::structural_coverage::{
 };
 
 /// Dense preorder identity within one root control declaration.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct ControlBlockId(pub u32);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -37,7 +37,8 @@ pub struct ControlCapture {
     pub input: u16,
     pub schema: SchemaId,
     /// Retain lexical arguments and derived captures across suspension.
-    /// Direct external inputs remain live when the FSM resumes.
+    /// Direct external inputs remain live when the FSM resumes. Counted
+    /// application requires this flag for its once-per-invocation snapshots.
     pub freeze_on_suspend: bool,
 }
 
@@ -46,6 +47,8 @@ pub enum ControlParameterSource {
     Scrutinee,
     PatternBinding(u32),
     Capture(u16),
+    /// Actual privately owned value at the current counted-application visit.
+    IterationCarrier,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -54,7 +57,7 @@ pub struct ControlParameter {
     pub schema: SchemaId,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum ControlValue {
     Constant(ConstantId),
     Parameter { block: ControlBlockId, ordinal: u16 },
@@ -92,6 +95,7 @@ pub enum ControlOperationBody<C = OperationContractId> {
     /// Stage an FSM output while control continues to a later transition in
     /// the same arm. Publication commits atomically with any suspension.
     Publish,
+    Iteration(super::IterationDeclaration<C>),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -677,13 +681,19 @@ pub(super) fn validate_match_inner(
         draft
             .schemas
             .get(schema)
-            .is_some_and(is_control_scalar_schema)
+            .is_some_and(is_control_literal_schema)
     };
     let closed_value = |schema| {
         draft
             .schemas
             .get(schema)
             .is_some_and(is_control_value_schema)
+    };
+    let result_value = |schema| {
+        draft
+            .schemas
+            .get(schema)
+            .is_some_and(is_control_result_schema)
     };
     let boolean = |schema| {
         draft
@@ -708,7 +718,7 @@ pub(super) fn validate_match_inner(
             .any(|capture| capture.input == declaration.scrutinee),
         recursive_target_eligible,
     ));
-    if !closed_value(output)
+    if !result_value(output)
         || (!scalar(scrutinee)
             && declaration
                 .arms
@@ -716,7 +726,7 @@ pub(super) fn validate_match_inner(
                 .any(|arm| matches!(&arm.pattern, MatchPattern::Literal(_))))
     {
         return Err(invalid(
-            "match requires a closed result and scalar literal-pattern scrutinee",
+            "match requires a supported result and scalar literal-pattern scrutinee",
         ));
     }
     if !closed_value(scrutinee)
@@ -733,7 +743,10 @@ pub(super) fn validate_match_inner(
     let mut captured_inputs = std::collections::BTreeSet::new();
     for capture in &declaration.captures {
         if inputs.get(capture.input as usize) != Some(&capture.schema)
-            || !closed_value(capture.schema)
+            || !draft
+                .schemas
+                .get(capture.schema)
+                .is_some_and(is_control_capture_schema)
             || !captured_inputs.insert(capture.input)
         {
             return Err(invalid("invalid or duplicate capture"));
@@ -808,6 +821,9 @@ pub(super) fn validate_match_inner(
                             .get(index as usize)
                             .ok_or_else(|| invalid("unknown capture parameter"))?
                             .schema
+                    }
+                    ControlParameterSource::IterationCarrier => {
+                        return Err(invalid("iteration carrier is not a match parameter"));
                     }
                 };
                 if parameter.schema != expected {
@@ -895,6 +911,17 @@ pub(super) fn validate_match_inner(
                                 next_block,
                                 guarded,
                             )?
+                        }
+                        ControlOperationBody::Iteration(nested) => {
+                            super::iteration::validate_iteration_inner(
+                                draft,
+                                node,
+                                nested,
+                                &inputs,
+                                operation.schema,
+                                next_block,
+                                guarded,
+                            )?;
                         }
                         ControlOperationBody::Recur(ancestor) => {
                             let target = match_schemas
@@ -1002,6 +1029,16 @@ pub(super) fn validate_match_inner(
                                     )
                                 })
                     );
+                    let live_turn_shaped_capture = matches!(
+                        input,
+                        ControlValue::Parameter { block: owner, ordinal }
+                            if *owner == block.id
+                                && block.parameters.get(*ordinal as usize).is_some_and(|parameter| {
+                                    matches!(parameter.source, ControlParameterSource::Capture(_))
+                                        && draft.schemas.get(parameter.schema)
+                                            .is_some_and(is_control_capture_schema)
+                                })
+                    );
                     let live_turn_shaped_local = matches!(
                         input,
                         ControlValue::Local { block: owner, node: local }
@@ -1015,6 +1052,7 @@ pub(super) fn validate_match_inner(
                         || value_schema(*input, index)? != port.schema
                         || (!closed_value(port.schema)
                             && !live_pattern_parameter
+                            && !live_turn_shaped_capture
                             && !live_turn_shaped_local)
                     {
                         return Err(invalid("block operation input contract mismatch"));
@@ -1087,6 +1125,7 @@ pub const MAX_CONTROL_DEPTH: usize = 8;
 enum ControlRef<'a, C> {
     Match(&'a MatchDeclaration<C>),
     Comprehension(&'a super::ComprehensionDeclaration<C>),
+    Iteration(&'a super::IterationDeclaration<C>),
 }
 
 fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
@@ -1132,6 +1171,8 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                                     ControlRef::Comprehension(nested),
                                     depth.checked_add(1)?,
                                 )),
+                                ControlOperationBody::Iteration(nested) => pending
+                                    .push((ControlRef::Iteration(nested), depth.checked_add(1)?)),
                                 ControlOperationBody::Operation { .. }
                                 | ControlOperationBody::Recur(_)
                                 | ControlOperationBody::Suspend
@@ -1163,12 +1204,41 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                                     ControlRef::Comprehension(nested),
                                     depth.checked_add(1)?,
                                 )),
+                                ControlOperationBody::Iteration(nested) => pending
+                                    .push((ControlRef::Iteration(nested), depth.checked_add(1)?)),
                                 ControlOperationBody::Operation { .. }
                                 | ControlOperationBody::Recur(_)
                                 | ControlOperationBody::Suspend
                                 | ControlOperationBody::Publish => {}
                             }
                         }
+                    }
+                }
+            }
+            ControlRef::Iteration(control) => {
+                add(1, 1)?;
+                add(2, control.body.operations.len())?;
+                add(3, control.captures.len())?;
+                add(3, control.body.parameters.len())?;
+                // One real scratch carrier shares the u16 local namespace.
+                add(4, 1)?;
+                add(4, control.body.operations.len())?;
+                for operation in &control.body.operations {
+                    add(3, operation.inputs.len())?;
+                    match &operation.body {
+                        ControlOperationBody::Match(nested) => {
+                            pending.push((ControlRef::Match(nested), depth.checked_add(1)?))
+                        }
+                        ControlOperationBody::Comprehension(nested) => {
+                            pending.push((ControlRef::Comprehension(nested), depth.checked_add(1)?))
+                        }
+                        ControlOperationBody::Iteration(nested) => {
+                            pending.push((ControlRef::Iteration(nested), depth.checked_add(1)?))
+                        }
+                        ControlOperationBody::Operation { .. }
+                        | ControlOperationBody::Recur(_)
+                        | ControlOperationBody::Suspend
+                        | ControlOperationBody::Publish => {}
                     }
                 }
             }
@@ -1210,6 +1280,9 @@ fn validate_control_depth<C>(
                         ControlOperationBody::Comprehension(nested) => {
                             pending.push((ControlRef::Comprehension(nested), nested_depth));
                         }
+                        ControlOperationBody::Iteration(nested) => {
+                            pending.push((ControlRef::Iteration(nested), nested_depth));
+                        }
                         ControlOperationBody::Operation { .. }
                         | ControlOperationBody::Recur(_)
                         | ControlOperationBody::Suspend
@@ -1230,6 +1303,28 @@ fn validate_control_depth<C>(
                         ControlOperationBody::Comprehension(nested) => {
                             pending.push((ControlRef::Comprehension(nested), nested_depth));
                         }
+                        ControlOperationBody::Iteration(nested) => {
+                            pending.push((ControlRef::Iteration(nested), nested_depth));
+                        }
+                        ControlOperationBody::Operation { .. }
+                        | ControlOperationBody::Recur(_)
+                        | ControlOperationBody::Suspend
+                        | ControlOperationBody::Publish => {}
+                    }
+                }
+            }
+            ControlRef::Iteration(control) => {
+                for operation in &control.body.operations {
+                    match &operation.body {
+                        ControlOperationBody::Match(nested) => {
+                            pending.push((ControlRef::Match(nested), nested_depth))
+                        }
+                        ControlOperationBody::Comprehension(nested) => {
+                            pending.push((ControlRef::Comprehension(nested), nested_depth))
+                        }
+                        ControlOperationBody::Iteration(nested) => {
+                            pending.push((ControlRef::Iteration(nested), nested_depth))
+                        }
                         ControlOperationBody::Operation { .. }
                         | ControlOperationBody::Recur(_)
                         | ControlOperationBody::Suspend
@@ -1240,6 +1335,13 @@ fn validate_control_depth<C>(
         }
     }
     Ok(())
+}
+
+pub(super) fn validate_iteration_depth<C>(
+    control: &super::IterationDeclaration<C>,
+    node: mech_core::NodeId,
+) -> Result<(), super::ArtifactBuildError> {
+    validate_control_depth(ControlRef::Iteration(control), node)
 }
 
 pub(super) fn validate_control_counts(
@@ -1269,6 +1371,13 @@ pub(super) fn validate_control_counts(
             let control_counts =
                 control_counts(ControlRef::Comprehension(control)).ok_or_else(invalid)?;
             for (index, count) in control_counts[..4].iter().copied().enumerate() {
+                add(index, count)?;
+            }
+            continue;
+        }
+        if let super::ExecutableNodeBody::Iteration(control) = &node.body {
+            let nested = control_counts(ControlRef::Iteration(control)).ok_or_else(invalid)?;
+            for (index, count) in nested[..4].iter().copied().enumerate() {
                 add(index, count)?;
             }
             continue;
@@ -1312,6 +1421,7 @@ impl<C> MatchDeclaration<C> {
                     ControlOperationBody::Suspend => true,
                     ControlOperationBody::Match(nested) => nested.contains_suspend(),
                     ControlOperationBody::Comprehension(nested) => nested.contains_suspend(),
+                    ControlOperationBody::Iteration(nested) => nested.contains_suspend(),
                     ControlOperationBody::Operation { .. }
                     | ControlOperationBody::Recur(_)
                     | ControlOperationBody::Publish => false,
@@ -1375,6 +1485,11 @@ impl<C> MatchDeclaration<C> {
                                         )?,
                                     )
                                 }
+                                ControlOperationBody::Iteration(nested) => {
+                                    ControlOperationBody::Iteration(
+                                        nested.map_contracts_inner(map)?,
+                                    )
+                                }
                                 ControlOperationBody::Recur(ancestor) => {
                                     ControlOperationBody::Recur(*ancestor)
                                 }
@@ -1419,6 +1534,7 @@ impl<C> super::ComprehensionDeclaration<C> {
                 ControlOperationBody::Suspend => true,
                 ControlOperationBody::Match(nested) => nested.contains_suspend(),
                 ControlOperationBody::Comprehension(nested) => nested.contains_suspend(),
+                ControlOperationBody::Iteration(nested) => nested.contains_suspend(),
                 ControlOperationBody::Operation { .. }
                 | ControlOperationBody::Recur(_)
                 | ControlOperationBody::Publish => false,
@@ -1439,6 +1555,14 @@ pub(crate) fn is_control_scalar_schema(schema: &mech_core::Schema) -> bool {
     schema.dimension_parameters().is_empty()
         && (is_builtin_control_scalar_body(schema.body())
             || matches!(schema.body(), SchemaBody::Option(payload) if is_optional_control_scalar_body(payload)))
+}
+
+/// Literal patterns include exact raw UTF-8 Strings without broadening the
+/// fixed numeric/Boolean scalar execution class used by ordinary kernels.
+pub(crate) fn is_control_literal_schema(schema: &mech_core::Schema) -> bool {
+    is_control_scalar_schema(schema)
+        || (schema.dimension_parameters().is_empty()
+            && matches!(schema.body(), mech_core::SchemaBody::String))
 }
 
 fn is_builtin_control_scalar_body(body: &mech_core::SchemaBody) -> bool {
@@ -1477,10 +1601,266 @@ pub(crate) fn is_control_value_schema(schema: &mech_core::Schema) -> bool {
         && !matches!(schema.body(), mech_core::SchemaBody::Dynamic)
 }
 
+/// Selected control results may retain per-turn Matrix geometry in an
+/// immutable canonical snapshot. This is a result-only authority: patterns,
+/// scrutinees, lexical captures and state carriers keep their own gates.
+pub(crate) fn is_control_result_schema(schema: &mech_core::Schema) -> bool {
+    use mech_core::{DimensionLifetime, SchemaBody};
+    fn matrix_result(body: &SchemaBody) -> Option<bool> {
+        fn children<'a>(mut bodies: impl Iterator<Item = &'a SchemaBody>) -> Option<bool> {
+            bodies.try_fold(false, |matrix, body| {
+                matrix_result(body).map(|child| matrix || child)
+            })
+        }
+        match body {
+            SchemaBody::Matrix {
+                element,
+                dimensions,
+            } if dimensions.len() == 2 => matrix_result(element).map(|_| true),
+            SchemaBody::Tuple(fields) => children(fields.iter()),
+            SchemaBody::Record(fields) => children(fields.iter().map(|field| &field.schema)),
+            SchemaBody::Option(body) => matrix_result(body),
+            SchemaBody::Enum { variants, .. } => children(
+                variants
+                    .iter()
+                    .filter_map(|variant| variant.payload.as_ref()),
+            ),
+            SchemaBody::Bool
+            | SchemaBody::UnsignedInteger(_)
+            | SchemaBody::SignedInteger(_)
+            | SchemaBody::IntegerInterval(_)
+            | SchemaBody::FloatingPoint(_)
+            | SchemaBody::Complex(_)
+            | SchemaBody::Rational64
+            | SchemaBody::String
+            | SchemaBody::Id
+            | SchemaBody::Index
+            | SchemaBody::Atom(_) => Some(false),
+            _ => None,
+        }
+    }
+    is_control_value_schema(schema)
+        || (schema
+            .dimension_parameters()
+            .iter()
+            .all(|parameter| parameter.lifetime() == DimensionLifetime::Turn)
+            && matrix_result(schema.body()) == Some(true))
+}
+
+/// A lexical matrix capture may retain its turn-local shape in a canonical
+/// snapshot. This does not make variable-shaped scrutinees, structural pattern
+/// bindings, or block results closed control values.
+pub(crate) fn is_control_capture_schema(schema: &mech_core::Schema) -> bool {
+    use mech_core::{DimensionLifetime, SchemaBody};
+    is_control_value_schema(schema)
+        || (matches!(
+            schema.body(),
+            SchemaBody::Matrix { element, dimensions }
+                if dimensions.len() == 2
+                    && matches!(element.as_ref(),
+                        SchemaBody::Bool
+                            | SchemaBody::Index
+                            | SchemaBody::String
+                            | SchemaBody::UnsignedInteger(_)
+                            | SchemaBody::SignedInteger(_)
+                            | SchemaBody::FloatingPoint(_))
+        ) && schema
+            .dimension_parameters()
+            .iter()
+            .all(|parameter| parameter.lifetime() == DimensionLifetime::Turn))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use mech_core::{DimensionExpr, FloatWidth, SchemaBody, SchemaDraft, SchemaTableBuilder};
+
+    #[test]
+    fn turn_matrix_capture_eligibility_does_not_widen_closed_values() {
+        use mech_core::{
+            DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin,
+        };
+        let schema = |element, rank, lifetime| {
+            SchemaDraft {
+                body: SchemaBody::Matrix {
+                    element: Box::new(element),
+                    dimensions: (0..rank)
+                        .map(|axis| {
+                            if axis == 0 {
+                                DimensionExpr::Parameter(DimensionParameterId::new(0))
+                            } else {
+                                DimensionExpr::Constant(1)
+                            }
+                        })
+                        .collect(),
+                },
+                dimension_parameters: vec![DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(0),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: None,
+                }]
+                .into_boxed_slice(),
+            }
+            .finalize()
+            .unwrap()
+        };
+        for element in [
+            SchemaBody::String,
+            SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+        ] {
+            let turn = schema(element.clone(), 2, DimensionLifetime::Turn);
+            assert!(is_control_capture_schema(&turn));
+            assert!(!is_control_value_schema(&turn));
+            assert!(!is_control_capture_schema(&schema(
+                element.clone(),
+                2,
+                DimensionLifetime::Activation,
+            )));
+            assert!(!is_control_capture_schema(&schema(
+                element,
+                1,
+                DimensionLifetime::Turn,
+            )));
+        }
+        assert!(!is_control_capture_schema(&schema(
+            SchemaBody::Dynamic,
+            2,
+            DimensionLifetime::Turn,
+        )));
+    }
+
+    #[test]
+    fn turn_matrix_result_eligibility_is_separate_from_patterns_and_captures() {
+        use mech_core::{
+            DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin, SchemaField,
+        };
+        let matrix = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)),
+            dimensions: vec![
+                DimensionExpr::Constant(1),
+                DimensionExpr::Parameter(DimensionParameterId::new(0)),
+            ]
+            .into_boxed_slice(),
+        };
+        let schema = |body, lifetime| {
+            SchemaDraft {
+                body,
+                dimension_parameters: vec![DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(0),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: Some(DimensionExpr::Constant(8)),
+                }]
+                .into_boxed_slice(),
+            }
+            .finalize()
+            .unwrap()
+        };
+        for body in [
+            matrix.clone(),
+            SchemaBody::Tuple(vec![matrix.clone(), SchemaBody::Bool].into_boxed_slice()),
+            SchemaBody::Record(
+                vec![SchemaField {
+                    name: "items".into(),
+                    schema: matrix.clone(),
+                }]
+                .into_boxed_slice(),
+            ),
+            SchemaBody::Option(Box::new(matrix.clone())),
+            SchemaBody::Enum {
+                key: mech_core::NominalKey::from_bytes([0x43; 32]),
+                variants: vec![
+                    mech_core::EnumVariantSchema {
+                        name: "Empty".into(),
+                        payload: None,
+                    },
+                    mech_core::EnumVariantSchema {
+                        name: "Items".into(),
+                        payload: Some(matrix.clone()),
+                    },
+                ]
+                .into_boxed_slice(),
+            },
+        ] {
+            let turn = schema(body.clone(), DimensionLifetime::Turn);
+            assert!(is_control_result_schema(&turn));
+            assert!(!is_control_value_schema(&turn));
+            assert!(!is_control_literal_schema(&turn));
+            if !matches!(body, SchemaBody::Matrix { .. }) {
+                assert!(!is_control_capture_schema(&turn));
+            }
+            assert!(!is_control_result_schema(&schema(
+                body,
+                DimensionLifetime::Activation
+            )));
+        }
+        let bounded = schema(matrix.clone(), DimensionLifetime::Turn);
+        assert!(mech_core::shape_for_resolved_extents(&bounded, &[1, 8]).is_ok());
+        assert!(mech_core::shape_for_resolved_extents(&bounded, &[1, 9]).is_err());
+        let mixed = SchemaDraft {
+            body: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::Bool),
+                dimensions: vec![
+                    DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                    DimensionExpr::Parameter(DimensionParameterId::new(1)),
+                ]
+                .into_boxed_slice(),
+            },
+            dimension_parameters: [DimensionLifetime::Activation, DimensionLifetime::Turn]
+                .into_iter()
+                .enumerate()
+                .map(|(index, lifetime)| DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(index as u32),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: None,
+                })
+                .collect(),
+        }
+        .finalize()
+        .unwrap();
+        assert!(!is_control_result_schema(&mixed));
+        let map = SchemaBody::Map {
+            key: Box::new(SchemaBody::String),
+            value: Box::new(matrix.clone()),
+            cardinality: mech_core::ExtentSpec::Exact(DimensionExpr::Constant(0)),
+        };
+        assert!(!is_control_result_schema(&schema(
+            map,
+            DimensionLifetime::Turn
+        )));
+        let dynamic =
+            SchemaBody::Tuple(vec![matrix.clone(), SchemaBody::Dynamic].into_boxed_slice());
+        assert!(!is_control_result_schema(&schema(
+            dynamic,
+            DimensionLifetime::Turn
+        )));
+        let non_rank_two = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Bool),
+            dimensions: vec![DimensionExpr::Parameter(DimensionParameterId::new(0))]
+                .into_boxed_slice(),
+        };
+        assert!(!is_control_result_schema(&schema(
+            non_rank_two,
+            DimensionLifetime::Turn
+        )));
+        // This result policy does not retroactively restrict legacy closed values.
+        let closed = SchemaDraft {
+            body: SchemaBody::Bool,
+            dimension_parameters: Box::new([]),
+        }
+        .finalize()
+        .unwrap();
+        assert!(is_control_value_schema(&closed));
+        assert!(is_control_result_schema(&closed));
+    }
 
     #[test]
     fn fixed_array_patterns_are_irrefutable_only_when_their_lengths_fit() {

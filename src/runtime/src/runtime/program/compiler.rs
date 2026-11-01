@@ -4,6 +4,12 @@
 //! finalization. Only immutable compilation products and detached typed
 //! initialization values escape this module.
 
+#[path = "compiler_retained_input.rs"]
+mod retained_input;
+pub use retained_input::{
+    CanonicalCompilationSource, CanonicalCompilationSources, RetainedCanonicalCompilation,
+};
+
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap},
     sync::Arc,
@@ -33,25 +39,23 @@ use mech_engine::{
 
 use crate::SourceContextCapabilityScope;
 use crate::{
-    CapabilityRequest, HostInterfaceCatalog, ModuleBuildOptions, ModuleBuilder,
-    ResidentExternalContractResolver, ResolvedSource, RuntimeCapabilityOperation,
-    RuntimeHostInputValue, RuntimeInvalidOperationError, RuntimeModuleDependencyMissingError,
-    RuntimeResourceKey, RuntimeResourceProviderNotFound, RuntimeResourceReadRequest,
-    RuntimeResourceRegistry, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
+    ArtifactResourceSchemaPreflightReport, CapabilityRequest, HostInterfaceCatalog,
+    ModuleBuildOptions, ModuleBuilder, ResidentExternalContractResolver, ResolvedSource,
+    ResourceSchemaPreflight, RuntimeCapabilityOperation, RuntimeHostInputValue,
+    RuntimeInvalidOperationError, RuntimeModuleDependencyMissingError, RuntimeResourceKey,
+    RuntimeResourceProviderNotFound, RuntimeResourceReadRequest, RuntimeResourceRegistry,
+    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
     SourceContextBase, SourceDocument, SourceImportAlias, SourceImportDeclaration, SourceIndex,
-    SourceRequest, SourceResolver, import_may_resolve_source_dependency,
-    import_requires_source_dependency, module_namespace_for_import, source_request_for_import,
+    SourceRequest, SourceResolver, artifact_has_closed_resource_payloads,
+    import_may_resolve_source_dependency, import_requires_source_dependency,
+    module_namespace_for_import, preflight_artifact_resource_schemas, source_request_for_import,
+    validate_artifact_resource_read_schema, validate_artifact_resource_schema_contract,
 };
 
 use super::{ResidentRouteFailure, ResidentRouteFailureClass, route_failure};
 
 fn canonical_frontend(document: &SourceDocument) -> CanonicalSourceFrontend {
-    document
-        .nominal_origin()
-        .cloned()
-        .map_or(CanonicalSourceFrontend, |origin| {
-            CanonicalSourceFrontend.with_nominal_origin(origin)
-        })
+    document.canonical_frontend()
 }
 
 pub(super) fn canonical_dependency_identity_hash(
@@ -87,10 +91,9 @@ pub(super) fn canonical_dependency_identity_hash(
 
 fn canonical_document_dependency_hash(document: &SourceDocument) -> MResult<u64> {
     let source = document.source().to_contiguous_string();
-    let nominal = !canonical_frontend(document)
-        .declared_enum_names(&document.document())
-        .map_err(|error| canonical_compilation_error(error.to_string()))?
-        .is_empty();
+    let nominal = canonical_frontend(document)
+        .has_origin_dependent_declarations(&document.document())
+        .map_err(|error| canonical_compilation_error(error.to_string()))?;
     Ok(if nominal {
         canonical_dependency_identity_hash(
             &source,
@@ -145,6 +148,7 @@ fn retained_compiler_document(source: &str) -> MResult<SourceDocument> {
         Arc::<str>::from(source),
         mech_syntax::document::ParseConfig::default(),
     )
+    .map(SourceDocument::with_standalone_nominal_origin)
     .map_err(|error| canonical_compilation_error(format!("invalid retained source: {error:?}")))
 }
 
@@ -425,6 +429,23 @@ impl ProgramCompiler {
         self.compile_document(&document)
     }
 
+    /// Admit acquired source bytes before UTF-8 decoding, then use the same
+    /// canonical source entry point. File/stream callers remain responsible
+    /// for bounding acquisition; a limit+1 prefix may end inside a character.
+    pub fn compile_canonical_source_bytes(
+        &mut self,
+        source: &[u8],
+    ) -> MResult<ProgramCompilationProduct> {
+        super::super::limits::enforce_source_byte_limit(
+            self.max_source_bytes,
+            u64::try_from(source.len()).unwrap_or(u64::MAX),
+        )?;
+        let source = std::str::from_utf8(source).map_err(|error| {
+            canonical_compilation_error(format!("source is not valid UTF-8: {error}"))
+        })?;
+        self.compile_canonical_source(source)
+    }
+
     /// Compiles source for immediate artifact activation without returning or
     /// retaining a duplicate durable bytecode container.
     pub fn compile_source_artifact(
@@ -600,6 +621,7 @@ pub(crate) struct ProgramCompilerView<'a> {
     module_manifests: &'a ModuleManifestCatalog,
     max_planning_steps: usize,
     max_source_bytes: Option<u64>,
+    retained_sources: Option<&'a std::cell::RefCell<retained_input::RetainedSourceCollector>>,
 }
 
 /// One resolution/planning session. Module versions use the same ModuleBuilder
@@ -611,6 +633,7 @@ struct CanonicalGraphCompilation<'a> {
     source_dependencies: BTreeMap<String, u64>,
     module_versions: HashMap<String, crate::ModuleVersionId>,
     nominal_owners: BTreeMap<Vec<String>, (Option<String>, mech_syntax::document::DocumentId)>,
+    enum_paths: BTreeSet<Vec<String>>,
 }
 
 impl<'a> CanonicalGraphCompilation<'a> {
@@ -622,12 +645,13 @@ impl<'a> CanonicalGraphCompilation<'a> {
             source_dependencies: BTreeMap::new(),
             module_versions: HashMap::new(),
             nominal_owners: BTreeMap::new(),
+            enum_paths: BTreeSet::new(),
         }
     }
 
     fn enum_qualifiers(&self) -> MResult<BTreeMap<mech_core::NominalKey, String>> {
-        self.nominal_owners
-            .keys()
+        self.enum_paths
+            .iter()
             .map(|path| {
                 let origin =
                     mech_core::CanonicalNominalPath::new(path.clone()).map_err(|error| {
@@ -647,7 +671,7 @@ impl<'a> CanonicalGraphCompilation<'a> {
 }
 
 struct CanonicalDocumentPlanning {
-    schemas: BTreeMap<String, mech_core::SchemaBody>,
+    schemas: BTreeMap<String, mech_core::SchemaDraft>,
     reads: BTreeMap<String, ExecutionResourceRequest>,
     writes: BTreeMap<String, ExecutionResourceRequest>,
     values: BTreeMap<String, Value>,
@@ -673,6 +697,7 @@ impl<'a> ProgramCompilerView<'a> {
             module_manifests,
             max_planning_steps,
             max_source_bytes,
+            retained_sources: None,
         }
     }
 
@@ -745,7 +770,7 @@ impl<'a> ProgramCompilerView<'a> {
         let (input_schemas, resource_reads, resource_writes, planned_reads) =
             self.canonical_document_resources(&index.root, &document.document())?;
         let mut program = canonical_frontend(document)
-            .compile_interactive_document_with_planning_contract(
+            .compile_interactive_document_with_planning_contract_schema_drafts(
                 &document.document(),
                 Arc::clone(&self.function_catalog),
                 input_schemas,
@@ -800,7 +825,9 @@ impl<'a> ProgramCompilerView<'a> {
             let value = input.clone().into_value()?;
             schemas.insert(
                 name.clone(),
-                ValueCell::from_snapshot(value.clone())?.closed_schema_body()?,
+                canonical_closed_input_schema(
+                    ValueCell::from_snapshot(value.clone())?.closed_schema_body()?,
+                ),
             );
             values.insert(name.clone(), value);
         }
@@ -821,7 +848,7 @@ impl<'a> ProgramCompilerView<'a> {
         initialization: bool,
     ) -> MResult<CanonicalSourceProgram> {
         let mut program = canonical_frontend(document)
-            .compile_document_with_planning_contract(
+            .compile_document_with_planning_contract_schema_drafts(
                 &document.document(),
                 Arc::clone(&self.function_catalog),
                 context.schemas.clone(),
@@ -942,8 +969,8 @@ impl<'a> ProgramCompilerView<'a> {
     fn validate_canonical_planning_candidate(
         &self,
         program: &CanonicalSourceProgram,
-        values: &BTreeMap<String, Value>,
-    ) -> MResult<()> {
+        _values: &BTreeMap<String, Value>,
+    ) -> MResult<ArtifactResourceSchemaPreflightReport> {
         self.validate_canonical_planning_step_limit(program)?;
         let has_write = program.program().nodes.iter().any(|node| {
             let mech_engine::SourceNodeBody::Operation {
@@ -957,33 +984,60 @@ impl<'a> ProgramCompilerView<'a> {
                 Some(ApplicationRequirement::Resource(request))
                 if matches!(request.intent, ResourceIntent::Assign | ResourceIntent::Send))
         });
-        if !has_write && values.is_empty() {
-            return Ok(());
+        if !has_write {
+            return Ok(ArtifactResourceSchemaPreflightReport::default());
         }
-        let bindings = program
-            .program()
-            .inputs
-            .iter()
-            .enumerate()
-            .filter_map(|(ordinal, input)| {
-                values
-                    .get(&input.name)
-                    .map(|value| (ordinal as u32, value.clone()))
-            })
-            .collect::<Vec<_>>();
-        let planning = program
-            .clone()
-            .bind_input_constants(&bindings)
-            .map_err(|error| canonical_compilation_error(error.to_string()))?;
-        // Explicit live ports can have their defaults evaluated by the
-        // separate initializer projection. Do not fabricate a planning value
-        // for a still-open input merely to execute an unrelated pure graph.
-        if !has_write && !planning.program().inputs.is_empty() {
-            return Ok(());
-        }
-        let artifact = planning.compile_artifact_with_external_contracts(
+        // Resource representatives establish schemas, not values. Retain the
+        // original open inputs instead of turning those representatives into
+        // constants and evaluating arbitrary domain-sensitive operations.
+        let artifact = program.compile_artifact_with_external_contracts(
             &ResidentExternalContractResolver::new(self.resources),
         )?;
+        let report = preflight_artifact_resource_schemas(&artifact, |site| {
+            let binding = self
+                .resources
+                .resident_provider_binding(&site.request.base_uri)?;
+            if site.request.intent == ResourceIntent::Read {
+                validate_artifact_resource_schema_contract(
+                    &site,
+                    binding.semantic_read_contract()?,
+                )?;
+                let representative = self.resources.plan_read(RuntimeResourceReadRequest {
+                    base_uri: site.request.base_uri.clone(),
+                    path: site.request.path.clone(),
+                    context_name: site.request.context_name.clone(),
+                })?;
+                validate_artifact_resource_read_schema(&artifact, &site, &representative)?;
+                return Ok(ResourceSchemaPreflight::Validated);
+            }
+            let intent = match site.request.intent {
+                ResourceIntent::Assign => RuntimeResourceWriteIntent::Assign,
+                ResourceIntent::Send => RuntimeResourceWriteIntent::Send,
+                ResourceIntent::Read => unreachable!(),
+            };
+            validate_artifact_resource_schema_contract(
+                &site,
+                binding.semantic_write_contract(intent)?,
+            )?;
+            self.resources.preflight_write_schema(
+                RuntimeResourceWritePreflightRequest {
+                    base_uri: site.request.base_uri.clone(),
+                    path: site.request.path.clone(),
+                    context_name: site.request.context_name.clone(),
+                    operation: RuntimeCapabilityOperation::from_name(
+                        site.request.operation.clone(),
+                    )?,
+                    intent,
+                },
+                site.schema,
+            )
+        })?;
+        if !artifact_has_closed_resource_payloads(&artifact) {
+            // A deferred provider check is preserved in the report. Every
+            // real effect still invokes mandatory provider preparation before
+            // publication, including for legacy custom providers.
+            return Ok(report);
+        }
         with_canonical_planning_step_limit(self.max_planning_steps, || {
             let mut instance = activate_external(
                 ReactiveInstanceId::new(0x4350_4c4e, 0),
@@ -1007,7 +1061,8 @@ impl<'a> ProgramCompilerView<'a> {
             // captured effects are discarded after the provider's effect-free hook.
             prepared.abort();
             Ok(())
-        })
+        })?;
+        Ok(report)
     }
 
     fn validate_canonical_planning_step_limit(
@@ -1057,9 +1112,9 @@ impl<'a> ProgramCompilerView<'a> {
         let (input_schemas, resource_reads, resource_writes, planned_reads) =
             self.canonical_document_resources(&index.root, &document.document())?;
         let compile = if interactive {
-            CanonicalSourceFrontend::compile_interactive_document_with_catalog_and_resources
+            CanonicalSourceFrontend::compile_interactive_document_with_catalog_and_resources_schema_drafts
         } else {
-            CanonicalSourceFrontend::compile_document_with_catalog_and_resources
+            CanonicalSourceFrontend::compile_document_with_catalog_and_resources_schema_drafts
         };
         let frontend = canonical_frontend(document);
         let mut program = compile(
@@ -1131,6 +1186,12 @@ impl<'a> ProgramCompilerView<'a> {
                     .map_err(|error| canonical_compilation_error(error.to_string()))?
             };
             if is_mixed {
+                let root = &resolved[0];
+                self.retain_compilation_source(
+                    &root.canonical_uri,
+                    root.source_document().expect("validated retained root"),
+                    true,
+                );
                 #[cfg(feature = "compute")]
                 {
                     let mixed = self.compile_canonical_mixed_resolved_root(
@@ -1168,12 +1229,11 @@ impl<'a> ProgramCompilerView<'a> {
         let mut ordinal = 0;
         while ordinal < resolved.len() {
             let uri = resolved[ordinal].canonical_uri.clone();
-            let index = resolved[ordinal]
-                .source_document()
-                .ok_or_else(|| {
-                    canonical_compilation_error("ordered root has no retained document")
-                })?
-                .index_with_diagnostics()?;
+            let document = resolved[ordinal].source_document().ok_or_else(|| {
+                canonical_compilation_error("ordered root has no retained document")
+            })?;
+            self.retain_compilation_source(&uri, document, ordinal < requested_roots);
+            let index = document.index_with_diagnostics()?;
             let mut detached = index.root.clone();
             let mut imports = Vec::new();
             for declaration in index.root.program_imports() {
@@ -1194,8 +1254,8 @@ impl<'a> ProgramCompilerView<'a> {
                     let current = dependency.source_document().ok_or_else(|| {
                         canonical_compilation_error("canonical dependency has no retained document")
                     })?;
-                    if mech_core::hash_str(&retained.source().to_contiguous_string())
-                        != mech_core::hash_str(&current.source().to_contiguous_string())
+                    if canonical_document_dependency_hash(retained)?
+                        != canonical_document_dependency_hash(current)?
                     {
                         return Err(canonical_compilation_error(format!(
                             "canonical dependency {} changed during compilation",
@@ -1359,7 +1419,10 @@ impl<'a> ProgramCompilerView<'a> {
         }
         let mut program = CanonicalSourceFrontend
             .with_imported_enum_qualifiers(context.enum_qualifiers()?)
-            .compile_ordered_documents_with_catalog(&documents, Arc::clone(&self.function_catalog))
+            .compile_ordered_documents_with_catalog_schema_drafts(
+                &documents,
+                Arc::clone(&self.function_catalog),
+            )
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
         for (ordinal, imports) in import_uses {
             use mech_syntax::document::AstNode;
@@ -1448,7 +1511,9 @@ impl<'a> ProgramCompilerView<'a> {
         for (name, value) in &imported {
             input_schemas.insert(
                 name.clone(),
-                ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
+                canonical_closed_input_schema(
+                    ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
+                ),
             );
         }
         let modules = imports
@@ -1463,7 +1528,7 @@ impl<'a> ProgramCompilerView<'a> {
             .collect();
         let prepared = canonical_frontend(document)
             .with_imported_enum_qualifiers(context.enum_qualifiers()?)
-            .prepare_mixed_document_with_planning_contract(
+            .prepare_mixed_document_with_planning_contract_schema_drafts(
                 &document.document(),
                 Arc::clone(&self.function_catalog),
                 input_schemas,
@@ -1573,13 +1638,15 @@ impl<'a> ProgramCompilerView<'a> {
         for (name, value) in imported {
             schemas.insert(
                 name,
-                ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
+                canonical_closed_input_schema(
+                    ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
+                ),
             );
         }
         let compile = if interactive {
-            CanonicalSourceFrontend::compile_interactive_document_with_planning_contract
+            CanonicalSourceFrontend::compile_interactive_document_with_planning_contract_schema_drafts
         } else {
-            CanonicalSourceFrontend::compile_document_with_planning_contract
+            CanonicalSourceFrontend::compile_document_with_planning_contract_schema_drafts
         };
         let program = compile(
             &frontend,
@@ -1661,15 +1728,15 @@ impl<'a> ProgramCompilerView<'a> {
         let Some(origin) = document.nominal_origin() else {
             return Ok(());
         };
-        for name in canonical_frontend(document)
-            .declared_enum_names(&document.document())
+        for (relative_path, _) in canonical_frontend(document)
+            .declared_nominal_keys(&document.document(), origin)
             .map_err(|error| canonical_compilation_error(error.to_string()))?
         {
             let path = origin
                 .segments()
                 .iter()
                 .cloned()
-                .chain(std::iter::once(name))
+                .chain(relative_path.into_vec())
                 .collect::<Vec<_>>();
             let owner = document.nominal_package_id().map(str::to_owned);
             let defining_document = document.source().document();
@@ -1685,6 +1752,19 @@ impl<'a> ProgramCompilerView<'a> {
                     .nominal_owners
                     .insert(path, (owner, defining_document));
             }
+        }
+        for name in canonical_frontend(document)
+            .declared_enum_names(&document.document())
+            .map_err(|error| canonical_compilation_error(error.to_string()))?
+        {
+            context.enum_paths.insert(
+                origin
+                    .segments()
+                    .iter()
+                    .cloned()
+                    .chain(std::iter::once(name))
+                    .collect(),
+            );
         }
         Ok(())
     }
@@ -1783,6 +1863,11 @@ impl<'a> ProgramCompilerView<'a> {
                 )));
             }
             if !context.exports.contains_key(&dependency.canonical_uri) {
+                self.retain_compilation_source(
+                    &dependency.canonical_uri,
+                    dependency_document,
+                    false,
+                );
                 let program =
                     self.compile_canonical_graph_document(&dependency, context, true, false)?;
                 let artifact = program.compile_artifact_with_external_contracts(
@@ -1843,7 +1928,7 @@ impl<'a> ProgramCompilerView<'a> {
         index: &SourceIndex,
         document: &mech_syntax::document::DocumentSyntax,
     ) -> MResult<(
-        BTreeMap<String, mech_core::SchemaBody>,
+        BTreeMap<String, mech_core::SchemaDraft>,
         BTreeMap<String, ExecutionResourceRequest>,
         BTreeMap<String, ExecutionResourceRequest>,
         BTreeMap<String, Value>,
@@ -1859,7 +1944,7 @@ impl<'a> ProgramCompilerView<'a> {
         document: &mech_syntax::document::DocumentSyntax,
         mut plan_read: impl FnMut(RuntimeResourceReadRequest) -> MResult<Option<Value>>,
     ) -> MResult<(
-        BTreeMap<String, mech_core::SchemaBody>,
+        BTreeMap<String, mech_core::SchemaDraft>,
         BTreeMap<String, ExecutionResourceRequest>,
         BTreeMap<String, ExecutionResourceRequest>,
         BTreeMap<String, Value>,
@@ -1883,23 +1968,24 @@ impl<'a> ProgramCompilerView<'a> {
                 ))
             })?;
             let key = RuntimeResourceKey::new(base_uri, &reference.name)?;
+            let read = RuntimeResourceReadRequest {
+                base_uri: key.base_uri.clone(),
+                path: key.path.clone(),
+                context_name: context_name.clone(),
+            };
             let request = ExecutionResourceRequest {
                 base_uri: key.base_uri.clone(),
                 path: key.path.clone(),
                 context_name: context_name.clone(),
                 operation: "read".to_owned(),
                 intent: ResourceIntent::Read,
+                // All observations remain captured live input facts. Whether
+                // a host driver is required is separate provider metadata.
                 delivery: mech_core::ResourceDelivery::Live,
             };
             let name = format!("@{}/{}", reference.target, reference.name);
             reads.insert(name.clone(), request);
-            if let Some(value) = plan_read(RuntimeResourceReadRequest {
-                base_uri: key.base_uri,
-                path: key.path,
-                context_name: context_name.clone(),
-            })
-            .map_err(classify_source_planning)?
-            {
+            if let Some(value) = plan_read(read).map_err(classify_source_planning)? {
                 input_schemas.insert(name.clone(), canonical_planned_read_schema(&value)?);
                 planned_reads.insert(name, value);
             }
@@ -2091,7 +2177,9 @@ impl<'a> ProgramCompilerView<'a> {
         for (name, value) in &imported {
             input_schemas.insert(
                 name.clone(),
-                ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
+                canonical_closed_input_schema(
+                    ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
+                ),
             );
         }
         let modules = imports
@@ -2106,7 +2194,7 @@ impl<'a> ProgramCompilerView<'a> {
             .collect();
         let mut programs = canonical_frontend(document)
             .with_imported_enum_qualifiers(imported_enum_qualifiers)
-            .prepare_mixed_document_with_planning_contract(
+            .prepare_mixed_document_with_planning_contract_schema_drafts(
                 &document.document(),
                 Arc::clone(&self.function_catalog),
                 input_schemas,
@@ -2211,7 +2299,7 @@ impl<'a> ProgramCompilerView<'a> {
         let coordinator = bind_imports(
             programs
                 .coordinator
-                .compile(compute_read_schemas)
+                .compile_schema_drafts(compute_read_schemas)
                 .map_err(|error| canonical_compilation_error(error.to_string()))?,
         )?;
 
@@ -2816,6 +2904,51 @@ fn declared_resource_send_operation<'a>(
 }
 
 #[cfg(test)]
+mod nominal_provenance_tests {
+    use super::{CanonicalGraphCompilation, SourceDocument};
+    use mech_core::{CanonicalNominalPath, NominalKey, NominalKind};
+    use mech_syntax::document::{ParseConfig, Revision};
+    use std::collections::BTreeMap;
+
+    #[test]
+    fn fsm_ownership_does_not_publish_enum_qualifiers() {
+        let origin = CanonicalNominalPath::new(["fixture".to_owned()]).unwrap();
+        let document = SourceDocument::parse_resolved(
+            "memory:qualifiers.mec",
+            Revision(0),
+            "<Drive> := :idle | :busy\n#Drive() => <f64>\n  | :Done.\n#Drive() -> :Done\n  :Done => 1.0.\n",
+            ParseConfig::default(),
+        )
+        .unwrap()
+        .with_nominal_origin(origin.clone());
+        assert!(document.is_strictly_clean());
+        let compiler = crate::RuntimeBuilder::new().build_compiler().unwrap();
+        let mut context = CanonicalGraphCompilation::new(None);
+        compiler
+            .view()
+            .register_nominal_declarations(&document, &mut context)
+            .unwrap();
+        assert_eq!(context.nominal_owners.len(), 2);
+        let enum_key = NominalKey::from_path(
+            NominalKind::Enum,
+            &CanonicalNominalPath::new(["fixture".to_owned(), "Drive".to_owned()]).unwrap(),
+        );
+        let fsm_key = NominalKey::from_path(
+            NominalKind::Enum,
+            &CanonicalNominalPath::new([
+                "fixture".to_owned(),
+                "fsm".to_owned(),
+                "Drive".to_owned(),
+            ])
+            .unwrap(),
+        );
+        let qualifiers = context.enum_qualifiers().unwrap();
+        assert_eq!(qualifiers, BTreeMap::from([(enum_key, "Drive".to_owned())]));
+        assert!(!qualifiers.contains_key(&fsm_key));
+    }
+}
+
+#[cfg(test)]
 mod resource_send_scope_tests {
     use super::resource_send_path_specificity;
 
@@ -2887,15 +3020,55 @@ impl mech_engine::ExternalRequirementContractResolver for CompilerExternalContra
     }
 }
 
-fn canonical_planned_read_schema(value: &Value) -> MResult<mech_core::SchemaBody> {
+fn canonical_closed_input_schema(body: mech_core::SchemaBody) -> mech_core::SchemaDraft {
+    mech_core::SchemaDraft {
+        body,
+        dimension_parameters: Box::new([]),
+    }
+}
+
+fn canonical_planned_read_schema(value: &Value) -> MResult<mech_core::SchemaDraft> {
     let schemas = value
         .schemas()
         .ok_or_else(|| canonical_compilation_error("planned resource read has no schema owner"))?;
+    value.validate_against(&schemas).map_err(|error| {
+        canonical_compilation_error(format!("planned resource snapshot is invalid: {error:?}"))
+    })?;
     let schema = schemas.get(value.schema()).ok_or_else(|| {
         canonical_compilation_error("planned resource read schema is unavailable")
     })?;
-    // Resolve provider/interface shape parameters before crossing schema arenas.
-    schema.closed_body(value.shape())
+    schema.instantiate_shape(value.shape().parameter_values().to_vec().into_boxed_slice())?;
+    // The finalized schema already owns canonical parameter ordinals. Rebuild
+    // those declarations without specializing its provider-declared lifetimes
+    // or bounds to the representative planning value's current geometry.
+    let draft = mech_core::SchemaDraft {
+        body: schema.body().clone(),
+        dimension_parameters: schema
+            .dimension_parameters()
+            .iter()
+            .enumerate()
+            .map(|(ordinal, parameter)| {
+                let ordinal = u32::try_from(ordinal).map_err(|_| {
+                    canonical_compilation_error("planned resource read has too many dimensions")
+                })?;
+                Ok(mech_core::DimensionParameterDeclaration {
+                    id: mech_core::DimensionParameterId::new(ordinal),
+                    origin: mech_core::DimensionParameterOrigin::Explicit,
+                    lifetime: parameter.lifetime(),
+                    lower_bound: parameter.lower_bound().clone(),
+                    upper_bound: parameter.upper_bound().cloned(),
+                })
+            })
+            .collect::<MResult<Vec<_>>>()?
+            .into_boxed_slice(),
+    };
+    let rebuilt = draft.clone().finalize()?;
+    if rebuilt != *schema || rebuilt.key() != value.schema_key() {
+        return Err(canonical_compilation_error(
+            "planned resource read lost its schema identity",
+        ));
+    }
+    Ok(draft)
 }
 
 fn is_compute_kernel_base(base_uri: &str) -> bool {

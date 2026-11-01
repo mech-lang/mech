@@ -6,9 +6,7 @@
       "id": "implicit-reactive-transaction",
       "description": "Legacy standalone-turn transaction construction",
       "pattern": "RuntimeExecutionTransactionMode::ImplicitReactiveTurn",
-      "allowed": [
-        { "path": "src/runtime/src/runtime/transaction/reactive.rs", "scope_contains": "with_atomic_reactive_turn", "max_occurrences": 1 }
-      ]
+      "allowed": []
     },
     {
       "id": "runtime-operation-savepoint",
@@ -16,8 +14,7 @@
       "pattern": "capture_runtime_operation_savepoint",
       "allowed": [
         { "path": "src/runtime/src/runtime/transaction/operation.rs", "scope_contains": "pub(in crate::runtime) fn capture_runtime_operation_savepoint", "max_occurrences": 1 },
-        { "path": "src/runtime/src/runtime/transaction/modules.rs", "scope_contains": "with_atomic_module_operation", "max_occurrences": 1 },
-        { "path": "src/runtime/src/runtime/transaction/reactive.rs", "scope_contains": "with_atomic_reactive_turn", "max_occurrences": 1 }
+        { "path": "src/runtime/src/runtime/transaction/modules.rs", "scope_contains": "with_atomic_module_operation", "max_occurrences": 1 }
       ]
     },
     {
@@ -86,8 +83,7 @@
       "pattern": "ReactiveTurnJournal",
       "allowed": [
         { "path": "src/core/src/reactive_transaction.rs", "scope_contains": "<file>", "max_occurrences": 6 },
-        { "path": "src/core/src/function/mod.rs", "scope_contains": "<file>", "max_occurrences": 14 },
-        { "path": "src/engine/src/program/instance.rs", "scope_contains": "<file>", "max_occurrences": 17 }
+        { "path": "src/core/src/function/mod.rs", "scope_contains": "<file>", "max_occurrences": 14 }
       ]
     },
     {
@@ -97,9 +93,7 @@
       "allowed": [
         { "path": "src/core/src/function/state.rs", "scope_contains": "<file>", "max_occurrences": 4 },
         { "path": "src/core/src/reactive_transaction.rs", "scope_contains": "<file>", "max_occurrences": 3 },
-        { "path": "src/core/src/state_journal/mod.rs", "scope_contains": "<file>", "max_occurrences": 12 },
-        { "path": "src/engine/src/interpreter/bytecode/registers.rs", "scope_contains": "<file>", "max_occurrences": 2 },
-        { "path": "src/engine/src/interpreter/mod.rs", "scope_contains": "<file>", "max_occurrences": 6 }
+        { "path": "src/core/src/state_journal/mod.rs", "scope_contains": "<file>", "max_occurrences": 12 }
       ]
     },
     {
@@ -160,16 +154,12 @@
         { "path": "src/core/src/function/mod.rs", "scope_contains": "<file>", "max_occurrences": 9 },
         { "path": "src/core/src/reactive_transaction.rs", "scope_contains": "<file>", "max_occurrences": 1 },
         { "path": "src/core/src/stdlib.rs", "scope_contains": "<file>", "max_occurrences": 2 },
-        { "path": "src/engine/src/activation/dispatch.rs", "scope_contains": "<file>", "max_occurrences": 6 },
-        { "path": "src/engine/src/activation/guards.rs", "scope_contains": "<file>", "max_occurrences": 1 },
-        { "path": "src/engine/src/activation/registers.rs", "scope_contains": "<file>", "max_occurrences": 1 },
         { "path": "src/engine/src/efficacy/ekf/catalog.rs", "scope_contains": "<file>", "max_occurrences": 2 },
         { "path": "src/engine/src/function/external/host_call.rs", "scope_contains": "<file>", "max_occurrences": 1 },
         { "path": "src/engine/src/function/external/resource_read.rs", "scope_contains": "<file>", "max_occurrences": 1 },
         { "path": "src/engine/src/function/external/resource_write.rs", "scope_contains": "<file>", "max_occurrences": 1 },
         { "path": "src/engine/src/function/module.rs", "scope_contains": "<file>", "max_occurrences": 4 },
         { "path": "src/engine/src/function/native.rs", "scope_contains": "<file>", "max_occurrences": 1 },
-        { "path": "src/engine/src/interpreter/mod.rs", "scope_contains": "<file>", "max_occurrences": 6 },
         { "path": "src/engine/src/intrinsics/access/map.rs", "scope_contains": "<file>", "max_occurrences": 1 },
         { "path": "src/engine/src/intrinsics/access/matrix.rs", "scope_contains": "<file>", "max_occurrences": 5 },
         { "path": "src/engine/src/intrinsics/access/mod.rs", "scope_contains": "<file>", "max_occurrences": 1 },
@@ -184,9 +174,7 @@
         { "path": "src/engine/src/intrinsics/assign/table.rs", "scope_contains": "<file>", "max_occurrences": 3 },
         { "path": "src/engine/src/intrinsics/assign/tuple.rs", "scope_contains": "<file>", "max_occurrences": 1 },
         { "path": "src/engine/src/intrinsics/constructors.rs", "scope_contains": "<file>", "max_occurrences": 3 },
-        { "path": "src/engine/src/intrinsics/convert/mat_to_mat.rs", "scope_contains": "<file>", "max_occurrences": 2 },
         { "path": "src/engine/src/intrinsics/convert/scalar.rs", "scope_contains": "<file>", "max_occurrences": 7 },
-        { "path": "src/engine/src/intrinsics/convert/scalar_to_mat.rs", "scope_contains": "<file>", "max_occurrences": 1 },
         { "path": "src/engine/src/intrinsics/define.rs", "scope_contains": "<file>", "max_occurrences": 4 },
         { "path": "src/engine/src/intrinsics/horzcat.rs", "scope_contains": "<file>", "max_occurrences": 53 },
         { "path": "src/engine/src/intrinsics/mod.rs", "scope_contains": "<file>", "max_occurrences": 2 },
@@ -200,15 +188,7 @@
       "pattern": "ReactiveCellId",
       "allowed": [
         { "path": "src/core/src/function/argument.rs", "scope_contains": "<file>", "max_occurrences": 2 },
-        { "path": "src/core/src/function/mod.rs", "scope_contains": "<file>", "max_occurrences": 57 },
-        { "path": "src/core/src/value.rs", "scope_contains": "<file>", "max_occurrences": 57 },
-        { "path": "src/engine/src/activation/registers.rs", "scope_contains": "<file>", "max_occurrences": 2 },
-        { "path": "src/engine/src/activation/registration.rs", "scope_contains": "<file>", "max_occurrences": 3 },
-        { "path": "src/engine/src/activation/validation.rs", "scope_contains": "<file>", "max_occurrences": 5 },
-        { "path": "src/engine/src/interpreter/mod.rs", "scope_contains": "<file>", "max_occurrences": 3 },
-        { "path": "src/engine/src/mechdown.rs", "scope_contains": "<file>", "max_occurrences": 4 },
-        { "path": "src/engine/src/program/instance.rs", "scope_contains": "<file>", "max_occurrences": 9 },
-        { "path": "src/runtime/src/runtime/test_support/values.rs", "scope_contains": "<file>", "max_occurrences": 6 }
+        { "path": "src/core/src/function/mod.rs", "scope_contains": "<file>", "max_occurrences": 57 }
       ]
     },
     {
@@ -223,9 +203,7 @@
       "id": "program-cell-pointer-identity",
       "description": "Program update deduplication derives identity from ValRef addresses",
       "pattern": "let target_address = update.target.as_ptr() as usize",
-      "allowed": [
-        { "path": "src/engine/src/program/instance.rs", "scope_contains": "fn prepare_cell_updates", "max_occurrences": 1 }
-      ]
+      "allowed": []
     },
     {
       "id": "live-resource-binding-address",

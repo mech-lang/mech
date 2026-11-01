@@ -11,7 +11,7 @@ use mech_syntax::document::{
     parse_canonical_grammar,
 };
 
-const EXPECTED_RULES: usize = 539;
+const EXPECTED_RULES: usize = 543;
 const FENCE_OPEN: &str = "```ebnf:canonical";
 const FENCE_CLOSE: &str = "```";
 const DEPENDENCY_HEADER: &str = "grammar-name\tdirect-children\tdirect-parents";

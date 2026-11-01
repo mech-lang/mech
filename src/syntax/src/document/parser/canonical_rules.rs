@@ -3,7 +3,7 @@
 
 use crate::document::RuleId;
 
-pub const CANONICAL_RULE_COUNT: usize = 539;
+pub const CANONICAL_RULE_COUNT: usize = 543;
 
 pub static CANONICAL_RULES: &[(&str, RuleId)] = &[
     ("absolute-source-import-specifier", RuleId(0x37410b35)),
@@ -24,6 +24,9 @@ pub static CANONICAL_RULES: &[(&str, RuleId)] = &[
     ("any", RuleId(0x2c29f04d)),
     ("any-token", RuleId(0xd91e0675)),
     ("apostrophe", RuleId(0xdff65064)),
+    ("application-expression", RuleId(0x8a5c1fba)),
+    ("application-operator", RuleId(0xdea6c1a8)),
+    ("application-stage", RuleId(0x5bc28226)),
     ("argument-list", RuleId(0xc1b3b46d)),
     ("assign-operator", RuleId(0x688f2a93)),
     ("asterisk", RuleId(0xef8a6081)),
@@ -189,6 +192,7 @@ pub static CANONICAL_RULES: &[(&str, RuleId)] = &[
     ("function-arg", RuleId(0x8409bba8)),
     ("function-call", RuleId(0xfcbdb56c)),
     ("function-define", RuleId(0xb0b7ceff)),
+    ("function-define-expression", RuleId(0x38bb75b4)),
     ("function-define-match-arms", RuleId(0x92fe8211)),
     ("function-define-statements", RuleId(0x0e0bf554)),
     ("function-match-arm", RuleId(0x15839c42)),
@@ -568,6 +572,9 @@ pub mod rules {
     pub const ANY: RuleId = RuleId(0x2c29f04d);
     pub const ANY_TOKEN: RuleId = RuleId(0xd91e0675);
     pub const APOSTROPHE: RuleId = RuleId(0xdff65064);
+    pub const APPLICATION_EXPRESSION: RuleId = RuleId(0x8a5c1fba);
+    pub const APPLICATION_OPERATOR: RuleId = RuleId(0xdea6c1a8);
+    pub const APPLICATION_STAGE: RuleId = RuleId(0x5bc28226);
     pub const ARGUMENT_LIST: RuleId = RuleId(0xc1b3b46d);
     pub const ASSIGN_OPERATOR: RuleId = RuleId(0x688f2a93);
     pub const ASTERISK: RuleId = RuleId(0xef8a6081);
@@ -733,6 +740,7 @@ pub mod rules {
     pub const FUNCTION_ARG: RuleId = RuleId(0x8409bba8);
     pub const FUNCTION_CALL: RuleId = RuleId(0xfcbdb56c);
     pub const FUNCTION_DEFINE: RuleId = RuleId(0xb0b7ceff);
+    pub const FUNCTION_DEFINE_EXPRESSION: RuleId = RuleId(0x38bb75b4);
     pub const FUNCTION_DEFINE_MATCH_ARMS: RuleId = RuleId(0x92fe8211);
     pub const FUNCTION_DEFINE_STATEMENTS: RuleId = RuleId(0x0e0bf554);
     pub const FUNCTION_MATCH_ARM: RuleId = RuleId(0x15839c42);

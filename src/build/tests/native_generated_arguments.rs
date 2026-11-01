@@ -26,7 +26,11 @@ fn generated_executables_accept_only_once() {
         assert!(output.stderr.is_empty());
     }
 
-    for arguments in [vec!["--unknown"], vec!["--once", "--unknown"]] {
+    for arguments in [
+        vec!["--unknown"],
+        vec!["--once", "--unknown"],
+        vec!["--print-result"],
+    ] {
         let output = Command::new(&executable).args(arguments).output().unwrap();
         assert_eq!(output.status.code(), Some(2));
         assert!(output.stdout.is_empty());

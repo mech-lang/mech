@@ -10,7 +10,8 @@ use mech_core::MResult;
 use super::{NativeBuildArtifact, parse_cargo_build_messages};
 use crate::error::{NativeBuildErrorKind, native_build_error};
 use crate::project::{
-    GeneratedNativeProject, validate_project_binary_name, validate_project_target_triple,
+    CargoProjectPaths, GeneratedNativeProject, validate_project_binary_name,
+    validate_project_target_triple,
 };
 
 pub const NATIVE_RUST_TOOLCHAIN: &str = "nightly-2026-03-03";
@@ -49,6 +50,86 @@ impl CargoInvocation {
         release: bool,
         offline: bool,
     ) -> MResult<Self> {
+        Self::binary(
+            "build",
+            manifest_path,
+            binary_name,
+            target,
+            target_dir,
+            release,
+            offline,
+        )
+    }
+
+    /// Optimize the final linked host without changing dependency prelinking.
+    /// `cargo rustc` scopes these flags to the selected binary, not its build
+    /// script or dependencies. The generated host's ThinLTO dependency profile
+    /// supplies bitcode; its already-native Mech Object is linked unchanged.
+    pub fn build_linked_native_host(
+        manifest_path: impl AsRef<Path>,
+        binary_name: &str,
+        target: Option<&str>,
+        target_dir: impl AsRef<Path>,
+        release: bool,
+        offline: bool,
+    ) -> MResult<Self> {
+        if !release {
+            return Self::build(
+                manifest_path,
+                binary_name,
+                target,
+                target_dir,
+                false,
+                offline,
+            );
+        }
+        let mut invocation = Self::binary(
+            "rustc",
+            manifest_path,
+            binary_name,
+            target,
+            target_dir,
+            true,
+            offline,
+        )?;
+        invocation.arguments.extend(
+            ["--", "-C", "lto=fat", "-C", "codegen-units=1"]
+                .into_iter()
+                .map(OsString::from),
+        );
+        Ok(invocation)
+    }
+
+    /// Compile and execute the Rust tests of a generated binary using the same
+    /// pinned, locked command policy as its production build.
+    pub fn test_binary(
+        manifest_path: impl AsRef<Path>,
+        binary_name: &str,
+        target: Option<&str>,
+        target_dir: impl AsRef<Path>,
+        release: bool,
+        offline: bool,
+    ) -> MResult<Self> {
+        Self::binary(
+            "test",
+            manifest_path,
+            binary_name,
+            target,
+            target_dir,
+            release,
+            offline,
+        )
+    }
+
+    fn binary(
+        action: &'static str,
+        manifest_path: impl AsRef<Path>,
+        binary_name: &str,
+        target: Option<&str>,
+        target_dir: impl AsRef<Path>,
+        release: bool,
+        offline: bool,
+    ) -> MResult<Self> {
         validate_project_binary_name(binary_name)?;
         if let Some(target) = target {
             validate_project_target_triple(target)?;
@@ -56,7 +137,7 @@ impl CargoInvocation {
 
         let mut arguments = vec![
             OsString::from(format!("+{NATIVE_RUST_TOOLCHAIN}")),
-            OsString::from("build"),
+            OsString::from(action),
             OsString::from("--manifest-path"),
             manifest_path.as_ref().as_os_str().to_owned(),
             OsString::from("--bin"),
@@ -181,9 +262,36 @@ pub fn generate_project_lockfile(
     resolution_seed: &[u8],
     offline: bool,
 ) -> MResult<()> {
+    generate_project_lockfile_with(
+        &CargoProjectPaths::new(&project.root),
+        resolution_seed,
+        offline,
+        || project.materialize_lockfile_seed(resolution_seed),
+    )
+}
+
+/// Resolve an already materialized project's lockfile through the same frozen
+/// seed, filesystem checks and isolated Cargo policy as native project builds.
+/// The path view grants no application/source authority and invokes no planner.
+pub fn generate_cargo_project_lockfile(
+    project: &CargoProjectPaths<'_>,
+    resolution_seed: &[u8],
+    offline: bool,
+) -> MResult<()> {
+    generate_project_lockfile_with(project, resolution_seed, offline, || {
+        project.materialize_lockfile_seed(resolution_seed)
+    })
+}
+
+fn generate_project_lockfile_with(
+    project: &CargoProjectPaths<'_>,
+    resolution_seed: &[u8],
+    offline: bool,
+    materialize_seed: impl FnOnce() -> MResult<()>,
+) -> MResult<()> {
     require_regular_generated_file(&project.manifest_path(), "Cargo manifest")?;
     let frozen_registry_packages = frozen_resolution_packages(resolution_seed)?;
-    project.materialize_lockfile_seed(resolution_seed)?;
+    materialize_seed()?;
 
     let manifest_path = project.manifest_path();
     let invocation = isolate_cargo_invocation(
@@ -320,21 +428,65 @@ pub fn build_native_project(
     release: bool,
     offline: bool,
 ) -> MResult<NativeBuildArtifact> {
-    require_regular_generated_file(&project.manifest_path(), "Cargo manifest")?;
-    require_regular_generated_file(&project.lockfile_path(), "Cargo lockfile")?;
+    build_cargo_project(
+        &CargoProjectPaths::new(&project.root),
+        binary_name,
+        target,
+        target_dir,
+        release,
+        offline,
+    )
+}
 
-    let manifest_path = project.manifest_path();
-    let invocation = isolate_cargo_invocation(
-        CargoInvocation::build(
-            &manifest_path,
+/// Build an already materialized Cargo project without interpreting its
+/// application plan. Uses the same regular inputs, isolation, locked command
+/// and exact compiler-message executable selection as build_native_project.
+pub fn build_cargo_project(
+    project: &CargoProjectPaths<'_>,
+    binary_name: &str,
+    target: Option<&str>,
+    target_dir: &Path,
+    release: bool,
+    offline: bool,
+) -> MResult<NativeBuildArtifact> {
+    build_cargo_project_with(project, binary_name, |manifest| {
+        CargoInvocation::build(manifest, binary_name, target, target_dir, release, offline)
+    })
+}
+
+/// Build a generated linked native host with final-binary-only release LTO.
+/// File validation, frozen inputs, isolation and executable selection are the
+/// same as `build_cargo_project`; this only changes the final compiler command.
+pub fn build_linked_native_host(
+    project: &CargoProjectPaths<'_>,
+    binary_name: &str,
+    target: Option<&str>,
+    target_dir: &Path,
+    release: bool,
+    offline: bool,
+) -> MResult<NativeBuildArtifact> {
+    build_cargo_project_with(project, binary_name, |manifest| {
+        CargoInvocation::build_linked_native_host(
+            manifest,
             binary_name,
             target,
             target_dir,
             release,
             offline,
-        )?,
-        &manifest_path,
-    )?;
+        )
+    })
+}
+
+fn build_cargo_project_with(
+    project: &CargoProjectPaths<'_>,
+    binary_name: &str,
+    invocation: impl FnOnce(&Path) -> MResult<CargoInvocation>,
+) -> MResult<NativeBuildArtifact> {
+    require_regular_generated_file(&project.manifest_path(), "Cargo manifest")?;
+    require_regular_generated_file(&project.lockfile_path(), "Cargo lockfile")?;
+
+    let manifest_path = project.manifest_path();
+    let invocation = isolate_cargo_invocation(invocation(&manifest_path)?, &manifest_path)?;
     let output = invocation.output()?;
     let messages = parse_cargo_build_messages(Cursor::new(&output.stdout))?;
     if !output.status.success() || messages.build_finished == Some(false) {
@@ -407,11 +559,15 @@ fn project_error(reason: impl Into<String>) -> mech_core::MechError {
 }
 
 #[cfg(test)]
+#[path = "project_paths_tests.rs"]
+mod project_paths_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::project::GeneratedSourceSet;
 
-    const MINIMAL_LOCK_SEED: &[u8] =
+    pub(super) const MINIMAL_LOCK_SEED: &[u8] =
         b"# This file is automatically @generated by Cargo.\nversion = 4\n";
 
     fn arguments(invocation: &CargoInvocation) -> Vec<String> {
@@ -550,15 +706,91 @@ checksum = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
     }
 
     #[test]
+    fn linked_host_release_optimizes_only_the_selected_binary() {
+        for (release, offline, target) in [
+            (false, false, None),
+            (false, true, Some("aarch64-apple-darwin")),
+            (true, false, None),
+            (true, true, Some("x86_64-unknown-linux-gnu")),
+        ] {
+            let ordinary = CargoInvocation::build(
+                "project/Cargo.toml",
+                "native-app",
+                target,
+                "cache",
+                release,
+                offline,
+            )
+            .unwrap();
+            let linked = CargoInvocation::build_linked_native_host(
+                "project/Cargo.toml",
+                "native-app",
+                target,
+                "cache",
+                release,
+                offline,
+            )
+            .unwrap();
+            let mut expected = arguments(&ordinary);
+            if release {
+                expected[1] = "rustc".into();
+                expected.extend(
+                    ["--", "-C", "lto=fat", "-C", "codegen-units=1"]
+                        .into_iter()
+                        .map(String::from),
+                );
+            }
+            assert_eq!(arguments(&linked), expected);
+        }
+    }
+
+    #[test]
     fn hostile_request_strings_never_become_arguments() {
         for binary in ["app; touch owned", "$(whoami)", "--release"] {
             assert!(
                 CargoInvocation::build("Cargo.toml", binary, None, "target", false, false).is_err()
             );
+            assert!(
+                CargoInvocation::test_binary("Cargo.toml", binary, None, "target", false, false)
+                    .is_err()
+            );
+            assert!(
+                CargoInvocation::build_linked_native_host(
+                    "Cargo.toml",
+                    binary,
+                    None,
+                    "target",
+                    true,
+                    false,
+                )
+                .is_err()
+            );
         }
         for target in ["x86_64;touch-owned", "$(whoami)", "--target=x"] {
             assert!(
+                CargoInvocation::build_linked_native_host(
+                    "Cargo.toml",
+                    "safe-app",
+                    Some(target),
+                    "target",
+                    true,
+                    false,
+                )
+                .is_err()
+            );
+            assert!(
                 CargoInvocation::build(
+                    "Cargo.toml",
+                    "safe-app",
+                    Some(target),
+                    "target",
+                    false,
+                    false,
+                )
+                .is_err()
+            );
+            assert!(
+                CargoInvocation::test_binary(
                     "Cargo.toml",
                     "safe-app",
                     Some(target),
@@ -571,7 +803,41 @@ checksum = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
         }
     }
 
-    fn minimal_project(root: &Path) -> GeneratedNativeProject {
+    #[test]
+    fn generated_binary_tests_share_every_build_flag_and_command_policy() {
+        for (release, offline, target) in [
+            (false, false, None),
+            (true, true, Some("x86_64-unknown-linux-gnu")),
+        ] {
+            let build = CargoInvocation::build(
+                "project/Cargo.toml",
+                "native-app",
+                target,
+                "target/generated",
+                release,
+                offline,
+            )
+            .unwrap();
+            let tests = CargoInvocation::test_binary(
+                "project/Cargo.toml",
+                "native-app",
+                target,
+                "target/generated",
+                release,
+                offline,
+            )
+            .unwrap();
+            let mut expected = arguments(&build);
+            expected[1] = "test".into();
+            assert_eq!(arguments(&tests), expected);
+            let isolated = Path::new("project-isolation");
+            let command = tests.with_current_dir(isolated).command();
+            assert_eq!(command.get_program(), "cargo");
+            assert_eq!(command.get_current_dir(), Some(isolated));
+        }
+    }
+
+    pub(super) fn minimal_project(root: &Path) -> GeneratedNativeProject {
         let mut sources = GeneratedSourceSet::new();
         sources
             .insert(

@@ -454,9 +454,9 @@ fn dynamic_range_peers_are_resolved_in_every_endpoint_position() {
 
 #[cfg(feature = "resident-artifact")]
 #[test]
-fn inferred_range_input_preserves_resident_completion_boundary_and_dynamic_cannot_escape() {
-    use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ResidentKernelBindError};
-    use mech_engine::__resident::{ActivationFacts, ResidentActivationError, activate};
+fn inferred_range_input_uses_live_snapshot_shape_and_dynamic_cannot_escape() {
+    use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef};
+    use mech_engine::__resident::{ActivationFacts, CapturedSignalInput, activate};
     let compiled = compile("1..limit");
     let artifact = compiled.compile_artifact().unwrap();
     let output = &artifact.outputs()[0];
@@ -476,12 +476,59 @@ fn inferred_range_input_preserves_resident_completion_boundary_and_dynamic_canno
     }
     let mut catalog = FunctionCatalogBuilder::new();
     mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
-    // Existing resident contract requires range cardinality to be activation-fixed.
-    // Supplying shape facts does not turn a live endpoint into an immutable value.
-    assert!(
-        matches!(activate(ReactiveInstanceId::new(0x549,0), &artifact, &catalog.build().unwrap(), &facts),
-        Err(ResidentActivationError::KernelBind { node, error: ResidentKernelBindError::UnsupportedLayout }) if node == mech_core::NodeId(0))
-    );
+    let catalog = catalog.build().unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+    )
+    .unwrap();
+    for artifact in [&artifact, &decoded] {
+        for facts in [ActivationFacts::default(), facts.clone()] {
+            let mut instance = activate(
+                ReactiveInstanceId::new(0x549, 0),
+                artifact,
+                &catalog,
+                &facts,
+            )
+            .unwrap();
+            let slot = instance.plan.inputs[0].slot;
+            for limit in [4.0, 1.0, 6.0, 2.0] {
+                let before = instance.published_epoch();
+                let prior = instance.copied_output(0).ok();
+                let values = [limit];
+                let result = instance.turn(&[CapturedSignalInput {
+                    slot,
+                    value: ResidentValueRef::F64(&values),
+                }]);
+                if limit == 1.0 {
+                    assert!(format!("{:?}", result.unwrap_err()).contains("InvalidInput"));
+                    assert_eq!(instance.published_epoch(), before);
+                    let current = instance.copied_output(0).unwrap();
+                    assert!(
+                        current
+                            .snapshot_eq(
+                                artifact.schemas(),
+                                prior.as_ref().unwrap(),
+                                artifact.schemas()
+                            )
+                            .unwrap()
+                    );
+                } else {
+                    result.unwrap();
+                    let current = instance.copied_output(0).unwrap();
+                    let expected = mech_core::ValueDataDraft::Matrix(
+                        (1..limit as u64)
+                            .map(|n| {
+                                mech_core::ValueDataDraft::F64(
+                                    mech_core::snapshot::F64Bits::from_f64(n as f64),
+                                )
+                            })
+                            .collect(),
+                    );
+                    assert_eq!(current.canonical_data_draft().unwrap(), expected);
+                }
+            }
+        }
+    }
     let source = "1..limit<*>";
     let error = CanonicalSourceFrontend
         .compile_expression(&expression(source))

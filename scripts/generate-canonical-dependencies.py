@@ -9,7 +9,7 @@ import io
 import re
 from pathlib import Path
 
-EXPECTED_RULES = 539
+EXPECTED_RULES = 543
 FENCE_OPEN = "```ebnf:canonical"
 FENCE_CLOSE = "```"
 

@@ -1700,19 +1700,19 @@ fn canonical_pretty_text_normalizes_function_signature_separators() {
     assert_pretty_roundtrip(&[
         (
             "add(x<u64>,y<u64>) = out<u64> := out := x + y.\n",
-            "add(x<u64>, y<u64>) = out<u64> := out := x + y.\n",
+            "add(x<u64>, y<u64>) => out<u64> := out := x + y.\n",
         ),
         (
             "add(x<u64>,  y<u64>) = out<u64> := out := x + y.\r\n",
-            "add(x<u64>, y<u64>) = out<u64> := out := x + y.\r\n",
+            "add(x<u64>, y<u64>) => out<u64> := out := x + y.\r\n",
         ),
         (
             "split(x<u64>,y<u64>) = (a<u64>,b<u64>) := a := x; b := y.\n",
-            "split(x<u64>, y<u64>) = (a<u64>, b<u64>) := a := x; b := y.\n",
+            "split(x<u64>, y<u64>) => (a<u64>, b<u64>) := a := x; b := y.\n",
         ),
         (
             "split(x<u64>) = (a<u64>,  b<u64>) := a := x; b := x.\r\n",
-            "split(x<u64>) = (a<u64>, b<u64>) := a := x; b := x.\r\n",
+            "split(x<u64>) => (a<u64>, b<u64>) := a := x; b := x.\r\n",
         ),
         (
             "choose(x<u64>,y<u64>) => <u64>\n| 0 => y\n| x => x.\n",
@@ -1720,11 +1720,15 @@ fn canonical_pretty_text_normalizes_function_signature_separators() {
         ),
         (
             "label(x<u64>,y<u64>) = out<string> := out := \"x,y\".\n-- keep x,y\n",
-            "label(x<u64>, y<u64>) = out<string> := out := \"x,y\".\n-- keep x,y\n",
+            "label(x<u64>, y<u64>) => out<string> := out := \"x,y\".\n-- keep x,y\n",
         ),
         (
             "~~~mech:worker\nsplit(x<u64>,y<u64>) = (a<u64>,b<u64>) := a := x; b := y.\n~~~\n",
-            "~~~mech:worker\nsplit(x<u64>, y<u64>) = (a<u64>, b<u64>) := a := x; b := y.\n~~~\n",
+            "~~~mech:worker\nsplit(x<u64>, y<u64>) => (a<u64>, b<u64>) := a := x; b := y.\n~~~\n",
+        ),
+        (
+            "copy(x<u64>) => (out<u64>) := ~value := x; value = x; out := value.\n",
+            "copy(x<u64>) => (out<u64>) := ~value := x; value = x; out := value.\n",
         ),
     ]);
 }

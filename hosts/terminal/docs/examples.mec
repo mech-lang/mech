@@ -1,7 +1,7 @@
 CLI Host Examples
 ===============================================================================
 
-CLI host examples should demonstrate environment reads and stdout/stderr output.
+CLI host examples demonstrate environment reads, a standard-input snapshot and stdout/stderr output.
 
 1. Environment read
 -------------------------------------------------------------------------------
@@ -30,7 +30,21 @@ home := @env/HOME
 @err/text <- "warning"
 ```
 
-4. Future example folder
+4. Standard-input snapshot
+-------------------------------------------------------------------------------
+
+```mech
++> @in := cli/stdin
++> @out := cli/stdout
+
+text := @in/text
+@out/text <- text
+```
+
+The host must explicitly grant stdin/text read and stdout/text write. Reading
+stdin waits for EOF once; subsequent reads reuse the same text snapshot.
+
+5. Future example folder
 -------------------------------------------------------------------------------
 
 A user-facing CLI host example should be added under:

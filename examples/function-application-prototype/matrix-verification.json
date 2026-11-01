@@ -1,0 +1,389 @@
+{
+  "cases": [
+    {
+      "scalar": true,
+      "rows": 0,
+      "columns": 0,
+      "partitions": 1
+    },
+    {
+      "scalar": true,
+      "rows": 0,
+      "columns": 0,
+      "partitions": 3
+    },
+    {
+      "scalar": true,
+      "rows": 0,
+      "columns": 0,
+      "partitions": 8
+    },
+    {
+      "scalar": true,
+      "rows": 0,
+      "columns": 3,
+      "partitions": 1
+    },
+    {
+      "scalar": true,
+      "rows": 0,
+      "columns": 3,
+      "partitions": 3
+    },
+    {
+      "scalar": true,
+      "rows": 0,
+      "columns": 3,
+      "partitions": 8
+    },
+    {
+      "scalar": true,
+      "rows": 3,
+      "columns": 0,
+      "partitions": 1
+    },
+    {
+      "scalar": true,
+      "rows": 3,
+      "columns": 0,
+      "partitions": 3
+    },
+    {
+      "scalar": true,
+      "rows": 3,
+      "columns": 0,
+      "partitions": 8
+    },
+    {
+      "scalar": true,
+      "rows": 1,
+      "columns": 1,
+      "partitions": 1
+    },
+    {
+      "scalar": true,
+      "rows": 1,
+      "columns": 1,
+      "partitions": 3
+    },
+    {
+      "scalar": true,
+      "rows": 1,
+      "columns": 1,
+      "partitions": 8
+    },
+    {
+      "scalar": true,
+      "rows": 2,
+      "columns": 3,
+      "partitions": 1
+    },
+    {
+      "scalar": true,
+      "rows": 2,
+      "columns": 3,
+      "partitions": 3
+    },
+    {
+      "scalar": true,
+      "rows": 2,
+      "columns": 3,
+      "partitions": 8
+    },
+    {
+      "scalar": true,
+      "rows": 3,
+      "columns": 2,
+      "partitions": 1
+    },
+    {
+      "scalar": true,
+      "rows": 3,
+      "columns": 2,
+      "partitions": 3
+    },
+    {
+      "scalar": true,
+      "rows": 3,
+      "columns": 2,
+      "partitions": 8
+    },
+    {
+      "scalar": true,
+      "rows": 7,
+      "columns": 9,
+      "partitions": 1
+    },
+    {
+      "scalar": true,
+      "rows": 7,
+      "columns": 9,
+      "partitions": 3
+    },
+    {
+      "scalar": true,
+      "rows": 7,
+      "columns": 9,
+      "partitions": 8
+    },
+    {
+      "scalar": true,
+      "rows": 9,
+      "columns": 7,
+      "partitions": 1
+    },
+    {
+      "scalar": true,
+      "rows": 9,
+      "columns": 7,
+      "partitions": 3
+    },
+    {
+      "scalar": true,
+      "rows": 9,
+      "columns": 7,
+      "partitions": 8
+    },
+    {
+      "scalar": true,
+      "rows": 8,
+      "columns": 8,
+      "partitions": 1
+    },
+    {
+      "scalar": true,
+      "rows": 8,
+      "columns": 8,
+      "partitions": 3
+    },
+    {
+      "scalar": true,
+      "rows": 8,
+      "columns": 8,
+      "partitions": 8
+    },
+    {
+      "scalar": true,
+      "rows": 17,
+      "columns": 15,
+      "partitions": 1
+    },
+    {
+      "scalar": true,
+      "rows": 17,
+      "columns": 15,
+      "partitions": 3
+    },
+    {
+      "scalar": true,
+      "rows": 17,
+      "columns": 15,
+      "partitions": 8
+    },
+    {
+      "scalar": false,
+      "rows": 0,
+      "columns": 0,
+      "partitions": 1
+    },
+    {
+      "scalar": false,
+      "rows": 0,
+      "columns": 0,
+      "partitions": 3
+    },
+    {
+      "scalar": false,
+      "rows": 0,
+      "columns": 0,
+      "partitions": 8
+    },
+    {
+      "scalar": false,
+      "rows": 0,
+      "columns": 3,
+      "partitions": 1
+    },
+    {
+      "scalar": false,
+      "rows": 0,
+      "columns": 3,
+      "partitions": 3
+    },
+    {
+      "scalar": false,
+      "rows": 0,
+      "columns": 3,
+      "partitions": 8
+    },
+    {
+      "scalar": false,
+      "rows": 3,
+      "columns": 0,
+      "partitions": 1
+    },
+    {
+      "scalar": false,
+      "rows": 3,
+      "columns": 0,
+      "partitions": 3
+    },
+    {
+      "scalar": false,
+      "rows": 3,
+      "columns": 0,
+      "partitions": 8
+    },
+    {
+      "scalar": false,
+      "rows": 1,
+      "columns": 1,
+      "partitions": 1
+    },
+    {
+      "scalar": false,
+      "rows": 1,
+      "columns": 1,
+      "partitions": 3
+    },
+    {
+      "scalar": false,
+      "rows": 1,
+      "columns": 1,
+      "partitions": 8
+    },
+    {
+      "scalar": false,
+      "rows": 2,
+      "columns": 3,
+      "partitions": 1
+    },
+    {
+      "scalar": false,
+      "rows": 2,
+      "columns": 3,
+      "partitions": 3
+    },
+    {
+      "scalar": false,
+      "rows": 2,
+      "columns": 3,
+      "partitions": 8
+    },
+    {
+      "scalar": false,
+      "rows": 3,
+      "columns": 2,
+      "partitions": 1
+    },
+    {
+      "scalar": false,
+      "rows": 3,
+      "columns": 2,
+      "partitions": 3
+    },
+    {
+      "scalar": false,
+      "rows": 3,
+      "columns": 2,
+      "partitions": 8
+    },
+    {
+      "scalar": false,
+      "rows": 7,
+      "columns": 9,
+      "partitions": 1
+    },
+    {
+      "scalar": false,
+      "rows": 7,
+      "columns": 9,
+      "partitions": 3
+    },
+    {
+      "scalar": false,
+      "rows": 7,
+      "columns": 9,
+      "partitions": 8
+    },
+    {
+      "scalar": false,
+      "rows": 9,
+      "columns": 7,
+      "partitions": 1
+    },
+    {
+      "scalar": false,
+      "rows": 9,
+      "columns": 7,
+      "partitions": 3
+    },
+    {
+      "scalar": false,
+      "rows": 9,
+      "columns": 7,
+      "partitions": 8
+    },
+    {
+      "scalar": false,
+      "rows": 8,
+      "columns": 8,
+      "partitions": 1
+    },
+    {
+      "scalar": false,
+      "rows": 8,
+      "columns": 8,
+      "partitions": 3
+    },
+    {
+      "scalar": false,
+      "rows": 8,
+      "columns": 8,
+      "partitions": 8
+    },
+    {
+      "scalar": false,
+      "rows": 17,
+      "columns": 15,
+      "partitions": 1
+    },
+    {
+      "scalar": false,
+      "rows": 17,
+      "columns": 15,
+      "partitions": 3
+    },
+    {
+      "scalar": false,
+      "rows": 17,
+      "columns": 15,
+      "partitions": 8
+    }
+  ],
+  "checked_outputs": 329,
+  "scalar_and_simd": true,
+  "rectangular_empty_and_tail_shapes": true,
+  "nested_immutable_captures_and_lexical_shadowing": true,
+  "eager_unsigned_error_order": true,
+  "conservative_bounds_validation_fallback": true,
+  "shape_errors_and_impure_formulas_rejected": true,
+  "simd_float_suffix_sqrt_casts_cancellation_and_reciprocal_rounding": true,
+  "checked_integer_lane_error_order": true,
+  "spectralnorm_sizes": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    8,
+    9,
+    15,
+    16,
+    17,
+    31,
+    100,
+    5500
+  ],
+  "all_passed": true
+}

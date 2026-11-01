@@ -173,7 +173,7 @@ pub(super) fn compile_document_with_catalog_and_input_schemas(
     document: &DocumentSyntax,
     nominal_origin: Option<&CanonicalNominalPath>,
     catalog: Arc<mech_core::FunctionCatalog>,
-    input_schemas: BTreeMap<String, SchemaBody>,
+    input_schemas: BTreeMap<String, SchemaDraft>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     compile_document_with_options(
         document,
@@ -193,7 +193,7 @@ pub(super) fn compile_document_with_catalog_and_resources(
     document: &DocumentSyntax,
     nominal_origin: Option<&CanonicalNominalPath>,
     catalog: Arc<mech_core::FunctionCatalog>,
-    input_schemas: BTreeMap<String, SchemaBody>,
+    input_schemas: BTreeMap<String, SchemaDraft>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     interactive: bool,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
@@ -220,9 +220,10 @@ pub struct CanonicalCoordinatorPlan {
     nominal_origin: Option<CanonicalNominalPath>,
     imported_enum_qualifiers: BTreeMap<NominalKey, String>,
     units: Vec<DocumentUnit>,
+    nominal_declarations: Vec<PendingNominalDeclaration>,
     exports: Vec<ExportDeclarationSyntax>,
     catalog: Arc<mech_core::FunctionCatalog>,
-    input_schemas: BTreeMap<String, SchemaBody>,
+    input_schemas: BTreeMap<String, SchemaDraft>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     resolved_source_modules: BTreeSet<String>,
 }
@@ -230,8 +231,16 @@ pub struct CanonicalCoordinatorPlan {
 impl CanonicalCoordinatorPlan {
     /// Complete coordinator lowering after the caller plans interface-dependent reads.
     pub fn compile(
-        mut self,
+        self,
         additional_input_schemas: BTreeMap<String, SchemaBody>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.compile_schema_drafts(closed_input_schema_drafts(additional_input_schemas))
+    }
+
+    /// Completes coordinator lowering without closing supplied dimensions.
+    pub fn compile_schema_drafts(
+        mut self,
+        additional_input_schemas: BTreeMap<String, SchemaDraft>,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         self.input_schemas.extend(additional_input_schemas);
         compile_collected_document(
@@ -249,6 +258,7 @@ impl CanonicalCoordinatorPlan {
             &BTreeSet::new(),
             &self.resolved_source_modules,
             None,
+            Some(self.nominal_declarations),
         )
     }
 }
@@ -258,7 +268,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
     nominal_origin: Option<&CanonicalNominalPath>,
     imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
     catalog: Arc<mech_core::FunctionCatalog>,
-    input_schemas: BTreeMap<String, SchemaBody>,
+    input_schemas: BTreeMap<String, SchemaDraft>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     external_inputs: &BTreeSet<String>,
     retained_outputs: &BTreeSet<String>,
@@ -331,6 +341,8 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
         nominal_origin: nominal_origin.cloned(),
         imported_enum_qualifiers: imported_enum_qualifiers.clone(),
         units: coordinator_units,
+        // Retain full-source declaration schemas without moving compute FSM implementations.
+        nominal_declarations: nominal_declaration_evidence(document, nominal_origin)?,
         exports: coordinator_exports,
         catalog: Arc::clone(&catalog),
         input_schemas: input_schemas.clone(),
@@ -353,6 +365,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
         external_inputs,
         retained_outputs,
         resolved_source_modules,
+        None,
         None,
     )?
     .with_compute_region(region_name.clone(), placement)?;
@@ -378,6 +391,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
         external_inputs,
         resolved_source_modules,
         None,
+        None,
     )?
     .retain_static_outputs(external_inputs)?;
 
@@ -395,7 +409,7 @@ pub(super) fn compile_document_with_options(
     nominal_origin: Option<&CanonicalNominalPath>,
     imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
     catalog: Option<Arc<mech_core::FunctionCatalog>>,
-    input_schemas: BTreeMap<String, SchemaBody>,
+    input_schemas: BTreeMap<String, SchemaDraft>,
     interactive: bool,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     external_definitions: &BTreeSet<String>,
@@ -422,7 +436,7 @@ pub(super) fn compile_document_with_capture_options(
     nominal_origin: Option<&CanonicalNominalPath>,
     imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
     catalog: Option<Arc<mech_core::FunctionCatalog>>,
-    input_schemas: BTreeMap<String, SchemaBody>,
+    input_schemas: BTreeMap<String, SchemaDraft>,
     interactive: bool,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     external_definitions: &BTreeSet<String>,
@@ -449,6 +463,7 @@ pub(super) fn compile_document_with_capture_options(
         published_bindings,
         resolved_source_modules,
         retained_result_boundary,
+        None,
     )
 }
 
@@ -513,6 +528,7 @@ fn compile_named_scope(
         &BTreeSet::new(),
         &BTreeSet::new(),
         None,
+        None,
     )
 }
 
@@ -547,6 +563,7 @@ pub(super) fn compile_mika_section(
         &BTreeSet::new(),
         &BTreeSet::new(),
         None,
+        None,
     )
 }
 
@@ -571,13 +588,14 @@ fn compile_collected_document(
     units: Vec<DocumentUnit>,
     exports: Vec<ExportDeclarationSyntax>,
     catalog: Option<Arc<mech_core::FunctionCatalog>>,
-    input_schemas: BTreeMap<String, SchemaBody>,
+    input_schemas: BTreeMap<String, SchemaDraft>,
     interactive: bool,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     external_definitions: &BTreeSet<String>,
     published_bindings: &BTreeSet<String>,
     resolved_source_modules: &BTreeSet<String>,
     retained_result_boundary: Option<mech_syntax::document::TextSize>,
+    nominal_declarations: Option<Vec<PendingNominalDeclaration>>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let mut builder = match catalog {
         Some(catalog) if !input_schemas.is_empty() => {
@@ -600,6 +618,9 @@ fn compile_collected_document(
         &units,
         nominal_origin.map_or(&[], CanonicalNominalPath::segments),
     )?;
+    if let Some(declarations) = nominal_declarations {
+        builder.declaration_schemas = declarations;
+    }
     builder.register_document_functions(&units)?;
     builder.register_document_imports(&units, resolved_source_modules)?;
     let mut bindings = BTreeSet::new();
@@ -1038,6 +1059,95 @@ pub(super) fn declared_enum_names(
         .map(|declarations| declarations.into_iter().map(|(name, _)| name).collect())
 }
 
+pub(super) fn has_origin_dependent_declarations(
+    document: &DocumentSyntax,
+) -> Result<bool, SourceSemanticError> {
+    fn has_fsm(units: &[DocumentUnit]) -> bool {
+        units.iter().any(|unit| match unit {
+            DocumentUnit::FsmSpecification(_) => true,
+            DocumentUnit::Fence(_, _, units) => has_fsm(units),
+            _ => false,
+        })
+    }
+    let mut units = Vec::new();
+    collect_document_units(document.syntax(), &mut units, &mut Vec::new())?;
+    Ok(!document_types::enum_declarations(&units)?.is_empty() || has_fsm(&units))
+}
+
+fn nominal_declaration_evidence(
+    document: &DocumentSyntax,
+    origin: Option<&CanonicalNominalPath>,
+) -> Result<Vec<PendingNominalDeclaration>, SourceSemanticError> {
+    let mut units = Vec::new();
+    collect_document_units(document.syntax(), &mut units, &mut Vec::new())?;
+    let mut builder = SemanticBuilder::new(SourceSemanticAnchor::for_node(document.syntax()));
+    builder.register_document_types(&units, origin)?;
+    builder.register_document_fsms(&units, origin.map_or(&[], CanonicalNominalPath::segments))?;
+    Ok(builder.declaration_schemas)
+}
+
+pub(super) fn declared_nominal_schemas(
+    document: &DocumentSyntax,
+    origin: &CanonicalNominalPath,
+) -> Result<Vec<(Box<[String]>, SchemaBody)>, SourceSemanticError> {
+    let anchor = SourceSemanticAnchor::for_node(document.syntax());
+    nominal_declaration_evidence(document, Some(origin))?
+        .into_iter()
+        .map(|declaration| {
+            let schema = declaration.schema.finalize().map_err(|error| {
+                internal(anchor, format!("invalid declaration schema: {error:?}"))
+            })?;
+            Ok((declaration.relative_path, schema.body().clone()))
+        })
+        .collect()
+}
+
+pub(super) fn declared_nominal_keys(
+    document: &DocumentSyntax,
+    origin: &CanonicalNominalPath,
+) -> Result<Vec<(Box<[String]>, NominalKey)>, SourceSemanticError> {
+    fn fsms(
+        units: &[DocumentUnit],
+        origin: &CanonicalNominalPath,
+        keys: &mut Vec<(Box<[String]>, NominalKey)>,
+    ) -> Result<(), SourceSemanticError> {
+        for unit in units {
+            match unit {
+                DocumentUnit::FsmSpecification(specification) => {
+                    let anchor = SourceSemanticAnchor::for_node(specification.syntax());
+                    let name = specification.name().ok_or_else(|| {
+                        internal(anchor, "FSM specification has no name".to_owned())
+                    })?;
+                    let name = node_text(name.syntax())?;
+                    let key = document_fsms::fsm_nominal_key(origin.segments(), &name).map_err(
+                        |error| internal(anchor, format!("invalid FSM nominal path: {error:?}")),
+                    )?;
+                    keys.push((vec!["fsm".to_owned(), name].into_boxed_slice(), key));
+                }
+                DocumentUnit::Fence(_, _, nested) => fsms(nested, origin, keys)?,
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+    let mut units = Vec::new();
+    collect_document_units(document.syntax(), &mut units, &mut Vec::new())?;
+    let mut keys = document_types::enum_declarations(&units)?
+        .into_iter()
+        .map(|(name, syntax)| {
+            let key = document_types::enum_nominal_key(origin, &name).map_err(|error| {
+                internal(
+                    SourceSemanticAnchor::for_node(&syntax),
+                    format!("invalid enum path: {error:?}"),
+                )
+            })?;
+            Ok((vec![name].into_boxed_slice(), key))
+        })
+        .collect::<Result<Vec<_>, SourceSemanticError>>()?;
+    fsms(&units, origin, &mut keys)?;
+    Ok(keys)
+}
+
 fn declare_document_inputs(
     builder: &mut SemanticBuilder,
     units: &[DocumentUnit],
@@ -1111,6 +1221,24 @@ fn compile_document_units(
     presentation: &mut Vec<(SourceDocumentOutputKind, PendingValue, SyntaxNode)>,
     interactive: bool,
 ) -> Result<Option<CompiledDocumentValue>, SourceSemanticError> {
+    compile_document_units_with_definition_context(
+        builder,
+        units,
+        local_bindings,
+        presentation,
+        interactive,
+        &BTreeMap::new(),
+    )
+}
+
+fn compile_document_units_with_definition_context(
+    builder: &mut SemanticBuilder,
+    units: Vec<DocumentUnit>,
+    local_bindings: &BTreeSet<String>,
+    presentation: &mut Vec<(SourceDocumentOutputKind, PendingValue, SyntaxNode)>,
+    interactive: bool,
+    expected_bindings: &BTreeMap<String, SchemaDraft>,
+) -> Result<Option<CompiledDocumentValue>, SourceSemanticError> {
     let mut deferred_inline = Vec::new();
     let mut last = compile_document_units_inner(
         builder,
@@ -1119,6 +1247,7 @@ fn compile_document_units(
         presentation,
         &mut deferred_inline,
         interactive,
+        expected_bindings,
     )?;
     refresh_deferred_inline(builder, &mut deferred_inline, presentation, &mut last)?;
     retain_document_boundary_result(builder, last.as_ref());
@@ -1138,6 +1267,7 @@ fn compile_document_units_inner(
     presentation: &mut Vec<(SourceDocumentOutputKind, PendingValue, SyntaxNode)>,
     deferred_inline: &mut Vec<DeferredInline>,
     interactive: bool,
+    expected_bindings: &BTreeMap<String, SchemaDraft>,
 ) -> Result<Option<CompiledDocumentValue>, SourceSemanticError> {
     let mut last = None;
     for unit in units {
@@ -1163,9 +1293,10 @@ fn compile_document_units_inner(
             }
             DocumentUnit::Statement(unit) => {
                 let result = match unit.kind() {
-                    SyntaxKind::VariableDefine => {
-                        builder.definition(&VariableDefineSyntax::cast(unit).unwrap())?
-                    }
+                    SyntaxKind::VariableDefine => builder.definition_with_expected_bindings(
+                        &VariableDefineSyntax::cast(unit).unwrap(),
+                        expected_bindings,
+                    )?,
                     SyntaxKind::Expression => {
                         builder.expression(&ExpressionSyntax::cast(unit).unwrap())?
                     }
@@ -1260,6 +1391,7 @@ fn compile_document_units_inner(
                     presentation,
                     deferred_inline,
                     interactive,
+                    expected_bindings,
                 )? {
                     let value = builder.read_document_binding(
                         PendingBinding::Value(compiled.value),
@@ -1292,6 +1424,11 @@ fn compile_document_units_inner(
             builder
                 .bindings
                 .insert("ans".to_owned(), PendingBinding::Value(value.value));
+        }
+        if builder.active_functions.is_empty() {
+            // Advance only the document's completed lexical environment.
+            // Expanded function bodies cannot replace document globals.
+            builder.document_bindings.clone_from(&builder.bindings);
         }
     }
     Ok(last)
@@ -2195,7 +2332,7 @@ impl OrderedDocumentScope {
 }
 
 pub(super) fn compile_ordered_documents(
-    documents: &[CanonicalOrderedDocument],
+    documents: &[CanonicalOrderedDocument<SchemaDraft>],
     catalog: Arc<mech_core::FunctionCatalog>,
     imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
@@ -2240,6 +2377,7 @@ pub(super) fn compile_ordered_documents(
             OrderedDocumentScope::default().activate(&mut builder);
         }
         builder.active_functions.clear();
+        builder.document_bindings.clone_from(&builder.bindings);
         builder.active_recursive_outputs.clear();
         builder.retained_result_boundary = None;
         builder.retained_result = None;
@@ -2261,19 +2399,12 @@ pub(super) fn compile_ordered_documents(
         builder.declared_variants.clear();
         builder.resource_writes = root.resource_writes.clone();
         builder.resolved_source_modules = root.resolved_modules.clone();
-        builder.input_schema_overrides = root
-            .input_schemas
-            .iter()
-            .map(|(name, body)| {
-                (
-                    name.clone(),
-                    SchemaDraft {
-                        body: body.clone(),
-                        dimension_parameters: Box::new([]),
-                    },
-                )
-            })
-            .collect();
+        for schema in root.input_schemas.values() {
+            schema.clone().finalize().map_err(|error| {
+                internal(anchor, format!("invalid declared input schema: {error:?}"))
+            })?;
+        }
+        builder.input_schema_overrides = root.input_schemas.clone();
         for (name, imported) in &root.imports {
             let binding = match imported {
                 CanonicalOrderedImport::RootExport { root, name: export } => *exports_by_root
@@ -2314,23 +2445,28 @@ pub(super) fn compile_ordered_documents(
         let mut exports = Vec::new();
         collect_document_units(root.document.syntax(), &mut units, &mut exports)?;
         if let Some(origin) = root.nominal_origin.as_ref() {
-            for (name, syntax) in document_types::enum_declarations(&units)? {
+            let enum_declarations = document_types::enum_declarations(&units)?;
+            for (relative_path, _) in declared_nominal_keys(&root.document, origin)? {
                 let path = origin
                     .segments()
                     .iter()
                     .cloned()
-                    .chain(std::iter::once(name.clone()))
+                    .chain(relative_path.iter().cloned())
                     .collect::<Vec<_>>();
                 let defining_document = anchor.document;
                 if let Some(previous) = nominal_owners.get(&path) {
                     if previous.0 != root.nominal_package_id || previous.1 != defining_document {
+                        let declaration_anchor = enum_declarations
+                            .iter()
+                            .find(|(name, _)| relative_path.len() == 1 && relative_path[0] == *name)
+                            .map_or(anchor, |(_, syntax)| SourceSemanticAnchor::for_node(syntax));
                         return Err(SourceSemanticError {
                             code: "source-semantics/ambiguous-nominal-declaration-v1",
                             message: format!(
                                 "AmbiguousNominalDeclarationV1: {} has distinct defining sources",
                                 path.join("/")
                             ),
-                            anchor: SourceSemanticAnchor::for_node(&syntax),
+                            anchor: declaration_anchor,
                         });
                     }
                 } else {
@@ -2339,12 +2475,14 @@ pub(super) fn compile_ordered_documents(
                         (root.nominal_package_id.clone(), defining_document),
                     );
                 }
-                let key = NominalKey::from_path(
-                    NominalKind::Enum,
-                    &CanonicalNominalPath::new(path).map_err(|error| {
-                        internal(anchor, format!("invalid enum declaration path: {error:?}"))
-                    })?,
-                );
+            }
+            for (name, syntax) in enum_declarations {
+                let key = document_types::enum_nominal_key(origin, &name).map_err(|error| {
+                    internal(
+                        SourceSemanticAnchor::for_node(&syntax),
+                        format!("invalid enum declaration path: {error:?}"),
+                    )
+                })?;
                 builder.imported_enum_qualifiers.insert(key, name);
             }
         }

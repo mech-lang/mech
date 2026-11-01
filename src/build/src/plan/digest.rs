@@ -223,10 +223,14 @@ mod tests {
             crate_name: "mech_terminal".to_owned(),
             cargo_features: vec!["provider".to_owned()],
             factory_path: "mech_terminal::CliHostFactory::new".to_owned(),
+            factory_input: crate::host::NativeHostFactoryInput::None,
             settings: ConfigValue::Null,
         });
         assert_digest_changes(&with_host, |changed| {
             changed.hosts[0].settings = ConfigValue::Bool(true)
+        });
+        assert_digest_changes(&with_host, |changed| {
+            changed.hosts[0].factory_input = crate::host::NativeHostFactoryInput::ProgramArguments
         });
 
         let mut with_grant = plan.clone();
@@ -329,5 +333,29 @@ mod tests {
         let mut changed = plan.clone();
         mutate(&mut changed);
         assert_ne!(compute_plan_sha256(&changed).unwrap(), expected);
+    }
+
+    #[test]
+    fn legacy_no_input_host_json_and_plan_digest_are_preserved() {
+        let legacy_host = r#"{"name":"cli","provider":"cli","package":"mech-terminal","crate_name":"mech_terminal","cargo_features":["provider"],"factory_path":"custom_cli::Factory::new","settings":"Null"}"#;
+        let host: PlannedHostInstance = serde_json::from_str(legacy_host).unwrap();
+        assert_eq!(
+            host.factory_input,
+            crate::host::NativeHostFactoryInput::None
+        );
+        assert_eq!(serde_json::to_string(&host).unwrap(), legacy_host);
+
+        let mut plan = empty_plan();
+        plan.hosts.push(host);
+        let original_digest = compute_plan_sha256(&plan).unwrap();
+        let serialized = serde_json::to_string(&plan).unwrap();
+        assert!(!serialized.contains("factory_input"));
+        let recovered: NativeBuildPlan = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(compute_plan_sha256(&recovered).unwrap(), original_digest);
+
+        let mut explicit_none = serde_json::to_value(&plan).unwrap();
+        explicit_none["hosts"][0]["factory_input"] = serde_json::json!("none");
+        let recovered: NativeBuildPlan = serde_json::from_value(explicit_none).unwrap();
+        assert_eq!(compute_plan_sha256(&recovered).unwrap(), original_digest);
     }
 }

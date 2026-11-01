@@ -4,10 +4,10 @@ use super::roundtrip;
 
 use mech_core::snapshot::SnapshotValidationContext;
 use mech_core::{
-    ReactiveInstanceId, ResidentKernelBindError, SchemaBody, SchemaDraft, SchemaTableBuilder,
-    Value, ValueDataDraft, ValueDraft,
+    ReactiveInstanceId, SchemaBody, SchemaDraft, SchemaTableBuilder, Value, ValueDataDraft,
+    ValueDraft,
 };
-use mech_engine::resident::{ActivationFacts, activate};
+use mech_engine::resident::{ActivationFacts, CapturedValueInput, activate};
 use mech_engine::{CanonicalSourceFrontend, ProgramArtifact};
 use mech_runtime::SourceDocument;
 use mech_syntax::document::{ParseConfig, Revision};
@@ -139,7 +139,7 @@ fn index_range_increments_and_literal_endpoints_are_exact() {
 }
 
 #[test]
-fn index_range_rejects_unrepresentable_cardinality_and_live_endpoints() {
+fn index_range_rejects_unrepresentable_cardinality_and_executes_live_endpoints() {
     let too_large = SourceDocument::parse_resolved(
         "index-range-overflow.mec",
         Revision(0),
@@ -175,16 +175,95 @@ fn index_range_rejects_unrepresentable_cardinality_and_live_endpoints() {
         .unwrap()
         .compile_artifact()
         .unwrap();
-    assert!(matches!(
-        activate(
+    for artifact in [artifact.clone(), roundtrip(&artifact)] {
+        let mut instance = activate(
             ReactiveInstanceId::new(0x58c, 10),
             &artifact,
             &mech_stdlib::source_catalog(),
             &ActivationFacts::default(),
-        ),
-        Err(mech_engine::resident::ResidentActivationError::KernelBind {
-            error: ResidentKernelBindError::UnsupportedLayout,
-            ..
-        })
-    ));
+        )
+        .unwrap();
+        for (lo, hi, expected) in [
+            (1, 4, Some(&[1u64, 2, 3][..])),
+            (2, 8, Some(&[2, 3, 4, 5, 6, 7][..])),
+            (3, 3, None),
+            (1, u64::MAX, None),
+            (9, 11, Some(&[9, 10][..])),
+        ] {
+            let values = artifact
+                .inputs()
+                .iter()
+                .map(|input| {
+                    let name = mech_engine::decode_source_input_name(&input.name).unwrap();
+                    ValueDraft {
+                        schema: input.schema,
+                        shape_values: Box::new([]),
+                        data: ValueDataDraft::Index(if name == "lo" { lo } else { hi }),
+                    }
+                    .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+                    .unwrap()
+                })
+                .collect::<Vec<_>>();
+            let captured = instance
+                .plan
+                .inputs
+                .iter()
+                .map(|input| CapturedValueInput {
+                    slot: input.slot,
+                    value: &values[artifact
+                        .inputs()
+                        .iter()
+                        .position(|i| i.slot == input.artifact_slot)
+                        .unwrap()],
+                })
+                .collect::<Vec<_>>();
+            let epoch = instance.published_epoch();
+            let prior = instance.copied_output(0).ok();
+            let result = instance
+                .prepare_turn_values(&captured)
+                .map_err(|error| format!("{error:?}"))
+                .and_then(|ready| ready.publish().map_err(|error| format!("{error:?}")));
+            if let Some(expected) = expected {
+                result.unwrap();
+                let value = instance.copied_output(0).unwrap();
+                assert_eq!(
+                    value.canonical_data_draft().unwrap(),
+                    ValueDataDraft::Matrix(
+                        expected
+                            .iter()
+                            .copied()
+                            .map(ValueDataDraft::Index)
+                            .collect()
+                    )
+                );
+                let body = value
+                    .schemas()
+                    .unwrap()
+                    .get(value.schema())
+                    .unwrap()
+                    .closed_body(value.shape())
+                    .unwrap();
+                assert!(
+                    matches!(body, SchemaBody::Matrix { dimensions, .. } if dimensions.as_ref() == [mech_core::DimensionExpr::Constant(1), mech_core::DimensionExpr::Constant(expected.len() as u64)])
+                );
+            } else {
+                let error = result.unwrap_err();
+                assert!(
+                    error.contains("InvalidInput")
+                        || error.contains("ResourceLimit")
+                        || error.contains("InvalidShape"),
+                    "{error}"
+                );
+                assert_eq!(instance.published_epoch(), epoch);
+                assert_eq!(
+                    instance
+                        .copied_output(0)
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    prior.unwrap().canonical_data_draft().unwrap()
+                );
+            }
+        }
+    }
 }

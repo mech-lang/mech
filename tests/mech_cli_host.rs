@@ -1,4 +1,8 @@
 #[cfg(all(feature = "run", feature = "cli_host"))]
+#[path = "support/cli_payload.rs"]
+mod payload_arguments;
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
 fn temp_root(name: &str) -> std::path::PathBuf {
     let root = std::env::temp_dir().join(format!(
         "mech-cli-host-{name}-{}",
@@ -181,6 +185,25 @@ value := @env/HOME
     assert!(
         !combined.lines().any(|line| line == "must-not-write"),
         "rejected resident program delivered stdout:\n{combined}"
+    );
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn default_capabilities_do_not_grant_args_from_a_source_binding() {
+    let root = temp_root("resident-deny-args");
+    let source_path = root.join("deny-args.mec");
+    std::fs::write(&source_path, "+> @out := cli/stdout\n+> @args := cli/args\n@out/line <- \"must-not-write-args\"\nvalue := @args/1\nvalue\n").unwrap();
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+        .arg("run")
+        .arg(&source_path)
+        .current_dir(&root)
+        .output()
+        .unwrap();
+    let combined = assert_failure_contains(output, "CapabilityDenied");
+    assert!(
+        !combined.lines().any(|line| line == "must-not-write-args"),
+        "rejected args read delivered output:\n{combined}"
     );
 }
 

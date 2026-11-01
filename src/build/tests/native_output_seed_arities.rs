@@ -3,6 +3,10 @@
 
 pub mod support;
 
+use mech_build::{
+    NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildProfile, NativeBuildRequest,
+    NativeDependencySource, NativeEmit, NativeHostCatalog,
+};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 
@@ -78,17 +82,27 @@ fn legacy_runtime_bytecode(
     runtime_instruction: BytecodeInstruction,
     output: u32,
 ) -> Vec<u8> {
-    let mut instructions = (0..constants.len() as u32)
-        .map(|register| BytecodeInstruction::ConstLoad {
-            dst: register,
-            constant: register,
-        })
-        .collect::<Vec<_>>();
+    let register_count = constants.len() as u32;
+    let mut canonical_constants = Vec::new();
+    let mut instructions = Vec::new();
+    for (register, value) in constants.into_iter().enumerate() {
+        let constant = canonical_constants
+            .iter()
+            .position(|prior| prior == &value)
+            .unwrap_or_else(|| {
+                canonical_constants.push(value);
+                canonical_constants.len() - 1
+            });
+        instructions.push(BytecodeInstruction::ConstLoad {
+            dst: register as u32,
+            constant: constant as u32,
+        });
+    }
     instructions.push(runtime_instruction);
     instructions.push(BytecodeInstruction::Return { src: output });
     write_bytecode(&BytecodeProgram {
-        register_count: constants.len() as u32,
-        constants,
+        register_count,
+        constants: canonical_constants,
         symbols: BTreeMap::new(),
         mutable_symbols: BTreeSet::new(),
         instructions,
@@ -100,7 +114,7 @@ fn legacy_runtime_bytecode(
 
 fn unary_bytecode() -> Vec<u8> {
     legacy_runtime_bytecode(
-        vec![boolean_constant(false), boolean_constant(true)],
+        vec![boolean_constant(false), boolean_constant(false)],
         BytecodeInstruction::RuntimeUnary {
             function: hash_str("NotS<bool>"),
             dst: 1,
@@ -112,7 +126,7 @@ fn unary_bytecode() -> Vec<u8> {
 
 fn binary_bytecode() -> Vec<u8> {
     legacy_runtime_bytecode(
-        vec![f64_constant(1.0), f64_constant(2.0), f64_constant(99.0)],
+        vec![f64_constant(1.0), f64_constant(2.0), f64_constant(0.0)],
         BytecodeInstruction::RuntimeBinary {
             function: hash_str("AddSS<f64>"),
             dst: 2,
@@ -127,7 +141,7 @@ fn matrix_input_constants(count: u32) -> Vec<EncodedConstant> {
     let mut constants = (1..=count)
         .map(|value| f64_row_matrix_constant(&[f64::from(value)]))
         .collect::<Vec<_>>();
-    constants.push(f64_row_matrix_constant(&vec![99.0; count as usize]));
+    constants.push(f64_row_matrix_constant(&vec![0.0; count as usize]));
     constants
 }
 
@@ -173,7 +187,7 @@ fn variadic_bytecode() -> Vec<u8> {
 }
 
 #[test]
-fn legacy_runtime_arities_remain_plannable_with_poisoned_output_seeds() {
+fn legacy_runtime_arities_preserve_contracts_but_are_rejected_as_native_applications() {
     let compiled = vec![
         (
             "unary",
@@ -222,10 +236,17 @@ fn legacy_runtime_arities_remain_plannable_with_poisoned_output_seeds() {
         ),
     ];
 
-    let temporary = tempfile::tempdir().unwrap();
-    // Legacy-only bytecode remains a planning input, but the generated runtime
-    // must not regain an instruction fallback. Canonical execution evidence for
-    // the same semantic arities is exercised separately below.
+    let catalog = mech_stdlib::source_native_plan_catalog();
+    let builder = NativeApplicationBuilder::new(NativeBuildEnvironment {
+        function_catalog: catalog.clone(),
+        host_catalog: std::sync::Arc::new(NativeHostCatalog::new()),
+        dependency_source: NativeDependencySource::Registry {
+            version: mech_build::MECH_COMPONENT_VERSION.to_owned(),
+        },
+    });
+    // Preserve the low-level arity and trusted-linkage contracts using output
+    // seeds that differ from the calculated results. Such instruction bytecode
+    // must still fail production admission; executable coverage follows below.
     for (name, bytecode, arity, runtime_name, package, crate_name, installer_path) in compiled {
         let parsed = ParsedProgram::from_bytes(&bytecode).unwrap();
         assert!(parsed.artifact.is_empty(), "{name}");
@@ -242,30 +263,35 @@ fn legacy_runtime_arities_remain_plannable_with_poisoned_output_seeds() {
             "{name}"
         );
 
-        let fixture = temporary.path().join(format!("{name}.mecb"));
-        fs::write(&fixture, bytecode).unwrap();
+        parsed.validate_runtime_contracts(&catalog).unwrap();
+        let entry = catalog
+            .runtime_entry(mech_core::RuntimeFunctionId::from_name(runtime_name))
+            .unwrap();
+        let linkage = entry.native_linkage.as_ref().unwrap();
+        assert_eq!(entry.name, runtime_name, "{name}");
+        assert_eq!(linkage.package, package, "{name}");
+        assert_eq!(linkage.crate_name, crate_name, "{name}");
+        assert_eq!(linkage.installer_path, installer_path, "{name}");
 
-        let result = run_owner(
-            OwnerProfile::Standard,
-            RunnerAction::Plan,
-            name,
-            fixture,
-            &format!("native_output_seed_{name}"),
-            true,
-        );
-        assert!(result.poisoned_output_seed, "{name}");
-        assert_eq!(result.poisoned_output_seed_count, 1, "{name}");
-        let [planned] = result.plan.runtime_functions.as_slice() else {
-            panic!(
-                "{name} must plan exactly one runtime function, found {:?}",
-                result.plan.runtime_functions
-            )
+        let request = NativeBuildRequest {
+            bytecode,
+            instruction_type_bindings: None,
+            instruction_type_binding_requirements: None,
+            runtime_config: None,
+            target: None,
+            profile: NativeBuildProfile::Debug,
+            binary_name: format!("legacy_{name}"),
+            output: "ignored-output".into(),
+            emit: NativeEmit::Plan,
+            keep_project: false,
+            offline: true,
         };
-        assert_eq!(planned.runtime_id, hash_str(runtime_name), "{name}");
-        assert_eq!(planned.runtime_name, runtime_name, "{name}");
-        assert_eq!(planned.package, package, "{name}");
-        assert_eq!(planned.crate_name, crate_name, "{name}");
-        assert_eq!(planned.installer_path, installer_path, "{name}");
+        let error = builder.plan(&request).unwrap_err();
+        assert_eq!(error.kind_name(), "NativeProgramArtifactInvalid", "{name}");
+        assert!(
+            error.display_message().contains("MissingArtifactSections"),
+            "{name}: {error:?}"
+        );
     }
 }
 

@@ -6,11 +6,9 @@ use web_time::Instant;
 
 #[cfg(feature = "resident-routing-source")]
 use mech_core::MechSourceCode;
-use mech_core::{
-    ApplicationRequirement, MResult, MechError, ParsedProgram, ReactiveInstanceId, ResourceIntent,
-};
+use mech_core::{ApplicationRequirement, MResult, MechError, ReactiveInstanceId, ResourceIntent};
 use mech_engine::{
-    BindingDeclaration, ProgramArtifact, decode_program_artifact_sections,
+    BindingDeclaration, ProgramArtifact, decode_program_artifact_bytecode_v1,
     resident::{
         ActivationFacts, ResidentActivationOptions, ResidentExternalAdmission,
         ResidentIntegrityMode, activate_with_options, preflight_resident_target,
@@ -408,13 +406,7 @@ impl MechRuntime {
 
     #[cfg(feature = "resident-routing")]
     fn decode_artifact(&self, bytecode: &[u8]) -> MResult<Arc<ProgramArtifact>> {
-        let parsed = ParsedProgram::from_bytes(bytecode).map_err(|error| {
-            route_failure(
-                ResidentRouteFailureClass::InvalidBytecode,
-                format!("invalid bytecode v1: {error:?}"),
-            )
-        })?;
-        let artifact = decode_program_artifact_sections(&parsed.artifact).map_err(|error| {
+        let artifact = decode_program_artifact_bytecode_v1(bytecode).map_err(|error| {
             route_failure(
                 ResidentRouteFailureClass::InvalidBytecode,
                 format!("invalid bytecode-v1 ProgramArtifact: {error:?}"),
@@ -953,7 +945,17 @@ pub(super) fn plan_resident_activation_facts(
                         ),
                     )
                 })?;
-            if let Some(existing) = facts.slot_shapes.insert(target, planned.shape().clone())
+            let shapes = if schema
+                .schema()
+                .dimension_parameters()
+                .iter()
+                .any(|parameter| parameter.lifetime() == mech_core::DimensionLifetime::Turn)
+            {
+                &mut facts.slot_shape_seeds
+            } else {
+                &mut facts.slot_shapes
+            };
+            if let Some(existing) = shapes.insert(target, planned.shape().clone())
                 && existing != *planned.shape()
             {
                 return Err(route_failure(

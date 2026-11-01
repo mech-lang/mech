@@ -1,0 +1,16 @@
+#Advance(p<[u8]:16,1>, c<[u8]:16,1>) => <([u8]:16,1,[u8]:16,1)>
+  | :Carry(p<[u8]:16,1>, c<[u8]:16,1>, rank<u64>)
+  | :Done(q<[u8]:16,1>, counts<[u8]:16,1>).
+#Advance(p, c) -> :Carry(p, c, 1u64)
+  :Carry(p, c, rank)
+    | c[rank + 1u64] + 1u64 > rank -> {
+        q := sequence/rotate-prefix(p, rank + 1u64, 1u64)
+        ~counts := c
+        counts[rank + 1u64] = 0u64
+      } -> :Carry(q, counts, rank + 1u64)
+    | * -> {
+        q := sequence/rotate-prefix(p, rank + 1u64, 1u64)
+        ~counts := c
+        counts[rank + 1u64] = c[rank + 1u64] + 1u64
+      } -> :Done(q, counts)
+  :Done(q, counts) => (q, counts).

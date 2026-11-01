@@ -1,6 +1,6 @@
 # Fixed integer interval contract
 
-Fixed integer intervals are the supported G12 constrained scalar form. A kind such as
+Fixed integer intervals are the supported constrained scalar form. A kind such as
 `u8:1..10` denotes the values 1 through 9. The lower endpoint is included;
 `..` excludes the upper endpoint and `..=` includes it. Equal endpoints are
 valid only with `..=`. Descending and empty intervals are invalid.
@@ -51,6 +51,24 @@ range-endpoint capabilities. Structural child evidence uses the same classifier;
 table and map roots remain non-keyable, and aggregates do not gain scalar ordering.
 Comparison accepts equal interval identities and preserves exact integer values.
 Mixed intervals and implicit base-integer conversions are rejected.
+
+Scalar addition (`+` and `math/add`) accepts two identical interval kinds and
+retains that exact kind on the result. It does not widen the integer width or
+infer a larger interval. For example:
+
+```mech
+foo⟨u8:1..=10⟩ := 3
+bar⟨u8:1..=10⟩ := foo
+bar + foo
+```
+
+The result is `6` with kind `u8:1..=10`. Adding `8` and `3` in that same kind is
+rejected because `11` is outside the interval. Both integer overflow and interval
+membership are checked before publishing the result; a refused live turn leaves
+previously accepted values and state unchanged. A later valid turn can succeed.
+This addition contract covers scalar intervals only. Other arithmetic operators,
+mixed interval identities, plain-integer mixing, and interval matrix/broadcast
+addition remain unsupported.
 
 Output templates require exact equality between the resolved interval and its
 schema: signedness, width, bounds, and upper inclusion all participate. Recursive

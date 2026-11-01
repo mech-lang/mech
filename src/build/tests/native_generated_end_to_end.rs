@@ -9,6 +9,16 @@ use mech_build::PlannedApplicationRequirement;
 use support::*;
 
 #[test]
+#[ignore = "explicit CI cold preparation; fixture execution requires these prebuilt runners"]
+fn prepare_generated_owner_runners() {
+    prepare_owner_runners(
+        &[OwnerProfile::Standard, OwnerProfile::Fixed],
+        "generated-owner-preparation",
+    )
+    .unwrap_or_else(|error| panic!("{error}"));
+}
+
+#[test]
 fn every_generated_application_fixture_builds_and_executes() {
     let temporary = tempfile::tempdir().unwrap();
     let selected = std::env::var("MECH_NATIVE_GENERATED_CASE").ok();

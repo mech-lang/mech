@@ -1081,6 +1081,149 @@ pub fn string_binary() -> Result<KindScheme, SemanticModelError> {
     exact_binary(string.clone(), string.clone(), string)
 }
 
+fn number_format() -> Result<Vec<KindScheme>, SemanticModelError> {
+    let precision = BuiltinScalarKind::U64.kind_expr();
+    let string = BuiltinScalarKind::String.kind_expr();
+    let mut schemes = Vec::new();
+    // These are the exact scalar families implemented by the canonical
+    // formatter. Rational/complex values do not inherit a made-up format.
+    for scalar in [
+        BuiltinScalarKind::U8,
+        BuiltinScalarKind::U16,
+        BuiltinScalarKind::U32,
+        BuiltinScalarKind::U64,
+        BuiltinScalarKind::U128,
+        BuiltinScalarKind::I8,
+        BuiltinScalarKind::I16,
+        BuiltinScalarKind::I32,
+        BuiltinScalarKind::I64,
+        BuiltinScalarKind::I128,
+        BuiltinScalarKind::F32,
+        BuiltinScalarKind::F64,
+    ] {
+        let numeric = scalar.kind_expr();
+        schemes.push(exact_binary(
+            numeric.clone(),
+            precision.clone(),
+            string.clone(),
+        )?);
+        schemes.push(make(
+            0,
+            2,
+            vec![matrix(numeric, dim(0), dim(1)), precision.clone()],
+            vec![matrix(string.clone(), dim(0), dim(1))],
+            Vec::new(),
+        )?);
+    }
+    Ok(schemes)
+}
+
+fn sequence_length() -> Result<Vec<KindScheme>, SemanticModelError> {
+    let count = BuiltinScalarKind::U64.kind_expr();
+    Ok(vec![
+        exact_unary(BuiltinScalarKind::String.kind_expr(), count.clone())?,
+        make(
+            1,
+            2,
+            vec![matrix(kind(0), dim(0), dim(1))],
+            vec![count],
+            Vec::new(),
+        )?,
+    ])
+}
+
+fn sequence_sort_indices() -> Result<KindScheme, SemanticModelError> {
+    let primary_length = DimensionExpr::Multiply(vec![dim(0), dim(1)].into_boxed_slice());
+    let secondary_length = DimensionExpr::Multiply(vec![dim(2), dim(3)].into_boxed_slice());
+    make(
+        0,
+        4,
+        vec![
+            matrix(BuiltinScalarKind::U64.kind_expr(), dim(0), dim(1)),
+            BuiltinScalarKind::String.kind_expr(),
+            matrix(BuiltinScalarKind::String.kind_expr(), dim(2), dim(3)),
+            BuiltinScalarKind::String.kind_expr(),
+        ],
+        vec![matrix(
+            KindExpr::Index,
+            DimensionExpr::Constant(1),
+            primary_length.clone(),
+        )],
+        vec![KindConstraint::DimensionCompatible(
+            primary_length,
+            secondary_length,
+        )],
+    )
+}
+
+fn text_lines() -> Result<KindScheme, SemanticModelError> {
+    make_with_dimensions(
+        0,
+        bounded_dimensions(0, None),
+        vec![BuiltinScalarKind::String.kind_expr()],
+        vec![matrix(
+            BuiltinScalarKind::String.kind_expr(),
+            DimensionExpr::Constant(1),
+            dim(0),
+        )],
+        Vec::new(),
+    )
+}
+
+fn text_join() -> Result<KindScheme, SemanticModelError> {
+    make(
+        0,
+        2,
+        vec![
+            matrix(BuiltinScalarKind::String.kind_expr(), dim(0), dim(1)),
+            BuiltinScalarKind::String.kind_expr(),
+        ],
+        vec![BuiltinScalarKind::String.kind_expr()],
+        Vec::new(),
+    )
+}
+
+fn string_count_map(cardinality: DimensionExpr) -> KindExpr {
+    KindExpr::Map {
+        key: Box::new(BuiltinScalarKind::String.kind_expr()),
+        value: Box::new(BuiltinScalarKind::U64.kind_expr()),
+        cardinality,
+    }
+}
+
+fn string_histogram() -> Result<KindScheme, SemanticModelError> {
+    make_with_dimensions(
+        0,
+        dimensions(3),
+        vec![matrix(
+            BuiltinScalarKind::String.kind_expr(),
+            dim(0),
+            dim(1),
+        )],
+        vec![string_count_map(dim(2))],
+        Vec::new(),
+    )
+}
+
+fn string_count_projection(keys: bool) -> Result<KindScheme, SemanticModelError> {
+    make(
+        0,
+        1,
+        vec![string_count_map(dim(0))],
+        vec![matrix(
+            if keys {
+                BuiltinScalarKind::String
+            } else {
+                BuiltinScalarKind::U64
+            }
+            .kind_expr(),
+            DimensionExpr::Constant(1),
+            dim(0),
+        )],
+        Vec::new(),
+    )
+}
+
 fn absolute_value() -> Result<Vec<KindScheme>, SemanticModelError> {
     let mut schemes = predicate_unary_same(BuiltinKindPredicate::Real)?;
     for complex in [BuiltinScalarKind::C32, BuiltinScalarKind::C64] {
@@ -1316,6 +1459,7 @@ pub fn numeric_binary_for_predicate(
 
 pub fn maintained_source_scheme_template(name: &str) -> Option<SourceSchemeTemplate> {
     match name {
+        "math/add" => Some(SourceSchemeTemplate::Addition),
         "compare/lt" | "compare/lte" | "compare/gt" | "compare/gte" => {
             Some(SourceSchemeTemplate::OrderedComparison)
         }
@@ -1338,6 +1482,25 @@ pub fn instantiate_source_scheme_template(
     template: SourceSchemeTemplate,
     inputs: &[ResolvedType],
 ) -> Result<Vec<KindScheme>, SemanticModelError> {
+    if template == SourceSchemeTemplate::Addition {
+        // An exact scalar interval pair keeps its declared bounds. Resident
+        // execution checks the sum; interval addition grants neither numeric
+        // promotion nor scalar/matrix broadcasting to interval kinds.
+        let mut schemes =
+            maintained_source_schemes("math/add")?.expect("addition has maintained source schemes");
+        if let [left, right] = inputs
+            && let KindExpr::IntegerInterval(interval) = left.kind()
+            && interval.is_valid()
+            && left.kind() == right.kind()
+        {
+            schemes.push(exact_binary(
+                left.kind().clone(),
+                right.kind().clone(),
+                left.kind().clone(),
+            )?);
+        }
+        return Ok(schemes);
+    }
     if template == SourceSchemeTemplate::OrderedComparison {
         // Preserve the existing numeric, Index and String declarations. Only
         // an identical valid interval pair adds its exact resident-capable
@@ -1393,6 +1556,9 @@ pub fn instantiate_source_scheme_template(
         SourceSchemeTemplate::TableJoin(mode) => instantiate_table_join_scheme(inputs, mode)?,
         SourceSchemeTemplate::OrderedComparison => {
             unreachable!("ordering returns its scheme family above")
+        }
+        SourceSchemeTemplate::Addition => {
+            unreachable!("addition returns its scheme family above")
         }
     };
     Ok(vec![scheme])
@@ -1540,6 +1706,18 @@ pub fn maintained_source_schemes(
             Vec::new(),
         )?],
         "string/concat" => vec![string_binary()?],
+        "number/parse-u64" => vec![exact_unary(
+            BuiltinScalarKind::String.kind_expr(),
+            BuiltinScalarKind::U64.kind_expr(),
+        )?],
+        "number/format" => number_format()?,
+        "sequence/length" => sequence_length()?,
+        "sequence/sort-indices" => vec![sequence_sort_indices()?],
+        "text/lines" => vec![text_lines()?],
+        "text/join" => vec![text_join()?],
+        "map/histogram" => vec![string_histogram()?],
+        "map/keys" => vec![string_count_projection(true)?],
+        "map/values" => vec![string_count_projection(false)?],
         "stats/sum/column" => vec![reduction_axis(true)?],
         "stats/sum/row" => vec![reduction_axis(false)?],
         "combinatorics/n-choose-k" => n_choose_k_schemes()?,

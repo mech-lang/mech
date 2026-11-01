@@ -258,7 +258,12 @@ fn plan_specialized_call(
         .outputs()
         .iter()
         .map(|_| match output_cell {
-            Some(cell) => cell_physical_storage_descriptor(cell, &target, lifetime),
+            Some(cell) => output_cell_physical_storage_descriptor(
+                cell,
+                &target,
+                lifetime,
+                implementation_memory,
+            ),
             None => Ok(physical_storage_descriptor(
                 output_representation,
                 &target,
@@ -324,6 +329,29 @@ fn cell_physical_storage_descriptor(
     let mut storage = physical_storage_descriptor(planned_representation, target, lifetime);
     if cell.has_managed_canonical_storage()?
         && !matches!(storage.slot, PlannedSlotKind::FixedScalar(_))
+    {
+        storage.capabilities = cell.storage_capabilities();
+        storage.slot = PlannedSlotKind::CanonicalValueHandle;
+    }
+    Ok(storage)
+}
+
+fn output_cell_physical_storage_descriptor(
+    cell: &ValueCell,
+    target: &TargetMemoryProfile,
+    lifetime: MemoryLifetime,
+    implementation_memory: ImplementationMemoryClass,
+) -> MResult<PhysicalStorageDescriptor> {
+    let mut storage = cell_physical_storage_descriptor(cell, target, lifetime)?;
+    // Numeric inputs retain their fixed-width import layout. An output that
+    // is actually canonical needs its payload transaction when the installed
+    // implementation constructs through the canonical lifecycle instead.
+    if matches!(
+        implementation_memory,
+        ImplementationMemoryClass::CanonicalFinalize
+            | ImplementationMemoryClass::CanonicalSortUnique
+            | ImplementationMemoryClass::CanonicalCloneInput { .. }
+    ) && cell.has_managed_canonical_storage()?
     {
         storage.capabilities = cell.storage_capabilities();
         storage.slot = PlannedSlotKind::CanonicalValueHandle;
@@ -719,6 +747,34 @@ impl BoundCall {
         outputs: Box<[ResolvedValueDescriptor]>,
         resident_operation: crate::ResidentOperationKey,
     ) -> MResult<Self> {
+        Self::artifact_operation_for_target(
+            operation,
+            inputs,
+            outputs,
+            resident_operation,
+            ExecutionTarget::ResidentCpu,
+        )
+    }
+
+    /// Joins an artifact operation to its selected implementation and explicit
+    /// destination. This descriptor is not proof that a backend implements the
+    /// operation; native lowering additionally requires its private binder seal.
+    pub fn artifact_operation_for_target(
+        operation: ResolvedOperationDescriptor,
+        inputs: Box<[ResolvedValueDescriptor]>,
+        outputs: Box<[ResolvedValueDescriptor]>,
+        resident_operation: crate::ResidentOperationKey,
+        target: ExecutionTarget,
+    ) -> MResult<Self> {
+        if !matches!(
+            target,
+            ExecutionTarget::ResidentCpu | ExecutionTarget::Native
+        ) {
+            return Err(
+                MechError::new(crate::MemoryPlanError::DescriptorMismatch, None)
+                    .with_compiler_loc(),
+            );
+        }
         let canonical_name = format!(
             "{}/{}",
             resident_operation.module_path.join("/"),
@@ -742,7 +798,7 @@ impl BoundCall {
             inputs,
             outputs,
             implementation: BoundImplementationId::Resident(resident_operation),
-            target: ExecutionTarget::ResidentCpu,
+            target,
         })
     }
 
@@ -2025,70 +2081,30 @@ fn empty_schema_table() -> Rc<SchemaTable> {
     )
 }
 
+/// Adapt the complete declaration grid to the established canonical installer
+/// surface. Cross-orientation dynamic vector factories are independently
+/// linkable, but are deliberately absent from this narrower surface.
 #[doc(hidden)]
 #[macro_export]
-macro_rules! __mech_for_each_canonical_binop_factory_group {
-    (
-        $callback:path,
-        $context:tt,
-        $lib:ident,
-        $scalar:ty,
-        $scalar_name:literal,
-        $scalar_token:ident;
-        $cfg:meta;
-        $($suffix:ident),+ $(,)?
-    ) => {
-        $(
-            #[cfg($cfg)]
-            $callback!($context, $lib, $suffix, $scalar, $scalar_name, $scalar_token);
-        )+
+macro_rules! __mech_canonical_binop_factory {
+    (($callback:path, $context:tt), $lib:ident, VDRD, $features:tt, $scalar:ty, $name:literal, $token:ident) => {};
+    (($callback:path, $context:tt), $lib:ident, RDVD, $features:tt, $scalar:ty, $name:literal, $token:ident) => {};
+    (($callback:path, $context:tt), $lib:ident, $suffix:ident, $features:tt, $scalar:ty, $name:literal, $token:ident) => {
+        $callback!($context, $lib, $suffix, $scalar, $name, $token);
     };
 }
 
-/// Enumerates the exact concrete binary factory surface for canonical source
-/// specialization. Source execution and native registration share this exact
-/// type grid without requiring an erased value projection.
+/// Enumerates the canonical source/installer subset in declaration order.
 #[macro_export]
 macro_rules! for_each_canonical_binop_factory {
     ($callback:path, $context:tt, $lib:ident, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
-        $callback!($context, $lib, SS, $scalar, $scalar_name, $scalar_token);
-
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "matrix1"; SM1, M1S, M1M1);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "matrix2"; SM2, M2S, M2M2);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "matrix3"; SM3, M3S, M3M3);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "matrix4"; SM4, M4S, M4M4);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "matrix2x3"; SM2x3, M2x3S, M2x3M2x3);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "matrix3x2"; SM3x2, M3x2S, M3x2M3x2);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "matrixd"; SMD, MDS, MDMD);
-
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "row_vector2"; SR2, R2S, R2R2);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "row_vector3"; SR3, R3S, R3R3);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "row_vector4"; SR4, R4S, R4R4);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "row_vectord"; SRD, RDS, RDRD);
-
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "vector2"; SV2, V2S, V2V2);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "vector3"; SV3, V3S, V3V3);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "vector4"; SV4, V4S, V4V4);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "vectord"; SVD, VDS, VDVD);
-
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix2", feature = "vector2"); M2V2, V2M2);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix3", feature = "vector3"); M3V3, V3M3);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix4", feature = "vector4"); M4V4, V4M4);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix2x3", feature = "vector2"); M2x3V2, V2M2x3);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix3x2", feature = "vector3"); M3x2V3, V3M3x2);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrixd", feature = "vectord"); MDVD, VDMD);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrixd", feature = "vector2"); MDV2, V2MD);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrixd", feature = "vector3"); MDV3, V3MD);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrixd", feature = "vector4"); MDV4, V4MD);
-
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix2", feature = "row_vector2"); M2R2, R2M2);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix3", feature = "row_vector3"); M3R3, R3M3);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix4", feature = "row_vector4"); M4R4, R4M4);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix2x3", feature = "row_vector3"); M2x3R3, R3M2x3);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix3x2", feature = "row_vector2"); M3x2R2, R2M3x2);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrixd", feature = "row_vectord"); MDRD, RDMD);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrixd", feature = "row_vector2"); MDR2, R2MD);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrixd", feature = "row_vector3"); MDR3, R3MD);
-        $crate::__mech_for_each_canonical_binop_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrixd", feature = "row_vector4"); MDR4, R4MD);
+        $crate::__mech_for_each_exact_binop_runtime_factory_for_type!(
+            $crate::__mech_canonical_binop_factory,
+            ($callback, $context),
+            $lib,
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
     };
 }

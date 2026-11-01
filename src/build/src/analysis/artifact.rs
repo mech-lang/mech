@@ -1,12 +1,17 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{
-    ApplicationRequirement, BindingId, FunctionCatalog, MResult, MechError, NativeValueFeature,
-    ReactiveInstanceId, ResourceIntent, native_features_for_schema_body,
+    FunctionCatalog, MResult, MechError, NativeValueFeature, ReactiveInstanceId, ResourceIntent,
+    native_features_for_schema_body,
 };
 use mech_engine::{
-    __resident::{ActivationFacts, CapturedValueInput, ResidentIntegrityMode, activate_external},
-    BindingDeclaration, ProgramArtifact,
+    __resident::{ActivationFacts, ResidentIntegrityMode, activate_external},
+    ProgramArtifact,
+};
+use mech_runtime::{
+    ArtifactResourceSchemaPreflightReport, ResourceSchemaPreflight,
+    artifact_has_closed_resource_payloads, preflight_artifact_resource_schemas,
+    validate_artifact_resource_read_schema,
 };
 
 use crate::error::{NativeBuildErrorKind, native_build_error};
@@ -93,6 +98,11 @@ pub(crate) fn analyze_artifact_native_features(
 
 fn required_resident_feature(module_path: &[String], operation_name: &str) -> Option<&'static str> {
     match (module_path, operation_name) {
+        ([module], "parse-u64" | "format") if module == "number" => Some("pure_text"),
+        ([module], "length") if module == "sequence" => Some("pure_text"),
+        ([module], "sort-indices") if module == "sequence" => Some("sequence_sort"),
+        ([module], "lines" | "join") if module == "text" => Some("pure_text"),
+        ([module], "histogram" | "keys" | "values") if module == "map" => Some("map_ops"),
         ([module], _) if module == "convert" => Some("convert"),
         ([module], _) if module == "table" => Some("table"),
         _ => None,
@@ -102,73 +112,58 @@ fn required_resident_feature(module_path: &[String], operation_name: &str) -> Op
 /// Plans the external contracts carried by a canonical retained artifact.
 ///
 /// Artifact bytecode intentionally has no shadow instruction stream. Native
-/// planning therefore evaluates the artifact itself, supplies provider-owned
-/// observation values at its resident input boundary, and validates each
-/// materialized effect payload with the same trusted planning providers used
-/// by instruction bytecode.
+/// planning validates every declared resource schema and provider contract.
+/// Read representatives supply shape/representation facts only. Value-domain
+/// checks may additionally evaluate a fully closed, observation-free artifact.
 pub(crate) fn plan_artifact_external_contracts(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
     resolver: &mut NativeBytecodeContractResolver<'_>,
-) -> MResult<()> {
+) -> MResult<ArtifactResourceSchemaPreflightReport> {
+    let limit = resolver.planning_step_limit()?;
+    mech_engine::__resident::with_planning_step_limit(limit, || {
+        plan_artifact_external_contracts_with_limit(artifact, catalog, resolver)
+    })
+    .map_err(|limit| {
+        artifact_error(format!(
+            "native planning exceeds the configured {limit} step limit"
+        ))
+    })?
+}
+
+fn plan_artifact_external_contracts_with_limit(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    resolver: &mut NativeBytecodeContractResolver<'_>,
+) -> MResult<ArtifactResourceSchemaPreflightReport> {
     let mut observation_values = BTreeMap::new();
     let mut facts = ActivationFacts::default();
     let mut effect_requirements = BTreeMap::new();
 
-    for node in artifact.nodes() {
-        let Some(operation) = node.as_operation() else {
-            continue;
-        };
-        let Some(requirement_id) = operation.requirement else {
-            continue;
-        };
-        let Some(requirement) = artifact.requirements().get(requirement_id) else {
-            return Err(artifact_error(format!(
-                "external node {} references missing requirement {}",
-                node.node.get(),
-                requirement_id.get(),
-            )));
-        };
-        let ApplicationRequirement::Resource(request) = requirement else {
-            return Err(artifact_error(format!(
-                "external node {} has a non-resource requirement",
-                node.node.get(),
-            )));
-        };
+    let report = preflight_artifact_resource_schemas(artifact, |site| {
+        let request = site.request;
         if request.intent != ResourceIntent::Read {
-            effect_requirements.insert(node.node, (requirement_id, request));
-            continue;
+            effect_requirements.insert(site.node, (site.requirement, request.clone()));
+            return resolver.preflight_artifact_resource_write(&site);
         }
-
-        let value = resolver.plan_artifact_resource_read(node.node, request)?;
-        let output_slot = node
-            .output_bindings
-            .clone()
-            .map(BindingId::new)
-            .find_map(
-                |binding| match artifact.bindings().get(binding.get() as usize) {
-                    Some(BindingDeclaration::Output {
-                        node: owner,
-                        target,
-                        ..
-                    }) if *owner == node.node => Some(*target),
-                    _ => None,
-                },
-            )
-            .ok_or_else(|| {
-                artifact_error(format!(
-                    "resource observation node {} has no output binding",
-                    node.node.get()
-                ))
-            })?;
+        resolver.validate_artifact_resource_contract(&site)?;
+        let value = resolver.plan_artifact_resource_read(site.node, request)?;
+        validate_artifact_resource_read_schema(artifact, &site, &value)?;
+        let output_slot = site.observation_output.ok_or_else(|| {
+            artifact_error(format!(
+                "resource observation node {} has no output binding",
+                site.node.get()
+            ))
+        })?;
         facts.slot_shapes.insert(output_slot, value.shape().clone());
-        if observation_values.insert(node.node, value).is_some() {
+        if observation_values.insert(site.node, value).is_some() {
             return Err(artifact_error(format!(
                 "resource observation node {} is duplicated",
-                node.node.get()
+                site.node.get()
             )));
         }
-    }
+        Ok(ResourceSchemaPreflight::Validated)
+    })?;
 
     let mut instance = activate_external(
         ReactiveInstanceId::new(0x4e41_5449, 0),
@@ -179,7 +174,7 @@ pub(crate) fn plan_artifact_external_contracts(
     )
     .map_err(|error| artifact_error(format!("resident activation failed: {error:?}")))?;
 
-    let captured = instance
+    let _representative_schema_checks = instance
         .plan
         .inputs
         .iter()
@@ -196,7 +191,7 @@ pub(crate) fn plan_artifact_external_contracts(
                     node.get()
                 ))
             })?;
-            let value = value
+            value
                 .rebind(input.schema, &input.shape, artifact.schemas())
                 .map_err(|error| {
                     artifact_error(format!(
@@ -205,20 +200,18 @@ pub(crate) fn plan_artifact_external_contracts(
                         input.slot.get(),
                     ))
                 })?;
-            Ok((input.slot, value))
+            Ok(())
         })
         .collect::<MResult<Vec<_>>>()?;
     // Shape facts admit storage, but only rebinding validates the provider's
     // value type against the retained input schema, including read-only plans.
-    if effect_requirements.is_empty() {
-        return Ok(());
+    if effect_requirements.is_empty() || !artifact_has_closed_resource_payloads(artifact) {
+        // A deferred schema check stays explicit in the report; actual live
+        // preparation still validates each real effect before publication.
+        return Ok(report);
     }
-    let inputs = captured
-        .iter()
-        .map(|(slot, value)| CapturedValueInput { slot: *slot, value })
-        .collect::<Vec<_>>();
     let prepared = instance
-        .prepare_initial_turn_values(&inputs)
+        .prepare_initial_turn_values(&[])
         .map_err(|error| artifact_error(format!("resident planning turn failed: {error:?}")))?;
 
     let effects = prepared
@@ -258,17 +251,9 @@ pub(crate) fn plan_artifact_external_contracts(
             })?;
         resolver.plan_artifact_resource_write(node, request, &payload)?;
     }
-    // Initial publication intentionally leaves activation-gated effects
-    // dormant. They still belong to the native application's authority and
-    // must resolve an owner, grant, operation and path before generation. An
-    // active effect additionally receives payload-specific planning above.
-    for (node, (_, request)) in effect_requirements {
-        if !materialized_effects.contains(&node) {
-            resolver.preflight_artifact_resource_write(node, request)?;
-        }
-    }
+    // Dormant effects were already structurally preflighted by the visitor.
     prepared.abort();
-    Ok(())
+    Ok(report)
 }
 
 fn artifact_error(reason: String) -> MechError {

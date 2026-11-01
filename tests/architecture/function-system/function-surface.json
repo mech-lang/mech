@@ -63,6 +63,18 @@
       "id_hex": "003d2b2d383079a3"
     },
     {
+      "name": "map/histogram",
+      "id_hex": "0089e5df42d13de4"
+    },
+    {
+      "name": "map/keys",
+      "id_hex": "00545bda103af406"
+    },
+    {
+      "name": "map/values",
+      "id_hex": "009afda241ea5663"
+    },
+    {
       "name": "math/abs",
       "id_hex": "0044150643e997b7"
     },
@@ -351,6 +363,14 @@
       "id_hex": "0028eceed65f65d6"
     },
     {
+      "name": "number/format",
+      "id_hex": "00d7b83fabed9e8d"
+    },
+    {
+      "name": "number/parse-u64",
+      "id_hex": "00375c524331ece1"
+    },
+    {
       "name": "range/exclusive",
       "id_hex": "00034d8ea099c892"
     },
@@ -365,6 +385,14 @@
     {
       "name": "range/inclusive-increment",
       "id_hex": "00bca71b7f93e1bd"
+    },
+    {
+      "name": "sequence/length",
+      "id_hex": "005230d27927cb75"
+    },
+    {
+      "name": "sequence/sort-indices",
+      "id_hex": "0042124eb130c9e5"
     },
     {
       "name": "set/cartesian-product",
@@ -481,6 +509,14 @@
     {
       "name": "table/right-outer-join",
       "id_hex": "0075a7a07bcfd366"
+    },
+    {
+      "name": "text/join",
+      "id_hex": "00e3a6bc3d9d2070"
+    },
+    {
+      "name": "text/lines",
+      "id_hex": "00b0f523a4736fda"
     }
   ],
   "prelude_source_specializers": [
@@ -699,6 +735,24 @@
       "item": "n-choose-k",
       "canonical_name": "combinatorics/n-choose-k",
       "id_hex": "00956dd291431449"
+    },
+    {
+      "module": "map",
+      "item": "histogram",
+      "canonical_name": "map/histogram",
+      "id_hex": "0089e5df42d13de4"
+    },
+    {
+      "module": "map",
+      "item": "keys",
+      "canonical_name": "map/keys",
+      "id_hex": "00545bda103af406"
+    },
+    {
+      "module": "map",
+      "item": "values",
+      "canonical_name": "map/values",
+      "id_hex": "009afda241ea5663"
     },
     {
       "module": "math",
@@ -983,6 +1037,30 @@
       "id_hex": "00d77a78dae3dbc2"
     },
     {
+      "module": "number",
+      "item": "format",
+      "canonical_name": "number/format",
+      "id_hex": "00d7b83fabed9e8d"
+    },
+    {
+      "module": "number",
+      "item": "parse-u64",
+      "canonical_name": "number/parse-u64",
+      "id_hex": "00375c524331ece1"
+    },
+    {
+      "module": "sequence",
+      "item": "length",
+      "canonical_name": "sequence/length",
+      "id_hex": "005230d27927cb75"
+    },
+    {
+      "module": "sequence",
+      "item": "sort-indices",
+      "canonical_name": "sequence/sort-indices",
+      "id_hex": "0042124eb130c9e5"
+    },
+    {
       "module": "stats",
       "item": "sum/column",
       "canonical_name": "stats/sum/column",
@@ -999,6 +1077,18 @@
       "item": "concat",
       "canonical_name": "string/concat",
       "id_hex": "0017216086cc0361"
+    },
+    {
+      "module": "text",
+      "item": "join",
+      "canonical_name": "text/join",
+      "id_hex": "00e3a6bc3d9d2070"
+    },
+    {
+      "module": "text",
+      "item": "lines",
+      "canonical_name": "text/lines",
+      "id_hex": "00b0f523a4736fda"
     }
   ]
 }

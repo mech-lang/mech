@@ -2,6 +2,43 @@
 
 use mech_core::{FunctionCatalogBuilder, RuntimeFunctionId};
 
+#[cfg(feature = "pure_text")]
+#[test]
+fn pure_text_installers_preserve_exact_runtime_identity_without_a_source_compiler() {
+    type Installer = fn(&mut FunctionCatalogBuilder) -> mech_core::MResult<()>;
+    for (name, install) in [
+        (
+            "number/parse-u64",
+            mech_engine::__mech_native::install_parse_u64 as Installer,
+        ),
+        (
+            "NumberFormatScalarCanonical",
+            mech_engine::__mech_native::install_number_format_scalar as Installer,
+        ),
+        (
+            "NumberFormatMatrixCanonical",
+            mech_engine::__mech_native::install_number_format_matrix as Installer,
+        ),
+        (
+            "sequence/length",
+            mech_engine::__mech_native::install_sequence_length as Installer,
+        ),
+    ] {
+        let mut builder = FunctionCatalogBuilder::new();
+        install(&mut builder).unwrap();
+        assert_eq!(
+            install(&mut builder).unwrap_err().kind_name(),
+            "FunctionCatalogDuplicateRuntimeCapability"
+        );
+        let catalog = builder.build().unwrap();
+        assert_eq!(catalog.runtime_factory_count(), 1);
+        let entry = catalog
+            .runtime_entry(RuntimeFunctionId::from_name(name))
+            .unwrap();
+        assert_eq!(entry.name, name);
+    }
+}
+
 #[cfg(all(feature = "f64", feature = "variable_define"))]
 #[test]
 fn variable_define_f64_installer_preserves_id_and_rejects_duplicates() {

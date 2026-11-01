@@ -56,6 +56,7 @@ fn plan() -> ProgramMemoryPlan {
         .into_boxed_slice(),
         transfers: Box::new([]),
         budget_limits: MemoryBudgetLimits::default(),
+        metadata_demand: ResourceDemand::default(),
         peak: ResourceDemand::default(),
         budget_violations: Box::new([]),
     }
@@ -90,6 +91,35 @@ fn repeated_activation_and_close_reclaims_all_instance_storage() {
         assert_eq!(memory.domain().ledger().committed_bytes, 24);
         memory.close().unwrap();
     }
+}
+
+#[test]
+fn non_arena_metadata_reserves_capacity_once_and_releases_after_denial() {
+    let mut plan = plan();
+    plan.metadata_demand = ResourceDemand {
+        persistent_bytes: 123,
+        retained_nodes: 5,
+        ..ResourceDemand::default()
+    };
+    plan.peak = ResourceDemand {
+        activation_bytes: 16,
+        ..plan.metadata_demand
+    };
+    // The 16-byte arena and its eight-byte initialization map coexist with
+    // activation-owned metadata, which is not backed by another arena.
+    let exact_bytes = 24 + 123;
+    let under = mech_core::ManagedMemoryBudget::new(exact_bytes - 1);
+    assert!(ManagedProgramMemory::realize_with_memory_budget(&plan, Some(&under)).is_err());
+    assert_eq!(under.used_bytes(), 0);
+    let exact = mech_core::ManagedMemoryBudget::new(exact_bytes);
+    let memory = ManagedProgramMemory::realize_with_memory_budget(&plan, Some(&exact)).unwrap();
+    assert_eq!(exact.used_bytes(), exact_bytes);
+    memory.close().unwrap();
+    assert_eq!(exact.used_bytes(), 0);
+    ManagedProgramMemory::realize_with_memory_budget(&plan, None)
+        .unwrap()
+        .close()
+        .unwrap();
 }
 
 fn solve_program(call_count: u32) -> ProgramMemoryPlan {

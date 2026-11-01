@@ -3,14 +3,14 @@ use std::sync::{Arc, LazyLock, Mutex};
 use mech_core::{
     AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
     IdempotencyRequirement, InputPortLayout, InputPortPolicy, MResult,
-    OperationContractDeclaration, Value, ValueData,
+    OperationContractDeclaration, Schema, Value, ValueData,
 };
 use mech_runtime::{
-    ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
-    RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
-    RuntimeHostInstallation, RuntimeResourceProvider, RuntimeResourceReadRequest,
-    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
-    RuntimeValueSnapshot, materialize_host_manifest,
+    ConfigValue, HostManifestConfig, PreparedRuntimeEffect, ResourceSchemaPreflight,
+    RuntimeAfterCommitEffect, RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource,
+    RuntimeHostFactory, RuntimeHostInstallation, RuntimeResourceProvider,
+    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
+    RuntimeResourceWriteRequest, RuntimeValueSnapshot, materialize_host_manifest,
 };
 
 use crate::{console_error, console_host_manifest};
@@ -148,6 +148,15 @@ impl<B: ConsoleBackend + 'static> RuntimeResourceProvider for ConsoleResourcePro
             ));
         }
         Ok(())
+    }
+
+    fn preflight_write_schema(
+        &self,
+        request: RuntimeResourceWritePreflightRequest,
+        _payload_schema: &Schema,
+    ) -> MResult<ResourceSchemaPreflight> {
+        self.preflight_write(request)?;
+        Ok(ResourceSchemaPreflight::Validated)
     }
 
     fn prepare_write(

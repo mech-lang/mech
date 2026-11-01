@@ -56,6 +56,7 @@ fn plan_with(allocations: Vec<AllocationPlan>) -> ProgramMemoryPlan {
         arenas: Box::new([]),
         transfers: Box::new([]),
         budget_limits: mech_core::MemoryBudgetLimits::default(),
+        metadata_demand: ResourceDemand::default(),
         peak: ResourceDemand::default(),
         budget_violations: Box::new([]),
     }

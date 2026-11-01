@@ -639,10 +639,10 @@ fn controlled_target_process() {
         fixture_failure(&root, &format!("descendant wait failed: {error}"))
     });
     if !status.success() {
-        fixture_failure(
-            &root,
-            &format!("descendant exited unsuccessfully: {status}"),
-        );
+        // Tree cleanup may terminate the descendant before this leader.
+        // Preserve its failure exit without treating cleanup as fixture expiry;
+        // the descendant records its own safety-deadline failures.
+        std::process::exit(status.code().unwrap_or(1));
     }
 }
 

@@ -3,14 +3,77 @@
 from __future__ import annotations
 
 import contextlib
+import ast
+from collections.abc import Callable
 import io
+import importlib.util
 import itertools
+import json
 from pathlib import Path
+import socket
 import tempfile
+import threading
+import time
 import unittest
 from unittest import mock
 
 from tests.browser.harness import chrome
+
+
+class DocumentLifecycleProfileTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        script = Path(__file__).resolve().parents[3] / "scripts/smoke-browser-document-lifecycle.py"
+        spec = importlib.util.spec_from_file_location("document_lifecycle_smoke", script)
+        assert spec is not None and spec.loader is not None
+        cls.smoke = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.smoke)
+        cls.script = script
+
+    def test_cached_singleton_lock_is_neither_reused_nor_removed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            artifacts = Path(directory)
+            cached = artifacts / "chrome-profile"
+            cached.mkdir()
+            lock = cached / "SingletonLock"
+            lock.write_text("another-runner-22810")
+            with self.smoke.fresh_chrome_profile(artifacts) as profile:
+                owned = Path(profile)
+                self.assertNotEqual(owned, cached)
+                self.assertEqual(owned.parent, artifacts)
+                self.assertEqual(list(owned.iterdir()), [])
+            self.assertFalse(owned.exists())
+            self.assertEqual(lock.read_text(), "another-runner-22810")
+
+    def test_profiles_are_unique_and_cleanup_also_runs_on_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            artifacts = Path(directory)
+            with self.smoke.fresh_chrome_profile(artifacts) as first:
+                with self.assertRaisesRegex(RuntimeError, "fixture failure"):
+                    with self.smoke.fresh_chrome_profile(artifacts) as second:
+                        self.assertNotEqual(first, second)
+                        self.assertTrue(Path(first).is_dir())
+                        raise RuntimeError("fixture failure")
+                self.assertFalse(Path(second).exists())
+                self.assertTrue(Path(first).is_dir())
+            self.assertFalse(Path(first).exists())
+
+    def test_main_passes_the_owned_profile_to_chrome(self) -> None:
+        tree = ast.parse(self.script.read_text())
+        main = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "main")
+        owned = [item for node in ast.walk(main) if isinstance(node, ast.With)
+                 for item in node.items if isinstance(item.context_expr, ast.Call)
+                 and isinstance(item.context_expr.func, ast.Name)
+                 and item.context_expr.func.id == "fresh_chrome_profile"]
+        self.assertEqual(len(owned), 1)
+        self.assertIsInstance(owned[0].optional_vars, ast.Name)
+        name = owned[0].optional_vars.id
+        launches = [node for node in ast.walk(main) if isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Name) and node.func.id == "ChromeSession"]
+        self.assertEqual(len(launches), 1)
+        argument = launches[0].args[1]
+        self.assertIsInstance(argument, ast.Call)
+        self.assertEqual(ast.unparse(argument), f"Path({name})")
 
 
 class ChromeSessionStartupTests(unittest.TestCase):
@@ -139,6 +202,87 @@ class ChromeSessionStartupTests(unittest.TestCase):
                 self.assertIn(str(self.session.log), diagnostics.getvalue())
                 self.assertIsNone(self.session.process)
                 self.assertIsNone(self.session._log_handle)
+
+
+class ChromeSessionNavigationTests(unittest.TestCase):
+    def setUp(self) -> None:
+        with mock.patch.object(chrome, "find_browser", return_value=Path("fixture-browser")):
+            self.session = chrome.ChromeSession(None, "fixture-profile", "fixture.log")
+        client_socket, peer_socket = socket.socketpair()
+        client_socket.settimeout(0.01)
+        peer_socket.settimeout(1)
+        self.client_socket = client_socket
+        self.peer_socket = peer_socket
+        self.addCleanup(self.close_socket, client_socket)
+        self.addCleanup(self.close_socket, peer_socket)
+        client = chrome.WebSocket.__new__(chrome.WebSocket)
+        client.socket = client_socket
+        self.peer = chrome.WebSocket.__new__(chrome.WebSocket)
+        self.peer.socket = peer_socket
+        process = mock.Mock()
+        process.poll.return_value = None
+        with mock.patch.object(chrome, "WebSocket", return_value=client):
+            self.session.devtools = chrome.DevTools(process, "ws://fixture")
+        self.session.session_id = "fixture-session"
+
+    @staticmethod
+    def close_socket(connection: socket.socket) -> None:
+        try:
+            connection.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
+        connection.close()
+
+    def respond(
+        self, send_response: Callable[[dict[str, object]], None],
+    ) -> tuple[threading.Thread, list[Exception]]:
+        errors = []
+
+        def run() -> None:
+            try:
+                request = self.peer.receive()
+                self.assertEqual(request["method"], "Page.navigate")
+                self.assertEqual(request["sessionId"], "fixture-session")
+                send_response(request)
+            except Exception as error:
+                errors.append(error)
+
+        worker = threading.Thread(target=run, daemon=True)
+        worker.start()
+        self.addCleanup(worker.join, 1)
+        return worker, errors
+
+    def test_navigation_accepts_a_reply_after_the_receive_idle_timeout(self) -> None:
+        def reply(request: dict[str, object]) -> None:
+            time.sleep(0.06)
+            self.peer.send(json.dumps({"id": request["id"], "result": {"frameId": "ready"}}))
+
+        worker, errors = self.respond(reply)
+        self.session.navigate("http://fixture", timeout=0.5)
+        worker.join(1)
+        self.assertFalse(worker.is_alive())
+        self.assertEqual(errors, [])
+
+    def test_navigation_preserves_partial_header_and_payload_across_receive_timeouts(self) -> None:
+        def reply(request: dict[str, object]) -> None:
+            payload = json.dumps({"id": request["id"], "result": {"frameId": "ready"}}).encode()
+            self.assertLess(len(payload), 126)
+            frame = b"\x81" + bytes([len(payload)]) + payload
+            for chunk in (frame[:1], frame[1:2], frame[2:5], frame[5:]):
+                self.peer_socket.sendall(chunk)
+                time.sleep(0.04)
+
+        worker, errors = self.respond(reply)
+        self.session.navigate("http://fixture", timeout=0.5)
+        worker.join(1)
+        self.assertFalse(worker.is_alive())
+        self.assertEqual(errors, [])
+
+    def test_navigation_deadline_remains_bounded_without_a_reply(self) -> None:
+        started = time.monotonic()
+        with self.assertRaisesRegex(chrome.BrowserFailure, "Page.navigate timed out"):
+            self.session.navigate("http://fixture", timeout=0.03)
+        self.assertLess(time.monotonic() - started, 1)
 
 
 if __name__ == "__main__":

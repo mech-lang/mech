@@ -228,14 +228,14 @@ def validate_ordinary_source_proof(source: str) -> list[str]:
     ):
         if required not in proof:
             failures.append(f"ordinary-source artifact proof is missing {required}")
+    compact = re.sub(r"\s+", "", proof)
     for field in (
-        "requirements", "compute_regions", "contracts", "inputs",
+        "requirements", "compute_regions", "source_nominal_declarations", "contracts", "inputs",
         "slots", "bindings", "outputs", "constraints", "nodes",
     ):
         assertion = f"assert_eq!(artifact.{field}(), decoded.{field}())"
-        if assertion not in proof:
+        if re.sub(r"\s+", "", assertion) not in compact:
             failures.append(f"ordinary-source artifact proof is missing {assertion}")
-    compact = re.sub(r"\s+", "", proof)
     for required in (
         "assert_eq!(artifact.schemas().len(), decoded.schemas().len())",
         "for (left, right) in artifact.schemas().entries().zip(decoded.schemas().entries())",

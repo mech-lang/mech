@@ -1,0 +1,88 @@
+fn unsigned(text: &str) -> Result<u64, String> {
+    if text.is_empty() || !text.bytes().all(|c| c.is_ascii_digit()) {
+        return Err("invalid U64 argument".into());
+    }
+    text.parse().map_err(|_| "invalid U64 argument".into())
+}
+fn signed(text: &str) -> Result<i64, String> {
+    let digits = text.strip_prefix('-').unwrap_or(text);
+    if digits.is_empty() || !digits.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err("invalid I64 argument".into());
+    }
+    text.parse().map_err(|_| "invalid I64 argument".into())
+}
+fn floating_bits(text: &str) -> Result<mech_core::snapshot::F64Bits, String> {
+    let digits = text.strip_prefix("f64:").ok_or("invalid F64 bit argument")?;
+    if digits.len() != 16 || !digits.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Err("invalid F64 bit argument".into());
+    }
+    u64::from_str_radix(digits, 16)
+        .map(mech_core::snapshot::F64Bits::from_bits)
+        .map_err(|_| "invalid F64 bit argument".into())
+}
+fn options(
+    arguments: Vec<OsString>,
+) -> Result<(NativeExecutionLimits, Option<u64>, Vec<OsString>), String> {
+    let mut limits = NativeExecutionLimits::default();
+    let mut budget = None;
+    let mut payload = Vec::new();
+    let mut controls = true;
+    for argument in arguments {
+        if controls {
+            let text = argument.to_str().ok_or("argument is not Unicode")?;
+            if text == "--" {
+                controls = false;
+                continue;
+            }
+            let mut selected = None;
+            for (prefix, slot) in [
+                ("--work=", 0),
+                ("--memory=", 1),
+                ("--stack=", 2),
+                ("--budget=", 3),
+            ] {
+                if let Some(value) = text.strip_prefix(prefix) {
+                    selected = Some((slot, unsigned(value).map_err(|_| "invalid limit argument")?));
+                    break;
+                }
+            }
+            if let Some((slot, value)) = selected {
+                match slot {
+                    0 => limits.max_work = value,
+                    1 => limits.max_transport_bytes = value,
+                    2 => limits.max_native_stack_bytes = value,
+                    _ => budget = Some(value),
+                }
+                continue;
+            }
+            if text.starts_with("--") {
+                return Err("unknown option".into());
+            }
+            controls = false;
+        }
+        payload.push(argument);
+    }
+    Ok((limits, budget, payload))
+}
+fn scalar_argument(argument: &std::ffi::OsStr, kind: NativeScalarKind) -> Result<NativeScalarValue, String> {
+    let text = argument.to_str().ok_or("argument is not Unicode")?;
+    Ok(match kind {
+        NativeScalarKind::U64 => NativeScalarValue::U64(unsigned(text)?),
+        NativeScalarKind::I64 => NativeScalarValue::I64(signed(text)?),
+        NativeScalarKind::F64 => NativeScalarValue::F64(floating_bits(text)?),
+        NativeScalarKind::Bool => NativeScalarValue::Bool(match text {
+            "true" => true,
+            "false" => false,
+            _ => return Err("invalid Bool argument".into()),
+        }),
+    })
+}
+fn append_scalar(result: &mut String, value: NativeScalarValue) {
+    use std::fmt::Write;
+    match value {
+        NativeScalarValue::Bool(v) => writeln!(result, "{v}"),
+        NativeScalarValue::U64(v) => writeln!(result, "{v}"),
+        NativeScalarValue::I64(v) => writeln!(result, "{v}"),
+        NativeScalarValue::F64(v) => writeln!(result, "f64:{:016x}", v.bits()),
+    }.expect("String formatting cannot fail");
+}

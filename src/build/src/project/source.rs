@@ -8,6 +8,10 @@ use mech_core::MResult;
 
 use crate::error::{NativeBuildErrorKind, native_build_error};
 
+#[path = "source_cargo_paths.rs"]
+mod cargo_paths;
+pub use cargo_paths::CargoProjectPaths;
+
 pub const GENERATED_RUST_TOOLCHAIN_TOML: &str = concat!(
     "[toolchain]\n",
     "channel = \"nightly-2026-03-03\"\n",
@@ -85,11 +89,11 @@ impl GeneratedNativeProject {
     }
 
     pub fn manifest_path(&self) -> PathBuf {
-        self.root.join("Cargo.toml")
+        CargoProjectPaths::new(&self.root).manifest_path()
     }
 
     pub fn lockfile_path(&self) -> PathBuf {
-        self.root.join("Cargo.lock")
+        CargoProjectPaths::new(&self.root).lockfile_path()
     }
 
     pub fn build_plan_path(&self) -> PathBuf {
@@ -161,10 +165,7 @@ impl GeneratedNativeProject {
     /// Atomically replace the generated lockfile with the trusted resolution
     /// seed whose digest is part of the native build plan.
     pub(crate) fn materialize_lockfile_seed(&self, seed: &[u8]) -> MResult<()> {
-        let boundary = materialization_boundary(&self.root)?;
-        ensure_directory_beneath(&boundary, &self.root, "generated project root")?;
-        require_regular_file_if_present(&self.lockfile_path(), "generated Cargo lockfile")?;
-        write_generated_file(&self.lockfile_path(), seed)
+        CargoProjectPaths::new(&self.root).materialize_lockfile_seed(seed)
     }
 }
 

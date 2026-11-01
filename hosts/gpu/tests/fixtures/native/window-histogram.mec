@@ -1,0 +1,7 @@
++> map
++> sequence
+histogram(s<string>, width<u64>) => (out<{string:u64}>) :=
+  n := sequence/length(s)
+  words := [s[(i + 1u64)..=(i + width)] | i <- 0u64..=n, width > 0u64, width <= n - i]
+  out := map/histogram(words).
+histogram(input<string>, width<u64>)

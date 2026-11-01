@@ -9,9 +9,9 @@ use mech_core::{
     BytecodeProgram, CellSlotId, ComputePlacement, ConstantId, ConstantStore, ConstantStoreBuilder,
     DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin,
     ExecutionHostFunctionRequest, ExecutionResourceRequest, InputId, IntegrityConstraintId,
-    MechError, NodeId, OperationContractId, OperationContractTable, OutputId, ParsedProgram,
-    ResourceDelivery, ResourceIntent, SchemaDraft, SchemaId, SchemaTable, SchemaTableBuilder,
-    SemanticModelError, SnapshotValueError, Value, ValueDraft, write_bytecode_with_artifact,
+    MechError, NodeId, OperationContractId, OperationContractTable, OutputId, ResourceDelivery,
+    ResourceIntent, SchemaDraft, SchemaId, SchemaTable, SchemaTableBuilder, SemanticModelError,
+    SnapshotValueError, Value, ValueDraft, write_bytecode_with_artifact,
 };
 use serde::{
     Deserialize, Serialize,
@@ -23,7 +23,7 @@ use super::{
     ComputeRegionDeclaration, InitializerReference, InputDeclaration,
     IntegrityConstraintDeclaration, InteractiveSymbolBinding, NodeDeclaration, OperationReference,
     OutputDeclaration, ProducerReference, ProgramArtifact, ProgramArtifactDraft, SlotDeclaration,
-    SlotRole,
+    SlotRole, SourceNominalDeclaration,
 };
 
 const DEFAULT_MAX_ARTIFACT_SECTION_BYTES: usize = 16_777_216;
@@ -88,6 +88,9 @@ pub enum ArtifactBytecodeError {
     Snapshot(SnapshotValueError),
     Artifact(ArtifactBuildError),
     MissingArtifactSections,
+    ParallelLegacyExecutionAuthority {
+        sections: Vec<&'static str>,
+    },
     SectionByteLimit {
         section: &'static str,
         limit: usize,
@@ -194,6 +197,30 @@ enum WireNodeBody {
         arguments: Box<[(Option<String>, u16)]>,
         stages: Box<[WireFsmStage]>,
     },
+    Iteration(WireIterationDeclaration),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WireIterationDeclaration {
+    count: WireIterationCount,
+    seed: u16,
+    captures: Box<[(u16, u32, bool)]>,
+    carrier: u32,
+    body: WireControlBlock,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+enum WireIterationCount {
+    Literal(u64),
+    Elements(WireElementCounts),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WireElementCounts {
+    elements: u16,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -277,8 +304,18 @@ enum WireComprehensionStep {
 struct WireComprehensionDeclaration {
     id: u32,
     kind: u8,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    rows: Option<WireMatrixBlockRows>,
     steps: Box<[WireComprehensionStep]>,
     yield_value: WireComprehensionValue,
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+enum WireMatrixBlockRows {
+    InferOrZero,
+    Fixed(u64),
+    InputMatrixElements { input: u16 },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -329,6 +366,7 @@ enum WireControlParameterSource {
     Scrutinee,
     PatternBinding(u32),
     Capture(u16),
+    IterationCarrier,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -359,6 +397,7 @@ enum WireControlOperationBody {
 
     Suspend,
     Publish,
+    Iteration(WireIterationDeclaration),
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -374,6 +413,19 @@ struct WireGraph {
     revision: u32,
     requirements: Box<[WireRequirement]>,
     nodes: Box<[WireNode]>,
+    #[serde(
+        default,
+        skip_serializing_if = "<[WireSourceNominalDeclaration]>::is_empty"
+    )]
+    source_nominal_declarations: Box<[WireSourceNominalDeclaration]>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WireSourceNominalDeclaration {
+    document_id: u64,
+    relative_path: Box<[String]>,
+    schema: u32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -553,6 +605,16 @@ pub fn encode_program_artifact_sections(
                 })
                 .collect::<Vec<_>>()
                 .into_boxed_slice(),
+            source_nominal_declarations: artifact
+                .source_nominal_declarations()
+                .iter()
+                .map(|declaration| WireSourceNominalDeclaration {
+                    document_id: declaration.document_id,
+                    relative_path: declaration.relative_path.clone(),
+                    schema: declaration.schema.get(),
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
         })?,
         bindings: encode(
             &artifact
@@ -625,7 +687,18 @@ pub fn encode_program_artifact_sections(
 pub fn decode_program_artifact_bytecode_v1(
     bytes: &[u8],
 ) -> Result<ProgramArtifact, ArtifactBytecodeError> {
-    let parsed = ParsedProgram::from_bytes(bytes)?;
+    let parsed =
+        mech_core::CanonicalArtifactBytecode::from_bytes(bytes).map_err(|error| match error {
+            mech_core::CanonicalArtifactBytecodeError::CoreBytecode(error) => {
+                ArtifactBytecodeError::CoreBytecode(error)
+            }
+            mech_core::CanonicalArtifactBytecodeError::MissingArtifactSections => {
+                ArtifactBytecodeError::MissingArtifactSections
+            }
+            mech_core::CanonicalArtifactBytecodeError::ParallelLegacyExecutionAuthority {
+                sections,
+            } => ArtifactBytecodeError::ParallelLegacyExecutionAuthority { sections },
+        })?;
     decode_program_artifact_sections_with_requirements(
         &parsed.artifact,
         Some(parsed.requirements),
@@ -724,6 +797,18 @@ fn decode_program_artifact_sections_owned(
             actual: graph.requirements.len(),
         });
     }
+    let source_nominal_declarations = graph
+        .source_nominal_declarations
+        .into_vec()
+        .into_iter()
+        .map(|declaration| SourceNominalDeclaration {
+            document_id: declaration.document_id,
+            relative_path: declaration.relative_path,
+            schema: SchemaId::new(declaration.schema),
+        })
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    super::model::validate_source_nominal_declarations(&schemas, &source_nominal_declarations)?;
     let embedded_requirements = graph
         .requirements
         .into_vec()
@@ -930,7 +1015,10 @@ fn decode_program_artifact_sections_owned(
         });
     }
     draft.compute_regions = compute_regions.into_boxed_slice();
-    draft.finalize().map_err(ArtifactBytecodeError::from)
+    draft
+        .finalize()?
+        .with_source_nominal_declarations(source_nominal_declarations)
+        .map_err(ArtifactBytecodeError::from)
 }
 
 fn validate_operation_table(
@@ -1646,6 +1734,9 @@ fn wire_control_block(
                         super::ControlParameterSource::Capture(index) => {
                             WireControlParameterSource::Capture(index)
                         }
+                        super::ControlParameterSource::IterationCarrier => {
+                            WireControlParameterSource::IterationCarrier
+                        }
                     },
                     parameter.schema.get(),
                 )
@@ -1692,6 +1783,37 @@ fn wire_control_operation_body(
 
         super::ControlOperationBody::Suspend => WireControlOperationBody::Suspend,
         super::ControlOperationBody::Publish => WireControlOperationBody::Publish,
+        super::ControlOperationBody::Iteration(control) => {
+            WireControlOperationBody::Iteration(wire_iteration(control, operations))
+        }
+    }
+}
+
+fn wire_iteration(
+    control: &super::IterationDeclaration,
+    operations: &BTreeMap<OperationReference, u32>,
+) -> WireIterationDeclaration {
+    WireIterationDeclaration {
+        count: match control.count {
+            super::IterationCount::Literal(count) => WireIterationCount::Literal(count),
+            super::IterationCount::Elements { input } => {
+                WireIterationCount::Elements(WireElementCounts { elements: input })
+            }
+        },
+        seed: control.seed,
+        captures: control
+            .captures
+            .iter()
+            .map(|capture| {
+                (
+                    capture.input,
+                    capture.schema.get(),
+                    capture.freeze_on_suspend,
+                )
+            })
+            .collect(),
+        carrier: control.carrier.get(),
+        body: wire_control_block(&control.body, operations),
     }
 }
 
@@ -1705,6 +1827,17 @@ fn wire_comprehension(
             super::ComprehensionKind::Matrix => 0,
             super::ComprehensionKind::Set => 1,
             super::ComprehensionKind::MatrixPreserveShape => 2,
+            super::ComprehensionKind::MatrixHorizontalBlocks { .. } => 3,
+        },
+        rows: match control.kind {
+            super::ComprehensionKind::MatrixHorizontalBlocks { rows } => Some(match rows {
+                super::MatrixBlockRows::InferOrZero => WireMatrixBlockRows::InferOrZero,
+                super::MatrixBlockRows::Fixed(rows) => WireMatrixBlockRows::Fixed(rows),
+                super::MatrixBlockRows::InputMatrixElements { input } => {
+                    WireMatrixBlockRows::InputMatrixElements { input }
+                }
+            }),
+            _ => None,
         },
         steps: control
             .steps
@@ -1935,6 +2068,9 @@ fn wire_node_body(
         super::ExecutableNodeBody::Activation(control) => {
             WireNodeBody::Activation(wire_match(control, operations))
         }
+        super::ExecutableNodeBody::Iteration(control) => {
+            WireNodeBody::Iteration(wire_iteration(control, operations))
+        }
         super::ExecutableNodeBody::Fsm(control) => WireNodeBody::Fsm {
             machine: control.machine.clone(),
             arguments: control
@@ -2058,6 +2194,9 @@ fn control_block_from_wire(
                     WireControlParameterSource::Capture(index) => {
                         super::ControlParameterSource::Capture(index)
                     }
+                    WireControlParameterSource::IterationCarrier => {
+                        super::ControlParameterSource::IterationCarrier
+                    }
                 },
                 schema: SchemaId::new(schema),
             })
@@ -2104,6 +2243,35 @@ fn control_operation_body_from_wire(
 
         WireControlOperationBody::Suspend => super::ControlOperationBody::Suspend,
         WireControlOperationBody::Publish => super::ControlOperationBody::Publish,
+        WireControlOperationBody::Iteration(control) => {
+            super::ControlOperationBody::Iteration(iteration_from_wire(control, operation)?)
+        }
+    })
+}
+
+fn iteration_from_wire(
+    control: WireIterationDeclaration,
+    operation: &impl Fn(u32) -> Result<OperationReference, ArtifactBytecodeError>,
+) -> Result<super::IterationDeclaration, ArtifactBytecodeError> {
+    Ok(super::IterationDeclaration {
+        count: match control.count {
+            WireIterationCount::Literal(count) => super::IterationCount::Literal(count),
+            WireIterationCount::Elements(count) => super::IterationCount::Elements {
+                input: count.elements,
+            },
+        },
+        seed: control.seed,
+        captures: control
+            .captures
+            .into_iter()
+            .map(|(input, schema, freeze_on_suspend)| super::ControlCapture {
+                input,
+                schema: SchemaId::new(schema),
+                freeze_on_suspend,
+            })
+            .collect(),
+        carrier: SchemaId::new(control.carrier),
+        body: control_block_from_wire(control.body, operation)?,
     })
 }
 
@@ -2113,11 +2281,20 @@ fn comprehension_from_wire(
 ) -> Result<super::ComprehensionDeclaration, ArtifactBytecodeError> {
     Ok(super::ComprehensionDeclaration {
         id: super::ControlBlockId(control.id),
-        kind: match control.kind {
-            0 => super::ComprehensionKind::Matrix,
-            1 => super::ComprehensionKind::Set,
-            2 => super::ComprehensionKind::MatrixPreserveShape,
-            tag => {
+        kind: match (control.kind, control.rows) {
+            (0, None) => super::ComprehensionKind::Matrix,
+            (1, None) => super::ComprehensionKind::Set,
+            (2, None) => super::ComprehensionKind::MatrixPreserveShape,
+            (3, Some(rows)) => super::ComprehensionKind::MatrixHorizontalBlocks {
+                rows: match rows {
+                    WireMatrixBlockRows::InferOrZero => super::MatrixBlockRows::InferOrZero,
+                    WireMatrixBlockRows::Fixed(rows) => super::MatrixBlockRows::Fixed(rows),
+                    WireMatrixBlockRows::InputMatrixElements { input } => {
+                        super::MatrixBlockRows::InputMatrixElements { input }
+                    }
+                },
+            },
+            (tag, _) => {
                 return Err(ArtifactBytecodeError::InvalidWireTag {
                     section: "comprehension kind",
                     tag,
@@ -2181,6 +2358,9 @@ fn node_body_from_wire(
         }
         WireNodeBody::Activation(control) => {
             super::ExecutableNodeBody::Activation(match_from_wire(control, operation)?)
+        }
+        WireNodeBody::Iteration(control) => {
+            super::ExecutableNodeBody::Iteration(iteration_from_wire(control, operation)?)
         }
         WireNodeBody::Fsm {
             machine,
@@ -2268,6 +2448,7 @@ fn wire_operation_ids(body: &WireNodeBody) -> Vec<u32> {
         WireNodeBody::Match(control) => wire_match_operation_ids(control),
         WireNodeBody::Activation(control) => wire_match_operation_ids(control),
         WireNodeBody::Fsm { .. } => Vec::new(),
+        WireNodeBody::Iteration(control) => wire_iteration_operation_ids(control),
     }
 }
 
@@ -2278,10 +2459,20 @@ fn wire_control_body_operation_ids(body: &WireControlOperationBody) -> Vec<u32> 
         WireControlOperationBody::Comprehension(control) => {
             wire_comprehension_operation_ids(control)
         }
+        WireControlOperationBody::Iteration(control) => wire_iteration_operation_ids(control),
         WireControlOperationBody::Recur(_)
         | WireControlOperationBody::Suspend
         | WireControlOperationBody::Publish => Vec::new(),
     }
+}
+
+fn wire_iteration_operation_ids(control: &WireIterationDeclaration) -> Vec<u32> {
+    control
+        .body
+        .operations
+        .iter()
+        .flat_map(|operation| wire_control_body_operation_ids(&operation.body))
+        .collect()
 }
 
 fn wire_comprehension_operation_ids(control: &WireComprehensionDeclaration) -> Vec<u32> {
@@ -2325,6 +2516,8 @@ fn preflight_control_graph(
         Other,
         Nodes,
         Requirements,
+        SourceNominalDeclarations,
+        SourceNominalPathSegments,
         Arms,
         Blocks,
         Operations,
@@ -2337,6 +2530,8 @@ fn preflight_control_graph(
     struct Counts {
         nodes: usize,
         requirements: usize,
+        source_nominal_declarations: usize,
+        source_nominal_path_segments: usize,
         arms: usize,
         blocks: usize,
         operations: usize,
@@ -2357,6 +2552,14 @@ fn preflight_control_graph(
                 Field::Requirements => {
                     (&mut self.counts.requirements, self.limits.max_requirements)
                 }
+                Field::SourceNominalDeclarations => (
+                    &mut self.counts.source_nominal_declarations,
+                    self.limits.max_schemas,
+                ),
+                Field::SourceNominalPathSegments => (
+                    &mut self.counts.source_nominal_path_segments,
+                    self.limits.max_control_operands,
+                ),
                 Field::Arms => (&mut self.counts.arms, self.limits.max_control_arms),
                 Field::Blocks => (&mut self.counts.blocks, self.limits.max_control_blocks),
                 Field::Operations => (
@@ -2458,6 +2661,8 @@ fn preflight_control_graph(
                 let field = match key.as_str() {
                     "nodes" => Field::Nodes,
                     "requirements" => Field::Requirements,
+                    "source_nominal_declarations" => Field::SourceNominalDeclarations,
+                    "relative_path" => Field::SourceNominalPathSegments,
                     "arms" => Field::Arms,
                     "operations" | "steps" | "stages" => Field::Operations,
                     "inputs" | "parameters" | "captures" | "arguments" => Field::Operands,
@@ -2476,7 +2681,10 @@ fn preflight_control_graph(
                     field,
                     depth: self.depth + 1,
                     control_depth: self.control_depth
-                        + usize::from(matches!(key.as_str(), "Match" | "Comprehension")),
+                        + usize::from(matches!(
+                            key.as_str(),
+                            "Match" | "Comprehension" | "Iteration"
+                        )),
                 })?;
             }
             Ok(())
@@ -2485,6 +2693,8 @@ fn preflight_control_graph(
     let mut counts = Counts {
         nodes: 0,
         requirements: 0,
+        source_nominal_declarations: 0,
+        source_nominal_path_segments: 0,
         arms: 0,
         blocks: 0,
         operations: 0,
@@ -2501,6 +2711,383 @@ fn preflight_control_graph(
     .deserialize(&mut decoder)?;
     decoder.end()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod execution_authority_tests {
+    use super::*;
+    use mech_core::{BytecodeInstruction, EncodedConstant, RuntimeType, write_bytecode};
+
+    fn empty_envelope() -> BytecodeProgram {
+        BytecodeProgram {
+            register_count: 0,
+            constants: Vec::new(),
+            symbols: BTreeMap::new(),
+            mutable_symbols: BTreeSet::new(),
+            instructions: Vec::new(),
+            dictionary: BTreeMap::new(),
+            requirements: Vec::new(),
+        }
+    }
+
+    fn empty_artifact() -> ProgramArtifact {
+        let schemas = SchemaTableBuilder::new().finish().unwrap().into_parts().0;
+        let constants = ConstantStoreBuilder::new(&schemas)
+            .finish()
+            .unwrap()
+            .into_parts()
+            .0;
+        ProgramArtifactDraft {
+            schemas,
+            constants,
+            contracts: OperationContractTable::empty(),
+            requirements: ApplicationRequirementTable::empty(),
+            inputs: Box::new([]),
+            slots: Box::new([]),
+            nodes: Box::new([]),
+            bindings: Box::new([]),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        }
+        .finalize()
+        .unwrap()
+    }
+
+    fn legacy_envelope() -> BytecodeProgram {
+        BytecodeProgram {
+            register_count: 1,
+            constants: vec![EncodedConstant {
+                runtime_type: RuntimeType::Empty,
+                alignment: 1,
+                bytes: Vec::new(),
+            }],
+            instructions: vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: 0,
+                    constant: 0,
+                },
+                BytecodeInstruction::Return { src: 0 },
+            ],
+            ..empty_envelope()
+        }
+    }
+
+    #[test]
+    fn full_decoder_rejects_legacy_only_bytecode() {
+        let bytes = write_bytecode(&legacy_envelope()).unwrap();
+        assert!(matches!(
+            decode_program_artifact_bytecode_v1(&bytes),
+            Err(ArtifactBytecodeError::MissingArtifactSections)
+        ));
+    }
+
+    #[test]
+    fn full_decoder_rejects_parallel_legacy_execution_authority() {
+        let sections = encode_program_artifact_sections(&empty_artifact()).unwrap();
+        let bytes = write_bytecode_with_artifact(&legacy_envelope(), &sections).unwrap();
+        match decode_program_artifact_bytecode_v1(&bytes) {
+            Err(ArtifactBytecodeError::ParallelLegacyExecutionAuthority { sections }) => {
+                assert!(sections.contains(&"registers"));
+                assert!(sections.contains(&"instructions"));
+                assert!(sections.contains(&"constants"));
+            }
+            result => panic!("hybrid bytecode must fail admission: {result:?}"),
+        }
+    }
+
+    #[test]
+    fn full_decoder_rejects_outer_requirement_authority_absent_from_artifact() {
+        let sections = encode_program_artifact_sections(&empty_artifact()).unwrap();
+        let bytes = write_bytecode_with_artifact(
+            &BytecodeProgram {
+                requirements: vec![ApplicationRequirement::HostFunction(
+                    ExecutionHostFunctionRequest {
+                        name: "unreferenced/host".to_owned(),
+                    },
+                )],
+                ..empty_envelope()
+            },
+            &sections,
+        )
+        .unwrap();
+        assert!(matches!(
+            decode_program_artifact_bytecode_v1(&bytes),
+            Err(ArtifactBytecodeError::RequirementTableMismatch)
+        ));
+    }
+
+    #[test]
+    fn full_decoder_preserves_canonical_bytes_and_revision() {
+        let artifact = empty_artifact();
+        let bytes = encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        assert_eq!(decoded.revision(), artifact.revision());
+        assert_eq!(
+            encode_program_artifact_bytecode_v1(&decoded).unwrap(),
+            bytes
+        );
+    }
+
+    #[test]
+    fn full_decoder_keeps_semantic_section_validation_after_strict_envelope() {
+        let mut sections = encode_program_artifact_sections(&empty_artifact()).unwrap();
+        sections.schemas = b"null".to_vec();
+        let bytes = write_bytecode_with_artifact(&empty_envelope(), &sections).unwrap();
+        assert!(mech_core::CanonicalArtifactBytecode::from_bytes(&bytes).is_ok());
+        assert!(matches!(
+            decode_program_artifact_bytecode_v1(&bytes),
+            Err(ArtifactBytecodeError::Json(_))
+        ));
+    }
+}
+
+#[cfg(test)]
+mod source_nominal_declaration_tests {
+    use super::*;
+    use mech_core::{CanonicalNominalPath, EnumVariantSchema, NominalKey, NominalKind, SchemaBody};
+
+    fn fixture() -> (ProgramArtifact, SchemaId, SchemaId, SchemaId) {
+        let mut builder = SchemaTableBuilder::new();
+        let mut add = |body| {
+            builder
+                .insert(
+                    SchemaDraft {
+                        dimension_parameters: Box::new([]),
+                        body,
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap()
+        };
+        let enum_body = |name: &str| SchemaBody::Enum {
+            key: NominalKey::from_path(
+                NominalKind::Enum,
+                &CanonicalNominalPath::new(vec![name.to_owned()]).unwrap(),
+            ),
+            variants: vec![EnumVariantSchema {
+                name: "Ready".to_owned(),
+                payload: None,
+            }]
+            .into_boxed_slice(),
+        };
+        let first = add(enum_body("First"));
+        let second = add(enum_body("Second"));
+        let boolean = add(SchemaBody::Bool);
+        let build = builder.finish().unwrap();
+        let first = build.resolve(first).unwrap();
+        let second = build.resolve(second).unwrap();
+        let boolean = build.resolve(boolean).unwrap();
+        let schemas = build.into_parts().0;
+        let constants = ConstantStoreBuilder::new(&schemas)
+            .finish()
+            .unwrap()
+            .into_parts()
+            .0;
+        let artifact = ProgramArtifactDraft {
+            schemas,
+            constants,
+            contracts: OperationContractTable::empty(),
+            requirements: ApplicationRequirementTable::empty(),
+            inputs: Box::new([]),
+            slots: Box::new([]),
+            nodes: Box::new([]),
+            bindings: Box::new([]),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        }
+        .finalize()
+        .unwrap();
+        (artifact, first, second, boolean)
+    }
+
+    fn declaration(document_id: u64, path: &[&str], schema: SchemaId) -> SourceNominalDeclaration {
+        SourceNominalDeclaration {
+            document_id,
+            relative_path: path.iter().map(|segment| (*segment).to_owned()).collect(),
+            schema,
+        }
+    }
+
+    #[test]
+    fn empty_source_declaration_table_preserves_existing_wire_and_revision() {
+        let (artifact, _, _, _) = fixture();
+        let original_revision = artifact.revision();
+        let original = encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let sections = encode_program_artifact_sections(&artifact).unwrap();
+        assert_eq!(
+            sections.nodes,
+            br#"{"revision":13,"requirements":[],"nodes":[]}"#
+        );
+        let artifact = artifact
+            .with_source_nominal_declarations(Box::new([]))
+            .unwrap();
+        assert_eq!(artifact.revision(), original_revision);
+        assert_eq!(
+            encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+            original
+        );
+        assert!(
+            decode_program_artifact_bytecode_v1(&original)
+                .unwrap()
+                .source_nominal_declarations()
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn source_declarations_round_trip_without_executable_references_and_commit_identity() {
+        let (base, first, second, _) = fixture();
+        let declarations = vec![
+            declaration(9, &["nested", "Mode"], second),
+            declaration(4, &["Mode"], first),
+        ];
+        let artifact = base
+            .clone()
+            .with_source_nominal_declarations(declarations.into_boxed_slice())
+            .unwrap();
+        assert!(artifact.nodes().is_empty());
+        assert_ne!(artifact.revision(), base.revision());
+        assert_eq!(artifact.source_nominal_declarations()[0].document_id, 4);
+        let encoded = encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = decode_program_artifact_bytecode_v1(&encoded).unwrap();
+        assert_eq!(
+            decoded.source_nominal_declarations(),
+            artifact.source_nominal_declarations()
+        );
+        assert_eq!(decoded.revision(), artifact.revision());
+        assert_eq!(
+            encode_program_artifact_bytecode_v1(&decoded).unwrap(),
+            encoded
+        );
+        for changed in [
+            declaration(5, &["Mode"], first),
+            declaration(4, &["Other"], first),
+            declaration(4, &["Mode"], second),
+        ] {
+            let expected = base
+                .clone()
+                .with_source_nominal_declarations(
+                    vec![declaration(4, &["Mode"], first)].into_boxed_slice(),
+                )
+                .unwrap();
+            let changed = base
+                .clone()
+                .with_source_nominal_declarations(vec![changed].into_boxed_slice())
+                .unwrap();
+            assert_ne!(expected.revision(), changed.revision());
+        }
+        let cleared = artifact
+            .clone()
+            .with_source_nominal_declarations(Box::new([]))
+            .unwrap();
+        assert_eq!(cleared.revision(), base.revision());
+        #[cfg(any(feature = "semantic-compiler", feature = "source"))]
+        {
+            let rebuilt = artifact.clone().with_compute_regions(Box::new([])).unwrap();
+            assert_eq!(
+                rebuilt.source_nominal_declarations(),
+                artifact.source_nominal_declarations()
+            );
+            assert_eq!(rebuilt.revision(), artifact.revision());
+        }
+    }
+
+    #[test]
+    fn source_declaration_builder_rejects_invalid_paths_schema_refs_and_duplicate_keys() {
+        let (artifact, first, _, boolean) = fixture();
+        for path in [
+            &[][..],
+            &[""][..],
+            &["."][..],
+            &[".."][..],
+            &["bad\0path"][..],
+        ] {
+            assert!(
+                artifact
+                    .clone()
+                    .with_source_nominal_declarations(
+                        vec![declaration(4, path, first),].into_boxed_slice()
+                    )
+                    .is_err()
+            );
+        }
+        // Source symbol spelling is kept as one path segment, using the same
+        // canonical nominal path rules as source schema derivation.
+        assert!(
+            artifact
+                .clone()
+                .with_source_nominal_declarations(
+                    vec![declaration(4, &["slash/name\\symbol"], first),].into_boxed_slice()
+                )
+                .is_ok()
+        );
+        assert!(matches!(
+            artifact.clone().with_source_nominal_declarations(
+                vec![declaration(4, &["Mode"], SchemaId::new(u32::MAX)),].into_boxed_slice()
+            ),
+            Err(ArtifactBuildError::UnknownSchema { .. })
+        ));
+        assert!(matches!(
+            artifact.clone().with_source_nominal_declarations(
+                vec![declaration(4, &["Mode"], boolean),].into_boxed_slice()
+            ),
+            Err(ArtifactBuildError::InvalidSourceNominalDeclaration { .. })
+        ));
+        assert!(matches!(
+            artifact.with_source_nominal_declarations(
+                vec![
+                    declaration(4, &["Mode"], first),
+                    declaration(4, &["Mode"], first),
+                ]
+                .into_boxed_slice()
+            ),
+            Err(ArtifactBuildError::NonCanonicalSourceNominalDeclarationTable)
+        ));
+    }
+
+    #[test]
+    fn wire_source_declarations_reject_noncanonical_and_invalid_evidence() {
+        let (artifact, first, _, boolean) = fixture();
+        let original = encode_program_artifact_sections(&artifact).unwrap();
+        let mut graph: serde_json::Value = serde_json::from_slice(&original.nodes).unwrap();
+        for entries in [
+            serde_json::json!([
+                {"document_id":9,"relative_path":["Mode"],"schema":first.get()},
+                {"document_id":4,"relative_path":["Mode"],"schema":first.get()},
+            ]),
+            serde_json::json!([
+                {"document_id":4,"relative_path":["Mode"],"schema":first.get()},
+                {"document_id":4,"relative_path":["Mode"],"schema":first.get()},
+            ]),
+            serde_json::json!([{ "document_id":4,"relative_path":[],"schema":first.get() }]),
+            serde_json::json!([{ "document_id":4,"relative_path":["Mode"],"schema":u32::MAX }]),
+            serde_json::json!([{ "document_id":4,"relative_path":["Mode"],"schema":boolean.get() }]),
+        ] {
+            graph["source_nominal_declarations"] = entries;
+            let mut sections = original.clone();
+            sections.nodes = serde_json::to_vec(&graph).unwrap();
+            assert!(decode_program_artifact_sections(&sections).is_err());
+        }
+    }
+
+    #[test]
+    fn source_declaration_counts_and_paths_are_bounded_before_typed_allocation() {
+        let bytes = br#"{"source_nominal_declarations":[{"document_id":4,"relative_path":["nested","Mode"],"schema":0},{"document_id":9,"relative_path":["Mode"],"schema":1}]}"#;
+        let table_limit = ArtifactDecodeLimits {
+            max_schemas: 1,
+            ..ArtifactDecodeLimits::default()
+        };
+        let path_limit = ArtifactDecodeLimits {
+            max_control_operands: 2,
+            ..ArtifactDecodeLimits::default()
+        };
+        assert!(preflight_control_graph(bytes, &table_limit).is_err());
+        assert!(preflight_control_graph(bytes, &path_limit).is_err());
+        assert!(preflight_control_graph(bytes, &ArtifactDecodeLimits::default()).is_ok());
+    }
 }
 
 #[cfg(test)]
@@ -2543,5 +3130,177 @@ mod control_preflight_tests {
             )
             .is_err()
         );
+    }
+}
+
+#[cfg(test)]
+mod matrix_block_wire_tests {
+    use super::*;
+
+    fn declaration(kind: u8, rows: Option<WireMatrixBlockRows>) -> WireComprehensionDeclaration {
+        WireComprehensionDeclaration {
+            id: 0,
+            kind,
+            rows,
+            steps: Box::new([]),
+            yield_value: WireComprehensionValue::Input(0),
+        }
+    }
+
+    #[test]
+    fn legacy_comprehension_wire_omits_the_additive_rows_field() {
+        for kind in 0..=2 {
+            let encoded = serde_json::to_value(declaration(kind, None)).unwrap();
+            assert!(encoded.get("rows").is_none());
+            let decoded: WireComprehensionDeclaration = serde_json::from_value(encoded).unwrap();
+            let control = comprehension_from_wire(decoded, &|_| unreachable!()).unwrap();
+            assert_eq!(
+                match control.kind {
+                    super::super::ComprehensionKind::Matrix => 0,
+                    super::super::ComprehensionKind::Set => 1,
+                    super::super::ComprehensionKind::MatrixPreserveShape => 2,
+                    super::super::ComprehensionKind::MatrixHorizontalBlocks { .. } =>
+                        unreachable!(),
+                },
+                kind
+            );
+        }
+    }
+
+    #[test]
+    fn block_rows_wire_round_trips_and_rejects_ignored_policy_combinations() {
+        use super::super::{ComprehensionKind, MatrixBlockRows};
+        for (wire, rows) in [
+            (
+                WireMatrixBlockRows::InferOrZero,
+                MatrixBlockRows::InferOrZero,
+            ),
+            (
+                WireMatrixBlockRows::Fixed(u64::MAX),
+                MatrixBlockRows::Fixed(u64::MAX),
+            ),
+            (
+                WireMatrixBlockRows::InputMatrixElements { input: u16::MAX },
+                MatrixBlockRows::InputMatrixElements { input: u16::MAX },
+            ),
+        ] {
+            let encoded = serde_json::to_value(declaration(3, Some(wire))).unwrap();
+            let decoded = serde_json::from_value(encoded).unwrap();
+            assert_eq!(
+                comprehension_from_wire(decoded, &|_| unreachable!())
+                    .unwrap()
+                    .kind,
+                ComprehensionKind::MatrixHorizontalBlocks { rows }
+            );
+            for kind in 0..=2 {
+                assert!(
+                    comprehension_from_wire(declaration(kind, Some(wire)), &|_| unreachable!())
+                        .is_err()
+                );
+            }
+        }
+        assert!(comprehension_from_wire(declaration(3, None), &|_| unreachable!()).is_err());
+        assert!(comprehension_from_wire(declaration(4, None), &|_| unreachable!()).is_err());
+        assert!(
+            serde_json::from_value::<WireComprehensionDeclaration>(serde_json::json!({
+                "id":0,"kind":3,"rows":{"InputMatrixElements":{"input":0,"ignored":1}},
+                "steps":[],"yield_value":{"Input":0}
+            }))
+            .is_err()
+        );
+        assert!(
+            serde_json::from_value::<WireComprehensionDeclaration>(serde_json::json!({
+                "id":0,"kind":3,"rows":{"Fixed":-1},"steps":[],"yield_value":{"Input":0}
+            }))
+            .is_err()
+        );
+    }
+}
+
+#[cfg(test)]
+mod iteration_wire_tests {
+    use super::*;
+
+    fn declaration(count: u64) -> serde_json::Value {
+        serde_json::json!({
+            "count": count,
+            "seed": 0,
+            "captures": [],
+            "carrier": 0,
+            "body": {
+                "id": 0,
+                "parameters": [["IterationCarrier", 0]],
+                "operations": [],
+                "yield_value": {"Parameter": {"block": 0, "ordinal": 0}}
+            }
+        })
+    }
+
+    #[test]
+    fn iteration_wire_is_strict_and_count_is_one_scalar_field() {
+        for count in [0, 19, u64::MAX] {
+            let json = declaration(count);
+            let wire: WireIterationDeclaration = serde_json::from_value(json.clone()).unwrap();
+            assert!(matches!(wire.count, WireIterationCount::Literal(value) if value == count));
+            assert!(wire.body.operations.is_empty());
+            assert_eq!(serde_json::to_value(&wire).unwrap(), json);
+            let mut unknown = json;
+            unknown["ignored_body"] = serde_json::json!(true);
+            assert!(serde_json::from_value::<WireIterationDeclaration>(unknown).is_err());
+        }
+        for count in [
+            serde_json::json!(-1),
+            serde_json::json!("18446744073709551616"),
+            serde_json::json!(1.5),
+        ] {
+            let mut json = declaration(0);
+            json["count"] = count;
+            assert!(serde_json::from_value::<WireIterationDeclaration>(json).is_err());
+        }
+    }
+
+    #[test]
+    fn iteration_wire_element_counts_have_one_strict_input_role() {
+        let mut json = declaration(0);
+        json["count"] = serde_json::json!({"elements": 1});
+        let wire: WireIterationDeclaration = serde_json::from_value(json.clone()).unwrap();
+        assert!(matches!(&wire.count, WireIterationCount::Elements(count) if count.elements == 1));
+        assert_eq!(serde_json::to_value(&wire).unwrap(), json);
+        for count in [
+            serde_json::json!({"elements": 1, "ignored": true}),
+            serde_json::json!({"elements": -1}),
+            serde_json::json!({"elements": 65536}),
+            serde_json::json!({"elements": "1"}),
+            serde_json::json!({"elements": 1.5}),
+        ] {
+            json["count"] = count;
+            assert!(serde_json::from_value::<WireIterationDeclaration>(json.clone()).is_err());
+        }
+    }
+
+    #[test]
+    fn iteration_wire_preflight_counts_bodies_and_nested_depth_before_allocation() {
+        let graph = serde_json::json!({"nodes": [{"body": {"Iteration": declaration(u64::MAX)}}]});
+        let bytes = serde_json::to_vec(&graph).unwrap();
+        let mut limits = ArtifactDecodeLimits::default();
+        limits.max_control_blocks = 0;
+        assert!(preflight_control_graph(&bytes, &limits).is_err());
+        assert!(preflight_control_graph(&bytes, &ArtifactDecodeLimits::default()).is_ok());
+        let mut nested = declaration(0);
+        for depth in 1..=super::super::MAX_CONTROL_DEPTH {
+            let mut parent = declaration(0);
+            parent["body"]["operations"] = serde_json::json!([{
+                "node": 0, "body": {"Iteration": nested}, "inputs": [], "schema": 0
+            }]);
+            nested = parent;
+            if depth == super::super::MAX_CONTROL_DEPTH {
+                let bytes = serde_json::to_vec(
+                    &serde_json::json!({"nodes": [{"body": {"Iteration": nested}}]}),
+                )
+                .unwrap();
+                assert!(preflight_control_graph(&bytes, &ArtifactDecodeLimits::default()).is_err());
+                break;
+            }
+        }
     }
 }

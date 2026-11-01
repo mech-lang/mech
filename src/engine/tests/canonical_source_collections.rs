@@ -512,7 +512,18 @@ mod resident_table_cases {
 
     #[test]
     fn table_join_admission_failure_preserves_publication_and_next_turn_recovers() {
-        let artifact = artifact("left<|a<u8>|> ⋈ right<|a<u8>|>");
+        let original = compile("left<|a<u8>|> ⋈ right<|a<u8>|>")
+            .compile_artifact()
+            .unwrap();
+        let bytes = mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap();
+        let parsed = mech_core::ParsedProgram::from_bytes(&bytes).unwrap();
+        let decoded = mech_engine::decode_program_artifact_sections(&parsed.artifact).unwrap();
+        for artifact in [original, decoded] {
+            assert_table_join_admission_and_recovery(artifact);
+        }
+    }
+
+    fn assert_table_join_admission_and_recovery(artifact: mech_engine::ProgramArtifact) {
         assert_eq!(artifact.inputs().len(), 2);
         let mut instance = activate(
             ReactiveInstanceId::new(0x556, 0),
@@ -561,6 +572,19 @@ mod resident_table_cases {
             ])
             .unwrap();
         let expected = instance.copied_output(0).unwrap();
+        let one_row = table_value(
+            &artifact,
+            artifact.outputs()[0].schema,
+            vec![("a", vec![D::U8(1)])],
+        );
+        assert!(
+            expected
+                .language_eq(artifact.schemas(), &one_row, artifact.schemas())
+                .unwrap()
+        );
+        assert_eq!(expected.schema_key(), one_row.schema_key());
+        assert_eq!(expected.shape(), one_row.shape());
+        let published_epoch = instance.published_epoch();
         let error = instance
             .turn(&[
                 CapturedSignalInput {
@@ -577,12 +601,21 @@ mod resident_table_cases {
             matches!(
                 error,
                 mech_engine::resident::ResidentExecutionError::Kernel {
-                    error: mech_core::ResidentKernelError::InvalidShape,
-                    ..
+                    node: mech_core::NodeId(0),
+                    error: mech_core::ResidentKernelError::ResourceLimit {
+                        phase: mech_core::ResidentResourcePhase::Admission,
+                        dimension: mech_core::MemoryBudgetDimension::ComparisonWork,
+                        required: 65538,
+                        limit: 65536,
+                    },
                 }
             ),
             "{error:?}"
         );
+        assert_eq!(instance.published_epoch(), published_epoch);
+        let retained = instance.copied_output(0).unwrap();
+        assert_eq!(retained.schema_key(), expected.schema_key());
+        assert_eq!(retained.shape(), expected.shape());
         assert!(
             instance
                 .copied_output(0)

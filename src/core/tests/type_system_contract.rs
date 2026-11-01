@@ -49,6 +49,169 @@ fn solve(
         .solve_scheme(scheme, inputs, None)
 }
 
+fn resolve_maintained_operation(
+    operation: &str,
+    inputs: &[ResolvedType],
+) -> Result<ResolvedOverload, TypeResolutionError> {
+    let schemes = if let Some(template) = maintained_source_scheme_template(operation) {
+        instantiate_source_scheme_template(template, inputs).unwrap()
+    } else {
+        maintained_source_schemes(operation).unwrap().unwrap()
+    };
+    let candidates = schemes
+        .iter()
+        .enumerate()
+        .map(|(id, scheme)| TypeOverloadCandidate {
+            id: id as u64,
+            scheme,
+        })
+        .collect::<Vec<_>>();
+    resolve_type_overloads(
+        TypeConstraintOrigin::new(operation, None),
+        &candidates,
+        inputs,
+        None,
+    )
+}
+
+#[test]
+fn maintained_addition_preserves_only_identical_scalar_interval_kinds() {
+    let interval_kind = |width, signed, lower: i128, upper: i128, upper_inclusive| {
+        KindExpr::IntegerInterval(if signed {
+            IntegerInterval::Signed {
+                width,
+                lower,
+                upper,
+                upper_inclusive,
+            }
+        } else {
+            IntegerInterval::Unsigned {
+                width,
+                lower: lower as u128,
+                upper: upper as u128,
+                upper_inclusive,
+            }
+        })
+    };
+    for (width, unsigned_kind, signed_kind) in [
+        (
+            IntegerWidth::W8,
+            BuiltinScalarKind::U8,
+            BuiltinScalarKind::I8,
+        ),
+        (
+            IntegerWidth::W16,
+            BuiltinScalarKind::U16,
+            BuiltinScalarKind::I16,
+        ),
+        (
+            IntegerWidth::W32,
+            BuiltinScalarKind::U32,
+            BuiltinScalarKind::I32,
+        ),
+        (
+            IntegerWidth::W64,
+            BuiltinScalarKind::U64,
+            BuiltinScalarKind::I64,
+        ),
+        (
+            IntegerWidth::W128,
+            BuiltinScalarKind::U128,
+            BuiltinScalarKind::I128,
+        ),
+    ] {
+        for (signed, primitive) in [(false, unsigned_kind), (true, signed_kind)] {
+            for inclusive in [false, true] {
+                let kind = interval_kind(width, signed, 1, 10, inclusive);
+                let input = closed(kind.clone());
+                let inputs = [input.clone(), input.clone()];
+                let resolution = resolve_maintained_operation("math/add", &inputs).unwrap();
+                assert_eq!(resolution.outputs.as_ref(), &[input.clone()]);
+                assert!(!input.satisfies(BuiltinKindPredicate::Number));
+                assert_eq!(numeric_promotion(&input, &input).unwrap(), None);
+                assert!(resolution.conversions.iter().all(|conversion| {
+                    conversion.source == input
+                        && conversion.target == input
+                        && conversion.step == ConversionStep::Identity
+                        && conversion.cost == 0
+                }));
+
+                let other_width = if width == IntegerWidth::W128 {
+                    IntegerWidth::W64
+                } else {
+                    IntegerWidth::W128
+                };
+                for other in [
+                    closed(primitive.kind_expr()),
+                    closed(interval_kind(width, signed, 2, 10, inclusive)),
+                    closed(interval_kind(width, signed, 1, 11, inclusive)),
+                    closed(interval_kind(width, signed, 1, 10, !inclusive)),
+                    closed(interval_kind(width, !signed, 1, 10, inclusive)),
+                    closed(interval_kind(other_width, signed, 1, 10, inclusive)),
+                ] {
+                    for inputs in [
+                        [input.clone(), other.clone()],
+                        [other.clone(), input.clone()],
+                    ] {
+                        assert!(
+                            resolve_maintained_operation("math/add", &inputs).is_err(),
+                            "interval addition must not widen or convert {inputs:?}",
+                        );
+                    }
+                }
+                for dimensions in [[1, 1], [2, 3]] {
+                    let matrix = closed(KindExpr::Matrix {
+                        element: Box::new(kind.clone()),
+                        dimensions: dimensions.map(DimensionExpr::Constant).into(),
+                    });
+                    for inputs in [
+                        [input.clone(), matrix.clone()],
+                        [matrix.clone(), input.clone()],
+                        [matrix.clone(), matrix.clone()],
+                    ] {
+                        assert!(
+                            resolve_maintained_operation("math/add", &inputs).is_err(),
+                            "interval addition is scalar-only: {inputs:?}",
+                        );
+                    }
+                }
+                for operation in ["math/sub", "math/mul", "math/div", "math/mod", "math/pow"] {
+                    assert!(resolve_maintained_operation(operation, &inputs).is_err());
+                }
+                for operation in ["math/neg", "math/abs"] {
+                    assert!(resolve_maintained_operation(operation, &[input.clone()]).is_err());
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn addition_template_preserves_existing_numeric_schemes() {
+    let template = maintained_source_scheme_template("math/add").unwrap();
+    let u8_type = closed(BuiltinScalarKind::U8.kind_expr());
+    let u16_type = closed(BuiltinScalarKind::U16.kind_expr());
+    let matrix = |scalar: &ResolvedType| {
+        closed(KindExpr::Matrix {
+            element: Box::new(scalar.kind().clone()),
+            dimensions: vec![DimensionExpr::Constant(2), DimensionExpr::Constant(3)].into(),
+        })
+    };
+    for (inputs, output) in [
+        ([u8_type.clone(), u16_type.clone()], u16_type.clone()),
+        ([matrix(&u8_type), matrix(&u16_type)], matrix(&u16_type)),
+        ([u8_type.clone(), matrix(&u16_type)], matrix(&u16_type)),
+        ([matrix(&u8_type), u16_type.clone()], matrix(&u16_type)),
+    ] {
+        assert_eq!(
+            instantiate_source_scheme_template(template, &inputs).unwrap(),
+            maintained_source_schemes("math/add").unwrap().unwrap(),
+        );
+        let resolution = resolve_maintained_operation("math/add", &inputs).unwrap();
+        assert_eq!(resolution.outputs.as_ref(), &[output]);
+    }
+}
+
 #[test]
 fn exact_conversion_promotion_and_cast_are_independent_relations() {
     let u8_type = closed(named(0));

@@ -70,7 +70,12 @@ fn named_specializers_are_scheme_authoritative() {
     let SourceTypeAuthority::Schemes(declaration) = &entry.type_authority else {
         panic!("a named operation cannot be syntax-directed")
     };
-    assert!(!declaration.overloads.is_empty());
+    assert_eq!(declaration.template, Some(SourceSchemeTemplate::Addition));
+    assert!(declaration.overloads.is_empty());
+    assert_eq!(
+        declaration.parameter_names.as_deref(),
+        Some(["left".to_owned(), "right".to_owned()].as_slice()),
+    );
 }
 
 #[test]
@@ -1045,13 +1050,34 @@ fn rational_power_selects_its_exact_integral_exponent() {
 
 #[test]
 fn parameter_metadata_cannot_disagree_with_the_catalog_input_authority() {
-    for names in [vec!["left", "left"], vec!["left"], vec!["", "right"]] {
-        let mut declaration = maintained_source_type_declaration("math/sub").unwrap();
-        declaration.parameter_names = Some(names.into_iter().map(String::from).collect());
+    for operation in ["math/add", "math/sub"] {
+        for names in [
+            vec!["left", "left"],
+            vec!["left"],
+            vec!["", "right"],
+            vec!["left", "right", "extra"],
+        ] {
+            let mut declaration = maintained_source_type_declaration(operation).unwrap();
+            declaration.parameter_names = Some(names.into_iter().map(String::from).collect());
+            let mut builder = FunctionCatalogBuilder::new();
+            let error = builder
+                .insert_canonical_specializer_with_contract(
+                    operation,
+                    declaration,
+                    TEST_CONTRACT.clone(),
+                    Arc::new(NeverSpecialize),
+                )
+                .unwrap_err();
+            assert_eq!(error.kind_name(), "FunctionCatalogInvalidTypeDeclaration");
+        }
+    }
+    for operation in ["compare/lt", "matrix/horzcat", "set/define", "table/join"] {
+        let mut declaration = maintained_source_type_declaration(operation).unwrap();
+        declaration.parameter_names = Some(vec!["left".into(), "right".into()].into());
         let mut builder = FunctionCatalogBuilder::new();
         let error = builder
             .insert_canonical_specializer_with_contract(
-                "math/sub",
+                operation,
                 declaration,
                 TEST_CONTRACT.clone(),
                 Arc::new(NeverSpecialize),

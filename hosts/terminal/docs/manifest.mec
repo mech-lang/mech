@@ -15,6 +15,8 @@ cli
 
 ```text
 cli/env
+cli/args
+cli/stdin
 cli/stdout
 cli/stderr
 ```
@@ -25,6 +27,8 @@ cli/stderr
 | Context | Operations |
 |---------|------------|
 | `env` | `read` |
+| `args` | `read` |
+| `stdin` | `read` |
 | `stdout` | `write` |
 | `stderr` | `write` |
 
@@ -35,6 +39,8 @@ The materialized base URI shape is:
 
 ```text
 cli://{instance}/env
+cli://{instance}/args
+cli://{instance}/stdin
 cli://{instance}/stdout
 cli://{instance}/stderr
 ```

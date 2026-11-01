@@ -170,8 +170,10 @@ impl Continuation {
             Phase::Start(owner) => {
                 let after = parser.checkpoint();
                 if owner.ordinary {
+                    // Leading line breaks precede the first physical row.
+                    // Retain its head once for both matrix/comprehension paths.
                     self.bracket(Phase::Leading(owner, after));
-                    self.base(rules::SPACE_TAB0);
+                    self.base(rules::WHITESPACE0);
                 } else {
                     self.bracket_failed_head(parser, owner, after);
                 }
@@ -240,7 +242,7 @@ impl Continuation {
                         self.bracket(Phase::MatrixHead(head));
                     } else {
                         self.bracket(Phase::BarSpace(head));
-                        self.base(rules::SPACE_TAB0);
+                        self.base(rules::WHITESPACE0);
                     }
                 }
             }

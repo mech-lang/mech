@@ -1,13 +1,30 @@
 use std::collections::{HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 
+#[cfg(feature = "matrix")]
+use mech_core::ValueCell;
 #[cfg(any(feature = "f32", feature = "f64", feature = "matrix"))]
 use mech_core::ValueData;
-use mech_core::{MResult, MechError, MechErrorKind, Value, ValueCell};
+use mech_core::{MResult, MechError, MechErrorKind, Value};
 #[cfg(feature = "matrix")]
 use mech_core::{SchemaBody, snapshot::SequenceView, structures::Matrix as ValueMatrix};
 
 pub const DEFAULT_HOST_INPUT_CAPACITY: usize = 1024;
+
+#[path = "input_scalar.rs"]
+mod scalar;
+
+/// Raw text capture distinguishes UTF8 failure from canonical construction
+/// failure so providers can preserve their existing resource diagnostics.
+#[derive(Clone, Debug)]
+pub enum RuntimeHostStringError {
+    InvalidUtf8(std::str::Utf8Error),
+    Snapshot(MechError),
+}
+
+#[cfg(feature = "string")]
+#[path = "input_string.rs"]
+mod string;
 
 /// Detached host or compiler-initialization value.
 ///
@@ -55,13 +72,30 @@ pub enum RuntimeHostInputValue {
 }
 
 impl RuntimeHostInputValue {
+    /// Transfer acquired UTF8 bytes into canonical text. Success consumes the
+    /// Vec; failure restores its exact bytes without another acquisition.
+    pub fn string_from_utf8_bytes(bytes: &mut Vec<u8>) -> Result<Value, RuntimeHostStringError> {
+        #[cfg(feature = "string")]
+        {
+            string::snapshot_bytes(bytes)
+        }
+        #[cfg(not(feature = "string"))]
+        {
+            std::str::from_utf8(bytes).map_err(RuntimeHostStringError::InvalidUtf8)?;
+            Err(RuntimeHostStringError::Snapshot(input_error(
+                "RuntimeHostInputValueUnsupported",
+                "string host input values require the `string` feature",
+            )))
+        }
+    }
+
     /// Converts a detached host input into the canonical immutable value used
     /// by execution, resource, and public host boundaries.
     pub fn into_value(self) -> MResult<Value> {
-        let cell = match self {
-            RuntimeHostInputValue::Unit => ValueCell::unit(),
+        match self {
+            RuntimeHostInputValue::Unit => scalar::unit(),
             #[cfg(feature = "bool")]
-            RuntimeHostInputValue::Bool(value) => ValueCell::from_exact(value)?,
+            RuntimeHostInputValue::Bool(value) => scalar::bool(value),
             #[cfg(not(feature = "bool"))]
             RuntimeHostInputValue::Bool(_) => {
                 return Err(input_error(
@@ -70,7 +104,7 @@ impl RuntimeHostInputValue {
                 ));
             }
             #[cfg(feature = "string")]
-            RuntimeHostInputValue::String(value) => ValueCell::from_exact(value)?,
+            RuntimeHostInputValue::String(value) => return string::snapshot(value),
             #[cfg(not(feature = "string"))]
             RuntimeHostInputValue::String(_) => {
                 return Err(input_error(
@@ -79,51 +113,51 @@ impl RuntimeHostInputValue {
                 ));
             }
             #[cfg(feature = "u8")]
-            RuntimeHostInputValue::U8(value) => ValueCell::from_exact(value)?,
+            RuntimeHostInputValue::U8(value) => scalar::u8(value),
             #[cfg(not(feature = "u8"))]
             RuntimeHostInputValue::U8(_) => return Err(unsupported_host_input("u8")),
             #[cfg(feature = "u16")]
-            RuntimeHostInputValue::U16(value) => ValueCell::from_exact(value)?,
+            RuntimeHostInputValue::U16(value) => scalar::u16(value),
             #[cfg(not(feature = "u16"))]
             RuntimeHostInputValue::U16(_) => return Err(unsupported_host_input("u16")),
             #[cfg(feature = "u32")]
-            RuntimeHostInputValue::U32(value) => ValueCell::from_exact(value)?,
+            RuntimeHostInputValue::U32(value) => scalar::u32(value),
             #[cfg(not(feature = "u32"))]
             RuntimeHostInputValue::U32(_) => return Err(unsupported_host_input("u32")),
             #[cfg(feature = "u64")]
-            RuntimeHostInputValue::U64(value) => ValueCell::from_exact(value)?,
+            RuntimeHostInputValue::U64(value) => scalar::u64(value),
             #[cfg(not(feature = "u64"))]
             RuntimeHostInputValue::U64(_) => return Err(unsupported_host_input("u64")),
             #[cfg(feature = "u128")]
-            RuntimeHostInputValue::U128(value) => ValueCell::from_exact(value)?,
+            RuntimeHostInputValue::U128(value) => scalar::u128(value),
             #[cfg(not(feature = "u128"))]
             RuntimeHostInputValue::U128(_) => return Err(unsupported_host_input("u128")),
             #[cfg(feature = "i8")]
-            RuntimeHostInputValue::I8(value) => ValueCell::from_exact(value)?,
+            RuntimeHostInputValue::I8(value) => scalar::i8(value),
             #[cfg(not(feature = "i8"))]
             RuntimeHostInputValue::I8(_) => return Err(unsupported_host_input("i8")),
             #[cfg(feature = "i16")]
-            RuntimeHostInputValue::I16(value) => ValueCell::from_exact(value)?,
+            RuntimeHostInputValue::I16(value) => scalar::i16(value),
             #[cfg(not(feature = "i16"))]
             RuntimeHostInputValue::I16(_) => return Err(unsupported_host_input("i16")),
             #[cfg(feature = "i32")]
-            RuntimeHostInputValue::I32(value) => ValueCell::from_exact(value)?,
+            RuntimeHostInputValue::I32(value) => scalar::i32(value),
             #[cfg(not(feature = "i32"))]
             RuntimeHostInputValue::I32(_) => return Err(unsupported_host_input("i32")),
             #[cfg(feature = "i64")]
-            RuntimeHostInputValue::I64(value) => ValueCell::from_exact(value)?,
+            RuntimeHostInputValue::I64(value) => scalar::i64(value),
             #[cfg(not(feature = "i64"))]
             RuntimeHostInputValue::I64(_) => return Err(unsupported_host_input("i64")),
             #[cfg(feature = "i128")]
-            RuntimeHostInputValue::I128(value) => ValueCell::from_exact(value)?,
+            RuntimeHostInputValue::I128(value) => scalar::i128(value),
             #[cfg(not(feature = "i128"))]
             RuntimeHostInputValue::I128(_) => return Err(unsupported_host_input("i128")),
             #[cfg(feature = "f32")]
-            RuntimeHostInputValue::F32(value) => ValueCell::from_exact(value)?,
+            RuntimeHostInputValue::F32(value) => scalar::f32(value),
             #[cfg(not(feature = "f32"))]
             RuntimeHostInputValue::F32(_) => return Err(unsupported_host_input("f32")),
             #[cfg(feature = "f64")]
-            RuntimeHostInputValue::F64(value) => ValueCell::from_exact(value)?,
+            RuntimeHostInputValue::F64(value) => scalar::f64(value),
             #[cfg(not(feature = "f64"))]
             RuntimeHostInputValue::F64(_) => return Err(unsupported_host_input("f64")),
             RuntimeHostInputValue::Index(0) => {
@@ -132,13 +166,14 @@ impl RuntimeHostInputValue {
                     "index host input values must be in 1..=max",
                 ));
             }
-            RuntimeHostInputValue::Index(value) => ValueCell::from_exact(value)?,
+            RuntimeHostInputValue::Index(value) => scalar::index(value),
             #[cfg(feature = "matrix")]
             RuntimeHostInputValue::BoolMatrix {
                 rows,
                 columns,
                 values,
-            } => exact_matrix_input(host_input_matrix(values, rows, columns)?, rows, columns)?,
+            } => exact_matrix_input(host_input_matrix(values, rows, columns)?, rows, columns)?
+                .snapshot(),
             #[cfg(not(feature = "matrix"))]
             RuntimeHostInputValue::BoolMatrix { .. } => {
                 return Err(unsupported_host_input("bool matrix"));
@@ -157,6 +192,7 @@ impl RuntimeHostInputValue {
                     ));
                 }
                 exact_matrix_input(host_input_matrix(values, rows, columns)?, rows, columns)?
+                    .snapshot()
             }
             #[cfg(not(feature = "matrix"))]
             RuntimeHostInputValue::IndexMatrix { .. } => {
@@ -167,13 +203,15 @@ impl RuntimeHostInputValue {
                 rows,
                 columns,
                 values,
-            } => exact_matrix_input(host_input_matrix(values, rows, columns)?, rows, columns)?,
+            } => exact_matrix_input(host_input_matrix(values, rows, columns)?, rows, columns)?
+                .snapshot(),
             #[cfg(all(feature = "matrix", feature = "f32"))]
             RuntimeHostInputValue::F32Matrix {
                 rows,
                 columns,
                 values,
-            } => exact_matrix_input(host_input_matrix(values, rows, columns)?, rows, columns)?,
+            } => exact_matrix_input(host_input_matrix(values, rows, columns)?, rows, columns)?
+                .snapshot(),
             #[cfg(not(all(feature = "matrix", feature = "f32")))]
             RuntimeHostInputValue::F32Matrix { .. } => {
                 return Err(unsupported_host_input("f32 matrix"));
@@ -182,8 +220,7 @@ impl RuntimeHostInputValue {
             RuntimeHostInputValue::F64Matrix { .. } => {
                 return Err(unsupported_host_input("f64 matrix"));
             }
-        };
-        cell.snapshot()
+        }
     }
 
     /// Detaches a canonical numeric scalar or matrix for host input queues.

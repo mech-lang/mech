@@ -61,6 +61,27 @@ pub(crate) fn command() -> Command {
                 .action(ArgAction::Append),
         )
         .arg(
+            Arg::new("build_backend")
+                .long("backend")
+                .value_parser(["resident", "cranelift"])
+                .default_value("resident")
+                .help(
+                    "Execution compiler: resident application or canonical Cranelift AOT program.",
+                ),
+        )
+        .arg(
+            Arg::new("native_scalar")
+                .long("scalar")
+                .action(ArgAction::SetTrue)
+                .help("Legacy vector setting; unsupported by canonical Cranelift builds."),
+        )
+        .arg(
+            Arg::new("native_loop_fma")
+                .long("fp-contract-loop")
+                .action(ArgAction::SetTrue)
+                .help("Legacy FMA setting; unsupported by canonical Cranelift builds."),
+        )
+        .arg(
             Arg::new("build_emit")
                 .long("emit")
                 .value_name("EMIT")
@@ -145,9 +166,55 @@ pub(crate) fn validate_build_bytecode_inputs(paths: &[String]) -> MResult<usize>
     Ok(bytecode_count)
 }
 
+/// Preserve the canonical compiler's owners until packaging finishes. Bytecode
+/// inputs remain explicitly source-unpaired; this record performs no new decode
+/// or admission and does not select an execution backend.
+enum PreparedBuildOrigin {
+    CanonicalSource {
+        _artifact: mech_engine::ProgramArtifact,
+        _sources: mech_runtime::CanonicalCompilationSources,
+        _instruction_memory_plans: Vec<Option<CallMemoryPlan>>,
+    },
+    SourceUnpairedBytecode,
+}
+
+struct PreparedBuildInput {
+    bytecode: Vec<u8>,
+    instruction_type_sidecars: Option<(Vec<Option<BoundCall>>, Vec<bool>)>,
+    origin: PreparedBuildOrigin,
+}
+
+impl PreparedBuildInput {
+    fn source_unpaired_bytecode(bytecode: Vec<u8>) -> Self {
+        Self {
+            bytecode,
+            instruction_type_sidecars: None,
+            origin: PreparedBuildOrigin::SourceUnpairedBytecode,
+        }
+    }
+
+    fn from_compilation(compilation: mech_runtime::RetainedCanonicalCompilation) -> Self {
+        let (product, sources) = compilation.into_parts();
+        let (artifact, bytecode, bindings, requirements, memory_plans) =
+            product.into_native_parts();
+        Self {
+            bytecode,
+            instruction_type_sidecars: Some((bindings, requirements)),
+            origin: PreparedBuildOrigin::CanonicalSource {
+                _artifact: artifact,
+                _sources: sources,
+                _instruction_memory_plans: memory_plans,
+            },
+        }
+    }
+}
+
 pub(crate) struct BuildOptions {
     pub paths: Vec<String>,
     pub emit: BuildEmit,
+    pub cranelift: bool,
+    pub native_scalar: bool,
+    pub native_loop_fma: bool,
     pub name: Option<String>,
     pub output_path: Option<PathBuf>,
     pub target: Option<String>,
@@ -183,6 +250,11 @@ impl BuildOptions {
                 .get_many::<String>("mech_build_file_paths")
                 .map_or_else(Vec::new, |files| files.cloned().collect()),
             emit,
+            cranelift: matches
+                .get_one::<String>("build_backend")
+                .is_some_and(|b| b == "cranelift"),
+            native_scalar: matches.get_flag("native_scalar"),
+            native_loop_fma: matches.get_flag("native_loop_fma"),
             name: matches.get_one::<String>("build_name").cloned(),
             output_path: matches.get_one::<String>("output_path").map(PathBuf::from),
             target: matches.get_one::<String>("build_target").cloned(),
@@ -213,25 +285,26 @@ impl BuildOptions {
     }
 }
 
-pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
-    let bytecode_count = validate_build_bytecode_inputs(&options.paths)?;
-    let binary_name = options
-        .name
-        .clone()
-        .unwrap_or_else(|| inferred_binary_name(&options.paths[0]));
-    if options.emit != BuildEmit::Bytecode || options.keep_project {
-        mech_build::validate_project_binary_name(&binary_name)?;
-    }
-
-    let (bytecode, loaded_config, instruction_type_sidecars) = if bytecode_count == 1 {
+// Both resident packaging and canonical AOT consume the SAME one-pass input.
+// Native planning has no launch authority; its grants never enter an executable.
+fn prepare_build_input(
+    options: &BuildOptions,
+    binary_name: &str,
+    bytecode_count: usize,
+    native_planning: bool,
+) -> MResult<(PreparedBuildInput, Option<crate::LoadedMechConfig>)> {
+    Ok(if bytecode_count == 1 {
         let path = PathBuf::from(&options.paths[0]);
         let bytecode = fs::read(&path)?;
-        let config = load_build_config(&options, Some(&path))?;
-        validate_production_build_config(config.as_ref(), &binary_name)?;
-        (bytecode, config, None)
+        let config = load_build_config(options, Some(&path))?;
+        validate_prepared_build_config(config.as_ref(), binary_name, native_planning)?;
+        (
+            PreparedBuildInput::source_unpaired_bytecode(bytecode),
+            config,
+        )
     } else {
-        let loaded_config = load_build_config(&options, None)?;
-        validate_production_build_config(loaded_config.as_ref(), &binary_name)?;
+        let loaded_config = load_build_config(options, None)?;
+        validate_prepared_build_config(loaded_config.as_ref(), binary_name, native_planning)?;
         let source_roots = discover_source_roots(&options.paths)?;
         if source_roots.is_empty() {
             return Err(MechError::new(
@@ -246,10 +319,14 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         enforce_production_build_source_shape(&source_roots)?;
         let configured_hosts = configured_hosts(loaded_config.as_ref());
         let run_grants = configured_run_grants(loaded_config.as_ref());
-        let cli_grants = crate::cli::host_grants::effective_cli_host_grants(
-            loaded_config.as_ref(),
-            crate::cli::host_grants::CliHostCapabilitySelection::default(),
-        )?;
+        let cli_grants = if native_planning {
+            crate::cli::host_grants::EffectiveCliHostGrants::empty()
+        } else {
+            crate::cli::host_grants::effective_cli_host_grants(
+                loaded_config.as_ref(),
+                crate::cli::host_grants::CliHostCapabilitySelection::default(),
+            )?
+        };
         let mut planner_config = module_runtime_config(
             format!("{binary_name}-planner"),
             options.debug,
@@ -279,18 +356,50 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
             &[],
             &[],
         );
-        let product = compiler.compile_canonical_roots(&requests, options)?;
-        let (_, bytecode, instruction_type_bindings, instruction_type_binding_requirements, _) =
-            product.into_native_parts();
+        let compilation = compiler.compile_canonical_roots_retained(&requests, options)?;
         (
-            bytecode,
+            PreparedBuildInput::from_compilation(compilation),
             loaded_config,
-            Some((
-                instruction_type_bindings,
-                instruction_type_binding_requirements,
-            )),
         )
-    };
+    })
+}
+
+fn validate_prepared_build_config(
+    config: Option<&crate::LoadedMechConfig>,
+    binary_name: &str,
+    native_planning: bool,
+) -> MResult<()> {
+    if native_planning && config.is_some() {
+        return build_error(
+            "canonical Cranelift builds do not accept runtime configuration; use --no-config and supply the executable's explicit launch JSON",
+        );
+    }
+    validate_production_build_config(config, binary_name)
+}
+
+pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
+    if options.cranelift {
+        return run_cranelift(options);
+    }
+    if options.native_scalar || options.native_loop_fma {
+        return build_error("`--scalar` and `--fp-contract-loop` require `--backend cranelift`");
+    }
+    let bytecode_count = validate_build_bytecode_inputs(&options.paths)?;
+    let binary_name = options
+        .name
+        .clone()
+        .unwrap_or_else(|| inferred_binary_name(&options.paths[0]));
+    if options.emit != BuildEmit::Bytecode || options.keep_project {
+        mech_build::validate_project_binary_name(&binary_name)?;
+    }
+
+    let (prepared_input, loaded_config) =
+        prepare_build_input(&options, &binary_name, bytecode_count, false)?;
+    let PreparedBuildInput {
+        bytecode,
+        instruction_type_sidecars,
+        origin: _retained_build_origin,
+    } = prepared_input;
     let (instruction_type_bindings, instruction_type_binding_requirements) =
         match instruction_type_sidecars {
             Some((bindings, requirements)) => (Some(bindings), Some(requirements)),
@@ -426,6 +535,22 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         }
     }
     Ok(CliOutcome::success())
+}
+
+#[cfg(not(feature = "cranelift_build"))]
+fn run_cranelift(_: BuildOptions) -> MResult<CliOutcome> {
+    build_error(
+        "Cranelift builds require this CLI to be compiled with `--features cranelift_build`",
+    )
+}
+
+#[cfg(feature = "cranelift_build")]
+#[path = "build_cranelift.rs"]
+mod cranelift;
+
+#[cfg(feature = "cranelift_build")]
+fn run_cranelift(options: BuildOptions) -> MResult<CliOutcome> {
+    cranelift::run(options)
 }
 
 fn build_error<T>(message: impl Into<String>) -> MResult<T> {
@@ -715,6 +840,61 @@ fn refuse_existing_project_output(destination: &Path) -> MResult<()> {
 mod tests {
     use super::*;
 
+    #[cfg(any(feature = "full_source", feature = "full_compiler"))]
+    #[test]
+    fn prepared_build_preserves_source_owners_and_labels_bytecode_source_unpaired() {
+        let catalog = mech_stdlib::source_catalog();
+        let mut resolver = mech_runtime::InMemorySourceResolver::new();
+        resolver
+            .insert_canonical_string("main.mec", "answer := \"retained\"\nanswer\n")
+            .unwrap();
+        let mut compiler = mech_runtime::RuntimeBuilder::new()
+            .function_catalog(std::sync::Arc::clone(&catalog))
+            .source_resolver(resolver)
+            .build_compiler()
+            .unwrap();
+        let compilation = compiler
+            .compile_canonical_roots_retained(
+                &[SourceRequest::new("main.mec")],
+                mech_runtime::ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+            )
+            .unwrap();
+        let revision = compilation.product().artifact().revision();
+        let bytecode = compilation.product().bytecode().to_vec();
+        let prepared = PreparedBuildInput::from_compilation(compilation);
+        match &prepared.origin {
+            PreparedBuildOrigin::CanonicalSource {
+                _artifact,
+                _sources,
+                ..
+            } => {
+                assert_eq!(_artifact.revision(), revision);
+                assert!(std::sync::Arc::ptr_eq(
+                    _sources.function_catalog(),
+                    &catalog
+                ));
+                assert_eq!(_sources.roots()[0].canonical_uri(), "memory:main.mec");
+            }
+            PreparedBuildOrigin::SourceUnpairedBytecode => {
+                panic!("compiled source lost its owners")
+            }
+        }
+        assert_eq!(prepared.bytecode, bytecode);
+        assert!(prepared.instruction_type_sidecars.is_some());
+        let unpaired = PreparedBuildInput::source_unpaired_bytecode(bytecode.clone());
+        assert!(matches!(
+            unpaired.origin,
+            PreparedBuildOrigin::SourceUnpairedBytecode
+        ));
+        assert_eq!(unpaired.bytecode, bytecode);
+        assert!(unpaired.instruction_type_sidecars.is_none());
+        // Existing bytecode validation/order remains owned by the old callers.
+        assert_eq!(
+            PreparedBuildInput::source_unpaired_bytecode(vec![0, 255]).bytecode,
+            [0, 255]
+        );
+    }
+
     #[test]
     fn default_outputs_match_the_authoritative_layout() {
         assert_eq!(
@@ -753,6 +933,61 @@ mod tests {
             project_output_path(Path::new("dist/demo.build-plan.json")),
             PathBuf::from("dist/demo.build-plan.json.project")
         );
+    }
+
+    #[cfg(feature = "cranelift_build")]
+    #[test]
+    fn cranelift_kept_project_collision_precedes_emission_and_output_writes() {
+        for existing_output in [false, true] {
+            let root = tempfile::tempdir().unwrap();
+            let source = root.path().join("demo.mec");
+            // A malformed source would fail admission if emission were reached.
+            fs::write(&source, "this is not a Mech source program {{{").unwrap();
+            let output = root.path().join("demo");
+            if existing_output {
+                fs::write(&output, b"existing executable").unwrap();
+            }
+            let project = project_output_path(&output);
+            fs::create_dir(&project).unwrap();
+            fs::write(project.join("keep.txt"), b"existing project").unwrap();
+            let result = run_cranelift(BuildOptions {
+                paths: vec![source.to_string_lossy().into_owned()],
+                emit: BuildEmit::Native,
+                cranelift: true,
+                native_scalar: false,
+                native_loop_fma: false,
+                name: Some("demo".into()),
+                output_path: Some(output.clone()),
+                target: None,
+                profile: BuildProfile::Release,
+                config_path: None,
+                no_config: true,
+                workspace_root: Some(root.path().to_path_buf()),
+                keep_project: true,
+                offline: true,
+                debug: false,
+                trace: false,
+                rounds_per_step: 10_000,
+            });
+            let error = match result {
+                Err(error) => error,
+                Ok(_) => panic!("an existing retained project must be rejected"),
+            };
+            assert!(
+                error
+                    .display_message()
+                    .contains("refusing to overwrite existing Cargo project")
+            );
+            if existing_output {
+                assert_eq!(fs::read(&output).unwrap(), b"existing executable");
+            } else {
+                assert!(!output.exists());
+            }
+            assert_eq!(
+                fs::read(project.join("keep.txt")).unwrap(),
+                b"existing project"
+            );
+        }
     }
 
     #[test]

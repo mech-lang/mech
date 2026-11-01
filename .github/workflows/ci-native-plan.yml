@@ -168,3 +168,363 @@ jobs:
             target/bytecode-v1-fixtures/owner-runner/logs
           if-no-files-found: error
           retention-days: 14
+
+  # This is part of the SAME reusable workflow required by early-native-plan
+  # and the full native-plan gate. Keeping a separate serial job avoids
+  # extending or sharing the existing planning owner's deadlines/cache.
+  canonical-hosted:
+    name: Canonical hosted native applications
+    runs-on: ubuntu-latest
+    # All serial step ceilings total 192 minutes; reserve thirteen more for
+    # orchestration so no valid inner deadline is cut short by this job.
+    timeout-minutes: 205
+    env:
+      RUSTUP_TOOLCHAIN: nightly-2026-03-03
+      CARGO_BUILD_JOBS: "1"
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v7.0.1
+        id: checkout
+        timeout-minutes: 2
+        with:
+          ref: ${{ inputs.validation_ref }}
+      - name: Record exact canonical hosted checkout
+        timeout-minutes: 2
+        env:
+          VALIDATION_REF: ${{ inputs.validation_ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        run: |
+          mkdir -p target/native-plan-logs
+          actual=$(git rev-parse HEAD)
+          expected=$(git rev-parse "$VALIDATION_REF^{commit}")
+          {
+            echo "requested_ref=$VALIDATION_REF"
+            echo "expected_sha=$expected"
+            echo "checkout_sha=$actual"
+          } | tee target/native-plan-logs/00-hosted-checkout.log
+          test "$actual" = "$expected"
+          test "$actual" = "$CHECKOUT_SHA"
+      - name: Install pinned hosted compiler and process tools
+        timeout-minutes: 10
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          sudo apt-get update -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources -o Dir::Etc::sourceparts=-
+          sudo apt-get install --yes strace ripgrep build-essential m4
+      - name: Verify hosted Unix process targeting before generation
+        timeout-minutes: 3
+        run: |
+          python3 -B scripts/tests/test_probe_unix_kill_targeting.py
+          python3 scripts/probe-unix-kill-targeting.py
+      - name: Fetch locked canonical hosted dependencies
+        timeout-minutes: 10
+        run: |
+          cargo +nightly-2026-03-03 fetch --locked
+          python3 scripts/check-canonical-hosted-runner.py --fetch
+      - name: Compile canonical hosted contracts without execution
+        timeout-minutes: 20
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-hosted-compile --timeout-secs 1080 \
+            --record-test-executable canonical_hosted_artifact \
+            --test-executable-file target/native-plan-logs/canonical-hosted-executable -- \
+            cargo +nightly-2026-03-03 test --locked --offline \
+            -p mech-core -p mech-engine -p mech-runtime -p mech-stdlib -p mech-syntax -p mech-gpu \
+            --no-default-features \
+            --features mech-stdlib/full_compiler,mech-stdlib/native-artifact,mech-gpu/canonical-native-program-host \
+            --test canonical_hosted_artifact --no-run --message-format=json-render-diagnostics
+      - name: Execute complete canonical hosted contracts
+        timeout-minutes: 10
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-hosted-contracts --timeout-secs 480 \
+            --test-executable-file target/native-plan-logs/canonical-hosted-executable -- \
+            --test-threads=1 --nocapture
+      - name: Verify linked canonical hosted selection is nonempty
+        timeout-minutes: 3
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-hosted-selection --timeout-secs 60 \
+            --test-executable-file target/native-plan-logs/canonical-hosted-executable -- \
+            --list --ignored --exact \
+            linked::complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pinned
+          python3 -c 'from pathlib import Path; lines = Path("target/native-plan-logs/canonical-hosted-selection.log").read_text().splitlines(); expected = "linked::complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pinned: test"; assert lines.count(expected) == 1, lines'
+      - name: Qualify original and decoded secured hosted standalone applications
+        timeout-minutes: 127
+        env:
+          MECH_CANONICAL_HOSTED_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
+          MECH_CANONICAL_HOSTED_EVIDENCE_DIR: ${{ runner.temp }}/canonical-hosted-evidence
+        run: |
+          # Existing inner bounds: 2x900s initial builds, 2x120s metadata,
+          # 2x300s actual generated-template test suites,
+          # 26x120s launches, 10x120s pin/recovery builds and 4x15s git checks.
+          # 7020s total ceilings leave 300s inside this stage for generation,
+          # supervision and cleanup; the Actions step leaves another 300s.
+          python3 scripts/run-native-plan-stage.py --stage canonical-hosted-linked --timeout-secs 7320 \
+            --test-executable-file target/native-plan-logs/canonical-hosted-executable -- \
+            --ignored --exact \
+            linked::complete_original_and_decoded_knucleotide_linked_processes_are_secured_and_pinned \
+            --test-threads=1 --nocapture
+      - name: Retain canonical hosted diagnostics and qualification evidence
+        if: always()
+        timeout-minutes: 5
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-hosted-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            target/native-plan-logs
+            ${{ runner.temp }}/canonical-hosted-evidence
+            !${{ runner.temp }}/canonical-hosted-evidence/cargo-target/**
+          if-no-files-found: error
+          retention-days: 14
+
+  # An explicit experiment in the SAME required reusable gate. This separate
+  # job does not lengthen the production CLI/hosted jobs or weaken their gates.
+  canonical-policy:
+    name: Same-binary native policy controls
+    runs-on: ubuntu-latest
+    # Serial Actions ceilings total 297 minutes; bounded orchestration headroom.
+    timeout-minutes: 315
+    env:
+      RUSTUP_TOOLCHAIN: nightly-2026-03-03
+      CARGO_BUILD_JOBS: "1"
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v7.0.1
+        id: checkout
+        timeout-minutes: 2
+        with:
+          ref: ${{ inputs.validation_ref }}
+      - name: Record exact benchmark policy checkout
+        timeout-minutes: 2
+        env:
+          VALIDATION_REF: ${{ inputs.validation_ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        run: |
+          mkdir -p target/native-plan-logs
+          actual=$(git rev-parse HEAD)
+          expected=$(git rev-parse "$VALIDATION_REF^{commit}")
+          test "$actual" = "$expected"
+          test "$actual" = "$CHECKOUT_SHA"
+          git status --porcelain=v1 --untracked-files=all
+      - name: Install pinned policy compiler and process tools
+        timeout-minutes: 10
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          sudo apt-get update -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources -o Dir::Etc::sourceparts=-
+          sudo apt-get install --yes strace ripgrep build-essential m4
+      - name: Verify policy Unix process targeting before generation
+        timeout-minutes: 3
+        run: |
+          python3 -B scripts/tests/test_probe_unix_kill_targeting.py
+          python3 scripts/probe-unix-kill-targeting.py
+      - name: Fetch locked benchmark policy dependencies
+        timeout-minutes: 10
+        run: cargo +nightly-2026-03-03 fetch --locked
+      - name: Compile benchmark policy contracts without execution
+        timeout-minutes: 20
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-policy-compile --timeout-secs 1080 \
+            --record-test-executable canonical_hosted_artifact \
+            --test-executable-file target/native-plan-logs/canonical-policy-executable -- \
+            cargo +nightly-2026-03-03 test --locked --offline \
+            -p mech-core -p mech-engine -p mech-runtime -p mech-stdlib -p mech-syntax -p mech-gpu \
+            --no-default-features \
+            --features mech-stdlib/full_compiler,mech-stdlib/native-artifact,mech-gpu/canonical-native-benchmark-policy \
+            --test canonical_hosted_artifact --no-run --message-format=json-render-diagnostics
+      - name: Execute benchmark policy kernel contracts
+        timeout-minutes: 30
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-policy-kernel --timeout-secs 1680 -- \
+            cargo +nightly-2026-03-03 test --locked --offline -j1 -p mech-gpu \
+            --no-default-features --features canonical-native-benchmark-policy \
+            --lib native_artifact::benchmark_policy:: -- --test-threads=1 --nocapture
+          python3 -c 'from pathlib import Path; import re; text = Path("target/native-plan-logs/canonical-policy-kernel.log").read_text(); assert re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text) == [("13", "0", "0")]'
+      - name: Execute benchmark generation and ordinary hosted contracts
+        timeout-minutes: 10
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-policy-contracts --timeout-secs 480 \
+            --test-executable-file target/native-plan-logs/canonical-policy-executable -- \
+            --test-threads=1 --nocapture
+      - name: Verify linked benchmark policy selection is nonempty
+        timeout-minutes: 3
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-policy-selection --timeout-secs 60 \
+            --test-executable-file target/native-plan-logs/canonical-policy-executable -- \
+            --list --ignored --exact \
+            linked::benchmark::complete_original_and_decoded_knucleotide_same_binary_policy_controls
+          python3 -c 'from pathlib import Path; lines = Path("target/native-plan-logs/canonical-policy-selection.log").read_text().splitlines(); expected = "linked::benchmark::complete_original_and_decoded_knucleotide_same_binary_policy_controls: test"; assert lines.count(expected) == 1, lines'
+      - name: Qualify same-binary policies and secured production controls
+        timeout-minutes: 202
+        env:
+          MECH_CANONICAL_POLICY_SOURCE_COMMIT: ${{ steps.checkout.outputs.commit }}
+          MECH_CANONICAL_POLICY_EVIDENCE_DIR: ${{ runner.temp }}/canonical-policy-evidence
+          MECH_CANONICAL_HOSTED_PROFILE: release
+        run: |
+          # Three builds/metadata checks, two generated-template suites, 55
+          # launches including production negatives and four zero-sample scale
+          # driver protocol controls, ten pin/recovery builds and four source
+          # checks: 11520s ceilings plus 300s stage headroom. No CI timings.
+          python3 scripts/run-native-plan-stage.py --stage canonical-policy-linked --timeout-secs 11820 \
+            --test-executable-file target/native-plan-logs/canonical-policy-executable -- \
+            --ignored --exact \
+            linked::benchmark::complete_original_and_decoded_knucleotide_same_binary_policy_controls \
+            --test-threads=1 --nocapture
+      - name: Retain benchmark policy diagnostics and qualification evidence
+        if: always()
+        timeout-minutes: 5
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-policy-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            target/native-plan-logs
+            ${{ runner.temp }}/canonical-policy-evidence
+            !${{ runner.temp }}/canonical-policy-evidence/cargo-target/**
+          if-no-files-found: error
+          retention-days: 14
+
+  # Same required reusable gate; this exercises the real public command,
+  # not the direct generator harness. Builds run once before saved harnesses.
+  canonical-native-cli:
+    name: Public canonical native CLI
+    runs-on: ubuntu-latest
+    # Serial Actions ceilings total 249 minutes, including always-run evidence;
+    # leave eleven more for orchestration. These are qualification, not timings.
+    timeout-minutes: 260
+    env:
+      RUSTUP_TOOLCHAIN: nightly-2026-03-03
+      CARGO_BUILD_JOBS: "1"
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v7.0.1
+        id: checkout
+        timeout-minutes: 2
+        with:
+          ref: ${{ inputs.validation_ref }}
+      - name: Record exact public canonical CLI checkout and source pins
+        timeout-minutes: 2
+        env:
+          VALIDATION_REF: ${{ inputs.validation_ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        run: |
+          mkdir -p target/native-plan-logs
+          actual=$(git rev-parse HEAD)
+          expected=$(git rev-parse "$VALIDATION_REF^{commit}")
+          {
+            echo "requested_ref=$VALIDATION_REF"
+            echo "expected_sha=$expected"
+            echo "checkout_sha=$actual"
+          } | tee target/native-plan-logs/00-canonical-cli-checkout.log
+          test "$actual" = "$expected"
+          test "$actual" = "$CHECKOUT_SHA"
+          sha256sum Cargo.toml Cargo.lock \
+            hosts/gpu/Cargo.toml \
+            src/cli/commands/build.rs src/cli/commands/build_cranelift.rs \
+            src/cli/commands/build_cranelift_tests.rs tests/canonical_native_build.rs \
+            tests/support/canonical_native_build.rs \
+            hosts/gpu/tests/fixtures/native/knucleotide-idiomatic.mec \
+            hosts/gpu/src/native_artifact/application.rs hosts/gpu/src/native_artifact/mod.rs \
+            hosts/gpu/src/native_artifact/program_application.rs \
+            hosts/gpu/src/native_artifact/templates/linked_*.in \
+            src/runtime/src/runtime/program/compiler.rs \
+            src/runtime/src/runtime/program/compiler_retained_input.rs \
+            src/runtime/src/runtime/program/compiler_retained_input_tests.rs \
+            src/build/src/project/source.rs src/build/src/project/source_cargo_paths.rs \
+            src/build/src/cargo/command.rs scripts/run-native-plan-stage.py \
+            scripts/check_canonical_cli_ci.py scripts/tests/test_canonical_cli_ci.py \
+            .github/workflows/ci-native-plan.yml .github/ci/owners.toml \
+            > target/native-plan-logs/canonical-cli-source.sha256
+      - name: Install pinned public CLI compiler and process tools
+        timeout-minutes: 10
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          sudo apt-get update -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources -o Dir::Etc::sourceparts=-
+          sudo apt-get install --yes strace ripgrep build-essential m4
+      - name: Verify public CLI Unix process targeting before generation
+        timeout-minutes: 3
+        run: |
+          python3 -B scripts/tests/test_probe_unix_kill_targeting.py
+          python3 scripts/probe-unix-kill-targeting.py
+      - name: Fetch locked public canonical CLI dependencies
+        timeout-minutes: 10
+        run: cargo +nightly-2026-03-03 fetch --locked
+      - name: Verify public CLI receipt checker rejects incomplete evidence
+        timeout-minutes: 2
+        run: python3 -B scripts/tests/test_canonical_cli_ci.py
+      - name: Compile public canonical CLI unit contracts without execution
+        timeout-minutes: 25
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-cli-lib-compile --timeout-secs 1380 \
+            --record-test-executable mech \
+            --test-executable-file target/native-plan-logs/canonical-cli-lib-executable -- \
+            cargo +nightly-2026-03-03 test --locked --offline -j1 -p mech \
+            --features full_compiler,cranelift_build --lib \
+            --no-run --message-format=json-render-diagnostics
+      - name: Compile public canonical CLI process contracts without execution
+        timeout-minutes: 25
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-cli-public-compile --timeout-secs 1380 \
+            --record-test-executable canonical_native_build \
+            --test-executable-file target/native-plan-logs/canonical-cli-public-executable -- \
+            cargo +nightly-2026-03-03 test --locked --offline -j1 -p mech \
+            --features full_compiler,cranelift_build --test canonical_native_build \
+            --no-run --message-format=json-render-diagnostics
+      - name: Pin exact saved public CLI executables
+        timeout-minutes: 2
+        run: |
+          test ! -e "$RUNNER_TEMP/canonical-cli-evidence"
+          python3 scripts/check_canonical_cli_ci.py pins
+      - name: Verify public canonical CLI unit selection is exact
+        timeout-minutes: 3
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-cli-unit-selection --timeout-secs 60 \
+            --test-executable-file target/native-plan-logs/canonical-cli-lib-executable -- \
+            --list cli::commands::build::cranelift::tests::
+          python3 scripts/check_canonical_cli_ci.py unit-selection
+      - name: Execute public canonical CLI unit contracts
+        timeout-minutes: 10
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-cli-unit-contracts --timeout-secs 480 \
+            --test-executable-file target/native-plan-logs/canonical-cli-lib-executable -- \
+            cli::commands::build::cranelift::tests:: --test-threads=1 --nocapture
+      - name: Verify public canonical CLI process selection is exact
+        timeout-minutes: 3
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-cli-public-selection --timeout-secs 60 \
+            --test-executable-file target/native-plan-logs/canonical-cli-public-executable -- \
+            --list --ignored
+          python3 scripts/check_canonical_cli_ci.py public-selection
+      - name: Qualify all public canonical CLI secured process cases
+        timeout-minutes: 145
+        env:
+          MECH_CANONICAL_CLI_EVIDENCE_DIR: ${{ runner.temp }}/canonical-cli-evidence
+        run: |
+          # Inner public bounds: K 120+2*1800+4*120, unused 1800+2*120,
+          # closed 1800+120 = 8160s. Reserve 300s before wrapper expiry;
+          # Actions leaves 240s more for owned-tree cleanup and diagnostics.
+          python3 scripts/run-native-plan-stage.py --stage canonical-cli-public-qualification --timeout-secs 8460 \
+            --test-executable-file target/native-plan-logs/canonical-cli-public-executable -- \
+            --ignored --test-threads=1 --nocapture
+      - name: Verify public canonical CLI completion and immutable pins
+        if: always()
+        timeout-minutes: 2
+        env:
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$CHECKOUT_SHA"
+          sha256sum --check target/native-plan-logs/canonical-cli-source.sha256
+          python3 scripts/check_canonical_cli_ci.py complete \
+            --evidence-dir "$RUNNER_TEMP/canonical-cli-evidence"
+      - name: Retain public canonical CLI diagnostics and process evidence
+        if: always()
+        timeout-minutes: 5
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-native-cli-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            target/native-plan-logs
+            ${{ runner.temp }}/canonical-cli-evidence
+          if-no-files-found: error
+          retention-days: 14

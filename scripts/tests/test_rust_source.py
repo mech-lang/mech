@@ -7,6 +7,14 @@ from rust_source import rust_code
 
 
 class RustSourceTests(unittest.TestCase):
+    def test_literal_preserving_mode_blanks_only_comments(self):
+        for literal in ('"https://example/*literal*/"', 'r#"// literal /* text */"#', "'/'"):
+            source = "/* outer /* nested */ done */" + literal + "// end\n"
+            self.assertEqual(
+                rust_code(source, preserve_literals=True),
+                " " * len("/* outer /* nested */ done */") + literal + " " * len("// end") + "\n",
+            )
+
     def assert_masked_region(self, non_code):
         before = "fn α<'a>(value: &'a str) {}\r\n"
         after = "\r\nfn r#visible() {}"

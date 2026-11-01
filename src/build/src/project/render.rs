@@ -5,7 +5,6 @@ use std::path::{Path, PathBuf};
 use mech_core::{MResult, ResourceDelivery};
 use mech_runtime::{ConfigValue, LogLevel, RuntimeConfig};
 
-use crate::NativeHostFunctionContext;
 use crate::analysis::requirements::{
     grant_covers_resource, normalize_native_runtime_config, planned_resource_grant,
     runtime_resource_grant,
@@ -16,11 +15,139 @@ use crate::plan::{
     NativeRuntimeConfig, PlannedApplicationRequirement, PlannedDependencySource,
     PlannedPackageSource, compute_plan_sha256, sha256_hex,
 };
+use crate::{NativeHostFactoryInput, NativeHostFunctionContext};
 
 use super::{
     GeneratedDependency, GeneratedNativeProject, GeneratedSourceSet, NativeProjectManifest,
     render_native_project_manifest, rust_string_literal, validate_project_installer_path,
 };
+
+#[cfg(test)]
+mod hosted_arguments_tests {
+    use std::ffi::OsString;
+
+    include!("hosted-arguments.rs.in");
+
+    fn parse(arguments: &[&str]) -> GeneratedArguments {
+        parse_arguments(arguments.iter().map(|argument| OsString::from(*argument))).unwrap()
+    }
+
+    #[test]
+    fn launcher_controls_end_at_the_first_payload_argument() {
+        let parsed = parse(&[
+            "--once",
+            "--print-result",
+            "--runtime-info",
+            "--max-live-turns",
+            "3",
+            "19",
+            "--once",
+            "--",
+            "--max-live-turns",
+        ]);
+        assert!(parsed.once);
+        assert!(parsed.print_result);
+        assert!(parsed.runtime_info);
+        assert_eq!(parsed.max_live_turns, Some(3));
+        assert_eq!(
+            parsed.program_arguments,
+            ["19", "--once", "--", "--max-live-turns"].map(OsString::from)
+        );
+        let parsed = parse(&["19", "--runtime-info"]);
+        assert!(!parsed.runtime_info);
+        assert_eq!(
+            parsed.program_arguments,
+            ["19", "--runtime-info"].map(OsString::from)
+        );
+    }
+
+    #[test]
+    fn explicit_boundary_and_empty_payloads_are_preserved() {
+        let parsed = parse(&["--", "--once", "", "19", "--runtime-info"]);
+        assert!(!parsed.once);
+        assert!(!parsed.runtime_info);
+        assert_eq!(
+            parsed.program_arguments,
+            ["--once", "", "19", "--runtime-info"].map(OsString::from)
+        );
+        assert_eq!(
+            parse(&["", "--once"]).program_arguments,
+            ["", "--once"].map(OsString::from)
+        );
+        assert_eq!(
+            parse(&["--unknown"]).program_arguments,
+            [OsString::from("--unknown")]
+        );
+        assert!(parse(&[]).program_arguments.is_empty());
+        assert!(!parse(&[]).print_result);
+        assert!(parse(&["--"]).program_arguments.is_empty());
+    }
+
+    #[test]
+    fn result_display_requires_a_launcher_control_before_the_payload_boundary() {
+        assert!(parse(&["--print-result", "19"]).print_result);
+        for arguments in [vec!["19", "--print-result"], vec!["--", "--print-result"]] {
+            let parsed = parse(&arguments);
+            assert!(!parsed.print_result);
+            assert!(
+                parsed
+                    .program_arguments
+                    .contains(&OsString::from("--print-result"))
+            );
+        }
+    }
+
+    #[test]
+    fn malformed_launcher_limits_fail_before_payload_routing() {
+        for arguments in [
+            vec!["--max-live-turns"],
+            vec!["--max-live-turns", "0"],
+            vec!["--max-live-turns", "bad"],
+            vec!["--max-live-turns", "--once"],
+        ] {
+            assert_eq!(
+                parse_arguments(arguments.into_iter().map(OsString::from)),
+                Err(())
+            );
+        }
+        assert_eq!(
+            parse(&["--", "--max-live-turns", "bad"]).program_arguments,
+            ["--max-live-turns", "bad"].map(OsString::from)
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn non_unicode_payload_bytes_reach_the_provider_unchanged() {
+        use std::os::unix::ffi::OsStringExt;
+        let opaque = OsString::from_vec(vec![0xff, 0x80]);
+        let parsed = parse_arguments([opaque.clone(), OsString::from("--once")]).unwrap();
+        assert!(!parsed.once);
+        assert_eq!(
+            parsed.program_arguments,
+            [opaque.clone(), OsString::from("--once")]
+        );
+        let parsed = parse_arguments([OsString::from("--"), opaque.clone()]).unwrap();
+        assert_eq!(parsed.program_arguments, [opaque.clone()]);
+        assert_eq!(
+            parse_arguments([OsString::from("--max-live-turns"), opaque]),
+            Err(())
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn non_unicode_payload_units_reach_the_provider_unchanged() {
+        use std::os::windows::ffi::OsStringExt;
+        let opaque = OsString::from_wide(&[0xd800]);
+        let parsed = parse_arguments([OsString::from("--"), opaque.clone()]).unwrap();
+        assert_eq!(parsed.program_arguments, [opaque.clone()]);
+        assert_eq!(
+            parse_arguments([OsString::from("--max-live-turns"), opaque]),
+            Err(())
+        );
+    }
+}
 
 const FORBIDDEN_GENERATED_PACKAGES: &[&str] =
     &["mech-stdlib", "mech-syntax", "mech-bytecode", "mech-build"];
@@ -449,39 +576,10 @@ fn generated_error(message: impl Into<String>) -> MechError {
     MechError::new(GenericError { msg: message.into() }, None)
 }
 
-#[derive(Clone, Copy)]
-struct GeneratedArguments {
-    once: bool,
-    runtime_info: bool,
-    max_live_turns: Option<usize>,
-}
-
-fn parse_arguments() -> Result<GeneratedArguments, ()> {
-    let mut parsed = GeneratedArguments {
-        once: false,
-        runtime_info: false,
-        max_live_turns: None,
-    };
-    let mut arguments = std::env::args().skip(1);
-    while let Some(argument) = arguments.next() {
-        match argument.as_str() {
-            "--once" => parsed.once = true,
-            "--runtime-info" => parsed.runtime_info = true,
-            "--max-live-turns" => {
-                let value = arguments.next().ok_or(())?.parse::<usize>().map_err(|_| ())?;
-                if value == 0 {
-                    return Err(());
-                }
-                parsed.max_live_turns = Some(value);
-            }
-            _ => return Err(()),
-        }
-    }
-    Ok(parsed)
-}
+// GENERATED_HOSTED_ARGUMENTS
 
 fn usage() {
-    eprintln!("usage: generated-app [--once] [--runtime-info] [--max-live-turns N]");
+    eprintln!("usage: generated-app [--once] [--print-result] [--runtime-info] [--max-live-turns N] [--] [ARG ...]");
 }
 
 fn runtime_info_json(runtime: &mech_runtime::MechRuntime) -> String {
@@ -504,7 +602,7 @@ fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
         Ok(catalog) => catalog,
         Err(error) => return (Err(error), Vec::new()),
     };
-    let mut runtime = match runtime::runtime_builder(catalog).and_then(|builder| builder.build()) {
+    let mut runtime = match runtime::runtime_builder(catalog, &arguments.program_arguments).and_then(|builder| builder.build()) {
         Ok(runtime) => runtime,
         Err(error) => return (Err(error), Vec::new()),
     };
@@ -518,48 +616,51 @@ fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
         )?;
         let value = outcome.initial_value;
 
-        if !arguments.once && !value.is_empty() {
+        let has_driven_inputs = runtime.has_driven_live_input_bindings()?;
+        if arguments.print_result && (!arguments.once || !has_driven_inputs) && !value.is_empty() {
             println!("{}", value);
         }
 
-        let interrupted = Arc::new(AtomicBool::new(false));
-        let handler_flag = Arc::clone(&interrupted);
-        ctrlc::set_handler(move || {
-            handler_flag.store(true, Ordering::SeqCst);
-        })
-        .map_err(|error| generated_error(format!("failed to install Ctrl-C handler: {error}")))?;
+        if has_driven_inputs {
+            let interrupted = Arc::new(AtomicBool::new(false));
+            let handler_flag = Arc::clone(&interrupted);
+            ctrlc::set_handler(move || {
+                handler_flag.store(true, Ordering::SeqCst);
+            })
+            .map_err(|error| generated_error(format!("failed to install Ctrl-C handler: {error}")))?;
 
-        drivers_started = true;
-        runtime.start_input_drivers()?;
-        let mut completed_live_turns = 0usize;
-        let max_live_turns = if arguments.once {
-            Some(1)
-        } else {
-            arguments.max_live_turns
-        };
-        while !interrupted.load(Ordering::SeqCst) {
-            if max_live_turns.is_some_and(|limit| completed_live_turns >= limit) {
-                break;
+            drivers_started = true;
+            runtime.start_input_drivers()?;
+            let mut completed_live_turns = 0usize;
+            let max_live_turns = if arguments.once {
+                Some(1)
+            } else {
+                arguments.max_live_turns
+            };
+            while !interrupted.load(Ordering::SeqCst) {
+                if max_live_turns.is_some_and(|limit| completed_live_turns >= limit) {
+                    break;
+                }
+                let drain_limit = max_live_turns
+                    .map(|limit| limit.saturating_sub(completed_live_turns))
+                    .unwrap_or(64)
+                    .min(64);
+                let outcomes = runtime.drain_host_inputs(drain_limit)?;
+                completed_live_turns = completed_live_turns.saturating_add(
+                    outcomes
+                        .iter()
+                        .filter(|outcome| outcome.resident_turn.is_some())
+                        .count(),
+                );
+                if outcomes.is_empty() {
+                    std::thread::sleep(Duration::from_millis(10));
+                }
             }
-            let drain_limit = max_live_turns
-                .map(|limit| limit.saturating_sub(completed_live_turns))
-                .unwrap_or(64)
-                .min(64);
-            let outcomes = runtime.drain_host_inputs(drain_limit)?;
-            completed_live_turns = completed_live_turns.saturating_add(
-                outcomes
-                    .iter()
-                    .filter(|outcome| outcome.resident_turn.is_some())
-                    .count(),
-            );
-            if outcomes.is_empty() {
-                std::thread::sleep(Duration::from_millis(10));
-            }
-        }
-        if arguments.once {
-            if let Some((_, value)) = runtime.root_symbol_values_all()?.into_iter().next() {
-                if !value.is_empty() {
-                    println!("{}", value);
+            if arguments.once && arguments.print_result {
+                if let Some((_, value)) = runtime.root_symbol_values_all()?.into_iter().next() {
+                    if !value.is_empty() {
+                        println!("{}", value);
+                    }
                 }
             }
         }
@@ -584,7 +685,7 @@ fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
 }
 
 fn main() {
-    let arguments = match parse_arguments() {
+    let arguments = match parse_arguments(std::env::args_os().skip(1)) {
         Ok(arguments) => arguments,
         Err(()) => {
             usage();
@@ -606,7 +707,8 @@ fn main() {
     }
 }
 "#,
-        );
+        )
+        .replace("// GENERATED_HOSTED_ARGUMENTS", include_str!("hosted-arguments.rs.in"));
     }
 
     String::from(
@@ -621,32 +723,10 @@ static PROGRAM: &[u8] =
         "/program.mecb"
     ));
 
-#[derive(Clone, Copy)]
-struct GeneratedArguments {
-    runtime_info: bool,
-}
-
-fn parse_arguments() -> Result<GeneratedArguments, ()> {
-    let mut parsed = GeneratedArguments { runtime_info: false };
-    let mut arguments = std::env::args().skip(1);
-    while let Some(argument) = arguments.next() {
-        match argument.as_str() {
-            "--once" => {}
-            "--runtime-info" => parsed.runtime_info = true,
-            "--max-live-turns" => {
-                let value = arguments.next().ok_or(())?.parse::<usize>().map_err(|_| ())?;
-                if value == 0 {
-                    return Err(());
-                }
-            }
-            _ => return Err(()),
-        }
-    }
-    Ok(parsed)
-}
+// GENERATED_HOSTED_ARGUMENTS
 
 fn usage() {
-    eprintln!("usage: generated-app [--once] [--runtime-info] [--max-live-turns N]");
+    eprintln!("usage: generated-app [--once] [--print-result] [--runtime-info] [--max-live-turns N] [--] [ARG ...]");
 }
 
 fn runtime_info_json(runtime: &mech_runtime::MechRuntime) -> String {
@@ -669,11 +749,12 @@ fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
         Ok(catalog) => catalog,
         Err(error) => return (Err(error), Vec::new()),
     };
-    let mut runtime = match runtime::runtime_builder(catalog).and_then(|builder| builder.build()) {
+    let mut runtime = match runtime::runtime_builder(catalog, &arguments.program_arguments).and_then(|builder| builder.build()) {
         Ok(runtime) => runtime,
         Err(error) => return (Err(error), Vec::new()),
     };
     let runtime_constructed = true;
+    let _one_shot_controls = (arguments.once, arguments.max_live_turns);
     let primary = (|| -> MResult<()> {
         let durability = runtime.config().resident_durability;
         let outcome = runtime.load_bytecode_program(
@@ -682,7 +763,7 @@ fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
         )?;
         let value = outcome.initial_value;
 
-        if !value.is_empty() {
+        if arguments.print_result && !value.is_empty() {
             println!("{}", value);
         }
         if arguments.runtime_info {
@@ -700,7 +781,7 @@ fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
 }
 
 fn main() {
-    let arguments = match parse_arguments() {
+    let arguments = match parse_arguments(std::env::args_os().skip(1)) {
         Ok(arguments) => arguments,
         Err(()) => {
             usage();
@@ -723,6 +804,7 @@ fn main() {
 }
 "#,
     )
+    .replace("// GENERATED_HOSTED_ARGUMENTS", include_str!("hosted-arguments.rs.in"))
 }
 
 fn render_hosted_main_source_for_plan(plan: &NativeBuildPlan) -> String {
@@ -743,13 +825,14 @@ pub fn render_runtime_source(
     }
     let runtime = &plan.runtime_config;
 
-    let mut factories = BTreeMap::<&str, &str>::new();
+    let mut factories = BTreeMap::<&str, (&str, NativeHostFactoryInput)>::new();
     for host in &plan.hosts {
         validate_project_installer_path(&host.factory_path)?;
-        match factories.insert(&host.provider, &host.factory_path) {
-            Some(existing) if existing != host.factory_path => {
+        let selected = (host.factory_path.as_str(), host.factory_input);
+        match factories.insert(&host.provider, selected) {
+            Some(existing) if existing != selected => {
                 return project_invalid(format!(
-                    "provider `{}` has conflicting factory paths",
+                    "provider `{}` has conflicting factory paths or constructor inputs",
                     host.provider
                 ));
             }
@@ -778,9 +861,19 @@ pub fn render_runtime_source(
         )
         .expect("writing to String cannot fail");
     }
-    source.push_str(
-        "\npub fn runtime_builder(\n    catalog: Arc<FunctionCatalog>,\n) -> MResult<RuntimeBuilder> {\n",
-    );
+    let arguments_parameter = if factories
+        .values()
+        .any(|(_, input)| *input == NativeHostFactoryInput::ProgramArguments)
+    {
+        "program_arguments"
+    } else {
+        "_program_arguments"
+    };
+    write!(
+        &mut source,
+        "\npub fn runtime_builder(\n    catalog: Arc<FunctionCatalog>,\n    {arguments_parameter}: &[std::ffi::OsString],\n) -> MResult<RuntimeBuilder> {{\n",
+    )
+    .expect("writing to String cannot fail");
     write!(
         &mut source,
         "    let config = {};\n\n    let mut builder = RuntimeBuilder::new()\n        .function_catalog(catalog)\n        .config(config);\n",
@@ -807,10 +900,14 @@ pub fn render_runtime_source(
             .expect("writing to String cannot fail");
     }
 
-    for factory_path in factories.values() {
+    for (factory_path, input) in factories.values() {
+        let input = match input {
+            NativeHostFactoryInput::None => "",
+            NativeHostFactoryInput::ProgramArguments => "program_arguments.to_vec()",
+        };
         write!(
             &mut source,
-            "\n    builder = builder.host_factory(\n        Box::new(\n            {factory_path}()?,\n        ),\n    )?;\n"
+            "\n    builder = builder.host_factory(\n        Box::new(\n            {factory_path}({input})?,\n        ),\n    )?;\n"
         )
         .expect("writing to String cannot fail");
     }
@@ -1296,16 +1393,20 @@ mod tests {
         assert!(engine.contains("Some(argument), None) if argument == \"--once\""));
         assert!(engine.contains("usage: generated-app [--once]"));
         assert!(!engine.contains("--runtime-info"));
+        assert!(!engine.contains("--print-result"));
 
         for source in [
             render_hosted_main_source(false),
             render_hosted_main_source(true),
         ] {
-            assert!(source.contains("\"--runtime-info\" => parsed.runtime_info = true"));
+            assert!(source.contains("argument == std::ffi::OsStr::new(\"--runtime-info\")"));
+            assert!(source.contains("argument == std::ffi::OsStr::new(\"--print-result\")"));
+            assert!(source.contains("parse_arguments(std::env::args_os().skip(1))"));
+            assert!(source.contains("&arguments.program_arguments"));
             assert!(source.contains("\"--max-live-turns\""));
             assert!(
                 source.contains(
-                    "usage: generated-app [--once] [--runtime-info] [--max-live-turns N]"
+                    "usage: generated-app [--once] [--print-result] [--runtime-info] [--max-live-turns N]"
                 )
             );
             assert!(source.contains("std::process::exit(2)"));
@@ -1338,6 +1439,17 @@ mod tests {
         assert!(live_source.contains("runtime.shutdown()"));
         assert!(live_source.contains("runtime_constructed"));
         assert!(live_source.contains("drivers_started"));
+        assert!(live_source.contains("runtime.has_driven_live_input_bindings()?"));
+        assert!(live_source.contains("if has_driven_inputs {"));
+        assert!(
+            live_source
+                .contains("arguments.print_result && (!arguments.once || !has_driven_inputs)")
+        );
+        assert!(live_source.contains("if arguments.once && arguments.print_result"));
+        assert!(
+            render_hosted_main_source(false)
+                .contains("if arguments.print_result && !value.is_empty()")
+        );
 
         let one_shot_dependencies =
             generated_dependencies_from_plan(&base_plan(NativeApplicationKind::Hosted)).unwrap();
@@ -1379,10 +1491,11 @@ mod tests {
             crate_name: "mech_terminal".into(),
             cargo_features: vec!["provider".into()],
             factory_path: "mech_terminal::CliHostFactory::new".into(),
+            factory_input: crate::host::NativeHostFactoryInput::None,
             settings: settings.clone(),
         }];
         plan.run_grants = vec![planned_grant("cli", "stdout")];
-        let config = NativeRuntimeConfig {
+        let mut config = NativeRuntimeConfig {
             runtime: plan.runtime_config.clone(),
             actor_bootstrap: None,
             hosts: vec![HostInstanceConfig {
@@ -1406,6 +1519,41 @@ mod tests {
         assert!(source.contains("RunResourceGrantConfig {"));
         assert!(!source.contains("quote\"newline\n"));
         assert!(!source.contains("serde_json"));
+
+        // A constructor input never replaces the selected factory with a
+        // standard provider implementation, even for a familiar provider name.
+        plan.hosts[0].factory_path = "custom_terminal::SnapshotFactory::create".into();
+        plan.hosts[0].factory_input = NativeHostFactoryInput::ProgramArguments;
+        let source = render_runtime_source(&plan, Some(&config)).unwrap();
+        assert!(
+            source
+                .contains("custom_terminal::SnapshotFactory::create(program_arguments.to_vec())?")
+        );
+        assert!(!source.contains("mech_terminal::CliHostFactory"));
+
+        let mut peer = plan.hosts[0].clone();
+        peer.name = "peer".into();
+        peer.factory_input = NativeHostFactoryInput::None;
+        plan.hosts.push(peer.clone());
+        plan.application_requirements.push(resource_requirement(
+            "cli://peer/stdout",
+            "peer",
+            "cli",
+            "stdout",
+        ));
+        plan.run_grants.push(planned_grant("peer", "stdout"));
+        config.hosts.push(HostInstanceConfig {
+            name: peer.name,
+            provider: peer.provider,
+            settings: peer.settings,
+        });
+        config.run_grants = plan.run_grants.iter().map(runtime_resource_grant).collect();
+        let error = render_runtime_source(&plan, Some(&config)).unwrap_err();
+        assert!(
+            error
+                .full_chain_message()
+                .contains("conflicting factory paths or constructor inputs")
+        );
     }
 
     #[test]
@@ -1424,6 +1572,7 @@ mod tests {
             crate_name: "mech_terminal".into(),
             cargo_features: vec!["provider".into()],
             factory_path: "mech_terminal::CliHostFactory::new".into(),
+            factory_input: crate::host::NativeHostFactoryInput::None,
             settings: ConfigValue::Map(BTreeMap::new()),
         }];
         plan.run_grants = vec![planned_grant("cli", "stderr")];
