@@ -1,0 +1,47 @@
+{
+  "removed": [
+    {
+      "path": "/private/tmp/mech-admitted-helpers-round78-20261031/initial-controls-schema-shape/tests",
+      "bytes": 112073832,
+      "sha256": "f82459c260de6a1e4a38f49a7a1e891fd1f77ecff5d0ec9c19b9d2604e056305",
+      "reason": "Superseded local test/inspection executable; final unit binary, accepted release, raw receipts and source/build commands retained."
+    },
+    {
+      "path": "/private/tmp/mech-admitted-helpers-round78-20261031/initial-controls-recursive/tests",
+      "bytes": 112073832,
+      "sha256": "5900c65d5489f06e62a7ab8879c69fde949e339c82d1681f53d58be611331b26",
+      "reason": "Superseded local test/inspection executable; final unit binary, accepted release, raw receipts and source/build commands retained."
+    },
+    {
+      "path": "/private/tmp/mech-admitted-helpers-round78-20261031/focused-controls/tests",
+      "bytes": 112073848,
+      "sha256": "0de431d2fc390c2954526afa8c333112c28439919a8d09ded32d9389d637fce5",
+      "reason": "Superseded local test/inspection executable; final unit binary, accepted release, raw receipts and source/build commands retained."
+    },
+    {
+      "path": "/private/tmp/mech-admitted-helpers-round78-20261031/units-qualified/gpu-unit-tests",
+      "bytes": 112079856,
+      "sha256": "34cf3261a3b10e945d7c5158a9303d17ac5b136144dd6439495db14de7c6b19e",
+      "reason": "Superseded local test/inspection executable; final unit binary, accepted release, raw receipts and source/build commands retained."
+    },
+    {
+      "path": "/private/tmp/mech-admitted-helpers-round78-20261031/source-inspection/inspect",
+      "bytes": 94248616,
+      "sha256": "edf73d6f3af2996491b034952b46658a423065fc693f889b0553e5fdb9d089a8",
+      "reason": "Superseded local test/inspection executable; final unit binary, accepted release, raw receipts and source/build commands retained."
+    },
+    {
+      "path": "/private/tmp/mech-admitted-helpers-round78-20261031/replay-final",
+      "bytes": 122577566,
+      "reason": "Recreatable extraction copy; source archives, derived outputs and passing standalone replay receipt retained."
+    },
+    {
+      "path": "/private/tmp/mech-admitted-helpers-round78-20261031/replay-final-2",
+      "bytes": 122580476,
+      "reason": "Recreatable extraction copy; source archives, derived outputs and passing standalone replay receipt retained."
+    }
+  ],
+  "logical_bytes_removed": 787708026,
+  "previous_failed_test_binaries_removed": 224145040,
+  "scope": "Only this round's obsolete local products. All pinned release/compiler/dependency inputs and final test binary are preserved."
+}

@@ -1,0 +1,17 @@
+{
+  "archives": 112,
+  "verified_file_occurrences": 937,
+  "unique_paths": 703,
+  "paths_with_multiple_preserved_versions": 13,
+  "byte_identical_outputs": [
+    "analysis/scorecard.json",
+    "analysis/scorecard.csv",
+    "diagnostic-counts/summary.json",
+    "profile-numbers.json",
+    "allocation-comparison.json",
+    "instruction-window-comparison.json",
+    "callback-comparison.json",
+    "validation.json"
+  ],
+  "scope": "All archived versions verified before chronological overlay. Analysis-only replay; no compiler/compressor or external scratch files."
+}
