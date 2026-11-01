@@ -487,7 +487,7 @@ impl NativeLibraryWorkBudget {
             }
             Err(error) => {
                 drop(account);
-                Err(Self::forward_debit_failure(error))
+                Self::forward_debit_failure(error)
             }
         }
     }
@@ -496,8 +496,8 @@ impl NativeLibraryWorkBudget {
     // account borrow must not merge successful debits with its cold transport.
     #[cold]
     #[inline(never)]
-    fn forward_debit_failure(error: ResidentKernelError) -> ResidentKernelError {
-        error
+    fn forward_debit_failure(error: ResidentKernelError) -> Result<(), ResidentKernelError> {
+        Err(error)
     }
 
     /// Preview the same account's debit before optional backing is selected.
