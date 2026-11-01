@@ -921,6 +921,17 @@
           "files": 52,
           "asset_id": 697588592,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r81-resource-observation-968482260830.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "c29854f6f1f404658c39bcb024296b01ec80a71d",
+          "asset": "r81-scalar-controls-bfbedaa314c7.tar.gz",
+          "sha256": "bfbedaa314c73f1a5779f509f8452808f202add4098d484ee5ebd6e3d9b6a678",
+          "manifest_sha256": "b825b9665ea75be05165fd1aa428279a9d3dfea1fa04b7ed585df9e8add7e4ca",
+          "bytes": 126546,
+          "files": 97,
+          "asset_id": 697588650,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r81-scalar-controls-bfbedaa314c7.tar.gz"
         }
       ]
     }
