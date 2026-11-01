@@ -3291,6 +3291,17 @@
           "files": 43,
           "asset_id": 698091709,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-record-field-witness-no-child-region-9650b1ea56d0.tar.gz"
+        },
+        {
+          "event": "record-field-witness-oracle-correction",
+          "source_revision": "36794bdeac6c70a13be317a14d2175bb1b4fbb94",
+          "asset": "r88-record-field-witness-oracle-correction-3c321b1e2054.tar.gz",
+          "sha256": "3c321b1e20544a3be565e5a64174c86c106c245f8cf687befc73a6f0d59ac20c",
+          "manifest_sha256": "20eac648dc9a900740bd30f46c7e9859a498da89aec28af87f2bddacd160ec12",
+          "bytes": 61131,
+          "files": 41,
+          "asset_id": 698091774,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-record-field-witness-oracle-correction-3c321b1e2054.tar.gz"
         }
       ]
     }
