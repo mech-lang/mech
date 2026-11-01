@@ -7033,6 +7033,17 @@
           "files": 76,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-counters-7e3aad38f7de.tar.gz"
+        },
+        {
+          "event": "isolated-profile",
+          "source_revision": "af930a97154d8f71b6759540049c55708c8ba035",
+          "asset": "r101-isolated-profile-c1343158ad03.tar.gz",
+          "sha256": "c1343158ad038d52bf8758a072dc87113aa653609cd237d282b0c6ce32bb197c",
+          "manifest_sha256": "3e44f642d6f5c066d8dc3221e174cd55d887730827cc386b447bf766e180daaf",
+          "bytes": 316855,
+          "files": 46,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-isolated-profile-c1343158ad03.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
