@@ -382,6 +382,49 @@ mod tests {
     use super::*;
     use mech_syntax::document::{GreenElement, GreenNode};
 
+    #[test]
+    #[ignore = "manual source-admission phase profiler; no timing assertions"]
+    fn profile_source_document_phases() {
+        let path = std::env::var_os("MECH_PROFILE_SOURCE")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| {
+                std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../examples/ekf/localization.mec")
+            });
+        let source = std::fs::read_to_string(&path).unwrap();
+        let bytes = source.len();
+        let started = std::time::Instant::now();
+        let document = SourceDocument::parse_resolved(
+            "memory:source-phase-profile",
+            Revision(0),
+            source,
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let parse = started.elapsed();
+        let started = std::time::Instant::now();
+        let first_index = document.index();
+        let index = started.elapsed();
+        let started = std::time::Instant::now();
+        let second_index = document.index();
+        let repeated_index = started.elapsed();
+        eprintln!(
+            "source_profile path={} bytes={} clean={} parse_ms={:.3} index_ms={:.3} repeated_index_ms={:.3} first_index_ok={} second_index_ok={} stats={:?}",
+            path.display(),
+            bytes,
+            document.is_strictly_clean(),
+            parse.as_secs_f64() * 1000.0,
+            index.as_secs_f64() * 1000.0,
+            repeated_index.as_secs_f64() * 1000.0,
+            first_index.is_ok(),
+            second_index.is_ok(),
+            document.snapshot().stats,
+        );
+        assert!(document.is_strictly_clean());
+        assert!(first_index.is_ok());
+        assert!(second_index.is_ok());
+    }
+
     fn change_descendant_identity(node: &mut GreenNode, token: bool) -> bool {
         let mut children = node.children.to_vec();
         let mut changed = false;

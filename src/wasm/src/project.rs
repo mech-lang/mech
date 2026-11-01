@@ -2033,7 +2033,7 @@ mod document {
                 }
             }
         }
-        let fences = root_fence_occurrences(&source);
+        let fences = root_fence_occurrences_in_document(&syntax);
         let mut title_occurrences = HashMap::<&'static str, usize>::new();
         let mut bindings = Vec::new();
         for (index, (output, (_, ordinal))) in
@@ -2192,7 +2192,6 @@ mod document {
     }
 
     fn root_fence_occurrences(source: &str) -> Vec<(usize, usize)> {
-        use mech_syntax::document::{AstNode, CodeBlockSyntax, CodeFenceScope};
         let Ok(document) = SourceDocument::parse_resolved(
             "browser:occurrence",
             mech_syntax::document::Revision(0),
@@ -2201,7 +2200,14 @@ mod document {
         ) else {
             return Vec::new();
         };
-        let mut nodes = vec![document.document().syntax().clone()];
+        root_fence_occurrences_in_document(&document.document())
+    }
+
+    fn root_fence_occurrences_in_document(
+        document: &mech_syntax::document::DocumentSyntax,
+    ) -> Vec<(usize, usize)> {
+        use mech_syntax::document::{AstNode, CodeBlockSyntax, CodeFenceScope};
+        let mut nodes = vec![document.syntax().clone()];
         let mut spans = Vec::new();
         while let Some(node) = nodes.pop() {
             if let Some(fence) = CodeBlockSyntax::cast(node.clone()) {
@@ -2640,6 +2646,24 @@ mod document {
 
         fn fence(output_id: u64, ordinal: u64, start: usize) -> DocumentOutputBinding {
             fence_with_semantic(output_id, 17, ordinal, start)
+        }
+
+        #[test]
+        fn retained_document_fences_keep_exact_delimiter_boundaries() {
+            let fence = "~~~mech{output: false}\n22\n~~~";
+            let source = format!("Prose before.\n\n{fence}\n\nProse after.\n");
+            let document = SourceDocument::parse_resolved(
+                "runtime:interactive",
+                mech_syntax::document::Revision(7),
+                source.as_str(),
+                mech_syntax::document::ParseConfig::default(),
+            )
+            .unwrap();
+            let start = source.find(fence).unwrap();
+            assert_eq!(
+                root_fence_occurrences_in_document(&document.document()),
+                vec![(start, start + fence.len())],
+            );
         }
 
         #[test]
@@ -5186,12 +5210,36 @@ fn document_source_resolver(
         )));
     }
 
-    let mut resolver = project_source_resolver_with_resolutions_and_provenance(
-        &source.source_map,
+    validate_source_resolution_entries(
+        source.source_map.keys().map(String::as_str),
         &source.resolutions,
-        &source.provenance,
     )?;
+    // The candidate already owns the accepted root revision. Only dependencies
+    // need admission here; reparsing the transported root before replacing it
+    // repeats the expensive document parse for every planning/runtime resolver.
+    let dependencies = source
+        .source_map
+        .iter()
+        .filter(|(specifier, _)| *specifier != &source.root_specifier)
+        .map(|(specifier, text)| (specifier.clone(), text.clone()))
+        .collect();
+    let mut resolver = project_source_resolver_with_provenance(&dependencies, &source.provenance)?;
     let default_root_uri = format!("memory:{}", source.root_specifier);
+    // Keep the logical root identity while resolving explicit and relative
+    // import edges. This temporary entry is replaced by the retained candidate
+    // before the resolver is returned to a compiler or runtime.
+    resolver.insert_source(
+        &source.root_specifier,
+        ResolvedSource::new(
+            &source.root_specifier,
+            &default_root_uri,
+            MechSourceCode::String(String::new()),
+        )
+        .with_kind(SourceKind::Mech),
+    )?;
+    for resolution in &source.resolutions {
+        resolver.insert_resolution_entry(resolution)?;
+    }
     let mut derived_root_resolutions = Vec::new();
     let index = document
         .index()
@@ -6936,6 +6984,60 @@ phase"#;
                 .unwrap(),
             42.0,
         );
+    }
+
+    #[test]
+    fn document_resolver_preserves_candidate_revision_and_explicit_import_edges() {
+        use mech_syntax::document::AstNode;
+        let source = "answer := 1\n";
+        let bootstrap = document_bootstrap(
+            "docs/main.mec",
+            source,
+            HashMap::from([
+                ("docs/main.mec".to_string(), source.to_string()),
+                (
+                    "support/index.mec".to_string(),
+                    "value := 41\n<+ value\n".to_string(),
+                ),
+            ]),
+            vec![SourceResolutionEntry::new(
+                "docs/main.mec",
+                "./helper",
+                "support/index.mec",
+            )],
+        );
+        let candidate = SourceDocument::parse_resolved(
+            "runtime:interactive",
+            mech_syntax::document::Revision(8),
+            "+> ./helper\nanswer := helper/value + 1\nanswer\n",
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        let resolver = document_source_resolver(&candidate, &bootstrap).unwrap();
+        let root =
+            mech_runtime::SourceResolver::resolve(&resolver, &SourceRequest::new("docs/main.mec"))
+                .unwrap()
+                .unwrap();
+        let retained = root.source_document().unwrap();
+        assert_eq!(retained.source().revision(), candidate.source().revision());
+        assert!(std::sync::Arc::ptr_eq(
+            retained.document().syntax().green(),
+            candidate.document().syntax().green(),
+        ));
+        let dependency = mech_runtime::SourceResolver::resolve(
+            &resolver,
+            &SourceRequest::new("./helper").with_referrer("runtime:interactive"),
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(dependency.canonical_uri, "memory:support/index.mec");
+        assert!(dependency.source_document().unwrap().is_strictly_clean());
+
+        let mut invalid_dependency = bootstrap.clone();
+        invalid_dependency
+            .source_map
+            .insert("support/index.mec".into(), "value := [\n".into());
+        assert!(document_source_resolver(&candidate, &invalid_dependency).is_err());
     }
 
     #[test]

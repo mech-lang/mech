@@ -694,7 +694,7 @@ fn render_canonical_source_html(
         SyntaxKind::ContextCapabilityDeclaration => Some("mech-context-capability"),
         SyntaxKind::ContextCapabilityPath => Some("mech-context-path"),
         SyntaxKind::ContextDeclaration if long_context(node) => {
-            Some("mech-context-declaration mech-statement-context-block")
+            Some("mech-context-declaration mech-statement-context-block mech-context-preformatted")
         }
         SyntaxKind::ContextDeclaration => Some("mech-context-declaration"),
         SyntaxKind::FsmDeclare => Some("mech-fsm-declare"),
@@ -706,12 +706,31 @@ fn render_canonical_source_html(
     if let Some(class) = class {
         output.push_str(&format!("<span class='{class}'>"));
     }
+    let preformatted_context = long_context(node);
+    let mut context_capabilities = false;
     for element in node.children_with_tokens() {
         match element {
             SyntaxElement::Node(child) => {
+                if preformatted_context && child.kind() == SyntaxKind::ContextCapabilityDeclaration
+                {
+                    output.push_str("\n  ");
+                }
                 render_canonical_source_html(&child, Some(node), comment_context, output)?;
             }
             SyntaxElement::Token(token) => {
+                let text = token.text().map_err(|_| range_error(token.range()))?;
+                if preformatted_context {
+                    if token.kind() == SyntaxKind::LeftBrace {
+                        context_capabilities = true;
+                    } else if token.kind() == SyntaxKind::RightBrace && context_capabilities {
+                        output.push('\n');
+                        context_capabilities = false;
+                    } else if context_capabilities && text.chars().all(char::is_whitespace) {
+                        // The projection owns one line per capability. Source
+                        // trivia and CSS block boxes must not add extra lines.
+                        continue;
+                    }
+                }
                 let class = match token.kind() {
                     SyntaxKind::Colon
                         if matches!(
@@ -733,9 +752,7 @@ fn render_canonical_source_html(
                 if let Some(class) = class {
                     output.push_str(&format!("<span class='{class}'>"));
                 }
-                output.push_str(&escape_html(
-                    &token.text().map_err(|_| range_error(token.range()))?,
-                ));
+                output.push_str(&escape_html(&text));
                 if class.is_some() {
                     output.push_str("</span>");
                 }

@@ -30,6 +30,18 @@ macro_rules! fixed_terminal_specs {
         },
       )+
     ];
+
+    pub fn fixed_terminal_spec(rule: RuleId) -> Option<&'static FixedTerminalSpec> {
+      match rule {
+        $(rules::$rule => Some(&FixedTerminalSpec {
+          rule: rules::$rule,
+          literal: $literal,
+          kind: SyntaxKind::$kind,
+          spacing: TerminalSpacing::$spacing,
+        }),)+
+        _ => None,
+      }
+    }
   };
 }
 
@@ -145,10 +157,6 @@ fixed_terminal_specs! {
 }
 
 pub const FIXED_TERMINAL_COUNT: usize = 108;
-
-pub fn fixed_terminal_spec(rule: RuleId) -> Option<&'static FixedTerminalSpec> {
-    FIXED_TERMINALS.iter().find(|spec| spec.rule == rule)
-}
 
 #[cfg(test)]
 mod tests {

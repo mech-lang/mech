@@ -33,6 +33,11 @@ on:
         required: false
         type: boolean
         default: false
+      browser_applications_in_caller:
+        description: The calling workflow already ran and required the EKF browser checks
+        required: false
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       contract_families:
@@ -2681,6 +2686,25 @@ jobs:
             --test mech_serve \
             mech_serve_interrupt_closes_keep_alive_server_once \
             -- --exact --nocapture
+
+      - name: Verify EKF startup, document layout, and live results
+        if: ${{ !inputs.browser_applications_in_caller }}
+        run: |
+          python3 scripts/build-wasm.py --profile browser-compute
+          cargo build --locked --bin mech --features compute_backends_native
+          MECH_BIN="$CARGO_TARGET_DIR/debug/mech" \
+            MECH_EKF_COMPUTE_BACKEND=cpu-scalar \
+            MECH_EKF_CONTINUITY_EDIT=false \
+            MECH_EKF_TERMINAL_SUBMIT_PROBE=false \
+            bash scripts/smoke-served-resident-ekf-browser.sh
+
+      - name: Retain EKF failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-browser-ekf
+          path: ${{ github.workspace }}/target/project-browser/served-resident-ekf-browser.*
+          if-no-files-found: ignore
 
       - name: Remove generated browser package
         if: always()

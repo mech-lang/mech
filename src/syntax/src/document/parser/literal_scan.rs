@@ -18,6 +18,7 @@ pub(crate) struct LiteralScan<'l> {
     expected: GraphemeScan,
     actual: GraphemeScan,
     expected_range: Option<TextRange>,
+    expected_start: TextSize,
     actual_range: Option<TextRange>,
     compared: u32,
     prefix_checked: bool,
@@ -39,6 +40,7 @@ impl<'l> LiteralScan<'l> {
             expected: GraphemeScan::new(TextSize::ZERO, Some(literal_end)),
             actual: GraphemeScan::new(start, final_context),
             expected_range: None,
+            expected_start: TextSize::ZERO,
             actual_range: None,
             compared: 0,
             prefix_checked: false,
@@ -76,6 +78,27 @@ impl<'l> LiteralScan<'l> {
             return LiteralProgress::Complete(result);
         }
         loop {
+            // Final input can reject a different leading byte before either
+            // Unicode cursor runs. While input is open, preserve the existing
+            // ASCII grapheme wait: callers may use that boundary to finalize a
+            // recovery diagnostic (notably when CR may still become CRLF).
+            if !self.prefix_checked
+                && self.expected_start < self.literal_end
+                && self.matched_end < consume_end
+            {
+                if *allowance == 0 {
+                    return LiteralProgress::NeedsProcessing;
+                }
+                *allowance -= 1;
+                self.prefix_bytes += 1;
+                let byte = source.scan_byte_at(self.matched_end.to_usize());
+                if byte != Some(self.literal.as_bytes()[self.expected_start.to_usize()])
+                    && (final_input || byte.is_some_and(|byte| !byte.is_ascii()))
+                {
+                    return self.complete(None);
+                }
+                self.prefix_checked = true;
+            }
             if self.expected_range.is_none() {
                 match self
                     .expected
@@ -88,23 +111,6 @@ impl<'l> LiteralScan<'l> {
                         return LiteralProgress::InvalidSource;
                     }
                 }
-            }
-            if !self.prefix_checked {
-                if *allowance == 0 {
-                    return LiteralProgress::NeedsProcessing;
-                }
-                *allowance -= 1;
-                self.prefix_bytes += 1;
-                let expected = self.expected_range.expect("expected grapheme");
-                if let Some(byte) = source.scan_byte_at(self.matched_end.to_usize()) {
-                    if !byte.is_ascii()
-                        && self.matched_end < consume_end
-                        && byte != self.literal.as_bytes()[expected.start.to_usize()]
-                    {
-                        return self.complete(None);
-                    }
-                }
-                self.prefix_checked = true;
             }
             if self.actual_range.is_none() {
                 match self
@@ -140,6 +146,7 @@ impl<'l> LiteralScan<'l> {
                 self.compared += 1;
             }
             self.matched_end = actual.end;
+            self.expected_start = expected.end;
             self.actual_range = None;
             self.expected_range = None;
             self.compared = 0;
@@ -346,5 +353,36 @@ mod tests {
             }
             previous = Some(current);
         }
+    }
+
+    #[test]
+    fn mismatched_prefix_rejects_without_scanning_graphemes() {
+        for text in ["a".into(), String::from("a") + &"\u{301}".repeat(1024)] {
+            let source = TextSnapshot::new(DocumentId(826), Revision(0), text).unwrap();
+            let mut scan = LiteralScan::new("+", TextSize::ZERO, None).unwrap();
+            assert_eq!(
+                drain(&mut scan, &source, true),
+                LiteralProgress::Complete(None)
+            );
+            assert_eq!(scan.expected.work.calls, 0);
+            assert_eq!(scan.actual.work.calls, 0);
+            assert_eq!(
+                work(&scan),
+                1,
+                "mismatch work must not depend on grapheme length"
+            );
+        }
+    }
+
+    #[test]
+    fn open_ascii_mismatch_waits_for_the_complete_recovery_grapheme() {
+        let source = TextSnapshot::new(DocumentId(826), Revision(0), "\r").unwrap();
+        let mut scan = LiteralScan::new("`", TextSize::ZERO, None).unwrap();
+        assert_eq!(drain(&mut scan, &source, false), LiteralProgress::NeedInput);
+        let source = source.append("\nnext").unwrap();
+        assert_eq!(
+            drain(&mut scan, &source, false),
+            LiteralProgress::Complete(None)
+        );
     }
 }

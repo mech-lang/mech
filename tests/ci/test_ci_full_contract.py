@@ -134,6 +134,18 @@ def literal_assignment(source: str, name: str):
 
 
 class FullWorkflowContractTests(unittest.TestCase):
+    def test_full_browser_qualification_requires_the_real_ekf_unless_caller_did(self):
+        browser = job_block(FULL, "project-browser")
+        step = next(step for step in job_steps(FULL, "project-browser")
+                    if "smoke-served-resident-ekf-browser.sh" in step)
+        self.assertIn("!inputs.browser_applications_in_caller", step)
+        self.assertIn("--profile browser-compute", step)
+        self.assertIn("--features compute_backends_native", step)
+        self.assertNotIn("continue-on-error", step)
+        self.assertIn("browser_applications_in_caller:", FULL)
+        self.assertIn("browser_applications_in_caller: ${{ needs.impact.outputs.browser_applications_required == 'true' }}", CI)
+        self.assertIn("served-resident-ekf-browser.*", browser)
+
     def test_served_result_smoke_uses_the_embedded_runner_before_package_removal(self):
         browser = job_block(FULL, "project-browser")
         steps = job_steps(FULL, "project-browser")

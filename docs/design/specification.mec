@@ -3436,9 +3436,10 @@ paragraph-newline := paragraph, new-line ;
 
 title := +text, new-line, +equal, whitespace0, ?title-front-matter ;
 title-front-matter :=
-  *(identifier, space-tab0, colon, space-tab0,
-    ((img | figures), whitespace0
-     | (inline-paragraph, new-line))),
+  *((module-import, code-terminal)
+    | (identifier, space-tab0, colon, space-tab0,
+       ((img | figures), whitespace0
+        | (inline-paragraph, new-line)))),
   +equal, whitespace0 ;
 
 no-alignment := +dash ;
@@ -3480,7 +3481,7 @@ subtitle := ¬(error-sigil | info-sigil), space-tab0,
             right-parenthesis, space-tab0, paragraph-newline,
             space-tab0, whitespace0 ;
 
-ordered-list-item := number, period, ¬period, paragraph-newline ;
+ordered-list-item := ¬ul-subtitle, number, period, ¬period, paragraph-newline ;
 checked-item := dash, left-bracket, ("x" | "✓" | "✗"),
                 right-bracket, paragraph-newline, paragraph-newline ;
 unchecked-item := dash, left-bracket, whitespace0, right-bracket,

@@ -4,7 +4,7 @@ use crate::document::parser::grapheme_scan::{GraphemeScan, ScanProgress};
 use crate::document::parser::literal_scan::{LiteralProgress, LiteralScan};
 use crate::document::parser::{checkpoint::ParserCheckpoint, marker::Marker};
 use crate::document::{TextRange, TextSize};
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 
 pub(crate) enum Progress {
     Complete(bool),
@@ -21,6 +21,8 @@ struct UnicodeEscape {
     digits: usize,
 }
 
+// Control frames stay small: Unicode cursors live on the call stack while
+// running, and enter an owned resume frame only when a scan actually suspends.
 enum Frame {
     Call(RuleId),
     Exit(ParserCheckpoint),
@@ -33,11 +35,13 @@ enum Frame {
     Fixed(&'static FixedTerminalSpec),
     FixedAfterLeading(&'static FixedTerminalSpec),
     FixedAfterToken,
-    Literal(LiteralScan<'static>, Option<SyntaxKind>),
+    LiteralStart(&'static str, Option<SyntaxKind>),
+    LiteralResume(Box<LiteralScan<'static>>, Option<SyntaxKind>),
     LiteralResult(Option<TextSize>, Option<SyntaxKind>),
     Classified(SyntaxKind, fn(char) -> bool),
     Raw(Option<SyntaxKind>),
-    Grapheme(GraphemeScan, Option<SyntaxKind>),
+    GraphemeStart(Option<SyntaxKind>),
+    GraphemeResume(Box<GraphemeScan>, Option<SyntaxKind>),
     GraphemeResult(Option<TextRange>, Option<SyntaxKind>),
     EscapeAfterSlash,
     EscapeZero,
@@ -95,13 +99,7 @@ impl Continuation {
     fn node(&mut self, parser: &mut Parser<'_>, kind: SyntaxKind) {
         self.push(Frame::CompleteNode(parser.start(), kind));
     }
-    fn literal(
-        &mut self,
-        parser: &Parser<'_>,
-        literal: &'static str,
-        kind: Option<SyntaxKind>,
-        final_input: bool,
-    ) {
+    fn literal(&mut self, parser: &Parser<'_>, literal: &'static str, kind: Option<SyntaxKind>) {
         // Resource finalization owns the whole accepted document remainder,
         // including bytes past an embedded fence's local consume bound. Failed
         // speculative terminals during unwind must not construct an out-of-range
@@ -110,15 +108,34 @@ impl Continuation {
             self.result = false;
             return;
         }
-        self.push(Frame::Literal(
-            LiteralScan::new(
-                literal,
-                parser.offset(),
-                final_input.then_some(parser.cursor().context_end()),
-            )
-            .expect("nonempty canonical literal"),
-            kind,
-        ));
+        self.push(Frame::LiteralStart(literal, kind));
+    }
+    fn advance_literal(
+        &mut self,
+        parser: &mut Parser<'_>,
+        scan: &mut LiteralScan<'static>,
+        kind: Option<SyntaxKind>,
+        final_input: bool,
+        allowance: &mut u64,
+    ) -> Option<Progress> {
+        let before = *allowance;
+        let progress = scan.advance(
+            parser.source(),
+            parser.cursor().end(),
+            parser.cursor().context_end(),
+            final_input,
+            allowance,
+        );
+        self.work += before - *allowance;
+        match progress {
+            LiteralProgress::Complete(end) => {
+                self.push(Frame::LiteralResult(end, kind));
+                None
+            }
+            LiteralProgress::NeedsProcessing => Some(Progress::NeedsProcessing),
+            LiteralProgress::NeedInput => Some(Progress::NeedInput),
+            LiteralProgress::InvalidSource => panic!("base continuation source bounds changed"),
+        }
     }
     fn unless(&mut self, parser: &Parser<'_>, excluded: &'static [RuleId], rule: RuleId) {
         self.push(Frame::Unless(parser.checkpoint(), rule));
@@ -246,7 +263,13 @@ impl Continuation {
                 self.push(frame);
                 return Progress::NeedsProcessing;
             }
-            if !matches!(frame, Frame::Literal(..) | Frame::Grapheme(..)) {
+            if !matches!(
+                frame,
+                Frame::LiteralStart(..)
+                    | Frame::LiteralResume(..)
+                    | Frame::GraphemeStart(..)
+                    | Frame::GraphemeResume(..)
+            ) {
                 *allowance -= 1;
                 self.work += 1;
             }
@@ -305,13 +328,13 @@ impl Continuation {
                         self.push(Frame::FixedAfterLeading(spec));
                         self.push(Frame::Call(rules::WHITESPACE0));
                     } else {
-                        self.literal(parser, spec.literal, Some(spec.kind), final_input);
+                        self.literal(parser, spec.literal, Some(spec.kind));
                     }
                 }
                 Frame::FixedAfterLeading(spec) => {
                     if self.result {
                         self.push(Frame::FixedAfterToken);
-                        self.literal(parser, spec.literal, Some(spec.kind), final_input);
+                        self.literal(parser, spec.literal, Some(spec.kind));
                     }
                 }
                 Frame::FixedAfterToken => {
@@ -319,31 +342,26 @@ impl Continuation {
                         self.push(Frame::Call(rules::WHITESPACE0));
                     }
                 }
-                Frame::Literal(mut scan, kind) => {
-                    let before = *allowance;
-                    let progress = scan.advance(
-                        parser.source(),
-                        parser.cursor().end(),
-                        parser.cursor().context_end(),
-                        final_input,
-                        allowance,
-                    );
-                    self.work += before - *allowance;
-                    match progress {
-                        LiteralProgress::Complete(end) => {
-                            self.push(Frame::LiteralResult(end, kind))
-                        }
-                        LiteralProgress::NeedsProcessing | LiteralProgress::NeedInput => {
-                            self.push(Frame::Literal(scan, kind));
-                            return if progress == LiteralProgress::NeedInput {
-                                Progress::NeedInput
-                            } else {
-                                Progress::NeedsProcessing
-                            };
-                        }
-                        LiteralProgress::InvalidSource => {
-                            panic!("base continuation source bounds changed")
-                        }
+                Frame::LiteralStart(literal, kind) => {
+                    let mut scan = LiteralScan::new(
+                        literal,
+                        parser.offset(),
+                        final_input.then_some(parser.cursor().context_end()),
+                    )
+                    .expect("nonempty canonical literal");
+                    if let Some(progress) =
+                        self.advance_literal(parser, &mut scan, kind, final_input, allowance)
+                    {
+                        self.push(Frame::LiteralResume(Box::new(scan), kind));
+                        return progress;
+                    }
+                }
+                Frame::LiteralResume(mut scan, kind) => {
+                    if let Some(progress) =
+                        self.advance_literal(parser, &mut scan, kind, final_input, allowance)
+                    {
+                        self.push(Frame::LiteralResume(scan, kind));
+                        return progress;
                     }
                 }
                 Frame::LiteralResult(end, kind) => {
@@ -371,20 +389,20 @@ impl Continuation {
                 }
                 Frame::Raw(kind) => {
                     if parser.charge() {
-                        let end = final_input.then_some(parser.cursor().context_end());
-                        let scan = parser
-                            .state
-                            .grapheme_tail
-                            .take()
-                            .filter(|scan| scan.resumes_at(parser.offset(), end))
-                            .unwrap_or_else(|| GraphemeScan::new(parser.offset(), end));
-                        self.push(Frame::Grapheme(scan, kind));
+                        self.push(Frame::GraphemeStart(kind));
                     } else {
                         self.raw_range = None;
                         self.result = false;
                     }
                 }
-                Frame::Grapheme(mut scan, kind) => {
+                Frame::GraphemeStart(kind) => {
+                    let end = final_input.then_some(parser.cursor().context_end());
+                    let mut scan = parser
+                        .state
+                        .grapheme_tail
+                        .take()
+                        .filter(|scan| scan.resumes_at(parser.offset(), end))
+                        .unwrap_or_else(|| GraphemeScan::new(parser.offset(), end));
                     let before = *allowance;
                     let progress = scan.advance(
                         parser.source(),
@@ -403,7 +421,38 @@ impl Continuation {
                         }
                         ScanProgress::End => self.push(Frame::GraphemeResult(None, kind)),
                         ScanProgress::NeedInput | ScanProgress::NeedsProcessing => {
-                            self.push(Frame::Grapheme(scan, kind));
+                            self.push(Frame::GraphemeResume(Box::new(scan), kind));
+                            return if progress == ScanProgress::NeedInput {
+                                Progress::NeedInput
+                            } else {
+                                Progress::NeedsProcessing
+                            };
+                        }
+                        ScanProgress::InvalidSource => {
+                            panic!("base continuation source bounds changed")
+                        }
+                    }
+                }
+                Frame::GraphemeResume(mut scan, kind) => {
+                    let before = *allowance;
+                    let progress = scan.advance(
+                        parser.source(),
+                        parser.cursor().context_end(),
+                        final_input,
+                        allowance,
+                    );
+                    self.work += before - *allowance;
+                    match progress {
+                        ScanProgress::Grapheme(range) => {
+                            parser.state.grapheme_tail = Some(*scan);
+                            self.push(Frame::GraphemeResult(
+                                (range.end <= parser.cursor().end()).then_some(range),
+                                kind,
+                            ));
+                        }
+                        ScanProgress::End => self.push(Frame::GraphemeResult(None, kind)),
+                        ScanProgress::NeedInput | ScanProgress::NeedsProcessing => {
+                            self.push(Frame::GraphemeResume(scan, kind));
                             return if progress == ScanProgress::NeedInput {
                                 Progress::NeedInput
                             } else {
@@ -426,7 +475,7 @@ impl Continuation {
                 Frame::EscapeAfterSlash => {
                     if self.result {
                         self.push(Frame::EscapeZero);
-                        self.literal(parser, "0", None, final_input);
+                        self.literal(parser, "0", None);
                     }
                 }
                 Frame::EscapeZero => {
@@ -437,7 +486,7 @@ impl Continuation {
                         ));
                     } else {
                         self.push(Frame::EscapeUnicode);
-                        self.literal(parser, "u{", None, final_input);
+                        self.literal(parser, "u{", None);
                     }
                 }
                 Frame::EscapeUnicode => {
@@ -477,7 +526,7 @@ impl Continuation {
                     }
                     _ if state.digits > 0 && state.scalar.and_then(char::from_u32).is_some() => {
                         self.push(Frame::UnicodeCloser(state));
-                        self.literal(parser, "}", None, final_input);
+                        self.literal(parser, "}", None);
                     }
                     _ => {
                         parser.rewind(state.checkpoint);
@@ -538,7 +587,7 @@ impl Continuation {
                     if let Some(rule) = SYMBOL_RULES.iter().chain(PUNCTUATION_RULES).nth(index) {
                         let spec = fixed_terminal_spec(*rule).expect("escape punctuation terminal");
                         self.push(Frame::EscapeSymbolResult(index));
-                        self.literal(parser, spec.literal, None, final_input);
+                        self.literal(parser, spec.literal, None);
                     } else {
                         self.result = false;
                     }
@@ -634,6 +683,12 @@ mod tests {
             output.stats,
             continuation.work,
         )
+    }
+
+    #[test]
+    fn control_frames_keep_unicode_scan_state_indirect() {
+        // Control-only alternatives must not pay for an embedded Unicode scan.
+        assert!(core::mem::size_of::<Frame>() * 2 < core::mem::size_of::<LiteralScan<'static>>());
     }
 
     #[test]

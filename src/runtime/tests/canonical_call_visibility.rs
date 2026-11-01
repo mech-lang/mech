@@ -358,6 +358,14 @@ fn visible_calls_and_operators_preserve_source_and_bytecode_results() {
         ("+> math/cos\ncos(0f32)\n", "1"),
         ("+> math/{sin, cos}\ncos(0f32)\n", "1"),
         ("+> wave := math/cos\nwave(0f32)\n", "1"),
+        (
+            "Import Report\n=============\nsection: Examples\n+> math/*\n=============\ncos(0f32)\n",
+            "1",
+        ),
+        (
+            "Import Report\n=============\n+> wave := math/cos\nsection: Examples\n=============\nwave(0f32)\n",
+            "1",
+        ),
         ("+> string\nstring/concat(\"a\",\"b\") == \"ab\"\n", "true"),
         ("compare/eq(1,1)\n", "true"),
         (

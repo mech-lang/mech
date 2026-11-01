@@ -65,6 +65,17 @@ struct Fence<'g> {
     sealed: bool,
     child: Box<Continuation<'g>>,
 }
+
+// A comment's double dash is also a valid pair of unary operators. Probe only
+// complete expression arms before letting pattern recovery claim that prefix.
+const FSM_EXPRESSION_ARMS: GrammarExpression = GrammarExpression::Choice(&[
+    GrammarExpression::Rule(rules::FSM_GUARD_ARM),
+    GrammarExpression::Rule(rules::FSM_TRANSITION),
+]);
+const FSM_COMMENT_ARM: GrammarExpression = GrammarExpression::Sequence(&[
+    GrammarExpression::Rule(rules::FSM_COMMENT_ARM),
+    GrammarExpression::Rule(rules::WHITESPACE0),
+]);
 enum Frame<'g> {
     RootResult,
     RootComplete(Marker, usize),
@@ -105,6 +116,8 @@ enum Frame<'g> {
     CommentExpression(&'g GrammarExpression, ParserCheckpoint, bool),
     CommentRecoveryCheck(&'g GrammarExpression, ParserCheckpoint, usize, bool),
     CommentTerminal(&'g GrammarExpression, ParserCheckpoint, bool),
+    FsmCommentProbe(&'g GrammarExpression, ParserCheckpoint),
+    FsmCommentExpression(&'g GrammarExpression, ParserCheckpoint, GrammarState, bool),
     Builtin(&'g str),
     Expression(&'g GrammarExpression),
     Literal(LiteralScan<'g>),
@@ -206,6 +219,11 @@ impl<'g> Continuation<'g> {
                 parser.checkpoint(),
             ));
             self.push(Frame::CallRule(rules::WHITESPACE0));
+        } else if specification.rule == rules::FSM_ARM {
+            self.push(Frame::FsmCommentProbe(
+                &specification.expression,
+                parser.checkpoint(),
+            ));
         } else {
             self.push(Frame::Expression(&specification.expression));
         }
@@ -1099,6 +1117,39 @@ impl<'g> Continuation<'g> {
                         self.push(Frame::CallRule(rules::COMMENT));
                     }
                 }
+                Frame::FsmCommentProbe(expression, checkpoint) => {
+                    if !final_input
+                        && (parser.cursor().byte_at(0).is_none()
+                            || (parser.cursor().starts_with("-")
+                                && parser.cursor().byte_at(1).is_none())
+                            || (parser.cursor().starts_with("--")
+                                && parser.cursor().byte_at(2).is_none()))
+                    {
+                        self.push(Frame::FsmCommentProbe(expression, checkpoint));
+                        return Progress::NeedInput;
+                    }
+                    if !parser.cursor().starts_with("--") {
+                        self.push(Frame::Expression(expression));
+                    } else {
+                        let previous = parser.replace_consuming_recovery(false);
+                        self.push(Frame::FsmCommentExpression(
+                            expression, checkpoint, self.state, previous,
+                        ));
+                        self.push(Frame::Expression(&FSM_EXPRESSION_ARMS));
+                    }
+                }
+                Frame::FsmCommentExpression(expression, checkpoint, initial, previous) => {
+                    let clean_expression = self.result == Attempt::Matched
+                        && parser.state.diagnostics.len() == checkpoint.diagnostics;
+                    parser.replace_consuming_recovery(previous);
+                    parser.rewind(checkpoint);
+                    self.state = initial;
+                    self.push(Frame::Expression(if clean_expression {
+                        expression
+                    } else {
+                        &FSM_COMMENT_ARM
+                    }));
+                }
                 Frame::Expression(expression) => self.expression(parser, expression),
                 Frame::Builtin(name) => match name {
                     "eof" if parser.is_eof() && !final_input => {
@@ -1601,6 +1652,19 @@ mod tests {
             (rules::EVAL_INLINE_MECH_CODE, "{x + 1}"),
             (rules::EVAL_INLINE_MECH_CODE, "{x +}"),
             (rules::PARSE, "╭◉╮\n(◉ ◯ ◉)\n"),
+        ]);
+    }
+
+    #[test]
+    fn fsm_comment_selection_preserves_unicode_cuts_and_resource_limits() {
+        crate::document::parser::canonical::continuation_test_support::assert_partitions::<
+            Continuation,
+        >(&[
+            (rules::FSM_ARM, "-- comment\n"),
+            (rules::FSM_ARM, "--é💡 comment\r\n"),
+            (rules::FSM_ARM, "--n -> :Done(n)\n"),
+            (rules::FSM_ARM, "-- n -> :Done(n)\n"),
+            (rules::FSM_ARM, "--n | true -> :Done(n)\r\n"),
         ]);
     }
 

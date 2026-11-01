@@ -69,9 +69,7 @@ impl<T> Journal<T> {
     }
     pub(crate) fn push(&mut self, value: T) {
         self.changed_from = self.changed_from.min(self.len());
-        let (items, allocations) = self.items.appended(Entry(value));
-        self.items = items;
-        self.allocations += allocations;
+        self.allocations += self.items.push(Entry(value));
         self.mutations += 1;
     }
     pub(crate) fn truncate(&mut self, len: usize) {
@@ -80,9 +78,7 @@ impl<T> Journal<T> {
         }
         self.changed_from = self.changed_from.min(len);
         self.discarded += (self.len() - len) as u64;
-        let (items, allocations) = self.items.truncated(len);
-        self.items = items;
-        self.allocations += allocations;
+        self.allocations += self.items.truncate(len);
         self.mutations += 1;
     }
     pub(crate) fn clear(&mut self) {
@@ -121,5 +117,58 @@ impl<T> core::ops::Index<usize> for Journal<T> {
 impl<T: Clone> core::ops::IndexMut<usize> for Journal<T> {
     fn index_mut(&mut self, index: usize) -> &mut T {
         self.get_mut(index).expect("journal mutable index")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unshared_append_and_rewind_allocate_only_the_retained_tree() {
+        for count in [64, 256, 1024] {
+            let mut journal = Journal::default();
+            for value in 0..count {
+                journal.push(value);
+            }
+            assert!(journal.allocations <= 2 * count as u64);
+            let append_allocations = journal.allocations;
+            for len in (0..count).rev() {
+                journal.truncate(len);
+                assert_eq!(journal.len(), len);
+                assert_eq!(
+                    journal.iter().copied().collect::<alloc::vec::Vec<_>>(),
+                    (0..len).collect::<alloc::vec::Vec<_>>()
+                );
+            }
+            assert_eq!(
+                journal.allocations, append_allocations,
+                "unshared rewind must not copy a path"
+            );
+        }
+    }
+
+    #[test]
+    fn shared_snapshots_preserve_values_across_rewind_append_and_marker_edits() {
+        let mut journal = Journal::default();
+        for value in 0..128 {
+            journal.push(value);
+        }
+        let frozen = journal.clone();
+        journal.truncate(65);
+        journal[64] = 1000;
+        for value in 128..192 {
+            journal.push(value);
+        }
+        assert_eq!(
+            frozen.iter().copied().collect::<alloc::vec::Vec<_>>(),
+            (0..128).collect::<alloc::vec::Vec<_>>()
+        );
+        assert_eq!(journal[63], 63);
+        assert_eq!(journal[64], 1000);
+        assert_eq!(journal[65], 128);
+        assert_eq!(journal[128], 191);
+        assert_eq!(frozen.len(), 128);
+        assert_eq!(journal.len(), 129);
     }
 }
