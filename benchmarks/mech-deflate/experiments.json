@@ -497,6 +497,17 @@
           "files": 53,
           "asset_id": 697419256,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-linked-multi-c2347bdde0ec.tar.gz"
+        },
+        {
+          "event": "units",
+          "source_revision": "e4d444b5fcd33a69c05837ad1cafbd4c50b9ae97",
+          "asset": "r80-units-0e39cd2d1620.tar.gz",
+          "sha256": "0e39cd2d1620365b660cfb5525eb1a2eafae0a23a4c4726754a5b6ed781294f9",
+          "manifest_sha256": "6f64fbf0d972c0accbcdda36a244c4a47fc284dedbb543f84f07dcad4529cbb2",
+          "bytes": 120316,
+          "files": 48,
+          "asset_id": 697420327,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-units-0e39cd2d1620.tar.gz"
         }
       ]
     }
