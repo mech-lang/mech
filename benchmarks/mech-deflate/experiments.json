@@ -3280,6 +3280,17 @@
           "files": 40,
           "asset_id": 698091631,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-record-field-witness-shape-mismatch-c2aebfc777aa.tar.gz"
+        },
+        {
+          "event": "record-field-witness-no-child-region",
+          "source_revision": "36794bdeac6c70a13be317a14d2175bb1b4fbb94",
+          "asset": "r88-record-field-witness-no-child-region-9650b1ea56d0.tar.gz",
+          "sha256": "9650b1ea56d0870d3ea48eb2489995ddaa470a74ae9cba30c305b9a18a638228",
+          "manifest_sha256": "a7ec72d828f88731fb872af79bdb1ccacfef248300fc08701a10150945df6dfc",
+          "bytes": 71789,
+          "files": 43,
+          "asset_id": 698091709,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-record-field-witness-no-child-region-9650b1ea56d0.tar.gz"
         }
       ]
     }
