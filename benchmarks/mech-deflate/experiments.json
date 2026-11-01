@@ -4748,6 +4748,17 @@
           "files": 49,
           "asset_id": 698605467,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r91-linked-prefix-90c27f5e5abc.tar.gz"
+        },
+        {
+          "event": "final-checks",
+          "source_revision": "31d77c7c1f5fdeecc9095664af19092353df06b3",
+          "asset": "r91-final-checks-186b815069c1.tar.gz",
+          "sha256": "186b815069c1eb4e20d1d8a7e36229a4630e09d1605d74a62eb2376f9c506579",
+          "manifest_sha256": "742fe3618d9711177db9a3882031b8b2838bf042c96f40729004ee2ca599104f",
+          "bytes": 62781,
+          "files": 68,
+          "asset_id": 698610698,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r91-final-checks-186b815069c1.tar.gz"
         }
       ]
     }
