@@ -6995,6 +6995,33 @@
           "files": 42,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-primary-group3-109fee4b10ff.tar.gz"
+        },
+        {
+          "event": "primary-summary",
+          "source_revision": "af930a97154d8f71b6759540049c55708c8ba035",
+          "asset": "r101-primary-summary-9a3b2fb47f5d.tar.gz",
+          "sha256": "9a3b2fb47f5dc5c607c9deed46e84bf84f4e855819092235ffb79919f2445954",
+          "manifest_sha256": "f8348d32abf9aca0c97e527e5806289de2d6e90862911bd90e0bab09178e53b2",
+          "bytes": 108212,
+          "files": 39,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-primary-summary-9a3b2fb47f5d.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.000286,
+            "medians": {
+              "after": 0.0024223120000000002,
+              "before": 0.0024136875
+            },
+            "multiples_of_reference": {
+              "after": 8.469622377622379,
+              "before": 8.439466783216783
+            },
+            "after_over_before": 1.003573163468759,
+            "improving_groups": 0,
+            "improving_blocks": 21,
+            "adverse_blocks": 43
+          }
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
