@@ -7196,6 +7196,17 @@
           "files": 77,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-counters-f0c8d607f69c.tar.gz"
+        },
+        {
+          "event": "isolated-profile",
+          "source_revision": "fa1ffe75e78c7ace538d7d14aa5f3ebc74783166",
+          "asset": "r102-isolated-profile-b79080bbdfb0.tar.gz",
+          "sha256": "b79080bbdfb095f534ab72d1b879fab4e1c2f1454aa4d92d4d35a93d839858e8",
+          "manifest_sha256": "6a27ae04e66d4f4ec45d6cc98ee38bbec2e1e3bc51e8d37c1c37d7943b257819",
+          "bytes": 317904,
+          "files": 47,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-isolated-profile-b79080bbdfb0.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
