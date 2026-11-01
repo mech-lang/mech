@@ -6657,9 +6657,9 @@
     },
     "100": {
       "base": "c84e307aa64e136bd0d3f6d2fc2bbf869b4e3b25",
-      "production": null,
-      "compiler_source": "5c219ed220879b05ee147bdf5d3f85680311eae2",
-      "decision": "under measurement",
+      "production": "bebe5a245d312796c630de76fc558fbcd2c2f2ff",
+      "compiler_source": "bebe5a245d312796c630de76fc558fbcd2c2f2ff",
+      "decision": "Candidate under measurement; ownership audit and repeated R99 hardware adverse result retained.",
       "events": [
         {
           "event": "ownership-audit",
@@ -6682,6 +6682,17 @@
           "files": 46,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-hardware-repeat-b0311d62c237.tar.gz"
+        },
+        {
+          "event": "initial",
+          "source_revision": "bebe5a245d312796c630de76fc558fbcd2c2f2ff",
+          "asset": "r100-initial-79d2ce6af774.tar.gz",
+          "sha256": "79d2ce6af774c89cf2a423ec2e4f27db31184f5c40263fa8191b9873f25ad514",
+          "manifest_sha256": "729eb57e2d48a5886e74bd47f36e7cf22249bd79a1d2ee1574b78b7a445d5ad0",
+          "bytes": 66706,
+          "files": 31,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-initial-79d2ce6af774.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
