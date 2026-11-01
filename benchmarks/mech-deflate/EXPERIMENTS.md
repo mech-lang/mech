@@ -549,3 +549,29 @@ frozen. No larger input, new all-features graph or green hosted CI is claimed.
 Compiler `5c219ed220879b05ee147bdf5d3f85680311eae2`; published parent `64705927265`.
 See [current status](../../docs/design/native-compression-status.md) and the
 compact index for exact archives, numerical replay hashes and publication state.
+
+
+## R100: ordinary BoundCall move; resource improvement only
+
+Compiler `bebe5a245d312796c630de76fc558fbcd2c2f2ff` avoids the no-witness metadata
+clone while retaining two independent witnessed consumers and original accounting
+order. The Object, descriptor and metadata are byte-identical to R99. Actual
+requests5149→5077, bytes−5404, instructions−16971.5 (0.060720%); peak live and
+reallocations stay equal. Fresh elapsed **8.268488×→8.281428×** reference
+(+0.156501%, two of four pairs improve). No elapsed win established; retain as a
+small allocation/instruction cleanup with all contrary observations.
+
+Current Engine seal9, runtime356, work/memory33, CI65, image1, components236,
+connected8, path1, linked40, isolated scalar12 (same1.05 gate, max1.010357), frame8,
+workflow132 and architecture15 pass. The original scalar batch passed but is
+excluded for a disclosed descriptor-read overlap; the full clean rerun is retained.
+All source allocation sites, prices, algorithm and timing boundary remain pinned.
+
+A separate audit refutes broad extra ownership scanning as the R99 cause: only
+eight extra candidate checks and the same9801 callbacks. Four new hardware pairs
+reproduce the2.05% instruction increase. Actual host disassembly instead reveals
+budget-helper outlining despite identical budget source. Its causal contribution
+is still unproved; an explicit inline experiment is next, separately measured.
+Seventeen archived packets verify1,249 file occurrences/538 paths and reproduce
+all four reports byte-identically. A missing linked-metadata replay input is fixed
+in a separate immutable repair packet; compiler and measurements stay unchanged.

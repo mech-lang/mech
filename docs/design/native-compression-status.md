@@ -6,7 +6,87 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Publication CI is cancelled by
 instruction; no green hosted-CI claim is made.
 
-## R99: retire finished ordinary collection sources
+## R100: move ordinary binding metadata; no elapsed win established
+
+Compiler **`bebe5a245d312796c630de76fc558fbcd2c2f2ff`**, published parent
+`c84e307aa64e136bd0d3f6d2fc2bbf869b4e3b25`. The no-witness binding branch now moves
+the original BoundCall into its sole kernel consumer. Certified scalar kernels
+still retain independent executor/seal metadata; all builder invalidation,
+accounting, current-value validation and admission order stay unchanged.
+
+Fresh matched complete eight-byte compression is **8.268488×→8.281428× Roc's
+time**, 2.422667→2.4264585ms against a 0.293ms reference: **+0.156501%** pooled
+median elapsed. Two pairs improve and two worsen; 25 descriptive blocks improve
+and 39 worsen. All observations remain: 3,968 primary and 3,984 total. No elapsed
+improvement is established. R99's historical 8.363107× used a different reference
+clock and must not be subtracted from this ratio to claim a gain.
+
+| Metric | Fresh R99 baseline | R100 |
+|---|---:|---:|
+| Instructions, separate cohort |27,950,216.5|27,933,245 (−16,971.5; −0.060720%)|
+| Cycles, same hardware cohort |7,697,293.5|7,622,510.5|
+| Allocation requests |5,149|5,077 (−72; −1.398330%)|
+| Requested bytes |95,900,682|95,895,278 (−5,404B)|
+| Incremental peak live bytes |17,782,744|unchanged|
+| Reallocations |162|unchanged|
+| Object/image/metadata |R99 artifacts|all byte-identical|
+| Generated text / entry stack |14,604,696B / 135,728B|unchanged|
+
+Retain this as a small allocation/instruction cleanup, with no elapsed-win or
+peak-live-heap claim. Price formulas, logical work 42,410,605,541 and versions
+IR/work/private ABI/MBC143/99/38/14 stay unchanged. Source, tables, search limits,
+real scratch capacities, allocator, output capacity13 clear/rebind and evaluate_into
+timing remain pinned. Mech computes the exact raw bytes and independent inflate
+passes; input aliases and final zero managed bytes/nodes remain verified.
+
+Passing current selections: nine actual Engine semantic-seal unit tests, runtime356,
+work/memory33, guarded native CI65, image1, unchanged components236/connected8/path1,
+linked40, scalar12, frame8, workflow132 and architecture15. Scalar gate remains1.05;
+the isolated rerun's maximum ratio is1.010357, pure scalar requests/bytes stay
+equal, and loop allocation slope remains zero. The initial scalar batch also
+passed but is excluded because a descriptor read overlapped its start. All its
+observations are preserved. An auxiliary Engine test driver initially used
+metadata-only extern paths and an incompatible filename flag; switching to the
+same frozen rlibs fixes the driver without compiler or allowance changes.
+
+Five Engine-dependent crates rebuild coherently with the retained optimized
+operation profile and warnings-as-errors; Core/math dependencies remain frozen.
+The additional actual Engine unit root uses opt-level1 and the same selected
+features. No new Core, all-features, full-math or larger-input qualification is
+claimed. The existing expensive knucleotide-body runtime exclusion remains.
+Fresh serial before/after profiles cover695 complete calls per subject.
+
+### New instruction finding: runtime budget helper outlining
+
+A current calibrated R97/R99 audit finds exactly9,801 callbacks in both versions.
+R99 adds only eight ownership-candidate checks (980→988) across200 matrix updates;
+57 buffer visits and260 buffer checks stay equal. Broad additional retirement
+scanning is not established as the instruction regression's cause. Four fresh
+hardware pairs reproduce about2.05% more instructions in R99, with lower cycles.
+Instrumented windows remain estimates, separate from uninstrumented counters.
+
+The budget source file is byte-identical across R97 and R99 (Git blob
+`bbcc2b4c97ac2a61ebe6b0a912349c8a85ef33cb`). Actual disassembly finds a732-byte
+library charge routine with its checks inline in R97. R99 instead has a512-byte
+caller plus a separate520-byte charge_control_account_at_limits routine, with
+intermediate Result transport. R100 still has this split. This establishes a
+binary/code-generation difference; its exact contribution to the regression
+remains unproved. The next bounded experiment explicitly requests inlining of
+that helper and measures it separately, retaining every finite check and error
+order. Prepared flat frame transfers and per-entry source reuse follow.
+
+Seventeen immutable evidence packets verify1,249 file occurrences across538
+paths and29 preserved multi-version paths. Fresh retrieval reproduces all four
+reports byte-identically. The first retrieval exposed a missing linked metadata
+input; a new replay-input packet fixes packaging without changing compiler source
+or measured data. Commands, all raw cohorts, profiles, assembly excerpts and
+diagnostic readers remain archived. Native binaries remain local. Local
+validation is complete; hosted CI is cancelled by instruction and the PR stays
+draft pending green CI and clean review.
+
+## Previous retained checkpoint: R99
+
+### Retire finished ordinary collection sources
 
 Complete eight-byte level-12 compression improves from **8.470875× to 8.363107×
 Roc's time**, **1.272220% less elapsed time** against the fresh matched baseline.

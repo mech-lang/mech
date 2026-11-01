@@ -6893,11 +6893,13 @@
           "manifest_sha256": "9c63336b0bab0633ecc09230837be919bc382da7cefd071f4753bde395eb461c",
           "bytes": 4471052,
           "files": 74,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-replay-inputs-c0ee042dbaf8.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-replay-inputs-c0ee042dbaf8.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-replay-inputs-c0ee042dbaf8.tar.gz.json",
+          "asset_digest": "sha256:c0ee042dbaf864cbfc2c7f23136efeae22ec1fdf84b343612d4e12b404c3fc17"
         }
       ],
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "Published seventeen immutable evidence archives and sidecars under standing user authorization; sixteen original packets plus one replay-input repair. Native binaries excluded.",
       "analysis": {
         "script": "analysis/analyze.py",
         "expected_outputs": {
@@ -6906,6 +6908,20 @@
           "validation.json": "a4562eca2da86b2d4dab3e943d4c0e77217bbe0100c9f5f030a7b3ad57da5f49",
           "profile-numbers.json": "e54938c7078408fd697e9db731476a56d62c548b7d54cb148fe7479bebcac899"
         }
+      },
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "scorecard.json",
+          "mechanism.json",
+          "validation.json",
+          "profile-numbers.json"
+        ],
+        "paths_with_multiple_preserved_versions": 29,
+        "round": 100,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 538,
+        "verified_archives": 17,
+        "verified_file_occurrences": 1249
       }
     }
   },
