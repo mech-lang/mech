@@ -5519,6 +5519,17 @@
           "files": 43,
           "asset_id": 698882018,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r93-confirm-reference-a9702fe6566b.tar.gz"
+        },
+        {
+          "event": "confirm-group0",
+          "source_revision": "9075392a71ae8ad078c6428e0a827ee57de4e5f7",
+          "asset": "r93-confirm-group0-aecebd0b384d.tar.gz",
+          "sha256": "aecebd0b384d637b7b5d1b2ca2a6c7335b90f9fc45f08fac91cf140e21152c2b",
+          "manifest_sha256": "031e90a4b84c5e8e0fc6b9c4ffda80ec2addb24e1f2cc2ee1497d9b0db8c9f98",
+          "bytes": 87454,
+          "files": 45,
+          "asset_id": 698882845,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r93-confirm-group0-aecebd0b384d.tar.gz"
         }
       ]
     }
