@@ -4301,6 +4301,17 @@
             "improving_blocks": 24,
             "adverse_blocks": 40
           }
+        },
+        {
+          "event": "qualification",
+          "source_revision": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+          "asset": "r90-qualification-c6ffaa1bb77e.tar.gz",
+          "sha256": "c6ffaa1bb77e21c0603500e6cc14ddf8bcbca52c15720eeddeeb5da7d1ebd8bf",
+          "manifest_sha256": "56458afe871e419a05d23644cc5540ce94670af74070a4bc0573582e26a959bf",
+          "bytes": 103379,
+          "files": 56,
+          "asset_id": 698539537,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-qualification-c6ffaa1bb77e.tar.gz"
         }
       ]
     }
