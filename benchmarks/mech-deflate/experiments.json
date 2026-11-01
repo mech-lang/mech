@@ -3914,9 +3914,9 @@
     },
     "90": {
       "base": "7ef95a8a22977d2436e2ad207dae3bcba7e916a2",
-      "production": "3444655203c554824153771782d3b81bf3cc1edc",
-      "compiler_source": "3444655203c554824153771782d3b81bf3cc1edc",
-      "decision": "under measurement",
+      "production": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+      "compiler_source": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+      "decision": "retain correctness repair; final elapsed +0.319946%, instructions +0.006704%; no performance improvement claimed",
       "events": [
         {
           "event": "pinned-inputs",
@@ -4422,8 +4422,86 @@
           "files": 42,
           "asset_id": 698549728,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-analysis-88f8d5ff7439.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+          "asset": "r90-closure-5ba91b1670ea.tar.gz",
+          "sha256": "5ba91b1670eaa58e3957e9ec1d95eda7541a3dfaa7c0a57db17251dbd20a5087",
+          "manifest_sha256": "ce8b693728eb2b0da56eb762f5c696ec91418c449e9027d126af9f715630c322",
+          "bytes": 53973,
+          "files": 37,
+          "asset_id": 698557839,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-closure-5ba91b1670ea.tar.gz"
         }
-      ]
+      ],
+      "retained_production": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+      "first_correct_variant": "3444655203c554824153771782d3b81bf3cc1edc",
+      "ci_coverage": "a1cf08ea2c98396fcc12bed908aa3bffc5c349ad",
+      "versions": [
+        136,
+        97,
+        38,
+        14
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "correctness.json": "c1116507ab953ea8a077c6189c339bd2d16a9b6207ac84b04c2f609b822de9c8",
+          "profile-numbers.json": "727f20e60513a41987c69802ae87d107b941f8420865df49166fcf9b8d51aee6",
+          "scorecard.json": "26e29fe6df4f4592dbb6aa6ceaf9f9a54a075790e15702f0ec63f87e1c52d915",
+          "validation.json": "e1acad40d99eac6bec667f173e79f097bcab1184ec207ed974669e437f82d223"
+        }
+      },
+      "validation": {
+        "architecture_checks": 15,
+        "current_required_failures": [],
+        "frame_cases": 8,
+        "inherited": "unchanged coherent Core/Engine/selected-operation dependency graph; no new full math or minimal/no_std graph build",
+        "linked_bounds_cases": 12,
+        "linked_existing_cases": 16,
+        "overlapping_selections": [
+          {
+            "executed": 347,
+            "receipt": "final-units/runtime.json"
+          },
+          {
+            "executed": 33,
+            "receipt": "final-units/work-memory-values.json"
+          },
+          {
+            "executed": 53,
+            "receipt": "final-units/ci.json"
+          },
+          {
+            "executed": 1,
+            "receipt": "final-units/image.json"
+          },
+          {
+            "executed": 236,
+            "receipt": "qualification/components.json"
+          },
+          {
+            "executed": 8,
+            "receipt": "qualification/composition.json"
+          },
+          {
+            "executed": 1,
+            "receipt": "qualification/path-mechanism.json"
+          }
+        ],
+        "passed": true,
+        "resolved_failures": {
+          "environmental": "linked evidence upload originally ran without network access; no executable rerun, exact existing packet resumed and verified",
+          "inherited_read_retry": "fixed and compared to ordinary source errors",
+          "preparation": "two weaker overlap witnesses, accidental patch context, wrong import all preserved and corrected"
+        },
+        "scalar_cases": 12,
+        "scalar_gate": 1.05,
+        "scalar_max_ratio": 1.0252667642125548,
+        "skipped": "hosted CI cancelled by instruction, large/full-corpus timing, giant complete knucleotide; PR stays draft",
+        "workflow_tests": 132
+      }
     }
   },
   "repository": "mech-lang/mech",
