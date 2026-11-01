@@ -4715,6 +4715,17 @@
           "files": 799,
           "asset_id": 698599416,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r91-callback-census-72989a5ade5b.tar.gz"
+        },
+        {
+          "event": "qualification",
+          "source_revision": "31d77c7c1f5fdeecc9095664af19092353df06b3",
+          "asset": "r91-qualification-638f3f2d266c.tar.gz",
+          "sha256": "638f3f2d266c3eaa8d5752864a7dc75a6912f9614841bc0b1375e477eef3f05b",
+          "manifest_sha256": "eb4f2ab5a9f6bafa83c25162ebb29a814902749c778199c0b90814242e1a6308",
+          "bytes": 110451,
+          "files": 52,
+          "asset_id": 698604988,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r91-qualification-638f3f2d266c.tar.gz"
         }
       ]
     }
