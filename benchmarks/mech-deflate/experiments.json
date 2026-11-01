@@ -3730,6 +3730,17 @@
           "files": 60,
           "asset_id": 698222407,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-final-checks-formatting-failure-5e3374f76163.tar.gz"
+        },
+        {
+          "event": "final-checks",
+          "source_revision": "460c9cb748fc377c1cbcfd57565a5373de05de14",
+          "asset": "r89-final-checks-f97480afec24.tar.gz",
+          "sha256": "f97480afec2473dc5dc03dfa6b41b5e5f7dd4afadec43e0df3020879146b79dc",
+          "manifest_sha256": "afa065f5dde28360dd6f95a4b570a994f10e2fa3184f84624b8be9028079609e",
+          "bytes": 59796,
+          "files": 72,
+          "asset_id": 698222499,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-final-checks-f97480afec24.tar.gz"
         }
       ]
     }
