@@ -5141,6 +5141,17 @@
           "files": 51,
           "asset_id": 698752813,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-linked-multi-d78fce727ddd.tar.gz"
+        },
+        {
+          "event": "linked-constants",
+          "source_revision": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
+          "asset": "r92-linked-constants-64972d4e0a99.tar.gz",
+          "sha256": "64972d4e0a990916781e38a72e1869f16c9087e2ab20c8cbeb8dcb8dc8ff7e92",
+          "manifest_sha256": "37a8925ca825633f2c6c84ab625af15ef6aced662669908ef53986b8c4a907d0",
+          "bytes": 68086,
+          "files": 51,
+          "asset_id": 698753070,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-linked-constants-64972d4e0a99.tar.gz"
         }
       ]
     }
