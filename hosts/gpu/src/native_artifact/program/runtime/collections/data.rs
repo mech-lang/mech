@@ -125,7 +125,7 @@ impl CollectedValues {
                 let value =
                     u16::try_from(word).map_err(|_| invalid("uniform U16 exceeds its kind"))?;
                 if value == 0 {
-                    values.resize(count, 0);
+                    values.resize_with(count, || 0);
                 } else {
                     values.resize(count, value);
                 }
@@ -134,14 +134,14 @@ impl CollectedValues {
                 let value =
                     u32::try_from(word).map_err(|_| invalid("uniform U32 exceeds its kind"))?;
                 if value == 0 {
-                    values.resize(count, 0);
+                    values.resize_with(count, || 0);
                 } else {
                     values.resize(count, value);
                 }
             }
             (Self::U64(values), NativeScalarKind::U64) => {
                 if word == 0 {
-                    values.resize(count, 0);
+                    values.resize_with(count, || 0);
                 } else {
                     values.resize(count, word);
                 }
