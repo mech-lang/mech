@@ -49,7 +49,7 @@ Actual baseline release:{binding['baseline_build_source']}.
 Actual candidate release:{binding['candidate_build_source']}.
 Observation-only migration:d176bbd4be32ab1c500f6eda907038c88dfc30f4.
 Audited test placement/final qualification source:84f180ca2bdadf139eb570912d8c01aedb08c971.
-The qualification-only commits leave measured production identical; exact source proof is archived. The final publication head is recorded in publication.json and the PR.
+The qualification-only commits leave measured production identical; exact source proof is archived. The final publication head and user-directed CI cancellation are recorded in the PR.
 
 Use reconstruct.py with a fresh output directory to verify every archived version and reproduce the derived reports without a compiler, compressor or external scratch files. Exact actual commands, cfg features, environments, raw outputs, manifests and before/after code excerpts are retained. The new candidate Object/image are archived as compiled-artifact.
 
