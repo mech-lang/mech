@@ -1112,7 +1112,7 @@
       "base": "84e1375e53375c11209f9933852fac9ee98eb2b7",
       "production": "4fe3ca57b17b4bcab90948f8357f8fd8fd9d11da",
       "compiler_source": "4fe3ca57b17b4bcab90948f8357f8fd8fd9d11da",
-      "decision": "under measurement",
+      "decision": "retained with R83 for correct owner transport and independent instruction reduction; R82 elapsed is 0.280294% adverse, never claimed as a win",
       "events": [
         {
           "event": "initial",
@@ -1228,14 +1228,70 @@
           "files": 43,
           "asset_id": 697677385,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r82-isolated-profile-411151ebce05.tar.gz"
+        },
+        {
+          "event": "counters",
+          "source_revision": "4fe3ca57b17b4bcab90948f8357f8fd8fd9d11da",
+          "asset": "r82-counters-672e94430a40.tar.gz",
+          "sha256": "672e94430a403c530f4d17cb86b5da331d87e4dbb7bb93f0787b12df9c62fa34",
+          "manifest_sha256": "5991e70ecba8e421078b70cd1107aafc8a576d0e2f8a3ee00db1059cc3440060",
+          "bytes": 261475,
+          "files": 77,
+          "asset_id": 697748625,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r82-counters-672e94430a40.tar.gz"
         }
-      ]
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "6c681e848ccc9519522068101830df590c05af4c31fd94ace3646c8c138da573",
+          "profile-numbers.json": "4d2455aee8c77899000ea4a1b0a9d62ed04b6656319851d82a1ca7078093a97c",
+          "scorecard.json": "d675986e5b25540243fa30e15c7d8109bab55bf21a96256e784a25679747a429",
+          "validation.json": "1b0a704b5a27a089a33d7ebecac1d0afe9c02aa64cf9aa20373e48ab58570425"
+        }
+      },
+      "validation": {
+        "overlapping_test_selections": [
+          {
+            "executed": 338,
+            "receipt": "final-units/runtime.json"
+          },
+          {
+            "executed": 33,
+            "receipt": "final-units/work-memory-values.json"
+          },
+          {
+            "executed": 44,
+            "receipt": "final-units/ci.json"
+          },
+          {
+            "executed": 1,
+            "receipt": "final-units/image.json"
+          }
+        ],
+        "passed": true,
+        "round": 82,
+        "scope": "R82 fresh runtime/CI/image and focus tests are retained. Complete connected/component/linked/static/scalar/frame qualification is rerun on the combined R83 source, not falsely attributed to R82.",
+        "skipped": "Hosted CI cancelled by instruction; giant complete knucleotide; large/full-corpus; fresh minimal/no_std graph. Unchanged Core/Budget/Engine integration receipts inherited.",
+        "versions": {
+          "abi": 38,
+          "bytecode": 14,
+          "ir": 135,
+          "work": 96
+        }
+      },
+      "versions": {
+        "ir": 135,
+        "work": 96,
+        "abi": 38,
+        "bytecode": 14
+      }
     },
     "83": {
       "base": "3831952d49a2f2d762f33e87dadc8f29349fc9d9",
       "production": "c0b5999f434650df9ff7fef6dc2c9f4c40d4fc42",
       "compiler_source": "c0b5999f434650df9ff7fef6dc2c9f4c40d4fc42",
-      "decision": "under measurement: direct R82 and retained R81 comparisons predeclared; initial None-only guard was untimed and corrected from census evidence",
+      "decision": "retained: directly 1.733503% less elapsed than retained R81 and 2.433118% fewer instructions in separate cohort; 2.091294% less elapsed than R82 in another cohort; heap unchanged",
       "events": [
         {
           "event": "untimed-none-guard-linked-multi",
@@ -1478,7 +1534,151 @@
           "asset_id": 697713083,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-reference-profile-05e2b5b421bc.tar.gz"
         }
-      ]
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "6ffca55533a66ac1e7be6a2029768c9fb1bc892515ce52a613cc2076dabc4215",
+          "profile-numbers.json": "43a4c5bba19ae5d010307e52232662f3812bbc51072eb5ea5a4d992ca5f52de9",
+          "scorecard.json": "483cf0f59434ed9cf948db8d35bee338ed9264301c4e7f151c6a3bacdab5254c",
+          "validation.json": "46e8d33081d88826506f87cc9a0f2acbdd9aea3bdec6bc80d7123e6f563f2861"
+        }
+      },
+      "validation": {
+        "architecture": 15,
+        "frame_controls": 8,
+        "linked": 16,
+        "max_scalar_ratio": 1.0142542657534523,
+        "overlapping_test_selections": [
+          {
+            "executed": 339,
+            "receipt": "final-units/runtime.json"
+          },
+          {
+            "executed": 33,
+            "receipt": "final-units/work-memory-values.json"
+          },
+          {
+            "executed": 45,
+            "receipt": "final-units/ci.json"
+          },
+          {
+            "executed": 1,
+            "receipt": "final-units/image.json"
+          },
+          {
+            "executed": 236,
+            "receipt": "qualification/components.json"
+          },
+          {
+            "executed": 8,
+            "receipt": "qualification/composition.json"
+          },
+          {
+            "executed": 1,
+            "receipt": "qualification/path-mechanism.json"
+          }
+        ],
+        "passed": true,
+        "round": 83,
+        "scalar_ceiling": 1.05,
+        "scalar_controls": 12,
+        "skipped": "Hosted CI cancelled by instruction; giant complete knucleotide; large/full-corpus; fresh minimal/no_std graph. Unchanged Core/Budget/Engine integration receipts inherited.",
+        "versions": {
+          "abi": 38,
+          "bytecode": 14,
+          "ir": 135,
+          "work": 96
+        },
+        "workflow_python": 132
+      },
+      "versions": {
+        "ir": 135,
+        "work": 96,
+        "abi": 38,
+        "bytecode": 14
+      },
+      "source_proof": {
+        "actual_optimized_source": "c0b5999f434650df9ff7fef6dc2c9f4c40d4fc42",
+        "production_files": [
+          {
+            "path": "hosts/gpu/src/native_artifact/program/image/identity.rs",
+            "sha256": "8d2939f62ac131d35b6b2d8472c626025b6f656f5d0ef3ba9ac94db92770371f"
+          },
+          {
+            "path": "hosts/gpu/src/native_artifact/program/prepare/composition/frames.rs",
+            "sha256": "a87da8ba1bc80db4d16571b1d8706799b88f9c531c3f0908159218e8ca54be45"
+          },
+          {
+            "path": "hosts/gpu/src/native_artifact/program/prepare/composition/mod.rs",
+            "sha256": "14ac0b2c3dac37bd20b21b7b98fa2aa60b25e30f13b6332b95eac4a2cce44bab"
+          },
+          {
+            "path": "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_segments.rs",
+            "sha256": "a1fc3466277c5d17ec7044393af75fc2b329b63aa5ccdf004e7777781270f652"
+          }
+        ],
+        "non_gpu_dependencies_unchanged": true,
+        "source_bytecode_reference_allocator_worker_and_library_pins_verified": 26,
+        "object_emitted_by": "4fe3ca57b17b4bcab90948f8357f8fd8fd9d11da",
+        "object_reused_byte_identically": true,
+        "ir_work_abi_bytecode": [
+          135,
+          96,
+          38,
+          14
+        ],
+        "limits_unchanged": "NoLimits still sets every limit to its representation maximum. Successful cached bound is only a conservative sufficient condition; refusal/overflow/tight caps take the original exact calculation.",
+        "source_allocation_sites_and_buffers_unchanged": true
+      },
+      "comparisons": {
+        "confirmation": {
+          "adverse_blocks": 4,
+          "after_over_before": 0.9826649746322298,
+          "elapsed_improvement_percent": 1.7335025367770207,
+          "improving_blocks": 60,
+          "improving_pairs": 4,
+          "medians": {
+            "after": 0.0028910205,
+            "before": 0.0029420205
+          },
+          "multiples_of_reference": {
+            "after": 9.969036206896552,
+            "before": 10.144898275862069
+          },
+          "pair_ratios": [
+            0.9794124903316985,
+            0.9817090253473325,
+            0.9813052560074722,
+            0.9869280701035046
+          ],
+          "primary_observations": 3968,
+          "reference_seconds": 0.00029
+        },
+        "primary": {
+          "adverse_blocks": 0,
+          "after_over_before": 0.9790870577425154,
+          "elapsed_improvement_percent": 2.0912942257484635,
+          "improving_blocks": 64,
+          "improving_pairs": 4,
+          "medians": {
+            "after": 0.002881229,
+            "before": 0.0029427710000000003
+          },
+          "multiples_of_reference": {
+            "after": 9.800098639455783,
+            "before": 10.00942517006803
+          },
+          "pair_ratios": [
+            0.9797619408379605,
+            0.9831747218211162,
+            0.9772700446212558,
+            0.975205499215004
+          ],
+          "primary_observations": 3968,
+          "reference_seconds": 0.000294
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
