@@ -341,3 +341,27 @@ architecture15 pass. Fresh retrieval verifies26 packets/1919 versions/1137 paths
 and reproduces four reports byte-identically. Replay with `replay-round --round 91`.
 Raw Object binaries stay local; numerical replay verifies hash pins and retrieved
 descriptor/metadata. See the authoritative [status](../../docs/design/native-compression-status.md).
+
+## R92: all-path unread constant ownership
+
+Base `fbf4c54a865e877f2026e7a825bab818889f628b`; compiler
+`312e0d7b68d4b85052584bbdbfa9319f124c4f57`; separate CI `5691e6edf`.
+Canonical readers prove309/500 constants unread; all immutable constants remain.
+Independent image loading rederives the exact live/dead ownership bounds. Live
+scalar owners remain; work99 explicitly prices the omitted representation.
+IR/work/private ABI/MBC138/99/38/14.
+
+Matched elapsed9.012791×→8.774856× reference (−2.639971%); instructions−1.287281%,
+cycles−2.053337%. Fresh complete censuses verify6399→5781 requests: constant
+registrations/wrappers each500→191, exactly618 requests/66744 bytes removed.
+Incremental live peak falls69216B; reallocations/large histogram stay equal.
+Actual generated text is byte-identical; code/stack stay15911648/143488B.
+The policy99 exact-work golden changes; output goldens and allowances do not.
+
+Runtime353, CI62, components236, linked16+12, scalar12 at unchanged1.05, frame8,
+workflow132 and architecture15 pass. All failed preparations, the one adverse
+timing block, fresh profiles, raw stack censuses and counter-driver resumption
+remain external. Reproduce four reports with `replay-round --round 92` after
+retrieving all hash-verified packets. Raw Object binaries remain local; see the
+[current status](../../docs/design/native-compression-status.md) for scope and
+skipped coverage. The separate suffix-only experiment follows this checkpoint.

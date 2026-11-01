@@ -1,131 +1,136 @@
 # Native compression: current status
 
-Raw observations, profiles, historical scripts and failed attempts stay outside
-the source tree. Source keeps this status, one maintained harness and the
-[compact hash-addressed evidence index](../../benchmarks/mech-deflate/EXPERIMENTS.md).
+Raw observations, complete stack censuses, historical scripts and failed attempts
+stay outside the source tree. Source keeps this status, one maintained harness and
+the [compact evidence index](../../benchmarks/mech-deflate/EXPERIMENTS.md).
 
-## Current measured checkpoint: R91
+## Current measured checkpoint: R92
 
-Complete pinned eight-byte level-12 compression improves **9.324090× →9.044674×
-Roc**, or **2.996705% less elapsed**, against the freshly measured R90 compiler.
+Complete pinned eight-byte level-12 compression improves **9.012791×→8.774856×
+Roc**, or **2.639971% less elapsed**, against the freshly measured R91 compiler.
 The target remains1×; larger-input throughput is unestablished.
 
-| Metric | R90, freshly measured | R91 |
+| Metric | R91, freshly measured | R92 |
 |---|---:|---:|
-| Elapsed |2.6480415ms|2.5686875ms (−2.996705%)|
-| Elapsed / fresh0.284ms reference |9.324090×|9.044674×|
-| Instructions, separate32-call cohort |29,290,846.5|28,237,589 (−3.595859%)|
-| Cycles, same separate cohort |8,470,510.5|8,144,220.5 (−3.852070%)|
-| Requests including reallocations |6,399|6,399|
-| Requested bytes |98,074,788|98,074,884 (+96)|
-| Incremental peak live allocator bytes |17,851,960|17,851,960|
-| Generated text bytes |15,032,784|15,911,648 (+878,864)|
-| Entry stack bytes |134,816|143,488 (+8,672)|
+| Elapsed |2.5686455ms|2.500834ms (−2.639971%)|
+| Elapsed / fresh0.285ms reference |9.012791×|8.774856×|
+| Instructions, separate32-call cohort |28,237,280|27,873,787 (−1.287281%)|
+| Cycles, same separate cohort |8,133,395.5|7,966,389.5 (−2.053337%)|
+| Requests including reallocations |6,399|5,781 (−618)|
+| Requested bytes |98,074,884|98,008,140 (−66,744)|
+| Incremental peak live allocator bytes |17,851,960|17,782,744 (−69,216)|
+| Generated compressor text / entry stack |15,911,648 /143,488B|unchanged|
 
 Four prepared pairs contain3,968 primary/3,984 total observations. All four pairs
-and62 descriptive blocks improve; two adverse blocks remain. No significance
-claim. Reference hardware medians are1,364,372 instructions/922,027 cycles;
-allocator95 requests/9,021,923 requested bytes/9,257,328 incremental live bytes.
-Elapsed, hardware, heap and sampling are separate cohorts, never multiplied.
-R89's9.080397× used a different0.291ms reference clock; cross-round ratios alone
-cannot establish a source regression or combined improvement.
+and63 descriptive blocks improve; one adverse block is retained. No significance
+claim. Reference clocks vary between rounds: compare each matched pair, not a
+cross-round ratio. Elapsed, hardware, heap, tracing and sampling are separate
+cohorts, never multiplied. Requested capacity is not copied bytes or live memory.
+All162 reallocations and the entire large-request histogram remain unchanged.
 
-Requests and162 reallocations are unchanged. A large request grows440,256→440,272;
-source max_library_inputs grows60→61. The96-byte increase is not fully attributed.
-Tree/cache/path histogram entries remain5×524,288,1×6,002,052 and35×2,442,056.
-Requested capacity is not initialized bytes copied or live memory. Whole-executable
-RSS/footprint decrease524,288/524,224B in the separate hardware cohort; this is not
-a broad memory win. Code and stack growth are retained adverse observations.
-
-Base: `c24b50e52a8988d7272012b64bf5cdb53adc0a6e`.
-Measured/retained compiler: **`31d77c7c1f5fdeecc9095664af19092353df06b3`**.
-Baseline compiler: `254ac339b64ab71dd374cc20c3873cd6ae766921`.
-Separate CI inventory: `fb6989d87f9d1c57c6594c8b91bf75fa44e4bf51`.
+Base/prior published head: `fbf4c54a865e877f2026e7a825bab818889f628b`.
+Measured/retained compiler: **`312e0d7b68d4b85052584bbdbfa9319f124c4f57`**.
+Baseline compiler: `31d77c7c1f5fdeecc9095664af19092353df06b3`.
+Separate CI inventory: `5691e6edf8df386e0fea9107df78c46caa588d4f`.
 Stack base: `eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`.
-[PR #973](https://github.com/mech-lang/mech/pull/973) remains draft until green CI
-and clean review. Publication CI is cancelled by instruction, not counted as green.
+[PR #973](https://github.com/mech-lang/mech/pull/973) stays draft until green CI and
+clean review. Publication CI is cancelled by instruction, not counted as passing.
 
 ## What changed
 
-An existing scalar admission group excluded97 otherwise proved larger parent
-pieces. Selection now accepts only an ordinary scalar group with the same entry
-and every member inside the larger piece. Owner-bearing groups, partial/interior
-overlaps and all child lifecycle boundaries stay ordinary barriers.
+The canonical Engine all-path semantic read inventory finds500 constants:
+191 with a runtime reader,309 without (248U8,51U32,10Index). That inventory already
+covers expanded virtual actions, primitive/library operands, structural reads,
+branches, collection sources, loop seeds/next/returns, effects and outputs. The
+minimal `[1u8,2u8,3u8]` retains four immutable constants but only consumes the array.
 
-The larger piece retains current schema/account/type/slot/owner and funding checks.
-The already paid scalar debit remains. Refusal leaves its marker intact; generated
-code restores the previous0/1 scalar readiness word overwritten by native entry.
-Successful entry clears the marker only after all fallible preparation/funding.
-Restored images independently rederive containment and selection. No new ledger,
-refund, renewed permission or loan across a child is introduced.
+Preparation records zero admission bytes only for a constant with no reader.
+Invocation setup skips its independent ownership import and arena installation.
+All500 immutable constants remain in the same plan for compilation/provenance.
+Live scalar-only constants and consumers on unselected paths remain owned.
+There is no per-loop lazy check, new permission cache, reused account authority,
+interpreter or alternate preparation pipeline.
 
-IR/work/private ABI/MBC are **137/98/38/14**, scalar ABI1. Policy98 explicitly
-retains the paid scalar-prefix debit before the existing native envelope. Logical
-work42,869,883,099→43,123,410,789; this is not a hardware instruction count.
-No allowance, output golden, unsafe allowlist, warning or architecture rule is
-weakened. The Huffman policy assertion advances to98; its88,767,602 work golden
-is unchanged.
+Image loading independently reconstructs the exact bounds and rejects changed
+live/dead entries. Current account/funding checks remain for each materialized
+owner. Constant totals and worker preflight use the same tape; empty arena slots
+remain valid at retirement. Original/decoded/restored behavior and failure recovery
+are qualified.
 
-Four identical complete diagnostic calls per subject show:
+IR/work/private ABI/MBC are **138/99/38/14**, scalar ABI1. Policy99 explicitly omits
+physical construction/import/installation/owner-cleanup prices for unread roots.
+Logical work43,123,410,789→42,449,879,781; this is not hardware instructions.
+The exact Huffman work assertion88,767,602→88,531,834 is a235,768-unit policy99
+pricing change. Output goldens, component allowances, unsafe allowlists, warning
+policy and architecture rules stay unchanged.
 
-| Executed mechanism | Before | After |
+## Direct allocation and binary evidence
+
+Fresh complete before/after censuses reconcile every successful request, requested
+byte and reallocation with the independent heap counters. Constant setup is:
+
+| Exact stack family | Before | After |
 |---|---:|---:|
-| Source admission callbacks |6,034|5,633|
-| All host helper callbacks |4,959|4,911|
-| Ordinary library callbacks |792|528|
-| Canonical arena installations |2,047|2,010|
-| Successful native piece visits |803|938|
+| 104-byte registrations |500|191|
+| 112-byte ownership wrappers |500|191|
+| Combined requests |1,000|382|
 
-Static pieces387→484, with none lost. Forty of the97 added pieces execute135
-visits. Parent25 entry2366 executes eight visits and removes136 library callbacks;
-all new pieces remove264. No actual native entry declines in this complete-call
-census. These are excluded diagnostics, not instruction or timing measurements.
-Fresh serial profiles contain695 calls per subject and20,000 reference calls.
-Entry-body sample weights208→178, native-entry preview35→51; the added boundaries
-still cost work. Samples are not retired-instruction shares; ancestry overlaps.
+These account exactly for618 requests and66,744 bytes removed. After subtracting
+this family, all remaining size/kind histogram bins agree. Both censuses contain
+3,592 full stack/size/kind groups, with1,240/1,239 symbolized PCs. No exact
+cross-binary join of every other stack family is claimed; all raw stacks remain.
 
-## Qualification and evidence
+The actual generated Mach-O `__TEXT,__text` is byte-identical, SHA-256
+`62ed89d66389e5ae65e730779ef534dc1a11fc5fa8bdbc1b5613dc16c5fd4401`.
+The improvement removes host setup/ownership work. Object identity changes with
+the explicit revision; generated text and entry stack do not grow. Fresh serial
+profiles cover695 Mech calls per subject and20,000 reference calls. CPU sample
+weights are not retired-instruction shares or exact timer fractions.
 
-Current-source overlapping passing selections: runtime350;work/memory33;native
-CI59;image1;unchanged components236;connected8;path1;linked16+12;scalar12
-(maximum1.011103 against unchanged1.05, equal pure-scalar allocations and zero loop
+Raw Object binaries remain local following the earlier automatic approval
+rejection of binary upload. Numerical replay verifies pinned build/hash receipts
+and retrieved descriptor/metadata, not independently retrieved Object bytes.
+
+## Qualification and failure disposition
+
+Current-source passing overlapping selections: runtime353;work/memory33;native
+CI62;image1;unchanged components236;connected8;path1;linked16+12;scalar12
+(maximum1.003625 at unchanged1.05, equal pure-scalar allocations, zero loop
 allocation slope);frame8;workflow132;architecture/type/memory15. GPU-only release,
 optimized units and runtime-only config retain warnings-as-errors against the
 coherent selected-operation Core/Engine graph. No fresh full math/minimal/no_std
-rebuild is claimed. Hosted green CI, giant complete knucleotide and large/full-
-corpus timing remain skipped.
+build claim. Hosted green CI, giant complete knucleotide and large/full-corpus
+timing remain skipped.
 
-New regressions cover current arguments on each recursive visit, actual refusal
-after scalar prepayment, restoration of readiness, one-short unfunded fallback,
-original arithmetic origin, unchanged prior publication, aliases, cleanup and
-recovery in original/decoded/restored forms. R90's private-read retry correction
-also remains: it pins the current operand before ordered retirement, installs it
-using existing funded alias escape, and invokes the original reader. R90's
-+0.319946% adverse elapsed and all its failed preparations remain separate.
+Three new tests cover U8/U32 arrays, unchanged immutable constants, all-path and
+unselected consumers, live scalar ownership, original/decoded/restored setup,
+exact image-bound derivation/rejection, finite setup, source arithmetic origins,
+prior publication, aliases, cleanup and retry. Twelve new linked/AOT cases actually
+execute restored images, including unselected division, failure/recovery and zero
+setup work. Existing linked16 and all component output/allowance checks pass.
 
-Intended baseline failures, an over-specific fixture assertion, a test-only shape
-slice inference error and an early unit-driver call are preserved and corrected.
-No required current local failure remains. Fresh external retrieval verifies
-26 packets/1,919 file versions/1,137 paths and reproduces four numerical reports
-byte-identically. Raw Object binaries remain local following automatic approval
-rejection of an upload. Replay checks their pinned hashes against build bindings;
-it retrieves descriptor/metadata bytes, not the Object binaries themselves.
+Resolved preparations: a diagnostic fixture's unequal branch shapes were correctly
+rejected; a test sum needed an explicit type; the intended negative baseline
+failed ownership/image tests; the work golden advanced explicitly with99; the
+counter driver retained a stale96-byte expectation from R90. That driver resumed
+only its not-yet-run after-memory subject; completed hardware observations were
+preserved unchanged. No required current local failure remains. Fresh retrieval verifies30 packets,
+1,437 file versions and437 paths, including one path with multiple preserved
+versions; all four numerical reports reproduce byte-identically. Historical
+failed and adverse observations stay externally retrievable.
 
 ## Next bounded experiments
 
-The new priority is unused constant ownership: verify the candidate309 unread
-constants through the canonical all-path read inventory, capture a fresh complete
-allocation stack census, then omit only their invocation owners. The618-request
-estimate is an acceptance target, not a result. Keep immutable compiler/provenance
-constants, current account checks, retirement, original/decoded/restored images,
-finite failures and recovery. Live scalar-only constants are a separate later proof.
+R91's retained whole-piece composition variant is already measured independently.
+The next runtime experiment is the separately requested scalar-prefix/native-suffix
+split: leave the paid prefix executing, derive fresh suffix proofs at its frontier,
+and compare directly against the retained variant. Do not truncate an old proof,
+remove the scalar fallback, or multiply the earlier gains.
 
-R91 admits the whole larger piece after retaining scalar payment. The new brief's
-proposal to leave that prefix executing and derive only a native suffix is a
-separate next runtime experiment; do not claim it is already implemented. Follow
-with shape-solver temporaries and independently proved exit-argument stores.
-Child seed handoffs, predicate-sensitive ownership and numeric outlining follow
-those bounded measurements. Ordinary debit-function tuning stays closed.
+Then target shape-solver temporary ownership and exact exit argument writes as
+separate changes/cohorts. Live scalar constants, direct child seed handoffs,
+predicate-sensitive last use and numeric outlining remain later work. Ordinary
+debit-function tuning stays closed.
 
 ## Fidelity
 
@@ -136,7 +141,7 @@ MBC SHA-256
 `a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7`.
 Algorithm, tables, source allocation sites, depth300, nice258, near-EOF checks,
 tree262144 U16/cache1500513 U32/path305257 U64, input aliases, pinned allocator,
-output capacity13 clear/rebind and evaluate_into timer stay unchanged. Search
-and skip remain separate; skip has no cache/recording path. Exact bytes
+output capacity13 clear/rebind and evaluate_into timer remain unchanged. Search
+and skip stay separate; skip has no cache/recording path. Exact bytes
 `[75,76,74,78,73,77,75,207,0,0]` and independent inflation agree. Final managed
 bytes/nodes are zero. Physical public-output backing still changes.
