@@ -4704,6 +4704,17 @@
           "files": 36,
           "asset_id": 698596308,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r91-reference-profile-790927638923.tar.gz"
+        },
+        {
+          "event": "callback-census",
+          "source_revision": "31d77c7c1f5fdeecc9095664af19092353df06b3",
+          "asset": "r91-callback-census-72989a5ade5b.tar.gz",
+          "sha256": "72989a5ade5b0280f160b113d45a75757cb4815730f98307fa297bae8546c738",
+          "manifest_sha256": "dde20cf6ba26df152a3b7db44d742dfae1d75ec04d5af2be8975e0c40dafe0eb",
+          "bytes": 2836005,
+          "files": 799,
+          "asset_id": 698599416,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r91-callback-census-72989a5ade5b.tar.gz"
         }
       ]
     }
