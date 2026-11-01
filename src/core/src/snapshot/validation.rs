@@ -17,7 +17,7 @@ pub use string_matrix::StringMatrixSnapshotConstructor;
 
 #[path = "numeric_matrix.rs"]
 mod numeric_matrix;
-pub use numeric_matrix::UnsignedMatrixBuffer;
+pub use numeric_matrix::{UnsignedMatrixBuffer, UnsignedMatrixSnapshotConstructor};
 
 #[path = "owned_unsigned_matrix.rs"]
 mod owned_unsigned_matrix;
@@ -2739,11 +2739,11 @@ fn token_data(mut hash: u64, data: &ValueData) -> u64 {
 fn finalized_value(
     schema: SchemaId,
     schema_key: SchemaKey,
-    shape: ShapeInstance,
+    shape: impl Into<Arc<ShapeInstance>>,
     data: ValueData,
     schemas: Option<Arc<SchemaTable>>,
 ) -> Value {
-    let shape = Arc::new(shape);
+    let shape = shape.into();
     Value {
         schema,
         schema_key,
