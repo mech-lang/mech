@@ -1,0 +1,16 @@
+"""Reconstruct disjoint diagnostic instruction windows and calibrated overhead."""
+from pathlib import Path
+import hashlib,json,re,statistics,sys
+r=Path(sys.argv[1]);out=Path(sys.argv[2]);p=r/'instruction-windows';result={'variants':{}}
+keys=['instructions','entry_instructions','outside_entry_instructions','cycles','entry_cycles','outside_entry_cycles','entry_calls']
+for label in ['before','after']:
+ raw=(p/(label+'.stdout')).read_bytes();all_rows=[json.loads(x) for x in raw.decode().splitlines() if x.startswith('{')];rows=[x for x in all_rows if not x['warmup'] and not x['profile']];assert len(all_rows)==34 and len(rows)==32
+ assert all(x['entry_calls']==2 and x['entry_instructions']+x['outside_entry_instructions']==x['instructions'] and x['entry_cycles']+x['outside_entry_cycles']==x['cycles'] and x['exact_reference'] and x['independent_inflation'] and x['work']==60260219686 and x['capacity']==13 for x in rows)
+ log=(p/(label+'.stderr')).read_text();assert log.endswith('CLEANUP bytes=0 nodes=0\n');calibration=json.loads(re.search(r'^ENTRY_SCOPE_CALIBRATION (\{.*\})$',log,re.M)[1]);assert calibration['observations']==101 and calibration['entry_calls']==1
+ binding=json.loads((p/(label+'-binding.json')).read_text());primary=json.loads((r/'linked-primary'/label/'binding.json').read_text());assert binding['compiler_source']==primary['compiler_source'] and binding['libraries']==primary['libraries'] and binding['artifact_pins']==primary['pins']
+ stats={key:{'mean':statistics.mean(x[key] for x in rows),'median':statistics.median(x[key] for x in rows),'min':min(x[key] for x in rows),'max':max(x[key] for x in rows)} for key in keys}
+ assert stats['instructions']['mean']==stats['entry_instructions']['mean']+stats['outside_entry_instructions']['mean']
+ result['variants'][label]={'observations':32,'stdout_sha256':hashlib.sha256(raw).hexdigest(),'compiler_source':binding['compiler_source'],'stats':stats,'empty_entry_calibration':calibration,'entry_instruction_share_percent':100*stats['entry_instructions']['mean']/stats['instructions']['mean']}
+b=result['variants']['before']['stats'];a=result['variants']['after']['stats'];result['mean_instruction_delta']={key:a[key]['mean']-b[key]['mean'] for key in ['instructions','entry_instructions','outside_entry_instructions']};d=result['mean_instruction_delta'];assert d['instructions']==d['entry_instructions']+d['outside_entry_instructions'];result['added_instructions_in_entry_percent']=100*d['entry_instructions']/d['instructions']
+result['scope']='Separate diagnostic cohort only. Entry includes the exact linked machine entry and every host callback it invokes; outside combines setup and cleanup. Two entry calls occur per complete compression, with two counter reads per entry, never per loop. Empty entry calibration is retained and not subtracted. Row windows are disjoint; means reconcile exactly, while independent medians need not sum. Counter trampoline/overhead is absent from primary timing. This does not identify individual callback costs or prove a pointer/refcount mechanism.'
+out.write_text(json.dumps(result,indent=2)+'\n');print(json.dumps({'shares':{k:v['entry_instruction_share_percent'] for k,v in result['variants'].items()},'mean_delta':d,'extra_in_entry_percent':result['added_instructions_in_entry_percent']},indent=2))

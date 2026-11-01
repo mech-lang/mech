@@ -1,0 +1,129 @@
+{
+  "schema": "mech.checked-compute-allocation-control.v1",
+  "variants": {
+    "before": {
+      "groups": {
+        "observed_owned_call_clone": {
+          "requests": 0,
+          "requested_bytes": 0,
+          "reallocations": 0,
+          "stack_groups": 0
+        },
+        "initial_call_clone": {
+          "requests": 151,
+          "requested_bytes": 15310,
+          "reallocations": 0,
+          "stack_groups": 147
+        },
+        "active_turn_plan_clone": {
+          "requests": 165,
+          "requested_bytes": 20478,
+          "reallocations": 0,
+          "stack_groups": 159
+        },
+        "other_observed_refinement": {
+          "requests": 233,
+          "requested_bytes": 28875,
+          "reallocations": 19,
+          "stack_groups": 222
+        },
+        "other_initial_turn": {
+          "requests": 263,
+          "requested_bytes": 37659,
+          "reallocations": 25,
+          "stack_groups": 252
+        },
+        "remaining": {
+          "requests": 5979,
+          "requested_bytes": 98009886,
+          "reallocations": 118,
+          "stack_groups": 2981
+        }
+      },
+      "requests": 6791,
+      "requested_bytes": 98112208,
+      "reallocations": 162
+    },
+    "after": {
+      "groups": {
+        "observed_owned_call_clone": {
+          "requests": 0,
+          "requested_bytes": 0,
+          "reallocations": 0,
+          "stack_groups": 0
+        },
+        "initial_call_clone": {
+          "requests": 151,
+          "requested_bytes": 15310,
+          "reallocations": 0,
+          "stack_groups": 147
+        },
+        "active_turn_plan_clone": {
+          "requests": 165,
+          "requested_bytes": 20478,
+          "reallocations": 0,
+          "stack_groups": 159
+        },
+        "other_observed_refinement": {
+          "requests": 233,
+          "requested_bytes": 28875,
+          "reallocations": 19,
+          "stack_groups": 222
+        },
+        "other_initial_turn": {
+          "requests": 263,
+          "requested_bytes": 37659,
+          "reallocations": 25,
+          "stack_groups": 252
+        },
+        "remaining": {
+          "requests": 5979,
+          "requested_bytes": 98009886,
+          "reallocations": 118,
+          "stack_groups": 2981
+        }
+      },
+      "requests": 6791,
+      "requested_bytes": 98112208,
+      "reallocations": 162
+    }
+  },
+  "delta": {
+    "observed_owned_call_clone": {
+      "requests": 0,
+      "requested_bytes": 0,
+      "reallocations": 0
+    },
+    "initial_call_clone": {
+      "requests": 0,
+      "requested_bytes": 0,
+      "reallocations": 0
+    },
+    "active_turn_plan_clone": {
+      "requests": 0,
+      "requested_bytes": 0,
+      "reallocations": 0
+    },
+    "other_observed_refinement": {
+      "requests": 0,
+      "requested_bytes": 0,
+      "reallocations": 0
+    },
+    "other_initial_turn": {
+      "requests": 0,
+      "requested_bytes": 0,
+      "reallocations": 0
+    },
+    "remaining": {
+      "requests": 0,
+      "requested_bytes": 0,
+      "reallocations": 0
+    }
+  },
+  "whole_call_delta": {
+    "requests": 0,
+    "requested_bytes": 0,
+    "reallocations": 0
+  },
+  "scope": "Ordered disjoint allocation stack families sum exactly to complete traces and separate heap counters. The checked-compute target is instruction-only; the previously removed owned-call clone should remain absent on both sides. Initial call/template and active turn-plan copies have different lifetimes and remain separate. Source does not substitute another planner or alter current facts/permissions. Symbol ancestry is not a complete object/call or retired-instruction ledger."
+}
