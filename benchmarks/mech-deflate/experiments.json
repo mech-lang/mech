@@ -6122,6 +6122,17 @@
           "files": 35,
           "asset_id": 699282978,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r97-primary-group2-b7bf06a2f9f2.tar.gz"
+        },
+        {
+          "event": "primary-group3",
+          "source_revision": "20f002f4ff5ff2186888b7efc8517261756b425e",
+          "asset": "r97-primary-group3-42b0986e4041.tar.gz",
+          "sha256": "42b0986e404127393898e29dfcd5ac5d579010b352a8f52a3b52abcdd24afe86",
+          "manifest_sha256": "82ad83df0191e7a77c707656bc00f7c0101884b3b4c2a2ee3db7d209bdf1787b",
+          "bytes": 83062,
+          "files": 35,
+          "asset_id": 699283859,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r97-primary-group3-42b0986e4041.tar.gz"
         }
       ]
     }
