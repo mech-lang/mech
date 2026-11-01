@@ -6061,6 +6061,25 @@
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r96-instruction-ledger-d186066dce1c.tar.gz"
         }
       ]
+    },
+    "97": {
+      "base": "38cf6825c575f046ca8b365f2d3c28108f303b49",
+      "production": "20f002f4ff5ff2186888b7efc8517261756b425e",
+      "compiler_source": "20f002f4ff5ff2186888b7efc8517261756b425e",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "20f002f4ff5ff2186888b7efc8517261756b425e",
+          "asset": "r97-initial-95dac9d5120d.tar.gz",
+          "sha256": "95dac9d5120db19d2136cb96010e9177e04ebfbc80d65304aa1ac4e396b671c8",
+          "manifest_sha256": "eaf9d9118bfe128f91485714fb19be68db0ffffae399f72c8cf057d62546f744",
+          "bytes": 4397789,
+          "files": 62,
+          "asset_id": 699280410,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r97-initial-95dac9d5120d.tar.gz"
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",
