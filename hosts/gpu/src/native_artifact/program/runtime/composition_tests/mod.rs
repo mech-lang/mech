@@ -3,6 +3,7 @@ use super::*;
 use crate::native_artifact::{JitProgramArtifact, NativeProgramLimitMode};
 use mech_core::ValueDataDraft as Data;
 use mech_engine::ProgramArtifact;
+mod admission_overlap;
 mod bounds_retry;
 mod child_cleanup;
 mod managed_carriers;
@@ -55,11 +56,11 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                97
+                98
             );
             assert_eq!(
                 report.work, 88_767_602,
-                "policy97 retains structural alias pricing; reached cleanup remains funded"
+                "policy98 retains structural alias pricing and scalar-prefix debits; reached cleanup remains funded"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(

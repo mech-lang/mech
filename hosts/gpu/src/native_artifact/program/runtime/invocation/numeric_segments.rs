@@ -69,7 +69,13 @@ impl Invocation<'_, '_, '_> {
             || self.state.control.previous != Some(site as u32)
             || self.state.control.current != Some(parent.iteration)
             || self.progress[parent.iteration as usize * 2 + 1] != 1
-            || self.state.scalar_path.is_some()
+            || self.state.scalar_path.is_some_and(|start| {
+                start as usize != site
+                    || metadata
+                        .map_admission
+                        .group(site)
+                        .is_none_or(|group| group.owner.is_some() || group.start() != start)
+            })
         {
             return Err(invalid(
                 "parent native entry is outside its exact active source visit",
@@ -329,7 +335,7 @@ impl Invocation<'_, '_, '_> {
                 origin: metadata.plan.blocks()[site].origin(),
                 error,
             })?;
-        self.closed_tail = Some(State {
+        let state = State {
             region: Region::Segment(id),
             used: self.state.library.used(),
             remaining: self
@@ -339,7 +345,12 @@ impl Invocation<'_, '_, '_> {
                 .ok_or_else(|| invalid("parent entry changed account scope"))?,
             entry: site as u32,
             partial: false,
-        });
+        };
+        // Selection proves that any active ordinary scalar group is wholly
+        // inside this piece. Its existing debit is retained. Every decline
+        // above leaves its marker intact for the ordinary scalar continuation.
+        self.state.scalar_path = None;
+        self.closed_tail = Some(state);
         Ok(Some(1))
     }
 

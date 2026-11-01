@@ -263,7 +263,10 @@ fn selected_template(
 // child boundaries. Numeric factories still admit each actual unsigned view.
 // IR136 retains constant, unambiguous named managed projections in parent
 // pieces. Images rederive the selector, owner and declared-output proofs.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 136;
+// IR137 composes a larger parent piece with its complete ordinary scalar
+// prefix. A declined entry restores the existing scalar readiness word;
+// independently restored images rederive the containment and selection proof.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 137;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -451,7 +454,10 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 136;
 // Policy97 prices named managed projections as native owner aliases. The
 // compile-time selector proof removes physical lookup/comparison work; current
 // source admission, declared result limits and reached retirement stay checked.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 97;
+// Policy98 retains the paid scalar-prefix debit, then funds the existing parent
+// envelope from the same current account. No debit is refunded or permission
+// carried across a child; a refusal retains the original scalar continuation.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 98;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

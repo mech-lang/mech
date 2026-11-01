@@ -6,7 +6,7 @@ use crate::native_artifact::program::prepare::readonly_numeric::Operation;
 pub(super) const SOURCE: &str =
     include_str!("../../../../../tests/fixtures/native/numeric-parent-admission-overlap.mec");
 
-fn arguments(
+pub(super) fn arguments(
     artifact: &ProgramArtifact,
     memory: &ManagedMemoryBudget,
     length: usize,
