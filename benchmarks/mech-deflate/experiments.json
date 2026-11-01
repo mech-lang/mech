@@ -4660,6 +4660,17 @@
           "files": 70,
           "asset_id": 698595024,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r91-counters-9cc58a0747c4.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "31d77c7c1f5fdeecc9095664af19092353df06b3",
+          "asset": "r91-scalar-controls-c9288c1e0c9b.tar.gz",
+          "sha256": "c9288c1e0c9b809e312ad1c126e2bff4ee0dfd9afc4c4dc09518abefe85c454c",
+          "manifest_sha256": "41d3e434928dcd76d78a88e696f7d865e13c1a02f7be6533da403bde1ee54cbd",
+          "bytes": 66626,
+          "files": 85,
+          "asset_id": 698595234,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r91-scalar-controls-c9288c1e0c9b.tar.gz"
         }
       ]
     }
