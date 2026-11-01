@@ -4060,6 +4060,17 @@
           "files": 33,
           "asset_id": 698453221,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-primary-group1-e82c1b66f030.tar.gz"
+        },
+        {
+          "event": "primary-group2",
+          "source_revision": "3444655203c554824153771782d3b81bf3cc1edc",
+          "asset": "r90-primary-group2-e42486456b3e.tar.gz",
+          "sha256": "e42486456b3ef1f8a155e05928724e222adbb3d9d0d0c2c836325418dfe935c6",
+          "manifest_sha256": "cd88668bdea56f613612b5db31aadb08a26a5455aae990b7a928c1510f5a68f6",
+          "bytes": 74619,
+          "files": 33,
+          "asset_id": 698454095,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-primary-group2-e42486456b3e.tar.gz"
         }
       ]
     }
