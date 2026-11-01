@@ -2711,6 +2711,17 @@
           "files": 408,
           "asset_id": 697950639,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r87-capacity-census-20e914247be3.tar.gz"
+        },
+        {
+          "event": "final-units",
+          "source_revision": "c2b334feed4326a66ce1f69ca4bc99b0cbe41bb2",
+          "asset": "r87-final-units-9cc6e3da7f41.tar.gz",
+          "sha256": "9cc6e3da7f41f718d3e5032f6c5872a78ad7e30105035528488c0f8f6684f40b",
+          "manifest_sha256": "c6e9365d2706007fa41c652ac29e6618beec14e0fe269b10161f78c6f1a4979f",
+          "bytes": 60531,
+          "files": 48,
+          "asset_id": 697950722,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r87-final-units-9cc6e3da7f41.tar.gz"
         }
       ]
     }
