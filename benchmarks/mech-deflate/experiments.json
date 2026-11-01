@@ -5273,6 +5273,17 @@
           "files": 42,
           "asset_id": 698786909,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-analysis-e24fbc34ee97.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
+          "asset": "r92-closure-397e61807f09.tar.gz",
+          "sha256": "397e61807f0984676f7fc090a322b17d43628975715d3ff8dc45b829857bcfe2",
+          "manifest_sha256": "f24188abe5ab46d8d6231e23aabf142393df2cd9b4bc3d1a4d0c3a80fe62a9cb",
+          "bytes": 59727,
+          "files": 37,
+          "asset_id": 698787037,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-closure-397e61807f09.tar.gz"
         }
       ],
       "retained_production": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
