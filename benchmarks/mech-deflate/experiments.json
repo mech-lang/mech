@@ -4524,6 +4524,20 @@
         "scalar_max_ratio": 1.0252667642125548,
         "skipped": "hosted CI cancelled by instruction, large/full-corpus timing, giant complete knucleotide; PR stays draft",
         "workflow_tests": 132
+      },
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "correctness.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 32,
+        "round": 90,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 544,
+        "verified_archives": 46,
+        "verified_file_occurrences": 2017
       }
     }
   },

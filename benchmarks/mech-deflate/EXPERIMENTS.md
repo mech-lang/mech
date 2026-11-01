@@ -303,3 +303,22 @@ The compact R89 entry pins all packets and five report hashes. Replay with:
 ```sh
 python3 benchmarks/mech-deflate/experiment.py replay-round --index benchmarks/mech-deflate/experiments.json --round 89 --output /tmp/mech-r89-retrieved
 ```
+
+## R90: current operand on native checked-read retry
+
+Base `7ef95a8a22977d2436e2ad207dae3bcba7e916a2`; retained compiler
+`254ac339b64ab71dd374cc20c3873cd6ae766921`. A real scalar-overlap witness exposed
+an inherited private-operand retry bug (StaleHandle versus ordinary Index).
+The cold retry pins the current operand before shared ordered retirement and
+uses the existing funded alias escape before the original reader. Representation,
+prices and compressor Object/image remain unchanged:136/97/38/14.
+
+Final matched elapsed9.266753×→9.296402× reference (+0.319946% adverse);
+instructions+0.006704%, cycles+0.794120%; requests/bytes/heap unchanged. Retained
+for correctness, with no performance win claimed. The first adverse variant,
+all failed attempts, exact commands and fresh final profiles remain external.
+Runtime347, native CI53, unchanged component236, linked16+12, scalar12 at unchanged
+1.05 gate, frame8, workflow132 and architecture15 pass. See the authoritative
+[current status](../../docs/design/native-compression-status.md) for limits and
+skipped coverage. Retrieve all preserved versions and reproduce four reports with
+`replay-round --round 90` and a fresh output directory.
