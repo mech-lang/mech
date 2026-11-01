@@ -6654,6 +6654,26 @@
         "verified_archives": 14,
         "verified_file_occurrences": 1032
       }
+    },
+    "100": {
+      "base": "c84e307aa64e136bd0d3f6d2fc2bbf869b4e3b25",
+      "production": null,
+      "compiler_source": "5c219ed220879b05ee147bdf5d3f85680311eae2",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "ownership-audit",
+          "source_revision": "5c219ed220879b05ee147bdf5d3f85680311eae2",
+          "asset": "r100-ownership-audit-06be8e830b28.tar.gz",
+          "sha256": "06be8e830b286adabf08ffe52e66ba185d49486096f2a30d41d27075841e4d06",
+          "manifest_sha256": "16cab2527c2fd4cd945373ea02ca081ccc6bdfcaa69029fae70760807bf976f2",
+          "bytes": 1275579,
+          "files": 41,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-ownership-audit-06be8e830b28.tar.gz"
+        }
+      ],
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
