@@ -3961,6 +3961,17 @@
           "files": 38,
           "asset_id": 698451214,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-baseline-witness-assertion-not-a-boundary-18d1c75d1bd7.tar.gz"
+        },
+        {
+          "event": "baseline-witness",
+          "source_revision": "3444655203c554824153771782d3b81bf3cc1edc",
+          "asset": "r90-baseline-witness-a6705b460833.tar.gz",
+          "sha256": "a6705b460833805eaabbaca98ce6b7318a59ad68022945092c463efe2a9b8ede",
+          "manifest_sha256": "4fe3a68eb0fdcbabaf45defd909792b32578e991fd9fbeff4ab2cb3b0778834f",
+          "bytes": 62808,
+          "files": 38,
+          "asset_id": 698451282,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-baseline-witness-a6705b460833.tar.gz"
         }
       ]
     }
