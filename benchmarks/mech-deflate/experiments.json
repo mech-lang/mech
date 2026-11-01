@@ -2037,6 +2037,17 @@
           "files": 31,
           "asset_id": 697886114,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r84-closure-7bdf567b832b.tar.gz"
+        },
+        {
+          "event": "qualification",
+          "source_revision": "10f5bbbe94fed1b1887e9f4794f48ec90b13b154",
+          "asset": "r84-qualification-07604a5357dd.tar.gz",
+          "sha256": "07604a5357dd22cedd692c8874be8153dc5f7502877b8ea4b717c811bbdf69cc",
+          "manifest_sha256": "2a8cc33f7c579823a3f5a1347e85ba18abde577d5c8e9acc37f9dbd9bb743f33",
+          "bytes": 100329,
+          "files": 52,
+          "asset_id": 697889931,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r84-qualification-07604a5357dd.tar.gz"
         }
       ],
       "analysis": {
