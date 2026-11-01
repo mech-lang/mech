@@ -133,6 +133,17 @@
           "files": 36,
           "asset_id": 697269269,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-frame-allocation-0a8d8c86f44c.tar.gz"
+        },
+        {
+          "event": "diagnostic-counts",
+          "source_revision": "374edf1410b5f975d793fb69d8fcf390cbfa10a5",
+          "asset": "r79-diagnostic-counts-a29427deffed.tar.gz",
+          "sha256": "a29427deffed8bbedfdacf86766495c08523e795ab6ee71de986530dca967127",
+          "manifest_sha256": "31b89defa6b1678723fb74fef9ca5484bacafb0f842864e0c2c8ad9f485b6418",
+          "bytes": 1388571,
+          "files": 392,
+          "asset_id": 697282637,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-diagnostic-counts-a29427deffed.tar.gz"
         }
       ]
     }
