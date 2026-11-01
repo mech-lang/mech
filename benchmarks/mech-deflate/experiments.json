@@ -3016,6 +3016,25 @@
         "verified_archives": 20,
         "verified_file_occurrences": 1638
       }
+    },
+    "88": {
+      "base": "5ccd962fc5a7efeb27600fecd5aff969113ad91f",
+      "production": "36794bdeac6c70a13be317a14d2175bb1b4fbb94",
+      "compiler_source": "36794bdeac6c70a13be317a14d2175bb1b4fbb94",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "linked-multi",
+          "source_revision": "36794bdeac6c70a13be317a14d2175bb1b4fbb94",
+          "asset": "r88-linked-multi-b37cc20daff0.tar.gz",
+          "sha256": "b37cc20daff088fd93d91af99fabb7f75255df91363dedef790c011e4ea29f58",
+          "manifest_sha256": "5370cf95ca5f93655684e443888460db8ef5ea641521eb535c116afc58c071f8",
+          "bytes": 76670,
+          "files": 43,
+          "asset_id": 698023366,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-linked-multi-b37cc20daff0.tar.gz"
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",
