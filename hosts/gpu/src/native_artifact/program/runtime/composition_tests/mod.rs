@@ -7,6 +7,7 @@ mod child_cleanup;
 mod managed_carriers;
 mod managed_projections;
 mod multiple_children;
+mod named_managed_projections;
 mod observe;
 mod pack;
 mod record_lookup;
@@ -53,11 +54,11 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                96
+                97
             );
             assert_eq!(
                 report.work, 88_767_602,
-                "policy96 elides private projection transport; reached cleanup remains funded"
+                "policy97 retains structural alias pricing; reached cleanup remains funded"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(

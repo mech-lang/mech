@@ -3,7 +3,8 @@
 use super::{readonly_numeric::ResultRecipe, tail};
 use mech_engine::native_artifact::{
     NativeBufferFrameLane as Lane, NativeBufferFrameOperation as Frame, NativeBufferFrames,
-    NativeControlLoop as Loop, NativeIterationAction as Action, NativeIterationTerminator as Term,
+    NativeCollectionPrimitive as Primitive, NativeControlLoop as Loop,
+    NativeIterationAction as Action, NativeIterationTerminator as Term,
     NativeMatchAction as Scalar, NativePreparedLibraryCall, NativeProgramArtifactPlan as Plan,
     NativeScalarAggregates,
 };
@@ -473,7 +474,10 @@ fn eligible(
             } => {
                 flat(*source)
                     && (plan.values()[output.get() as usize].scalar_kind().is_some()
-                        || (matches!(action, Action::Structural { .. })
+                        || ((matches!(action, Action::Structural { .. })
+                            || matches!(action, Action::LibraryCall { template, .. }
+                                if template.primitive() == Primitive::RecordFieldAccess
+                                    && calls[site].as_ref().is_some_and(|call| call.template() == template)))
                             && frames
                                 .fields(*source)
                                 .and_then(|fields| fields.get(*ordinal))

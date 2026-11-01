@@ -102,6 +102,32 @@ impl Invocation<'_, '_, '_> {
         }
         let mut alias_work = Some(0u64);
         for alias in &frames.aliases {
+            // The constant/unambiguous selector is proved by the original
+            // frame analysis, not looked up again at runtime. Its logical
+            // result boundary still requires explicit finite call limits.
+            // Current admitted capacity is a sufficient output-byte bound;
+            // a tight/refused bound declines without spending or rejecting,
+            // so the ordinary call checks its exact footprint at its site.
+            if alias.call_result
+                && ([
+                    self.limits.max_output_elements,
+                    self.limits.max_output_bytes,
+                    self.limits.max_temporary_bytes,
+                    self.limits.max_cloned_bytes,
+                    self.limits.max_retained_nodes,
+                    self.limits.max_comparison_work,
+                    self.limits.max_compute_work,
+                ]
+                .iter()
+                .any(Option::is_none)
+                    || self.limits.max_output_elements.is_some_and(|n| n < 1)
+                    || self
+                        .limits
+                        .max_output_bytes
+                        .is_some_and(|n| n < largest_source_bytes))
+            {
+                return Ok(Some(0));
+            }
             let Some(owner) = self.segment_source(&frames.sources[alias.source])? else {
                 return Ok(Some(0));
             };

@@ -261,7 +261,9 @@ fn selected_template(
 // IR135 separates immutable managed owner transport from typed numeric views.
 // Matrix-of-records/String carriers keep exact source/exit proofs and ordinary
 // child boundaries. Numeric factories still admit each actual unsigned view.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 135;
+// IR136 retains constant, unambiguous named managed projections in parent
+// pieces. Images rederive the selector, owner and declared-output proofs.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 136;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -446,7 +448,10 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 135;
 // before ordinary child entry; it does not renew a child or parent allowance.
 // Policy96 prices current alias previews and funds ordinary canonical escape
 // installation before a parent piece, without materializing its private aliases.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 96;
+// Policy97 prices named managed projections as native owner aliases. The
+// compile-time selector proof removes physical lookup/comparison work; current
+// source admission, declared result limits and reached retirement stay checked.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 97;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
