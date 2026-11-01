@@ -3001,6 +3001,20 @@
           14
         ],
         "scope": "Current production file is byte-identical to the measured c2b334fee source; all primary pins verified. Only the GPU runtime current-capacity sufficient proof changes. Original code generation, source/bytecode/algorithm/tables/allocation sites/real capacities/allocator/logical work/timing boundaries remain unchanged."
+      },
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "mechanism.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 0,
+        "round": 87,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 1081,
+        "verified_archives": 20,
+        "verified_file_occurrences": 1638
       }
     }
   },
