@@ -3033,6 +3033,17 @@
           "files": 43,
           "asset_id": 698023366,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-linked-multi-b37cc20daff0.tar.gz"
+        },
+        {
+          "event": "inputs",
+          "source_revision": "36794bdeac6c70a13be317a14d2175bb1b4fbb94",
+          "asset": "r88-inputs-4f5392f3f7f8.tar.gz",
+          "sha256": "4f5392f3f7f8e6368d17aeeeb88177a76b837d22e29f24f90f89161afd10bb4e",
+          "manifest_sha256": "fe8617a139abe70b524fae1c472aaa8f59ab2f0e98e438bf731ca39f12c4d01f",
+          "bytes": 42699,
+          "files": 26,
+          "asset_id": 698023543,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-inputs-4f5392f3f7f8.tar.gz"
         }
       ]
     }
