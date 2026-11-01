@@ -338,6 +338,17 @@
           "files": 66,
           "asset_id": 697403744,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-variants-cd811a379457.tar.gz"
+        },
+        {
+          "event": "initial",
+          "source_revision": "e4d444b5fcd33a69c05837ad1cafbd4c50b9ae97",
+          "asset": "r80-initial-88f0a2f866a9.tar.gz",
+          "sha256": "88f0a2f866a90751845ca7cbbaa96dd3229239b9b0d4a3409881d3506a19d07b",
+          "manifest_sha256": "f4255d7d8a30624976294b2c040dd4087239cfe66a55320229682b19761c903b",
+          "bytes": 8345372,
+          "files": 52,
+          "asset_id": 697406346,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-initial-88f0a2f866a9.tar.gz"
         }
       ]
     }
