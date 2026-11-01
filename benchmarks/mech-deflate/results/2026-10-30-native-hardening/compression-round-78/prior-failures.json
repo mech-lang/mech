@@ -1,0 +1,65 @@
+{
+  "failures": [
+    {
+      "receipt": "initial-controls/build.json",
+      "exit": 1,
+      "classification": "introduced",
+      "reason": "test source type inference",
+      "disposition": "resolved before source freeze; final two focused controls pass"
+    },
+    {
+      "receipt": "initial-controls-fixed/run.json",
+      "exit": 101,
+      "classification": "introduced",
+      "reason": "new eligibility check indexed an absent optional layout",
+      "disposition": "resolved before source freeze; final two focused controls pass"
+    },
+    {
+      "receipt": "initial-controls-checked-layout/run.json",
+      "exit": 101,
+      "classification": "introduced",
+      "reason": "test input shape used one parameter instead of schema-derived shape",
+      "disposition": "resolved before source freeze; final two focused controls pass"
+    },
+    {
+      "receipt": "initial-controls-schema-shape/run.json",
+      "exit": 101,
+      "classification": "introduced",
+      "reason": "test fixture inlined and did not exercise the new callback",
+      "disposition": "resolved before source freeze; final two focused controls pass"
+    },
+    {
+      "receipt": "initial-controls-recursive/run.json",
+      "exit": 101,
+      "classification": "introduced",
+      "reason": "test expected the wrong public error family",
+      "disposition": "resolved before source freeze; final two focused controls pass"
+    },
+    {
+      "receipt": "source-inspection/initial-build.json",
+      "exit": 1,
+      "classification": "introduced diagnostic-only",
+      "reason": "Missing AstNode trait import in the inspection utility",
+      "disposition": "Fixed; corrected read-only inspection succeeded; no production issue"
+    },
+    {
+      "receipt": "units-after/runtime.json",
+      "exit": 101,
+      "classification": "introduced test migration",
+      "tests_passed": 328,
+      "tests_failed": 3,
+      "reason": "Two observers counted standalone admission callbacks instead of logical admission attempts under the new encoding; one test expected private ABI37. Original child counts/work/outputs unchanged.",
+      "disposition": "Update observation-only normalization and private ABI expectation; rerun the failed selection on the clean accepted parent and full candidate runtime suite."
+    },
+    {
+      "receipt": "architecture/results.json",
+      "exit": 1,
+      "classification": "introduced test placement",
+      "reason": "Unsafe test observation and image restoration outside exact audited owner.",
+      "disposition": "Move pointer handling into existing runtime/tests.rs. New regression file safe; no allowlist or warning-policy change."
+    }
+  ],
+  "unresolved": [],
+  "scope": "All initial focused build/test failures retained, corrected before performance measurements. No baseline repair or allowance change.",
+  "closure": "Final actual GPU331, CI37 and all ten architecture/five type checks pass after migration. Warnings-as-errors and exact unsafe allowlist preserved. No production or resource-allowance repair was needed after timing."
+}
