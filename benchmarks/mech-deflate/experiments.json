@@ -954,6 +954,17 @@
           "files": 79,
           "asset_id": 697588760,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r81-final-checks-fd2726646c69.tar.gz"
+        },
+        {
+          "event": "inputs",
+          "source_revision": "c29854f6f1f404658c39bcb024296b01ec80a71d",
+          "asset": "r81-inputs-5cf02226d83c.tar.gz",
+          "sha256": "5cf02226d83cf5203edfd00adb0938e2aafa4458ede77ec4577ec53b11b55b88",
+          "manifest_sha256": "088dee65e2bba02bba4bf42285bf0653857809fc78adaa57dc947d3392858fa0",
+          "bytes": 1403355,
+          "files": 53,
+          "asset_id": 697588836,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r81-inputs-5cf02226d83c.tar.gz"
         }
       ]
     }
