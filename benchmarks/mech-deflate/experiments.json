@@ -7147,6 +7147,17 @@
           "files": 43,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-primary-group2-d80202f99403.tar.gz"
+        },
+        {
+          "event": "primary-group3",
+          "source_revision": "fa1ffe75e78c7ace538d7d14aa5f3ebc74783166",
+          "asset": "r102-primary-group3-87f6de0c9cc9.tar.gz",
+          "sha256": "87f6de0c9cc960b858d5ff93365d879295a57119fe7cf0518f1dbef940eb288b",
+          "manifest_sha256": "f13cd7fb2815b433154971c9f8b5dcc24337b07e2f227748e2ccfbb1756b9d27",
+          "bytes": 137884,
+          "files": 43,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-primary-group3-87f6de0c9cc9.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
