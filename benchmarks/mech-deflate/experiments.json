@@ -1,0 +1,25 @@
+{
+  "format": 1,
+  "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments",
+  "rounds": {
+    "79": {
+      "base": "0eb0c3d9d8a59fbf14b4ec3563944a276b56b8a4",
+      "production": "c5e4d66188339025ddfcbf83f0ab1e9788f237f3",
+      "compiler_source": "374edf1410b5f975d793fb69d8fcf390cbfa10a5",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "374edf1410b5f975d793fb69d8fcf390cbfa10a5",
+          "asset": "r79-initial-bcc4ac22e42f.tar.gz",
+          "sha256": "bcc4ac22e42f32a21262deb62b3915f398d10892daee59baf39ca771bf0ab441",
+          "manifest_sha256": "214eae64f06b7888473fa877cf985a30f8c05b1857264ee4b06224d00924389b",
+          "bytes": 8316015,
+          "files": 68,
+          "asset_id": 697243580,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-initial-bcc4ac22e42f.tar.gz"
+        }
+      ]
+    }
+  }
+}
