@@ -6748,6 +6748,33 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-primary-group3-2b656c9cdeab.tar.gz"
+        },
+        {
+          "event": "primary-summary",
+          "source_revision": "bebe5a245d312796c630de76fc558fbcd2c2f2ff",
+          "asset": "r100-primary-summary-9b5726e3caae.tar.gz",
+          "sha256": "9b5726e3caae0db07e9a94751c9fe9f4fcf004b31a6f8c6a1daa2103cf503213",
+          "manifest_sha256": "8e238ee2a2ccfad0c68fd4c8d93fe197812a9d396d04e5967805fa71d7cf46f1",
+          "bytes": 123526,
+          "files": 45,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-primary-summary-9b5726e3caae.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.000293,
+            "medians": {
+              "after": 0.0024264585,
+              "before": 0.002422667
+            },
+            "multiples_of_reference": {
+              "after": 8.28142832764505,
+              "before": 8.268488054607507
+            },
+            "after_over_before": 1.0015650107918257,
+            "improving_groups": 2,
+            "improving_blocks": 25,
+            "adverse_blocks": 39
+          }
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
