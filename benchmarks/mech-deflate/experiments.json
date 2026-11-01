@@ -3225,6 +3225,17 @@
           "files": 60,
           "asset_id": 698031182,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-frame-allocation-c417aee6d425.tar.gz"
+        },
+        {
+          "event": "isolated-profile",
+          "source_revision": "36794bdeac6c70a13be317a14d2175bb1b4fbb94",
+          "asset": "r88-isolated-profile-9519266c320e.tar.gz",
+          "sha256": "9519266c320e2eca630d50d26be45a861320f60c432da0a7d23f01f41ce72f27",
+          "manifest_sha256": "0ad8009f45a90f4578cc6353660a119d11d4c1654db15bd157efd33b618bf42a",
+          "bytes": 277750,
+          "files": 37,
+          "asset_id": 698031908,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-isolated-profile-9519266c320e.tar.gz"
         }
       ]
     }
