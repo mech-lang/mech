@@ -3549,6 +3549,17 @@
           "files": 35,
           "asset_id": 698191657,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-primary-group1-eea3aec4554c.tar.gz"
+        },
+        {
+          "event": "primary-group2",
+          "source_revision": "460c9cb748fc377c1cbcfd57565a5373de05de14",
+          "asset": "r89-primary-group2-917c1e82cb7e.tar.gz",
+          "sha256": "917c1e82cb7e73d1740c57935c99326cfba26aca868825a1d9e46b13c1eaee74",
+          "manifest_sha256": "fe8aa507f503ad0028f97e0112dabea6075d5b579addb30ab95dce0a58ef9255",
+          "bytes": 78372,
+          "files": 35,
+          "asset_id": 698192247,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-primary-group2-917c1e82cb7e.tar.gz"
         }
       ]
     }
