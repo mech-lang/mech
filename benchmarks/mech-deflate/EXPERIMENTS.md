@@ -322,3 +322,22 @@ Runtime347, native CI53, unchanged component236, linked16+12, scalar12 at unchan
 [current status](../../docs/design/native-compression-status.md) for limits and
 skipped coverage. Retrieve all preserved versions and reproduce four reports with
 `replay-round --round 90` and a fresh output directory.
+
+## R91: wholly contained scalar-prefix parent composition
+
+Base `c24b50e52a8988d7272012b64bf5cdb53adc0a6e`; retained/measured compiler
+`31d77c7c1f5fdeecc9095664af19092353df06b3`; separate CI `fb6989d87`.
+Matched elapsed9.324090×→9.044674× reference (−2.996705%), instructions−3.595859%,
+cycles−3.852070%. Requests/peak stay equal; bytes+96, code+878864 and stack+8672
+remain adverse. Actual library callbacks792→528 and arena puts2047→2010; forty
+new static entries execute135 visits. IR/work/private ABI/MBC137/98/38/14.
+
+The paid scalar debit is retained; native refusal restores paid/unpaid readiness.
+Owner/partial barriers, original source errors, aliases and child lifecycles remain.
+This measured whole-piece variant differs from the new brief's native-suffix-only
+proposal. Failed preparations and every cohort remain external. Current runtime350,
+CI59, unchanged components236, linked16+12, scalar12, frame8, workflow132 and
+architecture15 pass. Fresh retrieval verifies26 packets/1919 versions/1137 paths
+and reproduces four reports byte-identically. Replay with `replay-round --round 91`.
+Raw Object binaries stay local; numerical replay verifies hash pins and retrieved
+descriptor/metadata. See the authoritative [status](../../docs/design/native-compression-status.md).
