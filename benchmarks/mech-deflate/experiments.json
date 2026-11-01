@@ -2567,7 +2567,7 @@
       "base": "fc3887ddced43a84a0e58776064a108d9dbc483e",
       "production": "490ede99581fd233edd4c05d14f74641c9ae45c9",
       "compiler_source": "fc3887ddced43a84a0e58776064a108d9dbc483e",
-      "decision": "diagnostic only; no production change",
+      "decision": "diagnostic complete: all 10712 callback ordinals and 1620 piece boundaries covered four times; no production change or speedup claim",
       "events": [
         {
           "event": "callback-windows",
@@ -2612,8 +2612,55 @@
           "files": 12,
           "asset_id": 697927559,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r86-analysis-fee2456b6a86.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "fc3887ddced43a84a0e58776064a108d9dbc483e",
+          "asset": "r86-closure-3b298fcfc650.tar.gz",
+          "sha256": "3b298fcfc650eb0f45d975907b0364a7f486d283ddb3f5955db24be32e235dba",
+          "manifest_sha256": "b142b82f6f3d5885071781f14fb1c5f3161e9b62c5267e977d5d41093245bcd7",
+          "bytes": 29472,
+          "files": 9,
+          "asset_id": 697929578,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r86-closure-3b298fcfc650.tar.gz"
         }
-      ]
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "callbacks.json": "dfae2e4f4d6deb5e3bcf14541e5d192999870d036bfd318c22b44d71d1acda5e",
+          "phases.json": "9744dcec66714064eb6d5b8d6affc6653cc6308018d51132bbafe0091c07ae77",
+          "validation.json": "31e019ffb2e0f1ecd7c455fec35d29162d95bc95ee4b7339512f4cee003eee42"
+        }
+      },
+      "versions": [
+        135,
+        96,
+        38,
+        14
+      ],
+      "validation": {
+        "production_changed": false,
+        "source_revision": "fc3887ddced43a84a0e58776064a108d9dbc483e",
+        "observed_total_diagnostic_calls": 512,
+        "complete_ordinal_coverage": true,
+        "no_nested_or_failed_callbacks": true,
+        "no_counter_errors_or_bank_overflows": true,
+        "exact_bytes_and_independent_inflation_all_calls": true,
+        "input_aliases_and_capacity_13_all_calls": true,
+        "final_managed_bytes_nodes": [
+          0,
+          0
+        ],
+        "versions": [
+          135,
+          96,
+          38,
+          14
+        ],
+        "cleanup_verified": true,
+        "scope": "Diagnostic qualification only. R85 semantic/resource/scalar/component/linked suites remain inherited and are not relabeled as freshly executed R86 tests. No production change or new throughput result."
+      }
     }
   },
   "repository": "mech-lang/mech",
