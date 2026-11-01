@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-11-01T00:48:45.905989+00:00",
+  "head": "e68bc11850154448267aa5c0e014a87b26dfaf25",
+  "files": [
+    {
+      "path": "qualify-all.py",
+      "sha256": "6f33e50a9e51c7221a7d40cdb51cf68bc70b349ba38f350e03c46478e6ce6280",
+      "bytes": 2255
+    },
+    {
+      "path": "units-after/runtime-inventory.json",
+      "sha256": "524b13ef9d8a68f979f9b55402c3798fd23a108890a7cf8e5f0be8c630c149eb",
+      "bytes": 454
+    },
+    {
+      "path": "units-after/runtime-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "units-after/runtime-inventory.stdout",
+      "sha256": "e052f5db317d0f83f097ffbdac0f1bb93fd5bf6c361ccaac353a1eede7bff19e",
+      "bytes": 47145
+    }
+  ]
+}
