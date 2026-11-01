@@ -3099,6 +3099,17 @@
           "files": 47,
           "asset_id": 698024156,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-qualification-b1103167d97d.tar.gz"
+        },
+        {
+          "event": "final-checks",
+          "source_revision": "36794bdeac6c70a13be317a14d2175bb1b4fbb94",
+          "asset": "r88-final-checks-e12af528bf66.tar.gz",
+          "sha256": "e12af528bf660440de9d39ff58ec8727195a378b7d4e3427d0a9ccff35229887",
+          "manifest_sha256": "7daeb39d61b7ed775f0e4f2dbd7b19794fe0ec3b4304eaddb33795d658f51196",
+          "bytes": 47557,
+          "files": 63,
+          "asset_id": 698024233,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-final-checks-e12af528bf66.tar.gz"
         }
       ]
     }
