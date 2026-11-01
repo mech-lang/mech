@@ -144,6 +144,17 @@
           "files": 392,
           "asset_id": 697282637,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-diagnostic-counts-a29427deffed.tar.gz"
+        },
+        {
+          "event": "linked-multi",
+          "source_revision": "374edf1410b5f975d793fb69d8fcf390cbfa10a5",
+          "asset": "r79-linked-multi-6deaad77ad5c.tar.gz",
+          "sha256": "6deaad77ad5ccfc008895223ecde5c8a48f7b3eb74c3b050f6c0982338eb444d",
+          "manifest_sha256": "535d67ce2ebbbad58dc731d5fe0d810b472a39ce1cde5b3c8a2846a479285e77",
+          "bytes": 69506,
+          "files": 32,
+          "asset_id": 697287034,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-linked-multi-6deaad77ad5c.tar.gz"
         }
       ]
     }
