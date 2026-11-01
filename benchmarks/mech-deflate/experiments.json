@@ -1654,6 +1654,17 @@
           "files": 42,
           "asset_id": 697749304,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-resource-observation-2c13a6de41e7.tar.gz"
+        },
+        {
+          "event": "analysis",
+          "source_revision": "c0b5999f434650df9ff7fef6dc2c9f4c40d4fc42",
+          "asset": "r83-analysis-0f76f930018c.tar.gz",
+          "sha256": "0f76f930018c07c08dd0d52f172d05da31a728cd83b34edbaf11a2ce2d788ab4",
+          "manifest_sha256": "2e3f39d9470b4e9727d033eb6575022c3f5b53b8b8be0192b938abb8717ed579",
+          "bytes": 66884,
+          "files": 41,
+          "asset_id": 697749345,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-analysis-0f76f930018c.tar.gz"
         }
       ],
       "analysis": {
