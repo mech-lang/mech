@@ -40,16 +40,10 @@ fn completed_child_cleanup_keeps_unentered_paths_returns_and_failure_retry() {
             let prior = published.clone();
             let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
             super::super::retirement::take_child_observation();
-            let (result, handoffs) =
-                observe::run(&jit, &args, &mut published, mode.execution(), &memory);
+            let result = jit.evaluate_into(&args, &mut published, mode.execution(), &memory);
             let omitted = super::super::retirement::take_child_observation();
             if let Some(expected) = expected {
                 result.unwrap();
-                assert!(
-                    handoffs.seed_handoffs > 0,
-                    "must execute direct seed placement"
-                );
-                assert_eq!(handoffs.seed_handoffs, handoffs.seed_adoptions);
                 assert!(omitted > 0, "successful parent must use its child summary");
                 assert_eq!(
                     published

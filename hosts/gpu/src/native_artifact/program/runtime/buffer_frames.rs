@@ -586,6 +586,7 @@ impl BufferFrames {
     pub(super) fn has_retirement_backing(&self) -> bool {
         self.inner.is_some()
     }
+    #[cfg(all(test, feature = "canonical-native-program"))]
     pub(super) fn retirement_is_empty(
         &self,
         recipes: &crate::native_artifact::program::prepare::frame_retirement::FrameRetirements,
