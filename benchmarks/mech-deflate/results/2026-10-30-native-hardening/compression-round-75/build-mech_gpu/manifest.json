@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-11-01T00:10:04.999455+00:00",
+  "head": "e7608ae14102354ae211f95e79198c801f7b44b3",
+  "files": [
+    {
+      "path": "build-changed.py",
+      "sha256": "f63d8a5750de92084b11cf664512b1efc45e4cac9f9740f88f22bfd7e82b32f7",
+      "bytes": 5821
+    },
+    {
+      "path": "retained-build-commands.json",
+      "sha256": "621c307954ab44a2cc002549dc8bb672b654e8dfb9e72313a9d109f16c9191e5",
+      "bytes": 66665
+    },
+    {
+      "path": "variants/after/mech_gpu.json",
+      "sha256": "3d81fa4fa1c5341037376bf742a51e416888e06f20ddea2611c2fba1118a5aee",
+      "bytes": 5290
+    },
+    {
+      "path": "variants/after/mech_gpu.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "variants/after/mech_gpu.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}
