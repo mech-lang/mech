@@ -4120,6 +4120,17 @@
           "files": 69,
           "asset_id": 698479552,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-counters-60887c2d5a44.tar.gz"
+        },
+        {
+          "event": "isolated-profile",
+          "source_revision": "3444655203c554824153771782d3b81bf3cc1edc",
+          "asset": "r90-isolated-profile-48b214d4dd69.tar.gz",
+          "sha256": "48b214d4dd69dc74373ac4bb4d2027aeb19cb21cd52303b9963170d13c7288cd",
+          "manifest_sha256": "077508b29ce37a2326bc07cc193eef394d3d0cebc9b2b7fa7d737edb14a8f55e",
+          "bytes": 260831,
+          "files": 37,
+          "asset_id": 698480283,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-isolated-profile-48b214d4dd69.tar.gz"
         }
       ]
     }
