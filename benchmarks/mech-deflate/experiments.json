@@ -2562,6 +2562,25 @@
         "verified_archives": 28,
         "verified_file_occurrences": 1683
       }
+    },
+    "86": {
+      "base": "fc3887ddced43a84a0e58776064a108d9dbc483e",
+      "production": "490ede99581fd233edd4c05d14f74641c9ae45c9",
+      "compiler_source": "fc3887ddced43a84a0e58776064a108d9dbc483e",
+      "decision": "diagnostic only; no production change",
+      "events": [
+        {
+          "event": "callback-windows",
+          "source_revision": "fc3887ddced43a84a0e58776064a108d9dbc483e",
+          "asset": "r86-callback-windows-3bc76aeff46f.tar.gz",
+          "sha256": "3bc76aeff46fc18e09b842ca03f0cecf24fa79fdea22bf80bd49688ee0e63544",
+          "manifest_sha256": "1bfc68aca829a17fe803d067a12bfe05282ef2533d9c61700068d254d09172f8",
+          "bytes": 2153421,
+          "files": 398,
+          "asset_id": 697919531,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r86-callback-windows-3bc76aeff46f.tar.gz"
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",
