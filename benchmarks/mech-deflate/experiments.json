@@ -221,6 +221,17 @@
           "files": 55,
           "asset_id": 697350518,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-resource-observation-ccc5a4a0534c.tar.gz"
+        },
+        {
+          "event": "reference-profile",
+          "source_revision": "374edf1410b5f975d793fb69d8fcf390cbfa10a5",
+          "asset": "r79-reference-profile-5bc5fd032aad.tar.gz",
+          "sha256": "5bc5fd032aad853e81fe13ee6f4d1dd8615f5f25ea4b5c2d4fcebb08cbfc1b44",
+          "manifest_sha256": "5337cf4d67d515014a1af624b9eb8f8242aac58f2369077b7d99caff489ce446",
+          "bytes": 179555,
+          "files": 46,
+          "asset_id": 697350562,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-reference-profile-5bc5fd032aad.tar.gz"
         }
       ],
       "analysis": {
