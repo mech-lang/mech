@@ -3258,6 +3258,17 @@
           "files": 42,
           "asset_id": 698085661,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-restored-baseline-fde14e53e194.tar.gz"
+        },
+        {
+          "event": "record-field-witness-unqualified",
+          "source_revision": "36794bdeac6c70a13be317a14d2175bb1b4fbb94",
+          "asset": "r88-record-field-witness-unqualified-32594e7191df.tar.gz",
+          "sha256": "32594e7191df6ca2dab2dee724a279996f8ac00408e01590eb0100746a71ff20",
+          "manifest_sha256": "18f8392788b74a66f99470dd87ea48d3bfa6643a005e8c77e29ecffcf9803fec",
+          "bytes": 70963,
+          "files": 44,
+          "asset_id": 698091537,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-record-field-witness-unqualified-32594e7191df.tar.gz"
         }
       ]
     }
