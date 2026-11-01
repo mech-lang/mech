@@ -3752,6 +3752,17 @@
           "files": 77,
           "asset_id": 698225003,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-counters-serial-repeat-d156eb79e6ee.tar.gz"
+        },
+        {
+          "event": "scalar-controls-serial-repeat",
+          "source_revision": "460c9cb748fc377c1cbcfd57565a5373de05de14",
+          "asset": "r89-scalar-controls-serial-repeat-850e51878b76.tar.gz",
+          "sha256": "850e51878b769596ab2b0fce09aed4f281339c339bad4351f3c8678715282b27",
+          "manifest_sha256": "945d9a9190197dbcd58c3e02cb726aed1e39afa4c15e4a9587800560c8d33dc6",
+          "bytes": 69905,
+          "files": 90,
+          "asset_id": 698225167,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-scalar-controls-serial-repeat-850e51878b76.tar.gz"
         }
       ]
     }
