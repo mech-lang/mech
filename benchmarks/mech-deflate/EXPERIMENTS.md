@@ -272,3 +272,22 @@ and executed in CI (47 total); all scalar/frame/component/linked and architectur
 gates pass. The corrected diagnostic-selector failure and every raw observation
 remain external. Use `replay-round --round 87` for four numerical reports. The
 [current status](../../docs/design/native-compression-status.md) is authoritative.
+
+## R88: reached cleanup-group payment experiment, rejected
+
+Base `5ccd962fc5a7efeb27600fecd5aff969113ad91f`; candidate
+`36794bdeac6c70a13be317a14d2175bb1b4fbb94`. Actual355 groups/1,028 values use
+673 fewer budget payments, but matched elapsed9.789779×→9.801467× reference is
+0.119391% adverse; instructions/cycles are0.139877%/0.527157% adverse. Heap and
+Object stay equal. Runtime revert `aed9189cf`/CI restore `ba05ace60` restore
+the source-identical R87 baseline. This rejects a two-metric regression, not a
+small positive gain. All candidate qualification, failed witness preparations,
+profiles and adverse observations remain external. The restored47-test selection
+and132 workflow checks actually pass.
+
+The next qualified operation is normal managed record-field access:323 executed
+flat-record/constant-selector candidates inside parents, with a minimal changing-
+buffer/recursive-child witness that leaves field site13 between selected pieces.
+The external `closure/NEXT.md` specifies current selector/resource/error/alias
+requirements. Use `replay-round --round 88` for five reports. R87 remains the
+retained timing endpoint; no new production or throughput result is claimed.

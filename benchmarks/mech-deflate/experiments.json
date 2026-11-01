@@ -3461,6 +3461,21 @@
           "workflow_python": 132
         },
         "scope": "No new production/timing endpoint. R88 candidate is rejected; runtime/compiler/feature/CI code exactly restored to the validated R87 checkpoint. Retained R87 timing is not reinterpreted using R88 reference clock."
+      },
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "mechanism.json",
+          "opportunities.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 0,
+        "round": 88,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 1159,
+        "verified_archives": 27,
+        "verified_file_occurrences": 1927
       }
     }
   },
