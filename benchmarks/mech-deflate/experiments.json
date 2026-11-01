@@ -393,6 +393,17 @@
           "files": 40,
           "asset_id": 697408328,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-primary-group2-1a82eb977fb7.tar.gz"
+        },
+        {
+          "event": "primary-group3",
+          "source_revision": "e4d444b5fcd33a69c05837ad1cafbd4c50b9ae97",
+          "asset": "r80-primary-group3-e608df5ddada.tar.gz",
+          "sha256": "e608df5ddada87e665e7d4a69afe3c64815ad7c462a52ec72a7995f238a72667",
+          "manifest_sha256": "a5bc0b4a8e60afbd5183417ab0577573725c9eb64341531ca966aca610bc37d1",
+          "bytes": 132546,
+          "files": 40,
+          "asset_id": 697408759,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-primary-group3-e608df5ddada.tar.gz"
         }
       ]
     }
