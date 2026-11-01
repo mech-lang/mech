@@ -122,6 +122,17 @@
           "files": 61,
           "asset_id": 697265931,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-scalar-controls-2703f1a74037.tar.gz"
+        },
+        {
+          "event": "frame-allocation",
+          "source_revision": "374edf1410b5f975d793fb69d8fcf390cbfa10a5",
+          "asset": "r79-frame-allocation-0a8d8c86f44c.tar.gz",
+          "sha256": "0a8d8c86f44cdfe769a6afbdfa463ed9ffd4c5922b01113461d50d08e11e8279",
+          "manifest_sha256": "da733c94438bf14894bcce8948685c006b066201142ea0808977bdb09fec89a3",
+          "bytes": 23449,
+          "files": 36,
+          "asset_id": 697269269,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-frame-allocation-0a8d8c86f44c.tar.gz"
         }
       ]
     }
