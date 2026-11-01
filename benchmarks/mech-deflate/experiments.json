@@ -4323,6 +4323,17 @@
           "files": 72,
           "asset_id": 698539602,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-final-checks-0f7e2ab11a66.tar.gz"
+        },
+        {
+          "event": "counters-final",
+          "source_revision": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+          "asset": "r90-counters-final-eceb8ef81e80.tar.gz",
+          "sha256": "eceb8ef81e807a013b57df9e42f3b0a0dad52717b51a8bbc7db6ba0efdcf033b",
+          "manifest_sha256": "56b4fe233dceb6a403f5197cd8be1cf280f4f7ba46bdeb6af9b9ce846dbb1b20",
+          "bytes": 254959,
+          "files": 77,
+          "asset_id": 698543140,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-counters-final-eceb8ef81e80.tar.gz"
         }
       ]
     }
