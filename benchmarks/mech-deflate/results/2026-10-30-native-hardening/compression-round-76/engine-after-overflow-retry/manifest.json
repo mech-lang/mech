@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-11-01T00:41:47.698431+00:00",
+  "head": "c0f016ab5e4287904838391c520dfe7beb95a913",
+  "files": [
+    {
+      "path": "engine-after/budget.rs",
+      "sha256": "9c53b89f688ca6a7b8767c7da31b01fbc6d96e0859f68f8e1cfb4934c4db1b15",
+      "bytes": 172252
+    },
+    {
+      "path": "engine-after/overflow-retry.json",
+      "sha256": "7039705c09f50396756dcea0bd2abfdc627c995106247345de04f5bab7ffd26e",
+      "bytes": 12838
+    },
+    {
+      "path": "engine-after/overflow-retry.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-after/overflow-retry.stdout",
+      "sha256": "cc619de70cb8af266f8d00ed652cf2c3c0abf43f11872eabcbdd91df1577d9dc",
+      "bytes": 253
+    },
+    {
+      "path": "engine-focused.py",
+      "sha256": "c78a2702f976b1cdb7ce8bf4715b6e03edd0b574bd3c93f1956df308f9b33473",
+      "bytes": 5571
+    }
+  ]
+}
