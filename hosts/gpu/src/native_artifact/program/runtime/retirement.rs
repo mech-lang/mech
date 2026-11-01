@@ -3,6 +3,57 @@ use super::*;
 use crate::native_artifact::program::prepare::cleanup_effects::Boundary;
 use crate::native_artifact::program::prepare::frame_retirement::FrameRetirements;
 
+/// One reached native-piece group retires either its private frame or its
+/// canonical slot. Unlike ordinary Tail cleanup it does not also pay an arena
+/// retirement for a selected frame. A refused preview has no effects or debit.
+pub(super) fn try_current(
+    slots: &[u32],
+    recipes: &FrameRetirements,
+    frames: &mut buffer_frames::BufferFrames,
+    arena: &mut NativeValueArena<'_>,
+    work: &mut NativeWorkMeter,
+) -> Result<bool, NativeProgramExecutionError> {
+    if slots.len() < 2 {
+        return Ok(false);
+    }
+    let mut total = 0u64;
+    for &slot in slots {
+        let charge = if let Some((charge, _)) = recipes.get(slot as usize) {
+            if !frames.has_retirement_backing()
+                || !matches!(arena.native_entry_preview(slot, work), Ok(None))
+            {
+                return Ok(false);
+            }
+            charge
+        } else {
+            if !arena
+                .native_retirement_available(slot, work)
+                .unwrap_or(false)
+            {
+                return Ok(false);
+            }
+            32
+        };
+        let Some(next) = total.checked_add(charge) else {
+            return Ok(false);
+        };
+        total = next;
+    }
+    let Some(mut paid) = work.try_retirement_batch(total) else {
+        return Ok(false);
+    };
+    // The preview covers every fallible current-slot/account check. There are
+    // no definitions between these releases, so a duplicate canonical slot is
+    // empty after its first retirement and cannot exhaust another generation.
+    for &slot in slots {
+        if !frames.retire_prepaid(recipes, slot, &mut paid)? {
+            arena.retire_current_prepaid(slot, &mut paid)?;
+        }
+    }
+    paid.finish()?;
+    Ok(true)
+}
+
 pub(super) fn run(
     slots: &[u64],
     recipes: &FrameRetirements,

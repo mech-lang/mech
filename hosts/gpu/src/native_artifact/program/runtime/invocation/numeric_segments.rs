@@ -411,6 +411,17 @@ impl Invocation<'_, '_, '_> {
                     1 => {}
                     _ => return Err(invalid("parent retirement flag is not Boolean")),
                 }
+                if values.len() > 1
+                    && super::super::retirement::try_current(
+                        values,
+                        &metadata.frame_retirements,
+                        &mut self.state.buffer_frames,
+                        &mut self.state.arena,
+                        &mut self.state.control.work,
+                    )?
+                {
+                    continue;
+                }
                 for &value in values {
                     if !self.state.buffer_frames.retire(
                         &metadata.frame_retirements,
