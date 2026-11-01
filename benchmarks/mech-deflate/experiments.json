@@ -2601,6 +2601,17 @@
           "files": 13,
           "asset_id": 697925853,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r86-inputs-4f9cf3f301ef.tar.gz"
+        },
+        {
+          "event": "analysis",
+          "source_revision": "fc3887ddced43a84a0e58776064a108d9dbc483e",
+          "asset": "r86-analysis-fee2456b6a86.tar.gz",
+          "sha256": "fee2456b6a86279e21a9aadec5d5d25bd17a81824ebee6156dd6f5428f754684",
+          "manifest_sha256": "df3630192fd7ebd09e30421ddc5bb72697929c319b55116eea0b329c7f01f0c7",
+          "bytes": 35826,
+          "files": 12,
+          "asset_id": 697927559,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r86-analysis-fee2456b6a86.tar.gz"
         }
       ]
     }
