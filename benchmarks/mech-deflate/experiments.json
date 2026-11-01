@@ -5218,6 +5218,17 @@
           "files": 44,
           "asset_id": 698786420,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-baseline-owners-corrected-52d5b7518ae5.tar.gz"
+        },
+        {
+          "event": "candidate-owners",
+          "source_revision": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
+          "asset": "r92-candidate-owners-a895c265250a.tar.gz",
+          "sha256": "a895c265250a7c244e69f5b0921f4ccd73418c84325246612545ce4eb43d07f7",
+          "manifest_sha256": "0c5aed784d15c3a3cb93bf50ad854ce35b64b3b5ba9c5bc5a3f45da84e18d23f",
+          "bytes": 63792,
+          "files": 43,
+          "asset_id": 698786551,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-candidate-owners-a895c265250a.tar.gz"
         }
       ],
       "retained_production": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
