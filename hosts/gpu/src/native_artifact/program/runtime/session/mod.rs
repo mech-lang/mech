@@ -26,6 +26,8 @@ mod capture_host_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 mod capture_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
+mod dead_constant_owners;
+#[cfg(all(test, feature = "canonical-native-program"))]
 mod identity_inventory_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 mod prefix_tests;
@@ -682,6 +684,9 @@ impl<'a> Prepared<'a> {
             .iter()
             .zip(&descriptor.metadata().constant_bytes)
         {
+            if bound == 0 {
+                continue;
+            }
             work.charge(
                 NativeExecutionPhase::Setup,
                 bound

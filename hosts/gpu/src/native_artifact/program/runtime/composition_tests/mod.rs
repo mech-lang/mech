@@ -56,11 +56,11 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                98
+                99
             );
             assert_eq!(
-                report.work, 88_767_602,
-                "policy98 retains structural alias pricing and scalar-prefix debits; reached cleanup remains funded"
+                report.work, 88_531_834,
+                "policy99 omits unread constant owners while retaining structural alias pricing and scalar-prefix debits"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(

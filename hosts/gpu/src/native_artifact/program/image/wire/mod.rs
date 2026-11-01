@@ -201,6 +201,11 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
     }
     native::program::prepare::validate_type_slots(&plan, &schemas, &types)
         .map_err(str::to_owned)?;
+    if w.constant_bytes
+        != native::program::prepare::constant_owners::admission_bounds(&plan.facts())?
+    {
+        return Err("constant ownership bounds differ from canonical runtime reads".into());
+    }
     let closed_tails: native::program::prepare::tail::Layout = w.closed_tails.into();
     let buffer_frames = plan.facts().buffer_frames();
     native::program::prepare::prepare_frame_composition(&plan, &buffer_frames, &mut calls)?;
