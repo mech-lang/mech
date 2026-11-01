@@ -5863,6 +5863,17 @@
           "files": 194,
           "asset_id": 699075567,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r95-initial-9d7f29f8ac30.tar.gz"
+        },
+        {
+          "event": "primary-reference",
+          "source_revision": "67a7c88e745092264a5a735933dd95cf48fc5446",
+          "asset": "r95-primary-reference-f0c0aa8542d6.tar.gz",
+          "sha256": "f0c0aa8542d65239730b27cb7b0f86a3679cb9da3f4c9f09076807736dfc3792",
+          "manifest_sha256": "78a63b64da55dabccffd61fd3c2ad2176c4a017f68330567881b301f65dc9c7f",
+          "bytes": 205312,
+          "files": 48,
+          "asset_id": 699077464,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r95-primary-reference-f0c0aa8542d6.tar.gz"
         }
       ]
     }
