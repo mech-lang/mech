@@ -2419,6 +2419,17 @@
           "files": 42,
           "asset_id": 697886653,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r85-resource-observation-6bf37027dbbf.tar.gz"
+        },
+        {
+          "event": "analysis",
+          "source_revision": "490ede99581fd233edd4c05d14f74641c9ae45c9",
+          "asset": "r85-analysis-8c2e6f01d70a.tar.gz",
+          "sha256": "8c2e6f01d70a37f7708ba3dc92e381dac6d9ae6b6967a165b6f4ad66c7fc3589",
+          "manifest_sha256": "e2cebcb503809f9fde586c2b5109bc803c9415a0b7a7f7fad73019c85454c7d4",
+          "bytes": 61148,
+          "files": 41,
+          "asset_id": 697886708,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r85-analysis-8c2e6f01d70a.tar.gz"
         }
       ],
       "analysis": {
