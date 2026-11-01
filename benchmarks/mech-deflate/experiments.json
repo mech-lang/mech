@@ -2837,6 +2837,17 @@
           "files": 85,
           "asset_id": 697957577,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r87-counters-c0be899ac903.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "c2b334feed4326a66ce1f69ca4bc99b0cbe41bb2",
+          "asset": "r87-scalar-controls-79bb5f0fbd25.tar.gz",
+          "sha256": "79bb5f0fbd25fcdb2d245dca3f60e081fb2c45a3a75481b83ba5274b21f58ba8",
+          "manifest_sha256": "48003cebe4fe1be5b09c61cf8e8aa116543b26d429e8a7aa329036e47652181f",
+          "bytes": 60576,
+          "files": 84,
+          "asset_id": 697957799,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r87-scalar-controls-79bb5f0fbd25.tar.gz"
         }
       ]
     }
