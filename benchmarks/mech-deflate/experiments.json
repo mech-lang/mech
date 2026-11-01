@@ -464,6 +464,17 @@
           "files": 56,
           "asset_id": 697412260,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-sites-after-52940f269dfa.tar.gz"
+        },
+        {
+          "event": "isolated-profile",
+          "source_revision": "e4d444b5fcd33a69c05837ad1cafbd4c50b9ae97",
+          "asset": "r80-isolated-profile-be403ba0574e.tar.gz",
+          "sha256": "be403ba0574e6285dcdacaf39c78295c4972f30d156478744620e884191ba90f",
+          "manifest_sha256": "2b90ec050e9dbebae83652035d306d2658253f2c7d4d398c046ad8abb1c51299",
+          "bytes": 319553,
+          "files": 45,
+          "asset_id": 697412946,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-isolated-profile-be403ba0574e.tar.gz"
         }
       ]
     }
