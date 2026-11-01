@@ -33,6 +33,11 @@ on:
         required: false
         type: boolean
         default: false
+      browser_applications_in_caller:
+        description: The calling workflow already ran and required the EKF browser checks
+        required: false
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       contract_families:
@@ -1961,7 +1966,7 @@ jobs:
               'linkage': ['native-linkage-owners', 'native-linkage-surfaces', 'native-linkage', 'native-linkage-closures', 'catalog-closure'],
               'native': ['native-plan', 'native-engine', 'native-hosted', 'native-live', 'native-windows', 'native-macos', 'project-native', 'canonical-applications', 'canonical-linked-applications'],
               'browser': ['wasm-source-profile', 'wasm-bytecode-v1', 'project-browser'],
-              'distribution': ['cargo-features', 'distribution-contracts', 'package-validation', 'release-package-dry-run'],
+              'distribution': ['cargo-features', 'distribution-contracts', 'package-validation', 'project-browser', 'release-package-dry-run'],
           }
           selected = json.loads(os.environ["CONTRACT_FAMILIES"])
           if not isinstance(selected, list) or not selected or any(
@@ -2480,7 +2485,7 @@ jobs:
         run: bash scripts/ci-disk-report.sh
 
   project-browser:
-    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'browser') }}
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'browser') || contains(fromJSON(inputs.contract_families), 'distribution') }}
     name: Project browser
     runs-on: ubuntu-latest
     env:
@@ -2560,26 +2565,26 @@ jobs:
           cargo build \
             --bin mech \
             --no-default-features \
-            --features "serve,bundle_web,formatter"
+            --features "serve,bundle_web,formatter,run"
           cp "$CARGO_TARGET_DIR/debug/mech" \
             "$CARGO_TARGET_DIR/embedded-browser-mech"
           cargo test \
             -p mech \
             --no-default-features \
-            --features "serve,bundle_web,formatter" \
+            --features "serve,bundle_web,formatter,run" \
             --test mech_format_shims \
             -- --nocapture
           cargo test \
             -p mech \
             --no-default-features \
-            --features "serve,bundle_web,formatter" \
+            --features "serve,bundle_web,formatter,run" \
             --test mech_serve \
             formatted_blog_page_executes_when_served \
             -- --exact --nocapture
           cargo test \
             -p mech \
             --no-default-features \
-            --features "serve,bundle_web,formatter" \
+            --features "serve,bundle_web,formatter,run" \
             --test mech_serve \
             formatted_docs_page_executes_when_served \
             -- --exact --nocapture
@@ -2591,6 +2596,11 @@ jobs:
           MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
             bash scripts/smoke-bundle-web.sh
 
+      - name: Verify visible served results and source diagnostics against native execution
+        run: |
+          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
+            python3 scripts/smoke-served-program-results-browser.py
+
       - name: Verify actual browser-package admission before publication
         env:
           MECH_STATIC_TEST_WASM_PKG: ${{ github.workspace }}/src/wasm/pkg
@@ -2599,6 +2609,14 @@ jobs:
           --features full_source,bundle_web_core
           --lib bundle_web::tests::actual_browser_package_admits_compatible_source_and_refuses_missing_language
           -- --ignored --exact --nocapture
+
+      - name: Retain matching browser runtime for distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-runtime-for-distributions
+          path: src/wasm/pkg
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Remove generated browser package
         run: rm -rf src/wasm/pkg
@@ -2668,6 +2686,25 @@ jobs:
             --test mech_serve \
             mech_serve_interrupt_closes_keep_alive_server_once \
             -- --exact --nocapture
+
+      - name: Verify EKF startup, document layout, and live results
+        if: ${{ !inputs.browser_applications_in_caller }}
+        run: |
+          python3 scripts/build-wasm.py --profile browser-compute
+          cargo build --locked --bin mech --features compute_backends_native
+          MECH_BIN="$CARGO_TARGET_DIR/debug/mech" \
+            MECH_EKF_COMPUTE_BACKEND=cpu-scalar \
+            MECH_EKF_CONTINUITY_EDIT=false \
+            MECH_EKF_TERMINAL_SUBMIT_PROBE=false \
+            bash scripts/smoke-served-resident-ekf-browser.sh
+
+      - name: Retain EKF failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-browser-ekf
+          path: ${{ github.workspace }}/target/project-browser/served-resident-ekf-browser.*
+          if-no-files-found: ignore
 
       - name: Remove generated browser package
         if: always()
@@ -2871,6 +2908,7 @@ jobs:
 
   release-package-dry-run:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'distribution') }}
+    needs: project-browser
     name: ${{ matrix.distribution }} release package (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -2901,6 +2939,11 @@ jobs:
         run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Restore matching browser runtime before embedding
+        uses: actions/download-artifact@v4
+        with:
+          name: browser-runtime-for-distributions
+          path: src/wasm/pkg
       - name: Build and package the exact distribution
         id: package
         env:

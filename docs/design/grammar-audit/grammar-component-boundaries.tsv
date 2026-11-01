@@ -9,7 +9,7 @@ SCC-0166	1	false	help-rpl	none	none
 SCC-0206	1	false	load-rpl	none	none
 SCC-0208	1	false	ls-rpl	none	none
 SCC-0209	1	false	match-expression	SCC-0001	period|question|whitespace0
-SCC-0267	1	false	parse-repl-command	SCC-0057|SCC-0060|SCC-0061|SCC-0063|SCC-0093|SCC-0166|SCC-0206|SCC-0208|SCC-0270|SCC-0275|SCC-0283|SCC-0307|SCC-0334|SCC-0348|SCC-0389	colon
+SCC-0267	1	false	parse-repl-command	SCC-0057|SCC-0060|SCC-0061|SCC-0063|SCC-0093|SCC-0166|SCC-0206|SCC-0208|SCC-0270|SCC-0275|SCC-0283|SCC-0307|SCC-0334|SCC-0348|SCC-0388	colon
 SCC-0270	1	false	plan-rpl	none	none
 SCC-0275	1	false	profile-rpl	none	none
 SCC-0283	1	false	quit-rpl	none	none
@@ -18,4 +18,4 @@ SCC-0307	1	false	save-rpl	none	none
 SCC-0334	1	false	step-rpl	none	hashtag
 SCC-0348	1	false	symbols-rpl	none	none
 SCC-0352	1	false	table-column	SCC-0001	comma|space-tab0|table-separator
-SCC-0389	1	false	whos-rpl	SCC-0297	none
+SCC-0388	1	false	whos-rpl	SCC-0297	none

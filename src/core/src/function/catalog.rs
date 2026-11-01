@@ -1502,6 +1502,8 @@ impl MechErrorKind for FunctionOperationUnavailable {
 }
 
 pub struct FunctionCatalogBuilder {
+    runtime_capabilities:
+        BTreeMap<(OperationId, RuntimeFunctionSignature, ExecutionTarget), RuntimeFunctionId>,
     runtime_factories: BTreeMap<RuntimeFunctionId, RuntimeFunctionEntry>,
     specializers: BTreeMap<OperationId, FunctionSpecializerEntry>,
     intrinsic_specializers: BTreeMap<OperationId, FunctionSpecializerEntry>,
@@ -1519,6 +1521,7 @@ impl Default for FunctionCatalogBuilder {
 impl FunctionCatalogBuilder {
     pub fn new() -> Self {
         Self {
+            runtime_capabilities: BTreeMap::new(),
             runtime_factories: BTreeMap::new(),
             specializers: BTreeMap::new(),
             intrinsic_specializers: BTreeMap::new(),
@@ -1531,7 +1534,18 @@ impl FunctionCatalogBuilder {
     /// Extend an immutable catalog while retaining every existing binding and
     /// linkage. Building the result applies the ordinary collision checks.
     pub fn from_catalog(catalog: &FunctionCatalog) -> Self {
+        let mut runtime_capabilities = BTreeMap::new();
+        for (id, entry) in &catalog.runtime_factories {
+            if let RuntimeOperationBinding::Fixed(operations) = &entry.operation_binding {
+                for operation in operations {
+                    for target in entry.execution_targets.iter() {
+                        runtime_capabilities.insert((*operation, entry.signature, target), *id);
+                    }
+                }
+            }
+        }
         Self {
+            runtime_capabilities,
             runtime_factories: catalog.runtime_factories.clone(),
             specializers: catalog.specializers.clone(),
             intrinsic_specializers: catalog.intrinsic_specializers.clone(),
@@ -2106,7 +2120,20 @@ impl FunctionCatalogBuilder {
         }
 
         if let RuntimeOperationBinding::Fixed(incoming_operations) = &entry.operation_binding {
-            for existing in self.runtime_factories.values() {
+            // Only factories bound to an incoming operation can collide. Keep
+            // the same ID order as the complete scan so error selection is stable.
+            let candidates = incoming_operations
+                .iter()
+                .flat_map(|operation| {
+                    entry.execution_targets.iter().filter_map(|target| {
+                        self.runtime_capabilities
+                            .get(&(*operation, entry.signature, target))
+                            .copied()
+                    })
+                })
+                .collect::<BTreeSet<_>>();
+            for id in candidates {
+                let existing = &self.runtime_factories[&id];
                 let RuntimeOperationBinding::Fixed(existing_operations) =
                     &existing.operation_binding
                 else {
@@ -2163,6 +2190,14 @@ impl FunctionCatalogBuilder {
             return Err(kind.with_compiler_loc());
         }
 
+        if let RuntimeOperationBinding::Fixed(operations) = &entry.operation_binding {
+            for operation in operations {
+                for target in entry.execution_targets.iter() {
+                    self.runtime_capabilities
+                        .insert((*operation, entry.signature, target), entry.id);
+                }
+            }
+        }
         self.runtime_factories.insert(entry.id, entry);
         Ok(())
     }

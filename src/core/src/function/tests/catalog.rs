@@ -354,6 +354,119 @@ fn duplicate_exact_operation_target_signatures_are_rejected() {
 }
 
 #[test]
+fn extending_a_catalog_preserves_collision_order_and_recovers_after_failed_insertions() {
+    fn fixed_entry(
+        id: RuntimeFunctionId,
+        name: &str,
+        operations: &[OperationId],
+        targets: ExecutionTargetSet,
+    ) -> RuntimeFunctionEntry {
+        let mut entry = runtime_entry(id, name);
+        entry.operation_binding =
+            RuntimeOperationBinding::fixed(operations.iter().copied()).unwrap();
+        entry.operation_contracts = operations
+            .iter()
+            .map(|operation| {
+                (
+                    *operation,
+                    RuntimeOperationContractAuthority::Static(&INDEX_COPY_CONTRACT),
+                )
+            })
+            .collect();
+        entry.execution_targets = targets;
+        entry
+    }
+
+    let mut names = ["first", "second"];
+    names.sort_by_key(|name| RuntimeFunctionId::from_name(name));
+    let [first_name, second_name] = names;
+    let first_id = RuntimeFunctionId::from_name(first_name);
+    let second_id = RuntimeFunctionId::from_name(second_name);
+    let recovered_id = RuntimeFunctionId::from_name("recovered");
+    let first = OperationId::from_raw(2);
+    let second = OperationId::from_raw(1);
+    let third = OperationId::from_raw(3);
+    let fourth = OperationId::from_raw(4);
+    let mut builder = FunctionCatalogBuilder::new();
+    builder
+        .insert_runtime_entry(fixed_entry(
+            first_id,
+            first_name,
+            &[first],
+            ExecutionTargetSet::DIRECT_RUNTIME,
+        ))
+        .unwrap();
+    builder
+        .insert_runtime_entry(fixed_entry(
+            second_id,
+            second_name,
+            &[second],
+            ExecutionTargetSet::RESIDENT_CPU,
+        ))
+        .unwrap();
+    let catalog = builder.build().unwrap();
+    let mut builder = FunctionCatalogBuilder::from_catalog(&catalog);
+
+    let error = builder
+        .insert_runtime_entry(fixed_entry(
+            recovered_id,
+            "overlapping",
+            &[first, second],
+            ExecutionTargetSet::DIRECT_RUNTIME.with(ExecutionTarget::ResidentCpu),
+        ))
+        .unwrap_err();
+    let duplicate = error
+        .kind_as::<FunctionCatalogDuplicateRuntimeCapability>()
+        .unwrap();
+    assert_eq!(duplicate.existing_name, first_name);
+    assert_eq!(duplicate.operation, first);
+    assert_eq!(duplicate.target, ExecutionTarget::DirectRuntime);
+
+    builder
+        .insert_runtime_entry(fixed_entry(
+            recovered_id,
+            "recovered",
+            &[third],
+            ExecutionTargetSet::DIRECT_RUNTIME,
+        ))
+        .unwrap();
+    let error = builder
+        .insert_runtime_entry(fixed_entry(
+            first_id,
+            "colliding-id",
+            &[fourth],
+            ExecutionTargetSet::DIRECT_RUNTIME,
+        ))
+        .unwrap_err();
+    assert_eq!(error.kind_name(), "FunctionCatalogRuntimeIdCollision");
+    builder
+        .insert_runtime_entry(fixed_entry(
+            RuntimeFunctionId::from_name("after-id-collision"),
+            "after-id-collision",
+            &[fourth],
+            ExecutionTargetSet::DIRECT_RUNTIME,
+        ))
+        .unwrap();
+    let error = builder
+        .insert_runtime_entry(fixed_entry(
+            RuntimeFunctionId::from_name("duplicate"),
+            "duplicate",
+            &[fourth],
+            ExecutionTargetSet::DIRECT_RUNTIME,
+        ))
+        .unwrap_err();
+    assert_eq!(
+        error
+            .kind_as::<FunctionCatalogDuplicateRuntimeCapability>()
+            .unwrap()
+            .existing_name,
+        "after-id-collision"
+    );
+    assert_eq!(builder.build().unwrap().runtime_factory_count(), 4);
+    assert_eq!(catalog.runtime_factory_count(), 2);
+}
+
+#[test]
 fn generated_runtime_capability_matrix_does_not_infer_backend_support() {
     let mut builder = FunctionCatalogBuilder::new();
     builder

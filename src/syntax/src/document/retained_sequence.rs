@@ -53,6 +53,23 @@ impl<T: Measured> Node<T> {
             allocations,
         )
     }
+    fn append_mut(root: &mut Arc<Self>, leaf: Arc<Self>, allocations: &mut u64) {
+        if root.len().is_power_of_two() {
+            *root = Self::branch(root.clone(), leaf, allocations);
+        } else if let Some(Self::Branch {
+            left,
+            right,
+            len,
+            measure,
+        }) = Arc::get_mut(root)
+        {
+            Self::append_mut(right, leaf, allocations);
+            *len = left.len() + right.len();
+            *measure = left.measure() + right.measure();
+        } else {
+            *root = Self::append(root, leaf, allocations);
+        }
+    }
     fn replace_last(old: &Arc<Self>, leaf: Arc<Self>, allocations: &mut u64) -> Arc<Self> {
         match old.as_ref() {
             Self::Leaf(_) => leaf,
@@ -78,6 +95,29 @@ impl<T: Measured> Node<T> {
                 Self::truncate(right, len - left.len(), allocations),
                 allocations,
             )
+        }
+    }
+    fn truncate_mut(root: &mut Arc<Self>, len: usize, allocations: &mut u64) {
+        if len >= root.len() {
+            return;
+        }
+        if let Some(Self::Branch {
+            left,
+            right,
+            len: current_len,
+            measure,
+        }) = Arc::get_mut(root)
+        {
+            if len <= left.len() {
+                *root = left.clone();
+                Self::truncate_mut(root, len, allocations);
+            } else {
+                Self::truncate_mut(right, len - left.len(), allocations);
+                *current_len = left.len() + right.len();
+                *measure = left.measure() + right.measure();
+            }
+        } else {
+            *root = Self::truncate(root, len, allocations);
         }
     }
     fn get(&self, index: usize) -> Option<&T> {
@@ -181,6 +221,15 @@ impl<T: Measured> RetainedSequence<T> {
         };
         (Self { root: Some(root) }, allocations)
     }
+    pub(crate) fn push(&mut self, value: T) -> u64 {
+        let leaf = Arc::new(Node::Leaf(value));
+        let mut allocations = 1;
+        match &mut self.root {
+            None => self.root = Some(leaf),
+            Some(root) => Node::append_mut(root, leaf, &mut allocations),
+        }
+        allocations
+    }
     pub(crate) fn replacing_last(&self, value: T) -> (Self, u64) {
         let leaf = Arc::new(Node::Leaf(value));
         let mut allocations = 1;
@@ -210,16 +259,16 @@ impl<T: Measured> RetainedSequence<T> {
         }
         steps
     }
-    pub(crate) fn truncated(&self, len: usize) -> (Self, u64) {
+    pub(crate) fn truncate(&mut self, len: usize) -> u64 {
         if len == 0 {
-            return (Self::default(), 0);
+            self.root = None;
+            return 0;
         }
         let mut allocations = 0;
-        let root = self
-            .root
-            .as_ref()
-            .map(|root| Node::truncate(root, len, &mut allocations));
-        (Self { root }, allocations)
+        if let Some(root) = &mut self.root {
+            Node::truncate_mut(root, len, &mut allocations);
+        }
+        allocations
     }
     pub(crate) fn into_values(self) -> impl Iterator<Item = T>
     where

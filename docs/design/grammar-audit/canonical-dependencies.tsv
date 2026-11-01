@@ -74,7 +74,7 @@ clc-rpl	none	parse-repl-command
 clear-rpl	none	parse-repl-command
 code-block	any|codeblock-sigil|left-brace|new-line|option-map|space-tab0|text|whitespace0	section-element
 code-rpl	none	parse-repl-command
-code-terminal	comment|mika-section-close|new-line|right-brace|semicolon|space-tab0|whitespace0	fsm-block-transition|mech-code|not-mech-code
+code-terminal	comment|mika-section-close|new-line|right-brace|semicolon|space-tab0|whitespace0	fsm-block-transition|mech-code|not-mech-code|title-front-matter
 codeblock-sigil	grave-codeblock-sigil|tilde-codeblock-sigil	code-block
 colon	none	atom|binding|call-arg-with-binding|center-alignment|citation|context-capability-declaration|empty-map|enum-variant|footnote|identifier-path-segment-emoji|import-alias-operator|kind-atom|kind-map|kind-matrix|kind-scalar|kind-set|kind-table|left-alignment|mapping|option-mapping|parse-repl-command|pattern-atom-struct|punctuation|right-alignment|select-all|title-front-matter|tuple-struct
 comma	none	binding|grammar-list|grammar-term|identifier-path-segment-emoji|list-separator|mapping|matrix-column|option-mapping|punctuation|swizzle-subscript|table-column
@@ -326,7 +326,7 @@ mika-section-close	none	code-terminal|forbidden-emoji|mika-section|not-mech-code
 mika-section-open	none	forbidden-emoji|mika-section|paragraph-text
 mini-mika	left-parenthesis|mika-arm-left|mika-arm-right|mika-expression-inner|right-parenthesis	mika|not-mech-code
 module-export-sigil	none	export-declaration
-module-import	aliased-item-import|import-sigil|module-only-import|module-suffix-import|space-tab0|whitespace0	mech-code-alt
+module-import	aliased-item-import|import-sigil|module-only-import|module-suffix-import|space-tab0|whitespace0	mech-code-alt|title-front-matter
 module-import-alias	module-import-context-alias|module-import-value-alias	aliased-item-import
 module-import-alias-path	module-import-alias-segment|slash	module-import-value-alias
 module-import-alias-segment	identifier-path-segment	module-import-alias-path
@@ -364,7 +364,7 @@ option-mapping	colon|comma|identifier|option-value|whitespace0	option-map
 option-value	identifier|string	option-mapping
 or	ws0e	logic-operator
 ordered-list	ordered-list-item|sublist	mechdown-list|sublist
-ordered-list-item	number|paragraph-newline|period	ordered-list
+ordered-list-item	number|paragraph-newline|period|ul-subtitle	ordered-list
 output-operator	output-operator-a|output-operator-u	activation-arm|fsm-output|fsm-specification|function-define-expression|function-define-match-arms|function-define-statements|function-match-arm|match-arm
 output-operator-a	whitespace0	output-operator
 output-operator-u	whitespace0	output-operator
@@ -505,7 +505,7 @@ thin-space	none	forbidden-emoji|space-tab
 tilde	none	identifier-symbol|paragraph-text|strikethrough|symbol|variable-define
 tilde-codeblock-sigil	none	codeblock-sigil
 title	equal|new-line|text|title-front-matter|whitespace0	program
-title-front-matter	colon|equal|figures|identifier|img|inline-paragraph|new-line|space-tab0|whitespace0	title
+title-front-matter	code-terminal|colon|equal|figures|identifier|img|inline-paragraph|module-import|new-line|space-tab0|whitespace0	title
 transition-operator	transition-operator-a|transition-operator-u	fsm-block-transition|fsm-implementation|fsm-state-transition|fsm-statement-transition
 transition-operator-a	whitespace0	transition-operator
 transition-operator-u	whitespace0	transition-operator
@@ -515,7 +515,7 @@ tuple	expression|left-parenthesis|list-separator|right-parenthesis|whitespace0	s
 tuple-destructure	define-operator|expression|identifier|left-parenthesis|list-separator|right-parenthesis	statement
 tuple-struct	colon|expression|identifier|left-parenthesis|right-parenthesis|whitespace0	structure
 typed-integer	digit-sequence|identifier	integer-literal
-ul-subtitle	alpha-token|dash|digit-token|identifier|new-line|paragraph-newline|period|space-tab0|space-tab1|text|whitespace0	section
+ul-subtitle	alpha-token|dash|digit-token|identifier|new-line|paragraph-newline|period|space-tab0|space-tab1|text|whitespace0	ordered-list-item|section
 unchecked-item	dash|left-bracket|paragraph-newline|right-bracket|whitespace0	check-list-item
 underline	paragraph-element|underscore	paragraph-element
 underline-sigil	none	none

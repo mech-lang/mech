@@ -203,6 +203,44 @@ fn ordered_list_markers_do_not_split_adjacent_range_periods() {
 }
 
 #[test]
+fn lists_stop_before_underlined_numbered_sections() {
+    for (prefix, items) in [
+        ("- First item.\n- Second item.\n\n", 0),
+        ("1. First item.\n2. Second item.\n\n", 2),
+        ("1. First item.\n2. Second item.\n", 2),
+    ] {
+        for ending in ["\n", "\r\n"] {
+            let text = format!("{prefix}3. Next Section\n----------------\n\nanswer := 42\n")
+                .replace('\n', ending);
+            let parsed = parse_canonical_document(source(&text), ParseConfig::default());
+            assert!(
+                parsed.is_strictly_clean(),
+                "{text:?}: {:?}",
+                parsed.diagnostics
+            );
+            validate_lossless(&parsed.root, &parsed.source).unwrap();
+            assert_eq!(
+                reconstruct_source(&parsed.root, &parsed.source).unwrap(),
+                text
+            );
+            assert_eq!(
+                count(&parsed.syntax(), SyntaxKind::UlSubtitle),
+                1,
+                "{text:?}"
+            );
+            assert_eq!(
+                count(&parsed.syntax(), SyntaxKind::OrderedListItem),
+                items,
+                "{text:?}"
+            );
+            let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
+            assert!(document.contains_program_source(), "{text:?}");
+            assert_eq!(document.sections().len(), 2, "{text:?}");
+        }
+    }
+}
+
+#[test]
 fn typed_document_exposes_title_front_matter_sections_and_fences() {
     let text = fs::read_to_string(
         repository_root().join("tests/fixtures/syntax-source-boundary/document.mec"),
@@ -229,6 +267,40 @@ fn typed_document_exposes_title_front_matter_sections_and_fences() {
         .map(|token| token.text().unwrap())
         .collect::<Vec<_>>();
     assert_eq!(delimiters, ["~~~", "~~~"]);
+}
+
+#[test]
+fn title_front_matter_imports_keep_metadata_and_lossless_source() {
+    for ending in ["\n", "\r\n"] {
+        let text = "Import Report\n=============\nauthor: Ada\n+> math/* -- retained import\nsection: Examples\n+> wave := math/cos\n=============\n".replace('\n', ending);
+        let snapshot = parse_canonical_document(source(&text), ParseConfig::default());
+        assert!(snapshot.is_strictly_clean(), "{:?}", snapshot.diagnostics);
+        validate_lossless(&snapshot.root, &snapshot.source).unwrap();
+        assert_eq!(
+            reconstruct_source(&snapshot.root, &snapshot.source).unwrap(),
+            text
+        );
+        let document = DocumentSyntax::cast(snapshot.syntax()).unwrap();
+        let front = document
+            .title()
+            .expect("title")
+            .front_matter()
+            .expect("metadata");
+        assert_eq!(front.imports().len(), 2);
+        let keys = front
+            .keys()
+            .iter()
+            .map(|key| key.syntax().text().unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(keys, ["author", "section"]);
+        assert_eq!(count(front.syntax(), SyntaxKind::ModuleImport), 2);
+        assert_eq!(
+            count(document.body().unwrap().syntax(), SyntaxKind::ModuleImport),
+            0
+        );
+        assert!(document.contains_program_source());
+        assert!(!document.contains_executable_source());
+    }
 }
 
 #[test]

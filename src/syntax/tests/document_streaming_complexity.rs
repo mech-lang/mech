@@ -9,6 +9,38 @@ use mech_syntax::document::{
 #[path = "support/stream_mirror.rs"]
 mod stream_mirror;
 use stream_mirror::Mirror;
+
+#[test]
+#[cfg(all(feature = "mika", feature = "invariant_define"))]
+fn resident_ekf_source_keeps_lookup_work_and_journal_copying_bounded() {
+    // Keep the real application in this gate: its prose, tables, nested matrix
+    // expressions and invariants exercise speculative parsing together.
+    let source = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../examples/ekf/localization.mec"
+    ));
+    let mut stream = DocumentStream::new(DocumentId(826), ParseConfig::default());
+    stream.append(source, 0).unwrap();
+    assert_eq!(stream.finish(u64::MAX).progress, StreamProgress::Finished);
+    let snapshot = stream.materialize().unwrap();
+    assert!(snapshot.is_strictly_clean());
+    assert_eq!(snapshot.source.to_contiguous_string(), source);
+    validate_lossless(&snapshot.root, &snapshot.source).unwrap();
+    let work = stream.work();
+    assert!(
+        work.parser_work <= source.len() as u64 * 1000,
+        "closed-input parsing repeated speculative work: {work:?}",
+    );
+    assert!(
+        work.source_lookup_steps <= source.len() as u64 * 512,
+        "failed terminal alternatives repeated Unicode scans: {work:?}",
+    );
+    assert!(
+        work.journal_nodes_allocated <= work.journal_mutations,
+        "unobserved journal paths were copied on each mutation: {work:?}",
+    );
+}
+
 #[derive(Debug, Default)]
 struct Work {
     accepted_bytes: u64,

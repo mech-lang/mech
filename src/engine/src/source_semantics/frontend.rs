@@ -713,6 +713,7 @@ impl std::error::Error for SourceSemanticError {}
 /// Engine entry point for canonical typed source.
 #[derive(Clone, Debug, Default)]
 pub struct CanonicalSourceFrontend {
+    retained_result_boundary: Option<mech_syntax::document::TextSize>,
     nominal_origin: Option<CanonicalNominalPath>,
     imported_enum_qualifiers: BTreeMap<NominalKey, String>,
 }
@@ -722,6 +723,7 @@ pub struct CanonicalSourceFrontend {
     reason = "preserve unit-style frontend construction while adding explicit nominal provenance"
 )]
 pub const CanonicalSourceFrontend: CanonicalSourceFrontend = CanonicalSourceFrontend {
+    retained_result_boundary: None,
     nominal_origin: None,
     imported_enum_qualifiers: BTreeMap::new(),
 };
@@ -729,6 +731,7 @@ pub const CanonicalSourceFrontend: CanonicalSourceFrontend = CanonicalSourceFron
 impl CanonicalSourceFrontend {
     pub fn with_nominal_origin(&self, origin: CanonicalNominalPath) -> Self {
         Self {
+            retained_result_boundary: self.retained_result_boundary,
             nominal_origin: Some(origin),
             imported_enum_qualifiers: self.imported_enum_qualifiers.clone(),
         }
@@ -736,10 +739,20 @@ impl CanonicalSourceFrontend {
 
     pub fn with_imported_enum_qualifiers(&self, qualifiers: BTreeMap<NominalKey, String>) -> Self {
         Self {
+            retained_result_boundary: self.retained_result_boundary,
             nominal_origin: self.nominal_origin.clone(),
             imported_enum_qualifiers: qualifiers,
         }
     }
+    /// Preserve the value at an authored source boundary without inserting syntax.
+    pub fn with_retained_result_boundary(
+        mut self,
+        boundary: mech_syntax::document::TextSize,
+    ) -> Self {
+        self.retained_result_boundary = Some(boundary);
+        self
+    }
+
     pub fn compile_expression(
         &self,
         expression: &ExpressionSyntax,
@@ -1166,7 +1179,7 @@ impl CanonicalSourceFrontend {
         interactive: bool,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
-        document_lowering::compile_document_with_options(
+        document_lowering::compile_document_with_capture_options(
             document,
             self.nominal_origin.as_ref(),
             &self.imported_enum_qualifiers,
@@ -1180,6 +1193,11 @@ impl CanonicalSourceFrontend {
                 .map(|name| crate::encode_interactive_symbol_output_name(name))
                 .collect(),
             resolved_source_modules,
+            if interactive {
+                self.retained_result_boundary
+            } else {
+                None
+            },
         )
     }
 
@@ -1356,6 +1374,7 @@ impl CanonicalSourceFrontend {
             external_inputs,
             &retained_output_bindings,
             resolved_source_modules,
+            self.retained_result_boundary,
         )
     }
 

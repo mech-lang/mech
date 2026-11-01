@@ -1000,6 +1000,7 @@ jobs:
       validation_ref: ${{ github.sha }}
       native_plan_in_caller: true
       rich_browser_smoke_in_caller: ${{ needs.impact.outputs.browser_canary_required == 'true' }}
+      browser_applications_in_caller: ${{ needs.impact.outputs.browser_applications_required == 'true' }}
 
   pr-gate:
     name: PR gate

@@ -43,13 +43,19 @@ pub fn configured_browser_compiler_builder(
     Ok(builder)
 }
 
+enum CompiledBrowserDocument {
+    Standard(mech_engine::ProgramCompilationProduct),
+    #[cfg(feature = "compute_backends_native")]
+    Mixed(mech_runtime::MixedProgramCompilation),
+}
+
 /// Compile the browser's admitted coordinator through the canonical root graph.
 /// Compute regions use the mixed compiler; both paths retain dependency hashes.
-pub(crate) fn compile_browser_document_bundle(
+fn compile_browser_document(
     compiler: &mut mech_runtime::ProgramCompiler,
     uri: &str,
     document: &mech_runtime::SourceDocument,
-) -> MResult<mech_runtime::CanonicalProgramBundle> {
+) -> MResult<CompiledBrowserDocument> {
     let regions = mech_engine::CanonicalSourceFrontend
         .document_compute_regions(&document.document())
         .map_err(|error| {
@@ -61,28 +67,24 @@ pub(crate) fn compile_browser_document_bundle(
             )
         })?;
     if regions.is_empty() {
-        let product =
-            compiler.compile_canonical_interactive_root(mech_runtime::SourceRequest::new(uri))?;
-        mech_runtime::CanonicalProgramBundle::from_product(uri, document, &product)
+        compiler
+            .compile_canonical_interactive_root(mech_runtime::SourceRequest::new(uri))
+            .map(CompiledBrowserDocument::Standard)
     } else {
         #[cfg(feature = "compute_backends_native")]
         {
-            let mixed = compiler.compile_canonical_mixed_root(
-                mech_runtime::SourceRequest::new(uri),
-                mech_runtime::ModuleBuildOptions::new(
-                    env!("CARGO_PKG_VERSION"),
-                    "v0.4",
-                    "browser",
-                    &["compute"],
-                    &[],
-                ),
-            )?;
-            mech_runtime::CanonicalProgramBundle::from_artifact_product(
-                uri,
-                document,
-                &mixed.coordinator,
-                mixed.source_dependencies,
-            )
+            compiler
+                .compile_canonical_mixed_root(
+                    mech_runtime::SourceRequest::new(uri),
+                    mech_runtime::ModuleBuildOptions::new(
+                        env!("CARGO_PKG_VERSION"),
+                        "v0.4",
+                        "browser",
+                        &["compute"],
+                        &[],
+                    ),
+                )
+                .map(CompiledBrowserDocument::Mixed)
         }
         #[cfg(not(feature = "compute_backends_native"))]
         {
@@ -96,6 +98,31 @@ pub(crate) fn compile_browser_document_bundle(
     }
 }
 
+#[cfg(all(
+    test,
+    any(feature = "bundle_web_core", feature = "compute_backends_native")
+))]
+pub(crate) fn compile_browser_document_bundle(
+    compiler: &mut mech_runtime::ProgramCompiler,
+    uri: &str,
+    document: &mech_runtime::SourceDocument,
+) -> MResult<mech_runtime::CanonicalProgramBundle> {
+    match compile_browser_document(compiler, uri, document)? {
+        CompiledBrowserDocument::Standard(product) => {
+            mech_runtime::CanonicalProgramBundle::from_product(uri, document, &product)
+        }
+        #[cfg(feature = "compute_backends_native")]
+        CompiledBrowserDocument::Mixed(mixed) => {
+            mech_runtime::CanonicalProgramBundle::from_artifact_product(
+                uri,
+                document,
+                &mixed.coordinator,
+                mixed.source_dependencies,
+            )
+        }
+    }
+}
+
 /// Validate the configured browser program, then transport its retained source
 /// and canonical presentation addresses. The browser recompiles that single
 /// source authority for its own target instead of decoding a native artifact.
@@ -105,7 +132,14 @@ pub(crate) fn compile_browser_document_payload(
     root_specifier: &str,
     document: &mech_runtime::SourceDocument,
 ) -> MResult<mech_runtime::BrowserDocumentPayload> {
-    compile_browser_document_bundle(compiler, canonical_uri, document)?;
+    // This transport contains source, not native artifact bytecode. Compile to
+    // report semantic errors, but do not serialize and then revalidate a native
+    // bundle that would be discarded before the browser compiles its own target.
+    match compile_browser_document(compiler, canonical_uri, document)? {
+        CompiledBrowserDocument::Standard(product) => drop(product),
+        #[cfg(feature = "compute_backends_native")]
+        CompiledBrowserDocument::Mixed(product) => drop(product),
+    }
     let presentation_output_ids = mech_runtime::canonical_document_presentation_output_ids(
         &document.document(),
     )

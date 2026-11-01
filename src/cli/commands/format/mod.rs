@@ -976,7 +976,7 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                 MechSourceCode::String(source) => {
                     // Reject malformed roots with their positioned diagnostics
                     // before dependency discovery attempts strict indexing.
-                    canonical_document(&target.path, source)?;
+                    let original_document = canonical_document(&target.path, source)?;
                     let resolved_document = if uses_document_controller {
                         Some(resolve_document_source_bundle(&target.path)?)
                     } else {
@@ -994,7 +994,13 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                         .as_ref()
                         .map(|bundle| bundle.root_specifier.as_str())
                         .unwrap_or("document.mec");
-                    let document = canonical_document(&target.path, authoritative_source)?;
+                    // Includes may expand the resolver's source. Reuse the
+                    // admitted tree when its exact text is still authoritative.
+                    let document = if authoritative_source == source {
+                        original_document
+                    } else {
+                        canonical_document(&target.path, authoritative_source)?
+                    };
                     let presentation_output_ids =
                         mech_runtime::canonical_document_presentation_output_ids(
                             &document.document(),

@@ -1311,6 +1311,7 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
     DocumentRule {
         rule: rules::ORDERED_LIST_ITEM,
         expression: GrammarExpression::Sequence(&[
+            GrammarExpression::Not(&GrammarExpression::Rule(rules::UL_SUBTITLE)),
             GrammarExpression::Rule(rules::NUMBER),
             GrammarExpression::Rule(rules::PERIOD),
             GrammarExpression::Not(&GrammarExpression::Rule(rules::PERIOD)),
@@ -1614,22 +1615,28 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
     DocumentRule {
         rule: rules::TITLE_FRONT_MATTER,
         expression: GrammarExpression::Sequence(&[
-            GrammarExpression::ZeroOrMore(&GrammarExpression::Sequence(&[
-                GrammarExpression::Rule(rules::IDENTIFIER),
-                GrammarExpression::Rule(rules::SPACE_TAB0),
-                GrammarExpression::Rule(rules::COLON),
-                GrammarExpression::Rule(rules::SPACE_TAB0),
-                GrammarExpression::Choice(&[
-                    GrammarExpression::Sequence(&[
-                        GrammarExpression::Choice(&[
-                            GrammarExpression::Rule(rules::IMG),
-                            GrammarExpression::Rule(rules::FIGURES),
+            GrammarExpression::ZeroOrMore(&GrammarExpression::Choice(&[
+                GrammarExpression::Sequence(&[
+                    GrammarExpression::Rule(rules::MODULE_IMPORT),
+                    GrammarExpression::Rule(rules::CODE_TERMINAL),
+                ]),
+                GrammarExpression::Sequence(&[
+                    GrammarExpression::Rule(rules::IDENTIFIER),
+                    GrammarExpression::Rule(rules::SPACE_TAB0),
+                    GrammarExpression::Rule(rules::COLON),
+                    GrammarExpression::Rule(rules::SPACE_TAB0),
+                    GrammarExpression::Choice(&[
+                        GrammarExpression::Sequence(&[
+                            GrammarExpression::Choice(&[
+                                GrammarExpression::Rule(rules::IMG),
+                                GrammarExpression::Rule(rules::FIGURES),
+                            ]),
+                            GrammarExpression::Rule(rules::WHITESPACE0),
                         ]),
-                        GrammarExpression::Rule(rules::WHITESPACE0),
-                    ]),
-                    GrammarExpression::Sequence(&[
-                        GrammarExpression::Rule(rules::INLINE_PARAGRAPH),
-                        GrammarExpression::Rule(rules::NEW_LINE),
+                        GrammarExpression::Sequence(&[
+                            GrammarExpression::Rule(rules::INLINE_PARAGRAPH),
+                            GrammarExpression::Rule(rules::NEW_LINE),
+                        ]),
                     ]),
                 ]),
             ])),

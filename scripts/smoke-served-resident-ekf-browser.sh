@@ -100,7 +100,7 @@ dirty = subprocess.run(
     "browser_software_adapter_requested": software_adapter == "true",
     "server_ready_timeout_seconds": int(server_timeout) if server_timeout.isdecimal() else None,
     "dataset": parser.dataset,
-    "artifacts": ["server.log", "chrome.stderr", "harness.stderr", "chrome.dom"],
+    "artifacts": ["server.log", "chrome.stderr", "harness.stderr", "chrome.dom", "startup.json"],
 }, indent=2, sort_keys=True) + "\n")
 PY
     then
@@ -146,7 +146,8 @@ source = path.read_text()
 needle = "  filter-count := 1000.0"
 if source.count(needle) != 1:
     raise SystemExit("could not select the EKF browser smoke filter count")
-path.write_text(source.replace(needle, f"  filter-count := {filter_count}.0", 1))
+if filter_count != "1000":
+    path.write_text(source.replace(needle, f"  filter-count := {filter_count}.0", 1))
 PY
 
 compute_backend="${MECH_EKF_COMPUTE_BACKEND:-cpu-scalar}"
@@ -179,14 +180,16 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
 PY
 )"
 
-# Like the N-body canary, the debug server compiles the source for both the
-# native workspace and the served browser catalog. CI's scalar EKF workspace
-# took 58 seconds before beginning that second compilation, so use the same
-# bounded 180-second startup budget. Browser progress and numerical assertions
-# retain their separate watchdogs and hard deadlines below.
-server_ready_timeout_seconds="${MECH_BROWSER_SERVER_READY_TIMEOUT_SECONDS:-180}"
+# Startup has its own generous phase deadline. The longer numerical scenario
+# retains a separate progress watchdog and hard deadline below.
+server_ready_timeout_seconds="${MECH_BROWSER_SERVER_READY_TIMEOUT_SECONDS:-45}"
 if [[ ! "$server_ready_timeout_seconds" =~ ^[1-9][0-9]*$ ]]; then
   echo "MECH_BROWSER_SERVER_READY_TIMEOUT_SECONDS must be a positive integer" >&2
+  exit 1
+fi
+document_ready_budget_seconds="${MECH_BROWSER_DOCUMENT_READY_BUDGET_SECONDS:-20}"
+if [[ ! "$document_ready_budget_seconds" =~ ^[1-9][0-9]*$ ]]; then
+  echo "MECH_BROWSER_DOCUMENT_READY_BUDGET_SECONDS must be a positive integer" >&2
   exit 1
 fi
 "$MECH_BIN" serve --address 127.0.0.1 --port "$port" "$project_dir" >"$server_log" 2>&1 &
@@ -212,10 +215,13 @@ if [[ ! -s "$project_dir/index.html" ]]; then
   exit 1
 fi
 echo "EKF_SERVER_READY elapsed_seconds=$((SECONDS - server_started_seconds))"
+server_ready_elapsed_seconds=$((SECONDS - server_started_seconds))
 
 python3 - "$project_dir/index.html" "$expected_compute_backend" "$filter_count" \
   "$continuity_edit" <<'PY'
 from pathlib import Path
+import json
+import re
 import sys
 
 path = Path(sys.argv[1])
@@ -223,9 +229,24 @@ compute_backend = sys.argv[2]
 filter_count = sys.argv[3]
 continuity_edit = sys.argv[4]
 html = path.read_text()
+source_lines = (path.parent / "localization.mec").read_text().splitlines()
+title_line = next(index for index, line in enumerate(source_lines) if line.strip())
+expected_title = source_lines[title_line].strip()
+if not re.fullmatch(r"={3,}", source_lines[title_line + 1].strip()):
+    raise SystemExit("the authored EKF source has no title metadata header")
+metadata = []
+for line in source_lines[title_line + 2:]:
+    if re.fullmatch(r"={3,}", line.strip()):
+        break
+    metadata.append(line)
+expected_section = next(
+    line.split(":", 1)[1].strip() for line in metadata if line.startswith("section:")
+)
 marker = "</head>"
 harness = r'''<script>
     const root = document.documentElement;
+    const expectedTitle = __MECH_EXPECTED_TITLE_JSON__;
+    const expectedSection = __MECH_EXPECTED_SECTION_JSON__;
     const expectedComputeBackend = "__MECH_EXPECTED_COMPUTE_BACKEND__";
     const expectedComputeInstances = Number("__MECH_EXPECTED_COMPUTE_INSTANCES__");
     const performContinuityEdit = "__MECH_PERFORM_CONTINUITY_EDIT__" === "true";
@@ -342,9 +363,95 @@ harness = r'''<script>
     for (const attribute of lifecycleAttributes.keys()) {
       publishLifecycleMilestone(attribute);
     }
+    const validateSourcePresentation = () => {
+      const title = document.querySelector(".main-content header h1")?.textContent.trim();
+      const section = document.querySelector(".hero-kicker, .docs-kicker")?.textContent.trim();
+      const metadataLeaked = [...document.querySelectorAll("article p")].some(node =>
+        /^={3,}$/.test(node.textContent.trim()) ||
+        node.textContent.trim().replace(/\s+/g, " ") === `section: ${expectedSection}`
+      );
+      root.dataset.mechTitleMetadataValid = String(
+        title === expectedTitle && section === expectedSection && !metadataLeaked,
+      );
+      const declaration = [...document.querySelectorAll(".mech-context-declaration")]
+        .find(node => node.querySelectorAll(".mech-context-capability").length > 3);
+      const originalPre = declaration?.closest("pre");
+      const probe = document.createElement("pre");
+      probe.className = originalPre?.className || "mech-code";
+      probe.setAttribute("data-mech-source", "");
+      Object.assign(probe.style, {
+        position: "absolute", left: "-10000px", top: "0", visibility: "hidden",
+        whiteSpace: "pre", width: "max-content",
+      });
+      if (originalPre) {
+        const style = getComputedStyle(originalPre);
+        for (const property of ["fontFamily", "fontSize", "lineHeight"]) {
+          probe.style[property] = style[property];
+        }
+      }
+      try {
+        if (!declaration) throw new Error("the actual EKF source has no long capability declaration");
+        probe.append(declaration.cloneNode(true));
+        document.body.append(probe);
+        const rows = [...probe.querySelectorAll(".mech-context-capability")]
+          .map(node => {
+            const rect = node.getBoundingClientRect();
+            const lineHeight = Number.parseFloat(getComputedStyle(node).lineHeight);
+            return {
+              top: rect.top,
+              height: Number.isFinite(lineHeight) && lineHeight > 0 ? lineHeight : rect.height,
+            };
+          });
+        const ratios = rows.slice(1).map((row, index) =>
+          (row.top - rows[index].top) / Math.max(row.height, rows[index].height),
+        );
+        root.dataset.mechCapabilityRowRatios = JSON.stringify(ratios);
+        root.dataset.mechCapabilityRowsCompact = String(
+          ratios.length > 2 && ratios.every(ratio => Number.isFinite(ratio) && ratio >= 0.75 && ratio <= 1.5),
+        );
+      } catch (error) {
+        root.dataset.mechCapabilityRowsCompact = "false";
+        root.dataset.mechCapabilityRowError = String(error);
+      } finally {
+        probe.remove();
+      }
+    };
+    const recordStartupResources = () => {
+      const unusedRenderers = [];
+      const hasEquations = document.querySelector(
+        "[data-mech-equation], [data-katex], .mech-inline-equation, .mech-equation, .math-inline, .math-display",
+      );
+      const hasDiagrams = document.querySelector(".mermaid");
+      for (const element of document.querySelectorAll("script[src], link[href]")) {
+        const url = element.src || element.href;
+        if ((!hasEquations && /\/katex[@/]/.test(url)) ||
+            (!hasDiagrams && /\/mermaid[@/]/.test(url))) unusedRenderers.push(url);
+      }
+      root.dataset.mechUnusedRendererDownloads = JSON.stringify(unusedRenderers);
+      root.dataset.mechStartupResources = JSON.stringify(
+        performance.getEntriesByType("resource").map(entry => ({
+          name: entry.name, duration: entry.duration, transferSize: entry.transferSize,
+          encodedBodySize: entry.encodedBodySize, decodedBodySize: entry.decodedBodySize,
+        })),
+      );
+    };
     window.addEventListener("mech:document-ready", () => {
+      root.dataset.mechDocumentReadyMs = String(performance.now());
+      validateSourcePresentation();
+      recordStartupResources();
+      signalCompletion("ekf-document-ready");
       signalMilestone("document-ready");
+      if (root.dataset.mechFirstComputeCompletionMs) signalCompletion("ekf-startup-running");
     });
+    const recordFirstComputeCompletion = evidence => {
+      if (root.dataset.mechFirstComputeCompletionMs) return;
+      root.dataset.mechFirstComputeCompletionMs = String(performance.now());
+      root.dataset.mechFirstComputeCompletionEvidence = evidence;
+      if (root.dataset.mechDocumentReadyMs) signalCompletion("ekf-startup-running");
+    };
+    window.addEventListener("mech:compute-complete", () =>
+      recordFirstComputeCompletion("compute-complete-event"),
+    );
 
     let computeParitySample;
     let continuityNextSample;
@@ -837,6 +944,9 @@ harness = r'''<script>
           ? Number.isFinite(completedFilterTurn) &&
             completedFilterTurn !== lastObservedCpuFilterTurn
           : computeDispatches > lastObservedComputeDispatch;
+        if (expectedComputeBackend === "cpu-scalar" && completedFilterTurn > 0) {
+          recordFirstComputeCompletion("rendered-filter-turn");
+        }
         if (Number.isFinite(completedFilterTurn)) {
           lastObservedCpuFilterTurn = completedFilterTurn;
         }
@@ -1378,6 +1488,8 @@ harness = r'''<script>
 if html.count(marker) != 1:
     raise SystemExit("could not find the head boundary in generated EKF HTML")
 harness = harness.replace("__MECH_EXPECTED_COMPUTE_BACKEND__", compute_backend)
+harness = harness.replace("__MECH_EXPECTED_TITLE_JSON__", json.dumps(expected_title))
+harness = harness.replace("__MECH_EXPECTED_SECTION_JSON__", json.dumps(expected_section))
 harness = harness.replace("__MECH_EXPECTED_COMPUTE_INSTANCES__", filter_count)
 harness = harness.replace("__MECH_PERFORM_CONTINUITY_EDIT__", continuity_edit)
 path.write_text(html.replace(marker, harness + "\n  " + marker, 1))
@@ -1404,8 +1516,10 @@ set +e
 : >"$dom_file"
 : >"$chrome_log"
 python3 - "$page_url" "$chrome_profile" "$dom_file" "$chrome_log" "$compute_backend" \
-  "$terminal_submit_probe" "$software_adapter" <<'PY' 2>"$harness_log"
+  "$terminal_submit_probe" "$software_adapter" "$document_ready_budget_seconds" \
+  "$server_ready_elapsed_seconds" <<'PY' 2>"$harness_log"
 import json
+import math
 from pathlib import Path
 import sys
 import urllib.parse
@@ -1418,7 +1532,47 @@ from tests.browser.harness import (
 )
 
 
-page_url, profile, dom_file, chrome_log, compute_backend, terminal_submit_probe, software_adapter = sys.argv[1:]
+page_url, profile, dom_file, chrome_log, compute_backend, terminal_submit_probe, software_adapter, startup_budget, server_ready_seconds = sys.argv[1:]
+startup_budget = int(startup_budget)
+startup_reports = {}
+
+
+def record_startup(stage, dataset, *, require_running=False):
+    def elapsed(name):
+        try:
+            value = float(dataset.get(name, ""))
+        except ValueError:
+            return None
+        return value if math.isfinite(value) else None
+
+    ready_ms = elapsed("mechDocumentReadyMs")
+    running_ms = elapsed("mechFirstComputeCompletionMs")
+    report = {
+        "server_ready_seconds": int(server_ready_seconds),
+        "document_ready_ms": ready_ms,
+        "first_compute_completion_ms": running_ms if require_running else None,
+        "first_compute_completion_evidence": dataset.get("mechFirstComputeCompletionEvidence", ""),
+        "budget_seconds": startup_budget,
+        "resources": json.loads(dataset.get("mechStartupResources", "[]")),
+        "unused_renderer_downloads": json.loads(dataset.get("mechUnusedRendererDownloads", "[]")),
+        "title_metadata_valid": dataset.get("mechTitleMetadataValid") == "true",
+        "capability_rows_compact": dataset.get("mechCapabilityRowsCompact") == "true",
+        "capability_row_ratios": json.loads(dataset.get("mechCapabilityRowRatios", "[]")),
+        "capability_row_error": dataset.get("mechCapabilityRowError", ""),
+    }
+    startup_reports[stage] = report
+    (Path(chrome_log).parent / "startup.json").write_text(
+        json.dumps(startup_reports, indent=2, sort_keys=True) + "\n"
+    )
+    print("EKF_STARTUP", json.dumps({"stage": stage, **report}, sort_keys=True), flush=True)
+    if ready_ms is None or not 0 < ready_ms <= startup_budget * 1000:
+        raise RuntimeError(f"EKF document readiness exceeded its {startup_budget}s budget: {report!r}")
+    if require_running and (running_ms is None or not 0 < running_ms <= startup_budget * 1000):
+        raise RuntimeError(f"EKF first compute completion exceeded its {startup_budget}s budget: {report!r}")
+    if not report["title_metadata_valid"] or not report["capability_rows_compact"]:
+        raise RuntimeError(f"EKF source presentation contract failed: {report!r}")
+    if report["unused_renderer_downloads"]:
+        raise RuntimeError(f"unused document renderers were downloaded during startup: {report!r}")
 flags = []
 if compute_backend != "wgpu":
     flags.append("--disable-gpu")
@@ -1440,6 +1594,10 @@ with BrowserCompletionServer() as completion:
                 "mech-canary-callback": callback,
             })
             browser.navigate(f"{page_url}?{query}")
+            startup = json.loads(completion.wait_for(
+                "ekf-document-ready", timeout=startup_budget, max_timeout=startup_budget,
+            ))
+            record_startup("terminal-probe", startup)
             browser.wait_for(
                 "new URLSearchParams(location.search).has('mech-terminal-submit-probe') "
                 "&& document.readyState !== 'loading'",
@@ -1484,6 +1642,10 @@ with BrowserCompletionServer() as completion:
         completion.last_progress = None
         query = urllib.parse.urlencode({"mech-canary-callback": callback})
         browser.navigate(f"{page_url}?{query}")
+        startup = json.loads(completion.wait_for(
+            "ekf-startup-running", timeout=startup_budget, max_timeout=startup_budget,
+        ))
+        record_startup("numeric-run", startup, require_running=True)
         browser.wait_for(
             "!new URLSearchParams(location.search).has('mech-terminal-submit-probe') "
             "&& document.readyState !== 'loading'",
@@ -1671,12 +1833,12 @@ continuity_output="$(sed -n 's/.*data-mech-continuity-next-sample="\([^"]*\)".*/
 if [[ -n "${MECH_EKF_RESULT_FILE:-}" ]]; then
   python3 - "$MECH_EKF_RESULT_FILE" "$compute_backend" "$parity_updates" \
     "$parity_output" "$parity_tracking_error" "$continuity_output" \
-    "$software_adapter" <<'PY'
+    "$software_adapter" "$browser_dir/startup.json" <<'PY'
 import json
 from pathlib import Path
 import sys
 
-path, backend, updates, output, tracking, continuity_output, software_adapter = sys.argv[1:]
+path, backend, updates, output, tracking, continuity_output, software_adapter, startup = sys.argv[1:]
 values = [float(value) for value in output.split(",") if value]
 continuity_values = [float(value) for value in continuity_output.split(",") if value]
 if len(values) != 15:
@@ -1692,6 +1854,7 @@ Path(path).write_text(json.dumps({
     "continuity_output": continuity_values,
     "tracking_error": float(tracking),
     "browser_software_adapter_requested": software_adapter == "true",
+    "startup": json.loads(Path(startup).read_text()),
 }, sort_keys=True))
 PY
 fi

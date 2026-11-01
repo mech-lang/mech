@@ -2,6 +2,7 @@ use crate::document::{RuleId, SyntaxKind};
 
 pub(crate) mod continuation;
 mod exact_tag;
+mod sealed;
 pub(crate) use exact_tag::ExactTag;
 
 use super::super::Parser;
@@ -198,6 +199,7 @@ const BOX_DRAWING_EMOJI_RULES: &[RuleId] = &[
     rules::BOX_T_BOTTOM,
 ];
 
+#[cfg(test)]
 pub(crate) fn supports(rule: RuleId) -> bool {
     fixed_terminal_spec(rule).is_some() || NON_FIXED_RULES.contains(&rule)
 }
@@ -255,5 +257,52 @@ mod tests {
             assert!(supports(*rule));
             assert!(fixed_terminal_spec(*rule).is_none());
         }
+    }
+}
+
+fn impossible_prefix(rule: RuleId, byte: Option<u8>, fixed: Option<&FixedTerminalSpec>) -> bool {
+    if let Some(spec) = fixed {
+        return spec.spacing == TerminalSpacing::Exact && byte != Some(spec.literal.as_bytes()[0]);
+    }
+    let Some(byte) = byte else {
+        return matches!(
+            rule,
+            rules::ALPHA
+                | rules::ALPHA_TOKEN
+                | rules::DIGIT
+                | rules::DIGIT_TOKEN
+                | rules::EMOJI
+                | rules::EMOJI_GRAPHEME
+                | rules::FORBIDDEN_EMOJI
+                | rules::SPACE_TAB
+                | rules::WHITESPACE
+                | rules::SYMBOL
+                | rules::IDENTIFIER_SYMBOL
+                | rules::PUNCTUATION
+                | rules::GROUPING_SYMBOL
+                | rules::BOX_DRAWING_CHAR
+                | rules::BOX_DRAWING_EMOJI
+        );
+    };
+    match rule {
+        rules::SPACE_TAB => !matches!(byte, b' ' | b'\t' | 0xc2 | 0xe2),
+        rules::WHITESPACE => !matches!(byte, b' ' | b'\t' | b'\r' | b'\n'),
+        rules::ALPHA | rules::ALPHA_TOKEN => byte.is_ascii() && !byte.is_ascii_alphabetic(),
+        rules::DIGIT | rules::DIGIT_TOKEN => byte.is_ascii() && !byte.is_ascii_digit(),
+        rules::EMOJI | rules::EMOJI_GRAPHEME | rules::FORBIDDEN_EMOJI => byte.is_ascii(),
+        rules::BOX_DRAWING_CHAR | rules::BOX_DRAWING_EMOJI => byte != 0xe2,
+        rules::SYMBOL => !SYMBOL_RULES
+            .iter()
+            .any(|r| fixed_terminal_spec(*r).unwrap().literal.as_bytes()[0] == byte),
+        rules::IDENTIFIER_SYMBOL => !IDENTIFIER_SYMBOL_RULES
+            .iter()
+            .any(|r| fixed_terminal_spec(*r).unwrap().literal.as_bytes()[0] == byte),
+        rules::PUNCTUATION => !PUNCTUATION_RULES
+            .iter()
+            .any(|r| fixed_terminal_spec(*r).unwrap().literal.as_bytes()[0] == byte),
+        rules::IDENTIFIER => byte.is_ascii() && !byte.is_ascii_alphabetic(),
+        rules::DIGIT_SEQUENCE => byte.is_ascii() && !byte.is_ascii_digit(),
+        rules::ESCAPED_CHAR => byte != b'\\',
+        _ => false,
     }
 }

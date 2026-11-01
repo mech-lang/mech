@@ -201,8 +201,14 @@ impl ServerSourceRegistry {
     }
 
     fn rebuild_listing(&mut self) {
-        let mut keys = self.raw_sources.keys().cloned().collect::<Vec<_>>();
+        let mut keys = self
+            .raw_sources
+            .keys()
+            .chain(self.html_sources.keys())
+            .cloned()
+            .collect::<Vec<_>>();
         keys.sort();
+        keys.dedup();
         if keys.is_empty() {
             self.listing_asset = None;
             return;
@@ -216,7 +222,12 @@ impl ServerSourceRegistry {
                 .map(String::as_str)
                 .unwrap_or(&key);
             let escaped_label = escape_html(logical);
-            html.push_str(&format!("    <li><a href=\"/{escaped_url}\">{escaped_label}</a> <a href=\"/source/{escaped_url}\">source</a>"));
+            html.push_str(&format!(
+                "    <li><a href=\"/{escaped_url}\">{escaped_label}</a>"
+            ));
+            if self.raw_sources.contains_key(&key) {
+                html.push_str(&format!(" <a href=\"/source/{escaped_url}\">source</a>"));
+            }
             if self.code_sources.contains_key(&key) {
                 html.push_str(&format!(" <a href=\"/code/{escaped_url}\">code</a>"));
             }
@@ -399,8 +410,8 @@ impl ServerSourceRegistry {
         let root_uris = match &self.compiler_roots {
             Some(paths) => paths
                 .iter()
-                .map(|path| {
-                    snapshot
+                .filter_map(|path| {
+                    let source = snapshot
                         .sources
                         .values()
                         .find(|source| {
@@ -414,17 +425,29 @@ impl ServerSourceRegistry {
                                         .is_ok_and(|canonical| &canonical == path)
                             })
                         })
-                        .map(|source| source.canonical_uri.clone())
-                        .ok_or_else(|| {
-                            Error::new(
-                                ErrorKind::InvalidInput,
-                                format!(
-                                    "configured run root is outside the served source snapshot: {}",
-                                    path.display()
-                                ),
-                            )
-                            .into()
+                        .map(|source| source.canonical_uri.clone());
+                    if source.is_none()
+                        && snapshot.diagnostics.iter().any(|diagnostic| {
+                            diagnostic
+                                .canonical_uri
+                                .as_deref()
+                                .and_then(diagnostic_source_path)
+                                .as_ref()
+                                == Some(path)
                         })
+                    {
+                        return None;
+                    }
+                    Some(source.ok_or_else(|| {
+                        Error::new(
+                            ErrorKind::InvalidInput,
+                            format!(
+                                "configured run root is outside the served source snapshot: {}",
+                                path.display()
+                            ),
+                        )
+                        .into()
+                    }))
                 })
                 .collect::<MResult<BTreeSet<_>>>()?,
             None => {
@@ -705,10 +728,7 @@ impl ServerSourceRegistry {
                 extra_slots.insert("DOCUMENT_SOURCES", "");
             }
             let html = if let Some(error) = document_error {
-                format!(
-                    "<html><body><pre>{}</pre></body></html>",
-                    escape_html(&format!("{error:#?}"))
-                )
+                source_diagnostic_html(&logical_specifier, &format!("{error:#?}"))
             } else {
                 let render = if is_root
                     && (shim.contains("{{DOCUMENT_SCRIPT}}") || shim.contains("{{CODE}}"))
@@ -734,13 +754,14 @@ impl ServerSourceRegistry {
             };
             let mut backing_paths = vec![path.clone()];
             backing_paths.extend_from_slice(generated_html_backing_paths);
+            let backing_paths = dedupe_paths(backing_paths);
             self.html_sources.insert(
                 key.clone(),
                 ServerAsset {
                     bytes: html.into_bytes(),
                     content_type: "text/html",
                     content_encoding: None,
-                    backing_paths: dedupe_paths(backing_paths),
+                    backing_paths: backing_paths.clone(),
                 },
             );
             if is_root && shim.contains("{{DOCUMENT_SCRIPT}}") {
@@ -751,24 +772,40 @@ impl ServerSourceRegistry {
                     uri,
                     &logical_specifier,
                     &document,
-                )?
-                .encode()?;
-                // A dependency change invalidates this response as well as
-                // the source manifest; the loader checks the same hashes.
-                let backing_paths = snapshot
-                    .sources
-                    .values()
-                    .filter_map(|source| source.path.clone())
-                    .collect();
-                self.code_sources.insert(
-                    key.clone(),
-                    ServerAsset {
-                        bytes: code.into_bytes(),
-                        content_type: "text/plain",
-                        content_encoding: None,
-                        backing_paths,
-                    },
-                );
+                )
+                .and_then(|payload| payload.encode());
+                match code {
+                    Ok(code) => {
+                        // A dependency change invalidates this response as well as
+                        // the source manifest; the loader checks the same hashes.
+                        let backing_paths = snapshot
+                            .sources
+                            .values()
+                            .filter_map(|source| source.path.clone())
+                            .collect();
+                        self.code_sources.insert(
+                            key.clone(),
+                            ServerAsset {
+                                bytes: code.into_bytes(),
+                                content_type: "text/plain",
+                                content_encoding: None,
+                                backing_paths,
+                            },
+                        );
+                    }
+                    Err(error) => {
+                        self.html_sources.insert(
+                            key.clone(),
+                            asset(
+                                source_diagnostic_html(&logical_specifier, &format!("{error:?}"))
+                                    .as_bytes(),
+                                "text/html",
+                                None,
+                                backing_paths.clone(),
+                            ),
+                        );
+                    }
+                }
             }
             self.source_paths.insert(key.clone(), path.clone());
             self.source_specifiers
@@ -824,6 +861,50 @@ impl ServerSourceRegistry {
         source_roots.dedup();
         self.source_roots = source_roots;
         self.source_resolutions = source_resolutions;
+        // Rejected programs do not have an accepted module/source snapshot.
+        // Keep their public document route and diagnostic instead of falling
+        // back to a blank shell or a generic 404.
+        let mut diagnostics = BTreeMap::<PathBuf, Vec<&str>>::new();
+        for diagnostic in &snapshot.diagnostics {
+            if diagnostic.severity != mech_runtime::RuntimeWorkspaceDiagnosticSeverity::Error {
+                continue;
+            }
+            let Some(path) = diagnostic
+                .canonical_uri
+                .as_deref()
+                .and_then(diagnostic_source_path)
+            else {
+                continue;
+            };
+            if path.starts_with(&root) && is_renderable_mech_text_source(&path) {
+                let messages = diagnostics.entry(path).or_default();
+                if !messages.contains(&diagnostic.message.as_str()) {
+                    messages.push(&diagnostic.message);
+                }
+            }
+        }
+        for (path, messages) in diagnostics {
+            self.check(FS_READ, &path)?;
+            self.check(FS_SERVE, &path)?;
+            let Some(specifier) = path.strip_prefix(&root).ok().and_then(url_key) else {
+                continue;
+            };
+            let key = percent_encode_url_path(&specifier);
+            self.html_sources.insert(
+                key.clone(),
+                asset(
+                    source_diagnostic_html(&specifier, &messages.join("\n\n")).as_bytes(),
+                    "text/html",
+                    None,
+                    vec![path],
+                ),
+            );
+            self.code_sources.remove(&key);
+            self.workspace_keys.insert(key.clone());
+            if is_index_source_key(&key) {
+                self.index_source = Some(key);
+            }
+        }
         self.sync_source_manifest()?;
         self.rebuild_listing();
         Ok(())
@@ -882,6 +963,24 @@ impl ServerSourceRegistry {
         );
         self.sync_source_manifest()
     }
+}
+
+fn diagnostic_source_path(uri: &str) -> Option<PathBuf> {
+    let path = if uri.starts_with("file://") {
+        mech_runtime::file_uri_to_path(uri).ok()?
+    } else {
+        PathBuf::from(uri)
+    };
+    path.is_absolute()
+        .then(|| path.canonicalize().unwrap_or(path))
+}
+
+fn source_diagnostic_html(specifier: &str, message: &str) -> String {
+    format!(
+        "<!doctype html><html lang=\"en\" data-mech-document-status=\"error\"><head><meta charset=\"utf-8\"><title>Mech program error</title></head><body><h1>Mech could not run {}</h1><pre role=\"alert\" data-mech-source-diagnostic>{}</pre></body></html>",
+        escape_html(specifier),
+        escape_html(message),
+    )
 }
 
 fn is_index_source_key(key: &str) -> bool {
@@ -1330,6 +1429,40 @@ impl MechServer {
                 key.recursive,
                 operations.join(",")
             );
+        }
+        if plan.folders.is_empty()
+            && plan
+                .targets
+                .iter()
+                .any(|target| is_renderable_mech_text_source(Path::new(&target.specifier)))
+        {
+            // A selected source may import siblings without selecting them for
+            // discovery. Inherit that scope only when the host already holds
+            // a delegable project-root grant; exact-file authorities stay exact.
+            let operations = [FS_READ, FS_WATCH, FS_RESOLVE, FS_IMPORT, FS_SERVE];
+            match self.authority.delegate_path_to(
+                &mut ids,
+                &self.serve_subject,
+                &plan.root,
+                true,
+                operations,
+            ) {
+                Ok(_) => println!(
+                    "{} Source import authority delegated: {} recursive=true operations={}",
+                    self.badge(),
+                    display_fs_resource(&plan.root),
+                    operations.join(",")
+                ),
+                Err(error)
+                    if matches!(
+                        error.kind_name().as_str(),
+                        "CapabilityDenied"
+                            | "CapabilityNotAttenuable"
+                            | "CapabilityDerivationUnsupported"
+                            | "InvalidCapabilityDerivation"
+                    ) => {}
+                Err(error) => return Err(error),
+            }
         }
         Ok(())
     }
@@ -2784,15 +2917,12 @@ result\n",
         if requires_compute && !cfg!(feature = "compute_backends_native") {
             // A configured compute host must not suppress ordinary bundles.
             // Mixed source must refuse at the explicit capability boundary,
-            // before attempting to install a compute resource provider.
-            let error = result.unwrap_err();
-            let capability = error
-                .kind_downcast_ref::<mech_core::GenericError>()
-                .expect("mixed source must reach the compute capability refusal");
-            assert_eq!(
-                capability.msg,
-                "browser compute compilation requires compute_backends_native"
-            );
+            // before attempting to install a compute resource provider, and
+            // show that refusal on its document route.
+            result.unwrap();
+            let html = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
+            assert!(html.contains("data-mech-document-status=\"error\""));
+            assert!(html.contains("browser compute compilation requires compute_backends_native"));
             assert!(registry.get_route("/code/main.mec").is_none());
 
             // Removing the mixed region must recover on the same registry;
@@ -3661,6 +3791,73 @@ result\n",
         registry
     }
 
+    #[test]
+    fn rejected_source_keeps_its_document_routes_and_visible_diagnostic() {
+        let root = temp_root("rejected-source-diagnostic");
+        let path = root.join("broken.mec");
+        std::fs::write(&path, "answer := [\n").unwrap();
+        let path = path.canonicalize().unwrap();
+        let snapshot = RuntimeWorkspaceSnapshot {
+            root: root.clone(),
+            diagnostics: vec![mech_runtime::RuntimeWorkspaceDiagnostic {
+                severity: mech_runtime::RuntimeWorkspaceDiagnosticSeverity::Error,
+                target: Some("broken".into()),
+                canonical_uri: Some(path.to_string_lossy().into_owned()),
+                message: "syntax error: missing closing ] <unsafe>".into(),
+            }],
+            ..RuntimeWorkspaceSnapshot::default()
+        };
+        let mut registry = document_registry();
+        registry.compiler_roots = Some(BTreeSet::from([path]));
+        registry.set_preferred_index_source("broken.mec");
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &snapshot,
+                "",
+                include_str!("../include/index.html"),
+                &[],
+            )
+            .unwrap();
+        for route in ["/", "/index.html", "/broken.mec", "/broken.html", "/broken"] {
+            let html = String::from_utf8(registry.get_route(route).unwrap().bytes).unwrap();
+            assert!(
+                html.contains("data-mech-document-status=\"error\""),
+                "{route}: {html}"
+            );
+            assert!(
+                html.contains("syntax error: missing closing ] &lt;unsafe&gt;"),
+                "{html}"
+            );
+            assert!(!html.contains("<unsafe>"));
+        }
+        assert!(registry.get_route("/code/broken.mec").is_none());
+        let listing =
+            String::from_utf8(registry.listing_asset.as_ref().unwrap().bytes.clone()).unwrap();
+        assert!(listing.contains("href=\"/broken.mec\""));
+        assert!(!listing.contains("href=\"/source/broken.mec\""));
+        registry.compiler_roots = None;
+        registry
+            .sync_workspace_snapshot(&root, &RuntimeWorkspaceSnapshot::default(), "", "", &[])
+            .unwrap();
+        assert!(registry.get_route("/broken.mec").is_none());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn diagnostic_source_paths_decode_local_file_uris() {
+        let root = temp_root("diagnostic-file-uri");
+        let path = root.join("broken ü # %.mec");
+        std::fs::write(&path, "answer := [\n").unwrap();
+        let uri = mech_runtime::path_to_file_uri(&path).unwrap();
+        assert_eq!(
+            diagnostic_source_path(&uri),
+            Some(path.canonicalize().unwrap())
+        );
+        assert!(diagnostic_source_path("https://example.invalid/main.mec").is_none());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
     // A failed run target is absent from the compiled workspace snapshot.
     // Serve fixtures must also retain its source and diagnostic revision.
     fn retain_test_source(snapshot: &mut RuntimeWorkspaceSnapshot, root: &Path, file: &str) {
@@ -4007,6 +4204,143 @@ result\n",
             .load_source_program(payload.source(), durability)
             .unwrap();
         assert_eq!(loaded.initial_value.format_canonical_inline(), "1");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn file_only_serve_imports_reachable_sources_without_discovering_siblings() {
+        let root = temp_root("file-only-import-authority");
+        std::fs::write(
+            root.join("main.mec"),
+            "+> ./support\nanswer := support/value\nanswer\n",
+        )
+        .unwrap();
+        std::fs::write(root.join("support.mec"), "value := 42\n<+ value\n").unwrap();
+        std::fs::write(root.join("unrelated.mec"), "secret := 99\n").unwrap();
+        let guard = CurrentDirGuard::enter(&root);
+        let mut server = test_server();
+        server.html_shim = include_str!("../include/index.html").to_string();
+        server.set_document_controller(
+            Some(include_str!("../include/document.js").to_string()),
+            Some("include/index.html".to_string()),
+        );
+        tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(server.init())
+            .unwrap();
+        server.load_workspace(&vec!["main.mec".into()]).unwrap();
+        let session = server.workspace_session.as_ref().unwrap().lock().unwrap();
+        let snapshot = session.snapshot().unwrap();
+        assert!(
+            snapshot.diagnostics.is_empty(),
+            "{:?}",
+            snapshot.diagnostics
+        );
+        assert!(snapshot.targets.contains_key("main"));
+        assert!(session.workspace().config().folders.is_empty());
+        drop(session);
+
+        let registry = server.registry.read().unwrap();
+        assert!(registry.get_route("/code/main.mec").is_some());
+        assert!(registry.get_route("/source/support.mec").is_some());
+        let manifest: serde_json::Value = serde_json::from_slice(
+            &registry
+                .get_route("/_mech/project-sources.json")
+                .unwrap()
+                .bytes,
+        )
+        .unwrap();
+        let specifiers = manifest["sources"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|source| source["specifier"].as_str().unwrap())
+            .collect::<BTreeSet<_>>();
+        assert_eq!(specifiers, BTreeSet::from(["main.mec", "support.mec"]));
+        for route in [
+            "/unrelated.mec",
+            "/source/unrelated.mec",
+            "/code/unrelated.mec",
+        ] {
+            assert!(registry.get_route(route).is_none(), "{route}");
+        }
+        assert!(
+            check_fs_capability(
+                &mut server.authority.kernel().clone(),
+                SERVE_HOST_SUBJECT,
+                FS_LIST,
+                &root,
+            )
+            .is_err()
+        );
+        drop(registry);
+        drop(server);
+        drop(guard);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn file_only_serve_keeps_exact_file_authority_and_denies_sibling_imports() {
+        let root = temp_root("file-only-restricted-import");
+        let main = root.join("main.mec");
+        let support = root.join("support.mec");
+        std::fs::write(&main, "answer := 42\nanswer\n").unwrap();
+        std::fs::write(&support, "value := 42\n<+ value\n").unwrap();
+        let guard = CurrentDirGuard::enter(&root);
+        let mut ids = DefaultIdGenerator::new();
+        let mut authority = HostFilesystemAuthority::new(
+            MECH_TOOL_SUBJECT,
+            mech_runtime::SharedCapabilityKernel::new(),
+        );
+        authority
+            .grant_path(
+                &mut ids,
+                &main,
+                false,
+                [FS_READ, FS_WATCH, FS_RESOLVE, FS_IMPORT, FS_SERVE],
+            )
+            .unwrap();
+        let mut server = MechServer::new(
+            "test".into(),
+            "127.0.0.1:0".into(),
+            "".into(),
+            "shim".into(),
+            b"\0asm\x01\0\0\0".to_vec(),
+            b"export default async function init() {}".to_vec(),
+            authority,
+        );
+        tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(server.init())
+            .unwrap();
+        server.load_workspace(&vec!["main.mec".into()]).unwrap();
+        assert!(
+            server
+                .registry
+                .read()
+                .unwrap()
+                .get_route("/source/main.mec")
+                .is_some()
+        );
+        assert!(
+            check_fs_capability(
+                &mut server.authority.kernel().clone(),
+                SERVE_HOST_SUBJECT,
+                FS_READ,
+                &support,
+            )
+            .is_err()
+        );
+
+        std::fs::write(&main, "+> ./support\nanswer := support/value\nanswer\n").unwrap();
+        server.load_workspace(&vec!["main.mec".into()]).unwrap();
+        let registry = server.registry.read().unwrap();
+        let html = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
+        assert!(html.contains("CapabilityDenied"), "{html}");
+        assert!(registry.get_route("/source/support.mec").is_none());
+        drop(registry);
+        drop(server);
+        drop(guard);
         std::fs::remove_dir_all(root).unwrap();
     }
 

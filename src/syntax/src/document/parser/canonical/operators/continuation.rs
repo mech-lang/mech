@@ -4,7 +4,7 @@ use super::*;
 use crate::document::TextSize;
 use crate::document::parser::literal_scan::{LiteralProgress, LiteralScan};
 use crate::document::parser::{checkpoint::ParserCheckpoint, marker::Marker};
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 
 pub(crate) enum Progress {
     Complete(Attempt),
@@ -18,6 +18,8 @@ struct Leaf {
     guard: OperatorGuard,
     spacing: Option<RuleId>,
 }
+// Keep Unicode cursor state out of every control-frame push and pop. Only a
+// suspended scan needs retained heap storage; completion uses the call stack.
 enum Frame {
     Call(RuleId),
     Exit(ParserCheckpoint),
@@ -37,7 +39,8 @@ enum Frame {
     Comment(statements::Continuation),
     Tag(&'static str),
     TagExit(ParserCheckpoint),
-    Literal(LiteralScan<'static>),
+    LiteralStart(&'static str),
+    LiteralResume(Box<LiteralScan<'static>>),
     LiteralResult(Option<TextSize>),
 }
 pub(crate) struct Continuation {
@@ -66,6 +69,32 @@ impl Continuation {
         self.push(Frame::Accept);
         self.push(Frame::Call(rule));
     }
+    fn advance_literal(
+        &mut self,
+        parser: &mut Parser<'_>,
+        scan: &mut LiteralScan<'static>,
+        final_input: bool,
+        allowance: &mut u64,
+    ) -> Option<Progress> {
+        let before = *allowance;
+        let progress = scan.advance(
+            parser.source(),
+            parser.cursor().end(),
+            parser.cursor().context_end(),
+            final_input,
+            allowance,
+        );
+        self.work += before - *allowance;
+        match progress {
+            LiteralProgress::Complete(end) => {
+                self.push(Frame::LiteralResult(end));
+                None
+            }
+            LiteralProgress::NeedsProcessing => Some(Progress::NeedsProcessing),
+            LiteralProgress::NeedInput => Some(Progress::NeedInput),
+            LiteralProgress::InvalidSource => panic!("operator continuation source bounds changed"),
+        }
+    }
     pub fn advance(
         &mut self,
         parser: &mut Parser<'_>,
@@ -82,7 +111,10 @@ impl Continuation {
             let frame = self.frames.pop().expect("operator phase");
             if !matches!(
                 frame,
-                Frame::Base(_) | Frame::Comment(_) | Frame::Literal(_)
+                Frame::Base(_)
+                    | Frame::Comment(_)
+                    | Frame::LiteralStart(_)
+                    | Frame::LiteralResume(_)
             ) {
                 *allowance -= 1;
                 self.work += 1;
@@ -244,14 +276,7 @@ impl Continuation {
                     if parser.offset() > parser.cursor().end() {
                         self.matched = false;
                     } else {
-                        self.push(Frame::Literal(
-                            LiteralScan::new(
-                                text,
-                                parser.offset(),
-                                final_input.then_some(parser.cursor().context_end()),
-                            )
-                            .expect("nonempty operator atom"),
-                        ));
+                        self.push(Frame::LiteralStart(text));
                     }
                 }
                 Frame::TagExit(checkpoint) => {
@@ -260,29 +285,26 @@ impl Continuation {
                         parser.rewind(checkpoint);
                     }
                 }
-                Frame::Literal(mut scan) => {
-                    let before = *allowance;
-                    let progress = scan.advance(
-                        parser.source(),
-                        parser.cursor().end(),
-                        parser.cursor().context_end(),
-                        final_input,
-                        allowance,
-                    );
-                    self.work += before - *allowance;
-                    match progress {
-                        LiteralProgress::Complete(end) => self.push(Frame::LiteralResult(end)),
-                        LiteralProgress::NeedsProcessing => {
-                            self.push(Frame::Literal(scan));
-                            return Progress::NeedsProcessing;
-                        }
-                        LiteralProgress::NeedInput => {
-                            self.push(Frame::Literal(scan));
-                            return Progress::NeedInput;
-                        }
-                        LiteralProgress::InvalidSource => {
-                            panic!("operator continuation source bounds changed")
-                        }
+                Frame::LiteralStart(text) => {
+                    let mut scan = LiteralScan::new(
+                        text,
+                        parser.offset(),
+                        final_input.then_some(parser.cursor().context_end()),
+                    )
+                    .expect("nonempty operator atom");
+                    if let Some(progress) =
+                        self.advance_literal(parser, &mut scan, final_input, allowance)
+                    {
+                        self.push(Frame::LiteralResume(Box::new(scan)));
+                        return progress;
+                    }
+                }
+                Frame::LiteralResume(mut scan) => {
+                    if let Some(progress) =
+                        self.advance_literal(parser, &mut scan, final_input, allowance)
+                    {
+                        self.push(Frame::LiteralResume(scan));
+                        return progress;
                     }
                 }
                 Frame::LiteralResult(end) => {
@@ -348,6 +370,12 @@ mod tests {
     fn run(rule: RuleId, text: &str, chunks: &[&str], fuel: u64, step: bool) -> (Output, u64) {
         continuation_test_support::run::<Continuation>(rule, text, chunks, fuel, step)
     }
+    #[test]
+    fn control_frames_keep_unicode_scan_state_indirect() {
+        // Control-only alternatives must not pay for an embedded Unicode scan.
+        assert!(core::mem::size_of::<Frame>() * 2 < core::mem::size_of::<LiteralScan<'static>>());
+    }
+
     #[test]
     fn operator_spellings_guards_spacing_and_limits_survive_all_input_cuts() {
         let cases = [

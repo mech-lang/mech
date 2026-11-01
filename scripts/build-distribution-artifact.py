@@ -17,6 +17,40 @@ ROOT = Path(__file__).resolve().parents[1]
 TOOLCHAIN = "nightly-2026-03-03"
 
 
+def require_browser_package() -> None:
+    package = ROOT / "src" / "wasm" / "pkg"
+    rebuild = "run python3 scripts/build-wasm.py --profile browser before building the distribution"
+    javascript = package / "mech_wasm.js"
+    wasm = package / "mech_wasm_bg.wasm"
+    if not javascript.is_file() or not wasm.is_file():
+        raise RuntimeError(f"distribution browser runtime is missing or incomplete; {rebuild}")
+    try:
+        source = javascript.read_text(encoding="utf-8")
+        with wasm.open("rb") as module:
+            header = module.read(8)
+    except (OSError, UnicodeError) as error:
+        raise RuntimeError(f"distribution browser runtime is unreadable: {error}; {rebuild}") from error
+    if header != b"\0asm\x01\0\0\0" or wasm.stat().st_size <= 8:
+        raise RuntimeError(f"distribution browser runtime is not a complete WebAssembly module; {rebuild}")
+    expected_exports = (
+        "export class WasmDocument",
+        "static fromEncodedWithBundle(",
+        "static fromServedEncodedWithBundle(",
+        "renderedDocumentValue(",
+        "renderedProgramOutput(",
+        "replInvoke(",
+        "replContinueStep(",
+        "static validateStaticSources(",
+        "static supportsServedDocumentProvenance(",
+    )
+    missing = [export for export in expected_exports if export not in source]
+    if missing:
+        raise RuntimeError(
+            "distribution browser runtime is incompatible with the document controller "
+            f"(missing exports: {', '.join(missing)}); {rebuild}"
+        )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--channel", choices=("stable", "nightly"), required=True)
@@ -67,6 +101,7 @@ def clean_target_directory() -> Path:
 
 
 def build(distribution: str) -> tuple[Path, float, float]:
+    require_browser_package()
     target_dir = clean_target_directory()
     command = [
         "cargo",

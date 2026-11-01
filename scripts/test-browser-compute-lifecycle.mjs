@@ -1090,3 +1090,84 @@ assert.deepEqual(publicationAttempts.map(({ status }) => status), ["completed", 
 assert.throws(() => publicationSession.submit(command("22:2")), publicationSession.failure);
 
 console.log("browser compute submission lifecycle tests passed");
+
+// Run the complete controller with only its automatic startup replaced. The
+// renderer tests exercise requests, completion, caching, and DOM updates.
+function rendererFixture() {
+  const scripts = [];
+  const equations = [];
+  const diagrams = [];
+  const stylesheet = { href: "", dataset: { mechRendererHref: "/math.css" } };
+  const rendererWindow = { addEventListener() {} };
+  const rendererDocument = {
+    querySelector(selector) {
+      if (selector === 'link[data-mech-renderer="katex"]') return stylesheet;
+      const library = /^script\[data-mech-renderer="(katex|mermaid)"\]$/.exec(selector);
+      if (library) return { dataset: { mechRendererSrc: `/${library[1]}.js` } };
+      if (selector === ".mermaid:not([data-processed])") return diagrams.find(node => !node.dataset.processed) || null;
+      return null;
+    },
+    querySelectorAll(selector) {
+      if (selector === ".mermaid:not([data-processed])") return diagrams.filter(node => !node.dataset.processed);
+      return equations.filter(node => !node.dataset.mechRendered);
+    },
+    createElement(tag) {
+      assert.equal(tag, "script");
+      const listeners = new Map();
+      return { listeners, addEventListener(name, callback) { listeners.set(name, callback); } };
+    },
+    head: { append(script) { scripts.push(script); } },
+  };
+  const context = vm.createContext({ document: rendererDocument, window: rendererWindow, AbortController });
+  vm.runInContext(`${documentSource}\nasync function main() {}\n`, context);
+  return {
+    scripts, equations, diagrams, stylesheet, window: rendererWindow,
+    refresh() { return vm.runInContext("initializeOptionalRenderers()", context); },
+    async complete(index, event = "load") {
+      scripts[index].listeners.get(event)();
+      await new Promise(resolve => setImmediate(resolve));
+    },
+  };
+}
+const renderers = rendererFixture();
+assert.equal(renderers.refresh(), undefined, "presentation loading must not block program startup");
+assert.equal(renderers.scripts.length, 0, "documents without equations or diagrams need no renderer downloads");
+assert.equal(renderers.stylesheet.href, "");
+const equation = { dataset: {}, textContent: "x^2", getAttribute: () => null, classList: { contains: () => false } };
+renderers.equations.push(equation);
+renderers.refresh();
+renderers.refresh();
+assert.deepEqual(renderers.scripts.map(script => script.src), ["/katex.js"]);
+assert.equal(renderers.stylesheet.href, "/math.css");
+let equationsRendered = 0;
+renderers.window.katex = { render(source, element, options) {
+  assert.equal(source, "x^2");
+  assert.equal(options.throwOnError, false);
+  element.textContent = "rendered equation";
+  equationsRendered += 1;
+} };
+await renderers.complete(0);
+assert.equal(equationsRendered, 1);
+assert.equal(equation.dataset.mechRendered, "katex");
+const diagram = { dataset: {} };
+renderers.diagrams.push(diagram);
+renderers.refresh();
+renderers.refresh();
+assert.deepEqual(renderers.scripts.map(script => script.src), ["/katex.js", "/mermaid.js"]);
+let diagramInitializations = 0;
+renderers.window.mermaid = {
+  initialize() { diagramInitializations += 1; },
+  async run({ nodes }) { for (const node of nodes) node.dataset.processed = "true"; },
+};
+await renderers.complete(1);
+renderers.refresh();
+assert.equal(diagram.dataset.processed, "true");
+assert.equal(diagramInitializations, 1);
+const unavailable = rendererFixture();
+unavailable.equations.push({ ...equation, dataset: {}, textContent: "fallback equation" });
+unavailable.refresh();
+await unavailable.complete(0, "error");
+unavailable.refresh();
+assert.equal(unavailable.scripts.length, 1, "an unavailable renderer must not trigger a request loop");
+assert.equal(unavailable.equations[0].textContent, "fallback equation");
+console.log("optional document renderers passed");
