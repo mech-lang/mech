@@ -696,6 +696,17 @@
           "files": 33,
           "asset_id": 697473547,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r81-baseline-2bbc7217b7f9.tar.gz"
+        },
+        {
+          "event": "candidate",
+          "source_revision": "c29854f6f1f404658c39bcb024296b01ec80a71d",
+          "asset": "r81-candidate-d07cc0477336.tar.gz",
+          "sha256": "d07cc04773367e9d2005e127298744b75d918bd6f807c1297528b0aae53c5a5a",
+          "manifest_sha256": "1ad40a00eb59a789e7b122141860b267ee7e0673ebe82cf9c04ba678e14cb41d",
+          "bytes": 67779,
+          "files": 39,
+          "asset_id": 697473618,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r81-candidate-d07cc0477336.tar.gz"
         }
       ]
     }
