@@ -2176,6 +2176,17 @@
           "files": 42,
           "asset_id": 697867472,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r85-isolated-profile-47c37a7fa460.tar.gz"
+        },
+        {
+          "event": "reference-profile",
+          "source_revision": "490ede99581fd233edd4c05d14f74641c9ae45c9",
+          "asset": "r85-reference-profile-fc052d448965.tar.gz",
+          "sha256": "fc052d448965c1fef2b2c38cae16e38e273110886abf0ea390169f89b741a284",
+          "manifest_sha256": "541f1b7f758f2d8b5046a3e7bc1f55d34f384df9cfc46788bf7fb7f2148e15a2",
+          "bytes": 140593,
+          "files": 38,
+          "asset_id": 697867749,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r85-reference-profile-fc052d448965.tar.gz"
         }
       ]
     }
