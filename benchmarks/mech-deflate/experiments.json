@@ -684,7 +684,7 @@
       "base": "54badcdaf0a2c4094fa2127c69e25fb8bd1260ad",
       "production": "2f9bf24dee31b5d9078e0f6619a36ffe243fbbf7",
       "compiler_source": "c29854f6f1f404658c39bcb024296b01ec80a71d",
-      "decision": "under measurement",
+      "decision": "retained: 8.449124% less matched elapsed, 11.319245% fewer initial-cohort instructions, 3701 fewer host callbacks and 861 omitted canonical intermediates; all cycle cohorts and code/stack growth retained",
       "events": [
         {
           "event": "baseline",
@@ -965,8 +965,83 @@
           "files": 53,
           "asset_id": 697588836,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r81-inputs-5cf02226d83c.tar.gz"
+        },
+        {
+          "event": "tests-final",
+          "source_revision": "c29854f6f1f404658c39bcb024296b01ec80a71d",
+          "asset": "r81-tests-final-4d6ff6e057fc.tar.gz",
+          "sha256": "4d6ff6e057fcb337b2249e5d96eeaf4d2db4097d552d10c17426aa9b59127ecf",
+          "manifest_sha256": "0f3181d379510d15a37637c746bb2e582237fe4390ebc046ffb463b0c9313397",
+          "bytes": 128818,
+          "files": 66,
+          "asset_id": 697602115,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r81-tests-final-4d6ff6e057fc.tar.gz"
         }
-      ]
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "ea05e4ff3b43b2cca33dd2669f8cc16e5d13f3fd2660cb38081bd30b56948217",
+          "profile-numbers.json": "057c8be3f162655d2809101426739de03acc70e3f99fb1b44a34030ad6558916",
+          "scorecard.json": "18ba5d5d53650cced90978c9968537230beade6cd4e283fb67bb77f581bd0ef3",
+          "validation.json": "f6d0cfe9c9b400952e33c9654379f507125a4a0c303bcb2e15a423c9e8c007aa"
+        }
+      },
+      "source_proof": {
+        "production": "2f9bf24dee31b5d9078e0f6619a36ffe243fbbf7",
+        "actual_optimized_source": "c29854f6f1f404658c39bcb024296b01ec80a71d",
+        "production_files_unchanged_since_build": [
+          {
+            "path": "hosts/gpu/src/native_artifact/program/image/identity.rs",
+            "sha256": "97babca24003481fdeed37c3cc558a3966423def1e118846de5be593717c6a6d"
+          },
+          {
+            "path": "hosts/gpu/src/native_artifact/program/prepare/composition/frames.rs",
+            "sha256": "de69631a5f8386343de8b31e52571376075c70aff6baf52af2cdc15fff81fc0c"
+          },
+          {
+            "path": "hosts/gpu/src/native_artifact/program/prepare/composition/mod.rs",
+            "sha256": "7aaa3fe4b4011f01e628f290fdea4014d5ccc9ffb6e6a869c4e6ad816e15af87"
+          },
+          {
+            "path": "hosts/gpu/src/native_artifact/program/prepare/composition/numeric.rs",
+            "sha256": "f12732be6b0e40f7abba9c48e8c341d4bf8a728031af3298f738fb85fc2e5326"
+          },
+          {
+            "path": "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_segments.rs",
+            "sha256": "b6186134d1b64b8223629147d30c32a7374c043f8d1f690f15551059326c512e"
+          },
+          {
+            "path": "hosts/gpu/src/native_artifact/values/mod.rs",
+            "sha256": "6b3036e14f2f7346c0b560afd14f60acacceb4d641ff25adc29d1f7f01f4b03e"
+          }
+        ],
+        "engine_core_and_other_dependencies_unchanged": true,
+        "source_bytecode_reference_allocator_and_worker_pins_verified": 21,
+        "warning_and_unsafe_policy_unchanged": true,
+        "scope": "Later source changes are maintained test expectations for the new representation only; current production matches the measured optimized build byte-for-byte."
+      },
+      "resource_policy": {
+        "typed_ir": 134,
+        "work_policy": 96,
+        "private_abi": 38,
+        "bytecode": 14,
+        "compute_before": 67457686430,
+        "compute_after": 45563430475,
+        "comparison_before": 23063,
+        "comparison_after": 23066,
+        "whole_huffman_prior_policy95": 91452918,
+        "whole_huffman_policy96": 88767602,
+        "finite_allowances_and_compression_literals_unchanged": true
+      },
+      "disk_cleanup": {
+        "scope": "Obsolete standalone Mach-O executables only. All source, observations, archives, object files, rlibs, rmeta, dylibs and current R80/R81/reference trees remain. Skip live executable paths.",
+        "free_before": 170934272,
+        "files_removed": 463,
+        "logical_bytes_removed": 51042181752,
+        "free_after": 49081585664,
+        "free_space_increase": 48910651392
+      }
     }
   },
   "repository": "mech-lang/mech",
