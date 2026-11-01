@@ -1621,6 +1621,17 @@
           "files": 72,
           "asset_id": 697749088,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-final-checks-12c49a673810.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "c0b5999f434650df9ff7fef6dc2c9f4c40d4fc42",
+          "asset": "r83-scalar-controls-ec0efcca3612.tar.gz",
+          "sha256": "ec0efcca36126856be96ee462a7bd2e0475cc88b5ad7ba514319d99534d9d802",
+          "manifest_sha256": "90fab1141ca90cb0aaada8e970435906ebee98fc837188392a17aa0be35e2fe6",
+          "bytes": 69358,
+          "files": 90,
+          "asset_id": 697749168,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-scalar-controls-ec0efcca3612.tar.gz"
         }
       ],
       "analysis": {
