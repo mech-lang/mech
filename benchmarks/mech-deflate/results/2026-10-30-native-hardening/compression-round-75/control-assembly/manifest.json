@@ -1,0 +1,191 @@
+{
+  "created_utc": "2026-11-01T00:23:49.581602+00:00",
+  "head": "bb127cfc04abc179dfcb8c0506be315f83e41864",
+  "files": [
+    {
+      "path": "control-assembly/after/audit.json",
+      "sha256": "336fcaf0b05c3bc6b54768d662d5882529c6eb06745e08f6311fb62aac0f1a14",
+      "bytes": 89149
+    },
+    {
+      "path": "control-assembly/after/control-visit-0.asm",
+      "sha256": "aeb4bd6fd9f277412a15901c3c674c50896032f2fa59180d310c63e962b36006",
+      "bytes": 41030
+    },
+    {
+      "path": "control-assembly/after/control-visit-0.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "control-assembly/after/host-section-sizes.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "control-assembly/after/host-section-sizes.txt",
+      "sha256": "3279b4c327d8d2283a93146af505754617beae75a02fbd17222060b3727589ec",
+      "bytes": 935
+    },
+    {
+      "path": "control-assembly/after/nm.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "control-assembly/after/nm.stdout",
+      "sha256": "6bea9c9e78007c00c1ecdb489109f79639aae419fd853c7402db55cf94ff9942",
+      "bytes": 33627887
+    },
+    {
+      "path": "control-assembly/after.json",
+      "sha256": "760e7e874013a0a58db8b4cb113bcc03e524c87490d8dafcc64c912c5c0fd800",
+      "bytes": 481
+    },
+    {
+      "path": "control-assembly/after.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "control-assembly/after.stdout",
+      "sha256": "1a1eca7d839d987fc1147f1721ed7c23092936e13a77d86189078600e6537e32",
+      "bytes": 700
+    },
+    {
+      "path": "control-assembly/before/audit.json",
+      "sha256": "ffe84e6e602c8e06f7983da891577302d0884ae0713518d5bdf84279b500ed47",
+      "bytes": 92707
+    },
+    {
+      "path": "control-assembly/before/control-charge-0.asm",
+      "sha256": "e545e2684dc7fdc948549a91eeeae369f7192e54dd91cba86a40fd934e3ef088",
+      "bytes": 5180
+    },
+    {
+      "path": "control-assembly/before/control-charge-0.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "control-assembly/before/control-visit-0.asm",
+      "sha256": "37e638ac9b170a301958c73bb9d869eaf5c012f48283d96420abde954866ef55",
+      "bytes": 36869
+    },
+    {
+      "path": "control-assembly/before/control-visit-0.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "control-assembly/before/host-section-sizes.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "control-assembly/before/host-section-sizes.txt",
+      "sha256": "69699316f23d7f28678d964f278e254f01abcf59431c4e96859b3d6e16369a87",
+      "bytes": 936
+    },
+    {
+      "path": "control-assembly/before/nm.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "control-assembly/before/nm.stdout",
+      "sha256": "da7cea41ec5189c5a2bf0aada1b40372796717213592c4e62d4b07ed47fa7403",
+      "bytes": 33615052
+    },
+    {
+      "path": "control-assembly/before.json",
+      "sha256": "84ae10a9d7139cfba317139c5f0973c2bec3a866ad12d952105444658fab6885",
+      "bytes": 482
+    },
+    {
+      "path": "control-assembly/before.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "control-assembly/before.stdout",
+      "sha256": "942cf848dfcf6d7525ede7cd77c80e69bc724004b78bd40273f95d7433a6e2f4",
+      "bytes": 717
+    },
+    {
+      "path": "control-assembly/unfixed/audit.json",
+      "sha256": "8000432505f22daceb53c5280006ce7c57ee236db6972e1c0b201ac2660b013b",
+      "bytes": 108745
+    },
+    {
+      "path": "control-assembly/unfixed/control-charge-0.asm",
+      "sha256": "7ecc076981242658f32990f0df6b78c1ef0f0cc56a206162c70f0adde0c896dd",
+      "bytes": 6809
+    },
+    {
+      "path": "control-assembly/unfixed/control-charge-0.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "control-assembly/unfixed/control-visit-0.asm",
+      "sha256": "8deae71889e14ce745e26cc3f427e14464ab23e167f767644ce8facd1de3f911",
+      "bytes": 33400
+    },
+    {
+      "path": "control-assembly/unfixed/control-visit-0.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "control-assembly/unfixed/host-section-sizes.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "control-assembly/unfixed/host-section-sizes.txt",
+      "sha256": "bcb6595992e627869b5119f3cedc301838684edb0db66f40feed965851142ff0",
+      "bytes": 937
+    },
+    {
+      "path": "control-assembly/unfixed/nm.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "control-assembly/unfixed/nm.stdout",
+      "sha256": "cda9cc25f0e3c643ed65aecbfce7efb5a7be22f2cf8919df63bbd0214a119d8c",
+      "bytes": 33628317
+    },
+    {
+      "path": "control-assembly/unfixed/shared-debit-0.asm",
+      "sha256": "c3ee1f8b6997affc1d0807c7cee8510a16d0b3a6f0bcd8a8145eb341b7659106",
+      "bytes": 7589
+    },
+    {
+      "path": "control-assembly/unfixed/shared-debit-0.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "control-assembly/unfixed.json",
+      "sha256": "ae50bbacd18c3aa60004682efe2cc5ebf4c544c902eb67fe6fe0552ec777ed78",
+      "bytes": 484
+    },
+    {
+      "path": "control-assembly/unfixed.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "control-assembly/unfixed.stdout",
+      "sha256": "90394e97dfff392294d86c45c7c99f6799c8ae4e9deb37476abd9ceb8c83511f",
+      "bytes": 738
+    },
+    {
+      "path": "findings-packet/audit-control.py",
+      "sha256": "054c5a02573c090dc5ab8e98e27a39701adeff11f52725b9187d51db53d6e552",
+      "bytes": 4167
+    }
+  ]
+}
