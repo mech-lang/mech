@@ -6786,6 +6786,17 @@
           "files": 82,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-counters-861aefe591d8.tar.gz"
+        },
+        {
+          "event": "linked-multi",
+          "source_revision": "bebe5a245d312796c630de76fc558fbcd2c2f2ff",
+          "asset": "r100-linked-multi-4bbbd5872554.tar.gz",
+          "sha256": "4bbbd58725547974f0f34b030555954a6b5dff9b1d0c42c23d878e61ff683ebf",
+          "manifest_sha256": "31f3cfbc2cd888c94a9c74ae1e7a9753467af0b59f07c4463304056c65fcbcd3",
+          "bytes": 158912,
+          "files": 61,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-linked-multi-4bbbd5872554.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
