@@ -1632,6 +1632,17 @@
           "files": 90,
           "asset_id": 697749168,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-scalar-controls-ec0efcca3612.tar.gz"
+        },
+        {
+          "event": "frame-allocation",
+          "source_revision": "c0b5999f434650df9ff7fef6dc2c9f4c40d4fc42",
+          "asset": "r83-frame-allocation-8ef1a7c0dade.tar.gz",
+          "sha256": "8ef1a7c0daded70738beca7f03f9e8dd1f9ef5d39356728f49ec8d0892f8afc1",
+          "manifest_sha256": "97905db189a913f90d771a76f6a183b9cfe778fea9d4bc88563180ea75847f2d",
+          "bytes": 61673,
+          "files": 68,
+          "asset_id": 697749230,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-frame-allocation-8ef1a7c0dade.tar.gz"
         }
       ],
       "analysis": {
