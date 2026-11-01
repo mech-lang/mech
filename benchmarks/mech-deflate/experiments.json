@@ -3928,6 +3928,17 @@
           "files": 31,
           "asset_id": 698450715,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-pinned-inputs-0a1db9e36096.tar.gz"
+        },
+        {
+          "event": "initial",
+          "source_revision": "3444655203c554824153771782d3b81bf3cc1edc",
+          "asset": "r90-initial-5860ecacc200.tar.gz",
+          "sha256": "5860ecacc2006550ca173ca1c670ae7f43a6d8669f1fd34740093de77784613b",
+          "manifest_sha256": "7952ed765e0dd23ba9b0215be3aa5e52a21a2dd3e6e109408054963dd9ffcae7",
+          "bytes": 8397202,
+          "files": 53,
+          "asset_id": 698450948,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-initial-5860ecacc200.tar.gz"
         }
       ]
     }
