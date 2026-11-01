@@ -1866,7 +1866,7 @@
       "base": "ff4cf633c153d559a7a3f5288b34f656f94a1cfe",
       "production": "10f5bbbe94fed1b1887e9f4794f48ec90b13b154",
       "compiler_source": "10f5bbbe94fed1b1887e9f4794f48ec90b13b154",
-      "decision": "under measurement",
+      "decision": "superseded by R85: first branch leaves generic resize loops, mixed0.168704% elapsed decrease but+2056.5 instructions; all observations retained",
       "events": [
         {
           "event": "initial",
@@ -1971,14 +1971,81 @@
           "files": 38,
           "asset_id": 697866721,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r84-isolated-profile-76f209795088.tar.gz"
+        },
+        {
+          "event": "counters",
+          "source_revision": "10f5bbbe94fed1b1887e9f4794f48ec90b13b154",
+          "asset": "r84-counters-6316c60efe02.tar.gz",
+          "sha256": "6316c60efe02d999ee45c3c863fea9392767ac3ada26e3bcd474b6a959280ca6",
+          "manifest_sha256": "d6a96520a7a2bdd2204dde0e525956537a7900fd235cbeb495271f7ab24de254",
+          "bytes": 247761,
+          "files": 72,
+          "asset_id": 697885886,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r84-counters-6316c60efe02.tar.gz"
         }
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "a7fe9759344cd76c47782132ab3bb692cbcabbbc5c6bd14366f31ca0aa096a4d",
+          "profile-numbers.json": "3b424244f754c7f9f06dbf2b4ca9a00c75ae2384095d7c69ff83f7110e8c548a",
+          "scorecard.json": "db077508c272f51b5947aa1195d17cd6855bad2702268d7c72a7a936536f8f08",
+          "validation.json": "a2b4c44b10fb8f6ea31d1f1782b019ea15d91130df11e16071b017adecd50c8b"
+        }
+      },
+      "validation": {
+        "overlapping_selections": [
+          {
+            "executed": 339,
+            "receipt": "final-units/runtime.json"
+          },
+          {
+            "executed": 33,
+            "receipt": "final-units/work-memory-values.json"
+          },
+          {
+            "executed": 45,
+            "receipt": "final-units/ci.json"
+          },
+          {
+            "executed": 1,
+            "receipt": "final-units/image.json"
+          },
+          {
+            "executed": 236,
+            "receipt": "qualification/components.json"
+          },
+          {
+            "executed": 8,
+            "receipt": "qualification/composition.json"
+          },
+          {
+            "executed": 1,
+            "receipt": "qualification/path-mechanism.json"
+          }
+        ],
+        "passed": true,
+        "round": 84,
+        "skipped": "Hosted CI cancelled by instruction; giant complete knucleotide; large/full-corpus; fresh minimal/no_std graph. Unchanged Core/Budget/Engine integration inherited; R84 has only its explicitly listed fresh selections.",
+        "versions": [
+          135,
+          96,
+          38,
+          14
+        ]
+      },
+      "versions": [
+        135,
+        96,
+        38,
+        14
       ]
     },
     "85": {
       "base": "24f1019c83c1776ff64a4fb4ef288d644f696b2e",
       "production": "490ede99581fd233edd4c05d14f74641c9ae45c9",
       "compiler_source": "490ede99581fd233edd4c05d14f74641c9ae45c9",
-      "decision": "under measurement",
+      "decision": "retained: direct1.085752% less elapsed than retained R83, effectively flat instructions (+202.5), cycles\u22122.281639%; real bulk zeroing, heap unchanged",
       "events": [
         {
           "event": "initial",
@@ -2188,7 +2255,87 @@
           "asset_id": 697867749,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r85-reference-profile-fc052d448965.tar.gz"
         }
-      ]
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "cb6f6e60f6c6e00b4c37e4664c913b3217f153006ebc5dc42121343a07657edf",
+          "profile-numbers.json": "58a16641c1c795fce61d497691fe1cbdc1b795b0007efa15edc1b204adc26e34",
+          "scorecard.json": "0adc1677dd5e929ae52e00c5ae584f31137e5e97f8378c6bc647c813a47b3529",
+          "validation.json": "701ce9b9a2d8126694866dc672bbe2709d51254337758ab86294558409868afd"
+        }
+      },
+      "validation": {
+        "architecture": 15,
+        "frame_controls": 8,
+        "linked": 16,
+        "max_scalar_ratio": 1.0058739671959265,
+        "overlapping_selections": [
+          {
+            "executed": 339,
+            "receipt": "final-units/runtime.json"
+          },
+          {
+            "executed": 33,
+            "receipt": "final-units/work-memory-values.json"
+          },
+          {
+            "executed": 45,
+            "receipt": "final-units/ci.json"
+          },
+          {
+            "executed": 1,
+            "receipt": "final-units/image.json"
+          },
+          {
+            "executed": 236,
+            "receipt": "qualification/components.json"
+          },
+          {
+            "executed": 8,
+            "receipt": "qualification/composition.json"
+          },
+          {
+            "executed": 1,
+            "receipt": "qualification/path-mechanism.json"
+          }
+        ],
+        "passed": true,
+        "round": 85,
+        "scalar_ceiling": 1.05,
+        "scalar_controls": 12,
+        "skipped": "Hosted CI cancelled by instruction; giant complete knucleotide; large/full-corpus; fresh minimal/no_std graph. Unchanged Core/Budget/Engine integration inherited; R84 has only its explicitly listed fresh selections.",
+        "versions": [
+          135,
+          96,
+          38,
+          14
+        ],
+        "workflow_python": 132
+      },
+      "versions": [
+        135,
+        96,
+        38,
+        14
+      ],
+      "source_proof": {
+        "compiler_source": "490ede99581fd233edd4c05d14f74641c9ae45c9",
+        "production_file": {
+          "path": "hosts/gpu/src/native_artifact/program/runtime/collections/data.rs",
+          "sha256": "8b5db1fd66a72c8f40c4966e9612c1d67d25c845164e56cec20f4d7e6981f5b8"
+        },
+        "non_gpu_dependencies_unchanged": true,
+        "verified_pins": 26,
+        "object_image_metadata_unchanged": true,
+        "versions": [
+          135,
+          96,
+          38,
+          14
+        ],
+        "scope": "Current production matches the measured build. Source/bytecode/algorithm/source allocation sites/allocator/real capacities/work/timing boundaries unchanged."
+      }
     }
   },
   "repository": "mech-lang/mech",
