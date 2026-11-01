@@ -1,8 +1,7 @@
-//! Current frame/array sources for one acyclic parent piece. Sources are checked
+//! Current frame/owner sources for one acyclic parent piece. Sources are checked
 //! descriptions; the runtime must still establish current invocation availability.
 use super::Segment;
 use crate::native_artifact::program::prepare::readonly_numeric::FrameWords;
-use mech_core::{IntegerWidth, SchemaBody};
 use mech_engine::native_artifact::{
     NativeBufferFrameLane as Lane, NativeBufferFrameOperation as Frame, NativeBufferFrames,
     NativeIterationAction as Action, NativeMatchValue, NativeProgramArtifactPlan as Plan,
@@ -49,8 +48,8 @@ struct Origins<'a, 'p> {
 }
 impl Origins<'_, '_> {
     fn value(&mut self, value: u32) -> Result<Source, &'static str> {
-        if !unsigned_matrix(self.plan.values()[value as usize].definition().body()) {
-            return Err("parent piece requires an unsigned matrix source");
+        if self.plan.values()[value as usize].scalar_kind().is_some() {
+            return Err("parent piece requires a managed owner source");
         }
         let definitions = self
             .facts
@@ -98,15 +97,13 @@ impl Origins<'_, '_> {
         }
         let definitions = self.writes.get(&value).cloned().unwrap_or_default();
         let result = if definitions.is_empty() {
-            let body = self.plan.values()[value as usize].definition().body();
-            let field = match body {
-                SchemaBody::Tuple(fields) => fields.get(ordinal),
-                SchemaBody::Record(fields) => fields.get(ordinal).map(|f| &f.schema),
-                _ => None,
-            }
-            .ok_or("parent frame source lacks an exact field schema")?;
-            if !unsigned_matrix(field) {
-                return Err("parent frame source is not an unsigned matrix");
+            let field = self
+                .frames
+                .fields_at(value as usize)
+                .and_then(|fields| fields.get(ordinal))
+                .ok_or("parent frame source lacks an exact field schema")?;
+            if !matches!(field.lane(), Lane::Managed { .. }) {
+                return Err("parent frame source is not a managed owner");
             }
             Ok(Source::Field { value, ordinal })
         } else {
@@ -173,8 +170,7 @@ impl Layout {
                     }
                     Frame::Project { source, output, .. } => {
                         values.insert(source.get());
-                        if unsigned_matrix(plan.values()[output.get() as usize].definition().body())
-                        {
+                        if plan.values()[output.get() as usize].scalar_kind().is_none() {
                             projected.insert(output.get(), *output);
                             written_values.insert(output.get(), *output);
                         }
@@ -365,11 +361,4 @@ impl Layout {
             exits,
         })
     }
-}
-
-fn unsigned_matrix(body: &SchemaBody) -> bool {
-    matches!(body, SchemaBody::Matrix { element, dimensions }
-        if dimensions.len() == 2 && matches!(element.as_ref(),
-            SchemaBody::UnsignedInteger(IntegerWidth::W8 | IntegerWidth::W16
-                | IntegerWidth::W32 | IntegerWidth::W64)))
 }

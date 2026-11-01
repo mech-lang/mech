@@ -466,14 +466,18 @@ fn eligible(
                         .is_some_and(|c| c.supports_invariant_buffer_frame())
             }
             Frame::Copy { source, output } => flat(*source) && flat(*output),
-            Frame::Project { source, output, .. } => {
+            Frame::Project {
+                source,
+                ordinal,
+                output,
+            } => {
                 flat(*source)
                     && (plan.values()[output.get() as usize].scalar_kind().is_some()
                         || (matches!(action, Action::Structural { .. })
-                            && super::readonly_numeric::width(
-                                plan.values()[output.get() as usize].definition().body(),
-                            )
-                            .is_some()))
+                            && frames
+                                .fields(*source)
+                                .and_then(|fields| fields.get(*ordinal))
+                                .is_some_and(|field| matches!(field.lane(), Lane::Managed { .. }))))
             }
         };
     }
