@@ -957,6 +957,7 @@ fn charge_control_account(
     })
 }
 
+#[inline(always)]
 fn charge_control_account_at_limits(
     account: &mut ControlWorkAccount,
     compute: u64,
