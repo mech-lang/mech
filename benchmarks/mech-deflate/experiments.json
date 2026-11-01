@@ -2320,6 +2320,17 @@
           "files": 91,
           "asset_id": 697886157,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r85-counters-1275a3a09da6.tar.gz"
+        },
+        {
+          "event": "inputs",
+          "source_revision": "490ede99581fd233edd4c05d14f74641c9ae45c9",
+          "asset": "r85-inputs-c8d5e5aff62b.tar.gz",
+          "sha256": "c8d5e5aff62b87ba0c46ce09041a10a55006308f1b34de63bb67a3e3634314f2",
+          "manifest_sha256": "aab89e97925f5eaf2c1fb47e896e871c81bdb4430856550409e2771a6b77b027",
+          "bytes": 1295030,
+          "files": 39,
+          "asset_id": 697886214,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r85-inputs-c8d5e5aff62b.tar.gz"
         }
       ],
       "analysis": {
