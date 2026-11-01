@@ -474,12 +474,30 @@ impl NativeLibraryWorkBudget {
         {
             return Err(ResidentKernelError::InvalidInput);
         }
-        charge_control_account_at_limits(
-            &mut self.account.borrow_mut(),
+        let mut account = self.account.borrow_mut();
+        match charge_control_account_at_limits(
+            &mut account,
             compute,
             comparison,
             context.limits.get(),
-        )
+        ) {
+            Ok(()) => {
+                drop(account);
+                Ok(())
+            }
+            Err(error) => {
+                drop(account);
+                Self::forward_debit_failure(error)
+            }
+        }
+    }
+
+    // Keep the full public error payload on the rejected edge. Releasing the
+    // account borrow must not merge successful debits with its cold transport.
+    #[cold]
+    #[inline(never)]
+    fn forward_debit_failure(error: ResidentKernelError) -> Result<(), ResidentKernelError> {
+        Err(error)
     }
 
     /// Preview the same account's debit before optional backing is selected.
