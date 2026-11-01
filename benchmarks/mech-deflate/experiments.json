@@ -1269,6 +1269,17 @@
           "files": 150,
           "asset_id": 697697329,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-untimed-none-guard-13586bdf70f5.tar.gz"
+        },
+        {
+          "event": "primary-reference",
+          "source_revision": "c0b5999f434650df9ff7fef6dc2c9f4c40d4fc42",
+          "asset": "r83-primary-reference-665d45765a39.tar.gz",
+          "sha256": "665d45765a396104b3a4ca3cf984e29f746dde96ce0f930f5247fd3f07d85966",
+          "manifest_sha256": "8782200943baeb28ffaceda4332ee45d0d07a12cd96d7829a771dd1b8e60132e",
+          "bytes": 132603,
+          "files": 33,
+          "asset_id": 697697673,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-primary-reference-665d45765a39.tar.gz"
         }
       ]
     }
