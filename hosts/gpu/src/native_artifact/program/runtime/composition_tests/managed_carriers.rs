@@ -229,3 +229,82 @@ fn managed_carriers_keep_current_output_limits_at_ordinary_boundaries() {
         );
     }
 }
+
+#[test]
+fn managed_carriers_keep_valid_tight_limits_below_admitted_capacity() {
+    for artifact in artifacts(SOURCE) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let memory = mode.memory_budget();
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        let args = arguments(&artifact, &memory, 11, 2, true, 1, false);
+        let exact: u64 = args
+            .iter()
+            .map(|v| {
+                v.retained_footprint(artifact.schemas())
+                    .unwrap()
+                    .retained_bytes
+            })
+            .sum();
+        let admitted: u64 = args
+            .iter()
+            .map(|v| {
+                let bound = v.memory_budget_retained_bytes(&memory).unwrap();
+                assert!(
+                    bound
+                        >= v.retained_footprint(artifact.schemas())
+                            .unwrap()
+                            .retained_bytes
+                );
+                bound
+            })
+            .sum();
+        let cap = 4096;
+        assert!(
+            exact < cap && admitted > cap,
+            "exact={exact} admitted={admitted}"
+        );
+        let before = contents(&args);
+        let mut published = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&args, &mut published, mode.execution(), &memory)
+            .unwrap();
+        let expected = published
+            .last()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap();
+        for restored in [false, true] {
+            let mut policy = mode.execution();
+            policy.library.max_output_bytes = Some(cap);
+            let (result, counts) = if restored {
+                observe::run_restored(&jit, &args, &mut published, policy, &memory)
+            } else {
+                observe::run(&jit, &args, &mut published, policy, &memory)
+            };
+            result.unwrap();
+            assert!(counts.selected > 0);
+            assert_eq!(
+                published
+                    .last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                expected
+            );
+            assert_eq!(contents(&args), before);
+        }
+        drop((args, published));
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
+}
