@@ -1,0 +1,48 @@
+{
+  "before": {
+    "object.o": {
+      "sha256": "4921d95fdc25eaff386a16eb3de22c0178c3171d0eba668a5bee7fabaa0f7224",
+      "bytes": 11801304
+    },
+    "descriptor.json": {
+      "sha256": "8a578e3c0b3a4facbb613fc024f59f76488d00b8a7ef2974c484ce9989497702",
+      "bytes": 59787859
+    },
+    "metadata.json": {
+      "sha256": "ddba92983b3f34d6e7307e10655a02cc82e23edbcdfdafa2b43e94ce1052de76",
+      "bytes": 2542209
+    }
+  },
+  "after": {
+    "object.o": {
+      "sha256": "d74a85290e40bf7a464f0f34259dd5197f9fae2bbb22356a1aec89ea87eddfbf",
+      "bytes": 11754352
+    },
+    "descriptor.json": {
+      "sha256": "172f6fa326ca9e5822a2199aae9a5fe1ecc32c3ed3ba204be9d9d9819aa7a307",
+      "bytes": 59787849
+    },
+    "metadata.json": {
+      "sha256": "53af708a2842d6884b214ea0349f6a808c333edebf89f3b5c368eee566589b03",
+      "bytes": 2542208
+    }
+  },
+  "code_bytes": {
+    "before": 11800572,
+    "after": 11753624,
+    "delta": -46948
+  },
+  "stack_bytes": {
+    "before": 107344,
+    "after": 107280,
+    "delta": -64
+  },
+  "identity_equal": false,
+  "scope": "Fresh before/after Object/image hashes checked. Private program ABI37 to38 changes the code/image. Frozen scalar ABI1, source, bytecode14, typed IR132 and logical work policy95 remain. Dynamic counters and bounded callback disassembly are independent cohorts.",
+  "baseline_provenance": {
+    "checkpoint": "0816dc17aee0f009fa63577a37ebc30bc8693c36",
+    "source_matches_retained_R76": "0f8b961afbcde8d17b9bfde7018b60f855225e6e",
+    "measured_build_source": "d6ee13b886e50502dc413c41cf13a6259bb6db15",
+    "note": "Exact accepted R76 binaries. No historical timing is relabeled."
+  }
+}

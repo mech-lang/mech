@@ -1,0 +1,56 @@
+{
+  "variants": {
+    "before": {
+      "admit": {
+        "own_static_instructions": 118,
+        "own_frame_bytes": 208,
+        "entry_stack_pair_stores": 4,
+        "exit_stack_pair_loads": 4,
+        "assembly_sha256": "2c3eb64c67e8be4db992a51a3db4c2b8da726f3405e9f1fb3d1ef2ee28d14c29"
+      },
+      "helper": {
+        "own_static_instructions": 77,
+        "own_frame_bytes": 144,
+        "entry_stack_pair_stores": 2,
+        "exit_stack_pair_loads": 2,
+        "assembly_sha256": "ba25ec6bc6f7d4dc7b6d1605018ab43d8081df0123eb034acdd4a411d81b30bb"
+      }
+    },
+    "after": {
+      "admit": {
+        "own_static_instructions": 117,
+        "own_frame_bytes": 208,
+        "entry_stack_pair_stores": 4,
+        "exit_stack_pair_loads": 4,
+        "assembly_sha256": "0ae4f9c18d2412a03d20f163476c62c1aaa3d81bfc50571b4fe8e0d4bbec5d85"
+      },
+      "helper": {
+        "own_static_instructions": 237,
+        "own_frame_bytes": 320,
+        "entry_stack_pair_stores": 6,
+        "exit_stack_pair_loads": 6,
+        "assembly_sha256": "73ad455245a59143521a1eb28023742be2b9023f41f4ba0a9adb1f7056173ed8"
+      }
+    }
+  },
+  "dynamic": {
+    "fused_moves": 807,
+    "fused_structural": 2790,
+    "fused_total": 3597,
+    "original_logical_admissions": 12450,
+    "remaining_admission_callbacks": 8853,
+    "helper_callbacks": 8836,
+    "original_split_callback_total": 21286,
+    "current_callback_total": 17689,
+    "shared_compute_debits": 39030,
+    "callback_reduction_percent": 16.898430893545054
+  },
+  "helper_common_entry_extra_pair_store_instructions": 35344,
+  "common_callback_stack_pair_instructions": {
+    "added_helper_saves_restores": 70688,
+    "removed_admission_saves_restores": 28776,
+    "net_added": 41912,
+    "scope": "Verified common entry and single common exit only, multiplied by exact successful callback counts. Other emitted instructions and counter noise are not attributed."
+  },
+  "scope": "Own static routine sizes and frames from actual bounded machine-code disassembly; dynamic counters from four identical successful diagnostic calls. The extra pair-store count covers the unconditional helper entry prologue only; it is not net whole-call instruction attribution, omits removed admission prologues and other offsets, and is not a speed forecast. Original split callback total is reconstructed from current logical visits and checked against the retained baseline protocol, not a newly rerun baseline census."
+}
