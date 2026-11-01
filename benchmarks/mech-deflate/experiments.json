@@ -2881,6 +2881,17 @@
           "files": 398,
           "asset_id": 697961131,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r87-capacity-census-failed-selector-c5ebdbf78c2c.tar.gz"
+        },
+        {
+          "event": "analysis",
+          "source_revision": "c2b334feed4326a66ce1f69ca4bc99b0cbe41bb2",
+          "asset": "r87-analysis-96cffbf2c21a.tar.gz",
+          "sha256": "96cffbf2c21ae826dd367bc43d9ce9b2471d95a2673641407da014bade2ed690",
+          "manifest_sha256": "cbb8e4c611260d115b00c1b4425a500c7b83468d267f88a542c7238f83aba3ba",
+          "bytes": 54999,
+          "files": 35,
+          "asset_id": 697962205,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r87-analysis-96cffbf2c21a.tar.gz"
         }
       ]
     }
