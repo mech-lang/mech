@@ -40,9 +40,47 @@ def run(*command: str) -> None:
     subprocess.run(command, cwd=ROOT, check=True)
 
 
+def strip_debug_names(wasm: Path) -> None:
+    """Keep executable sections intact while omitting optional debug names."""
+    module = wasm.read_bytes()
+    if module[:8] != b"\0asm\x01\0\0\0":
+        raise ValueError(f"invalid WebAssembly header: {wasm}")
+
+    def unsigned(offset: int, end: int) -> tuple[int, int]:
+        value = 0
+        for shift in range(0, 35, 7):
+            if offset >= end:
+                break
+            byte = module[offset]
+            offset += 1
+            value |= (byte & 127) << shift
+            if byte < 128 and value <= 0xFFFFFFFF:
+                return value, offset
+        raise ValueError(f"invalid WebAssembly section length: {wasm}")
+
+    output = bytearray(module[:8])
+    offset = 8
+    while offset < len(module):
+        start = offset
+        section = module[offset]
+        size, payload = unsigned(offset + 1, len(module))
+        offset = payload + size
+        if offset > len(module):
+            raise ValueError(f"truncated WebAssembly section: {wasm}")
+        if section == 0:
+            size, name = unsigned(payload, offset)
+            if name + size > offset:
+                raise ValueError(f"truncated WebAssembly custom section name: {wasm}")
+            if module[name:name + size] == b"name":
+                continue
+        output.extend(module[start:offset])
+    wasm.write_bytes(output)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--profile", choices=PROFILES, required=True)
+    parser.add_argument("--keep-debug-names", action="store_true", help="retain WASM function names for CPU profiling")
     args = parser.parse_args()
     features, expected_exports = PROFILES[args.profile]
 
@@ -71,6 +109,8 @@ def main() -> None:
         raise SystemExit(
             f"{args.profile} WASM package is missing expected exports: {', '.join(missing)}"
         )
+    if not args.keep_debug_names:
+        strip_debug_names(wasm)
 
 
 if __name__ == "__main__":

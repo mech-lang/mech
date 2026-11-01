@@ -886,6 +886,7 @@ impl WasmDocumentBootstrap {
         self
     }
 
+    #[cfg(test)]
     pub(crate) fn initial_repl_source(&self) -> String {
         self.document_base().source().to_contiguous_string()
     }
@@ -968,7 +969,13 @@ impl WasmDocumentBootstrap {
 
     #[cfg(test)]
     fn program_output_id(&self) -> MResult<Option<OutputId>> {
-        runtime_document(self, &self.document_base()).map(|(_, output)| output)
+        let presentation = self.presentation_state.borrow();
+        Ok(presentation
+            .pending
+            .as_ref()
+            .unwrap_or(&presentation.active)
+            .program_output
+            .map(|output| OutputId::new(output as u32)))
     }
 
     pub(crate) fn console_output_context(&self) -> String {
@@ -1086,24 +1093,13 @@ pub(crate) fn activate_document_repl_runtime_document(
     let activation = if let Some(bundle) = initial_bundle {
         runtime.load_bytecode_program(&bundle.bytecode, durability)
     } else {
-        #[cfg(feature = "browser_compute")]
-        {
-            match candidate.coordinator.take() {
-                Some(coordinator) => runtime.load_compiled_program(coordinator, durability),
-                None => runtime.load_interactive_root_program(
-                    SourceRequest::new(&bootstrap.source().root_specifier),
-                    browser_module_options(),
-                    durability,
-                ),
-            }
-        }
-        #[cfg(not(feature = "browser_compute"))]
-        {
-            runtime.load_interactive_root_program(
+        match candidate.coordinator.take() {
+            Some(coordinator) => runtime.load_compiled_program(coordinator, durability),
+            None => runtime.load_interactive_root_program(
                 SourceRequest::new(&bootstrap.source().root_specifier),
                 browser_module_options(),
                 durability,
-            )
+            ),
         }
     };
     let outcome = match activation {
@@ -1153,7 +1149,6 @@ struct DocumentRuntimeCandidate {
     has_document_result: bool,
     #[cfg(feature = "browser_compute")]
     pointer: Option<PointerInputHandle>,
-    #[cfg(feature = "browser_compute")]
     coordinator: Option<mech_engine::ProgramArtifact>,
     #[cfg(feature = "browser_compute")]
     compute: Option<BrowserComputeBridge>,
@@ -1161,6 +1156,7 @@ struct DocumentRuntimeCandidate {
     scenes: BrowserSceneRegistry,
 }
 
+#[cfg(test)]
 fn compile_browser_interactive_document(
     bootstrap: &WasmDocumentBootstrap,
     document: &SourceDocument,
@@ -1310,7 +1306,26 @@ fn build_document_repl_runtime_for_document(
     if let Some(previous) = previous_compute.as_ref() {
         previous.ensure_source_replacement_ready()?;
     }
-    let (candidate_document, document_result) = runtime_document(source, candidate_document)?;
+    // Capture the authored result in the semantic graph. The original source
+    // and canonical tree remain the single authority, including for overlays.
+    let candidate_document = source.preserve_document_provenance(candidate_document.clone());
+    let authored = source.document_base();
+    let text = candidate_document.source().to_contiguous_string();
+    let original = authored.source().to_contiguous_string();
+    let base = if text.starts_with(&original) {
+        &authored
+    } else {
+        &candidate_document
+    };
+    let result_boundary = if CanonicalSourceFrontend
+        .root_statement_nodes(&base.document())
+        .map_err(|error| document_runtime_error(error.to_string()))?
+        .is_empty()
+    {
+        None
+    } else {
+        Some(base.source().byte_len())
+    };
     #[cfg(feature = "browser_host_scene")]
     let candidate_scenes = BrowserSceneRegistry::new();
 
@@ -1364,6 +1379,9 @@ fn build_document_repl_runtime_for_document(
                     });
                 let compiler_started = web_time::Instant::now();
                 let mut compiler = planning.build_compiler()?;
+                if let Some(boundary) = result_boundary {
+                    compiler = compiler.with_retained_result_boundary(boundary);
+                }
                 let catalog_setup = compiler_started.elapsed().as_secs_f64() * 1_000.0;
                 let prepared = prepare_compute_document_region(
                     &mut compiler,
@@ -1387,7 +1405,7 @@ fn build_document_repl_runtime_for_document(
         None => None,
     };
     #[cfg(all(feature = "browser_compute", feature = "served_project_authority"))]
-    let (compute_factory, compute_coordinator, compute_bridge) = match prepared_compute {
+    let (compute_factory, mut compute_coordinator, compute_bridge) = match prepared_compute {
         Some(prepared) => (
             Some(prepared.factory),
             Some(prepared.coordinator),
@@ -1395,6 +1413,21 @@ fn build_document_repl_runtime_for_document(
         ),
         None => (None, None, None),
     };
+
+    #[cfg(not(all(feature = "browser_compute", feature = "served_project_authority")))]
+    let mut compute_coordinator = None;
+    if compute_coordinator.is_none() {
+        if let Some(boundary) = result_boundary {
+            let mut compiler = document_planning_compiler(bootstrap, &candidate_document)?
+                .with_retained_result_boundary(boundary);
+            compute_coordinator = Some(
+                compiler
+                    .compile_canonical_interactive_root(SourceRequest::new(&source.root_specifier))?
+                    .into_parts()
+                    .0,
+            );
+        }
+    }
 
     let mut builder = runtime_builder_with_factories(
         Some(events),
@@ -1461,17 +1494,15 @@ fn build_document_repl_runtime_for_document(
             paths: vec!["line".to_string()],
         })
         .build()?;
+    let has_document_result = result_boundary.is_some();
     Ok(DocumentRuntimeCandidate {
         runtime,
-        has_document_result: document_result.is_some(),
+        has_document_result,
         #[cfg(feature = "browser_compute")]
         pointer: candidate_pointer,
-        #[cfg(all(feature = "browser_compute", feature = "served_project_authority"))]
         coordinator: compute_coordinator,
         #[cfg(all(feature = "browser_compute", feature = "served_project_authority"))]
         compute: compute_bridge,
-        #[cfg(all(feature = "browser_compute", not(feature = "served_project_authority")))]
-        coordinator: None,
         #[cfg(all(feature = "browser_compute", not(feature = "served_project_authority")))]
         compute: None,
         #[cfg(feature = "browser_host_scene")]
@@ -1483,6 +1514,7 @@ fn build_document_repl_runtime_for_document(
 /// inserting one canonical runtime-only capture at the original document boundary.
 /// Console overlays remain after that boundary and cannot replace the fixed
 /// document Output pane.
+#[cfg(test)]
 fn runtime_document(
     source: &WasmDocumentBootstrap,
     candidate: &SourceDocument,
@@ -1531,15 +1563,13 @@ fn runtime_document(
             document
         }
     };
-    let base_document = retain_provenance(
-        SourceDocument::parse_resolved(
-            "runtime:interactive",
-            Revision(candidate.source().revision().0),
-            base,
-            ParseConfig::default(),
-        )
-        .map_err(|error| document_runtime_error(format!("invalid browser source: {error:?}")))?,
-    );
+    // Both possible bases are already retained canonical documents: either the
+    // accepted candidate itself or the authored document before console input.
+    let base_document = retain_provenance(if base == candidate_source {
+        candidate.clone()
+    } else {
+        source.document_base()
+    });
     if CanonicalSourceFrontend
         .root_statement_nodes(&base_document.document())
         .map_err(|error| document_runtime_error(error.to_string()))?
@@ -1889,8 +1919,16 @@ mod document {
                 ));
             }
             runtime
-                .program_output_id()
-                .map(|output| u64::from(output.0))
+                .published_outputs()
+                .into_iter()
+                .find_map(|(output, name)| {
+                    (name == "document:captured-result").then_some(u64::from(output.0))
+                })
+                .or_else(|| {
+                    runtime
+                        .program_output_id()
+                        .map(|output| u64::from(output.0))
+                })
         } else if active.len() == source.len() + 1 {
             let index = capture_output_index(&source, &active).ok_or_else(|| {
                 document_runtime_error(
@@ -4474,7 +4512,11 @@ fn required_path_strings(source: &str) -> mech_core::MResult<Vec<String>> {
     Ok(paths)
 }
 pub(super) fn browser_runtime_builder() -> RuntimeBuilder {
-    RuntimeBuilder::new().function_catalog(mech_stdlib::source_catalog())
+    #[cfg(feature = "browser_compute")]
+    let catalog = mech_stdlib::source_native_plan_catalog();
+    #[cfg(not(feature = "browser_compute"))]
+    let catalog = mech_stdlib::source_catalog();
+    RuntimeBuilder::new().function_catalog(catalog)
 }
 
 fn runtime_builder_with_factories(

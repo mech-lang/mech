@@ -4,9 +4,9 @@ use std::path::PathBuf;
 use crate::document::parser::canonical::parse_canonical_document_rule_for_test;
 use crate::document::parser::rules;
 use crate::document::{
-    compact_debug_tree, parse_canonical_document, reconstruct_source, validate_lossless, AstNode,
-    CodeBlockSyntax, DocumentId, DocumentSyntax, ParseConfig, ParseLimits, RecursiveSyntaxNode,
-    Revision, SyntaxKind, SyntaxNode, TextSnapshot,
+    AstNode, CodeBlockSyntax, DocumentId, DocumentSyntax, ParseConfig, ParseLimits,
+    RecursiveSyntaxNode, Revision, SyntaxKind, SyntaxNode, TextSnapshot, compact_debug_tree,
+    parse_canonical_document, reconstruct_source, validate_lossless,
 };
 
 fn repository_root() -> PathBuf {
@@ -318,10 +318,12 @@ fn mismatched_fence_is_lossless_and_diagnostic() {
         .expect("mismatched fence must retain typed code-block structure");
     assert_eq!(fence.delimiters().len(), 2);
     let document = DocumentSyntax::cast(snapshot.syntax()).unwrap();
-    assert!(document
-        .missing_tokens()
-        .iter()
-        .any(|token| token.kind() == SyntaxKind::GraveCodeBlockSigil));
+    assert!(
+        document
+            .missing_tokens()
+            .iter()
+            .any(|token| token.kind() == SyntaxKind::GraveCodeBlockSigil)
+    );
 }
 
 #[test]
@@ -460,18 +462,22 @@ fn distinctive_document_openers_recover_required_closers() {
     let inline = parse_canonical_document(source("Text {{x := 1}\n"), ParseConfig::default());
     assert!(!inline.is_strictly_clean());
     assert!(find(inline.syntax(), SyntaxKind::InlineMechCode).is_some());
-    assert!(inline
-        .diagnostics
-        .iter()
-        .any(|diagnostic| { diagnostic.code.as_str() == "syntax/missing-inline-mech-closer" }));
+    assert!(
+        inline
+            .diagnostics
+            .iter()
+            .any(|diagnostic| { diagnostic.code.as_str() == "syntax/missing-inline-mech-closer" })
+    );
 
     let empty_inline = parse_canonical_document(source("Text {{"), ParseConfig::default());
     assert!(!empty_inline.is_strictly_clean());
     assert!(find(empty_inline.syntax(), SyntaxKind::InlineMechCode).is_some());
-    assert!(empty_inline
-        .diagnostics
-        .iter()
-        .any(|diagnostic| { diagnostic.code.as_str() == "syntax/missing-inline-mech-body" }));
+    assert!(
+        empty_inline
+            .diagnostics
+            .iter()
+            .any(|diagnostic| { diagnostic.code.as_str() == "syntax/missing-inline-mech-body" })
+    );
 
     for text in ["```", "```mech"] {
         let fence = parse_canonical_document(source(text), ParseConfig::default());

@@ -58,6 +58,7 @@ enum Frame {
 
 pub(crate) struct Continuation {
     frames: Vec<Frame>,
+    initial: Option<RuleId>,
     result: bool,
     raw_range: Option<TextRange>,
     pub work: u64,
@@ -65,7 +66,8 @@ pub(crate) struct Continuation {
 impl Continuation {
     pub fn new(rule: RuleId) -> Self {
         Self {
-            frames: alloc::vec![Frame::Call(rule)],
+            frames: Vec::new(),
+            initial: Some(rule),
             result: false,
             raw_range: None,
             work: 0,
@@ -141,15 +143,40 @@ impl Continuation {
         self.push(Frame::Unless(parser.checkpoint(), rule));
         self.choice(excluded);
     }
-    fn call(&mut self, parser: &mut Parser<'_>, rule: RuleId) {
-        if !supports(rule) {
+    fn call(
+        &mut self,
+        parser: &mut Parser<'_>,
+        rule: RuleId,
+        final_input: bool,
+        allowance: &mut u64,
+    ) {
+        #[cfg(test)]
+        let optimize = !parser.state.reference_lexical;
+        #[cfg(not(test))]
+        let optimize = true;
+        let fixed = fixed_terminal_spec(rule);
+        if optimize
+            && final_input
+            && parser.state.events.len() + parser.state.open_markers.len() + 512
+                < parser.state.config.limits.max_events as usize
+            && impossible_prefix(rule, parser.cursor().byte(), fixed)
+        {
+            self.result = false;
+            return;
+        }
+        if optimize && final_input && sealed::parse(parser, rule, fixed, allowance, &mut self.work)
+        {
+            self.result = true;
+            return;
+        }
+        if fixed.is_none() && !NON_FIXED_RULES.contains(&rule) {
             self.result = false;
             return;
         }
         let checkpoint = parser.checkpoint();
         parser.state.rules.push_canonical(rule);
         self.push(Frame::Exit(checkpoint));
-        if let Some(spec) = fixed_terminal_spec(rule) {
+        if let Some(spec) = fixed {
             self.push(Frame::Fixed(spec));
             return;
         }
@@ -251,6 +278,18 @@ impl Continuation {
         final_input: bool,
         allowance: &mut u64,
     ) -> Progress {
+        if let Some(rule) = self.initial {
+            if !final_input && parser.is_halted() {
+                return Progress::Limited;
+            }
+            if *allowance == 0 {
+                return Progress::NeedsProcessing;
+            }
+            self.initial = None;
+            *allowance -= 1;
+            self.work += 1;
+            self.call(parser, rule, final_input, allowance);
+        }
         while !self.frames.is_empty() {
             // Stop before unwinding markers can publish a resource remainder
             // against temporary EOF. The stream owner seals accepted input and
@@ -274,7 +313,7 @@ impl Continuation {
                 self.work += 1;
             }
             match frame {
-                Frame::Call(rule) => self.call(parser, rule),
+                Frame::Call(rule) => self.call(parser, rule, final_input, allowance),
                 Frame::Exit(checkpoint) => {
                     parser.state.rules.truncate(checkpoint.rule_depth);
                     if !self.result {
@@ -607,6 +646,7 @@ impl Continuation {
 
 #[cfg(test)]
 mod tests {
+    use super::super::super::terminal_spec::FIXED_TERMINALS;
     use super::*;
     use crate::document::parser::LexicalMode;
     use crate::document::{DocumentId, IdGenerator, ParseConfig, Revision, TextSnapshot};
@@ -619,6 +659,16 @@ mod tests {
         allowance_size: u64,
         fuel: u64,
     ) -> (bool, TextSize, String, crate::document::ParseStats, u64) {
+        run_mode(rule, text, chunks, allowance_size, fuel, false)
+    }
+    fn run_mode(
+        rule: RuleId,
+        text: &str,
+        chunks: &[&str],
+        allowance_size: u64,
+        fuel: u64,
+        reference: bool,
+    ) -> (bool, TextSize, String, crate::document::ParseStats, u64) {
         let mut source = TextSnapshot::new(DocumentId(826), Revision(0), "").unwrap();
         let mut ids = IdGenerator::new();
         let mut config = ParseConfig::default();
@@ -629,6 +679,7 @@ mod tests {
             config,
             &mut ids,
         );
+        parser.state.reference_lexical = reference;
         let wrapper = parser.start();
         let mut state = parser.suspend();
         let mut continuation = Continuation::new(rule);
@@ -683,6 +734,83 @@ mod tests {
             output.stats,
             continuation.work,
         )
+    }
+
+    #[test]
+    fn optimized_lexical_execution_matches_the_reference_vm() {
+        fn sealed(
+            rule: RuleId,
+            text: &str,
+            fuel: u64,
+            events: u32,
+            reference: bool,
+        ) -> (bool, TextSize, String, String, crate::document::ParseStats) {
+            let source = TextSnapshot::new(DocumentId(826), Revision(0), text).unwrap();
+            let mut ids = IdGenerator::new();
+            let mut config = ParseConfig::default();
+            config.limits.fuel = fuel;
+            config.limits.max_events = events;
+            let mut parser = Parser::new(
+                &source,
+                LexicalMode::CanonicalSourceFragment,
+                config,
+                &mut ids,
+            );
+            parser.state.reference_lexical = reference;
+            let wrapper = parser.start();
+            let mut continuation = Continuation::new(rule);
+            let mut allowance = u64::MAX;
+            let result = match continuation.advance(&mut parser, true, &mut allowance) {
+                Progress::Complete(result) => result,
+                _ => panic!("sealed input with unlimited allowance must complete"),
+            };
+            let end = parser.offset();
+            wrapper.complete(&mut parser, SyntaxKind::Document);
+            let output = parser.finish();
+            (
+                result,
+                end,
+                alloc::format!("{:?}", output.events),
+                alloc::format!("{:?}", output.diagnostics),
+                output.stats,
+            )
+        }
+        let mut inputs = alloc::vec![
+            String::from("  \t\r\nx"),
+            String::from("e\u{301}x"),
+            String::from("é💡"),
+            String::from("ab--x"),
+            String::from("1_2_3_"),
+            String::from("hello\tworld"),
+            String::from("\r\n"),
+            "a".repeat(1024),
+            " ".repeat(1024),
+            "1_".repeat(128),
+        ];
+        for byte in 0..=127_u8 {
+            inputs.push(alloc::format!("{}x", byte as char));
+            inputs.push(alloc::format!("{}\u{301}x", byte as char));
+        }
+        for rule in FIXED_TERMINALS
+            .iter()
+            .map(|spec| spec.rule)
+            .chain(NON_FIXED_RULES.iter().copied())
+        {
+            for text in &inputs {
+                for fuel in [0, 1, 2, 16, u64::MAX] {
+                    let optimized = sealed(rule, text, fuel, 1_000_000, false);
+                    let reference = sealed(rule, text, fuel, 1_000_000, true);
+                    assert_eq!(optimized, reference, "{rule:?} {text:?}, fuel {fuel}",);
+                }
+                for events in [7, 17, 64] {
+                    assert_eq!(
+                        sealed(rule, text, u64::MAX, events, false),
+                        sealed(rule, text, u64::MAX, events, true),
+                        "{rule:?} {text:?}, event limit {events}",
+                    );
+                }
+            }
+        }
     }
 
     #[test]

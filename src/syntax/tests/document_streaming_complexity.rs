@@ -28,11 +28,15 @@ fn resident_ekf_source_keeps_lookup_work_and_journal_copying_bounded() {
     validate_lossless(&snapshot.root, &snapshot.source).unwrap();
     let work = stream.work();
     assert!(
-        work.source_lookup_steps <= source.len() as u64 * 1000,
+        work.parser_work <= source.len() as u64 * 1000,
+        "closed-input parsing repeated speculative work: {work:?}",
+    );
+    assert!(
+        work.source_lookup_steps <= source.len() as u64 * 512,
         "failed terminal alternatives repeated Unicode scans: {work:?}",
     );
     assert!(
-        work.journal_nodes_allocated <= work.journal_mutations * 3,
+        work.journal_nodes_allocated <= work.journal_mutations,
         "unobserved journal paths were copied on each mutation: {work:?}",
     );
 }

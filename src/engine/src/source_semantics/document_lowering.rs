@@ -215,6 +215,7 @@ pub(super) fn compile_document_with_catalog_and_resources(
 /// The units and source anchors belong to the same snapshot as the compute program.
 /// Completing this plan does not parse, repartition, or execute the source again.
 pub struct CanonicalCoordinatorPlan {
+    retained_result_boundary: Option<mech_syntax::document::TextSize>,
     owner: DocumentScopeId,
     anchor: SourceSemanticAnchor,
     nominal_origin: Option<CanonicalNominalPath>,
@@ -257,7 +258,7 @@ impl CanonicalCoordinatorPlan {
             &BTreeSet::new(),
             &BTreeSet::new(),
             &self.resolved_source_modules,
-            None,
+            self.retained_result_boundary,
             Some(self.nominal_declarations),
         )
     }
@@ -273,6 +274,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
     external_inputs: &BTreeSet<String>,
     retained_outputs: &BTreeSet<String>,
     resolved_source_modules: &BTreeSet<String>,
+    retained_result_boundary: Option<mech_syntax::document::TextSize>,
 ) -> Result<CanonicalMixedSourcePreparation, SourceSemanticError> {
     let anchor = SourceSemanticAnchor::for_node(document.syntax());
     let sections = document
@@ -336,6 +338,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
     collect_document_units(region.syntax(), &mut region_units, &mut compute_exports)?;
     collect_shared_units(&region_units, &mut coordinator_units);
     let coordinator = CanonicalCoordinatorPlan {
+        retained_result_boundary,
         owner: document.scope_id(),
         anchor,
         nominal_origin: nominal_origin.cloned(),

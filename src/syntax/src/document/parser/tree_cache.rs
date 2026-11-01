@@ -256,6 +256,15 @@ impl TreeCache {
             if self.active.is_none() {
                 *allowance -= 1;
                 let request = self.queue.pop_front().expect("pending cache request");
+                // A child owner can reject an alternative before yielding to
+                // this cache. Its retired marker must never be materialized.
+                if request.end > current.len()
+                    || !matches!(current.get(request.start),
+                        Some(Event::Start { identity: Some(identity), .. })
+                            if *identity == request.identity)
+                {
+                    continue;
+                }
                 let sink = Sink::new(request.events.clone(), request.start, request.end);
                 self.active = Some((request, sink));
             }
@@ -296,5 +305,42 @@ impl Parser<'_> {
         let complete = cache.advance(self.source, &mut self.state.events, self.ids, allowance);
         self.state.tree_cache = cache;
         complete
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::document::{DocumentId, Revision};
+
+    #[test]
+    fn rejected_marker_requests_are_discarded_before_materialization() {
+        let source = TextSnapshot::new(DocumentId(829), Revision(0), "a").unwrap();
+        let mut ids = IdGenerator::new();
+        let mut parser = Parser::new(
+            &source,
+            LexicalMode::CanonicalSourceFragment,
+            ParseConfig::default(),
+            &mut ids,
+        );
+        let checkpoint = parser.checkpoint();
+        let rejected = parser.start();
+        parser.bump_bytes_token(1, SyntaxKind::Alpha).unwrap();
+        rejected.complete(&mut parser, SyntaxKind::Identifier);
+        parser.rewind(checkpoint);
+        let retained = parser.start();
+        parser.bump_bytes_token(1, SyntaxKind::Alpha).unwrap();
+        retained.complete(&mut parser, SyntaxKind::Identifier);
+        let mut allowance = u64::MAX;
+        assert!(parser.advance_tree_cache(&mut allowance));
+        assert_eq!(parser.state.tree_cache.total_work().nodes, 1);
+        let Event::Start {
+            cached: Some(cached),
+            ..
+        } = &parser.state.events[0]
+        else {
+            panic!("the retained marker must be available to streaming views");
+        };
+        crate::document::validate_lossless(&cached.node, &source).unwrap();
     }
 }
