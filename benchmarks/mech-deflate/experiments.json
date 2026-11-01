@@ -5229,6 +5229,17 @@
           "files": 43,
           "asset_id": 698786551,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-candidate-owners-a895c265250a.tar.gz"
+        },
+        {
+          "event": "pricing-before-golden",
+          "source_revision": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
+          "asset": "r92-pricing-before-golden-3381a20924e8.tar.gz",
+          "sha256": "3381a20924e89201e06e38245e91d25ae10a9d1b416b018cf5da5facd250669a",
+          "manifest_sha256": "826be8281e2bca283cb2b374ce6d0b15ff8575be0f9039400414464e99c4d3f1",
+          "bytes": 71669,
+          "files": 40,
+          "asset_id": 698786656,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-pricing-before-golden-3381a20924e8.tar.gz"
         }
       ],
       "retained_production": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
