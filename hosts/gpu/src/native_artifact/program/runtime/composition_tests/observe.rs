@@ -161,7 +161,7 @@ pub(super) fn run_restored(
     run_descriptor(jit, &descriptor, args, outputs, policy, memory)
 }
 
-fn run_descriptor(
+pub(super) fn run_descriptor(
     jit: &JitProgramArtifact,
     descriptor: &NativeProgramDescriptor,
     args: &[Value],
