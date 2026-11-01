@@ -4356,6 +4356,17 @@
           "files": 68,
           "asset_id": 698543479,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-frame-allocation-02c18c2de9d2.tar.gz"
+        },
+        {
+          "event": "isolated-profile-final",
+          "source_revision": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+          "asset": "r90-isolated-profile-final-0643a77f564c.tar.gz",
+          "sha256": "0643a77f564c60cf8317de9d6ca40f882f1f1d06860c81b9bf98fa3ba1059bd6",
+          "manifest_sha256": "e24012040283743bf2506ca859e50a0307587676f8caaadb149545ddc0b9d667",
+          "bytes": 266237,
+          "files": 45,
+          "asset_id": 698544157,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-isolated-profile-final-0643a77f564c.tar.gz"
         }
       ]
     }
