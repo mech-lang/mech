@@ -6215,6 +6215,17 @@
           "files": 65,
           "asset_id": 699313446,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r97-frame-allocation-866d25ab1859.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "20f002f4ff5ff2186888b7efc8517261756b425e",
+          "asset": "r97-closure-56351e555086.tar.gz",
+          "sha256": "56351e555086d186497ad77f6778d2a5329002357aa31dffda08552bfc11983a",
+          "manifest_sha256": "890d8097dd2bfd46fc8be7400dcaccb203ba4ff1cedd5bab17348dd0003fe62c",
+          "bytes": 4562755,
+          "files": 214,
+          "asset_id": 699325834,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r97-closure-56351e555086.tar.gz"
         }
       ]
     }
