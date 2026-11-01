@@ -1610,6 +1610,17 @@
           "files": 56,
           "asset_id": 697749049,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-final-units-de3e5edaf0d3.tar.gz"
+        },
+        {
+          "event": "final-checks",
+          "source_revision": "c0b5999f434650df9ff7fef6dc2c9f4c40d4fc42",
+          "asset": "r83-final-checks-12c49a673810.tar.gz",
+          "sha256": "12c49a673810ffc0b7e70e185f335d46753012cfc8daf17c9b84a2b1d9716e9d",
+          "manifest_sha256": "68ad859931a0c5061326a3f2b087914a3595fa5f8eb409ba9f629af1247623a3",
+          "bytes": 59263,
+          "files": 72,
+          "asset_id": 697749088,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-final-checks-12c49a673810.tar.gz"
         }
       ],
       "analysis": {
