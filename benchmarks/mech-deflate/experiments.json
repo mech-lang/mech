@@ -4544,7 +4544,7 @@
       "base": "c24b50e52a8988d7272012b64bf5cdb53adc0a6e",
       "production": "31d77c7c1f5fdeecc9095664af19092353df06b3",
       "compiler_source": "31d77c7c1f5fdeecc9095664af19092353df06b3",
-      "decision": "under measurement",
+      "decision": "retain whole-piece variant: elapsed -2.996705%, instructions -3.595859%, cycles -3.852070%; requests/peak unchanged, bytes/code/stack adverse",
       "events": [
         {
           "event": "pinned-inputs",
@@ -4759,8 +4759,88 @@
           "files": 68,
           "asset_id": 698610698,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r91-final-checks-186b815069c1.tar.gz"
+        },
+        {
+          "event": "baseline-overlap",
+          "source_revision": "31d77c7c1f5fdeecc9095664af19092353df06b3",
+          "asset": "r91-baseline-overlap-a0fd9d4a08b3.tar.gz",
+          "sha256": "a0fd9d4a08b3c153832f551b6a0969a85b5fe33e29ef8f9412efdc603bd39c22",
+          "manifest_sha256": "b0b2450256f45a2fcea2c60f65e799689f0a99a9f514ba4d92be4a0f957a9381",
+          "bytes": 60795,
+          "files": 38,
+          "asset_id": 698629012,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r91-baseline-overlap-a0fd9d4a08b3.tar.gz"
         }
-      ]
+      ],
+      "retained_production": "31d77c7c1f5fdeecc9095664af19092353df06b3",
+      "ci_coverage": "fb6989d87f9d1c57c6594c8b91bf75fa44e4bf51",
+      "versions": [
+        137,
+        98,
+        38,
+        14
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "a05a96fb63037297ef6f17cc97fa2373fa596ea9976f4d9403f5d9bb444c28b1",
+          "profile-numbers.json": "3999165cd0fc0f7c71bd3126475facb698e8638cc450749fea527c6d3ab58b89",
+          "scorecard.json": "efefb8896939cfe8a6db6f387e736a328aa49a59c9119d3e20ca686dd21d1be8",
+          "validation.json": "18c3d065352d471be84ee255ac9458fcc1119655a63212a62ab68bed6c56c4cd"
+        }
+      },
+      "validation": {
+        "architecture_checks": 15,
+        "current_required_failures": [],
+        "frame_cases": 8,
+        "inherited": "unchanged coherent selected-operation Core/Engine dependencies; GPU-only release, optimized units and runtime-only config retain warnings-as-errors. No fresh full math or minimal/no_std rebuild claim.",
+        "linked_existing_cases": 16,
+        "linked_prefix_cases": 12,
+        "new_tests": "current owners on each recursive visit; actual paid-scalar native refusal and readiness restoration; one-short scalar funding, refused native entry, ordered original error, unchanged publication, aliases, cleanup and recovery; original/decoded/restored",
+        "overlapping_selections": [
+          {
+            "executed": 350,
+            "receipt": "final-units/runtime.json"
+          },
+          {
+            "executed": 33,
+            "receipt": "final-units/work-memory-values.json"
+          },
+          {
+            "executed": 59,
+            "receipt": "final-units/ci.json"
+          },
+          {
+            "executed": 1,
+            "receipt": "final-units/image.json"
+          },
+          {
+            "executed": 236,
+            "receipt": "qualification/components.json"
+          },
+          {
+            "executed": 8,
+            "receipt": "qualification/composition.json"
+          },
+          {
+            "executed": 1,
+            "receipt": "qualification/path-mechanism.json"
+          }
+        ],
+        "passed": true,
+        "preparation_failures": "baseline intended selection failures; an over-specific partial-overlap fixture assertion and a test shape-tape type inference error corrected; a unit-driver call before its binary existed corrected. No production failure remains.",
+        "scalar_cases": 12,
+        "scalar_max_ratio": 1.0111033791781596,
+        "skipped": "Hosted CI cancelled by instruction; large/full-corpus timing and giant complete knucleotide. Raw Object stays local; numerical replay verifies build hash pins and retrieved descriptor/metadata, not independent Object-binary retrieval. PR stays draft.",
+        "unchanged_scalar_gate": 1.05,
+        "versions": [
+          137,
+          98,
+          38,
+          14
+        ],
+        "workflow_tests": 132
+      }
     }
   },
   "repository": "mech-lang/mech",
