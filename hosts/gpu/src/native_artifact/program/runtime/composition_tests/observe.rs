@@ -13,6 +13,7 @@ pub(super) struct Counts {
     pub admits: BTreeMap<u64, u64>,
     pub helpers: BTreeMap<(u64, u64), u64>,
     pub selected: u64,
+    pub selected_sites: BTreeMap<u64, u64>,
 }
 thread_local! {
     static COUNTS: RefCell<Counts> = RefCell::new(Counts::default());
@@ -47,7 +48,13 @@ unsafe extern "C" fn helper(
     {
         // SAFETY: the original helper has successfully filled its live result.
         let selected = unsafe { *out };
-        COUNTS.with(|v| v.borrow_mut().selected += u64::from(selected == 1));
+        COUNTS.with(|v| {
+            let mut counts = v.borrow_mut();
+            counts.selected += u64::from(selected == 1);
+            if selected == 1 {
+                *counts.selected_sites.entry(site).or_default() += 1;
+            }
+        });
     }
     status
 }
@@ -61,10 +68,38 @@ pub(super) fn run(
     Result<NativeProgramExecutionReport, NativeProgramExecutionError>,
     Counts,
 ) {
+    run_descriptor(jit, jit.descriptor(), args, outputs, policy, memory)
+}
+
+pub(super) fn run_restored(
+    jit: &JitProgramArtifact,
+    args: &[Value],
+    outputs: &mut [Option<Value>],
+    policy: NativeProgramExecutionLimits,
+    memory: &ManagedMemoryBudget,
+) -> (
+    Result<NativeProgramExecutionReport, NativeProgramExecutionError>,
+    Counts,
+) {
+    let descriptor = super::super::tests::restore_admitted_helper_descriptor(jit);
+    run_descriptor(jit, &descriptor, args, outputs, policy, memory)
+}
+
+fn run_descriptor(
+    jit: &JitProgramArtifact,
+    descriptor: &NativeProgramDescriptor,
+    args: &[Value],
+    outputs: &mut [Option<Value>],
+    policy: NativeProgramExecutionLimits,
+    memory: &ManagedMemoryBudget,
+) -> (
+    Result<NativeProgramExecutionReport, NativeProgramExecutionError>,
+    Counts,
+) {
     COUNTS.with(|v| *v.borrow_mut() = Counts::default());
     let entry = jit.test_checked_entry();
     let result = execute(
-        jit.descriptor(),
+        descriptor,
         |raw: *mut Frame| {
             // SAFETY: execute retains the initialized frame throughout this call;
             // only the callback fields change and are restored before returning.

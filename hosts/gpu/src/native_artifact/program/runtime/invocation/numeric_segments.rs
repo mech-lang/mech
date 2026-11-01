@@ -50,7 +50,9 @@ impl Invocation<'_, '_, '_> {
             .ok_or_else(|| invalid("parent numeric proof missing"))?;
         if args != [0; 3]
             || self.closed_tail.is_some()
-            || self.parent_continuation.is_pending()
+            || (self.worker.is_none()
+                && self.parent_continuation.current()
+                    != parent.suspended_child.map(|child| child as usize))
             || self.window_region.is_some()
             || self.state.control.previous != Some(site as u32)
             || self.state.control.current != Some(parent.iteration)

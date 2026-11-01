@@ -1,4 +1,5 @@
-//! One scalar, invocation-local child edge. It never holds an owner or fuel.
+//! One scalar, invocation-local innermost child edge. Immutable loop ancestry
+//! describes suspended outer edges; this marker never holds an owner or fuel.
 use super::{Error, Invocation, invalid};
 use std::num::NonZeroUsize;
 
@@ -8,13 +9,16 @@ impl Pending {
     pub(super) fn is_pending(&self) -> bool {
         self.0.is_some()
     }
-    fn arm(&mut self, parent: usize) -> Result<(), Error> {
-        if self.is_pending() {
-            return Err(invalid("parent child edge already pending"));
+    pub(super) fn current(&self) -> Option<usize> {
+        self.0.map(|value| value.get() - 1)
+    }
+    fn arm(&mut self, child: usize, outer: Option<usize>) -> Result<(), Error> {
+        if self.current() != outer {
+            return Err(invalid("parent child edge differs from active ancestor"));
         }
         self.0 = Some(
             NonZeroUsize::new(
-                parent
+                child
                     .checked_add(1)
                     .ok_or_else(|| invalid("parent child edge overflows"))?,
             )
@@ -22,14 +26,22 @@ impl Pending {
         );
         Ok(())
     }
-    fn complete(&mut self, parent: usize) -> Result<(), Error> {
+    fn complete(&mut self, child: usize, outer: Option<usize>) -> Result<(), Error> {
         let current = self
             .0
             .take()
             .ok_or_else(|| invalid("child completion without pending parent edge"))?;
-        if current.get() - 1 != parent {
+        if current.get() - 1 != child {
             return Err(invalid("child completion differs from pending parent edge"));
         }
+        self.0 = outer
+            .map(|outer| {
+                outer
+                    .checked_add(1)
+                    .and_then(NonZeroUsize::new)
+                    .ok_or_else(|| invalid("parent child ancestor overflows"))
+            })
+            .transpose()?;
         Ok(())
     }
 }
@@ -39,17 +51,22 @@ impl Invocation<'_, '_, '_> {
         if self.worker.is_some() {
             return Ok(());
         }
-        if let Some((parent, true)) = self.descriptor.metadata().compositions.boundary(site) {
-            let proof = &self.descriptor.metadata().compositions.parents[parent];
-            if self.state.control.current != Some(proof.child)
-                || self.progress[proof.child as usize * 2 + 1] != 1
+        let metadata = self.descriptor.metadata();
+        if let Some((boundary, true)) = metadata.compositions.boundary(site) {
+            let (parent, child) = metadata
+                .compositions
+                .child_boundary(boundary)
+                .ok_or_else(|| invalid("parent child boundary is outside its inventory"))?;
+            if self.state.control.current != Some(child.child)
+                || self.progress[child.child as usize * 2 + 1] != child.initialize_progress
                 || self.closed_tail.is_some()
             {
                 return Err(invalid(
                     "pending parent edge outside admitted child initialization",
                 ));
             }
-            self.parent_continuation.arm(parent)?;
+            let outer = parent.suspended_child.map(|child| child as usize);
+            self.parent_continuation.arm(child.child as usize, outer)?;
         }
         Ok(())
     }
@@ -62,22 +79,28 @@ impl Invocation<'_, '_, '_> {
         if self.worker.is_some() {
             return Ok(());
         }
-        if let Some((parent, false)) =
+        let metadata = self.descriptor.metadata();
+        if let Some((boundary, false)) =
             previous.and_then(|p| self.descriptor.metadata().compositions.boundary(p as usize))
         {
-            let proof = &self.descriptor.metadata().compositions.parents[parent];
+            let (parent, child) = metadata
+                .compositions
+                .child_boundary(boundary)
+                .ok_or_else(|| invalid("completed child boundary is outside its inventory"))?;
             // visit already requires the previous exit's action to be consumed.
             // Only its original successor may consume this exact child call.
-            if site != u64::from(proof.child_successor)
-                || self.state.control.current != Some(proof.iteration)
-                || self.progress[proof.child as usize * 2 + 1] != 0
+            if site != u64::from(child.child_successor)
+                || self.state.control.current != Some(parent.iteration)
+                || self.progress[child.child as usize * 2 + 1] != 0
                 || self.closed_tail.is_some()
             {
                 return Err(invalid(
                     "parent continuation before exact completed child exit",
                 ));
             }
-            self.parent_continuation.complete(parent)?;
+            let outer = parent.suspended_child.map(|child| child as usize);
+            self.parent_continuation
+                .complete(child.child as usize, outer)?;
         }
         if self.state.control.completed && self.parent_continuation.is_pending() {
             return Err(invalid("completion with pending parent child edge"));
@@ -90,14 +113,19 @@ impl Invocation<'_, '_, '_> {
 fn parent_continuation_is_single_use_and_matches_the_exact_child_edge() {
     assert_eq!(std::mem::size_of::<Pending>(), std::mem::size_of::<usize>());
     let mut state = Pending::default();
-    assert!(state.complete(3).is_err());
-    state.arm(3).unwrap();
-    assert!(state.arm(3).is_err());
-    assert!(state.complete(4).is_err());
+    assert!(state.complete(3, None).is_err());
+    state.arm(3, None).unwrap();
+    assert!(state.arm(3, None).is_err());
+    assert!(state.complete(4, None).is_err());
     assert!(!state.is_pending());
-    state.arm(3).unwrap();
-    state.complete(3).unwrap();
-    assert!(state.complete(3).is_err());
-    state.arm(4).unwrap();
-    state.complete(4).unwrap();
+    state.arm(3, None).unwrap();
+    state.arm(7, Some(3)).unwrap();
+    assert_eq!(state.current(), Some(7));
+    assert!(state.arm(9, Some(3)).is_err());
+    state.complete(7, Some(3)).unwrap();
+    assert_eq!(state.current(), Some(3));
+    state.complete(3, None).unwrap();
+    assert!(state.complete(3, None).is_err());
+    state.arm(4, None).unwrap();
+    state.complete(4, None).unwrap();
 }

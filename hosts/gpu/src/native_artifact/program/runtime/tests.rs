@@ -1584,7 +1584,7 @@ fn execute_observed_admitted_helper(
     (outcome, rows)
 }
 
-fn restore_admitted_helper_descriptor(
+pub(super) fn restore_admitted_helper_descriptor(
     jit: &crate::native_artifact::JitProgramArtifact,
 ) -> NativeProgramDescriptor {
     let image = jit.descriptor().encode_build_owned_image().unwrap();

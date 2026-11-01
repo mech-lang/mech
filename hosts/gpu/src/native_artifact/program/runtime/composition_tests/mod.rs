@@ -171,7 +171,7 @@ fn composition_counts_real_child_initializations_and_completed_empty_calls() {
             assert_eq!(
                 actual
                     .admits
-                    .get(&u64::from(proof.child_initialize))
+                    .get(&u64::from(proof.children[0].child_initialize))
                     .copied()
                     .unwrap_or(0),
                 expected_calls
@@ -179,7 +179,7 @@ fn composition_counts_real_child_initializations_and_completed_empty_calls() {
             assert_eq!(
                 actual
                     .admits
-                    .get(&u64::from(proof.child_exit))
+                    .get(&u64::from(proof.children[0].child_exit))
                     .copied()
                     .unwrap_or(0),
                 expected_calls
@@ -191,7 +191,7 @@ fn composition_counts_real_child_initializations_and_completed_empty_calls() {
                     .closed_tails
                     .regions
                     .iter()
-                    .find(|r| r.iteration == proof.child)
+                    .find(|r| r.iteration == proof.children[0].child)
                     .unwrap()
                     .numeric
                     .as_ref()
@@ -262,11 +262,15 @@ fn composition_native_parent_resumes_after_an_ordinary_empty_child() {
         assert!(counts.selected > 0);
         let proof = &jit.descriptor().metadata().compositions.parents[0];
         let mech_engine::native_artifact::NativeControlLoop::Tail(child) =
-            &jit.descriptor().plan().iterations()[proof.child as usize]
+            &jit.descriptor().plan().iterations()[proof.children[0].child as usize]
         else {
             panic!()
         };
-        for site in [proof.child_initialize, child.body(), proof.child_exit] {
+        for site in [
+            proof.children[0].child_initialize,
+            child.body(),
+            proof.children[0].child_exit,
+        ] {
             assert_eq!(
                 counts.admits.get(&u64::from(site)).copied().unwrap_or(0),
                 3,
