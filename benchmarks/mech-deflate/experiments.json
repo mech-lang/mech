@@ -4726,6 +4726,17 @@
           "files": 52,
           "asset_id": 698604988,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r91-qualification-638f3f2d266c.tar.gz"
+        },
+        {
+          "event": "linked-multi",
+          "source_revision": "31d77c7c1f5fdeecc9095664af19092353df06b3",
+          "asset": "r91-linked-multi-fe050509bcdf.tar.gz",
+          "sha256": "fe050509bcdf75c00d1cd470330822e8d43ff67733d61c974d4cc6f66bfd34e8",
+          "manifest_sha256": "b122481e2f1e8fe47039e1af565b3a23d54d3736e054fd52c5916463b80c72f9",
+          "bytes": 92583,
+          "files": 49,
+          "asset_id": 698605251,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r91-linked-multi-fe050509bcdf.tar.gz"
         }
       ]
     }
