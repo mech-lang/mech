@@ -258,7 +258,10 @@ fn selected_template(
 // every piece reacquires owners/views and images reconstruct the same inventory.
 // IR134 retains structural unsigned-array projections as proved aliases inside
 // parent pieces. Images reconstruct current-source and exact exit-use proofs.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 134;
+// IR135 separates immutable managed owner transport from typed numeric views.
+// Matrix-of-records/String carriers keep exact source/exit proofs and ordinary
+// child boundaries. Numeric factories still admit each actual unsigned view.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 135;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
