@@ -4197,6 +4197,17 @@
           "files": 39,
           "asset_id": 698517785,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-outlined-bounds-8806cb9573e0.tar.gz"
+        },
+        {
+          "event": "outlined-source",
+          "source_revision": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+          "asset": "r90-outlined-source-8387f7068dbc.tar.gz",
+          "sha256": "8387f7068dbc2385e33ad0bad6a9f61587bcd589db6391a928b7563af27fb850",
+          "manifest_sha256": "a6c8816bafc3443ed781a15fb922e52f12d584b05190f3b43c85295d4f57f860",
+          "bytes": 4357662,
+          "files": 44,
+          "asset_id": 698517844,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-outlined-source-8387f7068dbc.tar.gz"
         }
       ]
     }
