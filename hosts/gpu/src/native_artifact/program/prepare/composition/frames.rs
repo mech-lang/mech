@@ -245,14 +245,17 @@ impl Layout {
                 sources.push(origin);
                 sources.len() - 1
             };
-            let call_result = facts.definition_sites(value.get())?.iter().any(|definition| {
-                definition.site().is_some_and(|site| {
-                    matches!(
-                        plan.blocks()[site as usize].action(),
-                        Action::LibraryCall { .. }
-                    )
-                })
-            });
+            let call_result = facts
+                .definition_sites(value.get())?
+                .iter()
+                .any(|definition| {
+                    definition.site().is_some_and(|site| {
+                        matches!(
+                            plan.blocks()[site as usize].action(),
+                            Action::LibraryCall { .. }
+                        )
+                    })
+                });
             aliases.push(Alias {
                 value,
                 source,
