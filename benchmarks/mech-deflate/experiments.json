@@ -1878,6 +1878,17 @@
           "files": 57,
           "asset_id": 697798971,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r84-initial-6b1e4b50f451.tar.gz"
+        },
+        {
+          "event": "primary-reference",
+          "source_revision": "10f5bbbe94fed1b1887e9f4794f48ec90b13b154",
+          "asset": "r84-primary-reference-3a07e9e66df7.tar.gz",
+          "sha256": "3a07e9e66df7e16895dae3fb4a923f26562f74b4b10c1dfaee0e3a8b070ea8a3",
+          "manifest_sha256": "0896c2a0dae7644b072256e494dd7b2e1a02fba0272457c550125f5a8d71a5ba",
+          "bytes": 130861,
+          "files": 30,
+          "asset_id": 697799386,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r84-primary-reference-3a07e9e66df7.tar.gz"
         }
       ]
     }
