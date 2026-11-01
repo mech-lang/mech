@@ -5795,6 +5795,17 @@
           "files": 48,
           "asset_id": 698947497,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r94-reference-profile-cb2133e6107e.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "c35698030a4e89f6d4548af1b17762ec737cd427",
+          "asset": "r94-scalar-controls-c17eac549ada.tar.gz",
+          "sha256": "c17eac549ada0c0db91faa4957713be1fd02f4a10ae2485dd4ec24d3e93c1ec2",
+          "manifest_sha256": "bc9b155f7000b52379bea99f6f304aba53d9ba27e19159115db96df1a3a08a35",
+          "bytes": 78445,
+          "files": 99,
+          "asset_id": 698954786,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r94-scalar-controls-c17eac549ada.tar.gz"
         }
       ]
     }
