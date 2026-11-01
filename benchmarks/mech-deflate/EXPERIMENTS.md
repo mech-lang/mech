@@ -452,3 +452,26 @@ preserved: an unused-parameter fixture was pruned canonically, and a consumer
 driver initially used the wrong source argument position. Both are corrected.
 Four numerical reports replay with `replay-round --round 95`; native binaries
 stay local. See [current status](../../docs/design/native-compression-status.md).
+
+## R96: calibrated runtime instruction windows
+
+Production stays `67a7c88e745092264a5a735933dd95cf48fc5446`; base published head
+`5848625e2e3ade9d85c4db7f3380b20bae230559`. No new primary elapsed claim: R95
+remains 8.783390× reference. Fresh uninstrumented 32-call hardware cohorts measure
+27,795,070.5/1,364,372 instructions (20.372062×) and 7,791,610/923,787.5 cycles
+(8.434418×). Separate current heap and primary receipts remain R95's.
+
+Isolated fixed-storage diagnostics preserve the exact Object/image/dependencies.
+Known-loop and zero-work controls calibrate inside/outside counter overhead.
+9,801 callbacks execute per call without nested callbacks. Reconstructed
+27,946,307 instructions differ +0.544114% from the uninstrumented cohort: estimates,
+not an exact uninstrumented per-function ledger. Generated entry exclusive is
+4.98M; numeric parent entry/exit5.50M, library4.59M, admission3.14M, moves3.75M.
+Nested windows separately divide entry checks, view preparation and exit cleanup.
+76 observed complete Mech calls preserve bytes, inflate, aliases, capacity13 and
+zero final managed memory. No production semantics or allowances change.
+
+Retain this investigation to guide scratch/source-home transport and child-frame
+work. The numerical report replays through `replay-round --round 96`, verifying
+one external packet/74 files with byte-identical output. Diagnostic driver and
+packaging preparation failures remain archived. Native binaries stay local.

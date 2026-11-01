@@ -151,10 +151,34 @@ separate. Mech compresses eight bytes itself and returns
 output capacity13 clear/rebind and `evaluate_into` timing stay pinned. Physical
 public-output backing still changes; physical output reuse is unproved.
 
-The smaller allocation count did not materially change elapsed time. The next
-bounded investigation is a calibrated instruction breakdown of setup, generated
-execution, callback classes and cleanup. Current samples are insufficient to
-assign the whole-call instruction excess to individual helpers. Use that ledger
-to choose the next structural runtime change. Private scratch/source-local
-transport, child-seed placement, alias proof and outlining remain separately
-measured candidates; completed optimizations are not proposed as new work.
+R96 adds a calibrated instruction investigation without changing production.
+Fresh separate hardware cohorts measure 27,795,070.5 Mech instructions versus
+1,364,372 reference instructions (20.372062×), and 7,791,610 versus 923,787.5
+cycles (8.434418×). The primary elapsed result remains R95's 8.783390×; diagnostic
+elapsed is excluded. Process RSS is 319,995,904 versus 14,761,984B and includes
+prepared code, libraries and harness state; it is not compressor payload memory.
+
+Fixed, nonallocating windows on isolated GPU copies use the unchanged Object,
+image and coherent dependency graph. Known four-instruction loops calibrate the
+counter; zero-work controls measure each boundary's overhead. There are 9,801
+callbacks per complete call, with maximum callback nesting one. The reconstructed
+27,946,307-instruction estimate differs from the fresh uninstrumented cohort by
+0.544114%; per-category estimates are not an exact partition of that cohort.
+Generated entry exclusive is about 4.98M; parent numeric entry/exit 5.50M, library
+callbacks 4.59M, ordinary admission 3.14M and move/admitted-move callbacks 3.75M.
+These include useful algorithm and validation work, not wholly removable overhead.
+
+More intrusive, separately calibrated windows subdivide all 938 selected parent
+entries/exits: current source checks 0.456M, alias/funding preflight 0.515M,
+stale-frame/retirement checks 0.628M, argument/frame-bound preparation 0.507M,
+typed views 0.308M; exit retirement 0.711M and synchronization 0.764M. Do not add
+these nested estimates to the outer ledger or infer instruction shares from CPU
+samples. All 76 observed Mech calls preserve exact output, independent inflate,
+aliases, capacity13 and zero final managed memory. No new semantic test-suite
+claim is needed for unchanged production. Driver preparation failures are retained.
+
+The 74-file external packet and pure numerical replay reproduce the complete
+ledger without compilation or compression. Native binaries remain local. The
+next bounded compiler experiment separates private scratch SSA from source-local
+homes while retaining cold-bailout source state, full argument capacity and finite
+prices. Child-seed placement, alias proof and outlining remain separate targets.
