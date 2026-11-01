@@ -2061,6 +2061,17 @@
             "improving_blocks": 63,
             "adverse_blocks": 1
           }
+        },
+        {
+          "event": "confirm-reference",
+          "source_revision": "490ede99581fd233edd4c05d14f74641c9ae45c9",
+          "asset": "r85-confirm-reference-27aaf2b35f74.tar.gz",
+          "sha256": "27aaf2b35f749eac559535e5242f571b0601344209195291c11177c37f5af3ff",
+          "manifest_sha256": "d786c727a6571e23d89f3e448354d4dab821ef062b476b21a37ca41719951780",
+          "bytes": 135002,
+          "files": 36,
+          "asset_id": 697853123,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r85-confirm-reference-27aaf2b35f74.tar.gz"
         }
       ]
     }
