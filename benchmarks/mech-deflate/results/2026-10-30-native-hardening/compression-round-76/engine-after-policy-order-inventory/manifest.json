@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-11-01T00:41:47.258409+00:00",
+  "head": "201499d07b3ecec6f6611b1b3858065ab2466cc9",
+  "files": [
+    {
+      "path": "engine-after/budget.rs",
+      "sha256": "9c53b89f688ca6a7b8767c7da31b01fbc6d96e0859f68f8e1cfb4934c4db1b15",
+      "bytes": 172252
+    },
+    {
+      "path": "engine-after/policy-order-inventory.json",
+      "sha256": "e785f297d5fe5edc5cd429bd3d0b8ca1142f9628dae639365a801b949d011c0c",
+      "bytes": 12755
+    },
+    {
+      "path": "engine-after/policy-order-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-after/policy-order-inventory.stdout",
+      "sha256": "cefd4243c5adb25c464f48768a0063cc336a83963babd7a0205cc47469263f4a",
+      "bytes": 144
+    },
+    {
+      "path": "engine-focused.py",
+      "sha256": "c78a2702f976b1cdb7ce8bf4715b6e03edd0b574bd3c93f1956df308f9b33473",
+      "bytes": 5571
+    }
+  ]
+}
