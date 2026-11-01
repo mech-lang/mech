@@ -5601,6 +5601,17 @@
           "files": 45,
           "asset_id": 698895978,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r93-pinned-inputs-9692951e1d7f.tar.gz"
+        },
+        {
+          "event": "callback-census",
+          "source_revision": "9075392a71ae8ad078c6428e0a827ee57de4e5f7",
+          "asset": "r93-callback-census-3ece295b5982.tar.gz",
+          "sha256": "3ece295b59820f95724fddcdbaa37515c980952893f30e634209336ef34947a8",
+          "manifest_sha256": "cfd1024f8774f8d76289edba26559a6cbbdd174064274b8680abd1f95bc466fa",
+          "bytes": 2862089,
+          "files": 815,
+          "asset_id": 698896222,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r93-callback-census-3ece295b5982.tar.gz"
         }
       ]
     }
