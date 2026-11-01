@@ -3642,6 +3642,17 @@
           "files": 37,
           "asset_id": 698209732,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-witness-build-type-error-1c4c6a3fcd80.tar.gz"
+        },
+        {
+          "event": "qualification",
+          "source_revision": "460c9cb748fc377c1cbcfd57565a5373de05de14",
+          "asset": "r89-qualification-3a70c6a5b3fd.tar.gz",
+          "sha256": "3a70c6a5b3fd0a70a23304bfa3c093af1b0d29196f3bd04a71131409a01a831f",
+          "manifest_sha256": "126995e9fb674d0618e42acb053ed1938181f1a9f569618360e24223f19afc91",
+          "bytes": 107341,
+          "files": 55,
+          "asset_id": 698209783,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-qualification-3a70c6a5b3fd.tar.gz"
         }
       ]
     }
