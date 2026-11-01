@@ -5185,6 +5185,17 @@
           "files": 44,
           "asset_id": 698786125,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-inventory-da930890d7e6.tar.gz"
+        },
+        {
+          "event": "minimal",
+          "source_revision": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
+          "asset": "r92-minimal-ca38e49fd192.tar.gz",
+          "sha256": "ca38e49fd1928f33011d8e86071635edb17adff2c1558ef24e90985573c8e49a",
+          "manifest_sha256": "a04b55c0e0a51f04b437065381f44d678c9a062da2b5af60173e9462f8d473dd",
+          "bytes": 58600,
+          "files": 43,
+          "asset_id": 698786232,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-minimal-ca38e49fd192.tar.gz"
         }
       ],
       "retained_production": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
