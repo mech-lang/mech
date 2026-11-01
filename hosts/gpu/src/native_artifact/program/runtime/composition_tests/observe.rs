@@ -13,10 +13,13 @@ pub(super) struct Counts {
     pub admits: BTreeMap<u64, u64>,
     pub helpers: BTreeMap<(u64, u64), u64>,
     pub selected: u64,
+    pub poisoned_exit_words: usize,
+    pub exit_modes: BTreeMap<u64, u64>,
     pub selected_sites: BTreeMap<u64, u64>,
 }
 thread_local! {
     static COUNTS: RefCell<Counts> = RefCell::new(Counts::default());
+    static POISON_UNUSED_EXIT: Cell<bool> = const { Cell::new(false) };
     static ADMIT: Cell<Option<Admit>> = const { Cell::new(None) };
     static HELPER: Cell<Option<Helper>> = const { Cell::new(None) };
 }
@@ -41,6 +44,41 @@ unsafe extern "C" fn helper(
         COUNTS.with(|v| *v.borrow_mut().admits.entry(site).or_default() += 1);
     }
     COUNTS.with(|v| *v.borrow_mut().helpers.entry((site, op)).or_default() += 1);
+    if op == GlobalHelper::NumericSegmentEnd.raw() && POISON_UNUSED_EXIT.with(Cell::get) {
+        // SAFETY: the synchronous checked entry retains this same Invocation;
+        // no reference crosses the delegated helper or generated continuation.
+        let ctx = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
+        let metadata = ctx.descriptor.metadata();
+        let segment = metadata
+            .compositions
+            .parents
+            .iter()
+            .flat_map(|p| &p.segments)
+            .find(|segment| {
+                metadata
+                    .compositions
+                    .entry(segment.entry as usize)
+                    .is_some()
+                    && segment.sites.contains(&(site as u32))
+            })
+            .unwrap();
+        let proof = segment.numeric.as_ref().unwrap();
+        let used = proof
+            .exit_argument_words(segment.frame_plan.as_ref().unwrap())
+            .unwrap();
+        let omitted = (0..proof.words)
+            .filter(|word| used.binary_search(word).is_err())
+            .collect::<Vec<_>>();
+        for &word in &omitted {
+            ctx.write_borrowed_word(word, u64::MAX - word as u64)
+                .unwrap();
+        }
+        COUNTS.with(|v| {
+            let mut counts = v.borrow_mut();
+            counts.poisoned_exit_words += omitted.len();
+            *counts.exit_modes.entry(a).or_default() += 1;
+        });
+    }
     // SAFETY: unchanged arguments and result pointer from the checked entry.
     let status = unsafe { HELPER.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
     if op == crate::native_artifact::program::protocol::GlobalHelper::NumericSegmentBegin.raw()
@@ -126,4 +164,25 @@ fn run_descriptor(
         result,
         COUNTS.with(|v| std::mem::take(&mut *v.borrow_mut())),
     )
+}
+
+pub(super) fn run_with_unused_exit_poison(
+    jit: &JitProgramArtifact,
+    args: &[Value],
+    outputs: &mut [Option<Value>],
+    policy: NativeProgramExecutionLimits,
+    memory: &ManagedMemoryBudget,
+    restored: bool,
+) -> (
+    Result<NativeProgramExecutionReport, NativeProgramExecutionError>,
+    Counts,
+) {
+    POISON_UNUSED_EXIT.with(|v| v.set(true));
+    let result = if restored {
+        run_restored(jit, args, outputs, policy, memory)
+    } else {
+        run(jit, args, outputs, policy, memory)
+    };
+    POISON_UNUSED_EXIT.with(|v| v.set(false));
+    result
 }
