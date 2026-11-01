@@ -1,194 +1,154 @@
 # Native compression: current status
 
-Raw observations, diagnostic code, full censuses and rejected experiments remain
-outside source. This status, the maintained harness and the
-[compact evidence index](../../benchmarks/mech-deflate/EXPERIMENTS.md) retain the
-review and reproduction path.
+Raw observations, diagnostic drivers, full censuses and rejected experiments stay
+outside source. The maintained harness and [compact evidence index](../../benchmarks/mech-deflate/experiments.json)
+retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/973)
+stays draft pending green CI and clean review. Publication CI is cancelled by
+instruction; no green hosted-CI claim is made.
 
-## R98: measured adjacent-seed experiment rejected
+## R99: retire finished ordinary collection sources
 
-The retained compiler remains R97. R98 built an immediately consumed child seed
-in empty carrier storage while preserving disjoint lanes and the original
-pack/initialize admission and charge order. The mechanism ran at all 112 reached
-packs across 89 static sites (543 top-level field visits), but the complete call
-became slower. The candidate was reverted in `77b095453`; compiler/runtime
-source is byte-identical to the published R97 checkpoint.
+Complete eight-byte level-12 compression improves from **8.470875× to 8.363107×
+Roc's time**, **1.272220% less elapsed time** against the fresh matched baseline.
+All four pairs improve; 61 descriptive blocks improve and three worsen. All
+adverse observations remain. There are 3,968 primary and 3,984 total observations.
+Blocks within a pair are descriptive, not independent experiments. The reference
+is 0.289ms; Mech is 2.448083→2.416938ms. The target is 1×. Larger-input throughput
+remains unestablished. R97's historical 8.378794× used a different reference clock;
+it is not the baseline of this comparison.
 
-Fresh matched eight-byte level-12 elapsed is **8.469835×→8.506293×** the fresh
-0.288ms reference: **2.4393125→2.4498125ms, +0.430449%**. One of four pairs
-improves; three worsen. There are 3,968 primary/3,984 total observations,
-21 improving and 43 adverse descriptive blocks. All observations remain.
-The older R97 8.378794× ratio used a different reference clock; it is not the
-baseline of this candidate comparison.
-
-Separate 32-call hardware cohorts retire **27,388,332→27,647,635 instructions
-(+0.946764%)** and **7,717,172→7,729,106 cycles (+0.154642%)**. Requests 5,153,
-requested 97,997,834B, reallocations 162 and incremental peak live 17,782,744 B
-are unchanged. Generated text 14,604,696 B and entry stack 135,728 B are unchanged.
-Fresh 695-call serial sample windows and the exact before/after frame-state
-traces are retained separately; samples are not instruction attribution.
-
-Candidate source: `1b32af2c7093aeef1c44bbd7e17f048ac71ab593`, based on published
-`b2b5dc28dc3dc0392cb8dbfa5874ffaff7375dff`. Candidate IR/work/private ABI/MBC:
-142/99/38/14. Retained source returns to R97's 141/99/38/14. The candidate passed
-runtime 355, work/memory 33, native CI 64 and image 1. The committed rebuild's unit
-binary is byte-identical to the tested precommit binary. The original/decoded
-record control compares direct and ordinary Copy paths with the same executable,
-including changed Boolean words, errors, aliases, prior publication and retry.
-An initial unused-variable build failure was fixed before measurement.
-The rejected candidate did not receive another component, linked, scalar or full
-architecture sweep. R97's retained qualification below remains applicable;
-no new green hosted CI claim is made.
-
-Twelve hash-indexed evidence packets contain commands, raw observations,
-diagnostic drivers, descriptors and portable numerical replay. An initial
-automatic archive-upload rejection was resolved by explicit user approval of the
-exact twelve archives and sidecars. Native Objects and binaries remain local.
-The compact index records the publication and rejection decision.
-
-The next bounded target is finite ordinary collection-source lifetime. A fresh
-read-only R97 trace at tree update 1038 finds arena aliases 882 and 908 before
-retirement, and 882 alone afterward, in each of four visits. No private frame
-owner matches. Each 262,144-entry U16 update allocates a different 524,288-byte
-backing, accounting for 2,097,152 initialized bytes copied. The collection-source
-role remains opaque in old-value analysis even after the branch and its shape
-finalization. This diagnosis is not yet a lifetime fix or a new performance win.
-
-## Current measured checkpoint: R97
-
-Keeping private parent scratch in SSA improves complete pinned level-12
-compression of eight bytes from **8.498282× to 8.378794× Roc's time**: **1.406025%
-less elapsed time** against the fresh matched baseline. All four pairs improve;
-55 descriptive blocks improve and nine worsen. All adverse observations remain.
-The target is 1×. Larger-input throughput remains unestablished.
-
-| Metric | Fresh R95 compiler baseline | R97 |
+| Metric | Fresh retained R97 baseline | R99 |
 |---|---:|---:|
-| Primary elapsed |2.473000ms|2.438229ms|
-| Elapsed / fresh 0.291ms reference |8.498282×|8.378794×|
-| Instructions, separate 32-call cohort |27,796,101|27,387,432.5 (−1.470237%)|
-| Cycles, same hardware cohort |7,823,060.5|7,689,146.5 (−1.71%)|
-| Requests including reallocations |5,153|unchanged|
-| Requested allocator bytes |97,997,834|unchanged|
+| Instructions, separate 32-call cohort |27,389,660.5|27,947,877 (+2.038056%)|
+| Cycles, same hardware cohort |7,732,271.5|7,622,493 (-1.419745%)|
+| Allocation requests including reallocations |5,153|5,149|
+| Requested allocator bytes |97,997,834|95,900,682 (−2,097,152B)|
 | Incremental peak live allocator bytes |17,782,744|unchanged|
-| Generated compressor text |15,641,476B|14,604,696B (−1,036,780B)|
-| Machine entry stack |143,424B|135,728B (−7,696B)|
+| Reallocations |162|unchanged|
+| Generated compressor text |14,604,696B|byte-identical|
+| Machine entry stack |135,728B|unchanged|
 
-Four prepared pairs contain 3,968 primary/3,984 total observations. Blocks within
-a pair are descriptive, not independent experiments. No significance or larger
-throughput claim. Compare matched cohorts: R95's historical 8.783390× ratio used
-another reference clock and baseline, so its difference from 8.378794× is not the
-measured compiler gain.
+The independent reference hardware cohort retires 1,364,372 instructions and
+921,002 cycles. Reference allocation measurements retain 95 requests,
+9,021,923 requested bytes and 9,257,328 incremental peak live bytes. These are
+observed implementation results, not semantic minima. Hardware, heap, samples
+and primary elapsed are separate cohorts. Requested capacity is not initialized
+copy volume or live memory. Peak live heap does not improve. Hardware-cohort RSS
+is 319,963,136→319,700,992B and footprint is 228,968,128→228,919,040B; these include
+prepared code, libraries and harness state, rather than just compressor buffers.
 
-Primary elapsed, hardware, heap, scalar controls, fixed counters and samples are
-separate cohorts, never multiplied. All 162 reallocations and the large-request
-histogram stay equal. Requested capacity is not copying or live memory.
-Hardware-cohort RSS rises 319,864,832→320,372,736B and physical footprint
-228,853,504→229,394,176B. These include prepared code, libraries and harness state;
-there is no whole-process memory improvement claim.
+## What changed
 
-Compiler/source: **`20f002f4ff5ff2186888b7efc8517261756b425e`**.
-Measured baseline compiler: `67a7c88e745092264a5a735933dd95cf48fc5446`.
-Source parent after R96 diagnosis: `38cf6825c575f046ca8b365f2d3c28108f303b49`.
-Prior published head: `5848625e2e3ade9d85c4db7f3380b20bae230559`.
+The Engine's old-value graph query previously treated CollectionSource as opaque,
+so an ordinary completed comprehension could keep its input alive indefinitely.
+The query now places ordinary materialized source reads at initialization,
+header, body, latch, exit and collection finish. Finish matters: shape-preserving
+finalization reads the arena source after the generator releases its source pin.
+The same graph traversal preserves backedges, fresh definitions and read/write
+order. Unsupported consumers remain conservative. Private-frame eligibility and
+Core's current same-account/exclusive ownership check remain in place.
+
+The real tree trace finds aliases 882 and 908 before each update. Previously 882
+remained after retirement and forced a copy. After the fix neither remains; all
+four 262,144-entry U16 updates reuse their 524,288-byte backing. Four complete
+calls verify all 16 updates. This establishes exactly **2,097,152 initialized
+bytes no longer copied per complete call**. The trace's arena scan is diagnostic
+only; no production owner scan, source-field specialization or algorithm change
+is introduced. The selected site's static inventory grows 45→47, adding 882 and
+1857. Later readers and externally retained aliases still prevent unsafe reuse.
+
+An independent Mach-O section audit finds the entire generated text byte-identical:
+SHA-256 `65099c20101e43aaa1e355c0758a40316fc7ed6aa3ad358b1e0b5c8ba07020d4`.
+Object/image identity and ownership metadata change. IR143 reconstructs the
+new proof independently on image restoration; rejected R98's IR142 is not reused.
+IR/work/private ABI/MBC are **143/99/38/14**, scalar ABI1. Strict prior-image
+rejection remains. Price formulas are unchanged; actual logical work falls
+42,449,879,781→42,410,605,541 as already-accounted copying/ownership paths change.
+Logical work is not a hardware instruction count.
+
+## Instruction tradeoff and fresh profiles
+
+Whole-call instructions increase by 558,216.5 despite lower elapsed time and
+cycles. This adverse result remains explicit; R99 is retained for its elapsed
+and physical-copy reduction, without an instruction-reduction claim.
+
+Separate nonnested windows around the four tree helpers observe raw instruction
+totals 473,722→87,110.5 and cycle totals 209,935→32,007.5 per full call, over 32 calls
+per subject. Empty read-pair calibration averages 5,006 instructions; raw window
+totals include counter overhead and are not subtracted from the uninstrumented
+whole-call cohort. No complete per-function instruction ledger is established.
+The whole-call increase remains unattributed outside that bounded diagnostic.
+
+Fresh serial profiles cover 695 complete calls per subject and 1,302/1,293
+exclusive sample weights. Copy/move ancestry falls 41/1,302→15/1,293 weights;
+frame-action ancestry is 131/1,302→113/1,293. These are overlapping ancestry unions
+of CPU samples, not retired instructions or exact timer fractions. Runtime
+helper, admission, native-segment and cleanup costs remain prominent.
+
+## Revisions and qualification
+
+Published parent: `64705927265fa331735ef39cdb3185471015054e`.
+Retained comparison compiler: `20f002f4ff5ff2186888b7efc8517261756b425e`.
+Regression/CI inventory: `bdf3df43a2c0d5dc9483ae3ade9793f85de2a0f7`.
+Compiler fix: **`5c219ed220879b05ee147bdf5d3f85680311eae2`**.
+Test-only final-root publication correction: `348101721a2870ab2f503508491e7d3395c94b32`.
 Stack base: `eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`.
-[PR #973](https://github.com/mech-lang/mech/pull/973) stays draft pending green CI
-and clean review. Publication CI is cancelled by instruction.
 
-## What changed and why it is safe
+The new regression fails against the retained Engine at missing source eligibility,
+then passes after the fix. Original/decoded artifacts and original/restored images
+cover selected/unselected mapping, current arguments, a later published reader,
+external input aliases, unused failing results, assertion/index error order,
+unchanged prior publication and retained accounting through failure and retry.
+Final managed bytes/nodes remain zero.
 
-Selected numeric parent pieces used to load checked helper arguments, store them
-in private local homes, reload those homes into SSA, then spill them again at
-every exit. The runtime exit consumes the explicit argument exports, not those
-private local homes.
-
-The common `Words` implementation now accepts direct initial SSA inputs. Parent
-pieces load scratch from the already checked current arguments and spill only
-ordinary source homes. Every original source slot, including operands needed
-by cold checked-read retry and arithmetic failure, is still saved. Argument
-ordinals, the full capacity guard, checked operations, retirement flags, owner
-loans, finite funding, decline and publication paths remain unchanged.
-
-All 484 selected pieces retain their source sites, frontiers, register-word
-population and exit argument sets/stores. Static emitted IR omits 4,868 entry
-home stores, 4,868 reloads and 200,397 exit home stores: exactly 210,133 fewer
-instructions. These are IR counts, not hardware instruction counts.
-
-Fixed counters observe the same 938 selected entries/exits, no declines and the
-same 528 library helpers. Those visits omit 11,090 entry and 11,090 exit home
-stores in the IR. Actual ARM64 excerpts at the retained cold exit 699→700 show
-20→0 private-home STRs, while the one retirement argument and full guard remain.
-That particular exit is cold in the eight-byte run; no hot-path percentage is
-inferred from its excerpt.
-
-Regression controls poison private homes before selected entry and verify that
-success, checked-read retry and arithmetic exits leave them untouched. Original,
-decoded and restored execution retain aliases, prior publication and cleanup
-through success→failure→retry. Restoring only the old exit spills in an isolated
-copy makes this control fail; production source remains unchanged by that
-negative control.
-
-IR/work/private ABI/MBC are **141/99/38/14**, scalar ABI1. IR141 distinguishes the
-new code generation and retains strict old-image rejection. Capacity declarations
-and conservative prices remain unchanged. Full logical work is 42,449,879,781
-and Huffman work 88,531,834; neither is a hardware instruction count. Existing
-unused-constant, canonical-shape and exit-argument improvements remain retained.
-
-## Qualification and evidence
-
-Passing current selections: runtime 355, work/memory 33, native CI 64, image 1,
+Passing current selections: runtime356, work/memory33, native CI65, image1,
 unchanged components236, connected8, path1, linked16+12+12, scalar12, frame8,
-workflow132 and architecture/type/memory15. The scalar gate remains 1.05;
-maximum observed ratio is 1.002924, with equal pure-scalar requests/bytes and zero
-loop allocation slope. Exclusive and aliased frame request/byte counts remain
-unchanged. No expected output or component allowance is changed.
+workflow132 and architecture/type/memory15. CI's guarded inventory is updated
+64→65 and actually lists and executes all65. Scalar allowance stays 1.05; the
+maximum ratio is 1.018146. Pure scalar requests/bytes stay equal and loop allocation
+slope remains zero. Frame request/byte/work counts do not increase. Component
+expected values and allowances are unchanged.
 
-Current optimized GPU and unit roots use warnings-as-errors, the unchanged
-selected feature/operation profile, and the coherent R95 Core/dependency graph.
-There is no full math-library rebuild or fresh all-features dependency graph.
-R95's Core376, actual Rust consumers102 and minimal no_std qualification remain
-historical coverage; they were not rerun for this GPU-only change. One validation
-driver initially requested the wrong work-test receipt filename; corrected
-selection executes all33. Its preparation failure is retained. The intentionally
-failing old-spill control is separate from passing production qualification.
-No required current local failure remains.
+Engine, Stdlib, Compute, Runtime and GPU are coherently rebuilt with the same
+selected operations, optimized flags and warnings-as-errors. Core, Syntax,
+Bytecode, math libraries and external dependencies stay frozen. No fresh Core,
+full-math, minimal-dependency or all-features graph qualification is claimed.
+The existing expensive knucleotide-body runtime exclusion remains explicit.
+Formatting and architecture/catalog/type/memory checks pass.
 
-Every primary timing packet was committed. R96/R97 evidence is externally
-hash-indexed; pure `replay-round` reconstructs the numerical reports without
-compilation or compression. Native binaries stay local after the earlier
-automatic upload rejection. Descriptors, excerpts and hashes do not establish
-independent retrieval of native Object bytes. Full/all-features hosted CI,
-large-input timing and independent Object retrieval remain skipped.
+Preserved preparation failures: an initial diagnostic reporting prefix of16 was
+insufficient for45 static candidates and was replaced by a complete inventory;
+this was no production resource denial. An initial narrow-arithmetic witness was
+outside the retained lowerable subset and was corrected to the compressor's wide
+arithmetic/cast pattern. The new test's initial publication expectation was
+corrected to the language's final-root rule. No existing component golden changes.
+No current correctness/test failure remains; the instruction increase remains
+an adverse performance result.
 
-Fresh serial profiles cover 695 complete calls per subject (1,330/1,314 sample
-weights). Retirement, admission and frame helpers remain prominent. Samples are
-not retired instructions or exact timer fractions. R96's separately calibrated
-pre-change windows attributed about4.98M instructions to generated entry and
-5.50M to parent entry/exit; the reconstructed total differed 0.544114% from its
-uninstrumented cohort. Those are diagnostic estimates for that earlier source,
-not a post-R97 per-function instruction partition.
-
-## Fidelity and next bounded work
+## Fidelity, evidence and next bounded work
 
 Source SHA-256:
 `331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9`.
 Bytecode SHA-256:
 `a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7`.
 Level12 retains the 262144-entry U16 tree, 1500513-word U32 cache, 305257-entry U64
-path capacity, depth300, nice258 and original near-EOF rules. Search and skip
-remain separate. Algorithm, tables, source allocation sites, allocator and
-timing boundaries stay pinned.
+path capacity, depth300, nice258 and original near-EOF rules. Search and skip stay
+separate. Algorithm, tables, source allocation sites, allocator and evaluate_into
+timing stay pinned. Exact raw output is `[75,76,74,78,73,77,75,207,0,0]`, checked by
+independent inflate. Input aliases and output capacity13 clear/rebind remain.
+Physical public-output backing still changes; physical output reuse is not proved.
 
-Mech performs compression and returns
-`[75,76,74,78,73,77,75,207,0,0]`, checked by independent inflate. Input aliases,
-output capacity13 clear/rebind and `evaluate_into` timing remain. Final managed
-bytes/nodes are zero. Physical public-output backing still changes; this patch
-does not establish physical output reuse.
+Every measured cohort is sealed and committed. Fourteen uploaded evidence
+archives verify 1,032 file occurrences, 463 paths and two preserved multi-version
+paths. Fresh independent retrieval reproduces all four numerical reports
+byte-identically without compilation or compression. The initial automatic upload
+rejection was resolved by explicit authorization of evidence uploads. Native
+Objects and executables stay local; descriptor/excerpt/hash retrieval does not
+establish native-Object retrieval. No larger-input run is performed.
 
-Next, investigate the duplicate private seed-to-child-carrier handoff. A fresh
-inventory finds 89 current sites, 112 reached packs and 543 top-level operand
-visits, replacing the older 134/714 inventory. These are candidates, not a
-lifetime/consumption proof or promised saving. Establish the adjacent single-use
-witness, preserve pack-before-initialization errors and disjoint-lane cleanup,
-then measure the smallest general handoff change. Alias proof and numeric
-outlining remain separate experiments.
+Next, explain the remaining instruction cost using exact callback/ownership
+visits, remove the no-witness BoundCall clone, then stage immutable constructor
+binding/planning and prepare flat frame-transfer geometry. Current funding,
+values, error order and publication remain dynamic. The rejected R98 direct child
+seed experiment stays reverted; its 112 executed handoffs were slower and are
+not proposed again as unexplored work.
