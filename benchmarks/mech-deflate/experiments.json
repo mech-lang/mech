@@ -2353,6 +2353,17 @@
           "files": 415,
           "asset_id": 697886339,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r85-fill-census-fb5c6cc29ed4.tar.gz"
+        },
+        {
+          "event": "qualification",
+          "source_revision": "490ede99581fd233edd4c05d14f74641c9ae45c9",
+          "asset": "r85-qualification-36925b42d7f9.tar.gz",
+          "sha256": "36925b42d7f93e8e14f9eff318af967f1812982dc5f249f7ff2ee7d7dbfb19bd",
+          "manifest_sha256": "6c21558cf05559890d579c6dba3399991595924ef5e419f3de744eb59c38a4d1",
+          "bytes": 102683,
+          "files": 56,
+          "asset_id": 697886382,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r85-qualification-36925b42d7f9.tar.gz"
         }
       ],
       "analysis": {
