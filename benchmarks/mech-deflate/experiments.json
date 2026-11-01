@@ -2689,6 +2689,17 @@
           "files": 34,
           "asset_id": 697950156,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r87-inputs-71821ec55e14.tar.gz"
+        },
+        {
+          "event": "initial",
+          "source_revision": "c2b334feed4326a66ce1f69ca4bc99b0cbe41bb2",
+          "asset": "r87-initial-e9a317a1b8a2.tar.gz",
+          "sha256": "e9a317a1b8a29de33ba793d0dc4554380a9691460a1ce07282c67e24c62ea7e6",
+          "manifest_sha256": "41edff604d61bf0dbbaf6f63f7ee1a80223fde4e25b82058a7a41d49c8d4cfb3",
+          "bytes": 8337139,
+          "files": 59,
+          "asset_id": 697950361,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r87-initial-e9a317a1b8a2.tar.gz"
         }
       ]
     }
