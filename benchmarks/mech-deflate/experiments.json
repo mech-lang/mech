@@ -3972,6 +3972,17 @@
           "files": 38,
           "asset_id": 698451282,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-baseline-witness-a6705b460833.tar.gz"
+        },
+        {
+          "event": "failing-bounds-annotated",
+          "source_revision": "3444655203c554824153771782d3b81bf3cc1edc",
+          "asset": "r90-failing-bounds-annotated-01ea8ba60f47.tar.gz",
+          "sha256": "01ea8ba60f476912e7b31cb566e54746d5d4f65c0749c18bf66c27e08edfda68",
+          "manifest_sha256": "f02639e01283238bdf71734df6d9aaceb6de46a2326fdb069853fc51bf218f4b",
+          "bytes": 45674,
+          "files": 32,
+          "asset_id": 698451365,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-failing-bounds-annotated-01ea8ba60f47.tar.gz"
         }
       ]
     }
