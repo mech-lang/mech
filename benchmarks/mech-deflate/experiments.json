@@ -5773,6 +5773,17 @@
           "files": 82,
           "asset_id": 698940817,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r94-counters-77d6404827ce.tar.gz"
+        },
+        {
+          "event": "isolated-profile",
+          "source_revision": "c35698030a4e89f6d4548af1b17762ec737cd427",
+          "asset": "r94-isolated-profile-de142dc818ea.tar.gz",
+          "sha256": "de142dc818ea2551550487fe62349b9b87a2a813193c8d4b777cc44a4f3b1c7b",
+          "manifest_sha256": "1465650f1cf6606364862b72386cb6bf16ae24f7cd3522bde9d2243d2746324f",
+          "bytes": 270212,
+          "files": 52,
+          "asset_id": 698944537,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r94-isolated-profile-de142dc818ea.tar.gz"
         }
       ]
     }
