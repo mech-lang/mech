@@ -6387,6 +6387,17 @@
           "files": 47,
           "publication": "local-only; external archive upload rejected by automatic approval review",
           "local_archive": "/private/tmp/mech-child-seed-round98-20261101/archives/r98-seed-trace-after-8061ecf65051.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "1b32af2c7093aeef1c44bbd7e17f048ac71ab593",
+          "asset": "r98-closure-d5ae620b76f0.tar.gz",
+          "sha256": "d5ae620b76f06f12ae946b91ffa8d49d860649cdd62df1eb3c43131e41033854",
+          "manifest_sha256": "97985422392eb4e2f9029efc708f364292a479105ce5d3b7b0bd493c3f57d53d",
+          "bytes": 4411725,
+          "files": 60,
+          "publication": "local-only; external archive upload rejected by automatic approval review",
+          "local_archive": "/private/tmp/mech-child-seed-round98-20261101/archives/r98-closure-d5ae620b76f0.tar.gz"
         }
       ],
       "archive_publication": "local-only pending archive approval"
