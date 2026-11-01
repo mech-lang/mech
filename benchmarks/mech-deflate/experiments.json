@@ -6819,6 +6819,17 @@
           "files": 76,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-frame-allocation-17ce2bac40c3.tar.gz"
+        },
+        {
+          "event": "isolated-profile",
+          "source_revision": "bebe5a245d312796c630de76fc558fbcd2c2f2ff",
+          "asset": "r100-isolated-profile-b655eca5a356.tar.gz",
+          "sha256": "b655eca5a356fd3850ed23393395376ef4474acd108b91074370b7d724ec5149",
+          "manifest_sha256": "71b163db712e68b090585b69ca8fee1ee15d5efc828f40091cac4d4f51beda9e",
+          "bytes": 334139,
+          "files": 53,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-isolated-profile-b655eca5a356.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
