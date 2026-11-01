@@ -3482,7 +3482,7 @@
       "base": "21e3266e89d36d1224be050a4530625cf08f2ea2",
       "production": "460c9cb748fc377c1cbcfd57565a5373de05de14",
       "compiler_source": "460c9cb748fc377c1cbcfd57565a5373de05de14",
-      "decision": "under measurement",
+      "decision": "retain: elapsed -5.572531%, instructions -4.086419%, cycles -5.315683%; unchanged requests/bytes, incremental peak -12.805932%",
       "events": [
         {
           "event": "pinned-inputs",
@@ -3807,8 +3807,95 @@
           "files": 45,
           "asset_id": 698264458,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-analysis-90f83fad46d6.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "460c9cb748fc377c1cbcfd57565a5373de05de14",
+          "asset": "r89-closure-86a59bb81a67.tar.gz",
+          "sha256": "86a59bb81a6706472aa053d14db966d4d10881526ff55d09b032cc213bc4d8af",
+          "manifest_sha256": "76e403be9b1fea331d5b2fa5318652f478e7bf3b8c68f78bcd834bafa10ca25d",
+          "bytes": 77458,
+          "files": 43,
+          "asset_id": 698275914,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-closure-86a59bb81a67.tar.gz"
         }
-      ]
+      ],
+      "retained_production": "460c9cb748fc377c1cbcfd57565a5373de05de14",
+      "ci_coverage": "71c02cc89",
+      "formatting_correction": "64ed902f9",
+      "versions": [
+        136,
+        97,
+        38,
+        14
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "dd55b286129842c311a5f6864209174201510b2b91cf1a68fec4c0d7fa3d6b6e",
+          "profile-numbers.json": "ee31f264c3fee1ac17b4142f012a1654d18fa022ed40a413f8f7df3f5affd92c",
+          "scorecard.json": "08099a8970944d501bfe111e2f4adc0a80f99262342444bd47881dc75fbc7023",
+          "validation.json": "be60daa3bd5386db749aa312a1a70400a224f3807ae56e517a5ea7e2f4a3236a",
+          "opportunities.json": "9c8abd50be55559af2eee7f6818ff92cd273c01dce84e89b92f7a9e9c27bb067"
+        }
+      },
+      "validation": {
+        "architecture_checks": 15,
+        "current_required_failures": [],
+        "earlier_scalar_max_ratio": 1.0271538714467074,
+        "frame_cases": 8,
+        "inherited_validation": "Core/Budget/Engine dependency graph is unchanged and qualification inherited. Current GPU-only release, optimized tests and runtime-only feature cfg compile warnings-as-errors. No full math or fresh minimal/no_std graph build claim.",
+        "linked_existing_cases": 16,
+        "linked_named_cases": 14,
+        "overlapping_selections": [
+          {
+            "executed": 345,
+            "receipt": "final-units/runtime.json"
+          },
+          {
+            "executed": 33,
+            "receipt": "final-units/work-memory-values.json"
+          },
+          {
+            "executed": 51,
+            "receipt": "final-units/ci.json"
+          },
+          {
+            "executed": 1,
+            "receipt": "final-units/image.json"
+          },
+          {
+            "executed": 236,
+            "receipt": "qualification/components.json"
+          },
+          {
+            "executed": 8,
+            "receipt": "qualification/composition.json"
+          },
+          {
+            "executed": 1,
+            "receipt": "qualification/path-mechanism.json"
+          }
+        ],
+        "passed": true,
+        "preparation_failures": {
+          "diagnostic_driver": "invalid diff -w reflow predicate replaced by exact formatting of pinned candidate; no runtime change",
+          "introduced_formatting": "line reflow fixed in separate style commit; initial architecture8 failure and fresh fifteen passing checks retained",
+          "introduced_type_error": "fixed NativeMatchValue argument with .get() before source commit; failed build retained",
+          "overlapped_counters": "earlier hardware/control pass retained and explicitly excluded; serial repeats pass"
+        },
+        "scalar_cases": 12,
+        "scalar_max_ratio": 1.042987915407855,
+        "skipped": "Hosted CI cancelled by instruction; giant complete knucleotide and large/full-corpus timing. PR remains draft.",
+        "unchanged_scalar_gate": 1.05,
+        "versions": [
+          136,
+          97,
+          38,
+          14
+        ],
+        "workflow_tests": 132
+      }
     }
   },
   "repository": "mech-lang/mech",
