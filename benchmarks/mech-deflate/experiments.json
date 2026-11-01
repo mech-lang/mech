@@ -5590,6 +5590,17 @@
             "improving_blocks": 17,
             "adverse_blocks": 47
           }
+        },
+        {
+          "event": "pinned-inputs",
+          "source_revision": "9075392a71ae8ad078c6428e0a827ee57de4e5f7",
+          "asset": "r93-pinned-inputs-9692951e1d7f.tar.gz",
+          "sha256": "9692951e1d7f097a192e7e38bfa47b49b5e6d670e7a843cea9fff25af8fc2d02",
+          "manifest_sha256": "77c3c6ac4fde96e1dbf95cfe0502d828c94a5245678d4b6fb6ceadb0becca992",
+          "bytes": 4368617,
+          "files": 45,
+          "asset_id": 698895978,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r93-pinned-inputs-9692951e1d7f.tar.gz"
         }
       ]
     }
