@@ -4932,6 +4932,25 @@
         "verified_archives": 26,
         "verified_file_occurrences": 1919
       }
+    },
+    "92": {
+      "base": "fbf4c54a865e877f2026e7a825bab818889f628b",
+      "production": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
+      "compiler_source": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "pinned-inputs",
+          "source_revision": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
+          "asset": "r92-pinned-inputs-ff8a91a57575.tar.gz",
+          "sha256": "ff8a91a57575e6690844068257459e1f95ca9edf31e9e742a63f5c765db55ae1",
+          "manifest_sha256": "ad623c9614f7c66c4516910d3702e317c76c751c2aa4cb34ec40c08d76075d82",
+          "bytes": 4361284,
+          "files": 36,
+          "asset_id": 698725869,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-pinned-inputs-ff8a91a57575.tar.gz"
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",
