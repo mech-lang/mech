@@ -2408,6 +2408,17 @@
           "files": 68,
           "asset_id": 697886602,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r85-frame-allocation-b62a86da09d9.tar.gz"
+        },
+        {
+          "event": "resource-observation",
+          "source_revision": "490ede99581fd233edd4c05d14f74641c9ae45c9",
+          "asset": "r85-resource-observation-6bf37027dbbf.tar.gz",
+          "sha256": "6bf37027dbbf0d087ec87e9e4cd6ce49a7a6aa60c23323f1faa63ef34a2c64fb",
+          "manifest_sha256": "890c1be434b89211db1b423ec75d42dbd3978bfb0e98a2d91a1f349d512f42fd",
+          "bytes": 54364,
+          "files": 42,
+          "asset_id": 697886653,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r85-resource-observation-6bf37027dbbf.tar.gz"
         }
       ],
       "analysis": {
