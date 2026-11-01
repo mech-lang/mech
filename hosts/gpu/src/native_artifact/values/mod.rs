@@ -436,6 +436,33 @@ impl<'a> NativeValueArena<'a> {
         Ok(value.is_none() || self.generations.values()[index] != u64::MAX)
     }
 
+    /// Pure preview for an escaping alias from one native piece. No ticket or
+    /// permission survives this call: the ordinary put still performs all
+    /// checks and charges at the piece's maintained exit. Current empty slots
+    /// exclude stale canonical definitions while the alias is private.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn native_alias_put_work(
+        &self,
+        slot: u32,
+        value: &Value,
+        work: &NativeWorkMeter,
+    ) -> Result<Option<u64>, NativeValueError> {
+        self.check_work(work)?;
+        let index = slot as usize;
+        let ty = self.types.get(index).ok_or(NativeValueError::InvalidSlot)?;
+        if self.values.values()[index].is_some()
+            || self.generations.values()[index] == u64::MAX
+            || value.schema() != ty.schema
+            || value.schema_key() != ty.key
+        {
+            return Ok(None);
+        }
+        Ok(value
+            .memory_budget_retained_bytes(&self.budget)
+            .and_then(|bytes| bytes.checked_mul(4))
+            .and_then(|bytes| bytes.checked_add(64)))
+    }
+
     /// Only the certified generated caller may retire a lexical local. Payload
     /// retirement was prepaid by put; invalidate its handle before releasing it.
     #[cfg(feature = "canonical-native-program-runtime")]

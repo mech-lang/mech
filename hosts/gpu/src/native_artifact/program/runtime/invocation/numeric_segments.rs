@@ -83,12 +83,31 @@ impl Invocation<'_, '_, '_> {
             };
             entry = entry.and_then(|n| n.checked_add(bytes.checked_mul(8)?));
         }
+        let mut alias_work = Some(0u64);
+        for alias in &frames.aliases {
+            let Some(owner) = self.segment_source(&frames.sources[alias.source])? else {
+                return Ok(Some(0));
+            };
+            let Some(work) = self.state.arena.native_alias_put_work(
+                alias.value.get(),
+                owner,
+                &self.state.control.work,
+            )?
+            else {
+                return Ok(Some(0));
+            };
+            alias_work = alias_work.and_then(|total| total.checked_add(work));
+        }
+        // Policy96 prices the actual current alias/type/slot preview. The put
+        // bound is only checked here; ordinary put spends it at a reached exit.
+        entry = entry.and_then(|n| n.checked_add(amount(frames.aliases.len(), 128, 0).ok()?));
         let Some(entry) = entry else {
             return Ok(Some(0));
         };
         let Some(required) = entry
             .checked_add(proof.compute)
             .and_then(|n| n.checked_add(proof.retirement_work))
+            .and_then(|n| n.checked_add(alias_work?))
         else {
             return Ok(Some(0));
         };
@@ -323,6 +342,20 @@ impl Invocation<'_, '_, '_> {
                         }
                     }
                 }
+                for value in &exit.aliases {
+                    let alias = frames
+                        .aliases
+                        .iter()
+                        .find(|alias| alias.value == *value)
+                        .ok_or_else(|| invalid("parent alias export lacks its exact source"))?;
+                    if self.state.call_inputs.values()[alias.source].is_none() {
+                        let owner = self
+                            .segment_source(&frames.sources[alias.source])?
+                            .ok_or_else(|| invalid("parent alias export lost its current owner"))?
+                            .clone();
+                        self.state.call_inputs.values_mut()[alias.source] = Some(owner);
+                    }
+                }
             }
             let flags = frames.scalar_words + proof.views.len() * 4;
             for (at, (_, values)) in frames.retirements.iter().enumerate() {
@@ -344,6 +377,21 @@ impl Invocation<'_, '_, '_> {
                 }
             }
             if let Some(exit) = export {
+                // Only real escapes become canonical. Internal projections are
+                // immutable source aliases, never owning arena temporaries.
+                for value in &exit.aliases {
+                    let alias = frames
+                        .aliases
+                        .iter()
+                        .find(|alias| alias.value == *value)
+                        .ok_or_else(|| invalid("parent alias export lost its exact recipe"))?;
+                    let owner = self.state.call_inputs.values()[alias.source]
+                        .as_ref()
+                        .ok_or_else(|| invalid("parent alias export owner pin missing"))?;
+                    self.state
+                        .arena
+                        .put(value.get(), owner, &mut self.state.control.work)?;
+                }
                 for value in &exit.frames {
                     let recipe = frames
                         .frames

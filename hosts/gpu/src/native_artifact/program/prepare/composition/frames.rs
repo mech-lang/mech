@@ -20,10 +20,17 @@ pub(in crate::native_artifact) struct Exit {
     pub from: u32,
     pub to: u32,
     pub frames: Vec<NativeMatchValue>,
+    pub aliases: Vec<NativeMatchValue>,
+}
+#[derive(Debug, Eq, PartialEq, serde::Serialize)]
+pub(in crate::native_artifact) struct Alias {
+    pub value: NativeMatchValue,
+    pub source: usize,
 }
 #[derive(Debug, Eq, PartialEq, serde::Serialize)]
 pub(in crate::native_artifact) struct Layout {
     pub sources: Vec<Source>,
+    pub aliases: Vec<Alias>,
     pub frames: Vec<FrameWords>,
     pub inputs: Vec<u32>,
     pub scalar_words: usize,
@@ -41,18 +48,43 @@ struct Origins<'a, 'p> {
     active: BTreeSet<(u32, usize)>,
 }
 impl Origins<'_, '_> {
-    fn value(&self, value: u32) -> Result<Source, &'static str> {
+    fn value(&mut self, value: u32) -> Result<Source, &'static str> {
         if !unsigned_matrix(self.plan.values()[value as usize].definition().body()) {
             return Err("parent piece requires an unsigned matrix source");
         }
-        if self
+        let definitions = self
             .facts
             .definition_sites(value)?
             .iter()
             .filter_map(|d| d.site())
-            .any(|s| self.members.contains(&s))
-        {
-            return Err("parent piece changes an arena array source");
+            .collect::<Vec<_>>();
+        if definitions.iter().any(|s| self.members.contains(s)) {
+            let mut selected = None;
+            for site in definitions {
+                if !self.members.contains(&site) {
+                    return Err("parent array alias has an external alternative definition");
+                }
+                let Some(Frame::Project {
+                    source,
+                    ordinal,
+                    output,
+                }) = self
+                    .frames
+                    .action(site as usize)
+                    .map(|action| action.operation())
+                else {
+                    return Err("parent piece changes an arena array source");
+                };
+                if output.get() != value {
+                    return Err("parent array alias differs from its projection result");
+                }
+                let origin = self.field(source.get(), *ordinal)?;
+                if selected.as_ref().is_some_and(|old| *old != origin) {
+                    return Err("parent array alias changes across alternative definitions");
+                }
+                selected = Some(origin);
+            }
+            return selected.ok_or("parent array alias lacks a definition");
         }
         Ok(Source::Value(value))
     }
@@ -123,6 +155,7 @@ impl Layout {
         let members = segment.sites.iter().copied().collect::<BTreeSet<_>>();
         let mut writes = BTreeMap::<u32, Vec<usize>>::new();
         let mut written_values = BTreeMap::<u32, NativeMatchValue>::new();
+        let mut projected = BTreeMap::<u32, NativeMatchValue>::new();
         let mut values = BTreeSet::new();
         let mut retirements = Vec::new();
         for &site in &segment.sites {
@@ -138,8 +171,13 @@ impl Layout {
                         written_values.insert(output.get(), *output);
                         values.extend([source.get(), output.get()]);
                     }
-                    Frame::Project { source, .. } => {
+                    Frame::Project { source, output, .. } => {
                         values.insert(source.get());
+                        if unsigned_matrix(plan.values()[output.get() as usize].definition().body())
+                        {
+                            projected.insert(output.get(), *output);
+                            written_values.insert(output.get(), *output);
+                        }
                     }
                 }
                 if !frame.retire().is_empty() {
@@ -199,6 +237,17 @@ impl Layout {
                 arrays,
             });
         }
+        let mut aliases = Vec::new();
+        for &value in projected.values() {
+            let origin = origins.value(value.get())?;
+            let source = if let Some(at) = sources.iter().position(|source| *source == origin) {
+                at
+            } else {
+                sources.push(origin);
+                sources.len() - 1
+            };
+            aliases.push(Alias { value, source });
+        }
         let mut current = BTreeMap::<u32, BTreeSet<u32>>::new();
         let mut possible = BTreeMap::<u32, BTreeSet<u32>>::new();
         for &site in &segment.sites {
@@ -234,16 +283,37 @@ impl Layout {
                     valid.insert(output.get());
                     maybe.insert(output.get());
                 }
+                if let Frame::Project { output, .. } = action.operation()
+                    && projected.contains_key(&output.get())
+                {
+                    valid.insert(output.get());
+                    maybe.insert(output.get());
+                }
+                if let Frame::Pack { .. } = action.operation()
+                    && let Action::LibraryCall { operands, .. } =
+                        plan.blocks()[site as usize].action()
+                    && operands.iter().any(|value| {
+                        projected.contains_key(&value.get()) && !valid.contains(&value.get())
+                    })
+                {
+                    return Err("parent pack reads an unreached or retired array alias");
+                }
                 for value in action.retire() {
                     valid.remove(&value.get());
                     maybe.remove(&value.get());
                 }
+            } else if let Action::LibraryCall { operands, .. } =
+                plan.blocks()[site as usize].action()
+                && operands.iter().any(|value| {
+                    projected.contains_key(&value.get()) && !valid.contains(&value.get())
+                })
+            {
+                return Err("parent numeric use reads an unreached or retired array alias");
             }
             current.insert(site, valid);
             possible.insert(site, maybe);
         }
-        let external = origins
-            .writes
+        let external = written_values
             .keys()
             .filter_map(|&value| {
                 match facts.read_roles(written_values[&value]) {
@@ -275,12 +345,19 @@ impl Layout {
                 to,
                 frames: current[&from]
                     .intersection(&external)
+                    .filter(|value| !projected.contains_key(value))
                     .map(|v| written_values[v])
+                    .collect(),
+                aliases: current[&from]
+                    .intersection(&external)
+                    .filter(|value| projected.contains_key(value))
+                    .map(|value| written_values[value])
                     .collect(),
             });
         }
         Ok(Self {
             sources,
+            aliases,
             frames: recipes,
             inputs,
             scalar_words: words,
