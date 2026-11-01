@@ -2661,6 +2661,25 @@
         "cleanup_verified": true,
         "scope": "Diagnostic qualification only. R85 semantic/resource/scalar/component/linked suites remain inherited and are not relabeled as freshly executed R86 tests. No production change or new throughput result."
       }
+    },
+    "87": {
+      "base": "f72db5372a6179d48855ca3c80825af111b042bc",
+      "production": "c2b334feed4326a66ce1f69ca4bc99b0cbe41bb2",
+      "compiler_source": "c2b334feed4326a66ce1f69ca4bc99b0cbe41bb2",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "linked-multi",
+          "source_revision": "c2b334feed4326a66ce1f69ca4bc99b0cbe41bb2",
+          "asset": "r87-linked-multi-79394b2e30b0.tar.gz",
+          "sha256": "79394b2e30b0d0c70b4fa38b613bbad8d498131410504fc32a8d1c5387b7999a",
+          "manifest_sha256": "8359c14dd1b743c700998b6c2fa29f5617c27ba02e34ab4740539113999475f7",
+          "bytes": 77031,
+          "files": 44,
+          "asset_id": 697950079,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r87-linked-multi-79394b2e30b0.tar.gz"
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",
