@@ -3236,6 +3236,17 @@
           "files": 37,
           "asset_id": 698031908,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-isolated-profile-9519266c320e.tar.gz"
+        },
+        {
+          "event": "pinned-inputs",
+          "source_revision": "36794bdeac6c70a13be317a14d2175bb1b4fbb94",
+          "asset": "r88-pinned-inputs-b0afc9766539.tar.gz",
+          "sha256": "b0afc9766539e0a8ba3f914fea98eaa8bce84b1077e98e3e0b50cfa06aa52919",
+          "manifest_sha256": "d8fe6c29dec7b1743b79d71baf236ff4728ad757addfb36cb0c04f8bf525a16e",
+          "bytes": 8782907,
+          "files": 44,
+          "asset_id": 698085421,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-pinned-inputs-b0afc9766539.tar.gz"
         }
       ]
     }
