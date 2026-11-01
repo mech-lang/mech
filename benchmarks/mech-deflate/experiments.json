@@ -5086,6 +5086,17 @@
           "files": 66,
           "asset_id": 698745865,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-frame-allocation-ac333c24aee8.tar.gz"
+        },
+        {
+          "event": "isolated-profile",
+          "source_revision": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
+          "asset": "r92-isolated-profile-3c26e04e6aef.tar.gz",
+          "sha256": "3c26e04e6aefc7a6a0032990955a0d13e9f6c375598e19a02fb27d5cffff25cb",
+          "manifest_sha256": "30d5faa9abc3ca0a43fadc550adbdc47120123fe416a503f9bd5162628afd984",
+          "bytes": 261765,
+          "files": 43,
+          "asset_id": 698746666,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-isolated-profile-3c26e04e6aef.tar.gz"
         }
       ]
     }
