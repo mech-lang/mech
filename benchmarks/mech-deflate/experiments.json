@@ -3950,6 +3950,17 @@
           "files": 39,
           "asset_id": 698451162,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-baseline-witness-incomplete-overlap-435de689cc72.tar.gz"
+        },
+        {
+          "event": "baseline-witness-assertion-not-a-boundary",
+          "source_revision": "3444655203c554824153771782d3b81bf3cc1edc",
+          "asset": "r90-baseline-witness-assertion-not-a-boundary-18d1c75d1bd7.tar.gz",
+          "sha256": "18d1c75d1bd7aa399117c90b1ece936e80f4ff2c1dc75e65b6fb39e8e0e73fe7",
+          "manifest_sha256": "f1e0b33f7d530a619e7d725083b8dbf42c90d98254b57b5821a117419f79c925",
+          "bytes": 62159,
+          "files": 38,
+          "asset_id": 698451214,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-baseline-witness-assertion-not-a-boundary-18d1c75d1bd7.tar.gz"
         }
       ]
     }
