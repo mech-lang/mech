@@ -1588,6 +1588,17 @@
           "files": 41,
           "asset_id": 697748930,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-inputs-224c0845d5aa.tar.gz"
+        },
+        {
+          "event": "qualification",
+          "source_revision": "c0b5999f434650df9ff7fef6dc2c9f4c40d4fc42",
+          "asset": "r83-qualification-a7580b629efc.tar.gz",
+          "sha256": "a7580b629efc30f55d3de2f41853bbd3ebaf4b53ec81b75d0014939c6ae42035",
+          "manifest_sha256": "66d58d4c0838163566fc10c6401c6452b3292c339ba1725a7cd7ee37e52d3896",
+          "bytes": 107534,
+          "files": 56,
+          "asset_id": 697748995,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-qualification-a7580b629efc.tar.gz"
         }
       ],
       "analysis": {
