@@ -1179,6 +1179,33 @@
           "files": 35,
           "asset_id": 697650046,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r82-primary-group3-1c4cf3ed4fe7.tar.gz"
+        },
+        {
+          "event": "primary-summary",
+          "source_revision": "4fe3ca57b17b4bcab90948f8357f8fd8fd9d11da",
+          "asset": "r82-primary-summary-d6a954e8f753.tar.gz",
+          "sha256": "d6a954e8f75302a541af28da5722e1eea0d39e23256bdbd44318fd68588c5b14",
+          "manifest_sha256": "f296c139b1e9cf71bc5532db70966c25e1ddf0f0bbb2d065ed583d74e1443661",
+          "bytes": 49816,
+          "files": 32,
+          "asset_id": 697650109,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r82-primary-summary-d6a954e8f753.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.000285,
+            "medians": {
+              "after": 0.002951583,
+              "before": 0.002943333
+            },
+            "multiples_of_reference": {
+              "after": 10.356431578947369,
+              "before": 10.327484210526315
+            },
+            "after_over_before": 1.0028029448247955,
+            "improving_groups": 1,
+            "improving_blocks": 23,
+            "adverse_blocks": 41
+          }
         }
       ]
     }
