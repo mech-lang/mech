@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-11-01T01:23:41.499677+00:00",
+  "head": "3db7c634ffe8711851f0e84c79c9f8225887b61a",
+  "files": [
+    {
+      "path": "engine-after/budget.rs",
+      "sha256": "7b6603f8ed886c59d2286896aa3452ff531da69d6b75def4f693ed20aae6f24f",
+      "bytes": 172240
+    },
+    {
+      "path": "engine-after/build.json",
+      "sha256": "e10c4df0bc71cbe3d3ae18a57e99272fd302e45eed7791dfcfe446fea533b7aa",
+      "bytes": 22950
+    },
+    {
+      "path": "engine-after/build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-after/build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-focused.py",
+      "sha256": "b77c84a3e85d9d2d8f692faa5e01dd6ae24fc9e8d1681251db50376c1d157469",
+      "bytes": 5567
+    }
+  ]
+}
