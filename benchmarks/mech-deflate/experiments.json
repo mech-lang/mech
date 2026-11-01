@@ -4444,6 +4444,17 @@
           "files": 38,
           "asset_id": 698570568,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-replay-repair-7598e8786035.tar.gz"
+        },
+        {
+          "event": "analysis-final",
+          "source_revision": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+          "asset": "r90-analysis-final-af3127d33fac.tar.gz",
+          "sha256": "af3127d33faca89c9964b70c29941d3f8c6ee9b08403faf0e8c52a0a91fff025",
+          "manifest_sha256": "39633bb28021ebe59d03b96a6dc5f1e6e5fca1e2c66604ab1cbab26902433958",
+          "bytes": 65211,
+          "files": 43,
+          "asset_id": 698570662,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-analysis-final-af3127d33fac.tar.gz"
         }
       ],
       "retained_production": "254ac339b64ab71dd374cc20c3873cd6ae766921",
