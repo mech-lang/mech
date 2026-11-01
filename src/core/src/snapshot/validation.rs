@@ -752,7 +752,16 @@ impl Value {
                 reason: "immutable snapshot has no retained schema context".into(),
             }
         })?;
+        // Both checked borrows exclude strong aliases AND weak observers. An
+        // empty registry then needs neither a lookup nor a host lock backing.
+        let exclusive_empty = Arc::get_mut(&mut self.root)
+            .filter(|root| root.memory_budget.is_none())
+            .and_then(|root| Arc::get_mut(&mut root.data))
+            .is_some_and(|data| {
+                with_exclusive_budget_gate(&mut data.budget_imports, |imports| imports.is_none())
+            });
         if reuse_existing
+            && !exclusive_empty
             && let Some(owner) = self.root.data.budget_import(&budget, &schemas, &self.shape)
         {
             self.root = owner;
@@ -786,6 +795,42 @@ impl Value {
             alignment: core::mem::align_of::<SnapshotBudgetRegistration>() as u32,
             space: crate::MemorySpace::Host,
         })?;
+        // Keep the same node-before-byte charge order on both paths. A failed
+        // byte transfer releases the provisional node charge before returning.
+        let mut admit = |registration, schemas| {
+            let node_charge = budget.retain_snapshot_nodes(retained_nodes)?;
+            let charge = reservation.split_capacity(admitted_bytes)?;
+            Ok::<_, crate::MemoryRuntimeError>(SnapshotBudgetOwnership {
+                schemas,
+                required_bytes: retained_bytes,
+                reservation: charge,
+                node_charge,
+                registration,
+            })
+        };
+        // Reacquire actual exclusivity, before cloning any data owner. Nothing
+        // can observe this registry or wrapper during preparation. All fallible
+        // work completes before either ownership field is installed; setting
+        // the registration's weak back-reference afterwards cannot fail.
+        if exclusive_empty
+            && let Some(root) = Arc::get_mut(&mut self.root)
+            && let Some(data) = Arc::get_mut(&mut root.data)
+            && with_exclusive_budget_gate(&mut data.budget_imports, |imports| imports.is_none())
+        {
+            let ownership = admit(registration.clone(), schemas)?;
+            with_exclusive_budget_gate(&mut data.budget_imports, |imports| {
+                *imports = Some(registration);
+            });
+            root.memory_budget = Some(ownership);
+            let registration = &self
+                .root
+                .memory_budget
+                .as_ref()
+                .expect("exclusive import just installed its ownership")
+                .registration;
+            let _ = registration.owner.set(Arc::downgrade(&self.root));
+            return Ok(self);
+        }
         let data = self.root.data.clone();
         // A consumed unadmitted wrapper may already be the unique owner.
         // Data can still be shared: keep the existing registry gate and its
@@ -831,18 +876,10 @@ impl Value {
             );
             // All physical construction has succeeded under the reservation.
             // No user code runs under this short metadata gate.
-            let node_charge = budget.retain_snapshot_nodes(retained_nodes)?;
-            let charge = reservation.split_capacity(admitted_bytes)?;
             let target = prepared.as_mut().unwrap_or(&mut self.root);
             Arc::get_mut(target)
                 .expect("unpublished import has no shared or weak wrapper owner")
-                .memory_budget = Some(SnapshotBudgetOwnership {
-                schemas,
-                required_bytes: retained_bytes,
-                reservation: charge,
-                node_charge,
-                registration: registration.clone(),
-            });
+                .memory_budget = Some(admit(registration.clone(), schemas)?);
             let _ = registration.owner.set(Arc::downgrade(target));
             if let Some(next) = imports.as_ref() {
                 next.with_links(|links| links.previous = Arc::downgrade(&registration));
