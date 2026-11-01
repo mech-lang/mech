@@ -2590,6 +2590,17 @@
           "files": 397,
           "asset_id": 697923789,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r86-callback-phases-a1cbe8b6d73d.tar.gz"
+        },
+        {
+          "event": "inputs",
+          "source_revision": "fc3887ddced43a84a0e58776064a108d9dbc483e",
+          "asset": "r86-inputs-4f9cf3f301ef.tar.gz",
+          "sha256": "4f9cf3f301ef0687e62a21a86ee955bce02c506bd6aa8801cd791db5ee8f91d4",
+          "manifest_sha256": "ca9790c156dde61fb6befb1067dd2ea1a8d1e634143cb8cdf883394fcec9d349",
+          "bytes": 4310882,
+          "files": 13,
+          "asset_id": 697925853,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r86-inputs-4f9cf3f301ef.tar.gz"
         }
       ]
     }
