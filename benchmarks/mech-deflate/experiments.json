@@ -1272,13 +1272,24 @@
           "files": 36,
           "asset_id": 697748822,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r82-closure-32bd15d22d91.tar.gz"
+        },
+        {
+          "event": "analysis-scope-correction",
+          "source_revision": "4fe3ca57b17b4bcab90948f8357f8fd8fd9d11da",
+          "asset": "r82-analysis-scope-correction-6d58941c91db.tar.gz",
+          "sha256": "6d58941c91db0c34034d0a023af38ec012c9b8385e97f022279aebb3c67f421f",
+          "manifest_sha256": "bab19d8c42f82426acda9af61384b3ecf99ef0f85c8718c28d4af68f1a67aef2",
+          "bytes": 68849,
+          "files": 42,
+          "asset_id": 697755930,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r82-analysis-scope-correction-6d58941c91db.tar.gz"
         }
       ],
       "analysis": {
         "script": "analysis/analyze.py",
         "expected_outputs": {
           "mechanism.json": "6c681e848ccc9519522068101830df590c05af4c31fd94ace3646c8c138da573",
-          "profile-numbers.json": "4d2455aee8c77899000ea4a1b0a9d62ed04b6656319851d82a1ca7078093a97c",
+          "profile-numbers.json": "0212d47b4b7ccbfad16b8ac0bdf492db5208ff6d07ba4fe0a84065df497daa55",
           "scorecard.json": "d675986e5b25540243fa30e15c7d8109bab55bf21a96256e784a25679747a429",
           "validation.json": "1b0a704b5a27a089a33d7ebecac1d0afe9c02aa64cf9aa20373e48ab58570425"
         }
