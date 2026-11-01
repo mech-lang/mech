@@ -4186,6 +4186,17 @@
           "files": 37,
           "asset_id": 698517729,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-outline-import-error-4220678a462d.tar.gz"
+        },
+        {
+          "event": "outlined-bounds",
+          "source_revision": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+          "asset": "r90-outlined-bounds-8806cb9573e0.tar.gz",
+          "sha256": "8806cb9573e0658dd1ce24334f59930b15efd84f185aae5e8e8a979aaf8c5a5a",
+          "manifest_sha256": "77de5e09c123ce5cebe7a08f73ef8caca9c2647138d4ba1b1d01e5395eca37da",
+          "bytes": 50069,
+          "files": 39,
+          "asset_id": 698517785,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-outlined-bounds-8806cb9573e0.tar.gz"
         }
       ]
     }
