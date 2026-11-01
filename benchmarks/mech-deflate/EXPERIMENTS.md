@@ -244,3 +244,15 @@ component/linked and architecture gates pass. Use `replay-round --round 85` for
 four report hashes; full failures, raw observations, profiles and source pins
 remain external. The [current status](../../docs/design/native-compression-status.md)
 is authoritative. No source algorithm or limit changes.
+
+## R86: calibrated callback instruction windows
+
+No production change; source checkpoint `fc3887ddced43a84a0e58776064a108d9dbc483e`.
+Two separate 256-call diagnostics cover all10,712 callback positions and all1,620
+native-piece entry/exit boundaries four times. Calibrated estimates identify
+ordinary library calls, source-step admission and repeated frame-boundary checks;
+they are not an exact single-call instruction ledger or a new elapsed result.
+All raw observations, calibration extremes, staged sources and commands remain
+external. Use `replay-round --round 86` for three reproduced reports. R85 remains
+the production/timing endpoint. The next bounded experiment targets repeated
+output byte-cap field walks while retaining the current fallback and charges.

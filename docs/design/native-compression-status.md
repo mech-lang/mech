@@ -79,11 +79,29 @@ are dominated by probe cost. These are instruction windows, not elapsed fraction
 or a per-function ledger; individual-window medians need not sum to median total.
 All instrumentation is excluded from primary/hardware/heap acceptance.
 
-Further major instruction work should target the running body/callbacks. Next:
-sparse calibrated callback-group/site instruction windows, then the demonstrated
-expensive boundaries or precise SSA live-word synchronization. A large constant
-admission project is not justified solely by its allocation count. Ordinary debit
-primitive tuning stays closed without new mechanism evidence.
+R86 now supplies the finer diagnostic: rotating samples cover all 10,712 reached
+callback positions four times across 256 calls. No-op calibration is 5,027
+instructions. Estimated group totals include ordinary library calls 7.21M,
+source-step admission 3.56M, and native-piece entry/exit 5.28M. Library projections,
+record packs and indexed replacements each account for about 2M. Source-step
+admission covers ordinary operations, not assertions specifically. These sums of
+calibrated medians across calls are estimates, not one exact instruction ledger.
+
+A separate 256-call cohort covers all 810 entry/810 exit boundaries four times,
+with 5,047-instruction internal-marker calibration. Output byte-cap preview costs
+an estimated 704K instructions, reached retirements 645K, stale-output/retirement
+availability 544K, and current source checks 428K. Instrumented observations are
+excluded from performance acceptance. All calls retain output, inflation, alias,
+capacity and zero-final-managed-memory checks. R86 changes no production code or
+performance result; its reports replay from external packets.
+
+Next: a conservative maximum-current-source-capacity times field-count proof to
+avoid repeated byte-cap field walks when that bound fits; retain existing checks
+when it does not. There are 810 reached pieces and 22,032 weighted SSA words, but
+the latter is not a machine-store count. Measure the boundary work before
+forecasting a large SSA synchronization gain. A large constant-admission project
+is not justified solely by allocation count. Ordinary debit primitive tuning
+stays closed without new mechanism evidence.
 
 ## Fidelity and qualification
 
