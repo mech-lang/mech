@@ -293,7 +293,7 @@
       "base": "d68e5f0d97c7950b11aa2a798f805f9a56cc0096",
       "production": "e4d444b5fcd33a69c05837ad1cafbd4c50b9ae97",
       "compiler_source": "e4d444b5fcd33a69c05837ad1cafbd4c50b9ae97",
-      "decision": "under measurement",
+      "decision": "retained: 0.430999% less matched elapsed, 0.489492% fewer instructions and exactly 340 fewer 64-byte first-admission lock requests; generated artifacts and logical accounting unchanged",
       "events": [
         {
           "event": "baseline",
@@ -563,8 +563,65 @@
           "files": 73,
           "asset_id": 697422740,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-final-checks-58ec0cd4aaf9.tar.gz"
+        },
+        {
+          "event": "analysis",
+          "source_revision": "e4d444b5fcd33a69c05837ad1cafbd4c50b9ae97",
+          "asset": "r80-analysis-91911141301f.tar.gz",
+          "sha256": "91911141301ff536e0b92731413be2410aac23a48cc3d87db9a44af9c0e2dffc",
+          "manifest_sha256": "f6d12d3988c82f414fe74c13e9cd24793e76304c619cba8cef85233f28e8097d",
+          "bytes": 133463,
+          "files": 43,
+          "asset_id": 697428649,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-analysis-91911141301f.tar.gz"
         }
-      ]
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "allocation-mechanism.json": "cf10a38e0bdc0f080d63103de1f47ed00e87b07e07353739f6e7486680817264",
+          "profile-numbers.json": "312cf8dae93198efbee6b35092d82fd6db7dd739e8e8588c740f79d1cff312c5",
+          "scorecard.json": "b1ed407b0ff803401abe4206a263a874b8e978d8d14b7e6aab5e3637e63fbc54",
+          "validation.json": "9a3792892c38e221d9104af0ff049ba5e48c85bca46818a8345d139b61925717"
+        }
+      },
+      "source_proof": {
+        "compiler_build_source": "e4d444b5fcd33a69c05837ad1cafbd4c50b9ae97",
+        "current_head": "7abc912d3786b26591a7707b582b888c5b1598e5",
+        "compiled_production_prefix_unchanged": true,
+        "later_rust_changes_are_test_only": [
+          "src/core/src/snapshot/unique_admission_tests.rs",
+          "src/core/src/snapshot/validation.rs"
+        ],
+        "source_and_bytecode_and_allocator_pins_verified": true,
+        "verified_pin_count": 25,
+        "unsafe_allowlist_unchanged": true,
+        "warning_policy_changes": false,
+        "generated_artifacts": {
+          "object.o": {
+            "before": "b154c06cb08cc5f9eacc7cd4895ed03bb515f233856971c21cd5af819029f613",
+            "after": "b154c06cb08cc5f9eacc7cd4895ed03bb515f233856971c21cd5af819029f613",
+            "identical": true
+          },
+          "descriptor.json": {
+            "before": "c299d9c84c8fe3e40b0bbfcddd7d6841f0d56dc3c5766c710bfe46ce8ce83ad9",
+            "after": "c299d9c84c8fe3e40b0bbfcddd7d6841f0d56dc3c5766c710bfe46ce8ce83ad9",
+            "identical": true
+          },
+          "metadata.json": {
+            "before": "8766747cd7126ba533c94a3465b4b02c3c6dfec9268413f16f862c045fa9d7d4",
+            "after": "8766747cd7126ba533c94a3465b4b02c3c6dfec9268413f16f862c045fa9d7d4",
+            "identical": true
+          }
+        },
+        "complete_tracked_change_inventory": [
+          ".github/workflows/ci-full.yml",
+          "benchmarks/mech-deflate/experiments.json",
+          "src/core/src/snapshot/unique_admission_tests.rs",
+          "src/core/src/snapshot/validation.rs"
+        ],
+        "warning_policy_unchanged": true
+      }
     }
   },
   "repository": "mech-lang/mech",
