@@ -4274,6 +4274,33 @@
           "files": 40,
           "asset_id": 698520746,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-confirm-group3-a89b243c3226.tar.gz"
+        },
+        {
+          "event": "confirm-summary",
+          "source_revision": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+          "asset": "r90-confirm-summary-801c436e3ee5.tar.gz",
+          "sha256": "801c436e3ee5ebf0c20b64aa053f591161ea620940c5001cb3e52cd462c66bc6",
+          "manifest_sha256": "c5094b22fffb59fd24b3400d41e94e3f5004df2d52490305f4d7a7055b2edbfb",
+          "bytes": 50628,
+          "files": 37,
+          "asset_id": 698520805,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-confirm-summary-801c436e3ee5.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.000286,
+            "medians": {
+              "after": 0.002658771,
+              "before": 0.0026502914999999997
+            },
+            "multiples_of_reference": {
+              "after": 9.296402097902098,
+              "before": 9.266753496503496
+            },
+            "after_over_before": 1.003199459380223,
+            "improving_groups": 1,
+            "improving_blocks": 24,
+            "adverse_blocks": 40
+          }
         }
       ]
     }
