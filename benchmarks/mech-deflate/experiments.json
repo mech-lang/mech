@@ -2116,6 +2116,33 @@
           "files": 38,
           "asset_id": 697855848,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r85-confirm-group3-1ec05e6fba77.tar.gz"
+        },
+        {
+          "event": "confirm-summary",
+          "source_revision": "490ede99581fd233edd4c05d14f74641c9ae45c9",
+          "asset": "r85-confirm-summary-b3df3101b67b.tar.gz",
+          "sha256": "b3df3101b67bd40737a568cc5e3896baf62838878125d9580d64ae9550b60c96",
+          "manifest_sha256": "c26f1eb7911f3d891ac44cd5e72d7a6ab3b42b661ef9461953d8a3bf0c5b618e",
+          "bytes": 48442,
+          "files": 35,
+          "asset_id": 697855923,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r85-confirm-summary-b3df3101b67b.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.000286,
+            "medians": {
+              "after": 0.0028545,
+              "before": 0.002885833
+            },
+            "multiples_of_reference": {
+              "after": 9.98076923076923,
+              "before": 10.090325174825175
+            },
+            "after_over_before": 0.9891424763664425,
+            "improving_groups": 4,
+            "improving_blocks": 54,
+            "adverse_blocks": 10
+          }
         }
       ]
     }
