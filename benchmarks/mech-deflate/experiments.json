@@ -1444,6 +1444,17 @@
           "files": 49,
           "asset_id": 697708066,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-linked-multi-48c4e5869520.tar.gz"
+        },
+        {
+          "event": "diagnostic-counts",
+          "source_revision": "c0b5999f434650df9ff7fef6dc2c9f4c40d4fc42",
+          "asset": "r83-diagnostic-counts-da616340d388.tar.gz",
+          "sha256": "da616340d388990ead053a3a12789bfe6b5ec09292f18bd4caec190766ea2e44",
+          "manifest_sha256": "75e7d6b50538e42cc2c2cda2585c5a5eeddeaeef491d57105bca61ec6e75f7a6",
+          "bytes": 1417688,
+          "files": 413,
+          "asset_id": 697712189,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r83-diagnostic-counts-da616340d388.tar.gz"
         }
       ]
     }
