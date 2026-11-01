@@ -288,6 +288,25 @@
         "protected_source_and_bytecode_pins": true
       },
       "obsolete_build_bytes_removed": 622760064
+    },
+    "80": {
+      "base": "d68e5f0d97c7950b11aa2a798f805f9a56cc0096",
+      "production": "e4d444b5fcd33a69c05837ad1cafbd4c50b9ae97",
+      "compiler_source": "e4d444b5fcd33a69c05837ad1cafbd4c50b9ae97",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "baseline",
+          "source_revision": "e4d444b5fcd33a69c05837ad1cafbd4c50b9ae97",
+          "asset": "r80-baseline-55daf9ee8765.tar.gz",
+          "sha256": "55daf9ee87651610f3ba531832707a9cbaf6e308c043ea2ef96ada0e8f220d15",
+          "manifest_sha256": "9bc1b56b5248c8c0da51fd7d00c6303d9c692944032df06666dba09dc324c95f",
+          "bytes": 91564,
+          "files": 25,
+          "asset_id": 697394514,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-baseline-55daf9ee8765.tar.gz"
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",
