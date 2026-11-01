@@ -519,6 +519,17 @@
           "files": 57,
           "asset_id": 697420352,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-qualification-1a9fd8b394bb.tar.gz"
+        },
+        {
+          "event": "resource-observation",
+          "source_revision": "e4d444b5fcd33a69c05837ad1cafbd4c50b9ae97",
+          "asset": "r80-resource-observation-d1e2aea3b949.tar.gz",
+          "sha256": "d1e2aea3b9495b3e5d6ed74af64bdcc01940612f88710a0a26cb26b1cadc2cf4",
+          "manifest_sha256": "22e019879390cb37c730ea2a8230a22b3ee807f74182161903821b42a6591a07",
+          "bytes": 109139,
+          "files": 43,
+          "asset_id": 697420402,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-resource-observation-d1e2aea3b949.tar.gz"
         }
       ]
     }
