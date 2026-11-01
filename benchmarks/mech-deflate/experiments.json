@@ -4825,6 +4825,17 @@
           "files": 32,
           "asset_id": 698629341,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r91-preparation-be6e62573894.tar.gz"
+        },
+        {
+          "event": "analysis",
+          "source_revision": "31d77c7c1f5fdeecc9095664af19092353df06b3",
+          "asset": "r91-analysis-bacc0c35e0b3.tar.gz",
+          "sha256": "bacc0c35e0b3606484df4eb217f7febbb1ed1184cbc2dbd543880345abce155f",
+          "manifest_sha256": "5366ca074fb4c24d95045703cad2621441dfba3130649ec4cff6685bbfa59e15",
+          "bytes": 85059,
+          "files": 37,
+          "asset_id": 698629426,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r91-analysis-bacc0c35e0b3.tar.gz"
         }
       ],
       "retained_production": "31d77c7c1f5fdeecc9095664af19092353df06b3",
