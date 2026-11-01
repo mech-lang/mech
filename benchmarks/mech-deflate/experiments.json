@@ -6555,6 +6555,17 @@
           "files": 64,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-tree-instructions-fd05d07349c1.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "5c219ed220879b05ee147bdf5d3f85680311eae2",
+          "asset": "r99-scalar-controls-e90f4f513b05.tar.gz",
+          "sha256": "e90f4f513b05404a3b0e8ad10d2c8ff5d67cca30a8b77d25697d2d6a4b0d32b6",
+          "manifest_sha256": "eeee39e88659dbf215c07f179a70ba8d38fdfc939e10905f1a55e9a988b0803e",
+          "bytes": 129882,
+          "files": 99,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-scalar-controls-e90f4f513b05.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
