@@ -49,11 +49,12 @@ pub use self::validation::{
     PrivateUnsignedAppendPreparation, PrivateUnsignedMatrix, SnapshotCanonicalizationBudget,
     SnapshotValidationContext, StringMatrixSnapshotConstructor, StringOwnershipTransfer,
     StringSnapshotConstructor, TableSnapshotBuilder, UnsignedMatrixBuffer,
-    UnsignedMatrixOwnershipTransfer, UnsignedMatrixViewMut, Value, build_f64_set_snapshot,
-    build_f64_set_snapshot_after_remove, canonical_snapshot_data_draft,
-    canonical_snapshot_data_draft_in, canonical_snapshot_data_draft_with_context,
-    dynamic_canonical_allocation_bound_bytes, f64_set_snapshot_contains, rebuild_f64_set_snapshot,
-    wrap_resident_dynamic_data, wrap_resident_dynamic_value,
+    UnsignedMatrixOwnershipTransfer, UnsignedMatrixSnapshotConstructor, UnsignedMatrixViewMut,
+    Value, build_f64_set_snapshot, build_f64_set_snapshot_after_remove,
+    canonical_snapshot_data_draft, canonical_snapshot_data_draft_in,
+    canonical_snapshot_data_draft_with_context, dynamic_canonical_allocation_bound_bytes,
+    f64_set_snapshot_contains, rebuild_f64_set_snapshot, wrap_resident_dynamic_data,
+    wrap_resident_dynamic_value,
 };
 pub use self::views::{EnumView, MapView, MatrixView, RecordView, SetView, TableView, TupleView};
 pub use crate::{ConstantId, KeyHash, ValueHash};

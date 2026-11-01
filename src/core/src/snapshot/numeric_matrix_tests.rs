@@ -2,6 +2,272 @@ use super::*;
 use crate::snapshot::SequenceView;
 use crate::{DimensionExpr, IntegerInterval, SchemaDraft, SchemaTableBuilder};
 
+fn replacement_schema(width: IntegerWidth) -> (SchemaId, Arc<SchemaTable>) {
+    use crate::{
+        DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+        DimensionParameterOrigin,
+    };
+    let mut builder = SchemaTableBuilder::new();
+    let handle = builder
+        .insert(
+            SchemaDraft {
+                body: SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::UnsignedInteger(width)),
+                    dimensions: [
+                        DimensionExpr::Constant(1),
+                        DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                    ]
+                    .into(),
+                },
+                dimension_parameters: [DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(0),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime: DimensionLifetime::Activation,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: None,
+                }]
+                .into(),
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let build = builder.finish().unwrap();
+    (build.resolve(handle).unwrap(), Arc::new(build.table))
+}
+
+fn replacement_buffer(width: IntegerWidth, words: &[u64], capacity: usize) -> UnsignedMatrixBuffer {
+    macro_rules! buffer {
+        ($variant:ident, $ty:ty) => {{
+            let mut buffer = Vec::with_capacity(capacity);
+            buffer.extend(words.iter().map(|word| <$ty>::try_from(*word).unwrap()));
+            UnsignedMatrixBuffer::$variant(buffer)
+        }};
+    }
+    match width {
+        IntegerWidth::W8 => buffer!(U8, u8),
+        IntegerWidth::W16 => buffer!(U16, u16),
+        IntegerWidth::W32 => buffer!(U32, u32),
+        IntegerWidth::W64 => buffer!(U64, u64),
+        _ => panic!("test requires packed unsigned storage"),
+    }
+}
+
+fn replacement_pointer(words: SequenceView<'_>) -> usize {
+    match words {
+        SequenceView::U8(words) => words.as_ptr() as usize,
+        SequenceView::U16(words) => words.as_ptr() as usize,
+        SequenceView::U32(words) => words.as_ptr() as usize,
+        SequenceView::U64(words) => words.as_ptr() as usize,
+        _ => panic!("test requires packed unsigned storage"),
+    }
+}
+
+#[test]
+fn unsigned_reconstruction_shares_shape_without_sharing_changed_data_identity() {
+    for width in [
+        IntegerWidth::W8,
+        IntegerWidth::W16,
+        IntegerWidth::W32,
+        IntegerWidth::W64,
+    ] {
+        for count in [0, 1, 4] {
+            let (id, table) = replacement_schema(width);
+            let shape = table
+                .get(id)
+                .unwrap()
+                .instantiate_shape([count as u64].into())
+                .unwrap();
+            let source = Value::from_unsigned_matrix_buffer(
+                id,
+                shape,
+                replacement_buffer(width, &[1, 2, 3, 4][..count], 17),
+                table.clone(),
+            )
+            .unwrap();
+            let alias = source.clone();
+            let identity = source.frozen_storage_identity();
+            let prior = source.canonical_data_draft().unwrap();
+            let constructor = source
+                .unsigned_matrix_replacement_constructor(table.clone())
+                .unwrap();
+            let words = &[9, 8, 7, 6][..count];
+            let ordinary = Value::from_unsigned_matrix_buffer(
+                id,
+                source.shape().clone(),
+                replacement_buffer(width, words, 17),
+                table.clone(),
+            )
+            .unwrap();
+            let buffer = replacement_buffer(width, words, 17);
+            let pointer = replacement_pointer(buffer.elements());
+            let actual = constructor.finish(buffer).unwrap();
+            assert!(core::ptr::eq(source.shape(), actual.shape()));
+            assert!(!core::ptr::eq(source.shape(), ordinary.shape()));
+            assert_eq!(actual.schema(), source.schema());
+            assert_eq!(actual.schema_key(), source.schema_key());
+            assert_eq!(actual.shape(), ordinary.shape());
+            assert_eq!(
+                actual.canonical_data_draft().unwrap(),
+                ordinary.canonical_data_draft().unwrap()
+            );
+            assert_eq!(
+                actual.value_hash(&table).unwrap(),
+                ordinary.value_hash(&table).unwrap()
+            );
+            assert_eq!(
+                actual.retained_footprint(&table).unwrap(),
+                ordinary.retained_footprint(&table).unwrap()
+            );
+            assert!(identity.matches(&alias));
+            assert!(!identity.matches(&actual));
+            assert!(!actual.shares_frozen_storage(&source));
+            assert_eq!(alias.canonical_data_draft().unwrap(), prior);
+            let ValueData::Matrix(matrix) = actual.data() else {
+                panic!("matrix")
+            };
+            assert_eq!(replacement_pointer(matrix.elements()), pointer);
+            assert_eq!(matrix.unsigned_buffer_capacity(), Some(17));
+        }
+    }
+}
+
+#[test]
+fn unsigned_reconstruction_preserves_kind_cardinality_arena_errors_and_retry() {
+    let (id, table) = replacement_schema(IntegerWidth::W32);
+    let source = Value::from_unsigned_matrix_buffer(
+        id,
+        table
+            .get(id)
+            .unwrap()
+            .instantiate_shape([3].into())
+            .unwrap(),
+        replacement_buffer(IntegerWidth::W32, &[1, 2, 3], 17),
+        table.clone(),
+    )
+    .unwrap();
+    let prior = source.canonical_data_draft().unwrap();
+    let identity = source.frozen_storage_identity();
+    let (foreign_id, foreign) = replacement_schema(IntegerWidth::W64);
+    assert_eq!(
+        id, foreign_id,
+        "numeric ID alone must not admit a foreign arena"
+    );
+    assert!(matches!(
+        source.unsigned_matrix_replacement_constructor(foreign),
+        Err(SnapshotValueError::SnapshotSchemaTableMismatch { .. })
+    ));
+    for (width, count) in [
+        (IntegerWidth::W32, 2),
+        (IntegerWidth::W32, 4),
+        (IntegerWidth::W16, 3),
+    ] {
+        let actual = source
+            .unsigned_matrix_replacement_constructor(table.clone())
+            .unwrap()
+            .finish(replacement_buffer(width, &[7, 8, 9, 10][..count], 17));
+        let expected = Value::from_unsigned_matrix_buffer(
+            id,
+            source.shape().clone(),
+            replacement_buffer(width, &[7, 8, 9, 10][..count], 17),
+            table.clone(),
+        );
+        assert_eq!(actual.unwrap_err(), expected.unwrap_err());
+        assert!(identity.matches(&source));
+        assert_eq!(source.canonical_data_draft().unwrap(), prior);
+    }
+    let actual = source
+        .unsigned_matrix_replacement_constructor(table)
+        .unwrap()
+        .finish(replacement_buffer(IntegerWidth::W32, &[7, 8, 9], 17))
+        .unwrap();
+    assert!(core::ptr::eq(source.shape(), actual.shape()));
+    assert!(!identity.matches(&actual));
+    let (id, shape, table) = schema(SchemaBody::SignedInteger(IntegerWidth::W32), 1, 1);
+    let signed = Value::from_i32_matrix(id, shape, [1].into(), table.clone()).unwrap();
+    assert!(matches!(
+        signed.unsigned_matrix_replacement_constructor(table),
+        Err(SnapshotValueError::SnapshotSchemaDefinitionMismatch { .. })
+    ));
+}
+
+#[test]
+fn unsigned_reconstruction_keeps_exclusive_handoff_finite_admission_and_recovery() {
+    let (id, table) = replacement_schema(IntegerWidth::W64);
+    let raw = Value::from_unsigned_matrix_buffer(
+        id,
+        table
+            .get(id)
+            .unwrap()
+            .instantiate_shape([3].into())
+            .unwrap(),
+        replacement_buffer(IntegerWidth::W64, &[1, 2, 3], 32),
+        table.clone(),
+    )
+    .unwrap();
+    let memory = crate::ManagedMemoryBudget::new(16 * 1024 * 1024);
+    let mut charge = memory
+        .reserve_capacity(raw.memory_budget_admission_bytes(&memory).unwrap())
+        .unwrap();
+    let source = raw.into_memory_budget(&mut charge).unwrap();
+    drop(charge);
+    let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+    let shape_pointer = source.shape() as *const ShapeInstance;
+    let identity = source.frozen_storage_identity();
+    let constructor = source
+        .unsigned_matrix_replacement_constructor(table)
+        .unwrap();
+    let ValueData::Matrix(matrix) = source.data() else {
+        panic!("matrix")
+    };
+    let pointer = replacement_pointer(matrix.elements());
+    let super::super::UnsignedMatrixOwnershipTransfer::Owned(owned) =
+        source.try_into_owned_unsigned_matrix(&memory).unwrap()
+    else {
+        panic!("retaining immutable shape must not retain source data/root")
+    };
+    let (mut buffer, mut admission) = owned.into_parts();
+    assert_eq!(replacement_pointer(buffer.elements()), pointer);
+    let UnsignedMatrixBuffer::U64(words) = &mut buffer else {
+        panic!("u64")
+    };
+    words[1] = 99;
+    let result = constructor.finish(buffer).unwrap();
+    assert_eq!(result.shape() as *const ShapeInstance, shape_pointer);
+    assert!(!identity.matches(&result));
+    let required = result.memory_budget_admission_bytes(&memory).unwrap();
+    assert!(admission.capacity_bytes() >= required);
+    let mut short = memory.reserve_capacity(required - 1).unwrap();
+    let before = (memory.used_bytes(), memory.retained_snapshot_nodes());
+    let value_identity = result.frozen_storage_identity();
+    assert!(result.clone().into_memory_budget(&mut short).is_err());
+    assert_eq!(
+        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+        before
+    );
+    assert!(value_identity.matches(&result));
+    drop(short);
+    let result = result.into_memory_budget(&mut admission).unwrap();
+    drop(admission);
+    assert_eq!(
+        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+        retained
+    );
+    let ValueData::Matrix(matrix) = result.data() else {
+        panic!("matrix")
+    };
+    assert_eq!(replacement_pointer(matrix.elements()), pointer);
+    let SequenceView::U64(words) = matrix.elements() else {
+        panic!("u64")
+    };
+    assert_eq!(words, &[1, 99, 3]);
+    drop((result, identity, value_identity));
+    assert_eq!(
+        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+        (0, 0)
+    );
+}
+
 fn schema(
     element: SchemaBody,
     rows: u64,

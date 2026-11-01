@@ -205,10 +205,12 @@ impl NativePreparedLibraryCall {
                     metadata.checked_mul(16).ok_or(InvokeError::InvalidInput)?,
                     0,
                 )?;
-                // Shape cloning and ownership handoff use this already admitted
+                // Shape retention and ownership handoff use this already admitted
                 // envelope. The detached charge remains live on every failure exit.
                 let mut admission = memory.reserve_capacity(metadata)?;
-                let shape = source.shape().clone();
+                let constructor = source
+                    .unsigned_matrix_replacement_constructor(self.schemas.clone())
+                    .map_err(|_| InvokeError::InvalidInput)?;
                 let (source, owned) = if may_consume {
                     match source.try_into_owned_unsigned_matrix(&memory)? {
                         UnsignedMatrixOwnershipTransfer::Owned(buffer) => (None, Some(buffer)),
@@ -271,13 +273,9 @@ impl NativePreparedLibraryCall {
                 };
                 // All index, kind, work and capacity admission precedes this store.
                 replace(&mut buffer, ordinal, incoming)?;
-                let value = Value::from_unsigned_matrix_buffer(
-                    contract.outputs[0].schema,
-                    shape,
-                    buffer,
-                    self.schemas.clone(),
-                )
-                .map_err(|_| InvokeError::InvalidInput)?;
+                let value = constructor
+                    .finish(buffer)
+                    .map_err(|_| InvokeError::InvalidInput)?;
                 let value = finish(value, Some(&mut admission))?;
                 drop(source);
                 Ok((value, true))
