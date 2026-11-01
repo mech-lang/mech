@@ -5361,6 +5361,20 @@
           14
         ],
         "workflow_tests": 132
+      },
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "mechanism.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 1,
+        "round": 92,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 437,
+        "verified_archives": 30,
+        "verified_file_occurrences": 1437
       }
     }
   },
