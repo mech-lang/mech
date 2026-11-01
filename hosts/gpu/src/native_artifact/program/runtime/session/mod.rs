@@ -746,6 +746,7 @@ impl<'a> Prepared<'a> {
                 stats: RuntimeStats::default(),
                 consumed: false,
                 scalar_path: None,
+                seed_handoff: None,
                 output_cursor: 0,
             }),
         })

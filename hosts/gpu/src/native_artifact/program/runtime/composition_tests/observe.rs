@@ -16,6 +16,8 @@ pub(super) struct Counts {
     pub poisoned_exit_words: usize,
     pub poisoned_private_homes: usize,
     pub checked_private_homes: usize,
+    pub seed_handoffs: usize,
+    pub seed_adoptions: usize,
     pub exit_modes: BTreeMap<u64, u64>,
     pub selected_sites: BTreeMap<u64, u64>,
 }
@@ -100,8 +102,33 @@ unsafe extern "C" fn helper(
             *counts.exit_modes.entry(a).or_default() += 1;
         });
     }
+    // SAFETY: same synchronous owning callback context as the delegated entry.
+    let seed_pending = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() }
+        .state
+        .seed_handoff;
     // SAFETY: unchanged arguments and result pointer from the checked entry.
     let status = unsafe { HELPER.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
+    if status == 0 {
+        // SAFETY: the unchanged callback has returned; no mutable loan survives.
+        let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        if let Some(pending) = ctx.state.seed_handoff {
+            let recipe = ctx
+                .descriptor
+                .metadata()
+                .seed_handoffs
+                .get(pending.get() - 1)
+                .unwrap();
+            assert_eq!(u64::from(recipe.pack), site);
+            assert!(ctx.state.buffer_frames.retirement_is_empty(
+                &ctx.descriptor.metadata().frame_retirements,
+                recipe.seed.get(),
+            ));
+            COUNTS.with(|v| v.borrow_mut().seed_handoffs += 1);
+        }
+        if seed_pending.is_some() && ctx.state.seed_handoff.is_none() {
+            COUNTS.with(|v| v.borrow_mut().seed_adoptions += 1);
+        }
+    }
     if op == crate::native_artifact::program::protocol::GlobalHelper::NumericSegmentBegin.raw()
         && status == 0
     {
@@ -161,7 +188,7 @@ pub(super) fn run_restored(
     run_descriptor(jit, &descriptor, args, outputs, policy, memory)
 }
 
-fn run_descriptor(
+pub(super) fn run_descriptor(
     jit: &JitProgramArtifact,
     descriptor: &NativeProgramDescriptor,
     args: &[Value],

@@ -81,9 +81,29 @@ impl Invocation<'_, '_, '_> {
                         error,
                     });
                 }
+                // A single-use adjacent seed has no observation between this
+                // successful pack and Initialize. Keep its physical lanes
+                // separate, but construct in an empty child destination.
+                let handoff =
+                    descriptor
+                        .metadata()
+                        .seed_handoffs
+                        .at_pack(site)
+                        .filter(|(_, recipe)| {
+                            self.state.seed_handoff.is_none()
+                                && self.state.buffer_frames.retirement_is_empty(
+                                    &descriptor.metadata().frame_retirements,
+                                    recipe.seed.get(),
+                                )
+                                && self.state.buffer_frames.retirement_is_empty(
+                                    &descriptor.metadata().frame_retirements,
+                                    recipe.carrier.get(),
+                                )
+                        });
+                let destination = handoff.map_or(*output, |(_, recipe)| recipe.carrier);
                 let packed = self.state.buffer_frames.pack(
                     layout,
-                    *output,
+                    destination,
                     operands,
                     &mut self.state.call_inputs.values_mut()[..words.len()],
                     words,
@@ -91,6 +111,9 @@ impl Invocation<'_, '_, '_> {
                 );
                 self.state.call_inputs.values_mut()[..words.len()].fill(None);
                 packed?;
+                if let Some((index, _)) = handoff {
+                    self.state.seed_handoff = core::num::NonZeroUsize::new(index + 1);
+                }
             }
             Operation::Copy { source, output } if tag == GlobalHelper::Move && words.is_empty() => {
                 let expected = self
@@ -102,7 +125,26 @@ impl Invocation<'_, '_, '_> {
                 // The existing exact-action proof already retires this source
                 // after Copy. Transfer only that disposable frame's handles;
                 // outside aliases and the original retirement charge remain.
-                if action.retire().contains(source) {
+                if let Some(pending) = self.state.seed_handoff.take() {
+                    let recipe = descriptor
+                        .metadata()
+                        .seed_handoffs
+                        .get(pending.get() - 1)
+                        .ok_or_else(|| invalid("private seed handoff recipe missing"))?;
+                    if recipe.initialize as usize != site
+                        || recipe.seed != *source
+                        || recipe.carrier != *output
+                    {
+                        return Err(invalid("private seed handoff differs from initializer"));
+                    }
+                    // Pack already completed the same leaf validation and
+                    // writes. Retain Copy's charge at its original boundary,
+                    // before source retirement, even on insufficient fuel.
+                    self.state
+                        .control
+                        .work
+                        .charge(NativeExecutionPhase::Setup, recipe.copy_work)?;
+                } else if action.retire().contains(source) {
                     self.state.buffer_frames.copy::<true>(
                         layout,
                         *source,
