@@ -855,6 +855,17 @@
           "files": 42,
           "asset_id": 697517133,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r81-reference-profile-b639894abd52.tar.gz"
+        },
+        {
+          "event": "paired-counters",
+          "source_revision": "c29854f6f1f404658c39bcb024296b01ec80a71d",
+          "asset": "r81-paired-counters-68e7a0c96962.tar.gz",
+          "sha256": "68e7a0c96962afa014e1754db91c84b56fdf159d6868d513faaea375905d4cb1",
+          "manifest_sha256": "de515aced32c5fc09a39eb3db230fc726eaa45b7950e7536927360e9ae0df52f",
+          "bytes": 114961,
+          "files": 56,
+          "asset_id": 697518462,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r81-paired-counters-68e7a0c96962.tar.gz"
         }
       ]
     }
