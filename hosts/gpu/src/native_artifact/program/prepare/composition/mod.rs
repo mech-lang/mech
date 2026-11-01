@@ -215,82 +215,31 @@ impl Layout {
                     .then_some(site as u32)
                 })
                 .collect::<BTreeSet<_>>();
-            let mut incoming = BTreeMap::new();
-            for &site in &sites {
-                incoming.insert(
-                    site,
-                    facts
-                        .predecessors(site)?
-                        .iter()
-                        .filter(|p| sites.contains(p))
-                        .count(),
-                );
-            }
-            let mut ready = incoming
-                .iter()
-                .filter(|(_, count)| **count == 0)
-                .map(|(&site, _)| site)
-                .collect::<VecDeque<_>>();
-            let mut order = Vec::new();
-            while let Some(site) = ready.pop_front() {
-                order.push(site);
-                for next in facts
-                    .successors(site)?
-                    .into_iter()
-                    .flatten()
-                    .filter(|s| sites.contains(s))
-                {
-                    let count = incoming
-                        .get_mut(&next)
-                        .ok_or("composition edge lacks a node")?;
-                    *count -= 1;
-                    if *count == 0 {
-                        ready.push_back(next)
-                    }
-                }
-            }
-            // A second backedge cannot be hidden inside a native segment.
-            if order.len() != sites.len() {
+            let Some(initial) = partition(&facts, &sites)? else {
                 continue;
-            }
-            let mut owner = BTreeMap::new();
-            for &site in &order {
-                let predecessors = facts.predecessors(site)?;
-                let mut roots = predecessors
-                    .iter()
-                    .filter_map(|p| owner.get(p).copied())
-                    .collect::<BTreeSet<_>>();
-                if predecessors.iter().any(|p| !sites.contains(p)) {
-                    roots.insert(site);
-                }
-                // A join of independently entered pieces becomes a new entry,
-                // rather than letting either predecessor own a shared suffix.
-                let root = if roots.len() == 1 {
-                    *roots.first().unwrap()
-                } else {
-                    site
-                };
-                owner.insert(site, root);
-            }
-            let mut segments = BTreeMap::<u32, Segment>::new();
-            for &site in &order {
-                let root = owner[&site];
-                let segment = segments.entry(root).or_insert_with(|| Segment {
-                    entry: root,
-                    sites: Vec::new(),
-                    exits: Vec::new(),
-                    frame_plan: None,
-                    numeric: None,
-                    rejection: None,
-                });
-                segment.sites.push(site);
-                for next in facts.successors(site)?.into_iter().flatten() {
-                    if owner.get(&next) != Some(&root) {
-                        segment.exits.push((site, next));
+            };
+            // A contained ordinary scalar group is a real prefix boundary.
+            // Keep its checked source instructions and prepaid continuation;
+            // derive new pieces only after its frontiers. Do not slice frame
+            // or numeric proofs: every suffix is proved again below.
+            let mut suffix_sites = sites.clone();
+            for part in &initial {
+                if let Some(group) = admissions.group(part.entry as usize)
+                    && group.owner.is_none()
+                    && group.start() == part.entry
+                    && group.sites.iter().all(|site| part.sites.contains(site))
+                {
+                    for site in &group.sites {
+                        suffix_sites.remove(site);
                     }
                 }
             }
-            let mut segments = segments.into_values().collect::<Vec<_>>();
+            let mut segments = if suffix_sites == sites {
+                initial
+            } else {
+                partition(&facts, &suffix_sites)?
+                    .ok_or("removing an acyclic scalar prefix created a cycle")?
+            };
             for segment in &mut segments {
                 match frames::Layout::derive(plan, &facts, frames, segment) {
                     Ok(mut proof) => {
@@ -504,4 +453,88 @@ fn eligible(
         }),
         _ => false,
     }
+}
+
+/// Partition eligible sites at external entries and joins before deriving any
+/// representation or ownership proof. Reused after removing scalar prefixes.
+fn partition(
+    facts: &mech_engine::native_artifact::NativeProgramFacts<'_>,
+    sites: &BTreeSet<u32>,
+) -> Result<Option<Vec<Segment>>, &'static str> {
+    let mut incoming = BTreeMap::new();
+    for &site in sites {
+        incoming.insert(
+            site,
+            facts
+                .predecessors(site)?
+                .iter()
+                .filter(|p| sites.contains(p))
+                .count(),
+        );
+    }
+    let mut ready = incoming
+        .iter()
+        .filter(|(_, count)| **count == 0)
+        .map(|(&site, _)| site)
+        .collect::<VecDeque<_>>();
+    let mut order = Vec::new();
+    while let Some(site) = ready.pop_front() {
+        order.push(site);
+        for next in facts
+            .successors(site)?
+            .into_iter()
+            .flatten()
+            .filter(|s| sites.contains(s))
+        {
+            let count = incoming
+                .get_mut(&next)
+                .ok_or("composition edge lacks a node")?;
+            *count -= 1;
+            if *count == 0 {
+                ready.push_back(next)
+            }
+        }
+    }
+    // A second backedge cannot be hidden inside a native segment.
+    if order.len() != sites.len() {
+        return Ok(None);
+    }
+    let mut owner = BTreeMap::new();
+    for &site in &order {
+        let predecessors = facts.predecessors(site)?;
+        let mut roots = predecessors
+            .iter()
+            .filter_map(|p| owner.get(p).copied())
+            .collect::<BTreeSet<_>>();
+        if predecessors.iter().any(|p| !sites.contains(p)) {
+            roots.insert(site);
+        }
+        // A join of independently entered pieces becomes a new entry,
+        // rather than letting either predecessor own a shared suffix.
+        let root = if roots.len() == 1 {
+            *roots.first().unwrap()
+        } else {
+            site
+        };
+        owner.insert(site, root);
+    }
+    let mut segments = BTreeMap::<u32, Segment>::new();
+    for &site in &order {
+        let root = owner[&site];
+        let segment = segments.entry(root).or_insert_with(|| Segment {
+            entry: root,
+            sites: Vec::new(),
+            exits: Vec::new(),
+            frame_plan: None,
+            numeric: None,
+            rejection: None,
+        });
+        segment.sites.push(site);
+        for next in facts.successors(site)?.into_iter().flatten() {
+            if owner.get(&next) != Some(&root) {
+                segment.exits.push((site, next));
+            }
+        }
+    }
+    Ok(Some(segments.into_values().collect()))
 }
