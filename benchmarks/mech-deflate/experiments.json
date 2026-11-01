@@ -6244,6 +6244,26 @@
           "profile-numbers.json": "3f09fdb4e21adc19156d868e685f323e420f7c76f5a9c7fa00e3f0b001c91ecb"
         }
       }
+    },
+    "98": {
+      "base": "b2b5dc28dc3dc0392cb8dbfa5874ffaff7375dff",
+      "production": "1b32af2c7093aeef1c44bbd7e17f048ac71ab593",
+      "compiler_source": "1b32af2c7093aeef1c44bbd7e17f048ac71ab593",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "1b32af2c7093aeef1c44bbd7e17f048ac71ab593",
+          "asset": "r98-initial-e5c5104b26e4.tar.gz",
+          "sha256": "e5c5104b26e477fa4993ddbcc75e1486297f3025db4f6c43d1b781fb2077ec4d",
+          "manifest_sha256": "f7bfb9af72cceff8b9aa1a9533e7d52f2016bfd8cfb128fc0be9ec61def51f84",
+          "bytes": 4429288,
+          "files": 93,
+          "publication": "local-only; external archive upload rejected by automatic approval review",
+          "local_archive": "/private/tmp/mech-child-seed-round98-20261101/archives/r98-initial-e5c5104b26e4.tar.gz"
+        }
+      ],
+      "archive_publication": "local-only pending archive approval"
     }
   },
   "repository": "mech-lang/mech",
