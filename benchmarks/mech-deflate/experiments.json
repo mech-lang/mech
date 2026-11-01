@@ -177,8 +177,28 @@
           "files": 44,
           "asset_id": 697347454,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-inputs-a5126676c31c.tar.gz"
+        },
+        {
+          "event": "qualification",
+          "source_revision": "374edf1410b5f975d793fb69d8fcf390cbfa10a5",
+          "asset": "r79-qualification-af3d9dd445aa.tar.gz",
+          "sha256": "af3d9dd445aaf9149cfc7638992da763580f8beb822ac83304f9153078ab0cce",
+          "manifest_sha256": "e7861bafc29870e88ee2b502d71116e073017fe909f1a36b3a31f7fa19d1fffc",
+          "bytes": 153536,
+          "files": 65,
+          "asset_id": 697350379,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-qualification-af3d9dd445aa.tar.gz"
         }
-      ]
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "2807618f17c3b8dd01306b054aad2f3af5135b20cdb55cc2ef63ba6186bf1c33",
+          "profile-numbers.json": "0873e70c2a8c686b75caa1877cda21ee41fc79cb0ba7c66d4feea6d1fb58b8ee",
+          "scorecard.json": "d51d67cbd197fe9e0b3965a67d84b1524ca29fa7bcac48427abc225fc538f255",
+          "validation.json": "4dcda7a1ba5f3c8dd7d24651d1fe00608690f100aed55f239bad8ed1ce22beca"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
