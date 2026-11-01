@@ -6522,6 +6522,17 @@
             "improving_blocks": 61,
             "adverse_blocks": 3
           }
+        },
+        {
+          "event": "counters",
+          "source_revision": "5c219ed220879b05ee147bdf5d3f85680311eae2",
+          "asset": "r99-counters-98ea9cf1fe63.tar.gz",
+          "sha256": "98ea9cf1fe63d873aef453629db65ea37f3b1f962af38d816694ab425c3d443d",
+          "manifest_sha256": "c6f768dcfd68d14839d3a7fd051ad950caa099fa0a7d5d638144b9c71fd3a9e7",
+          "bytes": 311825,
+          "files": 80,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-counters-98ea9cf1fe63.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
