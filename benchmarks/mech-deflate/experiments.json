@@ -679,6 +679,25 @@
         "hosted_ci": "cancel on publication by instruction; not a pass",
         "skipped": "Giant complete knucleotide, large/full-corpus compression, fresh minimal/no_std graph; separate unchanged Budget/planner/Engine integration suites retain earlier receipts."
       }
+    },
+    "81": {
+      "base": "54badcdaf0a2c4094fa2127c69e25fb8bd1260ad",
+      "production": "2f9bf24dee31b5d9078e0f6619a36ffe243fbbf7",
+      "compiler_source": "c29854f6f1f404658c39bcb024296b01ec80a71d",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "baseline",
+          "source_revision": "c29854f6f1f404658c39bcb024296b01ec80a71d",
+          "asset": "r81-baseline-2bbc7217b7f9.tar.gz",
+          "sha256": "2bbc7217b7f915b9533b5cb06af213f6ae16dda3aec7797c18ebf0b1dfe492c8",
+          "manifest_sha256": "c38105a0fcb4cfa9fd94ea2cf1225d025cda53ce6055004e8c8f8bd625c16c4f",
+          "bytes": 55117,
+          "files": 33,
+          "asset_id": 697473547,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r81-baseline-2bbc7217b7f9.tar.gz"
+        }
+      ]
     }
   },
   "repository": "mech-lang/mech",
