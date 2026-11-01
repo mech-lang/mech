@@ -3686,6 +3686,17 @@
           "files": 67,
           "asset_id": 698212795,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-frame-allocation-a99d25bda1f7.tar.gz"
+        },
+        {
+          "event": "isolated-profile",
+          "source_revision": "460c9cb748fc377c1cbcfd57565a5373de05de14",
+          "asset": "r89-isolated-profile-b01c981e0900.tar.gz",
+          "sha256": "b01c981e0900e9419243b3048450c29c20479be6f38163eea9b7d7739aeb24f5",
+          "manifest_sha256": "282c782cab6ff2c0e9780cf69bc30826a1a935ece966adb80f300328c00562d3",
+          "bytes": 277146,
+          "files": 44,
+          "asset_id": 698213677,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-isolated-profile-b01c981e0900.tar.gz"
         }
       ]
     }
