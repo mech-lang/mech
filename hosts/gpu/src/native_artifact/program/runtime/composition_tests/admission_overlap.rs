@@ -1,7 +1,7 @@
-//! Ordinary scalar prefixes precede independently derived native suffixes.
+//! A larger parent piece may follow its already funded ordinary scalar prefix.
 use super::*;
 
-fn suffix(jit: &JitProgramArtifact) -> (u32, Vec<u32>) {
+fn overlap(jit: &JitProgramArtifact) -> (u32, Vec<u32>) {
     let metadata = jit.descriptor().metadata();
     let pieces = metadata
         .compositions
@@ -9,38 +9,28 @@ fn suffix(jit: &JitProgramArtifact) -> (u32, Vec<u32>) {
         .iter()
         .flat_map(|parent| &parent.segments)
         .filter(|piece| {
-            metadata.compositions.entry(piece.entry as usize).is_some()
+            piece.numeric.is_some()
                 && piece
                     .frame_plan
                     .as_ref()
                     .is_some_and(|frame| frame.aliases.iter().any(|alias| alias.call_result))
-        })
-        .flat_map(|piece| {
-            metadata
-                .map_admission
-                .groups
-                .iter()
-                .filter_map(move |group| {
-                    (group.owner.is_none()
-                        && group.frontier.iter().any(|edge| edge.site == piece.entry))
-                    .then_some((piece, group))
-                })
+                && metadata
+                    .map_admission
+                    .group(piece.entry as usize)
+                    .is_some_and(|group| {
+                        group.owner.is_none()
+                            && group.start() == piece.entry
+                            && group.sites.iter().all(|site| piece.sites.contains(site))
+                    })
         })
         .collect::<Vec<_>>();
-    assert_eq!(
-        pieces.len(),
-        1,
-        "fixture must isolate the derived native suffix"
+    assert_eq!(pieces.len(), 1, "fixture must isolate the real overlap");
+    let piece = pieces[0];
+    assert!(
+        metadata.compositions.entry(piece.entry as usize).is_some(),
+        "a fully contained scalar prefix must not exclude the proved piece"
     );
-    let (piece, group) = pieces[0];
-    assert!(metadata.map_admission.group(piece.entry as usize).is_none());
-    assert!(group.sites.iter().all(|site| !piece.sites.contains(site)));
-    for &site in &group.sites {
-        assert!(
-            metadata.compositions.entry(site as usize).is_none(),
-            "the original scalar prefix must execute before native entry"
-        );
-    }
+    let group = metadata.map_admission.group(piece.entry as usize).unwrap();
     for other in metadata
         .compositions
         .parents
@@ -80,7 +70,7 @@ fn check_output(output: &[Option<Value>], length: usize, steps: u64) {
 }
 
 #[test]
-fn scalar_prefix_selects_current_native_suffix_on_each_visit() {
+fn contained_scalar_prefix_selects_current_parent_piece_on_each_visit() {
     for artifact in artifacts(bounds_retry::SOURCE) {
         let mode = NativeProgramLimitMode::NoLimits;
         let jit = JitProgramArtifact::compile_with_limits(
@@ -89,7 +79,7 @@ fn scalar_prefix_selects_current_native_suffix_on_each_visit() {
             mode.compilation(),
         )
         .unwrap();
-        let (entry, _) = suffix(&jit);
+        let (entry, _) = overlap(&jit);
         for restored in [false, true] {
             let memory = mode.memory_budget();
             let mut output = vec![None; artifact.outputs().len()];
@@ -122,7 +112,7 @@ fn scalar_prefix_selects_current_native_suffix_on_each_visit() {
 }
 
 #[test]
-fn declined_native_suffix_preserves_paid_scalar_prefix_and_recovers() {
+fn declined_parent_piece_restores_paid_scalar_prefix_and_recovers() {
     for artifact in artifacts(bounds_retry::SOURCE) {
         let mode = NativeProgramLimitMode::NoLimits;
         let jit = JitProgramArtifact::compile_with_limits(
@@ -131,7 +121,7 @@ fn declined_native_suffix_preserves_paid_scalar_prefix_and_recovers() {
             mode.compilation(),
         )
         .unwrap();
-        let (entry, scalar_sites) = suffix(&jit);
+        let (entry, scalar_sites) = overlap(&jit);
         for restored in [false, true] {
             let memory = mode.memory_budget();
             let args = bounds_retry::arguments(&artifact, &memory, 3, 2);
@@ -180,88 +170,6 @@ fn declined_native_suffix_preserves_paid_scalar_prefix_and_recovers() {
                 (memory.used_bytes(), memory.retained_snapshot_nodes()),
                 (0, 0)
             );
-        }
-    }
-}
-
-#[test]
-fn scalar_prefix_errors_precede_suffix_preview_and_preserve_publication() {
-    use crate::native_artifact::codegen::options::OptimizationPass;
-    for division in [false, true] {
-        let source = if division {
-            bounds_retry::SOURCE.replace("future := left + 1u64", "future := 1u64 / left")
-        } else {
-            bounds_retry::SOURCE.to_owned()
-        };
-        for artifact in artifacts(&source) {
-            let mode = NativeProgramLimitMode::NoLimits;
-            let catalog = mech_stdlib::source_catalog();
-            let native =
-                JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
-                    .unwrap();
-            let ordinary = JitProgramArtifact::compile_for_test(
-                &artifact,
-                &catalog,
-                OptimizationPass::ScalarLoops,
-            )
-            .unwrap();
-            let (entry, _) = suffix(&native);
-            let mut expected_error = None;
-            for jit in [&ordinary, &native] {
-                for restored in [false, true] {
-                    let memory = mode.memory_budget();
-                    let mut output = vec![None; artifact.outputs().len()];
-                    for steps in [1, if division { 0 } else { u64::MAX }, 1] {
-                        let args = bounds_retry::arguments(&artifact, &memory, 3, steps);
-                        let aliases = args.clone();
-                        let before = contents(&args);
-                        let prior = output.clone();
-                        let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
-                        let (result, counts) = if restored {
-                            observe::run_restored(
-                                jit,
-                                &args,
-                                &mut output,
-                                mode.execution(),
-                                &memory,
-                            )
-                        } else {
-                            observe::run(jit, &args, &mut output, mode.execution(), &memory)
-                        };
-                        if steps != 1 {
-                            let error = format!("{:?}", result.unwrap_err());
-                            assert!(error.contains("Arithmetic"), "{error}");
-                            assert_eq!(error, *expected_error.get_or_insert(error.clone()));
-                            assert!(
-                                !counts.helpers.contains_key(&(
-                                    u64::from(entry),
-                                    GlobalHelper::NumericSegmentBegin.raw()
-                                )),
-                                "prefix failure must occur before suffix preview: {counts:?}"
-                            );
-                            assert!(output.iter().zip(&prior).all(|(a, b)| {
-                                a.as_ref()
-                                    .unwrap()
-                                    .shares_frozen_storage(b.as_ref().unwrap())
-                            }));
-                            assert_eq!(
-                                (memory.used_bytes(), memory.retained_snapshot_nodes()),
-                                retained
-                            );
-                        } else {
-                            result.unwrap();
-                            check_output(&output, 3, if division { 0 } else { 1 });
-                        }
-                        assert_eq!(contents(&args), before);
-                        assert_eq!(contents(&aliases), before);
-                    }
-                    drop(output);
-                    assert_eq!(
-                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
-                        (0, 0)
-                    );
-                }
-            }
         }
     }
 }
