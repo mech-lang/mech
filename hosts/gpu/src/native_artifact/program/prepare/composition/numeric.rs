@@ -74,20 +74,29 @@ impl Layout {
                 }
                 let width = width(template.inputs()[0].body())
                     .ok_or("parent numeric input has an unsupported shape or width")?;
-                if facts
-                    .definition_sites(operands[0].get())?
+                let alias = frames
+                    .aliases
                     .iter()
-                    .filter_map(|d| d.site())
-                    .any(|s| segment.sites.contains(&s))
+                    .find(|alias| alias.value == operands[0]);
+                if alias.is_none()
+                    && facts
+                        .definition_sites(operands[0].get())?
+                        .iter()
+                        .filter_map(|d| d.site())
+                        .any(|s| segment.sites.contains(&s))
                 {
                     return Err("parent native view changes within its piece");
                 }
-                let source = frames::Source::Value(operands[0].get());
-                let source = if let Some(at) = frames.sources.iter().position(|s| *s == source) {
-                    at
+                let source = if let Some(alias) = alias {
+                    alias.source
                 } else {
-                    frames.sources.push(source);
-                    frames.sources.len() - 1
+                    let source = frames::Source::Value(operands[0].get());
+                    if let Some(at) = frames.sources.iter().position(|s| *s == source) {
+                        at
+                    } else {
+                        frames.sources.push(source);
+                        frames.sources.len() - 1
+                    }
                 };
                 let array = if let Some(array) = views.iter().position(|v| v.source == source) {
                     if views[array].width != width {

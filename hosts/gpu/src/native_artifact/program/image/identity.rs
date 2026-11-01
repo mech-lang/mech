@@ -256,7 +256,9 @@ fn selected_template(
 // IR133 derives acyclic parent pieces around multiple ordinary child boundaries.
 // Exact nested child edges reuse validated ancestry and one invocation marker;
 // every piece reacquires owners/views and images reconstruct the same inventory.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 133;
+// IR134 retains structural unsigned-array projections as proved aliases inside
+// parent pieces. Images reconstruct current-source and exact exit-use proofs.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 134;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -439,7 +441,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 133;
 // Policy95 includes checked child-edge transitions within source admission.
 // Policy94 settles acyclic parent envelopes and reached lexical retirements
 // before ordinary child entry; it does not renew a child or parent allowance.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 95;
+// Policy96 prices current alias previews and funds ordinary canonical escape
+// installation before a parent piece, without materializing its private aliases.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 96;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

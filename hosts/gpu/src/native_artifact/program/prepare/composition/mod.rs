@@ -467,7 +467,13 @@ fn eligible(
             }
             Frame::Copy { source, output } => flat(*source) && flat(*output),
             Frame::Project { source, output, .. } => {
-                flat(*source) && plan.values()[output.get() as usize].scalar_kind().is_some()
+                flat(*source)
+                    && (plan.values()[output.get() as usize].scalar_kind().is_some()
+                        || (matches!(action, Action::Structural { .. })
+                            && super::readonly_numeric::width(
+                                plan.values()[output.get() as usize].definition().body(),
+                            )
+                            .is_some()))
             }
         };
     }
