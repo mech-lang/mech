@@ -3675,6 +3675,17 @@
           "files": 89,
           "asset_id": 698212583,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-scalar-controls-1614ab7a0134.tar.gz"
+        },
+        {
+          "event": "frame-allocation",
+          "source_revision": "460c9cb748fc377c1cbcfd57565a5373de05de14",
+          "asset": "r89-frame-allocation-a99d25bda1f7.tar.gz",
+          "sha256": "a99d25bda1f76c0583746ecba6190754a641b13c7e527a089447fdef2c7c10d6",
+          "manifest_sha256": "d75a80837c31d5353192ea541614f3d6874b48f5e05830e71b2747139b9e339b",
+          "bytes": 60966,
+          "files": 67,
+          "asset_id": 698212795,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-frame-allocation-a99d25bda1f7.tar.gz"
         }
       ]
     }
