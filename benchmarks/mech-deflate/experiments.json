@@ -3044,6 +3044,17 @@
           "files": 26,
           "asset_id": 698023543,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-inputs-4f5392f3f7f8.tar.gz"
+        },
+        {
+          "event": "initial",
+          "source_revision": "36794bdeac6c70a13be317a14d2175bb1b4fbb94",
+          "asset": "r88-initial-7aa3a3a19eed.tar.gz",
+          "sha256": "7aa3a3a19eed62624d5aee30a5331aad878ffcd9c75854783e82540f1ff858aa",
+          "manifest_sha256": "7dc4d7b15ada1670d5fda0e4abd52eefc44c9e1fccf6fc2c6740b56af578946f",
+          "bytes": 8336701,
+          "files": 58,
+          "asset_id": 698023633,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-initial-7aa3a3a19eed.tar.gz"
         }
       ]
     }
