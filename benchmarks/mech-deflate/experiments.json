@@ -4433,6 +4433,17 @@
           "files": 37,
           "asset_id": 698557839,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-closure-5ba91b1670ea.tar.gz"
+        },
+        {
+          "event": "replay-repair",
+          "source_revision": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+          "asset": "r90-replay-repair-7598e8786035.tar.gz",
+          "sha256": "7598e87860357d58f4d934d43630523528fac4c3d1b134eafe2340ac2f79d1a0",
+          "manifest_sha256": "d36a901968cc74c1aa0852b903e61c84d7cf8b550681bc500096238b322df38d",
+          "bytes": 51917,
+          "files": 38,
+          "asset_id": 698570568,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-replay-repair-7598e8786035.tar.gz"
         }
       ],
       "retained_production": "254ac339b64ab71dd374cc20c3873cd6ae766921",
@@ -4450,7 +4461,7 @@
           "correctness.json": "c1116507ab953ea8a077c6189c339bd2d16a9b6207ac84b04c2f609b822de9c8",
           "profile-numbers.json": "727f20e60513a41987c69802ae87d107b941f8420865df49166fcf9b8d51aee6",
           "scorecard.json": "26e29fe6df4f4592dbb6aa6ceaf9f9a54a075790e15702f0ec63f87e1c52d915",
-          "validation.json": "e1acad40d99eac6bec667f173e79f097bcab1184ec207ed974669e437f82d223"
+          "validation.json": "532c747e764d607a8dea5eb938f9bf7f01efb01fd2090dadaf230fa0ae875a0b"
         }
       },
       "validation": {
@@ -4460,6 +4471,7 @@
         "inherited": "unchanged coherent Core/Engine/selected-operation dependency graph; no new full math or minimal/no_std graph build",
         "linked_bounds_cases": 12,
         "linked_existing_cases": 16,
+        "object_binary_retrieval": "Raw Object stays local after automatic approval rejection; numerical replay verifies pinned Object hashes against both build bindings, not independently retrieved binary bytes.",
         "overlapping_selections": [
           {
             "executed": 347,
