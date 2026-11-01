@@ -6423,6 +6423,26 @@
           "profile-numbers.json": "f546072a1747ee2322e0ca9bfaa760a5fbcd164d5febb915e2b40cb0ad8fd002"
         }
       }
+    },
+    "99": {
+      "base": "64705927265fa331735ef39cdb3185471015054e",
+      "production": "5c219ed220879b05ee147bdf5d3f85680311eae2",
+      "compiler_source": "5c219ed220879b05ee147bdf5d3f85680311eae2",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "5c219ed220879b05ee147bdf5d3f85680311eae2",
+          "asset": "r99-initial-6bfdecfa6b34.tar.gz",
+          "sha256": "6bfdecfa6b348125dd88a2b894396189aeec317092db04bd2bb0ec31c831253d",
+          "manifest_sha256": "8bd7352ada85d96c8d3db8606095b4811cdbf36eb59a273ee4d6b46250a87c31",
+          "bytes": 4440139,
+          "files": 70,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-initial-6bfdecfa6b34.tar.gz"
+        }
+      ],
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
