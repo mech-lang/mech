@@ -3494,6 +3494,17 @@
           "files": 36,
           "asset_id": 698189750,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-pinned-inputs-ff4835e289c5.tar.gz"
+        },
+        {
+          "event": "initial",
+          "source_revision": "460c9cb748fc377c1cbcfd57565a5373de05de14",
+          "asset": "r89-initial-78cf73d6f1eb.tar.gz",
+          "sha256": "78cf73d6f1eb9768201b0726fb87fac851fbe498dfd7f23ff14a416cd8b83d07",
+          "manifest_sha256": "bfe2908ac6c42f4b2335d290cae963f60ca3fd88b422f781042f8bc3ad9016c1",
+          "bytes": 8405414,
+          "files": 62,
+          "asset_id": 698189910,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-initial-78cf73d6f1eb.tar.gz"
         }
       ]
     }
