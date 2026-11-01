@@ -4005,6 +4005,17 @@
           "files": 32,
           "asset_id": 698451531,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-repaired-bounds-91f210ed098a.tar.gz"
+        },
+        {
+          "event": "repaired-witness",
+          "source_revision": "3444655203c554824153771782d3b81bf3cc1edc",
+          "asset": "r90-repaired-witness-6522d549a405.tar.gz",
+          "sha256": "6522d549a4051695fad795850c71923a4dc5b77f26cc4287c789b03b06043e48",
+          "manifest_sha256": "7de6cea8b636b8cd3a795fa8a0cd870e4fe95d90c9320a338133bcdfe4e23287",
+          "bytes": 63088,
+          "files": 37,
+          "asset_id": 698451606,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-repaired-witness-6522d549a405.tar.gz"
         }
       ]
     }
