@@ -943,6 +943,17 @@
           "files": 75,
           "asset_id": 697588709,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r81-frame-allocation-45b5d3eb0405.tar.gz"
+        },
+        {
+          "event": "final-checks",
+          "source_revision": "c29854f6f1f404658c39bcb024296b01ec80a71d",
+          "asset": "r81-final-checks-fd2726646c69.tar.gz",
+          "sha256": "fd2726646c6904642c3e47273453dd50741431135519970dbde858b570b2ed1e",
+          "manifest_sha256": "c510486013c871cafa5dfa1341b502e3b61e29517d7c4adfb0fd36b78ca81a2f",
+          "bytes": 116162,
+          "files": 79,
+          "asset_id": 697588760,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r81-final-checks-fd2726646c69.tar.gz"
         }
       ]
     }
