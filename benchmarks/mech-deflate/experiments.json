@@ -4411,6 +4411,17 @@
           "files": 38,
           "asset_id": 698549633,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-analysis-driver-stream-error-fcc65c1e0c4d.tar.gz"
+        },
+        {
+          "event": "analysis",
+          "source_revision": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+          "asset": "r90-analysis-88f8d5ff7439.tar.gz",
+          "sha256": "88f8d5ff7439873b7f9cad9aff1132232ac9d4a5f494c3b4b537ec8ee560f5de",
+          "manifest_sha256": "9887aed6cbc291e7fb54f491d9b5d2c321d480984d166c9d7aa363c2943db20e",
+          "bytes": 64553,
+          "files": 42,
+          "asset_id": 698549728,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-analysis-88f8d5ff7439.tar.gz"
         }
       ]
     }
