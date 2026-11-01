@@ -6951,6 +6951,17 @@
           "files": 40,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-primary-reference-d84f37a83f36.tar.gz"
+        },
+        {
+          "event": "primary-group0",
+          "source_revision": "af930a97154d8f71b6759540049c55708c8ba035",
+          "asset": "r101-primary-group0-25713235a0c9.tar.gz",
+          "sha256": "25713235a0c982caecb4a3473e270e0ab45a359126091842469d8d330cb1ac3b",
+          "manifest_sha256": "ae3156453448fa98c0d1772cd5c8d438241afe9abd2d7fd3aa44d3995d79e94c",
+          "bytes": 136424,
+          "files": 42,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-primary-group0-25713235a0c9.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
