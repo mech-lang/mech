@@ -1,0 +1,71 @@
+{
+  "created_utc": "2026-11-01T00:21:03.140612+00:00",
+  "head": "a1a792786d08572519f9ee8a0acfd392517ec19c",
+  "files": [
+    {
+      "path": "diagnostic-counts/diagnostic.patch",
+      "sha256": "05b8daf70905c022ce844b987aeee7b5b03519ba109837e1adfdd4b39375347d",
+      "bytes": 5563
+    },
+    {
+      "path": "diagnostic-counts/gpu-build.json",
+      "sha256": "7d9a849ffe02853e9694a5ceb7166ba834c8c11d60bb6ef23661e2b1bdcb0260",
+      "bytes": 5284
+    },
+    {
+      "path": "diagnostic-counts/gpu-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "diagnostic-counts/gpu-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "diagnostic-counts/run.json",
+      "sha256": "610fbf81db0cfae12b53d87df6b81708f545c6f7151b839bc000afa97314210b",
+      "bytes": 507
+    },
+    {
+      "path": "diagnostic-counts/run.stderr",
+      "sha256": "6183316d886b4f42f485de1b00fd4bbc2d2947e1b1f2366cbb38a16a01aaefdf",
+      "bytes": 257
+    },
+    {
+      "path": "diagnostic-counts/run.stdout",
+      "sha256": "2c089a99b44d970f6408c4c38f0152b3b6e82fdb4181d6cb12555075dc278c2e",
+      "bytes": 4759
+    },
+    {
+      "path": "diagnostic-counts/summary.json",
+      "sha256": "c920bb2eea968566f0c64fceae93412f290d75e00fe3bd1f84eb4a4dae03281a",
+      "bytes": 2047
+    },
+    {
+      "path": "diagnostic-counts/worker-build.json",
+      "sha256": "b0975b7138e532dc423f7a708aeecb23205d604f44d7aa4bfaea8be2cfe58bad",
+      "bytes": 2407
+    },
+    {
+      "path": "diagnostic-counts/worker-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "diagnostic-counts/worker-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "diagnostic-counts/worker.rs",
+      "sha256": "366a8adcfa5871a2f903c3491f57d5622924399876e648634232013cc44a5999",
+      "bytes": 7913
+    },
+    {
+      "path": "diagnostic-counts.py",
+      "sha256": "b1388972f0e1ae3dfbd2659bede19ef20dc8f5d0d214c5361d9fc81f2c9da255",
+      "bytes": 10880
+    }
+  ]
+}
