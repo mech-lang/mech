@@ -25,6 +25,9 @@ pub(in crate::native_artifact) struct Exit {
 pub(in crate::native_artifact) struct Alias {
     pub value: NativeMatchValue,
     pub source: usize,
+    /// A library result keeps its declared output limits even when its owner
+    /// remains private. Structural forwarding has no declared call boundary.
+    pub call_result: bool,
 }
 #[derive(Debug, Eq, PartialEq, serde::Serialize)]
 pub(in crate::native_artifact) struct Layout {
@@ -242,7 +245,19 @@ impl Layout {
                 sources.push(origin);
                 sources.len() - 1
             };
-            aliases.push(Alias { value, source });
+            let call_result = facts.definition_sites(value.get())?.iter().any(|definition| {
+                definition.site().is_some_and(|site| {
+                    matches!(
+                        plan.blocks()[site as usize].action(),
+                        Action::LibraryCall { .. }
+                    )
+                })
+            });
+            aliases.push(Alias {
+                value,
+                source,
+                call_result,
+            });
         }
         let mut current = BTreeMap::<u32, BTreeSet<u32>>::new();
         let mut possible = BTreeMap::<u32, BTreeSet<u32>>::new();
