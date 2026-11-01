@@ -102,6 +102,7 @@ fn with_exclusive_budget_gate<T, R>(
 std::thread_local! {
     static IMPORT_LOOKUP_STEPS: Cell<u64> = const { Cell::new(0) };
     static IMPORT_LINK_STEPS: Cell<u64> = const { Cell::new(0) };
+    static IMPORT_SHARED_GATES: Cell<u64> = const { Cell::new(0) };
 }
 
 pub struct SnapshotValidationContext<'a> {
@@ -505,6 +506,8 @@ impl FrozenSnapshotData {
         &self,
         apply: impl FnOnce(&mut Option<Arc<SnapshotBudgetRegistration>>) -> T,
     ) -> T {
+        #[cfg(all(test, any(not(feature = "no_std"), feature = "std")))]
+        IMPORT_SHARED_GATES.with(|steps| steps.set(steps.get() + 1));
         with_budget_gate(&self.budget_imports, apply)
     }
 
@@ -4707,6 +4710,164 @@ mod tests {
         drop((raw, weak, independent_claim, claim_a, claim_b, zero));
         assert_eq!(a.used_bytes(), 0);
         assert_eq!(b.used_bytes(), 0);
+    }
+
+    #[cfg(any(not(feature = "no_std"), feature = "std"))]
+    #[test]
+    fn first_admission_uses_exclusive_empty_registry_only_without_observers() {
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::String,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let schemas = Arc::new(build.table);
+        for independent in [false, true] {
+            for observer in 0..4 {
+                let raw = ValueDraft {
+                    schema,
+                    shape_values: Box::new([]),
+                    data: ValueDataDraft::String("fresh".into()),
+                }
+                .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+                .unwrap();
+                let alias = (observer == 1).then(|| raw.clone());
+                let identity = (observer == 2).then(|| raw.frozen_storage_identity());
+                let root_observer = (observer == 3).then(|| Arc::downgrade(&raw.root));
+                let address = Arc::as_ptr(&raw.root);
+                let budget = crate::ManagedMemoryBudget::new(1_000_000);
+                let required = raw.unshared_memory_budget_admission_bytes(&budget).unwrap();
+                let mut reservation = budget.reserve_capacity(required).unwrap();
+                IMPORT_SHARED_GATES.with(|steps| steps.set(0));
+                let owned = if independent {
+                    raw.into_independent_memory_budget(&mut reservation)
+                } else {
+                    raw.into_memory_budget(&mut reservation)
+                }
+                .unwrap();
+                assert_eq!(
+                    IMPORT_SHARED_GATES.with(Cell::get),
+                    if observer == 0 {
+                        0
+                    } else if independent {
+                        1
+                    } else {
+                        2
+                    }
+                );
+                assert_eq!(
+                    Arc::as_ptr(&owned.root) == address,
+                    observer == 0 || observer == 2
+                );
+                assert_eq!(reservation.capacity_bytes(), 0);
+                assert_eq!(budget.used_bytes(), required);
+                assert!(budget.retained_snapshot_nodes() > 0);
+                if let Some(identity) = &identity {
+                    assert!(identity.matches(&owned));
+                }
+                if let Some(alias) = alias {
+                    assert!(alias.shares_frozen_storage(&owned));
+                    let mut zero = budget.reserve_capacity(0).unwrap();
+                    let reused = alias.into_memory_budget(&mut zero).unwrap();
+                    assert!(Arc::ptr_eq(&owned.root, &reused.root));
+                }
+                drop((owned, reservation, identity, root_observer));
+                assert_eq!(budget.used_bytes(), 0);
+                assert_eq!(budget.retained_snapshot_nodes(), 0);
+            }
+        }
+    }
+
+    #[cfg(any(not(feature = "no_std"), feature = "std"))]
+    #[test]
+    fn first_admission_keeps_failure_order_prior_owners_and_retry() {
+        let mut builder = SchemaTableBuilder::new();
+        let handle = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::String,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let schemas = Arc::new(build.table);
+        let fresh = || {
+            ValueDraft {
+                schema,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::String("fresh".into()),
+            }
+            .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+            .unwrap()
+        };
+        for failure in 0..3 {
+            let budget = crate::ManagedMemoryBudget::new(1_000_000);
+            let published = fresh();
+            let required = published
+                .unshared_memory_budget_admission_bytes(&budget)
+                .unwrap();
+            let mut initial = budget.reserve_capacity(required).unwrap();
+            let published = published.into_memory_budget(&mut initial).unwrap();
+            let before_nodes = budget.retained_snapshot_nodes();
+            let before_bytes = budget.used_bytes();
+            let mut reservation = budget
+                .reserve_capacity(required - u64::from(failure == 0))
+                .unwrap();
+            let capacity = reservation.capacity_bytes();
+            let overflow = (failure == 2).then(|| {
+                budget
+                    .retain_snapshot_nodes(u64::MAX - before_nodes)
+                    .unwrap()
+            });
+            if failure != 2 {
+                budget.inject_snapshot_import_failure_after(0);
+            }
+            let error = fresh().into_memory_budget(&mut reservation).unwrap_err();
+            assert!(match failure {
+                0 =>
+                    matches!(error, crate::MemoryRuntimeError::BudgetExceeded { requested, limit, .. } if requested == required && limit == required - 1),
+                1 => matches!(error, crate::MemoryRuntimeError::AllocationFailed { .. }),
+                _ => matches!(
+                    error,
+                    crate::MemoryRuntimeError::AccountingInvariantViolation { .. }
+                ),
+            });
+            assert_eq!(reservation.capacity_bytes(), capacity);
+            assert_eq!(budget.used_bytes(), before_bytes + capacity);
+            assert!(
+                matches!(published.data(), ValueData::String(text) if text.as_ref() == "fresh")
+            );
+            drop((overflow, reservation));
+            assert_eq!(budget.retained_snapshot_nodes(), before_nodes);
+            assert_eq!(budget.used_bytes(), before_bytes);
+            // The one-shot injected failure survives the earlier byte denial.
+            if failure == 0 {
+                let mut retry = budget.reserve_capacity(required).unwrap();
+                assert!(matches!(
+                    fresh().into_memory_budget(&mut retry),
+                    Err(crate::MemoryRuntimeError::AllocationFailed { .. })
+                ));
+                assert_eq!(retry.capacity_bytes(), required);
+            }
+            let mut retry = budget.reserve_capacity(required).unwrap();
+            let recovered = fresh().into_memory_budget(&mut retry).unwrap();
+            assert_eq!(retry.capacity_bytes(), 0);
+            assert_eq!(budget.retained_snapshot_nodes(), before_nodes * 2);
+            drop((recovered, retry, published, initial));
+            assert_eq!(budget.used_bytes(), 0);
+            assert_eq!(budget.retained_snapshot_nodes(), 0);
+        }
     }
 
     #[cfg(any(not(feature = "no_std"), feature = "std"))]
