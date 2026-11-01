@@ -5108,6 +5108,17 @@
           "files": 39,
           "asset_id": 698746916,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-reference-profile-2ee918ad354d.tar.gz"
+        },
+        {
+          "event": "after-census",
+          "source_revision": "312e0d7b68d4b85052584bbdbfa9319f124c4f57",
+          "asset": "r92-after-census-57e06b08e58b.tar.gz",
+          "sha256": "57e06b08e58bb1dbe2b07bf581a06e4f97d4e9f1af1ab0111c9e72516f96f870",
+          "manifest_sha256": "01a8827315e4fa3eb914eefcfa9be7bb5217b2f034e5c3ce32965dd1c3828c3c",
+          "bytes": 708205,
+          "files": 54,
+          "asset_id": 698747632,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r92-after-census-57e06b08e58b.tar.gz"
         }
       ]
     }
