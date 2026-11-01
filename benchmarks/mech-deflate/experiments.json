@@ -4016,6 +4016,17 @@
           "files": 37,
           "asset_id": 698451606,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-repaired-witness-6522d549a405.tar.gz"
+        },
+        {
+          "event": "final-units",
+          "source_revision": "3444655203c554824153771782d3b81bf3cc1edc",
+          "asset": "r90-final-units-1d1ef102fa00.tar.gz",
+          "sha256": "1d1ef102fa00d8126df0b3f4f1e0419db4ecea6ccecf792e1327a288e7e1563b",
+          "manifest_sha256": "d915dbf0038795ad6371d24416501d3b969062b7eca4e1319185b56f0dab29f9",
+          "bytes": 59837,
+          "files": 42,
+          "asset_id": 698451642,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-final-units-1d1ef102fa00.tar.gz"
         }
       ]
     }
