@@ -3066,6 +3066,17 @@
           "files": 407,
           "asset_id": 698023869,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-before-census-df7f3beef7e4.tar.gz"
+        },
+        {
+          "event": "after-census",
+          "source_revision": "36794bdeac6c70a13be317a14d2175bb1b4fbb94",
+          "asset": "r88-after-census-ca7473351d1b.tar.gz",
+          "sha256": "ca7473351d1bc26c45780136a391d8abb5bbc06dea58c954c36e095ef3a0f0ea",
+          "manifest_sha256": "84144370b9a66e2c0da81cc829dc51ffea3cb980b869a144bb7fe5b30f945ee1",
+          "bytes": 1401484,
+          "files": 407,
+          "asset_id": 698023971,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r88-after-census-ca7473351d1b.tar.gz"
         }
       ]
     }
