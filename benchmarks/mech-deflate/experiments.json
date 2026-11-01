@@ -6928,7 +6928,7 @@
       "base": "c489e5fc30a4e9cea549cc1de66e2c94ab2f9eb9",
       "production": "af930a97154d8f71b6759540049c55708c8ba035",
       "compiler_source": "af930a97154d8f71b6759540049c55708c8ba035",
-      "decision": "under measurement",
+      "decision": "Reject and revert ineffective ordinary #[inline]. No intended host code change; all four elapsed pairs adverse; heap unchanged.",
       "events": [
         {
           "event": "initial",
@@ -7057,7 +7057,21 @@
           "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-closure-d6960109a534.tar.gz"
         }
       ],
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "restoration": {
+        "commit": "e6d215ad6dfa6f24b3594fbe568189d0d28aa6f6",
+        "retained_source": "bebe5a245d312796c630de76fc558fbcd2c2f2ff",
+        "production_diff_empty": true
+      },
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "c2b68da86f2d3b3b57b927e908aeee9e92d6ccb1c5b4b62188077d8f091718ce",
+          "profile-numbers.json": "a49b93fc966348dd04ddf7648dff39564183fea75873fe2a925df2fc5dc72b70",
+          "scorecard.json": "5452e486c57f6af2798b4edcadbdb6f382cc497a0652741ed20149c7e2c54a3e",
+          "validation.json": "c5e57e49aec09d6e89f6cdc2042982701300231b903da10be125eac24fbd2a8f"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",

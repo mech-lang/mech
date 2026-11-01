@@ -575,3 +575,20 @@ is still unproved; an explicit inline experiment is next, separately measured.
 Seventeen archived packets verify1,249 file occurrences/538 paths and reproduce
 all four reports byte-identically. A missing linked-metadata replay input is fixed
 in a separate immutable repair packet; compiler and measurements stay unchanged.
+
+
+## R101: ordinary inline hint rejected
+
+Candidate `af930a97154d8f71b6759540049c55708c8ba035` adds only `#[inline]` to
+shared control debit. Actual hot caller512B/helper520B/observer428B and the
+extra call remain unchanged. Fresh elapsed **8.439467×→8.469622×** reference
+(+0.357316%); all four pairs are adverse. Instructions27,931,623→27,931,132
+are effectively unchanged; requests5077/bytes95,895,278/peak17,782,744 stay equal.
+All3968 primary/3984 total observations and separate695-call profiles remain.
+
+Actual Engine budget108 tests, focused lifetime1 and linked exact-byte/inflate
+smoke2 pass. Broader qualification is intentionally skipped after rejection.
+Object/image/metadata remain byte-identical. Revert `e6d215ad6` restores all
+production source to retained R100; all fees/errors/prices remain unchanged.
+The next distinct candidate is `#[inline(always)]`, verified in actual host code
+before accepting any elapsed result. Native executables remain local.
