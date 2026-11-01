@@ -6659,7 +6659,7 @@
       "base": "c84e307aa64e136bd0d3f6d2fc2bbf869b4e3b25",
       "production": "bebe5a245d312796c630de76fc558fbcd2c2f2ff",
       "compiler_source": "bebe5a245d312796c630de76fc558fbcd2c2f2ff",
-      "decision": "Candidate under measurement; ownership audit and repeated R99 hardware adverse result retained.",
+      "decision": "Retain as allocation/instruction cleanup: 72 fewer requests, 16971.5 fewer instructions; no elapsed win established (+0.156501% pooled median, 2/4 pairs improve). Next controlled experiment is budget-helper inlining.",
       "events": [
         {
           "event": "ownership-audit",
@@ -6669,8 +6669,10 @@
           "manifest_sha256": "16cab2527c2fd4cd945373ea02ca081ccc6bdfcaa69029fae70760807bf976f2",
           "bytes": 1275579,
           "files": 41,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-ownership-audit-06be8e830b28.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-ownership-audit-06be8e830b28.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-ownership-audit-06be8e830b28.tar.gz.json",
+          "asset_digest": "sha256:06be8e830b286adabf08ffe52e66ba185d49486096f2a30d41d27075841e4d06"
         },
         {
           "event": "hardware-repeat",
@@ -6680,8 +6682,10 @@
           "manifest_sha256": "1486f98bda021b6d8b56e2970db44e4314a9bae7ee922db0fecf7a30a00f2558",
           "bytes": 54188,
           "files": 46,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-hardware-repeat-b0311d62c237.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-hardware-repeat-b0311d62c237.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-hardware-repeat-b0311d62c237.tar.gz.json",
+          "asset_digest": "sha256:b0311d62c23747c7f74bc0d9ab56f0d9dfdd3e99f6012257167b0c626dcd70d6"
         },
         {
           "event": "initial",
@@ -6691,8 +6695,10 @@
           "manifest_sha256": "729eb57e2d48a5886e74bd47f36e7cf22249bd79a1d2ee1574b78b7a445d5ad0",
           "bytes": 66706,
           "files": 31,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-initial-79d2ce6af774.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-initial-79d2ce6af774.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-initial-79d2ce6af774.tar.gz.json",
+          "asset_digest": "sha256:79d2ce6af774c89cf2a423ec2e4f27db31184f5c40263fa8191b9873f25ad514"
         },
         {
           "event": "primary-reference",
@@ -6702,8 +6708,10 @@
           "manifest_sha256": "e049f5d4ea2865e2436e2f89bf8fcbad4dc1b6bf364bb5db58a2f56ea8bd5da1",
           "bytes": 210690,
           "files": 46,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-primary-reference-73f9b40453b5.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-primary-reference-73f9b40453b5.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-primary-reference-73f9b40453b5.tar.gz.json",
+          "asset_digest": "sha256:73f9b40453b599a6fd802dda62a4cefaaadf4a776a211eb312ed8d978ab86543"
         },
         {
           "event": "primary-group0",
@@ -6713,8 +6721,10 @@
           "manifest_sha256": "e33a174dd1dc85ea93e51d78b88fa84128b35e90780079b8759ac51ddab78ae5",
           "bytes": 150971,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-primary-group0-bee7b17e3935.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-primary-group0-bee7b17e3935.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-primary-group0-bee7b17e3935.tar.gz.json",
+          "asset_digest": "sha256:bee7b17e39353c839ed2e3ca1443b7753e6264385167af65d15a8b03586926ae"
         },
         {
           "event": "primary-group1",
@@ -6724,8 +6734,10 @@
           "manifest_sha256": "495a53616e5ab4abfd0fb31d2a36f5e7f02e06c0909cd3cf5ab02c44c68897e2",
           "bytes": 151039,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-primary-group1-ce3f72ebc472.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-primary-group1-ce3f72ebc472.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-primary-group1-ce3f72ebc472.tar.gz.json",
+          "asset_digest": "sha256:ce3f72ebc472148ee852fc66ca43feca945e1c5d3d9db4c5969adcccb7750944"
         },
         {
           "event": "primary-group2",
@@ -6735,8 +6747,10 @@
           "manifest_sha256": "17a710289d28c4c215332dba02caac88ec037183d5d84c7805633c4e0560bae1",
           "bytes": 150917,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-primary-group2-aef0a1df7f50.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-primary-group2-aef0a1df7f50.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-primary-group2-aef0a1df7f50.tar.gz.json",
+          "asset_digest": "sha256:aef0a1df7f5007d23cbff6a08f9c06dfd14dd84ab069124a7aa64bcf6cd618ea"
         },
         {
           "event": "primary-group3",
@@ -6746,8 +6760,10 @@
           "manifest_sha256": "74577d9744bb8198ad8030d1597a811afe286e4b5c2941f3e6be241d70fbfa34",
           "bytes": 151042,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-primary-group3-2b656c9cdeab.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-primary-group3-2b656c9cdeab.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-primary-group3-2b656c9cdeab.tar.gz.json",
+          "asset_digest": "sha256:2b656c9cdeabc1a883f6b02bf562b797d07960982ea478818f22ca9c1225389a"
         },
         {
           "event": "primary-summary",
@@ -6757,8 +6773,7 @@
           "manifest_sha256": "8e238ee2a2ccfad0c68fd4c8d93fe197812a9d396d04e5967805fa71d7cf46f1",
           "bytes": 123526,
           "files": 45,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-primary-summary-9b5726e3caae.tar.gz",
+          "publication": "published; release digest verified",
           "timing": {
             "primary_observations": 3968,
             "reference_seconds": 0.000293,
@@ -6774,7 +6789,10 @@
             "improving_groups": 2,
             "improving_blocks": 25,
             "adverse_blocks": 39
-          }
+          },
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-primary-summary-9b5726e3caae.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-primary-summary-9b5726e3caae.tar.gz.json",
+          "asset_digest": "sha256:9b5726e3caae0db07e9a94751c9fe9f4fcf004b31a6f8c6a1daa2103cf503213"
         },
         {
           "event": "counters",
@@ -6784,8 +6802,10 @@
           "manifest_sha256": "7cdfab07564ffa9f255f65a636ace50a1e05cce077b6c2fbbc75c3021d87b444",
           "bytes": 321574,
           "files": 82,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-counters-861aefe591d8.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-counters-861aefe591d8.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-counters-861aefe591d8.tar.gz.json",
+          "asset_digest": "sha256:861aefe591d8ece021be6ee94a486d33c9c522e26ffde17c2fe49d7550e72bb1"
         },
         {
           "event": "linked-multi",
@@ -6795,8 +6815,10 @@
           "manifest_sha256": "31f3cfbc2cd888c94a9c74ae1e7a9753467af0b59f07c4463304056c65fcbcd3",
           "bytes": 158912,
           "files": 61,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-linked-multi-4bbbd5872554.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-linked-multi-4bbbd5872554.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-linked-multi-4bbbd5872554.tar.gz.json",
+          "asset_digest": "sha256:4bbbd58725547974f0f34b030555954a6b5dff9b1d0c42c23d878e61ff683ebf"
         },
         {
           "event": "scalar-controls",
@@ -6806,8 +6828,10 @@
           "manifest_sha256": "5a377e0a417ab39b86d3badd4fdbe49161d222ce34f5a40914435875055b7b3f",
           "bytes": 138378,
           "files": 98,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-scalar-controls-878b516fd68d.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-scalar-controls-878b516fd68d.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-scalar-controls-878b516fd68d.tar.gz.json",
+          "asset_digest": "sha256:878b516fd68d99bbadf40bada039a392dd483556de076aa0cd0dbe527e7da6ed"
         },
         {
           "event": "frame-allocation",
@@ -6817,8 +6841,10 @@
           "manifest_sha256": "8264cd5a930de222c82aaf985b9a0bf84ee5bb5b4421015b09a03c9a50bf8fe4",
           "bytes": 129537,
           "files": 76,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-frame-allocation-17ce2bac40c3.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-frame-allocation-17ce2bac40c3.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-frame-allocation-17ce2bac40c3.tar.gz.json",
+          "asset_digest": "sha256:17ce2bac40c3986ee15f7d697dbb6ccf3a208590d84dc56d611f074c996153f6"
         },
         {
           "event": "isolated-profile",
@@ -6828,8 +6854,10 @@
           "manifest_sha256": "71b163db712e68b090585b69ca8fee1ee15d5efc828f40091cac4d4f51beda9e",
           "bytes": 334139,
           "files": 53,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-isolated-profile-b655eca5a356.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-isolated-profile-b655eca5a356.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-isolated-profile-b655eca5a356.tar.gz.json",
+          "asset_digest": "sha256:b655eca5a356fd3850ed23393395376ef4474acd108b91074370b7d724ec5149"
         },
         {
           "event": "scalar-controls-clean-repeat",
@@ -6839,8 +6867,10 @@
           "manifest_sha256": "2f9d173aaa0e0db7b5dcdb808115e57f0b839c3479d0c5b38f8a2d552b898dcf",
           "bytes": 138725,
           "files": 99,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-scalar-controls-clean-repeat-0ab759841374.tar.gz"
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-scalar-controls-clean-repeat-0ab759841374.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-scalar-controls-clean-repeat-0ab759841374.tar.gz.json",
+          "asset_digest": "sha256:0ab759841374aa6daaa4940a3b87896a68c17e74b1b22fccfdb1c5be07675cb7"
         },
         {
           "event": "closure",
@@ -6850,11 +6880,33 @@
           "manifest_sha256": "8869969a1b352259748d06c598d80c19cfcba2e0d478370a9257e42e10042b98",
           "bytes": 4688110,
           "files": 305,
+          "publication": "published; release digest verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-closure-d5200dbf5581.tar.gz",
+          "receipt_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r100-closure-d5200dbf5581.tar.gz.json",
+          "asset_digest": "sha256:d5200dbf55816f3fa179570c6d54288205e169be5f4a10ce43b46e3033972cef"
+        },
+        {
+          "event": "replay-inputs",
+          "source_revision": "bebe5a245d312796c630de76fc558fbcd2c2f2ff",
+          "asset": "r100-replay-inputs-c0ee042dbaf8.tar.gz",
+          "sha256": "c0ee042dbaf864cbfc2c7f23136efeae22ec1fdf84b343612d4e12b404c3fc17",
+          "manifest_sha256": "9c63336b0bab0633ecc09230837be919bc382da7cefd071f4753bde395eb461c",
+          "bytes": 4471052,
+          "files": 74,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-closure-d5200dbf5581.tar.gz"
+          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-replay-inputs-c0ee042dbaf8.tar.gz"
         }
       ],
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "scorecard.json": "c9c2fe5988b361e359e0cc2265d58f85edc20c0486a47995dc224b147d8c87eb",
+          "mechanism.json": "e63806ca0049494c8b1a7c249d0a0f334519d8df89e1d652751edaba4a8b748c",
+          "validation.json": "a4562eca2da86b2d4dab3e943d4c0e77217bbe0100c9f5f030a7b3ad57da5f49",
+          "profile-numbers.json": "e54938c7078408fd697e9db731476a56d62c548b7d54cb148fe7479bebcac899"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
