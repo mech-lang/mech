@@ -1,4 +1,4 @@
-//! Observe the actual checked callbacks, delegating to the unchanged runtime.
+//! Observe logical admissions and physical helpers, delegating to the runtime.
 use super::*;
 use crate::native_artifact::program::protocol::abi::{Frame, Helper};
 use std::{
@@ -9,6 +9,7 @@ use std::{
 type Admit = unsafe extern "C" fn(*mut c_void, u64) -> u64;
 #[derive(Default, Debug)]
 pub(super) struct Counts {
+    // Admission attempts include visits composed inside zero-word helpers.
     pub admits: BTreeMap<u64, u64>,
     pub helpers: BTreeMap<(u64, u64), u64>,
     pub selected: u64,
@@ -32,6 +33,12 @@ unsafe extern "C" fn helper(
     c: u64,
     out: *mut u64,
 ) -> u64 {
+    if matches!(
+        GlobalHelper::decode(op),
+        GlobalHelper::AdmitMove | GlobalHelper::AdmitStructuralObservation
+    ) {
+        COUNTS.with(|v| *v.borrow_mut().admits.entry(site).or_default() += 1);
+    }
     COUNTS.with(|v| *v.borrow_mut().helpers.entry((site, op)).or_default() += 1);
     // SAFETY: unchanged arguments and result pointer from the checked entry.
     let status = unsafe { HELPER.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
