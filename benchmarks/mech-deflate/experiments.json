@@ -6171,6 +6171,17 @@
           "files": 69,
           "asset_id": 699287732,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r97-counters-f267a267c06f.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "20f002f4ff5ff2186888b7efc8517261756b425e",
+          "asset": "r97-scalar-controls-349df8615a0e.tar.gz",
+          "sha256": "349df8615a0e159beb31677a6170608bab756b7adbacb58dd5650c8d94c683c1",
+          "manifest_sha256": "905a2578d7dd400de3b508d88b6369c90f1b78277f4b83178efbbab67e215638",
+          "bytes": 68206,
+          "files": 84,
+          "asset_id": 699288013,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r97-scalar-controls-349df8615a0e.tar.gz"
         }
       ]
     }
