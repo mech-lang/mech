@@ -55,6 +55,10 @@ fn ordinary_collection_source_lifetime_keeps_finish_later_reads_aliases_and_retr
             for descriptor in [jit.descriptor(), &restored] {
                 let memory = mode.memory_budget();
                 let mut published = vec![None; artifact.outputs().len()];
+                // Only the final root expression is published. The later-read
+                // variant publishes the original input; its unused update must
+                // still reject invalid inputs.
+                assert_eq!(published.len(), 1);
                 for (data, slide, allowed, expected_error) in [
                     (vec![0u16, 32768, 65535], true, true, None),
                     (vec![4, 5], false, true, None),
@@ -109,20 +113,12 @@ fn ordinary_collection_source_lifetime_keeps_finish_later_reads_aliases_and_retr
                                 .unwrap()
                                 .canonical_data_draft()
                                 .unwrap(),
-                            Data::Matrix(expected.into_iter().map(Data::U16).collect())
-                        );
-                        if later_read {
-                            assert_eq!(
-                                published
-                                    .last()
-                                    .unwrap()
-                                    .as_ref()
-                                    .unwrap()
-                                    .canonical_data_draft()
-                                    .unwrap(),
+                            if later_read {
                                 original
-                            );
-                        }
+                            } else {
+                                Data::Matrix(expected.into_iter().map(Data::U16).collect())
+                            }
+                        );
                     }
                     assert_eq!(contents(&args), before);
                     assert_eq!(contents(&aliases), before);
