@@ -1250,6 +1250,17 @@
           "files": 38,
           "asset_id": 697748674,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r82-inputs-3ce62ace0997.tar.gz"
+        },
+        {
+          "event": "analysis",
+          "source_revision": "4fe3ca57b17b4bcab90948f8357f8fd8fd9d11da",
+          "asset": "r82-analysis-41c2a1662b73.tar.gz",
+          "sha256": "41c2a1662b734c09112d22fc6d1481f069254f38152589a35627db6a47898d99",
+          "manifest_sha256": "dcd6e2cd7cd83198214f38a5ef7c10c0b2ac548ce4420926fa9bc65c07248a85",
+          "bytes": 68418,
+          "files": 41,
+          "asset_id": 697748766,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r82-analysis-41c2a1662b73.tar.gz"
         }
       ],
       "analysis": {
