@@ -2700,6 +2700,17 @@
           "files": 59,
           "asset_id": 697950361,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r87-initial-e9a317a1b8a2.tar.gz"
+        },
+        {
+          "event": "capacity-census",
+          "source_revision": "c2b334feed4326a66ce1f69ca4bc99b0cbe41bb2",
+          "asset": "r87-capacity-census-20e914247be3.tar.gz",
+          "sha256": "20e914247be3a0f8519ebbcb10a79926314bc413b5dc0865da2541f23e9fbe1c",
+          "manifest_sha256": "5cb98bbd06a33cec2969e700d653d8749e5e67b5e0fe9c01d951a42b375e0b6a",
+          "bytes": 1403660,
+          "files": 408,
+          "asset_id": 697950639,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r87-capacity-census-20e914247be3.tar.gz"
         }
       ]
     }
