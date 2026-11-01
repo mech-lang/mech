@@ -56,7 +56,7 @@ or green hosted-CI claim. Public output backing still changes.
 The new complete allocation trace independently reconciles5077 requests,
 95,895,278 bytes and162 reallocations. It finds336 eight-byte replacement
 requests (immediate callee deduplicated; exact ancestry/return offsets retained)
-and33632-byte final shape owners. The672-request/13,440-byte shape-forwarding
+and336 32-byte final shape owners. The672-request/13,440-byte shape-forwarding
 candidate is confirmed as a current target, not an achieved saving. Next: shape
 owner forwarding, then prepared schema headers. The independent instruction
 track remains prepared frame transfers, known-zero arguments and entry-local
