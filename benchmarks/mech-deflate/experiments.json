@@ -1074,6 +1074,38 @@
         "logical_bytes_removed": 51042181752,
         "free_after": 49081585664,
         "free_space_increase": 48910651392
+      },
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "mechanism.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 1,
+        "round": 81,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 1206,
+        "verified_archives": 28,
+        "verified_file_occurrences": 2148
+      },
+      "validation": {
+        "gpu_runtime": 335,
+        "work_memory_values": 33,
+        "native_ci": 41,
+        "components": 236,
+        "connected": 8,
+        "path": 1,
+        "linked_cases": 16,
+        "scalar_controls": 12,
+        "scalar_ceiling": 1.05,
+        "max_scalar_ratio": 1.0466448046871437,
+        "frame_controls": 8,
+        "workflow_python": 132,
+        "architecture": 15,
+        "counts_overlap": true,
+        "hosted_ci": "cancel on publication by instruction; not a pass",
+        "skipped": "Giant complete knucleotide, large/full-corpus, minimal/no_std graph; unchanged Core/Budget/planner/Engine integration receipts inherited."
       }
     }
   },

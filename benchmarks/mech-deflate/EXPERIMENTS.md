@@ -172,3 +172,17 @@ Four pairs /3,968 primary observations; all16 adverse descriptive blocks retaine
 All raw commands, failures, profiles, traces, controls and replay code are immutable
 release packets indexed by `rounds.80` in [experiments.json](experiments.json).
 Use the same `replay-round --round 80` command with a fresh output directory.
+
+## R81: managed projections inside native parent pieces
+
+Base `54badcdaf0a2c4094fa2127c69e25fb8bd1260ad`; production `2f9bf24de`; actual
+optimized source `c29854f6f1f404658c39bcb024296b01ec80a71d`. Matched elapsed
+11.077177×→10.141253× reference (−8.449124%), initial instructions −11.319245%.
+Four pairs /3,968 primary observations; all blocks improve. Initial adverse cycles
+and two additional predeclared hardware pairs remain separate. Actual callbacks
+14,460→10,759; canonical puts 3,039→2,178, with 816 real escapes preserved.
+IR134/work96/privateABI38/MBC14; source/bytecode and algorithm pins unchanged.
+Policy96 pricing golden and private current-result recipe checks are explicit.
+52 backing copies disappear. Evidence, exact commands, every failed attempt and
+replay hashes are external packets in `rounds.81` of [experiments.json](experiments.json).
+Use `replay-round --round 81` with a fresh output directory.
