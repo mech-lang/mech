@@ -643,6 +643,41 @@
           "src/core/src/snapshot/validation.rs"
         ],
         "warning_policy_unchanged": true
+      },
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "allocation-mechanism.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 4,
+        "round": 80,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 446,
+        "verified_archives": 26,
+        "verified_file_occurrences": 1283
+      },
+      "obsolete_build_bytes_removed": 17649120,
+      "validation": {
+        "core": 373,
+        "ownership_inventory_and_execution": 11,
+        "gpu_runtime": 334,
+        "work_memory_values": 32,
+        "native_ci": 40,
+        "components": 236,
+        "connected": 8,
+        "path": 1,
+        "linked_cases": 16,
+        "scalar_controls": 12,
+        "scalar_ceiling": 1.05,
+        "max_scalar_ratio": 1.0211167066336309,
+        "frame_controls": 8,
+        "workflow_python": 132,
+        "architecture": 15,
+        "counts_overlap": true,
+        "hosted_ci": "cancel on publication by instruction; not a pass",
+        "skipped": "Giant complete knucleotide, large/full-corpus compression, fresh minimal/no_std graph; separate unchanged Budget/planner/Engine integration suites retain earlier receipts."
       }
     }
   },
