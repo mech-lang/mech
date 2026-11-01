@@ -486,6 +486,17 @@
           "files": 41,
           "asset_id": 697413213,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-reference-profile-c28fbe328e1b.tar.gz"
+        },
+        {
+          "event": "linked-multi",
+          "source_revision": "e4d444b5fcd33a69c05837ad1cafbd4c50b9ae97",
+          "asset": "r80-linked-multi-c2347bdde0ec.tar.gz",
+          "sha256": "c2347bdde0ece38403d6ede3a531034c4fb17957f67369570ff7894429ace0ea",
+          "manifest_sha256": "b2c07f4ea1b53b2e521699d40c13214e81e9a141a9b8135f0eb315e260cf2c08",
+          "bytes": 136927,
+          "files": 53,
+          "asset_id": 697419256,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-linked-multi-c2347bdde0ec.tar.gz"
         }
       ]
     }
