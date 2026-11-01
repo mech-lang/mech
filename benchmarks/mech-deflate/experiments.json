@@ -4312,6 +4312,17 @@
           "files": 56,
           "asset_id": 698539537,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-qualification-c6ffaa1bb77e.tar.gz"
+        },
+        {
+          "event": "final-checks",
+          "source_revision": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+          "asset": "r90-final-checks-0f7e2ab11a66.tar.gz",
+          "sha256": "0f7e2ab11a66399d23d8131b796cefdb4aea0b86523de57e16f67a1ca3650cea",
+          "manifest_sha256": "e2a9c45ceef34f04d30bfeae768948a44a258d4e9b61b420351c1015dcf92a80",
+          "bytes": 55897,
+          "files": 72,
+          "asset_id": 698539602,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-final-checks-0f7e2ab11a66.tar.gz"
         }
       ]
     }
