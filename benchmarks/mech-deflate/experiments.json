@@ -111,6 +111,17 @@
           "files": 43,
           "asset_id": 697254980,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-counters-7d33ceb9ac4b.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "374edf1410b5f975d793fb69d8fcf390cbfa10a5",
+          "asset": "r79-scalar-controls-2703f1a74037.tar.gz",
+          "sha256": "2703f1a740376fa25542bb328559af63fade9f35778b8582bef2810b25b02185",
+          "manifest_sha256": "21dc0ec3cea0e6364b16f85214e743c5a38465d03da3d30fcef02486ff1e6e1e",
+          "bytes": 32534,
+          "files": 61,
+          "asset_id": 697265931,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-scalar-controls-2703f1a74037.tar.gz"
         }
       ]
     }
