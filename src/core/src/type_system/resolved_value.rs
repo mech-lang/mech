@@ -20,6 +20,10 @@ use std::{boxed::Box, collections::BTreeSet, format, string::String, vec, vec::V
 #[path = "resolved_value_witness_tests.rs"]
 mod witness_tests;
 
+#[cfg(test)]
+#[path = "resolved_value_storage_tests.rs"]
+mod storage_tests;
+
 /// Semantic authority for constructing one resolved output schema. These
 /// rules are selected with the source overload and never by a runtime factory.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -746,9 +750,7 @@ pub fn shape_for_resolved_extents(
     schema: &Schema,
     current_extents: &[u64],
 ) -> Result<ShapeInstance, TypeResolutionError> {
-    let mut values = shape_for_declared_lower_bounds(schema)?
-        .parameter_values()
-        .to_vec();
+    let mut values = shape_for_declared_lower_bounds(schema)?.into_parameter_values();
     let declared = match schema.body() {
         SchemaBody::Matrix { dimensions, .. } => dimensions.as_ref(),
         SchemaBody::Table {
@@ -772,13 +774,10 @@ pub fn shape_for_resolved_extents(
             current_extents.len()
         )));
     }
-    let witnesses = declared
-        .iter()
-        .zip(current_extents.iter().copied())
-        .collect::<Vec<_>>();
-    assign_dimension_witnesses(&witnesses, &mut values)?;
+    let witnesses = declared.iter().zip(current_extents.iter().copied());
+    assign_dimension_witnesses(witnesses, &mut values)?;
     let shape = schema
-        .instantiate_shape(values.into_boxed_slice())
+        .instantiate_shape(values)
         .map_err(TypeResolutionError::semantic)?;
     for (dimension, extent) in declared.iter().zip(current_extents.iter().copied()) {
         dimension_witness_mismatch(dimension, extent, shape.parameter_values())?;
@@ -805,15 +804,13 @@ pub fn shape_for_schema_components(
     if let Some((CardinalitySpec::Exact(dimension), count)) = cardinality {
         witnesses.push((dimension, count as u64));
     }
-    let mut values = shape_for_declared_lower_bounds(schema)?
-        .parameter_values()
-        .to_vec();
-    assign_dimension_witnesses(&witnesses, &mut values)?;
+    let mut values = shape_for_declared_lower_bounds(schema)?.into_parameter_values();
+    assign_dimension_witnesses(witnesses.iter().copied(), &mut values)?;
     if let Some((extent, count)) = cardinality {
         assign_extent_witness(extent, count as u64, &mut values)?;
     }
     let shape = schema
-        .instantiate_shape(values.into_boxed_slice())
+        .instantiate_shape(values)
         .map_err(TypeResolutionError::semantic)?;
     // One parameter may constrain several children. Check every witness again
     // after assignment, so later children cannot silently replace earlier ones.
@@ -1240,21 +1237,30 @@ fn assign_extent_witness(
 /// Solve uniquely determined dimensions first. Compound witnesses can become
 /// uniquely solvable as other axes or components establish their parameters.
 /// Ambiguous min/max witnesses do not freeze an arbitrary candidate value.
-fn assign_dimension_witnesses(
-    witnesses: &[(&DimensionExpr, u64)],
+fn assign_dimension_witnesses<'a>(
+    witnesses: impl Clone + Iterator<Item = (&'a DimensionExpr, u64)>,
     values: &mut [u64],
 ) -> Result<(), TypeResolutionError> {
-    let mut fixed = vec![false; values.len()];
+    // This is a storage cutoff, not a dimension limit. Larger tapes retain
+    // the same general solver and independently allocated Boolean scratch.
+    let mut inline_fixed = [false; 16];
+    let mut heap_fixed;
+    let fixed: &mut [bool] = if values.len() <= inline_fixed.len() {
+        &mut inline_fixed[..values.len()]
+    } else {
+        heap_fixed = vec![false; values.len()];
+        &mut heap_fixed
+    };
     loop {
         let mut progress = false;
-        for (expression, target) in witnesses {
+        for (expression, target) in witnesses.clone() {
             let mut parameter = None;
-            if !unique_unfixed_dimension_parameter(expression, &fixed, &mut parameter) {
+            if !unique_unfixed_dimension_parameter(expression, fixed, &mut parameter) {
                 continue;
             }
             let Some(parameter) = parameter else { continue };
             if dimension_is_injective(expression, parameter, values)? {
-                assign_unique_dimension_witness(expression, *target, parameter, values)?;
+                assign_unique_dimension_witness(expression, target, parameter, values)?;
                 *fixed
                     .get_mut(parameter.get() as usize)
                     .ok_or_else(|| invalid_rule(format!("unknown dimension {parameter:?}")))? =
@@ -1267,7 +1273,7 @@ fn assign_dimension_witnesses(
         }
     }
     for (expression, target) in witnesses {
-        assign_dimension_witness_preserving(expression, *target, values, &fixed)?;
+        assign_dimension_witness_preserving(expression, target, values, fixed)?;
     }
     Ok(())
 }

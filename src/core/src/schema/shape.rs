@@ -85,6 +85,12 @@ impl ShapeInstance {
         Ok(())
     }
 
+    /// Move unpublished parameter storage into a solver. A completed shape
+    /// must still be instantiated against its schema after changing values.
+    pub(crate) fn into_parameter_values(self) -> Box<[u64]> {
+        self.parameter_values
+    }
+
     pub fn parameter_values(&self) -> &[u64] {
         &self.parameter_values
     }
