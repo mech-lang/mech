@@ -4378,6 +4378,17 @@
           "files": 41,
           "asset_id": 698544431,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-reference-profile-final-12d8eda4ee00.tar.gz"
+        },
+        {
+          "event": "linked-multi",
+          "source_revision": "254ac339b64ab71dd374cc20c3873cd6ae766921",
+          "asset": "r90-linked-multi-d88222f808d6.tar.gz",
+          "sha256": "d88222f808d6d68c998a251391914fd47c8af7159e527952ad27949bebca262d",
+          "manifest_sha256": "6ee45f4422d7d579982bdcb7b39184f36a78846f1c53522249af24f874f0f41c",
+          "bytes": 85628,
+          "files": 53,
+          "asset_id": 698549459,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-linked-multi-d88222f808d6.tar.gz"
         }
       ]
     }
