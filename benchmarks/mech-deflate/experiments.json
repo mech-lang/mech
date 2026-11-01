@@ -888,6 +888,17 @@
           "files": 417,
           "asset_id": 697528625,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r81-diagnostic-before-765985b31a68.tar.gz"
+        },
+        {
+          "event": "sites-after",
+          "source_revision": "c29854f6f1f404658c39bcb024296b01ec80a71d",
+          "asset": "r81-sites-after-110fa4ab09e3.tar.gz",
+          "sha256": "110fa4ab09e3908958a38985feace6d241c66c59ebe1e730b22e07a0d732fe83",
+          "manifest_sha256": "d29ed3c0a9bc4b6e080ed7654936322fd6c63470deb1cefb6dd8fe8c9aa6c6f6",
+          "bytes": 765808,
+          "files": 61,
+          "asset_id": 697540449,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r81-sites-after-110fa4ab09e3.tar.gz"
         }
       ]
     }
