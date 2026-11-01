@@ -6316,6 +6316,33 @@
           "files": 41,
           "publication": "local-only; external archive upload rejected by automatic approval review",
           "local_archive": "/private/tmp/mech-child-seed-round98-20261101/archives/r98-primary-group3-3abdf80663ec.tar.gz"
+        },
+        {
+          "event": "primary-summary",
+          "source_revision": "1b32af2c7093aeef1c44bbd7e17f048ac71ab593",
+          "asset": "r98-primary-summary-bdf83523a983.tar.gz",
+          "sha256": "bdf83523a98390953967030966fe3f73093d005bf24640b58d5f01bc60a03141",
+          "manifest_sha256": "527d062c6e8f9bf521378222205a1c570aeab14488386c80373abae2564657a7",
+          "bytes": 64576,
+          "files": 38,
+          "publication": "local-only; external archive upload rejected by automatic approval review",
+          "local_archive": "/private/tmp/mech-child-seed-round98-20261101/archives/r98-primary-summary-bdf83523a983.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.000288,
+            "medians": {
+              "after": 0.0024498124999999997,
+              "before": 0.0024393125
+            },
+            "multiples_of_reference": {
+              "after": 8.506293402777777,
+              "before": 8.469835069444445
+            },
+            "after_over_before": 1.0043044915319377,
+            "improving_groups": 1,
+            "improving_blocks": 21,
+            "adverse_blocks": 43
+          }
         }
       ],
       "archive_publication": "local-only pending archive approval"
