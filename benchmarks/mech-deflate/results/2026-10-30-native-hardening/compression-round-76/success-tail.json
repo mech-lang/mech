@@ -1,0 +1,175 @@
+{
+  "variants": {
+    "before": {
+      "worker_sha256": "18ca1aac32593a7dae5e637fb583bdc0d0103f416dba631a99228ae2687298fe",
+      "compiler_source": "3979d6e360ed6d5def3aea745df94d970c92dc4d",
+      "symbol": "__RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+      "whole_function_own_static_instructions": 158,
+      "own_stack_frame_bytes": 128,
+      "selected_relative_ranges": [
+        [
+          460,
+          468
+        ],
+        [
+          508,
+          556
+        ]
+      ],
+      "success_tail_static_instructions": 16,
+      "instructions": [
+        {
+          "address": 4332077708,
+          "opcode": "stp",
+          "operands": "x21, x22, [x20, #0x38]"
+        },
+        {
+          "address": 4332077712,
+          "opcode": "mov",
+          "operands": "w8, #0x8                ; =8"
+        },
+        {
+          "address": 4332077716,
+          "opcode": "b",
+          "operands": "0x1023642bc <__RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit+0x1fc>"
+        },
+        {
+          "address": 4332077756,
+          "opcode": "ldr",
+          "operands": "x13, [x20, #0x10]"
+        },
+        {
+          "address": 4332077760,
+          "opcode": "add",
+          "operands": "x13, x13, #0x1"
+        },
+        {
+          "address": 4332077764,
+          "opcode": "str",
+          "operands": "x13, [x20, #0x10]"
+        },
+        {
+          "address": 4332077768,
+          "opcode": "strb",
+          "operands": "w8, [x19]"
+        },
+        {
+          "address": 4332077772,
+          "opcode": "strb",
+          "operands": "w12, [x19, #0x1]"
+        },
+        {
+          "address": 4332077776,
+          "opcode": "strb",
+          "operands": "w11, [x19, #0x2]"
+        },
+        {
+          "address": 4332077780,
+          "opcode": "ldr",
+          "operands": "w8, [sp, #0x20]"
+        },
+        {
+          "address": 4332077784,
+          "opcode": "stur",
+          "operands": "w8, [x19, #0x3]"
+        },
+        {
+          "address": 4332077788,
+          "opcode": "ldrb",
+          "operands": "w8, [sp, #0x24]"
+        },
+        {
+          "address": 4332077792,
+          "opcode": "strb",
+          "operands": "w8, [x19, #0x7]"
+        },
+        {
+          "address": 4332077796,
+          "opcode": "stp",
+          "operands": "x10, x9, [x19, #0x8]"
+        },
+        {
+          "address": 4332077800,
+          "opcode": "ldr",
+          "operands": "q0, [sp, #0x10]"
+        },
+        {
+          "address": 4332077804,
+          "opcode": "stur",
+          "operands": "q0, [x19, #0x18]"
+        }
+      ]
+    },
+    "after": {
+      "worker_sha256": "53f9477bfe43dfe346d64191f51a9224afd0ec35e9bb03e58619eb8ef7a27952",
+      "compiler_source": "d6ee13b886e50502dc413c41cf13a6259bb6db15",
+      "symbol": "__RNvMs0_NtNtCs1qJAwyMG1lC_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+      "whole_function_own_static_instructions": 183,
+      "own_stack_frame_bytes": 176,
+      "selected_relative_ranges": [
+        [
+          432,
+          468
+        ]
+      ],
+      "success_tail_static_instructions": 10,
+      "instructions": [
+        {
+          "address": 4332077680,
+          "opcode": "mov",
+          "operands": "x9, #0x0                ; =0"
+        },
+        {
+          "address": 4332077684,
+          "opcode": "stp",
+          "operands": "x21, x22, [x20, #0x38]"
+        },
+        {
+          "address": 4332077688,
+          "opcode": "mov",
+          "operands": "w8, #0x8                ; =8"
+        },
+        {
+          "address": 4332077692,
+          "opcode": "str",
+          "operands": "x9, [x20, #0x10]"
+        },
+        {
+          "address": 4332077696,
+          "opcode": "strb",
+          "operands": "w8, [x19]"
+        },
+        {
+          "address": 4332077700,
+          "opcode": "ldp",
+          "operands": "q0, q1, [sp, #0x50]"
+        },
+        {
+          "address": 4332077704,
+          "opcode": "stur",
+          "operands": "q0, [x19, #0x1]"
+        },
+        {
+          "address": 4332077708,
+          "opcode": "stur",
+          "operands": "q1, [x19, #0x11]"
+        },
+        {
+          "address": 4332077712,
+          "opcode": "ldur",
+          "operands": "x8, [sp, #0x6f]"
+        },
+        {
+          "address": 4332077716,
+          "opcode": "str",
+          "operands": "x8, [x19, #0x20]"
+        }
+      ]
+    }
+  },
+  "saved_selected_tail_instructions": 6,
+  "stack_frame_delta_bytes": 48,
+  "full_inactive_result_payload_still_transferred_on_success": true,
+  "public_result_bytes": 40,
+  "scope": "Exact selected commit/borrow-release/result-write tails in the actual accepted/candidate linked ordinary debit. The before tail follows its unconditional branch between the two ranges; the after tail is contiguous. Both are reached on successful no-worker debit. The whole function grows158\u2192183 own static instructions; cold forwarding is5 own instructions. No whole-function dynamic instruction ledger or complete causal attribution follows. Four-call diagnostic attempts and whole-call hardware counters remain separate evidence."
+}
