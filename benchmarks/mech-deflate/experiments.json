@@ -4781,6 +4781,17 @@
           "files": 38,
           "asset_id": 698629072,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r91-candidate-overlap-f54b42c0fbeb.tar.gz"
+        },
+        {
+          "event": "funded-and-unfunded",
+          "source_revision": "31d77c7c1f5fdeecc9095664af19092353df06b3",
+          "asset": "r91-funded-and-unfunded-140c5db56d2e.tar.gz",
+          "sha256": "140c5db56d2e94f2b9e11b9b3abe7e669982db6caf521a1cd45e679e0b24a142",
+          "manifest_sha256": "c8cc5f6a60d33d232280fc209fbbc78b60908e6093af21f024a3366d6fcf3d77",
+          "bytes": 65496,
+          "files": 35,
+          "asset_id": 698629151,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r91-funded-and-unfunded-140c5db56d2e.tar.gz"
         }
       ],
       "retained_production": "31d77c7c1f5fdeecc9095664af19092353df06b3",
