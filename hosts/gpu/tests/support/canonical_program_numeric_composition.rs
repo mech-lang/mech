@@ -261,7 +261,7 @@ fn parent_partition_keeps_exact_child_result_mapping_and_single_entry_boundaries
                         ordinal: 0,
                         output,
                     } if plan.values()[source.get() as usize].schema() == returned_schema => {
-                        Some(output.get())
+                        Some((site as u32, source.get(), output.get()))
                     }
                     _ => None,
                 }
@@ -302,10 +302,27 @@ fn parent_partition_keeps_exact_child_result_mapping_and_single_entry_boundaries
                     .find(|f| f["value"] == tail.next().get())
                 {
                     let root = next["arrays"][1].as_u64().unwrap() as usize;
-                    assert_eq!(
-                        recipe["sources"][root],
-                        serde_json::json!({"Value":current_lens})
-                    );
+                    let (projection, current_result, value) = current_lens;
+                    let expected = if sites.contains(&projection) {
+                        let alias = recipe["aliases"]
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .find(|alias| alias["value"] == value)
+                            .unwrap();
+                        assert_eq!(alias["source"].as_u64().unwrap() as usize, root);
+                        assert!(
+                            recipe["inputs"]
+                                .as_array()
+                                .unwrap()
+                                .iter()
+                                .any(|input| *input == current_result)
+                        );
+                        serde_json::json!({"Field":{"value":current_result,"ordinal":0}})
+                    } else {
+                        serde_json::json!({"Value":value})
+                    };
+                    assert_eq!(recipe["sources"][root], expected);
                     checked_current_result = true;
                 }
             }
