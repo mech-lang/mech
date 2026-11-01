@@ -266,7 +266,9 @@ fn selected_template(
 // IR137 composes a larger parent piece with its complete ordinary scalar
 // prefix. A declined entry restores the existing scalar readiness word;
 // independently restored images rederive the containment and selection proof.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 137;
+// IR138 retains immutable constants but omits invocation owners with no all-path
+// semantic consumer. Images rederive the exact constant ownership bounds.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 138;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -457,7 +459,10 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 137;
 // Policy98 retains the paid scalar-prefix debit, then funds the existing parent
 // envelope from the same current account. No debit is refunded or permission
 // carried across a child; a refusal retains the original scalar continuation.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 98;
+// Policy99 prices only reached setup construction for constants with a runtime
+// consumer. Unread constants retain their immutable plan/type/local metadata,
+// but no independent admission, arena installation or owner cleanup is needed.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 99;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

@@ -1595,5 +1595,12 @@ pub(super) fn restore_admitted_helper_descriptor(
     }
     .unwrap()
 }
+pub(super) fn rejects_malformed_helper_image(image: &[u8]) -> bool {
+    // SAFETY: negative metadata-only test. No decoded result can execute code.
+    unsafe {
+        NativeProgramDescriptor::decode_build_owned_image(image, &mech_stdlib::source_catalog())
+    }
+    .is_err()
+}
 #[path = "admitted_helper_tests.rs"]
 mod admitted_helper_tests;

@@ -15,6 +15,7 @@ pub(in crate::native_artifact) mod call_cache;
 pub(in crate::native_artifact) mod call_routes;
 pub(in crate::native_artifact) mod cleanup_effects;
 pub(in crate::native_artifact) mod composition;
+pub(in crate::native_artifact) mod constant_owners;
 pub(in crate::native_artifact) mod frame_retirement;
 
 /// Recomputed both on source preparation and independent build-image loading.
@@ -53,6 +54,8 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     pub(in crate::native_artifact) types: Box<[NativeValueSlot]>,
     pub(in crate::native_artifact) visits: Box<[NativeIterationVisit]>,
     pub(in crate::native_artifact) retirements: RetirementTables,
+    // Zero only for constants with no all-path semantic runtime reader.
+    // Independent image loading rederives the complete ownership inventory.
     pub(in crate::native_artifact) constant_bytes: Box<[u64]>,
     // Derived cache, recomputed from the exact bounds when an image is loaded.
     // It grants no independent authority and adds no serialized field.
@@ -383,18 +386,7 @@ impl PreparedNativeProgram {
             })
             .collect();
         validate_type_slots(&plan, artifact.schemas(), &types).map_err(str::to_owned)?;
-        let constant_bytes = plan
-            .constants()
-            .iter()
-            .map(|c| {
-                c.constant()
-                    .memory_budget_required_bytes()
-                    .map_err(|e| format!("constant ownership: {e:?}"))?
-                    .checked_add(Value::memory_budget_claim_metadata_bytes())
-                    .and_then(|n| n.checked_add(4096))
-                    .ok_or_else(|| "constant admission overflows".to_owned())
-            })
-            .collect::<Result<Box<[_]>, _>>()?;
+        let constant_bytes = constant_owners::admission_bounds(&facts)?;
         let constant_admission_bytes = constant_admission_total(&constant_bytes)?;
         // Shared schema finalization avoids a schema clone, but ownership
         // admission still includes the complete schema context. Reserve a
