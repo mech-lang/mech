@@ -1217,6 +1217,17 @@
           "files": 414,
           "asset_id": 697676637,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r82-diagnostic-counts-e12685e8729c.tar.gz"
+        },
+        {
+          "event": "isolated-profile",
+          "source_revision": "4fe3ca57b17b4bcab90948f8357f8fd8fd9d11da",
+          "asset": "r82-isolated-profile-411151ebce05.tar.gz",
+          "sha256": "411151ebce05dca100ccd9adbd5f8c5d5913d87faa53d06bc602f1f2f54a1b5f",
+          "manifest_sha256": "fa7b0494d7e7e742ff92b547d8f91e2fedd90dea3a2728c77938ddf5a005a04c",
+          "bytes": 286004,
+          "files": 43,
+          "asset_id": 697677385,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r82-isolated-profile-411151ebce05.tar.gz"
         }
       ]
     },
