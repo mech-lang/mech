@@ -226,8 +226,11 @@ fn parent_partition_keeps_exact_child_result_mapping_and_single_entry_boundaries
         assert_eq!(parents.len(), 1);
         let parent = &parents[0];
         assert_eq!(parent["iteration"], 0);
-        assert_eq!(parent["child"], 1);
-        assert_eq!(parent["returned_arrays"], serde_json::json!([[0, 1]]));
+        assert_eq!(parent["children"][0]["child"], 1);
+        assert_eq!(
+            parent["children"][0]["returned_arrays"],
+            serde_json::json!([[0, 1]])
+        );
         println!(
             "{}",
             serde_json::json!({"witness":"parent-current-frame-recipes", "parent":parent})
@@ -314,8 +317,8 @@ fn parent_partition_keeps_exact_child_result_mapping_and_single_entry_boundaries
                         tail.header(),
                         tail.latch(),
                         tail.finish(),
-                        parent["child_initialize"].as_u64().unwrap() as u32,
-                        parent["child_exit"].as_u64().unwrap() as u32
+                        parent["children"][0]["child_initialize"].as_u64().unwrap() as u32,
+                        parent["children"][0]["child_exit"].as_u64().unwrap() as u32
                     ]
                     .contains(&site)
                 );
@@ -365,7 +368,10 @@ fn parent_partition_follows_reordered_child_results() {
             .as_array()
             .unwrap();
         assert_eq!(parents.len(), 1);
-        assert_eq!(parents[0]["returned_arrays"], serde_json::json!([[1, 1]]));
+        assert_eq!(
+            parents[0]["children"][0]["returned_arrays"],
+            serde_json::json!([[1, 1]])
+        );
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
         let args = inputs(
             &artifact,

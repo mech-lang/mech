@@ -25,16 +25,27 @@ pub(in crate::native_artifact) struct Segment {
 #[derive(Debug, Eq, PartialEq, serde::Serialize)]
 pub(in crate::native_artifact) struct Parent {
     pub iteration: u32,
+    /// Innermost suspended ancestor edge, rederived from validated loop ancestry
+    /// after final segment selection. Runtime compares the current marker.
+    pub suspended_child: Option<u32>,
+    pub children: Vec<Child>,
+    pub segments: Vec<Segment>,
+}
+#[derive(Debug, Eq, PartialEq, serde::Serialize)]
+pub(in crate::native_artifact) struct Child {
     pub child: u32,
     pub child_initialize: u32,
+    /// Collection initialization waits for its ordinary dynamic-count helper;
+    /// counted/Tail initialization is already active after the source visit.
+    pub initialize_progress: u64,
     pub child_exit: u32,
     pub child_successor: u32,
-    /// Ordinary nested scalar control, with no private-frame parent below it.
-    /// This describes selection; no owner, view or fuel crosses the child call.
+    /// Existing scalar-child classification and returned-array proof evidence.
+    /// All child boundaries stay ordinary, including unselected/collection
+    /// children. Neither field grants an owner, view or fuel across a call.
     pub scalar_child: bool,
     /// Returned tuple/record field -> CURRENT child carrier array field.
     pub returned_arrays: Vec<(usize, usize)>,
-    pub segments: Vec<Segment>,
 }
 #[derive(Debug, Default, Eq, PartialEq, serde::Serialize)]
 pub(in crate::native_artifact) struct Layout {
@@ -43,6 +54,8 @@ pub(in crate::native_artifact) struct Layout {
     entries: Box<[Option<NonZeroUsize>]>,
     #[serde(skip)]
     regions: Vec<(usize, usize)>,
+    #[serde(skip)]
+    boundaries: Vec<(usize, usize)>,
     #[serde(skip)]
     pub words: usize,
 }
@@ -65,6 +78,14 @@ impl Layout {
         let &(parent, segment) = self.regions.get(index)?;
         let parent = self.parents.get(parent)?;
         Some((parent, parent.segments.get(segment)?))
+    }
+    pub(in crate::native_artifact) fn child_boundary(
+        &self,
+        index: usize,
+    ) -> Option<(&Parent, &Child)> {
+        let &(parent, child) = self.boundaries.get(index)?;
+        let parent = self.parents.get(parent)?;
+        Some((parent, parent.children.get(child)?))
     }
     pub(in crate::native_artifact) fn argument_words(&self) -> usize {
         self.regions
@@ -111,51 +132,65 @@ impl Layout {
                 .enumerate()
                 .filter(|(_, child)| child.as_ref().parent() == Some(iteration as u32))
                 .collect::<Vec<_>>();
-            let [(child_id, Loop::Tail(child))] = children.as_slice() else {
+            if children.is_empty() {
                 continue;
-            };
+            }
             if !frames.fields(parent.carrier()).is_some_and(|f| {
                 f.iter()
                     .all(|f| !matches!(f.lane(), Lane::Composite { .. }))
             }) {
                 continue;
             }
-            let proof = closed
-                .regions
-                .iter()
-                .find(|r| r.iteration as usize == *child_id)
-                .and_then(|r| r.numeric.as_ref());
-            let (scalar_child, returned_arrays) = if let Some(proof) = proof {
-                if proof.arrays.iter().any(|a| a.appends) {
-                    continue;
-                }
-                let ResultRecipe::Frame { arrays, .. } = &proof.result else {
-                    continue;
+            let mut child_boundaries = Vec::with_capacity(children.len());
+            for &(child_id, child) in &children {
+                let control = child.as_ref();
+                let Term::Scalar(mech_engine::native_artifact::NativeMatchTerminator::Jump(
+                    child_successor,
+                )) = plan.blocks()[control.exit() as usize].terminator()
+                else {
+                    break;
                 };
-                let returned = arrays
+                let proof = closed
+                    .regions
                     .iter()
-                    .map(|&(field, array)| {
-                        proof
-                            .arrays
-                            .get(array)
-                            .map(|a| (field, a.field))
-                            .ok_or("composition child result array is outside its proof")
-                    })
-                    .collect::<Result<Vec<_>, _>>()?;
-                (false, returned)
-            } else if super::readonly_numeric::scalar_aggregate(plan, aggregates, child.result())
-                && scalar_child_tree(plan, frames, aggregates, *child_id)
-            {
-                (true, Vec::new())
-            } else {
+                    .find(|r| r.iteration as usize == child_id)
+                    .and_then(|r| r.numeric.as_ref());
+                let returned_arrays = if let Some(proof) = proof
+                    && let ResultRecipe::Frame { arrays, .. } = &proof.result
+                {
+                    arrays
+                        .iter()
+                        .map(|&(field, array)| {
+                            proof
+                                .arrays
+                                .get(array)
+                                .map(|a| (field, a.field))
+                                .ok_or("composition child result array is outside its proof")
+                        })
+                        .collect::<Result<Vec<_>, _>>()?
+                } else {
+                    Vec::new()
+                };
+                let scalar_child = matches!(child, Loop::Tail(tail)
+                    if super::readonly_numeric::scalar_aggregate(plan, aggregates, tail.result())
+                        && scalar_child_tree(plan, frames, aggregates, child_id));
+                child_boundaries.push(Child {
+                    child: child_id as u32,
+                    child_initialize: control.initialize(),
+                    initialize_progress: if matches!(child, Loop::Collection(_)) {
+                        2
+                    } else {
+                        1
+                    },
+                    child_exit: control.exit(),
+                    child_successor,
+                    scalar_child,
+                    returned_arrays,
+                });
+            }
+            if child_boundaries.len() != children.len() {
                 continue;
-            };
-            let Term::Scalar(mech_engine::native_artifact::NativeMatchTerminator::Jump(
-                child_successor,
-            )) = plan.blocks()[child.exit() as usize].terminator()
-            else {
-                continue;
-            };
+            }
             // Every lifecycle transition and managed scalar handoff stays an
             // ordinary boundary. A native piece must finish before the child
             // initializer, and may only reopen after its original exit/copies.
@@ -169,8 +204,10 @@ impl Layout {
                         && site != parent.header() as usize
                         && site != parent.latch() as usize
                         && site != parent.finish() as usize
-                        && site != child.initialize() as usize
-                        && site != child.exit() as usize
+                        && child_boundaries.iter().all(|child| {
+                            site != child.child_initialize as usize
+                                && site != child.child_exit as usize
+                        })
                         && plan.activation_boundary() != Some(site as u32)
                         && matches!(block.terminator(), Term::Scalar(_))
                         && eligible(plan, frames, calls, site))
@@ -290,12 +327,8 @@ impl Layout {
             }
             parents.push(Parent {
                 iteration: iteration as u32,
-                child: *child_id as u32,
-                child_initialize: child.initialize(),
-                child_exit: child.exit(),
-                child_successor,
-                scalar_child,
-                returned_arrays,
+                suspended_child: None,
+                children: child_boundaries,
                 segments,
             });
         }
@@ -321,6 +354,8 @@ impl Layout {
                 regions.push((parent, segment));
             }
         }
+        let mut boundaries = Vec::new();
+        let mut tracked_children = vec![false; plan.iterations().len()];
         let entries = if regions.is_empty() {
             Box::default()
         } else {
@@ -333,36 +368,52 @@ impl Layout {
                 );
             }
             for parent in regions.iter().map(|&(p, _)| p).collect::<BTreeSet<_>>() {
-                for (site, tag) in [
-                    (parents[parent].child_initialize, 1),
-                    (parents[parent].child_exit, 2),
-                ] {
-                    let encoded = parent
-                        .checked_mul(4)
-                        .and_then(|n| n.checked_add(tag + 1))
-                        .ok_or("parent boundary index overflows")?;
-                    if entries[site as usize]
-                        .replace(NonZeroUsize::new(encoded).unwrap())
-                        .is_some()
-                    {
-                        return Err("parent boundary overlaps another selected region");
+                for (child_id, child) in parents[parent].children.iter().enumerate() {
+                    let boundary = boundaries.len();
+                    boundaries.push((parent, child_id));
+                    if core::mem::replace(&mut tracked_children[child.child as usize], true) {
+                        return Err("composition child has two parent boundaries");
+                    }
+                    for (site, tag) in [(child.child_initialize, 1), (child.child_exit, 2)] {
+                        let encoded = boundary
+                            .checked_mul(4)
+                            .and_then(|n| n.checked_add(tag + 1))
+                            .ok_or("parent boundary index overflows")?;
+                        if entries[site as usize]
+                            .replace(NonZeroUsize::new(encoded).unwrap())
+                            .is_some()
+                        {
+                            return Err("parent boundary overlaps another selected region");
+                        }
                     }
                 }
             }
             entries.into_boxed_slice()
         };
+        // Determine the expected outer marker once, using immutable ancestry.
+        // Child calls and piece entry must not walk the graph on every visit.
+        for parent in &mut parents {
+            let mut current = Some(parent.iteration);
+            while let Some(id) = current {
+                if tracked_children[id as usize] {
+                    parent.suspended_child = Some(id);
+                    break;
+                }
+                current = plan.iterations()[id as usize].as_ref().parent();
+            }
+        }
         Ok(Self {
             parents,
             entries,
             regions,
+            boundaries,
             words,
         })
     }
 }
 
-/// The existing single pending edge can span arbitrary ordinary scalar control,
-/// but cannot nest another selected private-frame parent edge. Reuse the exact
-/// connected scalar carrier proof and explicitly exclude every frame carrier.
+/// Retain the existing scalar-child diagnostic classification. Other children
+/// also remain ordinary boundaries; a piece never keeps a loan across any child.
 fn scalar_child_tree(
     plan: &Plan,
     frames: &NativeBufferFrames,

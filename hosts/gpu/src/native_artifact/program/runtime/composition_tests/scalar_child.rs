@@ -41,7 +41,7 @@ fn ordinary_scalar_child_keeps_current_boolean_words_errors_and_retry() {
         let parents = &jit.descriptor().metadata().compositions.parents;
         assert_eq!(parents.len(), 1);
         let parent = &parents[0];
-        assert!(parent.scalar_child && parent.returned_arrays.is_empty());
+        assert!(parent.children[0].scalar_child && parent.children[0].returned_arrays.is_empty());
         let mut published: Vec<Option<Value>> = vec![None; artifact.outputs().len()];
         for (steps, repeats, flag, allowed, divisor, expected, rejection) in [
             (3, 2, true, true, 1, Some(111), None),
@@ -73,7 +73,7 @@ fn ordinary_scalar_child_keeps_current_boolean_words_errors_and_retry() {
                 assert_eq!(
                     counts
                         .admits
-                        .get(&u64::from(parent.child_initialize))
+                        .get(&u64::from(parent.children[0].child_initialize))
                         .copied()
                         .unwrap_or(0),
                     steps,
@@ -82,7 +82,7 @@ fn ordinary_scalar_child_keeps_current_boolean_words_errors_and_retry() {
                 assert_eq!(
                     counts
                         .admits
-                        .get(&u64::from(parent.child_exit))
+                        .get(&u64::from(parent.children[0].child_exit))
                         .copied()
                         .unwrap_or(0),
                     steps,

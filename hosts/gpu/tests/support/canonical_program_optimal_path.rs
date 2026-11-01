@@ -74,7 +74,7 @@ fn path_scan_emits_native_pieces_around_its_nested_scalar_child() {
         let segments = metadata["compiled_numeric_segments"].as_array().unwrap();
         let selected = parents
             .iter()
-            .filter(|parent| parent["scalar_child"] == true)
+            .filter(|parent| parent["children"][0]["scalar_child"] == true)
             .filter(|parent| {
                 segments
                     .iter()
@@ -87,8 +87,13 @@ fn path_scan_emits_native_pieces_around_its_nested_scalar_child() {
             "the unchanged path scan must emit native pieces"
         );
         let parent = selected[0];
-        assert!(parent["returned_arrays"].as_array().unwrap().is_empty());
-        let child = parent["child"].as_u64().unwrap() as u32;
+        assert!(
+            parent["children"][0]["returned_arrays"]
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
+        let child = parent["children"][0]["child"].as_u64().unwrap() as u32;
         assert!(
             object
                 .descriptor()
@@ -109,7 +114,8 @@ fn path_scan_emits_native_pieces_around_its_nested_scalar_child() {
                     .unwrap()
                     .iter()
                     .all(|site| {
-                        site != &parent["child_initialize"] && site != &parent["child_exit"]
+                        site != &parent["children"][0]["child_initialize"]
+                            && site != &parent["children"][0]["child_exit"]
                     })
             );
         }

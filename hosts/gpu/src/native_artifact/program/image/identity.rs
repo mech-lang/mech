@@ -253,7 +253,10 @@ fn selected_template(
 // IR131 checks a single-use child continuation; IR130 composes current parent frame sources around already-qualified children.
 // IR132 assigns one numeric scratch bank while keeping independent region
 // readiness/fuel and original logical setup prices. Images rederive both homes.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 132;
+// IR133 derives acyclic parent pieces around multiple ordinary child boundaries.
+// Exact nested child edges reuse validated ancestry and one invocation marker;
+// every piece reacquires owners/views and images reconstruct the same inventory.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 133;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
