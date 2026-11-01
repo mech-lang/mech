@@ -2870,6 +2870,17 @@
           "files": 39,
           "asset_id": 697958632,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r87-isolated-profile-bf61aed31ae7.tar.gz"
+        },
+        {
+          "event": "capacity-census-failed-selector",
+          "source_revision": "c2b334feed4326a66ce1f69ca4bc99b0cbe41bb2",
+          "asset": "r87-capacity-census-failed-selector-c5ebdbf78c2c.tar.gz",
+          "sha256": "c5ebdbf78c2cd8cd9fd8a1473bbb6df8d622a70812ece96d644cb92b2afd001f",
+          "manifest_sha256": "3241b97fb6ae1d30550a8063f46e84f52787051826ffd30ef1816337f389f673",
+          "bytes": 1409129,
+          "files": 398,
+          "asset_id": 697961131,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r87-capacity-census-failed-selector-c5ebdbf78c2c.tar.gz"
         }
       ]
     }
