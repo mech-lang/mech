@@ -442,6 +442,17 @@
           "files": 75,
           "asset_id": 697411010,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-counters-c120c9e042d5.tar.gz"
+        },
+        {
+          "event": "sites-before",
+          "source_revision": "e4d444b5fcd33a69c05837ad1cafbd4c50b9ae97",
+          "asset": "r80-sites-before-47d485e34c38.tar.gz",
+          "sha256": "47d485e34c3822ee3a7253801c489b1d7b7ebab7c17a423d88543f17658c662d",
+          "manifest_sha256": "2826b9ee81125a14948fffab3b89118447cb71eee8209693db9939d6369d790c",
+          "bytes": 790210,
+          "files": 56,
+          "asset_id": 697411759,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-sites-before-47d485e34c38.tar.gz"
         }
       ]
     }
