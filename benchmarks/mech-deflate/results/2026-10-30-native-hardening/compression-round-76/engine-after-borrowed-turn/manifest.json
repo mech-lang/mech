@@ -1,0 +1,31 @@
+{
+  "created_utc": "2026-11-01T00:41:48.293229+00:00",
+  "head": "f7637621a48d59ff6524d06fe1b22ef2d68165e8",
+  "files": [
+    {
+      "path": "engine-after/borrowed-turn.json",
+      "sha256": "77c35816715070f83868cc40ea82ba6d77fbfc179bc45ab996daeb8139e660d2",
+      "bytes": 12791
+    },
+    {
+      "path": "engine-after/borrowed-turn.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine-after/borrowed-turn.stdout",
+      "sha256": "850c4d53ebf2b7c19f93c9721b2b762438fdeef44f1f274ca19fbb94f5d55d11",
+      "bytes": 915
+    },
+    {
+      "path": "engine-after/budget.rs",
+      "sha256": "9c53b89f688ca6a7b8767c7da31b01fbc6d96e0859f68f8e1cfb4934c4db1b15",
+      "bytes": 172252
+    },
+    {
+      "path": "engine-focused.py",
+      "sha256": "c78a2702f976b1cdb7ce8bf4715b6e03edd0b574bd3c93f1956df308f9b33473",
+      "bytes": 5571
+    }
+  ]
+}
