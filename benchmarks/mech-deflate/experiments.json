@@ -508,6 +508,17 @@
           "files": 48,
           "asset_id": 697420327,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-units-0e39cd2d1620.tar.gz"
+        },
+        {
+          "event": "qualification",
+          "source_revision": "e4d444b5fcd33a69c05837ad1cafbd4c50b9ae97",
+          "asset": "r80-qualification-1a9fd8b394bb.tar.gz",
+          "sha256": "1a9fd8b394bbff5940803dca4a1c6c2e976380fe57a64a7b238eb42767fc05e0",
+          "manifest_sha256": "298bcefa6d1ca55bdd43c2050406f0ecae887579dfce2ebe67cc3bb5e7da80a9",
+          "bytes": 157526,
+          "files": 57,
+          "asset_id": 697420352,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r80-qualification-1a9fd8b394bb.tar.gz"
         }
       ]
     }
