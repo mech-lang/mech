@@ -7022,6 +7022,17 @@
             "improving_blocks": 21,
             "adverse_blocks": 43
           }
+        },
+        {
+          "event": "counters",
+          "source_revision": "af930a97154d8f71b6759540049c55708c8ba035",
+          "asset": "r101-counters-7e3aad38f7de.tar.gz",
+          "sha256": "7e3aad38f7de9f37c03cde609c09f8503738976f4a8036b4fef9120df53a5d89",
+          "manifest_sha256": "dfa418ee0ccd9952987dbe6dde7b8b1a497a681db63f8d2ad2b6e6cb9e8364ab",
+          "bytes": 308306,
+          "files": 76,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-control-inline-round101-20261101/archives/r101-counters-7e3aad38f7de.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
