@@ -3774,6 +3774,17 @@
           "files": 78,
           "asset_id": 698264163,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-counters-static-check-overlap-a7d9d296f752.tar.gz"
+        },
+        {
+          "event": "scalar-controls-static-check-overlap",
+          "source_revision": "460c9cb748fc377c1cbcfd57565a5373de05de14",
+          "asset": "r89-scalar-controls-static-check-overlap-a12362cddafb.tar.gz",
+          "sha256": "a12362cddafbfa5bed5a8cc8e29b8d72eb12c2b3d906fcb55dda3a71d94650ec",
+          "manifest_sha256": "994cdc5f877aa8b41d1ab7b49c6316f51c8fdb81343fff7482477f768b897487",
+          "bytes": 77045,
+          "files": 93,
+          "asset_id": 698264276,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r89-scalar-controls-static-check-overlap-a12362cddafb.tar.gz"
         }
       ]
     }
