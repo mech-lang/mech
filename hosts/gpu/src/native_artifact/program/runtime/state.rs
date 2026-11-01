@@ -41,8 +41,5 @@ pub(in crate::native_artifact::program::runtime) struct ExecutionState<'plan> {
     // Paid scalar entry only; no source data or ownership is cached. Keep it
     // with the control state across activation/prefix entry suspension.
     pub(in crate::native_artifact::program::runtime) scalar_path: Option<u32>,
-    // Exact adjacent seed/initializer receipt, never owner or resource authority.
-    // Kept across entry suspension; all storage remains in the frame census.
-    pub(in crate::native_artifact::program::runtime) seed_handoff: Option<core::num::NonZeroUsize>,
     pub(in crate::native_artifact::program::runtime) output_cursor: usize,
 }

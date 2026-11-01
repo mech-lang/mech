@@ -1,5 +1,6 @@
 //! Actual private record field calls, current words, ordered failure and retry.
 use super::*;
+use crate::native_artifact::program::protocol::abi::Frame;
 use mech_core::snapshot::F64Bits;
 
 pub(super) const SOURCE: &str =
@@ -99,18 +100,7 @@ fn private_record_lookup_keeps_current_scalar_words_aliases_errors_and_retry() {
         let restored =
             unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
         assert_eq!(restored.encode_build_owned_image().unwrap(), image);
-        // The same Object still contains the ordinary seed Copy helper. Empty
-        // only this optional derived selector to compare that path's complete
-        // errors, work and publication against direct placement.
-        // SAFETY: same unchanged image and live entry owner as above.
-        let mut staged =
-            unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
-        staged.metadata.seed_handoffs = Default::default();
-        for (direct, descriptor) in [
-            (true, jit.descriptor()),
-            (true, &restored),
-            (false, &staged),
-        ] {
+        for descriptor in [jit.descriptor(), &restored] {
             let memory = mode.memory_budget();
             let mut published = vec![None; artifact.outputs().len()];
             for (case, (input, expected, error)) in [
@@ -176,16 +166,18 @@ fn private_record_lookup_keeps_current_scalar_words_aliases_errors_and_retry() {
                 let before = contents(&args);
                 let prior = published.clone();
                 let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
-                let (result, observed) = observe::run_descriptor(
-                    &jit,
+                let entry = jit.test_checked_entry();
+                let result = execute(
                     descriptor,
+                    |frame: *mut Frame| {
+                        // SAFETY: execute retains this initialized owning frame and the entry owner.
+                        unsafe { entry(frame) }
+                    },
                     &args,
                     &mut published,
                     mode.execution(),
                     &memory,
                 );
-                assert_eq!(observed.seed_handoffs > 0, direct);
-                assert_eq!(observed.seed_handoffs, observed.seed_adoptions);
                 if let Some(expected) = expected {
                     let report = result.unwrap();
                     assert_eq!(

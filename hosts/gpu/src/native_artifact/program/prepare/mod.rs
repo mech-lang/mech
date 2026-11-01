@@ -17,7 +17,6 @@ pub(in crate::native_artifact) mod cleanup_effects;
 pub(in crate::native_artifact) mod composition;
 pub(in crate::native_artifact) mod constant_owners;
 pub(in crate::native_artifact) mod frame_retirement;
-pub(in crate::native_artifact) mod seed_handoff;
 
 /// Recomputed both on source preparation and independent build-image loading.
 pub(in crate::native_artifact) fn prepare_frame_composition(
@@ -71,7 +70,6 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     pub(in crate::native_artifact) buffer_frames: mech_engine::native_artifact::NativeBufferFrames,
     // Derived from these exact frame lanes, including independent image load.
     pub(in crate::native_artifact) frame_retirements: frame_retirement::FrameRetirements,
-    pub(in crate::native_artifact) seed_handoffs: seed_handoff::Layout,
     pub(in crate::native_artifact) cleanup_effects: cleanup_effects::Layout,
     pub(in crate::native_artifact) unsigned_buffer_calls:
         Box<[Option<mech_engine::native_artifact::NativeUnsignedBufferCall>]>,
@@ -304,8 +302,6 @@ impl PreparedNativeProgram {
         let visits: Box<[NativeIterationVisit]> = visits.into();
         let frame_retirements =
             frame_retirement::FrameRetirements::derive(&buffer_frames, plan.values().len())?;
-        let seed_handoffs =
-            seed_handoff::Layout::derive(&plan, &buffer_frames, &frame_retirements)?;
         let cleanup_effects = cleanup_effects::Layout::derive(
             &plan,
             &retirements,
@@ -439,7 +435,6 @@ impl PreparedNativeProgram {
             unsigned_buffer_calls,
             buffer_frames,
             frame_retirements,
-            seed_handoffs,
             cleanup_effects,
             window_regions,
             string_map_regions,
