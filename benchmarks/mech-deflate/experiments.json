@@ -7091,7 +7091,7 @@
       "base": "f0ea21e3a35283d08bc1908b5ad0a8593e930b3f",
       "production": "fa1ffe75e78c7ace538d7d14aa5f3ebc74783166",
       "compiler_source": "fa1ffe75e78c7ace538d7d14aa5f3ebc74783166",
-      "decision": "under measurement",
+      "decision": "Retain explicit always-inline budget helper: elapsed -3.794800%, instructions -3.372758%, heap unchanged, existing gates pass.",
       "events": [
         {
           "event": "initial",
@@ -7264,7 +7264,16 @@
           "local_archive": "/private/tmp/mech-control-force-inline-round102-20261101/archives/r102-closure-87f669298372.tar.gz"
         }
       ],
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "4bc237d5d1e624394f69a3b1a7e86c99ca55b9f1030dd3cfecf645b16722b9df",
+          "profile-numbers.json": "0b4de21bee7dc2d192037e69a5185a5a8d70e1278c37189b2c0744418af39b97",
+          "scorecard.json": "6da69d2a2914d80ed0a90074cd8395ec05b917d56906647544eefaaf5514633a",
+          "validation.json": "574138933f1ccc8f26e9d2b352caa971ff47b219d6ea4a863d0096a003a415dd"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",

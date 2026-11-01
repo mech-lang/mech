@@ -592,3 +592,28 @@ Object/image/metadata remain byte-identical. Revert `e6d215ad6` restores all
 production source to retained R100; all fees/errors/prices remain unchanged.
 The next distinct candidate is `#[inline(always)]`, verified in actual host code
 before accepting any elapsed result. Native executables remain local.
+
+
+## R102: forced budget-helper inlining retained
+
+Compiler `fa1ffe75e78c7ace538d7d14aa5f3ebc74783166` adds only `#[inline(always)]`.
+Actual library/observer callers inline the paired checks; standalone helper
+disappears. Fresh elapsed **8.477859×→8.156141×** reference (−3.794800%), all4
+pairs/64 descriptive blocks improve. Separate instructions27,930,744.5→
+26,988,708 (−3.372758%); cycles−2.089625%. Requests5077, reallocations162,
+requested bytes95,895,278 and incremental live peak17,782,744 stay equal.
+Object/image/metadata are byte-identical; whole linked text grows640B.
+
+Engine budget108, runtime356, work33, native CI65, image1, unchanged
+components236/connected8/path1, linked40, scalar12 (same1.05 gate, max1.016923),
+frame8, workflow132 and architecture15 pass. All3968 primary/3984 total
+observations and separate695-call profiles remain. One environmental Git
+recording denial was repaired by committing the unchanged already sealed
+passing linked packet; no program rerun or allowance change.
+
+The fresh full5077-event allocation trace confirms3368B replacement requests
+and33632B final shape owners. Shape forwarding is the next672-request candidate,
+then prepared schema headers; no allocation saving is claimed for R102. The
+independent instruction track remains prepared transfers/known-zero arguments/
+entry-local source reuse. Exact pins, all commands, source/readers, raw cohorts,
+controlled failure/retry and numerical replay are in the compact archive index.

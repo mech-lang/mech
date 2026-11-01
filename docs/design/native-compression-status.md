@@ -6,7 +6,63 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Publication CI is cancelled by
 instruction; no green hosted-CI claim is made.
 
-## R100: move ordinary binding metadata; no elapsed win established
+## R102: inline paired budget debit; retain measured gain
+
+Compiler **`fa1ffe75e78c7ace538d7d14aa5f3ebc74783166`**, previous published head
+`c489e5fc30a4e9cea549cc1de66e2c94ab2f9eb9`, stack base
+`eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`. One `#[inline(always)]` keeps the
+shared paired-debit checks in their hot callers. No checks, fee, limit, debit
+order, worker atomicity or benchmark source change. R101's ordinary `#[inline]`
+was ineffective, measured adverse, archived, independently replayed and reverted.
+
+Fresh matched complete eight-byte compression **8.477859×→8.156141× Roc's time**:
+2.4331455→2.3408125ms against a0.287ms reference, **3.794800% less elapsed time**.
+All four matched pairs and64 descriptive blocks improve. All3968 primary/3984
+total observations remain; blocks are not independent experiments. Historical
+ratios with different reference clocks are not gain estimates.
+
+| Metric | Fresh retained R100 | R102 |
+|---|---:|---:|
+| Instructions, separate cohort |27,930,744.5|26,988,708 (−942,036.5; −3.372758%)|
+| Cycles, same hardware cohort |7,594,187|7,435,497 (−2.089625%)|
+| Requests / reallocations |5,077 /162|unchanged|
+| Requested bytes / incremental live peak |95,895,278 /17,782,744|unchanged|
+| Generated text / entry stack |14,604,696B /135,728B|byte-identical /unchanged|
+| Whole linked text, including runtime |63,674,544B|63,675,184B (+640B)|
+
+Actual host disassembly removes the separate520-byte helper. The library caller
+512→736B and observer428→628B now contain the checks directly. The complete
+Object, descriptor and metadata stay byte-identical. This is a controlled
+R100-to-R102 result; it does not assign all historical R99 instruction growth or
+all Result transport to outlining. Fresh isolated profiles cover695 calls per
+subject; samples remain separate from retired instructions.
+
+Passes: actual Engine budget108, runtime356, work/memory33, guarded native CI65,
+image1, unchanged components236/connected8/path1, linked40, scalar12 (same1.05
+gate; max1.016923, pure-scalar allocation equality, loop slope0), frame8,
+workflow132, architecture15 and current runtime-only GPU cfg. Five affected
+crates rebuild coherently, Core/math frozen, warnings-as-errors unchanged. A
+Git metadata permission denial occurred only when recording sixteen already
+passing linked cases; the same sealed packet was committed with authorized
+access. No program rerun, receipt rewrite or source/allowance change was needed.
+
+Logical work42,410,605,541 and IR/work/ABI/bytecode143/99/38/14 are unchanged.
+Algorithm, tables, buffers, allocator, input aliases, cap13 output clear/rebind
+and evaluate_into timing stay pinned. Exact bytes, independent inflate and
+final zero managed bytes/nodes pass. The existing expensive knucleotide-body
+exclusion remains; no full math/all-features/minimal graph, larger-input timing
+or green hosted-CI claim. Public output backing still changes.
+
+The new complete allocation trace independently reconciles5077 requests,
+95,895,278 bytes and162 reallocations. It finds336 eight-byte replacement
+requests (immediate callee deduplicated; exact ancestry/return offsets retained)
+and33632-byte final shape owners. The672-request/13,440-byte shape-forwarding
+candidate is confirmed as a current target, not an achieved saving. Next: shape
+owner forwarding, then prepared schema headers. The independent instruction
+track remains prepared frame transfers, known-zero arguments and entry-local
+checked-source reuse.
+
+## Previous retained checkpoint: R100 — move ordinary binding metadata; no elapsed win established
 
 Compiler **`bebe5a245d312796c630de76fc558fbcd2c2f2ff`**, published parent
 `c84e307aa64e136bd0d3f6d2fc2bbf869b4e3b25`. The no-witness binding branch now moves
