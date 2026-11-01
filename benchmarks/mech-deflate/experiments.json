@@ -6544,6 +6544,17 @@
           "files": 58,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-linked-multi-139bb197e436.tar.gz"
+        },
+        {
+          "event": "tree-instructions",
+          "source_revision": "5c219ed220879b05ee147bdf5d3f85680311eae2",
+          "asset": "r99-tree-instructions-fd05d07349c1.tar.gz",
+          "sha256": "fd05d07349c1f370b01ca726ec7b8e060b25593fd0561758de61957897958d92",
+          "manifest_sha256": "da67327353d6ad98bdd8c9a23aff0c5076a8c94eb26e61f8be20028e7bea2fcb",
+          "bytes": 128752,
+          "files": 64,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-tree-instructions-fd05d07349c1.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
