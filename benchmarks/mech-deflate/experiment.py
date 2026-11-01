@@ -12,6 +12,7 @@ import hashlib
 import io
 import itertools
 import json
+import math
 import os
 from pathlib import Path, PurePosixPath
 import select
@@ -19,6 +20,7 @@ import statistics
 import subprocess
 import sys
 import tarfile
+import time
 
 
 RESULTS = "benchmarks/mech-deflate/results/"
@@ -192,6 +194,12 @@ def measure(args):
     """The existing linked-worker protocol; preparation and cleanup stay outside evaluate_into."""
     spec = json.loads(args.spec.read_text())
     args.output.mkdir(parents=True, exist_ok=False)
+    if git(Path.cwd(), "status", "--porcelain").strip():
+        raise ValueError("commit source/harness changes before measuring")
+    active = subprocess.check_output(["ps", "-Ao", "comm="], text=True).splitlines()
+    busy = {"rustc", "cargo", "tests", "gpu-unit-tests", "worker", "inspect", "roc-profile", "native_frame_transport"}
+    if any(Path(name.strip()).name in busy or Path(name.strip()).name.endswith("-tests") for name in active):
+        raise ValueError("another compiler, test or benchmark is active")
     for pin in spec["pins"]:
         if sha256(Path(pin["path"])) != pin["sha256"]:
             raise ValueError(f"input pin mismatch: {pin['path']}")
@@ -201,6 +209,24 @@ def measure(args):
     samples = spec.get("samples", 31)
     orders = list(itertools.permutations(labels))
     write_json(args.output / "spec.json", spec)
+    def record(event):
+        if "record_command" in spec:
+            subprocess.run([*spec["record_command"], event], check=True)
+    reference = spec["reference"]
+    started = time.monotonic()
+    completed = subprocess.run(reference["command"], capture_output=True, text=True)
+    (args.output / "reference.stdout").write_text(completed.stdout)
+    (args.output / "reference.stderr").write_text(completed.stderr)
+    completed.check_returncode()
+    rows = [line.split("\t") for line in completed.stdout.splitlines()
+            if line.startswith(reference["row_prefix"])]
+    if len(rows) != reference["expected_observations"]:
+        raise ValueError("reference observation count differs from the declared cohort")
+    reference_seconds = statistics.median(int(row[reference["nanoseconds_column"]]) for row in rows) / 1e9
+    write_json(args.output / "reference.json", {"command": reference["command"], "exit": completed.returncode,
+               "seconds_outside_primary": time.monotonic() - started, "observations": len(rows),
+               "median_seconds": reference_seconds})
+    record("primary-reference")
     summaries = []
     for group in range(groups):
         directory = args.output / f"group{group}"
@@ -282,7 +308,31 @@ def measure(args):
         summaries.append({"group": group, "medians": medians,
                           "after_over_before": medians["after"] / medians["before"]})
         print(json.dumps(summaries[-1]), flush=True)
+        record(f"primary-group{group}")
     write_json(args.output / "groups.json", summaries)
+    all_rows = {label: [] for label in labels}
+    ratios = []
+    for group in range(groups):
+        data = json.loads((args.output / f"group{group}" / "results.json").read_text())
+        ratios.extend(block["after_over_before"] for block in data["blocks"])
+        for label in labels:
+            all_rows[label].extend(row["seconds"] for row in data["all_observations"][label]
+                                   if not row["warmup"] and not row["profile"])
+    medians = {label: statistics.median(all_rows[label]) for label in labels}
+    summary = {"primary_observations": groups * blocks * samples * 2,
+               "all_observations": groups * (blocks * samples + 2) * 2,
+               "reference_seconds": reference_seconds, "medians": medians,
+               "multiples_of_reference": {label: medians[label] / reference_seconds for label in labels},
+               "after_over_before": medians["after"] / medians["before"],
+               "improving_groups": sum(group["after_over_before"] < 1 for group in summaries),
+               "improving_blocks": sum(ratio < 1 for ratio in ratios),
+               "adverse_blocks": sum(ratio > 1 for ratio in ratios),
+               "median_block_ratio": statistics.median(ratios),
+               "geometric_block_ratio": math.exp(statistics.mean(math.log(ratio) for ratio in ratios)),
+               "scope": "Blocks within a prepared pair are descriptive, not independent experiments. All adverse observations retained."}
+    write_json(args.output / "summary.json", summary)
+    record("primary-summary")
+    print(json.dumps(summary, indent=2), flush=True)
 
 
 def main():
