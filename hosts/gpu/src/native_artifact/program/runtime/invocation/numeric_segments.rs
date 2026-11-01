@@ -3,7 +3,10 @@
 use super::tail::{Region, State};
 use super::{Error, Invocation, invalid};
 use crate::native_artifact::NativeExecutionPhase;
-use crate::native_artifact::program::prepare::composition::frames::Source;
+use crate::native_artifact::program::prepare::composition::frames::{
+    Layout as FrameLayout, Source,
+};
+use crate::native_artifact::program::prepare::composition::numeric::Layout as NumericLayout;
 use crate::native_artifact::program::prepare::readonly_numeric::Operation;
 use crate::native_artifact::program::runtime::amount;
 use mech_core::Value;
@@ -377,41 +380,15 @@ impl Invocation<'_, '_, '_> {
                 "parent native account, scope or entry changed during execution",
             ));
         }
-        let (export, retry_alias) = match args[0] {
-            0 => (
-                Some(
-                    frames
-                        .exits
-                        .iter()
-                        .find(|e| e.from as usize == site && u64::from(e.to) == args[1])
-                        .ok_or_else(|| {
-                            invalid("parent native exit is outside its proved frontier")
-                        })?,
-                ),
-                None,
-            ),
-            2 if args[1] == 0 && segment.sites.contains(&(site as u32)) => {
-                if !proof
-                    .actions
+        let export = match args[0] {
+            0 => Some(
+                frames
+                    .exits
                     .iter()
-                    .any(|(at, action)| *at == site && matches!(action, Operation::Read { .. }))
-                {
-                    return Err(invalid("parent bounds retry is outside a proved read"));
-                }
-                let NativeIterationAction::LibraryCall { operands, .. } =
-                    metadata.plan.blocks()[site].action()
-                else {
-                    return Err(invalid("parent bounds retry lost its original call"));
-                };
-                (
-                    None,
-                    frames
-                        .aliases
-                        .iter()
-                        .find(|alias| alias.value == operands[0]),
-                )
-            }
-            3 if args[1] == 0 && segment.sites.contains(&(site as u32)) => (None, None),
+                    .find(|e| e.from as usize == site && u64::from(e.to) == args[1])
+                    .ok_or_else(|| invalid("parent native exit is outside its proved frontier"))?,
+            ),
+            2 | 3 if args[1] == 0 && segment.sites.contains(&(site as u32)) => None,
             _ => {
                 return Err(invalid(
                     "parent native exit mode differs from its source boundary",
@@ -423,134 +400,186 @@ impl Invocation<'_, '_, '_> {
                 "parent native exit overlaps an ordinary input bank",
             ));
         }
-        let outcome = (|| {
-            if let Some(exit) = export {
-                // Reuse the already admitted ordinary Value bank. Pin current
-                // sources only until ordered retirement and final field copy.
-                for value in &exit.frames {
-                    let recipe = frames
-                        .frames
-                        .iter()
-                        .find(|f| f.value == value.get())
-                        .ok_or_else(|| invalid("parent export lacks exact frame words"))?;
-                    for source in recipe.arrays.iter().flatten() {
-                        if self.state.call_inputs.values()[*source].is_none() {
+        let outcome = if args[0] == 2 {
+            self.finish_numeric_bounds_retry(site, frames, proof)
+        } else {
+            (|| {
+                if let Some(exit) = export {
+                    // Reuse the already admitted ordinary Value bank. Pin current
+                    // sources only until ordered retirement and final field copy.
+                    for value in &exit.frames {
+                        let recipe = frames
+                            .frames
+                            .iter()
+                            .find(|f| f.value == value.get())
+                            .ok_or_else(|| invalid("parent export lacks exact frame words"))?;
+                        for source in recipe.arrays.iter().flatten() {
+                            if self.state.call_inputs.values()[*source].is_none() {
+                                let owner = self
+                                    .segment_source(&frames.sources[*source])?
+                                    .ok_or_else(|| {
+                                        invalid("parent export lost its current source")
+                                    })?
+                                    .clone();
+                                self.state.call_inputs.values_mut()[*source] = Some(owner);
+                            }
+                        }
+                    }
+                    for value in &exit.aliases {
+                        let alias = frames
+                            .aliases
+                            .iter()
+                            .find(|alias| alias.value == *value)
+                            .ok_or_else(|| invalid("parent alias export lacks its exact source"))?;
+                        if self.state.call_inputs.values()[alias.source].is_none() {
                             let owner = self
-                                .segment_source(&frames.sources[*source])?
-                                .ok_or_else(|| invalid("parent export lost its current source"))?
+                                .segment_source(&frames.sources[alias.source])?
+                                .ok_or_else(|| {
+                                    invalid("parent alias export lost its current owner")
+                                })?
                                 .clone();
-                            self.state.call_inputs.values_mut()[*source] = Some(owner);
+                            self.state.call_inputs.values_mut()[alias.source] = Some(owner);
                         }
                     }
                 }
-                for value in &exit.aliases {
-                    let alias = frames
-                        .aliases
-                        .iter()
-                        .find(|alias| alias.value == *value)
-                        .ok_or_else(|| invalid("parent alias export lacks its exact source"))?;
-                    if self.state.call_inputs.values()[alias.source].is_none() {
-                        let owner = self
-                            .segment_source(&frames.sources[alias.source])?
-                            .ok_or_else(|| invalid("parent alias export lost its current owner"))?
-                            .clone();
-                        self.state.call_inputs.values_mut()[alias.source] = Some(owner);
-                    }
-                }
-            } else if let Some(alias) = retry_alias {
-                // The original reader needs this private operand to report its
-                // own index error. Keep it alive across reached retirements,
-                // using the same source bank and already funded alias escape.
-                let owner = self
-                    .segment_source(&frames.sources[alias.source])?
-                    .ok_or_else(|| invalid("parent bounds retry lost its current owner"))?
-                    .clone();
-                self.state.call_inputs.values_mut()[alias.source] = Some(owner);
-            }
-            let flags = frames.scalar_words + proof.views.len() * 4;
-            for (at, (_, values)) in frames.retirements.iter().enumerate() {
-                match self.read_borrowed_word(flags + at)? {
-                    0 => continue,
-                    1 => {}
-                    _ => return Err(invalid("parent retirement flag is not Boolean")),
-                }
-                for &value in values {
-                    if !self.state.buffer_frames.retire(
-                        &metadata.frame_retirements,
-                        value,
-                        &mut self.state.control.work,
-                    )? {
+                self.retire_reached_segment_values(frames, proof)?;
+                if let Some(exit) = export {
+                    // Only real escapes become canonical. Internal projections are
+                    // immutable source aliases, never owning arena temporaries.
+                    for value in &exit.aliases {
+                        let alias = frames
+                            .aliases
+                            .iter()
+                            .find(|alias| alias.value == *value)
+                            .ok_or_else(|| invalid("parent alias export lost its exact recipe"))?;
+                        let owner = self.state.call_inputs.values()[alias.source]
+                            .as_ref()
+                            .ok_or_else(|| invalid("parent alias export owner pin missing"))?;
                         self.state
                             .arena
-                            .retire_current(value, &mut self.state.control.work)?;
+                            .put(value.get(), owner, &mut self.state.control.work)?;
                     }
-                }
-            }
-            if let Some(exit) = export {
-                // Only real escapes become canonical. Internal projections are
-                // immutable source aliases, never owning arena temporaries.
-                for value in &exit.aliases {
-                    let alias = frames
-                        .aliases
-                        .iter()
-                        .find(|alias| alias.value == *value)
-                        .ok_or_else(|| invalid("parent alias export lost its exact recipe"))?;
-                    let owner = self.state.call_inputs.values()[alias.source]
-                        .as_ref()
-                        .ok_or_else(|| invalid("parent alias export owner pin missing"))?;
-                    self.state
-                        .arena
-                        .put(value.get(), owner, &mut self.state.control.work)?;
-                }
-                for value in &exit.frames {
-                    let recipe = frames
-                        .frames
-                        .iter()
-                        .find(|f| f.value == value.get())
-                        .unwrap();
-                    for (ordinal, (word, source)) in
-                        recipe.fields.iter().zip(&recipe.arrays).enumerate()
-                    {
-                        if let Some(word) = word {
-                            let bits = self.read_borrowed_word(*word)?;
-                            self.state.buffer_frames.synchronize_scalar(
-                                &metadata.buffer_frames,
-                                *value,
-                                ordinal,
-                                bits,
-                            )?;
-                        } else if let Some(source) = source {
-                            let owner = self.state.call_inputs.values()[*source]
-                                .as_ref()
-                                .ok_or_else(|| invalid("parent export source pin missing"))?
-                                .clone();
-                            self.state.buffer_frames.synchronize_managed(
-                                &metadata.buffer_frames,
-                                *value,
-                                ordinal,
-                                owner,
-                            )?;
-                        } else {
-                            return Err(invalid("parent export has no scalar or managed source"));
+                    for value in &exit.frames {
+                        let recipe = frames
+                            .frames
+                            .iter()
+                            .find(|f| f.value == value.get())
+                            .unwrap();
+                        for (ordinal, (word, source)) in
+                            recipe.fields.iter().zip(&recipe.arrays).enumerate()
+                        {
+                            if let Some(word) = word {
+                                let bits = self.read_borrowed_word(*word)?;
+                                self.state.buffer_frames.synchronize_scalar(
+                                    &metadata.buffer_frames,
+                                    *value,
+                                    ordinal,
+                                    bits,
+                                )?;
+                            } else if let Some(source) = source {
+                                let owner = self.state.call_inputs.values()[*source]
+                                    .as_ref()
+                                    .ok_or_else(|| invalid("parent export source pin missing"))?
+                                    .clone();
+                                self.state.buffer_frames.synchronize_managed(
+                                    &metadata.buffer_frames,
+                                    *value,
+                                    ordinal,
+                                    owner,
+                                )?;
+                            } else {
+                                return Err(invalid(
+                                    "parent export has no scalar or managed source",
+                                ));
+                            }
                         }
                     }
                 }
-            } else if let Some(alias) = retry_alias {
-                let owner = self.state.call_inputs.values()[alias.source]
-                    .as_ref()
-                    .ok_or_else(|| invalid("parent bounds retry owner pin missing"))?;
-                self.state
-                    .arena
-                    .put(alias.value.get(), owner, &mut self.state.control.work)?;
-            }
-            Ok(())
-        })();
+                Ok(())
+            })()
+        };
         self.state.call_inputs.values_mut()[..frames.sources.len()].fill(None);
         outcome?;
         self.state.scalar_path = None;
         self.state.control.previous = Some(site as u32);
         self.state.consumed = args[0] != 2;
         Ok(None)
+    }
+
+    #[inline(always)]
+    fn retire_reached_segment_values(
+        &mut self,
+        frames: &FrameLayout,
+        proof: &NumericLayout,
+    ) -> Result<(), Error> {
+        let descriptor = self.descriptor;
+        let metadata = descriptor.metadata();
+        let flags = frames.scalar_words + proof.views.len() * 4;
+        for (at, (_, values)) in frames.retirements.iter().enumerate() {
+            match self.read_borrowed_word(flags + at)? {
+                0 => continue,
+                1 => {}
+                _ => return Err(invalid("parent retirement flag is not Boolean")),
+            }
+            for &value in values {
+                if !self.state.buffer_frames.retire(
+                    &metadata.frame_retirements,
+                    value,
+                    &mut self.state.control.work,
+                )? {
+                    self.state
+                        .arena
+                        .retire_current(value, &mut self.state.control.work)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[cold]
+    #[inline(never)]
+    fn finish_numeric_bounds_retry(
+        &mut self,
+        site: usize,
+        frames: &FrameLayout,
+        proof: &NumericLayout,
+    ) -> Result<(), Error> {
+        if !proof
+            .actions
+            .iter()
+            .any(|(at, action)| *at == site && matches!(action, Operation::Read { .. }))
+        {
+            return Err(invalid("parent bounds retry is outside a proved read"));
+        }
+        let descriptor = self.descriptor;
+        let NativeIterationAction::LibraryCall { operands, .. } =
+            descriptor.metadata().plan.blocks()[site].action()
+        else {
+            return Err(invalid("parent bounds retry lost its original call"));
+        };
+        let alias = frames
+            .aliases
+            .iter()
+            .find(|alias| alias.value == operands[0]);
+        if let Some(alias) = alias {
+            // Pin only the original reader's private operand. Entry already
+            // funded this possible escape; source retirement keeps its order.
+            let owner = self
+                .segment_source(&frames.sources[alias.source])?
+                .ok_or_else(|| invalid("parent bounds retry lost its current owner"))?
+                .clone();
+            self.state.call_inputs.values_mut()[alias.source] = Some(owner);
+        }
+        self.retire_reached_segment_values(frames, proof)?;
+        if let Some(alias) = alias {
+            let owner = self.state.call_inputs.values()[alias.source]
+                .as_ref()
+                .ok_or_else(|| invalid("parent bounds retry owner pin missing"))?;
+            self.state
+                .arena
+                .put(alias.value.get(), owner, &mut self.state.control.work)?;
+        }
+        Ok(())
     }
 }
 
