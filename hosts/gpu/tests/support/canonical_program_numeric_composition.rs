@@ -427,7 +427,7 @@ fn parent_partition_follows_reordered_child_results() {
 }
 
 #[test]
-fn parent_partition_declines_multiple_children_and_append_owners() {
+fn parent_partition_keeps_multiple_children_and_append_owners_at_ordinary_boundaries() {
     let original = include_str!("../fixtures/native/numeric-parent-child.mec");
     let siblings = original.replace("  (next, next-i) := step\n",
         "  (first, first-i) := step\n  (next, next-i) := second-symbols(a, lens, width, first-i, 0u64)\n");
@@ -443,15 +443,34 @@ fn parent_partition_declines_multiple_children_and_append_owners() {
     // The child is the already qualified record-buffer append recurrence.
     let append = "+> sequence\ngrow(words<[u64]>, left<u64>) => (out<{nodes<[u64]>}>) :=\n  out := ((left > 0u64)? | true => grow(sequence/append(words, left), left - 1u64) | false => {nodes: words}).\nouter(words<[u64]>, left<u64>) => (out<[u64]>) :=\n  result := grow(words, left)\n  out := ((left > 0u64)? | true => outer(result.nodes, left - 1u64) | false => result.nodes).\nouter(sequence/with-capacity(0u64, capacity<u64>), steps<u64>)\n";
     for (source, expect_append) in [(siblings.as_str(), false), (append, true)] {
-        println!("negative parent append={expect_append}");
+        println!("ordinary child boundaries append={expect_append}");
         for artifact in artifacts(source).0 {
-            let metadata = emit_program_object(&artifact, &mech_stdlib::source_catalog())
-                .unwrap()
-                .metadata();
+            let object = emit_program_object(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let metadata = object.metadata();
             let parents = metadata["numeric_parent_partitions"]["parents"]
                 .as_array()
                 .unwrap();
-            assert!(parents.is_empty());
+            let parent = parents
+                .iter()
+                .find(|parent| parent["iteration"] == 0)
+                .unwrap();
+            let children = parent["children"].as_array().unwrap();
+            assert_eq!(children.len(), if expect_append { 1 } else { 2 });
+            for segment in parent["segments"].as_array().unwrap() {
+                for site in segment["sites"].as_array().unwrap() {
+                    assert_eq!(
+                        object.descriptor().plan().blocks()[site.as_u64().unwrap() as usize]
+                            .iteration(),
+                        Some(0)
+                    );
+                    assert!(
+                        children
+                            .iter()
+                            .all(|child| site != &child["child_initialize"]
+                                && site != &child["child_exit"])
+                    );
+                }
+            }
             if expect_append {
                 assert!(
                     metadata["numeric_write_regions"]
@@ -464,6 +483,48 @@ fn parent_partition_declines_multiple_children_and_append_owners() {
                             .iter()
                             .any(|a| a["appends"] == true))
                 );
+                let jit =
+                    JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+                for (capacity, steps, expected) in [
+                    (0, 0, vec![]),
+                    (2, 3, vec![3, 2, 1, 2, 1, 1]),
+                    (16, 2, vec![2, 1, 1]),
+                ] {
+                    let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                    let args = inputs(
+                        &artifact,
+                        &[
+                            ("capacity", ValueDataDraft::U64(capacity)),
+                            ("steps", ValueDataDraft::U64(steps)),
+                        ],
+                        &memory,
+                    );
+                    let mut outputs = vec![None; artifact.outputs().len()];
+                    jit.evaluate_into(&args, &mut outputs, limits(), &memory)
+                        .unwrap();
+                    equal(
+                        &artifact,
+                        &outputs,
+                        &reference_result(&artifact, &args).unwrap(),
+                    );
+                    assert_eq!(
+                        outputs
+                            .last()
+                            .unwrap()
+                            .as_ref()
+                            .unwrap()
+                            .canonical_data_draft()
+                            .unwrap(),
+                        ValueDataDraft::Matrix(
+                            expected.into_iter().map(ValueDataDraft::U64).collect()
+                        )
+                    );
+                    drop((args, outputs));
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        (0, 0)
+                    );
+                }
             } else {
                 assert_eq!(
                     metadata["readonly_numeric_candidates"]
