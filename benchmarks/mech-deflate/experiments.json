@@ -6775,6 +6775,17 @@
             "improving_blocks": 25,
             "adverse_blocks": 39
           }
+        },
+        {
+          "event": "counters",
+          "source_revision": "bebe5a245d312796c630de76fc558fbcd2c2f2ff",
+          "asset": "r100-counters-861aefe591d8.tar.gz",
+          "sha256": "861aefe591d8ece021be6ee94a486d33c9c522e26ffde17c2fe49d7550e72bb1",
+          "manifest_sha256": "7cdfab07564ffa9f255f65a636ace50a1e05cce077b6c2fbbc75c3021d87b444",
+          "bytes": 321574,
+          "files": 82,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-counters-861aefe591d8.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
