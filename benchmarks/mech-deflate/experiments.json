@@ -6715,6 +6715,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-primary-group0-bee7b17e3935.tar.gz"
+        },
+        {
+          "event": "primary-group1",
+          "source_revision": "bebe5a245d312796c630de76fc558fbcd2c2f2ff",
+          "asset": "r100-primary-group1-ce3f72ebc472.tar.gz",
+          "sha256": "ce3f72ebc472148ee852fc66ca43feca945e1c5d3d9db4c5969adcccb7750944",
+          "manifest_sha256": "495a53616e5ab4abfd0fb31d2a36f5e7f02e06c0909cd3cf5ab02c44c68897e2",
+          "bytes": 151039,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-primary-group1-ce3f72ebc472.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
