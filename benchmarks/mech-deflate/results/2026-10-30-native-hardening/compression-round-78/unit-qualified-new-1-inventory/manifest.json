@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-11-01T02:34:36.038517+00:00",
+  "head": "10fc7fabc2d184856876d946fcdd95f5a75b51c7",
+  "files": [
+    {
+      "path": "units-qualified/new-1-inventory.json",
+      "sha256": "b6e0c7b768ba01681b715fbb0e9d24ccfe653824946feee20d7acebb98d28744",
+      "bytes": 12840
+    },
+    {
+      "path": "units-qualified/new-1-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "units-qualified/new-1-inventory.stdout",
+      "sha256": "bb3339055045b162d0b1ccc195498ec32488cf51ad06058b428fe5788e30b4cc",
+      "bytes": 167
+    },
+    {
+      "path": "units.py",
+      "sha256": "24791eba3a60a37909aa2a11d930439ee4e13366b847d03e1492cb2f647e1124",
+      "bytes": 4915
+    }
+  ]
+}
