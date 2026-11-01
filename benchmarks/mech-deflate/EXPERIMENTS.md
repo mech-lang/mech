@@ -475,3 +475,33 @@ Retain this investigation to guide scratch/source-home transport and child-frame
 work. The numerical report replays through `replay-round --round 96`, verifying
 one external packet/74 files with byte-identical output. Diagnostic driver and
 packaging preparation failures remain archived. Native binaries stay local.
+
+## R97: direct SSA scratch and source-only home spills
+
+Compiler `20f002f4ff5ff2186888b7efc8517261756b425e`, source parent `38cf6825c`;
+fresh baseline `67a7c88e7`. Parent pieces initialize private SSA from checked
+arguments and spill every ordinary source home while omitting private homes.
+All 484 selections/frontiers/exports and finite policy99 prices stay unchanged.
+IR/private ABI/MBC141/38/14; old images remain strictly rejected.
+
+Matched eight-byte elapsed8.498282×→8.378794× reference (−1.406025%); all4 pairs
+and55 blocks improve,9 adverse blocks retained. Separate instructions
+27,796,101→27,387,432.5 (−1.470237%), cycles−1.71%. Requests5153, bytes97997834,
+live peak17782744 and reallocations162 stay equal. Higher whole-process RSS and
+footprint remain explicit. Text15641476→14604696B, stack143424→135728B.
+
+Static IR omits4868 entry stores/reloads each plus200397 exit stores (210133
+instructions). Same938 reached entries/exits omit22180 home stores in IR.
+Actual cold699→700 ARM64 excerpt has20→0 private-home STRs; it is not a hot-path
+percentage. Poisoned-home success/read-retry/arithmetic controls pass; restoring
+old spills fails the isolated negative control. All aliases, publication, prices
+and recovery remain. No source algorithm, allocation site or allowance changes.
+
+Current runtime355, work/memory33, CI64, image1, unchanged components236,
+connected8, path1, linked40, scalar12 (unchanged1.05 gate, maximum1.002924),
+frame8, workflow132 and architecture15 pass. Same coherent dependencies and
+selected features; no fresh Core/all-features graph claim. Profiles695 calls per
+subject remain separate from hardware and elapsed. Every primary timing is
+externally archived and committed; four pure reports replay numerically.
+The next seed/carrier inventory is89 sites/112 packs/543 operand visits; these
+are unproved candidates. See [current status](../../docs/design/native-compression-status.md).

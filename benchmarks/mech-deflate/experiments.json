@@ -6066,7 +6066,7 @@
       "base": "38cf6825c575f046ca8b365f2d3c28108f303b49",
       "production": "20f002f4ff5ff2186888b7efc8517261756b425e",
       "compiler_source": "20f002f4ff5ff2186888b7efc8517261756b425e",
-      "decision": "under measurement",
+      "decision": "retain private-scratch transport: matched elapsed -1.406025%, instructions -1.470237%, code -1036780B, stack -7696B; unchanged heap counters, higher whole-process RSS/footprint retained",
       "events": [
         {
           "event": "initial",
@@ -6227,7 +6227,23 @@
           "asset_id": 699325834,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r97-closure-56351e555086.tar.gz"
         }
-      ]
+      ],
+      "retained_production": "20f002f4ff5ff2186888b7efc8517261756b425e",
+      "versions": [
+        141,
+        99,
+        38,
+        14
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "scorecard.json": "63da911bf38868c4f2b99e185cf164b46d7cd7539c4c2684daae48103c9e7390",
+          "mechanism.json": "444101fb78046f3678e84fe5a27dce25985146b9de3b1c8ad71f769b2b44c917",
+          "validation.json": "16ab84daa58a5bc2910007e8f28d23477815ebbb3f6cf7492342f31c907a0c42",
+          "profile-numbers.json": "3f09fdb4e21adc19156d868e685f323e420f7c76f5a9c7fa00e3f0b001c91ecb"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
