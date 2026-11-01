@@ -4109,6 +4109,17 @@
             "improving_blocks": 16,
             "adverse_blocks": 48
           }
+        },
+        {
+          "event": "counters",
+          "source_revision": "3444655203c554824153771782d3b81bf3cc1edc",
+          "asset": "r90-counters-60887c2d5a44.tar.gz",
+          "sha256": "60887c2d5a446fef75afdf322b31d6639f67f0b059d5b53160338ba1e9170789",
+          "manifest_sha256": "cfec344f45d2141cdfe694e085855684636eeb0bfd175279acabfaeee2647de8",
+          "bytes": 248205,
+          "files": 69,
+          "asset_id": 698479552,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r90-counters-60887c2d5a44.tar.gz"
         }
       ]
     }
