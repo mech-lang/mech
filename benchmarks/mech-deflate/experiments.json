@@ -6533,6 +6533,17 @@
           "files": 80,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-counters-98ea9cf1fe63.tar.gz"
+        },
+        {
+          "event": "linked-multi",
+          "source_revision": "5c219ed220879b05ee147bdf5d3f85680311eae2",
+          "asset": "r99-linked-multi-139bb197e436.tar.gz",
+          "sha256": "139bb197e4364013e36181dab6852016b1817725496da15ff1be02fe0112abdf",
+          "manifest_sha256": "12c831b7d335fdf6ad9b5b6ae9bcd9ce54b2d9393f6490a5b3d0940102cb43a7",
+          "bytes": 146438,
+          "files": 58,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collection-lifetime-round99-20261101/archives/r99-linked-multi-139bb197e436.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
