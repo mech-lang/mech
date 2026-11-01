@@ -121,15 +121,31 @@ impl CollectedValues {
                 count,
                 u8::try_from(word).map_err(|_| invalid("uniform U8 exceeds its kind"))?,
             ),
-            (Self::U16(values), NativeScalarKind::U16) => values.resize(
-                count,
-                u16::try_from(word).map_err(|_| invalid("uniform U16 exceeds its kind"))?,
-            ),
-            (Self::U32(values), NativeScalarKind::U32) => values.resize(
-                count,
-                u32::try_from(word).map_err(|_| invalid("uniform U32 exceeds its kind"))?,
-            ),
-            (Self::U64(values), NativeScalarKind::U64) => values.resize(count, word),
+            (Self::U16(values), NativeScalarKind::U16) => {
+                let value =
+                    u16::try_from(word).map_err(|_| invalid("uniform U16 exceeds its kind"))?;
+                if value == 0 {
+                    values.resize(count, 0);
+                } else {
+                    values.resize(count, value);
+                }
+            }
+            (Self::U32(values), NativeScalarKind::U32) => {
+                let value =
+                    u32::try_from(word).map_err(|_| invalid("uniform U32 exceeds its kind"))?;
+                if value == 0 {
+                    values.resize(count, 0);
+                } else {
+                    values.resize(count, value);
+                }
+            }
+            (Self::U64(values), NativeScalarKind::U64) => {
+                if word == 0 {
+                    values.resize(count, 0);
+                } else {
+                    values.resize(count, word);
+                }
+            }
             _ => return Err(invalid("uniform fill differs from its packed kind")),
         }
         Ok(())
