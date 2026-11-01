@@ -7,6 +7,13 @@ use crate::native_artifact::program::prepare::composition::frames::Source;
 use crate::native_artifact::program::runtime::amount;
 use mech_core::Value;
 
+// A sufficient bound only: an overflowing or too-large product must leave the
+// per-field and exact-footprint checks available. This carries no admission.
+fn frame_capacity_bound(largest: u64, fields: usize, limit: Option<u64>) -> Option<u64> {
+    let bound = largest.checked_mul(u64::try_from(fields).ok()?)?;
+    (bound.max(8) <= limit.unwrap_or(u64::MAX)).then_some(bound)
+}
+
 impl Invocation<'_, '_, '_> {
     fn segment_source(&self, source: &Source) -> Result<Option<&Value>, Error> {
         Ok(match *source {
@@ -70,6 +77,10 @@ impl Invocation<'_, '_, '_> {
             return Ok(Some(0));
         };
         let memory = self.state.library.memory_budget();
+        let scalar_bytes = (core::mem::size_of::<Value>()
+            + core::mem::size_of::<mech_core::ValueData>()
+            + 8) as u64;
+        let mut largest_source_bytes = scalar_bytes;
         let mut entry = amount(frames.sources.len(), 8, 0)
             .ok()
             .and_then(|n| metadata.observation_schema_bytes.checked_mul(n))
@@ -86,6 +97,7 @@ impl Invocation<'_, '_, '_> {
             let Some(bytes) = owner.memory_budget_retained_bytes(&memory) else {
                 return Ok(Some(0));
             };
+            largest_source_bytes = largest_source_bytes.max(bytes);
             entry = entry.and_then(|n| n.checked_add(bytes.checked_mul(8)?));
         }
         let mut alias_work = Some(0u64);
@@ -194,9 +206,6 @@ impl Invocation<'_, '_, '_> {
                 }
             }
         }
-        let scalar_bytes = (core::mem::size_of::<Value>()
-            + core::mem::size_of::<mech_core::ValueData>()
-            + 8) as u64;
         for frame in &frames.frames {
             if frames.inputs.contains(&frame.value) {
                 continue;
@@ -204,19 +213,29 @@ impl Invocation<'_, '_, '_> {
             // Current admitted capacity includes the exact retained footprint
             // and ownership headers. It is a conservative upper bound, never
             // a permission or a reason to reject a tighter valid byte limit.
-            let mut upper = Some(0u64);
-            for source in &frame.arrays {
-                let bound = if let Some(source) = source {
-                    let Some(owner) = self.segment_source(&frames.sources[*source])? else {
-                        return Ok(Some(0));
+            // Every managed field comes from a current source checked above;
+            // every other field has scalar_bytes. A maximum-times-count proof
+            // avoids revisiting fields when it already fits the current cap.
+            let mut upper = frame_capacity_bound(
+                largest_source_bytes,
+                frame.arrays.len(),
+                self.limits.max_output_bytes,
+            );
+            if upper.is_none() {
+                upper = Some(0u64);
+                for source in &frame.arrays {
+                    let bound = if let Some(source) = source {
+                        let Some(owner) = self.segment_source(&frames.sources[*source])? else {
+                            return Ok(Some(0));
+                        };
+                        owner.memory_budget_retained_bytes(&memory)
+                    } else {
+                        Some(scalar_bytes)
                     };
-                    owner.memory_budget_retained_bytes(&memory)
-                } else {
-                    Some(scalar_bytes)
-                };
-                upper = upper.and_then(|n| n.checked_add(bound?));
-                if upper.is_none() {
-                    break;
+                    upper = upper.and_then(|n| n.checked_add(bound?));
+                    if upper.is_none() {
+                        break;
+                    }
                 }
             }
             let mut bytes = upper.unwrap_or(0);
@@ -462,5 +481,39 @@ impl Invocation<'_, '_, '_> {
         self.state.control.previous = Some(site as u32);
         self.state.consumed = args[0] != 2;
         Ok(None)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::frame_capacity_bound;
+
+    #[test]
+    fn capacity_proof_cannot_accept_an_excessive_field_sum() {
+        // Unequal, repeated and zero-sized fields exercise the conservative
+        // proof independently of the actual frame representation.
+        for fields in [vec![], vec![0], vec![1, 7, 1], vec![8, 8], vec![9, 1, 0]] {
+            let largest = fields.iter().copied().max().unwrap_or(0);
+            let exact: u64 = fields.iter().sum();
+            for cap in 0..=32 {
+                if let Some(bound) = frame_capacity_bound(largest, fields.len(), Some(cap)) {
+                    assert!(bound >= exact);
+                    assert!(exact.max(8) <= cap);
+                }
+            }
+        }
+        // A refused coarse proof must not reject this valid tighter sum.
+        assert_eq!(frame_capacity_bound(7, 3, Some(9)), None);
+    }
+
+    #[test]
+    fn capacity_proof_declines_overflow_and_preserves_the_minimum_footprint() {
+        assert_eq!(frame_capacity_bound(u64::MAX, 2, None), None);
+        assert_eq!(
+            frame_capacity_bound(u64::MAX, 1, Some(u64::MAX)),
+            Some(u64::MAX)
+        );
+        assert_eq!(frame_capacity_bound(100, 0, Some(7)), None);
+        assert_eq!(frame_capacity_bound(100, 0, Some(8)), Some(0));
     }
 }
