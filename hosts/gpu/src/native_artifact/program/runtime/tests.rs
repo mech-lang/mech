@@ -1419,3 +1419,181 @@ fn execute_observed_locals_snapshot(
     assert!(LOCALS_SNAPSHOT_PROBE.with(|probe| probe.borrow().is_none()));
     outcome
 }
+
+// Keep opaque-pointer test observation inside this existing audited owner.
+#[derive(Debug, Eq, PartialEq)]
+struct AdmittedHelperRow {
+    site: u64,
+    operation: u64,
+    work_before: u64,
+    work_after: u64,
+    previous: Option<u32>,
+    consumed: bool,
+    status: u64,
+    result: u64,
+}
+#[derive(Default)]
+struct AdmittedHelperObservation {
+    split: bool,
+    fault: u8,
+    injected: bool,
+    rows: Vec<AdmittedHelperRow>,
+}
+thread_local! {
+    static ADMITTED_HELPER_OBSERVATION: std::cell::RefCell<AdmittedHelperObservation> = std::cell::RefCell::new(AdmittedHelperObservation::default());
+}
+
+unsafe extern "C" fn observe_admitted_helper(
+    context: *mut c_void,
+    site: u64,
+    operation: u64,
+    first: u64,
+    second: u64,
+    third: u64,
+    result: *mut u64,
+) -> u64 {
+    let plain = match GlobalHelper::decode(operation) {
+        GlobalHelper::AdmitMove => GlobalHelper::Move,
+        GlobalHelper::AdmitStructuralObservation => GlobalHelper::StructuralObservation,
+        _ => {
+            // SAFETY: transparent forwarding of the retained synchronous frame.
+            return unsafe {
+                hooks::helper(context, site, operation, first, second, third, result)
+            };
+        }
+    };
+    let (split, fault) = ADMITTED_HELPER_OBSERVATION.with(|cell| {
+        let mut state = cell.borrow_mut();
+        let eligible =
+            !matches!(state.fault, 2 | 4) || plain == GlobalHelper::StructuralObservation;
+        let fault = if state.injected || !eligible {
+            0
+        } else {
+            state.fault
+        };
+        state.injected |= eligible;
+        (state.split, fault)
+    });
+    // SAFETY: execute owns the live context. This borrow ends before callbacks.
+    let (work_before, budget) = unsafe {
+        let ctx = &*context.cast::<Invocation<'_, '_, '_>>();
+        (ctx.state.control.work.used(), ctx.state.library.clone())
+    };
+    let actual_result = if matches!(fault, 1 | 3) {
+        core::ptr::null_mut()
+    } else {
+        result
+    };
+    let actual_third = if matches!(fault, 2 | 4) { 1 } else { third };
+    let actual_site = if fault == 5 { u64::MAX } else { site };
+    let invoke = || {
+        // SAFETY: the two alternatives use identical current context and words.
+        // The split alternative is exactly the original callback ordering.
+        unsafe {
+            if split {
+                let status = hooks::admit(context, actual_site);
+                if status != STATUS_OK {
+                    return status;
+                }
+                hooks::helper(
+                    context,
+                    actual_site,
+                    plain.raw(),
+                    first,
+                    second,
+                    actual_third,
+                    actual_result,
+                )
+            } else {
+                hooks::helper(
+                    context,
+                    actual_site,
+                    operation,
+                    first,
+                    second,
+                    actual_third,
+                    actual_result,
+                )
+            }
+        }
+    };
+    let status = if matches!(fault, 3 | 4) {
+        budget.with_call_limits(0, u64::MAX, invoke).unwrap()
+    } else {
+        invoke()
+    };
+    // SAFETY: callback returned, so its mutable context borrow has ended. The
+    // registered result lane remains initialized even when its argument is bad.
+    let row = unsafe {
+        let ctx = &*context.cast::<Invocation<'_, '_, '_>>();
+        AdmittedHelperRow {
+            site,
+            operation: plain.raw(),
+            work_before,
+            work_after: ctx.state.control.work.used(),
+            previous: ctx.state.control.previous,
+            consumed: ctx.state.consumed,
+            status,
+            result: *ctx.result,
+        }
+    };
+    ADMITTED_HELPER_OBSERVATION.with(|cell| cell.borrow_mut().rows.push(row));
+    status
+}
+
+fn execute_observed_admitted_helper(
+    jit: &crate::native_artifact::JitProgramArtifact,
+    descriptor: &NativeProgramDescriptor,
+    args: &[Value],
+    outputs: &mut [Option<Value>],
+    memory: &ManagedMemoryBudget,
+    split: bool,
+    fault: u8,
+) -> (
+    Result<NativeProgramExecutionReport, NativeProgramExecutionError>,
+    Vec<AdmittedHelperRow>,
+) {
+    ADMITTED_HELPER_OBSERVATION.with(|cell| {
+        *cell.borrow_mut() = AdmittedHelperObservation {
+            split,
+            fault,
+            ..AdmittedHelperObservation::default()
+        }
+    });
+    let entry = jit.test_checked_entry();
+    let outcome = execute(
+        descriptor,
+        |raw| {
+            // SAFETY: the exact checked JIT and its same-build descriptor are held
+            // alive. Restore the original function pointer before wire validation.
+            unsafe {
+                let saved = (*raw).helper;
+                (*raw).helper = observe_admitted_helper;
+                let status = entry(raw);
+                (*raw).helper = saved;
+                status
+            }
+        },
+        args,
+        outputs,
+        limits(),
+        memory,
+    );
+    let rows =
+        ADMITTED_HELPER_OBSERVATION.with(|cell| core::mem::take(&mut cell.borrow_mut().rows));
+    (outcome, rows)
+}
+
+fn restore_admitted_helper_descriptor(
+    jit: &crate::native_artifact::JitProgramArtifact,
+) -> NativeProgramDescriptor {
+    let image = jit.descriptor().encode_build_owned_image().unwrap();
+    // SAFETY: this private test helper creates the image from the exact held
+    // checked JIT. Its caller pairs the result only with that same live entry.
+    unsafe {
+        NativeProgramDescriptor::decode_build_owned_image(&image, &mech_stdlib::source_catalog())
+    }
+    .unwrap()
+}
+#[path = "admitted_helper_tests.rs"]
+mod admitted_helper_tests;

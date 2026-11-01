@@ -325,6 +325,3 @@ use self::invocation::Invocation;
 use self::state::{ExecutionState, RuntimeStats};
 
 mod buffer_frames;
-
-#[cfg(all(test, feature = "canonical-native-program"))]
-mod admitted_helper_tests;
