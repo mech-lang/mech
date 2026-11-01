@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-11-01T02:42:53.690251+00:00",
+  "head": "2dbd41148a1a75328f39fa25d91392d06d3abc87",
+  "files": [
+    {
+      "path": "units-final/new-0-inventory.json",
+      "sha256": "dbdabc2ba5677428602155a9a0837cf240d0a549bb67c8c276802eb3cd02c73e",
+      "bytes": 12832
+    },
+    {
+      "path": "units-final/new-0-inventory.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "units-final/new-0-inventory.stdout",
+      "sha256": "f8ab1513b0299fee77290222c725c7b0a6f3cf67387d3aba3f141ec45fdc881e",
+      "bytes": 170
+    },
+    {
+      "path": "units-final.py",
+      "sha256": "ecfdb034e45b0625ff78f6a3c65635037a3ea3701852de72cbef55d45949d55c",
+      "bytes": 3725
+    }
+  ]
+}
