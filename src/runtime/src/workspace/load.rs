@@ -1,13 +1,41 @@
 use super::*;
 use mech_core::MechSourceCode;
 
+pub(super) struct RuntimeWorkspaceTargetLoadFailure {
+    pub diagnostic: RuntimeWorkspaceDiagnostic,
+    pub rejected_source: Option<RejectedTargetSource>,
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct RejectedTargetSource {
+    pub canonical_uri: String,
+    pub path: PathBuf,
+    pub content_hash: Option<u64>,
+}
+
+impl RejectedTargetSource {
+    fn observe(resolved_specifier: &str) -> Option<Self> {
+        // Only local paths have passed the workspace filesystem checks above.
+        if resolved_specifier.contains("://") {
+            return None;
+        }
+        let path = PathBuf::from(resolved_specifier);
+        let content_hash = std::fs::read(&path).ok().map(hash_content);
+        Some(Self {
+            canonical_uri: resolved_specifier.to_string(),
+            path,
+            content_hash,
+        })
+    }
+}
+
 pub(super) fn load_target(
     root: &Path,
     runtime: &mut MechRuntime,
     target: &RuntimeWorkspaceTarget,
     options: ModuleBuildOptions,
     capability_subject: Option<&str>,
-) -> MResult<Result<RuntimeWorkspaceTargetSnapshot, RuntimeWorkspaceDiagnostic>> {
+) -> MResult<Result<RuntimeWorkspaceTargetSnapshot, RuntimeWorkspaceTargetLoadFailure>> {
     let resolved_specifier = match workspace_target_specifier(root, &target.specifier) {
         Ok(specifier) => specifier,
         Err(error) => {
@@ -40,12 +68,17 @@ pub(super) fn load_target(
         }
     }
 
+    // Observe before attempting admission so an edit during a failed load remains
+    // a change to retry, rather than being mistaken for the rejected revision.
+    let source_revision = RejectedTargetSource::observe(&resolved_specifier);
     let module_version =
         match runtime.resolve_and_store_module_source(resolved_specifier.as_str(), options) {
             Ok(Some(module_version)) => module_version,
             Ok(None) => {
-                return Ok(Err(target_diagnostic(
+                return Ok(Err(resolved_target_diagnostic(
                     target,
+                    &resolved_specifier,
+                    source_revision,
                     format!(
                         "workspace target `{}` could not resolve `{}`",
                         target.name, target.specifier,
@@ -53,8 +86,10 @@ pub(super) fn load_target(
                 )));
             }
             Err(error) => {
-                return Ok(Err(target_diagnostic(
+                return Ok(Err(resolved_target_diagnostic(
                     target,
+                    &resolved_specifier,
+                    source_revision,
                     format!(
                         "workspace target `{}` failed to load `{}`: {:?}",
                         target.name, target.specifier, error,
@@ -64,8 +99,10 @@ pub(super) fn load_target(
         };
 
     let Some((module, _)) = runtime.workspace_module_records(module_version)? else {
-        return Ok(Err(target_diagnostic(
+        return Ok(Err(resolved_target_diagnostic(
             target,
+            &resolved_specifier,
+            source_revision,
             format!(
                 "loaded module version `{}` was not found in the runtime store",
                 module_version,
@@ -194,13 +231,28 @@ fn collect_loaded_modules(
 fn target_diagnostic(
     target: &RuntimeWorkspaceTarget,
     message: String,
-) -> RuntimeWorkspaceDiagnostic {
-    RuntimeWorkspaceDiagnostic {
-        severity: RuntimeWorkspaceDiagnosticSeverity::Error,
-        target: Some(target.name.clone()),
-        canonical_uri: None,
-        message,
+) -> RuntimeWorkspaceTargetLoadFailure {
+    RuntimeWorkspaceTargetLoadFailure {
+        diagnostic: RuntimeWorkspaceDiagnostic {
+            severity: RuntimeWorkspaceDiagnosticSeverity::Error,
+            target: Some(target.name.clone()),
+            canonical_uri: None,
+            message,
+        },
+        rejected_source: None,
     }
+}
+
+fn resolved_target_diagnostic(
+    target: &RuntimeWorkspaceTarget,
+    resolved_specifier: &str,
+    rejected_source: Option<RejectedTargetSource>,
+    message: String,
+) -> RuntimeWorkspaceTargetLoadFailure {
+    let mut failure = target_diagnostic(target, message);
+    failure.diagnostic.canonical_uri = Some(resolved_specifier.to_string());
+    failure.rejected_source = rejected_source;
+    failure
 }
 
 fn source_snapshot(

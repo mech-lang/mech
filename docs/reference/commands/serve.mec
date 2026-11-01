@@ -19,6 +19,20 @@ http://127.0.0.1:8081/
 The source is parsed by the runtime workspace and rendered as a formatted Mech
 document. It is not converted into a synthetic browser project.
 
+Release packages include the matching browser runtime. When building from a
+source checkout, build that runtime before serving:
+
+```sh
+python3 scripts/build-wasm.py --profile browser
+cargo build --locked --bin mech
+target/debug/mech serve main.mec
+```
+
+The native build embeds the generated runtime. An existing executable can also
+use it with `--wasm src/wasm/pkg`. The JavaScript wrapper and WebAssembly module
+must come from the same build; an older release runtime cannot execute the
+current branch's document payloads.
+
 2. Serve a directory
 -------------------------------------------------------------------------------
 
@@ -57,6 +71,9 @@ For `foo.mec`, the server provides:
 The same contract applies to nested paths. URL-reserved and Unicode filename
 bytes are encoded in links while the generated listing displays the logical
 source path.
+
+Invalid programs show their source diagnostics at the document route. Fixing
+the source refreshes that route, including when the initial program was invalid.
 
 5. Root selection
 -------------------------------------------------------------------------------
