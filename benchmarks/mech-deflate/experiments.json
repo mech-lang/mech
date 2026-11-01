@@ -210,6 +210,17 @@
           "files": 81,
           "asset_id": 697350481,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-evidence-integrity-017addf41b57.tar.gz"
+        },
+        {
+          "event": "resource-observation",
+          "source_revision": "374edf1410b5f975d793fb69d8fcf390cbfa10a5",
+          "asset": "r79-resource-observation-ccc5a4a0534c.tar.gz",
+          "sha256": "ccc5a4a0534caf50af0ab99449537c67c264b2bf6284ce2d857188bdee876999",
+          "manifest_sha256": "d2e06637c4ced1e83cefbeeb87d2160ff903e0765737785211f5d71280fa0e84",
+          "bytes": 91288,
+          "files": 55,
+          "asset_id": 697350518,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r79-resource-observation-ccc5a4a0534c.tar.gz"
         }
       ],
       "analysis": {
