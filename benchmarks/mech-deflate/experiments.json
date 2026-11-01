@@ -6193,6 +6193,17 @@
           "files": 39,
           "asset_id": 699291208,
           "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r97-isolated-profile-025542c460c8.tar.gz"
+        },
+        {
+          "event": "linked-multi",
+          "source_revision": "20f002f4ff5ff2186888b7efc8517261756b425e",
+          "asset": "r97-linked-multi-81a01eb3855f.tar.gz",
+          "sha256": "81a01eb3855f199408a59924876dbb8e4710c21bc193423668d324a3c36dad95",
+          "manifest_sha256": "78bf7e9c3714083bee9866f4716bbb76359cec80bb18efd15de08ec82a5e873a",
+          "bytes": 93575,
+          "files": 50,
+          "asset_id": 699300959,
+          "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments/r97-linked-multi-81a01eb3855f.tar.gz"
         }
       ]
     }
