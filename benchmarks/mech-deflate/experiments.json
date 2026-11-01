@@ -6671,6 +6671,17 @@
           "files": 41,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-ownership-audit-06be8e830b28.tar.gz"
+        },
+        {
+          "event": "hardware-repeat",
+          "source_revision": "5c219ed220879b05ee147bdf5d3f85680311eae2",
+          "asset": "r100-hardware-repeat-b0311d62c237.tar.gz",
+          "sha256": "b0311d62c23747c7f74bc0d9ab56f0d9dfdd3e99f6012257167b0c626dcd70d6",
+          "manifest_sha256": "1486f98bda021b6d8b56e2970db44e4314a9bae7ee922db0fecf7a30a00f2558",
+          "bytes": 54188,
+          "files": 46,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-binding-metadata-round100-20261101/archives/r100-hardware-repeat-b0311d62c237.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
