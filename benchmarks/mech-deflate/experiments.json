@@ -11462,7 +11462,7 @@
       "base": "7eaebbd7e6bd8deb572af5aafccddb0b0d0e22ad",
       "production": "da58ad43e12a7c9e078631514f1c06d874d4c384",
       "compiler_source": "da58ad43e12a7c9e078631514f1c06d874d4c384",
-      "decision": "under measurement",
+      "decision": "Retain the independently derived canonical argument span. All three matched elapsed cohorts improve; whole-call instructions decrease while original allocation, admission, logical charges and incremental peak heap remain unchanged. This removes the raw-word coupling that penalized the held larger phase; a separately rebuilt phase comparison is next.",
       "events": [
         {
           "event": "first-complete-native",
@@ -11655,11 +11655,38 @@
           "files": 62,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-call-bank-round122-20261102/archives/r122-isolated-profile-rich-8a9ae8a5cdc9.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "da58ad43e12a7c9e078631514f1c06d874d4c384",
+          "asset": "r122-closure-cf5c8a78e1d4.tar.gz",
+          "sha256": "cf5c8a78e1d4581f06e587c2cfd105be307dc094c43e6b7b7735641cb3a6b41c",
+          "manifest_sha256": "b3045cfc21fbe44ed865c5acd266a3b811592ee89a0965ba0a6b1432266c704a",
+          "bytes": 6212809,
+          "files": 399,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-call-bank-round122-20261102/archives/r122-closure-cf5c8a78e1d4.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "retained": true,
+      "versions": [
+        149,
+        102,
+        38,
+        14
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "539539c9713133e81ab47b5db7daf613f2912579e19b8fa08e5eca8cc42d2814",
+          "profile-numbers.json": "d9b6f7a1409c33cbe6f5fb4ff2f987c71cc98f435fd03eb09ae10f7816963428",
+          "scorecard.json": "fd0829979c1f1f376cec7b88641c6fbd38364badae51c9bd860f69b1fe1ca44a",
+          "validation.json": "c33ae1b1cf9ad87342631345dc4a4b1f414eefefbb6290065a599cb2563868eb"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
