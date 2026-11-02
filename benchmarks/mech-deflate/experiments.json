@@ -10335,7 +10335,7 @@
       "base": "6a303c6d92d14f5a88ab4aecb9999fda205f285a",
       "production": "50751f9445356b9b33d16b89f636876e6014379f",
       "compiler_source": "509c0d8e05a234020372b43832d7785f255c1b59",
-      "decision": "under measurement",
+      "decision": "Retain a separately labeled zero-trip source variant after matched gains on 8B,1KB no-match and1KB match-rich controls; R116 compiler and pinned default source unchanged.",
       "events": [
         {
           "event": "primary-reference",
@@ -10484,11 +10484,43 @@
           "files": 53,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-zero-trip-round118-20261102/archives/r118-match-rich-measure-1024-2e1580fb36c5.tar.gz"
+        },
+        {
+          "event": "qualification-final",
+          "source_revision": "509c0d8e05a234020372b43832d7785f255c1b59",
+          "asset": "r118-qualification-final-9b88b4eb951e.tar.gz",
+          "sha256": "9b88b4eb951e31e7d2aa896f1c978bf99d7e68436e159ff3630c3764119ef863",
+          "manifest_sha256": "d61df62d48067e851b8271acdbeea5504460aa342ba231b89341997fcb2c0b9d",
+          "bytes": 120713,
+          "files": 72,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-zero-trip-round118-20261102/archives/r118-qualification-final-9b88b4eb951e.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "benchmark_source_revision": "50751f9445356b9b33d16b89f636876e6014379f",
+      "test_source_revision": "2203da6c04",
+      "versions": [
+        145,
+        99,
+        38,
+        14
+      ],
+      "source_variant_only": true,
+      "source_pins": {
+        "baseline_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "bytecode_bytes": 4146587,
+        "bytecode_revision": 14,
+        "bytecode_sha256": "5d9318ae144d5d42b3bee53dd23ff6e26955ef6652c5f93ef05eeadf69a9ca26",
+        "canonical_roundtrip": true,
+        "kind": "source variant; compiler unchanged",
+        "source_and_codec_seconds": 57.628681334,
+        "source_bytes": 161193,
+        "source_sha256": "85fba4bc9f55796c8a83c7ff0533590d4bf5e97bd8be42d4dd56c5d448427b36"
+      },
+      "retained": true
     }
   },
   "repository": "mech-lang/mech",
