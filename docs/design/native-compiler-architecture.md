@@ -135,12 +135,22 @@ admission floor and transport/header charges remain. Numeric words retain their
 separate existing typed storage. A larger numeric phase therefore cannot expand
 every canonical stale-owner scan merely by needing more scalar scratch words.
 
+R123 broadens that same phase proof to positive constant progress and checked
+constant offsets in loop guards. Checked `counter + offset <= bound` is only an
+upper-bound fact on its successful source edge. Every continuing update must
+advance by a positive constant; conservative admission arithmetic must fit before
+wrapping progress is accepted. Equality-target proofs retain the exact unit
+stride rule. Wrapping guard offsets, zero/dynamic/overflowing strides and unknown
+progress still decline. Source checks, errors and reached traversal prices remain.
+This is complete-subtree selection; explicit unsupported-child exits are the next
+separate capability, beginning with Huffman counting's conditional clamp.
+
 Build-owned image validation independently reconstructs phase membership,
 bindings/current versions, homes, bounds, debit identities and result recipes
 from the validated program. Serialized metadata grants no raw-view authority.
 The emitted fixed boundary is bounded from the phase's word inventory, then
 checked against the actual emitted instruction count. The current versions
-are typed IR149 and work102, with ABI38 and bytecode14 unchanged; the version
+are typed IR150 and work103, with ABI38 and bytecode14 unchanged; the version
 numbers below describe the historical consolidation baseline.
 
 ## Runtime and protocols

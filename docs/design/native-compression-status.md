@@ -6,6 +6,97 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Hosted CI is not awaited under
 instruction; no green hosted-CI claim is made.
 
+## R123: retain whole matching phases on the repaired runtime
+
+Update base `2d9a0b3d8092836a21cab938f0d1356646e2a27b`; measured compiler
+**`71f8cb7bed8bc84bfcb75915b79b8c299401adc5`**; IR/work/ABI/MBC **150/103/38/14**.
+The preserved positive-stride/checked-offset proof now runs on the retained
+first-change handoff and separated argument spans. Three matching roots 27/35/41
+each select six loops under one phase. Actual child boundary callbacks are zero;
+observed interior callbacks are only the required first-change bridge. The
+independently restored executable funds 239 argument slots but exposes only 36
+canonical slots. Source, revision 14 bytecode, algorithm, tables, depth 300, nice 258,
+near-EOF rules, capacities, source allocation sites and timing boundary stay fixed.
+
+| Fresh matched elapsed cohort | R122 / Roc | R123 / Roc | Change |
+|---|---:|---:|---:|
+|8 bytes|7.516093×|7.534698×|0.247538% slower|
+|1KB random|71.713017×|71.530060×|0.255123% faster|
+|1KB repeated byte|56.639914×|39.694189×|29.918345% faster|
+
+Each row has its own fresh common reference. Preserve all 3,968 primary /3,984
+total 8B observations; two of four prepared pairs improve,27 blocks improve and 37
+regress. Random improves in 7/8 alternating blocks, repeated data in 8/8, with 128
+observations per version in each 1KB cohort. No full-scale timing. Raw output,
+independent inflation, aliases, capacities and final managed bytes/nodes zero agree.
+
+| Separate hardware/heap cohort | R122 | R123 |
+|---|---:|---:|
+|8B instructions|24,841,845|24,976,680|
+|Random instructions|335,420,451|335,805,569.5|
+|Repeated instructions|299,264,848.5|199,273,142|
+|8B allocation requests|4,101|4,101|
+|Random allocation requests|29,391|29,396|
+|Repeated allocation requests|16,091|17,109|
+|8B requested bytes|17,728,849|17,744,809|
+|Random requested bytes|19,981,650|20,001,570|
+|Repeated requested bytes|19,212,913|19,767,433|
+|Repeated incremental peak heap|15,178,400|15,208,608|
+
+All three incremental peaks increase 30,208 bytes. Cycles are 6,890,881.5→6,877,023,
+68,082,700.5→68,130,332 and 59,025,345.5→42,103,394 for 8B/random/repeated. Rich
+allocation requests rise by 1,018; this metadata cost remains explicit. The fresh
+histograms contain one 6,002,052-byte cache and one 524,288-byte tree request, with
+three 2,442,056-byte path requests on both sides. The held R120 experiment's four
+extra full-cache requests are not reintroduced. Requested bytes are not memcpy
+volume or live memory. Native text grows 14,780,140→16,533,748 bytes and entry
+stack 144,528→148,240 bytes. The tiny/random adverse instruction counts and larger
+code/stack are retained; no all-input speedup or allocation reduction is claimed.
+
+Fresh separate diagnostics count all registered callbacks, including ordinary
+admission:8B7,892→7,892; random 120,088→119,933; repeated 112,103→52,945. Within
+those totals, repeated helper callbacks fall 59,738→32,660 and parent exits
+17,806→8,780. Exits are a subset of helpers, not another additive category.
+Repeated internal array exports and source-site details remain in the replayed
+mechanism report. After CPU-time profiles attribute 80.56% /64.69% to other host
+callbacks and 4.95% /23.70% to the generated body for random/repeated. Sample
+percentages are not retired-instruction partitions.
+
+The pinned reference's largest anonymous fast function was freshly disassembled:
+16,684 static instruction lines and 826 static call sites. Its original source
+name is unavailable, so no particular source routine or dynamic count is inferred.
+The full local binary hash and bounded assembly are retained outside source.
+
+Passing checks:16 nested-phase controls,3 argument-bank controls,84 selected
+native tests,509 compatible GPU tests, unchanged 236 components /8 connected /
+1 structural path case,12 scalar original/decoded controls at the unchanged 1.05
+gate (worst 1.017157),132 workflow tests,15 architecture/catalog checks,
+runtime-only metadata, formatting and warnings as errors. No expected output or
+allowance increase; Huffman work golden remains 88,531,834. Seven independently
+reproduced selected-profile feature/registry failures remain excluded. No fresh
+Core/full-feature/no_std/minimal-graph build, linked 40/frame 8, source-variant
+complete qualification, green hosted CI or clean review is claimed.
+
+The first negative driver assumed a different assertion message; its original
+failed selection and outer expectation failure are preserved. A clearer selection
+expectation then reproduces the absent whole phase on unchanged production code.
+After the repair the same controls pass.36 completed old test executables were
+hash-inventoried and removed, freeing 4,065,733,664 logical bytes; frozen libraries,
+references, measured workers, Objects, descriptors and current baseline stay.
+
+All 19 public archives (13,103,351 compressed bytes) and sidecars have verified
+server hashes. Fresh public retrieval verifies 1,645 file occurrences / 438 unique
+paths and reproduces all four reports byte-for-byte. Native outputs remain local.
+
+Retain the substantial repeated-data gain with the measured small-input and
+metadata tradeoffs above. Follow the new brief next: native Huffman counting with
+an explicit cold exit immediately before its clamp child, receiving current
+post-write state and exact debit/continuation. Then collector intervals with
+terminal owner forwarding, fixed-size mutable children/header runs, and removal
+of cleanup obligations only for values that no longer materialize. The new brief's
+historical numbers do not replace this fresh checkpoint. Full collector native
+coverage, arbitrary cold exits and mutating child results remain unimplemented.
+
 ## R122: separate canonical owner spans from numeric transport words
 
 Update base `7eaebbd7e6bd8deb572af5aafccddb0b0d0e22ad`; measured compiler
