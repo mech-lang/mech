@@ -12637,6 +12637,17 @@
           "files": 84,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-continuation-match-rich-measure-1024-485e68fd8563.tar.gz"
+        },
+        {
+          "event": "continuation-counters",
+          "source_revision": "914ab57fab23f831f6bb99e5f8a0e8419d2c3004",
+          "asset": "r125-continuation-counters-e239838d29cd.tar.gz",
+          "sha256": "e239838d29cd5f1e7461d707b04ce2d029a987435c0d9fb3342f204347798a91",
+          "manifest_sha256": "c42179b0427fdd62512e1d1ed9dcf0c12e91a16267afae21aabe011418f6db45",
+          "bytes": 255293,
+          "files": 114,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-continuation-counters-e239838d29cd.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
