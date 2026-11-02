@@ -11496,6 +11496,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-call-bank-round122-20261102/archives/r122-primary-reference-1caaa873169d.tar.gz"
+        },
+        {
+          "event": "primary-group0",
+          "source_revision": "da58ad43e12a7c9e078631514f1c06d874d4c384",
+          "asset": "r122-primary-group0-a413346dad9d.tar.gz",
+          "sha256": "a413346dad9d6c34ca56e7f585b930dca54e85d236ceef386cc8dbe790b77893",
+          "manifest_sha256": "015d7ed421d5c163ee0d748420b95d0dcc5a0f9b188853e55c7e4b9a8babc523",
+          "bytes": 86067,
+          "files": 50,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-call-bank-round122-20261102/archives/r122-primary-group0-a413346dad9d.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
