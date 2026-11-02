@@ -196,6 +196,7 @@ def replay_round(args):
     """Retrieve every immutable packet, verify all versions, then replay numbers."""
     index = json.loads(args.index.read_text())
     round = index["rounds"][str(args.round)]
+    release_tag = round.get("release_tag", index["release_tag"])
     args.output.mkdir(parents=True, exist_ok=False)
     downloads, evidence = args.output / "downloads", args.output / "evidence"
     downloads.mkdir()
@@ -204,7 +205,7 @@ def replay_round(args):
     for position, event in enumerate(round["events"]):
         packet = downloads / str(position)
         packet.mkdir()
-        subprocess.run(["gh", "release", "download", index["release_tag"], "--repo", index["repository"],
+        subprocess.run(["gh", "release", "download", release_tag, "--repo", index["repository"],
                         "--pattern", event["asset"], "--dir", str(packet)], check=True)
         receipt = {**event, "archive_name": event["asset"]}
         receipt_path = packet / "receipt.json"

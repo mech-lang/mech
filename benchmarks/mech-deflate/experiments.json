@@ -7529,7 +7529,8 @@
           "bytes": 4446566,
           "files": 64,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-initial-90f9df15faa1.tar.gz"
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-initial-90f9df15faa1.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r104-initial-90f9df15faa1.tar.gz"
         },
         {
           "event": "primary-reference",
@@ -7540,7 +7541,8 @@
           "bytes": 206526,
           "files": 46,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-primary-reference-769dc046d19b.tar.gz"
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-primary-reference-769dc046d19b.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r104-primary-reference-769dc046d19b.tar.gz"
         },
         {
           "event": "primary-group0",
@@ -7551,7 +7553,8 @@
           "bytes": 148617,
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-primary-group0-39c13dc5f5c1.tar.gz"
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-primary-group0-39c13dc5f5c1.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r104-primary-group0-39c13dc5f5c1.tar.gz"
         },
         {
           "event": "primary-group1",
@@ -7562,7 +7565,8 @@
           "bytes": 148694,
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-primary-group1-df249199db5d.tar.gz"
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-primary-group1-df249199db5d.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r104-primary-group1-df249199db5d.tar.gz"
         },
         {
           "event": "primary-group2",
@@ -7573,7 +7577,8 @@
           "bytes": 148832,
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-primary-group2-dd04735dad84.tar.gz"
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-primary-group2-dd04735dad84.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r104-primary-group2-dd04735dad84.tar.gz"
         },
         {
           "event": "primary-group3",
@@ -7584,7 +7589,8 @@
           "bytes": 148641,
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-primary-group3-a300c6223828.tar.gz"
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-primary-group3-a300c6223828.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r104-primary-group3-a300c6223828.tar.gz"
         },
         {
           "event": "primary-summary",
@@ -7611,7 +7617,8 @@
             "improving_groups": 2,
             "improving_blocks": 29,
             "adverse_blocks": 35
-          }
+          },
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r104-primary-summary-9417acac1c87.tar.gz"
         },
         {
           "event": "counters",
@@ -7622,7 +7629,8 @@
           "bytes": 319777,
           "files": 82,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-counters-656cab4d468a.tar.gz"
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-counters-656cab4d468a.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r104-counters-656cab4d468a.tar.gz"
         },
         {
           "event": "isolated-profile",
@@ -7633,7 +7641,8 @@
           "bytes": 315123,
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-isolated-profile-80934e124f08.tar.gz"
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-isolated-profile-80934e124f08.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r104-isolated-profile-80934e124f08.tar.gz"
         },
         {
           "event": "current-census",
@@ -7644,7 +7653,8 @@
           "bytes": 683047,
           "files": 65,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-current-census-a19750498dbf.tar.gz"
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-current-census-a19750498dbf.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r104-current-census-a19750498dbf.tar.gz"
         },
         {
           "event": "linked-multi",
@@ -7655,7 +7665,8 @@
           "bytes": 183077,
           "files": 62,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-linked-multi-1fa038a9cc95.tar.gz"
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-linked-multi-1fa038a9cc95.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r104-linked-multi-1fa038a9cc95.tar.gz"
         },
         {
           "event": "scalar-controls",
@@ -7666,7 +7677,8 @@
           "bytes": 162521,
           "files": 100,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-scalar-controls-15e0f8a9b6ec.tar.gz"
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-scalar-controls-15e0f8a9b6ec.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r104-scalar-controls-15e0f8a9b6ec.tar.gz"
         },
         {
           "event": "frame-allocation",
@@ -7677,7 +7689,8 @@
           "bytes": 155161,
           "files": 78,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-frame-allocation-ec41e490bc98.tar.gz"
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-frame-allocation-ec41e490bc98.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r104-frame-allocation-ec41e490bc98.tar.gz"
         },
         {
           "event": "closure",
@@ -7688,7 +7701,8 @@
           "bytes": 5568490,
           "files": 446,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-closure-3a13572b9f86.tar.gz"
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-closure-3a13572b9f86.tar.gz",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r104-closure-3a13572b9f86.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending",
@@ -7702,7 +7716,9 @@
           "scorecard.json": "e0d9c781181589bc94f80d553fddcf0ea1fc43f0f5f60b19f7ec265e7d2c5c52",
           "validation.json": "66d471d0719ce95f2227395328c88196422466120c408214ee33e4a59f4d5163"
         }
-      }
+      },
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2"
     }
   },
   "repository": "mech-lang/mech",
