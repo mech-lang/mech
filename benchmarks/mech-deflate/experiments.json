@@ -9633,6 +9633,33 @@
           "files": 49,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-primary-group3-4af114bf1946.tar.gz"
+        },
+        {
+          "event": "primary-summary",
+          "source_revision": "2f0cc8b85e7dbcef53abfe16d76742872a7ceca2",
+          "asset": "r115-primary-summary-563007ea570e.tar.gz",
+          "sha256": "563007ea570e40b52c3bd492c8cc7dbf685da47dcba540f8ca836932caecbecd",
+          "manifest_sha256": "d68f5c10f92bbedd9ba88204e8354064a7e193713da8536ea01aa704e570f8ae",
+          "bytes": 87927,
+          "files": 46,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-primary-summary-563007ea570e.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.000277,
+            "medians": {
+              "after": 0.0023168125,
+              "before": 0.002321375
+            },
+            "multiples_of_reference": {
+              "after": 8.363944043321299,
+              "before": 8.380415162454874
+            },
+            "after_over_before": 0.998034570028539,
+            "improving_groups": 2,
+            "improving_blocks": 47,
+            "adverse_blocks": 17
+          }
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
