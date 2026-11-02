@@ -18,6 +18,7 @@ pub(super) struct Counts {
     pub phase_initial_fuel: Vec<u64>,
     pub phase_write_fuel: Vec<u64>,
     pub first_change_backings: Vec<(usize, usize)>,
+    pub replacement_backings: Vec<(u64, usize, usize)>,
     pub phase_settlements: Vec<(u64, u64, u64, u64)>,
     pub cold_private_arrays: Vec<usize>,
     pub poisoned_exit_words: usize,
@@ -161,6 +162,35 @@ unsafe extern "C" fn helper(
             }
         }
     }
+    let replacement = if op == GlobalHelper::Library.raw() {
+        // SAFETY: the same checked helper is suspended; only pointer numbers
+        // are retained, with no new Value pin that could change exclusivity.
+        let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        let metadata = ctx.descriptor.metadata();
+        metadata
+            .calls
+            .get(site as usize)
+            .and_then(Option::as_ref)
+            .filter(|call| call.supports_unsigned_matrix_replace())
+            .and_then(|_| {
+                let mech_engine::native_artifact::NativeIterationAction::LibraryCall {
+                    operands,
+                    output,
+                    ..
+                } = metadata.plan.blocks()[site as usize].action()
+                else {
+                    return None;
+                };
+                let value = ctx.state.arena.test_current_value(operands[0].get())?;
+                let mech_core::ValueData::Matrix(matrix) = value.data() else {
+                    return None;
+                };
+                matches!(matrix.elements(), mech_core::snapshot::SequenceView::U32(_))
+                    .then(|| (output.get(), address(matrix.elements())))
+            })
+    } else {
+        None
+    };
     let first_change = if op == GlobalHelper::NumericWritePrepare.raw() {
         // SAFETY: the generated entry is suspended at this same synchronous
         // helper. Only an address is retained across the original callback.
@@ -203,6 +233,23 @@ unsafe extern "C" fn helper(
     };
     // SAFETY: unchanged arguments and result pointer from the checked entry.
     let status = unsafe { HELPER.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
+    if status == 0
+        && let Some((output, before)) = replacement
+    {
+        // SAFETY: the original callback has returned. Its normal output arena
+        // retains this current immutable result through the generated resume.
+        let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        if let Some(value) = ctx.state.arena.test_current_value(output)
+            && let mech_core::ValueData::Matrix(matrix) = value.data()
+        {
+            let after = address(matrix.elements());
+            COUNTS.with(|v| {
+                v.borrow_mut()
+                    .replacement_backings
+                    .push((site, before, after))
+            });
+        }
+    }
     if let Some(previous) = old_copy_limit {
         // SAFETY: the original callback returned and its borrow has ended.
         unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() }

@@ -211,6 +211,8 @@ pub(super) fn derive(
             to,
             frames: Vec::new(),
             aliases: Vec::new(),
+            retire_carrier: !forest.prepaid_sites.is_empty()
+                && !live.contains(&tail.carrier().get()),
         };
         for value in live {
             if plan.values()[value as usize].scalar_kind().is_some()

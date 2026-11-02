@@ -316,3 +316,6 @@ fn numeric_interval_readonly_array_child_settles_without_first_change() {
         );
     }
 }
+
+#[path = "cold_interval_controls.rs"]
+mod controls;
