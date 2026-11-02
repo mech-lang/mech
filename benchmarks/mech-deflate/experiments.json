@@ -8160,6 +8160,33 @@
           "files": 46,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round108-20261102/archives/r107-primary-group3-952715ded0b7.tar.gz"
+        },
+        {
+          "event": "primary-summary",
+          "source_revision": "705c5acdc4fc92be5beeacf28d02721ea4e39ddf",
+          "asset": "r107-primary-summary-b73dcd201408.tar.gz",
+          "sha256": "b73dcd20140858e6ab410f9dd2ef5ae15006962285b164ba33e2f3025ce6b5d1",
+          "manifest_sha256": "eb7891ad592051227471f3cc441e281be3827529c5f9290f506334cd464d8151",
+          "bytes": 66881,
+          "files": 43,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round108-20261102/archives/r107-primary-summary-b73dcd201408.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.00029,
+            "medians": {
+              "after": 0.0023181045000000003,
+              "before": 0.0023485205
+            },
+            "multiples_of_reference": {
+              "after": 7.993463793103449,
+              "before": 8.098346551724138
+            },
+            "after_over_before": 0.9870488675742879,
+            "improving_groups": 4,
+            "improving_blocks": 58,
+            "adverse_blocks": 6
+          }
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
