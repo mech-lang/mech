@@ -378,6 +378,7 @@ impl Invocation<'_, '_, '_> {
         .into_memory_budget(&mut reservation)
         .map_err(Into::into)
     }
+    #[inline(always)]
     pub(in crate::native_artifact::program::runtime) fn helper(
         &mut self,
         site: u64,
