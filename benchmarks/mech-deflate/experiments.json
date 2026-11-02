@@ -10847,6 +10847,17 @@
           "files": 131,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-scalar-controls-48a5f29b5496.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "99fef709f1d984e32ad22e5c8929e8dfd0ff0984",
+          "asset": "r119-closure-91feaa4b58ee.tar.gz",
+          "sha256": "91feaa4b58ee3d5e44677439817def26ed9e385fce08970db0407dfa726d4cb1",
+          "manifest_sha256": "be25317489dcfd05ff3fec341556b0a7d5bd728333d73289ee793cb165067f9e",
+          "bytes": 6205350,
+          "files": 376,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-closure-91feaa4b58ee.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
