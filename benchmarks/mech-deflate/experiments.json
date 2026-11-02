@@ -8253,6 +8253,17 @@
           "files": 77,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round108-20261102/archives/r107-frame-allocation-f6a5091be43f.tar.gz"
+        },
+        {
+          "event": "isolated-profile",
+          "source_revision": "705c5acdc4fc92be5beeacf28d02721ea4e39ddf",
+          "asset": "r107-isolated-profile-9c1ab9f79758.tar.gz",
+          "sha256": "9c1ab9f797587f3075d34c6666b9dfeaecdb0d05b073ea125400b149f7ba7db9",
+          "manifest_sha256": "f0bab80b941600aec6d1665a70d945e142c463685a15e5c57dadf036eb479d0d",
+          "bytes": 271450,
+          "files": 55,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round108-20261102/archives/r107-isolated-profile-9c1ab9f79758.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
