@@ -11296,6 +11296,33 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-handoff-round121-20261102/archives/r121-primary-group3-1d546580f86d.tar.gz"
+        },
+        {
+          "event": "primary-summary",
+          "source_revision": "6ed4e0fb7e7e34abd1162f090e112045bc052565",
+          "asset": "r121-primary-summary-f653d969e458.tar.gz",
+          "sha256": "f653d969e4582e90f6644d0b7144272e9ea152b151d3544410e66b06f261f660",
+          "manifest_sha256": "16d7cd86070fba67230a5fe4159ce80e094d4ed9f2fc3b8541acb8821782319b",
+          "bytes": 59225,
+          "files": 45,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-handoff-round121-20261102/archives/r121-primary-summary-f653d969e458.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.00029,
+            "medians": {
+              "after": 0.0021887290000000004,
+              "before": 0.002195625
+            },
+            "multiples_of_reference": {
+              "after": 7.547341379310346,
+              "before": 7.571120689655173
+            },
+            "after_over_before": 0.9968592086535726,
+            "improving_groups": 2,
+            "improving_blocks": 41,
+            "adverse_blocks": 23
+          }
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
