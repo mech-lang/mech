@@ -7774,6 +7774,28 @@
         "seconds": 11.152500125113875,
         "scope": "Rerun after optional per-round release metadata support; actual R103 default-tag replay also passes all four original hashes."
       }
+    },
+    "105": {
+      "base": "accd7f478628a073e3f4e0007a830c1f95ccb82a",
+      "production": "341bf02918f4573fb518e12c5435ddd93efe0598",
+      "compiler_source": "ec55e3f856306b07d34050b8b95ac0289a28fb5f",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "ec55e3f856306b07d34050b8b95ac0289a28fb5f",
+          "asset": "r105-initial-9442c6bd52d5.tar.gz",
+          "sha256": "9442c6bd52d5fc9627323b2100cb728a3e27c69d5870d32c4d9ea63e962b152f",
+          "manifest_sha256": "df301574f06862b50993430e96609a894f9f22880d66ef9c6b541985a70079ba",
+          "bytes": 4442804,
+          "files": 68,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-initial-9442c6bd52d5.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
