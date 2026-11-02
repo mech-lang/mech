@@ -10946,6 +10946,17 @@
           "files": 38,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-scaled-witness-49a05be0745f.tar.gz"
+        },
+        {
+          "event": "primary-reference",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-primary-reference-5c961a70362d.tar.gz",
+          "sha256": "5c961a70362d82a8b84d0ec27599c5695de59e061c0184a5e9842b515ae77853",
+          "manifest_sha256": "66c28d3712d0109a9bd1ebe1ecf20faca7edd0f660da4ebc14c55acc9291d688",
+          "bytes": 138988,
+          "files": 38,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-primary-reference-5c961a70362d.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
