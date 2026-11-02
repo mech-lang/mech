@@ -10246,6 +10246,17 @@
           "files": 65,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-retirement-census-after-38d274d698d3.tar.gz"
+        },
+        {
+          "event": "retirement-binary",
+          "source_revision": "8e7334a4fdd929c58f0d741195c3d8a1857d81af",
+          "asset": "r117-retirement-binary-1715a63e44a3.tar.gz",
+          "sha256": "1715a63e44a3c6ce5b5a0034c3da24ff6b5499e8ec21a4565d08b2afdd309cf2",
+          "manifest_sha256": "14cdeac891acf558e2b4373b1a24155dfa8549b25a97a4401f14e1e525ffc237",
+          "bytes": 78464,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-retirement-binary-1715a63e44a3.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
