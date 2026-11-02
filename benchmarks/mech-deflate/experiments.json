@@ -11899,6 +11899,17 @@
           "files": 69,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-rich-counters-88c784a6ce15.tar.gz"
+        },
+        {
+          "event": "isolated-profile-scale",
+          "source_revision": "71f8cb7bed8bc84bfcb75915b79b8c299401adc5",
+          "asset": "r123-isolated-profile-scale-1805c37adefa.tar.gz",
+          "sha256": "1805c37adefae380002ab5f15f79e5591796f7d67f88a0bc9b085b58982334e9",
+          "manifest_sha256": "dd75c75ea8bdff705da970d977c7b803cd84e4362d1bb551f3eb374fd8d04984",
+          "bytes": 324626,
+          "files": 68,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-isolated-profile-scale-1805c37adefa.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
