@@ -18,6 +18,10 @@ use mech_core::{
 #[path = "native_collection_invocation.rs"]
 mod invocation;
 pub use invocation::NativeCollectionInvocationError;
+#[path = "native_collection_cache_capacity.rs"]
+mod cache_capacity;
+#[path = "native_collection_headroom.rs"]
+mod headroom;
 #[path = "native_collection_prepared.rs"]
 mod prepared;
 pub use prepared::{

@@ -62,11 +62,11 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                100
+                101
             );
             assert_eq!(
                 report.work, 88_531_834,
-                "policy100 preserves flat Huffman work while funding nested paths and captured numeric loops"
+                "policy101 preserves flat Huffman work while funding nested paths, captured numeric loops and shallow String cache inspection"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(

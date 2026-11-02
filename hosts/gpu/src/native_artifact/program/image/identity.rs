@@ -478,7 +478,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 147;
 // but no independent admission, arena installation or owner cleanup is needed.
 // Policy100 funds word-scaled entry/exit templates of recursive scalar frames.
 // Existing flat-frame envelopes and prices remain unchanged.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 100;
+// Policy101 pays current-demand inspection before optional shallow String
+// matrix call-cache admission/eviction. Other operation-family prices stay.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 101;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

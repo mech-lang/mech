@@ -18,6 +18,10 @@ use mech_core::{
 };
 use std::sync::Arc;
 
+#[cfg(all(test, any(feature = "full_source", feature = "full_compiler")))]
+#[path = "native_collection_prepared_capacity_tests.rs"]
+mod capacity_tests;
+
 fn composite_shape_from_children(template: &NativeProgramLibraryTemplate) -> bool {
     matches!(
         template.primitive(),
@@ -845,12 +849,63 @@ impl NativePreparedLibraryCall {
                     }
                 }
                 self.validate_values(inputs, output, &memory)?;
+                let bounded = super::headroom::supports_template(&self.template);
+                if bounded {
+                    let scope = crate::resident::budget::payload::native_scope_metadata_bytes();
+                    let owner = core::mem::size_of::<CachedBinding>() as u64;
+                    let fixed = self
+                        .binding_bytes
+                        .checked_mul(2)
+                        .and_then(|n| n.checked_add(owner))
+                        .and_then(|n| n.checked_add(scope));
+                    // The prepared binding envelope bounds the ordinary
+                    // invocation envelope too (the maintained plan-entry bound
+                    // is covered by the prepared envelope and factory tests).
+                    // Subtract only capacity actually held in this account:
+                    // a failed replacement can leave an owner-only guard.
+                    let held_bytes = cache
+                        .binding
+                        .as_ref()
+                        .map_or(0, |binding| binding._reservation.capacity_bytes());
+                    let held_nodes = cache
+                        .binding
+                        .as_ref()
+                        .map_or(0, |binding| binding._nodes.nodes());
+                    let additional = fixed.and_then(|n| n.checked_sub(held_bytes));
+                    let nodes = self.binding_nodes.checked_add(1);
+                    let additional_nodes = nodes.and_then(|n| n.checked_sub(held_nodes));
+                    let fits = match (fixed, additional, nodes, additional_nodes) {
+                        (Some(fixed), Some(additional), Some(nodes), Some(additional_nodes)) => {
+                            super::cache_capacity::admits(
+                                &self.template,
+                                &self.schemas,
+                                inputs,
+                                output,
+                                limits,
+                                work,
+                                fixed,
+                                nodes,
+                                additional,
+                                additional_nodes,
+                            )?
+                        }
+                        _ => false,
+                    };
+                    if !fits {
+                        // No kernel has run. Retire the optional metadata
+                        // before the ordinary binder needs current capacity;
+                        // keep every already spent unit on the SAME ledger.
+                        cache.binding = None;
+                        work.charge(self.binding_work, 0)?;
+                        return self.invoke_validated_current(inputs, output, limits, work);
+                    }
+                }
                 let hit = cache
                     .binding
                     .as_ref()
                     .and_then(|binding| binding.call.as_ref())
                     .is_some_and(|call| self.geometry_matches(call, inputs, output));
-                if !hit && cache.binding.is_none() {
+                if !bounded && !hit && cache.binding.is_none() {
                     work.charge(512, 0)?;
                     // Binding capacity is already subtracted from the nested
                     // temporary allowance below. Their complete coexistence
@@ -919,7 +974,11 @@ impl NativePreparedLibraryCall {
                         limits
                             .max_retained_nodes
                             .unwrap()
-                            .checked_sub(self.binding_nodes)
+                            .checked_sub(
+                                self.binding_nodes
+                                    .checked_add(u64::from(bounded))
+                                    .ok_or(MemoryPlanError::TargetAddressOverflow)?,
+                            )
                             .ok_or(MemoryPlanError::TargetAddressOverflow)?,
                     );
                     if let Some(binding) = cache.binding.as_mut() {

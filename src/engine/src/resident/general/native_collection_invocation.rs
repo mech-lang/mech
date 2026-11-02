@@ -65,7 +65,7 @@ impl std::error::Error for NativeCollectionInvocationError {}
 
 #[cfg(all(test, any(feature = "full_source", feature = "full_compiler")))]
 #[path = "native_data_footprint_tests.rs"]
-mod data_footprint_tests;
+pub(super) mod data_footprint_tests;
 
 /// Only constructor-private maintained families reach this envelope, including
 /// nested scalar/map state carriers. It conservatively covers planner coexistence, deep copies of
@@ -263,6 +263,51 @@ impl NativeCollectionCall {
                         return Err(NativeCollectionInvocationError::InvalidInput);
                     }
                 }
+                let bounded = super::headroom::supports_template(&self.template);
+                if bounded && !matches!(cache, NativePlanCacheState::Uncached) {
+                    let (retained, nodes) = match cache {
+                        NativePlanCacheState::Cached(current) => {
+                            let demand = current.retained_metadata_demand(work)?;
+                            (Some(demand.turn_peak_bytes), Some(demand.retained_nodes))
+                        }
+                        _ => (
+                            NativeTurnPlanCache::retained_bytes(
+                                &self.memory,
+                                self.invocation_metadata_bytes,
+                            ),
+                            NativeTurnPlanCache::retained_data_nodes(&self.memory)
+                                .and_then(|n| n.checked_add(1)),
+                        ),
+                    };
+                    let scope = budget::payload::native_scope_metadata_bytes();
+                    let mandatory = self.invocation_metadata_bytes.checked_add(scope);
+                    let fixed = retained.and_then(|n| n.checked_add(mandatory?));
+                    let warm = matches!(cache, NativePlanCacheState::Cached(_));
+                    let additional = if warm { mandatory } else { fixed };
+                    let fits = match (fixed, additional, nodes) {
+                        (Some(fixed), Some(additional), Some(nodes)) => {
+                            super::cache_capacity::admits(
+                                &self.template,
+                                &self.schemas,
+                                inputs,
+                                output,
+                                self.memory.target.limits,
+                                work,
+                                fixed,
+                                nodes,
+                                additional,
+                                if warm { 0 } else { nodes },
+                            )?
+                        }
+                        _ => false,
+                    };
+                    if !fits {
+                        // Current payload growth or a malformed selector only
+                        // declines optional reuse. This happens before scope,
+                        // kernel, mutable candidate or publication is entered.
+                        *cache = NativePlanCacheState::Uncached;
+                    }
+                }
                 if matches!(cache, NativePlanCacheState::Cold) {
                     // Only fixed metadata is inspected by this one-time
                     // optional-capacity decision. It never observes payload.
@@ -322,9 +367,16 @@ impl NativeCollectionCall {
                     // current scope. Probe full C + the unchanged finite nested
                     // temporary allowance + the two concrete scope Rc owners.
                     // No code executes while these probe bytes are held.
-                    let probe_bytes = retained.checked_add(temporary).and_then(|n| {
-                        n.checked_add(budget::payload::native_scope_metadata_bytes())
-                    });
+                    let probe_bytes = if bounded {
+                        // The complete current coexistence bound above already
+                        // reserved/dropped headroom. Retain only actual cache
+                        // metadata; no policy ceiling becomes a resource demand.
+                        Some(retained)
+                    } else {
+                        retained.checked_add(temporary).and_then(|n| {
+                            n.checked_add(budget::payload::native_scope_metadata_bytes())
+                        })
+                    };
                     let mut probe = if finite {
                         match probe_bytes {
                             Some(bytes) => match work.memory_budget().reserve_capacity(bytes) {
