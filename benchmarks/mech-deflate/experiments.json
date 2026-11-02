@@ -11001,6 +11001,33 @@
           "files": 40,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-primary-group3-c418b35f3ee3.tar.gz"
+        },
+        {
+          "event": "primary-summary",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-primary-summary-630dbe48bfae.tar.gz",
+          "sha256": "630dbe48bfae6d22a907513900f4b2d124e25ce65cbe3f0b70362e1b6083d04c",
+          "manifest_sha256": "72aa7db8a7f4f945d01a98636992c058ff616383bf44e69a7066e812a5c0da5a",
+          "bytes": 52774,
+          "files": 37,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-primary-summary-630dbe48bfae.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.000284,
+            "medians": {
+              "after": 0.0022563540000000003,
+              "before": 0.0021939795
+            },
+            "multiples_of_reference": {
+              "after": 7.944908450704226,
+              "before": 7.725279929577465
+            },
+            "after_over_before": 1.028429846313514,
+            "improving_groups": 0,
+            "improving_blocks": 1,
+            "adverse_blocks": 63
+          }
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
