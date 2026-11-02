@@ -8220,6 +8220,17 @@
           "files": 84,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round108-20261102/archives/r107-counters-a586797b95dc.tar.gz"
+        },
+        {
+          "event": "scale-counters",
+          "source_revision": "705c5acdc4fc92be5beeacf28d02721ea4e39ddf",
+          "asset": "r107-scale-counters-ba130f7fd00b.tar.gz",
+          "sha256": "ba130f7fd00b187f05c4e0efb2ef76366354969c9e8262107fc7983ca6762670",
+          "manifest_sha256": "6214c8a61b3c06f3c8c1caed9fac112949ff2b60a89d2e17af2146632a0c7ec8",
+          "bytes": 91958,
+          "files": 77,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round108-20261102/archives/r107-scale-counters-ba130f7fd00b.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
