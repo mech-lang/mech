@@ -10391,6 +10391,33 @@
           "files": 35,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-zero-trip-round118-20261102/archives/r118-primary-group3-0f09ccb4282d.tar.gz"
+        },
+        {
+          "event": "primary-summary",
+          "source_revision": "509c0d8e05a234020372b43832d7785f255c1b59",
+          "asset": "r118-primary-summary-5b8b95581e05.tar.gz",
+          "sha256": "5b8b95581e05200983b882d8ca0bef8c2ca8598b4bb2ca5f08aafd51f8210c25",
+          "manifest_sha256": "4f6bad98cef0e27ec78eb79822debb721c1db115b01dcaaa0a57c96cbc56ae6b",
+          "bytes": 50833,
+          "files": 32,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-zero-trip-round118-20261102/archives/r118-primary-summary-5b8b95581e05.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.000294,
+            "medians": {
+              "after": 0.0022500415,
+              "before": 0.002303937
+            },
+            "multiples_of_reference": {
+              "after": 7.653202380952382,
+              "before": 7.836520408163265
+            },
+            "after_over_before": 0.9766072162563474,
+            "improving_groups": 4,
+            "improving_blocks": 62,
+            "adverse_blocks": 2
+          }
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
