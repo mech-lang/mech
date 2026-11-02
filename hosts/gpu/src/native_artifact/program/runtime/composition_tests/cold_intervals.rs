@@ -252,7 +252,7 @@ fn numeric_interval_readonly_prefix_settles_before_its_first_write() {
 #[test]
 fn numeric_interval_readonly_array_child_settles_without_first_change() {
     let source = format!(
-        "{}\nheap-bridge(a<[u32]>, base<u64>, size<u64>, root<u64>) => (out<[u32]>) :=\n  out := huff-heap-build(a, base, size, root).\nheap-bridge(a<[u32]>, base<u64>, size<u64>, root<u64>)\n",
+        "{}\nheap-bridge(a<[u32]>, base<u64>, size<u64>, root<u64>, visits<u64>) => (out<[u32]>) :=\n  first<u64> := a[1u64]\n  valid! := first >= 0u64\n  out := ((visits != 0u64)? | true => heap-bridge(a, base, size, root, visits - 1u64) | false => huff-heap-build(a, base, size, root)).\nheap-bridge(a<[u32]>, base<u64>, size<u64>, root<u64>, visits<u64>)\n",
         include_str!("../../../../../tests/fixtures/native/deflate-huffman-level12.mec")
     );
     for artifact in artifacts(&source) {
@@ -274,7 +274,7 @@ fn numeric_interval_readonly_array_child_settles_without_first_change() {
         let proof = region.numeric.as_ref().unwrap();
         assert!(!proof.prepaid_sites.is_empty());
         assert!(!proof.writes());
-        assert!(proof.result.direct_array().is_some());
+        assert!(proof.result.direct_array().is_none());
         let memory = mode.memory_budget();
         let args = inputs(
             &artifact,
@@ -283,6 +283,7 @@ fn numeric_interval_readonly_array_child_settles_without_first_change() {
                 ("base", Data::U64(0)),
                 ("size", Data::U64(3)),
                 ("root", Data::U64(1)),
+                ("visits", Data::U64(2)),
             ],
             &memory,
         );

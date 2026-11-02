@@ -21,6 +21,9 @@ pub(in crate::native_artifact) struct Segment {
     pub exits: Vec<(u32, u32)>,
     pub frame_plan: Option<frames::Layout>,
     pub numeric: Option<numeric::Layout>,
+    /// Exact root traversal whose source visits can already have been paid.
+    /// The invocation must still hold that root's current cold continuation.
+    pub prepaid_region: Option<usize>,
     pub rejection: Option<&'static str>,
 }
 #[derive(Debug, Eq, PartialEq, serde::Serialize)]
@@ -142,20 +145,39 @@ impl Layout {
             let Loop::Tail(parent) = control else {
                 continue;
             };
-            if closed
+            let closed_region = closed
                 .sites
                 .get(parent.header() as usize)
                 .copied()
-                .flatten()
-                .is_some_and(|id| {
-                    closed.regions[id]
-                        .numeric
-                        .as_ref()
-                        .is_some_and(|p| p.phase.is_some())
+                .flatten();
+            if closed_region.is_some_and(|id| {
+                let region = &closed.regions[id];
+                region.numeric.as_ref().is_some_and(|p| {
+                    p.phase.is_some()
+                        && (region.iteration != iteration as u32 || p.prepaid_sites.is_empty())
                 })
-            {
+            }) {
                 continue;
             }
+            // An interval's custom native CFG and its ordinary cold suffix
+            // are distinct execution routes. Keep the maintained parent pieces
+            // on that suffix. Reconstruct the exact already-paid source price;
+            // physical entry, synchronization and retirement stay separately
+            // funded. No child scope or previous traversal can lend credit.
+            let prepaid_region = closed_region.filter(|&id| {
+                let region = &closed.regions[id];
+                region.iteration == iteration as u32
+                    && region.numeric.as_ref().is_some_and(|proof| {
+                        !proof.prepaid_sites.is_empty()
+                            && proof.phase.as_ref().is_some_and(|phase| {
+                                proof
+                                    .prepaid_sites
+                                    .iter()
+                                    .try_fold(0u64, |n, &site| n.checked_add(visits[site].work))
+                                    .is_some_and(|price| price <= phase.loops[0].compute)
+                            })
+                    })
+            });
             let children = plan
                 .iterations()
                 .iter()
@@ -310,6 +332,7 @@ impl Layout {
                     exits: Vec::new(),
                     frame_plan: None,
                     numeric: None,
+                    prepaid_region,
                     rejection: None,
                 });
                 segment.sites.push(site);
@@ -321,6 +344,19 @@ impl Layout {
             }
             let mut segments = segments.into_values().collect::<Vec<_>>();
             for segment in &mut segments {
+                if let Some(id) = segment.prepaid_region
+                    && !segment.sites.iter().all(|&site| {
+                        closed.regions[id]
+                            .numeric
+                            .as_ref()
+                            .unwrap()
+                            .prepaid_sites
+                            .binary_search(&(site as usize))
+                            .is_ok()
+                    })
+                {
+                    segment.prepaid_region = None;
+                }
                 match frames::Layout::derive(plan, &facts, frames, segment) {
                     Ok(mut proof) => {
                         match numeric::Layout::derive(

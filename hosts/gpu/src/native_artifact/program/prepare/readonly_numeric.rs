@@ -524,6 +524,14 @@ fn derive_with_children(
     if arrays.iter().any(|array| array.witness == usize::MAX) {
         return Err("unwitnessed retained array");
     }
+    // A prefix without a native backedge retains the maintained acyclic parent
+    // pieces. A Tail phase adds a second entry and cold export without keeping
+    // any recurrence in native code. Storage effects retain their usual sites.
+    if !forest.prepaid_sites.is_empty()
+        && !exits::retains_native_backedge(plan, tail, provenance.facts, &forest)
+    {
+        return Err("acyclic interval retains the ordinary parent pieces");
+    }
     let exits = exits::derive(plan, tail, frames, &forest, &mut provenance, &arrays)?;
     versions::validate(
         plan,
