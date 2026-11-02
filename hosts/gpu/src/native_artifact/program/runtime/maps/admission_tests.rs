@@ -41,14 +41,13 @@ fn note(f: impl FnOnce(&mut Observation)) {
     OBS.with(|v| f(&mut v.borrow_mut()));
 }
 
-unsafe extern "C" fn observe_admit(raw: *mut c_void, site: u64) -> u64 {
-    // SAFETY: this is the exact callback/context supplied by the checked entry.
-    let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
-    let group = ctx.descriptor.metadata().map_admission.group(site as usize);
-    let native = group
-        .and_then(|group| group.owner)
-        .is_some_and(|owner| ctx.state.map_owners.has_retained_binding(owner));
-    let scalar = group.filter(|group| group.owner.is_none());
+fn restrict_scalar_prefix(ctx: &mut Invocation<'_, '_, '_>, site: u64) -> bool {
+    let scalar = ctx
+        .descriptor
+        .metadata()
+        .map_admission
+        .group(site as usize)
+        .filter(|group| group.owner.is_none());
     let scalar_limited = scalar.is_some_and(|group| {
         group.start() as u64 == site
             && group.sites.iter().any(|&s| {
@@ -79,6 +78,18 @@ unsafe extern "C" fn observe_admit(raw: *mut c_void, site: u64) -> u64 {
         }
         note(|r| r.scalar_limited = true);
     }
+    scalar_limited
+}
+
+unsafe extern "C" fn observe_admit(raw: *mut c_void, site: u64) -> u64 {
+    // SAFETY: this is the exact callback/context supplied by the checked entry.
+    let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
+    let scalar_limited = restrict_scalar_prefix(ctx, site);
+    let group = ctx.descriptor.metadata().map_admission.group(site as usize);
+    let native = group
+        .and_then(|group| group.owner)
+        .is_some_and(|owner| ctx.state.map_owners.has_retained_binding(owner));
+    let scalar = group.filter(|group| group.owner.is_none());
     note(|r| {
         r.calls += 1;
         if let Some(group) = group {
@@ -209,6 +220,9 @@ unsafe extern "C" fn observe_helper(
     result: *mut u64,
 ) -> u64 {
     let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
+    if GlobalHelper::decode(operation) == GlobalHelper::AdmitNumericSegmentBegin {
+        restrict_scalar_prefix(ctx, site);
+    }
     let previous = ctx.limits;
     let fused = (operation == crate::native_artifact::program::protocol::abi::MAP_OWNER_CALL
         && ctx.retained_native_call(site as usize))
