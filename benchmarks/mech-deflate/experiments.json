@@ -9850,6 +9850,17 @@
           "files": 44,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-aggregate-funding-round116-20261102/archives/r116-primary-group2-eccafa2a2767.tar.gz"
+        },
+        {
+          "event": "primary-group3",
+          "source_revision": "509c0d8e05a234020372b43832d7785f255c1b59",
+          "asset": "r116-primary-group3-ab573c6f7564.tar.gz",
+          "sha256": "ab573c6f7564ca0fac80134721c52b54b39a4fc12910c9629936ca1f4d713be0",
+          "manifest_sha256": "b9a3543b58ad74df3052494aa9425309054e5c07e0cb5328b9b638b67d3780cf",
+          "bytes": 89503,
+          "files": 44,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-aggregate-funding-round116-20261102/archives/r116-primary-group3-ab573c6f7564.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
