@@ -80,6 +80,10 @@ from R116. No16KB/full-scale timing or green hosted-CI claim. The next compiler
 work keeps source fixed on both sides and targets the complete nested path phase.
 No no-match whole-block simplification or packed-load gain is claimed yet.
 
+All19 evidence archives (7,956,453 compressed bytes) and sidecars are published
+with matching server digests. Fresh retrieval verifies999 file occurrences /
+305 unique paths and reproduces all four indexed reports byte-for-byte.
+
 Variant source SHA256:`85fba4bc9f55796c8a83c7ff0533590d4bf5e97bd8be42d4dd56c5d448427b36`;
 revision14 MBC SHA256:`5d9318ae144d5d42b3bee53dd23ff6e26955ef6652c5f93ef05eeadf69a9ca26`.
 The evidence index retains the exact commands, feature profile, raw journals,
