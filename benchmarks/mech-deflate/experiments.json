@@ -8047,11 +8047,22 @@
           "files": 120,
           "publication": "published; server SHA-256 verified",
           "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r107-held-candidate-scaling-raw-af8bc97e3ab4.tar.gz"
+        },
+        {
+          "event": "analysis",
+          "source_revision": "8f6e6a8de9e4928a88f1341dd0538504bd2336e6",
+          "asset": "r107-analysis-da37130b543e.tar.gz",
+          "sha256": "da37130b543e69dd2c7572011a5750f395d71451e7876567d08464f92665e0a4",
+          "manifest_sha256": "f7f6f252f027722e51f05839d0c752dccad2f59e6b01b9b0b8d6f981648865f6",
+          "bytes": 41631,
+          "files": 25,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-input-scaling-profile-round107-20261101/archives/r107-analysis-da37130b543e.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified"
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
