@@ -154,6 +154,11 @@ fn nested_numeric_phase_declines_wrapping_offset_zero_or_dynamic_stride() {
             "phase-prefix(values, at + divisor,",
             1,
         ),
+        source(false).replacen(
+            "phase-prefix(values, at + 8u64,",
+            "phase-prefix(values, at + 18446744073709551615u64,",
+            1,
+        ),
     ] {
         for artifact in artifacts(&source) {
             let jit = JitProgramArtifact::compile_with_limits(
@@ -170,6 +175,73 @@ fn nested_numeric_phase_declines_wrapping_offset_zero_or_dynamic_stride() {
                     .iter()
                     .any(|r| r.iteration == 0
                         && r.numeric.as_ref().is_some_and(|p| p.phase.is_some()))
+            );
+        }
+    }
+}
+
+#[test]
+fn nested_numeric_phase_stride_keeps_finite_boundary_failures_and_retry() {
+    resources::finite_boundaries(&source(true), |artifact, memory| {
+        args(artifact, memory, 3, u64::MAX)
+    });
+}
+
+#[test]
+fn nested_numeric_phase_affine_guard_overflow_keeps_prior_errors_and_recovery() {
+    let source = source(true).replacen(
+        "phase-prefix(values, 0u64, end,",
+        "phase-prefix(values, 18446744073709551612u64, end,",
+        1,
+    );
+    for artifact in artifacts(&source) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let memory = mode.memory_budget();
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        qualify_nested_inventory(&jit);
+        for restored in [false, true] {
+            let mut output = vec![None; artifact.outputs().len()];
+            for (steps, deny, rejection) in [
+                (0, 0, None),
+                (1, 0, Some("Integrity")),
+                (1, u64::MAX, Some("Arithmetic")),
+                (0, 0, None),
+            ] {
+                let arguments = args(&artifact, &memory, steps, deny);
+                let before = contents(&arguments);
+                let prior = output.clone();
+                let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                let result = if restored {
+                    observe::run_restored(&jit, &arguments, &mut output, mode.execution(), &memory)
+                        .0
+                } else {
+                    observe::run(&jit, &arguments, &mut output, mode.execution(), &memory).0
+                };
+                if let Some(rejection) = rejection {
+                    assert!(format!("{:?}", result.unwrap_err()).contains(rejection));
+                    assert!(output.iter().zip(&prior).all(|(now, old)| {
+                        now.as_ref()
+                            .unwrap()
+                            .shares_frozen_storage(old.as_ref().unwrap())
+                    }));
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        retained
+                    );
+                } else {
+                    result.unwrap();
+                }
+                assert_eq!(contents(&arguments), before);
+            }
+            drop(output);
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
             );
         }
     }

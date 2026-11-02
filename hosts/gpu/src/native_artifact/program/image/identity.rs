@@ -279,7 +279,9 @@ fn selected_template(
 // ordinary scalar path. Images rederive those same current source frontiers.
 // IR146 composes synchronous numeric children into one phase with current buffer
 // versions, distinct live scalar homes, and independently reconstructed exits.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 146;
+// IR147 admits checked affine guards and positive constant strides in the
+// independently reconstructed nested numeric-phase progress proof.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 147;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -476,7 +478,10 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 146;
 // Policy100 retains existing leaf and parent prices. Nested phases separately
 // prove an outer admission envelope and settle actual per-loop traversal debits;
 // their finite boundary allowance follows the phase's source word inventory.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 100;
+// Policy101 extends phase selection to those proved strided children. Existing
+// traversal prices and unit-stride envelopes remain unchanged; only actually
+// reached traversal debits are charged under the selected phase schedule.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 101;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
