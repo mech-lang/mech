@@ -9253,6 +9253,17 @@
           "files": 53,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-confirm-group1-c478854da0d5.tar.gz"
+        },
+        {
+          "event": "confirm-group2",
+          "source_revision": "f327ef9489aaa0997f4d8627256f1a14eb70b0c4",
+          "asset": "r114-confirm-group2-f57e2a85a41f.tar.gz",
+          "sha256": "f57e2a85a41fc4e8ad1e840c379e0693658401e6cf5af6e67e4f788270395567",
+          "manifest_sha256": "a0db9694092c82571d80996d151243af7ea74e3c9d9a4ede6ec150f264f50f29",
+          "bytes": 94647,
+          "files": 53,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-confirm-group2-f57e2a85a41f.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
