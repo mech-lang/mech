@@ -6,6 +6,58 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Hosted CI is not awaited under
 instruction; no green hosted-CI claim is made.
 
+## R117: ordered retirement scan held; restore R116
+
+Baseline `6a303c6d92d14f5a88ab4aecb9999fda205f285a`; candidate
+`8e7334a4fdd929c58f0d741195c3d8a1857d81af`; restoration **`a057d5f570fc3ad9b460bf66876af182fa442257`**.
+The three runtime/test files now match the retained R116 checkpoint exactly.
+The experiment remains on `codex/retirement-scan-r117-experiment`.
+
+| Matched elapsed | Before / reference | Candidate / reference | Change |
+|---|---:|---:|---:|
+|8B, four prepared pairs|8.028728×|8.105774×|+0.959624%|
+|1KB, alternating blocks|104.010278×|105.039737×|+0.989766%|
+
+No pair/block improves at its respective level: 0/4 prepared pairs at 8B,
+0/8 blocks at 1KB. The 8B descriptive blocks include 13 improving and 51 adverse.
+All 3,968 primary / 3,984 total 8B observations and 128 per-version 1KB
+observations remain. Separate 1KB instructions rise 494,394,047.5→501,094,481;
+cycles rise 101,451,651→103,381,783.5. Separate 8B instructions also rise
+26,164,453→26,401,464.5. Per-call heap requests/bytes/peak are unchanged at both
+sizes. The generated Object/image/metadata remain byte-identical, including
+14,584,260B native text and 134,960B entry stack; whole linked runtime text grows
+12,368B. No source algorithm, pricing, allocator or buffer change.
+
+The scan replaces repeated arena-account checks with one check while the arena
+and work meter are immutably borrowed. Two diagnostic executions agree: at 1KB
+account checks fall 233,456→184,929 while all 233,456 slot visits remain. Native
+entries stay 31,912. At 8B checks fall 7,963→6,804 with the same 7,963 slots and
+933 entries. Actual ARM64 contains an 824-byte flattened-iterator scan, compared
+with the old 220-byte single-slot helper. Removed checks did not lower whole-call
+instructions or elapsed; this candidate is held.
+
+Disjoint entry-stage clock windows and an approximately 24ns empty-clock
+calibration are retained as diagnostics, with their substantial observer cost
+explicit. They are neither primary timings nor instruction attribution. Fresh
+serial profiles cover 695 complete 8B calls and 130 complete 1KB calls per subject.
+The exact reference binary is inspected again; opaque symbols are not assigned
+source names.
+
+Passing: maintained runtime356, work/memory/values33, guarded native65, image1,
+and both extended generation tests. Those tests check empty scans, foreign
+ledgers, ordered refusal versus invalid slots, untouched work/aliases/generations
+and recovery. The complete linked compressor matches exact bytes and independent
+inflation at both sizes; source work stays 42,390,445,317 / 1,970,438,688,821.
+No fresh component236/connected8/path1, linked40 mini-program, scalar12/frame8,
+Core/no_std/all-features/minimal graph, hosted CI or full-scale run is claimed for
+this held candidate. No introduced failing test remains in executed scope.
+
+The next assignment changes strategy: preserve R116 as the compiler control,
+measure zero-match/zero-skip source bypasses separately, and target a complete
+path scan with persistent typed views, scalar state and one nodes owner. The
+no-match block certificate and whole-pass simplification are a separate source
+track; vector shape, range proofs and packed loads follow those measurements.
+
 ## R116: fund native scalar aggregate words through the ordinary path
 
 Base **`d5e88ff2e66714ad4ee1d1f200518958401cea9a`**; retained compiler/runtime
