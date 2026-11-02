@@ -97,16 +97,20 @@ fn live_before(
         let mut used = BTreeSet::new();
         match plan.blocks()[site].action() {
             Action::Initialize { iteration } | Action::Latch { iteration } => {
-                let NativeControlLoop::Tail(child) = &plan.iterations()[*iteration as usize] else {
-                    return Err("cold continuation contains an unsupported progress action");
-                };
-                used.insert(
-                    if matches!(plan.blocks()[site].action(), Action::Initialize { .. }) {
-                        child.seed().get()
-                    } else {
-                        child.next().get()
-                    },
-                );
+                if let NativeControlLoop::Tail(child) = &plan.iterations()[*iteration as usize] {
+                    used.insert(
+                        if matches!(plan.blocks()[site].action(), Action::Initialize { .. }) {
+                            child.seed().get()
+                        } else {
+                            child.next().get()
+                        },
+                    );
+                } else {
+                    facts.parallel_action_reads(site as u32, &mut |value| {
+                        used.insert(value.get());
+                        Ok(())
+                    })?;
+                }
             }
             _ => facts.parallel_action_reads(site as u32, &mut |value| {
                 used.insert(value.get());
@@ -187,8 +191,13 @@ pub(super) fn derive(
     arrays: &[Array],
 ) -> Result<Vec<Exit>, &'static str> {
     let mut exits = Vec::new();
-    for child in &forest.cold {
-        let [from] = provenance.facts.predecessors(child.initialize as u32)? else {
+    for to in forest
+        .cold
+        .iter()
+        .map(|child| child.initialize)
+        .chain(forest.stops.iter().copied())
+    {
+        let [from] = provenance.facts.predecessors(to as u32)? else {
             return Err("cold initializer lacks a unique exact predecessor");
         };
         let from = *from as usize;
@@ -196,10 +205,10 @@ pub(super) fn derive(
             return Err("cold predecessor is outside the native traversal");
         }
         let known = known_predicates(plan, provenance.facts, forest, from);
-        let live = live_before(plan, tail, provenance.facts, child.initialize, &known)?;
+        let live = live_before(plan, tail, provenance.facts, to, &known)?;
         let mut export = Exit {
             from,
-            to: child.initialize,
+            to,
             frames: Vec::new(),
             aliases: Vec::new(),
         };

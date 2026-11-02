@@ -7,6 +7,8 @@ use mech_engine::native_artifact::{
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) enum ResultRecipe {
+    /// No native path reaches the root finish; an ordinary cold suffix owns it.
+    Unreachable,
     Scalar,
     Aggregate {
         value: u32,

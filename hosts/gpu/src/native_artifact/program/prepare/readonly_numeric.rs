@@ -1,6 +1,7 @@
 //! Same-plan proof for a packed numeric leaf under a suspended parent.
 //! Exact frame recipes own the connected escape analysis. This adds identity
 //! provenance for every managed field, including every alternative definition.
+use super::numeric_phase::Coverage;
 use mech_core::{IntegerWidth, SchemaBody};
 use mech_engine::native_artifact::{
     NativeAggregateWord, NativeBufferFrameLane as Lane, NativeBufferFrameOperation as Frame,
@@ -56,6 +57,7 @@ struct Provenance<'a, 'p> {
     cache: BTreeMap<(u32, Option<usize>), Option<usize>>,
     active: BTreeSet<(u32, Option<usize>)>,
     children: BTreeMap<(u32, usize), usize>,
+    native_sites: Option<&'a BTreeSet<usize>>,
 }
 impl Provenance<'_, '_> {
     fn array(&mut self, value: u32, field: Option<usize>) -> Option<usize> {
@@ -85,7 +87,17 @@ impl Provenance<'_, '_> {
         answer
     }
     fn definitions(&mut self, value: u32, field: Option<usize>) -> Option<usize> {
-        let definitions = self.facts.definition_sites(value).ok()?.to_vec();
+        let definitions = self
+            .facts
+            .definition_sites(value)
+            .ok()?
+            .iter()
+            .filter(|d| {
+                self.native_sites
+                    .is_none_or(|sites| d.site().is_some_and(|s| sites.contains(&(s as usize))))
+            })
+            .cloned()
+            .collect::<Vec<_>>();
         if definitions.is_empty() {
             return None;
         }
@@ -155,10 +167,47 @@ pub(in crate::native_artifact) fn derive(
     calls: &[Option<NativePreparedLibraryCall>],
     visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
 ) -> Result<Proof, &'static str> {
-    derive_with_children(plan, tail, frames, aggregates, calls, visits, false).or_else(|reason| {
-        derive_with_children(plan, tail, frames, aggregates, calls, visits, true)
-            .map_err(|_| reason)
+    derive_with_children(
+        plan,
+        tail,
+        frames,
+        aggregates,
+        calls,
+        visits,
+        Coverage::Complete,
+    )
+    .or_else(|reason| {
+        derive_with_children(
+            plan,
+            tail,
+            frames,
+            aggregates,
+            calls,
+            visits,
+            Coverage::ScalarCold,
+        )
+        .or_else(|_| derive_interval(plan, tail, frames, aggregates, calls, visits))
+        .map_err(|_| reason)
     })
+}
+
+pub(in crate::native_artifact) fn derive_interval(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
+) -> Result<Proof, &'static str> {
+    derive_with_children(
+        plan,
+        tail,
+        frames,
+        aggregates,
+        calls,
+        visits,
+        Coverage::Intervals,
+    )
 }
 
 fn derive_with_children(
@@ -168,7 +217,7 @@ fn derive_with_children(
     aggregates: &NativeScalarAggregates,
     calls: &[Option<NativePreparedLibraryCall>],
     visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
-    cold: bool,
+    mode: Coverage,
 ) -> Result<Proof, &'static str> {
     let fields = frames
         .fields(tail.carrier())
@@ -179,12 +228,12 @@ fn derive_with_children(
     {
         return Err("numeric carrier requires flat fields");
     }
-    let forest = if cold {
-        super::numeric_phase::Forest::with_cold_children(plan, tail)?
-    } else {
-        super::numeric_phase::Forest::derive(plan, tail)?
+    let forest = match mode {
+        Coverage::Complete => super::numeric_phase::Forest::derive(plan, tail)?,
+        Coverage::ScalarCold => super::numeric_phase::Forest::with_cold_children(plan, tail)?,
+        Coverage::Intervals => super::numeric_phase::Forest::intervals(plan, tail)?,
     };
-    let nested = forest.loops.len() > 1 || !forest.cold.is_empty();
+    let nested = forest.loops.len() > 1 || !forest.cold.is_empty() || !forest.stops.is_empty();
     let trips = if forest.loops.len() > 1 {
         forest.validate_child_actions(plan, frames, aggregates, calls)?;
         forest.bounded_children(plan, frames, aggregates, calls)?
@@ -201,6 +250,7 @@ fn derive_with_children(
         cache: BTreeMap::new(),
         active: BTreeSet::new(),
         children: BTreeMap::new(),
+        native_sites: (mode == Coverage::Intervals).then_some(&sites),
     };
     for child in forest.loops.iter().skip(1) {
         let NativeControlLoop::Tail(child_tail) = &plan.iterations()[child.iteration as usize]
@@ -244,7 +294,9 @@ fn derive_with_children(
     let mut arrays = Vec::new();
     for (ordinal, field) in fields.iter().enumerate() {
         if matches!(field.lane(), Lane::Managed { .. }) {
-            if provenance.array(tail.next().get(), Some(ordinal)) != Some(ordinal) {
+            if sites.contains(&(tail.latch() as usize))
+                && provenance.array(tail.next().get(), Some(ordinal)) != Some(ordinal)
+            {
                 return Err("array field changes, swaps, or has unknown recursive forwarding");
             }
             arrays.push(Array {
@@ -259,22 +311,27 @@ fn derive_with_children(
     if arrays.is_empty() {
         return Err("no invariant numeric arrays");
     }
-    let result = results::derive(
-        plan,
-        tail,
-        frames,
-        aggregates,
-        fields,
-        &arrays,
-        &mut provenance,
-    )?;
+    let result = if sites.contains(&(tail.finish() as usize)) {
+        results::derive(
+            plan,
+            tail,
+            frames,
+            aggregates,
+            fields,
+            &arrays,
+            &mut provenance,
+        )?
+    } else {
+        ResultRecipe::Unreachable
+    };
     let mut actions = Vec::new();
     let mut frame_values = BTreeSet::from([tail.carrier().get()]);
     if let Some(value) = result.frame() {
         frame_values.insert(value);
     }
     for &site in &sites {
-        if forest.cold.iter().any(|child| child.initialize == site) {
+        if forest.stops.contains(&site) || forest.cold.iter().any(|child| child.initialize == site)
+        {
             actions.push((site, Operation::Fallback));
             continue;
         }
@@ -571,6 +628,7 @@ fn derive_with_children(
         frames: frame_words,
         actions,
         sites: sites.into_iter().collect(),
+        prepaid_sites: forest.prepaid_sites.into_iter().collect(),
         scalar_words,
         words,
         result,

@@ -62,6 +62,7 @@ pub(in crate::native_artifact) struct Plan {
     pub frames: Vec<FrameWords>,
     pub actions: Vec<(usize, Operation)>,
     pub sites: Vec<usize>,
+    pub prepaid_sites: Vec<usize>,
     pub scalar_words: usize,
     pub words: usize,
     pub result: ResultRecipe,

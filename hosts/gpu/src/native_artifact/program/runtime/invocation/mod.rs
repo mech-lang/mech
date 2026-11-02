@@ -689,10 +689,13 @@ impl Invocation<'_, '_, '_> {
         let prepaid = self.numeric_prepaid.is_some_and(|region| {
             let region = &self.descriptor.metadata().closed_tails.regions[region];
             block.iteration() == Some(region.iteration)
-                && region
-                    .numeric
-                    .as_ref()
-                    .is_some_and(|proof| proof.sites.contains(&index))
+                && region.numeric.as_ref().is_some_and(|proof| {
+                    if proof.prepaid_sites.is_empty() {
+                        proof.sites.contains(&index)
+                    } else {
+                        proof.prepaid_sites.binary_search(&index).is_ok()
+                    }
+                })
         });
         let group = self
             .descriptor
