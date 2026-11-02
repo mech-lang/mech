@@ -11952,6 +11952,20 @@
           "scorecard.json": "10b2168ae0600055b0170293d75b379adab65c83d8a04f3c78115d87f7bf37c9",
           "validation.json": "2da1a5ae9b6a6abadee9e20096419b2a82b2e65bd32edeaa0a68922c632529cf"
         }
+      },
+      "public_replay": {
+        "byte_identical_outputs": [
+          "mechanism.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 1,
+        "round": 123,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 438,
+        "verified_archives": 19,
+        "verified_file_occurrences": 1645
       }
     }
   },
