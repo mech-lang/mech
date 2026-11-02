@@ -528,7 +528,11 @@ impl Invocation<'_, '_, '_> {
         self.state.scalar_path = None;
         self.state.control.previous = Some(site as u32);
         self.state.consumed = args[0] != 2;
-        Ok(None)
+        // A generated suffix may belong to an ordinary scalar group whose
+        // entry was executed inside this piece. That group was never funded
+        // as an ordinary path. Clear its readiness lane with the marker so
+        // the suffix retains its original per-source admission and errors.
+        Ok(Some(0))
     }
 
     #[inline(always)]

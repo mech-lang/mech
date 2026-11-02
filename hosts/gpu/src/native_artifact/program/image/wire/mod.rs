@@ -224,6 +224,7 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
         .collect::<Box<[_]>>();
     let admission = native::program::prepare::map_admission::Layout::derive(
         &plan,
+        &w.scalar_aggregates,
         w.map_owner_words.as_ref(),
         &visits,
         &closed_tails,
