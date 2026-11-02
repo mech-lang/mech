@@ -554,6 +554,7 @@ pub(in crate::native_artifact) fn validate_type_slots(
     Ok(())
 }
 
+pub(in crate::native_artifact) mod numeric_plan;
 pub(in crate::native_artifact) mod readonly_numeric;
 pub(in crate::native_artifact) mod retirement;
 
