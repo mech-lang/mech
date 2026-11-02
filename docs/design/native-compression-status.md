@@ -6,6 +6,79 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Hosted CI is not awaited under
 instruction; no green hosted-CI claim is made.
 
+## R109–R111: frame geometry trials held; default remains R108
+
+The speed target remains 1×. The earlier R106 memory-saving ownership change
+remains held rather than becoming the default. Its 1KB gain and smaller-input
+regressions are preserved below; cumulative requested capacity is not live memory.
+
+Three subsequent GPU-runtime trials reuse immutable frame-field geometry during
+numeric handoffs. Every comparison uses the retained R108 executable, source
+revision `705c5acdc4fc92be5beeacf28d02721ea4e39ddf`, with a fresh reference for
+that comparison. The candidate source revisions are:
+
+- R109 `0cbf5b9f6b5870c40aac5a75bc7c89bb23c9b32a`: lazy layout reuse plus field writers.
+- R110 `7a47b86b5e05e696beac21b7fe673c8b171c4fd2`: explicit lazy conditionals remove an outlined Option helper.
+- R111 `727a955105fe43ee99d120560157bbdf985dacd2`: resolve the immutable layout before the field loop and borrow field descriptions.
+
+| Trial | 8B baseline → candidate / reference | Elapsed change | 1KB baseline → candidate / reference | Elapsed change |
+|---|---:|---:|---:|---:|
+|R109|7.973493× → 8.037212×|+0.799135%|110.613871× → 111.660288×|+0.946009%|
+|R110|7.944563× → 7.969462×|+0.313409%|112.791323× → 113.392659×|+0.533140%|
+|R111|7.948558× → 7.967464×|+0.237852%|112.394942× → 112.059211×|−0.298707%|
+
+Each 8B trial retains 3,968 primary/3,984 total observations over four prepared
+pairs. The separate 1KB cohorts retain 128 observations/version in alternating
+16-call blocks. R111 improves two of four 8B pairs and seven of eight 1KB blocks;
+its positive result is retained alongside the adverse one. These trials do not
+establish a consistent speed improvement across both measured sizes. Neither
+historical reference ratios nor results from independent cohorts are combined.
+
+Address-bounded inspection of the actual ARM64 executables finds a new per-field
+outlined Option helper in R109 and 32-byte field-description transport at the
+new writers. R110 removes the Option helper. R111 borrows the field description
+and removes that aggregate copy at the scalar writer. These are verified binary
+changes, not a causal attribution of the elapsed differences. No instruction,
+heap, prepared-memory or fresh CPU-sample cohort is claimed for these held trials.
+The earlier weighted layout-lookup prediction remains explicitly a prediction;
+it is not an executed-call census for the final eager-lookup variant.
+
+All trial Objects/descriptors/metadata remain byte-identical to R108. Generated
+compressor text remains 14,604,696B and machine entry stack 135,728B; this does not
+claim unchanged host helper stack. Versions 143/99/38/14, source/bytecode pins,
+algorithm, real capacities, allocation sites, allocator, source work and timing
+boundaries remain unchanged. Both input sizes preserve exact raw bytes,
+independent inflation, aliases, output capacity13/1029 with clear/rebind outside
+the timer, and final managed bytes/nodes0. No larger-input timing is run.
+
+The new R111 focused regression passes for original/decoded artifacts, covering
+invalid Bool bits, wrong lane/schema, unchanged state/accounting and old aliases,
+error precedence with absent backing, and recovery. Its initial expectation
+incorrectly assumed every fixture field contained 7; the existing helper uses
+7 plus the leaf ordinal. Test-only fix `11b61ba7f7` captures each alias's actual
+pre-update draft. The failed receipt is retained. The existing collection-lifetime
+regression also passes. Full runtime/component/linked/scalar/frame qualification
+was not rerun for these unretained trials; no inherited allowance or golden changed.
+
+Candidate source/tests/CI inventory are saved on local branch
+`codex/frame-geometry-r109-r111-experiment` at `af69cc894c`. Restoration commit
+**`8bd35198ca69e0dac5c78e967c758f3397c7e3b7`** returns all compiler, runtime, test
+and CI files exactly to published R108 head
+`3b310eb80f84ab16757923f270931fd53cf1477b`. The default diff since that head
+contains only evidence/index/status updates. Source commits remain in history,
+and diagnostic patches/receipts preserve the experiments for later comparison.
+No new optimization is retained from R109–R111; R108's validation scope below still
+applies to the unchanged implementation.
+
+All31 archives and31 sidecars (29,015,328 archive bytes, no native binaries) are
+published with verified server digests. Fresh maintained retrieval reproduces all
+six timing/validation reports byte-identically from raw observations without
+compiling or compressing. It verifies the original and corrected fixture receipts
+as well as every earlier packet version. The restored default passes132 workflow
+checks,15 architecture/type/memory checks and full formatting. Exact commands,
+replay counts, omissions and report hashes are in the compact index. Hosted CI
+is not awaited; the PR remains draft pending green CI and clean review.
+
 ## R108: reuse current owner references within one numeric entry
 
 Base `ac80ae5e7766c0aef16978f5ba39b90aafd198c2`; compiler/runtime change
