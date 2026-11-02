@@ -7939,6 +7939,17 @@
           "files": 60,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-linked-exits-4dece251ba85.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "ec55e3f856306b07d34050b8b95ac0289a28fb5f",
+          "asset": "r105-scalar-controls-c4e64f63f399.tar.gz",
+          "sha256": "c4e64f63f399c9ec320a18808cc86c641f0d275c6d9050b153bf0a45c09cd159",
+          "manifest_sha256": "4b46b43fd590c76eec442b855a5cfb0bea105801b66c70b9f2dc4d632b368962",
+          "bytes": 129947,
+          "files": 97,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-scalar-controls-c4e64f63f399.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
