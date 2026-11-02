@@ -200,8 +200,11 @@ impl Invocation<'_, '_, '_> {
 }
 
 impl Invocation<'_, '_, '_> {
+    // Only the separate admitted transport bank changes. Immutable current
+    // owner borrows can coexist with a write; no reference to this bank escapes
+    // the callback, and generated code remains suspended until it returns.
     pub(in crate::native_artifact::program::runtime) fn write_borrowed_word(
-        &mut self,
+        &self,
         index: usize,
         word: u64,
     ) -> Result<(), NativeProgramExecutionError> {
