@@ -205,17 +205,17 @@ impl Invocation<'_, '_, '_> {
                 return Ok(Some(0));
             }
         }
-        let arena_retirements = frames
-            .retirements
-            .iter()
-            .flat_map(|(_, values)| values.iter().copied())
-            .filter(|&value| metadata.frame_retirements.get(value as usize).is_none());
-        if !self
-            .state
-            .arena
-            .native_retirements_available(arena_retirements, &self.state.control.work)?
-        {
-            return Ok(Some(0));
+        for (_, values) in &frames.retirements {
+            for &value in values {
+                if metadata.frame_retirements.get(value as usize).is_none()
+                    && !self
+                        .state
+                        .arena
+                        .native_retirement_available(value, &self.state.control.work)?
+                {
+                    return Ok(Some(0));
+                }
+            }
         }
         let temporary = metadata
             .observation_schema_bytes
