@@ -7667,6 +7667,17 @@
           "files": 100,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-scalar-controls-15e0f8a9b6ec.tar.gz"
+        },
+        {
+          "event": "frame-allocation",
+          "source_revision": "636da5e074add0632f7154f14d8d39848721cd16",
+          "asset": "r104-frame-allocation-ec41e490bc98.tar.gz",
+          "sha256": "ec41e490bc98d178fb76ea94181236e5f7fba10f350dc5393e58ff9208997b0a",
+          "manifest_sha256": "d576f581497967d5660f7b9464773c642b672ec1755175526564d3312e95eeea",
+          "bytes": 155161,
+          "files": 78,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-frame-allocation-ec41e490bc98.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
