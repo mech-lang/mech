@@ -25,7 +25,7 @@ fn sources() -> [String; 2] {
     [SOURCE.to_owned(), state_source]
 }
 
-fn arguments(
+pub(super) fn arguments(
     artifact: &ProgramArtifact,
     memory: &ManagedMemoryBudget,
     steps: u64,

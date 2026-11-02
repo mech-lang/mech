@@ -17,6 +17,7 @@ pub(super) struct Counts {
     pub phase_sites: BTreeMap<u64, u64>,
     pub phase_initial_fuel: Vec<u64>,
     pub phase_write_fuel: Vec<u64>,
+    pub first_change_backings: Vec<(usize, usize)>,
     pub phase_settlements: Vec<(u64, u64, u64, u64)>,
     pub poisoned_exit_words: usize,
     pub poisoned_private_homes: usize,
@@ -138,8 +139,54 @@ unsafe extern "C" fn helper(
             });
         }
     }
+    let first_change = if op == GlobalHelper::NumericWritePrepare.raw() {
+        // SAFETY: the generated entry is suspended at this same synchronous
+        // helper. Only an address is retained across the original callback.
+        let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        let metadata = ctx.descriptor.metadata();
+        let id = metadata.closed_tails.sites[site as usize].unwrap();
+        let region = &metadata.closed_tails.regions[id];
+        let proof = region.numeric.as_ref().unwrap();
+        use crate::native_artifact::program::prepare::readonly_numeric::Operation;
+        let (Operation::Write { array, .. } | Operation::Append { array, .. }) =
+            proof.action(site as usize).unwrap()
+        else {
+            panic!("first change requires a numeric store");
+        };
+        let owner = ctx
+            .state
+            .buffer_frames
+            .managed_owner(
+                &metadata.buffer_frames,
+                region.tail.carrier(),
+                proof.arrays[*array].field,
+            )
+            .unwrap();
+        let mech_core::ValueData::Matrix(matrix) = owner.data() else {
+            panic!("numeric store requires packed words");
+        };
+        Some((id, *array, address(matrix.elements())))
+    } else {
+        None
+    };
     // SAFETY: unchanged arguments and result pointer from the checked entry.
     let status = unsafe { HELPER.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
+    if status == 0
+        && let Some((id, array, before)) = first_change
+    {
+        // SAFETY: the delegated callback has ended; its private owner is now
+        // retained by this invocation until the generated continuation resumes.
+        let ctx = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
+        let private = ctx
+            .state
+            .buffer_frames
+            .private_array_mut(id, array)
+            .unwrap()
+            .as_ref()
+            .unwrap();
+        let after = address(private.elements());
+        COUNTS.with(|v| v.borrow_mut().first_change_backings.push((before, after)));
+    }
     if op == GlobalHelper::ClosedTailBegin.raw() && status == 0 {
         // SAFETY: the checked helper completed and retained its result cell.
         let selected = unsafe { *out };
@@ -210,6 +257,16 @@ unsafe extern "C" fn helper(
         });
     }
     status
+}
+fn address(view: mech_core::snapshot::SequenceView<'_>) -> usize {
+    use mech_core::snapshot::SequenceView as S;
+    match view {
+        S::U8(v) => v.as_ptr() as usize,
+        S::U16(v) => v.as_ptr() as usize,
+        S::U32(v) => v.as_ptr() as usize,
+        S::U64(v) => v.as_ptr() as usize,
+        _ => panic!("first-change observation requires unsigned packed words"),
+    }
 }
 pub(super) fn run(
     jit: &JitProgramArtifact,
