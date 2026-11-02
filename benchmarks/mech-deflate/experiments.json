@@ -9794,7 +9794,7 @@
       "base": "d5e88ff2e66714ad4ee1d1f200518958401cea9a",
       "production": "509c0d8e05a234020372b43832d7785f255c1b59",
       "compiler_source": "509c0d8e05a234020372b43832d7785f255c1b59",
-      "decision": "under measurement",
+      "decision": "retain: matched8B elapsed -1.314335%,1KB -8.215636%; separate8B instructions lower and1KB -10.441718%, cycles -7.771928%. Per-call heap requests/bytes/peak unchanged. Native code -20436B, entry stack -768B. All required maintained selections pass with unchanged allowances.",
       "events": [
         {
           "event": "initial",
@@ -10024,7 +10024,32 @@
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "test_source": "b91ab7e6a3",
+      "ci_source": "d5e88ff2e66714ad4ee1d1f200518958401cea9a",
+      "versions": [
+        145,
+        99,
+        38,
+        14
+      ],
+      "retained": true,
+      "source_disposition": "Retained generic scalar-aggregate funding; no new owner/cache. Shared aggregate emitter and owned-map/lifecycle rules retained. IR145/99/38/14.",
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "4df4d883b21cd89bc6735f5e82460fb258edad1189ee9b2e1d5b38ab7ca6e369",
+          "profile-numbers.json": "5e0803cb8d73c11d24c5c09212a4335dff470da56508dd675fc574a662d3d971",
+          "scorecard.json": "6266a20a135491069d3960b774fa68ab2658abbe3a8714fed226121ec08245d1",
+          "validation.json": "d9aaf794a10d567bbcbcb8e0a3640eb1c43bbf33cbe6226e06440489e2538ccd"
+        }
+      },
+      "skipped_coverage": [
+        "existing expensive knucleotide-body runtime exclusion",
+        "fresh Core/no_std/all-features/minimal dependency graph",
+        "hosted CI",
+        "full-scale timing"
+      ]
     }
   },
   "repository": "mech-lang/mech",
