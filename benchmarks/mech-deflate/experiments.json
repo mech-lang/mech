@@ -8019,6 +8019,28 @@
         "all_server_digests_match": true,
         "native_binaries_included": false
       }
+    },
+    "107": {
+      "base": "8f6e6a8de9e4928a88f1341dd0538504bd2336e6",
+      "production": "8f6e6a8de9e4928a88f1341dd0538504bd2336e6",
+      "compiler_source": "8f6e6a8de9e4928a88f1341dd0538504bd2336e6",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "input-scaling-profile",
+          "source_revision": "8f6e6a8de9e4928a88f1341dd0538504bd2336e6",
+          "asset": "r107-input-scaling-profile-faa40a3a0bc6.tar.gz",
+          "sha256": "faa40a3a0bc69b1fda93ab260585b315bbbbace193edb47d311444daca4fc833",
+          "manifest_sha256": "3c6bca00aae1b64fd51e25c94dca86886558d8c441dce26eaf9da05b4c16d029",
+          "bytes": 294709,
+          "files": 128,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-input-scaling-profile-round107-20261101/archives/r107-input-scaling-profile-faa40a3a0bc6.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
