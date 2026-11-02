@@ -7802,6 +7802,17 @@
           "files": 45,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-primary-reference-a635b1071507.tar.gz"
+        },
+        {
+          "event": "primary-group0",
+          "source_revision": "ec55e3f856306b07d34050b8b95ac0289a28fb5f",
+          "asset": "r105-primary-group0-675896536818.tar.gz",
+          "sha256": "6758965368185a150cad53bc600346124d9f05106feb0b87d5bb3bfd27ed7734",
+          "manifest_sha256": "2c4b852ce07f8dbec697673677433d22694cd72cff3fb690d1d20bb80f177d0c",
+          "bytes": 144114,
+          "files": 47,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-primary-group0-675896536818.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
