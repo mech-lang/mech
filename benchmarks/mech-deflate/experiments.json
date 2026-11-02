@@ -9660,6 +9660,17 @@
             "improving_blocks": 47,
             "adverse_blocks": 17
           }
+        },
+        {
+          "event": "scale-measure-1024",
+          "source_revision": "2f0cc8b85e7dbcef53abfe16d76742872a7ceca2",
+          "asset": "r115-scale-measure-1024-0f29648ece24.tar.gz",
+          "sha256": "0f29648ece24734131dd08d1347dcf76e5a514d1d463f796ecb320c1798f8149",
+          "manifest_sha256": "20d471772ebcbb885354e77a22a979cb419406c7f4a71d919e470b50470532d3",
+          "bytes": 105980,
+          "files": 60,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-scale-measure-1024-0f29648ece24.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
