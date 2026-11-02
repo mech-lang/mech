@@ -10347,6 +10347,17 @@
           "files": 33,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-zero-trip-round118-20261102/archives/r118-primary-reference-3b03dfebae0a.tar.gz"
+        },
+        {
+          "event": "primary-group0",
+          "source_revision": "509c0d8e05a234020372b43832d7785f255c1b59",
+          "asset": "r118-primary-group0-d8f481bf7b1d.tar.gz",
+          "sha256": "d8f481bf7b1da6c3716ebb0f8bc7e6b4cf12a4d625c1373eff633cf112156999",
+          "manifest_sha256": "aed0067276de262a1979a84e31498abce546382e40017facf780d37b33b2020a",
+          "bytes": 79482,
+          "files": 35,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-zero-trip-round118-20261102/archives/r118-primary-group0-d8f481bf7b1d.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
