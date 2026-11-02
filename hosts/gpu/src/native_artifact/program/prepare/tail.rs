@@ -117,6 +117,12 @@ impl Layout {
                 None
             };
             let successors = |site: usize| {
+                if numeric.as_ref().is_some_and(|proof| {
+                    !proof.prepaid_sites.is_empty()
+                        && proof.exits.iter().any(|exit| exit.to == site)
+                }) {
+                    return Vec::new();
+                }
                 numeric
                     .as_ref()
                     .and_then(|proof| proof.phase.as_ref())
@@ -186,7 +192,12 @@ impl Layout {
                 }
                 sites.push(site);
             }
-            if !closed || !seen[tail.finish() as usize] || !seen[tail.latch() as usize] {
+            let partial = numeric
+                .as_ref()
+                .is_some_and(|proof| !proof.prepaid_sites.is_empty());
+            if !closed
+                || (!partial && (!seen[tail.finish() as usize] || !seen[tail.latch() as usize]))
+            {
                 continue;
             }
             // Cut all and only the declared backedges in the selected phase.
@@ -354,11 +365,18 @@ impl Layout {
         if self.sites.get(site).copied().flatten().is_some()
             || self.initializers.get(site).copied().flatten().is_some()
             || self.exits.get(site).copied().flatten().is_some()
+            || self.prepaid_site(site)
         {
             OVERHEAD
         } else {
             0
         }
+    }
+    pub fn prepaid_site(&self, site: usize) -> bool {
+        self.regions
+            .iter()
+            .filter_map(|region| region.numeric.as_ref())
+            .any(|proof| proof.prepaid_sites.binary_search(&site).is_ok())
     }
 }
 

@@ -266,6 +266,9 @@ impl Invocation<'_, '_, '_> {
         let Some(proof) = &region.numeric else {
             return Ok(());
         };
+        if mode == 0 && matches!(proof.result, crate::native_artifact::program::prepare::readonly_numeric::ResultRecipe::Unreachable) {
+            return Err(invalid("native interval reached an ordinary-only finish"));
+        }
         for (ordinal, slot) in proof
             .fields(region.tail.carrier().get())
             .ok_or_else(|| invalid("numeric scalar frame missing"))?

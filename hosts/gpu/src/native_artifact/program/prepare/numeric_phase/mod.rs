@@ -15,12 +15,20 @@ mod bounds;
 mod cold;
 mod flow;
 mod homes;
+mod intervals;
 mod schedule;
 mod words;
 pub(in crate::native_artifact) use bounds::Bound;
 pub(in crate::native_artifact) use cold::Child as ColdChild;
 pub(in crate::native_artifact) use homes::boundary_work;
 pub(in crate::native_artifact) use schedule::Schedule;
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub(in crate::native_artifact) enum Coverage {
+    Complete,
+    ScalarCold,
+    Intervals,
+}
 
 /// Candidate source comparison. A bounded-trip proof must additionally prove
 /// recurrence, entry seed, the selected edge and an invariant opposite operand.
@@ -58,6 +66,10 @@ pub(in crate::native_artifact) struct Forest {
     pub sites: BTreeSet<usize>,
     /// A current traversal order, cutting each declared latch backedge.
     pub order: Vec<usize>,
+    /// Actual native exits; unlike a summary, these have no native successor.
+    pub stops: BTreeSet<usize>,
+    /// The complete root traversal paid before a partial interval starts.
+    pub prepaid_sites: BTreeSet<usize>,
 }
 
 impl Forest {
@@ -236,24 +248,35 @@ impl Forest {
         plan: &Plan,
         root: &NativeTailLoop,
     ) -> Result<Self, &'static str> {
-        Self::derive_inventory(plan, root, false)
+        Self::derive_inventory(plan, root, Coverage::Complete)
     }
 
     pub(in crate::native_artifact) fn with_cold_children(
         plan: &Plan,
         root: &NativeTailLoop,
     ) -> Result<Self, &'static str> {
-        Self::derive_inventory(plan, root, true)
+        Self::derive_inventory(plan, root, Coverage::ScalarCold)
+    }
+
+    pub(in crate::native_artifact) fn intervals(
+        plan: &Plan,
+        root: &NativeTailLoop,
+    ) -> Result<Self, &'static str> {
+        Self::derive_inventory(plan, root, Coverage::Intervals)
     }
 
     pub fn successors(&self, plan: &Plan, site: usize) -> Vec<usize> {
-        cold::successors(&self.cold, plan, site)
+        if self.stops.contains(&site) {
+            Vec::new()
+        } else {
+            cold::successors(&self.cold, plan, site)
+        }
     }
 
     fn derive_inventory(
         plan: &Plan,
         root: &NativeTailLoop,
-        allow_cold: bool,
+        mode: Coverage,
     ) -> Result<Self, &'static str> {
         let root_id = plan
             .iterations()
@@ -263,12 +286,24 @@ impl Forest {
             })
             .ok_or("numeric phase root is absent")? as u32;
         let mut members = BTreeSet::from([root_id]);
-        let cold = if allow_cold {
+        let cold = if mode == Coverage::ScalarCold {
             cold::children(plan, root_id)?
         } else {
             Vec::new()
         };
-        while !allow_cold {
+        let (mut stops, prepaid_sites) = if mode == Coverage::Intervals {
+            intervals::boundaries(plan, root_id)?
+        } else {
+            (BTreeSet::new(), BTreeSet::new())
+        };
+        let successors = |site| {
+            if stops.contains(&site) {
+                Vec::new()
+            } else {
+                cold::successors(&cold, plan, site)
+            }
+        };
+        while mode == Coverage::Complete {
             let before = members.len();
             for (id, loop_) in plan.iterations().iter().enumerate() {
                 if loop_
@@ -311,11 +346,7 @@ impl Forest {
             ) {
                 return Err("numeric phase has an unsupported terminator");
             }
-            pending.extend(
-                cold::successors(&cold, plan, site as usize)
-                    .into_iter()
-                    .map(|s| s as u32),
-            );
+            pending.extend(successors(site as usize).into_iter().map(|s| s as u32));
         }
         let mut loops = Vec::new();
         for iteration in members {
@@ -324,7 +355,10 @@ impl Forest {
             };
             if [tail.header(), tail.latch(), tail.finish()]
                 .iter()
-                .any(|s| !sites.contains(&(*s as usize)))
+                .any(|s| {
+                    !sites.contains(&(*s as usize))
+                        && (mode != Coverage::Intervals || *s == tail.header())
+                })
                 || (iteration != root_id
                     && [tail.initialize(), tail.exit()]
                         .iter()
@@ -340,11 +374,15 @@ impl Forest {
                 finish: tail.finish() as usize,
                 exit: tail.exit() as usize,
                 parent: tail.parent(),
-                sites: sites
-                    .iter()
-                    .copied()
-                    .filter(|&s| plan.blocks()[s].iteration() == Some(iteration))
-                    .collect(),
+                sites: if mode == Coverage::Intervals {
+                    &prepaid_sites
+                } else {
+                    &sites
+                }
+                .iter()
+                .copied()
+                .filter(|&s| plan.blocks()[s].iteration() == Some(iteration))
+                .collect(),
             });
         }
         let backedges = loops
@@ -356,7 +394,7 @@ impl Forest {
             .map(|&s| (s, 0usize))
             .collect::<BTreeMap<_, _>>();
         for &site in &sites {
-            for next in cold::successors(&cold, plan, site) {
+            for next in successors(site) {
                 if next != root.exit() as usize && !backedges.contains(&(site, next)) {
                     *incoming
                         .get_mut(&next)
@@ -371,7 +409,7 @@ impl Forest {
         let mut order = Vec::new();
         while let Some(site) = ready.pop() {
             order.push(site);
-            for next in cold::successors(&cold, plan, site) {
+            for next in successors(site) {
                 if next == root.exit() as usize || backedges.contains(&(site, next)) {
                     continue;
                 }
@@ -385,11 +423,17 @@ impl Forest {
         if order.len() != sites.len() {
             return Err("numeric phase has an undeclared cycle");
         }
+        stops.retain(|site| sites.contains(site));
+        if mode == Coverage::Intervals && stops.is_empty() {
+            return Err("numeric interval has no reachable cold boundary");
+        }
         Ok(Self {
             loops,
             cold,
             sites,
             order,
+            stops,
+            prepaid_sites,
         })
     }
 }
