@@ -11611,6 +11611,17 @@
           "files": 69,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-call-bank-round122-20261102/archives/r122-counters-3b4e856d9796.tar.gz"
+        },
+        {
+          "event": "scale-counters",
+          "source_revision": "da58ad43e12a7c9e078631514f1c06d874d4c384",
+          "asset": "r122-scale-counters-99601ee8c6bc.tar.gz",
+          "sha256": "99601ee8c6bc0a55e0308a12b6c5db66417a7a7bb1428a416b67b5c5c91f377c",
+          "manifest_sha256": "24f33037d19e36f0a99ce169e799d31086807592f11f53e3c90ffba728d1e513",
+          "bytes": 82640,
+          "files": 83,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-call-bank-round122-20261102/archives/r122-scale-counters-99601ee8c6bc.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
