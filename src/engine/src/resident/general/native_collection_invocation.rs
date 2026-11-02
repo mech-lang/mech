@@ -569,14 +569,29 @@ impl NativeCollectionCall {
                 },
             )?
         } else {
-            let facts = live::facts_with(
+            let mut facts = TurnMemoryFacts::default();
+            live::facts_with_indexed_into(
                 &self.memory,
                 self.template.origin().node(),
                 &arguments,
                 ResidentValueRef::Snapshot(core::slice::from_ref(output)),
                 &self.schemas,
-                |value, descriptor, schemas, observed| {
-                    live::footprint_with_check(value, descriptor, schemas, observed, &mut check)
+                &mut facts,
+                |ordinal, value, descriptor, schemas, observed| {
+                    let layout = match ordinal {
+                        Some(ordinal) => self
+                            .inputs
+                            .get(ordinal)
+                            .ok_or(MemoryPlanError::DescriptorArityMismatch)?,
+                        None => &self.output,
+                    };
+                    let entry = schemas
+                        .entry(layout.schema_id)
+                        .filter(|entry| entry.key() == layout.schema_key)
+                        .ok_or(MemoryPlanError::DescriptorMismatch)?;
+                    live::footprint_with_schema_check(
+                        value, descriptor, entry, observed, &mut check,
+                    )
                 },
             )?;
             Arc::new(self.plan_current(&facts)?)

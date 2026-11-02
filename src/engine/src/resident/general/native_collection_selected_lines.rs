@@ -201,7 +201,7 @@ impl NativePreparedLibraryCall {
                     &self.schemas,
                     self.template.clone(),
                     self.factory,
-                    self.descriptor_templates.as_deref(),
+                    Some(self.binding_metadata()),
                     &[lines.shape().parameter_values(), selector_parameters],
                     &output_parameters,
                     None,

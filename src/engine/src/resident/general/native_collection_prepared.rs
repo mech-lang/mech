@@ -572,6 +572,14 @@ impl NativePreparedLibraryCall {
         Ok(())
     }
 
+    fn binding_metadata(&self) -> super::PreparedBindingMetadata<'_> {
+        super::PreparedBindingMetadata {
+            descriptors: self.descriptor_templates.as_deref(),
+            input_keys: &self.input_keys,
+            output_key: self.output_key,
+        }
+    }
+
     // Called only after the enclosing binding reservation and work debit.
     // Keep the SAME live shape resolver on both first cached binding and
     // parameterized calls; empty shape tapes do not waive consistency checks.
@@ -689,7 +697,7 @@ impl NativePreparedLibraryCall {
             &self.schemas,
             self.template.clone(),
             self.factory,
-            self.descriptor_templates.as_deref(),
+            Some(self.binding_metadata()),
             &parameters,
             output_parameters,
             record_selector(&self.template, inputs),
