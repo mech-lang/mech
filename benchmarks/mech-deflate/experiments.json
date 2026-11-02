@@ -11169,8 +11169,8 @@
           "manifest_sha256": "e9983cd1c921f027fef95135f978a52c62c3ffd718b67686ec25da203485e025",
           "bytes": 4442042,
           "files": 67,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-replay-inputs-bf565d569ab4.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-replay-inputs-bf565d569ab4.tar.gz"
         },
         {
           "event": "replay-owner-proof",
@@ -11180,13 +11180,13 @@
           "manifest_sha256": "266f533dc4ae170298e18f533998744354505fbb273b21d248ef4f38b0289a7b",
           "bytes": 5703461,
           "files": 104,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-replay-owner-proof-a27b98399de3.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-replay-owner-proof-a27b98399de3.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified"
     }
   },
   "repository": "mech-lang/mech",
