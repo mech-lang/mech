@@ -12072,6 +12072,33 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-primary-group3-9e14de020b56.tar.gz"
+        },
+        {
+          "event": "primary-summary",
+          "source_revision": "fc8e98e8d7230b78ff01644ae1457828f281673b",
+          "asset": "r124-primary-summary-b801fd170116.tar.gz",
+          "sha256": "b801fd170116ad7b0c8bebda2cdbf4f989bfb659c077ea0c257dda5c91b3cefd",
+          "manifest_sha256": "9334a98f3ce41b2baef5cbb51ebf3962421e6c1c2d73443f8be1add4fde45207",
+          "bytes": 211115,
+          "files": 51,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-primary-summary-b801fd170116.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.000284,
+            "medians": {
+              "after": 0.0020305625000000002,
+              "before": 0.002183042
+            },
+            "multiples_of_reference": {
+              "after": 7.149867957746479,
+              "before": 7.686767605633802
+            },
+            "after_over_before": 0.9301527409916989,
+            "improving_groups": 4,
+            "improving_blocks": 61,
+            "adverse_blocks": 3
+          }
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
