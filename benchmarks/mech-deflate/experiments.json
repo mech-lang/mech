@@ -8852,7 +8852,7 @@
       "base": "a105e9a76978ff7bbb4a8dd56968a3c7b8e457b8",
       "production": "c85dfe8bcea3bc39a626a5287f2fa1ee5a22ad5c",
       "compiler_source": "c85dfe8bcea3bc39a626a5287f2fa1ee5a22ad5c",
-      "decision": "under measurement",
+      "decision": "hold: 8B +0.061063%, 1KB +3.439195%; instructions +0.213220% and cycles +0.156626% in a separate 1KB cohort; heap unchanged. Preserve contrary small hardware-cycle delta and mixed 8B pairs.",
       "events": [
         {
           "event": "initial",
@@ -8994,13 +8994,30 @@
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "retained": false,
+      "versions": [
+        143,
+        99,
+        39,
+        14
+      ],
+      "test_source": "f41078177598a32ff4bc60e69d9ae8c963812c76",
+      "ci_source": "a105e9a76978ff7bbb4a8dd56968a3c7b8e457b8",
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "diagnostics.json": "f10216f57d821cc8b7392a9b2f5b015b0689eb7101e4d1f9ee18ec841caf2e78",
+          "scorecard.json": "0e05216d951d26003945ff1186d8e97dfb52ba732444387f03443bf1a8f26a56"
+        }
+      },
+      "source_disposition": "Held; default restored to ABI38 in 951eb640a6. All candidate source commits and diagnostic patches retained."
     },
     "113": {
       "base": "a105e9a76978ff7bbb4a8dd56968a3c7b8e457b8",
       "production": "62b901e9b0cb81b2c84359bc41a48a50f56ecfa5",
       "compiler_source": "62b901e9b0cb81b2c84359bc41a48a50f56ecfa5",
-      "decision": "under measurement",
+      "decision": "hold: 8B +1.117953%, 1KB +0.674712%, no improving 8B pair or 1KB block. Duplicate prefix lookup removed, but helper frame grows320\u2192464B and numeric entry remains+272B. No current hardware/heap cohort claimed for R113.",
       "events": [
         {
           "event": "initial",
@@ -9131,13 +9148,30 @@
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "retained": false,
+      "versions": [
+        143,
+        99,
+        39,
+        14
+      ],
+      "test_source": "d4a7f89b9bcd71049e6fbc87be4bf68abd8fc76a",
+      "ci_source": "a105e9a76978ff7bbb4a8dd56968a3c7b8e457b8",
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "diagnostics.json": "fe8df0db8351f27c1d8a198d7db558814e5ee21da87bc2c79e9191acde8f69e3",
+          "scorecard.json": "bb1a8fa9c68345416c2f2668748531cd15aadd8f26bb81c59982d6858b576ec6"
+        }
+      },
+      "source_disposition": "Held; default restored to ABI38 in 951eb640a6. All candidate source commits and diagnostic patches retained."
     },
     "114": {
       "base": "a105e9a76978ff7bbb4a8dd56968a3c7b8e457b8",
       "production": "f327ef9489aaa0997f4d8627256f1a14eb70b0c4",
       "compiler_source": "f327ef9489aaa0997f4d8627256f1a14eb70b0c4",
-      "decision": "under measurement",
+      "decision": "retain small elapsed/instruction improvement:8B -0.457797% and independent confirmation -0.712040%;1KB -0.315317% and confirmation -0.251231%; instructions -0.319321%/-0.121892%; heap unchanged. Preserve adverse cycles +0.272690%/+0.542664% and linked text +4096B. Callback/native entry frames unchanged.",
       "events": [
         {
           "event": "initial",
@@ -9438,7 +9472,28 @@
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "retained": true,
+      "versions": [
+        143,
+        99,
+        38,
+        14
+      ],
+      "test_source": "f327ef9489aaa0997f4d8627256f1a14eb70b0c4",
+      "ci_source": "a105e9a76978ff7bbb4a8dd56968a3c7b8e457b8",
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "0a6294d4971dff524be3b4facb9a48f9f798a5401f38cba784e246bcf42a461b",
+          "profile-numbers.json": "108c80c631448d9de99f25875029a8d8674aeb84d3b25f3675b92ae0343c2d3c",
+          "scorecard.json": "0aee6486691c586cceec28a0417d6bd4d1efa23092b24e9190bce5be9e68b7f4",
+          "validation.json": "11199e97d631af3136a12125b01d03233de2026dbe1b4e44dd90b337f2baa2b0"
+        }
+      },
+      "object_source": "705c5acdc4fc92be5beeacf28d02721ea4e39ddf",
+      "object_reused": true,
+      "source_disposition": "Retain one runtime inline attribute; compiler/protocol/types unchanged. Exact R108 Object reused with validated provenance."
     }
   },
   "repository": "mech-lang/mech",
