@@ -7530,6 +7530,17 @@
           "files": 64,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-initial-90f9df15faa1.tar.gz"
+        },
+        {
+          "event": "primary-reference",
+          "source_revision": "636da5e074add0632f7154f14d8d39848721cd16",
+          "asset": "r104-primary-reference-769dc046d19b.tar.gz",
+          "sha256": "769dc046d19bd85c6a7a340302db23de297ebcb76856d1311e6ab295da35a559",
+          "manifest_sha256": "67d782a5c6e95c33d425c05369553e3e04ec36d4fe89f2df3372188e2455449a",
+          "bytes": 206526,
+          "files": 46,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-primary-reference-769dc046d19b.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
