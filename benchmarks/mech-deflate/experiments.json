@@ -8862,8 +8862,8 @@
           "manifest_sha256": "c3246638ebaa4f36a5adc54e30d2acb50d3e287c9e7ecd107f53d3b3d5409088",
           "bytes": 4397783,
           "files": 79,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-initial-b47b3a2bd59b.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r112-initial-b47b3a2bd59b.tar.gz"
         },
         {
           "event": "primary-reference",
@@ -8873,8 +8873,8 @@
           "manifest_sha256": "7416d0673e42cc1d4613f6f6f05af538b0c4552fc886bb2432d8e8af2927058d",
           "bytes": 153126,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-primary-reference-c915e0871469.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r112-primary-reference-c915e0871469.tar.gz"
         },
         {
           "event": "primary-group0",
@@ -8884,8 +8884,8 @@
           "manifest_sha256": "56fb980e03202abf90b415607ccbfbb1e9eefd770e6f0e7c9479a168b90ff1b3",
           "bytes": 94824,
           "files": 46,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-primary-group0-3f7b05fae161.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r112-primary-group0-3f7b05fae161.tar.gz"
         },
         {
           "event": "primary-group1",
@@ -8895,8 +8895,8 @@
           "manifest_sha256": "bffe3e029d26d05bab18e04223b5651166bc8c6b7636b8faae4f02c5bbdb72a7",
           "bytes": 95069,
           "files": 46,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-primary-group1-4304039b5dd3.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r112-primary-group1-4304039b5dd3.tar.gz"
         },
         {
           "event": "primary-group2",
@@ -8906,8 +8906,8 @@
           "manifest_sha256": "6c34958c74e8008349527688ea4bf571127b701b7dceb37954be82c177e9d928",
           "bytes": 94498,
           "files": 46,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-primary-group2-928f2cf80e77.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r112-primary-group2-928f2cf80e77.tar.gz"
         },
         {
           "event": "primary-group3",
@@ -8917,8 +8917,8 @@
           "manifest_sha256": "9a3db69188e56cd73be6e9b80b59258c4169c00037948ef27784516f176f5dac",
           "bytes": 94474,
           "files": 46,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-primary-group3-fe497085c57a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r112-primary-group3-fe497085c57a.tar.gz"
         },
         {
           "event": "primary-summary",
@@ -8928,8 +8928,7 @@
           "manifest_sha256": "66f49655037cb16b637238fd8937fc1eb56502b601d84c066cfb80cef86cc506",
           "bytes": 67368,
           "files": 43,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-primary-summary-356949fd3d7a.tar.gz",
+          "publication": "published; server SHA-256 verified",
           "timing": {
             "primary_observations": 3968,
             "reference_seconds": 0.000286,
@@ -8945,7 +8944,8 @@
             "improving_groups": 1,
             "improving_blocks": 31,
             "adverse_blocks": 33
-          }
+          },
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r112-primary-summary-356949fd3d7a.tar.gz"
         },
         {
           "event": "scale-measure-1024",
@@ -8955,8 +8955,8 @@
           "manifest_sha256": "7ef94afe3723eb12da93bb986c0b2940f2e284d1aa952e24a8d2712af89c0735",
           "bytes": 85569,
           "files": 57,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-scale-measure-1024-74c9e67b54e2.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r112-scale-measure-1024-74c9e67b54e2.tar.gz"
         },
         {
           "event": "scale-counters",
@@ -8966,8 +8966,8 @@
           "manifest_sha256": "d2bba928faac5c88b3fbf28d4da18d701affef830e6cecf08b6ec3a5a260e6f5",
           "bytes": 91072,
           "files": 74,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-scale-counters-a8b04101073c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r112-scale-counters-a8b04101073c.tar.gz"
         },
         {
           "event": "isolated-profile-scale",
@@ -8977,8 +8977,8 @@
           "manifest_sha256": "306e004a688a47542f3512d12565073bf246643d3c930cb64da36b6e33cec8c8",
           "bytes": 324267,
           "files": 53,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-isolated-profile-scale-fbd26d9c51c7.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r112-isolated-profile-scale-fbd26d9c51c7.tar.gz"
         },
         {
           "event": "closure",
@@ -8988,13 +8988,13 @@
           "manifest_sha256": "57f8abe18edda0bfedc05d5d348fc74db20d5c332c1116831820e1beeb8ee218",
           "bytes": 4858091,
           "files": 171,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-closure-c173f04740df.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r112-closure-c173f04740df.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "retained": false,
       "versions": [
         143,
