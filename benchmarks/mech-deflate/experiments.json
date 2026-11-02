@@ -12373,6 +12373,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-regression-heap-57cf5efeb6fd.tar.gz"
+        },
+        {
+          "event": "owner-diagnostic",
+          "source_revision": "a03a04a13a266ea39edaacf96725af10f6989874",
+          "asset": "r125-owner-diagnostic-0b89489c3da9.tar.gz",
+          "sha256": "0b89489c3da9f3d73998765920bb46d431e6c1db8a7b9ddd543ab62175fa8166",
+          "manifest_sha256": "77172059945b02d5b4038b87c717b5472cfe5b1913e696bdbd228c436da69b57",
+          "bytes": 125257,
+          "files": 57,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-owner-diagnostic-0b89489c3da9.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
