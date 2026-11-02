@@ -467,6 +467,15 @@ jobs:
           cargo +nightly-2026-03-03 test --locked -p mech-gpu \
             --features jit --test memory_runtime
           cargo +nightly-2026-03-03 check --locked -p mech-gpu --features native
+      - name: Execute prepared schema header measurement contracts
+        run: |
+          HEADER_TESTS=$(cargo +nightly-2026-03-03 test --locked -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact,pure_text \
+            --lib -- prepared_schema_header_ --list)
+          test "$(printf '%s\n' "$HEADER_TESTS" | awk '/prepared_schema_header_.*: test$/ { count += 1 } END { print count + 0 }')" -eq 2
+          cargo +nightly-2026-03-03 test --locked -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact,pure_text \
+            --lib -- prepared_schema_header_ --test-threads=1
       - name: Execute native compiler and batched array regressions
         timeout-minutes: 25
         run: |
