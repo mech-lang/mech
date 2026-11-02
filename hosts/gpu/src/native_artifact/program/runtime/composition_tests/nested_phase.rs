@@ -4,6 +4,27 @@ use super::*;
 
 const SOURCE: &str = include_str!("../../../../../tests/fixtures/native/numeric-nested-phase.mec");
 
+fn sources() -> [String; 2] {
+    let state_source = SOURCE
+        .replacen(
+            "+> sequence\n",
+            concat!(
+                "+> sequence\n",
+                include_str!(
+                    "../../../../../tests/fixtures/native/numeric-nested-phase-states.mec"
+                ),
+                "\n",
+            ),
+            1,
+        )
+        .replacen(
+            "phase-candidates(values, 1u64, 0u64, permitted, divisor)",
+            "#PhaseCandidates(values, permitted, divisor, 1u64, 0u64)",
+            1,
+        );
+    [SOURCE.to_owned(), state_source]
+}
+
 fn arguments(
     artifact: &ProgramArtifact,
     memory: &ManagedMemoryBudget,
@@ -45,7 +66,7 @@ fn expected(steps: u64, mut flag: bool, divisor: u64, bias: u64) -> Data {
 
 #[test]
 fn nested_numeric_phase_keeps_aliases_current_arguments_and_failure_recovery() {
-    for artifact in artifacts(SOURCE) {
+    for artifact in sources().iter().flat_map(|source| artifacts(source)) {
         let mode = NativeProgramLimitMode::NoLimits;
         let memory = mode.memory_budget();
         let jit = JitProgramArtifact::compile_with_limits(
@@ -146,7 +167,9 @@ fn nested_numeric_phase_keeps_aliases_current_arguments_and_failure_recovery() {
 
 #[test]
 fn nested_numeric_phase_finite_limits_keep_publication_and_retry() {
-    resources::finite_boundaries(SOURCE, |artifact, memory| {
-        arguments(artifact, memory, 2, true, true, u64::MAX, 1, 0)
-    });
+    for source in sources() {
+        resources::finite_boundaries(&source, |artifact, memory| {
+            arguments(artifact, memory, 2, true, true, u64::MAX, 1, 0)
+        });
+    }
 }

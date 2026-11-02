@@ -1,0 +1,29 @@
+// Enum-state children mirror the path scanner's Matches and Lengths loops.
+phase-checked-word(values<[u32]>, at<u64>, allowed<bool>) => (out<u64>) :=
+  allowed! := allowed
+  out<u64> := values[at + 1u64].
+phase-checked-quotient(number<u64>, allowed<bool>, divisor<u64>) => (out<u64>) :=
+  allowed! := allowed
+  out := number / divisor.
+
+#PhasePrefixes(values<[u32]>, end<u64>, allowed<bool>, divisor<u64>, at<u64>, number<u64>) => <u64>
+  | :Try(at<u64>, number<u64>)
+  | :Done(number<u64>).
+#PhasePrefixes(values, end, allowed, divisor, at, number) -> :Try(at, number)
+  :Try(at, number)
+    | at < end -> {
+        word := phase-checked-word(values, at, allowed)
+      } -> :Try(at + 1u64, number + word)
+    | * -> :Done(number)
+  :Done(number) => phase-checked-quotient(number, allowed, divisor).
+
+#PhaseCandidates(values<[u32]>, allowed<bool>, divisor<u64>, end<u64>, number<u64>) => <u64>
+  | :Try(end<u64>, number<u64>)
+  | :Done(number<u64>).
+#PhaseCandidates(values, allowed, divisor, end, number) -> :Try(end, number)
+  :Try(end, number)
+    | end <= sequence/length(values) -> {
+        prefix := #PhasePrefixes(values, end, allowed, divisor, 0u64, 0u64)
+      } -> :Try(end + 1u64, number + prefix)
+    | * -> :Done(number)
+  :Done(number) => number.
