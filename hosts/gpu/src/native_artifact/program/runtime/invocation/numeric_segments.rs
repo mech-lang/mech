@@ -248,8 +248,9 @@ impl Invocation<'_, '_, '_> {
             let mut current_fields = None;
             for (ordinal, slot) in recipe.fields.iter().enumerate() {
                 if let Some(slot) = slot {
-                    current_fields =
-                        current_fields.or_else(|| metadata.buffer_frames.fields_at(value as usize));
+                    if current_fields.is_none() {
+                        current_fields = metadata.buffer_frames.fields_at(value as usize);
+                    }
                     let Some((_, bits)) = current_fields
                         .and_then(|f| f.get(ordinal))
                         .and_then(|f| self.state.buffer_frames.current_leaf(*f))
@@ -499,8 +500,9 @@ impl Invocation<'_, '_, '_> {
                         {
                             if let Some(word) = word {
                                 let bits = self.read_borrowed_word(*word)?;
-                                current_fields = current_fields
-                                    .or_else(|| metadata.buffer_frames.fields(*value));
+                                if current_fields.is_none() {
+                                    current_fields = metadata.buffer_frames.fields(*value);
+                                }
                                 let field = current_fields
                                     .and_then(|fields| fields.get(ordinal))
                                     .ok_or_else(|| {
@@ -514,8 +516,9 @@ impl Invocation<'_, '_, '_> {
                                     .as_ref()
                                     .ok_or_else(|| invalid("parent export source pin missing"))?
                                     .clone();
-                                current_fields = current_fields
-                                    .or_else(|| metadata.buffer_frames.fields(*value));
+                                if current_fields.is_none() {
+                                    current_fields = metadata.buffer_frames.fields(*value);
+                                }
                                 let field = current_fields
                                     .and_then(|fields| fields.get(ordinal))
                                     .ok_or_else(|| {
