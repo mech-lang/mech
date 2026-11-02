@@ -34,7 +34,7 @@ scalar/enum arguments and results remain native. Selected path iterations136
 and170 each include all three loops,398 source sites,94 scalar operations,
 10 typed loads and one append. Actual generated success backedges contain zero
 helpers. Two identical complete-call diagnostic traces per size confirm the
-replaced path segments disappear:1KB path alias exports **18,450→0**, including
+replaced path segments disappear:1KB internal path-segment alias exports **18,450→0**, including
 18,432 per-position exports and18 terminal exports. Across the complete call,
 ordinary admissions fall100,264→48,025, helpers96,648→72,063 and segment alias
 exports39,527→21,077. These are callback/export counts, not allocation counts.
@@ -122,7 +122,11 @@ limitations explicit before selecting the next measured compiler change.
 No fresh Core/no_std/all-features/minimal dependency rebuild, linked40/frame8
 rerun, hosted CI completion, review approval or full-scale timing is claimed.
 The compact index supplies immutable journals, source revisions, exact commands,
-counter/profile scopes and deterministic offline report reconstruction.
+counter/profile scopes and deterministic offline report reconstruction. All20
+evidence archives (8,666,137 compressed bytes) and sidecars have verified server
+digests. Fresh public retrieval verifies1,678 file occurrences/499 unique paths
+and reproduces all four indexed reports byte-for-byte. No native binary, Object,
+library or bytecode is uploaded.
 
 ## R118: zero-trip source variant; R116 compiler unchanged
 

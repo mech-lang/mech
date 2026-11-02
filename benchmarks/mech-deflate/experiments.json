@@ -10892,6 +10892,20 @@
         "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
         "bytecode_revision": 14,
         "source_variant_included": false
+      },
+      "public_replay": {
+        "byte_identical_outputs": [
+          "mechanism.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 10,
+        "round": 119,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 499,
+        "verified_archives": 20,
+        "verified_file_occurrences": 1678
       }
     }
   },
