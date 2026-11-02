@@ -7700,9 +7700,20 @@
           "files": 90,
           "publication": "published; server SHA-256 verified",
           "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r104-publication-recovery-4c4bae5e9c35.tar.gz"
+        },
+        {
+          "event": "replay-inputs",
+          "source_revision": "636da5e074add0632f7154f14d8d39848721cd16",
+          "asset": "r104-replay-inputs-0f521da7dc6c.tar.gz",
+          "sha256": "0f521da7dc6cba7f8809087520128c44e2003ebc15c75230d29e765d650a24ad",
+          "manifest_sha256": "f788f78215f68f8107357b75f61e1d5f9a8753677e75e1924b1f4756030b8ab5",
+          "bytes": 4553270,
+          "files": 80,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-replay-inputs-0f521da7dc6c.tar.gz"
         }
       ],
-      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "archive_publication": "local-only at measurement; external publication pending",
       "test_source": "636da5e074add0632f7154f14d8d39848721cd16",
       "ci_source": "f51c45f8febc5d4f9855ac970931a2bc3292ab77",
       "analysis": {
@@ -7710,8 +7721,8 @@
         "expected_outputs": {
           "mechanism.json": "abfdf3e0ed34d3d8ff71a272c87ddad69d50dcd794fd2882c3f61e51bee9511a",
           "profile-numbers.json": "bed568177919c7b0379bf5c633a14065defbf31a70b981effa9b5ca5f04d7371",
-          "scorecard.json": "6d040ad383e6d7b8581bc7db896b025dd98f09063411495bd1411d9340dfe318",
-          "validation.json": "4b123667d16282b0ecefb5391e582114f158858024bc73f1e95f93adbc04493d"
+          "scorecard.json": "58be3dfad27c5a8a0aff7a9c7ac195aeea95c190a7978ea30bdbba237a59b90f",
+          "validation.json": "2e41f1aa64182b31e5e94e0d8a661552a73e0174ddf95045dcc44dab2e04a55a"
         }
       },
       "release_tag": "evidence-native-compression-experiments-2",
