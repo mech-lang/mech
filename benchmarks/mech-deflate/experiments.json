@@ -7726,7 +7726,54 @@
         }
       },
       "release_tag": "evidence-native-compression-experiments-2",
-      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2"
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "mechanism.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 10,
+        "round": 104,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 663,
+        "verified_archives": 16,
+        "verified_file_occurrences": 1402
+      },
+      "historical_default_release_replay": {
+        "byte_identical_outputs": [
+          "mechanism.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 18,
+        "round": 103,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 547,
+        "verified_archives": 16,
+        "verified_file_occurrences": 1316
+      },
+      "publication_verification": {
+        "archives": 16,
+        "sidecars": 16,
+        "all_server_digests_match": true,
+        "native_binaries_included": false
+      },
+      "publication_harness_workflow_check": {
+        "command": [
+          "/private/tmp/mech-profile-ci-python-20261030/bin/python",
+          "-B",
+          "-m",
+          "unittest",
+          "tests.ci.test_ci_full_contract",
+          "tests.ci.test_ci_test_inventory"
+        ],
+        "exit": 0,
+        "seconds": 11.152500125113875,
+        "scope": "Rerun after optional per-round release metadata support; actual R103 default-tag replay also passes all four original hashes."
+      }
     }
   },
   "repository": "mech-lang/mech",
