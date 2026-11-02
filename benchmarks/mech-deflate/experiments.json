@@ -10070,6 +10070,28 @@
         "all_server_digests_match": true,
         "native_binaries_included": false
       }
+    },
+    "117": {
+      "base": "6a303c6d92d14f5a88ab4aecb9999fda205f285a",
+      "production": "8e7334a4fdd929c58f0d741195c3d8a1857d81af",
+      "compiler_source": "8e7334a4fdd929c58f0d741195c3d8a1857d81af",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "primary-reference",
+          "source_revision": "8e7334a4fdd929c58f0d741195c3d8a1857d81af",
+          "asset": "r117-primary-reference-c56e25ce0dab.tar.gz",
+          "sha256": "c56e25ce0dab63d3bb7b7cc77f2dabe3e4b237314ec4f59d3a1795ee5a84c6d8",
+          "manifest_sha256": "1aa799a09f5ad399c5e5d5e1e8b12d9be736689a69f204726a45ca1bee310a92",
+          "bytes": 159991,
+          "files": 50,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-primary-reference-c56e25ce0dab.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
