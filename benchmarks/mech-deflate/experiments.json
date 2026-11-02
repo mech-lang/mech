@@ -11116,6 +11116,17 @@
           "files": 59,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-boundary-census-after-8937a3e3362d.tar.gz"
+        },
+        {
+          "event": "binary-audit",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-binary-audit-c426e35b9767.tar.gz",
+          "sha256": "c426e35b97670362e8e4cc251f50508b5f09743c6bee93cfc55f4f43392179ae",
+          "manifest_sha256": "3060de3707181d3d5a78e27244881df8df305b4e1f055d6729512cc75bb9cb39",
+          "bytes": 64294,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-binary-audit-c426e35b9767.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
