@@ -10616,6 +10616,28 @@
         "verified_archives": 19,
         "verified_file_occurrences": 999
       }
+    },
+    "119": {
+      "base": "6a303c6d92d14f5a88ab4aecb9999fda205f285a",
+      "production": null,
+      "compiler_source": "509c0d8e05a234020372b43832d7785f255c1b59",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "509c0d8e05a234020372b43832d7785f255c1b59",
+          "asset": "r119-initial-430920a5bc71.tar.gz",
+          "sha256": "430920a5bc718d776fe0c9874cf7bf799f983167bf8b44cff0f692b2f54c4e0c",
+          "manifest_sha256": "a88b481cad7dcf0fe712bf8d80e19147d01e6f54ec1e41c20a2df72015515a47",
+          "bytes": 94384,
+          "files": 59,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-initial-430920a5bc71.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
