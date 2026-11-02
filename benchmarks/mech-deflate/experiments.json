@@ -8489,8 +8489,8 @@
           "manifest_sha256": "3d8fa7a58b91d66c2a8f43a7856d45a2bee8e47fffa47a3ddb909457cba1a8e3",
           "bytes": 4396767,
           "files": 59,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-frame-geometry-round110-20261102/archives/r110-initial-b07532b5e0c7.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r110-initial-b07532b5e0c7.tar.gz"
         },
         {
           "event": "primary-reference",
@@ -8500,8 +8500,8 @@
           "manifest_sha256": "812a26d17b9562a48cea6ccdfe0c5e8a9fe50030e034d0d62172f337050b4e60",
           "bytes": 156856,
           "files": 45,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-frame-geometry-round110-20261102/archives/r110-primary-reference-eca5222a01db.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r110-primary-reference-eca5222a01db.tar.gz"
         },
         {
           "event": "primary-group0",
@@ -8511,8 +8511,8 @@
           "manifest_sha256": "6b06ee377ff09a87f777856f8567f82996ee196fad74f87ae8f712de1cac3ab0",
           "bytes": 98777,
           "files": 47,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-frame-geometry-round110-20261102/archives/r110-primary-group0-9be72c883a34.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r110-primary-group0-9be72c883a34.tar.gz"
         },
         {
           "event": "primary-group1",
@@ -8522,8 +8522,8 @@
           "manifest_sha256": "3cdee18d8f67d4dbde21a5132bade9579a360e201bfc2418a8b5b13220b1a1da",
           "bytes": 98762,
           "files": 47,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-frame-geometry-round110-20261102/archives/r110-primary-group1-82b7962add80.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r110-primary-group1-82b7962add80.tar.gz"
         },
         {
           "event": "primary-group2",
@@ -8533,8 +8533,8 @@
           "manifest_sha256": "18f216531cb43ea241f32574c6aaf36d59845f74003787fadfb8fa9e84a0a4c0",
           "bytes": 98747,
           "files": 47,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-frame-geometry-round110-20261102/archives/r110-primary-group2-06f18ce874ea.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r110-primary-group2-06f18ce874ea.tar.gz"
         },
         {
           "event": "primary-group3",
@@ -8544,8 +8544,8 @@
           "manifest_sha256": "2b7178c87db9e8e42b14f607bbceb838d535b6879be8f52716b30e963510ebca",
           "bytes": 98821,
           "files": 47,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-frame-geometry-round110-20261102/archives/r110-primary-group3-1ae8cced4c90.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r110-primary-group3-1ae8cced4c90.tar.gz"
         },
         {
           "event": "primary-summary",
@@ -8555,8 +8555,7 @@
           "manifest_sha256": "cffef4b2b9d3caa7eaa8679b59e6143ccd741d871ac9681003f8c1f1111a0169",
           "bytes": 70785,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-frame-geometry-round110-20261102/archives/r110-primary-summary-a2f54a358d80.tar.gz",
+          "publication": "published; server SHA-256 verified",
           "timing": {
             "primary_observations": 3968,
             "reference_seconds": 0.000292,
@@ -8572,7 +8571,8 @@
             "improving_groups": 1,
             "improving_blocks": 23,
             "adverse_blocks": 41
-          }
+          },
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r110-primary-summary-a2f54a358d80.tar.gz"
         },
         {
           "event": "scale-measure-1024",
@@ -8582,8 +8582,8 @@
           "manifest_sha256": "4a1efa60de96e7a46e244d831ca7350814d71681becacf6a21e888b04ceda85e",
           "bytes": 89047,
           "files": 58,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-frame-geometry-round110-20261102/archives/r110-scale-measure-1024-93f9e3b22760.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r110-scale-measure-1024-93f9e3b22760.tar.gz"
         },
         {
           "event": "geometry-binary",
@@ -8593,8 +8593,8 @@
           "manifest_sha256": "b7aa7cc528d49f755f0a0f4f75d87dc950887c7885a620014627183682106260",
           "bytes": 108463,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-frame-geometry-round110-20261102/archives/r110-geometry-binary-e20c55ac2838.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r110-geometry-binary-e20c55ac2838.tar.gz"
         },
         {
           "event": "closure",
@@ -8604,13 +8604,13 @@
           "manifest_sha256": "6a29146714bd1c8e49432be91aebc739e34accaeda03ecd6eecee8979e251d07",
           "bytes": 4423768,
           "files": 78,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-frame-geometry-round110-20261102/archives/r110-closure-e604773085bd.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r110-closure-e604773085bd.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "retained": false,
       "retained_baseline": "3b310eb80f84ab16757923f270931fd53cf1477b",
       "analysis": {
