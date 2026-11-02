@@ -12604,6 +12604,17 @@
           "files": 73,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-continuation-primary-group3-b927e48554b0.tar.gz"
+        },
+        {
+          "event": "continuation-primary-summary",
+          "source_revision": "914ab57fab23f831f6bb99e5f8a0e8419d2c3004",
+          "asset": "r125-continuation-primary-summary-1467c4d94cd8.tar.gz",
+          "sha256": "1467c4d94cd8f9480254e8cf43b1fe525eb39f9b72737d95fa01ae227a545152",
+          "manifest_sha256": "5877095fcc8207585762e5583b096a1cd1bf0033803f7c8ee06d57c0c7a3ba8f",
+          "bytes": 140800,
+          "files": 70,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-continuation-primary-summary-1467c4d94cd8.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
