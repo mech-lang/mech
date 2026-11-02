@@ -12143,6 +12143,17 @@
           "files": 75,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-counters-fd7a9ddae27c.tar.gz"
+        },
+        {
+          "event": "scale-counters",
+          "source_revision": "fc8e98e8d7230b78ff01644ae1457828f281673b",
+          "asset": "r124-scale-counters-1c7054de6b37.tar.gz",
+          "sha256": "1c7054de6b378c19ed4aaa797353e48170187e289eb54d58fd721b3392e89db3",
+          "manifest_sha256": "2a1c5fa4dcd5ab5a67bee1381e9d8cc479bd71a9f45af127cc63d04e9c0d151a",
+          "bytes": 239883,
+          "files": 89,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-scale-counters-1c7054de6b37.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
