@@ -8392,6 +8392,33 @@
           "files": 46,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-frame-geometry-round109-20261102/archives/r107-primary-group3-1618629a6b00.tar.gz"
+        },
+        {
+          "event": "primary-summary",
+          "source_revision": "0cbf5b9f6b5870c40aac5a75bc7c89bb23c9b32a",
+          "asset": "r107-primary-summary-e29cfd37524c.tar.gz",
+          "sha256": "e29cfd37524caa99e8d60720b84f9d5d7a979e06db0f015b7766fe62d3e6c214",
+          "manifest_sha256": "540645eb2767a7a76d326eeb5b4776adce15832941791b2884cfcce8cc42b3f8",
+          "bytes": 70197,
+          "files": 43,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-frame-geometry-round109-20261102/archives/r107-primary-summary-e29cfd37524c.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.00029,
+            "medians": {
+              "after": 0.0023307915,
+              "before": 0.002312313
+            },
+            "multiples_of_reference": {
+              "after": 8.037212068965518,
+              "before": 7.973493103448275
+            },
+            "after_over_before": 1.0079913489220536,
+            "improving_groups": 0,
+            "improving_blocks": 13,
+            "adverse_blocks": 51
+          }
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
