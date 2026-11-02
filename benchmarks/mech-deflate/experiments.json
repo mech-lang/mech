@@ -12659,6 +12659,17 @@
           "files": 83,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-continuation-isolated-profile-rich-9f02d799f2c3.tar.gz"
+        },
+        {
+          "event": "final-qualification",
+          "source_revision": "914ab57fab23f831f6bb99e5f8a0e8419d2c3004",
+          "asset": "r125-final-qualification-1a02094798ae.tar.gz",
+          "sha256": "1a02094798aec45e5a12963edf5f6cc1f18bceb0974cacc99cdab610b1b3581e",
+          "manifest_sha256": "d38c8ef97b25a52b3b5774f7141739d861248db5a9ad6c67a67fa2601b6ceada",
+          "bytes": 219186,
+          "files": 133,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-final-qualification-1a02094798ae.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
