@@ -1,0 +1,573 @@
+{
+  "schema_version": 3,
+  "encoding_name": "MechSnapshotEncodingV1",
+  "value_vectors": [
+    {
+      "id": "bool",
+      "input": { "schema": { "kind": "Bool" }, "shape_values": [], "value": true },
+      "expected": {
+        "schema_hex": "0100000000010000000000000001",
+        "schema_key_hex": "ae4fd11fd6195a3547c6aa0a5dc7e31a491ae0a604d1ff6543ed6472e88cbadb",
+        "shape_hex": "0100000000",
+        "payload_hex": "01",
+        "value_hash_hex": "ee9e1269904567ee1e7d1e8331e7311825a0451078d43d5cebe8281dd0e956ad"
+      }
+    },
+    {
+      "id": "f64",
+      "input": {
+        "schema": { "kind": "FloatingPoint", "bit_width": 64 },
+        "shape_values": [],
+        "value": 1.5
+      },
+      "expected": {
+        "schema_hex": "01000000000300000000000000044000",
+        "schema_key_hex": "ae4b870aa1e427f32cf87ad584f9786a0ae3c4144f16efcb1fe28696fd4c8dee",
+        "shape_hex": "0100000000",
+        "payload_hex": "000000000000f83f",
+        "value_hash_hex": "67dabee9a12a3509a8dc273d273e2369ed4439a01800ff679d87ab40706ca0d9"
+      }
+    },
+    {
+      "id": "fixed-matrix-f64-2x3",
+      "input": {
+        "schema": {
+          "kind": "Matrix",
+          "element": { "kind": "FloatingPoint", "bit_width": 64 },
+          "dimensions": [
+            { "kind": "Constant", "value": 2 },
+            { "kind": "Constant", "value": 3 }
+          ]
+        },
+        "shape_values": [],
+        "value": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+      },
+      "expected": {
+        "schema_hex": "010000000032000000000000000f03000000000000000440000200000009000000000000000102000000000000000900000000000000010300000000000000",
+        "schema_key_hex": "a82508791d9895b98ad242c236b3f465e70ae5ae9778ae22437cf53a5740eb41",
+        "shape_hex": "0100000000",
+        "payload_hex": "000000000000f03f00000000000000400000000000000840000000000000104000000000000014400000000000001840",
+        "value_hash_hex": "15e6c2664b2ead5faaeb24751dc1999c4f71c3e7564f72ce7899feea2b3e6b66"
+      }
+    },
+    {
+      "id": "activation-vector-f64-n-0-to-1024",
+      "input": {
+        "dimension_parameters": [
+          {
+            "lifetime": "Activation",
+            "lower_bound": { "kind": "Constant", "value": 0 },
+            "upper_bound": { "kind": "Constant", "value": 1024 }
+          }
+        ],
+        "schema": {
+          "kind": "Matrix",
+          "element": { "kind": "FloatingPoint", "bit_width": 64 },
+          "dimensions": [{ "kind": "Parameter", "ordinal": 0 }]
+        },
+        "shape_values": [7],
+        "value": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+      },
+      "expected": {
+        "schema_hex": "01010000000109000000000000000100000000000000000109000000000000000100040000000000001d000000000000000f03000000000000000440000100000005000000000000000200000000",
+        "schema_key_hex": "a4f9e40f46bcff934611b212d7767be0afbef5c2626e73d1616d5eae3fefb2a6",
+        "shape_hex": "01010000000700000000000000",
+        "payload_hex": "0000000000000000000000000000f03f00000000000000400000000000000840000000000000104000000000000014400000000000001840",
+        "value_hash_hex": "b6e6788f40180a5a8230a836022ac2cb330cdde4fc4967dd6bfdd7cedc8fdfac"
+      }
+    },
+    {
+      "id": "tuple-bool-u64",
+      "input": {
+        "schema": {
+          "kind": "Tuple",
+          "elements": [
+            { "kind": "Bool" },
+            { "kind": "UnsignedInteger", "bit_width": 64 }
+          ]
+        },
+        "shape_values": [],
+        "value": [true, 42]
+      },
+      "expected": {
+        "schema_hex": "010000000019000000000000000d020000000100000000000000010300000000000000024000",
+        "schema_key_hex": "bf585ea127d32f51ed764321b287c3ae4333be492cbd979267869978748e3cc4",
+        "shape_hex": "0100000000",
+        "payload_hex": "012a00000000000000",
+        "value_hash_hex": "dc4c92e9ddb4f18412c0fb1c7ed46d632ec526bf66790af98bd7e09162ddea15"
+      }
+    },
+    {
+      "id": "record-x-y-f64",
+      "input": {
+        "schema": {
+          "kind": "Record",
+          "fields": [
+            { "name": "x", "schema": { "kind": "FloatingPoint", "bit_width": 64 } },
+            { "name": "y", "schema": { "kind": "FloatingPoint", "bit_width": 64 } }
+          ]
+        },
+        "shape_values": [],
+        "value": { "x": 1.0, "y": -2.0 }
+      },
+      "expected": {
+        "schema_hex": "01000000002d000000000000000e0200000001000000000000007803000000000000000440000100000000000000790300000000000000044000",
+        "schema_key_hex": "12040d06b7cc8368c0e3f0fc0e707ef17a5a63a8a76742910949a1a59f3214fe",
+        "shape_hex": "0100000000",
+        "payload_hex": "000000000000f03f00000000000000c0",
+        "value_hash_hex": "c37db8b8150ec67af54554cc4ee132a0061780a4967fbe27942e45fa325d6e88"
+      }
+    },
+    {
+      "id": "option-string",
+      "input": {
+        "schema": { "kind": "Option", "element": { "kind": "String" } },
+        "shape_values": [],
+        "value": { "present": true, "value": "mech" }
+      },
+      "expected": {
+        "schema_hex": "01000000000a000000000000000c010000000000000007",
+        "schema_key_hex": "ea002fdb55ad6a72a86b744108b93cec06c873396e1294e049819bafae29a764",
+        "shape_hex": "0100000000",
+        "payload_hex": "0104000000000000006d656368",
+        "value_hash_hex": "a6c48b1b7219d30ed8d7b1c26bd1b7b91964c6cd6e866dc6cb0148e34d66b61d"
+      }
+    },
+    {
+      "id": "enum-two-variants-one-payload",
+      "input": {
+        "schema": {
+          "kind": "Enum",
+          "nominal_path": ["fixture", "Choice"],
+          "variants": [
+            { "name": "Off" },
+            { "name": "On", "payload": { "kind": "UnsignedInteger", "bit_width": 64 } }
+          ]
+        },
+        "shape_values": [],
+        "value": { "ordinal": 1, "payload": 7 }
+      },
+      "expected": {
+        "schema_hex": "010000000047000000000000000b8f9a0964450fe4b42888a07cb90aa33129453813ccc9b9805b958caf83fe7ad90200000003000000000000004f66660002000000000000004f6e010300000000000000024000",
+        "schema_key_hex": "ccdc9b743d9add4a1ceb13321b7a94b877dbd2d0bf0e0df37884a4eeaaea403a",
+        "shape_hex": "0100000000",
+        "payload_hex": "010000000700000000000000",
+        "value_hash_hex": "82db280c6fb1740917b82653d1b431d18b68b408a3749498127631c37a77b87e"
+      }
+    },
+    {
+      "id": "reified-type-schema",
+      "input": {
+        "schema": { "kind": "ReifiedType" },
+        "shape_values": [],
+        "value": { "kind": "Schema", "schema": { "kind": "Bool" } }
+      },
+      "expected": {
+        "schema_hex": "0100000000010000000000000013",
+        "schema_key_hex": "d1e02483d6edd8e12b254c8dd561911d5c47d8688b65a993f502d8f00660f785",
+        "shape_hex": "0100000000",
+        "payload_hex": "02ae4fd11fd6195a3547c6aa0a5dc7e31a491ae0a604d1ff6543ed6472e88cbadb",
+        "value_hash_hex": "d8bad67d4476677eac2e215fc1f94941462a1ce7ebc0a1b17c7b64a709c90092"
+      }
+    },
+    {
+      "id": "set-f64",
+      "input": {
+        "schema": {
+          "kind": "Set",
+          "element": { "kind": "FloatingPoint", "bit_width": 64 },
+          "cardinality": { "kind": "Constant", "value": 3 }
+        },
+        "shape_values": [],
+        "value": [-1.0, 0.0, 2.0]
+      },
+      "expected": {
+        "schema_hex": "01000000001d000000000000001103000000000000000440000900000000000000010300000000000000",
+        "schema_key_hex": "400abfb3570d3613d8d439cea89aab7b4e695597621e70347b974bf356bea63e",
+        "shape_hex": "0100000000",
+        "payload_hex": "0300000000000000000000000000f0bf00000000000000000000000000000040",
+        "value_hash_hex": "e59b6570ecf303b78bf48ec4ecbc316ac6945a9959ae08ba110cfbd40937a300"
+      }
+    },
+    {
+      "id": "map-string-u64",
+      "input": {
+        "schema": {
+          "kind": "Map",
+          "key": { "kind": "String" },
+          "value": { "kind": "UnsignedInteger", "bit_width": 64 },
+          "cardinality": { "kind": "Constant", "value": 2 }
+        },
+        "shape_values": [],
+        "value": [["b", 2], ["a", 1]]
+      },
+      "expected": {
+        "schema_hex": "010000000026000000000000001201000000000000000703000000000000000240000900000000000000010200000000000000",
+        "schema_key_hex": "51e7a44d31921a74e686a13a9511d25c6021f11f1dcd2ac81e359b52ca3c51b1",
+        "shape_hex": "0100000000",
+        "payload_hex": "020000000000000001000000000000006101000000000000000100000000000000620200000000000000",
+        "value_hash_hex": "2ed845c40652b81762a6c534c37f28749e7666305e1c0a9d27bafa943c5df4ff"
+      }
+    }
+  ],
+  "invalid_value_vectors": [
+    {
+      "id": "tuple-too-short",
+      "input": {
+        "schema": {"kind": "Tuple", "elements": [{"kind": "Bool"}, {"kind": "Bool"}]},
+        "shape_values": [],
+        "value": [true]
+      },
+      "expected": {"error": "AggregateArityMismatchV1"}
+    },
+    {
+      "id": "tuple-too-long",
+      "input": {
+        "schema": {"kind": "Tuple", "elements": [{"kind": "Bool"}]},
+        "shape_values": [],
+        "value": [true, false]
+      },
+      "expected": {"error": "AggregateArityMismatchV1"}
+    },
+    {
+      "id": "record-missing-field",
+      "input": {
+        "schema": {"kind": "Record", "fields": [{"name": "x", "schema": {"kind": "Bool"}}, {"name": "y", "schema": {"kind": "Bool"}}]},
+        "shape_values": [],
+        "value": {"x": true}
+      },
+      "expected": {"error": "AggregateFieldMismatchV1"}
+    },
+    {
+      "id": "record-extra-field",
+      "input": {
+        "schema": {"kind": "Record", "fields": [{"name": "x", "schema": {"kind": "Bool"}}]},
+        "shape_values": [],
+        "value": {"x": true, "y": false}
+      },
+      "expected": {"error": "AggregateFieldMismatchV1"}
+    },
+    {
+      "id": "option-present-missing-value",
+      "input": {
+        "schema": {"kind": "Option", "element": {"kind": "Bool"}},
+        "shape_values": [],
+        "value": {"present": true}
+      },
+      "expected": {"error": "PayloadCardinalityMismatchV1"}
+    },
+    {
+      "id": "enum-ordinal-out-of-range",
+      "input": {
+        "schema": {"kind": "Enum", "nominal_path": ["fixture", "Choice"], "variants": [{"name": "Only"}]},
+        "shape_values": [],
+        "value": {"ordinal": 1}
+      },
+      "expected": {"error": "EnumOrdinalOutOfRangeV1"}
+    },
+    {
+      "id": "enum-missing-payload",
+      "input": {
+        "schema": {"kind": "Enum", "nominal_path": ["fixture", "Choice"], "variants": [{"name": "Some", "payload": {"kind": "Bool"}}]},
+        "shape_values": [],
+        "value": {"ordinal": 0}
+      },
+      "expected": {"error": "EnumPayloadMismatchV1"}
+    },
+    {
+      "id": "enum-unexpected-payload",
+      "input": {
+        "schema": {"kind": "Enum", "nominal_path": ["fixture", "Choice"], "variants": [{"name": "None"}]},
+        "shape_values": [],
+        "value": {"ordinal": 0, "payload": true}
+      },
+      "expected": {"error": "EnumPayloadMismatchV1"}
+    },
+    {
+      "id": "matrix-element-count-mismatch",
+      "input": {
+        "schema": {"kind": "Matrix", "element": {"kind": "Bool"}, "dimensions": [{"kind": "Constant", "value": 2}]},
+        "shape_values": [],
+        "value": [true]
+      },
+      "expected": {"error": "PayloadCardinalityMismatchV1"}
+    },
+    {
+      "id": "table-column-set-mismatch",
+      "input": {
+        "schema": {"kind": "Table", "columns": [{"name": "x", "schema": {"kind": "Bool"}}], "row_count": {"kind": "Constant", "value": 1}},
+        "shape_values": [],
+        "value": {"y": [true]}
+      },
+      "expected": {"error": "AggregateFieldMismatchV1"}
+    },
+    {
+      "id": "table-row-count-mismatch",
+      "input": {
+        "schema": {"kind": "Table", "columns": [{"name": "x", "schema": {"kind": "Bool"}}], "row_count": {"kind": "Constant", "value": 2}},
+        "shape_values": [],
+        "value": {"x": [true]}
+      },
+      "expected": {"error": "PayloadCardinalityMismatchV1"}
+    },
+    {
+      "id": "set-cardinality-mismatch",
+      "input": {
+        "schema": {"kind": "Set", "element": {"kind": "Bool"}, "cardinality": {"kind": "Constant", "value": 2}},
+        "shape_values": [],
+        "value": [true]
+      },
+      "expected": {"error": "PayloadCardinalityMismatchV1"}
+    },
+    {
+      "id": "map-entry-arity-mismatch",
+      "input": {
+        "schema": {"kind": "Map", "key": {"kind": "String"}, "value": {"kind": "Bool"}, "cardinality": {"kind": "Constant", "value": 1}},
+        "shape_values": [],
+        "value": [["key"]]
+      },
+      "expected": {"error": "MapEntryArityMismatchV1"}
+    },
+    {
+      "id": "map-cardinality-mismatch",
+      "input": {
+        "schema": {"kind": "Map", "key": {"kind": "String"}, "value": {"kind": "Bool"}, "cardinality": {"kind": "Constant", "value": 2}},
+        "shape_values": [],
+        "value": [["key", true]]
+      },
+      "expected": {"error": "PayloadCardinalityMismatchV1"}
+    },
+    {
+      "id": "shape-parameter-count-mismatch",
+      "input": {
+        "dimension_parameters": [{"lifetime": "Activation", "lower_bound": {"kind": "Constant", "value": 0}, "upper_bound": {"kind": "Constant", "value": 10}}],
+        "schema": {"kind": "Matrix", "element": {"kind": "Bool"}, "dimensions": [{"kind": "Parameter", "ordinal": 0}]},
+        "shape_values": [],
+        "value": []
+      },
+      "expected": {"error": "ShapeParameterCountMismatchV1"}
+    },
+    {
+      "id": "shape-lower-bound-violation",
+      "input": {
+        "dimension_parameters": [{"lifetime": "Activation", "lower_bound": {"kind": "Constant", "value": 2}, "upper_bound": {"kind": "Constant", "value": 4}}],
+        "schema": {"kind": "Matrix", "element": {"kind": "Bool"}, "dimensions": [{"kind": "Parameter", "ordinal": 0}]},
+        "shape_values": [1],
+        "value": [true]
+      },
+      "expected": {"error": "ShapeBoundViolationV1"}
+    },
+    {
+      "id": "shape-upper-bound-violation",
+      "input": {
+        "dimension_parameters": [{"lifetime": "Activation", "lower_bound": {"kind": "Constant", "value": 2}, "upper_bound": {"kind": "Constant", "value": 4}}],
+        "schema": {"kind": "Matrix", "element": {"kind": "Bool"}, "dimensions": [{"kind": "Parameter", "ordinal": 0}]},
+        "shape_values": [5],
+        "value": [true, true, true, true, true]
+      },
+      "expected": {"error": "ShapeBoundViolationV1"}
+    }
+  ],
+  "invalid_schema_vectors": [
+    {"id": "duplicate-record-field", "input": {"schema": {"kind": "Record", "fields": [{"name": "x", "schema": {"kind": "Bool"}}, {"name": "x", "schema": {"kind": "Bool"}}]}}, "expected": {"error": "DuplicateSchemaNameV1"}},
+    {"id": "duplicate-table-column", "input": {"schema": {"kind": "Table", "columns": [{"name": "x", "schema": {"kind": "Bool"}}, {"name": "x", "schema": {"kind": "Bool"}}], "row_count": {"kind": "Constant", "value": 0}}}, "expected": {"error": "DuplicateSchemaNameV1"}},
+    {"id": "duplicate-enum-variant", "input": {"schema": {"kind": "Enum", "nominal_path": ["fixture", "Choice"], "variants": [{"name": "A"}, {"name": "A"}]}}, "expected": {"error": "DuplicateSchemaNameV1"}},
+    {"id": "invalid-unsigned-integer-width", "input": {"schema": {"kind": "UnsignedInteger", "bit_width": 24}}, "expected": {"error": "InvalidSchemaWidthV1"}},
+    {"id": "invalid-signed-integer-width", "input": {"schema": {"kind": "SignedInteger", "bit_width": 24}}, "expected": {"error": "InvalidSchemaWidthV1"}},
+    {"id": "invalid-floating-point-width", "input": {"schema": {"kind": "FloatingPoint", "bit_width": 16}}, "expected": {"error": "InvalidSchemaWidthV1"}},
+    {"id": "invalid-complex-width", "input": {"schema": {"kind": "Complex", "component_bit_width": 16}}, "expected": {"error": "InvalidSchemaWidthV1"}},
+    {"id": "invalid-rational-width", "input": {"schema": {"kind": "Rational", "numerator_width": 32, "denominator_width": 64}}, "expected": {"error": "InvalidSchemaWidthV1"}}
+  ],
+  "key_vectors": [
+    {
+      "id": "f64-signed-zero-equivalence",
+      "input": {
+        "schema": { "kind": "FloatingPoint", "bit_width": 64 },
+        "values": [0.0, { "bits_hex": "8000000000000000" }]
+      },
+      "expected": {
+        "canonical_key_payload_hex": "0000000000000000",
+        "key_hash_hex": "4a16b2e1c1f429c50b64d45d3cf1bdea9af42c857dec939562bf696a1da690c1",
+        "equivalent": true
+      }
+    },
+    {
+      "id": "f64-nan-equivalence",
+      "input": {
+        "schema": { "kind": "FloatingPoint", "bit_width": 64 },
+        "values": [
+          { "bits_hex": "7ff0000000000001" },
+          { "bits_hex": "fff8000000000042" }
+        ]
+      },
+      "expected": {
+        "canonical_key_payload_hex": "000000000000f87f",
+        "key_hash_hex": "06b26a0a523b8c91b68d4d1535e92f597833c542856f74ffa6624556165ab0fb",
+        "equivalent": true
+      }
+    },
+    {
+      "id": "duplicate-canonical-set-keys",
+      "input": {
+        "schema": { "kind": "FloatingPoint", "bit_width": 64 },
+        "values": [0.0, { "bits_hex": "8000000000000000" }]
+      },
+      "expected": { "error": "DuplicateCanonicalKeyV1" }
+    },
+    {
+      "id": "rational64-order",
+      "input": {
+        "schema": { "kind": "Rational", "numerator_width": 64, "denominator_width": 64 },
+        "left": { "numerator": 1, "denominator": 2 },
+        "right": { "numerator": 2, "denominator": 3 }
+      },
+      "expected": { "order": "Less" }
+    },
+    {
+      "id": "complex-not-keyable",
+      "input": {
+        "schema": { "kind": "Complex", "component_bit_width": 64 },
+        "value": { "real": 1.0, "imaginary": 2.0 }
+      },
+      "expected": { "error": "SchemaNotKeyableV1" }
+    }
+  ],
+  "dimension_vectors": [
+    {
+      "id": "nested-add",
+      "input": {
+        "parameter_count": 1,
+        "expression": {
+          "kind": "Add",
+          "operands": [
+            { "kind": "Constant", "value": 4 },
+            {
+              "kind": "Add",
+              "operands": [
+                {
+                  "kind": "Add",
+                  "operands": [
+                    { "kind": "Constant", "value": 1 },
+                    { "kind": "Constant", "value": 2 }
+                  ]
+                },
+                { "kind": "Parameter", "ordinal": 0 }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "normalized_hex": "0302000000090000000000000001070000000000000005000000000000000200000000"
+      }
+    },
+    {
+      "id": "nested-multiply",
+      "input": {
+        "parameter_count": 1,
+        "expression": {
+          "kind": "Multiply",
+          "operands": [
+            { "kind": "Constant", "value": 2 },
+            {
+              "kind": "Multiply",
+              "operands": [
+                { "kind": "Constant", "value": 3 },
+                {
+                  "kind": "Multiply",
+                  "operands": [
+                    { "kind": "Constant", "value": 1 },
+                    { "kind": "Parameter", "ordinal": 0 }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "normalized_hex": "0402000000090000000000000001060000000000000005000000000000000200000000"
+      }
+    },
+    {
+      "id": "nested-min",
+      "input": {
+        "parameter_count": 1,
+        "expression": {
+          "kind": "Min",
+          "operands": [
+            { "kind": "Parameter", "ordinal": 0 },
+            {
+              "kind": "Min",
+              "operands": [
+                { "kind": "Constant", "value": 5 },
+                { "kind": "Parameter", "ordinal": 0 }
+              ]
+            },
+            { "kind": "Constant", "value": 5 }
+          ]
+        }
+      },
+      "expected": {
+        "normalized_hex": "0502000000090000000000000001050000000000000005000000000000000200000000"
+      }
+    },
+    {
+      "id": "nested-max",
+      "input": {
+        "parameter_count": 1,
+        "expression": {
+          "kind": "Max",
+          "operands": [
+            {
+              "kind": "Max",
+              "operands": [
+                { "kind": "Constant", "value": 2 },
+                { "kind": "Parameter", "ordinal": 0 }
+              ]
+            },
+            { "kind": "Constant", "value": 2 },
+            { "kind": "Parameter", "ordinal": 0 }
+          ]
+        }
+      },
+      "expected": {
+        "normalized_hex": "0602000000090000000000000001020000000000000005000000000000000200000000"
+      }
+    },
+    {
+      "id": "add-overflow",
+      "input": {
+        "expression": {
+          "kind": "Add",
+          "operands": [
+            { "kind": "Constant", "value": 18446744073709551615 },
+            { "kind": "Constant", "value": 1 }
+          ]
+        }
+      },
+      "expected": { "error": "DimensionOverflowV1" }
+    },
+    {
+      "id": "multiply-overflow",
+      "input": {
+        "expression": {
+          "kind": "Multiply",
+          "operands": [
+            { "kind": "Constant", "value": 18446744073709551615 },
+            { "kind": "Constant", "value": 2 }
+          ]
+        }
+      },
+      "expected": { "error": "DimensionOverflowV1" }
+    },
+    {
+      "id": "unknown-parameter",
+      "input": {
+        "parameter_count": 1,
+        "expression": { "kind": "Parameter", "ordinal": 1 }
+      },
+      "expected": { "error": "UnknownDimensionParameterV1" }
+    }
+  ]
+}

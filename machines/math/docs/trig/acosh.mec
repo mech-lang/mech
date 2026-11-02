@@ -1,0 +1,77 @@
+math/acosh
+===============================================================================
+
+%% Inverse hyperbolic cosine of argument
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/acosh(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the inverse hyperbolic cosine (area hyperbolic cosine) of each element of `X`. The input `X` is interpreted as a numeric value. The result `Y` has the same shape as the input `X`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `X`      | `float`, `[float]`       | Input value(s). For real inputs, values must be greater than or equal to `1`. For complex inputs, values outside this domain are allowed, producing complex results. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `Y`      | matches input            | Inverse hyperbolic cosine of the input values. For real inputs `x >= 1`, results are real and nonnegative. For complex inputs, results may include both real and imaginary parts. The shape of `Y` matches the shape of `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Find the inverse hyperbolic cosine of a number 
+
+```mech:ex1
+y := math/acosh(2.0)
+```
+
+(b) Find the inverse hyperbolic cosine for a vector of numbers
+
+```mech:ex2
+x := [1, 2, 10]
+y := math/acosh(x)
+```
+
+(c) Find the inverse hyperbolic cosine for a matrix of numbers
+
+```mech:ex3
+x := [1, 2; 3, 4]
+y := math/acosh(x)
+```
+
+(d) Complex input example
+
+```mech:ex4
+x := [-1, 0, 0.5]
+y := math/acosh(x)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The inverse hyperbolic cosine function returns the value whose hyperbolic cosine is the specified input.
+
+For real numbers $$x \geq 1$$:
+
+$$ y = acosh(x)
+
+means $$ cosh(y) = x $$, where $$y \geq 0$$.
+
+The definition in terms of natural logarithms is:
+
+$$ acosh(x) = \ln(x + \sqrt{x^2 - 1})
+
+This form extends the function to complex inputs as well, allowing it to handle values outside the real domain.

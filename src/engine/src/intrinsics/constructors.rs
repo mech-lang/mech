@@ -1,0 +1,1148 @@
+use crate::intrinsics::*;
+#[cfg(any(
+    feature = "set",
+    feature = "set_comprehensions",
+    feature = "matrix_comprehensions",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
+))]
+use std::sync::LazyLock;
+
+#[cfg(feature = "matrix_comprehensions")]
+pub(crate) static PURE_MATRIX_COMPREHENSION_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| {
+        mech_core::maintained_operation_contract("matrix/comprehension", 0, false)
+            .expect("maintained constructor contract")
+    });
+
+#[cfg(feature = "matrix_horzcat")]
+pub(crate) static PURE_MATRIX_HORZCAT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| {
+        mech_core::maintained_operation_contract("matrix/horzcat", 0, false)
+            .expect("maintained constructor contract")
+    });
+
+#[cfg(feature = "matrix_vertcat")]
+pub(crate) static PURE_MATRIX_VERTCAT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| {
+        mech_core::maintained_operation_contract("matrix/vertcat", 0, false)
+            .expect("maintained constructor contract")
+    });
+
+#[cfg(feature = "set")]
+pub(crate) static PURE_SET_DEFINE_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| {
+        mech_core::maintained_operation_contract("set/define", 0, false)
+            .expect("maintained constructor contract")
+    });
+
+#[cfg(feature = "set_comprehensions")]
+pub(crate) static PURE_SET_COMPREHENSION_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| {
+        mech_core::maintained_operation_contract("set/comprehension", 0, false)
+            .expect("maintained constructor contract")
+    });
+
+#[cfg(any(
+    feature = "set_comprehensions",
+    feature = "matrix_comprehensions",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
+))]
+fn variadic_ports(
+    invocation: &FunctionInvocation,
+) -> MResult<(FunctionValueOutput, Vec<FunctionValueInput>)> {
+    if invocation.input_count() == 0 {
+        if invocation.expect_nullary().is_err() {
+            invocation.expect_variadic()?;
+        }
+    } else {
+        invocation.expect_variadic()?;
+    }
+    Ok((
+        invocation.output().value(),
+        invocation.inputs().map(FunctionInputPort::value).collect(),
+    ))
+}
+
+// Set -----------------------------------------------------------------------
+
+#[cfg(feature = "set")]
+pub struct SetDefine;
+
+#[cfg(all(feature = "set", feature = "functions", feature = "semantic-compiler"))]
+impl CanonicalFunctionSpecializer for SetDefine {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        let inputs = invocation.inputs().iter().collect::<Vec<_>>();
+        let descriptor = context.resolved_output_descriptor(
+            0,
+            vec![inputs.len() as u64].into_boxed_slice(),
+            &inputs,
+        )?;
+        let draft =
+            crate::intrinsics::aggregate::canonical_set_from_inputs(invocation.inputs().to_vec())?
+                .snapshot()?
+                .canonical_data_draft()
+                .map_err(|error| {
+                    MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+                })?;
+        let output = ValueCell::from_resolved_descriptor_data(&descriptor, draft)?;
+        let runtime_invocation = FunctionInvocation::nullary(output);
+        let implementation = ValueSet::new_invocation(runtime_invocation.clone())?;
+        context.certify_instance_for_inputs(
+            (implementation, runtime_invocation),
+            mech_core::RuntimeFunctionId::from_name("ValueSet"),
+            mech_core::ExecutionTarget::DirectRuntime,
+            &inputs,
+            mech_core::ImplementationMemoryClass::CanonicalSortUnique,
+        )
+    }
+}
+
+/// Runtime implementation for `set/define`.
+#[cfg(feature = "set")]
+#[derive(Debug)]
+pub struct ValueSet {
+    output: FunctionValueOutput,
+}
+
+#[cfg(all(feature = "set", feature = "functions"))]
+impl MechFunctionImpl for ValueSet {
+    fn payload_output_plan_policy(&self) -> mech_core::PayloadOutputPlanPolicy {
+        mech_core::PayloadOutputPlanPolicy::PublishedInvariant
+    }
+
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        // `set/define` is fully materialized by semantic specialization. A
+        // nullary runtime occurrence preserves that already validated root;
+        // reporting `Changed` without writing a candidate would authorize an
+        // uninitialized publication.
+        Ok(mech_core::ReactiveSolveStatus::Unchanged)
+    }
+
+    fn reactive_dependency_scopes(
+        &self,
+        argument_count: usize,
+    ) -> Option<Vec<ReactiveDependencyScope>> {
+        Some(vec![ReactiveDependencyScope::None; argument_count])
+    }
+
+    fn to_string(&self) -> String {
+        format!("{self:#?}")
+    }
+
+    fn reactive_output_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.output.cell().clone()]
+    }
+}
+
+#[cfg(all(feature = "set", feature = "functions"))]
+impl MechFunctionFactory for ValueSet {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalSortUnique
+    }
+
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::nullary(FunctionValueRepresentation::Set);
+
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let output = invocation.expect_nullary()?.value();
+        let SchemaBody::Set { .. } = output.cell().closed_schema_body()? else {
+            return Err(comprehension_output_error(
+                "set/define",
+                output.representation(),
+            ));
+        };
+        Ok(Box::new(Self { output }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_DEFINE_CONTRACT)
+    }
+}
+
+#[cfg(all(feature = "set", feature = "semantic-compiler"))]
+impl MechFunctionCompiler for ValueSet {
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let output = self.output.compile_register(context)?;
+        context.emit_nullop(hash_str("set/define"), output);
+        Ok(output)
+    }
+}
+
+// Set comprehensions --------------------------------------------------------
+
+#[cfg(any(feature = "set", feature = "set_comprehensions"))]
+#[derive(Debug, Clone)]
+struct SetComprehensionOutputKindMismatchError {
+    found: FunctionValueRepresentation,
+}
+
+#[cfg(any(feature = "set", feature = "set_comprehensions"))]
+impl MechErrorKind for SetComprehensionOutputKindMismatchError {
+    fn name(&self) -> &str {
+        "SetComprehensionOutputKindMismatch"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "Set comprehension bytecode output must be a set, but found {:?}.",
+            self.found
+        )
+    }
+}
+
+#[cfg(any(feature = "set", feature = "set_comprehensions"))]
+fn comprehension_output_error(
+    _operation: &'static str,
+    found: FunctionValueRepresentation,
+) -> MechError {
+    MechError::new(SetComprehensionOutputKindMismatchError { found }, None).with_compiler_loc()
+}
+
+/// Runtime implementation for `set/comprehension`.
+#[cfg(feature = "set_comprehensions")]
+#[derive(Debug)]
+pub struct ValueSetComprehension {
+    arguments: Vec<FunctionValueInput>,
+    output: FunctionValueOutput,
+}
+
+#[cfg(all(feature = "set_comprehensions", feature = "functions"))]
+impl MechFunctionImpl for ValueSetComprehension {
+    fn planned_output_footprints(
+        &self,
+    ) -> MResult<Option<Box<[mech_core::CurrentMemoryFootprint]>>> {
+        Ok(Some(
+            vec![self.output.cell().prospective_set_memory_footprint(
+                self.arguments.iter().map(FunctionValueInput::snapshot),
+            )?]
+            .into_boxed_slice(),
+        ))
+    }
+
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        let footprint = self.output.cell().prospective_set_memory_footprint(
+            self.arguments
+                .iter()
+                .map(|argument| frame.snapshot_function_value_input(argument)),
+        )?;
+        frame.with_admitted_canonical_output(
+            self.output.cell(),
+            footprint,
+            |frame, construction| {
+                let next = construction.try_build_set_with(&self.output, || {
+                    Ok(self
+                        .arguments
+                        .iter()
+                        .map(|argument| frame.snapshot_function_value_input(argument))
+                        .collect::<MResult<Vec<_>>>()?
+                        .into_iter()
+                        .map(|value| value.data().clone())
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice())
+                })?;
+                Ok(((), next))
+            },
+        )?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
+    }
+
+    fn to_string(&self) -> String {
+        format!("{self:#?}")
+    }
+}
+
+#[cfg(all(feature = "set_comprehensions", feature = "functions"))]
+impl MechFunctionFactory for ValueSetComprehension {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalSortUnique
+    }
+
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
+        FunctionValueRepresentation::Set,
+        FunctionValueRepresentation::AnyValue,
+    );
+
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (output, arguments) = variadic_ports(&invocation)?;
+        let SchemaBody::Set { .. } = output.cell().closed_schema_body()? else {
+            return Err(comprehension_output_error(
+                "set/comprehension",
+                output.representation(),
+            ));
+        };
+        Ok(Box::new(Self { arguments, output }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_COMPREHENSION_CONTRACT)
+    }
+}
+
+#[cfg(all(feature = "set_comprehensions", feature = "semantic-compiler"))]
+impl MechFunctionCompiler for ValueSetComprehension {
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let output = self.output.compile_register(context)?;
+        let arguments = self
+            .arguments
+            .iter()
+            .map(|argument| argument.compile_register(context))
+            .collect::<MResult<Vec<_>>>()?;
+        context.emit_varop(hash_str("set/comprehension"), output, arguments);
+        Ok(output)
+    }
+}
+
+// Matrix comprehensions -----------------------------------------------------
+
+#[cfg(any(
+    feature = "matrix_comprehensions",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
+))]
+fn source_matrix_input_drafts(
+    input: &ValueCell,
+) -> MResult<(usize, usize, SchemaBody, Vec<ValueDataDraft>)> {
+    let body = input.closed_schema_body()?;
+    let draft = input
+        .snapshot()?
+        .canonical_data_draft()
+        .map_err(|error| matrix_comprehension_error(format!("{error:?}")))?;
+    if let SchemaBody::Matrix {
+        element,
+        dimensions,
+    } = body
+    {
+        let [
+            DimensionExpr::Constant(rows),
+            DimensionExpr::Constant(columns),
+        ] = dimensions.as_ref()
+        else {
+            return Err(matrix_comprehension_error(
+                "matrix input must have exactly two dimensions",
+            ));
+        };
+        let ValueDataDraft::Matrix(elements) = draft else {
+            return Err(matrix_comprehension_error(
+                "matrix input did not retain canonical matrix data",
+            ));
+        };
+        return Ok((
+            usize::try_from(*rows)
+                .map_err(|_| matrix_comprehension_error("matrix row extent exceeds usize"))?,
+            usize::try_from(*columns)
+                .map_err(|_| matrix_comprehension_error("matrix column extent exceeds usize"))?,
+            *element,
+            elements.into_vec(),
+        ));
+    }
+    Ok((1, 1, body, vec![draft]))
+}
+
+#[cfg(all(
+    test,
+    feature = "f32",
+    feature = "matrixd",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
+))]
+mod matrix_input_tests {
+    use super::*;
+    use mech_core::{
+        ExecutionTarget, FloatWidth, ResolvedOperationDescriptor, RuntimeFunctionId,
+        SpecializedFunction, ValueData, ValueDataDraft,
+        snapshot::{F32Bits, SequenceView},
+    };
+
+    fn managed_factory<F: MechFunctionFactory>(
+        invocation: FunctionInvocation,
+        operation: &'static str,
+    ) -> SpecializedFunction {
+        let implementation = F::new_invocation(invocation.clone()).unwrap();
+        let contract = F::declared_operation_contract().unwrap().clone();
+        SpecializedFunction::syntax_directed(
+            (implementation, invocation),
+            ResolvedOperationDescriptor::from_name(operation, contract).unwrap(),
+            RuntimeFunctionId::from_name(operation),
+            ExecutionTarget::DirectRuntime,
+            F::implementation_memory_class(),
+        )
+        .unwrap()
+    }
+
+    fn matrix(rows: u64, columns: u64, values: &[f32]) -> ValueCell {
+        ValueCell::from_schema_data(
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W32)),
+                dimensions: vec![
+                    DimensionExpr::Constant(rows),
+                    DimensionExpr::Constant(columns),
+                ]
+                .into_boxed_slice(),
+            },
+            ValueDataDraft::Matrix(
+                values
+                    .iter()
+                    .map(|value| ValueDataDraft::F32(F32Bits::from_f32(*value)))
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        )
+        .unwrap()
+    }
+
+    fn values(cell: &ValueCell) -> Vec<f32> {
+        let snapshot = cell.snapshot().unwrap();
+        let ValueData::Matrix(matrix) = snapshot.data() else {
+            panic!("concatenation output must remain a matrix")
+        };
+        let SequenceView::F32(values) = matrix.elements() else {
+            panic!("concatenation output must retain f32 elements")
+        };
+        values.iter().map(|value| value.to_f32()).collect()
+    }
+
+    #[test]
+    fn fixed_matrix_extents_drive_horizontal_and_vertical_concatenation() {
+        let left = matrix(2, 1, &[1.0, 2.0]);
+        let right = matrix(2, 1, &[3.0, 4.0]);
+        assert!(left.shape().parameter_values().is_empty());
+
+        let horizontal = matrix_concatenation_output(&[left, right], false, None).unwrap();
+        assert_eq!(horizontal.shape().parameter_values(), &[2, 2]);
+        assert_eq!(values(&horizontal), vec![1.0, 3.0, 2.0, 4.0]);
+
+        let top = matrix(1, 2, &[1.0, 2.0]);
+        let bottom = matrix(1, 2, &[3.0, 4.0]);
+        let vertical = matrix_concatenation_output(&[top, bottom], true, None).unwrap();
+        assert_eq!(vertical.shape().parameter_values(), &[2, 2]);
+        assert_eq!(values(&vertical), vec![1.0, 2.0, 3.0, 4.0]);
+    }
+
+    #[test]
+    fn managed_matrix_concatenation_reads_live_ports_and_publishes_once() {
+        let left = matrix(2, 1, &[1.0, 2.0]);
+        let right = matrix(2, 1, &[3.0, 4.0]);
+        let output = matrix(2, 2, &[0.0, 0.0, 0.0, 0.0]);
+        let alias = output.clone();
+        let version = output.published_version();
+        let invocation =
+            FunctionInvocation::variadic(output.clone(), vec![left, right].into_boxed_slice());
+        managed_factory::<ValueMatrixConcatenation<false>>(invocation, "matrix/horzcat")
+            .instance()
+            .solve_result()
+            .unwrap();
+
+        assert!(output.same_logical_cell(&alias));
+        assert_eq!(values(&output), vec![1.0, 3.0, 2.0, 4.0]);
+        assert!(output.published_version() > version);
+    }
+}
+
+#[cfg(any(feature = "matrix_comprehensions", feature = "matrix_horzcat"))]
+fn horizontal_comprehension_drafts(
+    arguments: &[ValueCell],
+) -> MResult<(usize, usize, SchemaBody, Box<[ValueDataDraft]>)> {
+    if arguments.is_empty() {
+        return Err(matrix_comprehension_error(
+            "an empty matrix constructor requires an explicit element schema",
+        ));
+    }
+    let parts = arguments
+        .iter()
+        .map(source_matrix_input_drafts)
+        .collect::<MResult<Vec<_>>>()?;
+    let rows = parts[0].0;
+    let element = parts[0].2.clone();
+    if parts.iter().any(|(candidate, _, candidate_element, _)| {
+        *candidate != rows || *candidate_element != element
+    }) {
+        return Err(matrix_comprehension_error(
+            "horizontal inputs must have the same row extent and element schema",
+        ));
+    }
+    let columns = parts
+        .iter()
+        .try_fold(0_usize, |total, (_, columns, _, _)| {
+            total
+                .checked_add(*columns)
+                .ok_or_else(|| matrix_comprehension_error("matrix column extent overflowed"))
+        })?;
+    let mut values = Vec::with_capacity(rows.saturating_mul(columns));
+    for row in 0..rows {
+        for (_, part_columns, _, part_values) in &parts {
+            let start = row.saturating_mul(*part_columns);
+            values.extend_from_slice(&part_values[start..start + part_columns]);
+        }
+    }
+    Ok((rows, columns, element, values.into_boxed_slice()))
+}
+
+#[cfg(feature = "matrix_vertcat")]
+fn vertical_concatenation_drafts(
+    arguments: &[ValueCell],
+) -> MResult<(usize, usize, SchemaBody, Box<[ValueDataDraft]>)> {
+    if arguments.is_empty() {
+        return Err(matrix_comprehension_error(
+            "an empty matrix constructor requires an explicit element schema",
+        ));
+    }
+    let parts = arguments
+        .iter()
+        .map(source_matrix_input_drafts)
+        .collect::<MResult<Vec<_>>>()?;
+    let columns = parts[0].1;
+    let element = parts[0].2.clone();
+    if parts.iter().any(|(_, candidate, candidate_element, _)| {
+        *candidate != columns || *candidate_element != element
+    }) {
+        return Err(matrix_comprehension_error(
+            "vertical inputs must have the same column extent and element schema",
+        ));
+    }
+    let rows = parts.iter().try_fold(0_usize, |total, (rows, _, _, _)| {
+        total
+            .checked_add(*rows)
+            .ok_or_else(|| matrix_comprehension_error("matrix row extent overflowed"))
+    })?;
+    let values = parts
+        .into_iter()
+        .flat_map(|(_, _, _, values)| values)
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    Ok((rows, columns, element, values))
+}
+
+#[cfg(any(
+    feature = "matrix_comprehensions",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
+))]
+fn matrix_comprehension_error(reason: impl Into<String>) -> MechError {
+    MechError::new(GenericError { msg: reason.into() }, None).with_compiler_loc()
+}
+
+#[cfg(all(feature = "matrix_comprehensions", feature = "semantic-compiler"))]
+pub(crate) fn matrix_comprehension_output(arguments: &[ValueCell]) -> MResult<ValueCell> {
+    if arguments.is_empty() {
+        return ValueCell::dynamic_matrix(
+            SchemaBody::Tuple(Box::new([])),
+            vec![0, 0].into_boxed_slice(),
+            Box::new([]),
+        );
+    }
+    let (rows, columns, element, values) = horizontal_comprehension_drafts(arguments)?;
+    let owner = arguments[0].memory_domain().ok_or_else(|| {
+        MechError::from(MemoryRuntimeError::CandidateValidationFailed {
+            object: None,
+            reason: "owned matrix input has no memory session".into(),
+        })
+    })?;
+    ValueCell::dynamic_matrix_in(
+        &owner,
+        element,
+        vec![rows as u64, columns as u64].into_boxed_slice(),
+        values,
+    )
+}
+
+#[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
+fn matrix_concatenation_drafts(
+    arguments: &[ValueCell],
+    vertical: bool,
+) -> MResult<(usize, usize, SchemaBody, Box<[ValueDataDraft]>)> {
+    if vertical {
+        #[cfg(feature = "matrix_vertcat")]
+        {
+            vertical_concatenation_drafts(arguments)
+        }
+        #[cfg(not(feature = "matrix_vertcat"))]
+        unreachable!()
+    } else {
+        #[cfg(feature = "matrix_horzcat")]
+        {
+            horizontal_comprehension_drafts(arguments)
+        }
+        #[cfg(not(feature = "matrix_horzcat"))]
+        unreachable!()
+    }
+}
+
+#[cfg(any(
+    feature = "matrix_comprehensions",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
+))]
+fn canonical_matrix_output_requires_builder(output: &ValueCell) -> bool {
+    matches!(
+        output.representation(),
+        FunctionValueRepresentation::Matrix {
+            element: FunctionMatrixElement::String | FunctionMatrixElement::Value,
+            ..
+        }
+    )
+}
+
+#[cfg(any(
+    feature = "matrix_comprehensions",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
+))]
+fn prospective_matrix_output_footprint(
+    output: &ValueCell,
+    arguments: &[FunctionValueInput],
+) -> MResult<CurrentMemoryFootprint> {
+    // The candidate is a wholly new aggregate. The published output remains
+    // live during staging, but is accounted by the published-footprint input
+    // to turn planning; carrying it into this candidate witness charges the
+    // old payload twice and makes admission depend on stale contents.
+    let shape_parameter_count = output.shape().parameter_values().len() as u64;
+    let shape_bytes = shape_parameter_count
+        .checked_mul(core::mem::size_of::<u64>() as u64)
+        .ok_or_else(|| {
+            MechError::new(
+                MemoryPlanError::ArithmeticOverflow {
+                    field: "matrix construction shape bytes",
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+    let payload_bytes = (core::mem::size_of::<Value>() as u64)
+        .checked_add(shape_bytes)
+        .and_then(|bytes| bytes.checked_add(core::mem::size_of::<ValueData>() as u64))
+        .ok_or_else(|| {
+            MechError::new(
+                MemoryPlanError::ArithmeticOverflow {
+                    field: "matrix construction retained bytes",
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+    let mut footprint = CurrentMemoryFootprint {
+        payload_bytes,
+        // Root + matrix aggregate + sequence container.
+        retained_nodes: 3,
+        shape_parameter_count,
+        ..CurrentMemoryFootprint::default()
+    };
+    for argument in arguments {
+        let input = argument.cell().current_memory_footprint()?;
+        footprint.logical_elements = footprint
+            .logical_elements
+            .checked_add(input.logical_elements)
+            .ok_or_else(|| {
+                MechError::new(
+                    MemoryPlanError::ArithmeticOverflow {
+                        field: "matrix construction logical elements",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        macro_rules! add_input_bound {
+            ($field:ident, $name:literal) => {
+                footprint.$field = footprint.$field.checked_add(input.$field).ok_or_else(|| {
+                    MechError::new(MemoryPlanError::ArithmeticOverflow { field: $name }, None)
+                        .with_compiler_loc()
+                })?;
+            };
+        }
+        add_input_bound!(fixed_bytes, "matrix construction fixed bytes");
+        add_input_bound!(payload_bytes, "matrix construction payload bytes");
+        add_input_bound!(encoded_bytes, "matrix construction encoded bytes");
+        add_input_bound!(retained_nodes, "matrix construction retained nodes");
+        add_input_bound!(schema_bytes, "matrix construction schema bytes");
+    }
+    Ok(footprint)
+}
+
+#[cfg(any(
+    feature = "matrix_comprehensions",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
+))]
+fn managed_matrix_input_drafts(
+    frame: &mech_core::KernelMemoryFrame<'_>,
+    argument: &FunctionValueInput,
+) -> MResult<(usize, usize, Vec<ValueDataDraft>)> {
+    let value = frame.snapshot_function_value_input(argument)?;
+    let draft = value
+        .canonical_data_draft()
+        .map_err(|error| matrix_comprehension_error(format!("{error:?}")))?;
+    let SchemaBody::Matrix { dimensions, .. } = argument.cell().closed_schema_body()? else {
+        return Ok((1, 1, vec![draft]));
+    };
+    let [rows, columns] = dimensions.as_ref() else {
+        return Err(matrix_comprehension_error(
+            "matrix input must have exactly two dimensions",
+        ));
+    };
+    let shape = argument.shape();
+    let rows = usize::try_from(shape.resolve_dimension(rows)?)
+        .map_err(|_| matrix_comprehension_error("matrix row extent exceeds usize"))?;
+    let columns = usize::try_from(shape.resolve_dimension(columns)?)
+        .map_err(|_| matrix_comprehension_error("matrix column extent exceeds usize"))?;
+    let ValueDataDraft::Matrix(elements) = draft else {
+        return Err(matrix_comprehension_error(
+            "matrix input did not retain canonical matrix data",
+        ));
+    };
+    Ok((rows, columns, elements.into_vec()))
+}
+
+#[cfg(any(
+    feature = "matrix_comprehensions",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
+))]
+fn managed_matrix_concatenation_drafts(
+    frame: &mech_core::KernelMemoryFrame<'_>,
+    arguments: &[FunctionValueInput],
+    vertical: bool,
+) -> MResult<(usize, usize, Box<[ValueDataDraft]>)> {
+    if arguments.is_empty() {
+        return Ok((0, 0, Box::new([])));
+    }
+    let parts = arguments
+        .iter()
+        .map(|argument| managed_matrix_input_drafts(frame, argument))
+        .collect::<MResult<Vec<_>>>()?;
+    if vertical {
+        let columns = parts[0].1;
+        if parts.iter().any(|(_, candidate, _)| *candidate != columns) {
+            return Err(matrix_comprehension_error(
+                "vertical inputs must have the same column extent",
+            ));
+        }
+        let rows = parts.iter().try_fold(0_usize, |total, (rows, _, _)| {
+            total
+                .checked_add(*rows)
+                .ok_or_else(|| matrix_comprehension_error("matrix row extent overflowed"))
+        })?;
+        let elements = parts
+            .into_iter()
+            .flat_map(|(_, _, elements)| elements)
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        return Ok((rows, columns, elements));
+    }
+
+    let rows = parts[0].0;
+    if parts.iter().any(|(candidate, _, _)| *candidate != rows) {
+        return Err(matrix_comprehension_error(
+            "horizontal inputs must have the same row extent",
+        ));
+    }
+    let columns = parts.iter().try_fold(0_usize, |total, (_, columns, _)| {
+        total
+            .checked_add(*columns)
+            .ok_or_else(|| matrix_comprehension_error("matrix column extent overflowed"))
+    })?;
+    let mut elements = Vec::with_capacity(rows.saturating_mul(columns));
+    for row in 0..rows {
+        for (_, part_columns, part_elements) in &parts {
+            let start = row
+                .checked_mul(*part_columns)
+                .ok_or_else(|| matrix_comprehension_error("matrix element offset overflowed"))?;
+            let end = start
+                .checked_add(*part_columns)
+                .ok_or_else(|| matrix_comprehension_error("matrix element extent overflowed"))?;
+            let row_elements = part_elements.get(start..end).ok_or_else(|| {
+                matrix_comprehension_error("matrix input data does not match its declared shape")
+            })?;
+            elements.extend_from_slice(row_elements);
+        }
+    }
+    Ok((rows, columns, elements.into_boxed_slice()))
+}
+
+#[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
+fn matrix_concatenation_output(
+    arguments: &[ValueCell],
+    vertical: bool,
+    resolved: Option<&ResolvedType>,
+) -> MResult<ValueCell> {
+    if arguments.is_empty() {
+        return ValueCell::dynamic_matrix(
+            SchemaBody::Tuple(Box::new([])),
+            vec![0, 0].into_boxed_slice(),
+            Box::new([]),
+        );
+    }
+    let (rows, columns, element, values) = matrix_concatenation_drafts(arguments, vertical)?;
+    let owner = arguments[0].memory_domain().ok_or_else(|| {
+        MechError::from(MemoryRuntimeError::CandidateValidationFailed {
+            object: None,
+            reason: "resolved matrix output has no owning memory session".into(),
+        })
+    })?;
+    if let Some(resolved) = resolved {
+        return ValueCell::matrix_from_resolved_type_drafts_in(
+            &owner, resolved, rows, columns, element, values, arguments,
+        );
+    }
+    ValueCell::dynamic_matrix_in(
+        &owner,
+        element,
+        vec![rows as u64, columns as u64].into_boxed_slice(),
+        values,
+    )
+}
+
+#[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
+#[derive(Debug)]
+pub struct ValueMatrixConcatenation<const VERTICAL: bool> {
+    arguments: Vec<FunctionValueInput>,
+    output: FunctionValueOutput,
+    preserve_specialized_output: bool,
+}
+
+#[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
+impl<const VERTICAL: bool> MechFunctionImpl for ValueMatrixConcatenation<VERTICAL> {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        if !canonical_matrix_output_requires_builder(self.output.cell()) {
+            return Ok(None);
+        }
+        Ok(Some(
+            vec![prospective_matrix_output_footprint(
+                self.output.cell(),
+                &self.arguments,
+            )?]
+            .into_boxed_slice(),
+        ))
+    }
+
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        // Frozen nullary constructor IDs represent an output that was fully
+        // materialized while the semantic graph was specialized.  They must
+        // not manufacture an empty replacement during runtime activation.
+        if self.arguments.is_empty() {
+            return Ok(mech_core::ReactiveSolveStatus::Unchanged);
+        }
+        if canonical_matrix_output_requires_builder(self.output.cell()) {
+            let footprint =
+                prospective_matrix_output_footprint(self.output.cell(), &self.arguments)?;
+            frame.with_admitted_canonical_output(
+                self.output.cell(),
+                footprint,
+                |frame, construction| {
+                    let next =
+                        construction.try_rebuild_matrix_drafts_with(self.output.cell(), || {
+                            let (rows, columns, values) = managed_matrix_concatenation_drafts(
+                                frame,
+                                &self.arguments,
+                                VERTICAL,
+                            )?;
+                            Ok((vec![rows as u64, columns as u64].into_boxed_slice(), values))
+                        })?;
+                    Ok(((), next))
+                },
+            )?;
+        } else {
+            let (rows, columns, values) =
+                managed_matrix_concatenation_drafts(frame, &self.arguments, VERTICAL)?;
+            let next = self.output.cell().rebuild_matrix_drafts(
+                vec![rows as u64, columns as u64].into_boxed_slice(),
+                values,
+            )?;
+            frame.stage_output_value(self.output.cell(), next)?;
+        }
+        Ok(mech_core::ReactiveSolveStatus::Changed)
+    }
+
+    fn initial_solve_policy(&self) -> InitialSolvePolicy {
+        if self.preserve_specialized_output {
+            InitialSolvePolicy::PreserveSpecializedOutput
+        } else {
+            InitialSolvePolicy::Solve
+        }
+    }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        if VERTICAL {
+            #[cfg(feature = "matrix_vertcat")]
+            return Some(&PURE_MATRIX_VERTCAT_CONTRACT);
+            #[cfg(not(feature = "matrix_vertcat"))]
+            unreachable!();
+        }
+        #[cfg(feature = "matrix_horzcat")]
+        return Some(&PURE_MATRIX_HORZCAT_CONTRACT);
+        #[cfg(not(feature = "matrix_horzcat"))]
+        unreachable!();
+    }
+
+    fn semantic_operation_name(&self) -> Option<&str> {
+        Some(if VERTICAL {
+            "matrix/vertcat"
+        } else {
+            "matrix/horzcat"
+        })
+    }
+
+    fn to_string(&self) -> String {
+        if VERTICAL {
+            "ValueVerticalConcatenation".to_owned()
+        } else {
+            "ValueHorizontalConcatenation".to_owned()
+        }
+    }
+}
+
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(feature = "matrix_horzcat", feature = "matrix_vertcat")
+))]
+impl<const VERTICAL: bool> MechFunctionCompiler for ValueMatrixConcatenation<VERTICAL> {
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let output = self.output.compile_register(context)?;
+        let arguments = self
+            .arguments
+            .iter()
+            .map(|argument| argument.compile_register(context))
+            .collect::<MResult<Vec<_>>>()?;
+        context.emit_varop(
+            hash_str(if VERTICAL {
+                "matrix/vertcat"
+            } else {
+                "matrix/horzcat"
+            }),
+            output,
+            arguments,
+        );
+        Ok(output)
+    }
+}
+
+#[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
+impl<const VERTICAL: bool> ValueMatrixConcatenation<VERTICAL> {
+    pub(crate) fn specialize(
+        invocation: &SpecializationInvocation,
+        context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        let arguments = invocation
+            .inputs()
+            .iter()
+            .map(|input| Ok(input.cell()?.clone()))
+            .collect::<MResult<Vec<_>>>()?;
+        let output =
+            matrix_concatenation_output(&arguments, VERTICAL, Some(context.resolved_output(0)?))?;
+        let invocation = FunctionInvocation::variadic(output.clone(), arguments.into_boxed_slice());
+        let implementation = Self {
+            arguments: invocation.inputs().map(FunctionInputPort::value).collect(),
+            output: invocation.output().value(),
+            preserve_specialized_output: true,
+        };
+        context.certify_instance(
+            (Box::new(implementation), invocation),
+            mech_core::RuntimeFunctionId::from_name(if VERTICAL {
+                "matrix/vertcat"
+            } else {
+                "matrix/horzcat"
+            }),
+            mech_core::ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::CanonicalFinalize,
+        )
+    }
+}
+
+#[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
+impl<const VERTICAL: bool> MechFunctionFactory for ValueMatrixConcatenation<VERTICAL> {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
+        FunctionValueRepresentation::AnyValue,
+        FunctionValueRepresentation::AnyValue,
+    );
+
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (output, arguments) = variadic_ports(&invocation)?;
+        let SchemaBody::Matrix { .. } = output.cell().closed_schema_body()? else {
+            return Err(matrix_comprehension_error(format!(
+                "matrix concatenation output must be a matrix, found {:?}",
+                output.representation(),
+            )));
+        };
+        Ok(Box::new(Self {
+            arguments,
+            output,
+            preserve_specialized_output: false,
+        }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        if VERTICAL {
+            #[cfg(feature = "matrix_vertcat")]
+            return Some(&PURE_MATRIX_VERTCAT_CONTRACT);
+            #[cfg(not(feature = "matrix_vertcat"))]
+            unreachable!();
+        }
+        #[cfg(feature = "matrix_horzcat")]
+        return Some(&PURE_MATRIX_HORZCAT_CONTRACT);
+        #[cfg(not(feature = "matrix_horzcat"))]
+        unreachable!();
+    }
+}
+
+#[cfg(feature = "matrix_horzcat")]
+pub type ValueHorizontalConcatenation = ValueMatrixConcatenation<false>;
+
+#[cfg(feature = "matrix_vertcat")]
+pub type ValueVerticalConcatenation = ValueMatrixConcatenation<true>;
+
+/// Rebinds a frozen concrete concatenation runtime ID to the maintained
+/// logical-port implementation. The catalog entry keeps its historical ID
+/// and signature, while the executable retains no matrix `Ref` or physical
+/// address from specialization.
+#[cfg(any(feature = "matrix_horzcat", feature = "matrix_vertcat"))]
+pub(crate) fn managed_legacy_matrix_concatenation<const VERTICAL: bool>(
+    invocation: FunctionInvocation,
+) -> MResult<Box<dyn MechFunction>> {
+    let output = invocation.output().value();
+    let arguments = invocation.inputs().map(FunctionInputPort::value).collect();
+    let SchemaBody::Matrix { .. } = output.cell().closed_schema_body()? else {
+        return Err(matrix_comprehension_error(format!(
+            "matrix concatenation output must be a matrix, found {:?}",
+            output.representation(),
+        )));
+    };
+    Ok(Box::new(ValueMatrixConcatenation::<VERTICAL> {
+        arguments,
+        output,
+        preserve_specialized_output: false,
+    }))
+}
+
+/// Runtime implementation for `matrix/comprehension`.
+#[cfg(feature = "matrix_comprehensions")]
+#[derive(Debug)]
+pub struct ValueMatrixComprehension {
+    arguments: Vec<FunctionValueInput>,
+    output: FunctionValueOutput,
+}
+
+#[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
+impl MechFunctionImpl for ValueMatrixComprehension {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        if !canonical_matrix_output_requires_builder(self.output.cell()) {
+            return Ok(None);
+        }
+        Ok(Some(
+            vec![prospective_matrix_output_footprint(
+                self.output.cell(),
+                &self.arguments,
+            )?]
+            .into_boxed_slice(),
+        ))
+    }
+
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        if canonical_matrix_output_requires_builder(self.output.cell()) {
+            let footprint =
+                prospective_matrix_output_footprint(self.output.cell(), &self.arguments)?;
+            frame.with_admitted_canonical_output(
+                self.output.cell(),
+                footprint,
+                |frame, construction| {
+                    let next =
+                        construction.try_rebuild_matrix_drafts_with(self.output.cell(), || {
+                            let (rows, columns, drafts) =
+                                managed_matrix_concatenation_drafts(frame, &self.arguments, false)?;
+                            Ok((vec![rows as u64, columns as u64].into_boxed_slice(), drafts))
+                        })?;
+                    Ok(((), next))
+                },
+            )?;
+        } else {
+            let (rows, columns, drafts) =
+                managed_matrix_concatenation_drafts(frame, &self.arguments, false)?;
+            let next = self.output.cell().rebuild_matrix_drafts(
+                vec![rows as u64, columns as u64].into_boxed_slice(),
+                drafts,
+            )?;
+            frame.stage_output_value(self.output.cell(), next)?;
+        }
+        Ok(mech_core::ReactiveSolveStatus::Changed)
+    }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_MATRIX_COMPREHENSION_CONTRACT)
+    }
+
+    fn semantic_operation_name(&self) -> Option<&str> {
+        Some("matrix/comprehension")
+    }
+
+    fn to_string(&self) -> String {
+        format!("{self:#?}")
+    }
+}
+
+#[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
+impl MechFunctionFactory for ValueMatrixComprehension {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalFinalize
+    }
+
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
+        FunctionValueRepresentation::AnyValue,
+        FunctionValueRepresentation::AnyValue,
+    );
+
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (output, arguments) = variadic_ports(&invocation)?;
+        let SchemaBody::Matrix { .. } = output.cell().closed_schema_body()? else {
+            return Err(matrix_comprehension_error(format!(
+                "matrix comprehension output must be a matrix, found {:?}",
+                output.representation(),
+            )));
+        };
+        Ok(Box::new(Self { arguments, output }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_MATRIX_COMPREHENSION_CONTRACT)
+    }
+}
+
+#[cfg(all(feature = "matrix_comprehensions", feature = "semantic-compiler"))]
+impl MechFunctionCompiler for ValueMatrixComprehension {
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let output = self.output.compile_register(context)?;
+        let arguments = self
+            .arguments
+            .iter()
+            .map(|argument| argument.compile_register(context))
+            .collect::<MResult<Vec<_>>>()?;
+        if arguments.is_empty() {
+            context.emit_nullop(hash_str("matrix/comprehension"), output);
+        } else {
+            context.emit_varop(hash_str("matrix/comprehension"), output, arguments);
+        }
+        Ok(output)
+    }
+}

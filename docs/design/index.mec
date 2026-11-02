@@ -1,0 +1,13 @@
+Design Documents
+===============================================================================
+
+- [System Specification](/design/specification.html)
+- [Design Principles](/design/design-principles.html)  `todo`
+- [Mika](/design/mika.html)
+- [Syntax Design Notes](/design/syntax-design.html) `todo`
+- [History](/design/history.html)  `todo`
+- [Roadmap](/design/ROADMAP.html)
+- [Immutable value semantics](/design/value-semantics-and-migration.html)
+- [Program artifact resident activation contract](/design/program-artifact-resident-activation.html)
+- [Type-memory boundary](/design/type-memory-boundary.html)
+- [Type System v1](/design/type-system-v1.html)

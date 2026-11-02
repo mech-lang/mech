@@ -1,0 +1,79 @@
+math/acos
+===============================================================================
+
+%% Arc cosine of argument in radians
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/acos(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the arc cosine (inverse cosine) of each element of `X`. The input `X` is interpreted as a numeric value between `-1` and `1` (for real inputs). The result `Y` has the same shape as the input `X`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `X`      | `float`, `[float]`       | Input value(s). For real inputs, values must lie in the range `[-1, 1]`. For complex inputs, values outside this domain are allowed, producing complex results. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `Y`      | matches input            | Arc cosine of the input values, expressed in radians. For real inputs in `[-1, 1]`, results are in the range `[0, π]`. For complex inputs, results may include both real and imaginary parts. The shape of `Y` matches the shape of `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Find the arc cosine of a number 
+
+```mech:ex1
+y := math/acos(0.5)
+```
+
+(b) Find the arc cosine for a vector of numbers
+
+```mech:ex2
+x := [0, -0.5, 1]
+y := math/acos(x)
+```
+
+(c) Find the arc cosine for a matrix of numbers
+
+```mech:ex3
+x := [0.5, -0.5; 1, 0]
+y := math/acos(x)
+```
+
+(d) Handling degrees (convert to radians first)
+
+```mech:ex4
+x := [60, 90, 180]
+y := math/acos(cos(x * 3.14 / 180))
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The arc cosine (inverse cosine) function returns the angle whose cosine is the specified value.
+
+In real analysis, for $$x \in [-1,1]$$:
+
+$$ y = acos(x)
+
+means $$ cos(y) = x $$, where $$ y \in [0,π] $$.
+
+In the unit circle, $$acos(x)$$ gives the angle in radians corresponding to the given cosine value (x-coordinate of a point on the unit circle).
+
+For complex numbers, arc cosine can be expressed as:
+
+$$ acos(z) = -i \ln(z + i\sqrt{1 - z^2})
+
+This definition extends the arc cosine beyond real numbers, allowing it to handle complex inputs.

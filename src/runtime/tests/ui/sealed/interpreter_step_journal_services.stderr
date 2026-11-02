@@ -1,0 +1,16 @@
+error[E0624]: method `advance_reactive_turn_with_journal_and_services` is private
+ --> tests/ui/sealed/interpreter_step_journal_services.rs:5:15
+  |
+5 |       drop(plan.advance_reactive_turn_with_journal_and_services());
+  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ private method
+  |
+ ::: $WORKSPACE/src/core/src/function/mod.rs
+  |
+  | /     pub(crate) fn advance_reactive_turn_with_journal_and_services(
+  | |         &mut self,
+  | |         state: &mut ReactiveTurnState,
+  | |         dirty_cells: &[CanonicalCellId],
+  | |         journal: &mut CanonicalTurnJournal,
+  | |         services: &mut dyn MechExecutionServices,
+  | |     ) -> MResult<ReactiveTurnOutcome> {
+  | |_____________________________________- private method defined here

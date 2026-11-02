@@ -1,0 +1,450 @@
+//! Current-shape NativeHost bindings for the maintained individual leaves.
+//! This does not schedule a program or grant a generated visit permission.
+use super::native_collection_templates::{
+    native_collection_lexical_template, native_collection_operation_template,
+};
+use crate::ProgramArtifact;
+use crate::native_artifact::{NativeArtifactLoweringError as Error, NativeProgramLibraryTemplate};
+use mech_core::{
+    BoundCall, BoundResidentKernel, CallMemoryPlan, CallMemoryPlanningRequest, ExecutionTarget,
+    FunctionCatalog, FunctionValueRepresentation, MemoryBudgetLimits, MemoryFootprintWitness,
+    MemoryLifetime, MemoryPlanPoint, MemoryWitnessStage, NodeId, RegionAccessPlan,
+    ResidentKernelBindRequest, ResidentKernelFactory, ResidentPortLayout, ResidentShape,
+    ResidentValueKind, ResolvedOperationContract, ResolvedOperationDescriptor,
+    ResolvedValueDescriptor, Schema, SchemaId, TargetMemoryProfile, physical_storage_descriptor,
+    plan_call_memory,
+};
+
+#[path = "native_collection_invocation.rs"]
+mod invocation;
+pub use invocation::NativeCollectionInvocationError;
+#[path = "native_collection_prepared.rs"]
+mod prepared;
+pub use prepared::{
+    NativePreparedLibraryCall, NativePreparedLibraryCallCache, NativeSelectedStringSpanSelector,
+    prepare_native_program_library_call,
+};
+#[cfg(feature = "pure_text")]
+pub use prepared::{
+    NativePrivateStringBuffer, NativeSelectedStringMatrix, NativeTextLineCaptureFacts,
+    NativeTextLineChunks, NativeTextLineJoinChunk, NativeTextLineMatrix,
+    NativeTextLineMatrixChoice, NativeTextLineWindow,
+};
+
+/// A constructor-private binding of one actual artifact call at its current
+/// shapes. The selected factory, canonical contracts, actual handle
+/// storage and finite native policy are retained together. Runtime invocation
+/// must still verify the current visit and actual values, then refine/admit a
+/// real turn plan and payload scope before entering the maintained leaf.
+#[derive(Clone, Debug)]
+pub struct NativeCollectionCall {
+    template: NativeProgramLibraryTemplate,
+    kernel: BoundResidentKernel,
+    memory: CallMemoryPlan,
+    inputs: Box<[ResidentPortLayout]>,
+    output: ResidentPortLayout,
+    schemas: std::sync::Arc<mech_core::SchemaTable>,
+    invocation_metadata_bytes: u64,
+}
+impl NativeCollectionCall {
+    pub fn template(&self) -> &NativeProgramLibraryTemplate {
+        &self.template
+    }
+    pub fn bound_call(&self) -> &BoundCall {
+        self.kernel
+            .bound_call()
+            .expect("native call binding is retained")
+    }
+    pub fn memory_plan(&self) -> &CallMemoryPlan {
+        &self.memory
+    }
+    pub fn inputs(&self) -> &[ResidentPortLayout] {
+        &self.inputs
+    }
+    pub fn output(&self) -> &ResidentPortLayout {
+        &self.output
+    }
+}
+
+fn invalid(node: NodeId) -> Error {
+    Error::InvalidBinding { node: Some(node) }
+}
+fn layout(
+    node: NodeId,
+    id: SchemaId,
+    schema: &Schema,
+    key: mech_core::SchemaKey,
+    parameters: &[u64],
+) -> Result<ResidentPortLayout, Error> {
+    Ok(ResidentPortLayout {
+        schema_id: id,
+        schema_key: key,
+        // The physical carrier is one immutable value handle; its semantic
+        // matrix/map dimensions remain in the exact schema/shape instance.
+        kind: ResidentValueKind::Snapshot,
+        shape: ResidentShape::SCALAR,
+        shape_instance: schema
+            .instantiate_shape(parameters.into())
+            .map_err(|_| invalid(node))?,
+        activation_fixed_shape: false,
+        resolved_selector: None,
+    })
+}
+
+/// Bind one certified root leaf without observing or executing any values.
+/// Input parameters describe actual arguments, not a 1x1 transport slot.
+/// Output parameters describe the currently published shape, not a promise
+/// about the next data-dependent result. Invocation must validate its inputs
+/// against these descriptors and refine candidate/published facts separately
+/// before any result is admitted or published.
+pub fn bind_native_collection_operation(
+    artifact: &ProgramArtifact,
+    node: NodeId,
+    catalog: &FunctionCatalog,
+    input_parameters: &[&[u64]],
+    output_parameters: &[u64],
+    limits: MemoryBudgetLimits,
+) -> Result<NativeCollectionCall, Error> {
+    let template = NativeProgramLibraryTemplate::from_root(native_collection_operation_template(
+        artifact, node, catalog,
+    )?);
+    bind_selected(
+        artifact,
+        template,
+        catalog,
+        input_parameters,
+        output_parameters,
+        limits,
+    )
+}
+
+/// Bind an individual leaf at its genuine lexical site, using the same
+/// NativeHost binding and invocation boundary as a root leaf. This is setup
+/// metadata, not permission to visit that site or a runtime graph dispatcher.
+pub fn bind_native_collection_lexical(
+    artifact: &ProgramArtifact,
+    owner: NodeId,
+    block: crate::ControlBlockId,
+    local: u32,
+    catalog: &FunctionCatalog,
+    input_parameters: &[&[u64]],
+    output_parameters: &[u64],
+    limits: MemoryBudgetLimits,
+) -> Result<NativeCollectionCall, Error> {
+    let template = NativeProgramLibraryTemplate::from_lexical(native_collection_lexical_template(
+        artifact, owner, block, local, catalog,
+    )?);
+    bind_selected(
+        artifact,
+        template,
+        catalog,
+        input_parameters,
+        output_parameters,
+        limits,
+    )
+}
+
+/// Bind a retained native CFG template only if the actual artifact site and
+/// current selected implementation still match it in full. Matching revision,
+/// operation name or types alone cannot authorize a stale/foreign call site.
+/// Like the root/lexical setup APIs, this allocates binding metadata; generated
+/// runtime callers must pre-admit that metadata rather than call it unmetered.
+pub fn bind_native_program_library_call(
+    artifact: &ProgramArtifact,
+    template: &NativeProgramLibraryTemplate,
+    catalog: &FunctionCatalog,
+    input_parameters: &[&[u64]],
+    output_parameters: &[u64],
+    limits: MemoryBudgetLimits,
+) -> Result<NativeCollectionCall, Error> {
+    let current = current_template(artifact, template, catalog)?;
+    bind_selected(
+        artifact,
+        current,
+        catalog,
+        input_parameters,
+        output_parameters,
+        limits,
+    )
+}
+
+fn current_template(
+    artifact: &ProgramArtifact,
+    template: &NativeProgramLibraryTemplate,
+    catalog: &FunctionCatalog,
+) -> Result<NativeProgramLibraryTemplate, Error> {
+    let origin = template.origin();
+    let node = origin.node();
+    if template.program_revision() != artifact.revision() {
+        return Err(invalid(node));
+    }
+    let current = match (origin.block(), origin.local()) {
+        (None, None) => NativeProgramLibraryTemplate::from_root(
+            native_collection_operation_template(artifact, node, catalog)?,
+        ),
+        (Some(block), Some(local)) => {
+            NativeProgramLibraryTemplate::from_lexical(native_collection_lexical_template(
+                artifact,
+                node,
+                crate::ControlBlockId(block),
+                local,
+                catalog,
+            )?)
+        }
+        _ => return Err(invalid(node)),
+    };
+    if &current != template {
+        return Err(invalid(node));
+    }
+    Ok(current)
+}
+
+fn bind_selected(
+    artifact: &ProgramArtifact,
+    template: NativeProgramLibraryTemplate,
+    catalog: &FunctionCatalog,
+    input_parameters: &[&[u64]],
+    output_parameters: &[u64],
+    limits: MemoryBudgetLimits,
+) -> Result<NativeCollectionCall, Error> {
+    let key = template.selected_key();
+    let factory = catalog
+        .resident_factory(&key.module_path, &key.operation_name)
+        .ok_or(Error::MissingSemanticWitness {
+            node: template.origin().node(),
+        })?
+        .factory();
+    let selector = constant_record_selector(artifact, &template);
+    bind_current(
+        artifact.schemas(),
+        template,
+        factory,
+        None,
+        input_parameters,
+        output_parameters,
+        selector,
+        limits,
+    )
+}
+
+fn constant_record_selector(
+    artifact: &ProgramArtifact,
+    template: &NativeProgramLibraryTemplate,
+) -> Option<u64> {
+    use super::native_collection_templates::NativeCollectionLexicalSource as Source;
+    if template.primitive() != crate::native_artifact::NativeCollectionPrimitive::RecordFieldAccess
+    {
+        return None;
+    }
+    let constant = template
+        .root()
+        .and_then(|root| match root.sources().get(1) {
+            Some(crate::ArtifactSource::Constant(id)) => Some(*id),
+            _ => None,
+        })
+        .or_else(|| {
+            template
+                .lexical()
+                .and_then(|lexical| match lexical.sources().get(1) {
+                    Some(Source::Control(crate::ControlValue::Constant(id)))
+                    | Some(Source::Comprehension(crate::ComprehensionValue::Constant(id))) => {
+                        Some(*id)
+                    }
+                    _ => None,
+                })
+        })?;
+    match artifact.constants().get(constant)?.data() {
+        mech_core::ValueData::Id(id) => Some(*id),
+        _ => None,
+    }
+}
+
+pub(super) fn finite_limits(node: NodeId, limits: MemoryBudgetLimits) -> Result<(), Error> {
+    if [
+        limits.max_output_elements,
+        limits.max_output_bytes,
+        limits.max_temporary_bytes,
+        limits.max_cloned_bytes,
+        limits.max_retained_nodes,
+        limits.max_comparison_work,
+        limits.max_compute_work,
+    ]
+    .iter()
+    .any(Option::is_none)
+    {
+        return Err(Error::UnsupportedNode {
+            node,
+            feature: "native collection calls require explicit finite limits",
+        });
+    }
+    Ok(())
+}
+
+struct PreparedBindingMetadata<'a> {
+    descriptors: Option<&'a [ResolvedValueDescriptor]>,
+    input_keys: &'a [mech_core::SchemaKey],
+    output_key: mech_core::SchemaKey,
+}
+
+fn bind_current(
+    schemas: &mech_core::SchemaTable,
+    template: NativeProgramLibraryTemplate,
+    factory: ResidentKernelFactory,
+    prepared: Option<PreparedBindingMetadata<'_>>,
+    input_parameters: &[&[u64]],
+    output_parameters: &[u64],
+    record_selector: Option<u64>,
+    limits: MemoryBudgetLimits,
+) -> Result<NativeCollectionCall, Error> {
+    let node = template.origin().node();
+    if input_parameters.len() != template.inputs().len() {
+        return Err(invalid(node));
+    }
+    if prepared
+        .as_ref()
+        .is_some_and(|metadata| metadata.input_keys.len() != template.inputs().len())
+    {
+        return Err(invalid(node));
+    }
+    // NativeHost has no implicit quota. Require an explicit finite policy for
+    // every dimension consumed by these kernels; do not alter resident caps.
+    finite_limits(node, limits)?;
+    let ResolvedOperationContract::Declared(contract) = template.contract() else {
+        return Err(invalid(node));
+    };
+    let current_key = |id, schema: &Schema, prepared_key: Option<mech_core::SchemaKey>| {
+        let entry = schemas.entry(id).ok_or_else(|| invalid(node))?;
+        if entry.schema() != schema || prepared_key.is_some_and(|key| key != entry.key()) {
+            return Err(invalid(node));
+        }
+        Ok(entry.key())
+    };
+    let mut inputs = contract
+        .inputs
+        .iter()
+        .zip(template.inputs())
+        .zip(input_parameters)
+        .enumerate()
+        .map(|(index, ((port, schema), parameters))| {
+            let key = current_key(
+                port.schema,
+                schema,
+                prepared.as_ref().map(|metadata| metadata.input_keys[index]),
+            )?;
+            layout(node, port.schema, schema, key, parameters)
+        })
+        .collect::<Result<Box<[_]>, _>>()?;
+    if template.primitive() == crate::native_artifact::NativeCollectionPrimitive::RecordFieldAccess
+    {
+        // The maintained heterogeneous-record binder needs the actual field
+        // selector, just as resident activation does. It still checks the
+        // selected component's schema and validates the live Id at invocation.
+        inputs
+            .get_mut(1)
+            .ok_or_else(|| invalid(node))?
+            .resolved_selector = Some(mech_core::ResidentResolvedSelector::Id(
+            record_selector.ok_or_else(|| invalid(node))?,
+        ));
+    }
+    let output = layout(
+        node,
+        contract.outputs[0].schema,
+        template.output(),
+        current_key(
+            contract.outputs[0].schema,
+            template.output(),
+            prepared.as_ref().map(|metadata| metadata.output_key),
+        )?,
+        output_parameters,
+    )?;
+    let descriptor = |index: usize, schema: &Schema, layout: &ResidentPortLayout| {
+        match prepared.as_ref().and_then(|metadata| metadata.descriptors) {
+            Some(templates) => {
+                let prototype = templates.get(index).ok_or_else(|| invalid(node))?;
+                debug_assert_eq!(prototype.schema(), schema);
+                prototype.with_current_shape(layout.shape_instance.clone())
+            }
+            None => {
+                ResolvedValueDescriptor::from_schema(schema.clone(), layout.shape_instance.clone())
+            }
+        }
+        .map_err(|_| invalid(node))
+    };
+    let semantic = ResolvedOperationDescriptor::from_resolved_contract(
+        template.primitive().name().to_owned(),
+        template.contract(),
+    )
+    .map_err(|_| invalid(node))?;
+    let call = BoundCall::artifact_operation_for_target(
+        semantic,
+        template
+            .inputs()
+            .iter()
+            .zip(&inputs)
+            .enumerate()
+            .map(|(index, (schema, layout))| descriptor(index, schema, layout))
+            .collect::<Result<Box<[_]>, _>>()?,
+        Box::new([descriptor(inputs.len(), template.output(), &output)?]),
+        template.selected_key().clone(),
+        ExecutionTarget::Native,
+    )
+    .map_err(|_| invalid(node))?;
+    let mut target = TargetMemoryProfile::current_native_host().map_err(|_| invalid(node))?;
+    target.limits = limits;
+    // These are actual Option<Value> host lanes, not resident arenas with a
+    // changed label. Keep the physical slot layout tied to that Rust carrier.
+    target.primitives.canonical_value_handle = mech_core::SlotLayout {
+        bytes: core::mem::size_of::<Option<mech_core::Value>>() as u64,
+        alignment: core::mem::align_of::<Option<mech_core::Value>>() as u32,
+    };
+    let lifetime = MemoryLifetime::Turn {
+        first: MemoryPlanPoint::new(0),
+        last: MemoryPlanPoint::new(1),
+    };
+    let storage =
+        physical_storage_descriptor(FunctionValueRepresentation::AnyValue, &target, lifetime);
+    let input_storage = vec![storage.clone(); inputs.len()];
+    let output_storage = [storage];
+    let input_witnesses =
+        vec![MemoryFootprintWitness::Deferred(MemoryWitnessStage::Turn); inputs.len()];
+    let output_witnesses = [MemoryFootprintWitness::Deferred(MemoryWitnessStage::Turn)];
+    let memory = plan_call_memory(CallMemoryPlanningRequest {
+        bound_call: &call,
+        input_storage: &input_storage,
+        output_storage: &output_storage,
+        input_witnesses: &input_witnesses,
+        output_witnesses: &output_witnesses,
+        published_output_witnesses: &output_witnesses,
+        implementation_memory: template.implementation_memory(),
+        target: &target,
+        regions: &[RegionAccessPlan::WholeValue],
+    })
+    .map_err(|error| Error::ResidentBinding {
+        error: super::ResidentActivationError::ResidentMemoryPlanRejected { error },
+    })?;
+    let request = ResidentKernelBindRequest {
+        contract: template.contract(),
+        schemas,
+        inputs: &inputs,
+        output: output.clone(),
+    };
+    let kernel = factory(&request).map_err(|error| Error::ResidentBinding {
+        error: super::ResidentActivationError::KernelBind { node, error },
+    })?;
+    let kernel = crate::resident::native_semantics::bind_call(kernel, &request, call);
+    let invocation_metadata_bytes =
+        invocation::metadata_envelope(&memory).ok_or_else(|| invalid(node))?;
+    let schemas = kernel
+        .shared_snapshot_schemas()
+        .cloned()
+        .unwrap_or_else(|| std::sync::Arc::new(schemas.clone()));
+    Ok(NativeCollectionCall {
+        template,
+        kernel,
+        memory,
+        inputs,
+        output,
+        schemas,
+        invocation_metadata_bytes,
+    })
+}

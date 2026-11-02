@@ -1,0 +1,72 @@
+math/cbrt
+===============================================================================
+
+%% Cube Root Function
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/cbrt(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the cube root of each element of `X`. Unlike the square root, the cube root is defined for all real numbers, including negative values. The result `Y` has the same shape as the input `X`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `X`      | `float`, `[float]`       | Input value(s). Can be real or complex. If `X` is complex, `cbrt` returns complex results. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `Y`      | matches input            | Cube root of the input values. If `X` is real, `Y` is real. If `X` is complex, `Y` may have both real and imaginary parts. The shape of `Y` matches the shape of `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Compute the cube root of a positive number
+
+```mech:ex1
+y := math/cbrt(8)
+```
+
+(b) Compute the cube root of a negative number
+
+```mech:ex2
+y := math/cbrt(-27)
+```
+
+(c) Compute cube root for a vector
+
+```mech:ex3
+x := [1, 8, 27]
+y := math/cbrt(x)
+```
+
+(d) Compute cube root for a matrix
+
+```mech:ex4
+x := [1, -8; 27, -64]
+y := math/cbrt(x)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The cube root function is defined as:
+
+$$ cbrt(x) = x^{1/3}
+
+For real numbers, the cube root is uniquely defined for all `x` (unlike the square root, which is undefined for negative reals). For negative values of `x`, the cube root is also negative.
+
+For complex numbers, the cube root has three possible values (since complex roots are multi-valued). By convention, most implementations return the **principal cube root**, which has the smallest non-negative argument (angle in the complex plane).
+
+This function can be applied element-wise to vectors and matrices, preserving the input shape.

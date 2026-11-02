@@ -1,0 +1,203 @@
+use mech_core::{
+    AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExecutionResourceRequest,
+    ExternalInteraction, IdempotencyRequirement, InitialSolvePolicy, InputPortLayout,
+    InputPortPolicy, MResult, MechError, MechErrorKind, MechExecutionServices, MechFunctionImpl,
+    OperationContractDeclaration, ReactiveDependencyScope, ResourceIntent, ValueCell,
+};
+use std::sync::LazyLock;
+
+pub(crate) static RESOURCE_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: Box::new([]),
+        interaction: ExternalInteraction::Effect(EffectContract {
+            delivery: EffectDeliveryPolicy::ProviderDefined,
+            idempotency: IdempotencyRequirement::Optional,
+        }),
+    });
+
+#[cfg(feature = "semantic-compiler")]
+use mech_core::{ApplicationRequirement, BytecodeCompilerContext, MechFunctionCompiler, Register};
+
+#[derive(Clone, Debug)]
+pub struct ExternalResourceWriteFunction {
+    pub request: ExecutionResourceRequest,
+    pub input: ValueCell,
+    pub output: ValueCell,
+    pub initial_solve_policy: InitialSolvePolicy,
+    pub semantic_contract: Option<&'static OperationContractDeclaration>,
+}
+
+impl ExternalResourceWriteFunction {
+    fn validate(&self) -> MResult<()> {
+        let output = self.output.snapshot()?;
+        if !matches!(output.data(), mech_core::ValueData::Tuple(elements) if elements.is_empty()) {
+            return Err(MechError::new(
+                ExternalResourceWriteOutputNotEmpty {
+                    found: self.output.representation(),
+                },
+                None,
+            ));
+        }
+        if !matches!(
+            self.request.intent,
+            ResourceIntent::Assign | ResourceIntent::Send
+        ) {
+            return Err(MechError::new(
+                ExternalResourceWriteIntentUnsupported {
+                    request: self.request.clone(),
+                },
+                None,
+            ));
+        }
+        Ok(())
+    }
+
+    fn solve_with_services(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
+        self.validate()?;
+        // Reactive bytecode inputs retain their stable outer register cell, but
+        // execution services receive the logical value at the time of the
+        // effect. This also keeps source and reconstructed bytecode calls
+        // observably equivalent for non-reactive service implementations.
+        let input = self.input.snapshot()?;
+        services.write_resource(&self.request, &input)
+    }
+}
+
+impl MechFunctionImpl for ExternalResourceWriteFunction {
+    fn solve_managed(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        self.solve_with_services(services)?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
+    }
+
+    fn initial_solve_policy(&self) -> InitialSolvePolicy {
+        self.initial_solve_policy
+    }
+
+    fn reactive_dependency_scopes(
+        &self,
+        argument_count: usize,
+    ) -> Option<Vec<ReactiveDependencyScope>> {
+        Some(vec![ReactiveDependencyScope::Logical; argument_count])
+    }
+
+    fn initialize_preserved_output_with(
+        &self,
+        _frame: &mut mech_core::KernelMemoryFrame<'_>,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<()> {
+        // Source specialization deterministically plans the Empty output, but
+        // the initial source turn still has to perform the external operation.
+        // Activation registration bypasses this hook, so activation-body sends
+        // remain deferred until their body executes.
+        self.solve_with_services(services)
+    }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        self.semantic_contract.or(Some(&RESOURCE_EFFECT_CONTRACT))
+    }
+
+    fn to_string(&self) -> String {
+        format!("ExternalResourceWriteFunction::{:?}", self.request)
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+impl MechFunctionCompiler for ExternalResourceWriteFunction {
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.output.clone()]
+    }
+
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        self.validate()?;
+        let output = super::compile_external_output(&self.output, context)?;
+        let input = super::compile_external_cell(&self.input, context)?;
+        let requirement =
+            context.intern_requirement(ApplicationRequirement::Resource(self.request.clone()))?;
+        match self.request.intent {
+            ResourceIntent::Assign => context.emit_resource_write(requirement, output, input),
+            ResourceIntent::Send => context.emit_resource_send(requirement, output, input),
+            ResourceIntent::Read => unreachable!("validated resource-write intent"),
+        }
+        Ok(output)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ExternalResourceWriteOutputNotEmpty {
+    pub found: mech_core::FunctionValueRepresentation,
+}
+
+impl MechErrorKind for ExternalResourceWriteOutputNotEmpty {
+    fn name(&self) -> &str {
+        "ExternalResourceWriteOutputNotEmpty"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "external resource writes require a canonical unit output cell, found {:?}",
+            self.found,
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ExternalResourceWriteIntentUnsupported {
+    pub request: ExecutionResourceRequest,
+}
+
+impl MechErrorKind for ExternalResourceWriteIntentUnsupported {
+    fn name(&self) -> &str {
+        "ExternalResourceWriteIntentUnsupported"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "external resource-write node cannot execute request {:?}",
+            self.request,
+        )
+    }
+}
+
+#[cfg(all(test, feature = "f64"))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn write_requires_an_empty_output_cell_before_calling_services() {
+        let function = ExternalResourceWriteFunction {
+            request: ExecutionResourceRequest {
+                base_uri: "test://provider".into(),
+                path: "value".into(),
+                context_name: "test".into(),
+                operation: "write".into(),
+                intent: ResourceIntent::Assign,
+                delivery: mech_core::ResourceDelivery::Snapshot,
+            },
+            input: ValueCell::from_exact(1.0_f64).unwrap(),
+            output: ValueCell::from_exact(2.0_f64).unwrap(),
+            initial_solve_policy: InitialSolvePolicy::Solve,
+            semantic_contract: None,
+        };
+
+        let error = function.validate().unwrap_err();
+        assert_eq!(error.kind_name(), "ExternalResourceWriteOutputNotEmpty");
+        assert_eq!(
+            error
+                .kind_as::<ExternalResourceWriteOutputNotEmpty>()
+                .unwrap()
+                .found,
+            mech_core::FunctionValueRepresentation::F64,
+        );
+    }
+}

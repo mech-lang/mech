@@ -1,0 +1,28 @@
+//! Managed realization of deterministic memory plans.
+//!
+//! This module owns process-local allocation identity, reservations, leases,
+//! publication records, and reclamation. It consumes memory plan records through
+//! a borrowed [`RuntimePlanView`] and never derives a second physical policy.
+
+mod access;
+mod allocation;
+mod budget;
+mod domain;
+mod error;
+mod identity;
+mod payload;
+mod transaction;
+
+pub(crate) use self::access::RetainedPublicationLease;
+pub use self::access::*;
+pub use self::allocation::{PlannedArenaElement, PlannedArenaProjection};
+pub(crate) use self::budget::ManagedMemoryCharge;
+pub(crate) use self::budget::SnapshotNodeCharge;
+pub use self::budget::{ManagedMemoryBudget, ManagedMemoryReservation, ManagedNodeReservation};
+pub use self::domain::*;
+pub use self::error::*;
+pub use self::identity::*;
+pub use self::payload::*;
+pub use self::transaction::*;
+
+pub(crate) use self::allocation::HostBlock;

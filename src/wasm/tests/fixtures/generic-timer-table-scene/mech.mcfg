@@ -1,0 +1,36 @@
+config := {
+  hosts: [
+    {
+      name: "tick"
+      provider: "timer"
+      settings: {
+        frequency-hz: 60
+        max-catch-up-steps: 3
+      }
+    }
+    {
+      name: "view"
+      provider: "scene"
+      settings: {
+        selector: "#generic-scene"
+        renderer: "canvas"
+      }
+    }
+  ]
+
+  run: {
+    paths: ["table-scene.mec"]
+    grants: [
+      {
+        target: "tick/tick"
+        operations: ["read"]
+        paths: ["tick", "delta-seconds"]
+      }
+      {
+        target: "view/frame"
+        operations: ["write"]
+        paths: ["replace"]
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
++> map
++> sequence
+lookup(s<string>, width<u64>, query<string>) => (out<u64>) :=
+  n := sequence/length(s)
+  words := [s[(i + 1u64)..=(i + width)] | i <- 0u64..=n, width > 0u64, width <= n - i]
+  counts := map/histogram(words)
+  keys<{string}> := counts_keys
+  count := (query ∈ keys)? | true => counts{query} | false => 0u64.
+  out := count.
+lookup(input<string>, width<u64>, query<string>)

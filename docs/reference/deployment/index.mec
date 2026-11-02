@@ -1,0 +1,12 @@
+Build and Deployment
+===============================================================================
+
+Mech programs can run from the command line, be served for browser use, or be bundled into static web assets.
+
+1. Pages
+-------------------------------------------------------------------------------
+
+- [Command Line](command-line.html)
+- [Web Server](web-server.html)
+- [Static Web Bundles](static-web-bundles.html)
+- [WASM](wasm.html)

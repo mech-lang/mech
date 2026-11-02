@@ -1,0 +1,178 @@
+Mech Documentation
+===============================================================================
+
+1. Getting Started
+-------------------------------------------------------------------------------
+
+1. [Introduction](getting-started/introduction.html)
+2. [Install Mech](getting-started/install.html)
+3. [Build and Run Mech Programs](getting-started/build-and-run.html)
+4. [Your First Mech Project](getting-started/first-project.html)
+
+2. Language Reference
+-------------------------------------------------------------------------------
+
+(2.1) Data Model
+
+- [Data Types](/reference/data.html)
+  - [`atom`](/reference/atom.html) - symbolic constants, often used for tags or enums
+  - [`bool`](/reference/bool.html) - logical values for true and false
+  - [`empty`](/reference/empty.html) - represents an absence of value
+  - [`kind`](/reference/kind.html) - a category of values
+  - [`number`](/reference/number.html) - numeric values, including integers and floating-point numbers
+  - [`string`](/reference/string.html) - sequence of UTF-8 characters representing text
+
+- [Data Structures](/reference/structures.html)
+  - [`map`](/reference/map.html) - stores key-value pairs for fast lookups
+  - [`matrix`](/reference/matrix.html) - 2D array of homogenous values arranged in rows and columns
+  - [`record`](/reference/record.html) - groups related fields
+  - [`set`](/reference/set.html) - unordered collection of unique values
+  - [`table`](/reference/table.html) - heterogeneous data organized into rows and columns
+  - [`tuple`](/reference/tuple.html) - fixed-size, ordered grouping of heterogeneous values
+- [Defining, Assigning, and Accessing Data](/reference/define.html) `todo`
+- [Indexing](/reference/indexing.html)
+- [Conversion](/reference/convert.html) `todo`
+- [Broadcasting](/reference/broadcasting.html)
+
+(2.2) Program Model
+
+- [`comprehension`](/reference/comprehension.html)
+- [`function`](/reference/function.html)
+- [`match`](/reference/match.html)
+- [`pattern`](/reference/pattern.html)
+- [`state machine`](/reference/state-machine.html)
+- [Modules](/reference/modules.html)
+- [Validation](/reference/validation.html)
+
+3. Runtime Reference
+-------------------------------------------------------------------------------
+
+- [Runtime Overview](/reference/runtime/index.html)
+- [Runtime Object](/reference/runtime/runtime.html)
+- [Runtime Builder](/reference/runtime/builder.html)
+- [Runtime Context](/reference/runtime/context.html)
+- [Runtime Events](/reference/runtime/events.html)
+- [Scheduler](/reference/runtime/scheduler.html)
+- [Store](/reference/runtime/store.html)
+- [Source Resolver](/reference/runtime/source-resolver.html)
+- [Module Manifests](/reference/runtime/module-manifests.html)
+
+4. Project Configuration
+-------------------------------------------------------------------------------
+
+- [Configuration Overview](/reference/config/index.html)
+- [Config Files](/reference/config/config-files.html)
+- [Config Schema](/reference/config/schema.html)
+- [Runtime Config](/reference/config/runtime.html)
+- [Run Config](/reference/config/run.html)
+- [Serve Config](/reference/config/serve.html)
+- [Host Config](/reference/config/hosts.html)
+- [Grants](/reference/config/grants.html)
+
+5. Commands
+-------------------------------------------------------------------------------
+
+- [`mech`](/reference/commands/mech.html)
+- [`mech run`](/reference/commands/run.html)
+- [`mech serve`](/reference/commands/serve.html)
+- [`mech build`](/reference/commands/build.html)
+- [`mech format`](/reference/commands/format.html)
+- [`mech bundle-web`](/reference/commands/bundle-web.html)
+
+6. Contexts
+-------------------------------------------------------------------------------
+
+- [Contexts Overview](/reference/contexts/index.html)
+- [Bindings](/reference/contexts/bindings.html)
+- [Capabilities](/reference/contexts/capabilities.html)
+- [Paths](/reference/contexts/paths.html)
+
+7. Build and Deployment
+-------------------------------------------------------------------------------
+
+- [Deployment Overview](/reference/deployment/index.html)
+- [Command Line](/reference/deployment/command-line.html)
+- [Web Server](/reference/deployment/web-server.html)
+- [Static Web Bundles](/reference/deployment/static-web-bundles.html)
+- [WASM](/reference/deployment/wasm.html)
+
+8. Standard Library
+-------------------------------------------------------------------------------
+
+- [Assign](/stdlib/assign/index.html) `todo`
+- [Access](/stdlib/access/index.html) `todo`
+- [Combinatorics](/stdlib/combinatorics/index.html) `todo`
+- [Compare](/stdlib/compare/index.html) `todo`
+- [Convert](/stdlib/convert/index.html) `todo`
+- [Io](/stdlib/io/index.html) `todo`
+- [Logic](/stdlib/logic/index.html) `todo`
+- [Math](/stdlib/math/index.html)
+- [Matrix](/stdlib/matrix/index.html) `todo`
+- [Range](/stdlib/range/index.html) `todo`
+- [Set](/stdlib/set/index.html)
+- [Stats](/stdlib/stats/index.html) `todo`
+- [String](/stdlib/string/index.html) `todo`
+
+9. Host Providers
+-------------------------------------------------------------------------------
+
+- [Browser Host](/hosts/browser/docs/index.html)
+- [CLI Host](/hosts/terminal/docs/index.html)
+- [Robot Arm Host](/hosts/robot-arm/docs/index.html)
+
+10. Guides
+-------------------------------------------------------------------------------
+
+- [Mech in Fifteen Minutes](/guides/mech-in-fifteen-minutes.html)
+- [Robot Arm Demo](/guides/robot-arm-demo.html)
+- [Browser DOM Demo](/guides/browser-dom-demo.html)
+- [First Web Bundle](/guides/first-web-bundle.html)
+- [Writing a Host](/guides/writing-a-host.html)
+- [Tutorials](/guides/tutorials.html) `todo`
+
+11. Examples
+-------------------------------------------------------------------------------
+
+- [Examples Overview](/examples/README.html)
+- [Analog Clock](/examples/analog-clock/README.html)
+- [Browser DOM Static Bundle](/examples/browser-dom-demo/README.html)
+- [Robot Arm Examples](/hosts/robot-arm/examples/README.html)
+
+12. Mechdown Reference
+-------------------------------------------------------------------------------
+
+- Introduction `todo`
+- [Title](/mechdown/title.html)
+- [Paragraph](/mechdown/paragraph.html)
+- [List](/mechdown/list.html)
+- [Code Block](/mechdown/code-block.html)
+- [Table](/mechdown/table.html)
+- [Image](/mechdown/image.html)
+- [Thematic Break](/mechdown/thematic-break.html)
+- [Equation](/mechdown/equation.html)
+- [Callout Block](/mechdown/callout-block.html)
+- [Diagram](/mechdown/diagram.html)
+
+13. Release Notes
+-------------------------------------------------------------------------------
+
+- [v0.3.6](/releases/v0.3.6.html)
+
+14. Project Design Documents
+-------------------------------------------------------------------------------
+
+- [Platform Specification](/design/specification.html)
+- [Dynamic Modules Prototype](/design/dynamic-modules-prototype.html)
+- [Design Principles](/design/design-principles.html) `todo`
+- [Syntax Design Notes](/design/syntax-design.html) `todo`
+- [History](/design/history.html) `todo`
+- [Roadmap](/design/ROADMAP.html)
+
+```mech:hidden
+document/index := {
+  name: "docs" 
+  version: "v0.3.6"
+  authors: ["Corey Montella"] 
+  machine-url: "https://gitlab.com/mech-lang/mech/docs"
+  license: "Apache-2.0"}
+```

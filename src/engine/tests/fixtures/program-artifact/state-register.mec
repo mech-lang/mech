@@ -1,0 +1,4 @@
+input := 1.0
+~state := 2.0
+state = input
+output := state

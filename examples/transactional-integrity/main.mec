@@ -1,0 +1,5 @@
+target := 90.0
+maximum-target := 120.0
+
+candidate-controller-command := target
+safe-target! := candidate-controller-command <= maximum-target

@@ -1,0 +1,209 @@
+//! Copy only current same-arena owners whose complete cleanup is already paid.
+use super::*;
+
+#[test]
+fn exhausted_retirement_generation_of_an_empty_slot_keeps_epoch_and_original_charge() {
+    let memory = ManagedMemoryBudget::new(1_000_000);
+    let (ty, raw) = text("never installed");
+    let types = [ty];
+    let mut work = NativeWorkMeter::new(1_000_000).unwrap();
+    let mut arena = NativeValueArena::new(&types, TRANSPORT_LIMIT, &memory, &mut work).unwrap();
+    arena.generations.values_mut()[0] = u64::MAX;
+    assert!(arena.native_retirement_available(0, &work).unwrap());
+    let before = work.used();
+    arena.retire_current(0, &mut work).unwrap();
+    assert_eq!(work.used(), before + 32);
+    assert_eq!(arena.generations.values()[0], u64::MAX);
+    assert!(arena.native_entry_preview(0, &work).unwrap().is_none());
+    drop((arena, work, raw));
+    assert_eq!(
+        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+        (0, 0)
+    );
+}
+
+#[test]
+fn exhausted_retirement_generation_declines_preview_and_preserves_live_alias() {
+    let memory = ManagedMemoryBudget::new(1_000_000);
+    let (ty, raw) = text("kept on rejection");
+    let payload = admit(&raw, &memory);
+    let types = [ty];
+    let mut work = NativeWorkMeter::new(1_000_000).unwrap();
+    let mut arena = NativeValueArena::new(&types, TRANSPORT_LIMIT, &memory, &mut work).unwrap();
+    let mut handle = arena.put(0, &payload, &mut work).unwrap();
+    arena.generations.values_mut()[0] = u64::MAX;
+    handle.generation = u64::MAX;
+    assert!(!arena.native_retirement_available(0, &work).unwrap());
+    let before = work.used();
+    assert_eq!(
+        arena.retire_current(0, &mut work),
+        Err(NativeValueError::GenerationExhausted)
+    );
+    assert_eq!(work.used(), before + 32);
+    assert!(
+        arena
+            .get(handle, &mut work)
+            .unwrap()
+            .shares_frozen_storage(&payload)
+    );
+    drop((arena, payload, work));
+    assert_eq!(
+        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+        (0, 0)
+    );
+}
+
+#[test]
+fn copies_preserve_owners_generations_and_cleanup_after_seed_retirement() {
+    let memory = ManagedMemoryBudget::new(1024 * 1024);
+    let (ty, first) = text("original λ");
+    let (_, second) = text("replacement");
+    let first = admit(&first, &memory);
+    let second = admit(&second, &memory);
+    let alias = first.clone();
+    let types = [ty; 3];
+    let mut work = NativeWorkMeter::new(1024 * 1024).unwrap();
+    let mut arena = NativeValueArena::new(&types, TRANSPORT_LIMIT, &memory, &mut work).unwrap();
+    let source = arena.put(0, &first, &mut work).unwrap();
+    let old = arena.put(1, &second, &mut work).unwrap();
+    let bytes = memory.used_bytes();
+    let before = work.used();
+    let copy = arena.copy_current_to(0, 1, &mut work).unwrap();
+    assert_eq!(work.used() - before, 96);
+    assert_eq!(memory.used_bytes(), bytes);
+    assert!(
+        arena
+            .get(source, &mut work)
+            .unwrap()
+            .shares_frozen_storage(&alias)
+    );
+    assert!(
+        arena
+            .get(copy, &mut work)
+            .unwrap()
+            .shares_frozen_storage(&alias)
+    );
+    assert_eq!(
+        arena.get(old, &mut work).unwrap_err(),
+        NativeValueError::StaleHandle
+    );
+    let chained = arena.copy_current_to(1, 2, &mut work).unwrap();
+    arena.put(0, &second, &mut work).unwrap();
+    arena.retire_current(1, &mut work).unwrap();
+    drop((first, second));
+    assert!(
+        arena
+            .get(chained, &mut work)
+            .unwrap()
+            .shares_frozen_storage(&alias)
+    );
+    let renewed = arena.copy_current_to(2, 2, &mut work).unwrap();
+    assert_eq!(
+        arena.get(chained, &mut work).unwrap_err(),
+        NativeValueError::StaleHandle
+    );
+    assert!(
+        arena
+            .get(renewed, &mut work)
+            .unwrap()
+            .shares_frozen_storage(&alias)
+    );
+    drop((arena, alias, work));
+    assert_eq!(memory.used_bytes(), 0);
+}
+
+#[test]
+fn copy_denials_preserve_both_slots_and_recover_on_the_same_account() {
+    let memory = ManagedMemoryBudget::new(1024 * 1024);
+    let (ty, first) = text("first");
+    let (_, second) = text("second");
+    let (other, _) = value(
+        SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
+        ValueDataDraft::U64(7),
+    );
+    let first = admit(&first, &memory);
+    let second = admit(&second, &memory);
+    let types = [ty, ty, other, ty];
+    let mut work = NativeWorkMeter::new(1024 * 1024).unwrap();
+    let mut arena = NativeValueArena::new(&types, TRANSPORT_LIMIT, &memory, &mut work).unwrap();
+    let source = arena.put(0, &first, &mut work).unwrap();
+    let target = arena.put(1, &second, &mut work).unwrap();
+    let library = work
+        .shared_library_budget(NativeExecutionPhase::Setup, 1024 * 1024, &memory)
+        .unwrap();
+    let bytes = memory.used_bytes();
+    let before = work.used();
+    let denied = library
+        .with_call_limits(95, 0, || arena.copy_current_to(0, 1, &mut work))
+        .unwrap();
+    assert!(matches!(
+        denied,
+        Err(NativeValueError::Base(
+            NativeExecutionError::WorkLimit { .. }
+        ))
+    ));
+    assert_eq!(
+        work.used(),
+        before + 64,
+        "the first two debits remain spent"
+    );
+    assert_eq!(memory.used_bytes(), bytes);
+    assert!(
+        arena
+            .get(source, &mut work)
+            .unwrap()
+            .shares_frozen_storage(&first)
+    );
+    assert!(
+        arena
+            .get(target, &mut work)
+            .unwrap()
+            .shares_frozen_storage(&second)
+    );
+    for (source, target, expected) in [
+        (0, 2, NativeValueError::TypeMismatch),
+        (0, 4, NativeValueError::InvalidSlot),
+        (4, 1, NativeValueError::InvalidSlot),
+        (3, 1, NativeValueError::StaleHandle),
+    ] {
+        assert_eq!(
+            arena
+                .copy_current_to(source, target, &mut work)
+                .unwrap_err(),
+            expected
+        );
+    }
+    let mut foreign = NativeWorkMeter::new(1024 * 1024).unwrap();
+    assert_eq!(
+        arena.copy_current_to(0, 1, &mut foreign).unwrap_err(),
+        NativeValueError::WrongWorkLedger
+    );
+    assert_eq!(foreign.used(), 0);
+    let before = work.used();
+    let copied = library
+        .with_call_limits(96, 0, || arena.copy_current_to(0, 1, &mut work))
+        .unwrap()
+        .unwrap();
+    assert_eq!(work.used(), before + 96);
+    assert!(
+        arena
+            .get(copied, &mut work)
+            .unwrap()
+            .shares_frozen_storage(&first)
+    );
+    arena.generations.values_mut()[1] = u64::MAX;
+    assert_eq!(
+        arena.copy_current_to(0, 1, &mut work).unwrap_err(),
+        NativeValueError::GenerationExhausted
+    );
+    assert_eq!(arena.generations.values()[1], u64::MAX);
+    assert!(
+        arena.values.values()[1]
+            .as_ref()
+            .unwrap()
+            .shares_frozen_storage(&first)
+    );
+    assert_eq!(memory.used_bytes(), bytes);
+    drop((arena, first, second, work, library, foreign));
+    assert_eq!(memory.used_bytes(), 0);
+}

@@ -1,0 +1,551 @@
+use std::path::{Path, PathBuf};
+
+use mech_core::*;
+use mech_runtime::{FS_READ, HostFilesystemAuthority, check_fs_capability};
+
+use crate::{MechError, read_or_download};
+
+#[cfg(has_file_wasm)]
+pub(crate) static MECHWASM: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm_bg.wasm");
+
+#[cfg(has_file_js)]
+pub(crate) static MECHJS: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm.js");
+
+#[cfg(all(feature = "serve", has_file_project_js))]
+pub(crate) static PROJECTJS: &str = concat!(
+    include_str!("../../include/browser-compute.js"),
+    "\n",
+    include_str!("../../include/project.js")
+);
+
+#[cfg(has_file_document_js)]
+pub(crate) static DOCUMENTJS: &str = concat!(
+    include_str!("../../include/browser-compute.js"),
+    "\n",
+    include_str!("../../include/document.js")
+);
+
+#[cfg(has_file_shim)]
+pub(crate) static SHIMHTML: &str = include_str!("../../include/index.html");
+#[cfg(not(has_file_shim))]
+pub(crate) static SHIMHTML: &str = "No Embedded Shim";
+
+#[cfg(has_file_stylesheet)]
+pub(crate) static STYLESHEET: &str = include_str!("../../include/style.css");
+#[cfg(not(has_file_stylesheet))]
+pub(crate) static STYLESHEET: &str = "";
+
+#[cfg(has_file_stylesheet)]
+pub(crate) static PALETTE_STYLESHEET: &str = include_str!("../../include/palette.css");
+#[cfg(not(has_file_stylesheet))]
+pub(crate) static PALETTE_STYLESHEET: &str = "";
+
+#[cfg(has_file_stylesheet)]
+pub(crate) static MECH_SOURCE_STYLESHEET: &str = include_str!("../../include/mech-source.css");
+#[cfg(not(has_file_stylesheet))]
+pub(crate) static MECH_SOURCE_STYLESHEET: &str = "";
+
+#[cfg(has_file_stylesheet)]
+pub(crate) static MECHDOWN_STYLESHEET: &str = include_str!("../../include/mechdown.css");
+#[cfg(not(has_file_stylesheet))]
+pub(crate) static MECHDOWN_STYLESHEET: &str = "";
+
+#[cfg(has_file_stylesheet)]
+pub(crate) static MECH_REPL_STYLESHEET: &str = include_str!("../../include/mech-repl.css");
+#[cfg(not(has_file_stylesheet))]
+pub(crate) static MECH_REPL_STYLESHEET: &str = "";
+
+#[cfg(has_file_wasm)]
+fn embedded_wasm() -> Option<&'static [u8]> {
+    Some(MECHWASM)
+}
+#[cfg(not(has_file_wasm))]
+fn embedded_wasm() -> Option<&'static [u8]> {
+    None
+}
+
+#[cfg(has_file_js)]
+fn embedded_js() -> Option<&'static [u8]> {
+    Some(MECHJS)
+}
+#[cfg(not(has_file_js))]
+fn embedded_js() -> Option<&'static [u8]> {
+    None
+}
+
+#[cfg(all(feature = "serve", has_file_project_js))]
+fn embedded_project_js() -> Option<&'static str> {
+    Some(PROJECTJS)
+}
+#[cfg(all(feature = "serve", not(has_file_project_js)))]
+fn embedded_project_js() -> Option<&'static str> {
+    None
+}
+
+#[cfg(has_file_document_js)]
+fn embedded_document_js() -> Option<&'static str> {
+    Some(DOCUMENTJS)
+}
+#[cfg(not(has_file_document_js))]
+fn embedded_document_js() -> Option<&'static str> {
+    None
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct WebResourceDefaults {
+    pub stylesheet_backup_url: String,
+    pub shim_backup_url: String,
+    #[cfg(feature = "serve")]
+    pub wasm_backup_url: String,
+    #[cfg(feature = "serve")]
+    pub js_backup_url: String,
+    pub shim_html: &'static str,
+    pub mech_wasm: Option<&'static [u8]>,
+    pub mech_js: Option<&'static [u8]>,
+    #[cfg(feature = "serve")]
+    pub project_js: Option<&'static str>,
+    pub document_js: Option<&'static str>,
+}
+
+impl WebResourceDefaults {
+    pub(crate) fn for_current_package() -> Self {
+        Self::for_package_version(env!("CARGO_PKG_VERSION"))
+    }
+
+    fn for_package_version(
+        #[cfg(feature = "serve")] version: &str,
+        #[cfg(not(feature = "serve"))] _: &str,
+    ) -> Self {
+        Self {
+            shim_backup_url:
+                "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/index.html"
+                    .to_string(),
+            stylesheet_backup_url:
+                "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/style.css"
+                    .to_string(),
+            #[cfg(feature = "serve")]
+            wasm_backup_url: format!(
+                "https://github.com/mech-lang/mech/releases/download/v{version}-beta/mech_wasm_bg.wasm"
+            ),
+            #[cfg(feature = "serve")]
+            js_backup_url: format!(
+                "https://github.com/mech-lang/mech/releases/download/v{version}-beta/mech_wasm.js"
+            ),
+            shim_html: SHIMHTML,
+            mech_wasm: embedded_wasm(),
+            mech_js: embedded_js(),
+            #[cfg(feature = "serve")]
+            project_js: embedded_project_js(),
+            document_js: embedded_document_js(),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Utf8ConversionError {
+    pub source_error: String,
+}
+
+impl MechErrorKind for Utf8ConversionError {
+    fn name(&self) -> &str {
+        "Utf8ConversionError"
+    }
+    fn message(&self) -> String {
+        format!(
+            "Failed to convert bytes into UTF-8 string: {}",
+            self.source_error
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum ResourceFallback {
+    EmbeddedDefault,
+    RemoteUrl(String),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum ResourceEvent {
+    LoadedLocal {
+        path: PathBuf,
+    },
+    MissingLocalUsedFallback {
+        path: PathBuf,
+        fallback: ResourceFallback,
+    },
+    LoadedEmbeddedDefault,
+    LoadedRemoteFallback {
+        url: String,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct LoadedStylesheets {
+    pub css: String,
+    pub events: Vec<ResourceEvent>,
+    pub local_paths: Vec<PathBuf>,
+}
+
+pub(crate) fn html_style_sheets(page: String) -> crate::canonical_presentation::HtmlStyleSheets {
+    crate::canonical_presentation::HtmlStyleSheets {
+        palette: PALETTE_STYLESHEET.to_string(),
+        source: MECH_SOURCE_STYLESHEET.to_string(),
+        mechdown: MECHDOWN_STYLESHEET.to_string(),
+        page,
+        repl: MECH_REPL_STYLESHEET.to_string(),
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum ResourceSource {
+    LocalPath(PathBuf),
+    RemoteUrl(String),
+    EmbeddedDefault,
+    EmptyPathFallback,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct LoadedResource {
+    pub bytes: Vec<u8>,
+    pub source: ResourceSource,
+    pub events: Vec<ResourceEvent>,
+}
+
+fn read_authorized_local_file(
+    authority: &HostFilesystemAuthority,
+    path: &Path,
+) -> MResult<(PathBuf, Vec<u8>)> {
+    let canonical_path = path.canonicalize()?;
+    let mut kernel = authority.kernel().clone();
+    check_fs_capability(&mut kernel, authority.subject(), FS_READ, &canonical_path)?;
+    let bytes = std::fs::read(&canonical_path)?;
+    Ok((canonical_path, bytes))
+}
+
+fn utf8(bytes: Vec<u8>) -> MResult<String> {
+    String::from_utf8(bytes).map_err(|e| {
+        MechError::new(
+            Utf8ConversionError {
+                source_error: e.to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })
+}
+
+pub(crate) async fn load_resource(
+    authority: &HostFilesystemAuthority,
+    path: &str,
+    fallback_url: &str,
+    embedded: Option<&[u8]>,
+) -> MResult<LoadedResource> {
+    if !path.is_empty() {
+        let path_buf = PathBuf::from(path);
+        if Path::new(path).exists() {
+            let (canonical_path, bytes) = read_authorized_local_file(authority, Path::new(path))?;
+            return Ok(LoadedResource {
+                bytes,
+                source: ResourceSource::LocalPath(canonical_path.clone()),
+                events: vec![ResourceEvent::LoadedLocal {
+                    path: canonical_path,
+                }],
+            });
+        }
+        let bytes = read_or_download("", fallback_url, embedded).await?;
+        let (source, fallback, loaded_event) = if embedded.is_some() {
+            (
+                ResourceSource::EmbeddedDefault,
+                ResourceFallback::EmbeddedDefault,
+                ResourceEvent::LoadedEmbeddedDefault,
+            )
+        } else {
+            (
+                ResourceSource::RemoteUrl(fallback_url.to_string()),
+                ResourceFallback::RemoteUrl(fallback_url.to_string()),
+                ResourceEvent::LoadedRemoteFallback {
+                    url: fallback_url.to_string(),
+                },
+            )
+        };
+        return Ok(LoadedResource {
+            bytes,
+            source,
+            events: vec![
+                ResourceEvent::MissingLocalUsedFallback {
+                    path: path_buf,
+                    fallback,
+                },
+                loaded_event,
+            ],
+        });
+    }
+
+    let bytes = read_or_download("", fallback_url, embedded).await?;
+    let source = if embedded.is_some() {
+        ResourceSource::EmptyPathFallback
+    } else {
+        ResourceSource::RemoteUrl(fallback_url.to_string())
+    };
+    Ok(LoadedResource {
+        bytes,
+        source,
+        events: vec![if embedded.is_some() {
+            ResourceEvent::LoadedEmbeddedDefault
+        } else {
+            ResourceEvent::LoadedRemoteFallback {
+                url: fallback_url.to_string(),
+            }
+        }],
+    })
+}
+
+pub(crate) async fn load_stylesheets(
+    authority: &HostFilesystemAuthority,
+    paths: &[String],
+    fallback_url: &str,
+) -> MResult<LoadedStylesheets> {
+    let mut events = Vec::new();
+    if paths.is_empty() {
+        let loaded =
+            load_resource(authority, "", fallback_url, Some(STYLESHEET.as_bytes())).await?;
+        events.push(match loaded.source {
+            ResourceSource::RemoteUrl(url) => ResourceEvent::LoadedRemoteFallback { url },
+            _ => ResourceEvent::LoadedEmbeddedDefault,
+        });
+        return Ok(LoadedStylesheets {
+            css: utf8(loaded.bytes)?,
+            events,
+            local_paths: Vec::new(),
+        });
+    }
+
+    let mut combined = String::new();
+    let mut local_paths = Vec::new();
+    for path in paths {
+        let path_buf = PathBuf::from(path);
+        let (stylesheet, event) = if Path::new(path).exists() {
+            let (canonical_path, content) = read_authorized_local_file(authority, Path::new(path))?;
+            local_paths.push(canonical_path.clone());
+            (
+                content,
+                ResourceEvent::LoadedLocal {
+                    path: canonical_path,
+                },
+            )
+        } else {
+            let loaded =
+                load_resource(authority, "", fallback_url, Some(STYLESHEET.as_bytes())).await?;
+            let fallback = match loaded.source {
+                ResourceSource::RemoteUrl(url) => ResourceFallback::RemoteUrl(url),
+                _ => ResourceFallback::EmbeddedDefault,
+            };
+            (
+                loaded.bytes,
+                ResourceEvent::MissingLocalUsedFallback {
+                    path: path_buf,
+                    fallback,
+                },
+            )
+        };
+        let stylesheet_str = utf8(stylesheet)?;
+        if !combined.is_empty() {
+            combined.push('\n');
+        }
+        combined.push_str(&stylesheet_str);
+        events.push(event);
+    }
+    let css = compose_stylesheets(STYLESHEET, &combined);
+    Ok(LoadedStylesheets {
+        css,
+        events,
+        local_paths,
+    })
+}
+
+fn compose_stylesheets(embedded: &str, custom: &str) -> String {
+    match (embedded.is_empty(), custom.is_empty()) {
+        (true, true) => String::new(),
+        (true, false) => custom.to_string(),
+        (false, true) => embedded.to_string(),
+        (false, false) => format!("{embedded}\n{custom}"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mech_runtime::{DefaultIdGenerator, MECH_TOOL_SUBJECT, SharedCapabilityKernel};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn temp_root(name: &str) -> PathBuf {
+        let mut root = std::env::temp_dir();
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        root.push(format!("mech-{name}-{unique}"));
+        std::fs::create_dir_all(&root).unwrap();
+        root
+    }
+
+    fn authority_for(
+        path: &Path,
+        recursive: bool,
+        ops: impl IntoIterator<Item = &'static str>,
+    ) -> HostFilesystemAuthority {
+        let mut ids = DefaultIdGenerator::new();
+        let mut authority =
+            HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, SharedCapabilityKernel::new());
+        authority
+            .grant_path(&mut ids, path, recursive, ops)
+            .unwrap();
+        authority
+    }
+
+    fn block_on<T>(future: impl std::future::Future<Output = T>) -> T {
+        tokio::runtime::Runtime::new().unwrap().block_on(future)
+    }
+
+    #[test]
+    fn local_resource_read_requires_fs_read() {
+        let root = temp_root("resource-read");
+        let file = root.join("shim.html");
+        std::fs::write(&file, "local").unwrap();
+        let authority = authority_for(&root, true, [FS_READ]);
+        let loaded = block_on(load_resource(
+            &authority,
+            file.to_str().unwrap(),
+            "unused",
+            Some(b"fallback"),
+        ))
+        .unwrap();
+        assert_eq!(loaded.bytes, b"local");
+        assert_eq!(
+            loaded.source,
+            ResourceSource::LocalPath(file.canonicalize().unwrap())
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn denied_local_resource_does_not_fallback() {
+        let root = temp_root("resource-denied");
+        let allowed = root.join("allowed");
+        let outside = root.join("outside");
+        std::fs::create_dir_all(&allowed).unwrap();
+        std::fs::create_dir_all(&outside).unwrap();
+        let file = outside.join("shim.html");
+        std::fs::write(&file, "secret").unwrap();
+        let authority = authority_for(&allowed, true, [FS_READ]);
+        let result = block_on(load_resource(
+            &authority,
+            file.to_str().unwrap(),
+            "unused",
+            Some(b"fallback"),
+        ));
+        assert!(result.is_err());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn existing_local_directory_does_not_use_fallback() {
+        let root = temp_root("resource-directory");
+        let directory = root.join("shim-dir");
+        std::fs::create_dir_all(&directory).unwrap();
+        let authority = authority_for(&root, true, [FS_READ]);
+        let result = block_on(load_resource(
+            &authority,
+            directory.to_str().unwrap(),
+            "unused",
+            Some(b"fallback"),
+        ));
+        assert!(result.is_err());
+        assert!(
+            !result
+                .as_ref()
+                .map(|loaded| loaded.bytes.as_slice() == b"fallback")
+                .unwrap_or(false)
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn missing_local_resource_still_uses_embedded_fallback() {
+        let root = temp_root("resource-missing");
+        let missing = root.join("missing.html");
+        let authority = authority_for(&root, true, [FS_READ]);
+        let loaded = block_on(load_resource(
+            &authority,
+            missing.to_str().unwrap(),
+            "unused",
+            Some(b"fallback"),
+        ))
+        .unwrap();
+        assert_eq!(loaded.bytes, b"fallback");
+        assert!(matches!(loaded.source, ResourceSource::EmbeddedDefault));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn stylesheet_records_canonical_local_paths() {
+        let root = temp_root("stylesheet-local");
+        let css = root.join("style.css");
+        std::fs::write(&css, "body{}").unwrap();
+        let authority = authority_for(&root, true, [FS_READ]);
+        let loaded = block_on(load_stylesheets(
+            &authority,
+            &[css.to_string_lossy().to_string()],
+            "unused",
+        ))
+        .unwrap();
+        assert_eq!(loaded.css, compose_stylesheets(STYLESHEET, "body{}"));
+        assert!(loaded.css.ends_with("body{}"));
+        assert_eq!(loaded.local_paths, vec![css.canonicalize().unwrap()]);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn stylesheet_composition_handles_absent_embedded_assets_without_invalid_css() {
+        assert_eq!(compose_stylesheets("", "custom{}"), "custom{}");
+        assert_eq!(compose_stylesheets("embedded{}", ""), "embedded{}");
+        assert_eq!(
+            compose_stylesheets("embedded{}", "custom{}"),
+            "embedded{}\ncustom{}"
+        );
+        assert_eq!(compose_stylesheets("", ""), "");
+    }
+
+    #[test]
+    fn embedded_document_controller_is_safe_to_inline_in_a_script_element() {
+        let controller =
+            embedded_document_js().expect("the shipped document controller must be embedded");
+        assert!(
+            !controller.to_ascii_lowercase().contains("</script"),
+            "the controller is inserted into a script element and must not close it",
+        );
+    }
+
+    #[test]
+    fn default_shim_fallback_points_at_the_shipped_index_shell() {
+        let defaults = WebResourceDefaults::for_package_version("0.0.0");
+        assert_eq!(
+            defaults.shim_backup_url,
+            "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/index.html",
+        );
+    }
+
+    #[cfg(feature = "serve")]
+    #[test]
+    fn web_release_fallbacks_use_an_exact_package_version() {
+        let defaults = WebResourceDefaults::for_package_version("0.3.6");
+        assert_eq!(
+            defaults.wasm_backup_url,
+            "https://github.com/mech-lang/mech/releases/download/v0.3.6-beta/mech_wasm_bg.wasm",
+        );
+        assert_eq!(
+            defaults.js_backup_url,
+            "https://github.com/mech-lang/mech/releases/download/v0.3.6-beta/mech_wasm.js",
+        );
+    }
+}

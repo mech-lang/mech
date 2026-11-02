@@ -1,0 +1,122 @@
+math/exp
+===============================================================================
+
+%% Element-wise exponentiation (power)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/exp(Base, Exponent)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Raises each element of `Base` to the corresponding element of `Exponent`, element-wise: `Y = Base ^ Exponent`. `Base` and `Exponent` may be scalars, vectors, or matrices. When one input is a scalar and the other is an array, the scalar is broadcast across the array (see **Details** for broadcasting rules).
+
+This is **Hadamard (element-wise) exponentiation**, not matrix power from linear algebra.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument   | Kind                                   | Description                                                                 |
+|------------|----------------------------------------|-----------------------------------------------------------------------------|
+| `Base`     | `uint`, `float`, `rational*`, `[T]`, `[[T]]` | Base value(s). Supported scalars include `u8`, `u16`, `u32`, `f32`, `f64`, and (with a special case) `rational` (`R64`). |
+| `Exponent` | `uint`, `float`, `i32*`, `[T]`, `[[T]]` | Exponent value(s). Supported scalars include `u8`, `u16`, `u32`, `f32`, `f64`, and for rationals specifically `i32`.      |
+
+\* **Rational special case:** When enabled, `R64` bases with `i32` exponents are supported (`R64 ^ i32`).
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind            | Description                                                                 |
+|----------|-----------------|-----------------------------------------------------------------------------|
+| `Y`      | matches input   | Element-wise power `Base ^ Exponent`. The shape of `Y` follows broadcasting.|
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(a) Scalar powers
+
+```mech:ex1
+y1 := math/exp(2, 10)        // 1024
+y2 := math/exp(9.0, 0.5)     // 3.0
+```
+
+(b) Vector-by-vector (same length)
+
+```mech:ex2
+b := [2, 3, 4]
+e := [3, 2, 1]
+y := math/exp(b, e)          // [8, 9, 4]
+```
+
+(c) Matrix-by-matrix (same shape)
+
+```mech:ex3
+B := [1, 2; 3, 4]
+E := [0, 1; 2, 3]
+Y := math/exp(B, E)          // [1, 2; 9, 64]
+```
+
+(d) Array by scalar (broadcast exponent)
+
+```mech:ex4
+A := [1, 4; 9, 16]
+Y := math/exp(A, 0.5)        // element-wise sqrt => [1, 2; 3, 4]
+```
+
+(e) Scalar by array (broadcast base)
+
+```mech:ex5
+E := [0, 1, 2, 3]
+Y := math/exp(10, E)         // [1, 10, 100, 1000]
+```
+
+(f) Column-vector with matrix (broadcast by columns)
+
+```mech:ex6
+b := [2, 3]                  // column vector length 2
+M := [1, 2; 3, 4]            // 2x2
+Y := math/exp(b, M)          // [[2^1, 2^2]; [3^3, 3^4]] => [2, 4; 27, 81]
+```
+
+(g) Row-vector with matrix (broadcast by rows)
+
+```mech:ex7
+r := [1, 2]                  // row vector length 2
+M := [2, 3; 4, 5]            // 2x2
+Y := math/exp(M, r)          // first col ^1, second col ^2 => [2, 9; 4, 25]
+```
+
+(h) Rational with integer exponent (when enabled)
+
+```mech:ex8
+y := math/exp(3/5, 3)        // 27/125   // R64 ^ i32
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+**Element-wise semantics.** Exponentiation is applied per element. Shapes must either match or be compatible under broadcasting.
+
+**Broadcasting rules.**
+- **Array ^ Scalar or Scalar ^ Array:** The scalar is applied to every element.
+- **Matrix ^ Column Vector / Column Vector ^ Matrix:** A length-`m` vector combines with an `m×n` matrix column-wise.
+- **Matrix ^ Row Vector / Row Vector ^ Matrix:** A length-`n` vector combines with an `m×n` matrix row-wise.
+
+
+**Numeric behavior & domains.**
+- **Unsigned integers (u8, u16, u32):** Exponentiation with unsigned integer exponents only. Results that overflow the type’s range wrap or error depending on runtime rules.
+- **Floating-point (f32, f64):** Supports real bases and exponents (including non-integers). Domain errors (e.g., negative base with non-integer exponent) produce NaN per IEEE-754 rules.
+- **Rational (R64):** Supported with **integer (i32) exponents**; negative exponents produce reciprocals when representable.
+- **Zeros:** 0^0 is implementation-defined; may return 1, NaN, or error depending on type/runtime.
+
+**Performance notes.** Vectorized and matrix-aware kernels perform element-wise `pow` efficiently, including row/column broadcasting paths.
+
+**Errors.**
+- Shape mismatch that cannot be resolved by broadcasting.
+- Unsupported type combination (e.g., R64 with non-i32 exponent).
+- Overflow for integer types.
+- Invalid domain (e.g., negative base with fractional exponent in real types).

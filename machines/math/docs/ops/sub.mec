@@ -1,0 +1,113 @@
+math/sub
+===============================================================================
+
+%% Element-wise subtraction
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/sub(X1, X2)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the element-wise difference of two numeric inputs. `X1` is the minuend and `X2` is the subtrahend; the result is `X1 - X2`. Inputs may be scalars, vectors, or matrices. When one input is a scalar and the other is an array, the scalar is broadcast across the array (scalar broadcasting). Vector–matrix row/column operations follow the rules in **Details**.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                                   | Description                                                                 |
+|----------|----------------------------------------|-----------------------------------------------------------------------------|
+| `X1`     | `int`, `uint`, `float`, `rational`, `complex`, `[T]`, `[[T]]` | Minuend. Supports scalars, vectors, and matrices.                           |
+| `X2`     | `int`, `uint`, `float`, `rational`, `complex`, `[T]`, `[[T]]` | Subtrahend. Must be shape-compatible with `X1` under broadcasting.          |
+
+**Supported scalar types**: `i8`, `i16`, `i32`, `i64`, `i128`, `u8`, `u16`, `u32`, `u64`, `u128`, `f32`, `f64`, `rational` (R64), and `complex` (C64).
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind            | Description                                                                 |
+|----------|-----------------|-----------------------------------------------------------------------------|
+| `Y`      | matches input   | Element-wise result of `X1 - X2`. The shape of `Y` follows broadcasting.    |
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(a) Subtract two scalars
+
+```mech:ex1
+y := math/sub(10, 3)      // 7
+```
+
+(b) Subtract two vectors
+
+```mech:ex2
+x1 := [10, 20, 30]
+x2 := [1,  2,  3]
+y  := math/sub(x1, x2)    // [9, 18, 27]
+```
+
+(c) Subtract two matrices
+
+```mech:ex3
+a := [10, 20; 30, 40]
+b := [7,  6;  5,  4]
+y := math/sub(a, b)       // [3, 14; 25, 36]
+```
+
+(d) Subtract a scalar from a matrix (matrix - scalar)
+
+```mech:ex4
+a := [10, 20; 30, 40]
+y := math/sub(a, 5)       // [5, 15; 25, 35]
+```
+
+(e) Subtract a matrix from a scalar (scalar - matrix)
+
+```mech:ex5
+m := [1, 2; 3, 4]
+y := math/sub(10, m)      // [9, 8; 7, 6]
+```
+
+(f) Matrix minus column vector (broadcast by columns)
+
+```mech:ex6
+m := [10, 20; 30, 40]     // 2x2
+v := [1,  5]              // column vector length 2
+y := math/sub(m, v)       // [9, 19; 25, 35]
+```
+
+(g) Row vector minus matrix (broadcast by rows)
+
+```mech:ex7
+r := [100, 200]
+m := [1, 2; 3, 4]
+y := math/sub(r, m)       // [99, 198; 97, 196]
+```
+
+(h) Complex subtraction
+
+```mech:ex8
+y := math/sub(1+2i, 3-4i) // (-2 + 6i)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+**Element-wise semantics.** Subtraction is performed per element. Shapes must either match or be compatible under broadcasting.
+
+**Broadcasting rules.**
+- **Array - Scalar / Scalar - Array:** The scalar is broadcast across every element of the array.
+- **Matrix - Column Vector / Column Vector - Matrix:** A length-`m` vector can be subtracted from (or used to subtract) an `m×n` matrix column-wise.
+- **Matrix - Row Vector / Row Vector - Matrix:** A length-`n` vector can be subtracted from (or used to subtract) an `m×n` matrix row-wise.
+
+**Non-commutative.** `math/sub` is not commutative: `math/sub(X1, X2) ≠ math/sub(X2, X1)` in general. Parentheses and operand order matter.
+
+**Type support.** Implementations exist for signed/unsigned integers, floating-point, rationals, and complex numbers. When types differ, standard numeric promotions apply where supported.
+
+**Errors.**
+- Shape mismatch that cannot be resolved by broadcasting.
+- Unsupported type combination.
+

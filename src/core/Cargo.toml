@@ -1,0 +1,189 @@
+[package]
+name = "mech-core"
+version = "0.3.5"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "The Mech language runtime."
+documentation = "http://docs.mech-lang.org"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-lang/mech"
+keywords = ["mech", "language", "programming", "dataflow", "runtime"]
+categories = ["no-std", "science::robotics", "science", "game-engines", "database-implementations"]
+license = "Apache-2.0"
+readme = "README.md"
+edition = "2024"
+rust-version = "1.92"
+
+[features]
+std = []
+no_std = ["rlibc", "hashbrown", "embedded-io", "fxhash"]
+
+default = []
+resident-execution = []
+# Generated closed-schema hosts may omit numeric conversion implementations
+# whose existing value features are disabled. The canonical wire types and
+# default complete conversion semantics remain unchanged.
+selective-convert = []
+full = ["baselib", "pretty_print", "serde", "compiler", "mika", "program",
+          "u8", "u16", "u32", "u64", "u128",
+          "i8", "i16", "i32", "i64", "i128", 
+          "f32", "f64", "c64", "r64", 
+          "statements_default", "subscript_default",
+          ]
+base = ["baselib", "pretty_print", "serde", "compiler", "mika", "program",
+      "statements_default", "subscript_default",
+      ]   
+
+statements_default = ["variable_assign","variable_define","invariant_define","kind_define"]
+subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
+
+stdlib = ["bool", "string", 
+          "u8", "u16", "u32", "u64", "u128", 
+          "i8", "i16", "i32", "i64", "i128", 
+          "f32", "f64", "c64", "r64", 
+          "set", "map", "table", "tuple", "record", "atom",
+          "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
+          "row_vector2", "row_vector3", "row_vector4",
+          "vector2", "vector3", "vector4",
+          "row_vectord", "vectord", "matrixd",
+          "subscript_range", "logical_indexing", "swizzle",
+          "subscript_formula", "dot_indexing",
+          "variable_define", "variable_assign", "kind_define",
+          "kind_annotation", "variables",
+          "functions", "formulas"
+        ]
+
+baselib = ["bool", "string", 
+      "f64", "c64", "r64",
+      "set", "map", "table", "tuple", "record", "atom", "enum",
+      "row_vectord", "vectord", "matrixd",
+      "subscript_range", "logical_indexing", 
+      "subscript_formula",
+      "variable_define", "variable_assign", 
+      "kind_define",
+      "kind_annotation", "variables",
+      "functions", "formulas"
+    ]
+
+semantic-compiler = ["program"]
+compiler = ["semantic-compiler", "functions"]
+program = ["crc32fast", "byteorder"]
+native-plan = ["functions"]
+native-link = []
+pretty_print = ["tabled", "serde_json"]
+serde = ["brotli", "base64", "serde_derive", "serde_json", "bincode", "indexmap/serde", "bincode/serde", "dep:serde"]
+mika = []
+
+statements = []
+variables = ["variable_define", "symbol_table"]
+variable_define = ["statements", "functions"]
+invariant_define = ["variable_define"]
+variable_assign = ["statements"]
+kind_define = ["kind_annotation", "statements"]
+kind_annotation = ["functions"]
+formulas = []
+functions = ["indexmap","symbol_table"]
+symbol_table = []
+
+bool = []
+string = []
+
+# Numbers
+numbers = []
+complex = ["num-traits", "nalgebra", "f64", "numbers"]
+rational = ["num-traits", "num-rational", "i64", "numbers"]
+signed_ints = ["numbers"]
+unsigned_ints = ["numbers"]
+floats = ["num-traits", "numbers"]
+u8 = ["unsigned_ints"]
+u16 = ["unsigned_ints"]
+u32 = ["unsigned_ints"]
+u64 = ["unsigned_ints"]
+u128 = ["unsigned_ints"]
+i8 = ["signed_ints"]
+i16 = ["signed_ints"]
+i32 = ["signed_ints"]
+i64 = ["signed_ints"]
+i128 = ["signed_ints"]
+f32 = ["floats"]
+f64 = ["floats"]
+c64 = ["complex"]
+r64 = ["rational"]
+
+math_pow = ["libm", "num-traits"]
+range = []
+
+# Structs
+set = ["indexmap"]
+map = ["indexmap"]
+table = ["indexmap", "vectord", "record"]
+tuple = []
+enum = []
+record = ["indexmap", "tuple"]
+atom = []
+
+# Matrix
+matrix = ["nalgebra"]
+fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2", "matrix"]
+fixed_vector = ["vector4", "vector3", "vector2", "matrix"]
+fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "matrix"]
+dynamic_matrix = ["matrixd", "vectord", "row_vectord", "matrix"]
+row_vector4 = ["matrix"]
+row_vector3 = ["matrix"]
+row_vector2 = ["matrix"]
+vector4 = ["matrix"]
+vector3 = ["matrix"]
+vector2 = ["matrix"]
+matrix4 = ["matrix"]
+matrix3 = ["matrix"]
+matrix2 = ["matrix"]
+matrix1 = ["matrix"]
+matrix2x3 = ["matrix"]
+matrix3x2 = ["matrix"]
+row_vectord =["matrix"]
+vectord = ["matrix"]
+matrixd = ["matrix"]
+
+# Subscripts
+subscript = []
+subscript_slice = ["subscript", "vectord"]
+subscript_range = ["subscript_slice","vectord"]
+subscript_formula = ["subscript_slice","formulas"]
+logical_indexing = ["subscript","vectord","bool"]
+dot_indexing = ["subscript"]
+swizzle = ["subscript"]
+
+[dependencies]
+seahash = "4.1.0"
+sha2 = { version = "0.11.0", default-features = false }
+paste = "1.0.15"
+byteorder = {version = "1.5.0", optional = true}
+fxhash = { version = "0.2.1", default-features = false, optional = true }
+embedded-io = {version = "0.7.1", optional = true}
+crc32fast = {version = "1.5.0", optional = true}
+base64 = {version = "0.22.1", optional = true}
+bincode = {version = "2.0.1", optional = true}
+brotli = {version = "8.0.2", optional = true}
+hashbrown = {version = "0.16.1", optional = true, default-features = false}
+indexmap = {version = "2.13.0", optional = true}
+libm = {version = "0.2.16", optional = true}
+nalgebra = {version="0.34.1", optional = true}
+rayon = {version = "1.11.0", optional = true}
+rlibc = { version = "=1.0", optional = true }
+serde = {version = "1.0.228", default-features = false, features = ["alloc", "derive"], optional = true}
+serde_derive = {version = "1.0.219", optional = true}
+serde_json = {version = "1.0.142", optional = true}
+tabled = { version = "0.20.0", default-features = false, features = ["std"], optional = true }
+num-rational = {version = "0.4.2", optional = true}
+[dependencies.num-traits]
+version = "0.2.19"
+default-features = false
+features = ["libm"]
+optional = true
+
+[dev-dependencies]
+criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
+
+[[bench]]
+name = "solve_result_overhead"
+harness = false
+required-features = ["baselib"]

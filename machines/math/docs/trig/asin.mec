@@ -1,0 +1,79 @@
+math/asin
+===============================================================================
+
+%% Arc sine of argument in radians
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/asin(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the arc sine (inverse sine) of each element of `X`. The input `X` is interpreted as a numeric value between `-1` and `1` (for real inputs). The result `Y` has the same shape as the input `X`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `X`      | `float`, `[float]`       | Input value(s). For real inputs, values must lie in the range `[-1, 1]`. For complex inputs, values outside this domain are allowed, producing complex results. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `Y`      | matches input            | Arc sine of the input values, expressed in radians. For real inputs in `[-1, 1]`, results are in the range `[-π/2, π/2]`. For complex inputs, results may include both real and imaginary parts. The shape of `Y` matches the shape of `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Find the arc sine of a number 
+
+```mech:ex1
+y := math/asin(0.5)
+```
+
+(b) Find the arc sine for a vector of numbers
+
+```mech:ex2
+x := [0, -0.5, 1]
+y := math/asin(x)
+```
+
+(c) Find the arc sine for a matrix of numbers
+
+```mech:ex3
+x := [0.5, -0.5; 1, 0]
+y := math/asin(x)
+```
+
+(d) Handling degrees (convert to radians first)
+
+```mech:ex4
+x := [30, 45, 90]
+y := math/asin(sin(x * 3.14 / 180))
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The arc sine (inverse sine) function returns the angle whose sine is the specified value.
+
+In real analysis, for $$x \in [-1,1]$$:
+
+$$ y = asin(x)
+
+means $$ sin(y) = x $$, where $$y \in [-π/2, π/2]$$.
+
+In the unit circle, $$asin(x)$$ gives the angle in radians corresponding to the given sine value (y-coordinate of a point on the unit circle).
+
+For complex numbers, arc sine can be expressed as:
+
+$$ asin(z) = -i \ln(iz + \sqrt{1 - z^2})
+
+This definition extends the arc sine beyond real numbers, allowing it to handle complex inputs.

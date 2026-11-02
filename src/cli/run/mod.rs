@@ -1,0 +1,738 @@
+use clap::{Arg, ArgAction};
+use mech_core::*;
+use mech_runtime::{
+    ConfigValue, HostInstanceConfig, MechRuntime, ModuleBuildOptions, RunResourceGrantConfig,
+    RuntimeBuilder, RuntimeConfig, RuntimeHostFactory, SourceResolver,
+};
+use std::ffi::OsStr;
+use std::path::Path;
+
+use crate::cli::host_grants;
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RunInputMode {
+    Empty,
+    InlineSource(String),
+    Paths(Vec<String>),
+}
+
+/// Source selection ends at `--`; every following value belongs to the
+/// application, including empty, non-Unicode and flag-looking OS strings.
+pub(crate) fn payload_arguments_arg() -> Arg {
+    Arg::new("payload_arguments")
+        .value_name("ARG")
+        .help("Program payload arguments after --; launcher controls are excluded")
+        .last(true)
+        .num_args(0..)
+        .value_parser(clap::builder::OsStringValueParser::new())
+        .action(ArgAction::Append)
+}
+
+fn has_explicit_path_prefix(s: &str) -> bool {
+    s.starts_with("./")
+        || s.starts_with(".\\")
+        || s.starts_with("../")
+        || s.starts_with("..\\")
+        || s.starts_with('/')
+        || s.starts_with('\\')
+        || (s.len() > 2
+            && s.as_bytes()[0].is_ascii_alphabetic()
+            && s.as_bytes()[1] == b':'
+            && matches!(s.as_bytes()[2], b'/' | b'\\'))
+}
+
+fn is_intended_path(s: &str) -> bool {
+    if s.trim().is_empty() {
+        return false;
+    }
+
+    let path = Path::new(s);
+    if path.exists() || has_explicit_path_prefix(s) {
+        return true;
+    }
+    if s.len() > 2 && s.as_bytes()[1] == b':' {
+        return true;
+    }
+    if s.contains('/') || s.contains('\\') {
+        return true;
+    }
+    if let Some(ext) = path.extension().and_then(OsStr::to_str) {
+        match ext {
+            // Mech specific
+            "mec" | "🤖" | "mecb" | "mdoc" | "mpkg" => true,
+            // Data/Standard formats
+            "m" | "csv" | "tsv" | "txt" | "md" | "json" | "toml" | "yaml" => true,
+            // Web
+            "html" | "htm" | "css" | "js" | "wasm" => true,
+            // Images
+            "png" | "jpg" | "jpeg" | "gif" | "svg" | "bmp" | "ico" => true,
+            _ => false,
+        }
+    } else {
+        false
+    }
+}
+
+pub fn classify_run_inputs(inputs: Vec<String>) -> RunInputMode {
+    if inputs.is_empty() {
+        return RunInputMode::Empty;
+    }
+
+    if inputs.len() == 1 {
+        if Path::new(&inputs[0]).exists() || has_explicit_path_prefix(&inputs[0]) {
+            return RunInputMode::Paths(inputs);
+        }
+        if is_run_source_candidate(&inputs[0]) {
+            return RunInputMode::InlineSource(inputs[0].clone());
+        }
+        if is_intended_path(&inputs[0]) {
+            return RunInputMode::Paths(inputs);
+        }
+        return RunInputMode::InlineSource(inputs[0].clone());
+    }
+
+    let joined = inputs.join(" ");
+    if is_run_source_candidate(&joined) {
+        return RunInputMode::InlineSource(joined);
+    }
+
+    if inputs.iter().any(|input| is_intended_path(input)) {
+        RunInputMode::Paths(inputs)
+    } else {
+        RunInputMode::InlineSource(joined)
+    }
+}
+
+fn is_run_source_candidate(input: &str) -> bool {
+    use mech_runtime::resolver::SourceDocument;
+    use mech_syntax::document::{
+        AstNode, CodeBlockSyntax, CodeFenceScope, DocumentId, MechCodeAltSyntax, MechCodeSyntax,
+        ParseConfig, Revision, SyntaxKind, SyntaxNode, TextSnapshot,
+    };
+
+    fn contains_unadmitted_active_source(root: &SyntaxNode) -> bool {
+        let mut pending = vec![root.clone()];
+        while let Some(node) = pending.pop() {
+            if matches!(
+                node.kind(),
+                SyntaxKind::InlineMechCode | SyntaxKind::MikaSection
+            ) {
+                continue;
+            }
+            if let Some(fence) = CodeBlockSyntax::cast(node.clone()) {
+                if matches!(
+                    fence.info().map(|info| info.scope),
+                    Some(CodeFenceScope::Root | CodeFenceScope::Named(_))
+                ) && let Some(body) = fence.mech_code()
+                {
+                    pending.push(body.syntax().clone());
+                }
+                continue;
+            }
+            if node.kind() == SyntaxKind::EvalInlineMechCode {
+                return true;
+            }
+            if let Some(code) = MechCodeSyntax::cast(node.clone()) {
+                if code
+                    .items()
+                    .iter()
+                    .filter_map(MechCodeAltSyntax::value)
+                    .any(|item| item.kind() != SyntaxKind::Comment)
+                {
+                    return true;
+                }
+                continue;
+            }
+            if matches!(
+                node.kind(),
+                SyntaxKind::ContextDeclaration
+                    | SyntaxKind::ExportDeclaration
+                    | SyntaxKind::ImportDeclaration
+                    | SyntaxKind::ModuleImport
+            ) {
+                return true;
+            }
+            pending.extend(node.children());
+        }
+        false
+    }
+
+    let Ok(source) = TextSnapshot::new(DocumentId(0), Revision(0), input) else {
+        return false;
+    };
+    let document = SourceDocument::parse(source, ParseConfig::default());
+    let syntax = document.document();
+    // This selects a source argument, not an executable document. A malformed
+    // active source candidate must reach strict compiler admission for its
+    // positioned diagnostics instead of becoming a path merely because it
+    // contains a division operator or resource URI. Existing files still win.
+    syntax.contains_program_source()
+        || (!document.is_strictly_clean() && contains_unadmitted_active_source(syntax.syntax()))
+}
+
+pub fn new_cli_runtime(
+    config: RuntimeConfig,
+    cli_grants: &host_grants::EffectiveCliHostGrants,
+    configured_hosts: &[HostInstanceConfig],
+    run_grants: &[RunResourceGrantConfig],
+) -> MResult<MechRuntime> {
+    cli_runtime_builder(config, cli_grants, configured_hosts, run_grants, Vec::new())?.build()
+}
+
+pub fn new_cli_runtime_with_source_resolver(
+    config: RuntimeConfig,
+    cli_grants: &host_grants::EffectiveCliHostGrants,
+    configured_hosts: &[HostInstanceConfig],
+    run_grants: &[RunResourceGrantConfig],
+    source_resolver: impl SourceResolver + 'static,
+) -> MResult<MechRuntime> {
+    cli_runtime_builder(config, cli_grants, configured_hosts, run_grants, Vec::new())?
+        .source_resolver(source_resolver)
+        .build()
+}
+
+pub fn new_cli_runtime_with_source_resolver_and_host_factories(
+    config: RuntimeConfig,
+    cli_grants: &host_grants::EffectiveCliHostGrants,
+    configured_hosts: &[HostInstanceConfig],
+    run_grants: &[RunResourceGrantConfig],
+    host_factories: Vec<Box<dyn RuntimeHostFactory>>,
+    source_resolver: impl SourceResolver + 'static,
+) -> MResult<MechRuntime> {
+    cli_runtime_builder(
+        config,
+        cli_grants,
+        configured_hosts,
+        run_grants,
+        host_factories,
+    )?
+    .source_resolver(source_resolver)
+    .build()
+}
+
+pub(crate) fn cli_runtime_builder(
+    config: RuntimeConfig,
+    cli_grants: &host_grants::EffectiveCliHostGrants,
+    configured_hosts: &[HostInstanceConfig],
+    run_grants: &[RunResourceGrantConfig],
+    host_factories: Vec<Box<dyn RuntimeHostFactory>>,
+) -> MResult<RuntimeBuilder> {
+    cli_runtime_builder_with_cli_factory(
+        config,
+        cli_grants,
+        configured_hosts,
+        run_grants,
+        host_factories,
+        None,
+    )
+}
+
+pub(crate) fn cli_runtime_builder_with_cli_host_factory(
+    config: RuntimeConfig,
+    cli_grants: &host_grants::EffectiveCliHostGrants,
+    configured_hosts: &[HostInstanceConfig],
+    run_grants: &[RunResourceGrantConfig],
+    host_factories: Vec<Box<dyn RuntimeHostFactory>>,
+    cli_host_factory: Box<dyn RuntimeHostFactory>,
+) -> MResult<RuntimeBuilder> {
+    cli_runtime_builder_with_cli_factory(
+        config,
+        cli_grants,
+        configured_hosts,
+        run_grants,
+        host_factories,
+        Some(cli_host_factory),
+    )
+}
+
+fn cli_runtime_builder_with_cli_factory(
+    config: RuntimeConfig,
+    cli_grants: &host_grants::EffectiveCliHostGrants,
+    configured_hosts: &[HostInstanceConfig],
+    run_grants: &[RunResourceGrantConfig],
+    host_factories: Vec<Box<dyn RuntimeHostFactory>>,
+    cli_host_factory: Option<Box<dyn RuntimeHostFactory>>,
+) -> MResult<RuntimeBuilder> {
+    let builder = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .config(config);
+    let (mut builder, mut registered_providers) = match cli_host_factory {
+        Some(factory) => crate::cli::host_factories::register_cli_host_factories_with_cli_factory(
+            builder, factory,
+        )?,
+        None => crate::cli::host_factories::register_cli_host_factories(builder)?,
+    };
+    for factory in host_factories {
+        let provider = factory.provider_name().to_owned();
+        builder = builder.host_factory(factory)?;
+        registered_providers.insert(provider);
+    }
+
+    let (next_builder, mut registered_cli_instances) =
+        crate::cli::host_configuration::materialize_host_configuration(
+            builder,
+            configured_hosts,
+            &[],
+            &registered_providers,
+        )?;
+    builder = next_builder;
+
+    if !registered_cli_instances.contains("cli") {
+        registered_cli_instances.insert("cli".to_string());
+        builder = builder.host_instance(HostInstanceConfig {
+            name: "cli".to_string(),
+            provider: "cli".to_string(),
+            settings: ConfigValue::Map(std::collections::BTreeMap::new()),
+        });
+    }
+
+    for grant in cli_grants.to_run_resource_grants() {
+        builder = builder.run_resource_grant(grant);
+    }
+
+    crate::cli::host_configuration::materialize_run_grants(
+        builder,
+        run_grants,
+        &registered_cli_instances,
+    )
+}
+
+pub fn effective_run_runtime_config(
+    loaded_config: Option<&crate::LoadedMechConfig>,
+    name: String,
+    debug_enabled: bool,
+    trace_enabled: bool,
+    rounds_per_step: Option<usize>,
+) -> MResult<RuntimeConfig> {
+    let default_runtime_patch = mech_runtime::RuntimeConfigPatch::default();
+
+    let mut config = crate::apply_runtime_config_patch(
+        RuntimeConfig::default(),
+        loaded_config
+            .as_ref()
+            .map(|loaded| &loaded.document.runtime)
+            .unwrap_or(&default_runtime_patch),
+    )?;
+
+    config.name = name;
+
+    if debug_enabled {
+        config.diagnostics.debug_enabled = true;
+    }
+
+    if trace_enabled {
+        config.diagnostics.trace_enabled = true;
+    }
+
+    if let Some(rounds_per_step) = rounds_per_step {
+        config.limits.max_steps_per_turn = Some(rounds_per_step as u64);
+    }
+
+    config.validate()?;
+    Ok(config)
+}
+
+pub fn cli_module_options() -> ModuleBuildOptions<'static> {
+    ModuleBuildOptions::new(env!("CARGO_PKG_VERSION"), "v0.3", "native", &[], &[])
+}
+
+pub fn cli_host_capability_args() -> Vec<Arg> {
+    vec![
+        Arg::new("deny_default_capabilities")
+            .long("deny-default-capabilities")
+            .help("Disable default CLI host capability profiles for this run")
+            .global(true)
+            .action(ArgAction::SetTrue),
+        Arg::new("capabilities")
+            .long("capabilities")
+            .value_name("CAPABILITY")
+            .help("Enable one named CLI host capability profile for this run, e.g. :cli/stdout")
+            .global(true)
+            .num_args(1)
+            .value_parser([":cli/env", ":cli/args", ":cli/stdout", ":cli/stderr"])
+            .action(ArgAction::Append),
+    ]
+}
+
+fn cli_host_capability_values(cli_matches: &clap::ArgMatches) -> Vec<String> {
+    cli_matches
+        .get_many::<String>("capabilities")
+        .into_iter()
+        .flatten()
+        .cloned()
+        .collect()
+}
+
+pub fn cli_host_capability_selection(
+    cli_matches: &clap::ArgMatches,
+    _run_matches: Option<&clap::ArgMatches>,
+) -> host_grants::CliHostCapabilitySelection {
+    let deny_defaults = cli_matches.get_flag("deny_default_capabilities");
+
+    let profiles = cli_host_capability_values(cli_matches);
+
+    host_grants::CliHostCapabilitySelection {
+        include_defaults: !deny_defaults,
+        profiles,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_cli_payload_is_empty_and_an_explicit_factory_keeps_its_snapshot() {
+        let grants = host_grants::EffectiveCliHostGrants {
+            args_read_paths: vec!["count".into(), "1".into()],
+            ..host_grants::EffectiveCliHostGrants::empty()
+        };
+        let request = |path: &str| mech_runtime::RuntimeResourceReadRequest {
+            base_uri: "cli://args".into(),
+            path: path.into(),
+            context_name: "args".into(),
+        };
+        let mut runtime = new_cli_runtime(RuntimeConfig::default(), &grants, &[], &[]).unwrap();
+        let count = runtime.read_resource(request("count")).unwrap();
+        assert!(matches!(count.value().data(), ValueData::U64(0)));
+        assert!(runtime.read_resource(request("1")).is_err());
+        runtime.shutdown().unwrap();
+
+        let custom = mech_terminal::CliHostFactory::with_arguments(vec![
+            std::ffi::OsString::from("custom"),
+            std::ffi::OsString::from("--trace"),
+        ])
+        .unwrap();
+        let mut runtime = cli_runtime_builder_with_cli_host_factory(
+            RuntimeConfig::default(),
+            &grants,
+            &[],
+            &[],
+            Vec::new(),
+            Box::new(custom),
+        )
+        .unwrap()
+        .build()
+        .unwrap();
+        let count = runtime.read_resource(request("count")).unwrap();
+        assert!(matches!(count.value().data(), ValueData::U64(2)));
+        let first = runtime.read_resource(request("1")).unwrap();
+        assert!(
+            matches!(first.value().data(), ValueData::String(value) if value.as_ref() == "custom")
+        );
+        runtime.shutdown().unwrap();
+    }
+
+    #[test]
+    fn args_profile_is_accepted_as_an_explicit_cli_capability() {
+        let matches = clap::Command::new("mech")
+            .args(cli_host_capability_args())
+            .try_get_matches_from([
+                "mech",
+                "--deny-default-capabilities",
+                "--capabilities",
+                ":cli/args",
+            ])
+            .unwrap();
+        let selection = cli_host_capability_selection(&matches, None);
+        assert!(!selection.include_defaults);
+        assert_eq!(selection.profiles, [":cli/args"]);
+    }
+    use mech_runtime::{ConfigProfileOptions, parse_config_document};
+
+    #[test]
+    fn classifies_single_inline_context_send_with_slashes_as_inline_source() {
+        let mode = classify_run_inputs(vec![
+            "+> @out := cli/stdout\n@out/line <- \"hi\"".to_string(),
+        ]);
+        assert!(matches!(mode, RunInputMode::InlineSource(_)));
+    }
+
+    #[test]
+    fn classifies_single_fenced_context_import_with_slashes_as_inline_source() {
+        let mode = classify_run_inputs(vec![
+            "```mech
++> @out := cli/stdout
+```"
+            .to_string(),
+        ]);
+        assert!(matches!(mode, RunInputMode::InlineSource(_)));
+    }
+
+    #[test]
+    fn classifies_declaration_only_context_as_inline_source() {
+        assert!(matches!(
+            classify_run_inputs(vec!["+> @out := cli/stdout".to_owned()]),
+            RunInputMode::InlineSource(_)
+        ));
+    }
+
+    #[test]
+    fn classifies_single_plain_inline_expression_as_inline_source() {
+        let mode = classify_run_inputs(vec!["x := 1".to_string()]);
+        assert!(matches!(mode, RunInputMode::InlineSource(_)));
+    }
+
+    #[test]
+    fn malformed_active_source_reaches_admission_before_path_heuristics() {
+        for source in [
+            "+> @env := cli/env\nx := 1 +\n",
+            "x := @env/INPUT +\n",
+            "1 /\n",
+            "The value is {1 /}.\n",
+        ] {
+            assert_eq!(
+                classify_run_inputs(vec![source.to_owned()]),
+                RunInputMode::InlineSource(source.to_owned()),
+                "{source:?}"
+            );
+            let retained = crate::cli::canonical_source::CanonicalCliSource::retain(
+                "cli:test:unadmitted",
+                mech_syntax::document::Revision(0),
+                source,
+            )
+            .unwrap();
+            assert!(retained.document().index().is_err());
+            assert!(!retained.contains_executable_source());
+        }
+        for path in [
+            "./missing file.mec",
+            "./missing\npath.mec",
+            "../missing.mec",
+        ] {
+            assert_eq!(
+                classify_run_inputs(vec![path.to_owned()]),
+                RunInputMode::Paths(vec![path.to_owned()]),
+                "{path:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn source_candidates_keep_displayed_disabled_and_local_syntax_inert() {
+        for source in [
+            "Displayed {{1 /}}.\n",
+            "```mech:disabled\n+> @env := cli/env\nx := 1 /\n```\n",
+            "```text\n+> @env := cli/env\n```\n",
+            "~∘~⸢+> @env := cli/env\nx := 1 /\n⸥\n",
+        ] {
+            assert!(!is_run_source_candidate(source), "{source:?}");
+        }
+        for source in [
+            "```mech\n+> @env := cli/env\nx := 1 /\n```\n",
+            "```mech:worker\n+> @env := cli/env\nx := 1 /\n```\n",
+        ] {
+            assert!(is_run_source_candidate(source), "{source:?}");
+            let retained = crate::cli::canonical_source::CanonicalCliSource::retain(
+                "cli:test:unadmitted-fence",
+                mech_syntax::document::Revision(0),
+                source,
+            )
+            .unwrap();
+            assert!(retained.document().index().is_err());
+        }
+    }
+
+    #[test]
+    fn classifies_single_source_import_with_slashes_as_inline_source() {
+        let mode = classify_run_inputs(vec!["+> ./dep.mec".to_string()]);
+        assert!(matches!(mode, RunInputMode::InlineSource(_)));
+    }
+
+    #[test]
+    fn classifies_split_source_import_with_slashes_as_inline_source() {
+        let mode = classify_run_inputs(vec!["+>".to_string(), "./dep.mec".to_string()]);
+        assert!(matches!(mode, RunInputMode::InlineSource(_)));
+    }
+
+    #[test]
+    fn classifies_single_formula_with_slash_as_inline_source() {
+        let mode = classify_run_inputs(vec!["1 / 2".to_string()]);
+        assert!(matches!(mode, RunInputMode::InlineSource(_)));
+    }
+
+    #[test]
+    fn classifies_split_inline_context_read_with_slashes_as_inline_source() {
+        let mode = classify_run_inputs(vec![
+            "x".to_string(),
+            ":=".to_string(),
+            "@env/HOME".to_string(),
+        ]);
+        assert!(matches!(mode, RunInputMode::InlineSource(_)));
+    }
+
+    #[test]
+    fn classifies_split_inline_context_send_with_slashes_as_inline_source() {
+        let mode = classify_run_inputs(vec![
+            "@out/line".to_string(),
+            "<-".to_string(),
+            "\"hi\"".to_string(),
+        ]);
+        assert!(matches!(mode, RunInputMode::InlineSource(_)));
+    }
+
+    #[test]
+    fn classifies_multiple_path_like_inputs_as_paths_even_if_joined_text_parses() {
+        let mode = classify_run_inputs(vec!["examples/foo.mec".to_string(), "bar.mec".to_string()]);
+        assert!(matches!(mode, RunInputMode::Paths(_)));
+    }
+
+    #[test]
+    fn new_cli_runtime_filters_non_cli_run_grants() {
+        let document = parse_config_document(
+            "test.mcfg",
+            r#"config := {
+  hosts: [
+    {name: "cli", provider: "cli", settings: {}}
+    {name: "ui", provider: "browser", settings: {}}
+  ]
+  run: {
+    grants: [
+      {target: "cli/stdout", operations: ["write"], paths: ["line"]}
+      {target: "ui/dom", operations: ["read"], paths: ["counter/_text"]}
+    ]
+  }
+}
+"#,
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        let run_grants = document.run.as_ref().unwrap().grants.as_slice();
+        let _runtime = new_cli_runtime(
+            RuntimeConfig::default(),
+            &host_grants::EffectiveCliHostGrants::default(),
+            &document.hosts,
+            run_grants,
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn new_cli_runtime_keeps_cli_alias_run_grant() {
+        let document = parse_config_document(
+            "test.mcfg",
+            r#"config := {
+  hosts: [
+    {name: "term", provider: "cli", settings: {}}
+  ]
+  run: {
+    grants: [
+      {target: "term/stdout", operations: ["write"], paths: ["line"]}
+    ]
+  }
+}
+"#,
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        let run_grants = document.run.as_ref().unwrap().grants.as_slice();
+        let _runtime = new_cli_runtime(
+            RuntimeConfig::default(),
+            &host_grants::EffectiveCliHostGrants::default(),
+            &document.hosts,
+            run_grants,
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn cli_reserved_name_rejects_non_cli_provider() {
+        let document = parse_config_document(
+            "test.mcfg",
+            r#"config := {
+  hosts: [
+    {name: "cli", provider: "browser", settings: {}}
+  ]
+  run: {
+    grants: [
+      {target: "cli/stdout", operations: ["write"], paths: ["line"]}
+    ]
+  }
+}
+"#,
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        let run_grants = document.run.as_ref().unwrap().grants.as_slice();
+        let err = new_cli_runtime(
+            RuntimeConfig::default(),
+            &host_grants::EffectiveCliHostGrants::default(),
+            &document.hosts,
+            run_grants,
+        )
+        .unwrap_err();
+        let error = format!("{err:?}");
+        assert!(error.contains("cli"), "got {error}");
+        assert!(
+            error.contains("reserved") || error.contains("provider"),
+            "got {error}"
+        );
+        assert!(error.contains("browser"), "got {error}");
+    }
+
+    #[test]
+    fn explicit_config_cli_stdout_line_is_authoritative_without_deny_defaults() {
+        let document = parse_config_document(
+      "test.mcfg",
+      r#"config := { run: { grants: [{target: "cli/stdout", operations: ["write"], paths: ["line"]}] } }"#,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+        let loaded = crate::LoadedMechConfig {
+            path: std::path::PathBuf::from("test.mcfg"),
+            base_dir: std::path::PathBuf::new(),
+            document: document.clone(),
+            discovered_project_dir: None,
+        };
+        let cli_grants = host_grants::effective_cli_host_grants(
+            Some(&loaded),
+            host_grants::CliHostCapabilitySelection::default(),
+        )
+        .unwrap();
+        assert_eq!(cli_grants, host_grants::EffectiveCliHostGrants::empty(),);
+        let run_grants = document.run.as_ref().unwrap().grants.as_slice();
+        let _runtime = new_cli_runtime(
+            RuntimeConfig::default(),
+            &cli_grants,
+            &document.hosts,
+            run_grants,
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn explicit_cli_profile_remains_additive_with_config_grants() {
+        let document = parse_config_document(
+      "test.mcfg",
+      r#"config := { run: { grants: [{target: "cli/stdout", operations: ["write"], paths: ["line"]}] } }"#,
+      ConfigProfileOptions::default(),
+    ).unwrap();
+        let loaded = crate::LoadedMechConfig {
+            path: std::path::PathBuf::from("test.mcfg"),
+            base_dir: std::path::PathBuf::new(),
+            document: document.clone(),
+            discovered_project_dir: None,
+        };
+        let cli_grants = host_grants::effective_cli_host_grants(
+            Some(&loaded),
+            host_grants::CliHostCapabilitySelection {
+                include_defaults: true,
+                profiles: vec![":cli/stderr".to_string()],
+            },
+        )
+        .unwrap();
+        assert!(cli_grants.env_read_paths.is_empty());
+        assert!(cli_grants.stdout_write_paths.is_empty());
+        assert_eq!(
+            cli_grants.stderr_write_paths,
+            vec!["text".to_string(), "line".to_string()],
+        );
+        let run_grants = document.run.as_ref().unwrap().grants.as_slice();
+        let _runtime = new_cli_runtime(
+            RuntimeConfig::default(),
+            &cli_grants,
+            &document.hosts,
+            run_grants,
+        )
+        .unwrap();
+    }
+}

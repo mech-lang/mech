@@ -1,0 +1,1695 @@
+use std::collections::BTreeMap;
+
+#[cfg(feature = "browser")]
+use mech_core::ValueData;
+use mech_core::snapshot::{F64Bits, TableColumnDraft};
+use mech_core::{
+    CardinalitySpec, DimensionExpr, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
+    FloatWidth, IdempotencyRequirement, MResult, MechError, MechErrorKind, Schema, SchemaBody,
+    SchemaDraft, SchemaField, Value, ValueCell, ValueDataDraft,
+};
+#[cfg(feature = "native")]
+use mech_runtime::RuntimeHostFactory;
+use mech_runtime::{
+    ConfigValue, PreparedRuntimeEffect, ResourceSchemaPreflight, RuntimeCapabilityOperation,
+    RuntimeEffectId, RuntimeResourceProvider, RuntimeResourceWriteCommand,
+    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+    TransactionId,
+};
+#[cfg(feature = "browser")]
+use mech_runtime::{
+    HostInstanceConfig, ResidentDurabilityPolicy, RunResourceGrantConfig, RuntimeBuilder,
+    RuntimeHostInput, RuntimeHostInputSource, RuntimeHostInputValue,
+};
+use mech_scene::*;
+
+fn deliver_write(
+    provider: &mut dyn RuntimeResourceProvider,
+    request: RuntimeResourceWriteRequest,
+) -> mech_core::MResult<()> {
+    match provider.prepare_write(request)? {
+        PreparedRuntimeEffect::AfterCommit(mut effect) => effect.deliver(),
+        effect => panic!("expected scene after-commit effect, got {effect:?}"),
+    }
+}
+
+fn f(value: f64) -> ValueCell {
+    ValueCell::from_exact(value).unwrap()
+}
+fn ix(value: usize) -> ValueCell {
+    ValueCell::from_exact(value).unwrap()
+}
+fn s(value: &str) -> ValueCell {
+    ValueCell::from_exact(value.to_string()).unwrap()
+}
+fn b(value: bool) -> ValueCell {
+    ValueCell::from_exact(value).unwrap()
+}
+fn effect_id() -> RuntimeEffectId {
+    RuntimeEffectId {
+        transaction: TransactionId::new(1),
+        sequence: 0,
+    }
+}
+fn record(fields: Vec<(&str, ValueCell)>) -> ValueCell {
+    let fields = fields
+        .into_iter()
+        .map(|(name, value)| (name.to_string(), value))
+        .collect::<Vec<_>>();
+    ValueCell::record_from_cells(&fields).unwrap()
+}
+fn tuple(values: Vec<ValueCell>) -> ValueCell {
+    ValueCell::tuple_from_cells(&values).unwrap()
+}
+
+fn canonical(value: ValueCell) -> Value {
+    value.snapshot().expect("test value must be canonical")
+}
+
+fn scene_snapshot(value: &ValueCell) -> MResult<SceneSnapshot> {
+    value
+        .snapshot()
+        .and_then(|value| SceneSnapshot::from_value(&value))
+}
+
+#[cfg(feature = "browser")]
+fn snapshot_f64(value: mech_runtime::RuntimeValueSnapshot) -> f64 {
+    let value = value.into_value();
+    let ValueData::F64(value) = value.data() else {
+        panic!("runtime symbol must remain f64")
+    };
+    value.to_f64()
+}
+
+#[cfg(feature = "browser")]
+fn snapshot_f64_matrix(value: mech_runtime::RuntimeValueSnapshot) -> Vec<f64> {
+    let value = value.into_value();
+    let Some(matrix) = value.matrix_view() else {
+        panic!("runtime symbol must remain an f64 matrix")
+    };
+    let mech_core::snapshot::SequenceView::F64(values) = matrix.elements() else {
+        panic!("runtime symbol must remain an f64 matrix")
+    };
+    values.iter().map(|value| value.to_f64()).collect()
+}
+fn table(records: Vec<ValueCell>) -> ValueCell {
+    let first = records.first().expect("table fixture requires a row");
+    let SchemaBody::Record(fields) = first.closed_schema_body().unwrap() else {
+        panic!("table fixture row must be a record")
+    };
+    let mut columns = fields
+        .iter()
+        .map(|field| TableColumnDraft {
+            name: field.name.clone(),
+            values: Box::new([]),
+        })
+        .collect::<Vec<_>>();
+    let mut values = vec![Vec::with_capacity(records.len()); fields.len()];
+    for record in records {
+        let ValueDataDraft::Record(row) =
+            record.snapshot().unwrap().canonical_data_draft().unwrap()
+        else {
+            panic!("table fixture row must be a record")
+        };
+        assert_eq!(row.len(), fields.len());
+        for (index, field) in row.into_vec().into_iter().enumerate() {
+            assert_eq!(field.name, fields[index].name);
+            values[index].push(field.value);
+        }
+    }
+    for (column, values) in columns.iter_mut().zip(values) {
+        column.values = values.into_boxed_slice();
+    }
+    let rows = columns.first().map_or(0, |column| column.values.len());
+    ValueCell::from_schema_data(
+        SchemaBody::Table {
+            columns: fields,
+            rows: CardinalitySpec::Exact(DimensionExpr::Constant(rows as u64)),
+        },
+        ValueDataDraft::Table(columns.into_boxed_slice()),
+    )
+    .unwrap()
+}
+
+fn empty_table(record: ValueCell) -> ValueCell {
+    let SchemaBody::Record(fields) = record.closed_schema_body().unwrap() else {
+        panic!("table fixture row must be a record")
+    };
+    ValueCell::empty_dynamic_table(fields).unwrap()
+}
+
+fn settings(renderer: &str) -> ConfigValue {
+    let mut map = BTreeMap::new();
+    map.insert(
+        "selector".to_string(),
+        ConfigValue::String("#scene".to_string()),
+    );
+    map.insert(
+        "renderer".to_string(),
+        ConfigValue::String(renderer.to_string()),
+    );
+    ConfigValue::Map(map)
+}
+fn empty_scene() -> ValueCell {
+    record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", tuple(vec![])),
+        ("lines", tuple(vec![])),
+    ])
+}
+fn points(rows: usize, columns: usize, values: Vec<f64>) -> ValueCell {
+    let elements = (0..rows)
+        .flat_map(|row| {
+            let values = &values;
+            (0..columns).map(move |column| {
+                ValueDataDraft::F64(F64Bits::from_f64(values[column * rows + row]))
+            })
+        })
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    ValueCell::dynamic_rank_matrix(
+        SchemaBody::FloatingPoint(FloatWidth::W64),
+        vec![rows as u64, columns as u64].into_boxed_slice(),
+        elements,
+    )
+    .unwrap()
+}
+fn points_command(value: ValueCell) -> RuntimeResourceWriteCommand {
+    RuntimeResourceWriteCommand {
+        base_uri: "scene://view/frame".to_string(),
+        path: "points".to_string(),
+        context_name: "view".to_string(),
+        operation: RuntimeCapabilityOperation::Write,
+        intent: RuntimeResourceWriteIntent::Send,
+        value: canonical(value),
+    }
+}
+fn points_write(value: ValueCell) -> RuntimeResourceWriteRequest {
+    points_command(value).bind_effect(effect_id(), "scene-test:0".to_owned())
+}
+fn circle(id: &str) -> ValueCell {
+    record(vec![
+        ("id", s(id)),
+        ("x", f(1.0)),
+        ("y", f(2.0)),
+        ("radius", f(3.0)),
+        ("fill", s("red")),
+        ("stroke", s("none")),
+        ("stroke-width", f(0.0)),
+        ("opacity", f(1.0)),
+    ])
+}
+fn line(id: &str) -> ValueCell {
+    record(vec![
+        ("id", s(id)),
+        ("x1", f(0.0)),
+        ("y1", f(0.0)),
+        ("x2", f(1.0)),
+        ("y2", f(1.0)),
+        ("stroke", s("red")),
+        ("stroke-width", f(1.0)),
+        ("line-cap", s("round")),
+        ("opacity", f(1.0)),
+        ("rotation", f(45.0)),
+        ("origin-x", f(0.0)),
+        ("origin-y", f(0.0)),
+    ])
+}
+fn text(id: &str) -> ValueCell {
+    record(vec![
+        ("id", s(id)),
+        ("x", f(10.0)),
+        ("y", f(20.0)),
+        ("fill", s("white")),
+        ("font-size", f(12.0)),
+        ("font-family", s("sans-serif")),
+        ("font-weight", s("600")),
+        ("text-anchor", s("start")),
+        ("opacity", f(1.0)),
+        ("value", s("Scene label")),
+    ])
+}
+fn point_set(id: &str) -> ValueCell {
+    record(vec![
+        ("id", s(id)),
+        ("positions", points(2, 2, vec![10.0, 20.0, 30.0, 40.0])),
+        ("radius", f(3.0)),
+        ("first-radius", f(6.0)),
+        ("fills", tuple(vec![s("gold"), s("blue")])),
+        ("stroke", s("none")),
+        ("stroke-width", f(0.0)),
+        ("opacity", f(1.0)),
+    ])
+}
+fn line_strip(id: &str) -> ValueCell {
+    record(vec![
+        ("id", s(id)),
+        (
+            "positions",
+            points(3, 2, vec![10.0, 20.0, 30.0, 40.0, 50.0, 60.0]),
+        ),
+        ("stroke", s("gray")),
+        ("stroke-width", f(0.75)),
+        ("line-cap", s("round")),
+        ("line-join", s("round")),
+        ("opacity", f(0.5)),
+        ("closed", b(true)),
+    ])
+}
+
+#[test]
+fn valid_empty_scene() {
+    assert!(scene_snapshot(&empty_scene()).is_ok());
+}
+
+#[test]
+fn valid_circle_scene() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", tuple(vec![circle("c1")])),
+        ("lines", tuple(vec![])),
+    ]);
+    assert_eq!(scene_snapshot(&scene).unwrap().circles.len(), 1);
+}
+
+#[test]
+fn valid_line_scene() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", tuple(vec![])),
+        ("lines", tuple(vec![line("l1")])),
+    ]);
+    assert_eq!(scene_snapshot(&scene).unwrap().lines.len(), 1);
+}
+
+#[test]
+fn valid_text_scene() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("texts", tuple(vec![text("title")])),
+    ]);
+    let scene = scene_snapshot(&scene).unwrap();
+    assert_eq!(scene.texts[0].value, "Scene label");
+}
+
+#[test]
+fn numeric_text_paint_and_weight_are_normalized_without_index_coercion() {
+    let numeric_text = record(vec![
+        ("id", s("title")),
+        ("x", f(10.0)),
+        ("y", f(20.0)),
+        ("fill", f(0xedf2f7 as f64)),
+        ("font-size", f(12.0)),
+        ("font-family", s("sans-serif")),
+        ("font-weight", f(620.0)),
+        ("text-anchor", s("start")),
+        ("opacity", f(1.0)),
+        ("value", s("Scene label")),
+    ]);
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", f(0x080b12 as f64)),
+        ("texts", tuple(vec![numeric_text])),
+    ]);
+    let scene = scene_snapshot(&scene).unwrap();
+    assert_eq!(scene.background, "#080b12");
+    assert_eq!(scene.texts[0].fill, "#edf2f7");
+    assert_eq!(scene.texts[0].font_weight, "620");
+
+    for (field, value) in [("fill", ix(1)), ("font-weight", ix(500))] {
+        let invalid_text = record(vec![
+            ("id", s("title")),
+            ("x", f(10.0)),
+            ("y", f(20.0)),
+            (
+                "fill",
+                if field == "fill" {
+                    value.clone()
+                } else {
+                    f(0.0)
+                },
+            ),
+            ("font-size", f(12.0)),
+            ("font-family", s("sans-serif")),
+            (
+                "font-weight",
+                if field == "font-weight" {
+                    value
+                } else {
+                    f(500.0)
+                },
+            ),
+            ("text-anchor", s("start")),
+            ("opacity", f(1.0)),
+            ("value", s("Scene label")),
+        ]);
+        let invalid_scene = record(vec![
+            ("width", f(100.0)),
+            ("height", f(50.0)),
+            ("background", s("#000")),
+            ("texts", tuple(vec![invalid_text])),
+        ]);
+        assert!(scene_snapshot(&invalid_scene).is_err(), "{field}");
+    }
+}
+
+#[test]
+fn valid_text_table() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("texts", table(vec![text("title"), text("caption")])),
+    ]);
+    let scene = scene_snapshot(&scene).unwrap();
+    assert_eq!(scene.texts.len(), 2);
+    assert_eq!(scene.texts[1].id, "caption");
+}
+
+#[test]
+fn point_set_expands_matrix_rows_into_stable_circles() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("point-sets", point_set("body")),
+    ]);
+    let scene = scene_snapshot(&scene).unwrap();
+    assert_eq!(scene.circles.len(), 2);
+    assert_eq!(scene.circles[0].id, "body-0");
+    assert_eq!(scene.circles[0].radius, 6.0);
+    assert_eq!(scene.circles[0].fill, "gold");
+    assert_eq!((scene.circles[1].x, scene.circles[1].y), (20.0, 40.0));
+}
+
+#[test]
+fn point_set_table_expands_every_record() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        (
+            "point-sets",
+            table(vec![point_set("body"), point_set("marker")]),
+        ),
+    ]);
+    let scene = scene_snapshot(&scene).unwrap();
+    assert_eq!(scene.circles.len(), 4);
+    assert_eq!(scene.circles[2].id, "marker-0");
+}
+
+#[test]
+fn line_strip_keeps_matrix_rows_as_one_closed_path() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("line-strips", tuple(vec![line_strip("orbit-earth")])),
+    ]);
+    let scene = scene_snapshot(&scene).unwrap();
+    assert_eq!(scene.line_strips.len(), 1);
+    assert_eq!(scene.line_strips[0].id, "orbit-earth");
+    assert_eq!(
+        scene.line_strips[0].positions,
+        vec![[10.0, 40.0], [20.0, 50.0], [30.0, 60.0]]
+    );
+    assert!(scene.line_strips[0].closed);
+}
+
+#[test]
+fn line_strip_table_keeps_each_matrix_as_one_path() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        (
+            "line-strips",
+            table(vec![line_strip("orbit-a"), line_strip("orbit-b")]),
+        ),
+    ]);
+    let scene = scene_snapshot(&scene).unwrap();
+    assert_eq!(scene.line_strips.len(), 2);
+    assert_eq!(scene.line_strips[1].id, "orbit-b");
+    assert_eq!(scene.line_strips[1].positions.len(), 3);
+}
+
+#[test]
+fn point_set_rejects_a_palette_with_the_wrong_length() {
+    let bad = record(vec![
+        ("id", s("body")),
+        ("positions", points(2, 2, vec![10.0, 20.0, 30.0, 40.0])),
+        ("radius", f(3.0)),
+        ("first-radius", f(6.0)),
+        ("fills", tuple(vec![s("gold")])),
+        ("stroke", s("none")),
+        ("stroke-width", f(0.0)),
+        ("opacity", f(1.0)),
+    ]);
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("point-sets", bad),
+    ]);
+    assert!(scene_snapshot(&scene).is_err());
+}
+
+#[test]
+fn point_set_rejects_nonfinite_radii() {
+    for (radius, first_radius) in [(f64::NAN, 6.0), (3.0, f64::INFINITY)] {
+        let bad = record(vec![
+            ("id", s("body")),
+            ("positions", points(2, 2, vec![10.0, 20.0, 30.0, 40.0])),
+            ("radius", f(radius)),
+            ("first-radius", f(first_radius)),
+            ("fills", tuple(vec![s("gold"), s("blue")])),
+            ("stroke", s("none")),
+            ("stroke-width", f(0.0)),
+            ("opacity", f(1.0)),
+        ]);
+        let scene = record(vec![
+            ("width", f(100.0)),
+            ("height", f(50.0)),
+            ("background", s("#000")),
+            ("point-sets", bad),
+        ]);
+        assert!(scene_snapshot(&scene).is_err());
+    }
+}
+
+#[test]
+fn invalid_dimensions() {
+    let scene = record(vec![
+        ("width", f(0.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+    ]);
+    assert!(scene_snapshot(&scene).is_err());
+}
+
+#[test]
+fn duplicate_ids() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", tuple(vec![circle("x")])),
+        ("lines", tuple(vec![line("x")])),
+    ]);
+    assert!(scene_snapshot(&scene).is_err());
+}
+
+#[test]
+fn missing_required_columns() {
+    assert!(scene_snapshot(&record(vec![("width", f(1.0))])).is_err());
+}
+
+#[test]
+fn invalid_opacity() {
+    let bad = record(vec![
+        ("id", s("bad")),
+        ("x", f(1.0)),
+        ("y", f(2.0)),
+        ("radius", f(3.0)),
+        ("fill", s("red")),
+        ("stroke", s("none")),
+        ("stroke-width", f(0.0)),
+        ("opacity", f(2.0)),
+    ]);
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", tuple(vec![bad])),
+        ("lines", tuple(vec![])),
+    ]);
+    assert!(scene_snapshot(&scene).is_err());
+}
+
+#[test]
+fn valid_empty_circle_table() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", empty_table(circle("template"))),
+        ("lines", tuple(vec![])),
+    ]);
+    assert_eq!(scene_snapshot(&scene).unwrap().circles.len(), 0);
+}
+
+#[test]
+fn valid_single_circle_table() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", table(vec![circle("c1")])),
+        ("lines", tuple(vec![])),
+    ]);
+    assert_eq!(scene_snapshot(&scene).unwrap().circles.len(), 1);
+}
+
+#[test]
+fn valid_many_circle_table() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", table(vec![circle("c1"), circle("c2")])),
+        ("lines", tuple(vec![])),
+    ]);
+    assert_eq!(scene_snapshot(&scene).unwrap().circles.len(), 2);
+}
+
+#[test]
+fn valid_many_line_table() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", tuple(vec![])),
+        ("lines", table(vec![line("l1"), line("l2")])),
+    ]);
+    assert_eq!(scene_snapshot(&scene).unwrap().lines.len(), 2);
+}
+
+#[test]
+fn table_columns_may_be_reordered() {
+    let circle = record(vec![
+        ("opacity", f(1.0)),
+        ("stroke-width", f(0.0)),
+        ("stroke", s("none")),
+        ("fill", s("red")),
+        ("radius", f(3.0)),
+        ("y", f(2.0)),
+        ("x", f(1.0)),
+        ("id", s("c1")),
+    ]);
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", table(vec![circle])),
+        ("lines", tuple(vec![])),
+    ]);
+    assert_eq!(scene_snapshot(&scene).unwrap().circles[0].id, "c1");
+}
+
+#[test]
+fn table_missing_column_is_rejected() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", table(vec![record(vec![("id", s("c1"))])])),
+        ("lines", tuple(vec![])),
+    ]);
+    assert!(scene_snapshot(&scene).is_err());
+}
+
+#[test]
+fn table_unknown_column_is_rejected() {
+    let bad = record(vec![
+        ("id", s("c1")),
+        ("x", f(1.0)),
+        ("y", f(2.0)),
+        ("radius", f(3.0)),
+        ("fill", s("red")),
+        ("stroke", s("none")),
+        ("stroke-width", f(0.0)),
+        ("opacity", f(1.0)),
+        ("extra", f(1.0)),
+    ]);
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", table(vec![bad])),
+        ("lines", tuple(vec![])),
+    ]);
+    assert!(scene_snapshot(&scene).is_err());
+}
+
+#[test]
+fn table_error_identifies_row_and_column() {
+    let bad = record(vec![
+        ("id", s("c1")),
+        ("x", f(f64::NAN)),
+        ("y", f(2.0)),
+        ("radius", f(3.0)),
+        ("fill", s("red")),
+        ("stroke", s("none")),
+        ("stroke-width", f(0.0)),
+        ("opacity", f(1.0)),
+    ]);
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", table(vec![bad])),
+        ("lines", tuple(vec![])),
+    ]);
+    let err = format!("{:?}", scene_snapshot(&scene).unwrap_err());
+    assert!(err.contains("row 1"));
+    assert!(err.contains("x"));
+}
+
+#[test]
+fn tuple_unknown_field_is_rejected() {
+    let bad = record(vec![
+        ("id", s("c1")),
+        ("x", f(1.0)),
+        ("y", f(2.0)),
+        ("radius", f(3.0)),
+        ("fill", s("red")),
+        ("stroke", s("none")),
+        ("stroke-width", f(0.0)),
+        ("opacity", f(1.0)),
+        ("extra", f(1.0)),
+    ]);
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", tuple(vec![bad])),
+        ("lines", tuple(vec![])),
+    ]);
+    assert!(scene_snapshot(&scene).is_err());
+}
+
+#[test]
+fn empty_element_id_is_rejected() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", tuple(vec![circle("")])),
+        ("lines", tuple(vec![])),
+    ]);
+    assert!(scene_snapshot(&scene).is_err());
+}
+
+#[test]
+fn non_finite_scene_number_is_rejected() {
+    let scene = record(vec![
+        ("width", f(f64::INFINITY)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", tuple(vec![])),
+        ("lines", tuple(vec![])),
+    ]);
+    assert!(scene_snapshot(&scene).is_err());
+}
+
+#[test]
+fn invalid_line_cap_is_rejected() {
+    let bad = record(vec![
+        ("id", s("l1")),
+        ("x1", f(0.0)),
+        ("y1", f(0.0)),
+        ("x2", f(1.0)),
+        ("y2", f(1.0)),
+        ("stroke", s("red")),
+        ("stroke-width", f(1.0)),
+        ("line-cap", s("invalid")),
+        ("opacity", f(1.0)),
+        ("rotation", f(45.0)),
+        ("origin-x", f(0.0)),
+        ("origin-y", f(0.0)),
+    ]);
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", tuple(vec![])),
+        ("lines", tuple(vec![bad])),
+    ]);
+    assert!(scene_snapshot(&scene).is_err());
+}
+
+#[test]
+fn unknown_renderer() {
+    assert!(scene_settings_from_config(&settings("webgl")).is_err());
+}
+
+#[test]
+fn output_renderer_does_not_require_a_selector() {
+    let mut map = BTreeMap::new();
+    map.insert(
+        "renderer".to_string(),
+        ConfigValue::String("output".to_string()),
+    );
+
+    let settings = scene_settings_from_config(&ConfigValue::Map(map)).unwrap();
+
+    assert_eq!(settings.renderer, SceneRendererKind::Output);
+    assert!(settings.selector.is_empty());
+}
+
+#[test]
+fn dom_renderer_still_requires_a_selector() {
+    let mut map = BTreeMap::new();
+    map.insert(
+        "renderer".to_string(),
+        ConfigValue::String("svg".to_string()),
+    );
+
+    let error = scene_settings_from_config(&ConfigValue::Map(map)).unwrap_err();
+
+    assert!(format!("{error:?}").contains("scene selector is required"));
+}
+
+#[test]
+fn assignment_rejected() {
+    let provider = SceneResourceProvider::new("view", RecordingSceneBackend::new());
+    let err = provider
+        .preflight_write(RuntimeResourceWritePreflightRequest {
+            base_uri: "scene://view/frame".to_string(),
+            path: "replace".to_string(),
+            context_name: "view".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
+            intent: RuntimeResourceWriteIntent::Assign,
+        })
+        .unwrap_err();
+    assert!(format!("{err:?}").contains("send"));
+}
+
+#[test]
+fn unknown_send_path_rejected() {
+    let provider = SceneResourceProvider::new("view", RecordingSceneBackend::new());
+    assert!(
+        provider
+            .preflight_write(RuntimeResourceWritePreflightRequest {
+                base_uri: "scene://view/frame".to_string(),
+                path: "append".to_string(),
+                context_name: "view".to_string(),
+                operation: RuntimeCapabilityOperation::Write,
+                intent: RuntimeResourceWriteIntent::Send
+            })
+            .is_err()
+    );
+}
+
+#[test]
+fn scene_send_contract_is_at_most_once_without_idempotency() {
+    let provider = SceneResourceProvider::new("view", RecordingSceneBackend::new());
+    let contract = provider
+        .semantic_write_contract(RuntimeResourceWriteIntent::Send)
+        .unwrap();
+    assert!(matches!(
+        &contract.interaction,
+        ExternalInteraction::Effect(EffectContract {
+            delivery: EffectDeliveryPolicy::AtMostOnce,
+            idempotency: IdempotencyRequirement::NotRequired,
+        })
+    ));
+    assert!(
+        provider
+            .semantic_write_contract(RuntimeResourceWriteIntent::Assign)
+            .is_none()
+    );
+    assert!(!provider.supports_resident_idempotency(RuntimeResourceWriteIntent::Send));
+}
+
+#[test]
+fn points_reject_wrong_kinds_shapes_and_nonfinite_coordinates() {
+    let provider = SceneResourceProvider::new("view", RecordingSceneBackend::new());
+    assert!(provider.plan_write(points_command(f(1.0))).is_err());
+    assert!(
+        provider
+            .plan_write(points_command(points(2, 1, vec![0.0; 2])))
+            .is_err()
+    );
+    assert!(
+        provider
+            .plan_write(points_command(points(2, 3, vec![0.0; 6])))
+            .is_err()
+    );
+    assert!(
+        provider
+            .plan_write(points_command(points(
+                2,
+                2,
+                vec![1.0, 2.0, 3.0, f64::INFINITY],
+            )))
+            .is_err()
+    );
+}
+
+#[test]
+fn points_use_column_major_screen_coordinates_ids_palette_and_radii() {
+    let mut settings = SceneHostSettings::new("#scene", SceneRendererKind::Svg);
+    settings.width = 100;
+    settings.height = 80;
+    settings.point_radius = 2;
+    settings.first_point_radius = 7;
+    let scene = scene_snapshot_from_points(
+        &canonical(points(2, 2, vec![60.0, 30.0, 10.0, 80.0])),
+        &settings,
+    )
+    .unwrap();
+    assert_eq!(scene.circles.len(), 2);
+    assert_eq!(scene.circles[0].id, "body-0");
+    assert_eq!(scene.circles[0].x, 60.0);
+    assert_eq!(scene.circles[0].y, 10.0);
+    assert_eq!(scene.circles[0].radius, 7.0);
+    assert_eq!(scene.circles[0].fill, "#ffd166");
+    assert_eq!(scene.circles[1].id, "body-1");
+    assert_eq!(scene.circles[1].x, 30.0);
+    assert_eq!(scene.circles[1].y, 80.0);
+    assert_eq!(scene.circles[1].radius, 2.0);
+    assert_eq!(scene.circles[1].fill, "#b8b8b8");
+    assert!(scene.lines.is_empty());
+}
+
+#[test]
+fn recording_scene_backend_receives_an_accepted_points_frame() {
+    let backend = RecordingSceneBackend::new();
+    let mut provider = SceneResourceProvider::new("view", backend.clone());
+    deliver_write(&mut provider, points_write(points(1, 2, vec![1.0, 2.0]))).unwrap();
+    assert_eq!(backend.latest().unwrap().circles[0].id, "body-0");
+}
+
+#[cfg(feature = "browser")]
+#[test]
+fn browser_scene_registry_receives_an_accepted_points_frame() {
+    let registry = BrowserSceneRegistry::new();
+    let settings = SceneHostSettings::new("#scene", SceneRendererKind::Svg);
+    registry.register("view", settings.clone()).unwrap();
+    let backend = BrowserSceneBackend::new("view", registry.clone());
+    let mut provider = SceneResourceProvider::new_with_settings("view", backend, settings);
+    deliver_write(&mut provider, points_write(points(1, 2, vec![1.0, 2.0]))).unwrap();
+    assert_eq!(registry.latest("view").unwrap().circles[0].id, "body-0");
+}
+
+#[test]
+fn latest_scene_replaces_older_scene() {
+    let backend = RecordingSceneBackend::new();
+    let mut provider = SceneResourceProvider::new("view", backend.clone());
+    deliver_write(
+        &mut provider,
+        RuntimeResourceWriteRequest {
+            base_uri: "scene://view/frame".to_string(),
+            path: "replace".to_string(),
+            context_name: "view".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
+            intent: RuntimeResourceWriteIntent::Send,
+            value: canonical(empty_scene()),
+            effect_id: effect_id(),
+            idempotency_key: "scene-test:0".to_owned(),
+        },
+    )
+    .unwrap();
+    let newer = record(vec![
+        ("width", f(200.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("circles", tuple(vec![])),
+        ("lines", tuple(vec![])),
+    ]);
+    deliver_write(
+        &mut provider,
+        RuntimeResourceWriteRequest {
+            base_uri: "scene://view/frame".to_string(),
+            path: "replace".to_string(),
+            context_name: "view".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
+            intent: RuntimeResourceWriteIntent::Send,
+            value: canonical(newer),
+            effect_id: effect_id(),
+            idempotency_key: "scene-test:0".to_owned(),
+        },
+    )
+    .unwrap();
+    assert_eq!(backend.latest().unwrap().width, 200.0);
+}
+
+#[test]
+fn scene_prepare_write_does_not_render_before_delivery() {
+    let backend = RecordingSceneBackend::new();
+    let provider = SceneResourceProvider::new("view", backend.clone());
+    let effect = provider
+        .prepare_write(RuntimeResourceWriteRequest {
+            base_uri: "scene://view/frame".to_string(),
+            path: "replace".to_string(),
+            context_name: "view".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
+            intent: RuntimeResourceWriteIntent::Send,
+            value: canonical(empty_scene()),
+            effect_id: effect_id(),
+            idempotency_key: "scene-test:0".to_owned(),
+        })
+        .unwrap();
+
+    assert_eq!(backend.generation(), 0);
+    match effect {
+        PreparedRuntimeEffect::AfterCommit(mut effect) => {
+            effect.deliver().unwrap();
+        }
+        effect => panic!("expected scene after-commit effect, got {effect:?}"),
+    }
+    assert_eq!(backend.generation(), 1);
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn native_recording_backend_retains_latest_complete_scene() {
+    let factory = NativeSceneHostFactory::new().unwrap();
+    let installation = factory.instantiate("view", &settings("svg")).unwrap();
+    assert_eq!(installation.resource_providers.len(), 1);
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn native_scene_instances_are_isolated() {
+    let factory = NativeSceneHostFactory::new().unwrap();
+    let registry = factory.registry();
+    let mut main = factory
+        .instantiate("main", &settings("svg"))
+        .unwrap()
+        .resource_providers
+        .remove(0);
+    let mut hud = factory
+        .instantiate("hud", &settings("svg"))
+        .unwrap()
+        .resource_providers
+        .remove(0);
+    deliver_write(
+        main.as_mut(),
+        RuntimeResourceWriteRequest {
+            base_uri: "scene://main/frame".to_string(),
+            path: "replace".to_string(),
+            context_name: "view".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
+            intent: RuntimeResourceWriteIntent::Send,
+            value: canonical(record(vec![
+                ("width", f(100.0)),
+                ("height", f(50.0)),
+                ("background", s("#000")),
+                ("circles", tuple(vec![])),
+                ("lines", tuple(vec![])),
+            ])),
+            effect_id: effect_id(),
+            idempotency_key: "scene-test:0".to_owned(),
+        },
+    )
+    .unwrap();
+    deliver_write(
+        hud.as_mut(),
+        RuntimeResourceWriteRequest {
+            base_uri: "scene://hud/frame".to_string(),
+            path: "replace".to_string(),
+            context_name: "view".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
+            intent: RuntimeResourceWriteIntent::Send,
+            value: canonical(record(vec![
+                ("width", f(200.0)),
+                ("height", f(50.0)),
+                ("background", s("#000")),
+                ("circles", tuple(vec![])),
+                ("lines", tuple(vec![])),
+            ])),
+            effect_id: effect_id(),
+            idempotency_key: "scene-test:0".to_owned(),
+        },
+    )
+    .unwrap();
+    assert_eq!(registry.latest("main").unwrap().width, 100.0);
+    assert_eq!(registry.latest("hud").unwrap().width, 200.0);
+}
+
+#[cfg(feature = "browser")]
+#[test]
+fn browser_scene_pointer_activation_survives_coalesced_and_later_release() {
+    let registry = BrowserSceneRegistry::new();
+    let factory = BrowserSceneHostFactory::with_registry(registry.clone()).unwrap();
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .host_factory(Box::new(factory))
+        .unwrap()
+        .host_instance(HostInstanceConfig {
+            name: "view".to_string(),
+            provider: "scene".to_string(),
+            settings: settings("output"),
+        })
+        .run_resource_grant(RunResourceGrantConfig {
+            target: "view/frame".to_string(),
+            operations: vec!["read".to_string(), "write".to_string()],
+            paths: vec![
+                "pointer-pulse".to_string(),
+                "pointer-position".to_string(),
+                "pointer-pressed".to_string(),
+                "replace".to_string(),
+            ],
+        })
+        .build()
+        .unwrap();
+    runtime
+        .load_interactive_source_program(
+            r#"
+@scene := scene://view/frame{:read(pointer-pulse), :read(pointer-position), :read(pointer-pressed), :write(replace)}
+pulse := @scene/pointer-pulse
+position := @scene/pointer-position
+pressed := @scene/pointer-pressed
+~enabled := 1.0
+~last-pulse := 0.0
+delta := (pulse - last-pulse) % 2.0
+next-enabled := enabled + delta * (1.0 - 2.0 * enabled)
+enabled = next-enabled
+last-pulse = pulse
+"#,
+            ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+    runtime.start_input_drivers().unwrap();
+
+    registry
+        .submit_pointer("view", 0.25, -0.5, true, 0.0)
+        .unwrap();
+    registry
+        .submit_pointer("view", 0.25, -0.5, false, 0.01)
+        .unwrap();
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 2);
+    runtime.drain_host_inputs(8).unwrap();
+
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("enabled").unwrap()),
+        0.0
+    );
+
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("pressed").unwrap()),
+        0.0
+    );
+
+    // A second activation drains before its release. The release remains in
+    // the same gesture group and cannot replay the already-consumed pulse.
+    registry
+        .submit_pointer("view", -0.75, 0.5, true, 0.02)
+        .unwrap();
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
+    runtime.drain_host_inputs(8).unwrap();
+
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("enabled").unwrap()),
+        1.0
+    );
+
+    registry
+        .submit_pointer("view", -0.75, 0.5, false, 0.03)
+        .unwrap();
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
+    runtime.drain_host_inputs(8).unwrap();
+
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("pulse").unwrap()),
+        2.0
+    );
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("pressed").unwrap()),
+        0.0
+    );
+    assert_eq!(
+        snapshot_f64_matrix(runtime.root_symbol_value("position").unwrap()),
+        [-0.75, 0.5]
+    );
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("enabled").unwrap()),
+        1.0
+    );
+
+    // Two complete clicks may already be queued when one drain begins. Each
+    // gesture is still a distinct resident turn even though its own down/up
+    // packets coalesce, so different activation identities cannot disappear.
+    for (x, y, delta) in [(0.5, 0.5, 0.04), (-0.5, -0.5, 0.06)] {
+        registry.submit_pointer("view", x, y, true, delta).unwrap();
+        registry
+            .submit_pointer("view", x, y, false, delta + 0.01)
+            .unwrap();
+    }
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 4);
+    assert_eq!(runtime.drain_host_inputs(8).unwrap().len(), 2);
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 2);
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("pulse").unwrap()),
+        3.0
+    );
+    assert_eq!(
+        snapshot_f64_matrix(runtime.root_symbol_value("position").unwrap()),
+        [0.5, 0.5]
+    );
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("enabled").unwrap()),
+        0.0
+    );
+    assert_eq!(runtime.drain_host_inputs(8).unwrap().len(), 2);
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 0);
+
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("pulse").unwrap()),
+        4.0
+    );
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("enabled").unwrap()),
+        1.0
+    );
+}
+
+#[cfg(feature = "browser")]
+#[test]
+fn browser_scene_pointer_count_jump_preserves_toggle_parity() {
+    let factory = BrowserSceneHostFactory::new().unwrap();
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .host_factory(Box::new(factory))
+        .unwrap()
+        .host_instance(HostInstanceConfig {
+            name: "view".to_string(),
+            provider: "scene".to_string(),
+            settings: settings("output"),
+        })
+        .run_resource_grant(RunResourceGrantConfig {
+            target: "view/frame".to_string(),
+            operations: vec!["read".to_string()],
+            paths: vec!["pointer-pulse".to_string()],
+        })
+        .build()
+        .unwrap();
+    runtime
+        .load_interactive_source_program(
+            r#"
+@scene := scene://view/frame{:read(pointer-pulse)}
+pulse := @scene/pointer-pulse
+~enabled := 1.0
+~last-pulse := 0.0
+parity := (pulse - last-pulse) % 2.0
+next-enabled := enabled + parity * (1.0 - 2.0 * enabled)
+enabled = next-enabled
+last-pulse = pulse
+"#,
+            ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+
+    let pulse = RuntimeHostInputSource::new("scene://view/frame", "pointer-pulse").unwrap();
+    runtime
+        .ingress()
+        .submit(RuntimeHostInput::single(
+            pulse.clone(),
+            RuntimeHostInputValue::F64(2.0),
+        ))
+        .unwrap();
+    runtime.drain_host_inputs(1).unwrap();
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("enabled").unwrap()),
+        1.0
+    );
+
+    runtime
+        .ingress()
+        .submit(RuntimeHostInput::single(
+            pulse,
+            RuntimeHostInputValue::F64(3.0),
+        ))
+        .unwrap();
+    runtime.drain_host_inputs(1).unwrap();
+    assert_eq!(
+        snapshot_f64(runtime.root_symbol_value("enabled").unwrap()),
+        0.0
+    );
+}
+
+#[test]
+fn scene_provider_deduplicates_identical_replacements() {
+    let backend = RecordingSceneBackend::new();
+    let mut provider = SceneResourceProvider::new("main", backend.clone());
+    let write = |value: ValueCell| RuntimeResourceWriteRequest {
+        base_uri: "scene://main/frame".to_string(),
+        path: "replace".to_string(),
+        context_name: "main".to_string(),
+        operation: RuntimeCapabilityOperation::Write,
+        intent: RuntimeResourceWriteIntent::Send,
+        value: canonical(value),
+        effect_id: effect_id(),
+        idempotency_key: "scene-test:0".to_owned(),
+    };
+
+    deliver_write(&mut provider, write(empty_scene())).unwrap();
+    assert_eq!(backend.generation(), 1);
+    deliver_write(&mut provider, write(empty_scene())).unwrap();
+    assert_eq!(backend.generation(), 1);
+
+    let changed = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#111")),
+        ("circles", tuple(vec![])),
+        ("lines", tuple(vec![])),
+    ]);
+    deliver_write(&mut provider, write(changed)).unwrap();
+    assert_eq!(backend.generation(), 2);
+
+    let other_backend = RecordingSceneBackend::new();
+    let mut other_provider = SceneResourceProvider::new("other", other_backend.clone());
+    deliver_write(
+        &mut other_provider,
+        RuntimeResourceWriteRequest {
+            base_uri: "scene://other/frame".to_string(),
+            path: "replace".to_string(),
+            context_name: "main".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
+            intent: RuntimeResourceWriteIntent::Send,
+            value: canonical(empty_scene()),
+            effect_id: effect_id(),
+            idempotency_key: "scene-test:0".to_owned(),
+        },
+    )
+    .unwrap();
+    assert_eq!(other_backend.generation(), 1);
+}
+
+#[derive(Clone, Debug, Default)]
+struct FailableSceneBackend {
+    inner: RecordingSceneBackend,
+    fail_next: std::sync::Arc<std::sync::Mutex<bool>>,
+}
+impl FailableSceneBackend {
+    fn generation(&self) -> u64 {
+        self.inner.generation()
+    }
+    fn fail_next(&self) {
+        *self.fail_next.lock().unwrap() = true;
+    }
+}
+impl SceneBackend for FailableSceneBackend {
+    fn replace_scene(&mut self, scene: SceneSnapshot) -> mech_core::MResult<()> {
+        let mut fail = self.fail_next.lock().unwrap();
+        if *fail {
+            *fail = false;
+            return Err(MechError::new(TestSceneError, None));
+        }
+        self.inner.replace_scene(scene)
+    }
+}
+
+#[derive(Debug, Clone)]
+struct TestSceneError;
+impl MechErrorKind for TestSceneError {
+    fn name(&self) -> &str {
+        "SceneBackendRejected"
+    }
+    fn message(&self) -> String {
+        "backend rejected scene".to_string()
+    }
+}
+
+#[test]
+fn scene_provider_failed_replace_does_not_advance_dedup_state() {
+    let backend = FailableSceneBackend::default();
+    let mut provider = SceneResourceProvider::new("main", backend.clone());
+    let write = |value: ValueCell| RuntimeResourceWriteRequest {
+        base_uri: "scene://main/frame".to_string(),
+        path: "replace".to_string(),
+        context_name: "main".to_string(),
+        operation: RuntimeCapabilityOperation::Write,
+        intent: RuntimeResourceWriteIntent::Send,
+        value: canonical(value),
+        effect_id: effect_id(),
+        idempotency_key: "scene-test:0".to_owned(),
+    };
+    backend.fail_next();
+    assert!(deliver_write(&mut provider, write(empty_scene())).is_err());
+    assert_eq!(backend.generation(), 0);
+    deliver_write(&mut provider, write(empty_scene())).unwrap();
+    assert_eq!(backend.generation(), 1);
+    deliver_write(&mut provider, write(empty_scene())).unwrap();
+    assert_eq!(backend.generation(), 1);
+}
+
+fn payload_schema(value: &Value) -> Schema {
+    value
+        .schemas()
+        .unwrap()
+        .get(value.schema())
+        .unwrap()
+        .clone()
+}
+
+fn closed_schema(body: SchemaBody) -> Schema {
+    SchemaDraft {
+        dimension_parameters: Box::new([]),
+        body,
+    }
+    .finalize()
+    .unwrap()
+}
+
+fn scene_schema_with(field: &str, body: SchemaBody) -> Schema {
+    let mut fields = vec![
+        SchemaField {
+            name: "width".into(),
+            schema: SchemaBody::FloatingPoint(FloatWidth::W64),
+        },
+        SchemaField {
+            name: "height".into(),
+            schema: SchemaBody::FloatingPoint(FloatWidth::W64),
+        },
+        SchemaField {
+            name: "background".into(),
+            schema: SchemaBody::String,
+        },
+    ];
+    if let Some(existing) = fields.iter_mut().find(|existing| existing.name == field) {
+        existing.schema = body;
+    } else {
+        fields.push(SchemaField {
+            name: field.into(),
+            schema: body,
+        });
+    }
+    closed_schema(SchemaBody::Record(fields.into_boxed_slice()))
+}
+
+fn schema_request(path: &str) -> RuntimeResourceWritePreflightRequest {
+    RuntimeResourceWritePreflightRequest {
+        base_uri: "scene://view/frame".into(),
+        path: path.into(),
+        context_name: "view".into(),
+        operation: RuntimeCapabilityOperation::Write,
+        intent: RuntimeResourceWriteIntent::Send,
+    }
+}
+
+#[test]
+fn scene_schema_preflight_preserves_maintained_value_forms_without_rendering() {
+    let backend = RecordingSceneBackend::new();
+    let provider = SceneResourceProvider::new("view", backend.clone());
+    for value in [
+        empty_scene(),
+        record(vec![
+            ("width", f(100.0)),
+            ("height", f(50.0)),
+            ("background", f(0x080b12 as f64)),
+            ("circles", tuple(vec![circle("c")])),
+            ("lines", table(vec![line("l")])),
+            ("texts", tuple(vec![text("t")])),
+        ]),
+        record(vec![
+            ("width", f(100.0)),
+            ("height", f(50.0)),
+            ("background", s("black")),
+            ("point-sets", point_set("p")),
+            ("line-strips", line_strip("s")),
+        ]),
+        record(vec![
+            ("width", f(100.0)),
+            ("height", f(50.0)),
+            ("background", s("black")),
+            ("point-sets", table(vec![point_set("p")])),
+            ("line-strips", tuple(vec![line_strip("s")])),
+        ]),
+    ] {
+        let value = canonical(value);
+        SceneSnapshot::from_value(&value).unwrap();
+        provider
+            .preflight_write_schema(schema_request("replace"), &payload_schema(&value))
+            .unwrap();
+    }
+    assert_eq!(backend.generation(), 0);
+    assert!(backend.latest().is_none());
+}
+
+#[test]
+fn scene_schema_preflight_rejects_impossible_structure_and_preserves_path_checks() {
+    let provider = SceneResourceProvider::new("view", RecordingSceneBackend::new());
+    for schema in [
+        closed_schema(SchemaBody::String),
+        closed_schema(SchemaBody::Record(Box::new([]))),
+        scene_schema_with("width", SchemaBody::String),
+        scene_schema_with("background", SchemaBody::Index),
+        scene_schema_with("unknown", SchemaBody::Bool),
+        scene_schema_with("circles", SchemaBody::Record(Box::new([]))),
+        scene_schema_with("texts", SchemaBody::Tuple(Box::new([SchemaBody::Bool]))),
+    ] {
+        assert!(
+            provider
+                .preflight_write_schema(schema_request("replace"), &schema)
+                .is_err(),
+            "{schema:?}"
+        );
+    }
+    let schema = payload_schema(&canonical(empty_scene()));
+    let mut request = schema_request("replace");
+    request.base_uri = "scene://other/frame".into();
+    assert!(provider.preflight_write_schema(request, &schema).is_err());
+    let mut request = schema_request("replace");
+    request.intent = RuntimeResourceWriteIntent::Assign;
+    assert!(provider.preflight_write_schema(request, &schema).is_err());
+    assert!(
+        provider
+            .preflight_write_schema(schema_request("unknown"), &schema)
+            .is_err()
+    );
+}
+
+#[test]
+fn scene_schema_preflight_defers_optional_dynamic_and_zero_row_field_kinds() {
+    let provider = SceneResourceProvider::new("view", RecordingSceneBackend::new());
+    let plain = payload_schema(&canonical(empty_scene()));
+    for schema in [
+        closed_schema(SchemaBody::Dynamic),
+        closed_schema(SchemaBody::Option(Box::new(plain.body().clone()))),
+        scene_schema_with("width", SchemaBody::Dynamic),
+        scene_schema_with("circles", SchemaBody::Option(Box::new(SchemaBody::Bool))),
+    ] {
+        assert_eq!(
+            provider
+                .preflight_write_schema(schema_request("replace"), &schema)
+                .unwrap(),
+            ResourceSchemaPreflight::DeferredToRuntime
+        );
+    }
+    // None is a real accepted empty collection even when its Some kind would
+    // not be an element collection. Preflight must not manufacture Some.
+    let absent = ValueCell::from_schema_data(
+        SchemaBody::Option(Box::new(SchemaBody::Bool)),
+        ValueDataDraft::Option(mech_core::snapshot::OptionDraft {
+            present: false,
+            value: None,
+        }),
+    )
+    .unwrap();
+    let value = canonical(record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("black")),
+        ("circles", absent),
+    ]));
+    assert!(
+        SceneSnapshot::from_value(&value)
+            .unwrap()
+            .circles
+            .is_empty()
+    );
+    assert_eq!(
+        provider
+            .preflight_write_schema(schema_request("replace"), &payload_schema(&value))
+            .unwrap(),
+        ResourceSchemaPreflight::DeferredToRuntime
+    );
+
+    let SchemaBody::Record(mut fields) = circle("template").closed_schema_body().unwrap() else {
+        panic!("circle record")
+    };
+    fields
+        .iter_mut()
+        .find(|field| field.name == "id")
+        .unwrap()
+        .schema = SchemaBody::Bool;
+    let empty = ValueCell::empty_dynamic_table(fields.clone()).unwrap();
+    let value = canonical(record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("black")),
+        ("circles", empty),
+    ]));
+    assert!(
+        SceneSnapshot::from_value(&value)
+            .unwrap()
+            .circles
+            .is_empty()
+    );
+    assert_eq!(
+        provider
+            .preflight_write_schema(schema_request("replace"), &payload_schema(&value))
+            .unwrap(),
+        ResourceSchemaPreflight::DeferredToRuntime
+    );
+    let nonempty = scene_schema_with(
+        "circles",
+        SchemaBody::Table {
+            columns: fields.clone(),
+            rows: CardinalitySpec::Exact(DimensionExpr::Constant(1)),
+        },
+    );
+    assert!(
+        provider
+            .preflight_write_schema(schema_request("replace"), &nonempty)
+            .is_err()
+    );
+    let missing = fields
+        .into_vec()
+        .into_iter()
+        .filter(|field| field.name != "radius")
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    let empty_missing = scene_schema_with(
+        "circles",
+        SchemaBody::Table {
+            columns: missing,
+            rows: CardinalitySpec::Exact(DimensionExpr::Constant(0)),
+        },
+    );
+    assert!(
+        provider
+            .preflight_write_schema(schema_request("replace"), &empty_missing)
+            .is_err()
+    );
+}
+
+#[test]
+fn scene_schema_preflight_leaves_actual_numeric_domains_with_prepare_write() {
+    let backend = RecordingSceneBackend::new();
+    let provider = SceneResourceProvider::new("view", backend.clone());
+    for value in [
+        record(vec![
+            ("width", f(0.0)),
+            ("height", f(50.0)),
+            ("background", s("black")),
+        ]),
+        record(vec![
+            ("width", f(100.0)),
+            ("height", f(50.0)),
+            ("background", s("black")),
+            ("circles", tuple(vec![circle("same"), circle("same")])),
+        ]),
+    ] {
+        let value = canonical(value);
+        assert_eq!(
+            provider
+                .preflight_write_schema(schema_request("replace"), &payload_schema(&value))
+                .unwrap(),
+            ResourceSchemaPreflight::Validated
+        );
+        let request = RuntimeResourceWriteCommand {
+            base_uri: "scene://view/frame".into(),
+            path: "replace".into(),
+            context_name: "view".into(),
+            operation: RuntimeCapabilityOperation::Write,
+            value,
+            intent: RuntimeResourceWriteIntent::Send,
+        };
+        assert!(
+            provider
+                .prepare_write(request.bind_effect(effect_id(), "schema-preflight:0".into()))
+                .is_err()
+        );
+    }
+    assert_eq!(backend.generation(), 0);
+    assert!(backend.latest().is_none());
+}
+
+#[test]
+fn points_schema_preflight_checks_rank_f64_and_fixed_extents_without_values() {
+    use mech_core::{
+        DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+        DimensionParameterOrigin,
+    };
+    let provider = SceneResourceProvider::new("view", RecordingSceneBackend::new());
+    let matrix = |element, dimensions: Vec<DimensionExpr>| {
+        closed_schema(SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: dimensions.into_boxed_slice(),
+        })
+    };
+    let f64_kind = SchemaBody::FloatingPoint(FloatWidth::W64);
+    for schema in [
+        closed_schema(SchemaBody::Dynamic),
+        closed_schema(SchemaBody::Option(Box::new(SchemaBody::Dynamic))),
+        matrix(
+            SchemaBody::FloatingPoint(FloatWidth::W32),
+            vec![DimensionExpr::Constant(2), DimensionExpr::Constant(2)],
+        ),
+        matrix(f64_kind.clone(), vec![DimensionExpr::Constant(2)]),
+        matrix(
+            f64_kind.clone(),
+            vec![DimensionExpr::Constant(0), DimensionExpr::Constant(2)],
+        ),
+        matrix(
+            f64_kind.clone(),
+            vec![DimensionExpr::Constant(2), DimensionExpr::Constant(3)],
+        ),
+    ] {
+        assert!(
+            provider
+                .preflight_write_schema(schema_request("points"), &schema)
+                .is_err(),
+            "{schema:?}"
+        );
+    }
+    let fixed = matrix(
+        f64_kind.clone(),
+        vec![DimensionExpr::Constant(2), DimensionExpr::Constant(2)],
+    );
+    assert_eq!(
+        provider
+            .preflight_write_schema(schema_request("points"), &fixed)
+            .unwrap(),
+        ResourceSchemaPreflight::Validated
+    );
+    let variable = SchemaDraft {
+        dimension_parameters: Box::new([DimensionParameterDeclaration {
+            id: DimensionParameterId::new(0),
+            origin: DimensionParameterOrigin::Explicit,
+            lifetime: DimensionLifetime::Turn,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        }]),
+        body: SchemaBody::Matrix {
+            element: Box::new(f64_kind),
+            dimensions: Box::new([
+                DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                DimensionExpr::Constant(2),
+            ]),
+        },
+    }
+    .finalize()
+    .unwrap();
+    assert_eq!(
+        provider
+            .preflight_write_schema(schema_request("points"), &variable)
+            .unwrap(),
+        ResourceSchemaPreflight::DeferredToRuntime
+    );
+    let value = canonical(points(1, 2, vec![f64::INFINITY, 0.0]));
+    assert!(
+        provider
+            .preflight_write_schema(schema_request("points"), &payload_schema(&value))
+            .is_ok()
+    );
+    assert!(
+        provider
+            .prepare_write(points_write(points(1, 2, vec![f64::INFINITY, 0.0])))
+            .is_err()
+    );
+}

@@ -1,0 +1,14 @@
+{
+  "code": "syntax/missing-variable-definition-value",
+  "rule": "variable-define",
+  "context": null,
+  "range": {
+    "start": 5,
+    "end": 5
+  },
+  "expected": [
+    { "kind": "production", "value": "expression" }
+  ],
+  "found": "Eof",
+  "recovery": "Insert"
+}

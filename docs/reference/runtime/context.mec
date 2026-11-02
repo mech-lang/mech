@@ -1,0 +1,34 @@
+Runtime Context
+===============================================================================
+
+A runtime context is the per-operation execution envelope used by the runtime.
+
+It carries the identity, authority, budget, and event state needed to execute one operation safely.
+
+1. Context contents
+-------------------------------------------------------------------------------
+
+A runtime context can carry:
+
+- Subject identity.
+- Task identity.
+- Actor identity.
+- Module identity.
+- Transaction identity.
+- Resource budget.
+- Capability scope.
+- Runtime events emitted during the turn.
+
+2. Why contexts exist
+-------------------------------------------------------------------------------
+
+Runtime operations need more than source code and values. They need to know who is acting, what authority that subject has, what limits apply, and what events should be recorded.
+
+The runtime context is the object that carries this information through execution.
+
+3. Contexts and host resources
+-------------------------------------------------------------------------------
+
+When a program reads from or writes to a bound context, the runtime uses the active runtime context as the capability-check subject.
+
+That means access is checked for the currently executing runtime subject, not globally for all code.

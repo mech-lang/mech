@@ -1,0 +1,1014 @@
+// Module methods
+// -----------------------------------------------------------------------------
+
+// Modules represent a unit of code that can be compiled and executed within the runtime. They are versioned, allowing for updates and changes over time while maintaining references to specific versions. The module methods handle the resolution, compilation, storage, and activation of modules within the runtime. They also manage the dependencies between modules, ensuring that imports are correctly resolved and that circular dependencies are handled gracefully.
+
+// The included methods are:
+
+// - `ensure_module`: Ensures that a module with the given canonical URI exists in the store, creating it if it doesn't.
+// - `resolve_source`: Resolves a source request to a resolved source, which includes the canonical URI and the source code. This method does not emit any events.
+// - `resolve_source_evented`: A convenience method that creates a runtime context and resolves a source request, emitting events as needed.
+// - `store_resolved_module_source`: Stores a resolved module source in the runtime, compiling it and its dependencies as needed, and returns the ModuleVersionId of the stored module.
+// - `resolve_and_store_module_source`: Resolves a source request and stores the resulting module source in the runtime, compiling it and its dependencies as needed, and returns the ModuleVersionId of the stored module.
+// - `put_source_module`: A convenience method that takes raw source code, constructs a resolved source, and stores it as a module in the runtime, returning the ModuleVersionId of the stored module.
+// - `activate_module_version`: Activates a specific version of a module, making it the active version for that module.
+// - `active_module_version`: Retrieves the active version of a module, if any.
+
+use super::{
+    MechRuntime, RuntimeInvalidOperationError, RuntimeModuleDependencyCycleError,
+    RuntimeModuleDependencyMissingError, RuntimeModuleImportEdgeInvalid, extension,
+};
+use crate::{
+    CapabilityRequest, ModuleBuildOptions, ModuleDependencyGraph, ModuleId, ModuleImportEdge,
+    ModuleRecord, ModuleVersionId, ModuleVersionRecord, NonExecutableModuleSource, ResolvedSource,
+    RuntimeContext, RuntimeEventKind, RuntimeModuleJournalConflict, SourceDeclaration,
+    SourceImportAlias, SourceIndex, SourceRequest, SourceScope, module_id,
+};
+use mech_core::{MResult, MechError, MechSourceCode};
+use std::collections::HashMap;
+
+pub(in crate::runtime) fn validate_module_import_edges(
+    record: &ModuleVersionRecord,
+) -> MResult<()> {
+    record.validate_import_edges().map_err(|error| {
+        MechError::new(
+            RuntimeModuleImportEdgeInvalid {
+                module: record.id,
+                reason: format!("{:?}", error),
+            },
+            None,
+        )
+    })
+}
+
+#[cfg(feature = "source")]
+fn source_index_for_module_record_source(
+    source_document: Option<&crate::SourceDocument>,
+) -> MResult<Option<SourceIndex>> {
+    source_document
+        .map(|document| {
+            document
+                .index()
+                .map(|index| index.root)
+                .map_err(|error| MechError::new(error, None))
+        })
+        .transpose()
+}
+
+fn source_index_for_resolved_source(resolved: &mut ResolvedSource) -> MResult<Option<SourceIndex>> {
+    #[cfg(feature = "source")]
+    {
+        if matches!(resolved.kind, crate::SourceKind::Mech)
+            && matches!(&resolved.source, MechSourceCode::String(_))
+            && resolved.source_document().is_none()
+        {
+            *resolved = resolved.clone().retain_source_document(
+                mech_syntax::document::Revision(0),
+                mech_syntax::document::ParseConfig::default(),
+            )?;
+        }
+        source_index_for_module_record_source(resolved.source_document())
+    }
+    #[cfg(not(feature = "source"))]
+    {
+        let _ = resolved;
+        Ok(None)
+    }
+}
+
+fn source_index_for_runtime_record(
+    record: &crate::RuntimeModuleRecord,
+) -> MResult<Option<SourceIndex>> {
+    #[cfg(feature = "source")]
+    {
+        source_index_for_module_record_source(record.source_document.as_ref())
+    }
+    #[cfg(not(feature = "source"))]
+    {
+        let _ = record;
+        Ok(None)
+    }
+}
+
+fn index_unindexed_module_source(resolved: &mut ResolvedSource) -> MResult<()> {
+    if !resolved.scopes.is_empty() {
+        return Ok(());
+    }
+
+    let Some(index) = source_index_for_resolved_source(resolved)? else {
+        return Ok(());
+    };
+
+    index.validate_address_targets()?;
+    resolved.imports = index.all_imports();
+    resolved.exports = index.all_exports();
+    resolved.contexts = index.all_contexts();
+    resolved.address_references = index.all_address_references();
+    resolved.scopes = index.module_scopes();
+    Ok(())
+}
+
+#[cfg(all(test, feature = "source"))]
+#[test]
+fn textual_custom_resolver_result_retains_canonical_module_edges() {
+    let mut resolved = ResolvedSource::new(
+        "main.mec",
+        "main.mec",
+        MechSourceCode::String("+> ./dep.mec\nvalue := 1\n".to_owned()),
+    )
+    .with_kind(crate::SourceKind::Mech);
+    assert!(resolved.source_document().is_none());
+    index_unindexed_module_source(&mut resolved).unwrap();
+    assert!(resolved.source_document().is_some());
+    assert_eq!(resolved.imports.len(), 1);
+}
+
+#[cfg(all(test, feature = "source"))]
+#[test]
+fn nested_program_custom_resolver_result_remains_unindexed() {
+    let mut resolved = ResolvedSource::new(
+        "main.mec",
+        "main.mec",
+        MechSourceCode::Program(vec![MechSourceCode::String("value := 1\n".to_owned())]),
+    )
+    .with_kind(crate::SourceKind::Mech);
+    index_unindexed_module_source(&mut resolved).unwrap();
+    assert!(resolved.source_document().is_none());
+    assert!(resolved.scopes.is_empty());
+}
+
+impl MechRuntime {
+    pub(crate) fn context_declarations_from_index_scope(
+        &self,
+        index: &SourceIndex,
+        scope: &SourceScope,
+    ) -> MResult<Vec<crate::SourceContextDeclaration>> {
+        let mut declarations = Vec::new();
+
+        for declaration in &index.declarations {
+            match declaration {
+                SourceDeclaration::Context(context) if &context.occurrence.scope == scope => {
+                    declarations.push(context.declaration.clone());
+                }
+                SourceDeclaration::Import(import) if &import.occurrence.scope == scope => {
+                    let Some(SourceImportAlias::Context(alias)) = &import.declaration.alias else {
+                        continue;
+                    };
+                    let module = import.declaration.module.as_deref().ok_or_else(|| {
+                        MechError::new(
+                            RuntimeInvalidOperationError {
+                                operation: "materialize_direct_manifest_context_imports",
+                                reason: format!(
+                                    "context import `{}` is missing module metadata",
+                                    import.declaration.specifier
+                                ),
+                            },
+                            None,
+                        )
+                    })?;
+                    let item = import.declaration.item.as_deref().ok_or_else(|| {
+                        MechError::new(
+                            RuntimeInvalidOperationError {
+                                operation: "materialize_direct_manifest_context_imports",
+                                reason: format!(
+                                    "context import `{}` is missing item metadata",
+                                    import.declaration.specifier
+                                ),
+                            },
+                            None,
+                        )
+                    })?;
+                    let target = format!("{module}/{item}");
+                    if let Some(context) = self.host_interfaces.resolve_optional(&target)? {
+                        declarations.push(crate::SourceContextDeclaration {
+                            name: alias.clone(),
+                            base: crate::SourceContextBase::ResourceUri(context.base_uri.clone()),
+                            capabilities: context
+                                .operations
+                                .iter()
+                                .map(|operation| crate::SourceContextCapability {
+                                    operation: operation.clone(),
+                                    scope: crate::SourceContextCapabilityScope::Wildcard,
+                                })
+                                .collect(),
+                        });
+                    } else {
+                        let export = self.module_manifests.context_export(module, item)?;
+                        declarations.push(crate::SourceContextDeclaration {
+                            name: alias.clone(),
+                            base: crate::SourceContextBase::ResourceUri(export.base_uri.clone()),
+                            capabilities: export
+                                .operations
+                                .iter()
+                                .map(|operation| crate::SourceContextCapability {
+                                    operation: operation.clone(),
+                                    scope: crate::SourceContextCapabilityScope::Wildcard,
+                                })
+                                .collect(),
+                        });
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(declarations)
+    }
+
+    pub fn ensure_module(&mut self, name: &str, canonical_uri: &str) -> MResult<ModuleId> {
+        self.ensure_runtime_mutation_allowed("ensure_module")?;
+        if let Some(module) = self.store.find_module_by_name(canonical_uri)? {
+            return Ok(module.id);
+        }
+
+        let id = module_id(canonical_uri);
+        let module = ModuleRecord::new(id, canonical_uri).with_description(name.to_string());
+
+        self.store.put_module(module)
+    }
+
+    fn ensure_module_for_build_with_context(
+        &mut self,
+        context: &mut RuntimeContext,
+        name: &str,
+        canonical_uri: &str,
+    ) -> MResult<ModuleId> {
+        let transaction_id = Self::context_transaction_id(context)?;
+        if let Some(module) = self.find_module_by_name_visible(context, canonical_uri)? {
+            return Ok(module.id);
+        }
+
+        let id = module_id(canonical_uri);
+        if let Some(module) = self.get_module_visible(context, id)? {
+            if module.name == canonical_uri {
+                return Ok(id);
+            }
+            return Err(MechError::new(
+                RuntimeModuleJournalConflict {
+                    record_type: "module",
+                    identity: id.to_string(),
+                    reason: "visible module ID maps to another canonical URI".to_string(),
+                },
+                None,
+            ));
+        }
+
+        let module = ModuleRecord::new(id, canonical_uri).with_description(name.to_string());
+        self.active_runtime_transaction_mut(transaction_id)?
+            .modules
+            .stage_module(module)?;
+        Ok(id)
+    }
+
+    fn materialize_manifest_context_imports(
+        &mut self,
+        record: &mut crate::RuntimeModuleRecord,
+    ) -> MResult<()> {
+        let Some(index) = source_index_for_runtime_record(record)? else {
+            return self.materialize_manifest_context_imports_from_scopes(record);
+        };
+
+        let mut all_contexts = Vec::new();
+
+        for scope in &mut record.scopes {
+            let contexts = self.context_declarations_from_index_scope(&index, &scope.scope)?;
+            scope.contexts = contexts;
+            all_contexts.extend(scope.contexts.iter().cloned());
+        }
+
+        record.contexts = all_contexts;
+        Ok(())
+    }
+
+    fn materialize_manifest_context_imports_from_scopes(
+        &mut self,
+        record: &mut crate::RuntimeModuleRecord,
+    ) -> MResult<()> {
+        for scope in &mut record.scopes {
+            let context_imports = scope
+                .imports
+                .iter()
+                .filter_map(|import| match &import.alias {
+                    Some(SourceImportAlias::Context(alias)) => Some((import, alias.clone())),
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
+
+            for (import, alias) in context_imports {
+                if scope.contexts.iter().any(|context| context.name == alias) {
+                    return Err(MechError::new(
+                        RuntimeInvalidOperationError {
+                            operation: "materialize_manifest_context_imports",
+                            reason: format!(
+                                "context import duplicates an existing context binding `{alias}`"
+                            ),
+                        },
+                        None,
+                    ));
+                }
+
+                let module = import.module.as_deref().ok_or_else(|| {
+                    MechError::new(
+                        RuntimeInvalidOperationError {
+                            operation: "materialize_manifest_context_imports",
+                            reason: format!(
+                                "context import `{}` is missing module metadata",
+                                import.specifier
+                            ),
+                        },
+                        None,
+                    )
+                })?;
+                let item = import.item.as_deref().ok_or_else(|| {
+                    MechError::new(
+                        RuntimeInvalidOperationError {
+                            operation: "materialize_manifest_context_imports",
+                            reason: format!(
+                                "context import `{}` is missing item metadata",
+                                import.specifier
+                            ),
+                        },
+                        None,
+                    )
+                })?;
+
+                let export = self.module_manifests.context_export(module, item)?;
+                let declaration = crate::SourceContextDeclaration {
+                    name: alias,
+                    base: crate::SourceContextBase::ResourceUri(export.base_uri.clone()),
+                    capabilities: export
+                        .operations
+                        .iter()
+                        .map(|operation| crate::SourceContextCapability {
+                            operation: operation.clone(),
+                            scope: crate::SourceContextCapabilityScope::Wildcard,
+                        })
+                        .collect(),
+                };
+
+                scope.contexts.push(declaration.clone());
+                record.contexts.push(declaration);
+            }
+        }
+
+        Ok(())
+    }
+
+    fn validate_runtime_module_record_address_targets(
+        record: &crate::RuntimeModuleRecord,
+    ) -> MResult<()> {
+        let mut interpreter_targets: HashMap<String, String> = HashMap::new();
+
+        for metadata in &record.scopes {
+            if let SourceScope::Interpreter(interpreter) = &metadata.scope {
+                if let Some(first_kind) = interpreter_targets
+                    .insert(interpreter.namespace_str.clone(), "interpreter".to_string())
+                {
+                    return Err(MechError::new(
+                        crate::resolver::AddressTargetNameConflict {
+                            name: interpreter.namespace_str.clone(),
+                            first_kind,
+                            second_kind: "interpreter".to_string(),
+                        },
+                        None,
+                    ));
+                }
+            }
+        }
+
+        for metadata in &record.scopes {
+            let mut scope_targets = HashMap::new();
+            match &metadata.scope {
+                SourceScope::Program => {
+                    for (name, kind) in &interpreter_targets {
+                        scope_targets.insert(name.clone(), kind.clone());
+                    }
+                }
+                SourceScope::Interpreter(interpreter) => {
+                    scope_targets
+                        .insert(interpreter.namespace_str.clone(), "interpreter".to_string());
+                }
+            }
+
+            for context in &metadata.contexts {
+                if let Some(first_kind) =
+                    scope_targets.insert(context.name.clone(), "context".to_string())
+                {
+                    return Err(MechError::new(
+                        crate::resolver::AddressTargetNameConflict {
+                            name: context.name.clone(),
+                            first_kind,
+                            second_kind: "context".to_string(),
+                        },
+                        None,
+                    ));
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn resolve_source(
+        &self,
+        request: impl Into<SourceRequest>,
+    ) -> MResult<Option<ResolvedSource>> {
+        let request = request.into();
+        request.validate()?;
+
+        extension::invoke_extension("source resolver", "resolve", || {
+            self.source_resolver.resolve(&request)
+        })
+    }
+
+    pub fn resolve_source_with_context(
+        &mut self,
+        context: &mut RuntimeContext,
+        request: impl Into<SourceRequest>,
+    ) -> MResult<Option<ResolvedSource>> {
+        self.ensure_runtime_mutation_allowed("resolve_source_with_context")?;
+        self.validate_context_for_runtime(context)?;
+        context.charge_step()?;
+
+        let request = request.into();
+        request.validate()?;
+
+        let resolved = extension::invoke_extension("source resolver", "resolve", || {
+            self.source_resolver.resolve(&request)
+        })?;
+
+        if let Some(source) = &resolved {
+            self.emit_event_to_context(
+                context,
+                RuntimeEventKind::SourceResolved {
+                    canonical_uri: source.canonical_uri.clone(),
+                },
+            )?;
+        }
+
+        Ok(resolved)
+    }
+
+    pub fn resolve_source_evented(
+        &mut self,
+        request: impl Into<SourceRequest>,
+    ) -> MResult<Option<ResolvedSource>> {
+        self.ensure_runtime_mutation_allowed("resolve_source_evented")?;
+        let mut context = self.runtime_context()?;
+        self.resolve_source_with_context(&mut context, request)
+    }
+
+    pub fn store_resolved_module_source(
+        &mut self,
+        resolved: ResolvedSource,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ModuleVersionId> {
+        self.ensure_runtime_mutation_allowed("store_resolved_module_source")?;
+        let mut context = self.runtime_context()?;
+
+        self.build_module_from_resolved_source_with_context(&mut context, resolved, options)
+    }
+
+    pub fn build_module_from_resolved_source_with_context(
+        &mut self,
+        context: &mut RuntimeContext,
+        resolved: ResolvedSource,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ModuleVersionId> {
+        self.ensure_runtime_mutation_allowed("build_module_from_resolved_source_with_context")?;
+        self.with_atomic_module_operation(
+            context,
+            "build_module_from_resolved_source_with_context",
+            |runtime, context| {
+                runtime.build_module_from_resolved_source_in_transaction(context, resolved, options)
+            },
+        )
+    }
+
+    fn build_module_from_resolved_source_in_transaction(
+        &mut self,
+        context: &mut RuntimeContext,
+        resolved: ResolvedSource,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ModuleVersionId> {
+        Self::context_transaction_id(context)?;
+        let mut dependency_graph = ModuleDependencyGraph::new();
+
+        self.build_module_from_resolved_source_with_context_and_graph(
+            context,
+            resolved,
+            options,
+            &mut dependency_graph,
+        )
+    }
+
+    fn build_module_from_resolved_source_with_context_and_graph(
+        &mut self,
+        context: &mut RuntimeContext,
+        resolved: ResolvedSource,
+        options: ModuleBuildOptions<'_>,
+        dependency_graph: &mut ModuleDependencyGraph,
+    ) -> MResult<ModuleVersionId> {
+        self.validate_context_for_runtime(context)?;
+        let transaction_id = Self::context_transaction_id(context)?;
+        context.charge_step()?;
+
+        if !resolved.is_executable_mech_source() {
+            return Err(MechError::new(
+                NonExecutableModuleSource {
+                    canonical_uri: resolved.canonical_uri.clone(),
+                },
+                None,
+            ));
+        }
+
+        self.enforce_source_limits(context, &resolved.source)?;
+        resolved.validate()?;
+        #[cfg(feature = "source")]
+        if let Some(document) = resolved.source_document() {
+            self.validate_source_revision(module_id(&resolved.canonical_uri), document)?;
+        }
+
+        let canonical_uri = resolved.canonical_uri.clone();
+
+        if let Some(module_version) = dependency_graph.cached_version(&canonical_uri) {
+            return Ok(module_version);
+        }
+
+        if let Some(cycle) = dependency_graph.enter(&canonical_uri) {
+            return Err(MechError::new(
+                RuntimeModuleDependencyCycleError { cycle },
+                None,
+            ));
+        }
+
+        let result = (|| -> MResult<ModuleVersionId> {
+            let feature_flags_owned = options
+                .feature_flags
+                .iter()
+                .map(|flag| (*flag).to_string())
+                .collect::<Vec<_>>();
+
+            let mut resolved = resolved;
+            index_unindexed_module_source(&mut resolved)?;
+
+            let explicit_capability_requirements = options
+                .capability_requirements
+                .iter()
+                .map(|resource| {
+                    CapabilityRequest::from_keys(
+                        context.subject.clone(),
+                        "use",
+                        (*resource).to_string(),
+                    )
+                })
+                .collect::<Vec<_>>();
+
+            resolved
+                .capability_requirements
+                .extend(explicit_capability_requirements);
+
+            let concrete_capability_requirements = resolved.capability_requirements.clone();
+
+            let mut dependency_versions = Vec::new();
+            let mut flat_import_dependencies = Vec::new();
+
+            for import in &resolved.imports {
+                if !crate::resolver::import_may_resolve_source_dependency(import) {
+                    continue;
+                }
+                let dependency_request =
+                    crate::resolver::source_request_for_import(import, Some(&canonical_uri));
+                let dependency_version = self.build_module_from_request_with_context_and_graph(
+                    context,
+                    dependency_request.clone(),
+                    options,
+                    dependency_graph,
+                )?;
+                let Some(dependency_version) = dependency_version else {
+                    if crate::resolver::import_requires_source_dependency(import) {
+                        return Err(MechError::new(
+                            RuntimeModuleDependencyMissingError {
+                                module: canonical_uri.clone(),
+                                specifier: dependency_request.specifier.clone(),
+                                referrer: dependency_request.referrer.clone(),
+                            },
+                            None,
+                        ));
+                    }
+                    continue;
+                };
+                dependency_versions.push(dependency_version);
+                flat_import_dependencies.push((import.clone(), dependency_version));
+            }
+
+            let mut import_edges = Vec::new();
+            let mut matched_flat_imports = vec![false; flat_import_dependencies.len()];
+            for scope_metadata in &resolved.scopes {
+                for import in &scope_metadata.imports {
+                    if !crate::resolver::import_may_resolve_source_dependency(import) {
+                        continue;
+                    }
+                    let Some((index, (_, dependency_version))) = flat_import_dependencies
+                        .iter()
+                        .enumerate()
+                        .find(|(index, (flat_import, _))| {
+                            !matched_flat_imports[*index] && flat_import == import
+                        })
+                    else {
+                        if crate::resolver::import_requires_source_dependency(import) {
+                            return Err(MechError::new(
+                                RuntimeInvalidOperationError {
+                                    operation: "resolve_and_store_module_source",
+                                    reason: format!(
+                                        "scoped import `{}` was not found in flat imports",
+                                        import.specifier
+                                    ),
+                                },
+                                None,
+                            ));
+                        }
+                        continue;
+                    };
+                    matched_flat_imports[index] = true;
+                    import_edges.push(ModuleImportEdge {
+                        scope: scope_metadata.scope.clone(),
+                        import: import.clone(),
+                        dependency: *dependency_version,
+                    });
+                }
+            }
+
+            let mut record = self.module_builder.build_resolved_source(
+                resolved,
+                options.compiler_version.to_string(),
+                options.language_edition.to_string(),
+                options.target.to_string(),
+                &feature_flags_owned,
+                &dependency_versions,
+                &concrete_capability_requirements,
+            )?;
+
+            self.materialize_manifest_context_imports(&mut record)?;
+            Self::validate_runtime_module_record_address_targets(&record)?;
+
+            let module = self.ensure_module_for_build_with_context(
+                context,
+                &record.name,
+                &record.canonical_uri,
+            )?;
+
+            debug_assert_eq!(
+                module, record.module_id,
+                "ModuleBuilder and runtime module store derived different ModuleId values",
+            );
+
+            let module_version = record.module_version;
+            let version =
+                ModuleVersionRecord::new(module_version, module, 1).with_source(record.source);
+            #[cfg(feature = "source")]
+            let version = version.with_source_document(record.source_document);
+            let version = version
+                .with_exports(record.exports)
+                .with_imports(record.imports)
+                .with_contexts(record.contexts)
+                .with_address_references(record.address_references)
+                .with_scopes(record.scopes)
+                .with_dependencies(record.dependency_versions)
+                .with_import_edges(import_edges)
+                .with_capability_requirements(record.capability_requirements);
+            validate_module_import_edges(&version)?;
+
+            if let Some(existing) = self.get_module_version_visible(context, module_version)? {
+                if existing != version {
+                    return Err(MechError::new(
+                        RuntimeModuleJournalConflict {
+                            record_type: "module_version",
+                            identity: module_version.to_string(),
+                            reason: "visible version ID maps to different contents".to_string(),
+                        },
+                        None,
+                    ));
+                }
+                dependency_graph.cache_version(&canonical_uri, module_version);
+                return Ok(module_version);
+            }
+
+            let staged = self
+                .active_runtime_transaction_mut(transaction_id)?
+                .modules
+                .stage_version(version)?;
+
+            dependency_graph.cache_version(&canonical_uri, module_version);
+
+            if staged {
+                self.emit_event_to_context(
+                    context,
+                    RuntimeEventKind::ModuleCompiled { module_version },
+                )?;
+            }
+
+            Ok(module_version)
+        })();
+
+        dependency_graph.leave(&canonical_uri);
+
+        result
+    }
+
+    fn build_module_from_request_with_context_and_graph(
+        &mut self,
+        context: &mut RuntimeContext,
+        request: impl Into<SourceRequest>,
+        options: ModuleBuildOptions<'_>,
+        dependency_graph: &mut ModuleDependencyGraph,
+    ) -> MResult<Option<ModuleVersionId>> {
+        let Some(resolved) = self.resolve_source_with_context(context, request)? else {
+            return Ok(None);
+        };
+
+        Ok(Some(
+            self.build_module_from_resolved_source_with_context_and_graph(
+                context,
+                resolved,
+                options,
+                dependency_graph,
+            )?,
+        ))
+    }
+
+    pub fn resolve_and_store_module_source(
+        &mut self,
+        request: impl Into<SourceRequest>,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<Option<ModuleVersionId>> {
+        self.ensure_runtime_mutation_allowed("resolve_and_store_module_source")?;
+        let mut context = self.runtime_context()?;
+
+        self.build_module_from_request_with_context(&mut context, request, options)
+    }
+
+    pub fn build_module_from_request_with_context(
+        &mut self,
+        context: &mut RuntimeContext,
+        request: impl Into<SourceRequest>,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<Option<ModuleVersionId>> {
+        self.ensure_runtime_mutation_allowed("build_module_from_request_with_context")?;
+        let request = request.into();
+        self.with_atomic_module_operation(
+            context,
+            "build_module_from_request_with_context",
+            |runtime, context| {
+                runtime.build_module_from_request_in_transaction(context, request, options)
+            },
+        )
+    }
+
+    pub(super) fn build_module_from_request_in_transaction(
+        &mut self,
+        context: &mut RuntimeContext,
+        request: impl Into<SourceRequest>,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<Option<ModuleVersionId>> {
+        Self::context_transaction_id(context)?;
+        let mut dependency_graph = ModuleDependencyGraph::new();
+
+        self.build_module_from_request_with_context_and_graph(
+            context,
+            request,
+            options,
+            &mut dependency_graph,
+        )
+    }
+
+    pub fn put_source_module(
+        &mut self,
+        name: &str,
+        canonical_uri: &str,
+        source: &str,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ModuleVersionId> {
+        self.ensure_runtime_mutation_allowed("put_source_module")?;
+        let mut context = self.runtime_context()?;
+
+        self.put_source_module_with_context(&mut context, name, canonical_uri, source, options)
+    }
+
+    pub fn put_source_module_with_context(
+        &mut self,
+        context: &mut RuntimeContext,
+        name: &str,
+        canonical_uri: &str,
+        source: &str,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ModuleVersionId> {
+        self.ensure_runtime_mutation_allowed("put_source_module_with_context")?;
+        #[cfg(feature = "source")]
+        let revision = self.next_source_revision(canonical_uri)?;
+        let resolved = ResolvedSource::new(
+            name,
+            canonical_uri,
+            MechSourceCode::String(source.to_string()),
+        )
+        .with_kind(crate::SourceKind::Mech);
+        #[cfg(feature = "source")]
+        let resolved = resolved
+            .retain_source_document(revision, mech_syntax::document::ParseConfig::default())?;
+
+        let version = self.with_atomic_module_operation(
+            context,
+            "put_source_module_with_context",
+            |runtime, context| {
+                runtime.build_module_from_resolved_source_in_transaction(context, resolved, options)
+            },
+        )?;
+        Ok(version)
+    }
+
+    /// Prepare and store one source revision through the canonical resolver
+    /// authority only. Strict admission and all local-owner validation finish
+    /// before the runtime transaction can replace any accepted state.
+    #[cfg(feature = "source")]
+    pub fn put_canonical_source_module(
+        &mut self,
+        name: &str,
+        canonical_uri: &str,
+        source: &str,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ModuleVersionId> {
+        self.ensure_runtime_mutation_allowed("put_canonical_source_module")?;
+        let mut context = self.runtime_context()?;
+        self.put_canonical_source_module_with_context(
+            &mut context,
+            name,
+            canonical_uri,
+            source,
+            options,
+        )
+    }
+
+    #[cfg(feature = "source")]
+    pub fn put_canonical_source_module_with_context(
+        &mut self,
+        context: &mut RuntimeContext,
+        name: &str,
+        canonical_uri: &str,
+        source: &str,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ModuleVersionId> {
+        self.ensure_runtime_mutation_allowed("put_canonical_source_module_with_context")?;
+        let revision = self.next_source_revision(canonical_uri)?;
+        let resolved = ResolvedSource::new(
+            name,
+            canonical_uri,
+            MechSourceCode::String(source.to_owned()),
+        )
+        .with_kind(crate::SourceKind::Mech)
+        .retain_source_document(revision, mech_syntax::document::ParseConfig::default())?
+        .admit_canonical_document()?;
+        let version = self.with_atomic_module_operation(
+            context,
+            "put_canonical_source_module_with_context",
+            |runtime, context| {
+                runtime.build_module_from_resolved_source_in_transaction(context, resolved, options)
+            },
+        )?;
+        Ok(version)
+    }
+
+    #[cfg(feature = "source")]
+    pub(in crate::runtime) fn validate_source_revision(
+        &self,
+        module: ModuleId,
+        document: &crate::SourceDocument,
+    ) -> MResult<()> {
+        let revision = document.source().revision();
+        let documents = self.store.module_source_documents(module)?;
+        let committed = documents
+            .iter()
+            .filter(|known| known.source().revision() == revision);
+        let pending = self.active_transactions.values().flat_map(|transaction| {
+            transaction.modules.version_puts().filter_map(|version| {
+                if version.module != module {
+                    return None;
+                }
+                version
+                    .source_document
+                    .as_ref()
+                    .filter(|known| known.source().revision() == revision)
+            })
+        });
+        if committed.chain(pending).any(|known| known != document) {
+            return Err(MechError::new(
+                RuntimeInvalidOperationError {
+                    operation: "store_resolved_module_source",
+                    reason: format!(
+                        "source revision {} for module {module} already identifies another document",
+                        revision.0
+                    ),
+                },
+                None,
+            ));
+        }
+        Ok(())
+    }
+
+    #[cfg(feature = "source")]
+    fn next_source_revision(
+        &self,
+        canonical_uri: &str,
+    ) -> MResult<mech_syntax::document::Revision> {
+        let module = module_id(canonical_uri);
+        // The durable store is the committed authority, including after reopening
+        // a populated store. Pending journals reserve revisions until commit/abort.
+        let previous = self
+            .store
+            .module_source_documents(module)?
+            .iter()
+            .map(|document| document.source().revision())
+            .chain(self.active_transactions.values().flat_map(|transaction| {
+                transaction.modules.version_puts().filter_map(|version| {
+                    (version.module == module)
+                        .then_some(version.source_document.as_ref())
+                        .flatten()
+                        .map(|document| document.source().revision())
+                })
+            }))
+            .max();
+        let Some(previous) = previous else {
+            return Ok(mech_syntax::document::Revision(0));
+        };
+        previous
+            .0
+            .checked_add(1)
+            .map(mech_syntax::document::Revision)
+            .ok_or_else(|| {
+                MechError::new(
+                    RuntimeInvalidOperationError {
+                        operation: "put_source_module",
+                        reason: format!(
+                            "retained source revision is exhausted for `{canonical_uri}`"
+                        ),
+                    },
+                    None,
+                )
+            })
+    }
+
+    pub fn activate_module_version(
+        &mut self,
+        module: ModuleId,
+        version: ModuleVersionId,
+    ) -> MResult<()> {
+        self.ensure_runtime_mutation_allowed("activate_module_version")?;
+        let mut context = self.runtime_context()?.with_module_version(version);
+
+        self.activate_module_version_with_context(&mut context, module, version)
+    }
+
+    pub fn activate_module_version_with_context(
+        &mut self,
+        context: &mut RuntimeContext,
+        module: ModuleId,
+        version: ModuleVersionId,
+    ) -> MResult<()> {
+        self.ensure_runtime_mutation_allowed("activate_module_version_with_context")?;
+        self.validate_context_for_runtime(context)?;
+        context.charge_step()?;
+
+        self.store.set_active_module_version(module, version)?;
+
+        self.emit_event_to_context(
+            context,
+            RuntimeEventKind::ModuleActivated {
+                module_version: version,
+            },
+        )?;
+
+        Ok(())
+    }
+
+    pub fn active_module_version(&self, module: ModuleId) -> MResult<Option<ModuleVersionId>> {
+        self.store.get_active_module_version(module)
+    }
+
+    #[cfg(all(feature = "source", any(feature = "watcher", test)))]
+    pub(crate) fn workspace_module_records(
+        &self,
+        version: ModuleVersionId,
+    ) -> MResult<Option<(ModuleRecord, ModuleVersionRecord)>> {
+        let Some(version_record) = self.store.get_module_version(version)? else {
+            return Ok(None);
+        };
+        let Some(module_record) = self.store.get_module(version_record.module)? else {
+            return Ok(None);
+        };
+
+        Ok(Some((module_record, version_record)))
+    }
+}
+
+#[cfg(test)]
+#[path = "tests/mod.rs"]
+mod tests;

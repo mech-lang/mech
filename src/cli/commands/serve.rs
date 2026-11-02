@@ -1,0 +1,932 @@
+use clap::{Arg, ArgAction, ArgMatches, Command};
+use colored::*;
+use mech_core::*;
+use std::path::PathBuf;
+
+use crate::cli::outcome::CliOutcome;
+use crate::cli::resources::{
+    LoadedResource, LoadedStylesheets, ResourceEvent, ResourceFallback, ResourceSource,
+    Utf8ConversionError, WebResourceDefaults, html_style_sheets, load_resource, load_stylesheets,
+};
+use crate::cli::{capabilities, config, serve_options};
+use crate::{
+    ConfiguredProjectOverlay, MechError, MechServer, ServeInputPlan, plan_cli_serve_inputs,
+};
+
+fn render_capability_events(badge: &str, events: &[capabilities::FilesystemCapabilityEvent]) {
+    for event in events {
+        match event {
+            capabilities::FilesystemCapabilityEvent::DefaultGrant {
+                path, operations, ..
+            } => println!(
+                "{badge} Default filesystem grant: {} ({})",
+                path.display(),
+                operations.join(",")
+            ),
+            capabilities::FilesystemCapabilityEvent::CliGrant {
+                source_flag,
+                path,
+                operations,
+                ..
+            } => println!(
+                "{badge} {source_flag} filesystem grant: {} ({})",
+                path.display(),
+                operations.join(",")
+            ),
+            capabilities::FilesystemCapabilityEvent::ConfigGrant {
+                path, operations, ..
+            } => println!(
+                "{badge} Config filesystem grant: {} ({})",
+                path.display(),
+                operations.join(",")
+            ),
+            capabilities::FilesystemCapabilityEvent::NoGrants => {
+                println!("{badge} No filesystem grants configured.")
+            }
+        }
+    }
+}
+
+fn render_config_event(badge: &str, event: &config::ConfigLoadEvent) {
+    match event {
+        config::ConfigLoadEvent::DisabledByFlag => println!("{badge} Config loading disabled."),
+        config::ConfigLoadEvent::LoadedExplicit { path } => {
+            println!("{badge} Loading config… {}", path.display())
+        }
+        config::ConfigLoadEvent::LoadedDiscovered { path } => {
+            println!("{badge} Loading config… {}", path.display())
+        }
+        config::ConfigLoadEvent::NotFound => {}
+    }
+}
+
+fn expand_compilation_roots(paths: impl IntoIterator<Item = PathBuf>) -> MResult<Vec<PathBuf>> {
+    let mut roots = Vec::new();
+    for path in paths {
+        if path.is_dir() {
+            let discovery = crate::source_discovery::collect_sources_with_events(
+                &[path.clone()],
+                &path,
+                crate::source_discovery::DiscoveryOptions {
+                    allowed_file_extensions: &["mec", "🤖", "mecb"],
+                    recursive_file_extensions: &["mec", "🤖"],
+                    skip_dir_names: &["target", ".git", "dist", "out"],
+                    follow_file_symlinks: true,
+                    follow_dir_symlinks: false,
+                    missing_path_policy:
+                        crate::source_discovery::MissingPathPolicy::SkipBrokenSymlink,
+                },
+            )?;
+            // Serve consumes the source paths without displaying discovery events.
+            drop(discovery.events);
+            let mut directory_roots = discovery
+                .entries
+                .into_iter()
+                .map(|entry| entry.logical_path)
+                .collect::<Vec<_>>();
+            directory_roots.sort();
+            roots.extend(directory_roots);
+        } else {
+            roots.push(path);
+        }
+    }
+    Ok(roots)
+}
+
+fn render_resource_events(badge: &str, name: &str, events: &[ResourceEvent]) {
+    for event in events {
+        match event {
+            ResourceEvent::LoadedLocal { path } => {
+                println!("{badge} Loaded {name}: {}", path.display())
+            }
+            ResourceEvent::MissingLocalUsedFallback { path, fallback } => match fallback {
+                ResourceFallback::EmbeddedDefault => println!(
+                    "{badge} {name} not found: {}; using embedded default",
+                    path.display()
+                ),
+                ResourceFallback::RemoteUrl(url) => println!(
+                    "{badge} {name} not found: {}; using fallback {url}",
+                    path.display()
+                ),
+            },
+            ResourceEvent::LoadedEmbeddedDefault => {
+                println!("{badge} Using embedded default {name}")
+            }
+            ResourceEvent::LoadedRemoteFallback { url } => {
+                println!("{badge} Downloaded fallback {name}: {url}")
+            }
+        }
+    }
+}
+
+fn document_controller_for_shim(shim: &str, document_js: Option<&str>) -> MResult<Option<String>> {
+    if !shim.contains("{{DOCUMENT_SCRIPT}}") {
+        return Ok(None);
+    }
+    let document_js = document_js.ok_or_else(|| {
+        MechError::new(
+            GenericError {
+                msg: "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but the embedded document controller is unavailable".to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    Ok(Some(document_js.to_string()))
+}
+
+fn shipped_document_shim_name(source: &ResourceSource) -> Option<String> {
+    match source {
+        ResourceSource::EmbeddedDefault | ResourceSource::EmptyPathFallback => {
+            Some("include/index.html".to_string())
+        }
+        ResourceSource::LocalPath(path) => {
+            let include = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("include");
+            for (file, label) in [
+                ("index.html", "include/index.html"),
+                ("blog.html", "include/blog.html"),
+                ("docs.html", "include/docs.html"),
+            ] {
+                if include.join(file).canonicalize().ok().as_ref() == Some(path) {
+                    return Some(label.to_string());
+                }
+            }
+            None
+        }
+        ResourceSource::RemoteUrl(_) => None,
+    }
+}
+
+pub(crate) fn command() -> Command {
+    Command::new("serve")
+        .about("Serve Mech program over an HTTP server.")
+        .arg(
+            Arg::new("mech_serve_file_paths")
+                .help("Source .mec files, .mecb bytecode files, project folders, or directories")
+                .required(false)
+                .action(ArgAction::Append),
+        )
+        .arg(
+            Arg::new("port")
+                .short('p')
+                .long("port")
+                .value_name("PORT")
+                .help("Sets the port for the server (8081)"),
+        )
+        .arg(
+            Arg::new("stylesheet")
+                .short('s')
+                .long("stylesheet")
+                .value_name("STYLESHEET")
+                .num_args(1..)
+                .action(ArgAction::Append)
+                .help("Sets the stylesheet for the HTML output"),
+        )
+        .arg(
+            Arg::new("shim")
+                .short('m')
+                .long("shim")
+                .value_name("SHIM")
+                .help("Sets the shim for the HTML output"),
+        )
+        .arg(
+            Arg::new("wasm")
+                .short('w')
+                .long("wasm")
+                .value_name("WASM")
+                .help("Sets the the path to the wasm package"),
+        )
+        .arg(
+            Arg::new("backend")
+                .long("backend")
+                .value_name("BACKEND")
+                .value_parser(crate::cli::STABLE_COMPUTE_BACKEND_SELECTORS)
+                .help("Selects the backend for neutral @compute regions"),
+        )
+        .arg(
+            Arg::new("address")
+                .short('a')
+                .long("address")
+                .value_name("ADDRESS")
+                .help("Sets the address of the server (127.0.0.1)"),
+        )
+        .args(host_delegation_args())
+}
+
+#[cfg(feature = "host_delegation_signing")]
+fn host_delegation_args() -> Vec<Arg> {
+    vec![
+        Arg::new("host_delegation_key")
+            .long("host-delegation-key")
+            .value_name("PATH")
+            .num_args(1),
+        Arg::new("host_delegation_public_key")
+            .long("host-delegation-public-key")
+            .value_name("PATH")
+            .num_args(1),
+        Arg::new("host_delegation_key_id")
+            .long("host-delegation-key-id")
+            .value_name("ID")
+            .num_args(1),
+        Arg::new("host_delegation_issuer")
+            .long("host-delegation-issuer")
+            .value_name("ISSUER")
+            .num_args(1),
+        Arg::new("host_delegation_subject")
+            .long("host-delegation-subject")
+            .value_name("SUBJECT")
+            .num_args(1),
+        Arg::new("host_delegation_audience")
+            .long("host-delegation-audience")
+            .value_name("AUDIENCE")
+            .num_args(1),
+        Arg::new("host_delegation_expires_ms")
+            .long("host-delegation-expires-ms")
+            .value_name("MS")
+            .num_args(1),
+    ]
+}
+
+#[cfg(not(feature = "host_delegation_signing"))]
+fn host_delegation_args() -> Vec<Arg> {
+    Vec::new()
+}
+
+pub(crate) struct ServePlan {
+    pub project_root: Option<std::path::PathBuf>,
+    pub project_overlay: Option<ConfiguredProjectOverlay>,
+    pub workspace_plan: ServeInputPlan,
+    pub address: String,
+    pub port: String,
+    pub stylesheet_paths: Vec<String>,
+    pub shim_path: String,
+    pub wasm_pkg: String,
+    pub compute_backend: Option<String>,
+    pub loaded_config: Option<crate::LoadedMechConfig>,
+    pub runtime_config: mech_runtime::RuntimeConfig,
+    pub host_config: Option<mech_browser::BrowserRuntimeInjectionConfig>,
+    pub host_config_injection: Option<crate::HostAuthorityInjection>,
+    pub config_shim_at_root: bool,
+    pub authority: mech_runtime::HostFilesystemAuthority,
+    pub capability_events: Vec<capabilities::FilesystemCapabilityEvent>,
+    pub config_event: config::ConfigLoadEvent,
+    pub resources: WebResourceDefaults,
+    pub presentation: mech_runtime::ServePresentation,
+}
+
+pub(crate) fn prepare(
+    args: serve_options::ServeCliArgs,
+    matches: &ArgMatches,
+    resources: WebResourceDefaults,
+) -> MResult<ServePlan> {
+    let loaded = config::load_cli_config_report_with_inputs(matches, &args.paths)?;
+    let loaded_config = loaded.config;
+    let effective = serve_options::effective_serve_options(&args, loaded_config.as_ref())?;
+    if effective.compute_backend.is_some()
+        && !loaded_config.as_ref().is_some_and(|loaded| {
+            loaded
+                .document
+                .hosts
+                .iter()
+                .any(|host| host.provider == "compute")
+        })
+    {
+        return Err(MechError::new(
+            GenericError {
+                msg: "--backend requires a configured `compute` host".to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+    let project_root = effective.project_root.clone();
+    let project_overlay = if effective.uses_configured_paths {
+        let loaded = loaded_config.as_ref().ok_or_else(|| {
+            MechError::new(
+                GenericError {
+                    msg: "configured serve paths require a loaded configuration".to_string(),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let root = project_root.clone().ok_or_else(|| {
+            MechError::new(
+                GenericError {
+                    msg: "configured serve paths require a project root".to_string(),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let config_path = loaded.path.canonicalize()?;
+        if !config_path.starts_with(&root) {
+            return Err(MechError::new(
+                GenericError {
+                    msg: format!(
+                        "configured project file `{}` escapes project root `{}`",
+                        config_path.display(),
+                        root.display(),
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        Some(ConfiguredProjectOverlay {
+            root,
+            config_source: std::fs::read_to_string(&config_path)?,
+            config_path,
+        })
+    } else {
+        None
+    };
+    let workspace_plan = plan_cli_serve_inputs(
+        &effective.paths,
+        project_overlay
+            .as_ref()
+            .map(|project| project.root.as_path()),
+    )?;
+
+    let default_runtime_patch = mech_runtime::RuntimeConfigPatch::default();
+    let runtime_config = crate::apply_runtime_config_patch(
+        mech_runtime::RuntimeConfig::default(),
+        loaded_config
+            .as_ref()
+            .map(|loaded| &loaded.document.runtime)
+            .unwrap_or(&default_runtime_patch),
+    )?;
+
+    let host_config = loaded_config
+        .as_ref()
+        .map(|loaded| {
+            crate::web_runtime_injection_config_from_document(&loaded.document, &runtime_config)
+        })
+        .transpose()?;
+
+    let config_shim_at_root = loaded_config
+        .as_ref()
+        .and_then(|loaded| loaded.document.serve.as_ref())
+        .and_then(|serve| serve.shim.as_ref())
+        .is_some()
+        && matches.get_one::<String>("shim").is_none();
+
+    #[cfg(feature = "host_delegation_signing")]
+    let host_config_injection = {
+        let full_address = format!("{}:{}", effective.address, effective.port);
+        serve_host_delegation_injection(
+            matches,
+            loaded_config.as_ref(),
+            &runtime_config,
+            &full_address,
+        )?
+    };
+
+    #[cfg(not(feature = "host_delegation_signing"))]
+    let host_config_injection = None;
+
+    let capability_args = capabilities::FilesystemCapabilityArgs::from_matches(matches);
+    let authority_build =
+        capabilities::build_mech_filesystem_authority(&capability_args, loaded_config.as_ref())?;
+
+    Ok(ServePlan {
+        project_root,
+        project_overlay,
+        workspace_plan,
+        address: effective.address,
+        port: effective.port,
+        stylesheet_paths: effective.stylesheet_paths,
+        shim_path: effective.shim_path,
+        wasm_pkg: effective.wasm_pkg,
+        compute_backend: effective.compute_backend,
+        loaded_config,
+        runtime_config,
+        host_config,
+        host_config_injection,
+        config_shim_at_root,
+        authority: authority_build.authority,
+        capability_events: authority_build.events,
+        config_event: loaded.event,
+        resources,
+        presentation: effective.presentation,
+    })
+}
+
+#[derive(Debug)]
+struct LoadedBrowserAssets {
+    project_js: Option<&'static str>,
+    wasm: LoadedResource,
+    js: LoadedResource,
+}
+
+async fn load_browser_assets(
+    authority: &mech_runtime::HostFilesystemAuthority,
+    wasm_pkg: &str,
+    resources: &WebResourceDefaults,
+) -> MResult<LoadedBrowserAssets> {
+    let project_js = resources.project_js;
+    let wasm_path = format!("{}/mech_wasm_bg.wasm", wasm_pkg);
+    let js_path = format!("{}/mech_wasm.js", wasm_pkg);
+    let wasm = load_resource(
+        authority,
+        &wasm_path,
+        &resources.wasm_backup_url,
+        resources.mech_wasm,
+    )
+    .await?;
+    let js = load_resource(
+        authority,
+        &js_path,
+        &resources.js_backup_url,
+        resources.mech_js,
+    )
+    .await?;
+    if !wasm.bytes.starts_with(b"\0asm") {
+        return Err(MechError::new(
+            GenericError {
+                msg: "browser WASM asset is not a raw WebAssembly module (missing \\0asm magic)"
+                    .to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+    if js.bytes.is_empty() {
+        return Err(MechError::new(
+            GenericError {
+                msg: "browser JavaScript wrapper is empty".to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+    Ok(LoadedBrowserAssets {
+        project_js,
+        wasm,
+        js,
+    })
+}
+
+fn validate_configured_browser_profile(
+    document: Option<&mech_runtime::MechConfigDocument>,
+    wasm_pkg: &str,
+    javascript: &[u8],
+) -> MResult<()> {
+    let requires_mixed_compute = document
+        .is_some_and(|document| document.hosts.iter().any(|host| host.provider == "compute"));
+    if !requires_mixed_compute {
+        return Ok(());
+    }
+    let javascript = std::str::from_utf8(javascript).map_err(|error| {
+        MechError::new(
+            Utf8ConversionError {
+                source_error: error.to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    if javascript.contains("export class WasmMixedComputeProject")
+        && javascript.contains("static fromSource(")
+    {
+        return Ok(());
+    }
+    Err(MechError::new(
+        GenericError {
+            msg: format!(
+                "configured compute host requires the mixed compute browser package, but `{wasm_pkg}` does not export WasmMixedComputeProject.fromSource; run `python scripts/build-wasm.py --profile browser-compute` before serving this project"
+            ),
+        },
+        None,
+    )
+    .with_compiler_loc())
+}
+
+fn project_javascript_with_backend(source: &str, backend: Option<&str>) -> String {
+    match backend {
+        Some(backend) => {
+            format!("globalThis.__MECH_COMPUTE_BACKEND_OVERRIDE = '{backend}';\n{source}")
+        }
+        None => source.to_owned(),
+    }
+}
+
+pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
+    let badge = "[Mech Server]".truecolor(34, 204, 187);
+    let resources = &options.resources;
+
+    if let Some(loaded) = options.loaded_config.as_ref() {
+        render_config_event(&badge.to_string(), &options.config_event);
+        println!(
+            "{badge} Loaded host config entries: {}",
+            loaded.document.hosts.len()
+        );
+    } else {
+        render_config_event(&badge.to_string(), &options.config_event);
+    }
+
+    render_capability_events(&badge.to_string(), &options.capability_events);
+
+    let full_address = format!("{}:{}", options.address, options.port);
+    if let Some(project_root) = &options.project_root {
+        println!("{badge} Project root: {}", project_root.display());
+    }
+
+    println!("{badge} Loading resources…");
+
+    print!("{badge} Loading stylesheet…");
+    let LoadedStylesheets {
+        css: stylesheet_str,
+        events,
+        local_paths: stylesheet_backing_paths,
+    } = load_stylesheets(
+        &options.authority,
+        &options.stylesheet_paths,
+        &resources.stylesheet_backup_url,
+    )
+    .await?;
+    render_resource_events(&badge.to_string(), "stylesheet", &events);
+
+    print!("{badge} Loading HTML shim…");
+    let shim = load_resource(
+        &options.authority,
+        &options.shim_path,
+        &resources.shim_backup_url,
+        Some(resources.shim_html.as_bytes()),
+    )
+    .await?;
+    render_resource_events(&badge.to_string(), "HTML shim", &shim.events);
+    let shipped_document_shim = shipped_document_shim_name(&shim.source);
+    let html_shim_backing_paths = match &shim.source {
+        ResourceSource::LocalPath(path) => vec![path.clone()],
+        _ => Vec::new(),
+    };
+    let shim_str = String::from_utf8(shim.bytes).map_err(|e| {
+        MechError::new(
+            Utf8ConversionError {
+                source_error: e.to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    let document_controller = document_controller_for_shim(&shim_str, resources.document_js)?;
+
+    print!("{badge} Loading WASM…");
+    let LoadedBrowserAssets {
+        project_js,
+        wasm,
+        js,
+    } = load_browser_assets(&options.authority, &options.wasm_pkg, resources).await?;
+    validate_configured_browser_profile(
+        options
+            .loaded_config
+            .as_ref()
+            .map(|loaded| &loaded.document),
+        &options.wasm_pkg,
+        &js.bytes,
+    )?;
+    render_resource_events(&badge.to_string(), "WASM", &wasm.events);
+    let wasm_backing_paths = match &wasm.source {
+        ResourceSource::LocalPath(path) => vec![path.clone()],
+        _ => Vec::new(),
+    };
+
+    print!("{badge} Loading JS…");
+    render_resource_events(&badge.to_string(), "JS", &js.events);
+    let js_backing_paths = match &js.source {
+        ResourceSource::LocalPath(path) => vec![path.clone()],
+        _ => Vec::new(),
+    };
+
+    let mut server = MechServer::new_with_runtime_config_and_host_config(
+        "Mech Server".to_string(),
+        full_address,
+        html_style_sheets(stylesheet_str),
+        shim_str,
+        project_javascript_with_backend(
+            project_js.unwrap_or_default(),
+            options.compute_backend.as_deref(),
+        ),
+        wasm.bytes,
+        js.bytes,
+        options.authority,
+        options.runtime_config,
+        options.host_config,
+        options.host_config_injection,
+        options.config_shim_at_root,
+    );
+
+    if options.project_overlay.is_some()
+        && let Some(loaded) = &options.loaded_config
+        && let Some(run) = &loaded.document.run
+    {
+        server.set_compilation_roots(expand_compilation_roots(
+            run.paths
+                .iter()
+                .map(|path| crate::resolve_config_path(&loaded.base_dir, path)),
+        )?)?;
+    }
+
+    server.set_resource_backing_paths(
+        html_shim_backing_paths,
+        stylesheet_backing_paths,
+        wasm_backing_paths,
+        js_backing_paths,
+    );
+    server.set_document_controller(document_controller, shipped_document_shim);
+    server.set_document_presentation(options.presentation);
+    server.init().await?;
+
+    server.load_serve_plan(options.workspace_plan, options.project_overlay)?;
+
+    println!("{badge} Sources loaded.");
+
+    server.serve().await?;
+
+    Ok(CliOutcome::success())
+}
+
+#[cfg(feature = "host_delegation_signing")]
+fn serve_host_delegation_injection(
+    matches: &clap::ArgMatches,
+    loaded_config: Option<&crate::LoadedMechConfig>,
+    runtime_config: &mech_runtime::RuntimeConfig,
+    full_address: &str,
+) -> MResult<Option<crate::HostAuthorityInjection>> {
+    let Some(private_key) = matches.get_one::<String>("host_delegation_key") else {
+        return Ok(None);
+    };
+
+    let public_key = matches
+        .get_one::<String>("host_delegation_public_key")
+        .ok_or_else(|| {
+            MechError::new(
+                GenericError {
+                    msg: "--host-delegation-public-key is required with --host-delegation-key"
+                        .to_string(),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+
+    let Some(loaded_config) = loaded_config else {
+        return Err(MechError::new(
+            GenericError {
+                msg: "host delegation signing requires a loaded config".to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    };
+
+    let current_dir = std::env::current_dir()?;
+
+    let options = crate::HostDelegationSigningOptions {
+        private_key_path: current_dir.join(private_key),
+        public_key_path: current_dir.join(public_key),
+        key_id: matches
+            .get_one::<String>("host_delegation_key_id")
+            .cloned()
+            .unwrap_or_else(|| "dev".to_string()),
+        issuer: matches
+            .get_one::<String>("host_delegation_issuer")
+            .cloned()
+            .unwrap_or_else(|| "host://mech-cli".to_string()),
+        subject: matches
+            .get_one::<String>("host_delegation_subject")
+            .cloned()
+            .unwrap_or_else(|| "wasm://browser".to_string()),
+        audience: matches
+            .get_one::<String>("host_delegation_audience")
+            .cloned()
+            .unwrap_or_else(|| format!("browser://serve/{full_address}")),
+        expires_ms: matches
+            .get_one::<String>("host_delegation_expires_ms")
+            .map(|value| value.parse())
+            .transpose()
+            .map_err(|_| {
+                MechError::new(
+                    GenericError {
+                        msg: "--host-delegation-expires-ms must be an integer".to_string(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?,
+    };
+
+    let host_config =
+        crate::web_runtime_injection_config_from_document(&loaded_config.document, runtime_config)?;
+
+    let now_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error.to_string()))?
+        .as_millis() as u64;
+
+    crate::signed_browser_runtime_injection_config(host_config, &options, now_ms).map(Some)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mech_runtime::{
+        ConfigProfileOptions, DefaultIdGenerator, FS_READ, HostFilesystemAuthority,
+        MECH_TOOL_SUBJECT, SharedCapabilityKernel, parse_config_document,
+    };
+
+    fn authority_for(path: &std::path::Path) -> HostFilesystemAuthority {
+        let mut authority =
+            HostFilesystemAuthority::new(MECH_TOOL_SUBJECT, SharedCapabilityKernel::new());
+        let mut ids = DefaultIdGenerator::new();
+        authority
+            .grant_path(&mut ids, path, true, [FS_READ])
+            .unwrap();
+        authority
+    }
+
+    #[test]
+    fn configured_run_directory_expands_to_executable_source_roots() {
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("mech-serve-run-roots-{unique}"));
+        let sources = root.join("src");
+        std::fs::create_dir_all(sources.join("nested")).unwrap();
+        std::fs::write(sources.join("main.mec"), "answer := 1\n").unwrap();
+        std::fs::write(sources.join("nested/other.mec"), "answer := 2\n").unwrap();
+        std::fs::write(sources.join("notes.txt"), "not executable\n").unwrap();
+
+        let expanded = expand_compilation_roots([sources.clone()]).unwrap();
+        assert_eq!(
+            expanded,
+            [sources.join("main.mec"), sources.join("nested/other.mec")]
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    fn defaults(
+        project_js: Option<&'static str>,
+        mech_wasm: Option<&'static [u8]>,
+        mech_js: Option<&'static [u8]>,
+    ) -> WebResourceDefaults {
+        WebResourceDefaults {
+            stylesheet_backup_url: "http://unused/style.css".to_string(),
+            shim_backup_url: "http://unused/shim.html".to_string(),
+            wasm_backup_url: "http://unused/mech_wasm_bg.wasm".to_string(),
+            js_backup_url: "http://unused/mech_wasm.js".to_string(),
+            shim_html: "",
+            mech_wasm,
+            mech_js,
+            project_js,
+            document_js: Some("document-controller"),
+        }
+    }
+
+    #[test]
+    fn local_wasm_package_works_without_embedded_assets() {
+        let root = tempfile::tempdir().unwrap();
+        let pkg = root.path().join("pkg");
+        std::fs::create_dir_all(&pkg).unwrap();
+        std::fs::write(pkg.join("mech_wasm_bg.wasm"), b"\0asm\x01\0\0\0").unwrap();
+        std::fs::write(pkg.join("mech_wasm.js"), b"local-js").unwrap();
+        let authority = authority_for(root.path());
+        let assets = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(load_browser_assets(
+                &authority,
+                pkg.to_str().unwrap(),
+                &defaults(Some("project"), None, None),
+            ))
+            .unwrap();
+        assert_eq!(assets.project_js, Some("project"));
+        assert_eq!(assets.wasm.bytes, b"\0asm\x01\0\0\0");
+        assert_eq!(assets.js.bytes, b"local-js");
+    }
+
+    #[test]
+    fn missing_local_and_embedded_wasm_fails() {
+        let root = tempfile::tempdir().unwrap();
+        let authority = authority_for(root.path());
+        let error = format!(
+            "{:?}",
+            tokio::runtime::Runtime::new()
+                .unwrap()
+                .block_on(load_browser_assets(
+                    &authority,
+                    root.path().join("missing").to_str().unwrap(),
+                    &defaults(Some("project"), None, Some(b"js"))
+                ))
+                .unwrap_err()
+        );
+        assert!(
+            error.contains("mech_wasm_bg.wasm") || error.contains("unused"),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn missing_project_js_does_not_block_standalone_browser_assets() {
+        let root = tempfile::tempdir().unwrap();
+        let pkg = root.path().join("pkg");
+        std::fs::create_dir_all(&pkg).unwrap();
+        std::fs::write(pkg.join("mech_wasm_bg.wasm"), b"\0asm\x01\0\0\0").unwrap();
+        std::fs::write(pkg.join("mech_wasm.js"), b"local-js").unwrap();
+        let authority = authority_for(root.path());
+        let assets = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(load_browser_assets(
+                &authority,
+                pkg.to_str().unwrap(),
+                &defaults(None, None, None),
+            ))
+            .unwrap();
+        assert_eq!(assets.project_js, None);
+    }
+
+    #[test]
+    fn compressed_or_invalid_wasm_is_rejected() {
+        let root = tempfile::tempdir().unwrap();
+        let authority = authority_for(root.path());
+        let error = format!(
+            "{:?}",
+            tokio::runtime::Runtime::new()
+                .unwrap()
+                .block_on(load_browser_assets(
+                    &authority,
+                    "",
+                    &defaults(Some("project"), Some(b"not-wasm"), Some(b"js"))
+                ))
+                .unwrap_err()
+        );
+        assert!(error.contains("raw WebAssembly"), "{error}");
+    }
+
+    #[test]
+    fn configured_compute_host_rejects_generic_browser_profile_before_serving() {
+        let document = parse_config_document(
+            "test.mcfg",
+            r#"config := {hosts: [{name: "particles" provider: "compute" settings: {}}]}"#,
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        let error = format!(
+            "{:?}",
+            validate_configured_browser_profile(
+                Some(&document),
+                "src/wasm/pkg",
+                b"export class WasmProject {}",
+            )
+            .unwrap_err()
+        );
+        assert!(
+            error.contains("WasmMixedComputeProject.fromSource"),
+            "{error}"
+        );
+        assert!(
+            error.contains("build-wasm.py --profile browser-compute"),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn configured_compute_host_accepts_mixed_browser_profile() {
+        let document = parse_config_document(
+            "test.mcfg",
+            r#"config := {hosts: [{name: "particles" provider: "compute" settings: {}}]}"#,
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        validate_configured_browser_profile(
+            Some(&document),
+            "src/wasm/pkg",
+            b"export class WasmMixedComputeProject { static fromSource() {} }",
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn selected_compute_backend_is_injected_into_project_javascript() {
+        let javascript = project_javascript_with_backend("export {};", Some("cpu"));
+        assert!(javascript.contains("__MECH_COMPUTE_BACKEND_OVERRIDE = 'cpu'"));
+        assert!(javascript.ends_with("export {};"));
+    }
+
+    #[test]
+    fn serve_command_uses_the_stable_compute_selector_policy() {
+        let matches = command()
+            .try_get_matches_from(["serve", "--backend", "wgpu"])
+            .unwrap();
+        assert_eq!(
+            matches.get_one::<String>("backend").map(String::as_str),
+            Some("wgpu")
+        );
+
+        let error = command()
+            .try_get_matches_from(["serve", "--backend", "cpu-simd"])
+            .expect_err("shipping serve command must reject experimental backends");
+        assert_eq!(error.kind(), clap::error::ErrorKind::InvalidValue);
+    }
+}

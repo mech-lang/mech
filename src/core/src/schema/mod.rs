@@ -1,0 +1,256 @@
+//! Finalized semantic schemas, shape instances, and deterministic schema tables.
+
+mod dimension_relations;
+mod encoding;
+mod shape;
+mod table;
+mod validation;
+
+pub use self::dimension_relations::*;
+pub use self::shape::*;
+pub use self::table::*;
+pub use self::validation::rebase_schema_draft_dimensions;
+
+pub(crate) use self::validation::is_body_keyable as is_schema_body_keyable;
+
+use crate::{
+    DimensionExpr, DimensionParameter, DimensionParameterDeclaration, NominalKey,
+    SemanticModelError,
+};
+
+#[cfg(feature = "no_std")]
+use alloc::{boxed::Box, string::String};
+#[cfg(not(feature = "no_std"))]
+use std::{boxed::Box, string::String};
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SchemaDraft {
+    pub dimension_parameters: Box<[DimensionParameterDeclaration]>,
+    pub body: SchemaBody,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize))]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Schema {
+    dimension_parameters: Box<[DimensionParameter]>,
+    body: SchemaBody,
+}
+
+/// Declares whether an aggregate extent is fixed by its schema or may vary
+/// while preserving the same semantic schema and cell identity.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum CardinalitySpec {
+    Exact(DimensionExpr),
+    Dynamic { upper_bound: Option<DimensionExpr> },
+}
+
+/// General name for an exact or dynamic aggregate extent. The cardinality
+/// alias remains available for source compatibility with the first set slice.
+pub type ExtentSpec = CardinalitySpec;
+
+impl From<DimensionExpr> for CardinalitySpec {
+    fn from(value: DimensionExpr) -> Self {
+        Self::Exact(value)
+    }
+}
+
+impl SchemaDraft {
+    pub fn finalize(self) -> Result<Schema, SemanticModelError> {
+        validation::finalize_schema(self)
+    }
+}
+
+impl Schema {
+    /// Resolves every dimension expression in this schema against one
+    /// validated shape instance, producing the concrete schema body carried by
+    /// the current value without changing its durable schema identity.
+    pub fn closed_body(&self, shape: &crate::ShapeInstance) -> crate::MResult<SchemaBody> {
+        let shape = self
+            .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
+            .map_err(crate::MechError::from)?;
+        crate::cell_binding::close_schema_body(&self.body, &shape)
+    }
+
+    pub fn type_memory_contract(&self) -> Result<crate::TypeMemoryContract, SemanticModelError> {
+        crate::memory_contract::derive_type_memory_contract(&self.body, &self.dimension_parameters)
+    }
+
+    pub fn resolved_type_memory_contract(
+        &self,
+        shape: &crate::ShapeInstance,
+    ) -> Result<crate::ResolvedTypeMemoryContract, SemanticModelError> {
+        let validated_shape =
+            self.instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())?;
+        crate::memory_contract::resolve_type_memory_contract(
+            self.type_memory_contract()?,
+            &self.dimension_parameters,
+            &validated_shape,
+        )
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum SchemaBody {
+    /// A self-describing value whose concrete schema and shape are carried by
+    /// the value itself. This is the instantiable semantic form of a source
+    /// wildcard (`*`) inside heterogeneous aggregates such as table columns.
+    Dynamic,
+    Bool,
+    UnsignedInteger(IntegerWidth),
+    SignedInteger(IntegerWidth),
+    IntegerInterval(IntegerInterval),
+    FloatingPoint(FloatWidth),
+    Complex(FloatWidth),
+    Rational64,
+    String,
+    Id,
+    Index,
+    Atom(NominalKey),
+    Enum {
+        key: NominalKey,
+        variants: Box<[EnumVariantSchema]>,
+    },
+    Option(Box<SchemaBody>),
+    Tuple(Box<[SchemaBody]>),
+    Record(Box<[SchemaField]>),
+    Matrix {
+        element: Box<SchemaBody>,
+        dimensions: Box<[DimensionExpr]>,
+    },
+    Table {
+        columns: Box<[SchemaField]>,
+        rows: ExtentSpec,
+    },
+    Set {
+        element: Box<SchemaBody>,
+        cardinality: CardinalitySpec,
+    },
+    Map {
+        key: Box<SchemaBody>,
+        value: Box<SchemaBody>,
+        cardinality: ExtentSpec,
+    },
+    ReifiedType,
+}
+
+/// A closed, constant interval over one exact integer kind. The lower bound is
+/// inclusive; the upper bound follows the source range operator.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum IntegerInterval {
+    Unsigned {
+        width: IntegerWidth,
+        lower: u128,
+        upper: u128,
+        upper_inclusive: bool,
+    },
+    Signed {
+        width: IntegerWidth,
+        lower: i128,
+        upper: i128,
+        upper_inclusive: bool,
+    },
+}
+
+impl IntegerInterval {
+    pub fn is_valid(self) -> bool {
+        match self {
+            Self::Unsigned {
+                width,
+                lower,
+                upper,
+                upper_inclusive,
+            } => {
+                let max = if width == IntegerWidth::W128 {
+                    u128::MAX
+                } else {
+                    (1_u128 << (width as u16)) - 1
+                };
+                upper <= max && (lower < upper || (upper_inclusive && lower == upper))
+            }
+            Self::Signed {
+                width,
+                lower,
+                upper,
+                upper_inclusive,
+            } => {
+                let (min, max) = if width == IntegerWidth::W128 {
+                    (i128::MIN, i128::MAX)
+                } else {
+                    let half = 1_i128 << ((width as u16) - 1);
+                    (-half, half - 1)
+                };
+                lower >= min
+                    && upper <= max
+                    && (lower < upper || (upper_inclusive && lower == upper))
+            }
+        }
+    }
+
+    pub fn base_body(self) -> SchemaBody {
+        match self {
+            Self::Unsigned { width, .. } => SchemaBody::UnsignedInteger(width),
+            Self::Signed { width, .. } => SchemaBody::SignedInteger(width),
+        }
+    }
+
+    pub fn contains_unsigned(self, value: u128) -> bool {
+        match self {
+            Self::Unsigned {
+                lower,
+                upper,
+                upper_inclusive,
+                ..
+            } => value >= lower && (value < upper || (upper_inclusive && value == upper)),
+            Self::Signed { .. } => false,
+        }
+    }
+
+    pub fn contains_signed(self, value: i128) -> bool {
+        match self {
+            Self::Signed {
+                lower,
+                upper,
+                upper_inclusive,
+                ..
+            } => value >= lower && (value < upper || (upper_inclusive && value == upper)),
+            Self::Unsigned { .. } => false,
+        }
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[repr(u16)]
+pub enum IntegerWidth {
+    W8 = 8,
+    W16 = 16,
+    W32 = 32,
+    W64 = 64,
+    W128 = 128,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[repr(u16)]
+pub enum FloatWidth {
+    W32 = 32,
+    W64 = 64,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SchemaField {
+    pub name: String,
+    pub schema: SchemaBody,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct EnumVariantSchema {
+    pub name: String,
+    pub payload: Option<SchemaBody>,
+}

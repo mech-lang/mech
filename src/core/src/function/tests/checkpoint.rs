@@ -1,0 +1,261 @@
+#[cfg(feature = "semantic-compiler")]
+use super::super::MechFunctionCompiler;
+use super::super::{
+    ActivationRegistrationScope, FunctionInvocation, MechFunctionImpl,
+    PatternActivationRegistration, Plan, ReactiveDependency, ReactiveDependencyKind,
+    ReactiveNodeKind, ReactivePlan, ReactivePlanFunction, ReactiveTurnState,
+    reactive_function_identity,
+};
+#[cfg(feature = "f64")]
+use super::support::reg;
+use super::support::{TestFunction, index};
+#[cfg(feature = "semantic-compiler")]
+use crate::{BytecodeCompilerContext, Register};
+use crate::{CanonicalCellId, MResult, ValueCell};
+
+fn register(plan: &mut ReactivePlan, function: TestFunction, inputs: Vec<ValueCell>) -> usize {
+    plan.register_instance_with_activation(
+        crate::function::test_planned_instance(
+            Box::new(function),
+            FunctionInvocation::variadic(ValueCell::unit(), inputs.into_boxed_slice()),
+        ),
+        None,
+    )
+    .unwrap()
+}
+
+struct RetainedZstFunction;
+
+impl MechFunctionImpl for RetainedZstFunction {
+    fn solve_managed(
+        &self,
+        _frame: &mut crate::KernelMemoryFrame<'_>,
+        _services: &mut dyn crate::MechExecutionServices,
+    ) -> MResult<crate::ReactiveSolveStatus> {
+        (|| -> MResult<()> { Ok(()) })()?;
+        Ok(crate::ReactiveSolveStatus::Changed)
+    }
+    fn to_string(&self) -> String {
+        "retained-zst".into()
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+impl MechFunctionCompiler for RetainedZstFunction {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Ok(0)
+    }
+}
+
+#[test]
+fn reactive_plan_rollback_truncates_nodes_and_rebuilds_consumers() {
+    let (reactive_input, reactive_cell) = index(1);
+    let (sampled_input, sampled_cell) = index(2);
+    let mut plan = ReactivePlan::new();
+    let base = register(&mut plan, TestFunction::new("base"), vec![reactive_input]);
+    let checkpoint = plan.checkpoint();
+    let tail = register(
+        &mut plan,
+        TestFunction::new("tail")
+            .with_dependency_kinds(Some(vec![ReactiveDependencyKind::Sampled])),
+        vec![sampled_input],
+    );
+    plan.rollback(checkpoint).unwrap();
+    assert_eq!(plan.len(), 1);
+    assert_eq!(plan.nodes[0].id, base);
+    assert_eq!(plan.nodes[0].plan_index, 0);
+    assert_eq!(
+        plan.nodes[0].inputs,
+        vec![ReactiveDependency {
+            cell: reactive_cell,
+            kind: ReactiveDependencyKind::Reactive
+        }]
+    );
+    assert_eq!(plan.reactive_consumers_for(reactive_cell), &[base]);
+    assert!(plan.sampled_consumers_for(sampled_cell).is_empty());
+    assert!(
+        plan.reactive_consumers
+            .values()
+            .all(|nodes| !nodes.contains(&tail))
+    );
+    assert!(
+        plan.sampled_consumers
+            .values()
+            .all(|nodes| !nodes.contains(&tail))
+    );
+}
+
+#[test]
+fn plan_rollback_restores_full_structure_and_rebuilds_consumers() {
+    let (input, original_cell) = index(1);
+    let replacement_cell = CanonicalCellId::new(99);
+    let sampled_cell = CanonicalCellId::new(100);
+    let plan = Plan::new();
+    let base = register(
+        &mut plan.borrow_mut(),
+        TestFunction::new("base"),
+        vec![input],
+    );
+    plan.push_activation_registration_scope_with_sampled_cells(
+        vec![original_cell],
+        vec![sampled_cell],
+    );
+    {
+        let mut reactive = plan.borrow_mut();
+        reactive.register_pattern_activation(PatternActivationRegistration {
+            scope_pulse_node: base,
+            selector_node: base,
+            arms: Vec::new(),
+        });
+    }
+    let checkpoint = plan.checkpoint();
+    let function_identity = {
+        let reactive = plan.borrow();
+        reactive_function_identity(&reactive.nodes[base].function)
+    };
+
+    {
+        let mut reactive = plan.borrow_mut();
+        let node = &mut reactive.nodes[base];
+        node.id = 42;
+        node.plan_index = 77;
+        node.inputs = vec![ReactiveDependency {
+            cell: replacement_cell,
+            kind: ReactiveDependencyKind::Sampled,
+        }];
+        node.outputs = vec![replacement_cell];
+        node.kind = ReactiveNodeKind::Register;
+        reactive.pattern_activation_registrations.clear();
+        reactive.activation_sampled_cells = vec![vec![replacement_cell]];
+        reactive
+            .push(TestFunction::new("tail").into_instance())
+            .unwrap();
+    }
+    {
+        let mut scopes = plan.1.borrow_mut();
+        scopes[0].trigger_cells = vec![replacement_cell];
+        scopes[0].local_combinational_cells = vec![replacement_cell];
+        scopes.push(ActivationRegistrationScope {
+            trigger_cells: vec![replacement_cell],
+            local_combinational_cells: Vec::new(),
+        });
+    }
+
+    plan.preflight_rollback(&checkpoint).unwrap();
+    plan.apply_rollback(&checkpoint);
+
+    assert_eq!(plan.checkpoint(), checkpoint);
+    let reactive = plan.borrow();
+    assert_eq!(reactive.len(), 1);
+    assert_eq!(
+        reactive_function_identity(&reactive.nodes[base].function),
+        function_identity,
+    );
+    assert_eq!(reactive.reactive_consumers_for(original_cell), &[base]);
+    assert!(reactive.sampled_consumers_for(replacement_cell).is_empty());
+    assert_eq!(reactive.activation_sampled_cells, vec![vec![sampled_cell]],);
+}
+
+#[test]
+fn plan_rollback_restores_activation_registration_depth() {
+    let plan = Plan::new();
+    let checkpoint = plan.checkpoint();
+    plan.push_activation_registration_scope(vec![CanonicalCellId::new(1)]);
+    plan.push_activation_registration_scope(vec![CanonicalCellId::new(2)]);
+    assert_eq!(plan.activation_registration_depth(), 2);
+    plan.rollback(checkpoint).unwrap();
+    assert_eq!(plan.activation_registration_depth(), 0);
+}
+
+#[test]
+fn plan_rollback_rejects_removed_node_without_partial_restore() {
+    let plan = Plan::new();
+    plan.add_function(TestFunction::new("retained").into_instance())
+        .unwrap();
+    let checkpoint = plan.checkpoint();
+    plan.borrow_mut().nodes.pop();
+    plan.push_activation_registration_scope(vec![CanonicalCellId::new(1)]);
+
+    let error = plan.rollback(checkpoint).unwrap_err();
+
+    assert_eq!(error.kind_name(), "ReactivePlanRollbackInvariant");
+    assert_eq!(plan.len(), 0);
+    assert_eq!(plan.activation_registration_depth(), 1);
+}
+
+#[test]
+fn plan_rollback_rejects_replaced_function_without_partial_restore() {
+    let plan = Plan::new();
+    let node_id = plan
+        .add_function(TestFunction::new("retained").into_instance())
+        .unwrap();
+    let checkpoint = plan.checkpoint();
+    {
+        let mut reactive = plan.borrow_mut();
+        reactive.nodes[node_id].plan_index = 123;
+        reactive.nodes[node_id].function =
+            ReactivePlanFunction::new_instance(TestFunction::new("replacement").into_instance());
+    }
+    plan.push_activation_registration_scope(vec![CanonicalCellId::new(1)]);
+
+    let error = plan.rollback(checkpoint).unwrap_err();
+
+    assert_eq!(error.kind_name(), "ReactivePlanFunctionIdentity");
+    assert_eq!(plan.borrow().nodes[node_id].plan_index, 123);
+    assert_eq!(plan.activation_registration_depth(), 1);
+}
+
+#[test]
+fn plan_rollback_rejects_replaced_zero_sized_function_box() {
+    let plan = Plan::new();
+    let node_id = plan
+        .add_function(crate::function::test_planned_instance(
+            Box::new(RetainedZstFunction),
+            FunctionInvocation::nullary(ValueCell::unit()),
+        ))
+        .unwrap();
+    let checkpoint = plan.checkpoint();
+    let saved_identity = {
+        let reactive = plan.borrow();
+        reactive_function_identity(&reactive.nodes[node_id].function)
+    };
+    {
+        let mut reactive = plan.borrow_mut();
+        reactive.nodes[node_id].function =
+            ReactivePlanFunction::new_instance(crate::function::test_planned_instance(
+                Box::new(RetainedZstFunction),
+                FunctionInvocation::nullary(ValueCell::unit()),
+            ));
+    }
+    let replacement_identity = {
+        let reactive = plan.borrow();
+        reactive_function_identity(&reactive.nodes[node_id].function)
+    };
+
+    assert_ne!(saved_identity, replacement_identity);
+    let error = plan.rollback(checkpoint).unwrap_err();
+
+    assert_eq!(error.kind_name(), "ReactivePlanFunctionIdentity");
+}
+
+#[cfg(feature = "f64")]
+#[test]
+fn checkpoint_validation_accepts_duplicate_registers_from_retried_failed_turn() {
+    let plan = Plan::new();
+    let input = ValueCell::from_exact(1.).unwrap();
+    let sink = ValueCell::from_exact(1.).unwrap();
+    let (register, _, stage, _) = {
+        let mut reactive = plan.borrow_mut();
+        reg(&mut reactive, input.clone(), sink, true)
+    };
+    let dirty = [input.reactive_cell_id()];
+    let mut state = ReactiveTurnState::default();
+
+    assert!(plan.advance_reactive_turn(&mut state, &dirty).is_err());
+    assert_eq!(state.pending_register_nodes, vec![register]);
+    assert!(plan.advance_reactive_turn(&mut state, &dirty).is_err());
+    assert_eq!(state.pending_register_nodes, vec![register, register]);
+    assert_eq!(*stage.borrow(), 2);
+
+    plan.validate_checkpoint_turn_state(&state).unwrap();
+}

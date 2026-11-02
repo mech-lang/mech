@@ -1,0 +1,283 @@
+Mech Project Roadmap
+===============================================================================
+
+1. Project Status
+-------------------------------------------------------------------------------
+
+(1.1) Stage 1 - Alpha `v0.0.1` - `v0.0.6`
+
+Conception: started 2014
+Implementation: started 2018
+
+(1.2) Stage 2 - Beta `v0.1.0` - `v0.4+` (???)
+
+Started: December 2022
+
+Current package: `v0.3.6`
+Current development target: `v0.4.0`
+Canonical value-system cutover: complete
+Canonical contract and compatibility closure: complete
+Type–memory boundary: complete
+Type System v1: complete
+Type-system authority cutover: complete
+
+- `v0.1` proof of concept `Concluded 2023`
+- `v0.2` data specification    `Concluded 2025`
+- `v0.3` program specification !!Started 2026!!
+- `v0.4` system specification !!In development!!
+
+(1.3) Stage 3 - Stable v1.0.0
+
+No target release date yet.
+
+2. Feature Progress
+-------------------------------------------------------------------------------
+
+| Icon | Status | Description |
+|------|:--------:|-------------|
+| 💭 | Concept | Just an idea, no implementation |
+| 🥚 | Proof of Concept | Hacked implementation sketch |
+| 🐣 | Alpha Implementation | Missing features, many bugs, undocumented |
+| 🐤 | Beta Implementation | Completed, with bugs, some tests and docs |
+| 🐓 | Feature Complete | Fully implemented, tested, documented |
+| 🍗 | Deprecated | Removed from specification, should not be used |
+
+(2.1) Data Specification (`v0.2`)
+
+Now that all `v0.2` work items are at the beta implementation stage, we will prepare to move on to `v0.3`. This will mean wrapping up documentation, tests, and any remaining bugs. 
+
+As beta features, these are are still not complete and are subject to change in `v0.3`.
+
+-(🐤) repl
+-(🐤) error system
+-(🐤) value semantics
+-(🐤) mechdown
+-(🐤) type inference
+-(🐤) new data types
+  -(🐤) variety of numerical datatypes
+    -(🐤) scientific numbers
+    -(🐤) imaginary numbers
+    -(🐤) rational numbers
+  -(🐤) strings
+  -(🐤) bools
+-(🐤) new data structures
+  -(🐤) enums
+  -(🐤) option types
+  -(🐤) sets
+  -(🐤) maps
+  -(🐤) atoms
+  -(🐤) records
+  -(🐤) tuples
+  -(🐤) tables (dataframe)
+-(🐤) flexible matrix type with fixed and dynamic sizes for homogeneous data
+  -(🐤) matrix builder notation
+  -(🐤) matrix slicing
+  -(🐤) operator broadcasting
+  -(🐤) logical indexing
+  -(🐤) variable type and size checking
+  -(🐤) builtin linear algebra tools
+-(🐤) standard library
+  -(🐤) combinatorics
+  -(🐤) compare
+  -(🐤) io
+  -(🐤) math
+  -(🐤) matrix
+  -(🐤) set
+  -(🐤) stats
+  -(🐤) range
+
+(2.2) Program Specification (`v0.3`)
+
+(i)> Work on `v0.3` began in 2026.
+
+Version `v0.3` incorporates all the features of `v0.2`, in addition to the following new features:
+
+-(💭) synth/gen
+-(💭) introspection
+-(💭) higher order functions
+-(💭) new types (dec64, currency, email addresses, dates)
+-(💭) Integrations
+  -(💭) Godot
+  -(💭) Python
+  -(💭) C/C++
+  -(🐣) Rust
+  -(🐣) Javascript
+-(🥚) automatic differentiation
+-(🥚) language server
+-(🥚) physical units with dimension checking
+-(🥚) file/parameter server
+-(🥚) time travel debugging
+-(🥚) machine revamp
+-(🥚) database revamp
+-(🐣) state machines
+-(🐣) match expressions
+-(🐣) patterns
+-(🐣) mika
+-(🐣) matrix comprehension
+-(🐣) set comprehension
+-(🐣) self-contained binary executables
+-(🐣) bytecode interpreter
+-(🐣) build system
+-(🐣) user defined functions
+  -(🐣) recursive functions
+-(🐣) tests
+-(🐣) profiler
+-(🐣) gui
+-(🐣) live coding
+
+(2.3) System specification (v0.4)
+
+Current architecture uses declared operation contracts, semantic type binding,
+deterministic memory planning, and managed publication. Their contracts are in
+type-system-v1.md, type-memory-boundary.md, semantic-type-authority.md,
+memory-planner.md, and memory-runtime.md.
+
+Release qualification verifies the advertised package/platform matrix and these
+preserved compatibility contracts: bytecode-v1, canonical encoding v1, stable
+operation IDs, native linkage names, dynamic-module ABI v1, and program artifact
+versioning. Stable IDs identify declarations; they do not supply their semantics.
+The package remains v0.3.6 until the release is qualified.
+
+
+(2.4) Post-v0.4 direction
+
+The planned v0.5 type-system direction is:
+
+- computation types
+- effect types
+- coeffect types
+- refinement types
+
+3. Next Steps for v0.3
+--------------------------------------------------------------------------------
+
+(3.1) Enums, Tagged Unions, and Pattern Matching
+
+The current implementation of enums, tagged unions, and pattern matching is just a starting point, and we have a number of improvements planned for the future, including:
+
+- String patterns, which would allow you to match on string prefixes and substrings.
+- Table patterns, which would allow you to match on the presence or absence of keys in a table, and to destructure values from tables.
+- Set patterns, which would allow you to match on element membership in a set, and to destructure values from sets.
+- Map patterns, which would allow you to match on the presence or absence of keys in a map, or to match maps with particular key-value pairs.
+
+(3.2) Functions
+
+The current implementation of functions is just a starting point, and we have a number of improvements planned for the future, including:
+
+- Named arguments: allowing you to call functions with named parameters for improved readability and flexibility.
+- Function overloading: allowing you to define multiple functions with the same name but different parameter types or counts, and having the compiler resolve which one to call based on the arguments.
+- Where clauses: allowing you to add additional guards and constraints to function definitions for more complex pattern matching.
+
+
+(3.3) State Machines
+
+State machines are probably the lest developed area of the language right now, so there's a lot left to do. The main thing we'll look at next is adding support for asynchronous state machines, which would allow you to model processes that interact with external systems, or that have some notion of time or waiting. This would involve adding new syntax for defining asynchronous transitions (we have `~>` planned for that), and new semantics for how those transitions are executed and traced.
+
+
+(3.4) Comprehensions
+
+In a future release, we plan on adding support for record and table comprehensions, which would allow you to generate new records and tables from existing ones using a similar syntax.
+
+(3.5) Table Joins
+
+The current implementation of table joins is just a starting point, and we have a number of improvements planned for the future, including:
+
+- Joining on multiple keys, which would allow you to perform more complex joins based on multiple columns.
+- Non-equi joins, which would allow you to join tables based on conditions other than equality, such as greater than or less than.
+
+(3.6) Mechdown
+
+In a future release next release you will be able to embed Mech within an HTML document and feed that directly into the Mechdown compiler, which will allow you to use Mech components and features within your own custom web pages. Maybe something like this:
+
+```html
+<mech>
+  years := [2010 2025 2020 2025]
+  population := [2.5 2.6 2.7 2.8 2.9]
+  population-growth-chart := chart/line{
+    title: "Population Growth"
+    x-label: "Year"
+    y-label: "Population (billions)"
+    x: [2010, 2025, 2020, 2025]
+    y: [2.5, 2.6, 2.7, 2.8, 2.9]
+  }
+</mech>
+<html>
+  <body>
+    <h1>Population Growth</h1>
+    <p>Here is a chart about population growth over the years:</p>
+    {{VAR:population-growth-chart}}
+  </body>
+</html>
+```
+
+It would work by first compiling the Mech code to generate the chart component, and then replacing the `{{VAR:population-growth-chart}}` placeholder in the HTML with the rendered output of that component, which could be an SVG or a canvas element or something like that. This will allow you to use Mech and JavaScript together in a more seamless way for building interactive web content. Or if you want to, completely replace JavaScript with Mech for building interactive web content.
+
+4. Roadmap History
+-------------------------------------------------------------------------------
+
+(4.1) Version `v0.0.6-alpha` (unreleased)
+
+-[x] Testing
+-[x] Machines 
+  -[x]HTML
+    -[x] Mouse
+    -[x] Keyboard
+    -[x] Canvas Drawing
+  -[x] File I/O
+  -[x] Standard Streams
+  -[x] Strings
+  -[x] Number Literals
+  -[x] HTTP
+  -[x] Math
+  -[x] Stats
+  -[x] Random
+  -[x] Time
+  -[x] Set
+  -[x] System
+    -[x] Input Arguments
+    -[x] Exit
+  -[x] Mech Compiler
+  -[x] Table
+
+(4.2) Version `v0.1.0` (December 2022)
+
+-[x] User defined functions
+-[x] Errors
+-[x] Distribution
+-[x] Paralell operators
+-[x] Async blocks
+-[x] Units
+-[x] Type checking
+-[x] Multiple dispatch
+-[x] JIT Block Compiler
+-[x] Native executables
+-[x] REPL
+-[x] Machines
+  -[x] Matrix
+  -[x] GUI
+
+(4.3) Version `v0.1.1` (Spring 2023)
+
+- Core
+  -[x] Automatic differentiation
+  -[x] Capability system
+  -[x] New parser
+- Language Server
+  -[x] Syntax Highlighter
+  -[x] Autocomplete
+  -[x] Goto Definition
+  -[x] Goto Docs
+  -[x] Hover inspector
+  -[x] Workspace support
+  -[x] Database watcher
+- Editor
+  -[x] Compile programs
+  -[x] Database Explorer
+- Docs
+  - Mech platform references
+    -[x] User Guide
+    -[x] Ecosystem
+    -[x] Architecture
+- Machines
+  - More gui
+  - ai

@@ -1,0 +1,273 @@
+use std::sync::{Arc, LazyLock, Mutex};
+
+use mech_core::{
+    AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
+    IdempotencyRequirement, InputPortLayout, InputPortPolicy, MResult,
+    OperationContractDeclaration, Schema, Value, ValueData,
+};
+use mech_runtime::{
+    ConfigValue, HostManifestConfig, PreparedRuntimeEffect, ResourceSchemaPreflight,
+    RuntimeAfterCommitEffect, RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource,
+    RuntimeHostFactory, RuntimeHostInstallation, RuntimeResourceProvider,
+    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
+    RuntimeResourceWriteRequest, RuntimeValueSnapshot, materialize_host_manifest,
+};
+
+use crate::{console_error, console_host_manifest};
+
+static CONSOLE_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: Box::new([]),
+        interaction: ExternalInteraction::Effect(EffectContract {
+            delivery: EffectDeliveryPolicy::AtMostOnce,
+            idempotency: IdempotencyRequirement::NotRequired,
+        }),
+    });
+
+pub trait ConsoleBackend: std::fmt::Debug {
+    fn write_line(&mut self, text: &str) -> MResult<()>;
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct RecordingConsoleBackend {
+    lines: Arc<Mutex<Vec<String>>>,
+    fail_next: Arc<Mutex<Option<String>>>,
+}
+
+impl RecordingConsoleBackend {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    pub fn lines(&self) -> Vec<String> {
+        self.lines.lock().unwrap().clone()
+    }
+    pub fn fail_next(&self, reason: impl Into<String>) {
+        *self.fail_next.lock().unwrap() = Some(reason.into());
+    }
+}
+
+impl ConsoleBackend for RecordingConsoleBackend {
+    fn write_line(&mut self, text: &str) -> MResult<()> {
+        if let Some(reason) = self.fail_next.lock().unwrap().take() {
+            return Err(console_error("console://recording/output", reason));
+        }
+        self.lines.lock().unwrap().push(text.to_string());
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+pub struct ConsoleResourceProvider<B: ConsoleBackend> {
+    instance: String,
+    backend: Arc<Mutex<B>>,
+}
+
+impl<B: ConsoleBackend> ConsoleResourceProvider<B> {
+    pub fn new(instance: impl Into<String>, backend: B) -> Self {
+        Self {
+            instance: instance.into(),
+            backend: Arc::new(Mutex::new(backend)),
+        }
+    }
+
+    pub fn backend(&self) -> std::sync::MutexGuard<'_, B> {
+        self.backend.lock().expect("console backend lock poisoned")
+    }
+    pub fn backend_mut(&mut self) -> std::sync::MutexGuard<'_, B> {
+        self.backend.lock().expect("console backend lock poisoned")
+    }
+
+    fn base(&self) -> String {
+        format!("console://{}/output", self.instance)
+    }
+
+    fn matches_base(&self, base_uri: &str) -> bool {
+        base_uri == self.base() || (self.instance == "console" && base_uri == "console://output")
+    }
+}
+
+impl<B: ConsoleBackend + 'static> RuntimeResourceProvider for ConsoleResourceProvider<B> {
+    fn scheme(&self) -> &str {
+        "console"
+    }
+
+    fn base_uris(&self) -> Vec<String> {
+        let mut bases = vec![self.base()];
+        if self.instance == "console" {
+            bases.push("console://output".to_string());
+        }
+        bases
+    }
+
+    fn semantic_write_contract(
+        &self,
+        intent: RuntimeResourceWriteIntent,
+    ) -> Option<&'static OperationContractDeclaration> {
+        (intent == RuntimeResourceWriteIntent::Send).then_some(&CONSOLE_EFFECT_CONTRACT)
+    }
+
+    fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> {
+        if self.instance != "console" {
+            return Vec::new();
+        }
+
+        vec![vec![self.base(), "console://output".to_string()]]
+    }
+
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+        Err(console_error(
+            request.base_uri,
+            "console output is send-only and cannot be read",
+        ))
+    }
+
+    fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+        if !self.matches_base(&request.base_uri) {
+            return Err(console_error(
+                request.base_uri,
+                "unsupported console resource",
+            ));
+        }
+        if request.intent != RuntimeResourceWriteIntent::Send {
+            return Err(console_error(
+                request.base_uri,
+                "console output is send-only; use <-",
+            ));
+        }
+        if request.path != "line" {
+            return Err(console_error(
+                request.base_uri,
+                "console output supports only the `line` path",
+            ));
+        }
+        Ok(())
+    }
+
+    fn preflight_write_schema(
+        &self,
+        request: RuntimeResourceWritePreflightRequest,
+        _payload_schema: &Schema,
+    ) -> MResult<ResourceSchemaPreflight> {
+        self.preflight_write(request)?;
+        Ok(ResourceSchemaPreflight::Validated)
+    }
+
+    fn prepare_write(
+        &self,
+        request: RuntimeResourceWriteRequest,
+    ) -> MResult<PreparedRuntimeEffect> {
+        self.preflight_write(RuntimeResourceWritePreflightRequest {
+            base_uri: request.base_uri.clone(),
+            path: request.path.clone(),
+            context_name: request.context_name.clone(),
+            operation: request.operation.clone(),
+            intent: request.intent,
+        })?;
+        let text = value_to_text(&request.value);
+        Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
+            ConsoleOutputEffect {
+                backend: self.backend.clone(),
+                text,
+                resource: request.base_uri,
+            },
+        )))
+    }
+}
+
+#[derive(Debug)]
+struct ConsoleOutputEffect<B: ConsoleBackend> {
+    backend: Arc<Mutex<B>>,
+    text: String,
+    resource: String,
+}
+
+impl<B: ConsoleBackend> RuntimeAfterCommitEffect for ConsoleOutputEffect<B> {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+        RuntimeEffectMetadata::new(
+            RuntimeEffectSource::ResourceProvider {
+                scheme: "console".to_string(),
+            },
+            "write-line",
+        )
+        .with_resource(self.resource.clone())
+        .with_cost(RuntimeEffectCost {
+            bytes: u64::try_from(self.text.len()).unwrap_or(u64::MAX),
+            items: 1,
+        })
+    }
+
+    fn deliver(&mut self) -> MResult<()> {
+        self.backend
+            .lock()
+            .map_err(|_| console_error(&self.resource, "console backend lock poisoned"))?
+            .write_line(&self.text)
+    }
+}
+
+fn value_to_text(value: &Value) -> String {
+    match value.data() {
+        ValueData::String(value) => value.to_string(),
+        _ => RuntimeValueSnapshot::from_value(value.clone())
+            .expect("resource writes carry a validated canonical value")
+            .format_canonical_inline(),
+    }
+}
+
+pub fn validate_console_settings(settings: &ConfigValue) -> MResult<()> {
+    match settings {
+        ConfigValue::Map(map) if map.is_empty() => Ok(()),
+        _ => Err(console_error(
+            "console://settings",
+            "console host settings must be an empty map",
+        )),
+    }
+}
+
+#[derive(Debug)]
+pub struct ConsoleHostFactory<B: ConsoleBackend + Clone> {
+    backend: B,
+    manifest: HostManifestConfig,
+}
+
+impl<B: ConsoleBackend + Clone> ConsoleHostFactory<B> {
+    pub fn with_backend(backend: B) -> MResult<Self> {
+        Ok(Self {
+            backend,
+            manifest: console_host_manifest()?,
+        })
+    }
+}
+
+impl<B: ConsoleBackend + Clone + 'static> RuntimeHostFactory for ConsoleHostFactory<B> {
+    fn provider_name(&self) -> &str {
+        "console"
+    }
+    fn manifest(&self) -> &HostManifestConfig {
+        &self.manifest
+    }
+    fn validate_settings(&self, _instance_name: &str, settings: &ConfigValue) -> MResult<()> {
+        validate_console_settings(settings)
+    }
+    fn instantiate(
+        &self,
+        instance_name: &str,
+        settings: &ConfigValue,
+    ) -> MResult<RuntimeHostInstallation> {
+        self.validate_settings(instance_name, settings)?;
+        Ok(RuntimeHostInstallation {
+            interface: materialize_host_manifest(instance_name, &self.manifest)?,
+            resource_providers: vec![Box::new(ConsoleResourceProvider::new(
+                instance_name,
+                self.backend.clone(),
+            ))],
+            input_drivers: Vec::new(),
+        })
+    }
+}

@@ -1,0 +1,10 @@
++> stats
+~value := [-0.0 2.0 -4.0; 3.0 -5.0 6.0]
+~step := 0.0
+squares := stats/sum/column(value ^ 2)
+answer := squares <= limit<f64>
+done := step >= 4.0
+value += delta<f64>
+step += 1.0
+<+ answer
+<+ done

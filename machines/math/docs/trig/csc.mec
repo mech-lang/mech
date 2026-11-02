@@ -1,0 +1,77 @@
+math/csc
+===============================================================================
+
+%% Cosecant of argument in radians
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/csc(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the cosecant of each element of `X`. The input `X` is interpreted in radians, not degrees. The result `Y` has the same shape as the input `X`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `X`      | `float`, `[float]`       | Input angle(s) specified in radians. Can be real or complex. If `X` is complex, csc returns complex results. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `Y`      | matches input            | Cosecant of the input values. If `X` is real, `Y` is real except where `X` is a multiple of π (where csc is undefined). If `X` is complex, `Y` may have both real and imaginary parts. The shape of `Y` matches the shape of `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Find the cosecant of a number 
+
+```mech:ex1
+y := math/csc(1.0)
+```
+
+(b) Find the cosecant for a vector of numbers
+
+```mech:ex2
+x := [0.5, 1.0, 1.5]
+y := math/csc(x)
+```
+
+(c) Find the cosecant for a matrix of numbers
+
+```mech:ex3
+x := [0.5, 1.0; 1.5, 2.0]
+y := math/csc(x)
+```
+
+(d) Find the cosecant for a matrix of degrees
+
+```mech:ex4
+x := [30, 45; 60, 90]
+y := math/csc(x * 3.14 / 180)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The cosecant function is the reciprocal of the sine function:
+
+$$ csc(x) = \frac{1}{sin(x)}
+
+In a right triangle, the cosecant of an angle $$x$$ is defined as the ratio of the length of the hypotenuse to the opposite side:
+
+$$ csc(x) = \frac{\text{hypotenuse}}{\text{opposite}}
+
+For complex numbers, the cosecant can be expressed in terms of exponentials:
+
+$$ csc(x) = \frac{2i}{e^{ix} - e^{-ix}}
+
+This definition extends the cosecant function to work beyond real numbers, allowing it to handle complex inputs.

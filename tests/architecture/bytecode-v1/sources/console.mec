@@ -1,0 +1,3 @@
+@out := console://console/output{:write(line)}
+@out/line <- "bytecode-v1-console"
+"console-done"

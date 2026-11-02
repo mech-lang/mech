@@ -1,0 +1,149 @@
+[package]
+name = "mech-set"
+version = "0.3.5"
+authors = ["Corey Montella <corey@mech-lang.org>", "Steven McPhillimey <slm526@lehigh.edu>", "Liam Messinger <ljm426@lehigh.edu>", "Natalie Dumler <nad326@lehigh.edu>"]
+description = "Set library for the Mech language"
+documentation = "http://docs.mech-lang.org"
+homepage = "http://mech-lang.org"
+repository = "https://github.com/mech-machines/set"
+keywords = ["mech", "language", "programming"]
+license = "Apache-2.0"
+readme = "README.md"
+edition = "2024"
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[features]
+no_std = ["mech-core/no_std"]
+
+default = []
+runtime = ["mech-core/functions"]
+source = ["runtime"]
+semantic-compiler = ["runtime", "mech-core/semantic-compiler"]
+compiler = ["semantic-compiler", "mech-core/compiler"]
+native-plan = ["runtime", "mech-core/native-plan"]
+native-link = ["runtime"]
+standard_values = [
+  "bool", "string", "f64", "set", "map", "table", "tuple", "record", "atom", "enum",
+  "row_vectord", "vectord", "matrixd",
+]
+standard_operations = [
+  "membership_default", "modify_default", "difference", "intersection",
+  "symmetric_difference", "union", "relations_default", "setdata_default",
+]
+standard_runtime = ["runtime", "standard_values", "standard_operations"]
+standard_source = ["standard_runtime", "source"]
+standard_compiler = ["standard_source", "compiler"]
+full_values = [
+  "bool", "string", "u8", "u16", "u32", "u64", "u128",
+  "i8", "i16", "i32", "i64", "i128", "f32", "f64", "c64", "r64",
+  "set", "map", "table", "tuple", "record", "atom", "enum",
+  "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
+  "row_vector2", "row_vector3", "row_vector4",
+  "vector2", "vector3", "vector4", "row_vectord", "vectord", "matrixd",
+]
+full_operations = ["set_default"]
+full_runtime = ["runtime", "full_values", "full_operations"]
+full_source = ["full_runtime", "source"]
+full_compiler = ["full_source", "compiler"]
+
+membership_default = ["element_of", "not_element_of"]
+modify_default = ["insert", "remove"]
+operations_default = ["cartesian_product", "difference", "intersection", "powerset", "symmetric_difference", "union"]
+relations_default = ["disjoint", "equals", "not_equals", "proper_subset", "proper_superset", "subset", "superset"]
+setdata_default = ["size"]
+
+set_default = ["membership_default", "modify_default",
+              "operations_default", "relations_default",
+              "setdata_default"]
+
+set = ["runtime", "mech-core/set"]
+
+membership = ["runtime", "set"]
+modify = ["runtime", "set"]
+operations = ["runtime", "set"]
+relations = ["runtime", "set"]
+setdata = ["runtime", "set"]
+
+element_of = ["runtime", "membership"]
+not_element_of = ["runtime", "membership"]
+
+insert = ["runtime", "modify"]
+remove = ["runtime", "modify"]
+
+cartesian_product = ["runtime", "operations"]
+difference = ["runtime", "operations"]
+intersection = ["runtime", "operations"]
+powerset = ["runtime", "operations"]
+symmetric_difference = ["runtime", "operations"]
+union = ["runtime", "operations"]
+
+disjoint = ["runtime", "relations"]
+equals = ["runtime", "relations"]
+not_equals = ["runtime", "relations"]
+proper_subset = ["runtime", "relations"]
+proper_superset = ["runtime", "relations"]
+subset = ["runtime", "relations"]
+superset = ["runtime", "relations"]
+
+size = ["runtime", "setdata"]
+
+bool = ["mech-core/bool"]
+string = ["mech-core/string"]
+
+# Numbers
+numbers = ["mech-core/numbers"]
+complex = ["f64", "numbers", "mech-core/complex"]
+rational = ["i64", "numbers", "mech-core/rational"]
+signed_ints = ["numbers", "mech-core/signed_ints"]
+unsigned_ints = ["numbers", "mech-core/unsigned_ints"]
+floats = ["numbers", "mech-core/floats"]
+u8 = ["unsigned_ints", "mech-core/u8"]
+u16 = ["unsigned_ints", "mech-core/u16"]
+u32 = ["unsigned_ints", "mech-core/u32"]
+u64 = ["unsigned_ints", "mech-core/u64"]
+u128 = ["unsigned_ints", "mech-core/u128"]
+i8 = ["signed_ints", "mech-core/i8"]
+i16 = ["signed_ints", "mech-core/i16"]
+i32 = ["signed_ints", "mech-core/i32"]
+i64 = ["signed_ints", "mech-core/i64"]
+i128 = ["signed_ints", "mech-core/i128"]
+f32 = ["floats", "mech-core/f32"]
+f64 = ["floats", "mech-core/f64"]
+c64 = ["complex", "mech-core/c64"]
+r64 = ["rational", "mech-core/r64"]
+
+# Structs
+map = ["mech-core/map"]
+table = ["vectord", "record", "mech-core/table"]
+tuple = ["mech-core/tuple"]
+enum = ["mech-core/enum"]
+record = ["tuple", "mech-core/record"]
+atom = ["mech-core/atom"]
+
+# Matrix
+matrix = ["mech-core/matrix"]
+row_vector4 = ["matrix", "mech-core/row_vector4"]
+row_vector3 = ["matrix", "mech-core/row_vector3"]
+row_vector2 = ["matrix", "mech-core/row_vector2"]
+vector4 = ["matrix", "mech-core/vector4"]
+vector3 = ["matrix", "mech-core/vector3"]
+vector2 = ["matrix", "mech-core/vector2"]
+matrix4 = ["matrix", "mech-core/matrix4"]
+matrix3 = ["matrix", "mech-core/matrix3"]
+matrix2 = ["matrix", "mech-core/matrix2", "mech-core/matrix"]
+matrix1 = ["matrix", "mech-core/matrix1"]
+matrix2x3 = ["matrix", "mech-core/matrix2x3"]
+matrix3x2 = ["matrix", "mech-core/matrix3x2"]
+row_vectord =["matrix",  "mech-core/row_vectord"]
+vectord = ["matrix",  "mech-core/vectord"]
+matrixd = ["matrix",  "mech-core/matrixd"]
+
+[dependencies]
+mech-core = { path = "../../src/core", version = "0.3.5", default-features = false }
+
+paste = "1.0.15"
+indexmap = "2.13.0"
+
+[workspace]

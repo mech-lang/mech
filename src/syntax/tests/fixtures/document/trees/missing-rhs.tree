@@ -1,0 +1,15 @@
+Document
+  Body
+    Section
+      MechCode
+        MechCodeAlt
+          Statement
+            VariableDefine
+              Variable
+                Identifier
+                  Alpha "x"
+              Whitespace " "
+              DefineOperatorToken ":="
+              Newline "\n"
+              Missing
+        CodeTerminal

@@ -1,0 +1,114 @@
+math/mul
+===============================================================================
+
+%% Element-wise multiplication
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/mul(X1, X2)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the element-wise product of two numeric inputs. `X1` and `X2` may be scalars, vectors, or matrices. When one input is a scalar and the other is an array, the scalar is multiplied with every element of the array (scalar broadcasting). When multiplying vectors with matrices, broadcasting follows the rules in **Details**.
+
+> Note: `math/mul` performs **Hadamard (element-wise) multiplication**, *not* matrix-matrix linear algebra multiplication.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                                   | Description                                                                 |
+|----------|----------------------------------------|-----------------------------------------------------------------------------|
+| `X1`     | `int`, `uint`, `float`, `rational`, `complex`, `[T]`, `[[T]]` | First factor. Supports scalars, vectors, and matrices.                      |
+| `X2`     | `int`, `uint`, `float`, `rational`, `complex`, `[T]`, `[[T]]` | Second factor. Must be shape-compatible with `X1` under broadcasting.       |
+
+**Supported scalar types**: `i8`, `i16`, `i32`, `i64`, `i128`, `u8`, `u16`, `u32`, `u64`, `u128`, `f32`, `f64`, `rational` (R64), and `complex` (C64).
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind            | Description                                                                  |
+|----------|-----------------|------------------------------------------------------------------------------|
+| `Y`      | matches input   | Element-wise product of `X1 * X2`. The shape of `Y` follows broadcasting.    |
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(a) Multiply two scalars
+
+```mech:ex1
+y := math/mul(6, 7)         // 42
+```
+
+(b) Multiply two vectors
+
+```mech:ex2
+x1 := [1, 2, 3]
+x2 := [4, 5, 6]
+y  := math/mul(x1, x2)      // [4, 10, 18]
+```
+
+(c) Multiply two matrices
+
+```mech:ex3
+a := [1, 2; 3, 4]
+b := [5, 6; 7, 8]
+y := math/mul(a, b)         // [5, 12; 21, 32]
+```
+
+(d) Multiply a matrix by a scalar (scalar broadcasting)
+
+```mech:ex4
+a := [1, 2; 3, 4]
+y := math/mul(a, 10)        // [10, 20; 30, 40]
+```
+
+(e) Multiply a matrix by a column vector (broadcast by columns)
+
+```mech:ex5
+m := [1, 2; 3, 4]           // 2x2
+v := [10, 20]               // column vector length 2
+y := math/mul(m, v)         // [10, 20; 60, 80]
+```
+
+(f) Multiply a row vector by a matrix (broadcast by rows)
+
+```mech:ex6
+r := [100, 200]             // row vector length 2
+m := [1, 2; 3, 4]           // 2x2
+y := math/mul(r, m)         // [100, 400; 300, 800]
+```
+
+(g) Mixed types (float × int)
+
+```mech:ex7
+y := math/mul(2.5, 4)       // 10.0
+```
+
+(h) Complex multiplication
+
+```mech:ex8
+y := math/mul(1+2i, 3-4i)   // (11 + 2i)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+**Element-wise semantics.** Multiplication is applied per element. Shapes must either match exactly or be compatible via broadcasting.
+
+**Broadcasting rules.**
+- **Scalar × Array or Array × Scalar:** The scalar is multiplied with every element of the array.
+- **Matrix × Column Vector (or Vector × Matrix):** A length-`m` column vector can multiply an `m×n` matrix by multiplying the vector with **each column** of the matrix.
+- **Matrix × Row Vector (or Row Vector × Matrix):** A length-`n` row vector can multiply an `m×n` matrix by multiplying the vector with **each row** of the matrix.
+
+**Properties.** `math/mul` is commutative and associative on compatible numeric types (ignoring floating-point rounding).
+
+**Type support.** Implementations exist for signed/unsigned integers, floating-point, rationals, and complex numbers. When types differ, standard numeric promotions apply where defined by the runtime; otherwise a type error is raised.
+
+**Errors.**
+- Shape mismatch that cannot be resolved by broadcasting.
+- Unsupported type combination.
+

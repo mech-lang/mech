@@ -1,0 +1,5 @@
++> @out := cli/stdout
+
+@out/line <- "phase1-hosted-ok"
+
+"done"

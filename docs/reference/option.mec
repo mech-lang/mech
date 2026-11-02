@@ -1,0 +1,42 @@
+option
+===============================================================================
+
+%% An `option` value represents either an empty value (`_`) or a value of an inner kind. Use `?` on kinds to indicate optionality.
+
+1. Kind Syntax
+-------------------------------------------------------------------------------
+
+```mech:disabled
+<u64?>
+<string?>
+<([u64],bool)?>
+```
+
+2. Construction
+-------------------------------------------------------------------------------
+
+```mech:disabled
+x<u64?> := 123u64
+y<u64?> := _
+```
+
+3. Guarded Unwrap
+-------------------------------------------------------------------------------
+
+Use postfix `?` on an expression to unwrap through guarded arms. Arms use the same box-drawing guard style as functions/state machines.
+
+```mech:disabled
+foo := x?
+  │ x > 3u64 => x
+  │ x == 3u64 => 0u64
+  └ * => 0u64.
+```
+
+Tuple patterns are supported:
+
+```mech:disabled
+(x2,y2) := (x,y)?
+  │ (x,y) => (x,y)
+  └ * => (0u64,0u64).
+```
+

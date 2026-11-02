@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "$schema",
+    "contract",
+    "bytecode_version",
+    "contract_types",
+    "artifact_contract_fields",
+    "bytecode_section"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "const": "./boundary-schema.json"
+    },
+    "contract": {
+      "const": "mech-operation-contract-v1"
+    },
+    "bytecode_version": {
+      "const": 1
+    },
+    "contract_types": {
+      "type": "array",
+      "minItems": 20,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "artifact_contract_fields": {
+      "type": "object",
+      "required": [
+        "ProgramArtifact",
+        "NodeDeclaration",
+        "OperationNodeBody",
+        "ControlOperation",
+        "IntegrityConstraintDeclaration"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ProgramArtifact": {
+          "const": "contracts: OperationContractTable"
+        },
+        "NodeDeclaration": {
+          "const": "body: ExecutableNodeBody"
+        },
+        "OperationNodeBody": {
+          "const": "contract: OperationContractId"
+        },
+        "ControlOperation": {
+          "const": "body: ControlOperationBody"
+        },
+        "IntegrityConstraintDeclaration": {
+          "const": "contract: OperationContractId"
+        }
+      }
+    },
+    "bytecode_section": {
+      "const": "ArtifactOperationContracts"
+    }
+  }
+}

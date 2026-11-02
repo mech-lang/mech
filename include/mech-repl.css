@@ -1,0 +1,1131 @@
+/*
+ * Portable REPL component.
+ *
+ * This layer owns the console host, panes, prompt, transcript, value inspector,
+ * and resize/collapse behavior. Host pages may provide shared color tokens,
+ * but sizing stays component-owned and every token has a standalone fallback.
+ */
+
+[data-mech-repl-host],
+[data-mech-repl],
+[data-mech-repl-popup] {
+  --mech-repl-accent: var(--mech-brand, var(--accent-primary, #f2b63d));
+  --mech-repl-accent-soft: var(--mech-editorial-purple-soft, var(--accent-secondary-purple-soft, hsl(254 12% 58%)));
+  --mech-repl-background: var(--mech-output-bg, var(--console-bg, #020303));
+  --mech-repl-surface: var(--mech-panel, var(--bg-secondary, #171c26));
+  --mech-repl-surface-raised: var(--mech-panel-raised, var(--bg-elevated, #1f2533));
+  --mech-repl-border: var(--mech-border, var(--border-strong, #4d5257));
+  --mech-repl-border-soft: var(--mech-border, var(--border, #4d5257));
+  --mech-repl-text: var(--mech-console-text, var(--console-text, #e6edf3));
+  --mech-repl-text-muted: var(--mech-text-muted, var(--text-muted, #827f6b));
+  --mech-repl-kind: var(--mech-syntax-kind, var(--kind-annotation-color, #f09fca));
+  --mech-repl-error: var(--mech-error, #ff8095);
+  --mech-repl-scrollbar: var(--mech-repl-accent-soft);
+  --mech-repl-scrollbar-hover: var(--mech-repl-accent-soft);
+  --mech-repl-tab-text: var(--nav-text-primary, var(--mech-repl-text));
+  --mech-repl-tab-text-hover: var(--nav-text-hover, var(--mech-link, hsl(42 89% 70%)));
+  --mech-repl-tab-text-active: var(--nav-text-active, var(--mech-repl-text));
+  --mech-repl-tab-accent-hover: var(--nav-accent-hover, var(--mech-link, hsl(42 89% 70%)));
+  --mech-repl-tab-accent-active: var(--nav-accent-active, var(--mech-repl-accent));
+  --mech-repl-header-height: var(--mech-repl-top-offset, 0px);
+  --mech-repl-size: var(--mech-repl-initial-size, clamp(320px, 50vw, 620px));
+  --mech-repl-grip-width: var(--grip-width, 18px);
+  --mech-repl-grip-height: var(--grip-height, 72px);
+}
+
+[data-mech-repl-host],
+[data-mech-console-pane],
+[data-mech-console-pane] *,
+[data-mech-console-resizer],
+[data-mech-console-resizer]::before,
+[data-mech-console-resizer]::after,
+[data-mech-console-workspace-resizer],
+[data-mech-console-toggle],
+[data-mech-repl],
+[data-mech-repl] *,
+[data-mech-repl-popup],
+[data-mech-repl-popup] * {
+  box-sizing: border-box;
+}
+
+[data-mech-repl-host] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8px var(--mech-console-size, var(--mech-repl-size));
+  min-height: calc(100vh - var(--mech-repl-header-height));
+  min-width: 0;
+}
+
+[data-mech-repl-host] > .content-shell {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+
+[data-mech-repl-host] > [data-mech-console-resizer]:not([data-mech-console-edge-handle]) {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+[data-mech-repl-host] > [data-mech-console-pane] {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+[data-mech-repl-host][data-mech-console-open="false"] {
+  grid-template-columns: minmax(0, 1fr) 0 0;
+}
+
+[data-mech-repl-host][data-mech-console-open="false"] > [data-mech-console-resizer]:not([data-mech-console-edge-handle]) {
+  display: none;
+}
+
+[data-mech-repl-host][data-mech-console-open="false"] [data-mech-console-edge-handle] {
+  display: block;
+  opacity: 1;
+}
+
+[data-mech-console-resizer]:not([data-mech-console-edge-handle]) {
+  align-self: stretch;
+  cursor: ew-resize;
+  min-width: 8px;
+  position: relative;
+  z-index: 50;
+}
+
+[data-mech-console-resizer]::after {
+  background: var(--mech-repl-accent);
+  border: 1px solid color-mix(in srgb, var(--mech-repl-accent) 70%, var(--mech-output-bg, #020303));
+  border-radius: 999px;
+  content: "";
+  height: var(--mech-repl-grip-height);
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--mech-repl-grip-width);
+}
+
+[data-mech-console-resizer]::before {
+  background: var(--mech-repl-border-soft);
+  border-radius: 999px;
+  content: "";
+  height: 20px;
+  left: 50%;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  z-index: 1;
+}
+
+[data-mech-console-edge-handle] {
+  background: var(--mech-repl-accent);
+  border: 1px solid var(--mech-repl-border);
+  border-radius: 9px 0 0 9px;
+  cursor: ew-resize;
+  display: none;
+  height: var(--mech-repl-grip-height);
+  position: fixed;
+  right: -2px;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: left 120ms ease-out, right 120ms ease-out;
+  width: var(--mech-repl-grip-width);
+  z-index: 1100;
+}
+
+[data-mech-repl-host][data-mech-console-open="false"] [data-mech-console-edge-handle]:hover {
+  right: 0;
+}
+
+[data-mech-console-edge-handle].left {
+  border-radius: 0 9px 9px 0;
+  left: -4px;
+  right: auto;
+}
+
+[data-mech-console-edge-handle].left:hover {
+  left: 0;
+}
+
+[data-mech-repl-host][data-mech-console-mode="drag"] > [data-mech-console-resizer]:not([data-mech-console-edge-handle]) {
+  display: block;
+  height: 100dvh;
+  left: 0;
+  min-width: 8px;
+  position: fixed;
+  top: 0;
+  transition: left 120ms ease-out;
+  width: 8px;
+  z-index: 1100;
+}
+
+[data-mech-repl-host][data-mech-console-mode="drag"] > [data-mech-console-resizer]:not([data-mech-console-edge-handle]):hover {
+  left: 0;
+}
+
+[data-mech-repl-host][data-mech-console-mode="button"] > [data-mech-console-resizer] {
+  display: none !important;
+}
+
+body.is-resizing[data-mech-resize-axis="width"] [data-mech-console-pane],
+body.is-resizing[data-mech-resize-axis="width"] [data-mech-console-pane] *,
+body.is-resizing[data-mech-resize-axis="width"] [data-mech-console-resizer] {
+  cursor: ew-resize !important;
+}
+
+[data-mech-console-pane] {
+  background: var(--mech-repl-background);
+  border-left: 1px solid var(--mech-repl-border);
+  color: var(--mech-repl-text);
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--mech-repl-header-height));
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  position: sticky;
+  top: var(--mech-repl-header-height);
+  width: 100%;
+}
+
+[data-mech-console-pane][hidden] {
+  display: none;
+}
+
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) > [data-mech-console-pane] {
+  bottom: 0;
+  height: auto !important;
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+  /* The component owns an inline width while it is being edge-resized. */
+  width: 100vw !important;
+  z-index: 900;
+}
+
+/* Output-first applications start as a borderless program surface. The
+ * backtick presentation toggle restores the ordinary document workspace,
+ * including its TOC and complete portable REPL, without changing the program. */
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"],
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) {
+  display: block;
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] > :is(
+  .content-shell,
+  [data-mech-console-resizer]
+),
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) > :is(
+  .content-shell,
+  [data-mech-console-resizer]
+) {
+  display: none !important;
+}
+
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] > [data-mech-console-pane],
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) > [data-mech-console-pane] {
+  border: 0;
+  bottom: 0;
+  display: flex !important;
+  height: 100dvh !important;
+  left: 0;
+  max-width: none;
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 100vw !important;
+  z-index: 900;
+}
+
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-console-pane] .console-topbar,
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-console-pane] .console-topbar {
+  border: 0;
+  min-height: 0;
+  padding: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 8px;
+  top: 1px;
+  z-index: 3;
+}
+
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-console-pane] :is(
+  .console-tabs,
+  [data-mech-console-fullscreen]
+),
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-console-pane] :is(
+  .console-tabs,
+  [data-mech-console-fullscreen]
+) {
+  display: none;
+}
+
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-console-pane] [data-mech-output-fullscreen],
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-console-pane] [data-mech-output-fullscreen] {
+  display: inline-flex;
+  margin: 1px 0;
+  pointer-events: auto;
+}
+
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-console-pane] .console-panels,
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-console-pane] .console-panels {
+  display: block;
+  height: 100%;
+}
+
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-console-pane] [data-mech-console-panel],
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-console-pane] [data-mech-console-panel] {
+  border: 0;
+  display: none !important;
+}
+
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-console-pane] [data-mech-console-panel="output"],
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-console-pane] [data-mech-console-panel="output"] {
+  display: block !important;
+  height: 100%;
+}
+
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel],
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] {
+  height: 100%;
+  overflow: auto;
+  padding: 0;
+}
+
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel] :is(
+  .mech-output-region,
+  .mech-repl-output-entry,
+  .mech-document-output-entry,
+  .mech-repl-output-content,
+  .mech-document-output-html,
+  .mech-repl-output-scene,
+  .mech-repl-scene
+),
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] :is(
+  .mech-output-region,
+  .mech-repl-output-entry,
+  .mech-document-output-entry,
+  .mech-repl-output-content,
+  .mech-document-output-html,
+  .mech-repl-output-scene,
+  .mech-repl-scene
+) {
+  max-height: none;
+  max-width: none;
+  min-height: 0;
+  width: 100%;
+}
+
+/* A presentation surface fills the viewport only when its content explicitly
+ * owns that geometry. Ordinary values and streams retain the panel's single
+ * scroll surface, while scenes/canvases can use every available pixel. */
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel] :is(
+  .mech-output-region,
+  .mech-repl-output-entry,
+  .mech-document-output-entry,
+  .mech-repl-output-content,
+  .mech-document-output-html
+):has([data-mech-output-fill="true"]),
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] :is(
+  .mech-output-region,
+  .mech-repl-output-entry,
+  .mech-document-output-entry,
+  .mech-repl-output-content,
+  .mech-document-output-html
+):has([data-mech-output-fill="true"]),
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel] [data-mech-output-fill="true"],
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] [data-mech-output-fill="true"] {
+  height: 100%;
+}
+
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel] .mech-document-output-entry:has([data-mech-output-fill="true"]),
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] .mech-document-output-entry:has([data-mech-output-fill="true"]) {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-fill="true"] :is(.mech-repl-scene, canvas),
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-fill="true"] :is(.mech-repl-scene, canvas) {
+  display: block;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+  width: 100%;
+}
+
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel] :is(.mech-repl-output-entry, .mech-document-output-entry),
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] :is(.mech-repl-output-entry, .mech-document-output-entry) {
+  padding: 0;
+}
+
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel] .mech-output-region:empty,
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] .mech-output-region:empty {
+  display: none;
+}
+
+.mech-repl-scene[data-mech-scene-pointer-surface="true"] {
+  cursor: pointer;
+  touch-action: none;
+}
+
+[data-mech-console-pane] .console-topbar {
+  align-items: center;
+  border-bottom: 1px solid var(--mech-repl-border);
+  display: flex;
+  gap: 16px;
+  justify-content: flex-start;
+  min-height: 48px;
+  padding: 0 16px;
+}
+
+[data-mech-console-pane] [data-mech-output-fullscreen] {
+  margin-left: auto;
+}
+
+[data-mech-console-pane] .console-tabs {
+  align-items: stretch;
+  align-self: stretch;
+  display: flex;
+  gap: 14px;
+  min-width: 0;
+}
+
+[data-mech-console-pane] [data-mech-console-tab] {
+  align-items: center;
+  align-self: stretch;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--mech-repl-tab-text);
+  cursor: pointer;
+  display: inline-flex;
+  font: 600 12px/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  letter-spacing: 0.03em;
+  margin-bottom: -1px;
+  padding: 14px 2px 12px;
+  text-transform: uppercase;
+}
+
+[data-mech-console-pane] [data-mech-console-tab]:hover {
+  border-bottom-color: var(--mech-repl-tab-accent-hover);
+  color: var(--mech-repl-tab-text-hover);
+}
+
+[data-mech-console-pane] [data-mech-console-tab][aria-selected="true"] {
+  border-bottom-color: var(--mech-repl-tab-accent-active);
+  color: var(--mech-repl-tab-text-active);
+}
+
+[data-mech-console-pane] [data-mech-console-tab][data-mech-console-unread="true"]::after {
+  background: var(--mech-repl-accent);
+  border-radius: 999px;
+  content: "";
+  height: 6px;
+  margin-left: 6px;
+  width: 6px;
+}
+
+[data-mech-console-pane] [data-mech-console-tab="errors"][data-mech-console-unread="true"]::after {
+  display: none;
+}
+
+[data-mech-console-pane] .mech-console-error-count {
+  align-items: center;
+  background: var(--mech-repl-surface-raised);
+  border-radius: 999px;
+  box-sizing: border-box;
+  color: var(--mech-repl-text);
+  display: inline-flex;
+  font-size: 0.82em;
+  height: 1.45em;
+  justify-content: center;
+  line-height: 1;
+  margin-left: 6px;
+  min-width: 1.45em;
+  padding: 0 0.32em;
+}
+
+[data-mech-console-pane] .mech-console-error-count[hidden] {
+  display: none;
+}
+
+[data-mech-console-pane] [data-mech-console-tab="errors"][data-mech-console-unread="true"] .mech-console-error-count {
+  background: var(--mech-repl-accent);
+  color: var(--mech-repl-background);
+}
+
+[data-mech-console-pane] :is(
+  [data-mech-console-fullscreen],
+  [data-mech-output-fullscreen]
+) {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--mech-repl-text);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  height: 30px;
+  justify-content: center;
+  margin: 8px 0;
+  padding: 0;
+  width: 30px;
+}
+
+[data-mech-console-pane] :is(
+  [data-mech-console-fullscreen],
+  [data-mech-output-fullscreen]
+):hover {
+  border-color: var(--mech-repl-border-soft);
+  color: var(--mech-repl-accent);
+}
+
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] .console-topbar {
+  border: 0;
+  min-height: 0;
+  padding: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 8px;
+  top: 1px;
+  z-index: 3;
+}
+
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] :is(
+  .console-tabs,
+  [data-mech-output-fullscreen],
+  [data-mech-console-tab]
+) {
+  display: none;
+}
+
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] [data-mech-console-fullscreen] {
+  margin: 1px 0;
+  pointer-events: auto;
+}
+
+[data-mech-console-pane] .console-panels {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+}
+
+[data-mech-console-pane] [data-mech-console-panel] {
+  display: none;
+  height: 100%;
+  min-width: 0;
+}
+
+[data-mech-console-pane] [data-mech-console-panel]:not([hidden]) {
+  display: block;
+}
+
+[data-mech-console-workspace-resizer] {
+  display: none;
+}
+
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] .console-panels {
+  display: grid;
+  grid-template-columns:
+    clamp(
+      min(240px, calc(50% - 4px)),
+      var(--mech-console-workspace-left, calc(55% - 4px)),
+      calc(100% - min(240px, calc(50% - 4px)) - 8px)
+    )
+    8px
+    minmax(0, 1fr);
+  grid-template-rows:
+    clamp(
+      min(120px, calc(50% - 4px)),
+      var(--mech-console-workspace-top, calc(60% - 4px)),
+      calc(100% - min(120px, calc(50% - 4px)) - 8px)
+    )
+    8px
+    minmax(0, 1fr);
+}
+
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] [data-mech-console-panel] {
+  background: var(--mech-repl-background);
+  border: 1px solid var(--mech-repl-border);
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] [data-mech-console-panel]::before {
+  align-items: center;
+  background: color-mix(in srgb, var(--mech-repl-surface) 72%, var(--mech-repl-background));
+  border-bottom: 1px solid var(--mech-repl-border);
+  color: var(--mech-repl-text-muted);
+  content: attr(data-mech-console-label);
+  display: flex;
+  flex: 0 0 32px;
+  font: 600 11px/1.2 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  letter-spacing: 0.08em;
+  padding: 0 12px;
+  text-transform: uppercase;
+}
+
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] [data-mech-console-panel] > :is(.console-scroll, [data-mech-repl]) {
+  flex: 1;
+  width: 100%;
+}
+
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] [data-mech-console-panel="console"] {
+  grid-column: 1;
+  grid-row: 1 / -1;
+}
+
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] [data-mech-console-panel="output"] {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] [data-mech-console-panel="output"]::before {
+  padding-right: 48px;
+}
+
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] [data-mech-console-panel="errors"] {
+  grid-column: 3;
+  grid-row: 3;
+}
+
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] [data-mech-console-workspace-resizer] {
+  background: color-mix(in srgb, var(--mech-repl-surface) 55%, var(--mech-repl-background));
+  display: block;
+  position: relative;
+  touch-action: none;
+  z-index: 2;
+}
+
+[data-mech-console-pane] [data-mech-console-workspace-resizer]::after {
+  background: var(--mech-repl-text-muted);
+  border-radius: 999px;
+  content: "";
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+[data-mech-console-pane] [data-mech-console-workspace-resizer="column"]::after {
+  height: 36px;
+  width: 3px;
+}
+
+[data-mech-console-pane] [data-mech-console-workspace-resizer="row"]::after {
+  height: 3px;
+  width: 36px;
+}
+
+[data-mech-console-pane] [data-mech-console-workspace-resizer]:is(:hover, :focus-visible) {
+  background: var(--mech-repl-surface-raised);
+  outline: none;
+}
+
+[data-mech-console-pane] [data-mech-console-workspace-resizer]:is(:hover, :focus-visible)::after {
+  background: var(--mech-repl-accent);
+}
+
+[data-mech-console-workspace-resizer="column"] {
+  cursor: ew-resize;
+  grid-column: 2;
+  grid-row: 1 / -1;
+}
+
+[data-mech-console-workspace-resizer="row"] {
+  cursor: ns-resize;
+  grid-column: 3;
+  grid-row: 2;
+}
+
+body.is-resizing[data-mech-resize-axis="column"] [data-mech-console-pane],
+body.is-resizing[data-mech-resize-axis="column"] [data-mech-console-pane] * {
+  cursor: ew-resize !important;
+}
+
+body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane],
+body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
+  cursor: ns-resize !important;
+}
+
+[data-mech-console-pane] .console-scroll,
+[data-mech-repl] {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+
+[data-mech-console-pane] .console-scroll {
+  font: 14px/1.6 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  overflow: auto;
+  padding: 24px;
+  scrollbar-color: var(--mech-repl-scrollbar) transparent;
+  scrollbar-width: thin;
+}
+
+:is(
+  [data-mech-console-pane] .console-scroll,
+  [data-mech-repl] .mech-repl-transcript,
+  [data-mech-repl] .mech-repl-logo,
+  [data-mech-repl-popup] .mech-inline-popup__content
+) {
+  scrollbar-color: var(--mech-repl-scrollbar) transparent;
+  scrollbar-width: thin;
+}
+
+:is(
+  [data-mech-console-pane] .console-scroll,
+  [data-mech-repl] .mech-repl-transcript,
+  [data-mech-repl] .mech-repl-logo,
+  [data-mech-repl-popup] .mech-inline-popup__content
+)::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+:is(
+  [data-mech-console-pane] .console-scroll,
+  [data-mech-repl] .mech-repl-transcript,
+  [data-mech-repl] .mech-repl-logo,
+  [data-mech-repl-popup] .mech-inline-popup__content
+)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:is(
+  [data-mech-console-pane] .console-scroll,
+  [data-mech-repl] .mech-repl-transcript,
+  [data-mech-repl] .mech-repl-logo,
+  [data-mech-repl-popup] .mech-inline-popup__content
+)::-webkit-scrollbar-thumb {
+  background: var(--mech-repl-scrollbar);
+  border-radius: 999px;
+}
+
+:is(
+  [data-mech-console-pane] .console-scroll,
+  [data-mech-repl] .mech-repl-transcript,
+  [data-mech-repl] .mech-repl-logo,
+  [data-mech-repl-popup] .mech-inline-popup__content
+)::-webkit-scrollbar-thumb:hover {
+  background: var(--mech-repl-scrollbar-hover);
+}
+
+[data-mech-repl] {
+  background: var(--mech-repl-background);
+  color: var(--mech-repl-text);
+  display: flex;
+  flex-direction: column;
+  font: 14px/1.55 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+[data-mech-repl][hidden] {
+  display: none;
+}
+
+[data-mech-repl] .mech-repl-transcript {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+  padding: 24px;
+}
+
+[data-mech-repl] .mech-repl-hint {
+  color: var(--mech-repl-text-muted);
+  padding: 2px 0 8px;
+}
+
+[data-mech-repl] .mech-repl-response {
+  margin-left: 1rem;
+}
+
+[data-mech-repl] .mech-repl-input-row,
+[data-mech-repl] .repl-line {
+  align-items: flex-start;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  padding: 2px 0;
+}
+
+[data-mech-repl] .repl-code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+[data-mech-repl] .repl-code > .mech-code-block {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  display: inline;
+  font: inherit;
+  line-height: inherit;
+  margin: 0;
+  overflow: visible;
+  padding: 0;
+  white-space: pre-wrap;
+}
+
+[data-mech-repl] .mech-repl-logo {
+  color: var(--mech-repl-accent);
+  line-height: 1.2;
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+[data-mech-repl] .repl-prompt {
+  color: var(--mech-repl-accent);
+  flex: 0 0 auto;
+  line-height: 1.55;
+}
+
+[data-mech-repl] .repl-input {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  flex: 1;
+  font: inherit;
+  min-height: 1.5rem;
+  min-width: 0;
+  outline: 0;
+  box-sizing: border-box;
+  display: block;
+  overflow: hidden !important;
+  padding: 0;
+  resize: none;
+  scrollbar-width: none;
+}
+
+[data-mech-repl] .repl-input::-webkit-scrollbar {
+  display: none;
+  height: 0;
+  width: 0;
+}
+
+:is([data-mech-repl], [data-mech-output-panel], [data-mech-errors-panel], [data-mech-repl-popup]) .mech-repl-output-table {
+  border: 0;
+  border-collapse: collapse;
+  max-width: 100%;
+}
+
+:is([data-mech-repl], [data-mech-output-panel], [data-mech-errors-panel], [data-mech-repl-popup]) .mech-repl-output-table th,
+:is([data-mech-repl], [data-mech-output-panel], [data-mech-errors-panel], [data-mech-repl-popup]) .mech-repl-output-table td {
+  border: 0;
+  overflow-wrap: anywhere;
+  padding: 2px 16px 2px 0;
+  text-align: left;
+  vertical-align: top;
+}
+
+:is([data-mech-repl], [data-mech-output-panel], [data-mech-errors-panel], [data-mech-repl-popup]) .mech-repl-row-muted {
+  color: var(--mech-repl-text-muted);
+}
+
+:is([data-mech-repl], [data-mech-output-panel], [data-mech-errors-panel], [data-mech-repl-popup]) :is(.mech-repl-symbols, .mech-repl-constraints) {
+  table-layout: fixed;
+  width: 100%;
+}
+
+:is([data-mech-repl], [data-mech-output-panel], [data-mech-errors-panel], [data-mech-repl-popup]) :is(.mech-repl-symbols, .mech-repl-constraints) td:last-child {
+  max-width: 22rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-mech-repl] .mech-repl-symbols td.mech-clickable {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.18em;
+}
+
+[data-mech-repl] .mech-repl-symbols td.mech-clickable:hover,
+[data-mech-repl] .mech-repl-symbols td.mech-clickable:focus-visible {
+  color: var(--mech-repl-accent);
+  outline: 0;
+  text-decoration-color: currentColor;
+}
+
+:is([data-mech-repl], [data-mech-output-panel], [data-mech-errors-panel], [data-mech-repl-popup]) .mech-document-output-entry,
+:is([data-mech-repl], [data-mech-output-panel], [data-mech-errors-panel], [data-mech-repl-popup]) .mech-document-output-html,
+:is([data-mech-repl], [data-mech-output-panel], [data-mech-errors-panel], [data-mech-repl-popup]) .mech-output-value {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+}
+
+[data-mech-output-panel] .mech-document-output-entry {
+  min-width: 100%;
+  overflow: visible;
+  padding: 8px 0 14px;
+  width: max-content;
+}
+
+[data-mech-output-panel] .mech-document-output-heading {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+[data-mech-output-panel] .mech-document-output-heading .mech-output-kind,
+[data-mech-repl-popup] .mech-output-kind,
+:is([data-mech-repl], [data-mech-repl-popup]) .mech-repl-result-kind {
+  color: var(--mech-repl-kind);
+}
+
+[data-mech-repl] .mech-repl-formatted-value,
+[data-mech-repl-popup] .mech-repl-formatted-value {
+  align-items: flex-start;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+[data-mech-repl] .mech-repl-result-kind,
+[data-mech-repl-popup] .mech-repl-result-kind {
+  color: var(--mech-repl-kind);
+  flex: 0 0 auto;
+}
+
+:is([data-mech-repl], [data-mech-output-panel], [data-mech-errors-panel], [data-mech-repl-popup]) [data-mech-kind-elided="true"] {
+  max-width: min(100%, 96ch);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-mech-repl] .mech-repl-result-value,
+[data-mech-repl-popup] .mech-repl-result-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+:is([data-mech-repl], [data-mech-output-panel], [data-mech-errors-panel], [data-mech-repl-popup]) .mech-repl-output-text:not(.mech-repl-logo) {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+[data-mech-output-panel] .mech-document-output-html {
+  max-width: none;
+  min-width: 100%;
+  overflow: visible;
+  padding: 0;
+  width: max-content;
+}
+
+[data-mech-output-panel] .mech-document-output-html,
+[data-mech-output-panel] .mech-document-output-html > * {
+  max-width: none;
+}
+
+[data-mech-errors-panel] .mech-console-error,
+:is([data-mech-repl], [data-mech-repl-popup]) .mech-repl-error {
+  color: var(--mech-repl-error);
+}
+
+:is([data-mech-repl], [data-mech-errors-panel]) .mech-repl-diagnostic {
+  margin: 2px 0;
+}
+
+:is([data-mech-repl], [data-mech-errors-panel]) .mech-repl-diagnostic > header {
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+:is([data-mech-repl], [data-mech-errors-panel]) .mech-repl-diagnostic-note {
+  color: var(--mech-repl-text-muted);
+  padding-left: 16px;
+}
+
+[data-mech-repl-popup] {
+  --mech-repl-accent: var(--mech-brand, var(--accent-primary, #f2b63d));
+  --mech-repl-background: var(--mech-output-bg, var(--console-bg, #020303));
+  --mech-repl-surface: var(--mech-panel, var(--bg-secondary, #171c26));
+  --mech-repl-surface-raised: var(--mech-panel-raised, var(--bg-elevated, #1f2533));
+  --mech-repl-border: var(--mech-border, var(--border-strong, #4d5257));
+  --mech-repl-text: var(--mech-console-text, var(--console-text, #e6edf3));
+  background: var(--mech-repl-surface);
+  border: 1px solid var(--mech-repl-border);
+  border-radius: 8px;
+  box-shadow: var(--mech-shadow-focus, 0 24px 52px rgb(0 0 0 / 72%));
+  color: var(--mech-repl-text);
+  font: 14px/1.55 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  left: 24px;
+  max-width: min(460px, calc(100vw - 24px));
+  min-width: 220px;
+  overflow: hidden;
+  position: fixed;
+  top: 96px;
+  z-index: 12000;
+}
+
+[data-mech-repl-popup][hidden] {
+  display: none !important;
+}
+
+[data-mech-repl-popup].mech-inline-popup--error {
+  border-color: var(--mech-repl-error);
+}
+
+[data-mech-repl-popup] .mech-inline-popup__header {
+  align-items: center;
+  border-bottom: 1px solid var(--mech-repl-border);
+  cursor: grab;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 8px 10px;
+  user-select: none;
+}
+
+[data-mech-repl-popup] .mech-inline-popup__header:active {
+  cursor: grabbing;
+}
+
+[data-mech-repl-popup] .mech-inline-popup__title {
+  color: inherit;
+  font-size: 1rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+[data-mech-repl-popup] .mech-inline-popup__close {
+  background: var(--mech-repl-surface-raised);
+  border: 1px solid var(--mech-repl-border);
+  border-radius: 5px;
+  color: var(--mech-repl-text);
+  cursor: pointer;
+  height: 24px;
+  line-height: 20px;
+  width: 24px;
+}
+
+[data-mech-repl-popup] .mech-inline-popup__close:hover,
+[data-mech-repl-popup] .mech-inline-popup__close:focus-visible {
+  border-color: var(--mech-repl-accent);
+  color: var(--mech-repl-accent);
+  outline: none;
+}
+
+[data-mech-repl-popup] .mech-inline-popup__content {
+  border-radius: 0 0 8px 8px;
+  margin: 0;
+  max-height: 40vh;
+  overflow: auto;
+  padding: 10px;
+}
+
+[data-mech-repl-popup] .mech-inline-popup__content .mech-output-value {
+  padding: 8px 6px 4px;
+}
+
+@media (max-width: 900px) {
+  [data-mech-repl-host] {
+    display: block;
+    min-height: 0;
+  }
+
+  [data-mech-repl-host][data-mech-console-open="true"] [data-mech-console-pane] {
+    bottom: 0;
+    box-shadow: var(--mech-shadow-side, -8px 0 28px rgb(0 0 0 / 45%));
+    display: flex !important;
+    height: min(70vh, 620px);
+    position: fixed;
+    right: 0;
+    top: auto;
+    max-width: 100vw;
+    width: min(94vw, 520px) !important;
+    z-index: 900;
+  }
+
+  /* Presentation ownership outranks the compact drawer at this breakpoint,
+   * including when the Fullscreen API falls back to the CSS viewport. */
+  [data-mech-repl-host][data-mech-output-fullscreen-active="true"][data-mech-console-open="true"] [data-mech-console-pane],
+  [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-console-pane] {
+    bottom: 0;
+    height: 100dvh !important;
+    max-width: none;
+    right: 0;
+    top: 0;
+    width: 100vw !important;
+  }
+
+  [data-mech-repl-host][data-mech-console-open="false"] [data-mech-console-pane] {
+    display: none !important;
+  }
+
+  [data-mech-repl-host] > [data-mech-console-resizer]:not([data-mech-console-edge-handle]) {
+    display: none;
+  }
+
+  [data-mech-repl-host] [data-mech-console-edge-handle] {
+    bottom: 24px;
+    display: block !important;
+    position: fixed;
+    right: 0;
+    top: auto;
+    transform: none;
+    z-index: 901;
+  }
+
+  [data-mech-repl-host][data-mech-console-open="true"] [data-mech-console-edge-handle] {
+    right: min(94vw, 520px);
+  }
+
+  [data-mech-repl-host][data-mech-console-mode="drag"] [data-mech-console-edge-handle] {
+    left: -4px;
+    right: auto;
+  }
+
+  [data-mech-repl-host][data-mech-console-open="true"]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] {
+    bottom: 0;
+    height: 100dvh !important;
+    max-width: none;
+    right: 0;
+    top: 0;
+    width: 100vw !important;
+  }
+
+  [data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] .console-panels {
+    grid-template-columns:
+      clamp(
+        min(180px, calc(50% - 4px)),
+        var(--mech-console-workspace-left, calc(52% - 4px)),
+        calc(100% - min(180px, calc(50% - 4px)) - 8px)
+      )
+      8px
+      minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-mech-repl-popup],
+  [data-mech-console-edge-handle],
+  [data-mech-console-toggle] {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}

@@ -1,0 +1,519 @@
+[package]
+name = "mech"
+version = "0.3.6"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "Mech is a programming language for building reactive systems like robots, games, and animations."
+documentation = "https://docs.mech-lang.org"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-lang/mech"
+keywords = ["mech", "language", "programming", "dataflow", "runtime"]
+categories = ["science::robotics", "science", "game-engines", "web-programming"]
+license = "Apache-2.0"
+readme = "README.md"
+edition = "2024"
+rust-version = "1.92"
+
+[[bin]]
+name = "mech"
+path = "src/bin/mech.rs"
+required-features = ["cli_core"]
+
+[profile.release]
+debug = false
+
+[profile.test]
+# The exhaustive native-factory matrix otherwise produces multi-gigabyte
+# test executables that macOS cannot map alongside the shared dyld cache.
+debug = false
+strip = "symbols"
+
+[features]
+no_std = ["mech-core/no_std", "mech-engine/no_std", "mech-stdlib/no_std", "mech-syntax/no_std"]
+
+standard_runtime = [
+      "mech-engine/runtime",
+      "mech-stdlib/standard_runtime",
+      "math_add_assign", "math_sub_assign",
+      "mech-runtime?/resident-routing",
+      ]
+standard_source = [
+      "standard_runtime",
+      "mech-engine/source",
+      "mech-syntax/program",
+      "mech-stdlib/standard_source",
+      ]
+standard_compiler = [
+      "standard_source",
+      "mech-engine/compiler",
+      "mech-stdlib/standard_compiler",
+      "mech-runtime?/compiler",
+      "mech-runtime?/resident-routing-source",
+      ]
+
+full_runtime = [
+      "mech-engine/runtime",
+      "mech-stdlib/full_runtime",
+      "mech-runtime?/resident-routing",
+      ]
+full_source = [
+      "full_runtime",
+      "mech-engine/source",
+      "mech-syntax/program",
+      "mech-stdlib/full_source",
+      ]
+full_compiler = [
+      "full_source",
+      "mech-engine/compiler",
+      "mech-stdlib/full_compiler",
+      "mech-runtime?/compiler",
+      "mech-runtime?/resident-routing-source",
+      ]
+
+default = ["distribution-standard"]
+
+distribution-standard = [
+      "standard_compiler", "standard-hosts", "standard-cli", "standard-language",
+      ]
+distribution-full = [
+      "full_compiler", "full-hosts", "full-cli", "full-language",
+      ]
+standard-language = [
+      "pretty_print", "serde", "compiler", "program", "mika",
+      "bool", "string", "f64",
+      "set", "map", "table", "tuple", "record", "atom", "enum",
+      "row_vectord", "vectord", "matrixd",
+      "statements_default", "subscript_default", "state_machines",
+      "async", "trace",
+      ]
+full-language = [
+      "baselib", "pretty_print", "serde", "compiler", "program", "mika",
+      "u8", "u16", "u32", "u64", "u128", 
+      "i8", "i16", "i32", "i64", "i128", 
+      "f32", "f64", "c64", "r64",
+      "statements_default", "subscript_default", "state_machines",
+      "async", "trace",
+      "mech-core/full", "mech-syntax/full",
+      ]
+standard-cli = ["cli-product"]
+full-cli = ["cli-product"]
+standard-hosts = [
+      "cli_host",
+      "time_host_native", "timer_host_native", "console_host_native", "scene_host_native",
+      "time_host_browser", "timer_host_browser", "console_host_browser", "scene_host_browser",
+      "web_host",
+      "mech-build?/standard-hosts",
+      ]
+full-hosts = [
+      "standard-hosts",
+      "dep:mech-robot-arm", "mech-robot-arm/provider",
+      "mech-build?/full-hosts",
+      ]
+compute_backends_native = [
+      "dep:mech-compute", "dep:mech-gpu", "mech-gpu/native", "mech-gpu/jit",
+      "mech-browser/pointer",
+      "mech-runtime/compute",
+      "mech-runtime/f32", "mech-runtime/f64", "mech-runtime/string", "mech-runtime/matrixd",
+      "f32", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
+      "math_add", "math_sub", "math_mul", "math_div", "math_mod", "math_sin", "math_cos",
+      "math_ceil", "math_floor",
+      "mech-stdlib/native-plan",
+      ]
+base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
+      "statements_default", "subscript_default", "state_machines",
+      "cli", "async", "trace",
+      "mech-core/base", "mech-engine/base", "mech-syntax/base",
+      ]
+cli_core = []
+cli-product = ["cli_core", "build", "formatter", "serve", "bundle_web", "run"]
+cli = ["cli-product"]
+formatter_core = ["serde", "mech-syntax/mika", "mech-core/mika", "mech-syntax/variable_define", "mech-core/variable_define"]
+cranelift_build = ["build", "dep:mech-gpu", "mech-gpu/canonical-native-program-host", "dep:tempfile"]
+system_gmp = ["mech-gpu/system-gmp"]
+build = [
+      "cli_core", "compiler",
+      "dep:mech-build",
+      # Build planning calls the standard host catalog even without distribution defaults.
+      "mech-build/standard-hosts",
+      "mech-stdlib/native-plan",
+      "mech-runtime", "mech-runtime/compiler", "mech-runtime/native-link", "mech-runtime/serde",
+      ]
+# `mech run` is a complete source-to-resident product surface: it compiles the
+# standard language, admits the resulting resident program, and installs the
+# terminal provider used by retained CLI resources.  Keep that closure on the
+# product feature instead of relying on distribution-default feature leakage.
+run = [
+      "cli_core", "project", "cli_host",
+      "mech-engine/runtime", "mech-engine/source", "mech-engine/compiler",
+      "mech-syntax/program",
+      "mech-stdlib/standard_compiler",
+      "mech-stdlib/math_add_assign", "mech-stdlib/math_sub_assign",
+      "mech-runtime/compiler", "mech-runtime/resident-routing-source",
+      ]
+project = ["mech-runtime", "mech-runtime/source"]
+cli_host = ["mech-runtime", "dep:mech-terminal", "mech-terminal/provider"]
+web_host = ["mech-runtime", "mech-browser", "mech-browser/serde", "mech-browser/provider", "dep:mech-time", "dep:mech-timer", "dep:mech-console", "dep:mech-scene"]
+bundle_web_core = [
+      "project", "web_host", "formatter_core", "serde", "dep:sha2", "dep:tempfile",
+      "dep:mech-build", "mech-build/process-supervision",
+      "mech-engine/compiler", "mech-syntax/program", "mech-stdlib/standard_compiler",
+      "mech-runtime", "mech-runtime/compiler", "mech-runtime/resident-routing-source", "mech-runtime/pretty_print",
+      ]
+bundle_web = ["cli_core", "bundle_web_core"]
+# `mech serve` owns the same retained source-to-resident compilation boundary as
+# `mech run`, plus browser hosts and workspace watching.  Keep the compiler and
+# standard source catalog on this product feature so reduced browser/Windows
+# builds cannot inherit them accidentally from a distribution default.
+serve = [
+      "cli_core", "project", "web_host", "formatter_core", "dep:sha2",
+      "mech-engine/runtime", "mech-engine/source", "mech-engine/compiler",
+      "mech-syntax/program",
+      "mech-stdlib/standard_compiler",
+      "mech-stdlib/math_add_assign", "mech-stdlib/math_sub_assign",
+      "mech-runtime/compiler", "mech-runtime/resident-routing-source", "mech-runtime/pretty_print",
+      "mech-runtime/watcher", "ignore",
+      ]
+host_delegation = ["serde", "mech-runtime", "mech-runtime/host_delegation", "mech-browser", "mech-browser/delegation"]
+host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_signing", "mech-browser/delegation_signing"]
+# Formatting resolves source/document inputs through the retained filesystem
+# authority, but it does not compile or execute them. Keep that runtime-kernel
+# closure explicit without pulling in the semantic compiler.
+formatter = [
+      "cli_core", "formatter_core", "dep:sha2",
+      "mech-runtime", "mech-runtime/source", "mech-runtime/pretty_print", "mech-runtime/serde",
+      ]
+async = []
+trace = ["mech-engine/trace"]
+dynamic-modules = ["mech-engine/dynamic-modules"]
+time_host_native = ["dep:mech-time", "mech-time/native"]
+time_host_browser = ["dep:mech-time", "mech-time/browser"]
+console_host_native = ["dep:mech-console", "mech-console/native"]
+console_host_browser = ["dep:mech-console", "mech-console/browser"]
+timer_host_native = ["dep:mech-timer", "mech-timer/native"]
+timer_host_browser = ["dep:mech-timer", "mech-timer/browser"]
+scene_host_native = ["dep:mech-scene", "mech-scene/native"]
+scene_host_browser = ["dep:mech-scene", "mech-scene/browser"]
+
+statements_default = ["variable_assign","variable_define","invariant_define","kind_define"]
+subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
+
+stdlib = ["bool", "string", 
+      "u8", "u16", "u32", "u64", "u128", 
+      "i8", "i16", "i32", "i64", "i128", 
+      "f32", "f64", "c64", "r64", 
+      "set", "map", "table", "tuple", "record", "atom", "enum",
+      "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
+      "row_vector2", "row_vector3", "row_vector4",
+      "vector2", "vector3", "vector4",
+      "row_vectord", "vectord", "matrixd",
+      "subscript_range", "logical_indexing", "swizzle",
+      "subscript_formula", "dot_indexing",
+      "variable_define", "variable_assign", "kind_define",
+      "kind_annotation", "variables",
+      "functions", "formulas"
+    ]
+
+sample_hold = ["mech-engine/sample_hold"]
+state_step = ["mech-engine/state_step"]
+
+# Standard-machine operations are routed by the distribution composition
+# crate. Enabling one of these features selects its concrete implementation
+# and the engine's corresponding source-language marker.
+access = ["mech-stdlib/access"]
+assign = ["mech-stdlib/assign"]
+convert = ["mech-stdlib/convert"]
+matrix_comprehensions = ["mech-stdlib/matrix_comprehensions"]
+set_comprehensions = ["mech-stdlib/set_comprehensions"]
+set_define = ["mech-stdlib/set_define"]
+table_ops = ["mech-stdlib/table_ops"]
+
+math_default = ["mech-stdlib/math_default"]
+compare_default = ["mech-stdlib/compare_default"]
+logic_default = ["mech-stdlib/logic_default"]
+range_default = ["mech-stdlib/range_default"]
+matrix_default = ["mech-stdlib/matrix_default"]
+set_default = ["mech-stdlib/set_default"]
+string_default = ["mech-stdlib/string_default"]
+stats_default = ["mech-stdlib/stats_default"]
+combinatorics_default = ["mech-stdlib/combinatorics_default"]
+
+math_add = ["mech-stdlib/math_add"]
+math_sub = ["mech-stdlib/math_sub"]
+math_mul = ["mech-stdlib/math_mul"]
+math_div = ["mech-stdlib/math_div"]
+math_pow = ["mech-stdlib/math_pow"]
+math_mod = ["mech-stdlib/math_mod"]
+math_neg = ["mech-stdlib/math_neg"]
+math_add_assign = ["mech-stdlib/math_add_assign"]
+math_sub_assign = ["mech-stdlib/math_sub_assign"]
+math_mul_assign = ["mech-stdlib/math_mul_assign"]
+math_div_assign = ["mech-stdlib/math_div_assign"]
+math_sqrt = ["mech-stdlib/math_sqrt"]
+math_ceil = ["mech-stdlib/math_ceil"]
+math_floor = ["mech-stdlib/math_floor"]
+math_acos = ["mech-stdlib/math_acos"]
+math_acosh = ["mech-stdlib/math_acosh"]
+math_acot = ["mech-stdlib/math_acot"]
+math_acsc = ["mech-stdlib/math_acsc"]
+math_asec = ["mech-stdlib/math_asec"]
+math_asin = ["mech-stdlib/math_asin"]
+math_asinh = ["mech-stdlib/math_asinh"]
+math_atan = ["mech-stdlib/math_atan"]
+math_atan2 = ["mech-stdlib/math_atan2"]
+math_atanh = ["mech-stdlib/math_atanh"]
+math_cos = ["mech-stdlib/math_cos"]
+math_cosh = ["mech-stdlib/math_cosh"]
+math_cot = ["mech-stdlib/math_cot"]
+math_csc = ["mech-stdlib/math_csc"]
+math_sec = ["mech-stdlib/math_sec"]
+math_sin = ["mech-stdlib/math_sin"]
+math_sinh = ["mech-stdlib/math_sinh"]
+math_tan = ["mech-stdlib/math_tan"]
+math_tanh = ["mech-stdlib/math_tanh"]
+
+compare_eq = ["mech-stdlib/compare_eq"]
+compare_neq = ["mech-stdlib/compare_neq"]
+compare_seq = ["mech-stdlib/compare_seq"]
+compare_sneq = ["mech-stdlib/compare_sneq"]
+compare_lt = ["mech-stdlib/compare_lt"]
+compare_gt = ["mech-stdlib/compare_gt"]
+compare_lte = ["mech-stdlib/compare_lte"]
+compare_gte = ["mech-stdlib/compare_gte"]
+compare_min = ["mech-stdlib/compare_min"]
+compare_max = ["mech-stdlib/compare_max"]
+
+logic_and = ["mech-stdlib/logic_and"]
+logic_or = ["mech-stdlib/logic_or"]
+logic_not = ["mech-stdlib/logic_not"]
+logic_xor = ["mech-stdlib/logic_xor"]
+
+range_inclusive = ["mech-stdlib/range_inclusive"]
+range_exclusive = ["mech-stdlib/range_exclusive"]
+range_inclusive_increment = ["mech-stdlib/range_inclusive_increment"]
+range_exclusive_increment = ["mech-stdlib/range_exclusive_increment"]
+
+matrix_solve = ["mech-stdlib/matrix_solve"]
+matrix_dot = ["mech-stdlib/matrix_dot"]
+matrix_matmul = ["mech-stdlib/matrix_matmul"]
+matrix_transpose = ["mech-stdlib/matrix_transpose"]
+
+set_element_of = ["mech-stdlib/set_element_of"]
+set_not_element_of = ["mech-stdlib/set_not_element_of"]
+set_insert = ["mech-stdlib/set_insert"]
+set_remove = ["mech-stdlib/set_remove"]
+set_cartesian_product = ["mech-stdlib/set_cartesian_product"]
+set_difference = ["mech-stdlib/set_difference"]
+set_intersection = ["mech-stdlib/set_intersection"]
+set_powerset = ["mech-stdlib/set_powerset"]
+set_symmetric_difference = ["mech-stdlib/set_symmetric_difference"]
+set_union = ["mech-stdlib/set_union"]
+set_disjoint = ["mech-stdlib/set_disjoint"]
+set_equals = ["mech-stdlib/set_equals"]
+set_not_equals = ["mech-stdlib/set_not_equals"]
+set_proper_subset = ["mech-stdlib/set_proper_subset"]
+set_proper_superset = ["mech-stdlib/set_proper_superset"]
+set_subset = ["mech-stdlib/set_subset"]
+set_superset = ["mech-stdlib/set_superset"]
+set_size = ["mech-stdlib/set_size"]
+
+string_concat = ["mech-stdlib/string_concat"]
+stats_sum = ["mech-stdlib/stats_sum"]
+combinatorics_n_choose_k = ["mech-stdlib/combinatorics_n_choose_k"]
+
+baselib = ["bool", "string", 
+      "f64", "c64", "r64",
+      "set", "map", "table", "tuple", "record", "atom", "enum",
+      "row_vectord", "vectord", "matrixd",
+      "subscript_range", "logical_indexing", 
+      "subscript_formula",
+      "variable_define", "variable_assign", 
+      "kind_define",
+      "kind_annotation", "variables",
+      "functions", "formulas",
+    ]
+
+compiler = ["mech-core/compiler", "mech-engine/compiler", "mech-syntax/compiler", "mech-runtime?/compiler"]
+program = ["mech-core/program", "mech-engine/program", "mech-syntax/program"]
+pretty_print = ["mech-core/pretty_print", "mech-engine/pretty_print", "mech-syntax/pretty_print"]
+serde = ["mech-core/serde", "mech-engine/serde", "mech-syntax/serde"]
+mika = ["mech-syntax/mika", "mech-core/mika"]
+
+statements = ["mech-core/statements", "mech-engine/statements", "mech-syntax/statements"]
+variables = ["variable_define", "symbol_table", "mech-core/variables", "mech-stdlib/variables", "mech-syntax/variables"]
+variable_define = ["statements", "functions", "mech-core/variable_define", "mech-stdlib/variable_define", "mech-syntax/variable_define"]
+invariant_define = ["variable_define", "mech-core/invariant_define", "mech-engine/invariant_define", "mech-syntax/invariant_define"]
+variable_assign = ["assign", "statements", "mech-core/variable_assign", "mech-engine/variable_assign", "mech-syntax/variable_assign"]
+kind_define = ["kind_annotation", "statements", "mech-core/kind_define", "mech-engine/kind_define", "mech-syntax/kind_define"]
+kind_annotation = ["functions", "mech-core/kind_annotation", "mech-engine/kind_annotation", "mech-syntax/kind_annotation"]
+formulas = ["mech-core/formulas", "mech-engine/formulas", "mech-syntax/formulas"]
+functions = ["symbol_table", "mech-core/functions", "mech-engine/functions", "mech-syntax/functions"]
+state_machines = ["functions", "mech-engine/state_machines"]
+symbol_table = ["mech-core/symbol_table", "mech-engine/symbol_table", "mech-syntax/symbol_table"]
+
+bool = ["mech-stdlib/bool", "mech-syntax/bool"]
+string = ["mech-stdlib/string", "mech-syntax/string"]
+
+# Numbers
+numbers = ["mech-core/numbers", "mech-engine/numbers", "mech-syntax/numbers"]
+complex = ["f64", "numbers", "mech-core/complex", "mech-engine/complex", "mech-syntax/complex"]
+rational = ["i64", "numbers", "mech-core/rational", "mech-engine/rational", "mech-syntax/rational"]
+signed_ints = ["numbers", "mech-core/signed_ints", "mech-engine/signed_ints", "mech-syntax/signed_ints"]
+unsigned_ints = ["numbers", "mech-core/unsigned_ints", "mech-engine/unsigned_ints", "mech-syntax/unsigned_ints"]
+floats = ["numbers", "mech-core/floats", "mech-engine/floats", "mech-syntax/floats"]
+u8 = ["mech-stdlib/u8", "mech-syntax/u8"]
+u16 = ["mech-stdlib/u16", "mech-syntax/u16"]
+u32 = ["mech-stdlib/u32", "mech-syntax/u32"]
+u64 = ["mech-stdlib/u64", "mech-syntax/u64"]
+u128 = ["mech-stdlib/u128", "mech-syntax/u128"]
+i8 = ["mech-stdlib/i8", "mech-syntax/i8"]
+i16 = ["mech-stdlib/i16", "mech-syntax/i16"]
+i32 = ["mech-stdlib/i32", "mech-syntax/i32"]
+i64 = ["mech-stdlib/i64", "mech-syntax/i64"]
+i128 = ["mech-stdlib/i128", "mech-syntax/i128"]
+f32 = ["mech-stdlib/f32", "mech-syntax/f32"]
+f64 = ["mech-stdlib/f64", "mech-syntax/f64"]
+c64 = ["mech-stdlib/c64", "mech-syntax/c64"]
+r64 = ["mech-stdlib/r64", "mech-syntax/r64"]
+
+# Structs
+set = ["mech-stdlib/set", "mech-syntax/set"]
+map = ["mech-stdlib/map", "mech-syntax/map"]
+table = ["vectord", "record", "kind_annotation", "mech-stdlib/table", "mech-syntax/table"]
+tuple = ["mech-stdlib/tuple", "mech-syntax/tuple"]
+enum = ["mech-stdlib/enum", "mech-syntax/enum"]
+record = ["tuple", "kind_annotation", "mech-stdlib/record", "mech-syntax/record"]
+atom = ["mech-stdlib/atom", "mech-syntax/atom"]
+
+# Matrix
+matrix = ["mech-core/matrix", "mech-engine/matrix", "mech-syntax/matrix"]
+fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2", "mech-core/fixed_row_vector", "mech-engine/fixed_row_vector", "mech-syntax/fixed_row_vector"]
+fixed_vector = ["vector4", "vector3", "vector2", "mech-core/fixed_vector", "mech-engine/fixed_vector", "mech-syntax/fixed_vector"]
+fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "mech-core/fixed_matrix", "mech-engine/fixed_matrix", "mech-syntax/fixed_matrix"]
+dynamic_matrix = ["matrixd", "vectord", "row_vectord", "mech-core/dynamic_matrix", "mech-engine/dynamic_matrix", "mech-syntax/dynamic_matrix"]
+row_vector4 = ["matrix", "matrix_horzcat", "mech-stdlib/row_vector4", "mech-syntax/row_vector4"]
+row_vector3 = ["matrix", "matrix_horzcat", "mech-stdlib/row_vector3", "mech-syntax/row_vector3"]
+row_vector2 = ["matrix", "matrix_horzcat", "mech-stdlib/row_vector2", "mech-syntax/row_vector2"]
+vector4 = ["matrix", "matrix_vertcat", "mech-stdlib/vector4", "mech-syntax/vector4"]
+vector3 = ["matrix", "matrix_vertcat", "mech-stdlib/vector3", "mech-syntax/vector3"]
+vector2 = ["matrix", "matrix_vertcat", "mech-stdlib/vector2", "mech-syntax/vector2"]
+matrix4 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-stdlib/matrix4", "mech-syntax/matrix4"]
+matrix3 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-stdlib/matrix3", "mech-syntax/matrix3"]
+matrix2 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-stdlib/matrix2", "mech-syntax/matrix2"]
+matrix1 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-stdlib/matrix1", "mech-syntax/matrix1"]
+matrix2x3 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-stdlib/matrix2x3", "mech-syntax/matrix2x3"]
+matrix3x2 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-stdlib/matrix3x2", "mech-syntax/matrix3x2"]
+row_vectord =["matrix", "matrix_horzcat", "mech-stdlib/row_vectord", "mech-syntax/row_vectord"]
+vectord = ["matrix", "matrix_vertcat", "mech-stdlib/vectord", "mech-syntax/vectord"]
+matrixd = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-stdlib/matrixd", "mech-syntax/matrixd"]
+
+# Subscripts
+subscript = ["mech-core/subscript", "mech-engine/subscript", "mech-syntax/subscript"]
+subscript_slice = ["subscript", "vectord", "mech-core/subscript_slice", "mech-engine/subscript_slice", "mech-syntax/subscript_slice"]
+subscript_range = ["subscript_slice","vectord", "mech-core/subscript_range", "mech-engine/subscript_range", "mech-syntax/subscript_range"]
+subscript_formula = ["subscript_slice","formulas", "mech-core/subscript_formula", "mech-engine/subscript_formula", "mech-syntax/subscript_formula"]
+logical_indexing = ["subscript","vectord","bool", "mech-core/logical_indexing", "mech-engine/logical_indexing", "mech-syntax/logical_indexing"]
+dot_indexing = ["subscript", "mech-core/dot_indexing", "mech-engine/dot_indexing", "mech-syntax/dot_indexing"]
+swizzle = ["subscript", "mech-core/swizzle", "mech-engine/swizzle", "mech-syntax/swizzle"]
+
+# Horzcat and Vertcat
+
+matrix_horzcat = ["matrix", "mech-stdlib/matrix_horzcat"]
+matrix_vertcat = ["matrix", "mech-stdlib/matrix_vertcat"]
+
+[dev-dependencies]
+# Explicit public native CLI qualification reuses the existing process-tree owner.
+mech-build = { version = "0.3.5", path = "src/build", default-features = false, features = ["process-supervision"] }
+sha2 = "0.10"
+nalgebra = "0.34.1"
+indicatif = { version = "0.18.4", features = ["in_memory"] }
+tempfile = "3.26.0"
+# The root bytecode integration corpus deliberately exercises explicit u8/u64
+# table annotations even though the shipping standard distribution selects a
+# smaller value surface. Keep that additional closure test-owned.
+mech-stdlib = { version = "0.3.5", path = "src/stdlib", default-features = false, features = ["u8", "u64"] }
+
+[target.'cfg(windows)'.dev-dependencies]
+windows-sys = { version = "0.61", features = ["Win32_System_Threading"] }
+
+[dependencies]
+tempfile = { version = "3.26.0", optional = true }
+mech-core        = { version = "0.3.5", path = "src/core", default-features = false }
+mech-syntax      = { version = "0.3.5", path = "src/syntax", default-features = false }
+mech-engine = { version = "0.3.5", path = "src/engine", default-features = false }
+mech-stdlib = { version = "0.3.5", path = "src/stdlib", default-features = false }
+mech-runtime = { version = "0.3.5", path = "src/runtime", default-features = false, optional = true }
+mech-build = { version = "0.3.5", path = "src/build", default-features = false, optional = true }
+mech-browser = { version = "0.3.5", path = "hosts/browser", default-features = false, optional = true }
+mech-terminal = { version = "0.3.5", path = "hosts/terminal", default-features = false, optional = true }
+mech-time = { version = "0.3.5", path = "hosts/time", default-features = false, optional = true }
+mech-console = { version = "0.3.5", path = "hosts/console", default-features = false, optional = true }
+mech-timer = { version = "0.3.5", path = "hosts/timer", default-features = false, optional = true }
+mech-scene = { version = "0.3.5", path = "hosts/scene", default-features = false, optional = true }
+mech-robot-arm = { version = "0.3.5", path = "hosts/robot-arm", default-features = false, optional = true }
+mech-compute = { version = "0.3.5", path = "src/compute", optional = true }
+mech-gpu = { version = "0.3.5", path = "hosts/gpu", default-features = false, optional = true }
+sha2 = { version = "0.10", optional = true }
+ignore = { version = "0.4.24", optional = true }
+
+sevenz-rust = "0.6.1"
+colored = "3.1.1"
+chrono = { version = "0.4.44", default-features = false, features = ["clock"] }
+serde = "1.0.228"
+serde_derive = "1.0.228"
+crossbeam-channel = "0.5.15"
+crossterm = "0.29.0"
+serde_json = "1.0.149"
+nom = "7.1.3"
+ctrlc = "3.5.2"
+csv = "1.4.0"
+base64 = "0.22.1"
+rand = "0.9.2"
+notify = "8.2.0"
+clap = { version = "4.5.60", features = ["cargo"]}
+bincode = { version = "2.0.1", features = ["serde"]}
+indexmap = { version = "2.13.0", features = ["serde"]}
+reqwest = { version = "0.13.2", features = ["blocking"]}
+warp = { version = "0.3.7", features = ["compression"]}
+tokio = { version = "1.50.0", features = ["full"]}
+include_dir = {version = "0.7.4", features = ["glob"]}
+indicatif = { version = "0.18.4"}
+
+[workspace]
+members = [
+  "src/abi",
+  "src/bytecode",
+  "src/build",
+  "src/compute",
+  "src/core",
+  "src/syntax",
+  "src/engine",
+  "src/stdlib",
+  "src/runtime",
+  "src/wasm",
+  "hosts/browser",
+  "hosts/terminal",
+  "hosts/console",
+  "hosts/robot-arm",
+  "hosts/time",
+  "hosts/timer",
+  "hosts/scene",
+  "hosts/gpu",
+  "tests/fixtures/native-live-host",
+]
+
+[build-dependencies]
+winres = "0.1.12"
+
+[package.metadata.winres]
+OriginalFilename = "MECH.EXE"
+LegalCopyright = "Copyright © 2026"
+
+[patch.crates-io]
+mech-combinatorics = { path = "machines/combinatorics" }
+mech-compare = { path = "machines/compare" }
+mech-logic = { path = "machines/logic" }
+mech-math = { path = "machines/math" }
+mech-matrix = { path = "machines/matrix" }
+mech-range = { path = "machines/range" }
+mech-set = { path = "machines/set" }
+mech-stats = { path = "machines/stats" }
+mech-string = { path = "machines/string" }

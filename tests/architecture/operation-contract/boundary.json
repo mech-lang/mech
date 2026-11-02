@@ -1,0 +1,42 @@
+{
+  "$schema": "./boundary-schema.json",
+  "contract": "mech-operation-contract-v1",
+  "bytecode_version": 1,
+  "contract_types": [
+    "OperationContractId",
+    "OperationContractDeclaration",
+    "InputPortLayout",
+    "InputPortPolicy",
+    "OutputPortPolicy",
+    "AccessMode",
+    "DeliveryMode",
+    "OutputConstruction",
+    "ShapeRule",
+    "ShapeContractReference",
+    "RegionPolicy",
+    "AliasPolicy",
+    "ChangeDetectionPolicy",
+    "ExternalInteraction",
+    "ObservationContract",
+    "ObservationReplayPolicy",
+    "EffectContract",
+    "EffectDeliveryPolicy",
+    "IdempotencyRequirement",
+    "TransactionalExternalContract",
+    "TransactionalEffectProtocol",
+    "ResolvedOperationContract",
+    "DeclaredOperationContract",
+    "ResolvedInputPort",
+    "ResolvedOutputPort",
+    "OperationContractTable",
+    "OperationContractTableBuilder"
+  ],
+  "artifact_contract_fields": {
+    "ProgramArtifact": "contracts: OperationContractTable",
+    "NodeDeclaration": "body: ExecutableNodeBody",
+    "OperationNodeBody": "contract: OperationContractId",
+    "ControlOperation": "body: ControlOperationBody",
+    "IntegrityConstraintDeclaration": "contract: OperationContractId"
+  },
+  "bytecode_section": "ArtifactOperationContracts"
+}

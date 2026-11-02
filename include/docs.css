@@ -1,0 +1,142 @@
+/*
+ * Documentation shim.
+ *
+ * Wide documentation is a stable TOC + article + REPL workspace. It keeps the
+ * portable Mechdown components and canonical palette, while omitting the blog's
+ * journal numbering, drop cap, quotation marks, and multi-column backmatter.
+ */
+
+:root {
+  --mech-page-style-signal: 1px;
+}
+
+html[data-mech-shim="docs"] .docs-layout {
+  align-items: start;
+  display: grid;
+  gap: 40px;
+  grid-template-columns: var(--toc-width) minmax(0, 1fr);
+  min-width: 0;
+}
+
+html[data-mech-shim="docs"] .docs-layout > .main-content {
+  max-width: 76ch;
+  width: 100%;
+}
+
+html[data-mech-shim="docs"] .docs-layout:is(.hide-toc, .no-sections, .has-empty-toc) {
+  display: block;
+}
+
+html[data-mech-shim="docs"]
+  .docs-layout:is(.hide-toc, .no-sections, .has-empty-toc)
+  > .main-content {
+  margin-inline: auto;
+}
+
+html[data-mech-shim="docs"] .docs-header {
+  border-bottom: 1px dotted var(--border);
+  margin: 0 0 28px;
+  padding-bottom: 18px;
+}
+
+html[data-mech-shim="docs"] .docs-kicker {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.075em;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+}
+
+html[data-mech-shim="docs"] .docs-header h1 {
+  color: var(--text-primary);
+  font-family: "IBM Plex Mono", "SFMono-Regular", ui-monospace, Menlo, monospace;
+  font-size: clamp(2rem, 3vw, 2.75rem);
+  font-weight: 650;
+  line-height: 1.12;
+  margin: 0;
+}
+
+html[data-mech-shim="docs"] .version-badge {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  display: inline-block;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  margin-top: 1rem;
+  padding: 0.3rem 0.62rem;
+}
+
+html[data-mech-shim="docs"] .docs-intro {
+  margin: 0 0 34px;
+}
+
+/* The shared layer carries the blog's established section hierarchy. Docs
+ * deliberately flatten that presentation while retaining the same content. */
+html[data-mech-shim="docs"] [data-mechdown] .mechdown-section {
+  padding: 0 0 24px;
+}
+
+html[data-mech-shim="docs"] [data-mechdown] .mechdown-section > :is(h2, h3, h4, h5, h6) {
+  display: block;
+}
+
+html[data-mech-shim="docs"] [data-mechdown] .mechdown-section > :is(h2, h3, h4, h5, h6)::before {
+  display: none;
+}
+
+html[data-mech-shim="docs"] [data-mechdown] .mechdown-section > h2 {
+  font-size: 1.85rem;
+  margin: 2.25rem 0 0.85rem;
+}
+
+html[data-mech-shim="docs"] [data-mechdown] .mechdown-section > h3 {
+  font-size: 1.4rem;
+  margin: 1.8rem 0 0.7rem;
+}
+
+/* Keep the first two navigation levels visible; deeper detail follows focus. */
+html[data-mech-shim="docs"] .toc > ul,
+html[data-mech-shim="docs"] .toc > ul > li > .toc-sub {
+  display: block;
+}
+
+html[data-mech-shim="docs"] .toc > ul > li > .toc-sub > li > .toc-sub {
+  display: none;
+}
+
+html[data-mech-shim="docs"] .toc li.expanded > .toc-sub,
+html[data-mech-shim="docs"] .toc li.active-path > .toc-sub {
+  display: block;
+}
+
+/* The shared page shell owns the compact TOC reveal interaction. This variant
+ * only retires its wide grid so the shared toggle can replace the article in
+ * place instead of placing navigation above it. */
+@media (max-width: 900px) {
+  html[data-mech-shim="docs"] .docs-layout {
+    display: block;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  html[data-mech-shim="docs"] .docs-layout > .main-content {
+    max-width: 100%;
+  }
+}
+
+@container (max-width: 900px) {
+  html[data-mech-shim="docs"] .docs-layout {
+    display: block;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  html[data-mech-shim="docs"] .docs-layout > .main-content {
+    max-width: 100%;
+  }
+}

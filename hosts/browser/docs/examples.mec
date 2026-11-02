@@ -1,0 +1,28 @@
+Browser Host Examples
+===============================================================================
+
+Browser-oriented project examples and guides live under `examples` and `docs`.
+
+1. Browser project
+-------------------------------------------------------------------------------
+
+```text
+examples/analog-clock/
+```
+
+The analog clock is the maintained native/browser project example. It uses the time, console, and scene hosts.
+
+2. Static bundle project
+-------------------------------------------------------------------------------
+
+```text
+examples/browser-dom-demo/
+```
+
+The browser DOM demo is the executable static bundle example. It configures browser DOM paths and grants, and its shim uses static-compatible relative URLs.
+
+Guide:
+
+```text
+/docs/guides/first-web-bundle.mec
+```

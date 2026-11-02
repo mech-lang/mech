@@ -1,0 +1,543 @@
+#[cfg(all(feature = "semantic-compiler", feature = "set"))]
+use crate::intrinsics::constructors::SetDefine;
+#[cfg(feature = "matrix_horzcat")]
+use crate::intrinsics::constructors::ValueHorizontalConcatenation;
+#[cfg(feature = "matrix_comprehensions")]
+use crate::intrinsics::constructors::ValueMatrixComprehension;
+#[cfg(feature = "set")]
+use crate::intrinsics::constructors::ValueSet;
+#[cfg(feature = "set_comprehensions")]
+use crate::intrinsics::constructors::ValueSetComprehension;
+#[cfg(feature = "matrix_vertcat")]
+use crate::intrinsics::constructors::ValueVerticalConcatenation;
+#[cfg(all(feature = "semantic-compiler", feature = "variable_define"))]
+use crate::intrinsics::define::VarDefine;
+#[cfg(all(feature = "semantic-compiler", feature = "convert"))]
+use crate::intrinsics::kind_conversion::ConvertKind;
+#[cfg(any(
+    feature = "semantic-compiler",
+    feature = "set",
+    feature = "invariant_define",
+    feature = "set_comprehensions",
+    feature = "matrix_comprehensions",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat"
+))]
+use crate::*;
+#[cfg(any(
+    feature = "invariant_define",
+    feature = "matrix_comprehensions",
+    feature = "set_comprehensions"
+))]
+use mech_core::function_shape_contract_violation;
+use mech_core::{FunctionCatalogBuilder, MResult};
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        feature = "matrix_comprehensions",
+        feature = "matrix_horzcat",
+        feature = "matrix_vertcat",
+        feature = "set_comprehensions",
+        feature = "set"
+    )
+))]
+use mech_core::{FunctionExport, FunctionExposure};
+#[cfg(feature = "semantic-compiler")]
+use std::sync::Arc;
+
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        feature = "matrix_comprehensions",
+        feature = "matrix_horzcat",
+        feature = "matrix_vertcat",
+        feature = "set_comprehensions",
+        feature = "set"
+    )
+))]
+fn install_canonical_named<T>(
+    builder: &mut FunctionCatalogBuilder,
+    canonical_name: &str,
+    module: Option<&str>,
+    item: Option<&str>,
+    exposure: FunctionExposure,
+    compiler: T,
+) -> MResult<()>
+where
+    T: CanonicalFunctionSpecializer + 'static,
+{
+    let declaration = mech_core::maintained_source_type_declaration(canonical_name)?;
+    let contract: &'static OperationContractDeclaration = match canonical_name {
+        #[cfg(feature = "matrix_comprehensions")]
+        "matrix/comprehension" => {
+            &crate::intrinsics::constructors::PURE_MATRIX_COMPREHENSION_CONTRACT
+        }
+        #[cfg(feature = "matrix_horzcat")]
+        "matrix/horzcat" => &crate::intrinsics::constructors::PURE_MATRIX_HORZCAT_CONTRACT,
+        #[cfg(feature = "matrix_vertcat")]
+        "matrix/vertcat" => &crate::intrinsics::constructors::PURE_MATRIX_VERTCAT_CONTRACT,
+        #[cfg(feature = "set_comprehensions")]
+        "set/comprehension" => &crate::intrinsics::constructors::PURE_SET_COMPREHENSION_CONTRACT,
+        #[cfg(feature = "set")]
+        "set/define" => &crate::intrinsics::constructors::PURE_SET_DEFINE_CONTRACT,
+        #[cfg(feature = "table")]
+        "table/join"
+        | "table/left-outer-join"
+        | "table/right-outer-join"
+        | "table/full-outer-join"
+        | "table/left-semi-join"
+        | "table/left-anti-join" => &crate::intrinsics::table_ops::PURE_TABLE_JOIN_CONTRACT,
+        _ => {
+            return Err(MechError::new(
+                GenericError {
+                    msg: format!(
+                        "canonical source operation {canonical_name} has no semantic contract"
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+    };
+    let operation = builder.insert_canonical_specializer_with_contract(
+        canonical_name,
+        declaration,
+        contract.clone(),
+        Arc::new(compiler),
+    )?;
+    builder.insert_export(FunctionExport {
+        operation,
+        canonical_name: canonical_name.to_string(),
+        module: module.map(str::to_string),
+        item: item.map(str::to_string),
+        exposure,
+    })
+}
+
+#[cfg(feature = "semantic-compiler")]
+fn install_canonical_intrinsic<T>(
+    builder: &mut FunctionCatalogBuilder,
+    canonical_name: &str,
+    compiler: T,
+) -> MResult<()>
+where
+    T: CanonicalFunctionSpecializer + 'static,
+{
+    let contract: &'static OperationContractDeclaration = match canonical_name {
+        #[cfg(feature = "access")]
+        "access/scalar" | "access/range" | "access/rows" | "access/columns"
+        | "access/rectangle" | "access/column" | "access/swizzle" => {
+            &crate::intrinsics::access::PURE_CANONICAL_ACCESS_BINARY_CONTRACT
+        }
+        #[cfg(feature = "assign")]
+        "assign" | "assign/column" | "assign/add" => {
+            &crate::intrinsics::assign::PURE_STATE_REGISTER_CONTRACT
+        }
+        #[cfg(feature = "convert")]
+        "convert/kind" => &crate::intrinsics::kind_conversion::PURE_TYPE_CONVERSION_CONTRACT,
+        #[cfg(feature = "variable_define")]
+        "var/define" => &crate::intrinsics::define::PURE_VARIABLE_DEFINITION_CONTRACT,
+        _ => {
+            return Err(MechError::new(
+                GenericError {
+                    msg: format!("canonical intrinsic {canonical_name} has no semantic contract"),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+    };
+    builder
+        .insert_canonical_intrinsic_specializer(
+            canonical_name,
+            contract.clone(),
+            Arc::new(compiler),
+        )
+        .map(|_| ())
+}
+
+#[cfg(feature = "matrix_comprehensions")]
+fn validate_matrix_comprehension_canonical(output: &ValueCell, _: &[ValueCell]) -> MResult<()> {
+    match output.closed_schema_body()? {
+        SchemaBody::Matrix { .. } => Ok(()),
+        _ => Err(function_shape_contract_violation(
+            "matrix_comprehension",
+            "output must be matrix-backed",
+        )),
+    }
+}
+
+#[cfg(feature = "set_comprehensions")]
+fn validate_set_comprehension_canonical(output: &ValueCell, _: &[ValueCell]) -> MResult<()> {
+    match output.closed_schema_body()? {
+        SchemaBody::Set { .. } => Ok(()),
+        _ => Err(function_shape_contract_violation(
+            "set_comprehension",
+            "output must be set-backed",
+        )),
+    }
+}
+
+#[cfg(feature = "invariant_define")]
+fn validate_integrity_constraint_marker_canonical(
+    _: &ValueCell,
+    inputs: &[ValueCell],
+) -> MResult<()> {
+    if inputs.len() == 6 {
+        Ok(())
+    } else {
+        Err(function_shape_contract_violation(
+            "integrity_constraint_marker",
+            format!("expected 6 metadata inputs, found {}", inputs.len()),
+        ))
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(feature = "integer_bits")]
+    super::bits::install_source(builder)?;
+    #[cfg(feature = "pure_text")]
+    super::pure_text::install_source(builder)?;
+    #[cfg(feature = "pure_text")]
+    super::text_ops::install_source(builder)?;
+    #[cfg(feature = "map_ops")]
+    super::map_ops::install_source(builder)?;
+    #[cfg(feature = "sequence_sort")]
+    super::sequence_sort::install_source(builder)?;
+    #[cfg(feature = "sequence_buffers")]
+    super::sequence_buffers::install_source(builder)?;
+    #[cfg(feature = "matrix_horzcat")]
+    crate::intrinsics::horzcat::install_source_runtime(builder)?;
+    #[cfg(feature = "matrix_comprehensions")]
+    install_canonical_named(
+        builder,
+        "matrix/comprehension",
+        None,
+        None,
+        FunctionExposure::Prelude,
+        MatrixComprehensionDefine {},
+    )?;
+    #[cfg(feature = "matrix_horzcat")]
+    install_canonical_named(
+        builder,
+        "matrix/horzcat",
+        None,
+        None,
+        FunctionExposure::Prelude,
+        MatrixHorzCat {},
+    )?;
+    #[cfg(feature = "matrix_vertcat")]
+    install_canonical_named(
+        builder,
+        "matrix/vertcat",
+        None,
+        None,
+        FunctionExposure::Prelude,
+        MatrixVertCat {},
+    )?;
+    #[cfg(feature = "set_comprehensions")]
+    install_canonical_named(
+        builder,
+        "set/comprehension",
+        None,
+        None,
+        FunctionExposure::Prelude,
+        SetComprehensionDefine {},
+    )?;
+    #[cfg(feature = "set")]
+    install_canonical_named(
+        builder,
+        "set/define",
+        None,
+        None,
+        FunctionExposure::Prelude,
+        SetDefine,
+    )?;
+    #[cfg(feature = "table")]
+    {
+        install_canonical_named(
+            builder,
+            "table/join",
+            None,
+            None,
+            FunctionExposure::Internal,
+            TableInnerJoin,
+        )?;
+        install_canonical_named(
+            builder,
+            "table/left-outer-join",
+            None,
+            None,
+            FunctionExposure::Internal,
+            TableLeftOuterJoin,
+        )?;
+        install_canonical_named(
+            builder,
+            "table/right-outer-join",
+            None,
+            None,
+            FunctionExposure::Internal,
+            TableRightOuterJoin,
+        )?;
+        install_canonical_named(
+            builder,
+            "table/full-outer-join",
+            None,
+            None,
+            FunctionExposure::Internal,
+            TableFullOuterJoin,
+        )?;
+        install_canonical_named(
+            builder,
+            "table/left-semi-join",
+            None,
+            None,
+            FunctionExposure::Internal,
+            TableLeftSemiJoin,
+        )?;
+        install_canonical_named(
+            builder,
+            "table/left-anti-join",
+            None,
+            None,
+            FunctionExposure::Internal,
+            TableLeftAntiJoin,
+        )?;
+    }
+
+    #[cfg(feature = "access")]
+    {
+        install_canonical_intrinsic(builder, "access/scalar", AccessScalar {})?;
+        install_canonical_intrinsic(builder, "access/range", AccessRange {})?;
+        install_canonical_intrinsic(builder, "access/rows", AccessRange {})?;
+        install_canonical_intrinsic(builder, "access/columns", AccessRange {})?;
+        install_canonical_intrinsic(builder, "access/rectangle", AccessRange {})?;
+        install_canonical_intrinsic(builder, "access/column", AccessColumn {})?;
+        install_canonical_intrinsic(builder, "access/swizzle", AccessSwizzle {})?;
+    }
+    #[cfg(feature = "assign")]
+    {
+        install_canonical_intrinsic(builder, "assign", AssignValue {})?;
+        install_canonical_intrinsic(builder, "assign/column", AssignColumn {})?;
+        install_canonical_intrinsic(builder, "assign/add", AddAssignValue {})?;
+    }
+    #[cfg(feature = "convert")]
+    install_canonical_intrinsic(builder, "convert/kind", ConvertKind)?;
+    #[cfg(feature = "variable_define")]
+    install_canonical_intrinsic(builder, "var/define", VarDefine)?;
+    Ok(())
+}
+
+// Installs the concrete bytecode factories owned by the engine fragment.
+// Machine-owned factories are installed by their respective machine crates.
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "set",
+    registration: register_set_define,
+    installer: install_set_define,
+    name: "set/define",
+    factory_type: ValueSet,
+    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("set/define"),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_set_define",
+    extra_cargo_features: [],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "invariant_define",
+    registration: register_integrity_constraint_marker,
+    installer: install_integrity_constraint_marker,
+    name: "integrity/constraint",
+    factory_type: crate::intrinsics::define::BytecodeIntegrityConstraintMarker,
+    contract: RuntimeFunctionContract::canonical_custom(
+        "integrity_constraint_marker",
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+        validate_integrity_constraint_marker_canonical,
+    ),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("integrity/constraint"),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_integrity_constraint_marker",
+    extra_cargo_features: ["invariant_define"],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "set_comprehensions",
+    registration: register_set_comprehension,
+    installer: install_set_comprehension,
+    name: "set/comprehension",
+    factory_type: ValueSetComprehension,
+    contract: RuntimeFunctionContract::canonical_custom(
+        "set_comprehension",
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+        validate_set_comprehension_canonical,
+    ),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("set/comprehension"),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_set_comprehension",
+    extra_cargo_features: ["set_comprehensions"],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "matrix_comprehensions",
+    registration: register_matrix_comprehension,
+    installer: install_matrix_comprehension,
+    name: "matrix/comprehension",
+    factory_type: ValueMatrixComprehension,
+    contract: RuntimeFunctionContract::canonical_custom(
+        "matrix_comprehension",
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+        validate_matrix_comprehension_canonical,
+    ),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("matrix/comprehension"),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_matrix_comprehension",
+    extra_cargo_features: ["matrix_comprehensions"],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "matrix_horzcat",
+    registration: register_value_horizontal_concatenation,
+    installer: install_value_horizontal_concatenation,
+    name: "matrix/horzcat",
+    factory_type: ValueHorizontalConcatenation,
+    contract: RuntimeFunctionContract::horizontal_concatenation(
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+    ),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("matrix/horzcat"),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_value_horizontal_concatenation",
+    extra_cargo_features: ["matrix_horzcat"],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "matrix_vertcat",
+    registration: register_value_vertical_concatenation,
+    installer: install_value_vertical_concatenation,
+    name: "matrix/vertcat",
+    factory_type: ValueVerticalConcatenation,
+    contract: RuntimeFunctionContract::vertical_concatenation(
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+    ),
+    compiler_family: mech_core::RuntimeFamilyId::from_name("matrix/vertcat"),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_value_vertical_concatenation",
+    extra_cargo_features: ["matrix_vertcat"],
+}
+
+pub fn install_runtime(
+    #[cfg(any(
+        feature = "access",
+        feature = "assign",
+        feature = "convert",
+        feature = "variable_define",
+        feature = "set",
+        feature = "set_comprehensions",
+        feature = "matrix_comprehensions",
+        feature = "invariant_define",
+        feature = "matrix_horzcat",
+        feature = "matrix_vertcat",
+        feature = "pure_text",
+        feature = "integer_bits",
+        feature = "map_ops",
+        feature = "sequence_sort",
+        feature = "sequence_buffers",
+        feature = "table"
+    ))]
+    builder: &mut FunctionCatalogBuilder,
+    #[cfg(not(any(
+        feature = "access",
+        feature = "assign",
+        feature = "convert",
+        feature = "variable_define",
+        feature = "set",
+        feature = "set_comprehensions",
+        feature = "matrix_comprehensions",
+        feature = "invariant_define",
+        feature = "matrix_horzcat",
+        feature = "matrix_vertcat",
+        feature = "pure_text",
+        feature = "integer_bits",
+        feature = "map_ops",
+        feature = "sequence_sort",
+        feature = "sequence_buffers",
+        feature = "table"
+    )))]
+    _: &mut FunctionCatalogBuilder,
+) -> MResult<()> {
+    #[cfg(feature = "integer_bits")]
+    super::bits::install_runtime(builder)?;
+    #[cfg(feature = "pure_text")]
+    super::pure_text::install_runtime(builder)?;
+    #[cfg(feature = "pure_text")]
+    super::text_ops::install_runtime(builder)?;
+    #[cfg(feature = "map_ops")]
+    super::map_ops::install_runtime(builder)?;
+    #[cfg(feature = "sequence_sort")]
+    super::sequence_sort::install_runtime(builder)?;
+    #[cfg(feature = "sequence_buffers")]
+    super::sequence_buffers::install_runtime(builder)?;
+    #[cfg(feature = "access")]
+    super::access::install_runtime(builder)?;
+    #[cfg(feature = "assign")]
+    super::assign::install_runtime(builder)?;
+    #[cfg(feature = "convert")]
+    super::convert::scalar::install_runtime(builder)?;
+    #[cfg(all(feature = "convert", feature = "semantic-compiler"))]
+    crate::intrinsics::kind_conversion::register_runtime_kind_conversion(builder)?;
+    #[cfg(all(feature = "convert", feature = "semantic-compiler"))]
+    crate::intrinsics::kind_conversion::register_runtime_reified_kind_conversion(builder)?;
+    #[cfg(feature = "variable_define")]
+    super::define::install_runtime(builder)?;
+
+    #[cfg(feature = "set")]
+    register_set_define(builder)?;
+    #[cfg(feature = "set_comprehensions")]
+    register_set_comprehension(builder)?;
+    #[cfg(feature = "matrix_comprehensions")]
+    register_matrix_comprehension(builder)?;
+    #[cfg(feature = "matrix_horzcat")]
+    register_value_horizontal_concatenation(builder)?;
+    #[cfg(feature = "matrix_vertcat")]
+    register_value_vertical_concatenation(builder)?;
+    #[cfg(feature = "invariant_define")]
+    register_integrity_constraint_marker(builder)?;
+
+    #[cfg(feature = "matrix_horzcat")]
+    super::horzcat::install_runtime(builder)?;
+    #[cfg(feature = "matrix_vertcat")]
+    super::vertcat::install_runtime(builder)?;
+    #[cfg(feature = "table")]
+    super::table_ops::install_runtime(builder)?;
+
+    Ok(())
+}
+
+/// Adds exact runtime factories emitted by semantic compilation without
+/// changing the runtime-only catalog surface.
+#[cfg(feature = "semantic-compiler")]
+pub fn install_compiler_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(feature = "assign")]
+    crate::intrinsics::assign::catalog::install_compiler_runtime(builder)?;
+    let _ = builder;
+    Ok(())
+}
+
+/// Installs engine-owned factories that are available only when constructing
+/// native application plans.
+#[cfg(feature = "native-plan")]
+pub fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(feature = "access")]
+    crate::intrinsics::access::install_native_plan(builder)?;
+
+    #[cfg(feature = "assign")]
+    crate::intrinsics::assign::catalog::install_native_plan(builder)?;
+
+    #[cfg(all(feature = "variable_define_matrix1", not(feature = "matrix1")))]
+    crate::intrinsics::define::install_native_plan_runtime(builder)?;
+
+    #[cfg(feature = "matrix_horzcat")]
+    crate::intrinsics::horzcat::install_native_plan_runtime(builder)?;
+
+    Ok(())
+}

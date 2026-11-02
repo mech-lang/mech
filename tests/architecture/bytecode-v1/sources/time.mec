@@ -1,0 +1,3 @@
+@clock := time://clock/clock{:read(second)}
+second := @clock/second
+"time-done"

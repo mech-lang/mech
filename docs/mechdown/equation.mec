@@ -1,0 +1,26 @@
+equation
+===============================================================================
+
+%% Equations express mathematical notation in LaTeX syntax as block or inline elements.
+
+1. Block equations
+-------------------------------------------------------------------------------
+
+Block equations start with `$$` and continue as an equation block.
+
+```
+$$ c = \pm\sqrt{a^2 + b^2}
+```
+
+Rendered
+
+$$ c = \pm\sqrt{a^2 + b^2}
+
+2. Inline equations
+-------------------------------------------------------------------------------
+
+Inline equations are enclosed by `$$...$$` within paragraph text.
+
+Example: `The identity $$a^2+b^2=c^2$$ is well known.`
+
+(i)> Equation rendering is performed by a math typesetting library, so use valid LaTeX syntax for reliable output.

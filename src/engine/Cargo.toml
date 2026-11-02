@@ -1,0 +1,552 @@
+[package]
+name = "mech-engine"
+version = "0.3.5"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "Retained program execution, reactive coordination, and bytecode integration for Mech."
+documentation = "https://docs.mech-lang.org"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-lang/mech"
+keywords = ["mech", "language", "programming", "dataflow", "runtime"]
+categories = ["science::robotics", "science", "game-engines", "web-programming"]
+license = "Apache-2.0"
+readme = "README.md"
+edition = "2024"
+rust-version = "1.92"
+
+[features]
+native-sequence = ["std", "dep:mech-syntax", "mech-syntax/std", "mech-syntax/variable_define", "mech-syntax/functions", "mech-syntax/formulas", "mech-syntax/string", "mech-syntax/u8", "mech-syntax/u64", "mech-syntax/i64", "mech-syntax/f64", "mech-syntax/map", "mech-syntax/matrix"]
+std = ["mech-core/std"]
+no_std = ["mech-core/no_std", "mech-syntax?/no_std"]
+
+runtime = ["program", "functions"]
+# Runtime-only diagnostic hook consumed by mech-runtime's non-default runtime cost probes.
+runtime_bench_probes = ["runtime"]
+# Private benchmark/conformance implementation. It is never product-routed and
+# moves with the resident EKF workload when benchmark ownership is extracted.
+resident-ekf = ["mech-core/resident-execution"]
+artifact-codec = ["dep:serde_json", "mech-core/program", "mech-core/serde"]
+resident-artifact = [
+  "resident-ekf", "runtime", "artifact-codec",
+  "dep:libm",
+  "f64", "matrixd", "row_vectord",
+]
+# Canonical scalar words support signed integers without enabling legacy I64
+# cells in every native host. Generated applications select value gates from
+# their complete declared schema closure (including nested signed payloads).
+native-artifact = ["std", "resident-artifact", "bool", "u64", "native-capture-pages"]
+# Private Unix capture backing; the same executor retains its small-buffer and
+# budget-limited heap fallback. Non-Unix targets keep ordinary heap storage.
+native-capture-pages = ["dep:libc"]
+native-plan = ["runtime", "mech-core/native-plan"]
+native-link = ["runtime"]
+source = ["runtime", "artifact-codec", "dep:mech-syntax", "mech-core/range"]
+semantic-compiler = [
+  "source",
+  "artifact-codec",
+  "mech-core/semantic-compiler",
+  "mech-core/serde",
+  "mech-syntax/semantic-compiler",
+]
+compiler = [
+  "semantic-compiler",
+  "dep:mech-bytecode",
+  "mech-core/compiler",
+  "mech-syntax/compiler",
+]
+
+runtime_default = [
+  "runtime",
+  "integer_bits",
+  "pure_text",
+  "map_ops",
+  "sequence_sort",
+  "bool",
+  "string",
+  "u8", "u16", "u32", "u64", "u128",
+  "i8", "i16", "i32", "i64", "i128",
+  "f32", "f64", "c64", "r64",
+  "set", "map", "table", "tuple", "record", "atom", "enum",
+  "row_vectord", "vectord", "matrixd",
+]
+source_default = [
+  "runtime_default",
+  "source",
+  "pretty_print",
+  "serde",
+  "mika",
+  "trace",
+  "statements_default",
+  "subscript_default",
+  "state_machines",
+  "variables",
+  "access",
+  "assign",
+  "convert",
+  "matrix_comprehensions",
+  "matrix_horzcat",
+  "matrix_vertcat",
+  "set_comprehensions",
+  "math_default",
+  "compare_default",
+  "logic_default",
+  "range_default",
+  "matrix_default",
+  "set_default",
+  "string_default",
+  "stats_default",
+  "combinatorics_default",
+]
+compiler_default = ["source_default", "compiler"]
+full_runtime = ["runtime_default"]
+full_source = ["source_default", "semantic-compiler"]
+full_compiler = ["compiler_default"]
+default = []
+base = ["source_default"]
+
+async = []
+trace = []
+profile = []
+native = ["functions", "kind_annotation", "tuple", "convert"]
+dynamic-modules = ["dep:libloading", "dep:mech-abi"]
+
+prelude_default = [
+  "set_prelude",
+  "math_prelude",
+  "compare_prelude",
+  "logic_prelude",
+  "matrix_prelude",
+  "range_prelude",
+  "string_prelude",
+]
+math_prelude = ["math_ops_default", "math_ops_assign_default"]
+compare_prelude = [
+  "compare_eq", "compare_neq", "compare_seq", "compare_sneq",
+  "compare_lt", "compare_gt", "compare_lte", "compare_gte",
+]
+logic_prelude = ["logic_and", "logic_or", "logic_not", "logic_xor"]
+matrix_prelude = [
+  "matrix_horzcat", "matrix_vertcat", "matrix_matmul", "matrix_solve",
+  "matrix_dot", "matrix_transpose", "matrix_comprehensions",
+]
+set_prelude = [
+  "set_membership_default", "set_modify_default", "set_operations_default",
+  "set_relations_default", "set_comprehensions", "set_setdata_default",
+]
+range_prelude = [
+  "range_inclusive", "range_exclusive",
+  "range_inclusive_increment", "range_exclusive_increment",
+]
+string_prelude = ["string_concat"]
+
+statements_default = [
+  "variable_assign", "variable_define", "invariant_define", "kind_define",
+  "mech-core/statements_default", "mech-syntax?/statements_default",
+]
+subscript_default = [
+  "subscript_slice", "subscript_range", "logical_indexing", "swizzle",
+  "subscript_formula", "dot_indexing",
+  "mech-core/subscript_default", "mech-syntax?/subscript_default",
+]
+
+sample_hold = []
+state_step = []
+
+stdlib = [
+  "bool", "string",
+  "u8", "u16", "u32", "u64", "u128",
+  "i8", "i16", "i32", "i64", "i128",
+  "f32", "f64", "c64", "r64",
+  "set", "map", "table", "tuple", "record", "atom", "enum",
+  "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
+  "row_vector2", "row_vector3", "row_vector4",
+  "vector2", "vector3", "vector4",
+  "row_vectord", "vectord", "matrixd",
+  "subscript_range", "logical_indexing", "swizzle",
+  "subscript_formula", "dot_indexing",
+  "variable_define", "variable_assign", "invariant_define", "kind_define",
+  "kind_annotation", "variables", "functions", "formulas",
+  "access", "assign", "convert",
+  "mech-core/stdlib", "mech-syntax?/stdlib",
+]
+baselib = [
+  "bool", "string", "f64", "c64", "r64",
+  "set", "map", "table", "tuple", "record", "atom", "enum",
+  "row_vectord", "vectord", "matrixd",
+  "subscript_range", "logical_indexing", "subscript_formula",
+  "variable_define", "variable_assign", "kind_define",
+  "kind_annotation", "variables", "access", "assign", "convert",
+  "functions", "formulas",
+  "mech-core/baselib", "mech-syntax?/baselib",
+]
+
+program = ["assign", "mech-core/program"]
+pretty_print = ["mech-core/pretty_print", "mech-syntax?/pretty_print"]
+serde = ["mech-core/serde", "mech-syntax?/serde"]
+mika = ["mech-core/mika", "mech-syntax?/mika"]
+
+statements = ["mech-core/statements", "mech-syntax?/statements"]
+variables = [
+  "variable_define", "symbol_table",
+  "mech-core/variables", "mech-syntax?/variables",
+]
+variable_define = [
+  "statements", "functions", "bool", "string",
+  "mech-core/variable_define", "mech-syntax?/variable_define",
+]
+invariant_define = [
+  "variable_define",
+  "mech-core/invariant_define", "mech-syntax?/invariant_define",
+]
+variable_assign = [
+  "assign", "statements",
+  "mech-core/variable_assign", "mech-syntax?/variable_assign",
+]
+kind_define = [
+  "kind_annotation", "functions", "statements",
+  "mech-core/kind_define", "mech-syntax?/kind_define",
+]
+kind_annotation = [
+  "functions",
+  "mech-core/kind_annotation", "mech-syntax?/kind_annotation",
+]
+formulas = ["mech-core/formulas", "mech-syntax?/formulas"]
+functions = [
+  "symbol_table",
+  "mech-core/functions", "mech-syntax?/functions",
+]
+state_machines = ["functions", "statements", "atom", "tuple", "formulas"]
+symbol_table = ["mech-core/symbol_table", "mech-syntax?/symbol_table"]
+
+# Engine-owned intrinsic operations.
+access = ["functions"]
+assign = ["functions"]
+convert = ["functions"]
+pure_text = ["functions", "string"]
+# Canonical word cells use the always-available value codec. The legacy typed
+# port fast path is gated separately by the engine's u64 feature.
+integer_bits = ["functions"]
+map_ops = ["functions", "map", "string", "bool"]
+sequence_sort = ["functions", "string"]
+sequence_buffers = ["functions"]
+
+# Values and shapes. Syntax forwarding is weak so runtime-only builds do not
+# activate the parser dependency.
+bool = ["mech-core/bool", "mech-syntax?/bool"]
+string = ["mech-core/string", "mech-syntax?/string"]
+numbers = ["mech-core/numbers", "mech-syntax?/numbers"]
+complex = ["f64", "numbers", "mech-core/complex", "mech-syntax?/complex"]
+rational = ["i64", "numbers", "mech-core/rational", "mech-syntax?/rational"]
+signed_ints = ["numbers", "mech-core/signed_ints", "mech-syntax?/signed_ints"]
+unsigned_ints = ["numbers", "mech-core/unsigned_ints", "mech-syntax?/unsigned_ints"]
+floats = ["numbers", "mech-core/floats", "mech-syntax?/floats"]
+u8 = ["unsigned_ints", "mech-core/u8", "mech-syntax?/u8"]
+u16 = ["unsigned_ints", "mech-core/u16", "mech-syntax?/u16"]
+u32 = ["unsigned_ints", "mech-core/u32", "mech-syntax?/u32"]
+u64 = ["unsigned_ints", "mech-core/u64", "mech-syntax?/u64"]
+u128 = ["unsigned_ints", "mech-core/u128", "mech-syntax?/u128"]
+i8 = ["signed_ints", "mech-core/i8", "mech-syntax?/i8"]
+i16 = ["signed_ints", "mech-core/i16", "mech-syntax?/i16"]
+i32 = ["signed_ints", "mech-core/i32", "mech-syntax?/i32"]
+i64 = ["signed_ints", "mech-core/i64", "mech-syntax?/i64"]
+i128 = ["signed_ints", "mech-core/i128", "mech-syntax?/i128"]
+f32 = ["floats", "mech-core/f32", "mech-syntax?/f32"]
+f64 = ["floats", "mech-core/f64", "mech-syntax?/f64"]
+c64 = ["complex", "mech-core/c64", "mech-syntax?/c64"]
+r64 = ["rational", "mech-core/r64", "mech-syntax?/r64"]
+
+set = ["indexmap", "functions", "mech-core/set", "mech-syntax?/set"]
+map = ["indexmap", "mech-core/map", "mech-syntax?/map"]
+table = [
+  "indexmap", "vectord", "record", "kind_annotation",
+  "mech-core/table", "mech-syntax?/table",
+]
+tuple = ["mech-core/tuple", "mech-syntax?/tuple"]
+enum = ["mech-core/enum", "mech-syntax?/enum"]
+record = [
+  "indexmap", "tuple", "kind_annotation",
+  "mech-core/record", "mech-syntax?/record",
+]
+atom = ["mech-core/atom", "mech-syntax?/atom"]
+
+matrix = ["nalgebra", "mech-core/matrix", "mech-syntax?/matrix"]
+fixed_row_vector = [
+  "row_vector4", "row_vector3", "row_vector2", "matrix",
+  "mech-core/fixed_row_vector", "mech-syntax?/fixed_row_vector",
+]
+fixed_vector = [
+  "vector4", "vector3", "vector2", "matrix",
+  "mech-core/fixed_vector", "mech-syntax?/fixed_vector",
+]
+fixed_matrix = [
+  "matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "matrix",
+  "mech-core/fixed_matrix", "mech-syntax?/fixed_matrix",
+]
+dynamic_matrix = [
+  "matrixd", "vectord", "row_vectord", "matrix",
+  "mech-core/dynamic_matrix", "mech-syntax?/dynamic_matrix",
+]
+row_vector4 = ["matrix", "matrix_horzcat", "mech-core/row_vector4", "mech-syntax?/row_vector4"]
+row_vector3 = ["matrix", "matrix_horzcat", "mech-core/row_vector3", "mech-syntax?/row_vector3"]
+row_vector2 = ["matrix", "matrix_horzcat", "mech-core/row_vector2", "mech-syntax?/row_vector2"]
+vector4 = ["matrix", "matrix_vertcat", "mech-core/vector4", "mech-syntax?/vector4"]
+vector3 = ["matrix", "matrix_vertcat", "mech-core/vector3", "mech-syntax?/vector3"]
+vector2 = ["matrix", "matrix_vertcat", "mech-core/vector2", "mech-syntax?/vector2"]
+matrix4 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix4", "mech-syntax?/matrix4"]
+matrix3 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix3", "mech-syntax?/matrix3"]
+matrix2 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix2", "mech-syntax?/matrix2"]
+matrix1 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix1", "mech-syntax?/matrix1"]
+matrix2x3 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix2x3", "mech-syntax?/matrix2x3"]
+matrix3x2 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix3x2", "mech-syntax?/matrix3x2"]
+# Retained dynamic row-vector assignment uses dynamic bool and usize index
+# vectors even when source/compiler support is absent.
+row_vectord = [
+  "bool", "matrix", "matrix_horzcat", "vectord",
+  "mech-core/row_vectord", "mech-syntax?/row_vectord",
+]
+vectord = ["matrix", "matrix_vertcat", "mech-core/vectord", "mech-syntax?/vectord"]
+# Retained DMatrix assignment uses dynamic bool and usize index vectors even
+# when source/compiler support is absent.
+matrixd = [
+  "bool", "matrix", "matrix_horzcat", "matrix_vertcat", "vectord",
+  "mech-core/matrixd", "mech-syntax?/matrixd",
+]
+
+subscript = ["mech-core/subscript", "mech-syntax?/subscript"]
+subscript_slice = [
+  "subscript", "vectord",
+  "mech-core/subscript_slice", "mech-syntax?/subscript_slice",
+]
+subscript_range = [
+  "subscript_slice", "vectord",
+  "mech-core/subscript_range", "mech-syntax?/subscript_range",
+]
+subscript_formula = [
+  "subscript_slice", "formulas",
+  "mech-core/subscript_formula", "mech-syntax?/subscript_formula",
+]
+logical_indexing = [
+  "subscript", "vectord", "bool",
+  "mech-core/logical_indexing", "mech-syntax?/logical_indexing",
+]
+dot_indexing = ["subscript", "mech-core/dot_indexing", "mech-syntax?/dot_indexing"]
+swizzle = ["subscript", "mech-core/swizzle", "mech-syntax?/swizzle"]
+
+# Machine-owned operations are syntax markers only. Concrete implementations
+# are selected and installed by a distribution crate.
+stats_default = ["stats_sum"]
+stats = []
+stats_sum = []
+
+matrix_default = [
+  "matrix_solve", "matrix_dot", "matrix_horzcat", "matrix_vertcat",
+  "matrix_matmul", "matrix_transpose", "matrix_comprehensions",
+]
+matrix_comprehensions = ["functions", "matrix", "matrix_horzcat"]
+matrix_horzcat = ["matrix", "functions"]
+matrix_vertcat = ["matrix", "functions"]
+matrix_solve = []
+matrix_matmul = []
+matrix_transpose = []
+matrix_dot = []
+
+# The dynamic row-vector × vector runtime contract has a feature-invariant
+# Matrix1 output. Standard source builds need to bind that result without
+# enabling the rest of the fixed-Matrix1 intrinsic surface.
+variable_define_matrix1 = ["variable_define", "matrix", "mech-core/matrix1"]
+
+logic_default = ["logic_and", "logic_or", "logic_not", "logic_xor"]
+logic = []
+logic_and = []
+logic_or = []
+logic_not = []
+logic_xor = []
+
+combinatorics_default = ["combinatorics_n_choose_k"]
+combinatorics = []
+combinatorics_n_choose_k = []
+
+compare_default = [
+  "compare_lt", "compare_gt", "compare_lte", "compare_gte",
+  "compare_eq", "compare_neq", "compare_seq", "compare_sneq",
+]
+compare = []
+compare_eq = []
+compare_neq = []
+compare_seq = []
+compare_sneq = []
+compare_lt = []
+compare_gt = []
+compare_lte = []
+compare_gte = []
+
+range_default = [
+  "range_inclusive", "range_exclusive",
+  "range_inclusive_increment", "range_exclusive_increment",
+]
+range = []
+range_inclusive = []
+range_exclusive = []
+range_inclusive_increment = []
+range_exclusive_increment = []
+
+math_default = [
+  "math_ops_default", "math_root_default",
+  "math_ops_assign_default", "math_trig_default",
+]
+math_standard = [
+  "math_ops_default", "math_root_default",
+  "math_atan2", "math_cos", "math_sin",
+]
+math = []
+math_ops_default = ["math_add", "math_sub", "math_mul", "math_div", "math_pow", "math_mod", "math_neg"]
+math_root_default = ["math_sqrt"]
+math_ops_assign_default = ["math_add_assign", "math_sub_assign", "math_mul_assign", "math_div_assign"]
+math_trig_default = [
+  "math_acos", "math_acosh", "math_acot", "math_acsc", "math_asec",
+  "math_asin", "math_asinh", "math_atan", "math_atan2", "math_atanh",
+  "math_cos", "math_cosh", "math_cot", "math_csc", "math_sec",
+  "math_sin", "math_sinh", "math_tan", "math_tanh",
+]
+math_trig = []
+math_root = []
+math_ops = []
+math_op_assign = []
+math_add_assign = []
+math_sub_assign = []
+math_mul_assign = []
+math_div_assign = []
+math_acos = []
+math_acosh = []
+math_acot = []
+math_acsc = []
+math_asec = []
+math_asin = []
+math_asinh = []
+math_atan = []
+math_atan2 = []
+math_atanh = []
+math_cos = []
+math_cosh = []
+math_cot = []
+math_csc = []
+math_sec = []
+math_sin = []
+math_sinh = []
+math_tan = []
+math_tanh = []
+math_add = []
+math_sub = []
+math_mul = []
+math_div = []
+math_pow = []
+math_mod = []
+math_neg = []
+math_sqrt = []
+
+set_default = [
+  "set_membership_default", "set_modify_default", "set_operations_default",
+  "set_relations_default", "set_comprehensions", "set_setdata_default",
+]
+set_standard = [
+  "set_membership_default", "set_modify_default",
+  "set_difference", "set_intersection", "set_symmetric_difference", "set_union",
+  "set_relations_default", "set_comprehensions", "set_setdata_default",
+]
+set_comprehensions = ["functions", "set"]
+set_membership_default = ["set_element_of", "set_not_element_of"]
+set_modify_default = ["set_insert", "set_remove"]
+set_operations_default = [
+  "set_cartesian_product", "set_difference", "set_intersection", "set_powerset",
+  "set_symmetric_difference", "set_union",
+]
+set_relations_default = [
+  "set_disjoint", "set_equals", "set_not_equals", "set_proper_subset",
+  "set_proper_superset", "set_subset", "set_superset",
+]
+set_setdata_default = ["set_size"]
+set_size = []
+set_insert = []
+set_remove = []
+set_powerset = []
+set_symmetric_difference = []
+set_disjoint = []
+set_equals = []
+set_not_equals = []
+set_element_of = []
+set_not_element_of = []
+set_proper_subset = []
+set_proper_superset = []
+set_subset = []
+set_superset = []
+set_difference = []
+set_intersection = []
+set_union = []
+set_cartesian_product = []
+
+string_default = ["string_concat"]
+string_concat = []
+
+[dependencies]
+mech-bytecode = { version = "0.3.5", path = "../bytecode", default-features = false, optional = true }
+mech-core = { version = "0.3.5", path = "../core", default-features = false }
+mech-syntax = { version = "0.3.5", path = "../syntax", default-features = false, optional = true }
+mech-abi = { path = "../abi", version = "0.3.5", optional = true }
+libloading = { version = "0.8.9", optional = true }
+libm = { version = "0.2.16", optional = true }
+
+paste = "1.0.15"
+byteorder = "1.5.0"
+grapheme = "1.3.0"
+# Grapheme enables TinyVec's alloc-only path. TinyVec 1.13.0 calls `vec!`
+# without importing that macro in this configuration, so keep every lockless
+# generated/fixture workspace on the same known-good release as Cargo.lock.
+tinyvec = { version = "=1.12.0", default-features = false }
+nalgebra = { version = "0.34.1", optional = true }
+indexmap = { version = "2.13.0", optional = true }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = { version = "1.0.149", optional = true, features = ["raw_value", "unbounded_depth"] }
+sha2 = "0.10"
+
+[dependencies.num-traits]
+version = "0.2.19"
+default-features = false
+features = ["libm"]
+optional = true
+
+[target.'cfg(unix)'.dependencies]
+libc = { version = "=0.2.189", optional = true }
+
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+web-time = "1.1.0"
+
+[[test]]
+name = "native_linkage"
+required-features = ["native-link"]
+
+[[test]]
+name = "program"
+required-features = ["source"]
+
+[[test]]
+name = "program_artifact_contract"
+required-features = ["compiler"]
+
+[[test]]
+name = "resident_activation_contract"
+required-features = ["compiler"]
+
+[[test]]
+name = "resident_ekf_artifact_closure"
+required-features = ["semantic-compiler", "resident-artifact"]
+
+[[test]]
+name = "resident_ekf_contract"
+required-features = ["resident-ekf"]
+
+[[test]]
+name = "resident_ekf_program_activation"
+required-features = ["semantic-compiler", "resident-artifact"]
+
+[[test]]
+name = "resident_ekf_program_execution"
+required-features = ["semantic-compiler", "resident-artifact"]

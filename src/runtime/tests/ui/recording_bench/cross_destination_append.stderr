@@ -1,0 +1,12 @@
+error[E0624]: method `append` is private
+  --> tests/ui/recording_bench/cross_destination_append.rs:19:12
+   |
+19 |       second.append(prepared);
+   |              ^^^^^^ private method
+   |
+  ::: src/ledger/queue.rs
+   |
+   | /     pub(crate) fn append(&self, prepared: PreparedLedgerAppend<R>) -> LedgerSequence
+   | |     where
+   | |         R: Send + 'static,
+   | |__________________________- private method defined here

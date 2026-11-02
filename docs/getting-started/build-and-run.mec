@@ -1,0 +1,103 @@
+Build and Run Mech Programs
+===============================================================================
+
+This page covers the shortest path from a Mech source file to something you can run from the command line or serve in a browser.
+
+Use [Your First Mech Project](first-project.html) after this page when you want a project folder, config file, browser host settings, and static bundle output.
+
+1. Create a source file
+-------------------------------------------------------------------------------
+
+Create `hello.mec`:
+
+```mech
+message := "Hello, world!"
+message
+```
+
+2. Run from the command line
+-------------------------------------------------------------------------------
+
+Run the file with `mech run`:
+
+```sh
+mech run hello.mec
+```
+
+The command parses the source, runs it through the runtime, and prints the final value.
+
+For a one-line check, pass inline source:
+
+```sh
+mech run '"Hello, world!"'
+```
+
+Useful flags:
+
+| Flag | Description |
+|------|-------------|
+| `--debug` | Print debug diagnostics. |
+| `--trace` | Print trace output for selected runtime steps. |
+| `--rounds-per-step N` | Override the runtime step limit for the turn. |
+
+3. Build bytecode with `mech build`
+-------------------------------------------------------------------------------
+
+`mech build` compiles source to Mech bytecode.
+
+```sh
+mech build hello.mec -o build-output
+```
+
+This command is useful when you want an intermediate `.mecb` artifact.
+
+4. Serve in a browser
+-------------------------------------------------------------------------------
+
+Serve the source through the development server:
+
+```sh
+mech serve hello.mec
+```
+
+By default the server listens on `127.0.0.1:8081`.
+
+```text
+http://127.0.0.1:8081/
+```
+
+Use `--address` and `--port` to change the bind address:
+
+```sh
+mech serve hello.mec --address 127.0.0.1 --port 3000
+```
+
+Projects that use browser DOM resources should normally use a config file. See [Your First Mech Project](first-project.html).
+
+5. Use a project config
+-------------------------------------------------------------------------------
+
+For repeated commands, place source paths and server settings in a config file. The default name is `mech.mcfg`.
+
+```mech
+config := {
+  run: {
+    paths: ["hello.mec"]
+  }
+
+  serve: {
+    paths: ["hello.mec"]
+    address: "127.0.0.1"
+    port: 8081
+  }
+}
+```
+
+Then run the project directory:
+
+```sh
+mech run .
+mech serve .
+```
+
+For the complete config reference, see [Config Files](../reference/config/config-files.html) and [Config Schema](../reference/config/schema.html).

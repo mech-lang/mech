@@ -1,0 +1,225 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mech-lang.org/schemas/canonical-snapshot-encoding-v1-vectors-v3.json",
+  "additionalProperties": false,
+  "properties": {
+    "encoding_name": { "const": "MechSnapshotEncodingV1" },
+    "schema_version": { "const": 3 },
+    "value_vectors": {
+      "items": { "$ref": "#/$defs/valueVector" },
+      "minItems": 11,
+      "type": "array"
+    },
+    "key_vectors": {
+      "items": { "$ref": "#/$defs/keyVector" },
+      "minItems": 5,
+      "type": "array"
+    },
+    "dimension_vectors": {
+      "items": { "$ref": "#/$defs/dimensionVector" },
+      "minItems": 7,
+      "type": "array"
+    },
+    "invalid_value_vectors": {
+      "items": { "$ref": "#/$defs/invalidValueVector" },
+      "maxItems": 17,
+      "minItems": 17,
+      "type": "array"
+    },
+    "invalid_schema_vectors": {
+      "items": { "$ref": "#/$defs/invalidSchemaVector" },
+      "maxItems": 8,
+      "minItems": 8,
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "encoding_name",
+    "value_vectors",
+    "key_vectors",
+    "dimension_vectors",
+    "invalid_value_vectors",
+    "invalid_schema_vectors"
+  ],
+  "type": "object",
+  "$defs": {
+    "hex": { "pattern": "^(?:[0-9a-f]{2})+$", "type": "string" },
+    "hash": { "pattern": "^[0-9a-f]{64}$", "type": "string" },
+    "valueExpected": {
+      "additionalProperties": false,
+      "properties": {
+        "payload_hex": { "$ref": "#/$defs/hex" },
+        "schema_hex": { "$ref": "#/$defs/hex" },
+        "schema_key_hex": { "$ref": "#/$defs/hash" },
+        "shape_hex": { "$ref": "#/$defs/hex" },
+        "value_hash_hex": { "$ref": "#/$defs/hash" }
+      },
+      "required": [
+        "schema_hex",
+        "schema_key_hex",
+        "shape_hex",
+        "payload_hex",
+        "value_hash_hex"
+      ],
+      "type": "object"
+    },
+    "valueVector": {
+      "additionalProperties": false,
+      "properties": {
+        "expected": { "$ref": "#/$defs/valueExpected" },
+        "id": {
+          "enum": [
+            "bool",
+            "f64",
+            "fixed-matrix-f64-2x3",
+            "activation-vector-f64-n-0-to-1024",
+            "tuple-bool-u64",
+            "record-x-y-f64",
+            "option-string",
+            "enum-two-variants-one-payload",
+            "reified-type-schema",
+            "set-f64",
+            "map-string-u64"
+          ]
+        },
+        "input": { "type": "object" }
+      },
+      "required": ["id", "input", "expected"],
+      "type": "object"
+    },
+    "keyExpected": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_key_payload_hex": { "$ref": "#/$defs/hex" },
+        "equivalent": { "const": true },
+        "error": {
+          "enum": ["DuplicateCanonicalKeyV1", "SchemaNotKeyableV1"]
+        },
+        "key_hash_hex": { "$ref": "#/$defs/hash" },
+        "order": { "const": "Less" }
+      },
+      "type": "object"
+    },
+    "keyVector": {
+      "additionalProperties": false,
+      "properties": {
+        "expected": { "$ref": "#/$defs/keyExpected" },
+        "id": {
+          "enum": [
+            "f64-signed-zero-equivalence",
+            "f64-nan-equivalence",
+            "duplicate-canonical-set-keys",
+            "rational64-order",
+            "complex-not-keyable"
+          ]
+        },
+        "input": { "type": "object" }
+      },
+      "required": ["id", "input", "expected"],
+      "type": "object"
+    },
+    "dimensionExpected": {
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "enum": ["DimensionOverflowV1", "UnknownDimensionParameterV1"]
+        },
+        "normalized_hex": { "$ref": "#/$defs/hex" }
+      },
+      "type": "object"
+    },
+    "dimensionVector": {
+      "additionalProperties": false,
+      "properties": {
+        "expected": { "$ref": "#/$defs/dimensionExpected" },
+        "id": {
+          "enum": [
+            "nested-add",
+            "nested-multiply",
+            "nested-min",
+            "nested-max",
+            "add-overflow",
+            "multiply-overflow",
+            "unknown-parameter"
+          ]
+        },
+        "input": { "type": "object" }
+      },
+      "required": ["id", "input", "expected"],
+      "type": "object"
+    },
+    "invalidExpected": {
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "enum": [
+            "ShapeParameterCountMismatchV1",
+            "ShapeBoundViolationV1",
+            "AggregateArityMismatchV1",
+            "AggregateFieldMismatchV1",
+            "PayloadCardinalityMismatchV1",
+            "EnumOrdinalOutOfRangeV1",
+            "EnumPayloadMismatchV1",
+            "MapEntryArityMismatchV1",
+            "DuplicateSchemaNameV1",
+            "InvalidSchemaWidthV1"
+          ]
+        }
+      },
+      "required": ["error"],
+      "type": "object"
+    },
+    "invalidValueVector": {
+      "additionalProperties": false,
+      "properties": {
+        "expected": { "$ref": "#/$defs/invalidExpected" },
+        "id": {
+          "enum": [
+            "tuple-too-short",
+            "tuple-too-long",
+            "record-missing-field",
+            "record-extra-field",
+            "option-present-missing-value",
+            "enum-ordinal-out-of-range",
+            "enum-missing-payload",
+            "enum-unexpected-payload",
+            "matrix-element-count-mismatch",
+            "table-column-set-mismatch",
+            "table-row-count-mismatch",
+            "set-cardinality-mismatch",
+            "map-entry-arity-mismatch",
+            "map-cardinality-mismatch",
+            "shape-parameter-count-mismatch",
+            "shape-lower-bound-violation",
+            "shape-upper-bound-violation"
+          ]
+        },
+        "input": { "type": "object" }
+      },
+      "required": ["id", "input", "expected"],
+      "type": "object"
+    },
+    "invalidSchemaVector": {
+      "additionalProperties": false,
+      "properties": {
+        "expected": { "$ref": "#/$defs/invalidExpected" },
+        "id": {
+          "enum": [
+            "duplicate-record-field",
+            "duplicate-table-column",
+            "duplicate-enum-variant",
+            "invalid-unsigned-integer-width",
+            "invalid-signed-integer-width",
+            "invalid-floating-point-width",
+            "invalid-complex-width",
+            "invalid-rational-width"
+          ]
+        },
+        "input": { "type": "object" }
+      },
+      "required": ["id", "input", "expected"],
+      "type": "object"
+    }
+  }
+}

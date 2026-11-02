@@ -1,0 +1,82 @@
+math/floor
+===============================================================================
+
+%% Floor function
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/floor(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Rounds each element of the input **downward** to the nearest integer, elementwise:
+$$ \mathrm{floor}(x) = \lfloor x \rfloor
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                         | Description |
+|----------|------------------------------|-------------|
+| `X`      | `float`, `[float]`, `matrix` | Real-valued input(s). Supported scalar types are `f64` and `f32`, and their vector/matrix forms. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind             | Description |
+|----------|------------------|-------------|
+| `Y`      | matches input    | The largest integer less than or equal to `X`, computed elementwise. Shape and (floating) precision match the input. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Scalar value
+
+```mech:ex1
+y := math/floor(3.7)           
+```
+
+(b) Negative input
+
+```mech:ex2
+y := math/floor(-2.3)         
+```
+
+(c) Vector input
+
+```mech:ex3
+x := [1.1, 2.9, -0.1, -1.5]
+y := math/floor(x)            
+```
+
+(d) Matrix input
+
+```mech:ex4
+x := [0.5, 1.5; -2.7, 3.2]
+y := math/floor(x)           
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+- **Definition:** For real input `x`, $$ \lfloor x \rfloor $$ is the greatest integer less than or equal to `x`.
+- **Domain:** All real values are valid inputs.
+- **Special cases:**
+  - `floor(±∞) = ±∞`
+  - `floor(NaN) = NaN`
+- **Shapes & types:** Scalars map to scalars; vectors/matrices are computed elementwise with the same shape.
+- **Performance:** Vector and matrix paths loop over elements. For large arrays, contiguous memory layout is beneficial.
+
+7. Notes for Implementers
+-------------------------------------------------------------------------------
+
+Backed by Rust/libm `floor` (f64) and `floorf` (f32). Implementations dispatch
+across scalar, vector, and matrix variants.
+
+8. See also
+-------------------------------------------------------------------------------
+
+`math/ceil`, `math/trunc`, `math/round`

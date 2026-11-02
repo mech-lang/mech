@@ -1,0 +1,70 @@
+math/remainder
+===============================================================================
+
+%% Floating-point remainder of division
+
+1. Usage
+-------------------------------------------------------------------------------
+```mech:disabled
+Y := math/remainder(X, Divisor)
+```
+2. Description
+-------------------------------------------------------------------------------
+Computes the IEEE 754-style floating-point remainder of the division
+X / Divisor. The remainder has the same sign as X and magnitude less
+than or equal to half the magnitude of Divisor.
+
+This function supports scalar values, vectors, and matrices in both
+single-precision (f32) and double-precision (f64). It applies
+element-wise to structured inputs.
+
+3. Input
+-------------------------------------------------------------------------------
+| Argument | Kind           | Description |
+|----------|----------------|--------------------------------------------------|
+| X        | float, [float] | Dividend value(s). |
+| Divisor  | float, [float] | Divisor value(s). |
+
+4. Output
+-------------------------------------------------------------------------------
+| Argument | Kind         | Description |
+|----------|--------------|---------------------------------------------------|
+| Y        | matches input| The floating-point remainder of X / Divisor. |
+
+5. Examples
+-------------------------------------------------------------------------------
+(a) Compute remainder of two scalars
+```mech:ex1
+y := math/remainder(5.3, 2.0)
+```
+(b) Compute element-wise remainder of two vectors
+```mech:ex2
+x := [5.3, 6.7, 9.1]
+d := [2.0, 2.5, 4.0]
+y := math/remainder(x, d)
+```
+(c) Compute element-wise remainder of two matrices
+```mech:ex3
+x := [5.3, 6.7; 9.1, 10.5]
+d := [2.0, 2.5; 4.0, 3.0]
+y := math/remainder(x, d)
+```
+6. Details
+-------------------------------------------------------------------------------
+The remainder is calculated using the libm functions `remainder` (f64)
+and `remainderf` (f32), which follow the IEEE 754 definition. For scalars,
+the result is the remainder of X divided by Divisor.
+
+- For X = NaN or Divisor = 0, the result is NaN.
+- For infinite Divisor, the result is X.
+- For infinite X and finite Divisor, the result is NaN.
+
+The function is implemented in Mech with macros for scalar, vector, and
+matrix cases. Specialized implementations are provided for various
+matrix and vector dimensions (Matrix1, Matrix2, …, Vector2, Vector3, …).
+It integrates with the Mech runtime by implementing the MechFunctionImpl
+trait, enabling evaluation and compilation.
+
+This makes math/remainder suitable for element-wise numeric computation
+across scalars, vectors, and matrices in numerical and scientific
+applications.

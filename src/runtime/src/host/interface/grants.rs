@@ -1,0 +1,67 @@
+use crate::InvalidConfigField;
+use mech_core::{MResult, MechError};
+
+#[cfg(feature = "runtime")]
+use crate::ResourcePathScope;
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RunResourceGrantConfig {
+    pub target: String,
+    pub operations: Vec<String>,
+    pub paths: Vec<String>,
+}
+
+pub fn validate_run_resource_grant(grant: &RunResourceGrantConfig) -> MResult<()> {
+    super::parse_host_context_target(&grant.target)?;
+    super::validate_host_operations("run.grants[].operations", &grant.operations)?;
+    if grant.paths.is_empty() {
+        return invalid("run.grants[].paths must contain at least one path");
+    }
+    for path in &grant.paths {
+        validate_grant_path(path)?;
+    }
+    Ok(())
+}
+
+pub fn validate_grant_path(path: &str) -> MResult<()> {
+    if path.is_empty() {
+        return invalid("run grant paths must be non-empty");
+    }
+    if path == "*" {
+        return Ok(());
+    }
+    if path.contains('*') && !path.ends_with("/*") {
+        return invalid(format!("invalid wildcard placement in grant path `{path}`"));
+    }
+    if path.matches('*').count() > 1 {
+        return invalid(format!("invalid wildcard placement in grant path `{path}`"));
+    }
+    Ok(())
+}
+
+/// Normalize one configured resource-grant path with the exact rules used by
+/// runtime capability authorization.
+#[cfg(feature = "runtime")]
+pub fn normalize_run_resource_grant_path(path: &str) -> MResult<String> {
+    validate_grant_path(path)?;
+    Ok(ResourcePathScope::from_config_path(path)?.config_path())
+}
+
+/// Applies the runtime's canonical exact, prefix, and wildcard grant semantics
+/// to one concrete resource path.
+#[cfg(feature = "runtime")]
+pub fn run_resource_grant_path_allows(grant_path: &str, requested_path: &str) -> MResult<bool> {
+    let scope = ResourcePathScope::from_config_path(grant_path)?;
+    let requested = ResourcePathScope::from_config_path(requested_path)?;
+    let ResourcePathScope::Exact(requested) = requested else {
+        return invalid(format!(
+            "requested resource path `{requested_path}` must be concrete"
+        ));
+    };
+    Ok(scope.matches(&requested))
+}
+
+fn invalid<T>(message: impl Into<String>) -> MResult<T> {
+    Err(MechError::new(InvalidConfigField::new(message), None))
+}

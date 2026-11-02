@@ -1,0 +1,76 @@
+use crate::runtime::MechRuntime;
+use crate::{EventId, RuntimeContext, RuntimeEvent, RuntimeEventKind};
+use mech_core::MResult;
+
+impl MechRuntime {
+    pub fn next_event_sequence(&mut self) -> u64 {
+        let sequence = self.event_sequence;
+        self.event_sequence = self.event_sequence.saturating_add(1);
+        sequence
+    }
+
+    pub(in crate::runtime) fn make_event(&mut self, kind: RuntimeEventKind) -> RuntimeEvent {
+        RuntimeEvent::new(self.next_event_id(), self.next_event_sequence(), kind)
+    }
+
+    pub(in crate::runtime) fn emit_event_to_context(
+        &mut self,
+        context: &mut RuntimeContext,
+        kind: RuntimeEventKind,
+    ) -> MResult<EventId> {
+        self.validate_context_for_runtime(context)?;
+
+        let event = self.make_event(kind);
+        let id = event.id;
+
+        if let Some(transaction_id) = context.transaction {
+            if let Some(transaction) = self.active_transactions.get_mut(&transaction_id) {
+                transaction.store.stage_event(event.clone())?;
+                context.push_event(event);
+                self.apply_context_event_retention(context);
+                return Ok(id);
+            }
+        }
+
+        self.store.append_event(event.clone())?;
+        context.push_event(event);
+        self.apply_context_event_retention(context);
+        if context.transaction.is_none() {
+            context.finish_event_transaction_scope()?;
+        }
+
+        Ok(id)
+    }
+
+    pub(in crate::runtime) fn emit_event_immediate_to_context(
+        &mut self,
+        context: &mut RuntimeContext,
+        kind: RuntimeEventKind,
+    ) -> MResult<EventId> {
+        self.validate_context_for_runtime(context)?;
+
+        let event = self.make_event(kind);
+        let id = event.id;
+
+        self.store.append_event(event.clone())?;
+        context.push_event(event);
+        self.apply_context_event_retention(context);
+        if context.transaction.is_none() {
+            context.finish_event_transaction_scope()?;
+        }
+
+        Ok(id)
+    }
+
+    pub(in crate::runtime) fn push_persisted_event_to_context(
+        &self,
+        context: &mut RuntimeContext,
+        event: RuntimeEvent,
+    ) -> MResult<EventId> {
+        let id = event.id;
+        context.push_event(event);
+        self.apply_context_event_retention(context);
+        context.finish_event_transaction_scope()?;
+        Ok(id)
+    }
+}

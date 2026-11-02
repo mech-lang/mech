@@ -1,0 +1,300 @@
+[package]
+name = "mech-runtime"
+version = "0.3.5"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "Runtime abstraction layer for Mech execution backends."
+documentation = "https://docs.mech-lang.org"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-lang/mech"
+keywords = ["mech", "language", "programming", "dataflow", "runtime"]
+categories = ["science::robotics", "science", "game-engines", "web-programming"]
+license = "Apache-2.0"
+readme = "README.md"
+edition = "2024"
+rust-version = "1.92"
+
+[features]
+std = ["mech-core/std", "mech-engine/std"]
+no_std = ["mech-core/no_std", "mech-engine/no_std", "mech-syntax?/no_std"]
+
+runtime = ["mech-engine/runtime"]
+runtime_bench_probes = ["mech-engine/runtime_bench_probes"]
+# Private benchmark/conformance surface; never enable it from product defaults.
+resident_ekf_benchmarks = ["compiler", "mech-engine/resident-artifact"]
+resident-external = ["runtime", "string", "mech-engine/resident-artifact"]
+resident_external_test_support = ["resident-routing-source", "compiler_default"]
+# Shared artifact resource admission/delivery, without resident session routing.
+# Native and resident hosts use the SAME capability/provider/transaction checks.
+canonical-native-resources = ["resident-external"]
+# Build-owned image codec is not needed by ordinary resource-only hosts.
+canonical-native-images = ["canonical-native-resources", "serde", "dep:serde_json"]
+resident-routing = ["canonical-native-resources"]
+resident-routing-source = ["resident-routing", "semantic-compiler"]
+compute = ["resident-routing-source", "f32", "f64", "string", "matrixd", "dep:mech-compute"]
+native-link = ["runtime", "string"]
+source = ["runtime", "mech-engine/source", "dep:mech-syntax"]
+semantic-compiler = ["source", "mech-engine/semantic-compiler"]
+compiler = ["semantic-compiler", "mech-engine/compiler"]
+
+runtime_default = [
+  "runtime",
+  "async",
+  "bool", "string",
+  "u8", "u16", "u32", "u64", "u128",
+  "i8", "i16", "i32", "i64", "i128",
+  "f32", "f64", "c64", "r64",
+  "set", "map", "table", "tuple", "record", "atom", "enum",
+  "row_vectord", "vectord", "matrixd",
+]
+source_default = [
+  "runtime_default",
+  "source",
+  "pretty_print",
+  "serde",
+  "mika",
+  "statements_default",
+  "subscript_default",
+  "state_machines",
+  "variables",
+  "access",
+  "assign",
+  "convert",
+  # Operation features in mech-engine are distribution-neutral syntax markers.
+  # Concrete implementations still come only from an injected catalog.
+  "mech-engine/matrix_comprehensions",
+  "mech-engine/matrix_horzcat",
+  "mech-engine/matrix_vertcat",
+  "mech-engine/set_comprehensions",
+  "mech-engine/math_default",
+  "mech-engine/compare_default",
+  "mech-engine/logic_default",
+  "mech-engine/range_default",
+  "mech-engine/matrix_default",
+  "mech-engine/set_default",
+  "mech-engine/string_default",
+  "mech-engine/stats_default",
+  "mech-engine/combinatorics_default",
+  "watcher",
+]
+compiler_default = ["source_default", "compiler"]
+full_runtime = ["runtime_default"]
+full_source = ["source_default", "semantic-compiler"]
+full_compiler = ["compiler_default"]
+default = []
+base = ["compiler_default", "mech-core/base", "mech-engine/base"]
+
+async = ["mech-engine/async"]
+watcher = ["ignore", "notify"]
+statements_default = ["variable_assign","variable_define","invariant_define","kind_define"]
+subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
+
+stdlib = ["bool", "string", 
+      "u8", "u16", "u32", "u64", "u128", 
+      "i8", "i16", "i32", "i64", "i128", 
+      "f32", "f64", "c64", "r64", 
+      "set", "map", "table", "tuple", "record", "atom", "enum",
+      "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
+      "row_vector2", "row_vector3", "row_vector4",
+      "vector2", "vector3", "vector4",
+      "row_vectord", "vectord", "matrixd",
+      "subscript_range", "logical_indexing", "swizzle",
+      "subscript_formula", "dot_indexing",
+      "variable_define", "variable_assign", "kind_define",
+      "kind_annotation", "variables",
+      "functions", "formulas"
+    ]
+
+sample_hold = ["mech-engine/sample_hold"]
+state_step = ["mech-engine/state_step"]
+
+baselib = ["bool", "string", 
+      "f64", "c64", "r64",
+      "set", "map", "table", "tuple", "record", "atom", "enum",
+      "row_vectord", "vectord", "matrixd",
+      "subscript_range", "logical_indexing", 
+      "subscript_formula",
+      "variable_define", "variable_assign", 
+      "kind_define",
+      "kind_annotation", "variables",
+      "functions", "formulas",
+    ]
+
+program = ["mech-engine/program"]
+pretty_print = ["mech-engine/pretty_print"]
+serde = ["dep:serde", "dep:serde_derive", "mech-engine/serde"]
+mika = ["mech-engine/mika"]
+
+statements = ["mech-core/statements", "mech-engine/statements"]
+variables = ["variable_define", "symbol_table", "mech-core/variables", "mech-engine/variables"]
+variable_define = ["statements", "functions", "mech-core/variable_define", "mech-engine/variable_define"]
+invariant_define = ["variable_define", "mech-core/invariant_define", "mech-engine/invariant_define"]
+variable_assign = ["statements", "mech-core/variable_assign", "mech-engine/variable_assign"]
+kind_define = ["kind_annotation", "statements", "mech-core/kind_define", "mech-engine/kind_define"]
+kind_annotation = ["functions", "mech-core/kind_annotation", "mech-engine/kind_annotation"]
+formulas = ["mech-core/formulas", "mech-engine/formulas"]
+functions = ["symbol_table", "mech-core/functions", "mech-engine/functions"]
+state_machines = ["functions", "mech-engine/state_machines"]
+symbol_table = ["mech-core/symbol_table", "mech-engine/symbol_table"]
+
+access = ["functions", "mech-engine/access"]
+assign = ["functions", "mech-engine/assign"]
+convert = ["functions", "mech-engine/convert"]
+
+bool = ["mech-core/bool", "mech-engine/bool"]
+string = ["mech-core/string", "mech-engine/string"]
+      
+# Numbers
+numbers = ["mech-core/numbers", "mech-engine/numbers"]
+complex = ["f64", "numbers", "mech-core/complex", "mech-engine/complex"]
+rational = ["i64", "numbers", "mech-core/rational", "mech-engine/rational"]
+signed_ints = ["numbers", "mech-core/signed_ints", "mech-engine/signed_ints"]
+unsigned_ints = ["numbers", "mech-core/unsigned_ints", "mech-engine/unsigned_ints"]
+floats = ["numbers", "mech-core/floats", "mech-engine/floats"]
+u8 = ["unsigned_ints", "mech-core/u8", "mech-engine/u8"]
+u16 = ["unsigned_ints", "mech-core/u16", "mech-engine/u16"]
+u32 = ["unsigned_ints", "mech-core/u32", "mech-engine/u32"]
+u64 = ["unsigned_ints", "mech-core/u64", "mech-engine/u64"]
+u128 = ["unsigned_ints", "mech-core/u128", "mech-engine/u128"]
+i8 = ["signed_ints", "mech-core/i8", "mech-engine/i8"]
+i16 = ["signed_ints", "mech-core/i16", "mech-engine/i16"]
+i32 = ["signed_ints", "mech-core/i32", "mech-engine/i32"]
+i64 = ["signed_ints", "mech-core/i64", "mech-engine/i64"]
+i128 = ["signed_ints", "mech-core/i128", "mech-engine/i128"]
+f32 = ["floats", "mech-core/f32", "mech-engine/f32"]
+f64 = ["floats", "mech-core/f64", "mech-engine/f64"]
+c64 = ["complex", "mech-core/c64", "mech-engine/c64"]
+r64 = ["rational", "mech-core/r64", "mech-engine/r64"]
+
+# Structs
+set = ["mech-core/set", "mech-engine/set"]
+map = ["mech-core/map", "mech-engine/map"]
+table = ["vectord", "record", "kind_annotation", "mech-core/table", "mech-engine/table"]
+tuple = ["mech-core/tuple", "mech-engine/tuple"]
+enum = ["mech-core/enum", "mech-engine/enum"]
+record = ["tuple", "kind_annotation", "mech-core/record", "mech-engine/record"]
+atom = ["mech-core/atom", "mech-engine/atom"]
+
+# Matrix
+matrix = ["mech-core/matrix", "mech-engine/matrix"]
+fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2", "mech-core/fixed_row_vector", "mech-engine/fixed_row_vector"]
+fixed_vector = ["vector4", "vector3", "vector2", "mech-core/fixed_vector", "mech-engine/fixed_vector"]
+fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "mech-core/fixed_matrix", "mech-engine/fixed_matrix"]
+dynamic_matrix = ["matrixd", "vectord", "row_vectord", "mech-core/dynamic_matrix", "mech-engine/dynamic_matrix"]
+row_vector4 = ["matrix", "mech-core/row_vector4", "mech-engine/row_vector4"]
+row_vector3 = ["matrix", "mech-core/row_vector3", "mech-engine/row_vector3"]
+row_vector2 = ["matrix", "mech-core/row_vector2", "mech-engine/row_vector2"]
+vector4 = ["matrix", "mech-core/vector4", "mech-engine/vector4"]
+vector3 = ["matrix", "mech-core/vector3", "mech-engine/vector3"]
+vector2 = ["matrix", "mech-core/vector2", "mech-engine/vector2"]
+matrix4 = ["matrix", "mech-core/matrix4", "mech-engine/matrix4"]
+matrix3 = ["matrix", "mech-core/matrix3", "mech-engine/matrix3"]
+matrix2 = ["matrix", "mech-core/matrix2", "mech-engine/matrix2"]
+matrix1 = ["matrix", "mech-core/matrix1", "mech-engine/matrix1"]
+matrix2x3 = ["matrix", "mech-core/matrix2x3", "mech-engine/matrix2x3"]
+matrix3x2 = ["matrix", "mech-core/matrix3x2", "mech-engine/matrix3x2"]
+row_vectord =["matrix", "mech-core/row_vectord", "mech-engine/row_vectord"]
+vectord = ["matrix", "mech-core/vectord", "mech-engine/vectord"]
+matrixd = ["matrix", "mech-core/matrixd", "mech-engine/matrixd"]
+
+# Subscripts
+subscript = ["mech-core/subscript", "mech-engine/subscript"]
+subscript_slice = ["subscript", "vectord", "mech-core/subscript_slice", "mech-engine/subscript_slice"]
+subscript_range = ["subscript_slice","vectord", "mech-core/subscript_range", "mech-engine/subscript_range"]
+subscript_formula = ["subscript_slice","formulas", "mech-core/subscript_formula", "mech-engine/subscript_formula"]
+logical_indexing = ["subscript","vectord","bool", "mech-core/logical_indexing", "mech-engine/logical_indexing"]
+dot_indexing = ["subscript", "mech-core/dot_indexing", "mech-engine/dot_indexing"]
+swizzle = ["subscript", "mech-core/swizzle", "mech-engine/swizzle"]
+notify = ["dep:notify"]
+host_delegation = ["serde"]
+host_delegation_signing = ["host_delegation", "dep:ed25519-dalek", "dep:rand_core"]
+
+[dev-dependencies]
+criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
+mech-terminal = { path = "../../hosts/terminal", features = ["provider"] }
+mech-native-live-host-fixture = { path = "../../tests/fixtures/native-live-host" }
+mech-stdlib = { path = "../stdlib", default-features = false, features = ["full_compiler"] }
+serde_json = "1.0.150"
+sha2 = "0.10"
+trybuild = "1.0.118"
+
+[dependencies]
+blake3 = "1.8.5"
+mech-engine = { version = "0.3.5", path = "../engine", default-features = false }
+mech-core = { version = "0.3.5", path = "../core", default-features = false }
+mech-compute = { version = "0.3.5", path = "../compute", optional = true }
+mech-syntax = { version = "0.3.5", path = "../syntax", default-features = false, optional = true }
+serde = { version = "1.0.228", optional = true }
+serde_derive = { version = "1.0.228", optional = true }
+serde_json = { version = "1.0.150", optional = true }
+tracing = { version = "0.1.41", optional = true }
+ignore = {version = "0.4.24", optional = true }
+uuid = { version = "1.23.1", features = ["v7", "serde"] }
+notify = { version = "8.2.0", optional = true }
+ed25519-dalek = { version = "2.2.0", default-features = false, features = ["alloc", "fast", "zeroize"], optional = true }
+rand_core = { version = "0.6.4", optional = true }
+toml_edit = "0.23"
+
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+uuid = { version = "1.23.1", features = ["js"] }
+web-time = "1.1.0"
+
+[[example]]
+name = "transactional_runtime"
+path = "examples/transactional_runtime.rs"
+required-features = ["runtime_default"]
+
+[[example]]
+name = "canonical_host_reference"
+path = "examples/canonical_host_reference.rs"
+required-features = ["full_compiler", "resident-routing-source"]
+test = true
+
+[[test]]
+name = "config_profile"
+path = "tests/config_profile.rs"
+required-features = ["source"]
+
+[[test]]
+name = "generic_host_kernel"
+path = "tests/generic_host_kernel.rs"
+required-features = ["runtime_default"]
+
+[[test]]
+name = "recording_bench_facade"
+path = "tests/recording_bench_facade.rs"
+required-features = ["runtime_default", "runtime_bench_probes"]
+
+[[test]]
+name = "sealed_api"
+path = "tests/sealed_api.rs"
+required-features = ["source_default"]
+
+[[test]]
+name = "resident_external_contract"
+path = "tests/resident_external_contract.rs"
+required-features = ["resident_external_test_support"]
+
+[[test]]
+name = "resident_external_sealed_api"
+path = "tests/resident_external_sealed_api.rs"
+required-features = ["resident-external"]
+
+[[test]]
+name = "resident_ekf_contract"
+path = "tests/resident_ekf_contract.rs"
+required-features = ["resident_ekf_benchmarks"]
+
+[[test]]
+name = "resource_preflight"
+path = "tests/resource_preflight.rs"
+required-features = ["runtime_default"]
+
+[[bench]]
+name = "recording_primitives"
+harness = false
+required-features = ["runtime_default", "runtime_bench_probes"]
+
+[[bench]]
+name = "resident_ekf"
+harness = false
+required-features = ["source_default", "resident_ekf_benchmarks"]

@@ -1,0 +1,77 @@
+math/cot
+===============================================================================
+
+%% Cotangent of argument in radians
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/cot(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the cotangent of each element of `X`. The input `X` is interpreted in radians, not degrees. The result `Y` has the same shape as the input `X`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `X`      | `float`, `[float]`       | Input angle(s) specified in radians. Can be real or complex. If `X` is complex, cot returns complex results. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `Y`      | matches input            | Cotangent of the input values. If `X` is real, `Y` is real except where `X` is a multiple of π (where cot is undefined). If `X` is complex, `Y` may have both real and imaginary parts. The shape of `Y` matches the shape of `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Find the cotangent of a number 
+
+```mech:ex1
+y := math/cot(1.0)
+```
+
+(b) Find the cotangent for a vector of numbers
+
+```mech:ex2
+x := [0.5, 1.0, 1.5]
+y := math/cot(x)
+```
+
+(c) Find the cotangent for a matrix of numbers
+
+```mech:ex3
+x := [0.5, 1.0; 1.5, 2.0]
+y := math/cot(x)
+```
+
+(d) Find the cotangent for a matrix of degrees
+
+```mech:ex4
+x := [30, 45; 60, 90]
+y := math/cot(x * 3.14 / 180)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The cotangent function is the reciprocal of the tangent function:
+
+$$ cot(x) = \frac{1}{tan(x)}
+
+In a right triangle, the cotangent of an angle $$x$$ is defined as the ratio of the length of the adjacent side to the opposite side:
+
+$$ cot(x) = \frac{\text{adjacent}}{\text{opposite}}
+
+For complex numbers, the cotangent can be expressed in terms of exponentials:
+
+$$ cot(x) = i \cdot \frac{e^{ix} + e^{-ix}}{e^{ix} - e^{-ix}}
+
+This definition extends the cotangent function to work beyond real numbers, allowing it to handle complex inputs.

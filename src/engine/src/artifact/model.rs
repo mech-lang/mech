@@ -1,0 +1,1467 @@
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use alloc::collections::BTreeMap;
+use core::ops::Range;
+#[cfg(not(all(feature = "no_std", not(feature = "std"))))]
+use std::collections::BTreeMap;
+
+use mech_core::{
+    AccessMode, ApplicationRequirementId, BindingId, CanonicalNominalPath, CellSlotId,
+    ComputePlacement, ComputeRegionId, ConstantId, ConstantStore, DeclaredOperationContract,
+    DeliveryMode, ExternalInteraction, InputId, IntegrityConstraintId, MechError, NodeId,
+    OperationContractDeclaration, OperationContractError, OperationContractHandle,
+    OperationContractId, OperationContractTable, OperationContractTableBuilder, OutputId,
+    PortDirection, ProgramRevision, ResolvedInputPort, ResolvedOperationContract,
+    ResolvedOutputPort, ResolvedRangeMode, ResolvedReductionMode, ResolvedSelectionMode,
+    SchemaBody, SchemaId, SchemaTable, SemanticModelError, ShapeInstance, SnapshotValueError,
+    validate_declaration,
+};
+
+use super::CompilerIrError;
+
+fn append_block_contract_handles(
+    block: &super::ControlBlock<OperationContractDeclaration>,
+    constants: &ConstantStore,
+    builder: &mut OperationContractTableBuilder,
+    node: NodeId,
+    handles: &mut Vec<OperationContractHandle>,
+) -> Result<(), ArtifactBuildError> {
+    let invalid = || ArtifactBuildError::InvalidControl {
+        node,
+        reason: "invalid compiler block reference",
+    };
+    for operation in &block.operations {
+        let inputs = operation
+            .inputs
+            .iter()
+            .map(|value| {
+                match *value {
+                    super::ControlValue::Constant(id) => {
+                        constants.get(id).map(|value| value.schema())
+                    }
+                    super::ControlValue::Parameter {
+                        block: owner,
+                        ordinal,
+                    } if owner == block.id => block
+                        .parameters
+                        .get(ordinal as usize)
+                        .map(|parameter| parameter.schema),
+                    super::ControlValue::Local {
+                        block: owner,
+                        node: local,
+                    } if owner == block.id && local < operation.node => block
+                        .operations
+                        .get(local as usize)
+                        .map(|operation| operation.schema),
+                    _ => None,
+                }
+                .ok_or_else(invalid)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        match &operation.body {
+            super::ControlOperationBody::Operation { contract, .. } => {
+                handles.push(builder.insert(resolve_declared_contract(
+                    contract,
+                    inputs,
+                    vec![operation.schema],
+                )?)?);
+            }
+            super::ControlOperationBody::Match(nested) => {
+                append_match_contract_handles(nested, constants, builder, node, handles)?;
+            }
+            super::ControlOperationBody::Comprehension(nested) => {
+                append_comprehension_contract_handles(
+                    nested, &inputs, constants, builder, node, handles,
+                )?;
+            }
+            super::ControlOperationBody::Iteration(nested) => {
+                append_iteration_contract_handles(nested, constants, builder, node, handles)?;
+            }
+            super::ControlOperationBody::Recur(_)
+            | super::ControlOperationBody::Suspend
+            | super::ControlOperationBody::Assert
+            | super::ControlOperationBody::Publish => {}
+        }
+    }
+    Ok(())
+}
+
+fn append_iteration_contract_handles(
+    control: &super::IterationDeclaration<OperationContractDeclaration>,
+    constants: &ConstantStore,
+    builder: &mut OperationContractTableBuilder,
+    node: NodeId,
+    handles: &mut Vec<OperationContractHandle>,
+) -> Result<(), ArtifactBuildError> {
+    append_block_contract_handles(&control.body, constants, builder, node, handles)
+}
+
+fn append_match_contract_handles(
+    control: &super::MatchDeclaration<OperationContractDeclaration>,
+    constants: &ConstantStore,
+    builder: &mut OperationContractTableBuilder,
+    node: NodeId,
+    handles: &mut Vec<OperationContractHandle>,
+) -> Result<(), ArtifactBuildError> {
+    for block in control
+        .arms
+        .iter()
+        .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+    {
+        append_block_contract_handles(block, constants, builder, node, handles)?;
+    }
+    Ok(())
+}
+
+fn append_comprehension_contract_handles(
+    control: &super::ComprehensionDeclaration<OperationContractDeclaration>,
+    inputs: &[SchemaId],
+    constants: &ConstantStore,
+    builder: &mut OperationContractTableBuilder,
+    node: NodeId,
+    handles: &mut Vec<OperationContractHandle>,
+) -> Result<(), ArtifactBuildError> {
+    let invalid = |reason| ArtifactBuildError::InvalidControl { node, reason };
+    let mut locals = Vec::new();
+    for step in &control.steps {
+        match step {
+            super::ComprehensionStep::Generator { pattern, .. } => {
+                super::comprehension::pattern_counts(pattern)
+                    .ok_or_else(|| invalid("collection pattern admission limit"))?;
+                super::comprehension::pattern_locals(pattern, &mut locals)
+                    .ok_or_else(|| invalid("invalid collection local identity"))?;
+            }
+            super::ComprehensionStep::Filter(_) => {}
+            super::ComprehensionStep::Operation(operation) => {
+                if operation.local as usize != locals.len() {
+                    return Err(invalid("invalid collection local identity"));
+                }
+                let schemas = operation
+                    .inputs
+                    .iter()
+                    .map(|value| {
+                        super::comprehension::value_schema(*value, constants, inputs, &locals)
+                            .ok_or_else(|| invalid("invalid collection operand"))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                match &operation.body {
+                    super::ControlOperationBody::Operation { contract, .. } => {
+                        handles.push(builder.insert(resolve_declared_contract(
+                            contract,
+                            schemas,
+                            vec![operation.schema],
+                        )?)?);
+                    }
+                    super::ControlOperationBody::Match(nested) => {
+                        append_match_contract_handles(nested, constants, builder, node, handles)?;
+                    }
+                    super::ControlOperationBody::Comprehension(nested) => {
+                        append_comprehension_contract_handles(
+                            nested, &schemas, constants, builder, node, handles,
+                        )?;
+                    }
+                    super::ControlOperationBody::Iteration(nested) => {
+                        append_iteration_contract_handles(
+                            nested, constants, builder, node, handles,
+                        )?;
+                    }
+                    super::ControlOperationBody::Recur(_)
+                    | super::ControlOperationBody::Suspend
+                    | super::ControlOperationBody::Assert
+                    | super::ControlOperationBody::Publish => {}
+                }
+                locals.push(operation.schema);
+            }
+        }
+    }
+    Ok(())
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ComputeRegionDeclaration {
+    pub id: ComputeRegionId,
+    pub name: Box<str>,
+    pub placement: ComputePlacement,
+    pub nodes: Box<[NodeId]>,
+}
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct OperationReference {
+    pub module_path: Box<[String]>,
+    pub operation_name: String,
+}
+
+impl OperationReference {
+    pub fn canonical_name(&self) -> String {
+        if self.module_path.is_empty() {
+            return self.operation_name.clone();
+        }
+        format!("{}/{}", self.module_path.join("/"), self.operation_name)
+    }
+
+    fn module_is(&self, expected: &[&str]) -> bool {
+        self.module_path.len() == expected.len()
+            && self
+                .module_path
+                .iter()
+                .zip(expected)
+                .all(|(actual, expected)| actual == expected)
+    }
+
+    /// Returns the semantic selection encoded by this canonical operation
+    /// identity. The result depends only on artifact data, never on shapes.
+    pub fn resolved_selection_mode(&self, selector_count: usize) -> Option<ResolvedSelectionMode> {
+        match self.operation_name.as_str() {
+            "scalar" if self.module_is(&["access"]) && selector_count == 1 => {
+                Some(ResolvedSelectionMode::LinearScalar)
+            }
+            "range" if self.module_is(&["access"]) && selector_count <= 1 => {
+                Some(ResolvedSelectionMode::LinearGather)
+            }
+            "scalar" | "range" if self.module_is(&["access"]) && selector_count == 2 => {
+                Some(ResolvedSelectionMode::Rectangle)
+            }
+            "index" if self.module_is(&["access"]) && selector_count == 0 => {
+                Some(ResolvedSelectionMode::LinearScalar)
+            }
+            "rows" if self.module_is(&["access"]) => Some(ResolvedSelectionMode::Rows),
+            "columns" if self.module_is(&["access"]) => Some(ResolvedSelectionMode::Columns),
+            "rectangle" if self.module_is(&["access"]) => Some(ResolvedSelectionMode::Rectangle),
+            "assign" if self.module_is(&["core"]) => Some(ResolvedSelectionMode::Whole),
+            "range-all"
+                if self.module_is(&["math", "add-assign"])
+                    || self.module_is(&["math", "sub-assign"]) =>
+            {
+                Some(ResolvedSelectionMode::Rows)
+            }
+            _ => None,
+        }
+    }
+
+    pub fn resolved_range_mode(&self) -> Option<ResolvedRangeMode> {
+        if !self.module_is(&["range"]) {
+            return None;
+        }
+        match self.operation_name.as_str() {
+            "exclusive" => Some(ResolvedRangeMode::Exclusive),
+            "exclusive-increment" => Some(ResolvedRangeMode::ExclusiveIncrement),
+            "inclusive" => Some(ResolvedRangeMode::Inclusive),
+            "inclusive-increment" => Some(ResolvedRangeMode::InclusiveIncrement),
+            _ => None,
+        }
+    }
+
+    pub fn resolved_reduction_mode(&self) -> Option<ResolvedReductionMode> {
+        if !self.module_is(&["stats", "sum"]) {
+            return None;
+        }
+        match self.operation_name.as_str() {
+            "row" => Some(ResolvedReductionMode::Rows),
+            "column" => Some(ResolvedReductionMode::Columns),
+            _ => None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod operation_mode_tests {
+    use super::*;
+
+    fn operation(module_path: &[&str], operation_name: &str) -> OperationReference {
+        OperationReference {
+            module_path: module_path
+                .iter()
+                .map(|segment| (*segment).to_owned())
+                .collect(),
+            operation_name: operation_name.to_owned(),
+        }
+    }
+
+    #[test]
+    fn semantic_modes_are_resolved_from_artifact_identity_and_selector_arity() {
+        let scalar = operation(&["access"], "scalar");
+        assert_eq!(
+            scalar.resolved_selection_mode(1),
+            Some(ResolvedSelectionMode::LinearScalar)
+        );
+        for selectors in [0, 1] {
+            assert_eq!(
+                operation(&["access"], "range").resolved_selection_mode(selectors),
+                Some(ResolvedSelectionMode::LinearGather)
+            );
+        }
+        assert_eq!(
+            operation(&["access"], "range").resolved_selection_mode(3),
+            None
+        );
+        assert_eq!(
+            scalar.resolved_selection_mode(2),
+            Some(ResolvedSelectionMode::Rectangle)
+        );
+        assert_eq!(
+            operation(&["access"], "rows").resolved_selection_mode(1),
+            Some(ResolvedSelectionMode::Rows)
+        );
+        assert_eq!(
+            operation(&["access"], "columns").resolved_selection_mode(1),
+            Some(ResolvedSelectionMode::Columns)
+        );
+        assert_eq!(
+            operation(&["range"], "inclusive-increment").resolved_range_mode(),
+            Some(ResolvedRangeMode::InclusiveIncrement)
+        );
+        assert_eq!(
+            operation(&["stats", "sum"], "row").resolved_reduction_mode(),
+            Some(ResolvedReductionMode::Rows)
+        );
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SlotRole {
+    Input,
+    State,
+    Derived,
+    Output,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ProducerReference {
+    Input(InputId),
+    NodeOutput {
+        node: NodeId,
+        output_ordinal: u16,
+    },
+    Output {
+        output: OutputId,
+        source: ArtifactSource,
+    },
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum InitializerReference {
+    Constant(ConstantId),
+    /// Read once from this slot after the activation graph has completed.
+    /// Targets must reject an initializer unavailable during activation.
+    Activation(CellSlotId),
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SlotDeclaration {
+    pub slot: CellSlotId,
+    pub schema: SchemaId,
+    pub role: SlotRole,
+    pub producer: ProducerReference,
+    pub initializer: Option<InitializerReference>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, serde::Serialize)]
+pub enum ArtifactSource {
+    Constant(ConstantId),
+    Slot(CellSlotId),
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum BindingDeclaration {
+    Input {
+        id: BindingId,
+        node: NodeId,
+        port_ordinal: u16,
+        source: ArtifactSource,
+    },
+    Output {
+        id: BindingId,
+        node: NodeId,
+        port_ordinal: u16,
+        target: CellSlotId,
+    },
+}
+
+impl BindingDeclaration {
+    pub const fn id(&self) -> BindingId {
+        match self {
+            Self::Input { id, .. } | Self::Output { id, .. } => *id,
+        }
+    }
+
+    pub const fn node(&self) -> NodeId {
+        match self {
+            Self::Input { node, .. } | Self::Output { node, .. } => *node,
+        }
+    }
+
+    pub const fn port_ordinal(&self) -> u16 {
+        match self {
+            Self::Input { port_ordinal, .. } | Self::Output { port_ordinal, .. } => *port_ordinal,
+        }
+    }
+}
+
+/// An executable node has exactly one semantic owner. Control nodes do not
+/// claim an ordinary operation contract.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ExecutableNodeBody {
+    Operation(OperationNodeBody),
+    Match(super::MatchDeclaration),
+    /// Trigger-owned lexical control. Its first input is the sole reactive
+    /// trigger; remaining inputs are sampled captures.
+    Activation(super::MatchDeclaration),
+    Comprehension(super::ComprehensionDeclaration),
+    Fsm(super::FsmDeclaration),
+    Iteration(super::IterationDeclaration),
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct OperationNodeBody {
+    pub operation: OperationReference,
+    pub contract: OperationContractId,
+    pub requirement: Option<ApplicationRequirementId>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NodeDeclaration {
+    pub node: NodeId,
+    pub body: ExecutableNodeBody,
+    pub input_bindings: Range<u32>,
+    pub output_bindings: Range<u32>,
+}
+
+/// Borrowed ordinary-operation view. Callers must explicitly handle control
+/// nodes before accessing an operation identity or contract.
+#[derive(Clone, Copy, Debug)]
+pub struct OperationNodeView<'a> {
+    declaration: &'a NodeDeclaration,
+    pub operation: &'a OperationReference,
+    pub contract: OperationContractId,
+    pub requirement: Option<ApplicationRequirementId>,
+}
+
+impl core::ops::Deref for OperationNodeView<'_> {
+    type Target = NodeDeclaration;
+    fn deref(&self) -> &Self::Target {
+        self.declaration
+    }
+}
+
+impl NodeDeclaration {
+    pub fn as_operation(&self) -> Option<OperationNodeView<'_>> {
+        match &self.body {
+            ExecutableNodeBody::Operation(operation) => Some(OperationNodeView {
+                declaration: self,
+                operation: &operation.operation,
+                contract: operation.contract,
+                requirement: operation.requirement,
+            }),
+            ExecutableNodeBody::Match(_)
+            | ExecutableNodeBody::Activation(_)
+            | ExecutableNodeBody::Comprehension(_)
+            | ExecutableNodeBody::Fsm(_)
+            | ExecutableNodeBody::Iteration(_) => None,
+        }
+    }
+}
+
+fn control_body_operation_references(
+    body: &super::ControlOperationBody,
+    references: &mut Vec<OperationReference>,
+) {
+    match body {
+        super::ControlOperationBody::Operation { operation, .. } => {
+            references.push(operation.clone());
+        }
+        super::ControlOperationBody::Match(control) => {
+            match_operation_references(control, references);
+        }
+        super::ControlOperationBody::Comprehension(control) => {
+            comprehension_operation_references(control, references);
+        }
+        super::ControlOperationBody::Iteration(control) => {
+            for operation in &control.body.operations {
+                control_body_operation_references(&operation.body, references);
+            }
+        }
+        super::ControlOperationBody::Recur(_)
+        | super::ControlOperationBody::Suspend
+        | super::ControlOperationBody::Assert
+        | super::ControlOperationBody::Publish => {}
+    }
+}
+
+fn match_operation_references(
+    control: &super::MatchDeclaration,
+    references: &mut Vec<OperationReference>,
+) {
+    for block in control
+        .arms
+        .iter()
+        .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+    {
+        for operation in &block.operations {
+            control_body_operation_references(&operation.body, references);
+        }
+    }
+}
+
+fn comprehension_operation_references(
+    control: &super::ComprehensionDeclaration,
+    references: &mut Vec<OperationReference>,
+) {
+    for operation in control.operations() {
+        control_body_operation_references(&operation.body, references);
+    }
+}
+
+fn node_operation_references(body: &ExecutableNodeBody, references: &mut Vec<OperationReference>) {
+    match body {
+        ExecutableNodeBody::Operation(operation) => references.push(operation.operation.clone()),
+        ExecutableNodeBody::Comprehension(control) => {
+            comprehension_operation_references(control, references);
+        }
+        ExecutableNodeBody::Match(control) | ExecutableNodeBody::Activation(control) => {
+            match_operation_references(control, references);
+        }
+        ExecutableNodeBody::Fsm(_) => {}
+        ExecutableNodeBody::Iteration(control) => {
+            for operation in &control.body.operations {
+                control_body_operation_references(&operation.body, references);
+            }
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct InputDeclaration {
+    pub input: InputId,
+    pub name: String,
+    pub slot: CellSlotId,
+    pub schema: SchemaId,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct OutputDeclaration {
+    pub output: OutputId,
+    pub name: String,
+    /// Explicit interactive identity and storage mapping. Ordinary artifact
+    /// interfaces leave this unset, even when their canonical name happens to
+    /// resemble the compiler's collision-safe transport encoding.
+    pub interactive_binding: Option<InteractiveSymbolBinding>,
+    pub source: CellSlotId,
+    pub schema: SchemaId,
+}
+
+/// First-class identity for a lexical symbol exported to an interactive host.
+///
+/// `lexical_name` is never constrained by artifact-interface syntax.
+/// `artifact_source` identifies the semantic producer, while `storage` is the
+/// live resident cell used to inspect it. Several lexical names may therefore
+/// share the same source and storage without sharing an interface name.
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
+pub struct InteractiveSymbolBinding {
+    pub lexical_name: String,
+    pub artifact_source: ArtifactSource,
+    pub storage: CellSlotId,
+    pub output: OutputId,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IntegrityConstraintDeclaration {
+    pub constraint: IntegrityConstraintId,
+    pub name: String,
+    pub operation: OperationReference,
+    pub contract: OperationContractId,
+    pub inputs: Box<[ArtifactSource]>,
+}
+
+/// A source-defined nominal type and its actual typed schema.
+///
+/// Paths are relative to the defining document. The table preserves source
+/// declarations even when no executable graph node refers to their schemas.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SourceNominalDeclaration {
+    pub document_id: u64,
+    pub relative_path: Box<[String]>,
+    pub schema: SchemaId,
+}
+
+#[derive(Clone, Debug)]
+pub struct ProgramArtifact {
+    revision: ProgramRevision,
+    schemas: SchemaTable,
+    constants: ConstantStore,
+    contracts: OperationContractTable,
+    requirements: super::ApplicationRequirementTable,
+    inputs: Box<[InputDeclaration]>,
+    slots: Box<[SlotDeclaration]>,
+    nodes: Box<[NodeDeclaration]>,
+    bindings: Box<[BindingDeclaration]>,
+    outputs: Box<[OutputDeclaration]>,
+    constraints: Box<[IntegrityConstraintDeclaration]>,
+    compute_regions: Box<[ComputeRegionDeclaration]>,
+    source_nominal_declarations: Box<[SourceNominalDeclaration]>,
+    // Current-process compiler planning evidence. This is intentionally not
+    // part of ProgramArtifactDraft, ProgramRevision, or bytecode-v1 encoding.
+    slot_shape_hints: BTreeMap<CellSlotId, ShapeInstance>,
+}
+
+impl ProgramArtifact {
+    pub const fn revision(&self) -> ProgramRevision {
+        self.revision
+    }
+
+    pub const fn schemas(&self) -> &SchemaTable {
+        &self.schemas
+    }
+
+    pub const fn constants(&self) -> &ConstantStore {
+        &self.constants
+    }
+
+    pub const fn contracts(&self) -> &OperationContractTable {
+        &self.contracts
+    }
+
+    pub const fn requirements(&self) -> &super::ApplicationRequirementTable {
+        &self.requirements
+    }
+
+    pub const fn inputs(&self) -> &[InputDeclaration] {
+        &self.inputs
+    }
+
+    pub const fn slots(&self) -> &[SlotDeclaration] {
+        &self.slots
+    }
+
+    pub const fn nodes(&self) -> &[NodeDeclaration] {
+        &self.nodes
+    }
+
+    pub const fn bindings(&self) -> &[BindingDeclaration] {
+        &self.bindings
+    }
+
+    pub const fn outputs(&self) -> &[OutputDeclaration] {
+        &self.outputs
+    }
+
+    pub fn interactive_symbol_bindings(&self) -> impl Iterator<Item = &InteractiveSymbolBinding> {
+        self.outputs
+            .iter()
+            .filter_map(|output| output.interactive_binding.as_ref())
+    }
+
+    pub const fn constraints(&self) -> &[IntegrityConstraintDeclaration] {
+        &self.constraints
+    }
+
+    /// Returns the complete canonical operation closure carried by ordinary,
+    /// nested-control, and integrity nodes in deterministic order.
+    pub fn operation_references(&self) -> Vec<OperationReference> {
+        let mut references = Vec::new();
+        for node in &self.nodes {
+            node_operation_references(&node.body, &mut references);
+        }
+        references.extend(
+            self.constraints
+                .iter()
+                .map(|constraint| constraint.operation.clone()),
+        );
+        references.sort();
+        references.dedup();
+        references
+    }
+
+    /// Returns operations bound through resident kernel factories, including
+    /// nested control bodies. External resource nodes use providers instead,
+    /// and integrity constraints are evaluated directly by the resident plan.
+    pub fn kernel_operation_references(&self) -> Vec<OperationReference> {
+        let mut references = Vec::new();
+        for node in &self.nodes {
+            if node
+                .as_operation()
+                .is_some_and(|operation| operation.requirement.is_some())
+            {
+                continue;
+            }
+            node_operation_references(&node.body, &mut references);
+        }
+        references.sort();
+        references.dedup();
+        references
+    }
+
+    pub const fn compute_regions(&self) -> &[ComputeRegionDeclaration] {
+        &self.compute_regions
+    }
+
+    pub const fn source_nominal_declarations(&self) -> &[SourceNominalDeclaration] {
+        &self.source_nominal_declarations
+    }
+
+    /// Attaches source declarations in canonical document/path order.
+    ///
+    /// Each entry must identify an existing enum schema. Duplicate defining
+    /// document/path pairs are rejected, including duplicates of one schema.
+    pub fn with_source_nominal_declarations(
+        mut self,
+        mut declarations: Box<[SourceNominalDeclaration]>,
+    ) -> Result<Self, ArtifactBuildError> {
+        declarations.sort_by(|left, right| {
+            (left.document_id, &left.relative_path).cmp(&(right.document_id, &right.relative_path))
+        });
+        validate_source_nominal_declarations(&self.schemas, &declarations)?;
+        self.revision = super::encoding::program_artifact_revision(&self, &declarations)?;
+        self.source_nominal_declarations = declarations;
+        Ok(self)
+    }
+
+    /// Returns the compiler-proven current shape for a parameterized slot.
+    ///
+    /// These hints are non-wire planning sidecars. Durable artifacts recover
+    /// state shapes from their initializers and receive live input shapes at
+    /// activation instead of serializing one compilation instance as schema.
+    pub fn slot_shape_hint(&self, slot: CellSlotId) -> Option<&ShapeInstance> {
+        self.slot_shape_hints.get(&slot)
+    }
+
+    #[cfg(any(feature = "semantic-compiler", feature = "source"))]
+    pub(crate) fn with_slot_shape_hints(
+        mut self,
+        hints: BTreeMap<CellSlotId, ShapeInstance>,
+    ) -> Result<Self, ArtifactBuildError> {
+        for (slot, shape) in &hints {
+            let declaration = self
+                .slots
+                .get(slot.get() as usize)
+                .filter(|declaration| declaration.slot == *slot)
+                .ok_or(ArtifactBuildError::UnknownSlot { slot: *slot })?;
+            let schema =
+                self.schemas
+                    .get(declaration.schema)
+                    .ok_or(ArtifactBuildError::UnknownSchema {
+                        schema: declaration.schema,
+                    })?;
+            schema.instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())?;
+        }
+        self.slot_shape_hints = hints;
+        Ok(self)
+    }
+
+    #[cfg(any(feature = "semantic-compiler", feature = "source"))]
+    pub(crate) fn with_compute_regions(
+        self,
+        compute_regions: Box<[ComputeRegionDeclaration]>,
+    ) -> Result<Self, ArtifactBuildError> {
+        let shape_hints = self.slot_shape_hints;
+        let source_nominal_declarations = self.source_nominal_declarations;
+        ProgramArtifactDraft {
+            schemas: self.schemas,
+            constants: self.constants,
+            contracts: self.contracts,
+            requirements: self.requirements,
+            inputs: self.inputs,
+            slots: self.slots,
+            nodes: self.nodes,
+            bindings: self.bindings,
+            outputs: self.outputs,
+            constraints: self.constraints,
+            compute_regions,
+        }
+        .finalize()?
+        .with_source_nominal_declarations(source_nominal_declarations)?
+        .with_slot_shape_hints(shape_hints)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct ProgramArtifactDraft {
+    pub schemas: SchemaTable,
+    pub constants: ConstantStore,
+    pub contracts: OperationContractTable,
+    pub requirements: super::ApplicationRequirementTable,
+    pub inputs: Box<[InputDeclaration]>,
+    pub slots: Box<[SlotDeclaration]>,
+    pub nodes: Box<[NodeDeclaration]>,
+    pub bindings: Box<[BindingDeclaration]>,
+    pub outputs: Box<[OutputDeclaration]>,
+    pub constraints: Box<[IntegrityConstraintDeclaration]>,
+    pub compute_regions: Box<[ComputeRegionDeclaration]>,
+}
+
+impl ProgramArtifactDraft {
+    pub fn finalize(self) -> Result<ProgramArtifact, ArtifactBuildError> {
+        super::validation::validate(&self)?;
+        let revision = super::encoding::program_revision(&self)?;
+        Ok(ProgramArtifact {
+            revision,
+            schemas: self.schemas,
+            constants: self.constants,
+            contracts: self.contracts,
+            requirements: self.requirements,
+            inputs: self.inputs,
+            slots: self.slots,
+            nodes: self.nodes,
+            bindings: self.bindings,
+            outputs: self.outputs,
+            constraints: self.constraints,
+            compute_regions: self.compute_regions,
+            source_nominal_declarations: Box::new([]),
+            slot_shape_hints: BTreeMap::new(),
+        })
+    }
+}
+
+pub(super) fn validate_source_nominal_declarations(
+    schemas: &SchemaTable,
+    declarations: &[SourceNominalDeclaration],
+) -> Result<(), ArtifactBuildError> {
+    let mut previous = None;
+    for declaration in declarations {
+        let key = (declaration.document_id, &declaration.relative_path);
+        if previous.is_some_and(|previous| previous >= key) {
+            return Err(ArtifactBuildError::NonCanonicalSourceNominalDeclarationTable);
+        }
+        previous = Some(key);
+        let invalid = |reason| ArtifactBuildError::InvalidSourceNominalDeclaration {
+            document_id: declaration.document_id,
+            relative_path: declaration.relative_path.clone(),
+            reason,
+        };
+        CanonicalNominalPath::new(declaration.relative_path.clone())?;
+        let schema = schemas
+            .get(declaration.schema)
+            .ok_or(ArtifactBuildError::UnknownSchema {
+                schema: declaration.schema,
+            })?;
+        if !matches!(schema.body(), SchemaBody::Enum { .. }) {
+            return Err(invalid("source nominal declaration schema is not an enum"));
+        }
+    }
+    Ok(())
+}
+
+impl ProgramArtifactDraft {
+    pub(super) fn attach_contracts(
+        mut self,
+        declarations: &[Option<&OperationContractDeclaration>],
+        graph: &super::SourceProgram,
+    ) -> Result<Self, ArtifactBuildError> {
+        if declarations.len() != self.nodes.len() {
+            return Err(ArtifactBuildError::CompiledMetadataLengthMismatch {
+                table: "node_contracts",
+                expected: self.nodes.len(),
+                actual: declarations.len(),
+            });
+        }
+        let mut builder = OperationContractTableBuilder::new();
+        let mut node_handles = Vec::with_capacity(self.nodes.len());
+        let mut control_handles = BTreeMap::new();
+        let mut comprehension_handles = BTreeMap::new();
+        let mut iteration_handles = BTreeMap::new();
+        for (node, declaration) in self.nodes.iter().zip(declarations) {
+            if let super::SourceNodeBody::Match(control) =
+                &graph.nodes[node.node.get() as usize].body
+            {
+                if declaration.is_some() {
+                    return Err(ArtifactBuildError::InvalidControl {
+                        node: node.node,
+                        reason: "control has no ordinary root contract",
+                    });
+                }
+                let mut handles = Vec::new();
+                append_match_contract_handles(
+                    control,
+                    &self.constants,
+                    &mut builder,
+                    node.node,
+                    &mut handles,
+                )?;
+                let mut handles = handles.into_iter();
+                let handles = control.map_contracts(|_, _, _| {
+                    Ok::<_, ArtifactBuildError>(handles.next().expect("control contract count"))
+                })?;
+                control_handles.insert(node.node, handles);
+                node_handles.push(None);
+                continue;
+            }
+            if let super::SourceNodeBody::Activation(control) =
+                &graph.nodes[node.node.get() as usize].body
+            {
+                let invalid = |reason| ArtifactBuildError::InvalidControl {
+                    node: node.node,
+                    reason,
+                };
+                if declaration.is_some() {
+                    return Err(invalid("activation has no ordinary root contract"));
+                }
+                if !matches!(&node.body, ExecutableNodeBody::Activation(_)) {
+                    return Err(invalid("compiler activation body mismatch"));
+                }
+                let mut handles = Vec::new();
+                append_match_contract_handles(
+                    control,
+                    &self.constants,
+                    &mut builder,
+                    node.node,
+                    &mut handles,
+                )?;
+                let mut handles = handles.into_iter();
+                control_handles.insert(
+                    node.node,
+                    control.map_contracts(|_, _, _| {
+                        Ok::<_, ArtifactBuildError>(
+                            handles.next().expect("activation contract count"),
+                        )
+                    })?,
+                );
+                node_handles.push(None);
+                continue;
+            }
+            if let super::SourceNodeBody::Comprehension(control) =
+                &graph.nodes[node.node.get() as usize].body
+            {
+                let invalid = |reason| ArtifactBuildError::InvalidControl {
+                    node: node.node,
+                    reason,
+                };
+                if declaration.is_some() {
+                    return Err(invalid("control has no ordinary root contract"));
+                }
+                let inputs = binding_range(&self, &node.input_bindings, node.node)?
+                    .iter()
+                    .map(|binding| match binding {
+                        BindingDeclaration::Input { source, .. } => source_schema(&self, *source),
+                        _ => Err(invalid("invalid collection input binding")),
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                let mut handles = Vec::new();
+                append_comprehension_contract_handles(
+                    control,
+                    &inputs,
+                    &self.constants,
+                    &mut builder,
+                    node.node,
+                    &mut handles,
+                )?;
+                let mut handles = handles.into_iter();
+                comprehension_handles.insert(
+                    node.node,
+                    control.map_contracts(|_, _| {
+                        Ok::<_, ArtifactBuildError>(
+                            handles.next().expect("collection contract count"),
+                        )
+                    })?,
+                );
+                node_handles.push(None);
+                continue;
+            }
+            if let super::SourceNodeBody::Iteration(control) =
+                &graph.nodes[node.node.get() as usize].body
+            {
+                if declaration.is_some() {
+                    return Err(ArtifactBuildError::InvalidControl {
+                        node: node.node,
+                        reason: "iteration has no ordinary root contract",
+                    });
+                }
+                let mut handles = Vec::new();
+                append_iteration_contract_handles(
+                    control,
+                    &self.constants,
+                    &mut builder,
+                    node.node,
+                    &mut handles,
+                )?;
+                let mut handles = handles.into_iter();
+                iteration_handles.insert(
+                    node.node,
+                    control.map_contracts(|_, _, _| {
+                        Ok::<_, ArtifactBuildError>(
+                            handles.next().expect("iteration contract count"),
+                        )
+                    })?,
+                );
+                node_handles.push(None);
+                continue;
+            }
+            if let super::SourceNodeBody::Fsm(control) = &graph.nodes[node.node.get() as usize].body
+            {
+                if declaration.is_some() {
+                    return Err(ArtifactBuildError::InvalidControl {
+                        node: node.node,
+                        reason: "FSM control has no ordinary root contract",
+                    });
+                }
+                if !matches!(&node.body, ExecutableNodeBody::Fsm(actual) if actual == control) {
+                    return Err(ArtifactBuildError::InvalidControl {
+                        node: node.node,
+                        reason: "compiler FSM body mismatch",
+                    });
+                }
+                node_handles.push(None);
+                continue;
+            }
+            let declaration =
+                declaration.ok_or_else(|| ArtifactBuildError::MissingOperationContract {
+                    node: node.node,
+                    operation: node
+                        .as_operation()
+                        .expect("compiler operation body")
+                        .operation
+                        .clone(),
+                })?;
+            let inputs = binding_range(&self, &node.input_bindings, node.node)?
+                .iter()
+                .map(|binding| match binding {
+                    BindingDeclaration::Input { source, .. } => source_schema(&self, *source),
+                    BindingDeclaration::Output { id, .. } => {
+                        Err(ArtifactBuildError::BindingDirectionMismatch { binding: *id })
+                    }
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let outputs = binding_range(&self, &node.output_bindings, node.node)?
+                .iter()
+                .map(|binding| match binding {
+                    BindingDeclaration::Output { target, .. } => self
+                        .slots
+                        .get(target.get() as usize)
+                        .filter(|slot| slot.slot == *target)
+                        .map(|slot| slot.schema)
+                        .ok_or(ArtifactBuildError::UnknownSlot { slot: *target }),
+                    BindingDeclaration::Input { id, .. } => {
+                        Err(ArtifactBuildError::BindingDirectionMismatch { binding: *id })
+                    }
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            node_handles.push(Some(builder.insert(resolve_declared_contract(
+                declaration,
+                inputs,
+                outputs,
+            )?)?));
+        }
+
+        let mut constraint_handles = Vec::with_capacity(self.constraints.len());
+        for constraint in &self.constraints {
+            let inputs = constraint
+                .inputs
+                .iter()
+                .map(|source| {
+                    Ok(ResolvedInputPort {
+                        schema: source_schema(&self, *source)?,
+                        access: AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    })
+                })
+                .collect::<Result<Vec<_>, ArtifactBuildError>>()?;
+            constraint_handles.push(builder.insert(ResolvedOperationContract::Declared(
+                DeclaredOperationContract {
+                    inputs: inputs.into_boxed_slice(),
+                    outputs: Box::new([]),
+                    interaction: ExternalInteraction::Pure,
+                },
+            ))?);
+        }
+
+        let build = builder.finish()?;
+        for (node, handle) in self.nodes.iter_mut().zip(node_handles) {
+            match (&mut node.body, handle) {
+                (ExecutableNodeBody::Operation(operation), Some(handle)) => {
+                    operation.contract = build.resolve(handle)?
+                }
+                (ExecutableNodeBody::Match(control), None) => {
+                    *control = control_handles
+                        .remove(&node.node)
+                        .expect("compiler control handles")
+                        .map_contracts(|_, _, contract| {
+                            Ok::<_, ArtifactBuildError>(build.resolve(*contract)?)
+                        })?;
+                }
+                (ExecutableNodeBody::Activation(control), None) => {
+                    *control = control_handles
+                        .remove(&node.node)
+                        .expect("compiler activation handles")
+                        .map_contracts(|_, _, contract| {
+                            Ok::<_, ArtifactBuildError>(build.resolve(*contract)?)
+                        })?;
+                }
+                (ExecutableNodeBody::Comprehension(control), None) => {
+                    *control = comprehension_handles
+                        .remove(&node.node)
+                        .expect("compiler collection handles")
+                        .map_contracts(|_, contract| {
+                            Ok::<_, ArtifactBuildError>(build.resolve(*contract)?)
+                        })?;
+                }
+                (ExecutableNodeBody::Iteration(control), None) => {
+                    *control = iteration_handles
+                        .remove(&node.node)
+                        .expect("compiler iteration handles")
+                        .map_contracts(|_, _, contract| {
+                            Ok::<_, ArtifactBuildError>(build.resolve(*contract)?)
+                        })?;
+                }
+                (ExecutableNodeBody::Fsm(_), None) => {}
+                _ => {
+                    return Err(ArtifactBuildError::InvalidControl {
+                        node: node.node,
+                        reason: "compiler node body mismatch",
+                    });
+                }
+            }
+        }
+        for (constraint, handle) in self.constraints.iter_mut().zip(constraint_handles) {
+            constraint.contract = build.resolve(handle)?;
+        }
+        self.contracts = build.table;
+        Ok(self)
+    }
+}
+
+fn resolve_declared_contract(
+    declaration: &OperationContractDeclaration,
+    inputs: Vec<SchemaId>,
+    outputs: Vec<SchemaId>,
+) -> Result<ResolvedOperationContract, ArtifactBuildError> {
+    validate_declaration(declaration)?;
+    let policies = declaration.inputs.resolve(inputs.len())?;
+    if declaration.outputs.len() != outputs.len() {
+        return Err(OperationContractError::PortCountMismatch {
+            direction: PortDirection::Output,
+            expected: declaration.outputs.len() as u64,
+            actual: outputs.len() as u64,
+        }
+        .into());
+    }
+    let contract = ResolvedOperationContract::Declared(DeclaredOperationContract {
+        inputs: inputs
+            .into_iter()
+            .zip(policies)
+            .map(|(schema, policy)| ResolvedInputPort {
+                schema,
+                access: policy.access,
+                delivery: policy.delivery,
+            })
+            .collect::<Vec<_>>()
+            .into_boxed_slice(),
+        outputs: outputs
+            .into_iter()
+            .zip(declaration.outputs.iter())
+            .map(|(schema, policy)| ResolvedOutputPort {
+                schema,
+                access: policy.access,
+                delivery: policy.delivery,
+                construction: policy.construction.clone(),
+                alias: policy.alias,
+                change_detection: policy.change_detection,
+            })
+            .collect::<Vec<_>>()
+            .into_boxed_slice(),
+        interaction: declaration.interaction.clone(),
+    });
+    Ok(contract)
+}
+
+fn binding_range<'a>(
+    draft: &'a ProgramArtifactDraft,
+    range: &Range<u32>,
+    node: NodeId,
+) -> Result<&'a [BindingDeclaration], ArtifactBuildError> {
+    draft
+        .bindings
+        .get(range.start as usize..range.end as usize)
+        .ok_or(ArtifactBuildError::BindingRangeMismatch { node })
+}
+
+fn source_schema(
+    draft: &ProgramArtifactDraft,
+    source: ArtifactSource,
+) -> Result<SchemaId, ArtifactBuildError> {
+    match source {
+        ArtifactSource::Constant(constant) => draft
+            .constants
+            .get(constant)
+            .map(|value| value.schema())
+            .ok_or(ArtifactBuildError::UnknownConstant { constant }),
+        ArtifactSource::Slot(slot) => draft
+            .slots
+            .get(slot.get() as usize)
+            .filter(|declaration| declaration.slot == slot)
+            .map(|declaration| declaration.schema)
+            .ok_or(ArtifactBuildError::UnknownSlot { slot }),
+    }
+}
+
+#[derive(Debug)]
+pub enum ArtifactBuildError {
+    InvalidSourceNominalDeclaration {
+        document_id: u64,
+        relative_path: Box<[String]>,
+        reason: &'static str,
+    },
+    NonCanonicalSourceNominalDeclarationTable,
+    InvalidControl {
+        node: NodeId,
+        reason: &'static str,
+    },
+    ControlAdmissionLimit {
+        node: NodeId,
+        resource: &'static str,
+        required: usize,
+        limit: usize,
+    },
+    ControlAdmissionOverflow {
+        node: NodeId,
+        resource: &'static str,
+    },
+    CompiledMetadataLengthMismatch {
+        table: &'static str,
+        expected: usize,
+        actual: usize,
+    },
+    CompiledTypeBindingMismatch {
+        instruction: u32,
+        reason: String,
+    },
+    CompiledRegisterDescriptorMismatch {
+        register: u32,
+        reason: String,
+    },
+    MissingOperationContract {
+        node: NodeId,
+        operation: OperationReference,
+    },
+    MatrixLiteralMetadataMismatch {
+        output: u32,
+        reason: &'static str,
+    },
+    UnresolvedEmptyRegister {
+        register: u32,
+    },
+    InvalidDeclarationMarker {
+        instruction: u32,
+    },
+    MissingInstructionRole {
+        instruction: u32,
+    },
+    UnexpectedInstructionRole {
+        instruction: u32,
+        role: &'static str,
+    },
+    MissingRegisterKind {
+        instruction: u32,
+        register: u32,
+    },
+    MissingRegisterSource {
+        instruction: u32,
+        register: u32,
+        role: &'static str,
+    },
+    UnknownRuntimeFunction {
+        function: u64,
+    },
+    MissingSemanticOperation {
+        instruction: u32,
+        implementation: String,
+    },
+    UnknownApplicationRequirement {
+        requirement: u32,
+    },
+    ApplicationRequirementKindMismatch {
+        requirement: u32,
+        expected: &'static str,
+    },
+    NonCanonicalApplicationRequirementTable,
+    MissingApplicationRequirement {
+        node: NodeId,
+    },
+    UnexpectedApplicationRequirement {
+        node: NodeId,
+    },
+    ApplicationRequirementInteractionMismatch {
+        node: NodeId,
+    },
+    InvalidCompiledOperationName {
+        namespace: &'static str,
+        name: String,
+    },
+    MissingInputInterfaceName {
+        register: u32,
+    },
+    AmbiguousRegisterRole {
+        register: u32,
+    },
+    MissingRegisterCollectionCardinality {
+        register: u32,
+    },
+    CompiledReturnCount {
+        found: usize,
+    },
+    NonTerminalCompiledReturn {
+        instruction: u32,
+    },
+    CompiledReturnRegisterMismatch {
+        instruction: u32,
+        expected: u32,
+        found: u32,
+    },
+    DeclaredSourceNodeLoweringUnsupported {
+        source_node: u32,
+    },
+    IntegrityConstraintMetadataMismatch {
+        constraint: u32,
+        marker_register: Option<u32>,
+        declared_register: Option<u32>,
+    },
+    IntegrityConstraintSchemaMismatch {
+        constraint: u32,
+        schema: SchemaId,
+    },
+    InvalidOperationReference {
+        operation: OperationReference,
+    },
+    NonCanonicalIdentity {
+        identity: &'static str,
+        expected: u32,
+        found: u32,
+    },
+    DuplicateInterfaceName {
+        interface: &'static str,
+        name: String,
+    },
+    InvalidInterfaceName {
+        interface: &'static str,
+        name: String,
+    },
+    InvalidInteractiveBinding {
+        name: String,
+    },
+    InvalidComputeRegionName {
+        region: ComputeRegionId,
+    },
+    DuplicateComputeRegionName {
+        name: Box<str>,
+    },
+    EmptyComputeRegion {
+        region: ComputeRegionId,
+    },
+    NonCanonicalComputeRegionNodes {
+        region: ComputeRegionId,
+    },
+    DuplicateComputeRegionNode {
+        node: NodeId,
+    },
+    UnknownSchema {
+        schema: SchemaId,
+    },
+    UnknownOperationContract {
+        contract: OperationContractId,
+    },
+    ContractInputSchemaMismatch {
+        contract: OperationContractId,
+        port: u16,
+        expected: SchemaId,
+        actual: SchemaId,
+    },
+    ContractOutputSchemaMismatch {
+        contract: OperationContractId,
+        port: u16,
+        expected: SchemaId,
+        actual: SchemaId,
+    },
+    IntegrityConstraintContractInvalid {
+        constraint: IntegrityConstraintId,
+    },
+    UnknownConstant {
+        constant: ConstantId,
+    },
+    InitializerSchemaMismatch {
+        slot: CellSlotId,
+        constant: ConstantId,
+    },
+    UnknownInput {
+        input: InputId,
+    },
+    UnknownNode {
+        node: NodeId,
+    },
+    UnknownSlot {
+        slot: CellSlotId,
+    },
+    InvalidSlotRole {
+        slot: CellSlotId,
+    },
+    DuplicateProducer {
+        producer: ProducerReference,
+    },
+    ProducerBindingMismatch {
+        slot: CellSlotId,
+    },
+    InvalidStateWriterChain {
+        slot: CellSlotId,
+        reason: &'static str,
+    },
+    MissingProducerBinding {
+        slot: CellSlotId,
+        producer: ProducerReference,
+    },
+    BindingRangeMismatch {
+        node: NodeId,
+    },
+    BindingDirectionMismatch {
+        binding: BindingId,
+    },
+    BindingNodeMismatch {
+        binding: BindingId,
+    },
+    BindingPortMismatch {
+        binding: BindingId,
+        expected: u16,
+        found: u16,
+    },
+    InterfaceSlotMismatch {
+        interface: &'static str,
+        slot: CellSlotId,
+    },
+    ArtifactIdentityExhausted {
+        identity: &'static str,
+    },
+    SourceGraphReferenceOutOfRange {
+        reference: &'static str,
+        index: u32,
+    },
+    CombinationalCycle,
+    Snapshot(SnapshotValueError),
+    Semantic(SemanticModelError),
+    CoreBytecode(MechError),
+    OperationContract(OperationContractError),
+    CompilerIr(CompilerIrError),
+}
+
+impl From<SnapshotValueError> for ArtifactBuildError {
+    fn from(error: SnapshotValueError) -> Self {
+        Self::Snapshot(error)
+    }
+}
+
+impl From<SemanticModelError> for ArtifactBuildError {
+    fn from(error: SemanticModelError) -> Self {
+        Self::Semantic(error)
+    }
+}
+
+impl From<OperationContractError> for ArtifactBuildError {
+    fn from(error: OperationContractError) -> Self {
+        Self::OperationContract(error)
+    }
+}
+
+impl From<MechError> for ArtifactBuildError {
+    fn from(error: MechError) -> Self {
+        Self::CoreBytecode(error)
+    }
+}
+
+impl From<CompilerIrError> for ArtifactBuildError {
+    fn from(error: CompilerIrError) -> Self {
+        Self::CompilerIr(error)
+    }
+}

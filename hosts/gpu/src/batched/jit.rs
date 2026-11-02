@@ -1,0 +1,886 @@
+use std::collections::BTreeMap;
+use std::{mem, sync::Arc};
+
+use cranelift_codegen::ir::{
+    AbiParam, InstBuilder, MemFlags, UserFuncName, Value,
+    condcodes::{FloatCC, IntCC},
+    types,
+};
+use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
+use cranelift_jit::{JITBuilder, JITModule};
+use cranelift_module::{FuncId, Linkage, Module, default_libcall_names};
+use mech_core::CellSlotId;
+
+use super::{
+    BatchedExecutionError, BatchedFaultRecorder, BatchedIntegrityFault, BinaryOperation,
+    ComparisonOperation, ElementwiseOperation, FixedShapeKernel, LogicOperation, ScalarComputation,
+    ScalarOperand, ScalarPredicate, UnaryOperation,
+};
+
+pub(super) type NativeTurn = unsafe extern "C" fn(
+    input_pointers: *const *const f32,
+    state_pointers: *const *const f32,
+    next_state_pointers: *const *mut f32,
+    instances: usize,
+) -> u64;
+
+struct NativeKernel {
+    _module: JITModule,
+    turn: NativeTurn,
+}
+
+pub struct BatchedJitCpuSession {
+    program: Arc<FixedShapeKernel>,
+    kernel: NativeKernel,
+    inputs: BTreeMap<CellSlotId, Vec<f32>>,
+    state: BTreeMap<CellSlotId, Vec<f32>>,
+    next_state: BTreeMap<CellSlotId, Vec<f32>>,
+    input_pointers: Vec<*const f32>,
+    state_pointers: Vec<*const f32>,
+    next_state_pointers: Vec<*mut f32>,
+    faults: BatchedFaultRecorder,
+}
+
+impl FixedShapeKernel {
+    pub fn prepare_jit_cpu(
+        &self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<BatchedJitCpuSession, BatchedExecutionError> {
+        let inputs = self.expand_inputs(inputs)?;
+        let state = self.initial_state();
+        let next_state = state
+            .iter()
+            .map(|(slot, values)| (*slot, vec![0.0; values.len()]))
+            .collect();
+        let kernel = NativeKernel::compile(self)?;
+        let input_pointers = self
+            .inputs
+            .iter()
+            .map(|input| inputs[&input.slot].as_ptr())
+            .collect();
+        let mut session = BatchedJitCpuSession {
+            program: Arc::new(self.clone()),
+            kernel,
+            inputs,
+            state,
+            next_state,
+            input_pointers,
+            state_pointers: Vec::with_capacity(self.states.len()),
+            next_state_pointers: Vec::with_capacity(self.states.len()),
+            faults: BatchedFaultRecorder::default(),
+        };
+        session.refresh_state_pointers();
+        Ok(session)
+    }
+}
+
+impl BatchedJitCpuSession {
+    /// Validates every update before replacing any backing buffer.
+    pub fn update_inputs(
+        &mut self,
+        updates: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<(), BatchedExecutionError> {
+        let staged = stage_input_updates(&self.program, updates)?;
+        for (slot, values) in staged {
+            self.inputs.insert(slot, values);
+        }
+        self.input_pointers = self
+            .program
+            .inputs
+            .iter()
+            .map(|input| self.inputs[&input.slot].as_ptr())
+            .collect();
+        Ok(())
+    }
+
+    pub fn dispatch_turns(&mut self, turns: u32) -> Result<(), BatchedExecutionError> {
+        if turns == 0 {
+            return Err(BatchedExecutionError::ZeroTurns);
+        }
+        for _ in 0..turns {
+            let attempted_turn = self.faults.next_turn();
+            self.refresh_state_pointers();
+            // SAFETY: The generated function uses the exact ABI below. All pointer
+            // tables and their backing f32 buffers remain live for the call, and
+            // every generated access is bounded by the admitted fixed shapes and
+            // the program's instance count.
+            let packed_fault = unsafe {
+                (self.kernel.turn)(
+                    self.input_pointers.as_ptr(),
+                    self.state_pointers.as_ptr(),
+                    self.next_state_pointers.as_ptr(),
+                    self.program.instances as usize,
+                )
+            };
+            if let Some(fault) = self
+                .program
+                .failed_packed_constraint(packed_fault, attempted_turn)
+            {
+                return Err(self.faults.record(fault));
+            }
+            mem::swap(&mut self.state, &mut self.next_state);
+        }
+        Ok(())
+    }
+
+    pub fn state(&self) -> &BTreeMap<CellSlotId, Vec<f32>> {
+        &self.state
+    }
+
+    pub fn input_values(&self) -> &BTreeMap<CellSlotId, Vec<f32>> {
+        &self.inputs
+    }
+
+    pub const fn fault_count(&self) -> u64 {
+        self.faults.fault_count
+    }
+
+    pub const fn attempted_turns(&self) -> u64 {
+        self.faults.attempted_turns()
+    }
+
+    pub fn last_fault(&self) -> Option<&BatchedIntegrityFault> {
+        self.faults.last_fault.as_ref()
+    }
+
+    fn refresh_state_pointers(&mut self) {
+        self.state_pointers.clear();
+        self.next_state_pointers.clear();
+        for state in &self.program.states {
+            self.state_pointers.push(self.state[&state.slot].as_ptr());
+            self.next_state_pointers
+                .push(self.next_state.get_mut(&state.slot).unwrap().as_mut_ptr());
+        }
+    }
+}
+
+/// Both native sessions retain raw pointers into these buffers. A failed
+/// update must leave the buffers and pointer table together at the old state.
+pub(super) fn stage_input_updates(
+    program: &FixedShapeKernel,
+    updates: &BTreeMap<String, Vec<f32>>,
+) -> Result<Vec<(CellSlotId, Vec<f32>)>, BatchedExecutionError> {
+    updates
+        .iter()
+        .map(|(name, values)| {
+            let input = program
+                .inputs
+                .iter()
+                .find(|input| input.name == *name)
+                .ok_or_else(|| BatchedExecutionError::MissingInput(name.clone()))?;
+            Ok((input.slot, program.expand_input(input, values)?))
+        })
+        .collect()
+}
+
+impl NativeKernel {
+    fn compile(program: &FixedShapeKernel) -> Result<Self, BatchedExecutionError> {
+        let mut jit_builder =
+            JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
+                .map_err(cranelift_error)?;
+        jit_builder
+            .symbol("mech_jit_sinf", mech_jit_sinf as *const u8)
+            .symbol("mech_jit_cosf", mech_jit_cosf as *const u8)
+            .symbol("mech_jit_sqrtf", mech_jit_sqrtf as *const u8)
+            .symbol("mech_jit_ceilf", mech_jit_ceilf as *const u8)
+            .symbol("mech_jit_fmodf", mech_jit_fmodf as *const u8)
+            .symbol("mech_jit_atan2f", mech_jit_atan2f as *const u8);
+        let mut module = JITModule::new(jit_builder);
+        let function_id = define_native_turn(
+            &mut module,
+            program,
+            Linkage::Local,
+            NativeMathSymbols {
+                sin: "mech_jit_sinf",
+                cos: "mech_jit_cosf",
+                sqrt: "mech_jit_sqrtf",
+                ceil: "mech_jit_ceilf",
+                fmod: "mech_jit_fmodf",
+                atan2: "mech_jit_atan2f",
+            },
+        )?;
+        module.finalize_definitions().map_err(cranelift_error)?;
+        let code = module.get_finalized_function(function_id);
+        // SAFETY: `code` is the finalized entry point for the four-argument
+        // signature constructed below. The module remains owned by the kernel.
+        let turn = unsafe { mem::transmute::<*const u8, NativeTurn>(code) };
+        Ok(Self {
+            _module: module,
+            turn,
+        })
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(super) struct NativeMathSymbols<'a> {
+    pub sin: &'a str,
+    pub cos: &'a str,
+    pub sqrt: &'a str,
+    pub ceil: &'a str,
+    pub fmod: &'a str,
+    pub atan2: &'a str,
+}
+
+pub(super) fn define_native_turn<M: Module>(
+    module: &mut M,
+    program: &FixedShapeKernel,
+    linkage: Linkage,
+    symbols: NativeMathSymbols<'_>,
+) -> Result<FuncId, BatchedExecutionError> {
+    let unary_signature = {
+        let mut signature = module.make_signature();
+        signature.params.push(AbiParam::new(types::F32));
+        signature.returns.push(AbiParam::new(types::F32));
+        signature
+    };
+    let binary_signature = {
+        let mut signature = module.make_signature();
+        signature.params.push(AbiParam::new(types::F32));
+        signature.params.push(AbiParam::new(types::F32));
+        signature.returns.push(AbiParam::new(types::F32));
+        signature
+    };
+    let sin_id = module
+        .declare_function(symbols.sin, Linkage::Import, &unary_signature)
+        .map_err(cranelift_error)?;
+    let cos_id = module
+        .declare_function(symbols.cos, Linkage::Import, &unary_signature)
+        .map_err(cranelift_error)?;
+    let sqrt_id = module
+        .declare_function(symbols.sqrt, Linkage::Import, &unary_signature)
+        .map_err(cranelift_error)?;
+    let ceil_id = module
+        .declare_function(symbols.ceil, Linkage::Import, &unary_signature)
+        .map_err(cranelift_error)?;
+    let fmod_id = module
+        .declare_function(symbols.fmod, Linkage::Import, &binary_signature)
+        .map_err(cranelift_error)?;
+    let atan2_id = module
+        .declare_function(symbols.atan2, Linkage::Import, &binary_signature)
+        .map_err(cranelift_error)?;
+
+    let pointer_type = module.target_config().pointer_type();
+    let mut signature = module.make_signature();
+    for _ in 0..4 {
+        signature.params.push(AbiParam::new(pointer_type));
+    }
+    signature.returns.push(AbiParam::new(types::I64));
+    let function_id = module
+        .declare_function("mech_fixed_numeric_turn", linkage, &signature)
+        .map_err(cranelift_error)?;
+    let mut context = module.make_context();
+    context.func.signature = signature;
+    context.func.name = UserFuncName::user(0, function_id.as_u32());
+    let mut function_context = FunctionBuilderContext::new();
+
+    {
+        let mut builder = FunctionBuilder::new(&mut context.func, &mut function_context);
+        let entry = builder.create_block();
+        let header = builder.create_block();
+        let body = builder.create_block();
+        let advance = builder.create_block();
+        let fault = builder.create_block();
+        let exit = builder.create_block();
+        builder.append_block_params_for_function_params(entry);
+        builder.append_block_param(header, pointer_type);
+        builder.append_block_param(fault, pointer_type);
+        builder.append_block_param(fault, types::I32);
+        builder.switch_to_block(entry);
+
+        let parameters = builder.block_params(entry).to_vec();
+        let input_table = parameters[0];
+        let state_table = parameters[1];
+        let next_state_table = parameters[2];
+        let instances = parameters[3];
+        let pointer_bytes = i32::try_from(pointer_type.bytes()).unwrap();
+        let flags = MemFlags::trusted();
+        let input_bases = (0..program.inputs.len())
+            .map(|index| {
+                builder.ins().load(
+                    pointer_type,
+                    flags,
+                    input_table,
+                    i32::try_from(index).unwrap() * pointer_bytes,
+                )
+            })
+            .collect::<Vec<_>>();
+        let state_bases = (0..program.states.len())
+            .map(|index| {
+                builder.ins().load(
+                    pointer_type,
+                    flags,
+                    state_table,
+                    i32::try_from(index).unwrap() * pointer_bytes,
+                )
+            })
+            .collect::<Vec<_>>();
+        let next_state_bases = (0..program.states.len())
+            .map(|index| {
+                builder.ins().load(
+                    pointer_type,
+                    flags,
+                    next_state_table,
+                    i32::try_from(index).unwrap() * pointer_bytes,
+                )
+            })
+            .collect::<Vec<_>>();
+        let zero = builder.ins().iconst(pointer_type, 0);
+        builder.ins().jump(header, &[zero.into()]);
+
+        builder.switch_to_block(header);
+        let instance = builder.block_params(header)[0];
+        let has_instance = builder
+            .ins()
+            .icmp(IntCC::UnsignedLessThan, instance, instances);
+        builder.ins().brif(has_instance, body, &[], exit, &[]);
+
+        builder.switch_to_block(body);
+        let sin_ref = module.declare_func_in_func(sin_id, builder.func);
+        let cos_ref = module.declare_func_in_func(cos_id, builder.func);
+        let sqrt_ref = module.declare_func_in_func(sqrt_id, builder.func);
+        let ceil_ref = module.declare_func_in_func(ceil_id, builder.func);
+        let atan2_ref = module.declare_func_in_func(atan2_id, builder.func);
+        let functions = MathFunctions {
+            sin: sin_ref,
+            cos: cos_ref,
+            sqrt: sqrt_ref,
+            ceil: ceil_ref,
+            atan2: atan2_ref,
+            fmod: module.declare_func_in_func(fmod_id, builder.func),
+        };
+        let mut registers = vec![None; program.fixed_ir().register_count];
+        for (index, input) in program.inputs.iter().enumerate() {
+            let offset = program.register_offsets[&input.slot];
+            for component in 0..input.shape.elements() {
+                registers[offset + component] = Some(NativeRegister::F32(load_component(
+                    &mut builder,
+                    input_bases[index],
+                    instance,
+                    input.shape.elements(),
+                    component,
+                    pointer_type,
+                )));
+            }
+        }
+        for (index, state) in program
+            .states
+            .iter()
+            .enumerate()
+            .filter(|(_, state)| state.recurrence)
+        {
+            let offset = program.register_offsets[&state.slot];
+            for component in 0..state.shape.elements() {
+                registers[offset + component] = Some(NativeRegister::F32(load_component(
+                    &mut builder,
+                    state_bases[index],
+                    instance,
+                    state.shape.elements(),
+                    component,
+                    pointer_type,
+                )));
+            }
+        }
+        for instruction in &program.fixed_ir().instructions {
+            let value = lower_computation(
+                &mut builder,
+                &instruction.computation,
+                &registers,
+                functions,
+            )?;
+            registers[instruction.output] = Some(value);
+        }
+        let mut constraint_code = builder.ins().iconst(types::I32, 0);
+        for (index, constraint) in program.constraints.iter().enumerate() {
+            let condition = lower_predicate(&mut builder, &constraint.predicate, &registers)?;
+            let code_is_empty = builder.ins().icmp_imm(IntCC::Equal, constraint_code, 0);
+            let failed = builder.ins().bnot(condition);
+            let record = builder.ins().band(code_is_empty, failed);
+            let code = builder.ins().iconst(types::I32, (index + 1) as i64);
+            constraint_code = builder.ins().select(record, code, constraint_code);
+        }
+        for (index, state) in program.states.iter().enumerate() {
+            for (component, source) in state.update.iter().enumerate() {
+                let value = lower_numeric_operand(&mut builder, *source, &registers)?;
+                store_component(
+                    &mut builder,
+                    next_state_bases[index],
+                    instance,
+                    state.shape.elements(),
+                    component,
+                    pointer_type,
+                    value,
+                );
+            }
+        }
+
+        let has_fault = builder.ins().icmp_imm(IntCC::NotEqual, constraint_code, 0);
+        builder.ins().brif(
+            has_fault,
+            fault,
+            &[instance.into(), constraint_code.into()],
+            advance,
+            &[],
+        );
+
+        builder.switch_to_block(advance);
+        let next_instance = builder.ins().iadd_imm(instance, 1);
+        builder.ins().jump(header, &[next_instance.into()]);
+
+        builder.switch_to_block(fault);
+        let fault_instance = builder.block_params(fault)[0];
+        let fault_code = builder.block_params(fault)[1];
+        let fault_instance = if pointer_type == types::I64 {
+            fault_instance
+        } else {
+            builder.ins().uextend(types::I64, fault_instance)
+        };
+        let fault_code = builder.ins().uextend(types::I64, fault_code);
+        let packed = builder.ins().ishl_imm(fault_instance, 8);
+        let packed = builder.ins().bor(packed, fault_code);
+        builder.ins().return_(&[packed]);
+
+        builder.switch_to_block(exit);
+        let success = builder.ins().iconst(types::I64, 0);
+        builder.ins().return_(&[success]);
+        builder.seal_all_blocks();
+        builder.finalize();
+    }
+
+    module
+        .define_function(function_id, &mut context)
+        .map_err(cranelift_error)?;
+    module.clear_context(&mut context);
+    Ok(function_id)
+}
+
+#[derive(Clone, Copy)]
+struct MathFunctions {
+    sin: cranelift_codegen::ir::FuncRef,
+    cos: cranelift_codegen::ir::FuncRef,
+    sqrt: cranelift_codegen::ir::FuncRef,
+    ceil: cranelift_codegen::ir::FuncRef,
+    atan2: cranelift_codegen::ir::FuncRef,
+    fmod: cranelift_codegen::ir::FuncRef,
+}
+
+#[derive(Clone, Copy)]
+enum NativeRegister {
+    F32(Value),
+    Bool(Value),
+}
+
+fn lower_computation(
+    builder: &mut FunctionBuilder<'_>,
+    computation: &ScalarComputation,
+    registers: &[Option<NativeRegister>],
+    functions: MathFunctions,
+) -> Result<NativeRegister, BatchedExecutionError> {
+    Ok(match computation {
+        ScalarComputation::Copy(input) => lower_operand(builder, *input, registers)?,
+        ScalarComputation::Negate(input) => {
+            let value = lower_numeric_operand(builder, *input, registers)?;
+            NativeRegister::F32(builder.ins().fneg(value))
+        }
+        ScalarComputation::Absolute(input) => {
+            let value = lower_numeric_operand(builder, *input, registers)?;
+            NativeRegister::F32(builder.ins().fabs(value))
+        }
+        ScalarComputation::IsFinite(input) => {
+            let value = lower_numeric_operand(builder, *input, registers)?;
+            NativeRegister::Bool(lower_is_finite(builder, value))
+        }
+        ScalarComputation::Compare {
+            operation,
+            left,
+            right,
+        } => {
+            let left = lower_numeric_operand(builder, *left, registers)?;
+            let right = lower_numeric_operand(builder, *right, registers)?;
+            let condition = builder.ins().fcmp(
+                match operation {
+                    ComparisonOperation::Equal => FloatCC::Equal,
+                    ComparisonOperation::NotEqual => FloatCC::NotEqual,
+                    ComparisonOperation::Less => FloatCC::LessThan,
+                    ComparisonOperation::Greater => FloatCC::GreaterThan,
+                    ComparisonOperation::LessEqual => FloatCC::LessThanOrEqual,
+                    ComparisonOperation::GreaterEqual => FloatCC::GreaterThanOrEqual,
+                },
+                left,
+                right,
+            );
+            NativeRegister::Bool(condition)
+        }
+        ScalarComputation::Logic { operation, inputs } => {
+            let left = lower_boolean_operand(builder, inputs[0], registers)?;
+            let condition = if *operation == LogicOperation::Not {
+                builder.ins().bnot(left)
+            } else {
+                let right = lower_boolean_operand(builder, inputs[1], registers)?;
+                match operation {
+                    LogicOperation::And => builder.ins().band(left, right),
+                    LogicOperation::Or => builder.ins().bor(left, right),
+                    LogicOperation::Xor => builder.ins().bxor(left, right),
+                    LogicOperation::Not => unreachable!(),
+                }
+            };
+            NativeRegister::Bool(condition)
+        }
+        ScalarComputation::Elementwise { operation, inputs } => {
+            let values = inputs
+                .iter()
+                .map(|input| lower_numeric_operand(builder, *input, registers))
+                .collect::<Result<Vec<_>, _>>()?;
+            NativeRegister::F32(match operation {
+                ElementwiseOperation::Binary(operation) => match operation {
+                    BinaryOperation::Add => builder.ins().fadd(values[0], values[1]),
+                    BinaryOperation::Subtract => builder.ins().fsub(values[0], values[1]),
+                    BinaryOperation::Multiply => builder.ins().fmul(values[0], values[1]),
+                    BinaryOperation::Divide => builder.ins().fdiv(values[0], values[1]),
+                    BinaryOperation::Remainder => call_math(builder, functions.fmod, &values),
+                },
+                ElementwiseOperation::Unary(operation) => match operation {
+                    UnaryOperation::Sin => call_math(builder, functions.sin, &values),
+                    UnaryOperation::Cos => call_math(builder, functions.cos, &values),
+                    UnaryOperation::Sqrt => call_math(builder, functions.sqrt, &values),
+                    UnaryOperation::Ceil => call_math(builder, functions.ceil, &values),
+                },
+                ElementwiseOperation::Atan2 => call_math(builder, functions.atan2, &values),
+                ElementwiseOperation::Identity => values[0],
+            })
+        }
+        ScalarComputation::SumProducts(terms) => {
+            let mut sum = builder.ins().f32const(0.0);
+            for (left, right) in terms {
+                let left = lower_numeric_operand(builder, *left, registers)?;
+                let right = lower_numeric_operand(builder, *right, registers)?;
+                sum = builder.ins().fma(left, right, sum);
+            }
+            NativeRegister::F32(sum)
+        }
+    })
+}
+
+fn lower_predicate(
+    builder: &mut FunctionBuilder<'_>,
+    predicate: &ScalarPredicate,
+    registers: &[Option<NativeRegister>],
+) -> Result<Value, BatchedExecutionError> {
+    Ok(match predicate {
+        ScalarPredicate::Value(operand) => match lower_operand(builder, *operand, registers)? {
+            NativeRegister::Bool(value) => value,
+            NativeRegister::F32(value) => {
+                let zero = builder.ins().f32const(0.0);
+                builder.ins().fcmp(FloatCC::NotEqual, value, zero)
+            }
+        },
+        ScalarPredicate::IsFinite(operand) => {
+            let value = lower_numeric_operand(builder, *operand, registers)?;
+            lower_is_finite(builder, value)
+        }
+        ScalarPredicate::AbsoluteDifferenceWithin {
+            left,
+            right,
+            tolerance,
+        } => {
+            let left = lower_numeric_operand(builder, *left, registers)?;
+            let right = lower_numeric_operand(builder, *right, registers)?;
+            let tolerance = lower_numeric_operand(builder, *tolerance, registers)?;
+            let difference = builder.ins().fsub(left, right);
+            let difference = builder.ins().fabs(difference);
+            builder
+                .ins()
+                .fcmp(FloatCC::LessThanOrEqual, difference, tolerance)
+        }
+        ScalarPredicate::Compare {
+            operation,
+            left,
+            right,
+        } => {
+            let left = lower_numeric_operand(builder, *left, registers)?;
+            let right = lower_numeric_operand(builder, *right, registers)?;
+            builder.ins().fcmp(
+                match operation {
+                    ComparisonOperation::Equal => FloatCC::Equal,
+                    ComparisonOperation::NotEqual => FloatCC::NotEqual,
+                    ComparisonOperation::Less => FloatCC::LessThan,
+                    ComparisonOperation::Greater => FloatCC::GreaterThan,
+                    ComparisonOperation::LessEqual => FloatCC::LessThanOrEqual,
+                    ComparisonOperation::GreaterEqual => FloatCC::GreaterThanOrEqual,
+                },
+                left,
+                right,
+            )
+        }
+        ScalarPredicate::All(inputs) => {
+            let mut inputs = inputs.iter();
+            let mut condition = lower_predicate(
+                builder,
+                inputs.next().expect("flattened conjunction is non-empty"),
+                registers,
+            )?;
+            for input in inputs {
+                let next = lower_predicate(builder, input, registers)?;
+                condition = builder.ins().band(condition, next);
+            }
+            condition
+        }
+        ScalarPredicate::Logic { operation, inputs } => {
+            let left = lower_predicate(builder, &inputs[0], registers)?;
+            if *operation == LogicOperation::Not {
+                builder.ins().bnot(left)
+            } else {
+                let right = lower_predicate(builder, &inputs[1], registers)?;
+                match operation {
+                    LogicOperation::And => builder.ins().band(left, right),
+                    LogicOperation::Or => builder.ins().bor(left, right),
+                    LogicOperation::Xor => builder.ins().bxor(left, right),
+                    LogicOperation::Not => unreachable!(),
+                }
+            }
+        }
+    })
+}
+
+fn lower_is_finite(builder: &mut FunctionBuilder<'_>, value: Value) -> Value {
+    let bits = builder.ins().bitcast(types::I32, MemFlags::new(), value);
+    let exponent = builder.ins().band_imm(bits, 0x7f80_0000);
+    builder
+        .ins()
+        .icmp_imm(IntCC::NotEqual, exponent, 0x7f80_0000)
+}
+
+fn lower_operand(
+    builder: &mut FunctionBuilder<'_>,
+    operand: ScalarOperand,
+    registers: &[Option<NativeRegister>],
+) -> Result<NativeRegister, BatchedExecutionError> {
+    match operand {
+        ScalarOperand::Register(register) => registers[register].ok_or_else(|| {
+            BatchedExecutionError::Native(format!(
+                "native lowering read register {register} before definition"
+            ))
+        }),
+        ScalarOperand::Constant(value) => Ok(NativeRegister::F32(builder.ins().f32const(value))),
+    }
+}
+
+fn lower_numeric_operand(
+    builder: &mut FunctionBuilder<'_>,
+    operand: ScalarOperand,
+    registers: &[Option<NativeRegister>],
+) -> Result<Value, BatchedExecutionError> {
+    match lower_operand(builder, operand, registers)? {
+        NativeRegister::F32(value) => Ok(value),
+        NativeRegister::Bool(_) => Err(BatchedExecutionError::Native(
+            "native numeric operation received a boolean operand".to_owned(),
+        )),
+    }
+}
+
+fn lower_boolean_operand(
+    builder: &mut FunctionBuilder<'_>,
+    operand: ScalarOperand,
+    registers: &[Option<NativeRegister>],
+) -> Result<Value, BatchedExecutionError> {
+    match lower_operand(builder, operand, registers)? {
+        NativeRegister::Bool(value) => Ok(value),
+        NativeRegister::F32(_) => Err(BatchedExecutionError::Native(
+            "native boolean operation received a numeric operand".to_owned(),
+        )),
+    }
+}
+
+fn call_math(
+    builder: &mut FunctionBuilder<'_>,
+    function: cranelift_codegen::ir::FuncRef,
+    arguments: &[Value],
+) -> Value {
+    let call = builder.ins().call(function, arguments);
+    builder.inst_results(call)[0]
+}
+
+fn load_component(
+    builder: &mut FunctionBuilder<'_>,
+    base: Value,
+    instance: Value,
+    elements: usize,
+    component: usize,
+    pointer_type: cranelift_codegen::ir::Type,
+) -> Value {
+    let address = component_address(builder, base, instance, elements, component, pointer_type);
+    builder
+        .ins()
+        .load(types::F32, MemFlags::trusted(), address, 0)
+}
+
+fn store_component(
+    builder: &mut FunctionBuilder<'_>,
+    base: Value,
+    instance: Value,
+    elements: usize,
+    component: usize,
+    pointer_type: cranelift_codegen::ir::Type,
+    value: Value,
+) {
+    let address = component_address(builder, base, instance, elements, component, pointer_type);
+    builder.ins().store(MemFlags::trusted(), value, address, 0);
+}
+
+fn component_address(
+    builder: &mut FunctionBuilder<'_>,
+    base: Value,
+    instance: Value,
+    elements: usize,
+    component: usize,
+    pointer_type: cranelift_codegen::ir::Type,
+) -> Value {
+    let element = builder
+        .ins()
+        .imul_imm(instance, i64::try_from(elements).unwrap());
+    let element = builder
+        .ins()
+        .iadd_imm(element, i64::try_from(component).unwrap());
+    let byte_offset = builder
+        .ins()
+        .imul_imm(element, i64::from(types::F32.bytes()));
+    debug_assert_eq!(builder.func.dfg.value_type(byte_offset), pointer_type);
+    builder.ins().iadd(base, byte_offset)
+}
+
+fn cranelift_error(error: impl std::fmt::Display) -> BatchedExecutionError {
+    BatchedExecutionError::Native(format!("Cranelift native lowering: {error}"))
+}
+
+extern "C" fn mech_jit_sinf(value: f32) -> f32 {
+    value.sin()
+}
+
+extern "C" fn mech_jit_cosf(value: f32) -> f32 {
+    value.cos()
+}
+
+extern "C" fn mech_jit_sqrtf(value: f32) -> f32 {
+    value.sqrt()
+}
+
+extern "C" fn mech_jit_ceilf(value: f32) -> f32 {
+    value.ceil()
+}
+
+extern "C" fn mech_jit_atan2f(y: f32, x: f32) -> f32 {
+    y.atan2(x)
+}
+
+extern "C" fn mech_jit_fmodf(left: f32, right: f32) -> f32 {
+    left % right
+}
+
+#[cfg(test)]
+pub(super) mod tests {
+    use super::*;
+    use mech_runtime::{RuntimeBuilder, RuntimeHostInputValue};
+    use std::collections::BTreeSet;
+
+    pub(crate) fn input_update_program() -> FixedShapeKernel {
+        let source = r#"
+native input updates @compute
+-------------------------------------------------------------------------------
+input := source-input
+scale := source-scale
+~result := 0f32
+result = result + input * scale
+result
+"#;
+        let document = mech_runtime::SourceDocument::parse_resolved(
+            "test://native-input-updates",
+            mech_syntax::document::Revision(0),
+            source,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        assert!(document.is_strictly_clean());
+        let artifact = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .build_compiler()
+            .unwrap()
+            .compile_document_artifact_with_inputs(
+                &document,
+                &BTreeMap::from([
+                    ("source-input".to_owned(), RuntimeHostInputValue::F32(1.0)),
+                    ("source-scale".to_owned(), RuntimeHostInputValue::F32(0.5)),
+                ]),
+                &BTreeSet::from(["input".to_owned(), "scale".to_owned()]),
+            )
+            .unwrap()
+            .into_artifact();
+        crate::ComputeLowerer.compile_batched(&artifact, 4).unwrap()
+    }
+
+    pub(crate) fn initial_inputs() -> BTreeMap<String, Vec<f32>> {
+        BTreeMap::from([
+            ("input".to_owned(), vec![1.0]),
+            ("scale".to_owned(), vec![0.5]),
+        ])
+    }
+
+    pub(crate) fn rejected_updates() -> [BTreeMap<String, Vec<f32>>; 2] {
+        [
+            BTreeMap::from([
+                ("input".to_owned(), vec![9.0]),
+                ("scale".to_owned(), vec![1.0, 2.0]),
+            ]),
+            BTreeMap::from([
+                ("input".to_owned(), vec![9.0]),
+                ("unknown".to_owned(), vec![1.0]),
+            ]),
+        ]
+    }
+
+    #[test]
+    fn jit_rejected_updates_preserve_backing_buffers_before_dispatch() {
+        let program = input_update_program();
+        let inputs = initial_inputs();
+        let mut session = program.prepare_jit_cpu(&inputs).unwrap();
+        let initial = session.inputs.clone();
+        let pointers = session.input_pointers.clone();
+        let addresses = session
+            .inputs
+            .iter()
+            .map(|(k, v)| (*k, v.as_ptr()))
+            .collect::<Vec<_>>();
+        for updates in rejected_updates() {
+            assert!(session.update_inputs(&updates).is_err());
+            // These assertions fail before native dispatch on the old bug;
+            // the regression never deliberately dereferences a stale pointer.
+            assert_eq!(session.inputs, initial);
+            assert_eq!(session.input_pointers, pointers);
+            assert_eq!(
+                session
+                    .inputs
+                    .iter()
+                    .map(|(k, v)| (*k, v.as_ptr()))
+                    .collect::<Vec<_>>(),
+                addresses
+            );
+        }
+        let mut scalar = program.prepare_cpu(&inputs).unwrap();
+        session.dispatch_turns(3).unwrap();
+        scalar.dispatch_turns(3).unwrap();
+        assert_eq!(session.state(), scalar.state());
+        let updates = BTreeMap::from([
+            ("input".to_owned(), vec![2.0]),
+            ("scale".to_owned(), vec![3.0]),
+        ]);
+        session.update_inputs(&updates).unwrap();
+        scalar.update_inputs(&updates).unwrap();
+        for (index, input) in program.inputs.iter().enumerate() {
+            assert_eq!(
+                session.input_pointers[index],
+                session.inputs[&input.slot].as_ptr()
+            );
+        }
+        session.dispatch_turns(2).unwrap();
+        scalar.dispatch_turns(2).unwrap();
+        assert_eq!(session.state(), scalar.state());
+    }
+}

@@ -1,0 +1,25 @@
+Scheduler
+===============================================================================
+
+The scheduler controls when runtime work is executed.
+
+Runtime scheduling is part of the host-facing runtime model. It is not part of the basic language syntax.
+
+1. Responsibilities
+-------------------------------------------------------------------------------
+
+The scheduler is responsible for selecting scheduled work and advancing runtime turns.
+
+Scheduled work may include tasks, actor turns, runtime services, or other runtime-managed units of work.
+
+2. Builder integration
+-------------------------------------------------------------------------------
+
+`RuntimeBuilder` installs a scheduler and scheduler policy when constructing a runtime.
+
+The default runtime uses an in-memory scheduler.
+
+3. Documentation status
+-------------------------------------------------------------------------------
+
+This page documents the conceptual slot in the runtime. Public scheduling APIs should be documented in more detail after the scheduling surface is finalized.

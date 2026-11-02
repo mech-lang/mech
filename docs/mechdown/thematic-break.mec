@@ -1,0 +1,17 @@
+thematic-break
+===============================================================================
+
+%% A thematic break visually separates major sections within a document.
+
+Insert a line with three or more asterisks:
+
+```
+***
+***********
+```
+
+Rendered form:
+
+***
+
+Use thematic breaks sparingly to avoid visual clutter.

@@ -1,0 +1,367 @@
+#![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
+#![feature(where_clause_attrs)]
+#![cfg_attr(
+    all(feature = "native-artifact", feature = "pure_text"),
+    feature(portable_simd)
+)]
+
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+#[macro_use]
+extern crate alloc;
+
+#[cfg(feature = "matrix")]
+extern crate nalgebra as na;
+
+#[cfg(feature = "semantic-compiler")]
+pub use mech_core::{
+    CompileCtx, CompiledBytecode, CompiledInstructionRole, CompiledIntegrityConstraint,
+    CompiledNodeKind, CompiledSymbolDefinition,
+};
+
+#[cfg(feature = "resident-ekf")]
+mod efficacy;
+#[cfg(feature = "functions")]
+pub mod function;
+pub mod intrinsics;
+#[cfg(any(feature = "semantic-compiler", feature = "resident-artifact"))]
+pub mod memory_planner;
+#[cfg(any(feature = "semantic-compiler", feature = "resident-artifact"))]
+pub mod memory_runtime;
+#[cfg(feature = "native-artifact")]
+pub mod native_artifact;
+/// Separately linkable declarations of the SAME maintained canonical factories.
+/// Generated applications select these from private registration evidence;
+/// this is packaging, not an alternate evaluator or capability authority.
+#[cfg(feature = "native-artifact")]
+pub mod linked_factories {
+    pub use crate::resident::matrix_literal::linkage_factories::*;
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
+    pub use crate::resident::native_collection_semantics::linkage_factories::*;
+    pub use crate::resident::native_factory_linkage::{
+        NativeFactoryLinkageProfile, NativeLinkedFactory,
+    };
+    pub use crate::resident::numeric::linkage_factories::*;
+}
+#[cfg(feature = "native-sequence")]
+pub mod native_sequence;
+pub mod numeric_optimizations;
+#[cfg(feature = "semantic-compiler")]
+pub mod program;
+#[cfg(all(feature = "resident-ekf", not(feature = "resident-artifact")))]
+mod resident;
+#[cfg(feature = "resident-artifact")]
+pub mod resident;
+#[cfg(feature = "resident-artifact")]
+mod resident_value_adapter;
+#[cfg(any(
+    feature = "resident-artifact",
+    all(feature = "semantic-compiler", feature = "access")
+))]
+mod text_index;
+#[cfg(feature = "resident-ekf")]
+#[doc(hidden)]
+pub mod __resident_ekf {
+    pub use crate::resident::ResidentCandidateExecutionError as ResidentExecutionError;
+    #[cfg(feature = "runtime_bench_probes")]
+    pub use crate::resident::bench::ResidentTurnProbe;
+    pub use crate::resident::bench::{
+        PreparedResidentTurn, ResidentEkfBatch, ResidentEkfState, ResidentTurnSummary,
+    };
+    pub use crate::resident::{FULL_WRITE_ELEMENTS, PreparedResidentFullWrite, ResidentFullWrite};
+}
+#[cfg(feature = "resident-artifact")]
+#[doc(hidden)]
+pub mod __resident {
+    #[cfg(feature = "semantic-compiler")]
+    pub use crate::efficacy::ekf::catalog::frozen_ekf_compiler_catalog;
+    #[cfg(feature = "semantic-compiler")]
+    pub use crate::efficacy::ekf::closure::{
+        FrozenEkfArtifactClosure, FrozenEkfArtifactClosureError, FrozenEkfCompilation,
+        FrozenEkfCompilationServices, FrozenEkfConstantClosure, FrozenEkfConstraint,
+        FrozenEkfInputClosure, FrozenEkfKernelNode, FrozenEkfOutputClosure, FrozenEkfPredicateNode,
+        FrozenEkfStateUpdate, FrozenLiveBinding, compile_frozen_ekf_source,
+    };
+    pub use crate::efficacy::ekf::operation::{EkfKernel, EkfPredicate};
+    pub use crate::resident::budget::with_planning_step_limit;
+    pub use crate::resident::general::{
+        ActivatedConstraint, ActivatedExternalNode, ActivatedInput, ActivatedInputSource,
+        ActivatedKernelNode, ActivatedNodeIndex, ActivatedOutput, ActivatedPlan, ActivatedTurnStep,
+        ActivationFacts, CapturedSignalInput, CapturedValueInput, DependencyTopology,
+        PreparedResidentTurn, ReactiveInstance, ResidentActivationError, ResidentActivationOptions,
+        ResidentArenaSizes, ResidentEffectIntent, ResidentEffectIntentIter,
+        ResidentEffectIntentView, ResidentExecutionError, ResidentExternalAdmission,
+        ResidentExternalPublicationAuthority, ResidentIntegrityMode, ResidentReadLocation,
+        ResidentRegion, ResidentStorageClass, ResidentStructuralProbe, ResidentTurnSummary,
+        ResidentValueBorrow, ResidentWriteLocation, ResolvedSlot, StateArena,
+        StateMigrationMapping, StateMigrationPolicy, TurnWorkspace, TypedResidentArena, activate,
+        activate_external, activate_with_options,
+    };
+}
+#[cfg(feature = "source")]
+pub mod source_semantics;
+#[cfg(all(test, feature = "semantic-compiler", feature = "functions"))]
+#[path = "../tests/support/mod.rs"]
+pub(crate) mod test_support;
+pub mod tracing;
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    #[cfg(all(feature = "access", feature = "matrix"))]
+    pub use crate::intrinsics::access::matrix::__mech_native::*;
+    #[cfg(all(feature = "access", feature = "tuple"))]
+    pub use crate::intrinsics::access::tuple::install_tuple_access_element;
+    #[cfg(all(feature = "access", feature = "native-plan"))]
+    pub use crate::intrinsics::access::{
+        install_record_access_field, install_record_access_swizzle, install_table_access_swizzle,
+    };
+    #[cfg(feature = "assign")]
+    pub use crate::intrinsics::assign::catalog::__mech_native::*;
+    #[cfg(feature = "integer_bits")]
+    pub use crate::intrinsics::bits::{
+        install_bits_add, install_bits_and, install_bits_clz, install_bits_ctz, install_bits_mul,
+        install_bits_not, install_bits_or, install_bits_shl, install_bits_shr, install_bits_sub,
+        install_bits_xor,
+    };
+    #[cfg(feature = "invariant_define")]
+    pub use crate::intrinsics::catalog::install_integrity_constraint_marker;
+    #[cfg(feature = "matrix_comprehensions")]
+    pub use crate::intrinsics::catalog::install_matrix_comprehension;
+    #[cfg(feature = "set_comprehensions")]
+    pub use crate::intrinsics::catalog::install_set_comprehension;
+    #[cfg(feature = "set")]
+    pub use crate::intrinsics::catalog::install_set_define;
+    #[cfg(feature = "matrix_horzcat")]
+    pub use crate::intrinsics::catalog::install_value_horizontal_concatenation;
+    #[cfg(feature = "matrix_vertcat")]
+    pub use crate::intrinsics::catalog::install_value_vertical_concatenation;
+    #[cfg(feature = "convert")]
+    pub use crate::intrinsics::convert::scalar::__mech_native::*;
+    #[cfg(feature = "variable_define")]
+    pub use crate::intrinsics::define::__mech_native::*;
+    #[cfg(all(feature = "variable_define", feature = "matrix"))]
+    pub use crate::intrinsics::define::__mech_native_matrix::*;
+    #[cfg(all(feature = "f64", feature = "variable_define"))]
+    pub use crate::intrinsics::define::install_variable_define_f64;
+    #[cfg(feature = "matrix_horzcat")]
+    pub use crate::intrinsics::horzcat::__mech_native::*;
+    #[cfg(all(feature = "convert", feature = "semantic-compiler"))]
+    pub use crate::intrinsics::kind_conversion::install_runtime_kind_conversion;
+    #[cfg(feature = "map_ops")]
+    pub use crate::intrinsics::map_ops::contains::install_map_contains_key;
+    #[cfg(feature = "map_ops")]
+    pub use crate::intrinsics::map_ops::insert::install_map_insert;
+    #[cfg(feature = "map_ops")]
+    pub use crate::intrinsics::map_ops::new::install_map_new;
+    #[cfg(feature = "map_ops")]
+    pub use crate::intrinsics::map_ops::{
+        install_map_histogram, install_map_keys, install_map_values,
+    };
+    #[cfg(feature = "pure_text")]
+    pub use crate::intrinsics::pure_text::{
+        install_number_format_matrix, install_number_format_scalar, install_parse_u64,
+        install_sequence_length,
+    };
+    #[cfg(feature = "sequence_buffers")]
+    pub use crate::intrinsics::sequence_buffers::{
+        install_sequence_append, install_sequence_append_le_bytes, install_sequence_append_sublist,
+        install_sequence_clear, install_sequence_reserve, install_sequence_with_capacity,
+    };
+    #[cfg(feature = "sequence_sort")]
+    pub use crate::intrinsics::sequence_sort::install_sequence_sort_indices;
+    #[cfg(feature = "table")]
+    pub use crate::intrinsics::table_ops::__mech_native::*;
+    #[cfg(feature = "pure_text")]
+    pub use crate::intrinsics::text_ops::{install_text_join, install_text_lines};
+    #[cfg(feature = "matrix_vertcat")]
+    pub use crate::intrinsics::vertcat::__mech_native::*;
+}
+
+pub use mech_core::*;
+
+#[cfg(feature = "functions")]
+pub use crate::function::*;
+#[cfg(feature = "semantic-compiler")]
+pub use crate::intrinsics::aggregate::*;
+#[cfg(all(feature = "semantic-compiler", feature = "convert"))]
+pub use crate::intrinsics::kind_conversion::*;
+#[cfg(feature = "semantic-compiler")]
+pub use crate::program::*;
+#[cfg(feature = "source")]
+pub use crate::source_semantics::*;
+#[cfg(feature = "trace")]
+pub use crate::tracing::*;
+
+#[cfg(all(feature = "access", feature = "map"))]
+pub use crate::intrinsics::access::map::*;
+#[cfg(all(feature = "access", feature = "matrix"))]
+pub use crate::intrinsics::access::matrix::*;
+#[cfg(all(feature = "access", feature = "record"))]
+pub use crate::intrinsics::access::record::*;
+#[cfg(all(feature = "access", feature = "string", feature = "semantic-compiler"))]
+pub use crate::intrinsics::access::string::*;
+#[cfg(all(feature = "access", feature = "table"))]
+pub use crate::intrinsics::access::table::*;
+#[cfg(all(feature = "access", feature = "tuple"))]
+pub use crate::intrinsics::access::tuple::*;
+#[cfg(feature = "access")]
+pub use crate::intrinsics::access::{AccessColumn, AccessRange, AccessScalar, AccessSwizzle};
+#[cfg(feature = "assign")]
+pub use crate::intrinsics::assign::EmptyAssignmentNotBytecodeCompilable;
+#[cfg(all(feature = "assign", feature = "map"))]
+pub use crate::intrinsics::assign::map::*;
+#[cfg(all(feature = "assign", feature = "matrix"))]
+pub use crate::intrinsics::assign::matrix::*;
+#[cfg(all(feature = "assign", feature = "record"))]
+pub use crate::intrinsics::assign::record::*;
+#[cfg(all(feature = "assign", feature = "table"))]
+pub use crate::intrinsics::assign::table::*;
+#[cfg(all(feature = "assign", feature = "tuple"))]
+pub use crate::intrinsics::assign::tuple::*;
+#[cfg(all(feature = "assign", feature = "semantic-compiler"))]
+pub use crate::intrinsics::assign::{AddAssignValue, AssignColumn, AssignValue};
+#[cfg(feature = "matrix_horzcat")]
+pub use crate::intrinsics::horzcat::{HorizontalConcatenateDimensionMismatchError, MatrixHorzCat};
+#[cfg(feature = "table")]
+pub use crate::intrinsics::table_ops::{
+    TableFullOuterJoin, TableInnerJoin, TableLeftAntiJoin, TableLeftOuterJoin, TableLeftSemiJoin,
+    TableRightOuterJoin,
+};
+#[cfg(feature = "matrix_vertcat")]
+pub use crate::intrinsics::vertcat::{MatrixVertCat, VerticalConcatenateDimensionMismatch};
+#[cfg(feature = "semantic-compiler")]
+pub fn load_stdkinds(kinds: &mut NamedSchemaTable) {
+    // `ix` is the canonical spelling used by value formatting; `index` is the
+    // long-form alias. Both names denote the same one-based scalar schema.
+    kinds.insert(hash_str("ix"), SchemaBody::Index);
+    kinds.insert(hash_str("index"), SchemaBody::Index);
+    #[cfg(feature = "u8")]
+    kinds.insert(
+        hash_str("u8"),
+        SchemaBody::UnsignedInteger(IntegerWidth::W8),
+    );
+    #[cfg(feature = "u16")]
+    kinds.insert(
+        hash_str("u16"),
+        SchemaBody::UnsignedInteger(IntegerWidth::W16),
+    );
+    #[cfg(feature = "u32")]
+    kinds.insert(
+        hash_str("u32"),
+        SchemaBody::UnsignedInteger(IntegerWidth::W32),
+    );
+    #[cfg(feature = "u64")]
+    kinds.insert(
+        hash_str("u64"),
+        SchemaBody::UnsignedInteger(IntegerWidth::W64),
+    );
+    #[cfg(feature = "u128")]
+    kinds.insert(
+        hash_str("u128"),
+        SchemaBody::UnsignedInteger(IntegerWidth::W128),
+    );
+    #[cfg(feature = "i8")]
+    kinds.insert(hash_str("i8"), SchemaBody::SignedInteger(IntegerWidth::W8));
+    #[cfg(feature = "i16")]
+    kinds.insert(
+        hash_str("i16"),
+        SchemaBody::SignedInteger(IntegerWidth::W16),
+    );
+    #[cfg(feature = "i32")]
+    kinds.insert(
+        hash_str("i32"),
+        SchemaBody::SignedInteger(IntegerWidth::W32),
+    );
+    #[cfg(feature = "i64")]
+    kinds.insert(
+        hash_str("i64"),
+        SchemaBody::SignedInteger(IntegerWidth::W64),
+    );
+    #[cfg(feature = "i128")]
+    kinds.insert(
+        hash_str("i128"),
+        SchemaBody::SignedInteger(IntegerWidth::W128),
+    );
+    #[cfg(feature = "f32")]
+    kinds.insert(hash_str("f32"), SchemaBody::FloatingPoint(FloatWidth::W32));
+    #[cfg(feature = "f64")]
+    kinds.insert(hash_str("f64"), SchemaBody::FloatingPoint(FloatWidth::W64));
+    #[cfg(feature = "c64")]
+    kinds.insert(hash_str("c64"), SchemaBody::Complex(FloatWidth::W64));
+    #[cfg(feature = "r64")]
+    kinds.insert(hash_str("r64"), SchemaBody::Rational64);
+    #[cfg(feature = "string")]
+    kinds.insert(hash_str("string"), SchemaBody::String);
+    #[cfg(feature = "bool")]
+    kinds.insert(hash_str("bool"), SchemaBody::Bool);
+}
+
+#[cfg(all(test, feature = "semantic-compiler"))]
+mod standard_kind_tests {
+    use super::*;
+
+    #[test]
+    fn ix_and_index_are_aliases() {
+        let mut kinds = NamedSchemaTable::default();
+        load_stdkinds(&mut kinds);
+        assert_eq!(kinds.get(&hash_str("ix")), Some(&SchemaBody::Index));
+        assert_eq!(kinds.get(&hash_str("index")), Some(&SchemaBody::Index));
+    }
+}
+
+#[macro_export]
+macro_rules! print_tree {
+    ($tree:expr) => {
+        #[cfg(feature = "pretty_print")]
+        println!("{}", $tree.pretty_print());
+        #[cfg(not(feature = "pretty_print"))]
+        println!("{:#?}", $tree);
+    };
+}
+
+#[macro_export]
+macro_rules! print_symbols {
+    ($intrp:expr) => {
+        #[cfg(feature = "pretty_print")]
+        println!("{}", $intrp.pretty_print_symbols());
+        #[cfg(not(feature = "pretty_print"))]
+        println!("{:#?}", $intrp.symbols());
+    };
+}
+
+#[macro_export]
+macro_rules! print_plan {
+    ($intrp:expr) => {
+        #[cfg(feature = "pretty_print")]
+        println!("{}", $intrp.plan().pretty_print());
+        #[cfg(not(feature = "pretty_print"))]
+        println!("{:#?}", $intrp.plan());
+    };
+}
+
+#[cfg(any(
+    feature = "artifact-codec",
+    feature = "resident-artifact",
+    feature = "semantic-compiler"
+))]
+mod structural_coverage;
+
+#[cfg(any(
+    feature = "artifact-codec",
+    feature = "resident-artifact",
+    feature = "semantic-compiler"
+))]
+pub mod artifact;
+#[cfg(any(
+    feature = "artifact-codec",
+    feature = "resident-artifact",
+    feature = "semantic-compiler"
+))]
+pub use crate::artifact::*;
+
+#[cfg(feature = "resident-artifact")]
+mod native_scalar;

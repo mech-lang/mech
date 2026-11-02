@@ -1,0 +1,120 @@
+use mech_core::{
+    ManagedMemoryBudget,
+    snapshot::{SnapshotValidationContext, ValueDraft},
+};
+use mech_gpu::native_artifact::{
+    LinkedProgramArtifact, NativeExecutionLimits, NativeProgramExecutionLimits,
+};
+use std::sync::Arc;
+
+fn main() {
+    let arguments = std::env::args().skip(1).collect::<Vec<_>>();
+    assert_eq!(arguments.len(), 7);
+    assert_eq!(arguments[5], "--");
+    let unsigned = |index: usize| arguments[index].parse::<u64>().unwrap();
+    let memory = ManagedMemoryBudget::new(unsigned(1));
+    let mut limits = NativeProgramExecutionLimits {
+        execution: NativeExecutionLimits {
+            max_work: unsigned(0),
+            ..NativeExecutionLimits::default()
+        },
+        library: mech_core::TargetMemoryProfile::current_resident_cpu()
+            .unwrap()
+            .limits,
+    };
+    limits.library.max_compute_work = Some(unsigned(2));
+    limits.library.max_comparison_work = Some(unsigned(3));
+    limits.library.max_temporary_bytes = Some(unsigned(4));
+    let catalog = catalog().unwrap();
+    // SAFETY: the unchanged generated build.rs pins this exact descriptor,
+    // source, bytecode, catalog installation, Object and identity before link.
+    // The process retains their symbols throughout all three invocations.
+    let linked = unsafe {
+        LinkedProgramArtifact::from_build_owned_image(
+            include_bytes!("../../native-descriptor.bin"),
+            &catalog,
+            &LINKED_IDENTITY,
+            linked_entry,
+        )
+    }
+    .unwrap();
+    let schemas = Arc::new(linked.descriptor().schemas().clone());
+    let drafts: Vec<ValueDraft> =
+        serde_json::from_slice(&std::fs::read(&arguments[6]).unwrap()).unwrap();
+    let mut inputs = Vec::new();
+    for (draft, input) in drafts.into_iter().zip(linked.descriptor().plan().inputs()) {
+        assert_eq!(draft.schema, input.ty().schema());
+        let value = draft
+            .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+            .unwrap();
+        let mut reservation = memory
+            .reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap())
+            .unwrap();
+        inputs.push(value.into_memory_budget(&mut reservation).unwrap());
+    }
+    assert_eq!(inputs.len(), 1);
+    let mut outputs = vec![None; linked.descriptor().plan().outputs().len()];
+    for (number, expected) in [(3, Some(4)), (0, None), (2, Some(6))] {
+        let data = match inputs[0].canonical_data_draft().unwrap() {
+            mech_core::ValueDataDraft::U32(_) => {
+                mech_core::ValueDataDraft::U32(number.try_into().unwrap())
+            }
+            mech_core::ValueDataDraft::U64(_) => mech_core::ValueDataDraft::U64(number),
+            _ => panic!("unexpected assertion input kind"),
+        };
+        let value = ValueDraft {
+            schema: inputs[0].schema(),
+            shape_values: Box::new([]),
+            data,
+        }
+        .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+        .unwrap();
+        let mut reservation = memory
+            .reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap())
+            .unwrap();
+        let current = [value.into_memory_budget(&mut reservation).unwrap()];
+        let prior = outputs.clone();
+        let before = memory.used_bytes();
+        let before_nodes = memory.retained_snapshot_nodes();
+        let result = linked.evaluate_into(&current, &mut outputs, limits, &memory);
+        if let Some(expected) = expected {
+            assert!(result.unwrap().visits > 0);
+            assert_eq!(
+                outputs[0].as_ref().unwrap().canonical_data_draft().unwrap(),
+                mech_core::ValueDataDraft::U64(expected)
+            );
+        } else {
+            let mech_gpu::native_artifact::NativeProgramExecutionError::Control(
+                mech_gpu::native_artifact::NativeIterationExecutionError::Integrity { origin },
+            ) = result.unwrap_err()
+            else {
+                panic!("expected lexical integrity before division")
+            };
+            assert!(origin.block().is_some() && origin.local().is_some());
+            for (actual, old) in outputs.iter().zip(&prior) {
+                let (actual, old) = (actual.as_ref().unwrap(), old.as_ref().unwrap());
+                assert!(actual.snapshot_eq(&schemas, old, &schemas).unwrap());
+                assert!(actual.shares_frozen_storage(old));
+            }
+            assert_eq!(memory.used_bytes(), before);
+            assert_eq!(memory.retained_snapshot_nodes(), before_nodes);
+        }
+    }
+    for value in &outputs {
+        let bytes = value
+            .as_ref()
+            .unwrap()
+            .canonical_snapshot_bytes(&schemas)
+            .unwrap();
+        println!(
+            "{}",
+            bytes
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>()
+        );
+    }
+    drop((outputs, inputs));
+    assert_eq!(memory.used_bytes(), 0);
+    assert_eq!(memory.retained_snapshot_nodes(), 0);
+}

@@ -1,0 +1,12 @@
+config := {
+  host: {
+    provider: "browser"
+    contexts: [
+      {
+        name: "dom"
+        base-uri: "browser://{instance}/dom"
+        operations: ["read", "write"]
+      }
+    ]
+  }
+}

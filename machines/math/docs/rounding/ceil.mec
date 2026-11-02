@@ -1,0 +1,77 @@
+math/ceil
+===============================================================================
+
+%% Ceiling Function
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/ceil(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the smallest integer greater than or equal to each element of `X`. The result `Y` has the same shape as the input `X`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `X`      | `float`, `[float]`       | Input value(s). Can be real or complex. For complex inputs, `ceil` is applied separately to the real and imaginary parts. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `Y`      | matches input            | Ceiling of the input values. The result is an integer-valued float. The shape of `Y` matches the shape of `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Ceiling of a positive non-integer
+
+```mech:ex1
+y := math/ceil(2.3)
+```
+
+(b) Ceiling of a negative non-integer
+
+```mech:ex2
+y := math/ceil(-2.7)
+```
+
+(c) Ceiling of a vector
+
+```mech:ex3
+x := [1.2, 2.8, -3.1]
+y := math/ceil(x)
+```
+
+(d) Ceiling of a matrix
+
+```mech:ex4
+x := [1.1, -2.5; 3.9, -4.2]
+y := math/ceil(x)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The ceiling function maps a real number `x` to the smallest integer `n` such that
+
+$$ n \geq x, \,\, n \in \mathbb{Z}
+
+For example:
+
+- `ceil(2.3) = 3`
+- `ceil(-2.7) = -2`
+
+This function is useful in rounding operations, discretization, and ensuring values are large enough for indexing or allocation. For arrays, the operation is applied element-wise.
+
+For complex numbers, the ceiling is usually applied independently to the real and imaginary parts:
+
+$$ ceil(a + bi) = ceil(a) + ceil(b)i

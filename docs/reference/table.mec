@@ -1,0 +1,310 @@
+Table
+===============================================================================
+
+%% A `table` is a collection of heterogeneous data organized into rows and columns. Each column has a name and a kind, which describes the type of data it holds. Tables are useful for representing structured data, similar to database tables or spreadsheets.
+
+***
+
+| Operator | Function                                                | Description                                                              | 
+|:--------:|--------------------------------------------------------:|--------------------------------------------------------------------------|
+|`⋈`       | [`inner-join`](ops/inner-join.html)                     | Returns rows where keys exist in both tables.                            |
+|`⟕`       | [`left-outer-join`](ops/left-outer-join.html)           | Returns all left rows plus matching right data when present.             |
+|`⟖`       | [`right-outer-join`](ops/right-outer-join.html)         | Returns all right rows plus matching left data when present.             |
+|`⟗`       | [`full-outer-join`](ops/full-outer-join.html)           | Returns all rows from both sides, combining matches when available.      |
+|`⋉`       | [`left-semi-join`](ops/left-semi-join.html)             | Returns only left rows that have at least one match in the right table.  |
+|`▷`       | [`left-anti-join`](ops/left-anti-join.html)             | Returns only left rows that have no match in the right table.            |
+
+1. Syntax
+-------------------------------------------------------------------------------
+
+(1.1) Basic Syntax
+
+Tables are defined using the pipe `|` character. Each column is defined with a name and a kind, which describes the type of data it holds.
+
+```
+| x<f32>  y<bool> | 
+|  1.2     true   |
+|  1.3     false  |
+```
+
+This creates a table with two columns, `x` of kind `f32` and `y` of kind `bool`:
+
+```mech:disabled
+| x<f32>  y<bool> | 
+|  1.2     true   |
+|  1.3     false  |
+```
+
+(1.2) Inline Syntax
+
+You can write tables inline as well:
+
+```
+| x<f32>  y<bool> | 1.2 true | 1.3 false |
+```
+
+(1.3) Fancy Syntax
+
+The Mech REPL formats matrix output using fancy box drawing characters for better readability.
+
+```
+╭────────┬─────────╮
+│ x<f32> │ y<bool> │
+├────────┼─────────┤
+│  1.2   │  true   │
+│  1.3   │  false  │
+╰────────┴─────────╯
+```
+
+Mech can parse data formatted this way, allowing you to copy or pipe REPL output directly into a Mech program that expects a table. The above example evaluates to:
+
+```mech:disabled
+╭────────┬─────────╮
+│ x<u64> │ y<bool> │
+├────────┼─────────┤
+│  1.2   │  true   │
+│  1.3   │  false  │
+╰────────┴─────────╯
+```
+
+Fancy tables can be formatted in a variety of ways:
+
+```
+╭────────┬────────╮
+│ x<u64> │ y<f32> │
+├────────┼────────┤
+│   1    │   2    │
+├────────┼────────┤
+│   3    │   4    │
+╰────────┴────────╯
+```
+
+This one has no horizontal lines between rows, making it more compact:
+
+```
+╭────────┬────────╮
+│ x<u64> │ y<f32> │
+│   1    │   2    │
+│   3    │   4    │
+╰────────┴────────╯
+```
+
+2. Kind
+--------------------------------------------------------------------------------
+
+A table's kind describes the names and kinds of the columns, as well as the number of rows in the table. For example:
+
+  <|x<u8> y<f32>|:3>
+
+This represents a table with two columns, `x` of kind `u8` and `y` of kind `f32`, and 3 rows.
+
+3. Construction
+-------------------------------------------------------------------------------
+
+Tables can be constructed of vectors, matrices, or records.
+
+(3.1) From vectors
+
+(3.2) From a matrix
+
+You can create a table from a matrix using a kind annotation, as long as the kinds of the table columns are compatible with the matrix kind. For example, if you have a matrix of kind `f64`, you can create a table with columns of kind `f64`:
+
+For example:
+
+```mech:ex3
+x := [1 2; 3 4]; 
+a<|foo<f64>,bar<f64>|> := x
+```
+This creates a table `a` with two columns, `foo` and `bar`, both of kind `f64`, and two rows corresponding to the rows of the matrix `x`.
+
+The matrix `[a.foo a.bar]` is identical to the original matrix `x`.
+
+It's possible to convert a matrix of one kind to a table of different kinded columns, as long as the conversion is valid. For example, you can convert a matrix of `f64` to a table with `u8` columns:
+
+```mech:ex3
+b<|foo<u8>,bar<i8>|> := x
+```
+
+(3.3) From Records
+
+4. Accessing Elements
+-------------------------------------------------------------------------------
+
+Consider the table:
+
+```mech:ex 4
+a:=| x<f64>  y<bool> | 
+   |  1.6     true   |
+   |  1.3     false  |
+   |  2.7     false  |
+   |  1.5     true   |
+```
+
+(4.1) Access a Column
+
+Use dot indexing to access columns. For example {{a.x}}. The kind of the result is a column vector with elements of the column's kind. For instance, column `x` has kind `f32`, so the result of accessing that column is a column vector of kind `[f32]`, with the same number of rows as the table:
+
+```mech:ex 4
+a.x  -- Select column `x`, which has kind `[f32]`
+```
+
+(4.2) Access an Element
+
+You can access an individual element in a table column by specifying the row index on the selected column:
+
+```mech:ex 4
+a.x[1]  -- Select the first element of column `x`, which has kind `f32`
+```
+
+Table columns are just vectors, so they support the same indexing operations as vectors.
+
+(4.3) Access a Record
+
+You can access a record in a table by specifying the row index on the table itself:
+
+```mech:ex 4
+a[1]  -- Select the first record in the table, returns a `record`
+```
+
+(4.4) Access Several Records
+
+You can access a range of records by using a vector as an index:
+
+```mech:ex 4
+a[2..=3]  -- Select records 2 through 3, returns a `table`
+```
+
+It's possible to select the same row multiple times:
+
+```mech:ex 4
+a[[1 1 2 2]]  -- Select records 1 and 2 twice
+```
+
+(4.5) Filter Records
+
+You can filter records using logical indexing. For example, to select records where `y` is `true`:
+
+```mech:ex 4
+a[a.y]  -- Select records where `y` is `true`
+```
+
+Or to filter records where `x` is greater than `1.5`:
+
+```mech:ex 4
+a[a.x > 1.5]  -- Select records where `x` is greater than `1.5`
+```
+
+5. Heterogeneous Columns
+-------------------------------------------------------------------------------
+
+The kind `*` indicates that a column may contain heterogeneous data:
+
+```mech:disabled
+| x<*>   y<*> |
+|  1.2    true| 
+|  "Hi"   8   |
+```
+
+Each cell in the column may hold a different type of value.
+
+(5.1) Partial Columns
+
+You can omit values in the table using using `_` to indicate a missing value. In this case, the kind of the column must be annotated with an `option` kind,  indicated by a `?` suffix:
+
+```mech:disabled
+| x<u8?>  y<string?> z<[u8]:1,3?> |
+|   _      "a"          [1 2 3]   |
+|   4      "b"             _      |
+|   7       _           [7 8 9]   |
+```
+
+6. Relational Operators
+-------------------------------------------------------------------------------
+
+Table relational operators match rows using shared column names (natural-join style behavior for the join keys).
+
+Given:
+
+```mech:join-example
+a := | id<u64>  x<u64> |
+     |   1       10    |
+     |   2       20    |
+     |   3       30    |
+     
+b := | id<u64>  y<u64> |
+     |   2      200    |
+     |   3      300    |
+     |   4      400    |
+```
+
+(6.1) Inner Join `⋈`
+
+Returns rows where keys exist in both tables.
+
+```mech:join-example
+a ⋈ b -- table/join(a,b)
+```
+
+(6.2) Left Outer Join `⟕`
+
+Returns all left rows plus matching right data when present.
+
+```mech:join-example
+a ⟕ b -- table/left-outer-join(a,b)
+```
+
+(6.3) Right Outer Join `⟖`
+
+Returns all right rows plus matching left data when present.
+
+```mech:join-example
+a ⟖ b -- table/right-outer-join(a,b)
+```
+
+(6.4) Full Outer Join `⟗`
+
+Returns all rows from both sides, combining matches when available.
+
+```mech:join-example
+a ⟗ b -- table/full-outer-join(a,b)
+```
+
+When an outer join introduces missing values in non-key columns, those columns are promoted to optional kinds. If a column was declared as `T`, the joined column kind becomes `[T?]` (a column vector of optional `T` values).
+
+For example, `hw1<u8>` from `a` becomes `[u8?]` after a full outer join because row `id=4` has no `a.hw1` value:
+
+```mech:join-optional
+a := |id<u64> hw1<u8>| 1 10 | 2 20 | 3 30 |
+b := |id<u64> hw2<u8>| 2 200 | 3 255 | 4 42 |
+x := a ⟗ b
+x.hw1
+```
+
+Indexing into such a column returns an optional scalar (`T?`):
+
+```mech:join-optional
+x.hw1[1] -- some(10u8)
+x.hw1[4] -- none<u8>
+```
+
+You can destructure optional values with `?` and `match` to provide a fallback:
+
+```mech:join-optional
+y<u8> := x.hw1[4]? | v => v | * => 0.
+```
+
+(6.5) Left Semi Join `⋉`
+
+Returns only left rows that have at least one match in the right table.
+
+```mech:join-example
+a ⋉ b -- table/left-semi-join(a,b)
+```
+
+(6.6) Left Anti Join `▷`
+
+Returns only left rows that have no match in the right table.
+
+```mech:join-example
+a ▷ b -- table/left-anti-join(a,b)
+```

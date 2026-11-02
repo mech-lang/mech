@@ -1,0 +1,444 @@
+#![cfg_attr(not(test), no_main)]
+#![feature(where_clause_attrs)]
+
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    pub use crate::catalog::__mech_native::*;
+}
+
+#[cfg(feature = "matrix")]
+extern crate nalgebra as na;
+extern crate paste;
+
+#[cfg(any(
+    feature = "dot",
+    feature = "matmul",
+    feature = "solve",
+    feature = "transpose"
+))]
+use mech_core::*;
+
+#[cfg(feature = "matrixd")]
+use nalgebra::DMatrix;
+#[cfg(feature = "vectord")]
+use nalgebra::DVector;
+#[cfg(feature = "matrix1")]
+use nalgebra::Matrix1;
+#[cfg(feature = "matrix2")]
+use nalgebra::Matrix2;
+#[cfg(feature = "matrix2x3")]
+use nalgebra::Matrix2x3;
+#[cfg(feature = "matrix3")]
+use nalgebra::Matrix3;
+#[cfg(feature = "matrix3x2")]
+use nalgebra::Matrix3x2;
+#[cfg(feature = "matrix4")]
+use nalgebra::Matrix4;
+#[cfg(feature = "row_vectord")]
+use nalgebra::RowDVector;
+#[cfg(feature = "row_vector2")]
+use nalgebra::RowVector2;
+#[cfg(feature = "row_vector3")]
+use nalgebra::RowVector3;
+#[cfg(feature = "row_vector4")]
+use nalgebra::RowVector4;
+#[cfg(feature = "vector2")]
+use nalgebra::Vector2;
+#[cfg(feature = "vector3")]
+use nalgebra::Vector3;
+#[cfg(feature = "vector4")]
+use nalgebra::Vector4;
+
+#[cfg(any(feature = "dot", feature = "matmul"))]
+use num_traits::*;
+#[cfg(any(
+    feature = "dot",
+    feature = "matmul",
+    feature = "solve",
+    feature = "transpose"
+))]
+use std::fmt::Debug;
+#[cfg(any(feature = "dot", feature = "matmul", feature = "solve"))]
+use std::ops::*;
+
+#[cfg(any(feature = "dot", feature = "matmul", feature = "solve"))]
+use std::fmt::Display;
+#[cfg(any(feature = "dot", feature = "matmul", feature = "solve"))]
+use std::sync::LazyLock;
+
+#[cfg(any(feature = "dot", feature = "matmul"))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MatrixArithmeticOverflow {
+    pub operation: &'static str,
+    pub operand_type: &'static str,
+}
+
+#[cfg(any(feature = "dot", feature = "matmul"))]
+impl MechErrorKind for MatrixArithmeticOverflow {
+    fn name(&self) -> &str {
+        "MatrixArithmeticOverflow"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "{} overflows operand type {}",
+            self.operation, self.operand_type,
+        )
+    }
+}
+
+/// Arithmetic shared by every dot-product and matrix-product factory. Integer
+/// implementations are checked so debug and release applications have the
+/// same behavior; IEEE and exact non-primitive numeric types retain their
+/// established unbounded/IEEE operations.
+#[cfg(any(feature = "dot", feature = "matmul"))]
+pub trait RuntimeMatrixArithmetic:
+    Copy
+    + Debug
+    + Display
+    + Clone
+    + Sync
+    + Send
+    + 'static
+    + PartialEq
+    + PartialOrd
+    + FunctionRuntimeType
+    + Add<Output = Self>
+    + AddAssign
+    + Sub<Output = Self>
+    + SubAssign
+    + Mul<Output = Self>
+    + MulAssign
+    + Div<Output = Self>
+    + DivAssign
+    + Zero
+    + One
+{
+    fn runtime_checked_add(self, rhs: Self) -> Option<Self>;
+    fn runtime_checked_mul(self, rhs: Self) -> Option<Self>;
+}
+
+#[cfg(all(
+    any(feature = "dot", feature = "matmul"),
+    any(
+        feature = "i8",
+        feature = "i16",
+        feature = "i32",
+        feature = "i64",
+        feature = "i128",
+        feature = "u8",
+        feature = "u16",
+        feature = "u32",
+        feature = "u64",
+        feature = "u128",
+    ),
+))]
+macro_rules! impl_checked_matrix_arithmetic {
+    ($($type:ty),+ $(,)?) => {
+        $(
+            impl RuntimeMatrixArithmetic for $type {
+                fn runtime_checked_add(self, rhs: Self) -> Option<Self> {
+                    self.checked_add(rhs)
+                }
+
+                fn runtime_checked_mul(self, rhs: Self) -> Option<Self> {
+                    self.checked_mul(rhs)
+                }
+            }
+        )+
+    };
+}
+
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "i8"))]
+impl_checked_matrix_arithmetic!(i8);
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "i16"))]
+impl_checked_matrix_arithmetic!(i16);
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "i32"))]
+impl_checked_matrix_arithmetic!(i32);
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "i64"))]
+impl_checked_matrix_arithmetic!(i64);
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "i128"))]
+impl_checked_matrix_arithmetic!(i128);
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "u8"))]
+impl_checked_matrix_arithmetic!(u8);
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "u16"))]
+impl_checked_matrix_arithmetic!(u16);
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "u32"))]
+impl_checked_matrix_arithmetic!(u32);
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "u64"))]
+impl_checked_matrix_arithmetic!(u64);
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "u128"))]
+impl_checked_matrix_arithmetic!(u128);
+
+#[cfg(all(
+    any(feature = "dot", feature = "matmul"),
+    any(
+        feature = "f32",
+        feature = "f64",
+        feature = "rational",
+        feature = "complex"
+    ),
+))]
+macro_rules! impl_unchecked_matrix_arithmetic {
+    ($($type:ty),+ $(,)?) => {
+        $(
+            impl RuntimeMatrixArithmetic for $type {
+                fn runtime_checked_add(self, rhs: Self) -> Option<Self> {
+                    Some(self + rhs)
+                }
+
+                fn runtime_checked_mul(self, rhs: Self) -> Option<Self> {
+                    Some(self * rhs)
+                }
+            }
+        )+
+    };
+}
+
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "f32"))]
+impl_unchecked_matrix_arithmetic!(f32);
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "f64"))]
+impl_unchecked_matrix_arithmetic!(f64);
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "rational"))]
+impl_unchecked_matrix_arithmetic!(mech_core::R64);
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "complex"))]
+impl_unchecked_matrix_arithmetic!(mech_core::C64);
+
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "matrix"))]
+fn checked_matrix_add<T: RuntimeMatrixArithmetic>(
+    lhs: T,
+    rhs: T,
+    operation: &'static str,
+) -> MResult<T> {
+    lhs.runtime_checked_add(rhs).ok_or_else(|| {
+        MechError::new(
+            MatrixArithmeticOverflow {
+                operation,
+                operand_type: std::any::type_name::<T>(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })
+}
+
+#[cfg(any(feature = "dot", feature = "matmul"))]
+fn checked_matrix_mul<T: RuntimeMatrixArithmetic>(
+    lhs: T,
+    rhs: T,
+    operation: &'static str,
+) -> MResult<T> {
+    lhs.runtime_checked_mul(rhs).ok_or_else(|| {
+        MechError::new(
+            MatrixArithmeticOverflow {
+                operation,
+                operand_type: std::any::type_name::<T>(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })
+}
+
+#[cfg(any(feature = "dot", feature = "matmul"))]
+static PURE_SCALAR_PRODUCT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| pure_product_contract(false));
+#[cfg(feature = "matmul")]
+static PURE_MATRIX_PRODUCT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| pure_product_contract(true));
+
+#[cfg(any(feature = "dot", feature = "matmul"))]
+fn pure_product_contract(matrix: bool) -> OperationContractDeclaration {
+    mech_core::maintained_operation_contract("matrix/matmul", 2, matrix)
+        .expect("maintained product contract")
+}
+
+#[cfg(any(feature = "dot", feature = "matmul"))]
+fn product_contract(output: FunctionValueRepresentation) -> &'static OperationContractDeclaration {
+    match output {
+        #[cfg(feature = "matmul")]
+        FunctionValueRepresentation::Matrix { .. } => &PURE_MATRIX_PRODUCT_CONTRACT,
+        _ => &PURE_SCALAR_PRODUCT_CONTRACT,
+    }
+}
+
+/// Fallible counterpart to `impl_binop!` for reduction kernels. The operation
+/// macro computes a complete staged result and may use `?`; it publishes only
+/// after every multiplication and accumulation succeeds.
+#[cfg(any(feature = "dot", feature = "matmul"))]
+macro_rules! matrix_semantic_contract {
+    ($output:ty) => {
+        None
+    };
+    ($output:ty, $semantic_contract:path) => {
+        Some($semantic_contract(
+            <$output as FunctionRuntimeType>::REPRESENTATION,
+        ))
+    };
+}
+
+#[cfg(any(feature = "dot", feature = "matmul"))]
+macro_rules! impl_checked_matrix_binop {
+    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident $(, $semantic_contract:path)?) => {
+        #[derive(Debug)]
+        pub struct $struct_name<T> {
+            pub lhs: ManagedPort<T>,
+            pub rhs: ManagedPort<T>,
+            pub out: ManagedPort<T>,
+            marker: core::marker::PhantomData<($arg1_type, $arg2_type, $out_type)>,
+        }
+
+        impl<T> MechFunctionFactory for $struct_name<T>
+        where
+            T: RuntimeMatrixArithmetic + ManagedElement + FunctionPortBacking,
+            #[cfg(feature = "semantic-compiler")]
+            T: CanonicalMatrixElementBacking + ConstElem + CompileConst,
+            $arg1_type: FunctionPortBacking,
+            $arg2_type: FunctionPortBacking,
+            $out_type: FunctionStateBacking,
+        {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg1_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
+            );
+
+            fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+                mech_core::ImplementationMemoryClass::NoAdditionalScratch
+            }
+
+            fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+                matrix_semantic_contract!($out_type $(, $semantic_contract)?)
+            }
+
+            fn new_invocation(
+                invocation: FunctionInvocation,
+            ) -> MResult<Box<dyn MechFunction>> {
+                let (out, lhs, rhs) = invocation.expect_binary()?;
+                let _ = lhs.try_managed::<$arg1_type>()?;
+                let _ = rhs.try_managed::<$arg2_type>()?;
+                let _ = out.try_managed::<$out_type>()?;
+                Ok(Box::new(Self {
+                    lhs: lhs.try_managed_element::<T>()?,
+                    rhs: rhs.try_managed_element::<T>()?,
+                    out: out.try_managed_element::<T>()?,
+                    marker: core::marker::PhantomData,
+                }))
+            }
+
+        }
+
+        impl<T> MechFunctionImpl for $struct_name<T>
+        where
+            T: RuntimeMatrixArithmetic + ManagedElement,
+            #[cfg(feature = "semantic-compiler")]
+            T: CanonicalMatrixElementBacking,
+            $out_type: FunctionStateBacking,
+        {
+            fn solve_managed(
+                &self,
+                frame: &mut mech_core::KernelMemoryFrame<'_>,
+                _services: &mut dyn mech_core::MechExecutionServices,
+            ) -> MResult<mech_core::ReactiveSolveStatus> {
+                frame.with_binary_port_views(&self.lhs, &self.rhs, &self.out, |lhs, rhs, out| {
+                    $op!(lhs, rhs, out)
+                })?;
+                Ok(mech_core::ReactiveSolveStatus::Changed)
+            }
+
+            fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+                Some(FunctionStatePort::from_cell(self.out.cell()))
+            }
+
+            fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+                Ok(Some(vec![FunctionStatePort::from_cell(self.out.cell())]))
+            }
+
+
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                matrix_semantic_contract!($out_type $(, $semantic_contract)?)
+            }
+
+            fn to_string(&self) -> String {
+                format!("{self:#?}")
+            }
+        }
+
+        #[cfg(feature = "semantic-compiler")]
+        impl<T> MechFunctionCompiler for $struct_name<T>
+        where
+            T: CanonicalMatrixElementBacking + RuntimeMatrixArithmetic + ManagedElement + ConstElem + CompileConst,
+        {
+            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+                let name = format!("{}<{}>", stringify!($struct_name), <T as FunctionRuntimeType>::REPRESENTATION);
+                let output = compile_value_cell_register(self.out.cell(), ctx)?;
+                let lhs = compile_value_cell_register(self.lhs.cell(), ctx)?;
+                let rhs = compile_value_cell_register(self.rhs.cell(), ctx)?;
+                ctx.emit_binop(hash_str(&name), output, lhs, rhs);
+                Ok(output)
+            }
+        }
+    };
+}
+
+#[cfg(feature = "runtime")]
+pub mod catalog;
+#[cfg(feature = "runtime")]
+pub use self::catalog::*;
+
+#[cfg(all(test, feature = "runtime"))]
+pub(crate) fn test_managed_factory<F: MechFunctionFactory>(
+    invocation: FunctionInvocation,
+    operation: &'static str,
+) -> SpecializedFunction {
+    let implementation = F::new_invocation(invocation.clone()).unwrap();
+    let contract = F::declared_operation_contract().unwrap().clone();
+    SpecializedFunction::syntax_directed(
+        (implementation, invocation),
+        ResolvedOperationDescriptor::from_name(operation, contract).unwrap(),
+        RuntimeFunctionId::from_name(operation),
+        ExecutionTarget::DirectRuntime,
+        F::implementation_memory_class(),
+    )
+    .unwrap()
+}
+
+#[cfg(all(test, feature = "runtime"))]
+pub(crate) fn assert_test_value(actual: &ValueCell, expected: ValueCell) {
+    let actual = actual.snapshot().unwrap();
+    let expected = expected.snapshot().unwrap();
+    let actual_schemas = actual.schemas().unwrap();
+    let expected_schemas = expected.schemas().unwrap();
+    assert!(
+        actual
+            .language_eq(&actual_schemas, &expected, &expected_schemas)
+            .unwrap()
+    );
+}
+
+#[cfg(feature = "dot")]
+pub mod dot;
+#[cfg(feature = "matmul")]
+pub mod matmul;
+#[cfg(feature = "solve")]
+pub mod solve;
+#[cfg(feature = "transpose")]
+pub mod transpose;
+//pub mod cross;
+
+#[cfg(all(feature = "dot", feature = "source"))]
+pub use self::dot::*;
+#[cfg(all(feature = "matmul", feature = "source"))]
+pub use self::matmul::*;
+#[cfg(all(feature = "solve", feature = "source"))]
+pub use self::solve::*;
+#[cfg(all(feature = "transpose", feature = "source"))]
+pub use self::transpose::*;
+//pub use self::cross::*;
+
+// ----------------------------------------------------------------------------
+// Matrix Library
+// ----------------------------------------------------------------------------

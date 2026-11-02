@@ -1,0 +1,79 @@
+math/exp10
+===============================================================================
+
+%% Base-10 Exponential Function
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/exp10(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the base-10 exponential of each element of `X`. This means it returns 10 raised to the power of `X`. The result `Y` has the same shape as the input `X`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `X`      | `float`, `[float]`       | Input value(s). Can be real or complex. If `X` is complex, `exp10` returns complex results. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `Y`      | matches input            | Result of `10^X`. If `X` is real, `Y` is positive real. If `X` is complex, `Y` may have both real and imaginary parts. The shape of `Y` matches the shape of `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Compute 10 raised to a number
+
+```mech:ex1
+y := math/exp10(2)
+```
+
+(b) Compute base-10 exponential for a vector
+
+```mech:ex2
+x := [0, 1, 2, 3]
+y := math/exp10(x)
+```
+
+(c) Compute base-10 exponential for a matrix
+
+```mech:ex3
+x := [0, 1; 2 3]
+y := math/exp10(x)
+```
+
+(d) Compute fractional exponents
+
+```mech:ex4
+x := [0.5, -1.0, 2.5]
+y := math/exp10(x)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The base-10 exponential function is defined as:
+
+$$ exp10(x) = 10^x
+
+This is equivalent to the general exponential function with base `e`:
+
+$$ 10^x = e^{x \cdot ln(10)}
+
+This function is widely used in fields involving logarithmic scales, such as signal processing, acoustics, and scientific notation. It can be applied element-wise to vectors and matrices, preserving the shape of the input.
+
+For complex numbers, the definition extends naturally using Euler's formula:
+
+$$ 10^z = e^{z \cdot ln(10)}
+
+where `z` may have both real and imaginary components.

@@ -1,0 +1,69 @@
+paragraph
+================================================================================
+
+%% A paragraph is the default text block in Mechdown. It supports rich inline markup for formatting, references, and inline expressions.
+
+A paragraph starts at a valid paragraph starter and ends at a blank line or a new block element.
+
+1. Inline markup
+-------------------------------------------------------------------------------
+
+Paragraphs support inline markup such as:
+
+```
+- Text formatting
+  - **Bold text**
+  - *Italic text*
+  - __Underline text__
+  - ~~Strikethrough text~~
+  - !!Highlighted text!!
+- Inline elements
+  - `Inline code`
+  - {{inline-mech := syntax + "highlighting"}}
+  - {include/path.mec}
+  - $$\pm\sqrt{inline^2 + equation^2}$$
+- Links and references
+  - [Hyperlinks](https://mech-lang.org)
+  - Citation references [MECH]
+  - Footnote references[^1]
+  - Section references §2.1
+```
+
+2. References
+-------------------------------------------------------------------------------
+
+Mechdown supports references for footnotes, citations, and sections.
+
+- **Footnotes** use `[^label]` inline and `[^label]: definition` where defined.
+- **Citations** use `[LABEL]` inline and `[LABEL]: citation text` in definitions.
+- **Section references** use `§` followed by a section number or section label.
+
+3. Include disambiguation in `{...}`
+-------------------------------------------------------------------------------
+
+`{...}` can mean either an inline expression or a source include.
+
+- If the content ends with `.mec`, it is treated as include composition.
+- Otherwise it is treated as a normal inline Mech expression.
+
+Examples:
+
+```
+{1 + 1}            %% expression
+{foo/bar}          %% expression
+{parts/header.mec} %% include
+```
+
+(2.1) Example
+
+```
+This paragraph includes a footnote[^1], a citation[MECH], and a section link to §2.1.
+
+[^1]: Supplemental detail appears in the footnote body.
+[MECH]: Mech Programming Language. (2024). https://mech-lang.org
+```
+
+This paragraph includes a footnote[^1], a citation[MECH], and a section link to §2.1.
+
+[^1]: Supplemental detail appears in the footnote body.
+[MECH]: Mech Programming Language. (2024). https://mech-lang.org

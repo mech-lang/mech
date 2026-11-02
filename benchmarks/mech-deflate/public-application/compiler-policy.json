@@ -1,0 +1,8 @@
+{
+  "max_definition_table_bytes": 134217728,
+  "max_nodes": 131072,
+  "max_inputs": 4096,
+  "max_outputs": 4096,
+  "max_code_bytes": 16777216,
+  "max_stack_bytes": 65536
+}

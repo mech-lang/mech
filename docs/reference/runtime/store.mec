@@ -1,0 +1,32 @@
+Store
+===============================================================================
+
+The store is the runtime component responsible for runtime records.
+
+It is separate from the language data model. Language values are program data; store records are runtime metadata and state.
+
+1. Store responsibilities
+-------------------------------------------------------------------------------
+
+A runtime store may record:
+
+- Runtime records.
+- Module records and module versions.
+- Import edges.
+- Task records.
+- Actor records.
+- Message records.
+- Object records.
+- Transaction records.
+
+2. Default store
+-------------------------------------------------------------------------------
+
+The default runtime uses an in-memory store.
+
+External hosts can provide another store implementation through the runtime builder.
+
+3. Durable storage
+-------------------------------------------------------------------------------
+
+Durable storage is a store implementation concern. It should not be configured through scalar runtime config alone.

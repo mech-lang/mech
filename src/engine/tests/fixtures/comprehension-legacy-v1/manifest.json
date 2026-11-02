@@ -1,0 +1,38 @@
+{
+  "fixtures": [
+    {
+      "bytes": 1784,
+      "file": "matrix-scalar.mecb",
+      "kind_tag": 0,
+      "nested_element": false,
+      "program_revision": "2b33efb8cfe6607da6780bb6fb7e5671b1feca30fb80b000d89215b6dc65024d",
+      "sha256": "ffe9794e186f7c960cc536f0f610a9106d72297dc7a3f815e9f6b2d7930c8d53"
+    },
+    {
+      "bytes": 1848,
+      "file": "matrix-nested.mecb",
+      "kind_tag": 0,
+      "nested_element": true,
+      "program_revision": "343ec04328a3e66403abb5d43724c10a60530bffad53626ee410033e6bbfe769",
+      "sha256": "011f60703bebf40051d324515da7d8d9c5eda3890c61a29f090658be9fa9895d"
+    },
+    {
+      "bytes": 1688,
+      "file": "set-scalar.mecb",
+      "kind_tag": 1,
+      "nested_element": false,
+      "program_revision": "eefcd32688b814cdbcc1e61bda76b2a83f6bb7b779530002504a7c8562ba70ef",
+      "sha256": "b3019e8aded0957fabb36539f2a0c5cc4608aca00fc597439e289564489372df"
+    },
+    {
+      "bytes": 1640,
+      "file": "matrix-preserve-shape.mecb",
+      "kind_tag": 2,
+      "nested_element": false,
+      "program_revision": "6a40ef8c0569515ce3a198e2f73165e18fba39f2399711b3299d2b67cfd90ec1",
+      "sha256": "56b2628821f4b13c8fd0710141e5bf822fc5d7aa81e0f134908b75bb72596a9b"
+    }
+  ],
+  "origin": "ordinary-source-program-compiler",
+  "schema": "mech.matrix-block-legacy-fixtures.v1"
+}

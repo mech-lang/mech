@@ -1,0 +1,14 @@
+[package]
+name = "mech-dynamic-status-test"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[lib]
+name = "mech_dynamic_status_test"
+crate-type = ["cdylib"]
+
+[dependencies]
+mech-abi = { path = "../../../src/abi" }
+
+[workspace]

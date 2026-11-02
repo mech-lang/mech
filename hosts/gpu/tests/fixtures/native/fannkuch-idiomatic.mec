@@ -1,0 +1,71 @@
+<permutation> := <[u8]:16,1>
+
+#Flip(p<permutation>) => <u64>
+  | :Carry(p<permutation>, flips<u64>)
+  | :Done(flips<u64>).
+#Flip(p) -> :Carry(p, 0u64)
+  :Carry(p, flips)
+    | p[1u64] != 0u64 -> :Carry(sequence/reverse-prefix(p, p[1u64] + 1u64), flips + 1u64)
+    | p[1u64] == 0u64 -> :Done(flips)
+  :Done(flips) => flips.
+
+#Digits(p<permutation>, c<permutation>, index<u64>, rank<u64>) => <(permutation,permutation)>
+  | :Carry(p<permutation>, c<permutation>, index<u64>, rank<u64>)
+  | :Done(p<permutation>, c<permutation>).
+#Digits(p, c, index, rank) -> :Carry(p, c, index, rank)
+  :Carry(p, c, index, rank)
+    | rank > 0u64 -> {
+        factorial := number/factorial(rank)
+        digit := index / factorial
+        q := sequence/rotate-prefix(p, rank + 1u64, digit)
+        ~counts := c
+        counts[rank + 1u64] = digit
+      } -> :Carry(q, counts, number/mod(index, factorial), rank - 1u64)
+    | rank == 0u64 -> :Done(p, c)
+  :Done(p, c) => (p, c).
+
+#Advance(p<permutation>, c<permutation>) => <(permutation,permutation)>
+  | :Carry(p<permutation>, c<permutation>, rank<u64>)
+  | :Done(q<permutation>, counts<permutation>).
+#Advance(p, c) -> :Carry(p, c, 1u64)
+  :Carry(p, c, rank)
+    | c[rank + 1u64] + 1u64 > rank -> {
+        q := sequence/rotate-prefix(p, rank + 1u64, 1u64)
+        ~counts := c
+        counts[rank + 1u64] = 0u64
+      } -> :Carry(q, counts, rank + 1u64)
+    | c[rank + 1u64] + 1u64 <= rank -> {
+        digit := c[rank + 1u64] + 1u64
+        q := sequence/rotate-prefix(p, rank + 1u64, 1u64)
+        ~counts := c
+        counts[rank + 1u64] = digit
+      } -> :Done(q, counts)
+  :Done(q, counts) => (q, counts).
+
+#Permute(p<permutation>, c<permutation>, index<u64>, end<u64>, sum<i64>, maximum<u64>) => <(i64,u64)>
+  | :Carry(p<permutation>, c<permutation>, index<u64>, end<u64>, sum<i64>, maximum<u64>)
+  | :Done(checksum<i64>, maximum<u64>).
+#Permute(p, c, index, end, sum, maximum) -> :Carry(p, c, index, end, sum, maximum)
+  :Carry(p, c, index, end, sum, maximum)
+    | index < end -> {
+        flips := #Flip(p)
+        signed-flips<i64> := flips
+        checksum := (number/mod(index, 2u64) == 0u64)?
+          | true => sum + signed-flips
+          | false => sum - signed-flips.
+        most := number/max(maximum, flips)
+        next := index + 1u64
+        (q, counts) := (next < end)?
+          | true => #Advance(p, c)
+          | false => (p, c).
+      } -> :Carry(q, counts, next, end, checksum, most)
+    | index >= end -> :Done(sum, maximum)
+  :Done(checksum, maximum) => (checksum, maximum).
+
+Chunk(start<u64>, end<u64>, n<u64>) => (checksum<i64>, maximum<u64>) :=
+  (p, c) := #Digits(sequence/iota-bytes(16u64), sequence/zero-bytes(16u64), start, n - 1u64)
+  (checksum, maximum) := #Permute(p, c, start, end, 0<i64>, 0u64).
+
+n := number/bounded(io/argument-u64(1u64), 1u64, 16u64)
+(checksum, maximum) := parallel/reduce-ranges(0u64, number/factorial(n), 4096u64, Chunk, n, "sum,max")
+io/write(text/format("{}\nPfannkuchen({}) = {}\n", checksum, n, maximum))

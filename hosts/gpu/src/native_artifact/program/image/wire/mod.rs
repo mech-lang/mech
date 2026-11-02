@@ -1,0 +1,335 @@
+//! Private decoding only. No source proofs are inferred from serialized fields.
+use crate::native_artifact as native;
+use crate::native_artifact::{NativeProgramDescriptor, NativeValueSlot};
+use mech_core::{FunctionCatalog, SchemaId, SchemaKey};
+use mech_engine::native_artifact::*;
+use serde::{Deserialize, Deserializer};
+use serde_json::Value as Json;
+use serde_json::value::RawValue;
+use std::sync::Arc;
+
+// This trait is inaccessible outside the native implementation. In particular,
+// the engine proof types still do NOT implement public Deserialize.
+pub(in crate::native_artifact) trait ProofImage: Sized {
+    fn read(image: Json) -> Result<Self, String>;
+}
+pub(in crate::native_artifact) fn proof<'de, T: ProofImage, D: Deserializer<'de>>(
+    d: D,
+) -> Result<T, D::Error> {
+    T::read(Json::deserialize(d)?).map_err(serde::de::Error::custom)
+}
+macro_rules! engine_proofs {
+    ($($ty:ty),* $(,)?) => { $(impl ProofImage for $ty {
+        fn read(image: Json) -> Result<Self, String> {
+            // SAFETY: this private wire reader is reachable only through the
+            // enclosing unsafe descriptor loader, which confines all results
+            // until their unchanged checked Object provenance is established.
+            unsafe { <$ty>::from_build_owned_image(&image) }
+        }
+    })* };
+}
+engine_proofs!(
+    NativeMatchOrigin,
+    NativeTailLoop,
+    NativeWindowRegion,
+    NativeStringMapRegion,
+    NativeScalarAggregates,
+    NativeMapOwnerWords,
+    NativeBorrowedStringRegion,
+    NativeSelectedTextJoin,
+    NativeTextLineMatrixRegion,
+    NativeTextLineRetentionFrontier,
+);
+impl<T: ProofImage> ProofImage for Vec<T> {
+    fn read(image: Json) -> Result<Self, String> {
+        let Json::Array(values) = image else {
+            return Err("proof image expected an array".into());
+        };
+        values.into_iter().map(T::read).collect()
+    }
+}
+impl<T: ProofImage> ProofImage for Box<[T]> {
+    fn read(image: Json) -> Result<Self, String> {
+        Vec::<T>::read(image).map(Vec::into_boxed_slice)
+    }
+}
+impl<T: ProofImage> ProofImage for Option<T> {
+    fn read(image: Json) -> Result<Self, String> {
+        if image.is_null() {
+            Ok(None)
+        } else {
+            T::read(image).map(Some)
+        }
+    }
+}
+
+pub(in crate::native_artifact::program::image::decode::wire) mod layouts;
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Slot {
+    schema: SchemaId,
+    key: SchemaKey,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Visit {
+    #[serde(deserialize_with = "proof")]
+    origin: NativeMatchOrigin,
+    successors: [Option<u32>; 2],
+    iteration: Option<u32>,
+    progress: native::iteration_abi::Progress,
+    complete: bool,
+    arithmetic: bool,
+    reject: bool,
+    integrity: bool,
+    work: u64,
+}
+impl From<Visit> for native::iteration_abi::NativeIterationVisit {
+    fn from(w: Visit) -> Self {
+        Self {
+            origin: w.origin,
+            successors: w.successors,
+            iteration: w.iteration,
+            progress: w.progress,
+            complete: w.complete,
+            arithmetic: w.arithmetic,
+            reject: w.reject,
+            integrity: w.integrity,
+            work: w.work,
+        }
+    }
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Descriptor<'a> {
+    #[serde(borrow)]
+    plan: &'a RawValue,
+    schemas: Json,
+    #[serde(borrow)]
+    calls: Box<[Option<&'a RawValue>]>,
+    types: Box<[Slot]>,
+    visits: Box<[Visit]>,
+    retirements: native::program::prepare::retirement::RetirementTables,
+    constant_bytes: Box<[u64]>,
+    scalar_bytes: u64,
+    observation_schema_bytes: u64,
+    max_library_inputs: usize,
+    #[serde(deserialize_with = "proof")]
+    window_regions: Box<[NativeWindowRegion]>,
+    #[serde(deserialize_with = "proof")]
+    string_map_regions: Box<[NativeStringMapRegion]>,
+    #[serde(deserialize_with = "proof")]
+    scalar_aggregates: NativeScalarAggregates,
+    #[serde(deserialize_with = "proof")]
+    map_owner_words: Option<NativeMapOwnerWords>,
+    frozen_maps: native::program::prepare::frozen_map::Layout,
+    map_admission: native::program::prepare::map_admission::Layout,
+    parallel: native::program::prepare::parallel::Layout,
+    borrowed_strings: layouts::Borrowed,
+    closed_tails: layouts::Tails,
+    selected_joins: layouts::SelectedJoins,
+    line_matrices: layouts::LineMatrices,
+    prefix: Option<layouts::Prefix>,
+    stack: u64,
+    code: u64,
+    identity: [u8; 32],
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Image<'a> {
+    format: String,
+    version: u32,
+    #[serde(borrow)]
+    descriptor: Descriptor<'a>,
+}
+
+pub(in crate::native_artifact::program::image::decode) fn decode(
+    bytes: &[u8],
+    catalog: &FunctionCatalog,
+) -> Result<NativeProgramDescriptor, String> {
+    let image: Image<'_> = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
+    if image.format != "mech.build-owned-native-descriptor" || image.version != 1 {
+        return Err("unsupported native descriptor image format".into());
+    }
+    let w = image.descriptor;
+    let schemas = Arc::new(decode_native_schema_image(&w.schemas)?);
+    // SAFETY: only the enclosing unsafe descriptor loader reaches this private
+    // reader; it retains all metadata until exact checked-build provenance holds.
+    let plan =
+        unsafe { decode_build_owned_native_plan_body(w.plan.get().as_bytes(), &schemas, catalog)? };
+    let mut calls = w
+        .calls
+        .iter()
+        .map(|image| {
+            image
+                .as_ref()
+                .map(|image| {
+                    // Do not retain every call's expanded JSON while binding
+                    // the others: these bytes borrow the immutable build image.
+                    let image: Json =
+                        serde_json::from_str(image.get()).map_err(|e| e.to_string())?;
+                    // SAFETY: same confined build image; factory witnesses are checked too.
+                    unsafe {
+                        NativePreparedLibraryCall::from_build_owned_image(
+                            &image,
+                            schemas.clone(),
+                            catalog,
+                        )
+                    }
+                })
+                .transpose()
+        })
+        .collect::<Result<Box<[_]>, _>>()?;
+    let types = w
+        .types
+        .into_vec()
+        .into_iter()
+        .map(|s| NativeValueSlot {
+            schema: s.schema,
+            key: s.key,
+        })
+        .collect::<Box<[_]>>();
+    if w.stack == 0
+        || w.code == 0
+        || w.visits.len() != plan.blocks().len()
+        || calls.len() != plan.blocks().len()
+        || types.len() != plan.values().len() + plan.transport_output_count()
+        || w.constant_bytes.len() != plan.constants().len()
+    {
+        return Err("descriptor image inventory differs from its plan".into());
+    }
+    native::program::prepare::validate_type_slots(&plan, &schemas, &types)
+        .map_err(str::to_owned)?;
+    if w.constant_bytes
+        != native::program::prepare::constant_owners::admission_bounds(&plan.facts())?
+    {
+        return Err("constant ownership bounds differ from canonical runtime reads".into());
+    }
+    let closed_tails: native::program::prepare::tail::Layout = w.closed_tails.into();
+    let buffer_frames = plan.facts().buffer_frames();
+    native::program::prepare::prepare_frame_composition(&plan, &buffer_frames, &mut calls)?;
+    native::program::prepare::tail::validate_image(
+        &plan,
+        &buffer_frames,
+        &w.scalar_aggregates,
+        &calls,
+        &closed_tails,
+    )?;
+    let visits = w
+        .visits
+        .into_vec()
+        .into_iter()
+        .map(Into::into)
+        .collect::<Box<[_]>>();
+    let admission = native::program::prepare::map_admission::Layout::derive(
+        &plan,
+        &w.scalar_aggregates,
+        w.map_owner_words.as_ref(),
+        &visits,
+        &closed_tails,
+    )
+    .map_err(str::to_owned)?;
+    if admission != w.map_admission {
+        return Err("native path admission differs from its source frontiers".into());
+    }
+    let frozen_maps = w
+        .map_owner_words
+        .as_ref()
+        .map(|owner| {
+            native::program::prepare::frozen_map::Layout::derive(&plan, owner, &closed_tails)
+        })
+        .transpose()
+        .map_err(str::to_owned)?
+        .unwrap_or_default();
+    if frozen_maps != w.frozen_maps {
+        return Err("frozen-map descriptor proof differs from its complete source uses".into());
+    }
+    let selected_joins =
+        native::program::prepare::selected_join::Layout::derive(&plan, &plan.string_map_regions())?;
+    if selected_joins.maps != w.selected_joins.maps {
+        return Err("selected-join map proof differs from its complete source uses".into());
+    }
+    let uniform_word_collections = plan
+        .facts()
+        .uniform_unsigned_collections()
+        .into_boxed_slice();
+    let unsigned_buffer_calls = plan.unsigned_buffer_calls().into_boxed_slice();
+    let call_routes = native::program::prepare::call_routes::derive(
+        &plan,
+        &buffer_frames,
+        &unsigned_buffer_calls,
+        &calls,
+    );
+    let frame_retirements = native::program::prepare::frame_retirement::FrameRetirements::derive(
+        &buffer_frames,
+        plan.values().len(),
+    )?;
+    let cleanup_effects = native::program::prepare::cleanup_effects::Layout::derive(
+        &plan,
+        &w.retirements,
+        &buffer_frames,
+        &frame_retirements,
+    )?;
+    let call_cache = native::program::prepare::call_cache::Layout::derive(&plan, &calls)?;
+    let compositions = native::program::prepare::composition::Layout::derive(
+        &plan,
+        &buffer_frames,
+        &w.scalar_aggregates,
+        &calls,
+        &closed_tails,
+        &visits,
+        &frame_retirements,
+        &w.map_admission,
+    )?;
+    if w.max_library_inputs < compositions.argument_words() {
+        return Err("restored parent native argument bank is too small".into());
+    }
+    let descriptor = NativeProgramDescriptor {
+        metadata: native::program::prepare::ProgramMetadata {
+            plan,
+            schemas,
+            calls,
+            call_cache,
+            compositions,
+            call_routes,
+            types,
+            visits,
+            retirements: w.retirements,
+            constant_admission_bytes:
+                crate::native_artifact::program::prepare::constant_admission_total(
+                    &w.constant_bytes,
+                )?,
+            constant_bytes: w.constant_bytes,
+            scalar_bytes: w.scalar_bytes,
+            observation_schema_bytes: w.observation_schema_bytes,
+            max_library_inputs: w.max_library_inputs,
+            uniform_word_collections,
+            unsigned_buffer_calls,
+            buffer_frames,
+            frame_retirements,
+            cleanup_effects,
+            window_regions: w.window_regions,
+            string_map_regions: w.string_map_regions,
+            scalar_aggregates: w.scalar_aggregates,
+            map_owner_words: w.map_owner_words,
+            frozen_maps,
+            map_admission: w.map_admission,
+            parallel: w.parallel,
+            borrowed_strings: w.borrowed_strings.into(),
+            closed_tails,
+            selected_joins: w.selected_joins.into(),
+            line_matrices: w.line_matrices.into(),
+            prefix: w.prefix.map(Into::into),
+        },
+        footprint: native::program::image::NativeCodeFootprint {
+            stack_bytes: w.stack,
+            code_bytes: w.code,
+        },
+        identity: w.identity,
+    };
+    // Wire shape, canonical schemas and actual factories were checked above.
+    // Full round-trip fidelity is tested at build time; re-encoding here would
+    // retain compiler-side serializers without proving source/Object provenance.
+    Ok(descriptor)
+}

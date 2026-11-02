@@ -1,0 +1,79 @@
+math/fdim
+===============================================================================
+
+%% Positive difference of two floating-point values
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Z := math/fdim(X, Y)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the positive difference between `X` and `Y`.  
+That is, for each element:  
+
+$$ fdim(x, y) = \begin{cases} x - y & \text{if } x > y \\ 0 & \text{if } x \leq y \end{cases}
+
+The result `Z` has the same shape as the input arguments.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `X`      | `float`, `[float]`       | First input value(s). |
+| `Y`      | `float`, `[float]`       | Second input value(s). |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `Z`      | matches input            | Positive difference of the inputs. If `X > Y`, then `Z = X - Y`; otherwise `Z = 0`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Positive difference of two numbers
+
+```mech:ex1
+z := math/fdim(5.0, 3.0)
+```
+
+(b) Case when the first number is smaller
+
+```mech:ex2
+z := math/fdim(2.0, 7.0)
+```
+
+(c) Positive difference for a vector
+
+```mech:ex3
+x := [5.0, 2.0, 9.0]
+y := [3.0, 7.0, 4.0]
+z := math/fdim(x, y)
+```
+
+(d) Positive difference for a matrix
+
+```mech:ex4
+x := [5 2; 9 1]
+y := [3 7; 4 2]
+z := math/fdim(x, y)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The `fdim` function is part of the C standard library and libm.  
+It ensures that the result is always non-negative, unlike direct subtraction.  
+
+For floating-point numbers, `fdim(x, y)` is equivalent to:  
+
+$$ \max(x - y, 0)
+
+This is useful in numerical algorithms where negative differences are not meaningful, such as in error metrics or bounded computations.

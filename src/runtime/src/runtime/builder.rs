@@ -1,0 +1,451 @@
+//! Runtime construction and dependency assembly.
+
+use super::MechRuntime;
+use super::extension;
+use super::transaction::RuntimeHealth;
+use crate::{
+    BasicCapabilityKernel, CapabilityKernel, DEFAULT_HOST_INPUT_CAPACITY, DefaultHostCallPolicy,
+    DefaultIdGenerator, HostCallPolicy, HostInstanceConfig, HostInterfaceCatalog, HostRegistry,
+    IdGenerator, InMemoryDocsProvider, InMemoryHostRegistry, InMemoryScheduler, InMemoryStore,
+    MechStore, ModuleBuilder, RegisteredHostFunction, RunResourceGrantConfig, RuntimeConfig,
+    RuntimeConfigSpec, RuntimeEventKind, RuntimeHostFactory, RuntimeHostFactoryRegistry,
+    RuntimeHostInputDriver, RuntimeHostInputQueueState, RuntimeResourceProvider,
+    RuntimeResourceRegistry, Scheduler, SchedulerPolicy, materialize_config_spec_grants,
+    register_config_spec_resources,
+};
+#[cfg(feature = "source")]
+use crate::{InMemorySourceResolver, SourceResolver};
+#[cfg(feature = "resident-routing")]
+use mech_core::FunctionCatalog;
+use mech_core::{MResult, ModuleManifestCatalog, ModuleManifestConfig};
+#[cfg(feature = "resident-routing-source")]
+use mech_engine::{CompilerPlanningConfig, CompilerPlanningLimits};
+use std::cell::Cell;
+use std::collections::HashMap;
+use std::rc::Rc;
+#[cfg(feature = "resident-routing")]
+use std::sync::Arc;
+
+// -----------------------------------------------------------------------------
+// Runtime Builder
+// -----------------------------------------------------------------------------
+
+pub struct RuntimeBuilder {
+    config: RuntimeConfig,
+    #[cfg(feature = "resident-routing")]
+    function_catalog: Arc<FunctionCatalog>,
+    id_generator: Box<dyn IdGenerator>,
+    store: Box<dyn MechStore>,
+    capability_kernel: Box<dyn CapabilityKernel>,
+    #[cfg(feature = "source")]
+    source_resolver: Box<dyn SourceResolver>,
+    host_registry: Box<dyn HostRegistry>,
+    host_policy: Box<dyn HostCallPolicy>,
+    scheduler: Box<dyn Scheduler>,
+    scheduler_policy: SchedulerPolicy,
+    module_builder: ModuleBuilder,
+    config_specs: Vec<RuntimeConfigSpec>,
+    resource_providers: Vec<Box<dyn RuntimeResourceProvider>>,
+    input_drivers: Vec<Box<dyn RuntimeHostInputDriver>>,
+    host_input_capacity: usize,
+    host_factories: RuntimeHostFactoryRegistry,
+    host_instances: Vec<HostInstanceConfig>,
+    run_grants: Vec<RunResourceGrantConfig>,
+    module_manifests: ModuleManifestCatalog,
+}
+
+impl std::fmt::Debug for RuntimeBuilder {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut debug = f.debug_struct("RuntimeBuilder");
+        debug.field("config", &self.config);
+        #[cfg(feature = "resident-routing")]
+        debug.field("function_catalog", &"<FunctionCatalog>");
+        debug
+            .field("id_generator", &"<dyn IdGenerator>")
+            .field("store", &"<dyn MechStore>")
+            .field("capability_kernel", &"<dyn CapabilityKernel>")
+            .field("host_registry", &"<dyn HostRegistry>")
+            .field("host_policy", &"<dyn HostCallPolicy>")
+            .field("scheduler", &"<dyn Scheduler>")
+            .field("scheduler_policy", &self.scheduler_policy)
+            .field("module_builder", &self.module_builder)
+            .field("config_specs", &self.config_specs)
+            .field("resource_providers", &self.resource_providers.len())
+            .field("host_factories", &self.host_factories)
+            .field("host_instances", &self.host_instances)
+            .field("run_grants", &self.run_grants)
+            .field("module_manifests", &self.module_manifests);
+        #[cfg(feature = "source")]
+        debug.field("source_resolver", &"<dyn SourceResolver>");
+        debug.finish()
+    }
+}
+
+impl Default for RuntimeBuilder {
+    fn default() -> Self {
+        Self {
+            config: RuntimeConfig::default(),
+            #[cfg(feature = "resident-routing")]
+            function_catalog: mech_engine::empty_function_catalog(),
+            id_generator: Box::new(DefaultIdGenerator::new()),
+            store: Box::new(extension::RuntimeStoreBoundary::new(Box::new(
+                InMemoryStore::new(),
+            ))),
+            capability_kernel: Box::new(extension::RuntimeCapabilityKernelBoundary::new(Box::new(
+                BasicCapabilityKernel::new(),
+            ))),
+            #[cfg(feature = "source")]
+            source_resolver: Box::new(InMemorySourceResolver::new()),
+            host_registry: Box::new(InMemoryHostRegistry::new()),
+            host_policy: Box::new(DefaultHostCallPolicy),
+            scheduler: Box::new(InMemoryScheduler::new()),
+            scheduler_policy: SchedulerPolicy::default(),
+            module_builder: ModuleBuilder::new(),
+            config_specs: Vec::new(),
+            resource_providers: Vec::new(),
+            input_drivers: Vec::new(),
+            host_input_capacity: DEFAULT_HOST_INPUT_CAPACITY,
+            host_factories: RuntimeHostFactoryRegistry::new(),
+            host_instances: Vec::new(),
+            run_grants: Vec::new(),
+            module_manifests: ModuleManifestCatalog::new(),
+        }
+    }
+}
+
+impl RuntimeBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn input_driver(mut self, driver: impl RuntimeHostInputDriver + 'static) -> Self {
+        self.input_drivers.push(Box::new(driver));
+        self
+    }
+
+    #[cfg(all(test, feature = "resident-routing-source"))]
+    pub(crate) fn test_input_driver(self, driver: impl RuntimeHostInputDriver + 'static) -> Self {
+        self.input_driver(driver)
+    }
+
+    pub fn config(mut self, config: RuntimeConfig) -> Self {
+        self.config = config;
+        self
+    }
+
+    #[cfg(feature = "resident-routing")]
+    pub fn function_catalog(mut self, catalog: Arc<FunctionCatalog>) -> Self {
+        self.function_catalog = catalog;
+        self
+    }
+
+    pub fn id_generator(mut self, id_generator: impl IdGenerator + 'static) -> Self {
+        self.id_generator = Box::new(id_generator);
+        self
+    }
+
+    pub fn store(mut self, store: impl MechStore + 'static) -> Self {
+        self.store = Box::new(extension::RuntimeStoreBoundary::new(Box::new(store)));
+        self
+    }
+
+    pub fn capability_kernel(mut self, capability_kernel: impl CapabilityKernel + 'static) -> Self {
+        self.capability_kernel = Box::new(extension::RuntimeCapabilityKernelBoundary::new(
+            Box::new(capability_kernel),
+        ));
+        self
+    }
+
+    #[cfg(feature = "source")]
+    pub fn source_resolver(mut self, source_resolver: impl SourceResolver + 'static) -> Self {
+        self.source_resolver = Box::new(source_resolver);
+        self
+    }
+
+    pub fn host_registry(mut self, host_registry: impl HostRegistry + 'static) -> Self {
+        self.host_registry = Box::new(host_registry);
+        self
+    }
+
+    pub fn host_function(mut self, function: impl Into<RegisteredHostFunction>) -> MResult<Self> {
+        let function = function.into();
+        extension::invoke_extension("host registry", "register_function", || {
+            self.host_registry.register_function(function)
+        })?;
+        Ok(self)
+    }
+
+    pub fn host_policy(mut self, host_policy: impl HostCallPolicy + 'static) -> Self {
+        self.host_policy = Box::new(host_policy);
+        self
+    }
+
+    pub fn scheduler(mut self, scheduler: impl Scheduler + 'static) -> Self {
+        self.scheduler = Box::new(scheduler);
+        self
+    }
+
+    pub fn scheduler_policy(mut self, scheduler_policy: SchedulerPolicy) -> Self {
+        self.scheduler_policy = scheduler_policy;
+        self
+    }
+
+    pub fn module_builder(mut self, module_builder: ModuleBuilder) -> Self {
+        self.module_builder = module_builder;
+        self
+    }
+
+    pub fn config_spec(mut self, spec: RuntimeConfigSpec) -> Self {
+        self.config_specs.push(spec);
+        self
+    }
+
+    pub fn module_manifest(mut self, manifest: ModuleManifestConfig) -> MResult<Self> {
+        self.module_manifests.register(manifest)?;
+        Ok(self)
+    }
+
+    pub fn host_factory(mut self, factory: Box<dyn RuntimeHostFactory>) -> MResult<Self> {
+        self.host_factories.register(factory)?;
+        Ok(self)
+    }
+
+    pub fn host_instance(mut self, config: HostInstanceConfig) -> Self {
+        self.host_instances.push(config);
+        self
+    }
+
+    pub fn run_resource_grant(mut self, grant: RunResourceGrantConfig) -> Self {
+        self.run_grants.push(grant);
+        self
+    }
+
+    pub fn resource_provider(mut self, provider: Box<dyn RuntimeResourceProvider>) -> Self {
+        self.resource_providers.push(provider);
+        self
+    }
+
+    pub fn in_memory_docs(mut self, provider: InMemoryDocsProvider) -> Self {
+        self.resource_providers.push(Box::new(provider));
+        self
+    }
+
+    pub fn host_input_capacity(mut self, capacity: usize) -> Self {
+        self.host_input_capacity = capacity;
+        self
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    pub fn build_compiler(mut self) -> MResult<super::ProgramCompiler> {
+        self.config.validate()?;
+
+        let mut host_interfaces = HostInterfaceCatalog::new();
+        for host_instance in &self.host_instances {
+            let installation = self.host_factories.instantiate(host_instance)?;
+            host_interfaces.register(installation.interface)?;
+            self.resource_providers
+                .extend(installation.resource_providers);
+            // Compiler construction deliberately owns no input drivers. Host
+            // factories may describe them, but they are neither attached nor
+            // started and are dropped with the planning-only installation.
+            drop(installation.input_drivers);
+        }
+
+        let mut resources = RuntimeResourceRegistry::new();
+        for spec in &self.config_specs {
+            register_config_spec_resources(&mut resources, spec)?;
+        }
+        for provider in self.resource_providers {
+            resources.register_provider(provider)?;
+        }
+
+        let program_config = CompilerPlanningConfig {
+            name: self.config.name,
+            limits: CompilerPlanningLimits {
+                max_planning_steps: self.config.limits.max_steps_per_turn_as_usize()?,
+            },
+        };
+
+        Ok(super::ProgramCompiler::new(
+            self.function_catalog,
+            self.source_resolver,
+            resources,
+            self.module_builder,
+            host_interfaces,
+            self.module_manifests,
+            program_config,
+            self.config.limits.max_source_bytes,
+        ))
+    }
+
+    pub fn build(mut self) -> MResult<MechRuntime> {
+        self.config.validate()?;
+        self.scheduler_policy.validate()?;
+        if self.host_input_capacity == 0 {
+            return Err(crate::input::input_error(
+                "RuntimeHostInputCapacityInvalid",
+                "host input queue capacity must be greater than zero",
+            ));
+        }
+
+        let runtime_id = self.id_generator.runtime_id();
+
+        let mut host_interfaces = HostInterfaceCatalog::new();
+        for host_instance in &self.host_instances {
+            let installation = self.host_factories.instantiate(host_instance)?;
+            host_interfaces.register(installation.interface)?;
+            self.resource_providers
+                .extend(installation.resource_providers);
+            self.input_drivers.extend(installation.input_drivers);
+        }
+
+        let max_events = self
+            .config
+            .limits
+            .max_in_memory_events
+            .map(|value| usize::try_from(value).unwrap_or(usize::MAX));
+        self.store.configure_event_retention(max_events)?;
+
+        #[cfg(feature = "resident-routing")]
+        let resident_memory_budget = self
+            .config
+            .limits
+            .max_memory_bytes
+            .map(mech_core::ManagedMemoryBudget::new);
+
+        let mut runtime = MechRuntime {
+            id: runtime_id,
+            event_sequence: 0,
+            config: self.config,
+            #[cfg(feature = "resident-routing")]
+            function_catalog: Arc::clone(&self.function_catalog),
+            #[cfg(feature = "resident-routing")]
+            active_program: Default::default(),
+            #[cfg(feature = "resident-routing")]
+            program_execution_info: Default::default(),
+            #[cfg(feature = "resident-routing")]
+            next_resident_instance: 1,
+            #[cfg(feature = "resident-routing")]
+            resident_memory_budget,
+            #[cfg(feature = "resident-routing")]
+            resident_production_probe: Default::default(),
+            id_generator: self.id_generator,
+            store: self.store,
+            capability_kernel: self.capability_kernel,
+            #[cfg(feature = "source")]
+            source_resolver: self.source_resolver,
+            host_registry: self.host_registry,
+            host_policy: self.host_policy,
+            scheduler: self.scheduler,
+            scheduler_policy: self.scheduler_policy,
+            active_transactions: HashMap::new(),
+            active_effect_phase: Rc::new(Cell::new(None)),
+            health: RuntimeHealth::Healthy,
+            module_builder: self.module_builder,
+            resources: RuntimeResourceRegistry::new(),
+            host_input_queue: std::sync::Arc::new(std::sync::Mutex::new(
+                RuntimeHostInputQueueState::new(self.host_input_capacity),
+            )),
+            input_drivers: self.input_drivers,
+            attached_input_driver_count: 0,
+            input_driver_cleanup_armed: false,
+            host_interfaces,
+            module_manifests: self.module_manifests,
+        };
+
+        for spec in &self.config_specs {
+            register_config_spec_resources(&mut runtime.resources, spec)?;
+            let capabilities = materialize_config_spec_grants(runtime.id_generator.as_mut(), spec)?;
+            for capability in capabilities {
+                runtime.grant_capability(capability)?;
+            }
+        }
+
+        for provider in self.resource_providers {
+            runtime.register_resource_provider(provider)?;
+        }
+
+        for grant in &self.run_grants {
+            runtime.install_run_resource_grant(grant)?;
+        }
+
+        let ingress = runtime.ingress();
+        for index in 0..runtime.input_drivers.len() {
+            if let Err(error) = extension::invoke_extension("host input driver", "attach", || {
+                runtime.input_drivers[index].attach(ingress.clone())
+            }) {
+                let mut cleanup_failures = Vec::new();
+                if let Err(cleanup_error) = runtime.close_ingress() {
+                    cleanup_failures.push(format!(
+                        "input ingress close failed during rollback: {:?}",
+                        cleanup_error,
+                    ));
+                }
+                for rollback_index in (0..=index).rev() {
+                    if let Err(cleanup_error) =
+                        extension::invoke_extension("host input driver", "stop", || {
+                            runtime.input_drivers[rollback_index].stop()
+                        })
+                    {
+                        cleanup_failures.push(format!(
+                            "input driver {} stop failed: {:?}",
+                            rollback_index, cleanup_error,
+                        ));
+                    }
+                }
+                runtime.attached_input_driver_count = 0;
+                runtime.input_driver_cleanup_armed = false;
+                if !cleanup_failures.is_empty() {
+                    return Err(runtime.poison_runtime_operation(
+                        "build",
+                        None,
+                        format!("{:?}", error),
+                        cleanup_failures,
+                    ));
+                }
+                return Err(error);
+            }
+            runtime.attached_input_driver_count += 1;
+        }
+        runtime.input_driver_cleanup_armed = true;
+
+        let mut context = runtime.runtime_context()?;
+
+        runtime.emit_event_to_context(
+            &mut context,
+            RuntimeEventKind::RuntimeCreated {
+                runtime_id: runtime.id,
+            },
+        )?;
+
+        Ok(runtime)
+    }
+}
+
+#[cfg(all(test, feature = "resident-routing"))]
+mod tests {
+    use super::RuntimeBuilder;
+    use mech_core::FunctionCatalogBuilder;
+    use std::sync::Arc;
+
+    #[test]
+    fn custom_function_catalog_reaches_runtime() {
+        let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
+        let runtime = RuntimeBuilder::new()
+            .function_catalog(Arc::clone(&catalog))
+            .build()
+            .unwrap();
+
+        assert!(Arc::ptr_eq(&runtime.function_catalog, &catalog));
+    }
+
+    #[test]
+    fn bare_runtime_uses_an_empty_catalog() {
+        let runtime = RuntimeBuilder::new().build().unwrap();
+
+        assert_eq!(runtime.function_catalog.runtime_factory_count(), 0);
+        assert_eq!(runtime.function_catalog.specializer_count(), 0);
+        assert_eq!(runtime.function_catalog.intrinsic_specializer_count(), 0);
+        assert_eq!(runtime.function_catalog.all_exports().len(), 0);
+    }
+}

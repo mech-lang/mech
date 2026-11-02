@@ -1,0 +1,800 @@
+#![cfg(feature = "full-hosts")]
+
+use std::collections::BTreeMap;
+use std::path::PathBuf;
+
+use mech_build::{
+    NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildProfile, NativeBuildRequest,
+    NativeDependencySource, NativeEmit, NativeRuntimeConfig, selected_planning_host_factory,
+    standard_native_host_catalog,
+};
+use mech_core::{ApplicationRequirement, ParsedProgram, ResourceIntent};
+use mech_engine::{
+    BindingDeclaration, ProducerReference, ProgramArtifactDraft,
+    encode_program_artifact_bytecode_v1,
+};
+use mech_runtime::{
+    ConfigValue, HostInstanceConfig, ProgramCompiler, RunResourceGrantConfig, RuntimeBuilder,
+    RuntimeConfig,
+};
+
+struct ProviderCase {
+    provider: &'static str,
+    instance: &'static str,
+    target: &'static str,
+    operations: &'static [&'static str],
+    paths: &'static [&'static str],
+    source: &'static str,
+    base_uri: &'static str,
+    path: &'static str,
+    intent: ResourceIntent,
+}
+
+const PROVIDER_CASES: &[ProviderCase] = &[
+    ProviderCase {
+        provider: "cli",
+        instance: "cli",
+        target: "cli/env",
+        operations: &["read"],
+        paths: &["HOME"],
+        source: "@env := cli://cli/env{:read(HOME)}\nhome := @env/HOME",
+        base_uri: "cli://cli/env",
+        path: "HOME",
+        intent: ResourceIntent::Read,
+    },
+    ProviderCase {
+        provider: "cli",
+        instance: "cli",
+        target: "cli/stdout",
+        operations: &["write"],
+        paths: &["line"],
+        source: "@out := cli://stdout{:write(line)}\n@out/line <- \"planned-alias\"",
+        base_uri: "cli://stdout",
+        path: "line",
+        intent: ResourceIntent::Send,
+    },
+    ProviderCase {
+        provider: "console",
+        instance: "console",
+        target: "console/output",
+        operations: &["write"],
+        paths: &["line"],
+        source: "@out := console://console/output{:write(line)}\n@out/line <- \"planned\"",
+        base_uri: "console://console/output",
+        path: "line",
+        intent: ResourceIntent::Send,
+    },
+    ProviderCase {
+        provider: "console",
+        instance: "console",
+        target: "console/output",
+        operations: &["write"],
+        paths: &["line"],
+        source: "@out := console://output{:write(line)}\n@out/line <- \"planned-alias\"",
+        base_uri: "console://output",
+        path: "line",
+        intent: ResourceIntent::Send,
+    },
+    ProviderCase {
+        provider: "time",
+        instance: "clock",
+        target: "clock/clock",
+        operations: &["read"],
+        paths: &["second"],
+        source: "@clock := time://clock/clock{:read(second)}\nsecond := @clock/second",
+        base_uri: "time://clock/clock",
+        path: "second",
+        intent: ResourceIntent::Read,
+    },
+    ProviderCase {
+        provider: "timer",
+        instance: "timer",
+        target: "timer/tick",
+        operations: &["read"],
+        paths: &["tick"],
+        source: "@timer := timer://timer/tick{:read(tick)}\ntick := @timer/tick",
+        base_uri: "timer://timer/tick",
+        path: "tick",
+        intent: ResourceIntent::Read,
+    },
+    ProviderCase {
+        provider: "scene",
+        instance: "scene",
+        target: "scene/frame",
+        operations: &["write"],
+        paths: &["replace"],
+        source: "@frame := scene://scene/frame{:write(replace)}\nscene := {width: 640.0, height: 480.0, background: \"black\"}\n@frame/replace <- scene",
+        base_uri: "scene://scene/frame",
+        path: "replace",
+        intent: ResourceIntent::Send,
+    },
+    ProviderCase {
+        provider: "robot-arm",
+        instance: "arm",
+        target: "arm/commands",
+        operations: &["move"],
+        paths: &["move"],
+        source: "@arm := robot://arm/commands{:move(move)}\n@arm/move <- true",
+        base_uri: "robot://arm/commands",
+        path: "move",
+        intent: ResourceIntent::Send,
+    },
+];
+
+fn provider_compiler(case: &ProviderCase) -> ProgramCompiler {
+    let settings = if case.provider == "scene" {
+        ConfigValue::Map(BTreeMap::from([
+            (
+                "renderer".to_owned(),
+                ConfigValue::String("canvas".to_owned()),
+            ),
+            (
+                "selector".to_owned(),
+                ConfigValue::String("#scene".to_owned()),
+            ),
+        ]))
+    } else {
+        ConfigValue::Map(BTreeMap::new())
+    };
+    RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .host_factory(selected_planning_host_factory(case.provider).unwrap())
+        .unwrap()
+        .host_instance(HostInstanceConfig {
+            name: case.instance.to_owned(),
+            provider: case.provider.to_owned(),
+            settings,
+        })
+        .run_resource_grant(RunResourceGrantConfig {
+            target: case.target.to_owned(),
+            operations: case
+                .operations
+                .iter()
+                .map(|operation| (*operation).to_owned())
+                .collect(),
+            paths: case.paths.iter().map(|path| (*path).to_owned()).collect(),
+        })
+        .build_compiler()
+        .unwrap()
+}
+
+fn compile_provider(case: &ProviderCase) -> ParsedProgram {
+    let product = provider_compiler(case).compile_source(case.source).unwrap();
+    ParsedProgram::from_bytes(product.bytecode()).unwrap()
+}
+
+fn compile_canonical_provider(case: &ProviderCase) -> ParsedProgram {
+    let product = provider_compiler(case)
+        .compile_canonical_source(case.source)
+        .unwrap();
+    ParsedProgram::from_bytes(product.bytecode()).unwrap()
+}
+
+#[test]
+fn every_standard_provider_plans_source_to_bytecode() {
+    for case in PROVIDER_CASES {
+        let parsed = compile_provider(case);
+        assert!(
+            parsed.requirements.iter().any(|requirement| {
+                matches!(
+                    requirement,
+                    ApplicationRequirement::Resource(request)
+                        if request.base_uri == case.base_uri
+                            && request.path == case.path
+                            && request.context_name
+                                == case.target.rsplit('/').next().unwrap()
+                            && request.operation == case.operations[0]
+                            && request.intent == case.intent
+                )
+            }),
+            "missing planned requirement for {}",
+            case.provider
+        );
+    }
+}
+
+#[test]
+fn every_standard_provider_plans_canonical_source_to_bytecode() {
+    for case in PROVIDER_CASES {
+        let parsed = compile_canonical_provider(case);
+        assert!(
+            parsed.requirements.iter().any(|requirement| {
+                matches!(
+                    requirement,
+                    ApplicationRequirement::Resource(request)
+                        if request.base_uri == case.base_uri
+                            && request.path == case.path
+                            && request.context_name
+                                == case.target.rsplit('/').next().unwrap()
+                            && request.operation == case.operations[0]
+                            && request.intent == case.intent
+                )
+            }),
+            "missing canonical planned requirement for {}",
+            case.provider
+        );
+    }
+}
+
+#[test]
+fn canonical_resource_effect_survives_a_later_program_result() {
+    let case = ProviderCase {
+        provider: "cli",
+        instance: "cli",
+        target: "cli/stdout",
+        operations: &["write"],
+        paths: &["line"],
+        source: "@out := cli://stdout{:write(line)}\n@out/line <- \"planned\"\n\"done\"",
+        base_uri: "cli://stdout",
+        path: "line",
+        intent: ResourceIntent::Send,
+    };
+    let product = provider_compiler(&case)
+        .compile_canonical_source(case.source)
+        .unwrap();
+    let parsed = ParsedProgram::from_bytes(product.bytecode()).unwrap();
+    assert!(parsed.instructions.is_empty());
+    assert!(!parsed.artifact.is_empty());
+    assert!(parsed.requirements.iter().any(|requirement| {
+        matches!(
+            requirement,
+            ApplicationRequirement::Resource(request)
+                if request.base_uri == case.base_uri
+                    && request.path == case.path
+                    && request.intent == ResourceIntent::Send
+        )
+    }));
+
+    let request = NativeBuildRequest {
+        bytecode: product.bytecode().to_vec(),
+        instruction_type_bindings: None,
+        instruction_type_binding_requirements: None,
+        runtime_config: Some(NativeRuntimeConfig {
+            runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
+            hosts: vec![HostInstanceConfig {
+                name: "cli".to_owned(),
+                provider: "cli".to_owned(),
+                settings: ConfigValue::Map(BTreeMap::new()),
+            }],
+            run_grants: vec![RunResourceGrantConfig {
+                target: "cli/stdout".to_owned(),
+                operations: vec!["write".to_owned()],
+                paths: vec!["line".to_owned()],
+            }],
+        }),
+        target: None,
+        profile: NativeBuildProfile::Debug,
+        binary_name: "canonical-resource-effect".to_owned(),
+        output: PathBuf::from("ignored"),
+        emit: NativeEmit::Plan,
+        keep_project: false,
+        offline: true,
+    };
+    let plan = NativeApplicationBuilder::new(NativeBuildEnvironment {
+        function_catalog: mech_stdlib::source_native_plan_catalog(),
+        host_catalog: standard_native_host_catalog().unwrap(),
+        dependency_source: NativeDependencySource::Registry {
+            version: mech_build::MECH_COMPONENT_VERSION.to_owned(),
+        },
+    })
+    .plan(&request)
+    .unwrap();
+    assert_eq!(plan.hosts.len(), 1);
+    assert!(
+        !plan
+            .engine_features
+            .iter()
+            .any(|feature| feature == "dynamic-modules")
+    );
+    assert_eq!(plan.hosts[0].name, case.instance);
+    assert_eq!(plan.hosts[0].provider, case.provider);
+    assert_eq!(plan.application_requirements.len(), 1);
+    assert!(plan.application_requirements.iter().any(|requirement| {
+        matches!(requirement, mech_build::PlannedApplicationRequirement::Resource { request, .. }
+            if request.base_uri == "cli://stdout"
+                && request.path == "line"
+                && request.intent == ResourceIntent::Send)
+    }));
+}
+
+#[test]
+fn canonical_native_plan_preflights_a_dormant_effect() {
+    let source = "@out := cli://writer/stdout{:write(line)}\n~trigger := false\n~payload := \"waiting\"\n~> trigger\n  | true => { payload = \"ready\" }\n  | false => { payload = \"waiting\" }\n@out/line <- \"active\"\n\"done\"\n";
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .host_factory(selected_planning_host_factory("cli").unwrap())
+        .unwrap()
+        .host_instance(HostInstanceConfig {
+            name: "reader".to_owned(),
+            provider: "cli".to_owned(),
+            settings: ConfigValue::Map(BTreeMap::new()),
+        })
+        .host_instance(HostInstanceConfig {
+            name: "writer".to_owned(),
+            provider: "cli".to_owned(),
+            settings: ConfigValue::Map(BTreeMap::new()),
+        })
+        .run_resource_grant(RunResourceGrantConfig {
+            target: "reader/env".to_owned(),
+            operations: vec!["read".to_owned()],
+            paths: vec!["HOME".to_owned()],
+        })
+        .run_resource_grant(RunResourceGrantConfig {
+            target: "writer/stdout".to_owned(),
+            operations: vec!["write".to_owned()],
+            paths: vec!["line".to_owned()],
+        })
+        .build_compiler()
+        .unwrap();
+    let product = compiler.compile_canonical_source(source).unwrap();
+    let artifact = product.artifact();
+    let payload_state = artifact
+        .slots()
+        .iter()
+        .find_map(|slot| {
+            (slot.role == mech_engine::SlotRole::State
+                && artifact
+                    .schemas()
+                    .get(slot.schema)
+                    .is_some_and(|schema| matches!(schema.body(), mech_core::SchemaBody::String)))
+            .then_some(slot.slot)
+        })
+        .expect("payload is the fixture's String state slot");
+    let ProducerReference::NodeOutput {
+        node: payload_writer,
+        ..
+    } = artifact.slots()[payload_state.get() as usize].producer
+    else {
+        panic!("payload state has one resident writer")
+    };
+    let writer = &artifact.nodes()[payload_writer.get() as usize];
+    let BindingDeclaration::Input {
+        source: dormant_payload,
+        ..
+    } = artifact.bindings()[writer.input_bindings.start as usize]
+    else {
+        panic!("payload writer reads the activation-selected value")
+    };
+    let effect = artifact
+        .nodes()
+        .iter()
+        .find(|node| {
+            node.as_operation()
+                .and_then(|operation| operation.requirement)
+                .and_then(|requirement| artifact.requirements().get(requirement))
+                .is_some_and(|requirement| {
+                    matches!(requirement, ApplicationRequirement::Resource(request)
+                        if request.intent == ResourceIntent::Send)
+                })
+        })
+        .expect("fixture has one resource effect");
+    let mut bindings = artifact.bindings().to_vec();
+    let effect_input = bindings
+        [effect.input_bindings.start as usize..effect.input_bindings.end as usize]
+        .iter_mut()
+        .find(|binding| matches!(binding, BindingDeclaration::Input { .. }))
+        .expect("resource effect has a payload input");
+    let BindingDeclaration::Input { source, .. } = effect_input else {
+        unreachable!()
+    };
+    *source = dormant_payload;
+    let artifact = ProgramArtifactDraft {
+        schemas: artifact.schemas().clone(),
+        constants: artifact.constants().clone(),
+        contracts: artifact.contracts().clone(),
+        requirements: artifact.requirements().clone(),
+        inputs: artifact.inputs().to_vec().into_boxed_slice(),
+        slots: artifact.slots().to_vec().into_boxed_slice(),
+        nodes: artifact.nodes().to_vec().into_boxed_slice(),
+        bindings: bindings.into_boxed_slice(),
+        outputs: artifact.outputs().to_vec().into_boxed_slice(),
+        constraints: artifact.constraints().to_vec().into_boxed_slice(),
+        compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
+    }
+    .finalize()
+    .unwrap();
+    let request = NativeBuildRequest {
+        bytecode: encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+        instruction_type_bindings: None,
+        instruction_type_binding_requirements: None,
+        runtime_config: Some(NativeRuntimeConfig {
+            runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
+            hosts: vec![
+                HostInstanceConfig {
+                    name: "reader".to_owned(),
+                    provider: "cli".to_owned(),
+                    settings: ConfigValue::Map(BTreeMap::new()),
+                },
+                HostInstanceConfig {
+                    name: "writer".to_owned(),
+                    provider: "cli".to_owned(),
+                    settings: ConfigValue::Map(BTreeMap::new()),
+                },
+            ],
+            run_grants: vec![
+                RunResourceGrantConfig {
+                    target: "reader/env".to_owned(),
+                    operations: vec!["read".to_owned()],
+                    paths: vec!["HOME".to_owned()],
+                },
+                RunResourceGrantConfig {
+                    target: "writer/stdout".to_owned(),
+                    operations: vec!["write".to_owned()],
+                    paths: vec!["line".to_owned()],
+                },
+            ],
+        }),
+        target: None,
+        profile: NativeBuildProfile::Debug,
+        binary_name: "canonical-dormant-resource-effect".to_owned(),
+        output: PathBuf::from("ignored"),
+        emit: NativeEmit::Plan,
+        keep_project: false,
+        offline: true,
+    };
+    let plan = NativeApplicationBuilder::new(NativeBuildEnvironment {
+        function_catalog: mech_stdlib::source_native_plan_catalog(),
+        host_catalog: standard_native_host_catalog().unwrap(),
+        dependency_source: NativeDependencySource::Registry {
+            version: mech_build::MECH_COMPONENT_VERSION.to_owned(),
+        },
+    })
+    .plan(&request)
+    .unwrap();
+    assert_eq!(
+        plan.hosts
+            .iter()
+            .map(|host| (host.name.as_str(), host.provider.as_str()))
+            .collect::<Vec<_>>(),
+        [("writer", "cli")]
+    );
+    assert_eq!(
+        plan.run_grants,
+        [mech_build::PlannedResourceGrantKey {
+            host_instance: "writer".to_owned(),
+            host_context: "stdout".to_owned(),
+            operation: "write".to_owned(),
+            path: "line".to_owned(),
+        }]
+    );
+    assert!(plan.application_requirements.iter().any(|requirement| {
+        matches!(requirement, mech_build::PlannedApplicationRequirement::Resource { request, owner }
+            if request.base_uri == "cli://writer/stdout"
+                && request.path == "line"
+                && request.intent == ResourceIntent::Send
+                && owner.host_instance == "writer"
+                && owner.provider == "cli"
+                && owner.host_context == "stdout"
+                && owner.canonical_base_uri == "cli://writer/stdout")
+    }));
+}
+
+#[test]
+fn canonical_read_only_resource_plans_without_a_synthetic_effect_turn() {
+    let case = PROVIDER_CASES
+        .iter()
+        .find(|case| case.provider == "time")
+        .unwrap();
+    let product = provider_compiler(case)
+        .compile_canonical_source(case.source)
+        .unwrap();
+    let parsed = ParsedProgram::from_bytes(product.bytecode()).unwrap();
+    assert!(parsed.instructions.is_empty());
+    assert!(!parsed.artifact.is_empty());
+
+    let request = NativeBuildRequest {
+        bytecode: product.bytecode().to_vec(),
+        instruction_type_bindings: None,
+        instruction_type_binding_requirements: None,
+        runtime_config: Some(NativeRuntimeConfig {
+            runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
+            hosts: vec![HostInstanceConfig {
+                name: case.instance.to_owned(),
+                provider: case.provider.to_owned(),
+                settings: ConfigValue::Map(BTreeMap::new()),
+            }],
+            run_grants: vec![RunResourceGrantConfig {
+                target: case.target.to_owned(),
+                operations: case
+                    .operations
+                    .iter()
+                    .map(|operation| (*operation).to_owned())
+                    .collect(),
+                paths: case.paths.iter().map(|path| (*path).to_owned()).collect(),
+            }],
+        }),
+        target: None,
+        profile: NativeBuildProfile::Debug,
+        binary_name: "canonical-read-only-resource".to_owned(),
+        output: PathBuf::from("ignored"),
+        emit: NativeEmit::Plan,
+        keep_project: false,
+        offline: true,
+    };
+    let plan = NativeApplicationBuilder::new(NativeBuildEnvironment {
+        function_catalog: mech_stdlib::source_native_plan_catalog(),
+        host_catalog: standard_native_host_catalog().unwrap(),
+        dependency_source: NativeDependencySource::Registry {
+            version: mech_build::MECH_COMPONENT_VERSION.to_owned(),
+        },
+    })
+    .plan(&request)
+    .unwrap();
+    assert_eq!(plan.hosts.len(), 1);
+    assert_eq!(plan.hosts[0].name, case.instance);
+    assert_eq!(plan.hosts[0].provider, case.provider);
+    assert_eq!(plan.application_requirements.len(), 1);
+    assert!(plan.application_requirements.iter().any(|requirement| {
+        matches!(requirement, mech_build::PlannedApplicationRequirement::Resource { request, .. }
+            if request.base_uri == case.base_uri
+                && request.path == case.path
+                && request.intent == ResourceIntent::Read)
+    }));
+}
+
+#[test]
+fn canonical_context_alias_preserves_the_resolved_resource_owner() {
+    let case = PROVIDER_CASES
+        .iter()
+        .find(|case| case.provider == "console")
+        .unwrap();
+    let source = "@out := console://console/output{:write(line)}\n@alias := @out\n@alias/line <- \"planned\"";
+    let product = provider_compiler(case)
+        .compile_canonical_source(source)
+        .unwrap();
+    let parsed = ParsedProgram::from_bytes(product.bytecode()).unwrap();
+    assert!(parsed.requirements.iter().any(|requirement| {
+        matches!(
+            requirement,
+            ApplicationRequirement::Resource(request)
+                if request.base_uri == "console://console/output"
+                    && request.path == "line"
+                    && request.context_name == "output"
+                    && request.operation == "write"
+                    && request.intent == ResourceIntent::Send
+        )
+    }));
+}
+
+#[test]
+fn robot_custom_send_operation_survives_source_artifact_and_bytecode() {
+    let case = PROVIDER_CASES
+        .iter()
+        .find(|case| case.provider == "robot-arm")
+        .unwrap();
+    let product = provider_compiler(case).compile_source(case.source).unwrap();
+    assert!(
+        product
+            .artifact()
+            .requirements()
+            .iter()
+            .any(|(_, requirement)| {
+                matches!(
+                    requirement,
+                    ApplicationRequirement::Resource(request)
+                        if request.base_uri == "robot://arm/commands"
+                            && request.path == "move"
+                            && request.operation == "move"
+                            && request.intent == ResourceIntent::Send
+                )
+            })
+    );
+    assert!(product.artifact().nodes().iter().any(|node| {
+        node.as_operation().is_some_and(|node| {
+            node.operation.module_path.as_ref() == ["resource"]
+                && node.operation.operation_name == "send"
+                && node.requirement.is_some_and(|requirement| {
+                    matches!(product.artifact().requirements().get(requirement),
+                        Some(ApplicationRequirement::Resource(request))
+                        if request.operation == "move")
+                })
+        })
+    }));
+
+    let decoded = ParsedProgram::from_bytes(product.bytecode()).unwrap();
+    assert!(decoded.requirements.iter().any(|requirement| {
+        matches!(
+            requirement,
+            ApplicationRequirement::Resource(request)
+                if request.base_uri == "robot://arm/commands"
+                    && request.path == "move"
+                    && request.operation == "move"
+                    && request.intent == ResourceIntent::Send
+        )
+    }));
+}
+
+#[test]
+fn integrity_constraints_are_explicit_native_linkage_requirements() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap();
+    let bytecode = compiler
+        .compile_source("x := 1.0\nsafe! := x <= 2.0")
+        .map(|product| product.into_parts().1)
+        .unwrap();
+    let parsed = ParsedProgram::from_bytes(&bytecode).unwrap();
+    assert!(parsed.instructions.is_empty());
+    assert_eq!(
+        mech_engine::decode_program_artifact_bytecode_v1(&bytecode)
+            .unwrap()
+            .constraints()
+            .len(),
+        1
+    );
+
+    let request = NativeBuildRequest {
+        bytecode,
+        instruction_type_bindings: None,
+        instruction_type_binding_requirements: None,
+        runtime_config: Some(NativeRuntimeConfig {
+            runtime: RuntimeConfig::default(),
+            hosts: Vec::new(),
+            run_grants: Vec::new(),
+            actor_bootstrap: None,
+        }),
+        target: None,
+        profile: NativeBuildProfile::Debug,
+        binary_name: "compiled-integrity".to_owned(),
+        output: PathBuf::from("ignored"),
+        emit: NativeEmit::Plan,
+        keep_project: false,
+        offline: true,
+    };
+    let plan = NativeApplicationBuilder::new(NativeBuildEnvironment {
+        function_catalog: mech_stdlib::source_native_plan_catalog(),
+        host_catalog: standard_native_host_catalog().unwrap(),
+        dependency_source: NativeDependencySource::Registry {
+            version: mech_build::MECH_COMPONENT_VERSION.to_owned(),
+        },
+    })
+    .plan(&request)
+    .unwrap();
+    assert!(plan.runtime_functions.is_empty());
+    assert!(
+        !plan
+            .engine_features
+            .iter()
+            .any(|feature| feature == "dynamic-modules")
+    );
+}
+
+#[test]
+fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
+    let case = ProviderCase {
+        provider: "cli",
+        instance: "cli",
+        target: "cli/stdout",
+        operations: &["write"],
+        paths: &["line"],
+        source: "@out := cli://stdout{:write(line)}\nx := \"planned\"\n@out/line <- x + \" output\"",
+        base_uri: "cli://stdout",
+        path: "line",
+        intent: ResourceIntent::Send,
+    };
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .host_factory(selected_planning_host_factory("cli").unwrap())
+        .unwrap()
+        .host_instance(HostInstanceConfig {
+            name: "cli".to_owned(),
+            provider: "cli".to_owned(),
+            settings: ConfigValue::Map(BTreeMap::new()),
+        })
+        .run_resource_grant(RunResourceGrantConfig {
+            target: "cli/stdout".to_owned(),
+            operations: vec!["write".to_owned()],
+            paths: vec!["line".to_owned()],
+        })
+        .build_compiler()
+        .unwrap();
+    let product = compiler.compile_canonical_source(case.source).unwrap();
+    assert!(product.artifact().nodes().iter().any(|node| {
+        node.as_operation().is_some_and(|node| {
+            node.operation.module_path.as_ref() == ["string"]
+                && node.operation.operation_name == "concat"
+        })
+    }));
+    assert!(product.artifact().nodes().iter().any(|node| {
+        node.as_operation().is_some_and(|node| {
+            node.operation.module_path.as_ref() == ["resource"]
+                && node.operation.operation_name == "send"
+        })
+    }));
+    let request = NativeBuildRequest {
+        bytecode: product.bytecode().to_vec(),
+        instruction_type_bindings: None,
+        instruction_type_binding_requirements: None,
+        runtime_config: Some(NativeRuntimeConfig {
+            runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
+            hosts: vec![HostInstanceConfig {
+                name: "cli".to_owned(),
+                provider: "cli".to_owned(),
+                settings: ConfigValue::Map(BTreeMap::new()),
+            }],
+            run_grants: vec![RunResourceGrantConfig {
+                target: "cli/stdout".to_owned(),
+                operations: vec!["write".to_owned()],
+                paths: vec!["line".to_owned()],
+            }],
+        }),
+        target: None,
+        profile: NativeBuildProfile::Debug,
+        binary_name: "computed-resource-send".to_owned(),
+        output: PathBuf::from("ignored"),
+        emit: NativeEmit::Plan,
+        keep_project: false,
+        offline: true,
+    };
+    let plan = NativeApplicationBuilder::new(NativeBuildEnvironment {
+        function_catalog: mech_stdlib::source_native_plan_catalog(),
+        host_catalog: standard_native_host_catalog().unwrap(),
+        dependency_source: NativeDependencySource::Registry {
+            version: mech_build::MECH_COMPONENT_VERSION.to_owned(),
+        },
+    })
+    .plan(&request)
+    .unwrap();
+    assert!(plan.runtime_functions.is_empty());
+    assert_eq!(plan.hosts.len(), 1);
+}
+
+#[test]
+fn canonical_artifact_drives_native_value_and_resident_features() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap();
+    let source = "~value<f64> := 42\nconverted<u8> := value\nmatrix<[f32]:2,3> := [1f32 2f32 3f32; 4f32 5f32 6f32]\n(converted, matrix)";
+    let product = compiler.compile_canonical_source(source).unwrap();
+    assert!(
+        product
+            .artifact()
+            .operation_references()
+            .iter()
+            .any(|operation| operation.canonical_name() == "convert/kind")
+    );
+
+    let request = NativeBuildRequest {
+        bytecode: product.bytecode().to_vec(),
+        instruction_type_bindings: None,
+        instruction_type_binding_requirements: None,
+        runtime_config: None,
+        target: None,
+        profile: NativeBuildProfile::Debug,
+        binary_name: "canonical-artifact-features".to_owned(),
+        output: PathBuf::from("ignored"),
+        emit: NativeEmit::Plan,
+        keep_project: false,
+        offline: true,
+    };
+    let plan = NativeApplicationBuilder::new(NativeBuildEnvironment {
+        function_catalog: mech_stdlib::source_native_plan_catalog(),
+        host_catalog: standard_native_host_catalog().unwrap(),
+        dependency_source: NativeDependencySource::Registry {
+            version: mech_build::MECH_COMPONENT_VERSION.to_owned(),
+        },
+    })
+    .plan(&request)
+    .unwrap();
+
+    for feature in ["convert", "f32", "f64", "matrix2x3", "tuple", "u8"] {
+        assert!(
+            plan.engine_features.iter().any(|actual| actual == feature),
+            "missing engine feature {feature}: {:?}",
+            plan.engine_features
+        );
+    }
+    for feature in ["f32", "f64", "matrix2x3", "tuple", "u8"] {
+        assert!(
+            plan.core_features.iter().any(|actual| actual == feature),
+            "missing core feature {feature}: {:?}",
+            plan.core_features
+        );
+    }
+}

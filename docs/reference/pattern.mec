@@ -1,0 +1,108 @@
+patterns
+================================================================================
+
+%% Patterns are a single matching language shared by functions, state-machine transitions, and match guards. They are used to match and destructure data in a concise and declarative way.
+
+1. Pattern forms
+-------------------------------------------------------------------------------
+
+Mech patterns support the same core shapes in every pattern context:
+
+| Pattern | Description | Example |
+|---------|-------------|---------|
+| Wildcard | Matches anything and binds nothing | `*` |
+| Variable pattern | Binds a value to a symbol | {{x}} |
+| Literal / expression | Matches when evaluated pattern equals the candidate value | {{42}}, {{true}}, {{"hello"}} |
+| Atom pattern | Matches exact atoms | `:ready` |
+| Tuple pattern | Positional matching for tuples | {{(first, second)}} |
+| Enum-variant pattern | Matches tagged atom variants and optionally destructures payloads | {{:out(:in(x))}} |
+| Array pattern | Prefix/suffix matching with optional spread capture | `[first ... last]` |
+
+2. Function match arms
+-------------------------------------------------------------------------------
+
+Function branches are evaluated top-to-bottom. The first arm whose pattern matches call arguments is selected.
+
+```
+abs(x) => <f64>
+  ├ n if n < 0.0 => -n
+  └ n => n.
+```
+
+Multiple call arguments are matched with tuple-style structure:
+
+```
+max2(a, b) => <u64>
+  ├ (x, y) if x > y => x
+  └ (_, y) => y.
+```
+
+3. Match guards
+-------------------------------------------------------------------------------
+
+Option matching also reuses the same pattern syntax. A wildcard arm is required for exhaustiveness.
+
+```mech
+value<f64?> := 123.456
+result := value?
+  ├ x, x > 10 => "large"
+  ├ x => "small"
+  └ * => "empty".
+```
+
+Guard-like conditions in option arms are pattern expressions that evaluate to `bool` in the arm environment.
+
+You can also match atom-tagged values:
+
+```mech
+<color> := :red<f64> | :green<f64> | :blue<f64>
+my-color<color> := :red(300)
+shade := my-color?
+  ├ :red(100) => "dark red"
+  ├ :red(50) => "light red"
+  ├ :red(x), x < 50 => "pink"
+  ├ :red(x), x > 100 => "maroon"
+  ├ :green(100) => "dark green"
+  └ * => "unknown".
+```
+
+Deeply nested patterns are also possible:
+
+```mech
+<result> := :ok<u64> | :err<string>
+<wrapped> := :some(<result>) | :none
+wrapped-val := :some(:ok(42))
+status := wrapped-val?
+  ├ :some(:ok(42)) => "the answer"
+  ├ :some(:ok(x)) => "success"
+  ├ :some(:err(msg)) => msg
+  └ * => "no result".
+```
+
+4. State Machines
+-------------------------------------------------------------------------------
+
+State machine transitions also use the same pattern syntax in their transition arms. Guards work the same way as in option arms, but they are named and can transition between one another.
+
+For example:
+
+```mech
+#TrafficLight(steps<u64>) => <u64>
+  ├ :Red(steps<u64>)
+  ├ :Green(steps<u64>)
+  ├ :Yellow(steps<u64>)
+  └ :Done(out<u64>).
+
+#TrafficLight(steps<u64>) -> :Red(steps)
+  :Red(steps)
+    ├ steps > 0u64 -> :Green(steps - 1u64)
+    └ steps == 0u64 -> :Done(0u64)
+  :Green(steps)
+    ├ steps > 0u64 -> :Yellow(steps - 1u64)
+    └ steps == 0u64 -> :Done(0u64)
+  :Yellow(steps)
+    ├ steps > 0u64 -> :Red(steps - 1u64)
+    └ steps == 0u64 -> :Done(0u64)
+  :Done(out) => out.
+```
+

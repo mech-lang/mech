@@ -1,0 +1,72 @@
+math/fmod
+===============================================================================
+
+%% Floating-point remainder (fmod)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Z := math/fmod(X, Y)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the floating-point remainder of dividing `X` by `Y`, using the same sign as the dividend `X`. 
+This corresponds to the C `fmod` function. The result `Z` satisfies:
+
+    Z = X - n * Y
+
+where `n` is the integer quotient truncated toward zero.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind               | Description |
+|----------|--------------------|-------------|
+| `X`      | `float`, `[float]` | Dividend. Can be scalar, vector, or matrix. |
+| `Y`      | `float`, `[float]` | Divisor. Must be nonzero. Shape must match `X`. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind            | Description |
+|----------|-----------------|-------------|
+| `Z`      | matches input   | Floating-point remainder of `X / Y`. Same shape as `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Compute remainder of two numbers
+
+```mech:ex1
+z := math/fmod(5.3, 2.0)
+```
+
+(b) Compute elementwise remainders of a vector
+
+```mech:ex2
+x := [5.3, -5.3, 7.0]
+y := [2.0, 2.0, 2.5]
+z := math/fmod(x, y)
+```
+
+(c) Compute remainders for a matrix
+
+```mech:ex3
+x := [5.3, -5.3; 7.0, -7.0]
+y := [2.0, 2.0; 2.5, 2.5]
+z := math/fmod(x, y)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The `fmod` function differs from the standard remainder operation in how it handles signs:
+
+- The result always has the same sign as the dividend `X`.  
+- Magnitude of result is strictly less than `|Y|`.  
+- Division by zero is undefined and produces an error.  
+
+This behavior matches the C standard library `fmod` function, ensuring consistency with low-level floating-point arithmetic.

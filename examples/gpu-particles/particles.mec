@@ -1,0 +1,53 @@
++> math
+
+-- The unannotated section is the ordinary transactional CPU graph. Browser
+-- pointer data enters through a host resource. The graph decides which values
+-- cross the compute boundary, and dispatch occurs only after the turn commits.
+@pointer := pointer://pointer/frame{:read(pulse), :read(position), :read(pressed), :read(delta-seconds)}
+@particles := compute://particles/kernel{:write(input/force-point), :write(input/force-strength), :write(input/dt), :write(turn)}
+
+pulse := @pointer/pulse
+force-point := @pointer/position
+force-strength := @pointer/pressed
+dt := @pointer/delta-seconds
+
+@particles/input/force-point <- force-point
+@particles/input/force-strength <- force-strength
+@particles/input/dt <- dt
+@particles/turn <- pulse
+
+particle-field @compute
+-------------------------------------------------------------------------------
+
+-- This is the portable compute boundary. The values, initialization, and
+-- recurrence are Mech source; the host receives the compiled region, not a
+-- handwritten particle kernel.
+particle-count := 1000000f32
+particle-index := 1f32..=particle-count
+radius-seed := math/sin(particle-index * 12.9898<f32>) * 0.5<f32> + 0.5<f32>
+arm := math/mod(particle-index, 7f32)
+radius := 0.06<f32> + radius-seed * 0.86<f32>
+angle := radius * 19f32 + arm * 0.8975979<f32>
+particle-x := math/cos(angle) * radius
+particle-y := math/sin(angle) * radius
+~positions := [particle-x; particle-y]
+~velocities := [(0f32 - particle-y); particle-x] * 0.66<f32>
+
+-- These defaults establish the compute input types. The CPU graph replaces them
+-- every frame through the explicit compute:// resource paths above.
+force-point := [0f32; 0f32]
+force-strength := 0f32
+dt := 0.016666667<f32>
+
+offset := force-point - positions
+distance-square := offset * offset + 0.018<f32>
+pointer-pull := force-strength * (1f32 - distance-square * 0.18<f32>)
+position-square := positions * positions
+restoring := 0.435<f32> + position-square * 0.11<f32>
+acceleration := (0f32 - positions) * restoring + offset * pointer-pull
+next-velocities := velocities + acceleration * dt
+next-positions := positions + next-velocities * dt
+
+velocities = next-velocities
+positions = next-positions
+(positions, velocities)

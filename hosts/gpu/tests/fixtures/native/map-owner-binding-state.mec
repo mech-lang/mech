@@ -1,0 +1,14 @@
++> map
+retain(h<{string:u64}>, n<u64>) => (out<{string:u64}>) :=
+  previous := ("opaque" ∈ h)? | true => h{"opaque"} | false => 0u64.
+  out := map/insert(h, "opaque", previous + n).
+#Build(initial<{string:u64}>, count<u64>) => <{string:u64}>
+  | :Next(index<u64>, counts<{string:u64}>)
+  | :Done(counts<{string:u64}>).
+#Build(initial, count) -> :Next(0u64, initial)
+  :Next(index, counts)
+    | index >= count -> :Done(counts)
+    | * -> :Next(index + 1u64, retain(counts, index))
+  :Done(counts) => counts.
+empty<{string:u64}> := map/new()
+#Build(empty, 3u64)

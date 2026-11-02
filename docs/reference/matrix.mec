@@ -1,0 +1,552 @@
+matrix
+===============================================================================
+
+%% A `matrix` is a collection of homogenous datatypes in 2-Dimensions. Various operations can be performed on matricies, including arithmetic, concatenation, and matrix multiplication. Matrices can be sliced, indexed, and reshaped.
+
+***
+
+| Operator   | Function                                     | Description                                            |
+|------------|---------------------------------------------:|--------------------------------------------------------|
+| {{A + B}}  | [`math/ops`](/stdlib/math/ops.html)          | Perform element-wise arithmetic operations on matrices |
+| {{A > B}}  | [`compare/ops`](/stdlib/compare/ops.html)    | Perform element-wise comparison operations on matrices |
+| {{A || B}} | [`logic/ops`](/stdlib/logic/ops.html)        | Perform element-wise logical operations on matrices    |
+| {{A ** B}} | [`matmul`](/stdlib/matrix/matmul.html)       | Perform matrix multiplication                          |
+| {{A'}}     | [`transpose`](/stdlib/matrix/transpose.html) | Transpose a matrix                                     |
+| {{a · b}}  | [`dot`](/stdlib/matrix/dot.html)             | Compute the dot product of two vectors                 |
+| {{A \ b}}  | [`solve`](/stdlib/matrix/solve.html)         | Solve a system of linear equations                     |
+| `[x y]`    | [`horzcat`](/stdlib/matrix/horzcat.html)     | Arrange matrices side-by-side                          |
+| `[x; y]`   | [`vertcat`](/stdlib/matrix/vertcat.html)     | Arrange matrices one above the other                   |
+
+1. Syntax
+-------------------------------------------------------------------------------
+
+Declare a matrix using square brackets `[]`.
+
+Use semicolons `;` or newlines to separate rows. 
+
+Use commas `,` or spaces to separate columns.
+
+```
+[1,2,3]   -- A row vector (1x3)
+[1 2 3]   -- The same row vector
+
+[1;2;3]   -- A column vector (3x1)
+[1        
+ 2
+ 3]       -- The same column vector
+
+[1,2;3,4] -- A matrix (2x2)
+[1 2
+ 3 4]     -- The same matrix
+[1 + 2; 3 + 4] -- Elements can be expressions
+```
+
+By default, all matrices are rank 2, meaning they have rows and columns. Elementes are indexed in a `[row, column]` format.
+
+When parsed and formatted, they look like this:
+
+```mech
+-- Row Vector
+[1 2 3]  
+-- Column Vector
+[1;2;3]  
+-- Matrix
+[1 2;3 4]
+-- Vector from expressions
+[1 + 2; 3 + 4] 
+```
+
+(1.1) Fancy Syntax
+
+The Mech REPL formats matrix output using fancy box drawing characters for better readability.
+
+```
+┏           ┓
+┃ 1   2   3 ┃
+┃ 4   5   6 ┃
+┃ 7   8   9 ┃
+┗           ┛
+```
+
+Mech can parse data formatted this way, allowing you to copy or pipe REPL output directly into a Mech program that expects a matrix. The above example evaluates to:
+
+┏           ┓
+┃ 1   2   3 ┃
+┃ 4   5   6 ┃
+┃ 7   8   9 ┃
+┗           ┛
+
+2. Kind
+-------------------------------------------------------------------------------
+
+The kind of a matrix is determined by its dimensions and the kind of its elements. For example, a matrix of `u8` values with 2 rows and 3 columns has the kind:
+
+```mech:disabled
+<[u8]:2,3>
+```
+
+A general matrix can be represented as:
+
+```mech:disabled
+<[T]>
+```
+
+A dynamic dimension is noted with an underscore `_`, such as:
+
+```mech:disabled
+<[T]:_,3>  -- A dynamic matrix with 3 columns
+<[T]:2,_>  -- A dynamic matrix with 2 rows
+<[T]:_,_>  -- A dynamic matrix in 2 dimensions
+```
+
+Row vectors and column vectors are special cases of matrices:
+
+```mech:disabled
+<[T]:3>    -- A row vector with 3 elements
+<[T]:3,1>  -- A column vector with 3 elements
+<[T]:_>    -- A dynamic row vector with an unspecified number of elements
+<[T]:_,1>  -- A dynamic column vector with an unspecified number of elements
+```
+
+(2.1) Convert
+
+You can convert a matrix to another kind using a kind annotation. For example:
+
+```mech:ex 2.1.1
+m := [1 2 3]
+v<[u8]> := m  -- Converts `[f64]` to `[u8]`
+```
+
+You can also convert a vector of numbers into a vector of strings:
+
+```mech:ex 2.1.2
+v := [1 2 3]
+s<[string]> := v  -- Converts `[f64]` to `[string]`
+```
+
+(2.2) Reshape
+
+You can reshape a matrix to a different size as long as the total number of elements remains the same. For example, you can reshape a 2x3 matrix into a 3x2 matrix:
+
+```mech:ex 2.2.2
+m := [1 2 3 4 5 6]
+v<[f64]:3,2> := m  -- Reshapes the matrix to a 3x2 matrix
+```
+
+This will also convert the matrix elements to `u8` from `f64`.
+
+3. Construction
+-------------------------------------------------------------------------------
+
+Matrices can be constructed in several ways:
+
+- Matrix literals
+- From concatenation of existing matrices or vectors
+- From ranges
+- From comprehensions
+- From tables
+- From sets
+
+(3.1) Matrix Literals
+
+Matrix literals are written using square brackets `[]`, with rows separated by semicolons `;` or newlines, and columns separated by commas `,` or spaces.
+
+```mech:ex 3.1
+m1 := [1 2 3; 4 5 6]   -- A 2x3 matrix
+m2 := [1; 2; 3]        -- A 3x1 column vector
+m3 := [1, 2, 3]        -- A 1x3 row vector
+```
+(3.2) From Concatenation
+
+You can construct new matricies from existing ones using concatenation.
+
+Vertical concatenation is done bay stacking rows on top of each other, referencing another matrix or vector within the brackets.
+
+```mech:ex 3.1
+x := [1 2 3]  -- A row vector (1x3)
+y := [x;x;x]  -- A matrix (3x3)
+```
+
+Horizontal concatenation is done by placing matrices or vectors side by side, referencing another matrix or vector within the brackets.
+
+```mech:ex 3.2
+x := [1;2;3]  -- A column vector (3x1)
+y := [x,x,x]  -- A matrix (3x3)
+```
+
+See section §7 for more details on concatenation.
+
+(3.3) From Ranges
+
+You can create a matrix from a range of numbers. By default, ranges produce column vectors.
+
+```mech:ex 3.3.1
+m := 1..=4          -- A column vector with values from 1 to 4, inclusive
+```
+
+```mech:ex 3.3.2
+m := 1..4           -- A column vector with values from 1 to 4, exclusive, the matrix has 3 elements
+```
+
+(3.4) From Comprehensions
+
+Matrices can also be constructed with *matrix comprehensions*. A matrix comprehension uses square brackets and has the form {{[ expression | qualifiers ]}}.
+
+Qualifiers may include:
+
+- one or more generators (`<-`)
+- let bindings (`:=`)
+- boolean filters
+
+For example, this comprehension squares the even elements of a row vector and returns them as a row vector:
+
+```mech:ex 3.4.1
+[ x * x | x <- [1 2 3 4], (x % 2) == 0 ]
+```
+
+You can also generate from a named matrix value:
+
+```mech:ex 3.4.2
+qq := [1 2 3 4]
+[ x * x | x <- qq, (x % 2) != 0 ]
+```
+
+Matrix comprehensions use the same qualifier style as set comprehensions, but they produce matrix values instead of sets.
+
+(3.5) From Tables
+
+You can create a matrix from a table using a kind annotation, as long as the kinds are compatible. For example, if you have a table with columns of kind `f64`, you can create a matrix of kind `f64`:
+
+```mech:ex 3.5
+a:=| x<f64>  y<f64> | 
+   |  1.6    2.3   |
+   |  1.3    3.4   |
+   |  2.7    4.5   |
+   |  1.5    5.6   |
+m<[u8]> := a.x
+```
+
+(3.6) From Sets
+
+You can create a matrix from a set using a kind annotation, as long as the kinds are compatible. For example, if you have a set of `f64` values, you can create a matrix of kind `f64`:
+
+```
+s := {1.1, 2.2, 3.3, 4.4}
+m<[f64]:2,2> := s
+```
+
+4. Accessing Elements
+-------------------------------------------------------------------------------
+
+Matrix elements can be accessed using indexing, which is done with square brackets `[]` and a comma-separated list of indices.
+
+Indexing starts at 1, not 0, so the first element is accessed with `1`.
+
+(4.1) Indexing
+
+For a 1D vector, you can access elements using a single index:
+
+```mech:ex 4.1.1
+m := ["a" "b" "c" "d"]
+(m[1], m[4])  -- Access the first and fourth elements
+```
+
+Indexing into a column vector is similar:
+
+```mech:ex 4.1.2
+m := ["a";"b";"c";"d"]
+(m[1], m[4])  -- Access the first and fourth elements
+```
+
+For a 2D matrix, you can access elements using two indices, in a `[row, column]` format:
+
+```mech:ex 4.1.3
+m := [1 2 3; 4 5 6]
+m[2,3] -- Access the element in the second row and third column
+```
+
+The first index is the row, and the second index is the column. It's possible to use a single index to access matrix elements, which will return the element at that index in a column-major order. For example, considering the matrix above:
+
+```mech:ex 4.1.3
+m[2] -- returns {m[2]}
+```
+
+(4.2) Slicing
+
+Slicing allows you to access multiple elements at once, either entire rows or columns, or specific ranges of rows and columns.
+
+The `:` operator can be used to access entire rows or columns:
+
+You can slice it in various ways. For a matrix x with `N` rows and `M` columns, the following indexing operations are valid:
+
+| Syntax              | Description                        | Resulting Size   |
+|---------------------|------------------------------------|------------------|
+| {{x[:]}}              | Slice all elements                 | `[N*M x 1]`      |
+| {{x[1,:]}}            | Slice a row                        | `[1 x M]`        |
+| {{x[:,2]}}            | Slice a column                     | `[N x 1]`        |
+| {{x[1..=2,:]}}        | Slice a range of rows              | `[2 x M]`        |
+| `x[[1,3],:]`        | Slice specific rows                | `[2 x M]`        |
+| `x[[1,3],[1,3]]`    | Slice specific rows and columns    | `[2 x 2]`        |
+| `x[[1 1 2 2],:]`    | Slice the rows multiple times      | `[4 x M]`        |
+
+(4.2.1) Examples
+
+Given the matrix:
+
+```mech:ex 4.2.1
+m := [1 2 3; 4 5 6; 7 8 9]
+```
+
+Slice the entire matrix:
+
+```mech:ex 4.2.1
+m[:]
+```
+Slice the first row:
+
+```mech:ex 4.2.1
+m[1,:]
+```
+Slice the second colum:
+
+```mech:ex 4.2.1
+m[:,2]
+```
+
+Slice the first two rows:
+
+```mech:ex 4.2.1
+m[1..=2,:]
+```
+
+Slice rows 1 and 3:
+
+```mech:ex 4.2.1
+m[[1,3],:]
+```
+
+Slice the corners:
+
+```mech:ex 4.2.1
+m[[1,3],[1,3]]
+```
+
+Slice the first rows multiple times:
+
+```mech:ex 4.2.1
+m[[1 1 1 1],:]
+```
+
+(4.3) Logical Indexing
+
+Logical indexing allows you to select elements based on a condition. For example, if you have a matrix of numbers and want to select only those greater than 5:
+
+```mech:ex 4.3.1
+m := 1..=10
+m[m > 5]  -- Selects elements greater than 5
+```
+
+5. Assigning Elements
+--------------------------------------------------------------------------------
+
+Assignment follows the same syntax as accessing, but it only works if the matrix was declared as mutable:
+
+```mech:ex 5.1
+~m := [1 2 3 4 5 6] -- A mutable matrix
+m[3] = 42  -- Assigns the value `42` to the element in the second row and third Column
+```
+
+You can assign an entire row or column:
+
+```mech:ex 5.2
+~m := [1 2 3; 4 5 6; 7 8 9]
+m[2,:] = 42  -- Assigns `42` to every column of the second row
+```
+
+Logical indexing can also be used for assignment. 
+
+```mech:ex 5.3
+~m := [1 2 3 4]
+ix := [true false false true]  -- A logical index
+m[ix] = 0 -- Sets elements at the logical index to zero
+```
+
+For example, to set all even numbers in a matrix to zero:
+
+```mech:ex 5.4
+~m := [1 2 3 4 5 6]
+m[(m % 2) == 0] = 0  -- Sets all even numbers to zero
+```
+
+6. Operations
+-------------------------------------------------------------------------------
+
+Matrix operations include `add`, `sub`, `mul`, `div`, and `pow`. These operations are broadcast element-wise on the matrix.
+
+(6.1) Arithmetic Operations 
+
+If matrices have the same dimension, standard arithmetic operations are performed element-wise:
+
+```mech:ex 6.1.1
+m1 := [1 2 3; 4 5 6]
+m2 := [7 8 9; 10 11 12]
+m1 + m2  -- Adds the two matrices element-wise
+```
+
+If one of the operands is a scalar, it will be added or subtracted from each element of the matrix:
+
+```mech:ex 6.1.2
+m := [1 2 3 4 5] 
+m + 10  -- Adds 10 to each element of the vector
+```
+
+For more, see [`math/ops`](/stdlib/math/ops.html)
+
+(6.2) Comparison Operations
+
+Standard comparison operations can be performed element-wise on matrices of the same dimension:
+
+```mech:ex 6.2.1
+m1 := [1 2 3; 4 5 6]
+m2 := [3 2 1; 6 5 4]
+m1 < m2  -- Compares the two matrices element-wise
+```
+
+If one of the operands is a scalar, it will be compared to each element of the matrix:
+
+```mech:ex 6.2.2
+m := [1 2 3 4 5] 
+mask := m >= 3  -- Compares each element of the vector to 3
+```
+
+This is a common way to create logical indices for selecting elements from a matrix. In the above example, the variable `mask` represents a mask for all elements greater than or equal to 3. This mask can be applied to the original matrix to extract those elements:
+
+```mech:ex 6.2.2
+selected := m[mask]  -- Selects elements from m where mask is `true`
+```
+
+For more, see [`compare/ops`](/stdlib/compare/ops.html)
+
+(6.3) Logical Operations
+
+Logical operations can be performed element-wise on matrices of the same dimension:
+
+```mech:ex 6.3.1
+m1 := [true false true; false true false]
+m2 := [false false true; true true false]
+mask := m1 && m2  -- Performs element-wise logical AND
+```
+
+This can be used to assign values based on multiple conditions. For example, to set elements to zero where two conditions are met:
+
+```mech:ex 6.3.1
+~q := [1 2 3; 4 5 6]
+q[!mask] = 0 -- Sets elements to zero where mask is `false`
+```
+
+For more, see [`logic/ops`](/stdlib/logic/ops.html)
+
+(6.4) Matrix Multiplication
+
+Matrix multiplication is performed using the `**` operator. For the operation to be valid, the number of columns in the first matrix must match the number of rows in the second matrix:
+
+```mech:ex 6.4
+m1 := [1 2 3; 4 5 6 ]
+m2 := [7 8; 9 10; 11 12]
+m1 ** m2  -- Multiplies the two matrices
+```
+
+For more, see [`matrix/matmul`](/stdlib/matrix/matmul.html)
+
+(6.5) Matrix Transpose
+
+The transpose of a matrix is obtained by swapping its rows and columns. This can be done using the `grave` operator:
+
+```mech:ex 6.5
+m := [1 2 3 4 5 6]
+m'  -- Transposes the matrix to `6x1`
+```
+
+For more, see [`matrix/transpose`](/stdlib/matrix/transpose.html)
+
+(6.6) Dot Product
+
+The dot product of two vectors can be computed using the `·` operator:
+
+```mech:ex 6.6
+v1 := [1 2 3]
+v2 := [4 5 6]
+v1 · v2  -- Computes the dot product of the two vectors
+```
+
+For more, see [`matrix/dot`](/stdlib/matrix/dot.html)
+
+(6.7) Solve Systems of Linear Equations
+
+You can solve a system of linear equations represented in matrix form `Ax = b` using the `solve` function:
+
+```mech:ex 6.7
+A := [2 1; 1 3]
+b := [8; 13]
+x := A \ b  -- Solves for x in Ax = b
+```
+
+For more, see [`matrix/solve`](/stdlib/matrix/solve.html)
+
+In this example, `x` will contain the solution to the system of equations, `[2.2; 3.6]`.
+
+7. Concatenation
+-------------------------------------------------------------------------------
+
+Matrix concatenation allows you to combine multiple matrices or vectors into a single matrix. There are two types of concatenation: vertical and horizontal. Horizontal concatenation combines matrices side by side, while vertical concatenation stacks them on top of each other.
+
+When concatenating matrices, they must have compatible dimensions. For horizontal concatenation, the number of rows must match, and for vertical concatenation, the number of columns must match.
+
+(7.1) Horizontal Concatenation
+
+Horizontal concatenation is done by placing matrices or vectors next to each other, separated by commas or spaces. For example:
+
+```mech:ex 7.1
+m1 := [1 2]
+m2 := [3 4]
+m := [m1, m2]  -- Evaluates to `[1 2 3 4]`
+```
+
+The concated matrices must have the same number of rows, but they can have different numbers of columns.
+
+```mech:ex 7.2
+m1 := [1]
+m2 := [2 3]
+m := [m1, m2]  -- Evaluates to `[1 2 3]`
+```
+
+Contatenate a 2x2 matrix with a 2x1 vector:
+
+```mech:ex 7.3
+m1 := [1 2; 4 5]
+m2 := [3; 6]
+m := [m1, m2]  -- Evaluates to `[1 2 3; 4 5 6]`
+```
+
+(7.2) Vertical Concatenation
+
+Vertical concatenation is done by stacking matrices or vectors on top of each other, separated by semicolons or newlines. The matrices must have the same number of columns, but they can have different numbers of rows.
+
+```mech:ex 7.4
+m1 := [1 2]'
+m2 := [3 4]'
+m := [m1; m2]  -- Evaluates to `[1 2 3 4]'`
+```
+
+You can also vertically concatenate matrices of different sizes as long as each matrix has the same number of columns:
+
+```mech:ex 7.5
+m1 := [1 2; 3 4]
+m2 := [5 6]
+m := [m1; m2]  -- Evaluates to `[1 2; 3 4; 5 6]`
+```
+Matrix-valued comprehensions follow the same one-level horizontal block rule
+as matrix literals. Blocks must agree on row count and contribute their widths
+in qualifier order. An explicit nested result kind, such as
+`blocks<[[f64]:2,1]:1,2>`, retains complete matrices as elements instead.
+See the comprehension reference for empty geometry and skipped-yield rules.

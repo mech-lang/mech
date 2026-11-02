@@ -1,0 +1,83 @@
+math/negate
+===============================================================================
+
+%% Element-wise arithmetic negation
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/negate(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Returns the arithmetic negation of the input: `Y = -X`. Works on scalars, vectors, and matrices. For array inputs, negation is applied **element-wise** and the output has the same shape and element type (subject to numeric rules for that type).
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                                   | Description                                                    |
+|----------|----------------------------------------|----------------------------------------------------------------|
+| `X`      | `int`, `float`, `rational`, `complex`, `[T]`, `[[T]]` | Value(s) to negate. Arrays are negated element-wise.           |
+
+**Supported scalar types**: `i8`, `i16`, `i32`, `i64`, `i128`, `f32`, `f64`, `rational` (R64), and `complex` (C64).
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind            | Description                                                |
+|----------|-----------------|------------------------------------------------------------|
+| `Y`      | matches input   | Negated value(s). Shape and element type match `X`.       |
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(a) Negate a scalar
+
+```mech:ex1
+y := math/negate(42)        // -42
+```
+
+(b) Negate a floating-point scalar
+
+```mech:ex2
+y := math/negate(-3.5)      // 3.5
+```
+
+(c) Negate a vector (element-wise)
+
+```mech:ex3
+x := [1, -2, 3]
+y := math/negate(x)         // [-1, 2, -3]
+```
+
+(d) Negate a matrix (element-wise)
+
+```mech:ex4
+m := [1, 2; -3, 4]
+y := math/negate(m)         // [-1, -2; 3, -4]
+```
+
+(e) Negate a complex number
+
+```mech:ex5
+y := math/negate(1 - 2i)    // (-1 + 2i)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+**Element-wise semantics.** For arrays, negation is applied independently to each element. Shapes are preserved.
+
+**Numeric behavior.**
+- **Integers:** `-x` is the two's complement negation. Beware of overflow for the most-negative value (e.g., `i8::MIN`), which may raise an error or wrap depending on runtime rules.
+- **Floats:** `-0.0` and `+0.0` are distinct IEEE-754 values; `math/negate(+0.0)` yields `-0.0`. `NaN` remains `NaN` under negation.
+- **Rationals (R64):** Numerator sign is flipped; value is exact when representable.
+- **Complex (C64):** Both real and imaginary parts are negated: `-(a + bi) = (-a) + (-b)i`.
+
+**Aliases & composition.** Applying negation twice returns the original value: `math/negate(math/negate(X)) = X` (ignoring special cases like `NaN` sign bits for floats).
+
+**Errors.**
+- Integer overflow for the minimum representable value in signed integer types (implementation-dependent behavior).

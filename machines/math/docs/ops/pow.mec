@@ -1,0 +1,65 @@
+math/pow
+===============================================================================
+
+%% Element-wise exponentiation
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/pow(X1, X2)
+Y := X1 ^ X2
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Raises `X1` to the power of `X2` using element-wise semantics. Inputs can be scalars, vectors, or matrices when shapes are compatible. Scalar/array and vector/matrix broadcast cases are supported.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                                   | Description |
+|----------|----------------------------------------|-------------|
+| `X1`     | `int`, `uint`, `float`, `rational`, `[T]`, `[[T]]` | Base value(s). |
+| `X2`     | `int`, `uint`, `float`, `rational`, `[T]`, `[[T]]` | Exponent value(s). |
+
+**Supported scalar types**: `u8`, `u16`, `u32`, `f32`, `f64`, and `rational` (`r64`) with `i32` exponents.
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind          | Description |
+|----------|---------------|-------------|
+| `Y`      | matches input | Element-wise result of `X1 ^ X2`. |
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(a) Scalar exponentiation
+
+```mech:ex1
+y := math/pow(2.0, 3.0)     -- 8.0
+```
+
+(b) Vector exponentiation (same length)
+
+```mech:ex2
+base := [2.0, 3.0, 4.0]
+exp  := [3.0, 2.0, 0.5]
+y    := math/pow(base, exp) -- [8.0, 9.0, 2.0]
+```
+
+(c) Matrix with scalar exponent (broadcast)
+
+```mech:ex3
+m := [1.0, 4.0; 9.0, 16.0]
+y := math/pow(m, 0.5)       -- [1.0, 2.0; 3.0, 4.0]
+```
+
+(d) Rational base with integer exponent
+
+```mech:ex4
+r := 3/2
+y := r ^ 3         -- 27/8
+```

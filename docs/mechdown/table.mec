@@ -1,0 +1,40 @@
+mechdown-table
+===============================================================================
+
+%% A Mechdown table organizes data into rows and columns for comparison and reference.
+
+A table contains:
+
+1. A header row
+2. An alignment row
+3. One or more body rows
+
+1. Alignment syntax
+-------------------------------------------------------------------------------
+
+Column alignment markers:
+
+- Left: `:---` or `---`
+- Center: `:---:`
+- Right: `---:`
+
+2. Example
+-------------------------------------------------------------------------------
+
+```
+| Feature      | Support | Notes            |
+|:-------------|:-------:|-----------------:|
+| Sections     | Yes     | Numbered titles  |
+| Equations    | Yes     | LaTeX syntax     |
+| Callouts     | Yes     | Semantic variants|
+```
+
+Rendered form:
+
+| Feature      | Support | Notes            |
+|:-------------|:-------:|-----------------:|
+| Sections     | Yes     | Numbered titles  |
+| Equations    | Yes     | LaTeX syntax     |
+| Callouts     | Yes     | Semantic variants|
+
+(i)> Keep column counts consistent across all rows.

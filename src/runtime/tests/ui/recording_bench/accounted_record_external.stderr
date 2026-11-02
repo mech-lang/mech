@@ -1,0 +1,13 @@
+error[E0603]: module `turn_record` is private
+ --> tests/ui/recording_bench/accounted_record_external.rs:1:19
+  |
+1 | use mech_runtime::turn_record::sealed::Sealed;
+  |                   ^^^^^^^^^^^          ------ trait `Sealed` is not publicly re-exported
+  |                   |
+  |                   private module
+  |
+note: the module `turn_record` is defined here
+ --> src/lib.rs
+  |
+  | mod turn_record;
+  | ^^^^^^^^^^^^^^^

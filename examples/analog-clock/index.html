@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mech Analog Clock</title>
+  <link rel="stylesheet" href="clock.css" />
+</head>
+<body>
+  <main>
+    <h1>Mech Analog Clock</h1>
+    <svg id="clock" viewBox="0 0 200 200" role="img" aria-label="Analog clock">
+      <circle class="clock-face" cx="100" cy="100" r="92" />
+      <g class="markers">
+        <line x1="100" y1="14" x2="100" y2="26" transform="rotate(0 100 100)" />
+        <line x1="100" y1="14" x2="100" y2="26" transform="rotate(30 100 100)" />
+        <line x1="100" y1="14" x2="100" y2="26" transform="rotate(60 100 100)" />
+        <line x1="100" y1="14" x2="100" y2="26" transform="rotate(90 100 100)" />
+        <line x1="100" y1="14" x2="100" y2="26" transform="rotate(120 100 100)" />
+        <line x1="100" y1="14" x2="100" y2="26" transform="rotate(150 100 100)" />
+        <line x1="100" y1="14" x2="100" y2="26" transform="rotate(180 100 100)" />
+        <line x1="100" y1="14" x2="100" y2="26" transform="rotate(210 100 100)" />
+        <line x1="100" y1="14" x2="100" y2="26" transform="rotate(240 100 100)" />
+        <line x1="100" y1="14" x2="100" y2="26" transform="rotate(270 100 100)" />
+        <line x1="100" y1="14" x2="100" y2="26" transform="rotate(300 100 100)" />
+        <line x1="100" y1="14" x2="100" y2="26" transform="rotate(330 100 100)" />
+      </g>
+    </svg>
+  </main>
+  <script
+    type="module"
+    src="/_mech/project.js"
+    data-mech-project="."
+    data-mech-max-inputs="8"></script>
+</body>
+</html>

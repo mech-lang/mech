@@ -1,0 +1,93 @@
+#[cfg(feature = "source")]
+use crate::canonical::specialize_dynamic_set;
+use crate::canonical::{ArbitraryInput, SetInput, SetOutput};
+use crate::*;
+
+#[derive(Debug)]
+pub(crate) struct SetRemoveFxn {
+    arg1: SetInput,
+    arg2: ArbitraryInput,
+    out: SetOutput,
+}
+
+impl MechFunctionFactory for SetRemoveFxn {
+    fn implementation_memory_class() -> mech_core::ImplementationMemoryClass {
+        mech_core::ImplementationMemoryClass::CanonicalSortUnique
+    }
+
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        FunctionValueRepresentation::Set,
+        FunctionValueRepresentation::Set,
+        FunctionValueRepresentation::AnyValue,
+    );
+
+    fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+        let (out, set, element) = invocation.expect_binary()?;
+        Ok(Box::new(Self {
+            arg1: SetInput::canonical(set)?,
+            arg2: ArbitraryInput::canonical(element),
+            out: SetOutput::canonical(out)?,
+        }))
+    }
+
+    fn declared_operation_contract() -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_UPDATE_CONTRACT)
+    }
+}
+
+impl MechFunctionImpl for SetRemoveFxn {
+    fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+        Ok(Some(
+            vec![self.arg1.prospective_retained_footprint(&self.out)?].into_boxed_slice(),
+        ))
+    }
+
+    fn primary_output_state_port(&self) -> Option<FunctionStatePort<'_>> {
+        self.out.primary_state_port()
+    }
+    fn transaction_state_ports(&self) -> MResult<Option<Vec<FunctionStatePort<'_>>>> {
+        self.out.transaction_state_ports()
+    }
+    fn solve_managed(
+        &self,
+        frame: &mut mech_core::KernelMemoryFrame<'_>,
+        _services: &mut dyn mech_core::MechExecutionServices,
+    ) -> MResult<mech_core::ReactiveSolveStatus> {
+        let footprint = self.arg1.prospective_retained_footprint(&self.out)?;
+        self.out.with_admitted_set(frame, footprint, |frame| {
+            self.arg1.elements_after_remove(frame, &self.arg2)
+        })?;
+        Ok(mech_core::ReactiveSolveStatus::Changed)
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_UPDATE_CONTRACT)
+    }
+    fn to_string(&self) -> String {
+        format!("{:#?}", self)
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+impl MechFunctionCompiler for SetRemoveFxn {
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let destination = self.out.compile_register(ctx)?;
+        let set = self.arg1.compile_register(ctx)?;
+        let element = self.arg2.compile_register(ctx)?;
+        ctx.emit_binop(hash_str("SetRemoveFxn"), destination, set, element);
+        Ok(destination)
+    }
+}
+
+#[cfg(feature = "source")]
+pub struct SetRemove {}
+
+#[cfg(feature = "source")]
+impl CanonicalFunctionSpecializer for SetRemove {
+    fn specialize_invocation(
+        &self,
+        invocation: &SpecializationInvocation,
+        context: &mut SpecializationContext<'_>,
+    ) -> MResult<SpecializedFunction> {
+        specialize_dynamic_set::<SetRemoveFxn>(invocation, context)
+    }
+}

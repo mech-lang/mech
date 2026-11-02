@@ -1,0 +1,5 @@
+
+src/.DS_Store
+machines
+*.html
+!*/index.html

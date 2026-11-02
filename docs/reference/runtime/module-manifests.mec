@@ -1,0 +1,21 @@
+Module Manifests
+===============================================================================
+
+Module manifests describe module-level exports that the runtime can resolve.
+
+They are part of the runtime/module boundary, not the basic source-file import syntax.
+
+1. Context exports
+-------------------------------------------------------------------------------
+
+A module manifest can describe context exports. These allow a context to be resolved by module and item name, then bound by the runtime.
+
+2. Runtime use
+-------------------------------------------------------------------------------
+
+The runtime keeps a module manifest catalog. During context binding, the runtime can resolve host contexts or module-manifest context exports.
+
+3. Documentation status
+-------------------------------------------------------------------------------
+
+This page documents the role of manifests in the runtime. The manifest schema should be expanded when the module-manifest format is stabilized for external authors.

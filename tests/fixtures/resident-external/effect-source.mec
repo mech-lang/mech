@@ -1,0 +1,10 @@
+@input := test-resource://input/value{:read(sample)}
+sample := @input/sample
+
+~state := 0.0
+state += sample
+
+@scene := test-resource://scene/output
+@scene/frame <- state
+
+output := state

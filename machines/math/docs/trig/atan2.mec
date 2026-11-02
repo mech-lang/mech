@@ -1,0 +1,73 @@
+math/atan2
+===============================================================================
+
+%% Four-quadrant inverse tangent (arctangent with two arguments)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Z := math/atan2(Y, X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the four-quadrant inverse tangent of `Y/X`. Unlike `atan(Y/X)`, the 
+function `atan2` considers the signs of both arguments to determine the 
+correct quadrant of the result.
+
+This is especially useful when converting Cartesian coordinates `(X, Y)` to 
+polar coordinates `(r, θ)`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind               | Description                            |
+|----------|--------------------|----------------------------------------|
+| `Y`      | `float`, `[float]` | Numerator (ordinate).                   |
+| `X`      | `float`, `[float]` | Denominator (abscissa).                 |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind          | Description                                                     |
+|----------|---------------|-----------------------------------------------------------------|
+| `Z`      | matches input | Angle in radians, measured counter-clockwise from the x-axis.   |
+
+The result lies in the interval $$(-\pi, \pi]$$.
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Compute atan2 of two numbers
+
+```mech:ex1
+theta := math/atan2(1.0, 1.0)   // π/4
+```
+
+(b) Compute atan2 for vectors
+
+```mech:ex2
+y := [0.0, 1.0, -1.0]
+x := [1.0, -1.0, -1.0]
+theta := math/atan2(y, x)
+```
+
+(c) Compute atan2 for a matrix
+
+```mech:ex3
+y := [0.0, 1.0; -1.0, 0.5]
+x := [1.0, -1.0; -1.0, 0.5]
+theta := math/atan2(y, x)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+Mathematically, the function is defined as:
+
+$$ atan2(y,x) = \begin{cases} \arctan\left(\frac{y}{x}\right) & x > 0 \\\arctan\left(\frac{y}{x}\right) + \pi & y \ge 0, x < 0 \\\arctan\left(\frac{y}{x}\right) - \pi & y < 0, x < 0 \\+\frac{\pi}{2} & y > 0, x = 0 \\-\frac{\pi}{2} & y < 0, x = 0 \\\text{undefined} & y = 0, x = 0\end{cases} 
+
+The function returns an angle in radians that corresponds to the point `(x, y)` 
+in the Cartesian plane.

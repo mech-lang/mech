@@ -1,0 +1,34 @@
+@out := console://console/output{:write(line)}
+@view := scene://view/frame{:write(replace)}
+
+@clock := time://clock/clock{:read(unix-ms), :read(hour), :read(minute), :read(second), :read(millisecond)}
+
+clock-unix-ms := @clock/unix-ms
+clock-second := @clock/second + @clock/millisecond / 1000
+clock-minute := @clock/minute + clock-second / 60
+clock-hour := @clock/hour + clock-minute / 60
+
+clock-second-angle := clock-second * 6
+clock-minute-angle := clock-minute * 6
+clock-hour-angle := clock-hour * 30
+
+clock-output := (clock-hour, clock-minute, clock-second)
+
+clock-circles := |id<string> x<f64> y<f64> radius<f64> fill<string> stroke<string> stroke-width<f64> opacity<f64>|
+  | "clock-center-pin" 100 100 4 "#e25555" "#e25555" 0 1 |
+
+clock-lines := |id<string> x1<f64> y1<f64> x2<f64> y2<f64> stroke<string> stroke-width<f64> line-cap<string> opacity<f64> rotation<f64> origin-x<f64> origin-y<f64>|
+  | "clock-hour-hand" 100 100 100 58 "#1d2430" 7 "round" 1 clock-hour-angle 100 100 |
+  | "clock-minute-hand" 100 100 100 36 "#1d2430" 5 "round" 1 clock-minute-angle 100 100 |
+  | "clock-second-hand" 100 106 100 28 "#e25555" 2 "round" 1 clock-second-angle 100 100 |
+
+clock-scene := {
+  width: 200
+  height: 200
+  background: "transparent"
+  circles: clock-circles
+  lines: clock-lines
+}
+
+@out/line <- clock-output
+@view/replace <- clock-scene

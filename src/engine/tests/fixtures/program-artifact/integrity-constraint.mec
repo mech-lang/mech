@@ -1,0 +1,4 @@
+left := 1.0
+right := 2.0
+safe! := left < right
+output := left

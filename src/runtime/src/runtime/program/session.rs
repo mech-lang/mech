@@ -1,0 +1,409 @@
+use mech_core::{MResult, MechError, MechErrorKind};
+
+use crate::{ResidentDurabilityPolicy, RuntimeValueSnapshot};
+use crate::{ResidentExternalHealth, runtime::MechRuntime};
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+use std::time::Instant;
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+use web_time::Instant;
+
+use super::{
+    ActiveProgramExecution, ResidentRouteFailureClass, RuntimeProgramExecutionInfo,
+    RuntimeProgramRoute, route_failure,
+};
+
+#[derive(Debug)]
+pub struct RuntimeProgramLoadOutcome {
+    pub route: RuntimeProgramRoute,
+    pub initial_value: RuntimeValueSnapshot,
+    pub info: RuntimeProgramExecutionInfo,
+}
+
+/// Retained resident evidence transferred out of the active coordinator for
+/// checkpointing, replication, or archival. Draining releases the bounded
+/// ledger capacity so retained production programs can continue executing.
+#[derive(Debug, Default)]
+pub struct RuntimeResidentEvidence {
+    pub input_batches: Vec<(crate::LedgerSequence, crate::CapturedInputBatch)>,
+    pub receipts: Vec<(crate::LedgerSequence, crate::ResidentTurnRecord)>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ResidentEnvironmentFrozen {
+    pub operation: &'static str,
+}
+
+impl MechErrorKind for ResidentEnvironmentFrozen {
+    fn name(&self) -> &str {
+        "ResidentEnvironmentFrozen"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "runtime environment operation `{}` is frozen while a resident program is active",
+            self.operation
+        )
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ResidentProgramNotQuiescent;
+
+impl MechErrorKind for ResidentProgramNotQuiescent {
+    fn name(&self) -> &str {
+        "ResidentProgramNotQuiescent"
+    }
+
+    fn message(&self) -> String {
+        "the active resident program is not quiescent".to_owned()
+    }
+}
+
+pub(crate) fn invalid_active_program(reason: impl Into<String>) -> mech_core::MechError {
+    route_failure(ResidentRouteFailureClass::InternalFailure, reason)
+}
+
+pub(crate) fn unsupported_route(reason: impl Into<String>) -> mech_core::MechError {
+    route_failure(ResidentRouteFailureClass::SemanticUnsupported, reason)
+}
+
+pub(crate) fn ensure_supported_durability(policy: ResidentDurabilityPolicy) -> MResult<()> {
+    if matches!(
+        policy,
+        ResidentDurabilityPolicy::Volatile | ResidentDurabilityPolicy::Retained
+    ) {
+        Ok(())
+    } else {
+        Err(route_failure(
+            ResidentRouteFailureClass::InternalFailure,
+            format!("resident durability {policy:?} is not implemented"),
+        ))
+    }
+}
+
+impl MechRuntime {
+    pub(crate) fn program_route_for_debug(&self) -> RuntimeProgramRoute {
+        self.program_route()
+    }
+
+    pub fn drain_resident_evidence(&mut self) -> MResult<RuntimeResidentEvidence> {
+        let ActiveProgramExecution::ResidentExternal(execution) = &mut self.active_program else {
+            return Err(invalid_active_program(
+                "retained evidence is available only for an active external resident program",
+            ));
+        };
+        let mut evidence = RuntimeResidentEvidence::default();
+        while let Some(batch) = execution.coordinator.release_next_input_batch() {
+            evidence.input_batches.push(batch);
+        }
+        while let Some(receipt) = execution.coordinator.release_next_receipt() {
+            evidence.receipts.push(receipt);
+        }
+        Ok(evidence)
+    }
+
+    pub fn retry_resident_outbox(&mut self) -> MResult<Box<[crate::RuntimeEffectFailure]>> {
+        self.revalidate_active_resident_grants()?;
+        let ActiveProgramExecution::ResidentExternal(execution) = &mut self.active_program else {
+            return Err(invalid_active_program(
+                "resident outbox retry requires an active external resident program",
+            ));
+        };
+        execution.coordinator.retry_outbox()
+    }
+
+    /// Advances the active program through its owning execution route.
+    pub fn step_active_program(&mut self) -> MResult<()> {
+        let max_turn_duration_ms = self.config.limits.max_turn_duration_ms;
+        if matches!(
+            &self.active_program,
+            ActiveProgramExecution::ResidentExternal(execution)
+                if execution.coordinator.instance().continuation_wakeup().is_some()
+                    || execution
+                        .coordinator
+                        .instance()
+                        .plan
+                        .has_input_free_activation_roots()
+        ) {
+            self.revalidate_active_resident_grants()?;
+        }
+        match &mut self.active_program {
+            ActiveProgramExecution::ResidentPure(execution) => {
+                let turn_started = Instant::now();
+                let prepared = execution.instance.prepare_turn(&[]).map_err(|error| {
+                    route_failure(
+                        ResidentRouteFailureClass::ActivationFailure,
+                        format!("resident pure step failed: {error:?}"),
+                    )
+                })?;
+                if let Err(error) = super::super::limits::enforce_turn_duration_limit(
+                    max_turn_duration_ms,
+                    turn_started,
+                ) {
+                    prepared.abort();
+                    return Err(error);
+                }
+                prepared.publish().map_err(|error| {
+                    route_failure(
+                        ResidentRouteFailureClass::ActivationFailure,
+                        format!("resident pure publication failed: {error:?}"),
+                    )
+                })?;
+                self.program_execution_info.resident_accepted_turns = self
+                    .program_execution_info
+                    .resident_accepted_turns
+                    .saturating_add(1);
+                self.drain_resident_continuations()
+            }
+            ActiveProgramExecution::ResidentExternal(execution)
+                if execution
+                    .coordinator
+                    .instance()
+                    .continuation_wakeup()
+                    .is_some() =>
+            {
+                self.drain_resident_continuations()
+            }
+            ActiveProgramExecution::ResidentExternal(execution)
+                if execution
+                    .coordinator
+                    .instance()
+                    .plan
+                    .has_input_free_activation_roots() =>
+            {
+                let turn_started = Instant::now();
+                let admission = execution.coordinator.admit_turn()?;
+                let before = execution.coordinator.structural_probe();
+                let outcome =
+                    execution
+                        .coordinator
+                        .execute_admitted_step_turn(admission, |_| {
+                            super::super::limits::enforce_turn_duration_limit(
+                                max_turn_duration_ms,
+                                turn_started,
+                            )
+                        })?;
+                let after = execution.coordinator.structural_probe();
+                self.resident_production_probe
+                    .observe_structural_delta(before, after);
+                match &outcome {
+                    crate::ResidentExternalTurnOutcome::Rejected { .. } => {
+                        self.program_execution_info.resident_rejected_turns = self
+                            .program_execution_info
+                            .resident_rejected_turns
+                            .saturating_add(1);
+                        self.resident_production_probe.resident_rejections = self
+                            .resident_production_probe
+                            .resident_rejections
+                            .saturating_add(1);
+                    }
+                    crate::ResidentExternalTurnOutcome::Accepted { .. }
+                    | crate::ResidentExternalTurnOutcome::PublishedIndeterminate { .. } => {
+                        self.program_execution_info.resident_accepted_turns = self
+                            .program_execution_info
+                            .resident_accepted_turns
+                            .saturating_add(1);
+                        self.resident_production_probe.resident_turns = self
+                            .resident_production_probe
+                            .resident_turns
+                            .saturating_add(1);
+                    }
+                }
+                if let Some(error) = super::resident_host_turn_error(&outcome) {
+                    return Err(route_failure(
+                        ResidentRouteFailureClass::ActivationFailure,
+                        format!("resident external step did not complete cleanly: {error:?}"),
+                    ));
+                }
+                self.drain_resident_continuations()
+            }
+            ActiveProgramExecution::ResidentExternal(_) => Err(invalid_active_program(
+                "external resident programs advance only from admitted host input or continuation",
+            )),
+            ActiveProgramExecution::None => Err(invalid_active_program(
+                "program stepping requires an active resident program",
+            )),
+        }
+    }
+
+    pub(crate) fn drain_resident_continuations(&mut self) -> MResult<()> {
+        let max_work = self.config.limits.max_steps_per_turn_as_usize()?;
+        let max_turn_duration_ms = self.config.limits.max_turn_duration_ms;
+        let mut scheduler = mech_engine::resident::ResidentContinuationScheduler::new();
+        for _ in 0..max_work {
+            let wakeup = match &self.active_program {
+                ActiveProgramExecution::ResidentPure(execution) => scheduler
+                    .collect_ready(&[&execution.instance], 1)
+                    .first()
+                    .copied(),
+                ActiveProgramExecution::ResidentExternal(execution) => scheduler
+                    .collect_ready(&[execution.coordinator.instance()], 1)
+                    .first()
+                    .copied(),
+                ActiveProgramExecution::None => None,
+            };
+            let Some(wakeup) = wakeup else { return Ok(()) };
+            match &mut self.active_program {
+                ActiveProgramExecution::ResidentPure(execution) => {
+                    if !execution.instance.accepts_continuation_wakeup(wakeup) {
+                        continue;
+                    }
+                    let turn_started = Instant::now();
+                    let prepared =
+                        execution
+                            .instance
+                            .prepare_continuation_turn(&[])
+                            .map_err(|error| {
+                                route_failure(
+                                    ResidentRouteFailureClass::ActivationFailure,
+                                    format!("resident continuation failed: {error:?}"),
+                                )
+                            })?;
+                    if let Err(error) = super::super::limits::enforce_turn_duration_limit(
+                        max_turn_duration_ms,
+                        turn_started,
+                    ) {
+                        prepared.abort();
+                        return Err(error);
+                    }
+                    prepared.publish().map_err(|error| {
+                        route_failure(
+                            ResidentRouteFailureClass::ActivationFailure,
+                            format!("resident continuation publication failed: {error:?}"),
+                        )
+                    })?;
+                }
+                ActiveProgramExecution::ResidentExternal(execution) => {
+                    if !execution
+                        .coordinator
+                        .instance()
+                        .accepts_continuation_wakeup(wakeup)
+                    {
+                        continue;
+                    }
+                    let turn_started = Instant::now();
+                    let admission = execution.coordinator.admit_turn()?;
+                    let before = execution.coordinator.structural_probe();
+                    let outcome = execution.coordinator.execute_admitted_continuation_turn(
+                        admission,
+                        |_| {
+                            super::super::limits::enforce_turn_duration_limit(
+                                max_turn_duration_ms,
+                                turn_started,
+                            )
+                        },
+                    )?;
+                    let after = execution.coordinator.structural_probe();
+                    self.resident_production_probe
+                        .observe_structural_delta(before, after);
+                    match &outcome {
+                        crate::ResidentExternalTurnOutcome::Rejected { .. } => {
+                            self.program_execution_info.resident_rejected_turns = self
+                                .program_execution_info
+                                .resident_rejected_turns
+                                .saturating_add(1);
+                            self.resident_production_probe.resident_rejections = self
+                                .resident_production_probe
+                                .resident_rejections
+                                .saturating_add(1);
+                        }
+                        crate::ResidentExternalTurnOutcome::Accepted { .. }
+                        | crate::ResidentExternalTurnOutcome::PublishedIndeterminate { .. } => {
+                            self.program_execution_info.resident_accepted_turns = self
+                                .program_execution_info
+                                .resident_accepted_turns
+                                .saturating_add(1);
+                            self.resident_production_probe.resident_turns = self
+                                .resident_production_probe
+                                .resident_turns
+                                .saturating_add(1);
+                        }
+                    }
+                    if let Some(error) = super::resident_host_turn_error(&outcome) {
+                        return Err(route_failure(
+                            ResidentRouteFailureClass::ActivationFailure,
+                            format!("resident continuation did not complete cleanly: {error:?}"),
+                        ));
+                    }
+                }
+                ActiveProgramExecution::None => unreachable!(),
+            }
+            if matches!(self.active_program, ActiveProgramExecution::ResidentPure(_)) {
+                self.program_execution_info.resident_accepted_turns = self
+                    .program_execution_info
+                    .resident_accepted_turns
+                    .saturating_add(1);
+            }
+        }
+        let still_ready = match &self.active_program {
+            ActiveProgramExecution::ResidentPure(execution) => {
+                execution.instance.continuation_wakeup().is_some()
+            }
+            ActiveProgramExecution::ResidentExternal(execution) => execution
+                .coordinator
+                .instance()
+                .continuation_wakeup()
+                .is_some(),
+            ActiveProgramExecution::None => false,
+        };
+        if still_ready {
+            return Err(route_failure(
+                ResidentRouteFailureClass::ActivationFailure,
+                "resident continuation wakeup limit exhausted".to_owned(),
+            ));
+        }
+        Ok(())
+    }
+
+    pub(crate) fn ensure_resident_environment_mutable(
+        &self,
+        operation: &'static str,
+    ) -> MResult<()> {
+        if matches!(
+            self.active_program,
+            ActiveProgramExecution::ResidentPure(_) | ActiveProgramExecution::ResidentExternal(_)
+        ) {
+            Err(MechError::new(
+                ResidentEnvironmentFrozen { operation },
+                None,
+            ))
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn unload_active_program(&mut self) -> MResult<()> {
+        let program_owned = !matches!(self.active_program, ActiveProgramExecution::None);
+        let drivers_stopped = self.input_drivers[..self.attached_input_driver_count]
+            .iter()
+            .try_fold(true, |stopped, driver| {
+                if !stopped {
+                    return Ok(false);
+                }
+                crate::runtime::extension::invoke_extension_value(
+                    "host input driver",
+                    "is_live",
+                    || driver.is_live(),
+                )
+                .map(|live| !live)
+            })?;
+        if let ActiveProgramExecution::ResidentExternal(execution) = &self.active_program {
+            if execution.coordinator.health() != &ResidentExternalHealth::Healthy
+                || execution.coordinator.pending_outbox_count() != 0
+                || execution.coordinator.has_active_candidate()
+                || execution.coordinator.input_facts().next().is_some()
+                || execution.coordinator.receipts().next().is_some()
+                || self.pending_host_input_count()? != 0
+                || !drivers_stopped
+            {
+                return Err(MechError::new(ResidentProgramNotQuiescent, None));
+            }
+        } else if program_owned && (self.pending_host_input_count()? != 0 || !drivers_stopped) {
+            return Err(MechError::new(ResidentProgramNotQuiescent, None));
+        }
+        self.active_program = ActiveProgramExecution::None;
+        self.program_execution_info = RuntimeProgramExecutionInfo::default();
+        self.resident_production_probe = Default::default();
+        Ok(())
+    }
+}

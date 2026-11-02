@@ -1,0 +1,5 @@
+@timer := timer://timer/tick{:read(tick)}
+@out := console://console/output{:write(line)}
+
+tick := @timer/tick
+@out/line <- tick

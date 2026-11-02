@@ -1,0 +1,147 @@
+use mech_core::*;
+#[cfg(any(feature = "bundle_web_core", feature = "formatter"))]
+use std::path::Component;
+use std::path::Path;
+#[cfg(any(
+    feature = "build",
+    feature = "formatter",
+    feature = "run",
+    feature = "serve"
+))]
+use std::path::PathBuf;
+
+// These helpers belong to source discovery, including standalone serve builds.
+#[cfg(any(
+    feature = "build",
+    feature = "formatter",
+    feature = "run",
+    feature = "serve"
+))]
+pub(crate) fn source_extension(path: &Path) -> Option<String> {
+    path.extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_ascii_lowercase())
+}
+
+#[cfg(any(
+    feature = "build",
+    feature = "formatter",
+    feature = "run",
+    feature = "serve"
+))]
+pub(crate) fn extension_allowed(path: &Path, allowed_extensions: &[&str]) -> bool {
+    source_extension(path)
+        .map(|ext| allowed_extensions.iter().any(|allowed| *allowed == ext))
+        .unwrap_or(false)
+}
+
+#[cfg(any(
+    feature = "build",
+    feature = "formatter",
+    feature = "run",
+    feature = "serve"
+))]
+pub(crate) fn unsupported_source_path_error(path: &Path, allowed_extensions: &[&str]) -> MechError {
+    MechError::new(
+        GenericError {
+            msg: format!(
+                "Unsupported source extension for `{}`; expected one of: {}",
+                path.display(),
+                allowed_extensions.join(", "),
+            ),
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
+
+#[cfg(feature = "formatter")]
+pub(crate) fn absolute_path(path: &Path) -> MResult<PathBuf> {
+    Ok(if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        std::env::current_dir()?.join(path)
+    })
+}
+
+#[cfg(feature = "formatter")]
+pub(crate) fn normalized_existing_or_absolute(path: &Path) -> MResult<PathBuf> {
+    let absolute = absolute_path(path)?;
+    Ok(if absolute.exists() {
+        absolute.canonicalize()?
+    } else {
+        absolute
+    })
+}
+
+#[cfg(feature = "formatter")]
+pub(crate) fn paths_equivalent(a: &Path, b: &Path) -> MResult<bool> {
+    Ok(normalized_existing_or_absolute(a)? == normalized_existing_or_absolute(b)?)
+}
+
+#[cfg(any(feature = "bundle_web_core", feature = "formatter"))]
+pub(crate) fn validate_safe_relative_path(path: &Path) -> MResult<()> {
+    if path.is_absolute()
+        || path
+            .components()
+            .any(|component| matches!(component, Component::ParentDir))
+    {
+        return Err(MechError::new(
+            GenericError {
+                msg: format!("rejected unsafe relative path: {}", path.display()),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+    Ok(())
+}
+
+#[cfg(feature = "formatter")]
+pub(crate) fn relative_to_base(
+    logical_path: &Path,
+    base_dir: &Path,
+    project_dir: &Path,
+) -> MResult<PathBuf> {
+    let relative = if let Ok(relative) = logical_path.strip_prefix(base_dir) {
+        relative
+    } else if let Ok(relative) = logical_path.strip_prefix(project_dir) {
+        relative
+    } else {
+        return Err(MechError::new(
+            GenericError {
+                msg: format!(
+                    "source is outside project/config root: {}",
+                    logical_path.display()
+                ),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    };
+    validate_safe_relative_path(relative)?;
+    Ok(relative.to_path_buf())
+}
+
+#[cfg(any(
+    feature = "build",
+    feature = "formatter",
+    feature = "run",
+    feature = "serve"
+))]
+pub(crate) fn is_directory_symlink(path: &Path) -> MResult<bool> {
+    if !std::fs::symlink_metadata(path)?.file_type().is_symlink() {
+        return Ok(false);
+    }
+    Ok(path.canonicalize()?.is_dir())
+}
+
+#[cfg(any(
+    feature = "build",
+    feature = "formatter",
+    feature = "run",
+    feature = "serve"
+))]
+pub(crate) fn canonicalize_for_read(path: &Path) -> MResult<PathBuf> {
+    Ok(path.canonicalize()?)
+}

@@ -1,0 +1,15 @@
+error[E0308]: mismatched types
+  --> tests/ui/sealed/interpreter_step_participating_without_capability.rs:10:68
+   |
+10 |     drop(plan.advance_reactive_turn_participating(&mut state, &[], &mut forged, &mut services));
+   |               -----------------------------------                  ^^^^^^^^^^^ expected `&mut ReactiveJournalParticipant<'_>`, found `&mut ForgedParticipant`
+   |               |
+   |               arguments to this method are incorrect
+   |
+   = note: expected mutable reference `&mut ReactiveJournalParticipant<'_>`
+              found mutable reference `&mut ForgedParticipant`
+note: method defined here
+  --> $WORKSPACE/src/core/src/function/mod.rs
+   |
+   |     pub fn advance_reactive_turn_participating(
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

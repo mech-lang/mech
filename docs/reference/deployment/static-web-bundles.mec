@@ -1,0 +1,37 @@
+Static Web Bundles
+===============================================================================
+
+Use `mech bundle-web` to produce static web assets from a configured browser project.
+
+```sh
+mech bundle-web examples/browser-dom-demo --out dist/browser-dom-demo
+python -m http.server 9000 -d dist/browser-dom-demo
+```
+
+The generated directory can be served by a normal static web server.
+
+1. Requirements
+-------------------------------------------------------------------------------
+
+The config must provide nonempty `run.paths` and `serve.paths`. The HTML shim and WASM package may be supplied through `serve.shim` and `serve.wasm` or through the `--shim` and `--wasm` command-line options.
+
+2. URL rules
+-------------------------------------------------------------------------------
+
+Static bundles must use relative URLs for Mech assets.
+
+Use:
+
+```text
+./_mech/project.js
+./pkg/mech_wasm.js
+./source/demo.mec
+```
+
+Do not use server-root URLs such as:
+
+```text
+/_mech/project.js
+/pkg/mech_wasm.js
+/source/demo.mec
+```

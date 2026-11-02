@@ -1,0 +1,387 @@
+#[cfg(feature = "formatter")]
+use crate::fs_paths::relative_to_base;
+use crate::fs_paths::{
+    canonicalize_for_read, extension_allowed, is_directory_symlink, unsupported_source_path_error,
+};
+use mech_core::*;
+use std::collections::BTreeSet;
+use std::fs;
+use std::path::{Path, PathBuf};
+
+#[derive(Clone, Debug)]
+pub(crate) struct SourceEntry {
+    pub logical_path: PathBuf,
+    #[cfg(feature = "formatter")]
+    pub relative_path: PathBuf,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct SourceDiscoveryResult {
+    pub entries: Vec<SourceEntry>,
+    pub events: Vec<SourceDiscoveryEvent>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum SourceDiscoveryEvent {
+    SkippedBrokenSymlink { path: PathBuf },
+    SkippedSymlinkedDirectory { path: PathBuf },
+    SkippedFileSymlink { path: PathBuf },
+    SkippedUnsupportedExtension { path: PathBuf },
+    SkippedDirectory { path: PathBuf, reason: SkipReason },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum SkipReason {
+    SkippedByName,
+    AlreadyVisited,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct DiscoveryOptions {
+    pub allowed_file_extensions: &'static [&'static str],
+    pub recursive_file_extensions: &'static [&'static str],
+    pub skip_dir_names: &'static [&'static str],
+    pub follow_file_symlinks: bool,
+    pub follow_dir_symlinks: bool,
+    pub missing_path_policy: MissingPathPolicy,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum MissingPathPolicy {
+    #[cfg(feature = "build")]
+    Error,
+    #[cfg(any(test, feature = "formatter", feature = "run", feature = "serve"))]
+    SkipBrokenSymlink,
+}
+
+impl MissingPathPolicy {
+    fn skips_broken_symlinks(self) -> bool {
+        match self {
+            #[cfg(feature = "build")]
+            Self::Error => false,
+            #[cfg(any(test, feature = "formatter", feature = "run", feature = "serve"))]
+            Self::SkipBrokenSymlink => true,
+        }
+    }
+}
+
+#[cfg(feature = "build")]
+pub(crate) fn collect_sources(
+    roots: &[PathBuf],
+    base_dir: &Path,
+    options: DiscoveryOptions,
+) -> MResult<Vec<SourceEntry>> {
+    let result = collect_sources_with_events(roots, base_dir, options)?;
+    // The build adapter requests paths only; reporting callers use the full result.
+    drop(result.events);
+    Ok(result.entries)
+}
+
+pub(crate) fn collect_sources_with_events(
+    roots: &[PathBuf],
+    base_dir: &Path,
+    options: DiscoveryOptions,
+) -> MResult<SourceDiscoveryResult> {
+    let project_dir = base_dir;
+    let mut entries = Vec::new();
+    let mut events = Vec::new();
+    let mut seen = BTreeSet::new();
+    let mut visited_dirs = BTreeSet::new();
+    for root in roots {
+        collect_one(
+            root,
+            root,
+            base_dir,
+            project_dir,
+            &options,
+            &mut entries,
+            &mut events,
+            &mut seen,
+            &mut visited_dirs,
+            true,
+        )?;
+    }
+    Ok(SourceDiscoveryResult { entries, events })
+}
+
+fn collect_one(
+    logical_path: &Path,
+    read_path: &Path,
+    base_dir: &Path,
+    project_dir: &Path,
+    options: &DiscoveryOptions,
+    entries: &mut Vec<SourceEntry>,
+    events: &mut Vec<SourceDiscoveryEvent>,
+    seen: &mut BTreeSet<PathBuf>,
+    visited_dirs: &mut BTreeSet<PathBuf>,
+    explicit: bool,
+) -> MResult<()> {
+    let metadata = match fs::symlink_metadata(read_path) {
+        Ok(metadata) => metadata,
+        Err(error) if options.missing_path_policy.skips_broken_symlinks() => {
+            if explicit {
+                return Err(error.into());
+            }
+            events.push(SourceDiscoveryEvent::SkippedBrokenSymlink {
+                path: read_path.to_path_buf(),
+            });
+            return Ok(());
+        }
+        Err(error) => return Err(error.into()),
+    };
+    if metadata.file_type().is_symlink() {
+        let canonical = match canonicalize_for_read(read_path) {
+            Ok(path) => path,
+            Err(error) if options.missing_path_policy.skips_broken_symlinks() => {
+                if explicit {
+                    return Err(error);
+                }
+                events.push(SourceDiscoveryEvent::SkippedBrokenSymlink {
+                    path: read_path.to_path_buf(),
+                });
+                return Ok(());
+            }
+            Err(error) => return Err(error),
+        };
+        if canonical.is_dir() {
+            if !options.follow_dir_symlinks {
+                events.push(SourceDiscoveryEvent::SkippedSymlinkedDirectory {
+                    path: logical_path.to_path_buf(),
+                });
+                return Ok(());
+            }
+            return collect_dir(
+                logical_path,
+                &canonical,
+                base_dir,
+                project_dir,
+                options,
+                entries,
+                events,
+                seen,
+                visited_dirs,
+            );
+        }
+        if !options.follow_file_symlinks {
+            events.push(SourceDiscoveryEvent::SkippedFileSymlink {
+                path: logical_path.to_path_buf(),
+            });
+            return Ok(());
+        }
+        return collect_file(
+            logical_path,
+            #[cfg(feature = "formatter")]
+            base_dir,
+            #[cfg(feature = "formatter")]
+            project_dir,
+            options,
+            entries,
+            events,
+            seen,
+            explicit,
+        );
+    }
+    if metadata.is_dir() {
+        return collect_dir(
+            logical_path,
+            read_path,
+            base_dir,
+            project_dir,
+            options,
+            entries,
+            events,
+            seen,
+            visited_dirs,
+        );
+    }
+    canonicalize_for_read(read_path)?;
+    collect_file(
+        logical_path,
+        #[cfg(feature = "formatter")]
+        base_dir,
+        #[cfg(feature = "formatter")]
+        project_dir,
+        options,
+        entries,
+        events,
+        seen,
+        explicit,
+    )
+}
+
+fn collect_dir(
+    logical_dir: &Path,
+    read_dir: &Path,
+    base_dir: &Path,
+    project_dir: &Path,
+    options: &DiscoveryOptions,
+    entries: &mut Vec<SourceEntry>,
+    events: &mut Vec<SourceDiscoveryEvent>,
+    seen: &mut BTreeSet<PathBuf>,
+    visited_dirs: &mut BTreeSet<PathBuf>,
+) -> MResult<()> {
+    let canonical_dir = canonicalize_for_read(read_dir)?;
+    if !visited_dirs.insert(canonical_dir.clone()) {
+        events.push(SourceDiscoveryEvent::SkippedDirectory {
+            path: logical_dir.to_path_buf(),
+            reason: SkipReason::AlreadyVisited,
+        });
+        return Ok(());
+    }
+    for entry in fs::read_dir(read_dir)? {
+        let entry = entry?;
+        let logical_path = logical_dir.join(entry.file_name());
+        let read_path = entry.path();
+        let is_directory_symlink = match is_directory_symlink(&read_path) {
+            Ok(value) => value,
+            Err(_error) if options.missing_path_policy.skips_broken_symlinks() => {
+                events.push(SourceDiscoveryEvent::SkippedBrokenSymlink {
+                    path: read_path.clone(),
+                });
+                continue;
+            }
+            Err(error) => return Err(error),
+        };
+        if is_directory_symlink && !options.follow_dir_symlinks {
+            events.push(SourceDiscoveryEvent::SkippedSymlinkedDirectory {
+                path: logical_path.clone(),
+            });
+            continue;
+        }
+        let is_dir = match read_path.canonicalize() {
+            Ok(path) => path.is_dir(),
+            Err(_error) if options.missing_path_policy.skips_broken_symlinks() => {
+                events.push(SourceDiscoveryEvent::SkippedBrokenSymlink {
+                    path: read_path.clone(),
+                });
+                continue;
+            }
+            Err(error) => return Err(error.into()),
+        };
+        if read_path.is_dir() || is_dir {
+            if options
+                .skip_dir_names
+                .iter()
+                .any(|name| read_path.file_name().and_then(|n| n.to_str()) == Some(*name))
+            {
+                events.push(SourceDiscoveryEvent::SkippedDirectory {
+                    path: logical_path.clone(),
+                    reason: SkipReason::SkippedByName,
+                });
+                continue;
+            }
+            collect_one(
+                &logical_path,
+                &read_path,
+                base_dir,
+                project_dir,
+                options,
+                entries,
+                events,
+                seen,
+                visited_dirs,
+                false,
+            )?;
+        } else if extension_allowed(&read_path, options.recursive_file_extensions) {
+            collect_one(
+                &logical_path,
+                &read_path,
+                base_dir,
+                project_dir,
+                options,
+                entries,
+                events,
+                seen,
+                visited_dirs,
+                false,
+            )?;
+        }
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn discovery_keeps_source_and_refusal_contracts_in_reduced_profiles() {
+        let root = tempfile::Builder::new()
+            .prefix("mech-source-discovery-ü # % ")
+            .tempdir()
+            .unwrap();
+        let source = root.path().join("main.MEC");
+        let unsupported = root.path().join("notes.txt");
+        fs::write(&source, "answer := 42\n").unwrap();
+        fs::write(&unsupported, "not executable source").unwrap();
+        let options = DiscoveryOptions {
+            allowed_file_extensions: &["mec"],
+            recursive_file_extensions: &["mec"],
+            skip_dir_names: &[],
+            follow_file_symlinks: false,
+            follow_dir_symlinks: false,
+            missing_path_policy: MissingPathPolicy::SkipBrokenSymlink,
+        };
+
+        let discover = || {
+            collect_sources_with_events(&[root.path().to_path_buf()], root.path(), options.clone())
+                .unwrap()
+        };
+        let result = discover();
+        assert_eq!(result.entries.len(), 1);
+        assert_eq!(result.entries[0].logical_path, source);
+        assert!(result.events.is_empty());
+
+        let error =
+            collect_sources_with_events(&[unsupported], root.path(), options.clone()).unwrap_err();
+        assert!(
+            error
+                .kind_message()
+                .contains("Unsupported source extension")
+        );
+        assert_eq!(discover().entries[0].logical_path, source);
+        assert_eq!(fs::read_to_string(source).unwrap(), "answer := 42\n");
+    }
+}
+
+fn collect_file(
+    logical_path: &Path,
+    #[cfg(feature = "formatter")] base_dir: &Path,
+    #[cfg(feature = "formatter")] project_dir: &Path,
+    options: &DiscoveryOptions,
+    entries: &mut Vec<SourceEntry>,
+    events: &mut Vec<SourceDiscoveryEvent>,
+    seen: &mut BTreeSet<PathBuf>,
+    explicit: bool,
+) -> MResult<()> {
+    if !extension_allowed(
+        logical_path,
+        if explicit {
+            options.allowed_file_extensions
+        } else {
+            options.recursive_file_extensions
+        },
+    ) {
+        if explicit {
+            return Err(unsupported_source_path_error(
+                logical_path,
+                options.allowed_file_extensions,
+            ));
+        }
+        events.push(SourceDiscoveryEvent::SkippedUnsupportedExtension {
+            path: logical_path.to_path_buf(),
+        });
+        return Ok(());
+    }
+    #[cfg(feature = "formatter")]
+    let relative_path = relative_to_base(logical_path, base_dir, project_dir)?;
+    if !seen.insert(logical_path.to_path_buf()) {
+        return Ok(());
+    }
+    entries.push(SourceEntry {
+        logical_path: logical_path.to_path_buf(),
+        #[cfg(feature = "formatter")]
+        relative_path,
+    });
+    Ok(())
+}

@@ -1,0 +1,16 @@
+Analog Clock Demo
+===============================================================================
+
+Run the maintained native/browser runtime example:
+
+```sh
+mech run examples/analog-clock
+```
+
+Serve it in the browser:
+
+```sh
+mech serve examples/analog-clock
+```
+
+Both commands use the same `mech.mcfg` and `clock.mec`. The browser page is driven by the shared project bootstrap and requestAnimationFrame; all application state and calculations remain in Mech.

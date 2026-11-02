@@ -1,0 +1,23 @@
+use crate::*;
+
+// Erfc ------------------------------------------------------------------------
+
+use libm::{erfc, erfcf};
+macro_rules! erfc_op {
+    (@managed $arg:expr) => {
+        Ok(erfc(($arg)))
+    };
+}
+
+macro_rules! erfcf_op {
+    (@managed $arg:expr) => {
+        Ok(erfcf(($arg)))
+    };
+}
+
+#[cfg(feature = "f32")]
+impl_math_unop!(MathErfc, f32, erfcf);
+#[cfg(feature = "f64")]
+impl_math_unop!(MathErfc, f64, erfc);
+
+impl_canonical_math_float_unop_specializer!(MathErfc, MathErfc, "math/erfc");

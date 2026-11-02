@@ -1,0 +1,243 @@
+#!/bin/sh
+set -eu
+
+repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+scratch=$(mktemp -d "${TMPDIR:-/tmp}/mech-bytecode-boundaries.XXXXXX")
+trap 'rm -rf "$scratch"' EXIT HUP INT TERM
+
+# Reuse artifacts within each Cargo workspace, but never across standalone
+# workspaces: relative path dependencies can otherwise produce incompatible
+# crates with colliding artifact names.
+root_target=${CARGO_TARGET_DIR:-$repository_root/target}
+machine_target="$scratch/math-target"
+producer_target="$scratch/producer-target"
+consumer_target="$scratch/consumer-target"
+bytecode_path="$scratch/add.mecb"
+machine_manifest="$repository_root/machines/math/Cargo.toml"
+producer_manifest="$repository_root/tests/fixtures/bytecode-compiler-producer/Cargo.toml"
+consumer_manifest="$repository_root/tests/fixtures/bytecode-runtime-consumer/Cargo.toml"
+core_patch="patch.crates-io.mech-core.path=\"$repository_root/src/core\""
+
+require_source_entry() {
+  source_file=$1
+  entry=$2
+  description=$3
+  if ! grep -F -q "$entry" "$source_file"; then
+    echo "bytecode compiler boundary failed: missing $description" >&2
+    exit 1
+  fi
+}
+
+# Bytecode compatibility is a language/runtime ABI choice, not an incidental
+# property of whichever package happens to compile the writer or reader.
+abi_authority=MECH_LANGUAGE_RUNTIME_ABI_VERSION
+require_source_entry \
+  "$repository_root/src/core/src/program/bytecode/header.rs" \
+  "pub const $abi_authority" \
+  "explicit bytecode ABI authority"
+require_source_entry \
+  "$repository_root/src/core/src/program/bytecode/writer.rs" \
+  "$abi_authority" \
+  "bytecode writer use of the ABI authority"
+require_source_entry \
+  "$repository_root/src/core/src/program/bytecode/reader.rs" \
+  "$abi_authority" \
+  "bytecode reader use of the ABI authority"
+if grep -R -n 'CARGO_PKG_VERSION' \
+  "$repository_root/src/core/src/program/bytecode" \
+  "$repository_root/src/bytecode/src"
+then
+  echo "bytecode compiler boundary failed: package version used as bytecode ABI" >&2
+  exit 1
+fi
+
+require_tree_entry() {
+  tree=$1
+  entry=$2
+  description=$3
+  case $tree in
+    *"$entry"*) ;;
+    *)
+      echo "bytecode compiler boundary failed: missing $description" >&2
+      exit 1
+      ;;
+  esac
+}
+
+reject_tree_entry() {
+  tree=$1
+  entry=$2
+  description=$3
+  case $tree in
+    *"$entry"*)
+      echo "bytecode compiler boundary failed: found $description" >&2
+      exit 1
+      ;;
+    *) ;;
+  esac
+}
+
+cargo +nightly-2026-03-03 check \
+  --manifest-path "$repository_root/Cargo.toml" \
+  --target-dir "$root_target" \
+  -p mech-core \
+  --no-default-features
+
+cargo +nightly-2026-03-03 check \
+  --manifest-path "$repository_root/Cargo.toml" \
+  --target-dir "$root_target" \
+  -p mech-core \
+  --no-default-features \
+  --features "atom,enum,tuple,f64"
+
+cargo +nightly-2026-03-03 check \
+  --manifest-path "$machine_manifest" \
+  --target-dir "$machine_target" \
+  --config "$core_patch" \
+  --no-default-features \
+  --features "runtime f64 add"
+
+cargo +nightly-2026-03-03 check \
+  --manifest-path "$machine_manifest" \
+  --target-dir "$machine_target" \
+  --config "$core_patch" \
+  --no-default-features \
+  --features "compiler f64 add"
+
+cargo +nightly-2026-03-03 check \
+  --manifest-path "$repository_root/Cargo.toml" \
+  --target-dir "$root_target" \
+  -p mech-engine \
+  --no-default-features \
+  --features "program functions symbol_table f64"
+
+runtime_program_tree=$(cargo +nightly-2026-03-03 tree \
+  --manifest-path "$repository_root/Cargo.toml" \
+  -p mech-engine \
+  --no-default-features \
+  --features "program functions symbol_table f64" \
+  -e features,no-dev)
+runtime_program_tree="$runtime_program_tree
+$(cargo +nightly-2026-03-03 tree \
+  --manifest-path "$repository_root/Cargo.toml" \
+  -p mech-engine \
+  --no-default-features \
+  --features "program functions symbol_table f64" \
+  -e features,no-dev \
+  -i mech-core)
+$(cargo +nightly-2026-03-03 tree \
+  --manifest-path "$repository_root/Cargo.toml" \
+  -p mech-engine \
+  --no-default-features \
+  --features "program functions symbol_table f64" \
+  -e features,no-dev \
+  -i mech-engine)"
+reject_tree_entry "$runtime_program_tree" "mech-bytecode v" "mech-bytecode in the runtime-only program graph"
+reject_tree_entry "$runtime_program_tree" 'mech-core feature "compiler"' "mech-core/compiler in the runtime-only program graph"
+reject_tree_entry "$runtime_program_tree" 'mech-engine feature "compiler"' "mech-engine/compiler in the runtime-only program graph"
+
+cargo +nightly-2026-03-03 check \
+  --manifest-path "$repository_root/Cargo.toml" \
+  --target-dir "$root_target" \
+  -p mech-engine \
+  --no-default-features \
+  --features "compiler functions symbol_table f64"
+
+compiler_program_tree=$(cargo +nightly-2026-03-03 tree \
+  --manifest-path "$repository_root/Cargo.toml" \
+  -p mech-engine \
+  --no-default-features \
+  --features "compiler functions symbol_table f64" \
+  -e features,no-dev)
+compiler_program_tree="$compiler_program_tree
+$(cargo +nightly-2026-03-03 tree \
+  --manifest-path "$repository_root/Cargo.toml" \
+  -p mech-engine \
+  --no-default-features \
+  --features "compiler functions symbol_table f64" \
+  -e features,no-dev \
+  -i mech-core)
+$(cargo +nightly-2026-03-03 tree \
+  --manifest-path "$repository_root/Cargo.toml" \
+  -p mech-engine \
+  --no-default-features \
+  --features "compiler functions symbol_table f64" \
+  -e features,no-dev \
+  -i mech-engine)"
+require_tree_entry "$compiler_program_tree" "mech-bytecode v" "mech-bytecode in the compiler-enabled program graph"
+require_tree_entry "$compiler_program_tree" 'mech-core feature "compiler"' "mech-core/compiler in the compiler-enabled program graph"
+require_tree_entry "$compiler_program_tree" 'mech-engine feature "compiler"' "mech-engine/compiler in the compiler-enabled program graph"
+
+cargo +nightly-2026-03-03 check \
+  --manifest-path "$repository_root/Cargo.toml" \
+  --target-dir "$root_target" \
+  -p mech-runtime \
+  --lib \
+  --no-default-features \
+  --features "program functions symbol_table f64"
+
+runtime_runtime_tree=$(cargo +nightly-2026-03-03 tree \
+  --manifest-path "$repository_root/Cargo.toml" \
+  -p mech-runtime \
+  --no-default-features \
+  --features "program functions symbol_table f64" \
+  -e features,no-dev)
+runtime_runtime_tree="$runtime_runtime_tree
+$(cargo +nightly-2026-03-03 tree \
+  --manifest-path "$repository_root/Cargo.toml" \
+  -p mech-runtime \
+  --no-default-features \
+  --features "program functions symbol_table f64" \
+  -e features,no-dev \
+  -i mech-core)
+$(cargo +nightly-2026-03-03 tree \
+  --manifest-path "$repository_root/Cargo.toml" \
+  -p mech-runtime \
+  --no-default-features \
+  --features "program functions symbol_table f64" \
+  -e features,no-dev \
+  -i mech-engine)"
+reject_tree_entry "$runtime_runtime_tree" "mech-bytecode v" "mech-bytecode in the runtime-only runtime graph"
+reject_tree_entry "$runtime_runtime_tree" 'mech-core feature "compiler"' "mech-core/compiler in the runtime-only runtime graph"
+reject_tree_entry "$runtime_runtime_tree" 'mech-engine feature "compiler"' "mech-engine/compiler in the runtime-only runtime graph"
+
+cargo +nightly-2026-03-03 test \
+  --manifest-path "$repository_root/Cargo.toml" \
+  --target-dir "$root_target" \
+  -p mech-engine \
+  --features compiler_default \
+  --lib \
+  program::bytecode_plan_topology_tests
+
+producer_tree=$(cargo +nightly-2026-03-03 tree \
+  --manifest-path "$producer_manifest" \
+  -e features,no-dev)
+require_tree_entry "$producer_tree" "mech-bytecode v" "mech-bytecode in the producer graph"
+
+consumer_tree=$(cargo +nightly-2026-03-03 tree \
+  --manifest-path "$consumer_manifest" \
+  -e features,no-dev)
+consumer_tree="$consumer_tree
+$(cargo +nightly-2026-03-03 tree \
+  --manifest-path "$consumer_manifest" \
+  -e features,no-dev \
+  -i mech-core)
+$(cargo +nightly-2026-03-03 tree \
+  --manifest-path "$consumer_manifest" \
+  -e features,no-dev \
+  -i mech-engine)"
+reject_tree_entry "$consumer_tree" "mech-bytecode v" "mech-bytecode in the consumer graph"
+reject_tree_entry "$consumer_tree" 'mech-core feature "compiler"' "mech-core/compiler in the consumer graph"
+reject_tree_entry "$consumer_tree" 'mech-engine feature "compiler"' "mech-engine/compiler in the consumer graph"
+
+cargo +nightly-2026-03-03 run \
+  --manifest-path "$producer_manifest" \
+  --target-dir "$producer_target" \
+  -- "$bytecode_path"
+
+cargo +nightly-2026-03-03 run \
+  --manifest-path "$consumer_manifest" \
+  --target-dir "$consumer_target" \
+  -- "$bytecode_path"
+
+echo "bytecode compiler boundaries passed"

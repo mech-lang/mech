@@ -1,0 +1,1285 @@
+use std::{
+    collections::BTreeMap,
+    fmt,
+    rc::Rc,
+    sync::mpsc,
+    time::{Duration, Instant},
+};
+
+use mech_core::{CellSlotId, DeviceSubmissionHold, MemoryObjectId, PreparedDeviceSubmission};
+use wgpu::util::DeviceExt;
+
+use super::{
+    ElementwiseKernel, GpuBindingAccess, GpuExecutionBindingRole, GpuExecutionPlan,
+    GpuKernelPlanSource, GpuPhysicalOutputPlan, GpuPlanInitialValues, GpuPlanScalar,
+};
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum GpuExecutionError {
+    AdapterUnavailable,
+    DeviceRequest(String),
+    MissingInput(String),
+    UnknownInput(String),
+    InputLength {
+        name: String,
+        expected: u64,
+        actual: usize,
+    },
+    BufferMap(String),
+    ChannelClosed,
+    InvalidFeedback(String),
+    WorkgroupLimit {
+        required: u32,
+        supported: u32,
+    },
+    InvalidPlan(String),
+}
+
+impl fmt::Display for GpuExecutionError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "{self:?}")
+    }
+}
+
+impl std::error::Error for GpuExecutionError {}
+
+#[derive(Clone, Debug)]
+pub struct GpuExecutionProfile {
+    pub adapter: String,
+    pub setup: Duration,
+    pub pipeline_and_upload: Duration,
+    pub dispatch_and_readback: Duration,
+    pub total: Duration,
+    pub outputs: BTreeMap<String, Vec<f32>>,
+}
+
+pub struct ResidentGpuSession {
+    adapter: String,
+    pipeline: wgpu::ComputePipeline,
+    bind_groups: [wgpu::BindGroup; 2],
+    _registered_buffers: Vec<Rc<crate::RegisteredDeviceBuffer>>,
+    input_buffers: BTreeMap<String, (Rc<crate::RegisteredDeviceBuffer>, u64)>,
+    output_buffers: [BTreeMap<String, Rc<crate::RegisteredDeviceBuffer>>; 2],
+    output_elements: BTreeMap<String, u64>,
+    readback_buffers: BTreeMap<CellSlotId, crate::RegisteredDeviceBuffer>,
+    workgroups: u32,
+    next_group: usize,
+    last_output_group: Option<usize>,
+    memory_plan: crate::PlannedGpuExecution,
+    input_objects: BTreeMap<String, MemoryObjectId>,
+    input_submissions: BTreeMap<String, PreparedDeviceSubmission>,
+    dispatch_submission: PreparedDeviceSubmission,
+    readback_submission: PreparedDeviceSubmission,
+    submission_tracker: crate::DeviceSubmissionTracker,
+    queued_uploads: Vec<(MemoryObjectId, DeviceSubmissionHold)>,
+    managed_memory: crate::ManagedGpuMemory,
+    queue: wgpu::Queue,
+    device: wgpu::Device,
+}
+
+#[derive(Clone, Debug)]
+pub struct ResidentDispatchProfile {
+    pub adapter: String,
+    pub turns: u32,
+    pub dispatch: Duration,
+    pub readback: Duration,
+    pub outputs: BTreeMap<String, Vec<f32>>,
+}
+
+struct BufferMapCleanup<'a>(&'a wgpu::Buffer);
+
+impl Drop for BufferMapCleanup<'_> {
+    fn drop(&mut self) {
+        self.0.unmap();
+    }
+}
+
+impl ElementwiseKernel {
+    /// Dispatches the generated kernel through wgpu. The same path works over
+    /// Metal, Vulkan, Direct3D 12, and WebGPU-capable native backends.
+    pub fn run_gpu(
+        &self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<BTreeMap<String, Vec<f32>>, GpuExecutionError> {
+        self.run_gpu_profiled(inputs).map(|profile| profile.outputs)
+    }
+
+    pub fn run_gpu_profiled(
+        &self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<GpuExecutionProfile, GpuExecutionError> {
+        pollster::block_on(self.run_gpu_profiled_async(inputs))
+    }
+
+    pub async fn run_gpu_async(
+        &self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<BTreeMap<String, Vec<f32>>, GpuExecutionError> {
+        self.run_gpu_profiled_async(inputs)
+            .await
+            .map(|profile| profile.outputs)
+    }
+
+    pub async fn run_gpu_profiled_async(
+        &self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<GpuExecutionProfile, GpuExecutionError> {
+        let total_started = Instant::now();
+        let execution_plan =
+            GpuExecutionPlan::build(GpuKernelPlanSource::Elementwise(self), inputs)
+                .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+        let setup_started = Instant::now();
+        let instance = wgpu::Instance::default();
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions {
+                power_preference: wgpu::PowerPreference::HighPerformance,
+                compatible_surface: None,
+                force_fallback_adapter: false,
+            })
+            .await
+            .ok_or(GpuExecutionError::AdapterUnavailable)?;
+        let adapter_name = {
+            let info = adapter.get_info();
+            format!("{} ({:?})", info.name, info.backend)
+        };
+        let adapter_limits = adapter.limits();
+        let planned_execution = crate::PlannedGpuExecution::from_execution(
+            execution_plan,
+            crate::gpu_memory_limits(&adapter_limits),
+        )
+        .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+        let execution_plan = &planned_execution.execution;
+        let (required_limits, workgroups) =
+            required_device_limits_for_plan(execution_plan, &adapter_limits)?;
+        let (device, queue) = adapter
+            .request_device(
+                &wgpu::DeviceDescriptor {
+                    label: Some("Mech GPU program"),
+                    required_features: wgpu::Features::empty(),
+                    required_limits,
+                },
+                None,
+            )
+            .await
+            .map_err(|error| GpuExecutionError::DeviceRequest(error.to_string()))?;
+        let setup = setup_started.elapsed();
+        let mut managed_memory = planned_execution
+            .managed_memory()
+            .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+
+        let pipeline_started = Instant::now();
+        let mut buffers = BTreeMap::new();
+        for binding in &execution_plan.bindings {
+            let planned_bytes = binding
+                .elements
+                .checked_mul(scalar_size(binding.scalar))
+                .ok_or_else(|| {
+                    GpuExecutionError::InvalidPlan("GPU binding byte count overflow".to_owned())
+                })?;
+            planned_execution
+                .assert_binding_bytes(binding.binding, planned_bytes)
+                .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+            let usage = wgpu::BufferUsages::STORAGE
+                | if matches!(
+                    binding.role,
+                    GpuExecutionBindingRole::StateWrite | GpuExecutionBindingRole::Output
+                ) {
+                    wgpu::BufferUsages::COPY_SRC
+                } else {
+                    wgpu::BufferUsages::empty()
+                };
+            let buffer = match &binding.initial_values {
+                Some(GpuPlanInitialValues::F32(values)) => {
+                    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                        label: Some(&binding.name),
+                        contents: bytemuck::cast_slice(values),
+                        usage,
+                    })
+                }
+                Some(GpuPlanInitialValues::U32(values)) => {
+                    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                        label: Some(&binding.name),
+                        contents: bytemuck::cast_slice(values),
+                        usage,
+                    })
+                }
+                None => device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some(&binding.name),
+                    size: binding.elements * scalar_size(binding.scalar),
+                    usage,
+                    mapped_at_creation: false,
+                }),
+            };
+            let object = planned_execution
+                .binding_object(binding.binding)
+                .ok_or_else(|| {
+                    GpuExecutionError::InvalidPlan(format!(
+                        "GPU binding {} has no planned object",
+                        binding.binding
+                    ))
+                })?;
+            let initialized_bytes = binding
+                .initial_values
+                .as_ref()
+                .map(|_| planned_bytes)
+                .unwrap_or(0);
+            let buffer = managed_memory
+                .register_device_buffer(object, buffer, initialized_bytes)
+                .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+            buffers.insert(binding.binding, buffer);
+        }
+
+        let layout_entries = execution_plan
+            .bindings
+            .iter()
+            .map(|binding| wgpu::BindGroupLayoutEntry {
+                binding: binding.binding,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage {
+                        read_only: binding.access == GpuBindingAccess::Read,
+                    },
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            })
+            .collect::<Vec<_>>();
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Mech GPU bindings"),
+            entries: &layout_entries,
+        });
+        let bind_entries = execution_plan
+            .bindings
+            .iter()
+            .map(|binding| wgpu::BindGroupEntry {
+                binding: binding.binding,
+                resource: buffers[&binding.binding].buffer().as_entire_binding(),
+            })
+            .collect::<Vec<_>>();
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Mech GPU bind group"),
+            layout: &bind_group_layout,
+            entries: &bind_entries,
+        });
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Generated Mech WGSL"),
+            source: wgpu::ShaderSource::Wgsl(execution_plan.wgsl.clone().into()),
+        });
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("Mech GPU pipeline layout"),
+            bind_group_layouts: &[&bind_group_layout],
+            push_constant_ranges: &[],
+        });
+        let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+            label: Some("Mech GPU pipeline"),
+            layout: Some(&pipeline_layout),
+            module: &shader,
+            entry_point: "main",
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+        });
+        let pipeline_and_upload = pipeline_started.elapsed();
+
+        let dispatch_started = Instant::now();
+        let mut readbacks = Vec::new();
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("Mech GPU command encoder"),
+        });
+        {
+            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: Some("Mech GPU compute pass"),
+                timestamp_writes: None,
+            });
+            pass.set_pipeline(&pipeline);
+            pass.set_bind_group(0, &bind_group, &[]);
+            pass.dispatch_workgroups(workgroups, 1, 1);
+        }
+        for output in &execution_plan.physical_outputs {
+            let size = output.sample_elements * std::mem::size_of::<f32>() as u64;
+            let slot = CellSlotId::new(output.slot);
+            planned_execution
+                .assert_readback_bytes(slot, size)
+                .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+            let readback_capacity = planned_execution.readback_bytes(slot).ok_or_else(|| {
+                GpuExecutionError::InvalidPlan(format!(
+                    "GPU output slot {} has no planned readback capacity",
+                    slot.get()
+                ))
+            })?;
+            let readback = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("Mech GPU readback"),
+                size: readback_capacity,
+                usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+                mapped_at_creation: false,
+            });
+            let readback_object =
+                planned_execution
+                    .readback_device_object(slot)
+                    .ok_or_else(|| {
+                        GpuExecutionError::InvalidPlan(format!(
+                            "GPU output slot {} has no planned readback buffer",
+                            slot.get()
+                        ))
+                    })?;
+            let readback = managed_memory
+                .register_device_buffer(readback_object, readback, 0)
+                .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+            let host_readback_object =
+                planned_execution.readback_object(slot).ok_or_else(|| {
+                    GpuExecutionError::InvalidPlan(format!(
+                        "GPU output slot {} has no planned host readback buffer",
+                        slot.get()
+                    ))
+                })?;
+            let binding = physical_output_binding(&execution_plan, output)?;
+            encoder.copy_buffer_to_buffer(
+                buffers[&binding].buffer(),
+                0,
+                readback.buffer(),
+                0,
+                size,
+            );
+            readbacks.push((
+                output.aliases.clone(),
+                slot,
+                host_readback_object,
+                readback,
+                size,
+            ));
+        }
+        let submission_hold = managed_memory
+            .begin_submission(
+                planned_execution.device_objects(),
+                planned_execution.transfer_objects(),
+            )
+            .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+        let mut submission_tracker =
+            crate::DeviceSubmissionTracker::new(1).map_err(GpuExecutionError::InvalidPlan)?;
+        submission_tracker.observe_device_loss(&device);
+        let unsubmitted = submission_tracker
+            .reserve_batch(core::iter::once(submission_hold))
+            .map_err(GpuExecutionError::InvalidPlan)?;
+        let submission = queue.submit(Some(encoder.finish()));
+        unsubmitted.record_submitted(submission);
+
+        let readback_result = (|| {
+            let mut outputs = BTreeMap::new();
+            for (aliases, _, host_readback_object, readback, size) in &readbacks {
+                let slice = readback.buffer().slice(..*size);
+                let (sender, receiver) = mpsc::channel();
+                slice.map_async(wgpu::MapMode::Read, move |result| {
+                    drop(sender.send(result));
+                });
+                device.poll(wgpu::Maintain::Wait);
+                receiver
+                    .recv()
+                    .map_err(|_| GpuExecutionError::ChannelClosed)?
+                    .map_err(|error| GpuExecutionError::BufferMap(error.to_string()))?;
+                let cleanup = BufferMapCleanup(readback.buffer());
+                let mapped = slice.get_mapped_range();
+                let values = managed_memory
+                    .with_staged_host_transfer(*host_readback_object, &mapped, |bytes| {
+                        bytemuck::cast_slice::<u8, f32>(bytes).to_vec()
+                    })
+                    .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+                for name in aliases {
+                    outputs.insert(name.clone(), values.clone());
+                }
+                drop(mapped);
+                drop(cleanup);
+            }
+            Ok::<_, GpuExecutionError>(outputs)
+        })();
+        let completion_result =
+            settle_submissions(&device, &mut submission_tracker, &managed_memory);
+        let write_result = if completion_result.is_ok() {
+            (|| {
+                for (object, bytes) in planned_execution.writable_device_objects().iter().copied() {
+                    managed_memory
+                        .record_device_write(object, bytes)
+                        .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+                }
+                for (object, bytes) in planned_execution
+                    .writable_state_objects(0)
+                    .expect("the single-dispatch bind group is validated")
+                    .iter()
+                    .copied()
+                {
+                    managed_memory
+                        .record_device_write(object, bytes)
+                        .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+                }
+                for (_, slot, _, _, bytes) in &readbacks {
+                    let object =
+                        planned_execution
+                            .readback_device_object(*slot)
+                            .ok_or_else(|| {
+                                GpuExecutionError::InvalidPlan(format!(
+                                    "GPU output slot {} has no planned device readback storage",
+                                    slot.get()
+                                ))
+                            })?;
+                    managed_memory
+                        .record_device_write(object, *bytes)
+                        .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+                }
+                Ok::<_, GpuExecutionError>(())
+            })()
+        } else {
+            Ok(())
+        };
+        // Release all backend references before closing the logical domain.
+        drop(bind_group);
+        drop(bind_entries);
+        drop(readbacks);
+        drop(buffers);
+        let close_result = managed_memory
+            .close()
+            .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()));
+        let outputs = readback_result?;
+        completion_result?;
+        write_result?;
+        close_result?;
+        Ok(GpuExecutionProfile {
+            adapter: adapter_name,
+            setup,
+            pipeline_and_upload,
+            dispatch_and_readback: dispatch_started.elapsed(),
+            total: total_started.elapsed(),
+            outputs,
+        })
+    }
+
+    pub fn prepare_resident(
+        &self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<ResidentGpuSession, GpuExecutionError> {
+        pollster::block_on(self.prepare_resident_async(inputs))
+    }
+
+    pub async fn prepare_resident_async(
+        &self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<ResidentGpuSession, GpuExecutionError> {
+        let execution_plan =
+            GpuExecutionPlan::build(GpuKernelPlanSource::Elementwise(self), inputs)
+                .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+        let instance = wgpu::Instance::default();
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions {
+                power_preference: wgpu::PowerPreference::HighPerformance,
+                compatible_surface: None,
+                force_fallback_adapter: false,
+            })
+            .await
+            .ok_or(GpuExecutionError::AdapterUnavailable)?;
+        let adapter_info = adapter.get_info();
+        let adapter_name = format!("{} ({:?})", adapter_info.name, adapter_info.backend);
+        let adapter_limits = adapter.limits();
+        let planned_execution = crate::PlannedGpuExecution::from_execution(
+            execution_plan,
+            crate::gpu_memory_limits(&adapter_limits),
+        )
+        .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+        let execution_plan = &planned_execution.execution;
+        let (required_limits, workgroups) =
+            required_device_limits_for_plan(execution_plan, &adapter_limits)?;
+        let (device, queue) = adapter
+            .request_device(
+                &wgpu::DeviceDescriptor {
+                    label: Some("Mech resident GPU program"),
+                    required_features: wgpu::Features::empty(),
+                    required_limits,
+                },
+                None,
+            )
+            .await
+            .map_err(|error| GpuExecutionError::DeviceRequest(error.to_string()))?;
+        let mut managed_memory = planned_execution
+            .managed_memory()
+            .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+
+        let mut state_buffers = BTreeMap::new();
+        let mut fixed_buffers = BTreeMap::new();
+        let mut input_buffers = BTreeMap::new();
+        let mut input_objects = BTreeMap::new();
+        let mut registered_buffers = Vec::with_capacity(planned_execution.device_objects().len());
+        for state in &execution_plan.states {
+            let slot = CellSlotId::new(state.slot);
+            let state_bytes = state
+                .elements
+                .checked_mul(core::mem::size_of::<f32>() as u64)
+                .ok_or_else(|| {
+                    GpuExecutionError::InvalidPlan("GPU state byte count overflow".to_owned())
+                })?;
+            if planned_execution.state_bytes(slot) != Some(state_bytes) {
+                return Err(GpuExecutionError::InvalidPlan(
+                    "GPU state backing differs from the admitted memory plan".to_owned(),
+                ));
+            }
+            let initial = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Mech resident initial state"),
+                contents: bytemuck::cast_slice(&state.initial_values),
+                usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+            });
+            let alternate = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("Mech resident alternate state"),
+                size: state.elements * std::mem::size_of::<f32>() as u64,
+                usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+                mapped_at_creation: false,
+            });
+            let [current, next] = planned_execution.state_objects(slot).ok_or_else(|| {
+                GpuExecutionError::InvalidPlan(format!(
+                    "GPU state slot {} has no planned double buffer",
+                    slot.get()
+                ))
+            })?;
+            let initial = Rc::new(
+                managed_memory
+                    .register_device_buffer(current, initial, state_bytes)
+                    .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?,
+            );
+            let alternate = Rc::new(
+                managed_memory
+                    .register_device_buffer(next, alternate, 0)
+                    .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?,
+            );
+            registered_buffers.push(initial.clone());
+            registered_buffers.push(alternate.clone());
+            state_buffers.insert(slot, [initial, alternate]);
+        }
+        for binding in &execution_plan.bindings {
+            if binding.role != GpuExecutionBindingRole::Input {
+                continue;
+            }
+            let planned_bytes = binding
+                .elements
+                .checked_mul(scalar_size(binding.scalar))
+                .ok_or_else(|| {
+                    GpuExecutionError::InvalidPlan("GPU input byte count overflow".to_owned())
+                })?;
+            planned_execution
+                .assert_binding_bytes(binding.binding, planned_bytes)
+                .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+            let Some(GpuPlanInitialValues::F32(values)) = &binding.initial_values else {
+                return Err(GpuExecutionError::InvalidPlan(format!(
+                    "input binding `{}` has no f32 initializer",
+                    binding.name
+                )));
+            };
+            let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some(&binding.name),
+                contents: bytemuck::cast_slice(values),
+                usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+            });
+            let object = planned_execution
+                .binding_object(binding.binding)
+                .ok_or_else(|| {
+                    GpuExecutionError::InvalidPlan(format!(
+                        "GPU input binding {} has no planned object",
+                        binding.binding
+                    ))
+                })?;
+            let buffer = Rc::new(
+                managed_memory
+                    .register_device_buffer(object, buffer, planned_bytes)
+                    .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?,
+            );
+            registered_buffers.push(buffer.clone());
+            fixed_buffers.insert(binding.binding, buffer.clone());
+            input_buffers.insert(binding.name.clone(), (buffer, binding.elements));
+            input_objects.insert(binding.name.clone(), object);
+        }
+
+        let mut group_buffers: [BTreeMap<u32, Rc<crate::RegisteredDeviceBuffer>>; 2] =
+            [BTreeMap::new(), BTreeMap::new()];
+        for binding in &execution_plan.bindings {
+            match binding.role {
+                GpuExecutionBindingRole::Input => {
+                    let buffer = fixed_buffers[&binding.binding].clone();
+                    group_buffers[0].insert(binding.binding, buffer.clone());
+                    group_buffers[1].insert(binding.binding, buffer);
+                }
+                GpuExecutionBindingRole::StateRead => {
+                    let slot = CellSlotId::new(binding.slot);
+                    group_buffers[0].insert(binding.binding, state_buffers[&slot][0].clone());
+                    group_buffers[1].insert(binding.binding, state_buffers[&slot][1].clone());
+                }
+                GpuExecutionBindingRole::StateWrite => {
+                    let slot = CellSlotId::new(binding.slot);
+                    group_buffers[0].insert(binding.binding, state_buffers[&slot][1].clone());
+                    group_buffers[1].insert(binding.binding, state_buffers[&slot][0].clone());
+                }
+                GpuExecutionBindingRole::Output => {
+                    let planned_bytes = binding
+                        .elements
+                        .checked_mul(scalar_size(binding.scalar))
+                        .ok_or_else(|| {
+                        GpuExecutionError::InvalidPlan("GPU output byte count overflow".to_owned())
+                    })?;
+                    planned_execution
+                        .assert_binding_bytes(binding.binding, planned_bytes)
+                        .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+                    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+                        label: Some(&binding.name),
+                        size: planned_bytes,
+                        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+                        mapped_at_creation: false,
+                    });
+                    let object = planned_execution
+                        .binding_object(binding.binding)
+                        .ok_or_else(|| {
+                            GpuExecutionError::InvalidPlan(format!(
+                                "GPU output binding {} has no planned object",
+                                binding.binding
+                            ))
+                        })?;
+                    let buffer = Rc::new(
+                        managed_memory
+                            .register_device_buffer(object, buffer, 0)
+                            .map_err(|failure| {
+                                GpuExecutionError::InvalidPlan(failure.to_string())
+                            })?,
+                    );
+                    registered_buffers.push(buffer.clone());
+                    group_buffers[0].insert(binding.binding, buffer.clone());
+                    group_buffers[1].insert(binding.binding, buffer.clone());
+                }
+                GpuExecutionBindingRole::IntegrityFault => {
+                    return Err(GpuExecutionError::InvalidPlan(
+                        "elementwise plan unexpectedly contains an integrity binding".to_owned(),
+                    ));
+                }
+            }
+        }
+
+        let mut output_buffers: [BTreeMap<String, Rc<crate::RegisteredDeviceBuffer>>; 2] =
+            [BTreeMap::new(), BTreeMap::new()];
+        let mut output_elements = BTreeMap::new();
+        for output in &execution_plan.outputs {
+            for group in 0..2 {
+                let physical = execution_plan
+                    .physical_outputs
+                    .iter()
+                    .find(|physical| physical.id == output.physical_output)
+                    .expect("validated execution plan references a physical output");
+                let buffer = if let Some(binding) = physical.binding {
+                    group_buffers[group][&binding].clone()
+                } else {
+                    let slot = CellSlotId::new(output.slot);
+                    state_buffers[&slot][1 - group].clone()
+                };
+                output_buffers[group].insert(output.name.clone(), buffer);
+            }
+            output_elements.insert(output.name.clone(), output.elements);
+        }
+        let mut readback_buffers = BTreeMap::new();
+        for output in &execution_plan.physical_outputs {
+            let slot = CellSlotId::new(output.slot);
+            if readback_buffers.contains_key(&slot) {
+                continue;
+            }
+            let capacity = planned_execution.readback_bytes(slot).ok_or_else(|| {
+                GpuExecutionError::InvalidPlan(format!(
+                    "GPU output slot {} has no planned readback capacity",
+                    slot.get()
+                ))
+            })?;
+            let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("Mech resident GPU readback buffer"),
+                size: capacity,
+                usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+                mapped_at_creation: false,
+            });
+            let object = planned_execution
+                .readback_device_object(slot)
+                .ok_or_else(|| {
+                    GpuExecutionError::InvalidPlan(format!(
+                        "GPU output slot {} has no planned readback object",
+                        slot.get()
+                    ))
+                })?;
+            let buffer = managed_memory
+                .register_device_buffer(object, buffer, 0)
+                .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+            readback_buffers.insert(slot, buffer);
+        }
+
+        let layout_entries = execution_plan
+            .bindings
+            .iter()
+            .map(|binding| wgpu::BindGroupLayoutEntry {
+                binding: binding.binding,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage {
+                        read_only: binding.access == GpuBindingAccess::Read,
+                    },
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            })
+            .collect::<Vec<_>>();
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Mech resident GPU bindings"),
+            entries: &layout_entries,
+        });
+        let bind_groups = [0, 1].map(|group| {
+            let entries = execution_plan
+                .bindings
+                .iter()
+                .map(|binding| wgpu::BindGroupEntry {
+                    binding: binding.binding,
+                    resource: group_buffers[group][&binding.binding]
+                        .buffer()
+                        .as_entire_binding(),
+                })
+                .collect::<Vec<_>>();
+            device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("Mech resident GPU bind group"),
+                layout: &bind_group_layout,
+                entries: &entries,
+            })
+        });
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Generated resident Mech WGSL"),
+            source: wgpu::ShaderSource::Wgsl(execution_plan.wgsl.clone().into()),
+        });
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("Mech resident GPU pipeline layout"),
+            bind_group_layouts: &[&bind_group_layout],
+            push_constant_ranges: &[],
+        });
+        let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+            label: Some("Mech resident GPU pipeline"),
+            layout: Some(&pipeline_layout),
+            module: &shader,
+            entry_point: "main",
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+        });
+        let mut queued_uploads = Vec::new();
+        queued_uploads
+            .try_reserve_exact(input_buffers.len())
+            .map_err(|_| {
+                GpuExecutionError::InvalidPlan(
+                    "GPU upload hold reservation was not available".to_owned(),
+                )
+            })?;
+        let submission_capacity = input_objects.len().checked_add(2).ok_or_else(|| {
+            GpuExecutionError::InvalidPlan("GPU submission capacity overflowed".to_owned())
+        })?;
+        let submission_tracker = crate::DeviceSubmissionTracker::new(submission_capacity)
+            .map_err(GpuExecutionError::InvalidPlan)?;
+        submission_tracker.observe_device_loss(&device);
+        let input_submissions = input_objects
+            .iter()
+            .map(|(name, object)| {
+                Ok((
+                    name.clone(),
+                    managed_memory
+                        .prepare_submission(&[*object], &[])
+                        .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?,
+                ))
+            })
+            .collect::<Result<BTreeMap<_, _>, GpuExecutionError>>()?;
+        let dispatch_submission = managed_memory
+            .prepare_submission(planned_execution.device_objects(), &[])
+            .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+        let readback_submission = managed_memory
+            .prepare_submission(
+                planned_execution.device_objects(),
+                planned_execution.transfer_objects(),
+            )
+            .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+
+        Ok(ResidentGpuSession {
+            adapter: adapter_name,
+            pipeline,
+            bind_groups,
+            _registered_buffers: registered_buffers,
+            input_buffers,
+            output_buffers,
+            output_elements,
+            readback_buffers,
+            workgroups,
+            next_group: 0,
+            last_output_group: None,
+            memory_plan: planned_execution,
+            input_objects,
+            input_submissions,
+            dispatch_submission,
+            readback_submission,
+            submission_tracker,
+            queued_uploads,
+            managed_memory,
+            queue,
+            device,
+        })
+    }
+}
+
+fn scalar_size(scalar: GpuPlanScalar) -> u64 {
+    match scalar {
+        GpuPlanScalar::F32 | GpuPlanScalar::U32 => 4,
+    }
+}
+
+fn physical_output_binding(
+    plan: &GpuExecutionPlan,
+    output: &GpuPhysicalOutputPlan,
+) -> Result<u32, GpuExecutionError> {
+    output
+        .binding
+        .or_else(|| {
+            plan.bindings
+                .iter()
+                .find(|binding| {
+                    binding.role == GpuExecutionBindingRole::StateWrite
+                        && binding.slot == output.slot
+                })
+                .map(|binding| binding.binding)
+        })
+        .ok_or_else(|| {
+            GpuExecutionError::InvalidPlan(format!(
+                "physical output {} has no readable binding",
+                output.id
+            ))
+        })
+}
+
+fn required_device_limits_for_plan(
+    plan: &GpuExecutionPlan,
+    adapter_limits: &wgpu::Limits,
+) -> Result<(wgpu::Limits, u32), GpuExecutionError> {
+    let required_storage_buffers = plan.bindings.len() as u32;
+    if required_storage_buffers > adapter_limits.max_storage_buffers_per_shader_stage {
+        return Err(GpuExecutionError::DeviceRequest(format!(
+            "kernel needs {required_storage_buffers} storage buffers, adapter supports {}",
+            adapter_limits.max_storage_buffers_per_shader_stage
+        )));
+    }
+    let workgroups = plan.dispatch_elements.div_ceil(plan.workgroup_size);
+    if workgroups > adapter_limits.max_compute_workgroups_per_dimension {
+        return Err(GpuExecutionError::WorkgroupLimit {
+            required: workgroups,
+            supported: adapter_limits.max_compute_workgroups_per_dimension,
+        });
+    }
+    Ok((
+        wgpu::Limits {
+            max_storage_buffers_per_shader_stage: required_storage_buffers,
+            max_compute_workgroups_per_dimension: workgroups,
+            ..wgpu::Limits::downlevel_defaults()
+        },
+        workgroups,
+    ))
+}
+
+pub(crate) fn settle_submissions(
+    device: &wgpu::Device,
+    tracker: &mut crate::DeviceSubmissionTracker,
+    managed_memory: &crate::ManagedGpuMemory,
+) -> Result<(), GpuExecutionError> {
+    tracker
+        .wait_for_submitted(device)
+        .map_err(GpuExecutionError::InvalidPlan)?;
+    device.poll(wgpu::Maintain::Wait);
+    tracker.reap().map_err(GpuExecutionError::InvalidPlan)?;
+    if tracker.device_was_lost() || tracker.has_pending() {
+        // `Maintain::Wait` invokes completion callbacks on native backends. A
+        // remaining batch therefore needs an explicit terminal device-loss
+        // boundary before its ownership holds can be released.
+        if !tracker.device_was_lost() {
+            device.destroy();
+        }
+        managed_memory
+            .mark_device_lost()
+            .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+        tracker
+            .release_after_device_loss()
+            .map_err(GpuExecutionError::InvalidPlan)?;
+        return Err(GpuExecutionError::InvalidPlan(
+            "GPU device was lost before submitted work completed".to_owned(),
+        ));
+    }
+    Ok(())
+}
+
+impl ResidentGpuSession {
+    pub fn adapter(&self) -> &str {
+        &self.adapter
+    }
+
+    /// Replaces one declared resident input without rebuilding the pipeline or
+    /// resetting feedback state. Queue ordering makes the upload visible to the
+    /// next dispatch submitted through this session.
+    pub fn update_input(&mut self, name: &str, values: &[f32]) -> Result<(), GpuExecutionError> {
+        let (buffer, expected) = self
+            .input_buffers
+            .get(name)
+            .ok_or_else(|| GpuExecutionError::UnknownInput(name.to_owned()))?;
+        if values.len() != *expected as usize {
+            return Err(GpuExecutionError::InputLength {
+                name: name.to_owned(),
+                expected: *expected,
+                actual: values.len(),
+            });
+        }
+        let object = *self.input_objects.get(name).ok_or_else(|| {
+            GpuExecutionError::InvalidPlan(format!(
+                "GPU input `{name}` has no managed allocation object"
+            ))
+        })?;
+        if self
+            .queued_uploads
+            .iter()
+            .any(|(pending, _)| *pending == object)
+        {
+            return Err(GpuExecutionError::InvalidFeedback(format!(
+                "GPU input `{name}` already has an unpublished upload"
+            )));
+        }
+        let prepared = self.input_submissions.get(name).ok_or_else(|| {
+            GpuExecutionError::InvalidPlan(format!(
+                "GPU input `{name}` has no prepared submission authority"
+            ))
+        })?;
+        let next_batch_holds = self.queued_uploads.len().checked_add(2).ok_or_else(|| {
+            GpuExecutionError::InvalidPlan("GPU upload hold count overflowed".to_owned())
+        })?;
+        self.submission_tracker
+            .preflight_batch(next_batch_holds)
+            .map_err(GpuExecutionError::InvalidPlan)?;
+        let hold = self
+            .managed_memory
+            .begin_prepared_submission(prepared)
+            .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+        self.queue
+            .write_buffer(buffer.buffer(), 0, bytemuck::cast_slice(values));
+        self.queued_uploads.push((object, hold));
+        Ok(())
+    }
+
+    pub fn dispatch_turns(&mut self, turns: u32) -> Result<Duration, GpuExecutionError> {
+        if turns == 0 {
+            return Err(GpuExecutionError::InvalidFeedback(
+                "resident dispatch needs at least one turn".to_owned(),
+            ));
+        }
+        let started = Instant::now();
+        let dispatch_hold = self
+            .managed_memory
+            .begin_prepared_submission(&self.dispatch_submission)
+            .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Mech resident GPU turns"),
+            });
+        let mut next_group = self.next_group;
+        let mut last_output_group = self.last_output_group;
+        let mut written_state_groups = [false; 2];
+        {
+            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: Some("Mech resident GPU compute pass"),
+                timestamp_writes: None,
+            });
+            pass.set_pipeline(&self.pipeline);
+            for _ in 0..turns {
+                let group = next_group;
+                written_state_groups[group] = true;
+                pass.set_bind_group(0, &self.bind_groups[group], &[]);
+                pass.dispatch_workgroups(self.workgroups, 1, 1);
+                last_output_group = Some(group);
+                next_group = 1 - group;
+            }
+        }
+        let mut uploaded_objects = Vec::new();
+        uploaded_objects
+            .try_reserve_exact(self.queued_uploads.len())
+            .map_err(|_| {
+                GpuExecutionError::InvalidPlan(
+                    "GPU upload publication reservation was not available".to_owned(),
+                )
+            })?;
+        let upload_holds = self.queued_uploads.drain(..).map(|(object, hold)| {
+            uploaded_objects.push(object);
+            hold
+        });
+        let unsubmitted = self
+            .submission_tracker
+            .reserve_batch(core::iter::once(dispatch_hold).chain(upload_holds))
+            .map_err(GpuExecutionError::InvalidPlan)?;
+        let submission = self.queue.submit(Some(encoder.finish()));
+        unsubmitted.record_submitted(submission);
+        settle_submissions(
+            &self.device,
+            &mut self.submission_tracker,
+            &self.managed_memory,
+        )?;
+        for object in uploaded_objects {
+            let bytes = self
+                .memory_plan
+                .memory
+                .allocations
+                .iter()
+                .find(|allocation| allocation.id == object)
+                .map(|allocation| allocation.capacity_bytes)
+                .ok_or_else(|| {
+                    GpuExecutionError::InvalidPlan(
+                        "completed GPU upload has no planned allocation".to_owned(),
+                    )
+                })?;
+            self.managed_memory
+                .record_device_write(object, bytes)
+                .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+        }
+        for (object, bytes) in self.memory_plan.writable_device_objects().iter().copied() {
+            self.managed_memory
+                .record_device_write(object, bytes)
+                .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+        }
+        for (group, written) in written_state_groups.into_iter().enumerate() {
+            if !written {
+                continue;
+            }
+            for (object, bytes) in self
+                .memory_plan
+                .writable_state_objects(group)
+                .expect("resident bind-group index is validated")
+                .iter()
+                .copied()
+            {
+                self.managed_memory
+                    .record_device_write(object, bytes)
+                    .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+            }
+        }
+        self.last_output_group = last_output_group;
+        self.next_group = next_group;
+        Ok(started.elapsed())
+    }
+
+    pub fn read_outputs(
+        &mut self,
+    ) -> Result<(Duration, BTreeMap<String, Vec<f32>>), GpuExecutionError> {
+        let group = self.last_output_group.ok_or_else(|| {
+            GpuExecutionError::InvalidFeedback("no resident turns have run".to_owned())
+        })?;
+        let started = Instant::now();
+        let readback_hold = self
+            .managed_memory
+            .begin_prepared_submission(&self.readback_submission)
+            .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Mech resident GPU readback"),
+            });
+        let mut readbacks = Vec::new();
+        for (name, buffer) in &self.output_buffers[group] {
+            let size = self.output_elements[name] * std::mem::size_of::<f32>() as u64;
+            let slot = self
+                .memory_plan
+                .execution
+                .outputs
+                .iter()
+                .find(|output| output.name == *name)
+                .map(|output| CellSlotId::new(output.slot))
+                .ok_or_else(|| {
+                    GpuExecutionError::InvalidPlan(format!(
+                        "output `{name}` has no memory-plan slot"
+                    ))
+                })?;
+            self.memory_plan
+                .assert_readback_bytes(slot, size)
+                .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+            let readback = self.readback_buffers.get(&slot).ok_or_else(|| {
+                GpuExecutionError::InvalidPlan(format!(
+                    "output `{name}` has no realized readback buffer"
+                ))
+            })?;
+            encoder.copy_buffer_to_buffer(buffer.buffer(), 0, readback.buffer(), 0, size);
+            readbacks.push((name.clone(), slot, size));
+        }
+        let unsubmitted = self
+            .submission_tracker
+            .reserve_batch(core::iter::once(readback_hold))
+            .map_err(GpuExecutionError::InvalidPlan)?;
+        let submission = self.queue.submit(Some(encoder.finish()));
+        unsubmitted.record_submitted(submission);
+
+        let readback_result = (|| {
+            let mut outputs = BTreeMap::new();
+            for (name, slot, size) in &readbacks {
+                let readback = &self.readback_buffers[slot];
+                let slice = readback.buffer().slice(..*size);
+                let (sender, receiver) = mpsc::channel();
+                slice.map_async(wgpu::MapMode::Read, move |result| {
+                    drop(sender.send(result));
+                });
+                self.device.poll(wgpu::Maintain::Wait);
+                receiver
+                    .recv()
+                    .map_err(|_| GpuExecutionError::ChannelClosed)?
+                    .map_err(|error| GpuExecutionError::BufferMap(error.to_string()))?;
+                let cleanup = BufferMapCleanup(readback.buffer());
+                let mapped = slice.get_mapped_range();
+                let host_object = self.memory_plan.readback_object(*slot).ok_or_else(|| {
+                    GpuExecutionError::InvalidPlan(format!(
+                        "GPU output slot {} has no planned host readback storage",
+                        slot.get()
+                    ))
+                })?;
+                let values = self
+                    .managed_memory
+                    .with_staged_host_transfer(host_object, &mapped, |bytes| {
+                        bytemuck::cast_slice::<u8, f32>(bytes).to_vec()
+                    })
+                    .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+                outputs.insert(name.clone(), values);
+                drop(mapped);
+                drop(cleanup);
+            }
+            Ok::<_, GpuExecutionError>(outputs)
+        })();
+        let completion_result = settle_submissions(
+            &self.device,
+            &mut self.submission_tracker,
+            &self.managed_memory,
+        );
+        let write_result = if completion_result.is_ok() {
+            (|| {
+                for slot in self.readback_buffers.keys().copied() {
+                    let device_object =
+                        self.memory_plan
+                            .readback_device_object(slot)
+                            .ok_or_else(|| {
+                                GpuExecutionError::InvalidPlan(format!(
+                                    "GPU output slot {} has no planned device readback storage",
+                                    slot.get()
+                                ))
+                            })?;
+                    let bytes = self.memory_plan.readback_bytes(slot).ok_or_else(|| {
+                        GpuExecutionError::InvalidPlan(format!(
+                            "GPU output slot {} has no planned readback capacity",
+                            slot.get()
+                        ))
+                    })?;
+                    self.managed_memory
+                        .record_device_write(device_object, bytes)
+                        .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
+                }
+                Ok::<_, GpuExecutionError>(())
+            })()
+        } else {
+            Ok(())
+        };
+        let outputs = readback_result?;
+        completion_result?;
+        write_result?;
+        Ok((started.elapsed(), outputs))
+    }
+
+    pub fn run_turns(&mut self, turns: u32) -> Result<ResidentDispatchProfile, GpuExecutionError> {
+        let dispatch = self.dispatch_turns(turns)?;
+        let (readback, outputs) = self.read_outputs()?;
+        Ok(ResidentDispatchProfile {
+            adapter: self.adapter.clone(),
+            turns,
+            dispatch,
+            readback,
+            outputs,
+        })
+    }
+}
+
+impl Drop for ResidentGpuSession {
+    fn drop(&mut self) {
+        if !self.queued_uploads.is_empty() {
+            if let Ok(unsubmitted) = self
+                .submission_tracker
+                .reserve_batch(self.queued_uploads.drain(..).map(|(_, hold)| hold))
+            {
+                let submission = self.queue.submit(core::iter::empty());
+                unsubmitted.record_submitted(submission);
+            }
+        }
+        let _ = settle_submissions(
+            &self.device,
+            &mut self.submission_tracker,
+            &self.managed_memory,
+        );
+        // Resource fields are ordered so bind groups drop before registered
+        // buffers, their logical memory domain follows, and the queue/device
+        // handles are released last.
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{GpuBinding, GpuBindingAccess, GpuBindingKind};
+    use mech_core::CellSlotId;
+
+    #[test]
+    fn all_gpu_execution_modes_reject_oversized_workgroup_counts() {
+        let program = ElementwiseKernel {
+            compute: super::super::empty_compute_program(),
+            wgsl: String::new(),
+            bindings: Vec::new(),
+            outputs: Vec::new(),
+            states: Vec::new(),
+            input_slots: BTreeMap::new(),
+            constants: BTreeMap::new(),
+            dispatch_elements: u64::from(super::super::WORKGROUP_SIZE) * 2,
+        };
+        let mut limits = wgpu::Limits::downlevel_defaults();
+        limits.max_compute_workgroups_per_dimension = 1;
+
+        let plan =
+            GpuExecutionPlan::build(GpuKernelPlanSource::Elementwise(&program), &BTreeMap::new())
+                .unwrap();
+        assert_eq!(
+            required_device_limits_for_plan(&plan, &limits).unwrap_err(),
+            GpuExecutionError::WorkgroupLimit {
+                required: 2,
+                supported: 1,
+            }
+        );
+    }
+
+    #[test]
+    fn all_gpu_execution_modes_request_the_validated_limits() {
+        let program = ElementwiseKernel {
+            compute: super::super::empty_compute_program(),
+            wgsl: String::new(),
+            bindings: vec![GpuBinding {
+                binding: 0,
+                name: "output".to_owned(),
+                access: GpuBindingAccess::ReadWrite,
+                elements: u64::from(super::super::WORKGROUP_SIZE) * 2,
+                kind: GpuBindingKind::Output(CellSlotId::new(0)),
+            }],
+            outputs: Vec::new(),
+            states: Vec::new(),
+            input_slots: BTreeMap::new(),
+            constants: BTreeMap::new(),
+            dispatch_elements: u64::from(super::super::WORKGROUP_SIZE) * 2,
+        };
+        let limits = wgpu::Limits {
+            max_storage_buffers_per_shader_stage: 8,
+            max_compute_workgroups_per_dimension: 8,
+            ..wgpu::Limits::downlevel_defaults()
+        };
+
+        let plan =
+            GpuExecutionPlan::build(GpuKernelPlanSource::Elementwise(&program), &BTreeMap::new())
+                .unwrap();
+        let (requested, workgroups) = required_device_limits_for_plan(&plan, &limits).unwrap();
+        assert_eq!(workgroups, 2);
+        assert_eq!(requested.max_storage_buffers_per_shader_stage, 1);
+        assert_eq!(requested.max_compute_workgroups_per_dimension, 2);
+    }
+}

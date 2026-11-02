@@ -1,0 +1,879 @@
+//! Private complete-turn coordinator shared by resident efficacy workloads.
+
+use mech_core::{MResult, MechError, MechErrorKind};
+use mech_engine::__resident::{
+    PreparedResidentTurn as PreparedArtifactResidentTurn,
+    ResidentExecutionError as ArtifactResidentExecutionError,
+    ResidentTurnSummary as ArtifactResidentTurnSummary,
+};
+use mech_engine::__resident_ekf::{
+    PreparedResidentFullWrite, PreparedResidentTurn as PreparedResidentEkfTurn,
+    ResidentExecutionError, ResidentTurnSummary as ResidentEkfTurnSummary,
+};
+
+use crate::{
+    TransactionId,
+    ledger::{LedgerPermit, PreparedLedgerAppend, RecordEstimate, RetainedTurnLedger, TurnLedger},
+    turn_record::{
+        InputSequence, InputSequenceRange, LedgerSequence, OwnedTurnRecord, ResidentEkfReceipt,
+        TurnFailurePhase, TurnFailureRecord, TurnId, TurnRecordHeader, TurnRecordStatus,
+    },
+};
+
+pub(crate) type ResidentTurnRecord = OwnedTurnRecord<ResidentEkfReceipt>;
+const RESIDENT_RECORD_RESERVATION_BYTES: usize = 256;
+const RESIDENT_RECORD_ESTIMATE: RecordEstimate = RecordEstimate {
+    records: 1,
+    bytes: RESIDENT_RECORD_RESERVATION_BYTES,
+};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ResidentRecorderFailure(&'static str);
+
+impl MechErrorKind for ResidentRecorderFailure {
+    fn name(&self) -> &str {
+        "ResidentRecorderFailure"
+    }
+
+    fn message(&self) -> String {
+        self.0.to_string()
+    }
+}
+
+fn error(message: &'static str) -> MechError {
+    MechError::new(ResidentRecorderFailure(message), None)
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ResidentRecordInspection<'a> {
+    pub sequence: u64,
+    pub turn_id: u64,
+    pub transaction_id: u128,
+    pub input_first: u64,
+    pub input_last: u64,
+    pub accepted: bool,
+    pub failure_phase: Option<TurnFailurePhase>,
+    pub failure_kind: Option<&'a str>,
+    pub body: ResidentEkfReceipt,
+}
+
+struct PreparedResidentAppend<'ledger> {
+    ledger: &'ledger mut RetainedTurnLedger<ResidentTurnRecord>,
+    prepared: PreparedLedgerAppend<ResidentTurnRecord>,
+}
+
+impl PreparedResidentAppend<'_> {
+    #[inline]
+    fn append(self) -> LedgerSequence {
+        TurnLedger::append(self.ledger, self.prepared)
+    }
+}
+
+pub struct ResidentTurnRecorder {
+    ledger: RetainedTurnLedger<ResidentTurnRecord>,
+    permits: Box<[Option<LedgerPermit>]>,
+    next_turn: Option<u64>,
+    records_inspected: usize,
+    #[cfg(test)]
+    fail_next_preparation: bool,
+}
+
+impl ResidentTurnRecorder {
+    pub fn new(episode_turns: usize, retained_history: usize) -> MResult<Self> {
+        let capacity = retained_history
+            .checked_add(episode_turns)
+            .ok_or_else(|| error("ledger capacity overflow"))?;
+        let max_bytes = capacity
+            .checked_mul(RESIDENT_RECORD_RESERVATION_BYTES)
+            .ok_or_else(|| error("ledger byte capacity overflow"))?;
+        let mut ledger = RetainedTurnLedger::new(capacity, max_bytes)?;
+        for ordinal in 1..=retained_history {
+            let identity =
+                u64::try_from(ordinal).map_err(|_| error("history identity overflow"))?;
+            let record = accepted_record(
+                identity,
+                ResidentEkfTurnSummary {
+                    before_epoch: identity.saturating_sub(1),
+                    after_epoch: identity,
+                    state_hash: 0,
+                    touched_slots: 0,
+                    changed_slots: 0,
+                    dirty_nodes: 0,
+                },
+            )?;
+            let permit = TurnLedger::reserve(&ledger, RESIDENT_RECORD_ESTIMATE)?;
+            let prepared = TurnLedger::prepare_append(&ledger, permit, record)?;
+            TurnLedger::append(&mut ledger, prepared);
+        }
+
+        let permits = (0..episode_turns)
+            .map(|_| TurnLedger::reserve(&ledger, RESIDENT_RECORD_ESTIMATE).map(Some))
+            .collect::<MResult<Vec<_>>>()?
+            .into_boxed_slice();
+        let next_turn = u64::try_from(retained_history)
+            .ok()
+            .and_then(|history| history.checked_add(1))
+            .ok_or_else(|| error("turn identity overflow"))?;
+        Ok(Self {
+            ledger,
+            permits,
+            next_turn: Some(next_turn),
+            records_inspected: 0,
+            #[cfg(test)]
+            fail_next_preparation: false,
+        })
+    }
+
+    pub fn take_admission_permit(&mut self, turn: usize) -> MResult<LedgerPermit> {
+        self.permits
+            .get_mut(turn)
+            .and_then(Option::take)
+            .ok_or_else(|| error("resident turn has no unused admission permit"))
+    }
+
+    fn prepare_accepted_append(
+        &mut self,
+        permit: LedgerPermit,
+        summary: ResidentEkfTurnSummary,
+    ) -> MResult<PreparedResidentAppend<'_>> {
+        let identity = self.take_turn_identity()?;
+        #[cfg(test)]
+        if core::mem::take(&mut self.fail_next_preparation) {
+            drop(permit);
+            return Err(error("forced resident ledger preparation failure"));
+        }
+        let record = accepted_record(identity, summary)?;
+        let prepared = TurnLedger::prepare_append(&self.ledger, permit, record)?;
+        Ok(PreparedResidentAppend {
+            ledger: &mut self.ledger,
+            prepared,
+        })
+    }
+
+    pub fn prepare_commit<'instance>(
+        &mut self,
+        permit: LedgerPermit,
+        turn: PreparedResidentEkfTurn<'instance>,
+    ) -> MResult<PreparedResidentCommit<'instance, '_>> {
+        let summary = turn.summary();
+        match self.prepare_accepted_append(permit, summary) {
+            Ok(append) => Ok(PreparedResidentCommit {
+                turn: PreparedResidentPublication::Ekf(turn),
+                append,
+            }),
+            Err(error) => {
+                turn.abort();
+                Err(error)
+            }
+        }
+    }
+
+    pub fn prepare_artifact_commit<'instance>(
+        &mut self,
+        permit: LedgerPermit,
+        turn: PreparedArtifactResidentTurn<'instance>,
+    ) -> MResult<PreparedResidentCommit<'instance, '_>> {
+        let summary = turn.summary();
+        let identity = match self.take_turn_identity() {
+            Ok(identity) => identity,
+            Err(error) => {
+                turn.abort();
+                return Err(error);
+            }
+        };
+        #[cfg(test)]
+        if core::mem::take(&mut self.fail_next_preparation) {
+            drop(permit);
+            turn.abort();
+            return Err(error("forced resident ledger preparation failure"));
+        }
+        let record = match accepted_artifact_record(identity, summary) {
+            Ok(record) => record,
+            Err(error) => {
+                turn.abort();
+                return Err(error);
+            }
+        };
+        match TurnLedger::prepare_append(&self.ledger, permit, record) {
+            Ok(prepared) => Ok(PreparedResidentCommit {
+                turn: PreparedResidentPublication::Artifact(turn),
+                append: PreparedResidentAppend {
+                    ledger: &mut self.ledger,
+                    prepared,
+                },
+            }),
+            Err(error) => {
+                turn.abort();
+                Err(error)
+            }
+        }
+    }
+
+    pub fn prepare_full_write_commit<'instance>(
+        &mut self,
+        permit: LedgerPermit,
+        turn: PreparedResidentFullWrite<'instance>,
+    ) -> MResult<PreparedResidentCommit<'instance, '_>> {
+        let summary = turn.summary();
+        match self.prepare_accepted_append(permit, summary) {
+            Ok(append) => Ok(PreparedResidentCommit {
+                turn: PreparedResidentPublication::FullWrite(turn),
+                append,
+            }),
+            Err(error) => {
+                turn.abort();
+                Err(error)
+            }
+        }
+    }
+
+    pub fn prepare_rejected(
+        &mut self,
+        permit: LedgerPermit,
+        before_epoch: u64,
+        failure: ResidentExecutionError,
+    ) -> MResult<PreparedRejectedAppend<'_>> {
+        let identity = self.take_turn_identity()?;
+        let record = rejected_record(identity, before_epoch, failure)?;
+        let prepared = TurnLedger::prepare_append(&self.ledger, permit, record)?;
+        Ok(PreparedRejectedAppend(PreparedResidentAppend {
+            ledger: &mut self.ledger,
+            prepared,
+        }))
+    }
+
+    pub fn prepare_artifact_rejected(
+        &mut self,
+        permit: LedgerPermit,
+        before_epoch: u64,
+        failure: ArtifactResidentExecutionError,
+    ) -> MResult<PreparedRejectedAppend<'_>> {
+        let identity = self.take_turn_identity()?;
+        let record = rejected_artifact_record(identity, before_epoch, failure)?;
+        let prepared = TurnLedger::prepare_append(&self.ledger, permit, record)?;
+        Ok(PreparedRejectedAppend(PreparedResidentAppend {
+            ledger: &mut self.ledger,
+            prepared,
+        }))
+    }
+
+    pub fn recorded_ledger_len(&self) -> usize {
+        self.ledger.len()
+    }
+
+    pub fn records_inspected(&self) -> usize {
+        self.records_inspected
+    }
+
+    pub fn inspect_last(&mut self) -> Option<ResidentRecordInspection<'_>> {
+        self.records_inspected += 1;
+        let (sequence, record) = self.ledger.last()?;
+        let range = record.header.input_range?;
+        Some(ResidentRecordInspection {
+            sequence: sequence.get(),
+            turn_id: record.header.turn_id.get(),
+            transaction_id: record.header.transaction_id.as_u128(),
+            input_first: range.first().get(),
+            input_last: range.last().get(),
+            accepted: record.header.status == TurnRecordStatus::Accepted,
+            failure_phase: record.header.failure.as_ref().map(|failure| failure.phase),
+            failure_kind: record
+                .header
+                .failure
+                .as_ref()
+                .map(|failure| failure.kind.as_str()),
+            body: record.body,
+        })
+    }
+
+    fn take_turn_identity(&mut self) -> MResult<u64> {
+        let identity = self
+            .next_turn
+            .take()
+            .ok_or_else(|| error("turn identity exhausted"))?;
+        self.next_turn = identity.checked_add(1);
+        Ok(identity)
+    }
+}
+
+pub struct PreparedRejectedAppend<'ledger>(PreparedResidentAppend<'ledger>);
+
+impl PreparedRejectedAppend<'_> {
+    pub fn append(self) -> LedgerSequence {
+        self.0.append()
+    }
+}
+
+fn header(
+    identity: u64,
+    status: TurnRecordStatus,
+    failure: Option<TurnFailureRecord>,
+) -> MResult<TurnRecordHeader> {
+    let input =
+        InputSequence::new(identity).ok_or_else(|| error("input identity must be non-zero"))?;
+    Ok(TurnRecordHeader {
+        turn_id: TurnId::new(identity).ok_or_else(|| error("turn identity must be non-zero"))?,
+        transaction_id: TransactionId::new(u128::from(identity)),
+        input_range: Some(InputSequenceRange::new(input, input)?),
+        status,
+        failure,
+    })
+}
+
+fn accepted_record(identity: u64, summary: ResidentEkfTurnSummary) -> MResult<ResidentTurnRecord> {
+    Ok(OwnedTurnRecord {
+        header: header(identity, TurnRecordStatus::Accepted, None)?,
+        body: ResidentEkfReceipt::accepted(
+            summary.before_epoch,
+            summary.after_epoch,
+            summary.state_hash,
+            summary.touched_slots,
+            summary.changed_slots,
+            summary.dirty_nodes,
+        ),
+    })
+}
+
+fn accepted_artifact_record(
+    identity: u64,
+    summary: ArtifactResidentTurnSummary,
+) -> MResult<ResidentTurnRecord> {
+    Ok(OwnedTurnRecord {
+        header: header(identity, TurnRecordStatus::Accepted, None)?,
+        body: ResidentEkfReceipt::accepted(
+            summary.before_epoch.get(),
+            summary.after_epoch.get(),
+            summary.state_hash,
+            summary.touched_slots,
+            summary.changed_slots,
+            summary.dirty_nodes,
+        ),
+    })
+}
+
+fn rejected_record(
+    identity: u64,
+    before_epoch: u64,
+    failure: ResidentExecutionError,
+) -> MResult<ResidentTurnRecord> {
+    let (phase, kind, message) = match failure {
+        ResidentExecutionError::EpochExhausted => (
+            TurnFailurePhase::Execution,
+            "ResidentEpochExhausted",
+            "resident candidate epoch exhausted",
+        ),
+        ResidentExecutionError::IncompleteCandidate => (
+            TurnFailurePhase::Integrity,
+            "ResidentIncompleteCandidate",
+            "resident candidate did not fully materialize its state",
+        ),
+        ResidentExecutionError::LandmarkDistance => (
+            TurnFailurePhase::Integrity,
+            "ResidentLandmarkDistance",
+            "landmark distance integrity failed",
+        ),
+        ResidentExecutionError::InnovationDeterminant => (
+            TurnFailurePhase::Integrity,
+            "ResidentInnovationDeterminant",
+            "innovation determinant integrity failed",
+        ),
+        ResidentExecutionError::NonFiniteState => (
+            TurnFailurePhase::Integrity,
+            "ResidentNonFiniteState",
+            "resident state contains a non-finite value",
+        ),
+        ResidentExecutionError::CovarianceDiagonal => (
+            TurnFailurePhase::Integrity,
+            "ResidentCovarianceDiagonal",
+            "resident covariance diagonal is invalid",
+        ),
+        ResidentExecutionError::CovarianceSymmetry => (
+            TurnFailurePhase::Integrity,
+            "ResidentCovarianceSymmetry",
+            "resident covariance is not symmetric",
+        ),
+    };
+    Ok(OwnedTurnRecord {
+        header: header(
+            identity,
+            TurnRecordStatus::Rejected,
+            Some(TurnFailureRecord {
+                phase,
+                kind: kind.to_string(),
+                message: message.to_string(),
+            }),
+        )?,
+        body: ResidentEkfReceipt::rejected(before_epoch),
+    })
+}
+
+fn rejected_artifact_record(
+    identity: u64,
+    before_epoch: u64,
+    failure: ArtifactResidentExecutionError,
+) -> MResult<ResidentTurnRecord> {
+    let failure_message = match &failure {
+        ArtifactResidentExecutionError::LexicalIntegrity { node, block, local } => Some(format!(
+            "resident lexical invariant failed at {node:?}, block {}, local {local}",
+            block.0
+        )),
+        ArtifactResidentExecutionError::ResourceAdmission { violation, .. } => Some(format!(
+            "resident admission denied: {:?}; required {}, limit {}",
+            violation.dimension, violation.required, violation.limit
+        )),
+        ArtifactResidentExecutionError::Kernel {
+            error:
+                mech_core::ResidentKernelError::ResourceLimit {
+                    phase,
+                    dimension,
+                    required,
+                    limit,
+                },
+            ..
+        } => Some(format!(
+            "resident {phase:?} denied: {dimension:?}; required {required}, limit {limit}"
+        )),
+        _ => None,
+    };
+    let (phase, kind, message) = match failure {
+        ArtifactResidentExecutionError::MemoryPlan { .. } => (
+            TurnFailurePhase::Execution,
+            "ResidentMemoryPlan",
+            "resident memory planning failed",
+        ),
+        ArtifactResidentExecutionError::ResourceAdmission { .. } => (
+            TurnFailurePhase::Execution,
+            "ResidentResourceAdmission",
+            "resident resource admission failed",
+        ),
+        ArtifactResidentExecutionError::Kernel {
+            error: mech_core::ResidentKernelError::ResourceLimit { phase, .. },
+            ..
+        } => (
+            if phase == mech_core::ResidentResourcePhase::Publication {
+                TurnFailurePhase::Publication
+            } else {
+                TurnFailurePhase::Execution
+            },
+            "ResidentResourceLimit",
+            "resident resource limit exceeded",
+        ),
+        ArtifactResidentExecutionError::PlanningStepLimit { .. } => (
+            TurnFailurePhase::Execution,
+            "ResidentPlanningStepLimit",
+            "resident planning exceeded its configured step limit",
+        ),
+        ArtifactResidentExecutionError::MemoryRuntime { .. } => (
+            TurnFailurePhase::Execution,
+            "ResidentMemoryRuntime",
+            "resident memory admission or ownership failed",
+        ),
+        ArtifactResidentExecutionError::ActiveCandidate => (
+            TurnFailurePhase::Execution,
+            "ResidentActiveCandidate",
+            "resident instance already has an active candidate",
+        ),
+        ArtifactResidentExecutionError::EpochExhausted => (
+            TurnFailurePhase::Execution,
+            "ResidentEpochExhausted",
+            "resident candidate epoch exhausted",
+        ),
+        ArtifactResidentExecutionError::InputCount { .. }
+        | ArtifactResidentExecutionError::UnknownInput { .. }
+        | ArtifactResidentExecutionError::DuplicateInput { .. }
+        | ArtifactResidentExecutionError::InputLayout { .. } => (
+            TurnFailurePhase::InputInstallation,
+            "ResidentInput",
+            "resident captured input was invalid",
+        ),
+        ArtifactResidentExecutionError::Kernel { .. }
+        | ArtifactResidentExecutionError::InvalidWrite { .. }
+        | ArtifactResidentExecutionError::EffectIntentCapacity => (
+            TurnFailurePhase::Execution,
+            "ResidentKernel",
+            "resident kernel execution failed",
+        ),
+        ArtifactResidentExecutionError::InvalidOutputMaterialization { .. } => (
+            TurnFailurePhase::Execution,
+            "ResidentOutputMaterialization",
+            "resident output materialization failed",
+        ),
+        ArtifactResidentExecutionError::InvalidProjectionState { .. } => (
+            TurnFailurePhase::Execution,
+            "ResidentProjectionState",
+            "resident replacement projection state was invalid",
+        ),
+        ArtifactResidentExecutionError::ArtifactRevisionMismatch { .. } => (
+            TurnFailurePhase::Execution,
+            "ResidentArtifactRevisionMismatch",
+            "resident artifact revision did not match the activated plan",
+        ),
+        ArtifactResidentExecutionError::ExternalSummaryRequired => (
+            TurnFailurePhase::Execution,
+            "ResidentExternalSummaryRequired",
+            "resident external turns require prepared-turn coordination",
+        ),
+        ArtifactResidentExecutionError::ExternalPublicationUnauthorized => (
+            TurnFailurePhase::Publication,
+            "ResidentExternalPublicationUnauthorized",
+            "resident external publication requires the bound coordinator authority",
+        ),
+        // A reached false Bool rejects the candidate during integrity checking.
+        // Keep this stable kind distinct from document-level integrity failures;
+        // failure_message above retains the exact lexical node/block/local.
+        ArtifactResidentExecutionError::LexicalIntegrity { .. } => (
+            TurnFailurePhase::Integrity,
+            "ResidentLexicalIntegrity",
+            "resident lexical invariant failed",
+        ),
+        ArtifactResidentExecutionError::Integrity { .. } => (
+            TurnFailurePhase::Integrity,
+            "ResidentIntegrity",
+            "resident candidate integrity failed",
+        ),
+        ArtifactResidentExecutionError::CounterOverflow => (
+            TurnFailurePhase::Execution,
+            "ResidentCounterOverflow",
+            "resident turn summary overflowed",
+        ),
+    };
+    Ok(OwnedTurnRecord {
+        header: header(
+            identity,
+            TurnRecordStatus::Rejected,
+            Some(TurnFailureRecord {
+                phase,
+                kind: kind.to_string(),
+                message: failure_message.unwrap_or_else(|| message.to_string()),
+            }),
+        )?,
+        body: ResidentEkfReceipt::rejected(before_epoch),
+    })
+}
+
+pub struct PreparedResidentCommit<'instance, 'ledger> {
+    turn: PreparedResidentPublication<'instance>,
+    append: PreparedResidentAppend<'ledger>,
+}
+
+enum PreparedResidentPublication<'instance> {
+    Ekf(PreparedResidentEkfTurn<'instance>),
+    Artifact(PreparedArtifactResidentTurn<'instance>),
+    FullWrite(PreparedResidentFullWrite<'instance>),
+}
+
+impl PreparedResidentPublication<'_> {
+    #[inline]
+    fn publish(self) {
+        match self {
+            Self::Ekf(turn) => turn.publish(),
+            Self::Artifact(turn) => {
+                turn.publish()
+                    .expect("recorded artifact resident turns exclude external steps");
+            }
+            Self::FullWrite(turn) => turn.publish(),
+        }
+    }
+}
+
+impl PreparedResidentCommit<'_, '_> {
+    #[inline]
+    pub fn commit(self) -> LedgerSequence {
+        self.turn.publish();
+        self.append.append()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mech_engine::__resident_ekf::ResidentEkfBatch;
+
+    const INPUT: [f64; 4] = [1.0, 0.1, 24.0, -0.6];
+
+    #[cfg(all(feature = "full_source", feature = "resident-routing-source"))]
+    #[test]
+    fn artifact_recorded_assertion_rejection_preserves_publication_and_recovers() {
+        use mech_core::{ReactiveInstanceId, ValueDataDraft};
+        use mech_engine::__resident::{
+            ActivationFacts, CapturedValueInput, ResidentActivationOptions, activate_with_options,
+        };
+        use mech_syntax::document::{ParseConfig, Revision};
+
+        let catalog = mech_stdlib::source_catalog();
+        let source = crate::SourceDocument::parse_resolved(
+            "recorded-assertion.mec",
+            Revision(0),
+            "checked(n<u64>) => (out<u64>) :=\n  positive! := n > 0u64\n  out := 12u64 / n.\nchecked(input<u64>)\n",
+            ParseConfig::default(),
+        )
+        .unwrap();
+        assert!(source.is_strictly_clean());
+        let compiled = crate::RuntimeBuilder::new()
+            .function_catalog(catalog.clone())
+            .build_compiler()
+            .unwrap()
+            .compile_document(&source)
+            .unwrap();
+        let original = compiled.artifact();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(original).unwrap(),
+        )
+        .unwrap();
+        for artifact in [original, &decoded] {
+            let memory = mech_core::ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let mut instance = activate_with_options(
+                ReactiveInstanceId::new(1, 0),
+                artifact,
+                &catalog,
+                &ActivationFacts::default(),
+                ResidentActivationOptions {
+                    memory_budget: Some(memory.clone()),
+                    ..ResidentActivationOptions::default()
+                },
+            )
+            .unwrap();
+            let slot = instance.plan.inputs[0].slot;
+            let schema = artifact.inputs()[0].schema;
+            let mut recorder = ResidentTurnRecorder::new(3, 0).unwrap();
+            for (turn, number, expected) in [(0, 3, Some(4)), (1, 0, None), (2, 2, Some(6))] {
+                let value = mech_core::snapshot::ValueDraft {
+                    schema,
+                    shape_values: Box::new([]),
+                    data: ValueDataDraft::U64(number),
+                }
+                .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+                    artifact.schemas(),
+                ))
+                .unwrap();
+                let before = instance.published_epoch().get();
+                let prior = (before != 0).then(|| instance.copied_output(0).unwrap());
+                let permit = recorder.take_admission_permit(turn).unwrap();
+                let captured = [CapturedValueInput {
+                    slot,
+                    value: &value,
+                }];
+                let memory_before = memory.used_bytes();
+                if let Some(expected) = expected {
+                    let prepared = instance.prepare_turn_values(&captured).unwrap();
+                    let summary = prepared.summary();
+                    assert_eq!(summary.before_epoch.get(), before);
+                    recorder
+                        .prepare_artifact_commit(permit, prepared)
+                        .unwrap()
+                        .commit();
+                    assert_eq!(instance.published_epoch(), summary.after_epoch);
+                    assert!(instance.published_epoch().get() > before);
+                    assert_eq!(
+                        instance
+                            .copied_output(0)
+                            .unwrap()
+                            .canonical_data_draft()
+                            .unwrap(),
+                        ValueDataDraft::U64(expected)
+                    );
+                    let recorded = recorder.inspect_last().unwrap();
+                    assert!(recorded.accepted);
+                    assert_eq!(
+                        recorded.body,
+                        accepted_artifact_record((turn + 1) as u64, summary)
+                            .unwrap()
+                            .body
+                    );
+                } else {
+                    let failure = match instance.prepare_turn_values(&captured) {
+                        Err(failure) => failure,
+                        Ok(prepared) => {
+                            prepared.abort();
+                            panic!("assertion must reject before division")
+                        }
+                    };
+                    assert!(matches!(
+                        failure,
+                        ArtifactResidentExecutionError::LexicalIntegrity { .. }
+                    ));
+                    // Rejection may retire earlier scratch, but must retain no
+                    // new candidate allocations or disturb published aliases.
+                    assert!(memory.used_bytes() <= memory_before);
+                    recorder
+                        .prepare_artifact_rejected(permit, before, failure)
+                        .unwrap()
+                        .append();
+                    assert_eq!(instance.published_epoch().get(), before);
+                    assert!(
+                        instance
+                            .copied_output(0)
+                            .unwrap()
+                            .snapshot_eq(
+                                artifact.schemas(),
+                                prior.as_ref().unwrap(),
+                                artifact.schemas()
+                            )
+                            .unwrap()
+                    );
+                    let recorded = recorder.inspect_last().unwrap();
+                    assert!(!recorded.accepted);
+                    assert_eq!(recorded.failure_phase, Some(TurnFailurePhase::Integrity));
+                    assert_eq!(recorded.failure_kind, Some("ResidentLexicalIntegrity"));
+                    assert_eq!(recorded.body, ResidentEkfReceipt::rejected(before));
+                }
+                assert_eq!(recorder.recorded_ledger_len(), turn + 1);
+            }
+            drop(instance);
+            assert_eq!(memory.used_bytes(), 0);
+        }
+    }
+
+    #[test]
+    fn artifact_lexical_assertion_failure_records_preserve_phase_and_origin() {
+        let error = ArtifactResidentExecutionError::LexicalIntegrity {
+            node: mech_core::NodeId::new(7),
+            block: mech_engine::ControlBlockId(11),
+            local: 13,
+        };
+        let record = rejected_artifact_record(1, 3, error.clone()).unwrap();
+        assert_eq!(record.header.status, TurnRecordStatus::Rejected);
+        assert_eq!(record.body, ResidentEkfReceipt::rejected(3));
+        let failure = record.header.failure.unwrap();
+        assert_eq!(failure.phase, TurnFailurePhase::Integrity);
+        assert_eq!(failure.kind, "ResidentLexicalIntegrity");
+        assert_eq!(
+            failure.message,
+            "resident lexical invariant failed at NodeId(7), block 11, local 13"
+        );
+        let mut recorder = ResidentTurnRecorder::new(1, 0).unwrap();
+        let permit = recorder.take_admission_permit(0).unwrap();
+        recorder
+            .prepare_artifact_rejected(permit, 3, error)
+            .unwrap()
+            .append();
+        let recorded = recorder.inspect_last().unwrap();
+        assert!(!recorded.accepted);
+        assert_eq!(recorded.failure_phase, Some(TurnFailurePhase::Integrity));
+        assert_eq!(recorded.failure_kind, Some("ResidentLexicalIntegrity"));
+        assert_eq!(recorded.body, ResidentEkfReceipt::rejected(3));
+    }
+
+    #[test]
+    fn artifact_resource_failure_records_preserve_limit_details() {
+        let record = rejected_artifact_record(
+            1,
+            0,
+            ArtifactResidentExecutionError::Kernel {
+                node: mech_core::NodeId::new(2),
+                error: mech_core::ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: mech_core::MemoryBudgetDimension::ComputeWork,
+                    required: 9,
+                    limit: 8,
+                },
+            },
+        )
+        .unwrap();
+        let failure = record.header.failure.unwrap();
+        assert_eq!(failure.kind, "ResidentResourceLimit");
+        assert_eq!(
+            failure.message,
+            "resident Admission denied: ComputeWork; required 9, limit 8"
+        );
+    }
+
+    #[test]
+    fn record_preparation_failure_automatically_aborts_before_publication() {
+        let mut resident = ResidentEkfBatch::new(1);
+        let mut recorder = ResidentTurnRecorder::new(2, 0).unwrap();
+        let initial = resident.state(0);
+        let permit = recorder.take_admission_permit(0).unwrap();
+        let prepared = resident.prepare_scheduled_turn(INPUT).unwrap();
+        let failed_epoch = prepared.summary().after_epoch;
+        recorder.fail_next_preparation = true;
+        assert!(recorder.prepare_commit(permit, prepared).is_err());
+        assert_eq!(resident.published_epoch(), 0);
+        assert_eq!(resident.state(0), initial);
+        assert!(!resident.candidate_epoch_is_active(failed_epoch));
+        assert_eq!(recorder.recorded_ledger_len(), 0);
+        drop(TurnLedger::reserve(&recorder.ledger, RESIDENT_RECORD_ESTIMATE).unwrap());
+
+        let permit = recorder.take_admission_permit(1).unwrap();
+        let prepared = resident.prepare_scheduled_turn(INPUT).unwrap();
+        assert_eq!(prepared.summary().after_epoch, failed_epoch + 1);
+        recorder.prepare_commit(permit, prepared).unwrap().commit();
+        assert_eq!(resident.published_epoch(), failed_epoch + 1);
+        assert_ne!(resident.state(0), initial);
+        assert_eq!(recorder.recorded_ledger_len(), 1);
+    }
+
+    #[test]
+    fn artifact_record_preparation_failure_aborts_before_publication() {
+        let mut services = mech_engine::__resident::FrozenEkfCompilationServices::default();
+        let compilation = mech_engine::__resident::compile_frozen_ekf_source(
+            include_str!("../../../tests/architecture/resident-activation/ekf-source-v1.mec"),
+            &mut services,
+        )
+        .unwrap();
+        let mut instance = mech_engine::__resident::activate(
+            mech_core::ReactiveInstanceId::new(0, 0),
+            &compilation.source_artifact,
+            &mech_engine::__resident::frozen_ekf_compiler_catalog().unwrap(),
+            &mech_engine::__resident::ActivationFacts::default(),
+        )
+        .unwrap();
+        let state = |instance: &mech_engine::__resident::ReactiveInstance| {
+            instance
+                .plan
+                .slots
+                .iter()
+                .filter(|slot| slot.role == mech_engine::SlotRole::State)
+                .map(
+                    |slot| match instance.state_borrow(slot.artifact_id).unwrap() {
+                        mech_engine::__resident::ResidentValueBorrow::F64 { values, .. } => values
+                            .iter()
+                            .map(|value| value.to_bits())
+                            .collect::<Vec<_>>(),
+                        _ => panic!("EKF resident state is f64"),
+                    },
+                )
+                .collect::<Vec<_>>()
+        };
+        let initial = state(&instance);
+        assert_eq!(initial.iter().map(Vec::len).collect::<Vec<_>>(), [3, 9]);
+        let mut recorder = ResidentTurnRecorder::new(1, 0).unwrap();
+        let permit = recorder.take_admission_permit(0).unwrap();
+        let slot = instance.plan.inputs[0].slot;
+        let prepared = instance
+            .prepare_turn(&[mech_engine::__resident::CapturedSignalInput {
+                slot,
+                value: mech_core::ResidentValueRef::F64(&INPUT),
+            }])
+            .unwrap();
+        recorder.fail_next_preparation = true;
+        assert!(recorder.prepare_artifact_commit(permit, prepared).is_err());
+        assert_eq!(instance.published_epoch().get(), 0);
+        assert_eq!(state(&instance), initial);
+        assert_eq!(recorder.recorded_ledger_len(), 0);
+    }
+
+    #[test]
+    fn final_turn_identity_is_issued_once_without_wrap_or_reuse() {
+        let mut recorder = ResidentTurnRecorder::new(2, 0).unwrap();
+        recorder.next_turn = Some(u64::MAX);
+
+        let permit = recorder.take_admission_permit(0).unwrap();
+        recorder
+            .prepare_rejected(permit, 0, ResidentExecutionError::EpochExhausted)
+            .unwrap()
+            .append();
+        let record = recorder.inspect_last().unwrap();
+        assert_eq!(record.turn_id, u64::MAX);
+        assert_eq!(record.input_first, u64::MAX);
+        assert_eq!(record.transaction_id, u128::from(u64::MAX));
+
+        let permit = recorder.take_admission_permit(1).unwrap();
+        assert!(
+            recorder
+                .prepare_rejected(permit, 0, ResidentExecutionError::EpochExhausted)
+                .is_err()
+        );
+        assert_eq!(recorder.recorded_ledger_len(), 1);
+    }
+}

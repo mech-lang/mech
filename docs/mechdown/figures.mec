@@ -1,0 +1,38 @@
+figure
+===============================================================================
+
+%% Figures provide multi-image layouts with a single numbered caption block.
+
+Use a pipe table where each cell contains an image entry:
+
+`![caption](image-url)`
+
+Each image in the grid receives an automatic sublabel `(a)`, `(b)`, `(c)`, etc. The renderer adds one figure label for the block (for example `Fig 3.2`) and appends a combined caption line below the grid:
+
+`Fig 3.2 (a) caption a (b) caption b (c) caption c ...`
+
+1. Syntax
+-------------------------------------------------------------------------------
+
+A figures block is one or more rows:
+
+- Each row starts and ends with `|`
+- Each cell contains an image entry
+- Rows can have different numbers of columns (useful for wide middle images)
+
+2. Example
+-------------------------------------------------------------------------------
+
+The following example would create a figure with 5 images arranged in a 2-row grid, with a wide image in the middle:
+
+```
+| ![caption a](img1.jpg) | ![caption b](img2.jpg) |
+| ![caption c](imgwide.jpg)                       |
+| ![caption d](img3.jpg) | ![caption e](img4.jpg) |
+```
+
+With real images, this renders as:
+
+| ![Mika the mech idle pose.](https://gitlab.com/mech-lang/assets/-/raw/v0.3-beta/images/mika/mika-pose-idle.png?ref_type=heads) | ![Back detail](https://gitlab.com/mech-lang/assets/-/raw/v0.3-beta/images/mika/mika-pose-back.png?ref_type=heads) |
+| ![A winter scene featuring Mika building a snowman.](https://gitlab.com/mech-lang/assets/-/raw/v0.3-beta/images/mika/mika-scene-winter.png?ref_type=heads) |
+| ![Pointing at something.](https://gitlab.com/mech-lang/assets/-/raw/v0.3-beta/images/mika/mika-pose-point.png?ref_type=heads) | ![Running somewhere.](https://gitlab.com/mech-lang/assets/-/raw/v0.3-beta/images/mika/mika-pose-running.png?ref_type=heads) |

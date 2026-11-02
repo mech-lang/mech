@@ -1,0 +1,250 @@
+kind
+===============================================================================
+
+%% A `kind` is a compositional descriptor that classifies values, defines their
+structure, and constrains operations without a separate meta-type system.
+
+
+Kinds describe the *type*, *structure*, and *properties* of values in Mech. Every value has one or more associated kinds, and kinds themselves are values that participate directly in the language.
+
+Kinds contain information to describe:
+
+- Data type e.g. `i32`, `string`, `bool`, ec.
+- Data structure e.g. matrix, set, record, table or tuple
+- Data size e.g. matrix dimensions, set size, table rows
+
+(!)> Kinds do *not* indicate whether a value is mutable or immutable. The mutability is determined by the user when the value is created, and is independent of its kind.
+
+1. Syntax
+-------------------------------------------------------------------------------
+
+Kinds are written using *kind annotations*, which enclose
+a kind in angle brackets:
+
+```mech:disabled
+<i32>        -- signed 32-bit integer
+<string>    -- string
+<[u8]>      -- matrix of u8 values
+<(u8,bool)> -- tuple of u8 and bool
+```
+
+Each data structure has a unique syntax, see (§4).
+
+
+2. Kinds as Values
+-------------------------------------------------------------------------------
+
+Kinds are values in Mech.
+
+This means:
+
+- Kinds can be assigned to variables
+- Kinds can be passed, stored, and inspected
+- Kinds themselves have kinds
+
+For example:
+
+```mech:disabled
+x := <u8>
+```
+
+The value of `x` is {{<u8>}}, and the kind of `x` is {{<<u8>>}}.
+
+(*)> This means the kind of {{<<u8>>}} is {{<<<u8>>>}}, and so on.
+
+3. Simple Kinds
+-------------------------------------------------------------------------------
+
+Simple kinds correspond directly to primitive data types.
+
+| Data Type         | Kind                                                  |
+|-------------------|-------------------------------------------------------|
+| Signed integers   | {{<i8>}}, {{<i16>}}, {{<i32>}}, {{<i64>}}, {{<i128>}} |
+| Unsigned integers | {{<u8>}}, {{<u16>}}, {{<u32>}}, {{<u64>}}, {{<u128>}} |
+| Floating-point    | {{<f32>}}, {{<f64>}}                                  |
+| Rational          | {{<r64>}}                                             |
+| Complex           | {{<c64>}}                                             |
+| String            | {{<string>}}                                          |
+| Boolean           | {{<bool>}}                                            |
+| Atom              | {{<:atom>}}                                           |
+| Kind              | {{<kind>}}                                            |
+| Empty             | {{<_>}}                                               |
+
+4. Compound Kinds
+-------------------------------------------------------------------------------
+
+Kinds compose structurally according to the data structures they describe.
+
+| Data Structure | Kind Syntax       | Example                   | Meaning                                 |
+|----------------|-------------------|---------------------------|-----------------------------------------|
+| Matrix         | `[T]:N,M`         | {{<[u8]:2,3>}}            | `2x3` matrix of `u8` values             |
+| Set            | `{T}:N`           | {{<{u8}:3>}}              | Set of 3 `u8` values                    |
+| Record         | `{field<T>,...}`  | {{<{x<u8>,y<string>}>}}   | Record with fields `x` and `y`          |
+| Map            | `{K:V}`           | {{<{string:i32}>}}        | Map from `string` to `i32`              |
+| Table          | `|name<T>,...|:N` | {{<|x<u8>,y<string>|:3>}} | Table with columns `x`,`y` and 3 rows   |
+| Tuple          | `(T1,T2,...)`     | {{<(u8,string,bool)>}}    | Ordered tuple of heterogeneous values   |
+
+Compound kinds are recursively derived from the kinds of their constituent elements.
+
+5. Kind Annotations
+-------------------------------------------------------------------------------
+
+Kind annotations may be used in expressions to specify or constrain the kind of a value.
+
+(5.1) Literals
+
+```mech:ex 5.1
+x := 42<u8>
+```
+
+Defines `x` as an unsigned 8-bit integer with value `42`.
+
+(5.2) Variables
+
+```mech:ex 5.2
+y<u8> := 10
+```
+
+Constrains `y` to always have kind {{<u8>}}.
+
+(5.3) Conversions
+
+```mech:ex 5.3
+x := [1 2 3]         -- `[f64]:1,3`
+z<[u8]> := x         -- converts `[f64]:1,3` -> `[u8]:1,3`
+```
+
+Conversions succeed only when a valid transformation exists, otherwise a compile-time error is raised.
+
+(5.4) Matrix Reshaping
+
+```mech:ex 5.4
+m := [1 2 3 4 5 6]          -- `[f64]:1,6`
+n<[i32]:2,3> := m            -- reshapes to `[i32]:2,3`
+```
+
+Matrices may be reshaped to compatible dimensions using kind annotations.
+
+6. Kind Membership (`∈`, `∉`)
+-------------------------------------------------------------------------------
+
+The set membership operators are also defined for kinds:
+
+- `value ∈ <kind>` returns `true` when `value` conforms to `<kind>`
+- `value ∉ <kind>` returns `true` when `value` does not conform to `<kind>`
+
+Examples:
+
+```mech:ex 6.1
+42 ∈ <u64>         -- true
+42 ∉ <string>      -- true
+```
+
+This also applies to enum kinds (including payload variants):
+
+```mech:ex 6.2
+<color> := :red<u64> | :green<u64> | :blue
+:red(300) ∈ <color>   -- true
+:red("300") ∈ <color> -- false
+```
+
+7. Custom Kinds
+-------------------------------------------------------------------------------
+
+Users may define custom kinds as aliases of existing kinds:
+
+```mech:disabled
+<T> := <S>
+```
+
+Example:
+
+```mech:disabled
+<point3> := <[f64]:3>
+```
+
+Usage:
+
+```mech:disabled
+p1<point3> := [1 2 3]
+p2<point3> := [4 5]   -- Error: expected 3 elements
+```
+
+Custom kinds introduce semantic meaning without changing runtime representation.
+
+8. Enumerations
+-------------------------------------------------------------------------------
+
+Enumerations (enums) define a fixed set of named variants.
+
+```mech:ex 8.1
+<color> := :red | :green | :blue
+```
+
+The kind of the enum is `<color>`, and The possible values are:
+
+- `:red`
+- `:green`
+- `:blue`
+
+Example:
+
+```mech:ex 8.1
+example<color> := :green
+```
+
+Invalid variants are rejected:
+
+```mech:disabled
+example2<color> := :yellow   -- Error, yellow not in enum
+```
+
+Enums are kinds and participate in all kind-based reasoning. Enum variants are atoms, which are globally unique, immutable symbols, so namespace collisions are possible if another module defines the same variant name. To avoid this, you can use qualified names:
+
+```mech:ex 8.1
+<color> := :red | :green | :blue
+example<color> := :color/red
+```
+
+Which means the same thing as `:red`, but is guaranteed to be unique even if another module defines `:red` as well.
+
+(8.2) Variants with payload kinds
+
+Enum variants may optionally carry data. Payload kinds can be written either inline (`ok<u64>`) or with parentheses (`ok(<u64>)`):
+
+```mech:ex 8.2
+<response> := ok<u64> | error<string> | timeout
+
+r1<response> := :ok(200)
+r2<response> := :error("Not Found")
+r3<response> := :timeout
+```
+
+In this enum:
+
+- `ok` requires a `u64` payload
+- `error` requires a `string` payload
+- `timeout` carries no payload
+
+Assignments with the wrong payload kind are rejected:
+
+```mech:disabled
+rbad<response> := :ok("200")   -- Error: expected u64 payload
+```
+
+(8.3) Enum kinds in pattern matching
+
+Enums participate in pattern matching like other kinds, including payload destructuring:
+
+```mech:ex 8.3
+<response> := ok<u64> | error<string> | timeout
+r<response> := :error("Not Found")
+
+status-code<u64> := r?
+  | :ok(code) => code
+  | :error(msg) => 500
+  | :timeout => 408
+  | * => 500.
+```
+
+When matching enum kinds, arms should be exhaustive (cover every variant or use `*`). Non-exhaustive matches are reported as compile-time errors.

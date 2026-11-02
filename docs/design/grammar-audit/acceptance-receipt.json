@@ -1,0 +1,106 @@
+{
+  "source_revision": "1d9252606b92a6d11508576bbfd0ff47db2e1794",
+  "source_tree": "532fa7e52b9c42ff5e2231cb326c924d9880a8bb",
+  "status": "Historical qualification baseline, incorporated into consolidated pull request #888 with an identical source tree. This receipt does not qualify the cleanup tree.",
+  "source_record": "https://github.com/mech-lang/mech/pull/830",
+  "historical_records": "https://github.com/mech-lang/mech/tree/1d9252606b92a6d11508576bbfd0ff47db2e1794/docs/design/grammar-audit",
+  "toolchain": "nightly-2026-03-03 (rustc 1.96.0-nightly ec818fda3; cargo 1.96.0-nightly f298b8c82)",
+  "lock_sha256": "d4ae47696f307123d6fecdf06c9356647447a913ec0a04ddf22264ad322ba8a0",
+  "qualification": {
+    "run": "https://github.com/mech-lang/mech/actions/runs/37302395803",
+    "attempt": 2,
+    "conclusion": "success",
+    "succeeded": 133,
+    "skipped": 1,
+    "skip_reason": "Nested Native plan reused the successful early Native plan; browser lifecycle steps were delegated to the successful caller canary.",
+    "selection": "ci:full; full required selection recorded in the immutable workflows and retained logs.",
+    "workflow": "https://github.com/mech-lang/mech/blob/1d9252606b92a6d11508576bbfd0ff47db2e1794/.github/workflows/ci-full.yml",
+    "profiles": [
+      "distribution-standard",
+      "distribution-full",
+      "full_source",
+      "full_compiler",
+      "resident-artifact",
+      "resident-routing-source",
+      "browser_project",
+      "browser_compute",
+      "compute_backends_native"
+    ],
+    "platforms": [
+      "Linux",
+      "macOS",
+      "Windows"
+    ],
+    "checkout_identity": "Ordinary jobs used integration commit 4ff0710862c00d7b211c485286fe39c07657069a; head/release jobs used the source revision above. Source products were separate for each identity."
+  },
+  "limitations": [
+    "CI WebGPU uses the configured software adapter. Earlier real-device evidence keeps its original revision attribution in source history.",
+    "Existing explicitly ignored tests are not coverage credit. The full suite passing does not remove declared feature/profile limitations.",
+    "Consolidated pull request #888 and this cleanup have not landed on integration/v0.4. Future integration qualification must use the actual landing tree."
+  ],
+  "baseline_measurement": {
+    "run_started_at": "2026-10-05T11:28:34Z",
+    "last_job_completed_at": "2026-10-05T16:08:52Z",
+    "wall_clock_seconds": 16818.0,
+    "summed_job_seconds": 88874.0,
+    "longest_job": "Requested full validation / Cargo language tests",
+    "longest_job_seconds": 12474.0,
+    "uploaded_artifacts": 51,
+    "uploaded_artifact_bytes": 390667366,
+    "conditions": "GitHub-hosted Linux/macOS/Windows runners; full qualification, not an ordinary warm-cache PR sample. Cache state is not controlled. Do not use this run alone to claim the proposed 15-minute PR budget or a matched before/after improvement.",
+    "unmeasured": [
+      "Rust builds per target/profile",
+      "generated projects compiled",
+      "browser launches",
+      "longest individual test"
+    ]
+  },
+  "release_artifacts": [
+    {
+      "name": "distribution-full-macOS",
+      "url": "https://github.com/mech-lang/mech/actions/runs/37302395803/artifacts/11348207643",
+      "archive_digest": "sha256:8068bdd8eea0a8978e61fe4e911db4e5fc8300f2f40dac4d8f020f02234ebac0"
+    },
+    {
+      "name": "distribution-full-Linux",
+      "url": "https://github.com/mech-lang/mech/actions/runs/37302395803/artifacts/11346748452",
+      "archive_digest": "sha256:0ef1270f7f9ab3c510197abd4e6d73444cf5d89d2d7b9379c93ced77f021d38b"
+    },
+    {
+      "name": "distribution-full-Windows",
+      "url": "https://github.com/mech-lang/mech/actions/runs/37302395803/artifacts/11346217686",
+      "archive_digest": "sha256:86c5ab30f93803c31404ffe964dd02298ed63073f37a026405d1d9a841726a46"
+    },
+    {
+      "name": "distribution-standard-Windows",
+      "url": "https://github.com/mech-lang/mech/actions/runs/37302395803/artifacts/11345670485",
+      "archive_digest": "sha256:088e33e90e1a90ad3f97c4fbc9e6c423c887dccbfe042990810f2ca9993dae72"
+    },
+    {
+      "name": "package-archive-manifests",
+      "url": "https://github.com/mech-lang/mech/actions/runs/37302395803/artifacts/11345349679",
+      "archive_digest": "sha256:fb63c05bba6924cdf48cbd536077dfd2a8d60de506cf7081178f9c20fe03dff9"
+    },
+    {
+      "name": "distribution-standard-macOS",
+      "url": "https://github.com/mech-lang/mech/actions/runs/37302395803/artifacts/11345048749",
+      "archive_digest": "sha256:2b8fb7d04af0aed4081cbfb2782c3304264d417f682dcb145277fb316e5657e8"
+    },
+    {
+      "name": "distribution-standard-Linux",
+      "url": "https://github.com/mech-lang/mech/actions/runs/37302395803/artifacts/11344769257",
+      "archive_digest": "sha256:7ca5cff576cebc6852b8e0f2b0e622b2a9f3934884f040252b2740287b2c02ab"
+    }
+  ],
+  "retained_logs": {
+    "archive_sha256": "20a9cb0d0211ca86d752fc91c85bb1689c025ddbddf3912afb6131cd693e7ef2",
+    "package_manifests_sha256": "fb63c05bba6924cdf48cbd536077dfd2a8d60de506cf7081178f9c20fe03dff9",
+    "note": "Raw Actions logs, job results, artifact metadata, PR seal text, and package manifests were downloaded together as the cleanup review attachment; they are not a new tracked archive or recurring checker."
+  },
+  "consolidation": {
+    "source_record": "https://github.com/mech-lang/mech/pull/888",
+    "source_revision": "c465a2fc9b2c4ecc6254da0b52344ac0a538fa03",
+    "source_tree": "532fa7e52b9c42ff5e2231cb326c924d9880a8bb",
+    "integration_status": "Open against integration/v0.4 when recorded; cleanup landing requires qualification of the accepted integration tree."
+  }
+}

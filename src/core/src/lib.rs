@@ -1,0 +1,699 @@
+#![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
+#![feature(allocator_api)]
+#![feature(where_clause_attrs)]
+#![allow(
+    unused_features,
+    reason = "the public macro surface expands cfg attributes on where clauses in downstream crates"
+)]
+
+extern crate seahash;
+
+#[cfg(feature = "no_std")]
+#[macro_use]
+extern crate alloc;
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
+extern crate core;
+
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use hashbrown::HashMap as HashBrownMap;
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
+use std::collections::HashMap;
+
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use alloc::fmt::{self, Debug, Display};
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
+use std::fmt::{self, Debug, Display};
+
+#[cfg(feature = "no_std")]
+use alloc::vec::Vec;
+
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+use fxhash::FxHasher;
+#[cfg(all(feature = "no_std", not(feature = "std")))]
+type HashMap<K, V> = HashBrownMap<K, V, core::hash::BuildHasherDefault<FxHasher>>;
+
+#[cfg(all(feature = "serde", any(not(feature = "no_std"), feature = "std")))]
+use std::io::{Cursor, Read, Write};
+
+#[cfg(feature = "no_std")]
+use alloc::string::{String, ToString};
+
+#[cfg(feature = "no_std")]
+use core::hash::Hash;
+#[cfg(any(feature = "atom", feature = "complex", feature = "matrix"))]
+use core::hash::Hasher;
+#[cfg(not(feature = "no_std"))]
+use std::hash::Hash;
+
+#[cfg(feature = "no_std")]
+use alloc::boxed::Box;
+
+#[cfg(feature = "matrix")]
+extern crate nalgebra as na;
+#[cfg(feature = "pretty_print")]
+extern crate tabled;
+#[cfg(feature = "serde")]
+#[macro_use]
+extern crate serde_derive;
+#[cfg(feature = "serde")]
+extern crate serde;
+
+pub extern crate paste;
+
+/// Escapes text for insertion into canonical HTML presentations.
+pub fn escape_html_text(input: &str) -> String {
+    input
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
+#[cfg(feature = "matrixd")]
+use nalgebra::DMatrix;
+#[cfg(feature = "vectord")]
+use nalgebra::DVector;
+#[cfg(feature = "matrix1")]
+use nalgebra::Matrix1;
+#[cfg(feature = "matrix2")]
+use nalgebra::Matrix2;
+#[cfg(feature = "matrix2x3")]
+use nalgebra::Matrix2x3;
+#[cfg(feature = "matrix3")]
+use nalgebra::Matrix3;
+#[cfg(feature = "matrix3x2")]
+use nalgebra::Matrix3x2;
+#[cfg(feature = "matrix4")]
+use nalgebra::Matrix4;
+#[cfg(feature = "row_vectord")]
+use nalgebra::RowDVector;
+#[cfg(feature = "row_vector2")]
+use nalgebra::RowVector2;
+#[cfg(feature = "row_vector3")]
+use nalgebra::RowVector3;
+#[cfg(feature = "row_vector4")]
+use nalgebra::RowVector4;
+#[cfg(feature = "vector2")]
+use nalgebra::Vector2;
+#[cfg(feature = "vector3")]
+use nalgebra::Vector3;
+#[cfg(feature = "vector4")]
+use nalgebra::Vector4;
+#[cfg(feature = "rational")]
+use num_rational::Rational64;
+#[cfg(all(
+    feature = "pretty_print",
+    any(
+        feature = "symbol_table",
+        feature = "matrix",
+        feature = "table",
+        feature = "tuple"
+    )
+))]
+use tabled::{builder::Builder, settings::Style};
+
+pub mod browser_document;
+pub mod cell_binding;
+pub mod element;
+#[cfg(feature = "serde")]
+pub mod encoded_payload;
+pub mod error;
+pub mod execution;
+#[cfg(feature = "functions")]
+pub mod function;
+#[path = "function/signature.rs"]
+mod function_signature;
+pub mod memory_contract;
+pub mod memory_plan;
+pub mod memory_runtime;
+#[cfg(feature = "mika")]
+pub mod mika;
+pub mod program;
+#[cfg(feature = "range")]
+pub mod range;
+#[cfg(feature = "functions")]
+pub mod reactive_transaction;
+pub mod read_source;
+#[cfg(feature = "resident-execution")]
+#[doc(hidden)]
+pub mod resident_execution;
+pub(crate) mod runtime_storage;
+pub mod selector;
+pub mod snapshot;
+pub mod source_diagnostic;
+pub mod state_journal;
+pub mod stdlib;
+pub mod structures;
+mod text_fragment;
+pub mod types;
+
+pub use self::browser_document::root_document_program_output_id;
+pub use self::cell_binding::*;
+pub use self::element::*;
+#[cfg(feature = "serde")]
+pub use self::encoded_payload::*;
+pub use self::error::*;
+pub use self::execution::*;
+#[cfg(feature = "functions")]
+pub use self::function::*;
+#[cfg(not(feature = "functions"))]
+pub use self::function_signature::*;
+pub use self::memory_contract::*;
+pub use self::memory_plan::*;
+pub use self::memory_runtime::*;
+#[cfg(feature = "mika")]
+pub use self::mika::*;
+pub use self::program::*;
+#[cfg(feature = "range")]
+pub use self::range::*;
+#[cfg(feature = "functions")]
+pub use self::reactive_transaction::*;
+pub use self::read_source::ReadSource;
+pub use self::schema::*;
+pub use self::selector::*;
+pub use self::semantic_error::*;
+pub use self::semantic_identity::*;
+pub use self::snapshot::{
+    ConstantHandle, ConstantStore, ConstantStoreBuilder, SetValueRelation, SnapshotValueError,
+    Value, ValueData, ValueDataDraft, ValueDraft,
+};
+pub use self::source_diagnostic::*;
+pub use self::state_journal::*;
+#[cfg(feature = "matrix")]
+pub use self::structures::matrix;
+#[cfg(feature = "matrix")]
+pub use self::structures::matrix::{
+    CopyMat, IncompatibleMatrixAppendToTableError, MechMatrix, PushIntoStaticMatrixError,
+    ResizeStaticMatrixError, ToMatrix,
+};
+pub use self::text_fragment::Utf8Fragment;
+pub use self::types::*;
+
+pub mod dimension;
+pub mod kind_expr;
+pub mod kind_scheme;
+pub mod nominal;
+pub mod operation_contract;
+pub mod schema;
+pub mod semantic_error;
+pub mod semantic_identity;
+pub mod type_system;
+
+pub use self::dimension::*;
+pub use self::kind_expr::*;
+pub use self::kind_scheme::*;
+pub use self::nominal::*;
+pub use self::operation_contract::*;
+pub use self::type_system::*;
+
+// Mech Source Code
+// ---------------------------------------------------------------------------
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum MechSourceCode {
+    String(String),
+    Html(String),
+    ByteCode(Vec<u8>),
+    Program(Vec<MechSourceCode>),
+    Image(String, Vec<u8>),
+}
+
+impl MechSourceCode {
+    /// Returns the encoded byte size of this source, or `None` if a nested
+    /// program's total cannot be represented as `u64`.
+    pub fn byte_len(&self) -> Option<u64> {
+        match self {
+            Self::String(source) | Self::Html(source) => u64::try_from(source.len()).ok(),
+            Self::ByteCode(bytes) | Self::Image(_, bytes) => u64::try_from(bytes.len()).ok(),
+            Self::Program(sources) => sources
+                .iter()
+                .try_fold(0u64, |total, source| total.checked_add(source.byte_len()?)),
+        }
+    }
+}
+
+impl fmt::Display for MechSourceCode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            MechSourceCode::ByteCode(bc) => {
+                #[cfg(feature = "program")]
+                match ParsedProgram::from_bytes(bc) {
+                    Ok(program) => write!(f, "{program:#?}"),
+                    Err(error) => write!(f, "Error parsing bytecode: {error:?}"),
+                }
+                #[cfg(not(feature = "program"))]
+                write!(f, "{bc:#?}")
+            }
+            MechSourceCode::Image(extension, img) => {
+                write!(f, "Image (.{extension}) with {} bytes", img.len())
+            }
+            MechSourceCode::String(source) | MechSourceCode::Html(source) => f.write_str(source),
+            MechSourceCode::Program(sources) => {
+                for (index, source) in sources.iter().enumerate() {
+                    if index > 0 {
+                        f.write_str("\n")?;
+                    }
+                    write!(f, "{source}")?;
+                }
+                Ok(())
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod source_code_tests {
+    use super::*;
+
+    #[test]
+    fn every_source_code_variant_has_a_non_panicking_display() {
+        assert_eq!(
+            MechSourceCode::String("source".into()).to_string(),
+            "source"
+        );
+        assert_eq!(
+            MechSourceCode::Html("<p>source</p>".into()).to_string(),
+            "<p>source</p>"
+        );
+        assert_eq!(
+            MechSourceCode::Image("png".into(), vec![1, 2, 3]).to_string(),
+            "Image (.png) with 3 bytes"
+        );
+        assert_eq!(
+            MechSourceCode::Program(vec![
+                MechSourceCode::String("first".into()),
+                MechSourceCode::Html("second".into()),
+            ])
+            .to_string(),
+            "first\nsecond"
+        );
+
+        let bytecode = MechSourceCode::ByteCode(Vec::new()).to_string();
+        #[cfg(feature = "program")]
+        assert!(bytecode.starts_with("Error parsing bytecode:"));
+        #[cfg(not(feature = "program"))]
+        assert_eq!(bytecode, "[]");
+    }
+
+    #[test]
+    fn every_source_code_variant_has_a_known_byte_size() {
+        let source = MechSourceCode::Program(vec![
+            MechSourceCode::String("mech".into()),
+            MechSourceCode::Html("<p/>".into()),
+            MechSourceCode::ByteCode(vec![1, 2]),
+            MechSourceCode::Image("png".into(), vec![3, 4, 5]),
+        ]);
+
+        assert_eq!(source.byte_len(), Some(13));
+    }
+
+    #[test]
+    fn empty_bytes_have_an_empty_emoji_representation() {
+        assert_eq!(emojify_bytes(&[]), "");
+    }
+
+    #[test]
+    fn hash_helpers_accept_slices() {
+        assert_eq!(hash_chars(&['m', 'e', 'c', 'h']), hash_str("mech"));
+        assert_eq!(
+            hash_bytes(b"mech"),
+            seahash::hash(b"mech") & 0x00FFFFFFFFFFFFFF
+        );
+    }
+}
+
+// Humanize
+// ---------------------------------------------------------------------------
+
+// Turn bytes into something more readable by humans
+// Useful for visualizing register dumps, hashes, etc.
+
+pub fn hash_chars(input: &[char]) -> u64 {
+    seahash::hash(
+        input
+            .iter()
+            .map(|s| String::from(*s))
+            .collect::<String>()
+            .as_bytes(),
+    ) & 0x00FFFFFFFFFFFFFF
+}
+
+pub fn hash_bytes(input: &[u8]) -> u64 {
+    seahash::hash(input) & 0x00FFFFFFFFFFFFFF
+}
+
+pub fn hash_str(input: &str) -> u64 {
+    seahash::hash(input.as_bytes()) & 0x00FFFFFFFFFFFFFF
+}
+
+pub fn emojify_bytes(bytes: &[u8]) -> String {
+    if bytes.is_empty() {
+        return String::new();
+    }
+    let start = bytes
+        .iter()
+        .position(|&b| b != 0)
+        .unwrap_or(bytes.len() - 1);
+    let mut out = String::new();
+    for &b in &bytes[start..] {
+        out.push_str(EMOJILIST[b as usize]);
+    }
+    out
+}
+
+pub fn humanize_bytes(bytes: &[u8]) -> String {
+    let parts: Vec<&str> = bytes
+        .iter()
+        .enumerate()
+        .filter_map(|(ix, &b)| {
+            if ix % 2 == 1 {
+                Some(WORDLIST[b as usize])
+            } else {
+                None
+            }
+        })
+        .collect();
+    parts.join("-")
+}
+
+pub fn emojify<T>(num: &T) -> String
+where
+    T: Display + Copy + TryInto<u128>,
+    <T as TryInto<u128>>::Error: core::fmt::Debug,
+{
+    match (*num).try_into() {
+        Ok(v) => {
+            let bytes = v.to_be_bytes();
+            emojify_bytes(&bytes)
+        }
+        Err(_) => format!("{}", num),
+    }
+}
+
+pub fn humanize<T>(num: &T) -> String
+where
+    T: Display + Copy + TryInto<u128>,
+    <T as TryInto<u128>>::Error: Debug,
+{
+    match (*num).try_into() {
+        Ok(v) => {
+            let bytes = v.to_be_bytes();
+            let first_non_zero = bytes
+                .iter()
+                .position(|&b| b != 0)
+                .unwrap_or(bytes.len() - 1);
+            let trimmed = &bytes[first_non_zero..];
+            humanize_bytes(trimmed)
+        }
+        Err(_) => format!("{}", num),
+    }
+}
+
+pub const WORDLIST: &[&str; 256] = &[
+    "nil", "ama", "ine", "ska", "pha", "gel", "art", "ona", "sas", "ist", "aus", "pen", "ust",
+    "umn", "ado", "con", "loo", "man", "eer", "lin", "ium", "ack", "som", "lue", "ird", "avo",
+    "dog", "ger", "ter", "nia", "bon", "nal", "ina", "pet", "cat", "ing", "lie", "ken", "fee",
+    "ola", "old", "rad", "met", "cut", "azy", "cup", "ota", "dec", "del", "elt", "iet", "don",
+    "ble", "ear", "rth", "eas", "war", "eig", "tee", "ele", "emm", "ene", "qua", "tst", "fan",
+    "fif", "fil", "fin", "fis", "fiv", "flo", "for", "foo", "fou", "fot", "fox", "fre", "fri",
+    "fru", "gee", "gia", "glu", "fol", "gre", "ham", "hap", "har", "haw", "hel", "hig", "hot",
+    "hyd", "ida", "ill", "ind", "ini", "ink", "iwa", "and", "ite", "jer", "jig", "joh", "jul",
+    "uly", "kan", "ket", "kil", "kin", "kit", "lac", "lak", "lem", "ard", "lim", "lio", "lit",
+    "lon", "lou", "low", "mag", "nes", "mai", "gam", "arc", "mar", "mao", "mas", "may", "mex",
+    "mic", "mik", "ril", "min", "mir", "mis", "mio", "mob", "moc", "ech", "moe", "tan", "oon",
+    "ain", "mup", "sic", "neb", "une", "net", "nev", "nin", "een", "nit", "nor", "nov", "nut",
+    "oct", "ohi", "okl", "one", "ora", "ges", "ore", "osc", "ove", "oxy", "pap", "par", "pey",
+    "pip", "piz", "plu", "pot", "pri", "pur", "que", "uqi", "qui", "red", "riv", "rob", "roi",
+    "rug", "sad", "sal", "sat", "sep", "sev", "eve", "sha", "sie", "sin", "sik", "six", "sit",
+    "sky", "soc", "sod", "sol", "sot", "tir", "ker", "spr", "sta", "ste", "mam", "mer", "swe",
+    "tab", "tag", "see", "nis", "tex", "thi", "the", "tim", "tri", "twe", "ent", "two", "unc",
+    "ess", "uni", "ura", "veg", "ven", "ver", "vic", "vid", "vio", "vir", "was", "est", "whi",
+    "hit", "iam", "win", "his", "wis", "olf", "wyo", "ray", "ank", "yel", "zeb", "ulu", "fix",
+    "gry", "hol", "jup", "lam", "pas", "rom", "sne", "ten", "uta",
+];
+
+// Emoji list is for quicker visual scanning/recognition when comparing registers
+
+pub const EMOJILIST: &[&str; 256] = &[
+    "🐵",
+    "🐶",
+    "🐺",
+    "🦊",
+    "🦝",
+    "🐱",
+    "🐈",
+    "🐈",
+    "🦁",
+    "🐷",
+    "🐮",
+    "🦬",
+    "🐯",
+    "🐴",
+    "🫎",
+    "🦄",
+    "🦓",
+    "🦙",
+    "🦒",
+    "🐘",
+    "🦣",
+    "🦏",
+    "🦛",
+    "🐫",
+    "🐏",
+    "🐭",
+    "🐰",
+    "🐿️",
+    "🦫",
+    "🦔",
+    "🦇",
+    "🐻",
+    "🐨",
+    "🐼",
+    "🦥",
+    "🦦",
+    "🦨",
+    "🦘",
+    "🦡",
+    "🦃",
+    "🐔",
+    "🐦",
+    "🐧",
+    "🕊️",
+    "🦅",
+    "🦆",
+    "🐦‍🔥",
+    "🦉",
+    "🦤",
+    "🦩",
+    "🦚",
+    "🦜",
+    "🐸",
+    "🐊",
+    "🐢",
+    "🦎",
+    "🐍",
+    "🐲",
+    "🦖",
+    "🐳",
+    "🐬",
+    "🦭",
+    "🐠",
+    "🦈",
+    "🐙",
+    "🪼",
+    "🦀",
+    "🦞",
+    "🦐",
+    "🦑",
+    "🐌",
+    "🦋",
+    "🐛",
+    "🐝",
+    "🪲",
+    "🐞",
+    "🦗",
+    "🕸️",
+    "🪰",
+    "🪱",
+    "🦠",
+    "👻",
+    "👽",
+    "🐶",
+    "🐮",
+    "🐚",
+    "🪸",
+    "🪶",
+    "🦧",
+    "🪿",
+    "🦢",
+    "🤖",
+    "🌹",
+    "🌳",
+    "🌴",
+    "🌵",
+    "🍀",
+    "🍁",
+    "🍄",
+    "🌛",
+    "🌞",
+    "🪐",
+    "⭐",
+    "⛅",
+    "🌧️",
+    "🌨️",
+    "🌈",
+    "❄️",
+    "☃️",
+    "☄️",
+    "🔥",
+    "🌻",
+    "🍇",
+    "🍉",
+    "🍊",
+    "🍋",
+    "🍋‍🟩",
+    "🍌",
+    "🍍",
+    "🥭",
+    "🍎",
+    "🍐",
+    "🍓",
+    "🥝",
+    "🍅",
+    "🫒",
+    "🥥",
+    "🥔",
+    "🥕",
+    "🌽",
+    "🌶️",
+    "🫑",
+    "🥒",
+    "🥦",
+    "🧄",
+    "🧅",
+    "🫛",
+    "🍦",
+    "🍧",
+    "🍩",
+    "🍪",
+    "🍰",
+    "🧁",
+    "🥧",
+    "🍫",
+    "🍭",
+    "🍞",
+    "🥨",
+    "🥯",
+    "🧇",
+    "🍟",
+    "🍿",
+    "🧃",
+    "🎤",
+    "🎧",
+    "📻",
+    "🎷",
+    "🪗",
+    "🎸",
+    "🎹",
+    "🎺",
+    "🎻",
+    "🪇",
+    "🥁",
+    "⚗️",
+    "📷",
+    "🧳",
+    "🌡️",
+    "🧸",
+    "🧶",
+    "🔎",
+    "🕯️",
+    "💡",
+    "🔦",
+    "🔒",
+    "🗝️",
+    "🪚",
+    "🔧",
+    "🪛",
+    "🔩",
+    "⚙️",
+    "⚖️",
+    "🧰",
+    "🧲",
+    "🪜",
+    "🔬",
+    "📡",
+    "🧷",
+    "🧹",
+    "🧺",
+    "🪣",
+    "🧼",
+    "🧽",
+    "🧯",
+    "🛒",
+    "⏰",
+    "🛟",
+    "🛩️",
+    "🚁",
+    "🛰️",
+    "🚀",
+    "🛸",
+    "⚓",
+    "🚂",
+    "🚑",
+    "🚒",
+    "🚕",
+    "🚗",
+    "🚚",
+    "🚜",
+    "🏎️",
+    "🏍️",
+    "🛵",
+    "🦼",
+    "🚲",
+    "🛹",
+    "🛼",
+    "🛞",
+    "📰",
+    "📦",
+    "📫",
+    "✏️",
+    "🖊️",
+    "🖌️",
+    "🖍️",
+    "📌",
+    "📏",
+    "✂️",
+    "🗑️",
+    "🏆",
+    "⚾",
+    "🏀",
+    "🎾",
+    "🎳",
+    "⛳",
+    "⛸️",
+    "🤿",
+    "🛷",
+    "🎯",
+    "🪁",
+    "🧩",
+    "🪅",
+    "🎨",
+    "🧭",
+    "🏔️",
+    "🏝️",
+    "⛲",
+    "⛺",
+    "🎠",
+    "🛝",
+    "🧵",
+    "💈",
+    "🎪",
+    "🛎️",
+    "💎",
+    "⛵",
+];
+
+pub mod module_manifest;
+pub use module_manifest::*;
