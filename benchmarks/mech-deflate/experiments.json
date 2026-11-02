@@ -11198,7 +11198,21 @@
         }
       },
       "next_bounded_step": "Apply the existing same-plan canonical alias retirement proof at the numeric first-change boundary; preserve actual frozen identity, external aliases, finite charges, errors, publication and retry. Investigate instruction regression independently.",
-      "experiment_branch": "codex/numeric-stride-r120-experiment"
+      "experiment_branch": "codex/numeric-stride-r120-experiment",
+      "public_replay": {
+        "byte_identical_outputs": [
+          "mechanism.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 15,
+        "round": 120,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 363,
+        "verified_archives": 23,
+        "verified_file_occurrences": 1370
+      }
     }
   },
   "repository": "mech-lang/mech",
