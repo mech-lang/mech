@@ -155,8 +155,9 @@ pub(in crate::native_artifact) fn derive(
     calls: &[Option<NativePreparedLibraryCall>],
     visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
 ) -> Result<Proof, &'static str> {
-    derive_with_children(plan, tail, frames, aggregates, calls, visits, false)
-        .or_else(|_| derive_with_children(plan, tail, frames, aggregates, calls, visits, true))
+    derive_with_children(plan, tail, frames, aggregates, calls, visits, false).or_else(|reason| {
+        derive_with_children(plan, tail, frames, aggregates, calls, visits, true).map_err(|_| reason)
+    })
 }
 
 fn derive_with_children(
