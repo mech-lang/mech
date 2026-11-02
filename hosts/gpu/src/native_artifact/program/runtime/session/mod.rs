@@ -675,8 +675,9 @@ impl<'a> Prepared<'a> {
             memory,
             &mut work,
         )?;
-        let call_inputs = NativeTypedStorage::new_values(
+        let call_inputs = super::call_inputs::CallInputs::new(
             descriptor.metadata().max_library_inputs,
+            descriptor.metadata().max_call_values,
             limits.execution.max_transport_bytes,
             memory,
         )?;

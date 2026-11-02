@@ -103,6 +103,21 @@ impl Layout {
             .max()
             .unwrap_or(0)
     }
+    /// Canonical owner pins use source ordinals, not numeric word homes.
+    pub(in crate::native_artifact) fn argument_values(&self) -> usize {
+        self.regions
+            .iter()
+            .map(|&(p, s)| {
+                self.parents[p].segments[s]
+                    .frame_plan
+                    .as_ref()
+                    .unwrap()
+                    .sources
+                    .len()
+            })
+            .max()
+            .unwrap_or(0)
+    }
     /// Source preparation and independently validated image loading use this
     /// same pure derivation. No serialized candidate inventory is accepted.
     pub(in crate::native_artifact) fn derive(

@@ -282,7 +282,9 @@ fn selected_template(
 // IR147 is reserved for the held strided-phase eligibility experiment.
 // IR148 binds numeric first-change handoff to the independently reconstructed
 // ordinary source-site canonical alias-retirement proof.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 148;
+// IR149 independently derives the canonical argument prefix separately from
+// numeric reconciliation words. Physical backing and original prices remain.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 149;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

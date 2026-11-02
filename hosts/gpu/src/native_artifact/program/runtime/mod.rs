@@ -30,6 +30,7 @@ use mech_engine::native_artifact::{
 };
 use std::ffi::c_void;
 
+mod call_inputs;
 mod collections;
 
 mod lines;
