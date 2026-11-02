@@ -7873,6 +7873,17 @@
             "improving_blocks": 28,
             "adverse_blocks": 36
           }
+        },
+        {
+          "event": "counters",
+          "source_revision": "ec55e3f856306b07d34050b8b95ac0289a28fb5f",
+          "asset": "r105-counters-0118cb020258.tar.gz",
+          "sha256": "0118cb0202582da4baca5d162aad7dc3db176caaf0336e5a42e11ab54489cab6",
+          "manifest_sha256": "11d48763127c46a32845fa38aa09db8c253ef9b55cf3e98a6ceb8513ffa52592",
+          "bytes": 316109,
+          "files": 81,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-counters-0118cb020258.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
