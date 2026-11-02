@@ -436,6 +436,33 @@ impl<'a> NativeValueArena<'a> {
         Ok(value.is_none() || self.generations.values()[index] != u64::MAX)
     }
 
+    /// Preview an ordered immutable inventory under one current account check.
+    /// No retirement, debit or permission escapes this synchronous borrow.
+    /// An empty inventory retains the scalar caller's lack of an account check;
+    /// a refused slot stops before inspecting any later slot.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn native_retirements_available(
+        &self,
+        slots: impl IntoIterator<Item = u32>,
+        work: &NativeWorkMeter,
+    ) -> Result<bool, NativeValueError> {
+        let mut slots = slots.into_iter();
+        let Some(first) = slots.next() else {
+            return Ok(true);
+        };
+        self.check_work(work)?;
+        let values = self.values.values();
+        let generations = self.generations.values();
+        for slot in core::iter::once(first).chain(slots) {
+            let index = slot as usize;
+            let value = values.get(index).ok_or(NativeValueError::InvalidSlot)?;
+            if value.is_some() && generations[index] == u64::MAX {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
     /// Pure preview for an escaping alias from one native piece. No ticket or
     /// permission survives this call: the ordinary put still performs all
     /// checks and charges at the piece's maintained exit. Current empty slots
