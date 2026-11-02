@@ -17,7 +17,7 @@ mod named_managed_projections;
 mod nested_phase;
 mod nested_phase_growing;
 mod nested_phase_handoff;
-mod observe;
+pub(super) mod observe;
 mod pack;
 mod record_lookup;
 mod resources;
@@ -63,11 +63,11 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                106
+                107
             );
             assert_eq!(
                 report.work, 88_531_834,
-                "policy106 retains existing child-free leaf/parent prices, constant ownership, structural alias pricing and scalar-prefix debits"
+                "policy107 retains existing child-free leaf/parent prices, constant ownership, structural alias pricing and scalar-prefix debits"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(

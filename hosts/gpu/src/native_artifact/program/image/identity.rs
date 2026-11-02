@@ -291,7 +291,10 @@ fn selected_template(
 // IR153 keeps SSA and boundary accesses in each private home's same alias region.
 // IR154 independently reconstructs dead root carrier retirement after all live
 // values have been exported at an actual native interval boundary.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 154;
+// IR155 reconstructs ordinary parent pieces on a native interval's cold route.
+// Source-price coverage belongs to the exact current root continuation only.
+// Acyclic prefixes retain their existing parent pieces.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 155;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -501,7 +504,10 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 154;
 // private fuel home's boundary alias region.
 // Policy106 charges the existing frame retirement recipe when a dead interval
 // carrier releases its pins after exporting the ordinary continuation.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 106;
+// Policy107 retains the paid root source visits across an ordinary parent
+// piece. Its own entry, per-site overhead, synchronization and cleanup are
+// still charged; neither a source debit nor an account is renewed or refunded.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 107;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

@@ -45,7 +45,17 @@ fn known_predicates(
     forest: &super::super::numeric_phase::Forest,
     from: usize,
 ) -> BTreeMap<u32, bool> {
+    required_predicates(plan, facts, forest, from).0
+}
+
+fn required_predicates(
+    plan: &Plan,
+    facts: &NativeProgramFacts<'_>,
+    forest: &super::super::numeric_phase::Forest,
+    from: usize,
+) -> (BTreeMap<u32, bool>, bool) {
     let mut known = BTreeMap::new();
+    let mut consistent = true;
     for &site in &forest.sites {
         let operands = match plan.blocks()[site].terminator() {
             Term::Scalar(Branch::Branch { condition, .. }) => vec![condition],
@@ -72,12 +82,32 @@ fn known_predicates(
             };
             for (edge, truth) in [(no, false), (yes, true)] {
                 if !reaches(plan, forest, from, Some((site, edge as usize))) {
-                    known.insert(root, truth);
+                    if known
+                        .insert(root, truth)
+                        .is_some_and(|previous| previous != truth)
+                    {
+                        consistent = false;
+                    }
                 }
             }
         }
     }
-    known
+    (known, consistent)
+}
+
+/// Profitability only: repeated immutable guards can make a CFG backedge
+/// contradictory even though the graph has a syntactic path to it. Such a
+/// prefix retains the existing parent pieces instead of adding a Tail phase.
+pub(super) fn retains_native_backedge(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    facts: &NativeProgramFacts<'_>,
+    forest: &super::super::numeric_phase::Forest,
+) -> bool {
+    let latch = tail.latch() as usize;
+    forest.sites.contains(&latch)
+        && reaches(plan, forest, latch, None)
+        && required_predicates(plan, facts, forest, latch).1
 }
 
 fn live_before(

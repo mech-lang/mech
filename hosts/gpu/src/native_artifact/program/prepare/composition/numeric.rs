@@ -23,6 +23,8 @@ pub(in crate::native_artifact) struct Layout {
     pub actions: Vec<(usize, Operation)>,
     pub words: usize,
     pub compute: u64,
+    /// Exact source visit prices, excluding this piece's physical overhead.
+    pub source_work: u64,
     /// Reserved separately; only reached lexical retirement actions spend it.
     pub retirement_work: u64,
 }
@@ -74,6 +76,7 @@ impl Layout {
         let mut views = Vec::<View>::new();
         let mut actions = Vec::new();
         let mut compute = FIXED_OVERHEAD;
+        let mut source_work = 0u64;
         for &site in &segment.sites {
             let at = site as usize;
             compute = compute
@@ -85,6 +88,9 @@ impl Layout {
                 )
                 .and_then(|n| n.checked_add(OVERHEAD))
                 .ok_or("parent native work overflows")?;
+            source_work = source_work
+                .checked_add(visits[at].work)
+                .ok_or("parent source visit work overflows")?;
             let action = if frame_layout.action(at).is_some() {
                 // Frame proof above already checked every pack/copy/project.
                 Operation::Frame
@@ -233,6 +239,7 @@ impl Layout {
             actions,
             words,
             compute,
+            source_work,
             retirement_work,
         })
     }

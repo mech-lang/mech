@@ -20,6 +20,8 @@ pub(super) struct Counts {
     pub first_change_backings: Vec<(usize, usize)>,
     pub replacement_backings: Vec<(u64, usize, usize)>,
     pub terminal_backings: Vec<(usize, usize)>,
+    pub prepaid_segment_charges: Vec<(u64, u64)>,
+    prepaid_segment_entry_work: Option<u64>,
     pub phase_settlements: Vec<(u64, u64, u64, u64)>,
     pub cold_private_arrays: Vec<usize>,
     pub poisoned_exit_words: usize,
@@ -35,6 +37,9 @@ thread_local! {
     static ADMIT: Cell<Option<Admit>> = const { Cell::new(None) };
     static HELPER: Cell<Option<Helper>> = const { Cell::new(None) };
     static FIRST_CHANGE_COPY_LIMIT: Cell<Option<u64>> = const { Cell::new(None) };
+}
+pub(in crate::native_artifact::program::runtime) fn prepaid_segment_entry_work(entry: u64) {
+    COUNTS.with(|v| v.borrow_mut().prepaid_segment_entry_work = Some(entry));
 }
 fn private_homes(
     metadata: &crate::native_artifact::program::prepare::ProgramMetadata,
@@ -150,6 +155,10 @@ unsafe extern "C" fn helper(
                     .iter()
                     .enumerate()
                     .filter(|(array, _)| {
+                        let proof = metadata.closed_tails.regions[id].numeric.as_ref().unwrap();
+                        if !proof.writes() && proof.result.direct_array().is_none() {
+                            return false;
+                        }
                         // Observe only this current synchronous private owner.
                         let ctx = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
                         ctx.state
@@ -162,6 +171,30 @@ unsafe extern "C" fn helper(
                 COUNTS.with(|v| v.borrow_mut().cold_private_arrays.push(count));
             }
         }
+    }
+    let prepaid_segment = if op == GlobalHelper::NumericSegmentBegin.raw() {
+        // SAFETY: only current counter numbers and immutable prepared prices
+        // cross this synchronous callback; no owner or account is retained.
+        let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        let layout = &ctx.descriptor.metadata().compositions;
+        layout.entry(site as usize).and_then(|id| {
+            let (_, segment) = layout.region(id)?;
+            (ctx.numeric_prepaid.is_some() && ctx.numeric_prepaid == segment.prepaid_region).then(
+                || {
+                    let proof = segment.numeric.as_ref().unwrap();
+                    assert!(proof.source_work > 0);
+                    (
+                        ctx.state.library.used().0,
+                        proof.compute - proof.source_work,
+                    )
+                },
+            )
+        })
+    } else {
+        None
+    };
+    if prepaid_segment.is_some() {
+        COUNTS.with(|v| v.borrow_mut().prepaid_segment_entry_work = None);
     }
     let terminal = if op == GlobalHelper::ClosedTailEnd.raw() && c == 0 {
         // SAFETY: only pointer numbers from the current private carrier are
@@ -371,6 +404,23 @@ unsafe extern "C" fn helper(
     {
         // SAFETY: the original helper has successfully filled its live result.
         let selected = unsafe { *out };
+        if selected == 1
+            && let Some((before, expected)) = prepaid_segment
+        {
+            // SAFETY: the callback returned, and this same Invocation retains
+            // its current account. Observe the actual debit without changing it.
+            let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+            let charged = ctx.state.library.used().0 - before;
+            COUNTS.with(|v| {
+                let mut counts = v.borrow_mut();
+                // The account also observes the separately charged current
+                // entry work. Credit removes only original source prices.
+                let entry = counts.prepaid_segment_entry_work.take().unwrap();
+                counts
+                    .prepaid_segment_charges
+                    .push((charged, expected + entry));
+            });
+        }
         if selected == 1 && POISON_UNUSED_EXIT.with(Cell::get) {
             // Poison the unused physical homes before selected SSA entry. The
             // body must initialize from arguments, and no exit may spill here.

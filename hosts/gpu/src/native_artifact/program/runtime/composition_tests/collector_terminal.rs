@@ -126,6 +126,14 @@ fn numeric_interval_real_skip_forwards_current_buffers_and_keeps_cold_rebase() {
                     assert!(next_cache[2..].iter().all(|&word| word == 0));
                     if slide == 0 {
                         assert!(!counts.cold_private_arrays.is_empty());
+                        assert!(!counts.prepaid_segment_charges.is_empty(), "{counts:?}");
+                        assert!(
+                            counts
+                                .prepaid_segment_charges
+                                .iter()
+                                .all(|(actual, expected)| actual == expected),
+                            "paid source work must be credited while the entire current entry cost remains charged: {counts:?}"
+                        );
                     }
                 }
                 assert!(old_tree.iter().all(|&word| word == 0));

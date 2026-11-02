@@ -60,6 +60,15 @@ impl Invocation<'_, '_, '_> {
             .numeric
             .as_ref()
             .ok_or_else(|| invalid("parent numeric proof missing"))?;
+        let compute =
+            if self.numeric_prepaid.is_some() && self.numeric_prepaid == segment.prepaid_region {
+                proof
+                    .compute
+                    .checked_sub(proof.source_work)
+                    .ok_or_else(|| invalid("parent prepaid source price exceeds its total"))?
+            } else {
+                proof.compute
+            };
         if args != [0; 3]
             || self.closed_tail.is_some()
             || (self.worker.is_none()
@@ -173,7 +182,7 @@ impl Invocation<'_, '_, '_> {
             return Ok(Some(0));
         };
         let Some(required) = entry
-            .checked_add(proof.compute)
+            .checked_add(compute)
             .and_then(|n| n.checked_add(proof.retirement_work))
             .and_then(|n| n.checked_add(alias_work?))
         else {
@@ -338,13 +347,17 @@ impl Invocation<'_, '_, '_> {
                 self.write_borrowed_word(frames.scalar_words + array * 4 + at, word)?;
             }
         }
+        #[cfg(all(test, feature = "canonical-native-program"))]
+        if self.numeric_prepaid.is_some() && self.numeric_prepaid == segment.prepaid_region {
+            super::super::composition_tests::observe::prepaid_segment_entry_work(entry);
+        }
         self.state
             .control
             .work
             .charge(NativeExecutionPhase::Setup, entry)?;
         self.state
             .library
-            .charge(proof.compute, 0)
+            .charge(compute, 0)
             .map_err(|error| Error::Collection {
                 origin: metadata.plan.blocks()[site].origin(),
                 error,
