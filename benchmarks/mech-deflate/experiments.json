@@ -9313,6 +9313,17 @@
           "files": 64,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-scale-confirm-1024-12b15ecd8b15.tar.gz"
+        },
+        {
+          "event": "counters",
+          "source_revision": "f327ef9489aaa0997f4d8627256f1a14eb70b0c4",
+          "asset": "r114-counters-753af99e9fa4.tar.gz",
+          "sha256": "753af99e9fa4f2c47cbba12059254d016eccd9e21753e20685d5e477ea5bdc91",
+          "manifest_sha256": "53695330eccb218c07c130fbb607bee10807a260e53a0b7d163fc8d89012263e",
+          "bytes": 263952,
+          "files": 88,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-counters-753af99e9fa4.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
