@@ -7709,11 +7709,11 @@
           "manifest_sha256": "f788f78215f68f8107357b75f61e1d5f9a8753677e75e1924b1f4756030b8ab5",
           "bytes": 4553270,
           "files": 80,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-replay-inputs-0f521da7dc6c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r104-replay-inputs-0f521da7dc6c.tar.gz"
         }
       ],
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "test_source": "636da5e074add0632f7154f14d8d39848721cd16",
       "ci_source": "f51c45f8febc5d4f9855ac970931a2bc3292ab77",
       "analysis": {
