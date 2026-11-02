@@ -11,6 +11,8 @@ use mech_engine::native_artifact::{
     NativeScalarKind, NativeTailLoop,
 };
 use std::collections::{BTreeMap, BTreeSet};
+#[path = "numeric_exits.rs"]
+mod exits;
 #[path = "numeric_results.rs"]
 mod results;
 #[path = "numeric_versions.rs"]
@@ -153,6 +155,19 @@ pub(in crate::native_artifact) fn derive(
     calls: &[Option<NativePreparedLibraryCall>],
     visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
 ) -> Result<Proof, &'static str> {
+    derive_with_children(plan, tail, frames, aggregates, calls, visits, false)
+        .or_else(|_| derive_with_children(plan, tail, frames, aggregates, calls, visits, true))
+}
+
+fn derive_with_children(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
+    cold: bool,
+) -> Result<Proof, &'static str> {
     let fields = frames
         .fields(tail.carrier())
         .ok_or("carrier escapes or lacks an exact private frame")?;
@@ -162,9 +177,13 @@ pub(in crate::native_artifact) fn derive(
     {
         return Err("numeric carrier requires flat fields");
     }
-    let forest = super::numeric_phase::Forest::derive(plan, tail)?;
-    let nested = forest.loops.len() > 1;
-    let trips = if nested {
+    let forest = if cold {
+        super::numeric_phase::Forest::with_cold_children(plan, tail)?
+    } else {
+        super::numeric_phase::Forest::derive(plan, tail)?
+    };
+    let nested = forest.loops.len() > 1 || !forest.cold.is_empty();
+    let trips = if forest.loops.len() > 1 {
         forest.validate_child_actions(plan, frames, aggregates, calls)?;
         forest.bounded_children(plan, frames, aggregates, calls)?
     } else {
@@ -253,6 +272,10 @@ pub(in crate::native_artifact) fn derive(
         frame_values.insert(value);
     }
     for &site in &sites {
+        if forest.cold.iter().any(|child| child.initialize == site) {
+            actions.push((site, Operation::Fallback));
+            continue;
+        }
         let action = plan.blocks()[site].action();
         if let Action::LibraryCall { template, .. } = action {
             if !calls
@@ -442,6 +465,7 @@ pub(in crate::native_artifact) fn derive(
     if arrays.iter().any(|array| array.witness == usize::MAX) {
         return Err("unwitnessed retained array");
     }
+    let exits = exits::derive(plan, tail, frames, &forest, &mut provenance, &arrays)?;
     versions::validate(
         plan,
         tail,
@@ -452,6 +476,7 @@ pub(in crate::native_artifact) fn derive(
         &arrays,
         &result,
         &forest,
+        &exits,
     )?;
     let mut scalar_words = 0;
     let frame_words = frame_values
@@ -519,6 +544,7 @@ pub(in crate::native_artifact) fn derive(
             &forest,
             words
                 .checked_add(forest.loops.len())
+                .and_then(|n| n.checked_add(usize::from(!exits.is_empty())))
                 .ok_or("phase counter size overflows")?,
         )?;
         let schedule = super::numeric_phase::Schedule::derive(
@@ -547,5 +573,6 @@ pub(in crate::native_artifact) fn derive(
         words,
         result,
         phase,
+        exits,
     })
 }

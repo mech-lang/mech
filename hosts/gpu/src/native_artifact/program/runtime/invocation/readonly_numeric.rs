@@ -366,6 +366,9 @@ impl Invocation<'_, '_, '_> {
                 }
             }
         }
+        if mode == 6 {
+            self.export_numeric_continuation(id, site)?;
+        }
         if mode == 2 {
             // A native bounds miss executes the original selected operation at
             // its exact source position. Materialize only that cold operand.

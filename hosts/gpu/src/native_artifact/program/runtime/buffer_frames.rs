@@ -409,8 +409,17 @@ impl BufferFrames {
         ordinal: usize,
         bits: u64,
     ) -> Result<(), NativeProgramExecutionError> {
+        self.synchronize_scalar_at(layout, value.get(), ordinal, bits)
+    }
+    pub(super) fn synchronize_scalar_at(
+        &mut self,
+        layout: &Layout,
+        value: u32,
+        ordinal: usize,
+        bits: u64,
+    ) -> Result<(), NativeProgramExecutionError> {
         let field = layout
-            .fields(value)
+            .fields_at(value as usize)
             .and_then(|fields| fields.get(ordinal))
             .ok_or_else(|| invalid("numeric reconciliation outside frame"))?;
         let Lane::Scalar { at, kind } = field.lane() else {
@@ -539,8 +548,17 @@ impl BufferFrames {
         ordinal: usize,
         owner: Value,
     ) -> Result<(), NativeProgramExecutionError> {
+        self.synchronize_managed_at(layout, value.get(), ordinal, owner)
+    }
+    pub(super) fn synchronize_managed_at(
+        &mut self,
+        layout: &Layout,
+        value: u32,
+        ordinal: usize,
+        owner: Value,
+    ) -> Result<(), NativeProgramExecutionError> {
         let field = layout
-            .fields(value)
+            .fields_at(value as usize)
             .and_then(|f| f.get(ordinal))
             .ok_or_else(|| invalid("numeric managed reconciliation outside frame"))?;
         let Lane::Managed { at } = field.lane() else {

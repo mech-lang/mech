@@ -27,10 +27,9 @@ impl Traversal {
             let successors = if forest.loops.iter().any(|l| l.latch == site) {
                 Vec::new()
             } else {
-                NativeProgramFacts::control_successors(plan.blocks()[site].terminator())
+                forest
+                    .successors(plan, site)
                     .into_iter()
-                    .flatten()
-                    .map(|n| n as usize)
                     .filter(|n| sites.contains(n))
                     .collect::<Vec<_>>()
             };
@@ -125,6 +124,7 @@ pub(super) fn validate(
     arrays: &[Array],
     result: &ResultRecipe,
     forest: &super::super::numeric_phase::Forest,
+    exits: &[super::super::numeric_plan::Exit],
 ) -> Result<(), &'static str> {
     // Check the complete graph before any conditional edge can be excluded.
     let traversal = Traversal::new(plan, tail, sites, forest)?;
@@ -138,6 +138,7 @@ pub(super) fn validate(
         arrays,
         result,
         &[],
+        exits,
     );
     if !matches!(
         original,
@@ -153,11 +154,11 @@ pub(super) fn validate(
         let no = edges.iter().map(|&(s, (n, _))| (s, n)).collect::<Vec<_>>();
         let yes = edges.iter().map(|&(s, (_, y))| (s, y)).collect::<Vec<_>>();
         if pass(
-            plan, tail, frames, provenance, &traversal, actions, arrays, result, &no,
+            plan, tail, frames, provenance, &traversal, actions, arrays, result, &no, exits,
         )
         .is_ok()
             && pass(
-                plan, tail, frames, provenance, &traversal, actions, arrays, result, &yes,
+                plan, tail, frames, provenance, &traversal, actions, arrays, result, &yes, exits,
             )
             .is_ok()
         {
@@ -177,6 +178,7 @@ fn pass(
     arrays: &[Array],
     result: &ResultRecipe,
     selected: &[(usize, usize)],
+    exits: &[super::super::numeric_plan::Exit],
 ) -> Result<(), &'static str> {
     let mut states = BTreeMap::<usize, State>::new();
     states.insert(
@@ -194,6 +196,29 @@ fn pass(
             continue;
         };
         let fresh = |state: &State, key: Key| state.get(&key).copied().unwrap_or(false);
+        if let Some(exit) = exits.iter().find(|exit| exit.to == site) {
+            for &value in &exit.frames {
+                for (ordinal, field) in frames
+                    .fields_at(value as usize)
+                    .ok_or("cold frame lost its private lanes")?
+                    .iter()
+                    .enumerate()
+                {
+                    if matches!(field.lane(), Lane::Managed { .. })
+                        && !fresh(&state, (value, Some(ordinal)))
+                    {
+                        return Err("cold continuation requires an older array version");
+                    }
+                }
+            }
+            if exit
+                .aliases
+                .iter()
+                .any(|&(value, _)| !fresh(&state, (value, None)))
+            {
+                return Err("cold continuation requires an older array version");
+            }
+        }
         match actions.iter().find(|(s, _)| *s == site).map(|(_, op)| op) {
             Some(Operation::Frame) => match frames.action(site).unwrap().operation() {
                 Frame::Pack { output } => {

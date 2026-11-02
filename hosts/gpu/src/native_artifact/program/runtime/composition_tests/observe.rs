@@ -19,6 +19,7 @@ pub(super) struct Counts {
     pub phase_write_fuel: Vec<u64>,
     pub first_change_backings: Vec<(usize, usize)>,
     pub phase_settlements: Vec<(u64, u64, u64, u64)>,
+    pub cold_private_arrays: Vec<usize>,
     pub poisoned_exit_words: usize,
     pub poisoned_private_homes: usize,
     pub checked_private_homes: usize,
@@ -138,6 +139,26 @@ unsafe extern "C" fn helper(
                     .phase_settlements
                     .push((mode, root, children, a))
             });
+            if mode == 6 {
+                let count = metadata.closed_tails.regions[id]
+                    .numeric
+                    .as_ref()
+                    .unwrap()
+                    .arrays
+                    .iter()
+                    .enumerate()
+                    .filter(|(array, _)| {
+                        // Observe only this current synchronous private owner.
+                        let ctx = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
+                        ctx.state
+                            .buffer_frames
+                            .private_array_mut(id, *array)
+                            .unwrap()
+                            .is_some()
+                    })
+                    .count();
+                COUNTS.with(|v| v.borrow_mut().cold_private_arrays.push(count));
+            }
         }
     }
     let first_change = if op == GlobalHelper::NumericWritePrepare.raw() {
@@ -210,7 +231,9 @@ unsafe extern "C" fn helper(
         if selected == 1 {
             let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
             let metadata = ctx.descriptor.metadata();
-            let id = metadata.closed_tails.initializers[site as usize].unwrap();
+            let id = metadata.closed_tails.initializers[site as usize]
+                .or(metadata.closed_tails.sites[site as usize])
+                .unwrap();
             if metadata.closed_tails.regions[id]
                 .numeric
                 .as_ref()

@@ -23,6 +23,8 @@ pub(in crate::native_artifact) struct FrameWords {
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) enum Operation {
+    /// The summary edge is descriptive only; execute the original child here.
+    Fallback,
     Frame,
     Aggregate,
     ArrayCopy,
@@ -47,6 +49,14 @@ pub(in crate::native_artifact) enum Operation {
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
+pub(in crate::native_artifact) struct Exit {
+    pub from: usize,
+    pub to: usize,
+    pub frames: Vec<u32>,
+    pub aliases: Vec<(u32, usize)>,
+}
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Plan {
     pub arrays: Vec<Array>,
     pub frames: Vec<FrameWords>,
@@ -56,6 +66,7 @@ pub(in crate::native_artifact) struct Plan {
     pub words: usize,
     pub result: ResultRecipe,
     pub phase: Option<super::numeric_phase::Schedule>,
+    pub exits: Vec<Exit>,
 }
 impl Plan {
     pub fn action(&self, site: usize) -> Option<&Operation> {

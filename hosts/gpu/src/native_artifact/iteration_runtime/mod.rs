@@ -160,7 +160,18 @@ impl<D: VisitPlan> ControlView<'_, '_, D> {
         group_work: Option<u64>,
         previous: Option<u32>,
     ) -> Result<(), NativeIterationExecutionError> {
-        self.visit_from_entry(raw, group_work, previous, self.descriptor.entry())
+        self.visit_from_entry(raw, group_work, previous, self.descriptor.entry(), false)
+    }
+
+    /// The Program consumer must first prove membership in the still-paid
+    /// remainder of one source traversal. Progress and edge checks stay exact.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn visit_prepaid_from(
+        &mut self,
+        raw: u64,
+        previous: Option<u32>,
+    ) -> Result<(), NativeIterationExecutionError> {
+        self.visit_from_entry(raw, None, previous, self.descriptor.entry(), true)
     }
 
     #[cfg(feature = "canonical-native-program-runtime")]
@@ -176,7 +187,7 @@ impl<D: VisitPlan> ControlView<'_, '_, D> {
         {
             return Err(invalid("outlined entry requires fresh worker control"));
         }
-        self.visit_from_entry(raw, None, None, entry)
+        self.visit_from_entry(raw, None, None, entry, false)
     }
 
     fn visit_from_entry(
@@ -185,6 +196,7 @@ impl<D: VisitPlan> ControlView<'_, '_, D> {
         group_work: Option<u64>,
         previous: Option<u32>,
         entry: u32,
+        prepaid: bool,
     ) -> Result<(), NativeIterationExecutionError> {
         let id = u32::try_from(raw).ok();
         let allowed = !self.state.completed
@@ -221,8 +233,12 @@ impl<D: VisitPlan> ControlView<'_, '_, D> {
             .ok_or_else(|| invalid("iteration visit outside descriptor"))?;
         // Charge before reading/changing per-loop metadata or inspecting any
         // completion progress words. The generated block is not entered yet.
-        let work = group_work.unwrap_or(site.work);
-        if work < site.work {
+        let work = if prepaid {
+            0
+        } else {
+            group_work.unwrap_or(site.work)
+        };
+        if !prepaid && work < site.work {
             return Err(invalid("group admission underfunds its entry"));
         }
         charge(&mut self.state.work, work, Some(site.origin))?;

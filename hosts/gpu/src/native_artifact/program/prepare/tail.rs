@@ -30,6 +30,23 @@ pub(in crate::native_artifact) struct Region {
     pub compute: u64,
     pub comparison: u64,
 }
+impl Region {
+    /// Ordinary children may use the phases' shared scratch bank. Pending
+    /// continuation identity therefore lives beside this region's fuel.
+    pub fn cold_resume(&self) -> Option<usize> {
+        self.numeric
+            .as_ref()
+            .is_some_and(|proof| !proof.exits.is_empty())
+            .then(|| self.words + 3)
+    }
+    fn state_words(&self) -> usize {
+        if self.map.is_some() {
+            5
+        } else {
+            3 + usize::from(self.cold_resume().is_some())
+        }
+    }
+}
 #[derive(Debug, Default, serde::Serialize)]
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Layout {
@@ -99,6 +116,22 @@ impl Layout {
             } else {
                 None
             };
+            let successors = |site: usize| {
+                numeric
+                    .as_ref()
+                    .and_then(|proof| proof.phase.as_ref())
+                    .and_then(|phase| phase.cold.iter().find(|child| child.initialize == site))
+                    .map_or_else(
+                        || {
+                            visits[site]
+                                .successors
+                                .into_iter()
+                                .flatten()
+                                .collect::<Vec<_>>()
+                        },
+                        |child| vec![child.exit as u32],
+                    )
+            };
             if (tail.parent().is_some() && map.is_none() && numeric.is_none())
                 || (map.is_none()
                     && numeric.is_none()
@@ -145,7 +178,7 @@ impl Layout {
                     closed = false;
                     break;
                 }
-                for next in visits[site as usize].successors.into_iter().flatten() {
+                for next in successors(site as usize) {
                     if next == tail.exit() && site != tail.finish() {
                         closed = false;
                     }
@@ -176,7 +209,7 @@ impl Layout {
             );
             let mut incoming = vec![0usize; plan.blocks().len()];
             for &site in &sites {
-                for next in visits[site as usize].successors.into_iter().flatten() {
+                for next in successors(site as usize) {
                     if next != tail.exit() && !backedges.contains(&(site, next)) {
                         incoming[next as usize] += 1;
                     }
@@ -190,7 +223,7 @@ impl Layout {
             let mut count = 0;
             while let Some(site) = ready.pop() {
                 count += 1;
-                for next in visits[site as usize].successors.into_iter().flatten() {
+                for next in successors(site as usize) {
                     if next == tail.exit() || backedges.contains(&(site, next)) {
                         continue;
                     }
@@ -280,7 +313,7 @@ impl Layout {
             layout.logical_words = layout
                 .logical_words
                 .checked_add(
-                    if map.is_some() { 5 } else { 3 }
+                    layout.regions.last().unwrap().state_words()
                         + layout
                             .regions
                             .last()
@@ -290,7 +323,7 @@ impl Layout {
                 .ok_or("Tail words overflow")?;
             layout.words = layout
                 .words
-                .checked_add(if map.is_some() { 5 } else { 3 })
+                .checked_add(layout.regions.last().unwrap().state_words())
                 .ok_or("Tail state words overflow")?;
         }
         // Distinct phases never overlap at runtime. Each includes its own
