@@ -7513,6 +7513,26 @@
         "verified_archives": 16,
         "verified_file_occurrences": 1316
       }
+    },
+    "104": {
+      "base": "a88acd5d87650e12cca6d28015334fa027989594",
+      "production": "636da5e074add0632f7154f14d8d39848721cd16",
+      "compiler_source": "636da5e074add0632f7154f14d8d39848721cd16",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "636da5e074add0632f7154f14d8d39848721cd16",
+          "asset": "r104-initial-90f9df15faa1.tar.gz",
+          "sha256": "90f9df15faa187c00c1198b64be26a6e95920f638591ab713e72f938693cee85",
+          "manifest_sha256": "b542ce6b4c0b852330d239653d1295829ef2fe1d34d6757cf7f54badce996ffe",
+          "bytes": 4446566,
+          "files": 64,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-initial-90f9df15faa1.tar.gz"
+        }
+      ],
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
