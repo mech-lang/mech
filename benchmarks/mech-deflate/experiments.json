@@ -10595,6 +10595,26 @@
           "profile-numbers.json": "51878c651ed64f8aeea5a28fb6c5647ec7c02236eef79f25e6ec3c0d5ec98c60",
           "validation.json": "119e686e4100a9e8af092e8840ff960d1c633de83205b910d3d1bf7250839473"
         }
+      },
+      "archive_verification": {
+        "archives": 19,
+        "sidecars": 19,
+        "all_server_digests_match": true,
+        "native_binaries_included": false
+      },
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "scorecard.json",
+          "diagnostics.json",
+          "profile-numbers.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 8,
+        "round": 118,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 305,
+        "verified_archives": 19,
+        "verified_file_occurrences": 999
       }
     }
   },
