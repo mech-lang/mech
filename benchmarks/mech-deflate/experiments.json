@@ -11718,6 +11718,17 @@
           "files": 50,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-first-complete-native-8114dfc7da24.tar.gz"
+        },
+        {
+          "event": "scaled-witness",
+          "source_revision": "71f8cb7bed8bc84bfcb75915b79b8c299401adc5",
+          "asset": "r123-scaled-witness-aea6b7302194.tar.gz",
+          "sha256": "aea6b73021948eac0415452d07e8b259068deed468ae8be824b7693c02512613",
+          "manifest_sha256": "a1d7163891be7c303fdd8026a038b0197416da08f5867e2877fa5cec4f69455d",
+          "bytes": 67191,
+          "files": 56,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-scaled-witness-aea6b7302194.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
