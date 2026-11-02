@@ -6,6 +6,129 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Hosted CI is not awaited under
 instruction; no green hosted-CI claim is made.
 
+## R115: scalar aggregate parent pieces held
+
+Base `e7644df6bb40969bfbe3b7e38856071fc4ef2090`; initial candidate
+`0bb239f3849df2bea16dc4929581d1ba83f61ca8`, corrected compiler
+**`2f0cc8b85e7dbcef53abfe16d76742872a7ceca2`**, test-only correction
+`c1b0265887`. The candidate uses the existing independently derived scalar
+aggregate word layout and shared checked SSA emitter inside acyclic parent
+pieces. IR144 rejects old IR143 identities; work policy 99, ABI38 and bytecode14
+remain. A fresh complete-compressor Object is emitted, not reused.
+
+| Cohort | Baseline / reference | Candidate / reference | Elapsed change |
+|---|---:|---:|---:|
+|8B, four prepared pairs|8.380415×|8.363944×|−0.196543%|
+|1KB, original|112.018587×|113.075641×|+0.943642%|
+|1KB, independent confirmation|113.620849×|114.912444×|+1.136759%|
+
+The 8B cohort retains 3,968 primary / 3,984 total observations; two of four
+pairs improve, with 47 improving and 17 adverse descriptive blocks. Each 1KB
+cohort has 128 observations per version; neither improves any of its eight
+blocks. The independent confirmation was declared after the contrary hardware
+cohort, before its own observations. All original observations remain. Each row
+uses its own common reference; historical multiples are not pooled or compounded.
+
+Actual 8B elapsed is 2.321375→2.3168125 ms, reference 0.277 ms. The 1KB times
+are 34.2776875→34.601146 ms, reference 0.306 ms; confirmation
+34.1998755→34.5886455 ms, reference 0.301 ms. No full-scale run is made.
+
+The separate 1KB hardware cohort is favorable: instructions
+552,040,295.5→545,942,708.5 (**−1.104555%**), cycles
+109,309,426→108,070,921.5 (**−1.133026%**), 32 observations per subject.
+These counts remain explicit contrary evidence to both paired elapsed cohorts.
+Their instrumented elapsed is not a primary speed claim. The fresh reference
+uses 1,690,807 instructions / 968,725 cycles in that cohort.
+
+Heap demand is exactly unchanged: 47,796 requests, 7,523,247,338 requested bytes,
+68 reallocations and 17,773,224B incremental live peak, eight measured calls per
+Mech subject. The separate 1KB reference has 84 requests / 9,012,988 requested
+bytes / 9,257,328B incremental peak. Requested capacity is neither initialized
+bytes copied nor live memory. No new 8B hardware/heap cohort is claimed.
+
+Generated native text grows **87,040B**, 14,604,696→14,691,736B; native entry
+stack grows **688B**, 135,728→136,416B. Whole linked text grows 86,868B to
+63,769,508B; the executable grows 98,064B. Fresh bounded ARM64 disassembly
+covers actual helper/entry/exit functions. The pinned reference is inspected
+again: its complete text is 195,456B, including platform and allocator; Mech's
+generated-text row excludes its host runtime. Static sizes are not executed
+instruction counts, and opaque reference symbols are not assigned source names.
+
+### What the census changed
+
+| Exact counts per 1KB computation | Baseline | Candidate |
+|---|---:|---:|
+|Native numeric entries/exits|31,916|34,988|
+|Runtime helper callbacks, excluding ordinary admissions|96,655|102,796|
+|Exported array aliases|39,527|39,527|
+|Exported managed frame fields|52,432|52,438|
+
+Two repeated diagnostic executions agree at each size and compiler revision.
+The extra 3,072 entries are dominated by two six-site pieces reached 1,024 and
+2,048 times, each with two aggregate actions, no numeric views, no managed
+sources and no frames. The selection formula counts source sites plus actions,
+although aggregate actions already emit native word instructions without an
+ordinary helper. The candidate adds helper boundaries without reducing array
+alias exports. These are measured mechanisms, not a causal attribution of every
+elapsed or cycle difference.
+
+The real source witness is `#OptimalPathMatches :Try(m,k,best,item)` at pinned
+source lines 700–714, including four-word tuple and enum packing; one original
+frontier reaches that pack 2,048 times at 1KB. The next bounded target is to fund
+already-native aggregate words through the existing cheap scalar-admission
+path and base selection on actual callback work. No additional ownership cache
+is proposed. The positive instruction result is preserved for that refinement.
+
+### Correctness, failures and disposition
+
+The new minimal regression fails on the retained parent because aggregate
+actions are absent from its native piece. The first implementation then exposes
+an introduced cursor failure: piece 25 executes 91→7, but an unchanged readiness
+word incorrectly skips ordinary finish 7 and attempts 91→92. Its exit now clears
+the readiness lane together with `scalar_path`; the test requires that exact
+partial ordinary-group suffix. The first error-class expectation incorrectly
+looked for `Bounds`; it now requires the maintained `IndexOutOfRange` and adds
+a simultaneous failed-assertion / zero-divisor control. Earlier lexical load
+failure wins. Both failed receipts remain.
+
+Corrected candidate execution passes runtime 357, work/memory 33, guarded native
+inventory/execution 66 and image 1, including explicit IR143 rejection. The new
+original/decoded and independently restored controls check current Boolean
+words across recursive visits, success→assertion/arithmetic/bounds failure→retry,
+unselected child calls, live aliases, unchanged prior publication and cleanup.
+The complete linked compressor matches exact raw bytes and independent inflation
+at 8B and1KB; capacity 13/1029, clear/rebind outside evaluation and final managed
+bytes/nodes 0 remain. Source, algorithm, tables, limits, real buffers, source
+allocation sites, allocator and timing boundaries are unchanged.
+
+Logical resource prices are not hardware instructions. The changed piece
+partition charges 42,410,605,541→42,381,503,754 at 8B and
+1,970,398,096,074→1,970,444,323,983 at 1KB under the existing policy 99 formula.
+The restored default retains the baseline charges. No component golden or
+allowance is changed. Candidate workflow 132, architecture/type/memory 15,
+runtime-only cfg and formatting pass. Fresh component 236 / connected 8 / path 1,
+linked 40 mini-program, scalar 12 / frame 8 performance, Core/no_std/all-features
+and minimal-graph qualifications are skipped for this held trial; no full
+retained-candidate or hosted-CI qualification is claimed. Fresh serial profiles
+cover 130 complete 1KB calls per subject, outside primary timing.
+
+Other preserved diagnostic failures: a reader requested sites beyond a 94-block
+fixture; its already-created descriptor was reread at valid sites without new
+execution. An initial hardware driver could not inspect host activity; it failed
+before any observation and succeeds with authorized access. A stale initial
+diagnostic-only scope sentence is corrected by an explicit addendum; actual
+primary specs, artifact identities, version fields and numerical cohorts were
+correct. No hardware resource denial or unresolved retained compiler failure
+remains in executed scope.
+
+**Held, not default.** Experiment branch
+`codex/scalar-aggregate-pieces-r115-experiment` preserves checkpoint
+`7ddc7acd1b8cf812f38bf9da682e69d7f5f206f9`. Restoration
+**`94c7447f7fb5c30073340388b8cf865a0d1a888d`** returns all nine compiler,
+runtime, test and CI files exactly to base R114. Default versions remain
+**143/99/38/14**; its prior qualifications remain applicable. This update adds
+evidence and status relative to that base.
+
 ## R114: inline private dispatch at the callback boundary
 
 Base `a105e9a76978ff7bbb4a8dd56968a3c7b8e457b8`; retained runtime change
