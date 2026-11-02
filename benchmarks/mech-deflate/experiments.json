@@ -11844,6 +11844,17 @@
           "files": 74,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-boundary-census-before-18cb6084ab3a.tar.gz"
+        },
+        {
+          "event": "boundary-census-after",
+          "source_revision": "71f8cb7bed8bc84bfcb75915b79b8c299401adc5",
+          "asset": "r123-boundary-census-after-5b762cbb6edc.tar.gz",
+          "sha256": "5b762cbb6edcfdcea5d9d46951eba80780a31b2b05657f624b8ca9c4f965e440",
+          "manifest_sha256": "dd7cdfb20dfbc1b1a48829eaa14e1d4e57636aad28a5b641af44482e20db721d",
+          "bytes": 290500,
+          "files": 74,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-boundary-census-after-5b762cbb6edc.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
