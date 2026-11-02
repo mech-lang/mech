@@ -7623,6 +7623,17 @@
           "files": 82,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-counters-656cab4d468a.tar.gz"
+        },
+        {
+          "event": "isolated-profile",
+          "source_revision": "636da5e074add0632f7154f14d8d39848721cd16",
+          "asset": "r104-isolated-profile-80934e124f08.tar.gz",
+          "sha256": "80934e124f089656059c5d4be03ecab9136c6284aca3a74a90cfcc422d8d01dd",
+          "manifest_sha256": "9271442fd35d80e34e2826d773265327ac1610b2094c534c2ab5d5e3b8ecfa9a",
+          "bytes": 315123,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-isolated-profile-80934e124f08.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
