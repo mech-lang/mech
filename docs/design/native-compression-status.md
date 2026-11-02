@@ -6,6 +6,91 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Hosted CI is not awaited under
 instruction; no green hosted-CI claim is made.
 
+## R108: reuse current owner references within one numeric entry
+
+Base `ac80ae5e7766c0aef16978f5ba39b90aafd198c2`; compiler/runtime change
+**`705c5acdc4fc92be5beeacf28d02721ea4e39ddf`**. Only GPU runtime code changes;
+all project and external dependencies stay frozen from R105. GPU release build
+22.597s; Object emission59.816s. These are descriptive setup durations, not matched
+compiler-time improvement claims. The R106 ownership candidate remains separate.
+
+A numeric entry first resolves and validates every current source. It now keeps
+eight borrowed owner references for the rest of that same entry. Higher source
+indices keep the existing lookup path; this is no program-size/eligibility limit.
+There are no owner clones, heap allocations, persistent caches or new permissions.
+Current schema, footprint, typed-view, account, funding, failure and publication
+checks retain their order. Argument-word writes touch the separate admitted bank;
+shared owner borrows cannot mutate owner tables, and no bank reference escapes.
+No source, algorithm, table, capacity, allocator, ABI or pricing change occurs.
+
+External diagnostics find all938/31,916 entries still selected on8B/1KB. Source
+lookups fall5,540→2,877 and211,691→112,793 respectively:2,663/98,898 avoided.
+Only38 repeats remain in each witness, from the ordinary larger-index fallback.
+Both diagnostic repetitions agree. Logical work stays42,410,605,541 /1,970,398,096,074;
+diagnostic timings and allocations are excluded from performance claims.
+
+| Input | Fresh baseline / reference | R108 / reference | Elapsed change |
+|---|---:|---:|---:|
+|8B|8.098347×|7.993464×|−1.295113%|
+|1KB|113.933211×|111.848379×|−1.829872%|
+
+8B elapsed2.3485205→2.3181045ms, common fresh reference0.290ms;3,968 primary /
+3,984 total observations, all four pairs improve,58 descriptive blocks improve
+and6 worsen. The separate1KB cohort is34.8635625→34.225604ms, reference0.306ms,
+128 observations/version; all eight alternating16-call blocks improve. All adverse
+observations remain. Each row uses its own common reference; historical ratios
+are not combined. The1KB input is the retained deterministic xorshift prefix;
+all capacities, exact raw output, independent inflate, input aliases, clear/rebind
+outside evaluate_into and final managed bytes/nodes0 pass. No full-scale run.
+
+| Separate counter cohort | Baseline | R108 | Change |
+|---|---:|---:|---:|
+|8B instructions|27,013,922.5|26,861,966.5|−0.562510%|
+|8B cycles|7,417,961|7,328,817.5|−1.201725%|
+|1KB instructions|558,180,681|552,668,745.5|−0.987482%|
+|1KB cycles|111,651,054.5|109,037,226|−2.341069%|
+
+Heap demand is exactly unchanged:8B4,257 requests/95,876,945 requested bytes/
+17,782,424B incremental peak;1KB47,796 requests/7,523,247,338 requested bytes/
+17,773,224B incremental peak. Reallocations68 in both cases, included in requests.
+These are separate hardware/heap cohorts, not primary timings or copying totals.
+
+Object/descriptor/metadata stay byte-identical. Generated text14,604,696B and
+native entry stack135,728B remain; whole linked text shrinks128B. Actual bounded
+ARM64 helper inspection finds a480→560B host frame (**+80B**) and4,060→3,868B
+symbol span. Eight borrowed references are local temporary storage, not a heap
+or prepared-owner bank. No fresh full prepared-heap census is claimed.
+Versions143/99/38/14 and every component golden/allowance remain unchanged.
+
+Passing selections: runtime356; work/memory33; guarded native CI65; image1;
+unchanged components236/connected8/path1; linked16+12+12; scalar12 (maximum
+1.003199 under unchanged1.05 gate, pure counts/bytes equal, loop allocation slope0);
+frame8 (no request/byte/work increase); workflow132; architecture/type/memory15;
+runtime-only feature cfg and full formatting. Original/decoded/restored images,
+fresh recursive/current arguments, live aliases, finite funding, rejection,
+unchanged prior publication and retry are covered by these maintained controls.
+No fresh Core/no_std/all-features/minimal dependency graph is claimed; the existing
+expensive knucleotide-body exclusion remains. Hosted CI is not awaited.
+
+Fresh serial profiles cover695 calls/subject at8B and130 at1KB. Current sample
+weights1,269/1,319 are not retired instructions. At1KB, generated entry has54/1,319
+exclusive weights; other callbacks1,096, tail cleanup109 and private-frame49.
+Callbacks include actual algorithm work. Numeric entry, visit/dispatch, debit/TLS
+and exit remain prominent. Next count repeated frame geometry/entry-exit work;
+do not infer function instruction totals by multiplying sample shares.
+
+One diagnostic disassembly reader incorrectly assumed every byte before the next
+symbol decoded as an instruction. Eight padding/non-mnemonic bytes violate that
+precondition. The repaired reader bounds addresses and reports that gap; original
+failure is retained. No compiler/runtime correctness failure remains in executed
+scope. The source-borrow change is retained; PR stays draft for CI/review.
+
+Sixteen diagnostic archives and sidecars (11,383,144 archive bytes, no native
+binaries) have verified server digests. A fresh independent maintained replay
+verifies1,272 file occurrences/473 paths and five preserved multi-version paths;
+all four indexed reports reproduce byte-identically without compilation or
+compression. Exact commands, exclusions, raw pairs and report hashes are indexed.
+
 ## R107: input scaling and CPU/memory profile; default compiler unchanged
 
 The default implementation stays R105 at `8f6e6a8de9e4928a88f1341dd0538504bd2336e6`.
