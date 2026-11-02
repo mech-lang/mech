@@ -9899,6 +9899,17 @@
           "files": 57,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-aggregate-funding-round116-20261102/archives/r116-scale-measure-1024-9c575f7c7d80.tar.gz"
+        },
+        {
+          "event": "counters",
+          "source_revision": "509c0d8e05a234020372b43832d7785f255c1b59",
+          "asset": "r116-counters-d647f3060d2c.tar.gz",
+          "sha256": "d647f3060d2cf34800344851741336d1c28028d9f55af3224234a4c4ddc263a8",
+          "manifest_sha256": "3f3352e4972d9a74a5625182158aeae01ca145cb085a83000989e13a27a58d4f",
+          "bytes": 265941,
+          "files": 82,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-aggregate-funding-round116-20261102/archives/r116-counters-d647f3060d2c.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
