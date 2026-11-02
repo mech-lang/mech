@@ -8704,6 +8704,17 @@
           "files": 59,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-frame-geometry-round111-20261102/archives/r111-scale-measure-1024-6e717ae59581.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "727a955105fe43ee99d120560157bbdf985dacd2",
+          "asset": "r111-closure-71f1957bebf7.tar.gz",
+          "sha256": "71f1957bebf7ac77d086b083d841e2afc10418eec795c96dcf5cb3ab7af8c32f",
+          "manifest_sha256": "5db533155043acc1acc2173dcf16744d486cb570c5057ad0de261b49e5c1fe42",
+          "bytes": 4467463,
+          "files": 104,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-frame-geometry-round111-20261102/archives/r111-closure-71f1957bebf7.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
