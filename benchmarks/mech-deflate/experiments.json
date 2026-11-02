@@ -7585,6 +7585,33 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-primary-group3-a300c6223828.tar.gz"
+        },
+        {
+          "event": "primary-summary",
+          "source_revision": "636da5e074add0632f7154f14d8d39848721cd16",
+          "asset": "r104-primary-summary-9417acac1c87.tar.gz",
+          "sha256": "9417acac1c8743250e57c085e518bc35473c3d0a1e6b47946eb078d7b2de6c26",
+          "manifest_sha256": "439e87e73b1018551d8cdc595ce85fb5f4fa979f389ddf9dec003faadfbea58d",
+          "bytes": 120598,
+          "files": 45,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-primary-summary-9417acac1c87.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.000289,
+            "medians": {
+              "after": 0.002355771,
+              "before": 0.0023522085000000003
+            },
+            "multiples_of_reference": {
+              "after": 8.151456747404845,
+              "before": 8.139129757785469
+            },
+            "after_over_before": 1.001514534106989,
+            "improving_groups": 2,
+            "improving_blocks": 29,
+            "adverse_blocks": 35
+          }
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
