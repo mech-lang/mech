@@ -9565,8 +9565,8 @@
           "manifest_sha256": "d1b8f51d93b349754819132c9858b44b0778887f2c999760301edab4c7d7a2d3",
           "bytes": 3861487,
           "files": 59,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-boundary-census-77a0e0d4366b.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r115-boundary-census-77a0e0d4366b.tar.gz"
         },
         {
           "event": "initial",
@@ -9576,8 +9576,8 @@
           "manifest_sha256": "b031f0bf8b9393fc027cdf3ce63ae3551c5f5201d96a02655f3f99f83ffde37b",
           "bytes": 4431102,
           "files": 79,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-initial-7dac706a4894.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r115-initial-7dac706a4894.tar.gz"
         },
         {
           "event": "primary-reference",
@@ -9587,8 +9587,8 @@
           "manifest_sha256": "6c71529a3ac64f00a6f142dd19493e04b4ea25db9abfc257a2bcfc23e03e67f1",
           "bytes": 171593,
           "files": 47,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-primary-reference-2f8cc74fdb16.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r115-primary-reference-2f8cc74fdb16.tar.gz"
         },
         {
           "event": "primary-group0",
@@ -9598,8 +9598,8 @@
           "manifest_sha256": "164d06d447f609f30ad3be2f0e8466732cc64d7ce70e6b9e680de7c78083d258",
           "bytes": 116174,
           "files": 49,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-primary-group0-62352f88f8d7.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r115-primary-group0-62352f88f8d7.tar.gz"
         },
         {
           "event": "primary-group1",
@@ -9609,8 +9609,8 @@
           "manifest_sha256": "2014e4c054c03130cd8a17c4d9550623b19c4e6307675d8c187ecb0e96fc69d5",
           "bytes": 116273,
           "files": 49,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-primary-group1-677ad0d5e622.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r115-primary-group1-677ad0d5e622.tar.gz"
         },
         {
           "event": "primary-group2",
@@ -9620,8 +9620,8 @@
           "manifest_sha256": "c73f7573843caba6f21042ee66a5205945f9a5c3b4539c22cb0eb4660c4693e4",
           "bytes": 116517,
           "files": 49,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-primary-group2-49f7fe613696.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r115-primary-group2-49f7fe613696.tar.gz"
         },
         {
           "event": "primary-group3",
@@ -9631,8 +9631,8 @@
           "manifest_sha256": "f6bbce2bacdf8474eed647b7b8592d8643f7536463d091e7d45b457c3411432b",
           "bytes": 116530,
           "files": 49,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-primary-group3-4af114bf1946.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r115-primary-group3-4af114bf1946.tar.gz"
         },
         {
           "event": "primary-summary",
@@ -9642,8 +9642,7 @@
           "manifest_sha256": "d68f5c10f92bbedd9ba88204e8354064a7e193713da8536ea01aa704e570f8ae",
           "bytes": 87927,
           "files": 46,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-primary-summary-563007ea570e.tar.gz",
+          "publication": "published; server SHA-256 verified",
           "timing": {
             "primary_observations": 3968,
             "reference_seconds": 0.000277,
@@ -9659,7 +9658,8 @@
             "improving_groups": 2,
             "improving_blocks": 47,
             "adverse_blocks": 17
-          }
+          },
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r115-primary-summary-563007ea570e.tar.gz"
         },
         {
           "event": "scale-measure-1024",
@@ -9669,8 +9669,8 @@
           "manifest_sha256": "20d471772ebcbb885354e77a22a979cb419406c7f4a71d919e470b50470532d3",
           "bytes": 105980,
           "files": 60,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-scale-measure-1024-0f29648ece24.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r115-scale-measure-1024-0f29648ece24.tar.gz"
         },
         {
           "event": "scale-counters",
@@ -9680,8 +9680,8 @@
           "manifest_sha256": "35d7ccf2b628fd04392f210adeedd5150e51f2847e0761d74337e34761f3e845",
           "bytes": 118457,
           "files": 83,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-scale-counters-064f7fc93a0c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r115-scale-counters-064f7fc93a0c.tar.gz"
         },
         {
           "event": "boundary-census-after",
@@ -9691,8 +9691,8 @@
           "manifest_sha256": "133358a36a43cedc599e2707358f1786c6c4d7832e046048f4e517024f665ca1",
           "bytes": 211750,
           "files": 66,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-boundary-census-after-d9cd21a8dc98.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r115-boundary-census-after-d9cd21a8dc98.tar.gz"
         },
         {
           "event": "isolated-profile-scale",
@@ -9702,8 +9702,8 @@
           "manifest_sha256": "639142efcba1d150cc0bd54eb3a14af04d9cfc150f883b8310de69b1cd85172b",
           "bytes": 348967,
           "files": 62,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-isolated-profile-scale-f88659cfe7bd.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r115-isolated-profile-scale-f88659cfe7bd.tar.gz"
         },
         {
           "event": "scale-confirm-1024",
@@ -9713,8 +9713,8 @@
           "manifest_sha256": "400ac38ed3f572f43b99dddc6dc2e3fac1494e9460ede30f7f16ab0575ef0e81",
           "bytes": 111678,
           "files": 67,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-scale-confirm-1024-d648c0952f03.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r115-scale-confirm-1024-d648c0952f03.tar.gz"
         },
         {
           "event": "closure",
@@ -9724,8 +9724,8 @@
           "manifest_sha256": "d9d2bceb8f93fa509c43acb6911a8f49087c4cb4364b642d3fc1ae098e192efd",
           "bytes": 9431800,
           "files": 262,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-closure-00ed5feede6d.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r115-closure-00ed5feede6d.tar.gz"
         },
         {
           "event": "analysis-final",
@@ -9735,13 +9735,13 @@
           "manifest_sha256": "75c3630f30aea446831257ceca471071f047303fed4b29693c406720367ca066",
           "bytes": 131300,
           "files": 60,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-analysis-final-c51ceff7c9ea.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r115-analysis-final-c51ceff7c9ea.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "test_source": "c1b02658878bedf8b4b2bbb70d28d95c0ec97a26",
       "ci_source": "bb03507e7d",
       "retained": false,
