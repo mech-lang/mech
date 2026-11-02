@@ -94,6 +94,32 @@ pub(in crate::native_artifact::program::runtime) unsafe extern "C" fn helper(
             }
             GlobalHelper::StructuralObservation.raw()
         }
+        GlobalHelper::AdmitNumericSegmentBegin => {
+            let status = admit_current(context, site);
+            if status != STATUS_OK {
+                return status;
+            }
+            // The original native capacity guard fails after admission but
+            // before helper-pointer validation or any numeric state change.
+            if first == 0 {
+                return STATUS_OK;
+            }
+            let scalar_ready = context.scalar_admission_word(site).unwrap_or(0);
+            let outcome = if result.is_null() || result != context.result {
+                Err(invalid("helper result pointer mismatch"))
+            } else if first != 1 {
+                Err(invalid("numeric admission capacity word is not Boolean"))
+            } else {
+                context
+                    .helper(
+                        site,
+                        GlobalHelper::NumericSegmentBegin.raw(),
+                        [0, second, third],
+                    )
+                    .map(|word| word.map(|selected| selected | (scalar_ready << 1)))
+            };
+            return finish_callback(context, outcome);
+        }
         _ => operation,
     };
     let outcome = if result.is_null() || result != context.result {

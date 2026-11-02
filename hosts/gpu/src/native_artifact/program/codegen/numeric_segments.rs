@@ -21,6 +21,7 @@ use std::collections::{BTreeMap, BTreeSet};
 pub(in crate::native_artifact) struct Report {
     pub iteration: u32,
     pub entry: usize,
+    pub fused_admission: bool,
     pub source_sites: Vec<u32>,
     pub frontiers: Vec<(u32, u32)>,
     pub register_words: usize,
@@ -67,6 +68,16 @@ fn end(
     Ok(stores)
 }
 
+pub(in crate::native_artifact) fn can_fuse_admission(
+    controls: &CompilationControls,
+    code: CodePlan<'_>,
+    site: usize,
+) -> bool {
+    controls.enabled(OptimizationPass::ScalarLoops)
+        && matches!(code, CodePlan::Program(program)
+            if program.metadata().compositions.entry(site).is_some())
+}
+
 pub(in crate::native_artifact) fn emit_entry(
     controls: &CompilationControls,
     b: &mut FunctionBuilder<'_>,
@@ -75,6 +86,7 @@ pub(in crate::native_artifact) fn emit_entry(
     code: CodePlan<'_>,
     site: usize,
     hooks: &Hooks,
+    fused_admission: bool,
     ordinary_blocks: &[Option<Block>],
     error: Block,
     reports: &mut CodegenReport,
@@ -108,15 +120,37 @@ pub(in crate::native_artifact) fn emit_entry(
     // The source visit has just published whether its ordinary scalar prefix
     // was funded. NumericSegmentBegin uses the same result word for selection;
     // preserve the prefix decision if its larger piece declines.
-    let scalar_ready = metadata
+    let scalar_group = metadata
         .map_admission
         .group(site)
-        .filter(|group| group.owner.is_none() && group.start() as usize == site)
-        .map(|_| b.ins().load(types::I64, MemFlags::new(), hooks.result, 0));
-    hooks.require_argument_words(b, proof.words, error);
+        .filter(|group| group.owner.is_none() && group.start() as usize == site);
     let zero = b.ins().iconst(types::I64, 0);
-    hooks.call(b, site, GlobalHelper::NumericSegmentBegin, [zero; 3], error);
-    let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+    let (ready, scalar_ready) = if fused_admission {
+        // This comparison cannot fail or charge. Admission still precedes its
+        // observable guard; a false word asks the callback to stop after that
+        // same admission, before checking the helper pointer or entering.
+        let enough = hooks.argument_words_available(b, proof.words);
+        let flag = b.ins().uextend(types::I64, enough);
+        hooks.call(
+            b,
+            site,
+            GlobalHelper::AdmitNumericSegmentBegin,
+            [flag, zero, zero],
+            error,
+        );
+        crate::native_artifact::compiler::guard(b, enough, error, STATUS_ABI);
+        let decisions = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+        let selected = b.ins().band_imm(decisions, 1);
+        let scalar_ready = scalar_group.map(|_| b.ins().ushr_imm(decisions, 1));
+        (selected, scalar_ready)
+    } else {
+        let scalar_ready =
+            scalar_group.map(|_| b.ins().load(types::I64, MemFlags::new(), hooks.result, 0));
+        hooks.require_argument_words(b, proof.words, error);
+        hooks.call(b, site, GlobalHelper::NumericSegmentBegin, [zero; 3], error);
+        let selected = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+        (selected, scalar_ready)
+    };
     let selected = b.create_block();
     let ordinary = b.create_block();
     b.ins().brif(ready, selected, &[], ordinary, &[]);
@@ -381,6 +415,7 @@ pub(in crate::native_artifact) fn emit_entry(
     reports.numeric_segments.push(Report {
         iteration: parent.iteration,
         entry: site,
+        fused_admission,
         source_sites: segment.sites.clone(),
         frontiers: segment.exits.clone(),
         register_words,
