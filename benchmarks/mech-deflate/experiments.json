@@ -8242,6 +8242,17 @@
           "files": 99,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round108-20261102/archives/r107-scalar-controls-7f1984657db4.tar.gz"
+        },
+        {
+          "event": "frame-allocation",
+          "source_revision": "705c5acdc4fc92be5beeacf28d02721ea4e39ddf",
+          "asset": "r107-frame-allocation-f6a5091be43f.tar.gz",
+          "sha256": "f6a5091be43fc17e4a4a051053a200cbb580f5fa1f7dadc2847d97695f4490d2",
+          "manifest_sha256": "08fc7b930add968b865b20f6b5ff8ed5f079983ae17c98bef5d75ce7ac158c63",
+          "bytes": 74070,
+          "files": 77,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round108-20261102/archives/r107-frame-allocation-f6a5091be43f.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
