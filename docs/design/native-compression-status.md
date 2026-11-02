@@ -6,7 +6,73 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Publication CI is cancelled by
 instruction; no green hosted-CI claim is made.
 
-## R102: inline paired budget debit; retain measured gain
+## R103: forward immutable shape owners; allocation improvement only
+
+Production `a43888583dc37806a1c9e39b4b98d6dece3dac52`, measured compiler
+`6b064cdeb678f2e7c89e5c2a39143e5ac2f36e79`, published parent
+`9bc0fae10a806eeb5e0a8f980f3ce6d6df11ad72`. The Core unsigned reconstruction
+constructor retains the existing immutable shape owner without retaining source
+payload, root, registration or mutation permission. Both aliased and consuming
+updates use ordinary numeric validation and create fresh frozen data identities.
+Original conservative admission, checks, work and transfer order remain.
+
+Fresh matched eight-byte elapsed **8.205418×→8.233392× Roc's time**:
+2.3467495→2.354750ms, reference 0.286ms, **+0.340918%**. One of four pairs
+improves; 23 descriptive blocks improve and 41 worsen. All 3,968 primary/3,984
+total observations remain. **No elapsed improvement is established.** Historical
+reference ratios and separate counter cohorts must not be combined into a gain.
+
+| Metric | Fresh retained R102 | R103 |
+|---|---:|---:|
+| Allocation requests |5,077|4,405 (−672; −13.236163%)|
+| Requested bytes |95,895,278|95,881,838 (−13,440B)|
+| Incremental live heap peak |17,782,744|17,782,424 (−320B)|
+| Reallocations |162|unchanged|
+| Instructions, separate cohort |27,004,221|27,045,073 (+40,852; +0.151280%)|
+| Cycles, same hardware cohort |7,868,378.5|7,401,114 (−5.938511%)|
+| Whole linked text |63,675,184B|63,680,080B (+4,896B)|
+
+Retain as an allocation/representation improvement with adverse elapsed and
+instructions explicit. Fresh complete traces reconcile all 5,077/4,405 events
+with bytes and reallocations. The whole size/kind histogram changes only by
+336 eight-byte allocations and 336 32-byte shape owners; both disappear from
+unsigned replacement ancestry. Compression payload copy branches stay unchanged;
+13,440 requested bytes are metadata, not saved payload copying. Source implies
+2,688 parameter bytes no longer cloned; no separate memcpy-volume cohort is claimed.
+
+The complete Object, descriptor and metadata remain byte-identical, generated
+text 14,604,696B and entry stack 135,728B unchanged. No prepared fields/cache are
+added; a separate exact prepared-heap census is not claimed. Logical work
+42,410,605,541 and IR/work/ABI/bytecode 143/99/38/14 stay fixed. Source, algorithm,
+tables, capacities, allocator, aliases, cap13 output clear/rebind and evaluate_into
+boundary stay pinned. Exact bytes, independent inflate and final managed
+bytes/nodes zero pass. Public output backing still changes.
+
+Current actual Core selections pass 48 tests: numeric8 (three new), unsigned
+ownership14, string ownership7, identity3, tokens5 and admission11. Fresh locked,
+offline no_std Core check passes with warnings-as-errors. Twelve dependent crates
+rebuild coherently using unchanged selected features and frozen external dependencies.
+Runtime356, work/memory33, native CI65, image1, unchanged components236/connected8/
+path1, linked40, scalar12 (unchanged1.05 gate, max1.024748; allocation equality/
+zero loop slope), frame8, workflow132, architecture15 and runtime-only GPU cfg pass.
+Fresh separate profiles cover695 complete calls per subject.
+
+One introduced test-only audit failure is repaired in `750adeea5`: raw-pointer
+casts are replaced by Arc identity comparison. Clean published parent audit
+passes; corrected actual Core48 and all15 architecture checks pass. Runtime
+production files and measured binaries are unchanged, so measurements are retained.
+Original failures/report precondition, repair, parent proof and reruns stay archived.
+CI inventory5→8 is a separate commit, matching the three new tests; the old5 guard
+is an explicit negative control. No allowlist, warning or allowance is weakened.
+
+The existing giant knucleotide-body exclusion remains. No fresh all-features
+dependency graph, full no_std suite, larger-input benchmark or green hosted CI is
+claimed. Next: prepared schema-header reuse (148-request candidate, conditional
+4,257 remaining); then classify registration reuse eligibility. Immutable contract
+sharing/private-owner continuity and the independent frame/zero-argument/source
+instruction track remain later work.
+
+## Previous retained checkpoint: R102 — inline paired budget debit; retain measured gain
 
 Compiler **`fa1ffe75e78c7ace538d7d14aa5f3ebc74783166`**, previous published head
 `c489e5fc30a4e9cea549cc1de66e2c94ab2f9eb9`, stack base
