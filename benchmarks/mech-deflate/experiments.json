@@ -11784,6 +11784,33 @@
           "files": 57,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-primary-group3-2f15bee60baa.tar.gz"
+        },
+        {
+          "event": "primary-summary",
+          "source_revision": "71f8cb7bed8bc84bfcb75915b79b8c299401adc5",
+          "asset": "r123-primary-summary-d299f2871931.tar.gz",
+          "sha256": "d299f2871931484e66adb53dacfcf13cee95e53209653217be6af3b063335dd0",
+          "manifest_sha256": "6866c0169d2747b94d7c7e3a1b5c14128783e1e33268c4666e53d0dc033f9bf2",
+          "bytes": 68294,
+          "files": 54,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-primary-summary-d299f2871931.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.00029,
+            "medians": {
+              "after": 0.0021850625,
+              "before": 0.002179667
+            },
+            "multiples_of_reference": {
+              "after": 7.534698275862069,
+              "before": 7.516093103448276
+            },
+            "after_over_before": 1.0024753781196851,
+            "improving_groups": 2,
+            "improving_blocks": 27,
+            "adverse_blocks": 37
+          }
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
