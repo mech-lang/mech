@@ -8968,6 +8968,17 @@
           "files": 74,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-scale-counters-a8b04101073c.tar.gz"
+        },
+        {
+          "event": "isolated-profile-scale",
+          "source_revision": "c85dfe8bcea3bc39a626a5287f2fa1ee5a22ad5c",
+          "asset": "r112-isolated-profile-scale-fbd26d9c51c7.tar.gz",
+          "sha256": "fbd26d9c51c767c826537586dea7d56dd0c8091af7a1ac9cf078bb0225b74217",
+          "manifest_sha256": "306e004a688a47542f3512d12565073bf246643d3c930cb64da36b6e33cec8c8",
+          "bytes": 324267,
+          "files": 53,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-isolated-profile-scale-fbd26d9c51c7.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
