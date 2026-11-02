@@ -6,6 +6,7 @@ use crate::native_artifact::iteration_abi::{NativeIterationVisit, Progress};
 use mech_engine::native_artifact::{
     NativeIterationAction as Action, NativeIterationTerminator as Terminator, NativeMapOwnerWords,
     NativeMatchAction as Scalar, NativeMatchTerminator as Term, NativeProgramArtifactPlan,
+    NativeScalarAggregates,
 };
 
 #[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -52,6 +53,7 @@ impl Layout {
 
     pub fn derive(
         plan: &NativeProgramArtifactPlan,
+        aggregates: &NativeScalarAggregates,
         owners: Option<&NativeMapOwnerWords>,
         visits: &[NativeIterationVisit],
         closed: &super::tail::Layout,
@@ -87,10 +89,16 @@ impl Layout {
                         .span_site(site)
                         .is_some_and(|id| owners.spans()[id].region() == owner)
             });
-            let scalar = matches!(
-                block.action(),
-                Action::Scalar(Scalar::None | Scalar::Primitive { .. })
-            ) || matches!(block.action(), Action::Scalar(Scalar::Copy { output, .. })
+            // These private scalar-only aggregates already use the shared
+            // native word emitter, with its original tag guards. They need
+            // current scalar funding, not a managed-owner entry. Preserve
+            // the separate owned-map selection rules below.
+            let scalar = (owner.is_none() && aggregates.action(site).is_some())
+                || matches!(
+                    block.action(),
+                    Action::Scalar(Scalar::None | Scalar::Primitive { .. })
+                )
+                || matches!(block.action(), Action::Scalar(Scalar::Copy { output, .. })
                     if plan.values()[output.get() as usize].scalar_kind().is_some());
             let native = scalar
                 || owner.is_some_and(|owner| owners.unwrap().action_region(site) == Some(owner));
