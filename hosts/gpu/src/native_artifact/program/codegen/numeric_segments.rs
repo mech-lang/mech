@@ -1,7 +1,7 @@
 //! SSA native parent pieces around the original managed/child boundaries.
 use super::{hooks::Hooks, numeric_words};
 use crate::native_artifact::codegen::{
-    common::{aggregates, ssa_words::Words, terminators, word_access::SsaWords},
+    common::{ssa_words::Words, terminators},
     control::{CodegenReport, plan::CodePlan},
     options::{CompilationControls, OptimizationPass},
 };
@@ -180,20 +180,6 @@ pub(in crate::native_artifact) fn emit_entry(
             .find(|(s, _)| *s == source)
             .map(|(_, a)| a)
         {
-            Some(Operation::Aggregate) => {
-                let layout = &metadata.scalar_aggregates;
-                let action = layout
-                    .action(source)
-                    .ok_or_else(|| backend("parent aggregate lost its shared action"))?;
-                aggregates::emit(
-                    b,
-                    &mut SsaWords(&words),
-                    layout,
-                    action,
-                    failure,
-                    &mut aggregates::CheckedGuards,
-                )?;
-            }
             Some(Operation::Frame) => {
                 numeric_words::frame_words(b, &words, shadow, code, source, &frames.frames)?
             }
