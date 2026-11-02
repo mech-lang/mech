@@ -11457,6 +11457,28 @@
         "verified_archives": 17,
         "verified_file_occurrences": 1416
       }
+    },
+    "122": {
+      "base": "7eaebbd7e6bd8deb572af5aafccddb0b0d0e22ad",
+      "production": "da58ad43e12a7c9e078631514f1c06d874d4c384",
+      "compiler_source": "da58ad43e12a7c9e078631514f1c06d874d4c384",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "first-complete-native",
+          "source_revision": "da58ad43e12a7c9e078631514f1c06d874d4c384",
+          "asset": "r122-first-complete-native-ea2200244327.tar.gz",
+          "sha256": "ea2200244327f7726885c9d60dc092fcb131171c900025bf3e728be5c294a978",
+          "manifest_sha256": "4455f05c959958cc7467d3c8248fd666f89747f96d3e87670029e350b758654c",
+          "bytes": 50672,
+          "files": 41,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-call-bank-round122-20261102/archives/r122-first-complete-native-ea2200244327.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
