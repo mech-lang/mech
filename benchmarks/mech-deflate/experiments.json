@@ -10825,6 +10825,17 @@
           "files": 69,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-reference-profile-4f9f073d68f2.tar.gz"
+        },
+        {
+          "event": "rich-counters",
+          "source_revision": "99fef709f1d984e32ad22e5c8929e8dfd0ff0984",
+          "asset": "r119-rich-counters-a966d5632c60.tar.gz",
+          "sha256": "a966d5632c60532e7c18311d63c2df8bde8f55ddae05ab774d526c76c90f890b",
+          "manifest_sha256": "af13a89e8aa51ba39d0c9efb36d49e8f6a9bc2d6ae47a3c4229d978ca5fddad9",
+          "bytes": 82142,
+          "files": 76,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-rich-counters-a966d5632c60.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
