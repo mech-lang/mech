@@ -10473,6 +10473,17 @@
           "files": 47,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-zero-trip-round118-20261102/archives/r118-isolated-profile-scale-00b19bad572e.tar.gz"
+        },
+        {
+          "event": "match-rich-measure-1024",
+          "source_revision": "509c0d8e05a234020372b43832d7785f255c1b59",
+          "asset": "r118-match-rich-measure-1024-2e1580fb36c5.tar.gz",
+          "sha256": "2e1580fb36c5618efbeec1697c44a34d311e50b637499d072f2013a5f6d2dce8",
+          "manifest_sha256": "bb689b13aa73467487c3de4ae9cbea88087d2725ff17f5f6bef7d33f1eaf27da",
+          "bytes": 78104,
+          "files": 53,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-zero-trip-round118-20261102/archives/r118-match-rich-measure-1024-2e1580fb36c5.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
