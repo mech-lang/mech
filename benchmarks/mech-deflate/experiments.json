@@ -9555,7 +9555,7 @@
       "base": "e7644df6bb40969bfbe3b7e38856071fc4ef2090",
       "production": "2f0cc8b85e7dbcef53abfe16d76742872a7ceca2",
       "compiler_source": "2f0cc8b85e7dbcef53abfe16d76742872a7ceca2",
-      "decision": "under measurement",
+      "decision": "hold:8B -0.196543% with2/4 improving pairs;1KB +0.943642% and independent confirmation +1.136759%, both0/8 improving blocks. Separate1KB instructions -1.104555% and cycles -1.133026% are favorable and retained as contrary evidence. Heap unchanged; native code+87040B and entry stack+688B. Restore default R114; preserve experiment for cheaper scalar-aggregate admission/refined native selection.",
       "events": [
         {
           "event": "boundary-census",
@@ -9741,7 +9741,35 @@
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "test_source": "c1b02658878bedf8b4b2bbb70d28d95c0ec97a26",
+      "ci_source": "bb03507e7d",
+      "retained": false,
+      "versions": [
+        144,
+        99,
+        38,
+        14
+      ],
+      "retained_baseline": "e7644df6bb40969bfbe3b7e38856071fc4ef2090",
+      "source_disposition": "Held: compiler/runtime/test/CI restored exactly to R114 in94c7447f7fb5c30073340388b8cf865a0d1a888d. Candidate source and favorable instruction evidence remain preserved.",
+      "skipped_coverage": [
+        "fresh236-component/8-connected/1-path selection",
+        "fresh40-case linked mini-program qualification",
+        "fresh scalar12/frame8 performance gates",
+        "new8B hardware/heap cohort",
+        "Core/no_std/all-features/minimal dependency graph",
+        "hosted CI",
+        "full-scale timing"
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "diagnostics.json": "0da710e0c6b5d5daa64e2c44407160c99497ea711da22c68c9dc46a0c0f2a347",
+          "scorecard.json": "63e2066a496d6f357109e25a113f66889eabec9b534d125bb0d4406f63981f88",
+          "validation.json": "43053f4181ebfe720276495ddc17d447d2556056da7505571666bb01e71df536"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
