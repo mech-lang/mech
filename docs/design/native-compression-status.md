@@ -129,6 +129,13 @@ runtime, test and CI files exactly to base R114. Default versions remain
 **143/99/38/14**; its prior qualifications remain applicable. This update adds
 evidence and status relative to that base.
 
+All 15 R115 archives (19,477,535 compressed bytes), plus sidecars, have verified
+server digests. Fresh independent retrieval verifies 1,087 file occurrences /
+324 unique paths, including all eight paths with multiple preserved versions,
+and reproduces all three indexed reports byte-for-byte. Native binaries remain
+local. The maintained `experiment.py replay-round --round 115` entry verifies
+and reconstructs these numbers without compiling or compressing.
+
 ## R114: inline private dispatch at the callback boundary
 
 Base `a105e9a76978ff7bbb4a8dd56968a3c7b8e457b8`; retained runtime change
