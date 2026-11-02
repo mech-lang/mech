@@ -570,6 +570,15 @@ fn reused_frame_geometry_keeps_kind_type_rejection_and_recovery() {
         let mut frames = BufferFrames::new(&layout, u64::MAX, &memory, &mut work).unwrap();
         fill(&layout, fields, &artifact, &mut frames, &memory, 7);
         let published = snapshot(&frames);
+        let published_data = published
+            .1
+            .iter()
+            .map(|owner| {
+                owner
+                    .as_ref()
+                    .map(|owner| owner.canonical_data_draft().unwrap())
+            })
+            .collect::<Vec<_>>();
         let bad = ValueDraft {
             schema: boolean.schema(),
             shape_values: Box::new([]),
@@ -630,10 +639,12 @@ fn reused_frame_geometry_keeps_kind_type_rejection_and_recovery() {
                 .unwrap()
                 .shares_frozen_storage(&owner)
         );
-        for alias in published.1.iter().flatten() {
+        for (alias, expected) in published.1.iter().zip(&published_data) {
             assert_eq!(
-                alias.canonical_data_draft().unwrap(),
-                ValueDataDraft::Matrix(vec![ValueDataDraft::U32(7)].into())
+                alias
+                    .as_ref()
+                    .map(|owner| owner.canonical_data_draft().unwrap()),
+                *expected
             );
         }
         let mut missing = BufferFrames { inner: None };
