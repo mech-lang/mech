@@ -9110,6 +9110,28 @@
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
       "archive_publication": "local-only at measurement; external publication pending"
+    },
+    "114": {
+      "base": "a105e9a76978ff7bbb4a8dd56968a3c7b8e457b8",
+      "production": "f327ef9489aaa0997f4d8627256f1a14eb70b0c4",
+      "compiler_source": "f327ef9489aaa0997f4d8627256f1a14eb70b0c4",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "f327ef9489aaa0997f4d8627256f1a14eb70b0c4",
+          "asset": "r114-initial-c968380656d3.tar.gz",
+          "sha256": "c968380656d3b282ebea85ef9547e86638705ab0937d4e27bebe2e4fc3d7d914",
+          "manifest_sha256": "6d57eadbf36d5284f2f7ad8e5b6cd09e83d9355f79b4b5a7faa0e575d1472da6",
+          "bytes": 4406644,
+          "files": 79,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-initial-c968380656d3.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
