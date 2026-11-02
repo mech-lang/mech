@@ -58,6 +58,10 @@ path scan with persistent typed views, scalar state and one nodes owner. The
 no-match block certificate and whole-pass simplification are a separate source
 track; vector shape, range proofs and packed loads follow those measurements.
 
+All17 evidence archives (7,193,521 compressed bytes) and sidecars are published
+with matching server digests. Fresh retrieval verifies1,128 file occurrences /
+304 unique paths and reproduces all four indexed reports byte-for-byte.
+
 ## R116: fund native scalar aggregate words through the ordinary path
 
 Base **`d5e88ff2e66714ad4ee1d1f200518958401cea9a`**; retained compiler/runtime
