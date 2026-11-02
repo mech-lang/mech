@@ -8198,6 +8198,17 @@
           "files": 57,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round108-20261102/archives/r107-scale-measure-1024-4d0325cdd28d.tar.gz"
+        },
+        {
+          "event": "linked-multi",
+          "source_revision": "705c5acdc4fc92be5beeacf28d02721ea4e39ddf",
+          "asset": "r107-linked-multi-fcf93132cc29.tar.gz",
+          "sha256": "fcf93132cc29c115065048d1fb045dc721084539d876a97cbc4f231315be1556",
+          "manifest_sha256": "3dc09e3eb9b8865f58e9053a75171d8f3e212d861795076e0931c89478ea3982",
+          "bytes": 101364,
+          "files": 60,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round108-20261102/archives/r107-linked-multi-fcf93132cc29.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
