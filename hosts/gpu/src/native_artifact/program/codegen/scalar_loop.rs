@@ -12,7 +12,7 @@ use crate::native_artifact::compiler::{backend, guard, offset, primitive, set_or
 use crate::native_artifact::program::codegen::hooks::Hooks;
 use crate::native_artifact::program::codegen::tag_threading::{Edge, Target};
 use crate::native_artifact::program::codegen::{
-    borrowed as borrowed_codegen, prefix as prefix_codegen, tag_threading,
+    borrowed as borrowed_codegen, prefix as prefix_codegen, tag_threading, tail,
 };
 use crate::native_artifact::program::prepare::tail::Layout;
 use crate::native_artifact::program::prepare::{
@@ -215,14 +215,17 @@ pub(in crate::native_artifact) fn emit_entry(
     let setup_start = b.func.dfg.num_insts();
     let ordinary = b.create_block();
     let selected = b.create_block();
-    let ready = b
-        .ins()
-        .load(types::I64, MemFlags::new(), locals, offset(region.words)?);
+    let ready = b.ins().load(
+        types::I64,
+        tail::flags(controls.options(), region),
+        locals,
+        offset(region.words)?,
+    );
     let mut ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
     if let Some(borrow) = region.borrowed {
         let ready_view = b.ins().load(
             types::I64,
-            MemFlags::new(),
+            crate::native_artifact::codegen::common::memory_regions::borrowed(controls.options()),
             locals,
             offset(borrowed.regions[borrow].ready)?,
         );
@@ -232,7 +235,17 @@ pub(in crate::native_artifact) fn emit_entry(
     b.ins().brif(ready, selected, &[], ordinary, &[]);
     b.switch_to_block(selected);
     let slot_count = slots.len();
-    let words = Words::new(b, locals, code, slots)?;
+    let words = Words::new_with_regions(b, locals, code, slots, |slot| {
+        if (region.words..region.words + 3).contains(&slot) {
+            tail::flags(controls.options(), region)
+        } else if region.borrowed.is_some_and(|at| {
+            (borrowed.regions[at].ready..borrowed.regions[at].end).contains(&slot)
+        }) {
+            crate::native_artifact::codegen::common::memory_regions::borrowed(controls.options())
+        } else {
+            MemFlags::new()
+        }
+    })?;
     let setup_work = b.func.dfg.num_insts() - setup_start;
     let exit = b.create_block();
     let bailout = b.create_block();

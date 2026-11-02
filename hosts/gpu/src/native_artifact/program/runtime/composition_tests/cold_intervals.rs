@@ -184,3 +184,135 @@ fn numeric_interval_collection_receives_current_writes_and_recovers() {
         }
     }
 }
+
+#[test]
+fn numeric_interval_readonly_prefix_settles_before_its_first_write() {
+    let source = source().replace(
+        "  changed := (active? | true => poke(nodes) | false => nodes)",
+        "  first<u64> := nodes[1u64]\n  readable! := first >= 0u64\n  changed := nodes",
+    );
+    for artifact in artifacts(&source) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        let memory = mode.memory_budget();
+        let args = arguments(&artifact, &memory, 3, 0, u64::MAX);
+        let before = contents(&args);
+        for restored in [false, true] {
+            let mut out = vec![None; artifact.outputs().len()];
+            let (result, counts) = if restored {
+                observe::run_restored(&jit, &args, &mut out, mode.execution(), &memory)
+            } else {
+                observe::run(&jit, &args, &mut out, mode.execution(), &memory)
+            };
+            result.unwrap();
+            assert_eq!(
+                counts
+                    .phase_settlements
+                    .iter()
+                    .filter(|row| row.0 == 6)
+                    .count(),
+                1
+            );
+            assert_eq!(
+                counts.cold_private_arrays,
+                vec![0],
+                "cold read-only prefix must settle without a prior materialization call"
+            );
+            assert_eq!(
+                out.last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                Data::Tuple(
+                    vec![
+                        Data::Matrix([0, 1, 0].map(Data::U16).into()),
+                        Data::Matrix([3, 0].map(Data::U32).into()),
+                        Data::U64(3)
+                    ]
+                    .into()
+                )
+            );
+            assert_eq!(contents(&args), before);
+        }
+        drop(args);
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
+}
+
+#[test]
+fn numeric_interval_readonly_array_child_settles_without_first_change() {
+    let source = format!(
+        "{}\nheap-bridge(a<[u32]>, base<u64>, size<u64>, root<u64>) => (out<[u32]>) :=\n  out := huff-heap-build(a, base, size, root).\nheap-bridge(a<[u32]>, base<u64>, size<u64>, root<u64>)\n",
+        include_str!("../../../../../tests/fixtures/native/deflate-huffman-level12.mec")
+    );
+    for artifact in artifacts(&source) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        let region = jit
+            .descriptor()
+            .metadata()
+            .closed_tails
+            .regions
+            .iter()
+            .find(|r| r.iteration == 0)
+            .unwrap();
+        let proof = region.numeric.as_ref().unwrap();
+        assert!(!proof.prepaid_sites.is_empty());
+        assert!(!proof.writes());
+        assert!(proof.result.direct_array().is_some());
+        let memory = mode.memory_budget();
+        let args = inputs(
+            &artifact,
+            &[
+                ("a", Data::Matrix([1, 3, 2].map(Data::U32).into())),
+                ("base", Data::U64(0)),
+                ("size", Data::U64(3)),
+                ("root", Data::U64(1)),
+            ],
+            &memory,
+        );
+        let aliases = args.clone();
+        let before = contents(&args);
+        for restored in [false, true] {
+            let mut out = vec![None; artifact.outputs().len()];
+            let (result, counts) = if restored {
+                observe::run_restored(&jit, &args, &mut out, mode.execution(), &memory)
+            } else {
+                observe::run(&jit, &args, &mut out, mode.execution(), &memory)
+            };
+            result.unwrap();
+            assert_eq!(counts.cold_private_arrays, vec![0]);
+            assert_eq!(
+                out.last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                Data::Matrix([3, 1, 2].map(Data::U32).into())
+            );
+            assert_eq!(contents(&args), before);
+            assert_eq!(contents(&aliases), before);
+        }
+        drop((args, aliases));
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
+}

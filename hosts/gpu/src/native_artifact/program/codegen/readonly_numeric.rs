@@ -87,9 +87,12 @@ pub(in crate::native_artifact) fn emit_entry(
     tail::resume_cold(controls.options(), b, locals, region, site, hooks, error)?;
     let ordinary = b.create_block();
     let selected = b.create_block();
-    let ready = b
-        .ins()
-        .load(types::I64, MemFlags::new(), locals, offset(region.words)?);
+    let ready = b.ins().load(
+        types::I64,
+        tail::flags(controls.options(), region),
+        locals,
+        offset(region.words)?,
+    );
     let ready = b.ins().icmp_imm(IntCC::NotEqual, ready, 0);
     b.ins().brif(ready, selected, &[], ordinary, &[]);
     b.switch_to_block(selected);
@@ -98,7 +101,15 @@ pub(in crate::native_artifact) fn emit_entry(
         .ok_or_else(|| backend("numeric region lacks scratch home"))?;
     let slots = slots(code, proof, region.words, shadow)?;
     let register_words = slots.len();
-    let words = Words::new(b, locals, code, slots)?;
+    let words = Words::new_with_regions(b, locals, code, slots, |slot| {
+        if (region.words..region.words + 3).contains(&slot)
+            || (shadow..shadow + proof.words).contains(&slot)
+        {
+            tail::flags(controls.options(), region)
+        } else {
+            MemFlags::new()
+        }
+    })?;
     let setup_work = b.func.dfg.num_insts() - setup_start;
     let exit = b.create_block();
     let bailout = b.create_block();
@@ -159,7 +170,7 @@ pub(in crate::native_artifact) fn emit_entry(
             )?;
             let one = b.ins().iconst(types::I64, 1);
             b.ins().store(
-                MemFlags::new(),
+                tail::flags(controls.options(), region),
                 one,
                 locals,
                 offset(region.cold_resume().unwrap())?,
@@ -306,7 +317,18 @@ pub(in crate::native_artifact) fn emit_entry(
                 b.switch_to_block(materialize);
                 let index = b.ins().iadd_imm(length, 1);
                 boundary::materialize(
-                    b, &words, region, proof, *array, site, frame, locals, index, incoming, hooks,
+                    b,
+                    controls.options(),
+                    &words,
+                    region,
+                    proof,
+                    *array,
+                    site,
+                    frame,
+                    locals,
+                    index,
+                    incoming,
+                    hooks,
                     error,
                 )?;
                 b.ins().jump(done, &[]);
@@ -407,8 +429,19 @@ pub(in crate::native_artifact) fn emit_entry(
                         b.ins().brif(private, store, &[], materialize, &[]);
                         b.switch_to_block(materialize);
                         boundary::materialize(
-                            b, &words, region, proof, *array, site, frame, locals, index, incoming,
-                            hooks, error,
+                            b,
+                            controls.options(),
+                            &words,
+                            region,
+                            proof,
+                            *array,
+                            site,
+                            frame,
+                            locals,
+                            index,
+                            incoming,
+                            hooks,
+                            error,
                         )?;
                         b.ins().jump(done, &[]);
                         b.switch_to_block(store);

@@ -8,8 +8,12 @@ use cranelift_frontend::{FunctionBuilder, Variable};
 use std::collections::{BTreeMap, BTreeSet};
 
 pub(in crate::native_artifact) struct Words {
-    variables: BTreeMap<usize, Variable>,
+    variables: BTreeMap<usize, (Variable, MemFlags)>,
 }
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "ssa_words_tests.rs"]
+mod tests;
 impl Words {
     pub(in crate::native_artifact) fn new(
         b: &mut FunctionBuilder<'_>,
@@ -26,10 +30,34 @@ impl Words {
         locals: Value,
         code: CodePlan<'_>,
         slots: BTreeSet<usize>,
+        initial: impl FnMut(
+            &mut FunctionBuilder<'_>,
+            usize,
+        ) -> Result<Option<Value>, NativeCompileError>,
+    ) -> Result<Self, NativeCompileError> {
+        Self::build(b, locals, code, slots, initial, |_| MemFlags::new())
+    }
+    /// A physical home keeps one alias region across entry, spills, and reloads.
+    /// Tail/borrowed synchronization accesses these same private homes directly.
+    pub(in crate::native_artifact) fn new_with_regions(
+        b: &mut FunctionBuilder<'_>,
+        locals: Value,
+        code: CodePlan<'_>,
+        slots: BTreeSet<usize>,
+        flags: impl FnMut(usize) -> MemFlags,
+    ) -> Result<Self, NativeCompileError> {
+        Self::build(b, locals, code, slots, |_, _| Ok(None), flags)
+    }
+    fn build(
+        b: &mut FunctionBuilder<'_>,
+        locals: Value,
+        code: CodePlan<'_>,
+        slots: BTreeSet<usize>,
         mut initial: impl FnMut(
             &mut FunctionBuilder<'_>,
             usize,
         ) -> Result<Option<Value>, NativeCompileError>,
+        mut flags: impl FnMut(usize) -> MemFlags,
     ) -> Result<Self, NativeCompileError> {
         let constants = (0..code.constant_count())
             .map(|index| code.constant(index))
@@ -40,16 +68,16 @@ impl Words {
         let mut variables = BTreeMap::new();
         for slot in slots {
             let variable = b.declare_var(types::I64);
+            let flags = flags(slot);
             let value = if let Some(value) = initial(b, slot)? {
                 value
             } else if let Some(&word) = constants.get(&slot) {
                 b.ins().iconst(types::I64, word as i64)
             } else {
-                b.ins()
-                    .load(types::I64, MemFlags::new(), locals, offset(slot)?)
+                b.ins().load(types::I64, flags, locals, offset(slot)?)
             };
             b.def_var(variable, value);
-            variables.insert(slot, variable);
+            variables.insert(slot, (variable, flags));
         }
         Ok(Self { variables })
     }
@@ -58,7 +86,7 @@ impl Words {
         b: &mut FunctionBuilder<'_>,
         slot: usize,
     ) -> Value {
-        b.use_var(self.variables[&slot])
+        b.use_var(self.variables[&slot].0)
     }
     pub(in crate::native_artifact) fn write(
         &self,
@@ -66,7 +94,7 @@ impl Words {
         slot: usize,
         value: Value,
     ) {
-        b.def_var(self.variables[&slot], value);
+        b.def_var(self.variables[&slot].0, value);
     }
     pub(in crate::native_artifact) fn spill_all(
         &self,
@@ -83,7 +111,8 @@ impl Words {
     ) -> Result<(), NativeCompileError> {
         for &slot in live {
             let value = self.read(b, slot);
-            b.ins().store(MemFlags::new(), value, locals, offset(slot)?);
+            b.ins()
+                .store(self.variables[&slot].1, value, locals, offset(slot)?);
         }
         Ok(())
     }
@@ -96,7 +125,7 @@ impl Words {
         for &slot in live {
             let value = b
                 .ins()
-                .load(types::I64, MemFlags::new(), locals, offset(slot)?);
+                .load(types::I64, self.variables[&slot].1, locals, offset(slot)?);
             self.write(b, slot, value);
         }
         Ok(())
