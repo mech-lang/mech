@@ -11367,6 +11367,17 @@
           "files": 74,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-handoff-round121-20261102/archives/r121-counters-3ee4811d548f.tar.gz"
+        },
+        {
+          "event": "scale-counters",
+          "source_revision": "6ed4e0fb7e7e34abd1162f090e112045bc052565",
+          "asset": "r121-scale-counters-63306e4d18c9.tar.gz",
+          "sha256": "63306e4d18c90f1b5e3676699cb8402e9f1d50563b667f556fb28641cc7322ff",
+          "manifest_sha256": "a307f2db61cec66d0e2e7735f76ab20eb92b3e39276dcd368ba21c6689e20272",
+          "bytes": 88299,
+          "files": 88,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-handoff-round121-20261102/archives/r121-scale-counters-63306e4d18c9.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
