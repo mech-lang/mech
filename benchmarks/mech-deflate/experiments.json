@@ -8473,7 +8473,25 @@
         "full qualification of unretained candidate",
         "hosted CI"
       ],
-      "source_disposition": "Experimental source/test/CI changes reverted from default; commits and diagnostic patches retained."
+      "source_disposition": "Experimental source/test/CI changes reverted from default; commits and diagnostic patches retained.",
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 1,
+        "round": 109,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 116,
+        "verified_archives": 10,
+        "verified_file_occurrences": 517
+      },
+      "archive_verification": {
+        "archives": 10,
+        "sidecars": 10,
+        "all_server_digests_match": true,
+        "native_binaries_included": false
+      }
     },
     "110": {
       "base": "3b310eb80f84ab16757923f270931fd53cf1477b",
@@ -8627,7 +8645,25 @@
         "full qualification of unretained candidate",
         "hosted CI"
       ],
-      "source_disposition": "Experimental source/test/CI changes reverted from default; commits and diagnostic patches retained."
+      "source_disposition": "Experimental source/test/CI changes reverted from default; commits and diagnostic patches retained.",
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 1,
+        "round": 110,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 113,
+        "verified_archives": 10,
+        "verified_file_occurrences": 520
+      },
+      "archive_verification": {
+        "archives": 10,
+        "sidecars": 10,
+        "all_server_digests_match": true,
+        "native_binaries_included": false
+      }
     },
     "111": {
       "base": "3b310eb80f84ab16757923f270931fd53cf1477b",
@@ -8792,7 +8828,25 @@
         "full qualification of unretained candidate",
         "hosted CI"
       ],
-      "source_disposition": "Experimental source/test/CI changes reverted from default; commits and diagnostic patches retained."
+      "source_disposition": "Experimental source/test/CI changes reverted from default; commits and diagnostic patches retained.",
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 2,
+        "round": 111,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 188,
+        "verified_archives": 11,
+        "verified_file_occurrences": 656
+      },
+      "archive_verification": {
+        "archives": 11,
+        "sidecars": 11,
+        "all_server_digests_match": true,
+        "native_binaries_included": false
+      }
     }
   },
   "repository": "mech-lang/mech",
