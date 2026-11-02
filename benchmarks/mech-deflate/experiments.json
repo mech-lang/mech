@@ -7464,6 +7464,17 @@
           "files": 65,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-shared-shape-round103-20261101/archives/r103-current-census-99e2133e99f7.tar.gz"
+        },
+        {
+          "event": "architecture-repair",
+          "source_revision": "6b064cdeb678f2e7c89e5c2a39143e5ac2f36e79",
+          "asset": "r103-architecture-repair-a28b7664353e.tar.gz",
+          "sha256": "a28b7664353e2bba347236291e830a16f057d7be89ff6c540621ed0bfa77f05b",
+          "manifest_sha256": "cc1d731b1cca3e9e8663746fa7ed78399cf004156ba0c043ef0f67411909c57a",
+          "bytes": 131609,
+          "files": 118,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-shared-shape-round103-20261101/archives/r103-architecture-repair-a28b7664353e.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
