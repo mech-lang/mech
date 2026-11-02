@@ -3,7 +3,10 @@
 use super::*;
 
 fn source(keep_old: bool) -> String {
-    let original = include_str!("../../../../../tests/fixtures/native/numeric-nested-phase.mec");
+    let original = include_str!("../../../../../tests/fixtures/native/numeric-nested-phase.mec")
+        .replace("next := (more? | true => sequence/append(nodes, number + at + tag + bias) | false => nodes)", "next := phase-store(nodes, number + at + tag + bias)")
+        .replace("| false => nodes).", "| false => next).")
+        .replacen("+> sequence", "+> sequence\nphase-store(nodes<[u64]>, word<u64>) => (out<[u64]>) :=\n  ~next := nodes\n  next[1u64] = word\n  out := next.\n", 1);
     let main = original.lines().last().unwrap();
     let signature = "values<[u32]>, nodes<[u64]>, steps<u64>, flag<bool>, allowed<bool>, deny-at<u64>, divisor<u64>, bias<u64>";
     let result = if keep_old {
@@ -83,19 +86,19 @@ fn nested_numeric_phase_first_change_retires_only_dead_canonical_pins() {
                     } else {
                         result.unwrap();
                         assert_eq!(counts.phases, 1);
-                        let nodes = std::iter::once(17)
-                            .chain((0..steps).map(|at| {
-                                26 + at + if flag == (at % 2 == 0) { 0 } else { 100 } + 17
-                            }))
-                            .map(Data::U64)
-                            .collect();
+                        let nodes = vec![Data::U64(
+                            steps + if flag == (steps % 2 == 0) { 0 } else { 100 } + 17,
+                        )];
                         let expected = if keep_old {
                             Data::Tuple(
-                                vec![Data::Matrix([Data::U64(17)].into()), Data::Matrix(nodes)]
-                                    .into(),
+                                vec![
+                                    Data::Matrix([Data::U64(17)].into()),
+                                    Data::Matrix(nodes.into()),
+                                ]
+                                .into(),
                             )
                         } else {
-                            Data::Matrix(nodes)
+                            Data::Matrix(nodes.into())
                         };
                         assert_eq!(
                             published
