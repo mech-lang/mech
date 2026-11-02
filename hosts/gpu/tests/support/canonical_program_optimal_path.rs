@@ -149,6 +149,23 @@ fn zero_trip_min_cost_paths_keep_exact_nodes_and_real_reservation() {
 }
 
 fn qualify_min_cost_paths(source: &str) {
+    qualify_min_cost_paths_with_limits(source, policy(), false);
+}
+
+#[test]
+fn native_path_phase_keeps_all_pinned_nodes_and_real_reservation() {
+    qualify_min_cost_paths_with_limits(
+        SOURCE,
+        mech_gpu::native_artifact::NativeProgramLimitMode::NoLimits.execution(),
+        true,
+    );
+}
+
+fn qualify_min_cost_paths_with_limits(
+    source: &str,
+    run_policy: mech_gpu::native_artifact::NativeProgramExecutionLimits,
+    require_phase: bool,
+) {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "../fixtures/native/deflate-optimal-path-reference.json"
     ))
@@ -166,13 +183,22 @@ fn qualify_min_cost_paths(source: &str) {
             let mut output = vec![None; artifact.outputs().len()];
             let start = std::time::Instant::now();
             let (result, requests, bytes) = allocation_probe::measured_with_bytes(|| {
-                jit.evaluate_into(&args, &mut output, policy(), &memory)
+                jit.evaluate_into(&args, &mut output, run_policy, &memory)
             });
             println!(
                 "{}",
                 serde_json::json!({"witness":"pinned-min-cost-path","artifact":form,"case":case["name"],"block_length":case["block_length"],"elapsed_seconds":start.elapsed().as_secs_f64(),"allocation_requests":requests,"requested_bytes":bytes,"result":format!("{result:?}")})
             );
-            result.unwrap();
+            let report = result.unwrap();
+            if require_phase && case["block_length"].as_u64().unwrap() >= 320 {
+                // Ordinary fallback takes over 65,000 visits for these cases.
+                // The separate structural gate requires the entire three-loop
+                // phase, and this gate requires its current views to admit.
+                assert!(
+                    report.visits < 1024,
+                    "complete phase did not execute: {report:?}"
+                );
+            }
             let value = output.last().unwrap().as_ref().unwrap();
             let expected = Data::Matrix(
                 case["nodes"]
@@ -210,6 +236,21 @@ fn zero_trip_checks_keep_errors_aliases_and_recovery() {
 }
 
 fn qualify_path_checks(source: &str) {
+    qualify_path_checks_with_limits(source, policy());
+}
+
+#[test]
+fn native_path_phase_checks_keep_origins_publication_aliases_and_retry() {
+    qualify_path_checks_with_limits(
+        SOURCE,
+        mech_gpu::native_artifact::NativeProgramLimitMode::NoLimits.execution(),
+    );
+}
+
+fn qualify_path_checks_with_limits(
+    source: &str,
+    run_policy: mech_gpu::native_artifact::NativeProgramExecutionLimits,
+) {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "../fixtures/native/deflate-optimal-path-reference.json"
     ))
@@ -246,7 +287,7 @@ fn qualify_path_checks(source: &str) {
             let old = output.clone();
             let retained = memory.used_bytes();
             let nodes = memory.retained_snapshot_nodes();
-            let result = jit.evaluate_into(&args, &mut output, policy(), &memory);
+            let result = jit.evaluate_into(&args, &mut output, run_policy, &memory);
             if reject {
                 let error = format!("{:?}", result.unwrap_err());
                 assert!(error.contains("Integrity"), "{error}");
