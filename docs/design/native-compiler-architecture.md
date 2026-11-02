@@ -142,15 +142,40 @@ advance by a positive constant; conservative admission arithmetic must fit befor
 wrapping progress is accepted. Equality-target proofs retain the exact unit
 stride rule. Wrapping guard offsets, zero/dynamic/overflowing strides and unknown
 progress still decline. Source checks, errors and reached traversal prices remain.
-This is complete-subtree selection; explicit unsupported-child exits are the next
-separate capability, beginning with Huffman counting's conditional clamp.
+This is complete-subtree selection; R124 adds the bounded fallback below.
+
+R124 first attempts that complete proof, then can summarize direct synchronous
+Tail children with scalar results as explicit cold edges. A successful native
+parent never follows a summary edge: it freezes current private buffers, exports
+only the exact live current frames/aliases, settles the loan, and jumps to the
+original child initializer. The child and the remainder of that source traversal
+execute ordinarily. The parent re-enters at its next original header, after its
+original latch. Earlier stores are neither replayed nor rolled back.
+
+The current parent traversal is prepaid once. Its ordinary remaining source
+visits retain control/progress checks while consuming that prepared credit;
+actual child and selected-library work still use the same authoritative account.
+Credit ends at the parent latch/finish, and the next native loan uses the current
+post-write/post-child remainder. A second cold parent cannot nest within pending
+parent credit. The persistent resume flag belongs to the individual region's
+state, separately from scratch shared by sequential numeric phases. If entry
+declines, ordinary execution proceeds without a repeated resume attempt.
+
+Cold-edge liveness and current versions are independently reconstructed on image
+restoration. Immutable current-traversal branch facts can prune impossible
+liveness edges, but never change emitted source branches. Unknown or older
+managed versions still decline. A fallback refusal preserves the original
+complete-proof diagnostic. Non-Tail children, managed child results and mutable
+included children remain outside this bounded contract. Huffman counting is
+qualified with an actually taken clamp after a native write, including failure,
+unchanged publication, aliases, finite accounting and retry.
 
 Build-owned image validation independently reconstructs phase membership,
 bindings/current versions, homes, bounds, debit identities and result recipes
 from the validated program. Serialized metadata grants no raw-view authority.
 The emitted fixed boundary is bounded from the phase's word inventory, then
 checked against the actual emitted instruction count. The current versions
-are typed IR150 and work103, with ABI38 and bytecode14 unchanged; the version
+are typed IR151 and work104, with ABI38 and bytecode14 unchanged; the version
 numbers below describe the historical consolidation baseline.
 
 ## Runtime and protocols
