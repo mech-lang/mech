@@ -9550,6 +9550,28 @@
         "all_server_digests_match": true,
         "native_binaries_included": false
       }
+    },
+    "115": {
+      "base": "e7644df6bb40969bfbe3b7e38856071fc4ef2090",
+      "production": "2f0cc8b85e7dbcef53abfe16d76742872a7ceca2",
+      "compiler_source": "2f0cc8b85e7dbcef53abfe16d76742872a7ceca2",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "boundary-census",
+          "source_revision": "2f0cc8b85e7dbcef53abfe16d76742872a7ceca2",
+          "asset": "r115-boundary-census-77a0e0d4366b.tar.gz",
+          "sha256": "77a0e0d4366b0067b90c46feb7c0bbf5bd1315722cf585b0b323bcc504108aac",
+          "manifest_sha256": "d1b8f51d93b349754819132c9858b44b0778887f2c999760301edab4c7d7a2d3",
+          "bytes": 3861487,
+          "files": 59,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-boundary-census-77a0e0d4366b.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
