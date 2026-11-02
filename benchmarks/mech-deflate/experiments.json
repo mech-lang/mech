@@ -7475,6 +7475,17 @@
           "files": 118,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-shared-shape-round103-20261101/archives/r103-architecture-repair-a28b7664353e.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "6b064cdeb678f2e7c89e5c2a39143e5ac2f36e79",
+          "asset": "r103-closure-661f4abc1abd.tar.gz",
+          "sha256": "661f4abc1abd05daa6da841612a773326860987f0e5e299543cd4c27a172d7c5",
+          "manifest_sha256": "52520af2823ca1e1566d603a5862089ce198efd54528fc20fc6455c8299a28de",
+          "bytes": 9504258,
+          "files": 377,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-shared-shape-round103-20261101/archives/r103-closure-661f4abc1abd.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
