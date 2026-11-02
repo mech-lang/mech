@@ -8897,6 +8897,17 @@
           "files": 46,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-primary-group1-4304039b5dd3.tar.gz"
+        },
+        {
+          "event": "primary-group2",
+          "source_revision": "c85dfe8bcea3bc39a626a5287f2fa1ee5a22ad5c",
+          "asset": "r112-primary-group2-928f2cf80e77.tar.gz",
+          "sha256": "928f2cf80e774da5a2660f5e800285eb5e82a69d88a883f4c41adec399499f99",
+          "manifest_sha256": "6c34958c74e8008349527688ea4bf571127b701b7dceb37954be82c177e9d928",
+          "bytes": 94498,
+          "files": 46,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-primary-group2-928f2cf80e77.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
