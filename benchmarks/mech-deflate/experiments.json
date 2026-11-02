@@ -11567,6 +11567,17 @@
             "improving_blocks": 58,
             "adverse_blocks": 6
           }
+        },
+        {
+          "event": "scale-measure-1024",
+          "source_revision": "da58ad43e12a7c9e078631514f1c06d874d4c384",
+          "asset": "r122-scale-measure-1024-6c11127c849a.tar.gz",
+          "sha256": "6c11127c849af8eced4a589fc41b3ab146fe7bca0de0e688649d6114bc401e29",
+          "manifest_sha256": "63929ae7b5bd1c840310e17b892c680f1a6411f3f3be9048f3fe49561fc8ada8",
+          "bytes": 75520,
+          "files": 62,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-call-bank-round122-20261102/archives/r122-scale-measure-1024-6c11127c849a.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
