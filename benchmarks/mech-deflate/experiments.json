@@ -8600,6 +8600,17 @@
           "files": 46,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-frame-geometry-round111-20261102/archives/r111-primary-reference-b0a78b553617.tar.gz"
+        },
+        {
+          "event": "primary-group0",
+          "source_revision": "727a955105fe43ee99d120560157bbdf985dacd2",
+          "asset": "r111-primary-group0-7a7240103aeb.tar.gz",
+          "sha256": "7a7240103aeb967ad76a679a834d41a9c1391c29eecf55fa85bc1fa1d05a68bf",
+          "manifest_sha256": "08dd9c875d7ff7aecc358ad9ecd293a88afa1c8ad9d0f86ea031e4d2ac3a4960",
+          "bytes": 99354,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-frame-geometry-round111-20261102/archives/r111-primary-group0-7a7240103aeb.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
