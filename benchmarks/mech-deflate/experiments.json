@@ -8572,6 +8572,28 @@
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
       "archive_publication": "local-only at measurement; external publication pending"
+    },
+    "111": {
+      "base": "3b310eb80f84ab16757923f270931fd53cf1477b",
+      "production": "727a955105fe43ee99d120560157bbdf985dacd2",
+      "compiler_source": "727a955105fe43ee99d120560157bbdf985dacd2",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "727a955105fe43ee99d120560157bbdf985dacd2",
+          "asset": "r111-initial-87b53a5f24f1.tar.gz",
+          "sha256": "87b53a5f24f1145bcace3833bc65ac13af0c375207cf3f63e9c8cda4a0ebd2cf",
+          "manifest_sha256": "105754cce6fbfacb04529b675f11b249a3746fab00d44e8428eead22a0d54c4c",
+          "bytes": 4398935,
+          "files": 69,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-frame-geometry-round111-20261102/archives/r111-initial-87b53a5f24f1.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
