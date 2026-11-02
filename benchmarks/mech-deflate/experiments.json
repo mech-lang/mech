@@ -11028,6 +11028,17 @@
             "improving_blocks": 1,
             "adverse_blocks": 63
           }
+        },
+        {
+          "event": "scale-measure-1024",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-scale-measure-1024-3e6e9cd68dec.tar.gz",
+          "sha256": "3e6e9cd68deca52c19d0938e5b3a01caf6c3f4cad4d0a1b2119f7bcb87731541",
+          "manifest_sha256": "1f2b9b7c4cd74b1a88af9b3df02a35b03f646a3b22d0af9307570561cd251ac1",
+          "bytes": 69232,
+          "files": 51,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-scale-measure-1024-3e6e9cd68dec.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
