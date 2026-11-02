@@ -7431,6 +7431,17 @@
           "files": 61,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-shared-shape-round103-20261101/archives/r103-linked-multi-33105e4cec41.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "6b064cdeb678f2e7c89e5c2a39143e5ac2f36e79",
+          "asset": "r103-scalar-controls-3a88b1c14b0a.tar.gz",
+          "sha256": "3a88b1c14b0aeca9b02a58b1f9771ae9eb5db68b4f9bc5aaebcd83930a925ee1",
+          "manifest_sha256": "2791c00b08858235d10cecc4fcaad2de6784414ecf0c8dc0b274ced411a6fca4",
+          "bytes": 126473,
+          "files": 98,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-shared-shape-round103-20261101/archives/r103-scalar-controls-3a88b1c14b0a.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
