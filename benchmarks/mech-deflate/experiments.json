@@ -11578,6 +11578,17 @@
           "files": 62,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-call-bank-round122-20261102/archives/r122-scale-measure-1024-6c11127c849a.tar.gz"
+        },
+        {
+          "event": "match-rich-measure-1024",
+          "source_revision": "da58ad43e12a7c9e078631514f1c06d874d4c384",
+          "asset": "r122-match-rich-measure-1024-79ecd66205de.tar.gz",
+          "sha256": "79ecd66205de1f075dd8671d4b9f358e928d985ada407a45aa574ecba7896f47",
+          "manifest_sha256": "a208666087a4836d873dd4919ffc73879975b9c946fe31be5e48299c92d6d7a4",
+          "bytes": 75261,
+          "files": 62,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-call-bank-round122-20261102/archives/r122-match-rich-measure-1024-79ecd66205de.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
