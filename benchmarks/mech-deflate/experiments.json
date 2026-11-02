@@ -7518,7 +7518,7 @@
       "base": "a88acd5d87650e12cca6d28015334fa027989594",
       "production": "636da5e074add0632f7154f14d8d39848721cd16",
       "compiler_source": "636da5e074add0632f7154f14d8d39848721cd16",
-      "decision": "under measurement",
+      "decision": "Retain as immutable-metadata/construction improvement only:148 fewer requests including94 fewer reallocations,4893 fewer requested bytes. Matched elapsed+0.151453% (two pairs faster,two slower); instructions-0.125574%, cycles+0.531301% in separate cohort. No elapsed improvement established.",
       "events": [
         {
           "event": "initial",
@@ -7691,7 +7691,18 @@
           "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-closure-3a13572b9f86.tar.gz"
         }
       ],
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "test_source": "636da5e074add0632f7154f14d8d39848721cd16",
+      "ci_source": "f51c45f8febc5d4f9855ac970931a2bc3292ab77",
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "abfdf3e0ed34d3d8ff71a272c87ddad69d50dcd794fd2882c3f61e51bee9511a",
+          "profile-numbers.json": "bed568177919c7b0379bf5c633a14065defbf31a70b981effa9b5ca5f04d7371",
+          "scorecard.json": "e0d9c781181589bc94f80d553fddcf0ea1fc43f0f5f60b19f7ec265e7d2c5c52",
+          "validation.json": "66d471d0719ce95f2227395328c88196422466120c408214ee33e4a59f4d5163"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",

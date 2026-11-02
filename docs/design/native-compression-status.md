@@ -3,8 +3,90 @@
 Raw observations, diagnostic drivers, full censuses and rejected experiments stay
 outside source. The maintained harness and [compact evidence index](../../benchmarks/mech-deflate/experiments.json)
 retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/973)
-stays draft pending green CI and clean review. Publication CI is cancelled by
+stays draft pending green CI and clean review. Hosted CI is not awaited under
 instruction; no green hosted-CI claim is made.
+
+## R104: reuse prepared schema headers; allocation improvement only
+
+Published parent `a88acd5d87650e12cca6d28015334fa027989594`; production/compiler
+`636da5e074add0632f7154f14d8d39848721cd16`. The main implementation is
+`22554ca76fdbc9841245e28f696223550b50648c`; its explicit key-type repair is the
+measured compiler above. Separate CI inventory: `f51c45f8febc5d4f9855ac970931a2bc3292ab77`.
+
+Binding borrows existing prepared input/output keys and checks the retained
+schema entry and template. Uncached live footprint calculation borrows the exact
+retained encoded length/key independently of a DATA transaction; current values,
+retained arenas, shapes, payload chunks and their original charges remain checked.
+Unsigned-buffer no-ops use the existing prepared output key. No new cache, stored
+prepared fields, permission, ABI or pricing change is introduced.
+
+Fresh matched complete eight-byte elapsed **8.139130×→8.151457× Roc's time**:
+2.3522085→2.355771ms, common fresh reference 0.289ms, **+0.151453%**. Two of four
+pairs improve and two worsen; 29 descriptive blocks improve and 35 worsen.
+Geometric block ratio 0.997238553 also remains recorded. All 3,968 primary/3,984
+total observations are retained and committed. **No elapsed win is established.**
+
+| Metric | Fresh retained R103 | R104 |
+|---|---:|---:|
+| Allocation requests |4,405|4,257 (−148; −3.359818%)|
+| Reallocations, included in requests |162|68 (−94)|
+| Requested bytes |95,881,838|95,876,945 (−4,893B)|
+| Incremental live heap peak |17,782,424|unchanged|
+| Instructions, separate cohort |27,046,906|27,012,942 (−33,964; −0.125574%)|
+| Cycles, same hardware cohort |7,434,770.5|7,474,271.5 (+0.531301%)|
+| Whole linked text |63,680,080B|63,678,544B (−1,536B)|
+
+Retain as an immutable-metadata/construction improvement. The fresh complete
+allocation censuses reconcile exactly with the separate heap counters. Binding
+loses 66 requests/2,263B/42 reallocations; footprint loses the same; buffer no-ops
+lose 16 requests/367B/10 reallocations. All three targeted encoding families become
+zero, and the whole size/kind histogram difference is exactly those families.
+Reallocations are already counted in requests. No other size/count bucket changes.
+
+Object, descriptor and metadata are byte-identical; generated text14,604,696B and
+entry stack135,728B stay fixed. Payload copying branches are unchanged; this is no
+claim of measured payload-copy savings. No stored prepared fields/cache are added;
+a separate prepared-heap census is not claimed. Work42,410,605,541 and versions
+143/99/38/14 remain. Source/bytecode, level12 algorithm, real tables/capacities,
+allocator, input aliases and evaluate_into boundary stay pinned. Exact raw bytes,
+independent inflate, output capacity13 clear/rebind and final managed bytes/nodes0
+pass. Public output physical backing still changes.
+
+Passing current checks: 20 distinct actual Engine unit tests (two new; header,
+current-payload, wrong-contract/arena, equal foreign IDs, overflow and exact finite
+denial/spent-prefix controls); runtime356, work/memory33, native CI65, image1;
+unchanged components236, connected8, path1; linked16+12+12; scalar12 and frame8;
+workflow132 and architecture/type/memory15. The existing scalar gate1.05 is
+unchanged; maximum ratio1.025436251. Pure-scalar requests/bytes remain equal and
+loop allocation slope remains zero. Frame request/byte/work counts do not increase.
+The two new tests have a separately committed CI step requiring exactly two
+discovered tests. Local execution uses the retained richer selected-operation
+profile; a fresh minimal graph for that CI profile is not claimed.
+
+Five Engine-dependent crates rebuild coherently with the retained optimized
+warnings-as-errors flags; Core, Syntax, Bytecode, math and external dependencies
+remain frozen. Existing expensive knucleotide-body runtime exclusion remains;
+no fresh all-features/no_std graph or larger-input benchmark is claimed. Hosted CI
+is not awaited under instruction, and the PR remains draft pending green CI and
+clean review.
+
+Failures and diagnostic corrections are retained. The first two builds reject a
+missing Option<SchemaKey> closure annotation (introduced, repaired in636da5e074).
+Both corrected actual builds pass. A diagnostic disassembler initially counted
+following symbols; original excerpts remain, and corrected static counts are
+bounded by each symbol's address range. No performance claim uses those initial
+counts. Static module matches may include cold/drop helpers; the census supplies
+the executed encoding-family proof. No correctness failure remains.
+
+Fresh isolated profiles retain695 complete calls per subject, excluded from
+primary timing. Their1175/1292 sample weights are not retired instructions.
+Current registration admission/removal accounts for29/1292 weights, frame-copy
+ancestry24/1292 and tail cleanup74/1292; ancestry groups overlap. These are no
+removable-instruction estimates. Next, classify actual registration exclusivity
+through consuming updates before attempting physical registration transfer;
+166 remains a candidate envelope, with node release/reacquisition and fresh data
+identities preserved. Shared immutable descriptor contracts follow that bounded
+ownership check.
 
 ## R103: forward immutable shape owners; allocation improvement only
 
