@@ -11356,6 +11356,17 @@
           "files": 110,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-handoff-round121-20261102/archives/r121-scalar-controls-14a59f4e0564.tar.gz"
+        },
+        {
+          "event": "counters",
+          "source_revision": "6ed4e0fb7e7e34abd1162f090e112045bc052565",
+          "asset": "r121-counters-3ee4811d548f.tar.gz",
+          "sha256": "3ee4811d548f62cbc4541ab3cc22fa9e9b3cb2c78545310c65db94961fc4a60f",
+          "manifest_sha256": "afea87ef4ea3ab844178a8192d20a3b3f5f56f9fd3c766d399723350bb68f1ba",
+          "bytes": 244152,
+          "files": 74,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-handoff-round121-20261102/archives/r121-counters-3ee4811d548f.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
