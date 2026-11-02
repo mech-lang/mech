@@ -10814,6 +10814,17 @@
           "files": 73,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-isolated-profile-rich-8a5643f695ee.tar.gz"
+        },
+        {
+          "event": "reference-profile",
+          "source_revision": "99fef709f1d984e32ad22e5c8929e8dfd0ff0984",
+          "asset": "r119-reference-profile-4f9f073d68f2.tar.gz",
+          "sha256": "4f9f073d68f27ea72418a5383b6f7eac80190cbd1cba206143cf806307839ddf",
+          "manifest_sha256": "382dc6fe9de54a5fcfb1c3c0eb4579f02c5c9ed0f6cc8cfb832a14dc0531ee8c",
+          "bytes": 134446,
+          "files": 69,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-reference-profile-4f9f073d68f2.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
