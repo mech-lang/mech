@@ -15,7 +15,7 @@ fn source(keep_old: bool) -> String {
     original.replacen(
         main,
         &format!(
-            "handoff({signature}) => (out<{kind}>) :=\n  ~prepared := sequence/reserve(nodes, 305257u64)\n  prepared[1u64] = bias\n  answer := phase-scan(values, prepared, steps, 0u64, flag, allowed, deny-at, divisor, bias)\n  out := {result}.\n\nhandoff({signature})"
+            "write-header(nodes<[u64]>, head<u64>) => (out<[u64]>) :=\n  ~next := nodes\n  next[1u64] = head\n  out := next.\n\nhandoff({signature}) => (out<{kind}>) :=\n  reserved := sequence/reserve(nodes, 305257u64)\n  prepared := (allowed? | true => write-header(reserved, bias) | false => reserved)\n  answer := phase-scan(values, prepared, steps, 0u64, flag, allowed, deny-at, divisor, bias)\n  out := {result}.\n\nhandoff({signature})"
         ),
         1,
     )
