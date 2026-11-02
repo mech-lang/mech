@@ -7442,6 +7442,17 @@
           "files": 98,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-shared-shape-round103-20261101/archives/r103-scalar-controls-3a88b1c14b0a.tar.gz"
+        },
+        {
+          "event": "frame-allocation",
+          "source_revision": "6b064cdeb678f2e7c89e5c2a39143e5ac2f36e79",
+          "asset": "r103-frame-allocation-1dd0b56e0189.tar.gz",
+          "sha256": "1dd0b56e0189c8b05fe0695da0deb26c143be54cb362b4982582cf5921e4e855",
+          "manifest_sha256": "f3280ed79f494e8b754fca459b68cdcf3e449fc6046277c8ebd0d968d9ac4f9e",
+          "bytes": 118638,
+          "files": 76,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-shared-shape-round103-20261101/archives/r103-frame-allocation-1dd0b56e0189.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
