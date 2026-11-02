@@ -12472,6 +12472,17 @@
           "files": 73,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-carrier-scale-measure-1024-d5ff205d31f9.tar.gz"
+        },
+        {
+          "event": "carrier-match-rich-measure-1024",
+          "source_revision": "1f4d2fa8fc2483e8d70cf8b2de38ae34bf9d4021",
+          "asset": "r125-carrier-match-rich-measure-1024-8f1e76045a9d.tar.gz",
+          "sha256": "8f1e76045a9db8e6f7bf977e443dfa50688d350a818728b1356a433366339462",
+          "manifest_sha256": "8750c8b053972a6a1e9d8132ba8ba579131582e0c1aae48dd69cde47889243be",
+          "bytes": 147017,
+          "files": 73,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-carrier-match-rich-measure-1024-8f1e76045a9d.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
