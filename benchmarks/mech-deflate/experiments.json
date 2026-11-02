@@ -10907,6 +10907,28 @@
         "verified_archives": 20,
         "verified_file_occurrences": 1678
       }
+    },
+    "120": {
+      "base": "1dfbfc374108d08a982fe4560d5fd0f516330029",
+      "production": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+      "compiler_source": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-initial-bdbe7c4c55b9.tar.gz",
+          "sha256": "bdbe7c4c55b9900dfb20bcab419d36e64880452d296b5d6e21e01ede71c073ea",
+          "manifest_sha256": "267a480d707e5b276045822d2fad930f743af6fb0afd671ff4d8666fea010d50",
+          "bytes": 43673,
+          "files": 36,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-initial-bdbe7c4c55b9.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
