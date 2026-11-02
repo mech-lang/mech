@@ -9302,6 +9302,17 @@
             "improving_blocks": 51,
             "adverse_blocks": 13
           }
+        },
+        {
+          "event": "scale-confirm-1024",
+          "source_revision": "f327ef9489aaa0997f4d8627256f1a14eb70b0c4",
+          "asset": "r114-scale-confirm-1024-12b15ecd8b15.tar.gz",
+          "sha256": "12b15ecd8b15c2cfda68c8bcf1057376eb0d66c567769be7af27873a28e286cd",
+          "manifest_sha256": "ae5b1ceb3b2d6e919d567a04a9496b587f775e76ab2f747b24fccc75335861cf",
+          "bytes": 84108,
+          "files": 64,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-scale-confirm-1024-12b15ecd8b15.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
