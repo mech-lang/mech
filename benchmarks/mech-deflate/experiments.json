@@ -10912,7 +10912,7 @@
       "base": "1dfbfc374108d08a982fe4560d5fd0f516330029",
       "production": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
       "compiler_source": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
-      "decision": "under measurement",
+      "decision": "Hold positive-stride phase eligibility outside the retained compiler. Repeated data improves, but tiny/random data regress and four cache copies increase peak memory. Preserve the candidate and all contrary evidence; repair the demonstrated cold owner handoff separately before reconsidering it.",
       "events": [
         {
           "event": "initial",
@@ -11186,7 +11186,19 @@
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified"
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "retained": false,
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "e637cb5d497e22fbd36a139e04e2bda4fa48093e89b5c97e8246478fe74ceb31",
+          "profile-numbers.json": "d2b97def9f54f11c5a8b43af3db4dcfaa1c593d814b329951ff09045a34c8b5e",
+          "scorecard.json": "5419cf04dd00bb764267b443beb5f75c126b10c1f66ca8db1d020ae960fa9ad3",
+          "validation.json": "05cbb2b3f19a85ddcd24b08b8b97c333a1cbc8e09dadee9bb9d1cd913983b23a"
+        }
+      },
+      "next_bounded_step": "Apply the existing same-plan canonical alias retirement proof at the numeric first-change boundary; preserve actual frozen identity, external aliases, finite charges, errors, publication and retry. Investigate instruction regression independently.",
+      "experiment_branch": "codex/numeric-stride-r120-experiment"
     }
   },
   "repository": "mech-lang/mech",
