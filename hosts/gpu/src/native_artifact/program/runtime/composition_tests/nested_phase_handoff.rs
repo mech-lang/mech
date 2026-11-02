@@ -138,3 +138,91 @@ fn nested_numeric_phase_canonical_pin_handoff_keeps_finite_failures_and_retry() 
         nested_phase::arguments(artifact, memory, 3, true, true, u64::MAX, 1, 17)
     });
 }
+
+#[test]
+fn nested_numeric_phase_canonical_handoff_keeps_copy_denial_and_recovery() {
+    for keep_old in [false, true] {
+        for artifact in artifacts(&source(keep_old)) {
+            let mode = NativeProgramLimitMode::NoLimits;
+            let memory = mode.memory_budget();
+            let jit = JitProgramArtifact::compile_with_limits(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+                mode.compilation(),
+            )
+            .unwrap();
+            for restored in [false, true] {
+                let mut published = vec![None; artifact.outputs().len()];
+                for deny_copy in [false, true, false] {
+                    let args =
+                        nested_phase::arguments(&artifact, &memory, 3, true, true, u64::MAX, 1, 17);
+                    let aliases = args.clone();
+                    let before = contents(&args);
+                    let prior = published.clone();
+                    let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                    let (result, counts) = if deny_copy {
+                        observe::run_with_first_change_copy_limit(
+                            &jit,
+                            &args,
+                            &mut published,
+                            mode.execution(),
+                            &memory,
+                            restored,
+                            0,
+                        )
+                    } else if restored {
+                        observe::run_restored(
+                            &jit,
+                            &args,
+                            &mut published,
+                            mode.execution(),
+                            &memory,
+                        )
+                    } else {
+                        observe::run(&jit, &args, &mut published, mode.execution(), &memory)
+                    };
+                    if keep_old && deny_copy {
+                        assert!(format!("{:?}", result.unwrap_err()).contains("ClonedBytes"));
+                        assert!(counts.first_change_backings.is_empty());
+                        assert!(published.iter().zip(&prior).all(|(now, old)| {
+                            now.as_ref()
+                                .unwrap()
+                                .shares_frozen_storage(old.as_ref().unwrap())
+                        }));
+                        assert_eq!(
+                            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                            retained
+                        );
+                    } else {
+                        result.unwrap();
+                        assert_eq!(counts.phases, 1);
+                        assert_eq!(counts.first_change_backings.len(), 1);
+                        assert_eq!(
+                            counts.first_change_backings[0].0 == counts.first_change_backings[0].1,
+                            !keep_old
+                        );
+                        if prior.iter().all(Option::is_some) {
+                            assert_eq!(
+                                published
+                                    .iter()
+                                    .map(|v| v.as_ref().unwrap().canonical_data_draft().unwrap())
+                                    .collect::<Vec<_>>(),
+                                prior
+                                    .iter()
+                                    .map(|v| v.as_ref().unwrap().canonical_data_draft().unwrap())
+                                    .collect::<Vec<_>>()
+                            );
+                        }
+                    }
+                    assert_eq!(contents(&args), before);
+                    assert_eq!(contents(&aliases), before);
+                }
+                drop(published);
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    (0, 0)
+                );
+            }
+        }
+    }
+}

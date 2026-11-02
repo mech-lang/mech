@@ -279,7 +279,10 @@ fn selected_template(
 // ordinary scalar path. Images rederive those same current source frontiers.
 // IR146 composes synchronous numeric children into one phase with current buffer
 // versions, distinct live scalar homes, and independently reconstructed exits.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 146;
+// IR147 is reserved for the held strided-phase eligibility experiment.
+// IR148 binds numeric first-change handoff to the independently reconstructed
+// ordinary source-site canonical alias-retirement proof.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 148;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -476,7 +479,11 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 146;
 // Policy100 retains existing leaf and parent prices. Nested phases separately
 // prove an outer admission envelope and settle actual per-loop traversal debits;
 // their finite boundary allowance follows the phase's source word inventory.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 100;
+// Policy101 is reserved for the held strided-phase eligibility experiment.
+// Policy102 funds the existing same-plan canonical alias checks and ordered
+// matching retirements before a nested phase first-change consuming handoff.
+// Existing child-free leaf handoffs and their prices remain unchanged.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 102;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
