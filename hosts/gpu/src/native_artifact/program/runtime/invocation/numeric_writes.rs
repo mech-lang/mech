@@ -43,21 +43,50 @@ impl Invocation<'_, '_, '_> {
         // Close the current loan before any fallible factory/account operation.
         // This traversal has already been prepaid at its native header.
         self.end_closed_tail(site, [args[0], args[1], 5])?;
-        let Action::LibraryCall { .. } = metadata.plan.blocks()[site].action() else {
+        let Action::LibraryCall { operands, .. } = metadata.plan.blocks()[site].action() else {
             return Err(invalid("numeric write lost source operation"));
+        };
+        let aliases = if proof.phase.is_some() {
+            metadata
+                .unsigned_buffer_calls
+                .get(site)
+                .and_then(Option::as_ref)
+                .filter(|call| {
+                    call.site() as usize == site && call.source() == operands.first().copied()
+                })
+                .ok_or_else(|| invalid("numeric write lost its same-plan ownership proof"))?
+                .owned_source_slots()
+        } else {
+            // Existing child-free leaves retain their qualified handoff/prices.
+            &[]
         };
         let call = metadata.calls[site]
             .as_ref()
             .ok_or_else(|| invalid("numeric write lost selected factory"))?;
-        self.state
-            .control
-            .work
-            .charge(crate::native_artifact::NativeExecutionPhase::Setup, 64)?;
+        self.state.control.work.charge(
+            crate::native_artifact::NativeExecutionPhase::Setup,
+            (aliases.len() as u64)
+                .checked_mul(64)
+                .and_then(|n| n.checked_add(64))
+                .ok_or_else(|| invalid("numeric ownership work overflows"))?,
+        )?;
         let source = self.state.buffer_frames.take_managed_owner(
             &metadata.buffer_frames,
             region.tail.carrier(),
             proof.arrays[*array].field,
         )?;
+        // The same source-site proof used by ordinary replacement/append
+        // admits only dead canonical aliases. A skipped private projection does
+        // not itself retire an earlier canonical definition. Release matching
+        // old pins here, after settlement and before Core checks exclusivity.
+        // Live frames, outside aliases and differently backed visits remain.
+        for slot in aliases {
+            self.state.arena.retire_current_matching(
+                slot.get(),
+                &source,
+                &mut self.state.control.work,
+            )?;
+        }
         let coexistence = self.selected_join_coexistence(None)?;
         let result = if matches!(operation, Operation::Append { .. }) {
             call.unsigned_matrix_append_private(

@@ -31,6 +31,7 @@ thread_local! {
     static LOCALS: Cell<(*mut u64, usize)> = const { Cell::new((std::ptr::null_mut(), 0)) };
     static ADMIT: Cell<Option<Admit>> = const { Cell::new(None) };
     static HELPER: Cell<Option<Helper>> = const { Cell::new(None) };
+    static FIRST_CHANGE_COPY_LIMIT: Cell<Option<u64>> = const { Cell::new(None) };
 }
 fn private_homes(
     metadata: &crate::native_artifact::program::prepare::ProgramMetadata,
@@ -169,8 +170,24 @@ unsafe extern "C" fn helper(
     } else {
         None
     };
+    let old_copy_limit = if first_change.is_some()
+        && let Some(limit) = FIRST_CHANGE_COPY_LIMIT.with(|v| v.replace(None))
+    {
+        // SAFETY: the owning helper is suspended. Deny only its original copy
+        // admission; earlier source setup and generated fuel remain intact.
+        let ctx = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
+        Some(ctx.limits.max_cloned_bytes.replace(limit))
+    } else {
+        None
+    };
     // SAFETY: unchanged arguments and result pointer from the checked entry.
     let status = unsafe { HELPER.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
+    if let Some(previous) = old_copy_limit {
+        // SAFETY: the original callback returned and its borrow has ended.
+        unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() }
+            .limits
+            .max_cloned_bytes = previous;
+    }
     if status == 0
         && let Some((id, array, before)) = first_change
     {
@@ -293,6 +310,28 @@ pub(super) fn run_restored(
 ) {
     let descriptor = super::super::tests::restore_admitted_helper_descriptor(jit);
     run_descriptor(jit, &descriptor, args, outputs, policy, memory)
+}
+
+pub(super) fn run_with_first_change_copy_limit(
+    jit: &JitProgramArtifact,
+    args: &[Value],
+    outputs: &mut [Option<Value>],
+    policy: NativeProgramExecutionLimits,
+    memory: &ManagedMemoryBudget,
+    restored: bool,
+    limit: u64,
+) -> (
+    Result<NativeProgramExecutionReport, NativeProgramExecutionError>,
+    Counts,
+) {
+    FIRST_CHANGE_COPY_LIMIT.with(|v| v.set(Some(limit)));
+    let result = if restored {
+        run_restored(jit, args, outputs, policy, memory)
+    } else {
+        run(jit, args, outputs, policy, memory)
+    };
+    assert!(FIRST_CHANGE_COPY_LIMIT.with(|v| v.get()).is_none());
+    result
 }
 
 pub(super) fn run_descriptor(
