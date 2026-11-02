@@ -257,8 +257,10 @@ unsafe extern "C" fn observe_helper(
     };
     let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
     ctx.limits = previous;
-    if operation == GlobalHelper::NumericSegmentBegin.raw()
-        && status == STATUS_OK
+    if matches!(
+        GlobalHelper::decode(operation),
+        GlobalHelper::NumericSegmentBegin | GlobalHelper::AdmitNumericSegmentBegin
+    ) && status == STATUS_OK
         && ctx
             .descriptor
             .metadata()
@@ -267,7 +269,7 @@ unsafe extern "C" fn observe_helper(
             .is_some_and(|group| group.owner.is_none() && u64::from(group.start()) == site)
     {
         // SAFETY: the real successful helper has filled this checked result.
-        let declined = unsafe { *result == 0 };
+        let declined = unsafe { *result & 1 == 0 };
         let unfunded = ctx.state.scalar_path.is_none();
         note(|r| {
             r.parent_attempts += 1;
