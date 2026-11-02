@@ -11389,6 +11389,17 @@
           "files": 68,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-handoff-round121-20261102/archives/r121-rich-counters-e217e95a65a1.tar.gz"
+        },
+        {
+          "event": "isolated-profile-scale",
+          "source_revision": "6ed4e0fb7e7e34abd1162f090e112045bc052565",
+          "asset": "r121-isolated-profile-scale-1e30d22f01ba.tar.gz",
+          "sha256": "1e30d22f01bafa70f43ab8810ef5b44f3e9fac3e6090e920c233d715c3a94540",
+          "manifest_sha256": "4caa159d42e59fd3731c1c18015447881e8f2876bc742c17b2fa6594441eea82",
+          "bytes": 313380,
+          "files": 67,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-handoff-round121-20261102/archives/r121-isolated-profile-scale-1e30d22f01ba.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
