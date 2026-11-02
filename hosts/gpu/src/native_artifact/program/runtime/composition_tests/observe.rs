@@ -13,6 +13,11 @@ pub(super) struct Counts {
     pub admits: BTreeMap<u64, u64>,
     pub helpers: BTreeMap<(u64, u64), u64>,
     pub selected: u64,
+    pub phases: u64,
+    pub phase_sites: BTreeMap<u64, u64>,
+    pub phase_initial_fuel: Vec<u64>,
+    pub phase_write_fuel: Vec<u64>,
+    pub phase_settlements: Vec<(u64, u64, u64, u64)>,
     pub poisoned_exit_words: usize,
     pub poisoned_private_homes: usize,
     pub checked_private_homes: usize,
@@ -100,8 +105,80 @@ unsafe extern "C" fn helper(
             *counts.exit_modes.entry(a).or_default() += 1;
         });
     }
+    if matches!(
+        GlobalHelper::decode(op),
+        GlobalHelper::ClosedTailEnd | GlobalHelper::NumericWritePrepare
+    ) {
+        // Read the admitted generated counters before settlement consumes them.
+        let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        let metadata = ctx.descriptor.metadata();
+        if let Some(id) = metadata.closed_tails.sites[site as usize]
+            .or(metadata.closed_tails.exits[site as usize])
+            && let Some(phase) = metadata.closed_tails.regions[id]
+                .numeric
+                .as_ref()
+                .and_then(|p| p.phase.as_ref())
+        {
+            let root = ctx.read_borrowed_word(2 + phase.loops[0].counter).unwrap();
+            let children = phase
+                .loops
+                .iter()
+                .skip(1)
+                .map(|l| ctx.read_borrowed_word(2 + l.counter).unwrap())
+                .sum::<u64>();
+            let mode = if op == GlobalHelper::NumericWritePrepare.raw() {
+                5
+            } else {
+                c
+            };
+            COUNTS.with(|v| {
+                v.borrow_mut()
+                    .phase_settlements
+                    .push((mode, root, children, a))
+            });
+        }
+    }
     // SAFETY: unchanged arguments and result pointer from the checked entry.
     let status = unsafe { HELPER.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
+    if op == GlobalHelper::ClosedTailBegin.raw() && status == 0 {
+        // SAFETY: the checked helper completed and retained its result cell.
+        let selected = unsafe { *out };
+        if selected == 1 {
+            let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+            let metadata = ctx.descriptor.metadata();
+            let id = metadata.closed_tails.initializers[site as usize].unwrap();
+            if metadata.closed_tails.regions[id]
+                .numeric
+                .as_ref()
+                .is_some_and(|p| p.phase.is_some())
+            {
+                COUNTS.with(|v| {
+                    let mut counts = v.borrow_mut();
+                    counts.phases += 1;
+                    counts
+                        .phase_initial_fuel
+                        .push(ctx.read_borrowed_word(0).unwrap());
+                    *counts.phase_sites.entry(site).or_default() += 1;
+                });
+            }
+        }
+    }
+    if op == GlobalHelper::NumericWritePrepare.raw() && status == 0 {
+        let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        let metadata = ctx.descriptor.metadata();
+        if metadata.closed_tails.sites[site as usize].is_some_and(|id| {
+            metadata.closed_tails.regions[id]
+                .numeric
+                .as_ref()
+                .is_some_and(|p| p.phase.is_some())
+        }) {
+            COUNTS.with(|v| {
+                v.borrow_mut()
+                    .phase_write_fuel
+                    .push(ctx.read_borrowed_word(0).unwrap())
+            });
+        }
+    }
     if op == crate::native_artifact::program::protocol::GlobalHelper::NumericSegmentBegin.raw()
         && status == 0
     {

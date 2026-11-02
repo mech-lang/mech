@@ -143,17 +143,43 @@ pub(in crate::native_artifact) fn emit_entry(
         if site == region.tail.header() as usize {
             let compute = words.read(b, region.words + 1);
             let comparison = words.read(b, region.words + 2);
-            let a = b.ins().icmp_imm(
-                IntCC::UnsignedGreaterThanOrEqual,
-                compute,
-                region.compute as i64,
-            );
-            let c = b.ins().icmp_imm(
+            let (compute_bound, comparison_bound, valid) = if let Some(phase) = &proof.phase {
+                let (work, a) = super::numeric_fuel::envelope(
+                    b,
+                    &words,
+                    code,
+                    proof,
+                    shadow,
+                    region.tail.carrier().get(),
+                    &phase.compute_bound,
+                )?;
+                let (compare, c) = super::numeric_fuel::envelope(
+                    b,
+                    &words,
+                    code,
+                    proof,
+                    shadow,
+                    region.tail.carrier().get(),
+                    &phase.comparison_bound,
+                )?;
+                (work, compare, b.ins().band(a, c))
+            } else {
+                (
+                    b.ins().iconst(types::I64, region.compute as i64),
+                    b.ins().iconst(types::I64, region.comparison as i64),
+                    b.ins().iconst(types::I8, 1),
+                )
+            };
+            let a = b
+                .ins()
+                .icmp(IntCC::UnsignedGreaterThanOrEqual, compute, compute_bound);
+            let c = b.ins().icmp(
                 IntCC::UnsignedGreaterThanOrEqual,
                 comparison,
-                region.comparison as i64,
+                comparison_bound,
             );
             let mut enough = b.ins().band(a, c);
+            enough = b.ins().band(enough, valid);
             // Capacity is checked before ANY source operation in this visit.
             // Count all append sites: a conservative DAG traversal bound, even
             // if a branch would skip some. A miss uses the existing header exit.
@@ -187,6 +213,23 @@ pub(in crate::native_artifact) fn emit_entry(
             let comparison = b.ins().iadd_imm(comparison, -(region.comparison as i64));
             words.write(b, region.words + 1, compute);
             words.write(b, region.words + 2, comparison);
+        }
+        if let Some(debit) = proof
+            .phase
+            .as_ref()
+            .and_then(|phase| phase.loops.iter().find(|loop_| loop_.header == site))
+        {
+            if site != region.tail.header() as usize {
+                let compute = words.read(b, region.words + 1);
+                let comparison = words.read(b, region.words + 2);
+                let compute = b.ins().iadd_imm(compute, -(debit.compute as i64));
+                let comparison = b.ins().iadd_imm(comparison, -(debit.comparison as i64));
+                words.write(b, region.words + 1, compute);
+                words.write(b, region.words + 2, comparison);
+            }
+            let count = words.read(b, shadow + debit.counter);
+            let count = b.ins().iadd_imm(count, 1);
+            words.write(b, shadow + debit.counter, count);
         }
         match proof.action(site) {
             Some(Operation::Aggregate) => {
@@ -412,7 +455,12 @@ pub(in crate::native_artifact) fn emit_entry(
     words.spill_all(b, locals)?;
     b.ins().jump(error, &[status.into()]);
     report.fixed_template_instructions = setup_work + b.func.dfg.num_insts() - boundary;
-    if report.fixed_template_instructions > FIXED_OVERHEAD as usize {
+    if report.fixed_template_instructions
+        > proof
+            .phase
+            .as_ref()
+            .map_or(FIXED_OVERHEAD, |p| p.boundary_work) as usize
+    {
         return Err(backend("numeric leaf exceeds finite boundary envelope"));
     }
     // Inspect the actual emitted graph, stopping at the admitted cold/exit

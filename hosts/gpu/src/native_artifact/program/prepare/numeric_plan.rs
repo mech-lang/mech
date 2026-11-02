@@ -1,5 +1,6 @@
-//! Shared checked numeric operations, buffer bindings, scalar homes and returns.
-//! Eligibility and current-owner authority remain in their existing adapters.
+//! Shared checked numeric representation for leaves, parent pieces, and phases.
+//! Source membership, ownership authority and prices are independently derived;
+//! these records describe operations and word homes, never a second program.
 use super::readonly_numeric::ResultRecipe;
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -54,6 +55,7 @@ pub(in crate::native_artifact) struct Plan {
     pub scalar_words: usize,
     pub words: usize,
     pub result: ResultRecipe,
+    pub phase: Option<super::numeric_phase::Schedule>,
 }
 impl Plan {
     pub fn action(&self, site: usize) -> Option<&Operation> {

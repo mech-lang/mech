@@ -75,6 +75,7 @@ fn nested_numeric_phase_keeps_aliases_current_arguments_and_failure_recovery() {
             mode.compilation(),
         )
         .unwrap();
+        qualify_nested_inventory(&jit);
         for restored in [false, true] {
             let mut published = vec![None; artifact.outputs().len()];
             for (steps, flag, allowed, deny_at, divisor, bias, rejection) in [
@@ -125,6 +126,21 @@ fn nested_numeric_phase_keeps_aliases_current_arguments_and_failure_recovery() {
                     );
                 } else {
                     result.unwrap();
+                    assert_eq!(counts.phases, 1);
+                    assert!(counts.admits.keys().all(|&site| {
+                        !jit.descriptor()
+                            .metadata()
+                            .closed_tails
+                            .regions
+                            .iter()
+                            .filter_map(|r| r.numeric.as_ref().filter(|p| p.phase.is_some()))
+                            .flat_map(|p| &p.sites)
+                            .any(|&s| s as u64 == site)
+                    }));
+                    assert_eq!(
+                        counts.helpers.values().sum::<u64>(),
+                        if steps == 0 { 7 } else { 8 }
+                    );
                     let expected = if steps == 0 {
                         Data::Matrix([Data::U64(9)].into())
                     } else {
@@ -165,6 +181,114 @@ fn nested_numeric_phase_keeps_aliases_current_arguments_and_failure_recovery() {
     }
 }
 
+fn qualify_nested_inventory(jit: &JitProgramArtifact) {
+    use crate::native_artifact::program::prepare::numeric_phase::Forest;
+    use mech_engine::native_artifact::NativeControlLoop;
+    let plan = jit.descriptor().plan();
+    let NativeControlLoop::Tail(root) = &plan.iterations()[0] else {
+        panic!("nested phase must have a Tail root")
+    };
+    let forest = Forest::derive(plan, root).unwrap();
+    let regions = &jit.descriptor().metadata().closed_tails.regions;
+    assert_eq!(regions.len(), 1);
+    let selected = regions[0].numeric.as_ref().expect("complete native phase");
+    assert_eq!(selected.phase.as_ref().unwrap().loops.len(), 3);
+    assert_eq!(
+        selected
+            .sites
+            .iter()
+            .copied()
+            .collect::<std::collections::BTreeSet<_>>(),
+        forest.sites
+    );
+    assert!(jit.descriptor().metadata().compositions.parents.is_empty());
+    let metadata = jit.descriptor().metadata();
+    assert!(
+        forest
+            .validate_child_actions(
+                plan,
+                &metadata.buffer_frames,
+                &metadata.scalar_aggregates,
+                &metadata.calls,
+            )
+            .unwrap()
+            > 0
+    );
+    let bounds = forest
+        .bounded_children(
+            plan,
+            &metadata.buffer_frames,
+            &metadata.scalar_aggregates,
+            &metadata.calls,
+        )
+        .expect("bounded native children");
+    assert_eq!(bounds.len(), 2);
+    let schedule = crate::native_artifact::program::prepare::numeric_phase::Schedule::derive(
+        &forest,
+        bounds.clone(),
+        &metadata.visits,
+        &[],
+        0,
+        0,
+        crate::native_artifact::program::prepare::tail::FIXED_OVERHEAD,
+    )
+    .unwrap();
+    assert_eq!(schedule.loops.len(), 3);
+    assert_ne!(
+        schedule.compute_bound,
+        crate::native_artifact::program::prepare::numeric_phase::Bound::Constant(0)
+    );
+    assert_eq!(
+        schedule.comparison_bound,
+        crate::native_artifact::program::prepare::numeric_phase::Bound::Constant(0)
+    );
+    for bound in &bounds {
+        assert!(bound.guard > 0);
+        assert!(bound.iteration > 0);
+        assert!(matches!(
+            bound.bound,
+            crate::native_artifact::program::prepare::numeric_phase::Bound::Add(..)
+        ));
+    }
+    assert_eq!(forest.loops.len(), 3);
+    assert_eq!(forest.order.len(), forest.sites.len());
+    assert_eq!(forest.order.first().copied(), Some(root.header() as usize));
+    assert!(!forest.sites.contains(&(root.initialize() as usize)));
+    assert!(!forest.sites.contains(&(root.exit() as usize)));
+    assert_eq!(
+        forest
+            .loops
+            .iter()
+            .map(|loop_| loop_.sites.len())
+            .sum::<usize>(),
+        forest.sites.len(),
+    );
+    for loop_ in &forest.loops {
+        let NativeControlLoop::Tail(tail) = &plan.iterations()[loop_.iteration as usize] else {
+            panic!("non-Tail inventory")
+        };
+        assert_eq!(
+            (
+                loop_.header,
+                loop_.latch,
+                loop_.initialize,
+                loop_.finish,
+                loop_.exit,
+                loop_.parent
+            ),
+            (
+                tail.header() as usize,
+                tail.latch() as usize,
+                tail.initialize() as usize,
+                tail.finish() as usize,
+                tail.exit() as usize,
+                tail.parent()
+            ),
+        );
+        assert!(loop_.sites.iter().all(|&site| forest.sites.contains(&site)));
+    }
+}
+
 #[test]
 fn nested_numeric_phase_finite_limits_keep_publication_and_retry() {
     for source in sources() {
@@ -173,3 +297,6 @@ fn nested_numeric_phase_finite_limits_keep_publication_and_retry() {
         });
     }
 }
+
+#[path = "nested_phase_controls.rs"]
+mod controls;

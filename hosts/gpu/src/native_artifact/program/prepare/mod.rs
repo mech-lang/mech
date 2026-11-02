@@ -17,6 +17,7 @@ pub(in crate::native_artifact) mod cleanup_effects;
 pub(in crate::native_artifact) mod composition;
 pub(in crate::native_artifact) mod constant_owners;
 pub(in crate::native_artifact) mod frame_retirement;
+pub(in crate::native_artifact) mod numeric_phase;
 
 /// Recomputed both on source preparation and independent build-image loading.
 pub(in crate::native_artifact) fn prepare_frame_composition(

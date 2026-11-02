@@ -33,6 +33,7 @@ pub(in crate::native_artifact) mod tail;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod window;
 
+mod numeric_fuel;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod numeric_segments;
 #[cfg(feature = "canonical-native-program")]

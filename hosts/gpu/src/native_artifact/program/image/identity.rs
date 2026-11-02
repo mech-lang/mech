@@ -277,7 +277,9 @@ fn selected_template(
 // IR144 belongs to the held aggregate-in-numeric-pieces experiment.
 // IR145 funds the existing private scalar aggregate word actions through the
 // ordinary scalar path. Images rederive those same current source frontiers.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 145;
+// IR146 composes synchronous numeric children into one phase with current buffer
+// versions, distinct live scalar homes, and independently reconstructed exits.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 146;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -471,7 +473,10 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 145;
 // Policy99 prices only reached setup construction for constants with a runtime
 // consumer. Unread constants retain their immutable plan/type/local metadata,
 // but no independent admission, arena installation or owner cleanup is needed.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 99;
+// Policy100 retains existing leaf and parent prices. Nested phases separately
+// prove an outer admission envelope and settle actual per-loop traversal debits;
+// their finite boundary allowance follows the phase's source word inventory.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 100;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

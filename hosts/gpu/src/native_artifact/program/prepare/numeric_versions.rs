@@ -17,14 +17,14 @@ impl Traversal {
         plan: &Plan,
         tail: &NativeTailLoop,
         sites: &BTreeSet<usize>,
+        forest: &super::super::numeric_phase::Forest,
     ) -> Result<Self, &'static str> {
+        if sites != &forest.sites || forest.loops[0].header != tail.header() as usize {
+            return Err("numeric version forest differs from the selected phase");
+        }
         let mut next = BTreeMap::new();
-        let mut incoming = sites
-            .iter()
-            .map(|&s| (s, 0usize))
-            .collect::<BTreeMap<_, _>>();
         for &site in sites {
-            let successors = if site == tail.latch() as usize {
+            let successors = if forest.loops.iter().any(|l| l.latch == site) {
                 Vec::new()
             } else {
                 NativeProgramFacts::control_successors(plan.blocks()[site].terminator())
@@ -34,29 +34,9 @@ impl Traversal {
                     .filter(|n| sites.contains(n))
                     .collect::<Vec<_>>()
             };
-            for n in &successors {
-                *incoming.get_mut(n).unwrap() += 1;
-            }
             next.insert(site, successors);
         }
-        let mut ready = incoming
-            .iter()
-            .filter_map(|(&s, &n)| (n == 0).then_some(s))
-            .collect::<Vec<_>>();
-        let mut order = Vec::new();
-        while let Some(site) = ready.pop() {
-            order.push(site);
-            for n in &next[&site] {
-                let count = incoming.get_mut(n).unwrap();
-                *count -= 1;
-                if *count == 0 {
-                    ready.push(*n);
-                }
-            }
-        }
-        if order.len() != sites.len() {
-            return Err("numeric traversal has an undeclared cycle");
-        }
+        let order = forest.order.clone();
         Ok(Self {
             header: tail.header() as usize,
             order,
@@ -144,9 +124,10 @@ pub(super) fn validate(
     actions: &[(usize, Operation)],
     arrays: &[Array],
     result: &ResultRecipe,
+    forest: &super::super::numeric_phase::Forest,
 ) -> Result<(), &'static str> {
     // Check the complete graph before any conditional edge can be excluded.
-    let traversal = Traversal::new(plan, tail, sites)?;
+    let traversal = Traversal::new(plan, tail, sites, forest)?;
     let original = pass(
         plan,
         tail,
@@ -292,6 +273,28 @@ fn pass(
                 }
             }
             _ => {}
+        }
+        if let Some(child) = plan
+            .iterations()
+            .iter()
+            .filter_map(|l| match l {
+                NativeControlLoop::Tail(t)
+                    if t.header() != tail.header() && t.latch() as usize == site =>
+                {
+                    Some(t)
+                }
+                _ => None,
+            })
+            .next()
+            && let Some(fields) = frames.fields(child.carrier())
+        {
+            for (ordinal, field) in fields.iter().enumerate() {
+                if matches!(field.lane(), Lane::Managed { .. })
+                    && !fresh(&state, (child.next().get(), Some(ordinal)))
+                {
+                    return Err("child recursive edge forwards an older array version");
+                }
+            }
         }
         if site == tail.latch() as usize {
             for array in arrays {
