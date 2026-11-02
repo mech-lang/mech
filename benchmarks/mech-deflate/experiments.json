@@ -8325,7 +8325,7 @@
       "base": "3b310eb80f84ab16757923f270931fd53cf1477b",
       "production": "0cbf5b9f6b5870c40aac5a75bc7c89bb23c9b32a",
       "compiler_source": "0cbf5b9f6b5870c40aac5a75bc7c89bb23c9b32a",
-      "decision": "under measurement",
+      "decision": "hold: 8B +0.799135%, 1KB +0.946009%; no measured speed win",
       "events": [
         {
           "event": "initial",
@@ -8456,13 +8456,30 @@
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "retained": false,
+      "retained_baseline": "3b310eb80f84ab16757923f270931fd53cf1477b",
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "scorecard.json": "107102fd06fbdaad1e16aa91520d43330303ff3a187aa1c585f092d9e3a1bff4",
+          "validation.json": "e6f95eb1c1169a32977ffb831a79f0f27dff64b46e46c5e4d5c5ee4ab1ec64fa"
+        }
+      },
+      "test_source": "7200aee43be4793cb6f912f72f6691373ceafbeb",
+      "ci_source": "9d931235f4d3d62e0b772e7f35320b20b6216d93",
+      "skipped_coverage": [
+        "fresh hardware/heap/sampling",
+        "full qualification of unretained candidate",
+        "hosted CI"
+      ],
+      "source_disposition": "Experimental source/test/CI changes reverted from default; commits and diagnostic patches retained."
     },
     "110": {
       "base": "3b310eb80f84ab16757923f270931fd53cf1477b",
       "production": "7a47b86b5e05e696beac21b7fe673c8b171c4fd2",
       "compiler_source": "7a47b86b5e05e696beac21b7fe673c8b171c4fd2",
-      "decision": "under measurement",
+      "decision": "hold: 8B +0.313409%, 1KB +0.533140%; no measured speed win",
       "events": [
         {
           "event": "initial",
@@ -8593,13 +8610,30 @@
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "retained": false,
+      "retained_baseline": "3b310eb80f84ab16757923f270931fd53cf1477b",
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "scorecard.json": "59f35522b34562be183288ad4c8ad9113430ef0df3a2b6708b50cd7c17f28586",
+          "validation.json": "1f6bff2588c7aaa85808d9741a3b30b3c4bd59cc5e3faeca1a00dba79a278122"
+        }
+      },
+      "test_source": "7200aee43be4793cb6f912f72f6691373ceafbeb",
+      "ci_source": "9d931235f4d3d62e0b772e7f35320b20b6216d93",
+      "skipped_coverage": [
+        "fresh hardware/heap/sampling",
+        "full qualification of unretained candidate",
+        "hosted CI"
+      ],
+      "source_disposition": "Experimental source/test/CI changes reverted from default; commits and diagnostic patches retained."
     },
     "111": {
       "base": "3b310eb80f84ab16757923f270931fd53cf1477b",
       "production": "727a955105fe43ee99d120560157bbdf985dacd2",
       "compiler_source": "727a955105fe43ee99d120560157bbdf985dacd2",
-      "decision": "under measurement",
+      "decision": "hold: mixed 8B +0.237852%, 1KB -0.298707%; preserve positive and adverse observations; retain R108 default",
       "events": [
         {
           "event": "initial",
@@ -8719,7 +8753,24 @@
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "retained": false,
+      "retained_baseline": "3b310eb80f84ab16757923f270931fd53cf1477b",
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "scorecard.json": "b589f0cc9903e17783dc9ba58ea956bc305a389aa9c3545b73353dd793525482",
+          "validation.json": "8bedc7013c2b25184e1f5d38565c37040a3601f3c1c1a239703f58bff4396fe3"
+        }
+      },
+      "test_source": "11b61ba7f74a4f397b2b6d08b851b42e9d58f3e1",
+      "ci_source": "9d931235f4d3d62e0b772e7f35320b20b6216d93",
+      "skipped_coverage": [
+        "fresh hardware/heap/sampling",
+        "full qualification of unretained candidate",
+        "hosted CI"
+      ],
+      "source_disposition": "Experimental source/test/CI changes reverted from default; commits and diagnostic patches retained."
     }
   },
   "repository": "mech-lang/mech",
