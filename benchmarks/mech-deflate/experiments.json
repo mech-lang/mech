@@ -11323,6 +11323,17 @@
             "improving_blocks": 41,
             "adverse_blocks": 23
           }
+        },
+        {
+          "event": "scale-measure-1024",
+          "source_revision": "6ed4e0fb7e7e34abd1162f090e112045bc052565",
+          "asset": "r121-scale-measure-1024-40b7d9ac1bdf.tar.gz",
+          "sha256": "40b7d9ac1bdf31f92654e3a7595b714f60910bfd6ace6f541e97ef9ab446b67c",
+          "manifest_sha256": "fa633d69b131518a0e8bf1f4a8c6c3b4610976f454348a6d09e9556f22be7d9c",
+          "bytes": 76929,
+          "files": 61,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-handoff-round121-20261102/archives/r121-scale-measure-1024-40b7d9ac1bdf.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
