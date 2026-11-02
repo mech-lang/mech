@@ -6,6 +6,85 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Hosted CI is not awaited under
 instruction; no green hosted-CI claim is made.
 
+## R118: zero-trip source variant; R116 compiler unchanged
+
+Compiler control **`509c0d8e05a234020372b43832d7785f255c1b59`**; published base
+`6a303c6d92d14f5a88ab4aecb9999fda205f285a`; application variant
+**`50751f9445356b9b33d16b89f636876e6014379f`**; test-filter correction
+`2203da6c04`. This is a separately labeled source optimization. The maintained
+pinned source and its MBC remain unchanged; compiler-only parity is still a
+separate measurement. IR/work/ABI/MBC remain145/99/38/14.
+
+The variant restores general zero-match and zero-skip guards. It bypasses only
+empty children and returns their incoming state. Nonzero calls, earlier checks,
+search/skip separation, algorithm, tables, real scratch capacities, depth300,
+nice258, near-EOF limits, allocator and `evaluate_into` boundary are unchanged.
+
+| Matched elapsed cohort | Before / Roc | Variant / Roc | Change |
+|---|---:|---:|---:|
+|8B, four prepared pairs|7.836520×|7.653202×|−2.339278%|
+|1KB random, no matches|102.481686×|91.356686×|−10.855598%|
+|1KB repeated `a`, many matches|171.389060×|165.643853×|−3.352143%|
+
+Each row uses its own fresh common reference. All4 prepared pairs improve;
+8B descriptive blocks include62 improving and2 adverse. Both1KB cohorts have
+8/8 improving alternating blocks and128 observations per version. Preserve all
+3,968 primary /3,984 total8B observations. These results are neither pooled nor
+compounded; the target remains1×. Largest timed input is1KB.
+
+Separate hardware:8B instructions26,163,688→25,679,547 and cycles
+7,216,289.5→7,088,817;1KB no-match instructions494,413,943→439,689,257
+(**−11.068597%**) and cycles100,478,452.5→89,185,590.5 (**−11.239088%**).
+No match-rich hardware or heap cohort was collected. Serial CPU-time profiles
+cover695 complete8B calls and130 complete1KB no-match calls per subject;
+CPU-time weights are not a retired-instruction ledger.
+
+Heap requests remain4,257 at8B and47,796 at1KB, with68 reallocations at each.
+Requested bytes rise by**2,368** per call:95,876,945→95,879,313 at8B and
+7,523,247,338→7,523,249,706 at1KB. Incremental peak live heap is unchanged:
+17,782,424B /17,773,224B. Whole prepared-harness between-call live usable bytes
+rise**66,544B** at both sizes; this includes prepared metadata/current values,
+not an exclusive cache census. Requested capacity is not copied bytes.
+Native text shrinks14,584,260→14,571,128B and entry stack134,960→134,768B.
+Whole linked text also shrinks13,132B. Native binaries remain local.
+
+Two identical execution censuses per size/subject confirm that all**3,072** empty
+path-match child calls disappear at1KB. Registered admission/helper callbacks
+fall196,912→164,144; numeric entries/exits31,912→29,864; array-alias exports
+39,527→38,503. At8B the corresponding callback count is8,724→8,412.
+GPU scalar-transport materializations remain3; this observer does not count all
+Core canonical constructors. The two per-position path frontiers still export
+**18,432 arrays**. Their owners are path iterations136 and170, retaining6,144
+and12,288 exports respectively. This is the unchanged compiler witness for a
+complete phase with persistent views/owner/scalar state.
+
+Passing, with inventories checked separately: unchanged baseline component236,
+composition8, path1; variant component3; complete variant1 test covering all
+existing small cases from original and decoded artifacts. Expected values and
+allowances are unchanged. Checks retain exact nodes, real305,257-node capacity,
+entry errors/order, live aliases, failure publication and recovery. Complete
+compression and timed calls match pinned raw bytes and independent inflate,
+with final managed bytes/nodes zero. Timed output capacities remain13 /1,029.
+
+The initial standalone producer missed a retained `sha2` dependency; correcting
+the extern fixed this harness error. The first managed reference build returned
+`PermissionDenied` without identifying an operation; the identical approved
+command succeeded. The inherited scale-summary scope string initially claimed
+identical source/MBC; original and corrected metadata are both retained, with
+raw observations/statistics unchanged. These are resolved harness/environment
+issues, not introduced compiler failures.
+
+No new whole-compiler/Core/no_std/all-features/minimal-graph, scalar12/frame8 or
+linked40 mini-program rerun is claimed: compiler and libraries are unchanged
+from R116. No16KB/full-scale timing or green hosted-CI claim. The next compiler
+work keeps source fixed on both sides and targets the complete nested path phase.
+No no-match whole-block simplification or packed-load gain is claimed yet.
+
+Variant source SHA256:`85fba4bc9f55796c8a83c7ff0533590d4bf5e97bd8be42d4dd56c5d448427b36`;
+revision14 MBC SHA256:`5d9318ae144d5d42b3bee53dd23ff6e26955ef6652c5f93ef05eeadf69a9ca26`.
+The evidence index retains the exact commands, feature profile, raw journals,
+reference/source pins, corrected scope, code inspections and replay reports.
+
 ## R117: ordered retirement scan held; restore R116
 
 Baseline `6a303c6d92d14f5a88ab4aecb9999fda205f285a`; candidate
