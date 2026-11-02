@@ -6,6 +6,89 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Hosted CI is not awaited under
 instruction; no green hosted-CI claim is made.
 
+## R107: input scaling and CPU/memory profile; default compiler unchanged
+
+The default implementation stays R105 at `8f6e6a8de9e4928a88f1341dd0538504bd2336e6`.
+No new compiler/runtime code is added here. The ownership candidate
+`4834caa483d1f79437dace189accdba82eaf9770` is saved separately on
+`codex/branch-ownership-r106-experiment` at local checkpoint `1693fe593f`.
+It remains held, with no universal speed claim. Its existing implementation,
+controls, raw adverse observations and1KB gain are preserved.
+
+### Matched uninstrumented timing of the held candidate
+
+| Input | R105 / reference time | Candidate / reference time | Candidate time change |
+|---|---:|---:|---:|
+|8B|8.027041×|8.081192×|+0.674603%|
+|64B|25.204773×|25.595225×|+1.549122%|
+|256B|55.363354×|56.026910×|+1.198547%|
+|1,024B|115.013911×|113.918447×|−0.952462%|
+
+The8B primary comparison has3,968 observations and no improving pair. Larger
+small cases are a separate cohort:128 observations/version/size, alternating
+16-call blocks with the peer blocked on stdin. All eight descriptive blocks agree
+with each size's direction; they are not independent experiment replications.
+The64/256/1,024B inputs are deterministic prefix-consistent xorshift bytes. Their
+exact reference raw bytes and independent inflate pass. Inputs differ from the
+8B alphabetic case; the table does not isolate size from content across that row.
+Original level12 computation, source/bytecode, search limits, real scratch sizes
+and pinned allocator remain. Output capacity is the original bound `n+5` for these
+small inputs, cleared/rebound outside evaluate_into; aliases and final managed
+bytes/nodes0 pass. No full-scale/long benchmark is run.
+
+### Fresh1KB counters, independent of timing and CPU sampling
+
+| Metric | Reference | R105 | Held candidate |
+|---|---:|---:|---:|
+|Retired instructions|1,690,807|558,388,496|559,500,546|
+|Cycles|973,713.5|112,154,903|111,583,370|
+|Allocation requests, including reallocations|84|47,796|43,100|
+|Cumulative requested bytes|9,012,988|7,523,247,338|20,234,842|
+|Incremental peak live usable heap|9,257,328B|17,773,224B|15,173,352B|
+
+Hardware has32 observations/subject; heap has32 reference and8 Mech observations/
+subject after controls are excluded. Heap-instrumented instructions and elapsed
+are excluded from hardware and primary timing claims. Counter read overhead is
+retained. Candidate instructions rise0.199154% while cycles fall0.509593%.
+Cumulative reservation requests are not bytes copied or resident memory. Despite
+7.50GB fewer requested bytes, actual incremental heap peak falls only2.60MB and
+whole-subject physical footprint stays roughly229MB. Reference footprint is about
+14MB. This includes setup/image/runtime ownership, not merely the1KB input;
+no exact whole-footprint attribution is established.
+
+### CPU evidence and next bounded target
+
+Fresh serial two-second samples contain1,329 Mech and1,517 reference exclusive
+weights. Only65/1,329 Mech weights are generated-entry body;1,112 are other host
+callbacks,101 tail cleanup and39 private-frame callbacks. Categories are disjoint;
+callbacks include real algorithm work and are not all removable overhead.
+Reference's leading opaque generated function has1,362/1,517 exclusive weights;
+no source name is inferred from its hash. Sampling weights are not instructions.
+
+The leading Mech leaves are numeric-segment entry85, ordinary visit82, compute
+debit70, helper dispatch68, thread-local lookup64, numeric-segment exit53 and tail
+cleanup40. Next, count actual repeated source previews/validation/footprint work
+within each numeric entry, then test entry-local reuse before adding persistent
+caches or changing admission. This targets work now demonstrated at the larger
+small input. Shared debit inlining, buffer ownership, shape forwarding and prior
+frame changes are already investigated; this report does not re-propose them.
+
+An environmental removal around midnight deleted the pinned source/bytecode and
+98 otherwise-clean tracked files. Missing tracked files were restored from exact
+HEAD; source assembled byte-identically and bytecode restored from an existing
+pinned snapshot. Both longstanding hashes match, with a persistent backup outside
+temporary storage. A current-producer regeneration differed and was rejected
+before execution. The cause of the removal is not established. Initial reference
+platform-path and missing-input diagnostic failures remain in the packet; corrected
+builds, counters and profiles pass. There is no compiler semantic change or fresh
+compiler/CI qualification claim in this round.
+
+Three diagnostic archives/sidecars (647,188 archive bytes, no native binaries)
+are published with verified server digests. Fresh independent downloads verify
+276 file occurrences/239 paths; only packet manifests have multiple versions.
+All four timing/counter/sample reports replay byte-identically without a compiler
+or compressor run. The compact index retains exact download URLs and hashes.
+
 ## R105: preserve live immutable shapes when finalizing private appends
 
 Published parent `accd7f478628a073e3f4e0007a830c1f95ccb82a`; production fix
