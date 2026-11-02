@@ -312,7 +312,7 @@ fn bind_current(
     let ResolvedOperationContract::Declared(contract) = template.contract() else {
         return Err(invalid(node));
     };
-    let current_key = |id, schema: &Schema, prepared_key| {
+    let current_key = |id, schema: &Schema, prepared_key: Option<mech_core::SchemaKey>| {
         let entry = schemas.entry(id).ok_or_else(|| invalid(node))?;
         if entry.schema() != schema || prepared_key.is_some_and(|key| key != entry.key()) {
             return Err(invalid(node));
