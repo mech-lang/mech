@@ -11811,6 +11811,17 @@
             "improving_blocks": 27,
             "adverse_blocks": 37
           }
+        },
+        {
+          "event": "scale-measure-1024",
+          "source_revision": "71f8cb7bed8bc84bfcb75915b79b8c299401adc5",
+          "asset": "r123-scale-measure-1024-9b682ea9b831.tar.gz",
+          "sha256": "9b682ea9b8315d06f11957da01ab02e9959337040248b2662adb68193bebc2e1",
+          "manifest_sha256": "466d44396a8401bcecc574157dd12461be7a5a987f05d3d63e5a98f02d2819df",
+          "bytes": 85877,
+          "files": 68,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-scale-measure-1024-9b682ea9b831.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
