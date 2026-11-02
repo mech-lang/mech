@@ -70,16 +70,12 @@ impl Hooks {
             * crate::native_artifact::program::codegen::bound_shim::TEMPLATE_BOUND
     }
     #[cfg(feature = "canonical-native-program")]
-    pub fn argument_words_available(&self, b: &mut FunctionBuilder<'_>, count: usize) -> Value {
-        b.ins().icmp_imm(
+    pub fn require_argument_words(&self, b: &mut FunctionBuilder<'_>, count: usize, error: Block) {
+        let enough = b.ins().icmp_imm(
             IntCC::UnsignedGreaterThanOrEqual,
             self.argument_capacity,
             count as i64,
-        )
-    }
-    #[cfg(feature = "canonical-native-program")]
-    pub fn require_argument_words(&self, b: &mut FunctionBuilder<'_>, count: usize, error: Block) {
-        let enough = self.argument_words_available(b, count);
+        );
         guard(b, enough, error, crate::native_artifact::abi::STATUS_ABI);
     }
     #[cfg(feature = "canonical-native-program")]

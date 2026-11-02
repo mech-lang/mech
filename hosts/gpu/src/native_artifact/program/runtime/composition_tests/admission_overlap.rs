@@ -150,18 +150,9 @@ fn declined_parent_piece_restores_paid_scalar_prefix_and_recovers() {
                 assert_eq!(
                     counts
                         .helpers
-                        .iter()
-                        .filter(|((site, operation), _)| {
-                            *site == u64::from(entry)
-                                && matches!(
-                                    GlobalHelper::decode(*operation),
-                                    GlobalHelper::NumericSegmentBegin
-                                        | GlobalHelper::AdmitNumericSegmentBegin
-                                )
-                        })
-                        .map(|(_, count)| count)
-                        .sum::<u64>(),
-                    3,
+                        .get(&(u64::from(entry), GlobalHelper::NumericSegmentBegin.raw()))
+                        .copied(),
+                    Some(3),
                     "the decline must exercise the actual native preview: {counts:?}"
                 );
                 for &site in &scalar_sites[1..] {
