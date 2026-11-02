@@ -12099,6 +12099,17 @@
             "improving_blocks": 61,
             "adverse_blocks": 3
           }
+        },
+        {
+          "event": "scale-measure-1024",
+          "source_revision": "fc8e98e8d7230b78ff01644ae1457828f281673b",
+          "asset": "r124-scale-measure-1024-9cea160f8559.tar.gz",
+          "sha256": "9cea160f855956899d86c84c8f1938506b017d58927ab867d4040629c472ccdd",
+          "manifest_sha256": "fcc60990ccc45d23d961a4a0f8c913c195e11a06e182ef1c93bd39b858e76b62",
+          "bytes": 228827,
+          "files": 65,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-scale-measure-1024-9cea160f8559.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
