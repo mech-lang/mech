@@ -85,6 +85,17 @@ sidecars remain. Payload archive hashes are unchanged; canonical sidecars and th
 round index point to the continuation. The maintained replay harness accepts an
 optional per-round release tag while preserving historical default downloads.
 
+The initial fresh replay verified all15 packets and reproduced three reports,
+but the single entrypoint omitted the profile report generator. The original
+failure and matching reports remain. The entrypoint now invokes its sibling
+profile reader; a clean empty-output control passes. A supplemental immutable
+packet retains that repair. Fully fresh retrieval verifies all16 packets,
+1,402 file occurrences, 663 paths and ten multi-version paths; all four numerical
+reports reproduce byte-identically. The prior R103 default-release path also
+retrieves16 packets and reproduces its original four reports, and all132 workflow
+tests pass again after the per-round release change. No compiler build or
+performance observation was changed for these evidence-only repairs.
+
 Fresh isolated profiles retain695 complete calls per subject, excluded from
 primary timing. Their1175/1292 sample weights are not retired instructions.
 Current registration admission/removal accounts for29/1292 weights, frame-copy
