@@ -12,6 +12,7 @@ mod managed_carriers;
 mod managed_projections;
 mod multiple_children;
 mod named_managed_projections;
+mod nested_phase;
 mod observe;
 mod pack;
 mod record_lookup;
