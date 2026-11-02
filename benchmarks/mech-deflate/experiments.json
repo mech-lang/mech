@@ -9715,6 +9715,17 @@
           "files": 67,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-scale-confirm-1024-d648c0952f03.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "2f0cc8b85e7dbcef53abfe16d76742872a7ceca2",
+          "asset": "r115-closure-00ed5feede6d.tar.gz",
+          "sha256": "00ed5feede6d5a57408f7313c21647764aecfcb51208328674e41da8080ae339",
+          "manifest_sha256": "d9d2bceb8f93fa509c43acb6911a8f49087c4cb4364b642d3fc1ae098e192efd",
+          "bytes": 9431800,
+          "files": 262,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-closure-00ed5feede6d.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
