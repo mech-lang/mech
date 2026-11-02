@@ -6,6 +6,97 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Hosted CI is not awaited under
 instruction; no green hosted-CI claim is made.
 
+## R105: preserve live immutable shapes when finalizing private appends
+
+Published parent `accd7f478628a073e3f4e0007a830c1f95ccb82a`; production fix
+`341bf02918f4573fb518e12c5435ddd93efe0598`, measured compiler
+`ec55e3f856306b07d34050b8b95ac0289a28fb5f`. Test-only canonical fixture repair
+`05d3a9ce5`; separate guarded CI inventory `ec55e3f85` requires exactly four
+private-append tests.
+
+Review identified an introduced R103 correctness bug: a replacement shares its
+immutable shape with a live old alias, but private append finalization tried to
+mutate that shared owner. Two maintained Core tests reproduce the parent panic
+`private shape`, including when the append branch is unselected. Finalization now
+copies current parameters into its already admitted independent shape scratch,
+performs the original checked length update, and installs that owner consistently.
+No new allocation site, budget allowance or publication identity is introduced.
+
+Fresh complete eight-byte elapsed **8.125431×→8.124210× Roc's time**:
+2.356375→2.356021ms, common fresh reference0.290ms, −0.015023%. Only one of four
+pairs improves; 28 descriptive blocks improve and36 worsen. All3,968 primary /
+3,984 total observations remain. **Retain as a correctness repair, without an
+elapsed-win claim.**
+
+| Metric | Fresh retained R104 | R105 |
+|---|---:|---:|
+| Allocation requests |4,257|4,257|
+| Reallocations, included above |68|68|
+| Requested bytes |95,876,945|95,876,945|
+| Incremental live heap peak |17,782,424B|unchanged|
+| Instructions, separate cohort |27,013,011|27,014,335.5 (+0.004903%)|
+| Cycles, same hardware cohort |7,388,324.5|7,411,965.5 (+0.319978%)|
+| Whole linked text |63,678,544B|63,678,672B (+128B)|
+
+The fresh complete census reconciles4,257 requests/2,683 stack groups/1,118 PCs
+with the separate heap counters. Object, descriptor and metadata remain
+byte-identical; generated text14,604,696B and entry stack135,728B stay fixed.
+Logical work42,410,605,541 and versions143/99/38/14 remain. Algorithm, source and
+bytecode hashes, allocation sites, real tables/capacities, pinned allocator, input
+aliases and evaluate_into timer are unchanged. Exact raw bytes, independent
+inflate, output capacity13 clear/rebind and final managed bytes/nodes0 pass;
+physical output backing still changes.
+
+Actual Core unit root:52 tests pass, including all four append cases, all unsigned
+widths, selected/unselected append, live aliases, abort cleanup and a preparation
+from an older value with a different current length. Current Core no_std check
+passes locked/offline with warnings-as-errors. Twelve Core-dependent project
+crates rebuild coherently under the exact retained selected-operation features;
+external dependencies remain frozen. Full current formatting also passes.
+
+Existing checks pass unchanged: runtime356, work/memory33, native CI65, image1;
+components236, connected8, path1; linked16+12+12; scalar12 with maximum1.009568
+under unchanged1.05 gate, pure-scalar counts/bytes equal and zero loop allocation
+slope; frame8 with no request/byte/work increase; workflow132 and architecture /
+type/memory15. The expensive knucleotide-body exclusion remains. No fresh full
+all-features/minimal dependency graph, full no_std test suite or larger-input run
+is claimed. Hosted CI is not awaited; the PR remains draft.
+
+Failure disposition: the introduced parent panic is repaired. One added control
+initially provided an unused third schema parameter, which canonicalization
+prunes; its initial fixture error remains, and the corrected legal two-parameter
+case passes. A proposed native source witness hit an existing exact match-schema
+restriction before execution and was removed, without broadening source semantics;
+it is not claimed as a runtime reproducer. A separate external diagnostic initially
+omitted an existing fixture path; an unchanged-fixture symlink repairs that copy.
+One successful linked test's archive write could not update Git metadata under
+restricted access; its exact receipt was committed through authorized access.
+No timing was rerun or altered for bookkeeping. No unresolved correctness failure
+remains in this repair's executed scope.
+
+Fresh isolated profiles retain695 complete calls per subject and1,265/1,308 sample
+weights, excluded from primary timing. Current frame-action ancestry128/1,308,
+tail cleanup95/1,308 and registration admission/removal23/1,308 are descriptive
+samples with overlapping ancestry groups, not retired-instruction partitions.
+
+The earlier registration question is now measured separately: each of two complete
+eight-byte diagnostic visits has336 changed replacements,252 may-consume visits,
+166 actual consumes, and all166 have an actually exclusive detached registration
+in the same account/arena with the old root dead.24 nonreplacement consumes remain
+separate. This establishes a166-candidate envelope, not an implemented allocation
+saving. Diagnostic timings and allocations are excluded from performance claims.
+
+Publication verifies17 archives and17 sidecars in the existing continuation
+release, without native binaries. Fully fresh retrieval verifies1,372 file
+occurrences /602 paths and reproduces all four indexed reports byte-identically.
+
+The next main compiler target follows the branch-ownership brief: refine the
+old-value query using one exact current Boolean, discard it at invalidating
+boundaries, and retain Core's actual alias/account/arena/ownership checks. All four
+current scanner append witnesses independently reproduce the impossible false-arm
+read. The prepared-schema148-request change is already complete in R104; borrowed
+descriptor validation and initial-turn plan overrides remain separate follow-ups.
+
 ## R104: reuse prepared schema headers; allocation improvement only
 
 Published parent `a88acd5d87650e12cca6d28015334fa027989594`; production/compiler
