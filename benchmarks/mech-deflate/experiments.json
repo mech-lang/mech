@@ -8024,7 +8024,7 @@
       "base": "8f6e6a8de9e4928a88f1341dd0538504bd2336e6",
       "production": "8f6e6a8de9e4928a88f1341dd0538504bd2336e6",
       "compiler_source": "8f6e6a8de9e4928a88f1341dd0538504bd2336e6",
-      "decision": "under measurement",
+      "decision": "profile complete; no compiler/runtime edit; R105 default retained, R106 held as workload-dependent experiment",
       "events": [
         {
           "event": "input-scaling-profile",
@@ -8034,8 +8034,8 @@
           "manifest_sha256": "3c6bca00aae1b64fd51e25c94dca86886558d8c441dce26eaf9da05b4c16d029",
           "bytes": 294709,
           "files": 128,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-input-scaling-profile-round107-20261101/archives/r107-input-scaling-profile-faa40a3a0bc6.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r107-input-scaling-profile-faa40a3a0bc6.tar.gz"
         },
         {
           "event": "held-candidate-scaling-raw",
@@ -8045,13 +8045,13 @@
           "manifest_sha256": "07278c57af3ca901f2ee55665319d08f824080ed3f2ce3e35e4b2f992b4d7d6c",
           "bytes": 310848,
           "files": 120,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-input-scaling-profile-round107-20261101/archives/r107-held-candidate-scaling-raw-af8bc97e3ab4.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r107-held-candidate-scaling-raw-af8bc97e3ab4.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified"
     }
   },
   "repository": "mech-lang/mech",
