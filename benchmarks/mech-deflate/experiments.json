@@ -9682,6 +9682,17 @@
           "files": 83,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-scale-counters-064f7fc93a0c.tar.gz"
+        },
+        {
+          "event": "boundary-census-after",
+          "source_revision": "2f0cc8b85e7dbcef53abfe16d76742872a7ceca2",
+          "asset": "r115-boundary-census-after-d9cd21a8dc98.tar.gz",
+          "sha256": "d9cd21a8dc98075b6851d2887df06783bbe8a9633f73e6aacda6900f8bd8f0d5",
+          "manifest_sha256": "133358a36a43cedc599e2707358f1786c6c4d7832e046048f4e517024f665ca1",
+          "bytes": 211750,
+          "files": 66,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-boundary-census-after-d9cd21a8dc98.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
