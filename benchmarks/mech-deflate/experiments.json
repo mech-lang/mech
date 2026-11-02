@@ -11274,6 +11274,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-handoff-round121-20261102/archives/r121-primary-group1-1be55a739731.tar.gz"
+        },
+        {
+          "event": "primary-group2",
+          "source_revision": "6ed4e0fb7e7e34abd1162f090e112045bc052565",
+          "asset": "r121-primary-group2-f9a289f0044f.tar.gz",
+          "sha256": "f9a289f0044f9ebf1c8523b7c134eee479e5e66bf3c5c1e06013a1afc27b6f4c",
+          "manifest_sha256": "3d7d10d4b14bbae0c28c57e78b08058c15edc6e663ddf1f8d7a61975d4e0a556",
+          "bytes": 87735,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-handoff-round121-20261102/archives/r121-primary-group2-f9a289f0044f.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
