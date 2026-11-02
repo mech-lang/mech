@@ -11160,11 +11160,22 @@
           "files": 211,
           "publication": "published; server SHA-256 verified",
           "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-closure-02647362e5a6.tar.gz"
+        },
+        {
+          "event": "replay-inputs",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-replay-inputs-bf565d569ab4.tar.gz",
+          "sha256": "bf565d569ab436169fcc87cb7b7219265df917216d8ab8d3ba65768fd1799016",
+          "manifest_sha256": "e9983cd1c921f027fef95135f978a52c62c3ffd718b67686ec25da203485e025",
+          "bytes": 4442042,
+          "files": 67,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-replay-inputs-bf565d569ab4.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified"
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
