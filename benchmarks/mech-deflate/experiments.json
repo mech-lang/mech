@@ -7789,8 +7789,8 @@
           "manifest_sha256": "df301574f06862b50993430e96609a894f9f22880d66ef9c6b541985a70079ba",
           "bytes": 4442804,
           "files": 68,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-initial-9442c6bd52d5.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r105-initial-9442c6bd52d5.tar.gz"
         },
         {
           "event": "primary-reference",
@@ -7800,8 +7800,8 @@
           "manifest_sha256": "be50d56d2b73853e8ec2561a38b1629337255ee8db037078aa3b9d984dffa7bf",
           "bytes": 201732,
           "files": 45,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-primary-reference-a635b1071507.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r105-primary-reference-a635b1071507.tar.gz"
         },
         {
           "event": "primary-group0",
@@ -7811,8 +7811,8 @@
           "manifest_sha256": "2c4b852ce07f8dbec697673677433d22694cd72cff3fb690d1d20bb80f177d0c",
           "bytes": 144114,
           "files": 47,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-primary-group0-675896536818.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r105-primary-group0-675896536818.tar.gz"
         },
         {
           "event": "primary-group1",
@@ -7822,8 +7822,8 @@
           "manifest_sha256": "9204f38ffa05efa199e9a1f99e442202d52c4bd3457468604557f03f3192c27d",
           "bytes": 144221,
           "files": 47,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-primary-group1-de3c9a6cb74d.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r105-primary-group1-de3c9a6cb74d.tar.gz"
         },
         {
           "event": "primary-group2",
@@ -7833,8 +7833,8 @@
           "manifest_sha256": "4d0baaa020567716dabced38177c33840e5640332a9cf712a9a9de81daf63c68",
           "bytes": 144259,
           "files": 47,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-primary-group2-0f13cdb63a37.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r105-primary-group2-0f13cdb63a37.tar.gz"
         },
         {
           "event": "primary-group3",
@@ -7844,8 +7844,8 @@
           "manifest_sha256": "1d27534c6dd1bb9f470b924397f4518d40edcf93ddba795fff856a874edb595e",
           "bytes": 144139,
           "files": 47,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-primary-group3-95a3be10ba31.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r105-primary-group3-95a3be10ba31.tar.gz"
         },
         {
           "event": "primary-summary",
@@ -7855,8 +7855,7 @@
           "manifest_sha256": "fa8029f8c2cd0024112c0511a22f497039f5ca830550dc0e70317a0edc2d2789",
           "bytes": 116235,
           "files": 44,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-primary-summary-d22c63f958bd.tar.gz",
+          "publication": "published; server SHA-256 verified",
           "timing": {
             "primary_observations": 3968,
             "reference_seconds": 0.00029,
@@ -7872,7 +7871,8 @@
             "improving_groups": 1,
             "improving_blocks": 28,
             "adverse_blocks": 36
-          }
+          },
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r105-primary-summary-d22c63f958bd.tar.gz"
         },
         {
           "event": "counters",
@@ -7882,8 +7882,8 @@
           "manifest_sha256": "11d48763127c46a32845fa38aa09db8c253ef9b55cf3e98a6ceb8513ffa52592",
           "bytes": 316109,
           "files": 81,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-counters-0118cb020258.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r105-counters-0118cb020258.tar.gz"
         },
         {
           "event": "isolated-profile",
@@ -7893,8 +7893,8 @@
           "manifest_sha256": "e902e700105f32178a47781d96195be9df7bb9b32023b31e7e0a0e06fd4146d6",
           "bytes": 322299,
           "files": 51,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-isolated-profile-13fe24d81c40.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r105-isolated-profile-13fe24d81c40.tar.gz"
         },
         {
           "event": "current-census",
@@ -7904,8 +7904,8 @@
           "manifest_sha256": "e31f3374574f3b474e8516a77faed4c08ba3549360fdb1afec1b381224ed6bcc",
           "bytes": 651988,
           "files": 62,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-current-census-33dc443c66ad.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r105-current-census-33dc443c66ad.tar.gz"
         },
         {
           "event": "linked-multi",
@@ -7915,8 +7915,8 @@
           "manifest_sha256": "25dbef77ab97f41c50e56c4cf35fb78d5cd0ee1049fd1ac45446c1fd6b3d4d18",
           "bytes": 150292,
           "files": 59,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-linked-multi-391ad2228700.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r105-linked-multi-391ad2228700.tar.gz"
         },
         {
           "event": "linked-constants",
@@ -7926,8 +7926,8 @@
           "manifest_sha256": "0bf290ac89238be42d47bcad4d93f00e418b0c0128726fed7948e42727e33847",
           "bytes": 128669,
           "files": 60,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-linked-constants-6d224a0f95df.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r105-linked-constants-6d224a0f95df.tar.gz"
         },
         {
           "event": "linked-exits",
@@ -7937,8 +7937,8 @@
           "manifest_sha256": "1844758346e8dcb80828aec4d7028aa15e0aaa7bab3f881e20989442f00257c1",
           "bytes": 142810,
           "files": 60,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-linked-exits-4dece251ba85.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r105-linked-exits-4dece251ba85.tar.gz"
         },
         {
           "event": "scalar-controls",
@@ -7948,8 +7948,8 @@
           "manifest_sha256": "4b46b43fd590c76eec442b855a5cfb0bea105801b66c70b9f2dc4d632b368962",
           "bytes": 129947,
           "files": 97,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-scalar-controls-c4e64f63f399.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r105-scalar-controls-c4e64f63f399.tar.gz"
         },
         {
           "event": "frame-allocation",
@@ -7959,8 +7959,8 @@
           "manifest_sha256": "c9101f23b67852b8ff851ef86d62bd7bb71a5a5685d04a59b58f7b5f49635bbc",
           "bytes": 122019,
           "files": 75,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-frame-allocation-8d5b655972b6.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r105-frame-allocation-8d5b655972b6.tar.gz"
         },
         {
           "event": "closure",
@@ -7970,8 +7970,8 @@
           "manifest_sha256": "6eb6139f5ecd93e2bbdf98718256b2239f18475397d3a7d6c36ca477fa74f6f5",
           "bytes": 4851807,
           "files": 430,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-closure-dbd5e6170905.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r105-closure-dbd5e6170905.tar.gz"
         },
         {
           "event": "analysis",
@@ -7981,13 +7981,13 @@
           "manifest_sha256": "8fa94266fcb8fd52fb65a9b13fe2278eb96939b211977f01d69300e75eb3a76f",
           "bytes": 135826,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-analysis-6b975d66201d.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r105-analysis-6b975d66201d.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "test_source": "05d3a9ce5007db79d0c6c72de14ed7c1eacf61a6",
       "ci_source": "ec55e3f856306b07d34050b8b95ac0289a28fb5f",
       "analysis": {
