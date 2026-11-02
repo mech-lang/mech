@@ -94,7 +94,8 @@ fn scalar_aggregate_actions_stay_in_parent_ssa_with_current_words_and_retry() {
                 (3, 2, false, false, 0, false, Some("Integrity")),
                 (3, 2, false, true, 0, false, Some("Arithmetic")),
                 (0, 2, false, false, 0, false, None),
-                (3, 2, true, true, 1, true, Some("Bounds")),
+                (3, 2, true, true, 1, true, Some("IndexOutOfRange")),
+                (3, 2, true, false, 0, true, Some("IndexOutOfRange")),
                 (3, 2, false, true, 1, false, None),
             ] {
                 let args = inputs(
