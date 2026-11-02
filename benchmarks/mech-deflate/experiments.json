@@ -11982,8 +11982,8 @@
           "manifest_sha256": "204722de006f097980e63a9a30a2972da54cec8db72556f4aa59f91bf4afd94d",
           "bytes": 31447,
           "files": 11,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-baseline-reproduce-da294ce25364.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-baseline-reproduce-da294ce25364.tar.gz"
         },
         {
           "event": "baseline-full",
@@ -11993,8 +11993,8 @@
           "manifest_sha256": "e146f72742c5967559a4667589b96a076d380b7776e8003b65551903d3a6598e",
           "bytes": 32229,
           "files": 15,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-baseline-full-1a76e7b73095.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-baseline-full-1a76e7b73095.tar.gz"
         },
         {
           "event": "first-complete-native",
@@ -12004,8 +12004,8 @@
           "manifest_sha256": "1e2adeb54139af4288ed83b5a5af1712d6dee5a67fdaab92e178a70f0884a3cb",
           "bytes": 207188,
           "files": 49,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-first-complete-native-5b74dafa29cb.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-first-complete-native-5b74dafa29cb.tar.gz"
         },
         {
           "event": "scaled-witness",
@@ -12015,8 +12015,8 @@
           "manifest_sha256": "a74b9763103fa6d933aca0ca6733c23f507ca4a874e5e53ab4f74868ffef16c9",
           "bytes": 209879,
           "files": 53,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-scaled-witness-79fcefc27a20.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-scaled-witness-79fcefc27a20.tar.gz"
         },
         {
           "event": "primary-reference",
@@ -12026,8 +12026,8 @@
           "manifest_sha256": "36dd0a8b40700563f085f9ce85515ad4cc3dc2c5c4812ac4c9d90e76da804866",
           "bytes": 296686,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-primary-reference-80803c7956cc.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-primary-reference-80803c7956cc.tar.gz"
         },
         {
           "event": "primary-group0",
@@ -12037,8 +12037,8 @@
           "manifest_sha256": "9cac40030f26ea0bd143165a42ee61b30c0349d4cde9931be0950ae29e12655a",
           "bytes": 238805,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-primary-group0-4a0ff48a5fef.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-primary-group0-4a0ff48a5fef.tar.gz"
         },
         {
           "event": "primary-group1",
@@ -12048,8 +12048,8 @@
           "manifest_sha256": "0678f9cbeb2d394dee8f444133a6db4656bb257d0c5e0ce64e190aaffb5a0729",
           "bytes": 238850,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-primary-group1-4eafe5feef40.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-primary-group1-4eafe5feef40.tar.gz"
         },
         {
           "event": "primary-group2",
@@ -12059,8 +12059,8 @@
           "manifest_sha256": "e9730c012b135da0c1e5af6a89d6e53f32060dcb5e2344e58b8f80c3b4f29025",
           "bytes": 238828,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-primary-group2-6455abcb36ed.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-primary-group2-6455abcb36ed.tar.gz"
         },
         {
           "event": "primary-group3",
@@ -12070,8 +12070,8 @@
           "manifest_sha256": "47aca4c145c309c8b91346564a0f18cf75a938f83dd0c955b15bba8e6f0fdfe2",
           "bytes": 238955,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-primary-group3-9e14de020b56.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-primary-group3-9e14de020b56.tar.gz"
         },
         {
           "event": "primary-summary",
@@ -12081,8 +12081,7 @@
           "manifest_sha256": "9334a98f3ce41b2baef5cbb51ebf3962421e6c1c2d73443f8be1add4fde45207",
           "bytes": 211115,
           "files": 51,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-primary-summary-b801fd170116.tar.gz",
+          "publication": "published; server SHA-256 verified",
           "timing": {
             "primary_observations": 3968,
             "reference_seconds": 0.000284,
@@ -12098,7 +12097,8 @@
             "improving_groups": 4,
             "improving_blocks": 61,
             "adverse_blocks": 3
-          }
+          },
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-primary-summary-b801fd170116.tar.gz"
         },
         {
           "event": "scale-measure-1024",
@@ -12108,8 +12108,8 @@
           "manifest_sha256": "fcc60990ccc45d23d961a4a0f8c913c195e11a06e182ef1c93bd39b858e76b62",
           "bytes": 228827,
           "files": 65,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-scale-measure-1024-9cea160f8559.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-scale-measure-1024-9cea160f8559.tar.gz"
         },
         {
           "event": "match-rich-measure-1024",
@@ -12119,8 +12119,8 @@
           "manifest_sha256": "9187f1e4b24652a2af6e841da5964f85c2a23fca84848baf71c14e37462a1f13",
           "bytes": 228348,
           "files": 65,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-match-rich-measure-1024-475899ee9820.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-match-rich-measure-1024-475899ee9820.tar.gz"
         },
         {
           "event": "scalar-controls",
@@ -12130,8 +12130,8 @@
           "manifest_sha256": "adb48f105fd994c29ef96c3ce903320054ceb076aa8aea71128bf95dcee41e72",
           "bytes": 228611,
           "files": 111,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-scalar-controls-f1fa00232a2a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-scalar-controls-f1fa00232a2a.tar.gz"
         },
         {
           "event": "counters",
@@ -12141,8 +12141,8 @@
           "manifest_sha256": "94a0ffc40ecfc3c946953a705103daf1b971b71a4b1e57a9c62cd98691d644cc",
           "bytes": 395368,
           "files": 75,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-counters-fd7a9ddae27c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-counters-fd7a9ddae27c.tar.gz"
         },
         {
           "event": "scale-counters",
@@ -12152,8 +12152,8 @@
           "manifest_sha256": "2a1c5fa4dcd5ab5a67bee1381e9d8cc479bd71a9f45af127cc63d04e9c0d151a",
           "bytes": 239883,
           "files": 89,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-scale-counters-1c7054de6b37.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-scale-counters-1c7054de6b37.tar.gz"
         },
         {
           "event": "rich-counters",
@@ -12163,8 +12163,8 @@
           "manifest_sha256": "c51249ae163df7d13fe9f3fdc9a3b9663ad9d13a8cde373581cfdfbba2a546d3",
           "bytes": 222952,
           "files": 69,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-rich-counters-235aa9c267aa.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-rich-counters-235aa9c267aa.tar.gz"
         },
         {
           "event": "boundary-census-before",
@@ -12174,8 +12174,8 @@
           "manifest_sha256": "c64335539709f6e4a9f032ac0076e868411f2c5cc52735053c3c86b9a2b7ce97",
           "bytes": 448462,
           "files": 77,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-boundary-census-before-c82097e3db42.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-boundary-census-before-c82097e3db42.tar.gz"
         },
         {
           "event": "boundary-census-after",
@@ -12185,8 +12185,8 @@
           "manifest_sha256": "e8e2fd25a3f1e29957ef41296b6a627b7e47c875c90cc917d96c1a8c6c512eaf",
           "bytes": 432688,
           "files": 77,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-boundary-census-after-0c02f82e48a1.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-boundary-census-after-0c02f82e48a1.tar.gz"
         },
         {
           "event": "qualified",
@@ -12196,8 +12196,8 @@
           "manifest_sha256": "c907d25512a2a99782955468fa44109b85ea340e8d1ae71fc3928f2f371dcb7c",
           "bytes": 287670,
           "files": 95,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-qualified-d9729d6151b7.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-qualified-d9729d6151b7.tar.gz"
         },
         {
           "event": "isolated-profile-scale",
@@ -12207,8 +12207,8 @@
           "manifest_sha256": "bcff7c50e8f84422018b67a94134681b3647a8700afcee8a08623842cc46a4f9",
           "bytes": 467202,
           "files": 70,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-isolated-profile-scale-8c4eb1f677ba.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-isolated-profile-scale-8c4eb1f677ba.tar.gz"
         },
         {
           "event": "isolated-profile-rich",
@@ -12218,8 +12218,8 @@
           "manifest_sha256": "4591cbd5958705fbf39c99033d2c033dafe3fdf3a30936fd051db43079cc1a97",
           "bytes": 413362,
           "files": 70,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-isolated-profile-rich-49994af0fe4b.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-isolated-profile-rich-49994af0fe4b.tar.gz"
         },
         {
           "event": "analysis",
@@ -12229,8 +12229,8 @@
           "manifest_sha256": "bba866503f27cccc1a908a9285e1699c6d176e90b4c569441ff83e28f25efd9c",
           "bytes": 271346,
           "files": 65,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-analysis-cfb45522855f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-analysis-cfb45522855f.tar.gz"
         },
         {
           "event": "closure",
@@ -12240,13 +12240,13 @@
           "manifest_sha256": "7e78d2b558fdbca629ca413f4fdd2ad8c5e44beaeae7fafeeeb3ee0d6f8356a2",
           "bytes": 14811179,
           "files": 483,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-closure-99998e9f1829.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r124-closure-99998e9f1829.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "retained": false,
       "qualified_compiler": "d73f332c467db89b5ba03659062b7917d8185c6a",
       "format_revision": "2169f283b754c1fc77bf08dd1d8aec2f940485f1",
