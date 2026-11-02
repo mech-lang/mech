@@ -11230,6 +11230,17 @@
           "files": 42,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-handoff-round121-20261102/archives/r121-first-complete-native-2f37e7dad5aa.tar.gz"
+        },
+        {
+          "event": "scaled-witness",
+          "source_revision": "6ed4e0fb7e7e34abd1162f090e112045bc052565",
+          "asset": "r121-scaled-witness-94ae7b5b5885.tar.gz",
+          "sha256": "94ae7b5b5885695100c1d8e5e29be6fb6fbde82b6d4a2cfcff972211241a6b0a",
+          "manifest_sha256": "ea120766809a556c04dcfc148c0e2604352f55e96234252f3bb12ab019a5c935",
+          "bytes": 57991,
+          "files": 46,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-handoff-round121-20261102/archives/r121-scaled-witness-94ae7b5b5885.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
