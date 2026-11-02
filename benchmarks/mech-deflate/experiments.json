@@ -11877,6 +11877,17 @@
           "files": 75,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-counters-3acd8498a8df.tar.gz"
+        },
+        {
+          "event": "scale-counters",
+          "source_revision": "71f8cb7bed8bc84bfcb75915b79b8c299401adc5",
+          "asset": "r123-scale-counters-fc0e61b7173c.tar.gz",
+          "sha256": "fc0e61b7173c1fb37a9cd4a17e1b0793a427fe3aa51f5dff44917bcd4b50253c",
+          "manifest_sha256": "1be2fcdb9a5b933fce068289b348e6cd05ffb58d936ba97e15ba62ba4fe298ea",
+          "bytes": 92942,
+          "files": 89,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-scale-counters-fc0e61b7173c.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
