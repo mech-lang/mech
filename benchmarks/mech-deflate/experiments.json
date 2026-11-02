@@ -11967,6 +11967,28 @@
         "verified_archives": 19,
         "verified_file_occurrences": 1645
       }
+    },
+    "124": {
+      "base": "0a7237f66c407f0ec880b3ad5768a8433c7b6ec0",
+      "production": null,
+      "compiler_source": "0a7237f66c407f0ec880b3ad5768a8433c7b6ec0",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "baseline-reproduce",
+          "source_revision": "0a7237f66c407f0ec880b3ad5768a8433c7b6ec0",
+          "asset": "r124-baseline-reproduce-da294ce25364.tar.gz",
+          "sha256": "da294ce253642215cd0f81a69754576a755337994a9545434637f691f784a030",
+          "manifest_sha256": "204722de006f097980e63a9a30a2972da54cec8db72556f4aa59f91bf4afd94d",
+          "bytes": 31447,
+          "files": 11,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-baseline-reproduce-da294ce25364.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
