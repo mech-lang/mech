@@ -12187,6 +12187,17 @@
           "files": 77,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-boundary-census-after-0c02f82e48a1.tar.gz"
+        },
+        {
+          "event": "qualified",
+          "source_revision": "d73f332c467db89b5ba03659062b7917d8185c6a",
+          "asset": "r124-qualified-d9729d6151b7.tar.gz",
+          "sha256": "d9729d6151b7b13094cb7be9fcc9756acd935acfa8f241c08ba9002ce75968c4",
+          "manifest_sha256": "c907d25512a2a99782955468fa44109b85ea340e8d1ae71fc3928f2f371dcb7c",
+          "bytes": 287670,
+          "files": 95,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-qualified-d9729d6151b7.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
