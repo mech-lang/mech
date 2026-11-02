@@ -8441,6 +8441,17 @@
           "files": 51,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-frame-geometry-round109-20261102/archives/r107-geometry-binary-d6f93378d81c.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "0cbf5b9f6b5870c40aac5a75bc7c89bb23c9b32a",
+          "asset": "r107-closure-5649fe326eaa.tar.gz",
+          "sha256": "5649fe326eaa5c678a81ec4aeb4c03410e994645187e4364a54ada409e7c4675",
+          "manifest_sha256": "5f3226e5bf6e513f655911f2594e6c016f147d37c917621786637352d88238ac",
+          "bytes": 4425621,
+          "files": 80,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-frame-geometry-round109-20261102/archives/r107-closure-5649fe326eaa.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
