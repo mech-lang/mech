@@ -19,6 +19,7 @@ pub(super) struct Counts {
     pub phase_write_fuel: Vec<u64>,
     pub first_change_backings: Vec<(usize, usize)>,
     pub replacement_backings: Vec<(u64, usize, usize)>,
+    pub terminal_backings: Vec<(usize, usize)>,
     pub phase_settlements: Vec<(u64, u64, u64, u64)>,
     pub cold_private_arrays: Vec<usize>,
     pub poisoned_exit_words: usize,
@@ -162,6 +163,37 @@ unsafe extern "C" fn helper(
             }
         }
     }
+    let terminal = if op == GlobalHelper::ClosedTailEnd.raw() && c == 0 {
+        // SAFETY: only pointer numbers from the current private carrier are
+        // retained across its synchronous terminal synchronization callback.
+        let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        let metadata = ctx.descriptor.metadata();
+        metadata.closed_tails.exits[site as usize].and_then(|id| {
+            let region = &metadata.closed_tails.regions[id];
+            let proof = region.numeric.as_ref()?;
+            let frame = proof.result.frame()?;
+            let fields = &proof.frames.iter().find(|f| f.value == frame)?.arrays;
+            let pointers = fields
+                .iter()
+                .enumerate()
+                .filter_map(|(ordinal, array)| {
+                    let array = &proof.arrays[(*array)?];
+                    let owner = ctx.state.buffer_frames.managed_owner(
+                        &metadata.buffer_frames,
+                        region.tail.carrier(),
+                        array.field,
+                    )?;
+                    let mech_core::ValueData::Matrix(matrix) = owner.data() else {
+                        return None;
+                    };
+                    Some((ordinal, address(matrix.elements())))
+                })
+                .collect::<Vec<_>>();
+            Some((id, pointers))
+        })
+    } else {
+        None
+    };
     let replacement = if op == GlobalHelper::Library.raw() {
         // SAFETY: the same checked helper is suspended; only pointer numbers
         // are retained, with no new Value pin that could change exclusivity.
@@ -233,6 +265,27 @@ unsafe extern "C" fn helper(
     };
     // SAFETY: unchanged arguments and result pointer from the checked entry.
     let status = unsafe { HELPER.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
+    if status == 0
+        && let Some((id, pointers)) = terminal
+    {
+        // SAFETY: the callback has finished; its returned frame still owns the
+        // managed fields. No Value clone or new ownership pin is introduced.
+        let ctx = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        let metadata = ctx.descriptor.metadata();
+        let region = &metadata.closed_tails.regions[id];
+        for (ordinal, before) in pointers {
+            let owner = ctx
+                .state
+                .buffer_frames
+                .managed_owner(&metadata.buffer_frames, region.tail.returned(), ordinal)
+                .unwrap();
+            let mech_core::ValueData::Matrix(matrix) = owner.data() else {
+                panic!("terminal managed array")
+            };
+            let after = address(matrix.elements());
+            COUNTS.with(|v| v.borrow_mut().terminal_backings.push((before, after)));
+        }
+    }
     if status == 0
         && let Some((output, before)) = replacement
     {
