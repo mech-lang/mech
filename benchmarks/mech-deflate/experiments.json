@@ -10087,6 +10087,17 @@
           "files": 50,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-primary-reference-c56e25ce0dab.tar.gz"
+        },
+        {
+          "event": "primary-group0",
+          "source_revision": "8e7334a4fdd929c58f0d741195c3d8a1857d81af",
+          "asset": "r117-primary-group0-56eefa23e2ba.tar.gz",
+          "sha256": "56eefa23e2ba1d34e5421a79304c7713099c8777a0eb310d667b2dd53989e865",
+          "manifest_sha256": "22f1f0ba7cbb60a00e109ce490f9b527326dc109ea4b39598a4f99b53c6832fc",
+          "bytes": 101794,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-primary-group0-56eefa23e2ba.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
