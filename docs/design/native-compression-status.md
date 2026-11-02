@@ -6,6 +6,170 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Hosted CI is not awaited under
 instruction; no green hosted-CI claim is made.
 
+## R114: inline private dispatch at the callback boundary
+
+Base `a105e9a76978ff7bbb4a8dd56968a3c7b8e457b8`; retained runtime change
+**`f327ef9489aaa0997f4d8627256f1a14eb70b0c4`**. The complete production change is
+one `#[inline(always)]` attribute on `Invocation::helper`. The source program,
+algorithm, tables, search limits, real buffer capacities, allocation sites,
+allocator, logical prices, work and evaluate_into boundaries remain pinned.
+Versions remain IR/work/private ABI/bytecode **143/99/38/14**.
+
+| Cohort | Same-round baseline / reference | Candidate / reference | Elapsed change |
+|---|---:|---:|---:|
+|8B original|8.003090×|7.966452×|−0.457797%|
+|8B independent confirmation|8.104747×|8.047038×|−0.712040%|
+|1KB original|111.327477×|110.976443×|−0.315317%|
+|1KB independent confirmation|112.166735×|111.884938×|−0.251231%|
+
+The two 8B cohorts each retain 3,968 primary/3,984 total observations across four
+fresh prepared pairs. Original pairs improve 3/4, confirmation 4/4; descriptive
+blocks improve 41/64 and 51/64. The separate 1KB cohorts each retain 128 observations
+per version in alternating 16-call blocks; 7/8 and 6/8 blocks improve. Every adverse
+observation remains. Each row uses its own common fresh reference; these are not
+pooled or compounded gains. The target remains 1× and larger-input throughput is
+still unestablished. No full-scale timing is run.
+
+8B elapsed 2.320896→2.310271 ms (reference 0.290 ms), confirmation
+2.3260625→2.3095 ms (reference 0.287 ms). The 1KB times are 34.066208→33.9587915 ms
+(reference 0.306 ms), confirmation 34.0986875→34.013021 ms (reference 0.304 ms).
+The small effect motivated the separately declared confirmation before retention.
+
+| Separate counter cohort | Baseline | Candidate | Change |
+|---|---:|---:|---:|
+|8B retired instructions|26,860,744|26,774,972|−0.319321%|
+|8B cycles|7,333,426|7,353,423.5|+0.272690%|
+|1KB retired instructions|552,670,712|551,997,052.5|−0.121892%|
+|1KB cycles|109,466,354.5|110,060,389.5|+0.542664%|
+
+**Both cycle cohorts worsen.** Preserve this contrary result alongside the four
+matched elapsed improvements. Counter, heap, sample and primary timing cohorts
+are distinct; instrumented elapsed is not a speed claim. Hardware has 32
+observations per subject; heap has 32 reference / eight Mech observations after
+controls are excluded. No per-function instruction ledger is inferred from samples.
+
+Heap demand is exactly unchanged: 8B 4,257 requests/95,876,945 requested bytes/
+17,782,424B incremental live peak; 1KB 47,796 requests/7,523,247,338 requested bytes/
+17,773,224B incremental peak. Reallocations 68, included in requests. Requested
+capacity is not copying volume or live memory. No new cache or retained data bank
+is introduced; this is not a measured whole-prepared-memory reduction. Retention
+is a small speed/instruction win with a 4 KiB code-size cost, not a memory win.
+
+### Mechanism and code footprint
+
+The native error type and `Result<Option<u64>, Error>` each occupy 80B;
+`Option<u64>` occupies 16B. Actual baseline ARM64 supplies a stack return place to
+the separate generic dispatcher. Inlining removes that internal call from the
+hot callback while retaining the original body and check order. This does not
+prove 80B copied on each successful return. The callback frame remains 320B;
+its symbol span grows 884→3,044B and the standalone 19,276B dispatcher symbol
+is absent. Two additional internal String/map fallback callers also exist; the
+change is not based on a claim that there is only one production caller.
+
+Whole linked instruction text grows **4,096B**, 63,678,544→63,682,640B. Total
+executable bytes fall 172,998,888→172,997,704; other sections differ. Report both
+rather than claiming a code-memory reduction. Native program text remains
+14,604,696B and entry stack 135,728B. No fresh complete host-stack census is claimed.
+
+The exact retained R108 Object/descriptor/metadata are reused, after verifying
+that the only GPU source delta is this runtime attribute. Code generation,
+protocol, types, image semantics and all dependencies remain unchanged. Object
+producer source is `705c5acdc4fc92be5beeacf28d02721ea4e39ddf`; runtime source is
+`f327ef9489aaa0997f4d8627256f1a14eb70b0c4`. All three pins and actual native text
+are byte-identical. No fresh full-compressor Object emission or matched compiler-
+time improvement is claimed. The actual GPU-only release build takes 23.231s;
+all project/external dependencies remain frozen from R105.
+
+### Qualification and remaining cost
+
+Passing current selections: runtime 356, work/memory 33, guarded native CI 65,
+image 1, unchanged components 236 / connected 8 / path 1 with listed inventories,
+linked 16+12+12, scalar 12 and frame 8. Scalar's maximum ratio is 1.015528 under the
+unchanged 1.05 gate; pure scalar requests/bytes are equal and loop allocation
+slope is zero. Frame requests/bytes/work do not increase. Workflow 132,
+architecture/type/memory 15, runtime-only cfg and full formatting pass. No golden
+or allowance changes. Original/decoded/restored and linked controls retain current
+arguments, live aliases, checked failures, unchanged publication, cleanup and retry.
+Exact raw bytes and independent inflation pass at both sizes; output capacity 13/
+1029 with clear/rebind outside the timer and final managed bytes/nodes 0 remain.
+The existing expensive knucleotide-body exclusion stays explicit. No fresh Core,
+no_std, all-features or minimal dependency graph qualification is claimed.
+
+Fresh serial profiles cover 695 complete calls per 8B subject and 130 per 1KB subject.
+CPU weights are not retired instructions; ancestry categories overlap. The next
+bounded diagnostic is an actual census of which managed operations end native
+pieces and force array publication, to select a larger boundary reduction.
+
+The 16-case linked run passed before its receipt hit a protected Git-metadata write.
+The exact archive/index entry was verified and its pending commit completed with
+authorized access; tests were not rerun. Two numerical-reader path assumptions
+were corrected without new measurements: the section receipt is at
+`binary-audit/sections.json`, and an already-symbolized raw sample may have no
+separate resolved file. Original sealed packets and failures remain, with a new
+corrected-reader packet. No retained compiler/runtime failure remains in executed
+scope. The PR stays draft pending green CI and clean review; hosted CI is not awaited.
+
+All 24 R114 archives (12,027,300 compressed bytes), plus their sidecars, have
+verified server digests in the continuation evidence release. Independent fresh
+retrieval verifies 1,747 file occurrences / 491 unique paths and reproduces all
+four indexed numerical reports byte-for-byte. No native binaries are published.
+
+## R112–R113: adjacent numeric admission trials held
+
+R112 source `c85dfe8bcea3bc39a626a5287f2fa1ee5a22ad5c` combines source admission
+and numeric entry through a private ABI39 tag. R113
+`62b901e9b0cb81b2c84359bc41a48a50f56ecfa5` reuses the already computed scalar
+fallback decision. Both preserve source work and exact output, and both are held.
+
+| Trial | 8B baseline → candidate / reference | Elapsed change | 1KB baseline → candidate / reference | Elapsed change |
+|---|---:|---:|---:|---:|
+|R112|8.111014× → 8.115967×|+0.061063%|112.203467× → 116.062363×|+3.439195%|
+|R113|8.038864× → 8.128734×|+1.117953%|106.951137× → 107.672749×|+0.674712%|
+
+Each 8B trial retains 3,968 primary/3,984 total observations; each 1KB trial retains
+128 observations/version. R113 has no improving 8B pair or 1KB block. Different
+reference times explain different baseline multiples across rows; baseline 1KB
+elapsed is 34.109854 ms and 34.063937 ms respectively. Do not treat those historical
+multiples as a compiler improvement.
+
+R112's separate 1KB instructions increase 552,670,237→553,848,641 (+0.213220%);
+cycles rise 109,696,621.5→109,868,435 (+0.156626%). This small counter-cycle delta
+contrasts with the primary 3.44% elapsed regression and remains explicit. Heap
+requests 47,796, requested bytes 7,523,247,338 and live peak 17,773,224B are unchanged.
+R113 has no new hardware/heap cohort. Both have fresh serial 1KB CPU profiles and
+actual bounded ARM64 disassembly; samples are not instruction attribution.
+
+Actual program text falls 16,300B to 14,588,396, but native entry stack grows 272B
+to 136,000. The callback frame grows 320→400B in R112 and 464B in R113. R112 adds
+an outlined 184B scalar-decision lookup; R113 removes the redundant lookup but
+still regresses. These are verified code differences, not a complete causal
+explanation of elapsed changes. R112/R113 Objects are byte-identical to each other,
+with changed ABI identity versus R108. Old ABI rejection remains strict.
+
+Preserved diagnostic failures: the first R112 unit driver started before its
+library manifest existed, before Rust compilation; after the dependency completed,
+the driver succeeds. Its one-short-fuel observer originally injected only through
+the old callback; shared injection at both real admission forms fixes the observer
+in `f410781775` without relaxing assertions. Nine focused cases pass. R113's full
+runtime run passes 354 cases and fails two stale ABI38 assertions against ABI39.
+Both pass on retained ABI38; test-only update `d4a7f89b9b` makes both pass in focused
+reruns. No new all-356-pass cohort is claimed for the held ABI39 candidate.
+
+Restoration **`951eb640a6`** returns all 12 changed GPU files exactly to the retained
+ABI38 implementation. Source commits, tests and raw adverse results remain on
+`codex/numeric-admission-r112-experiment` and
+`codex/numeric-admission-r113-experiment` and in the published history. Full
+component/linked/scalar/frame qualification is not claimed for either held trial.
+These findings do not reopen the previously completed assertion, fixture or CI
+work. R114 retains ABI38 and only the separate runtime inline attribute.
+
+R112 publishes 11 archives (10,356,141 compressed bytes), R113 10 (10,279,867),
+plus sidecars, with verified server digests. Fresh independent retrieval verifies
+705 / 643 file occurrences and reproduces both reports for each trial exactly.
+The maintained `experiment.py replay-round` entry performs verification and
+numerical replay without compiling or compressing. R112–R114 together retain
+45 immutable archives and eight byte-identical derived reports.
+
 ## R109–R111: frame geometry trials held; default remains R108
 
 The speed target remains 1×. The earlier R106 memory-saving ownership change
@@ -124,7 +288,7 @@ outside evaluate_into and final managed bytes/nodes0 pass. No full-scale run.
 |1KB cycles|111,651,054.5|109,037,226|−2.341069%|
 
 Heap demand is exactly unchanged:8B4,257 requests/95,876,945 requested bytes/
-17,782,424B incremental peak;1KB47,796 requests/7,523,247,338 requested bytes/
+17,782,424B incremental peak; 1KB47,796 requests/7,523,247,338 requested bytes/
 17,773,224B incremental peak. Reallocations68 in both cases, included in requests.
 These are separate hardware/heap cohorts, not primary timings or copying totals.
 
