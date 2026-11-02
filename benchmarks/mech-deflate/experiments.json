@@ -12039,6 +12039,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-primary-group0-4a0ff48a5fef.tar.gz"
+        },
+        {
+          "event": "primary-group1",
+          "source_revision": "fc8e98e8d7230b78ff01644ae1457828f281673b",
+          "asset": "r124-primary-group1-4eafe5feef40.tar.gz",
+          "sha256": "4eafe5feef40778fd915da1b60ab0b73a5f4f8d6bc776360a3b528a55d250ac1",
+          "manifest_sha256": "0678f9cbeb2d394dee8f444133a6db4656bb257d0c5e0ce64e190aaffb5a0729",
+          "bytes": 238850,
+          "files": 54,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-primary-group1-4eafe5feef40.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
