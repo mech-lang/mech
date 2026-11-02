@@ -8231,6 +8231,17 @@
           "files": 77,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round108-20261102/archives/r107-scale-counters-ba130f7fd00b.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "705c5acdc4fc92be5beeacf28d02721ea4e39ddf",
+          "asset": "r107-scalar-controls-7f1984657db4.tar.gz",
+          "sha256": "7f1984657db41b87b4b07f95623cdf86db4c1f88e857fae397cdfd7e1ae1e28a",
+          "manifest_sha256": "43515492fc9de6498584df3035e0fa6618d0b615e254c7ff18b00a03cccbf008",
+          "bytes": 82864,
+          "files": 99,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round108-20261102/archives/r107-scalar-controls-7f1984657db4.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
