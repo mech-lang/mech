@@ -12384,6 +12384,17 @@
           "files": 57,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-owner-diagnostic-0b89489c3da9.tar.gz"
+        },
+        {
+          "event": "carrier-repair",
+          "source_revision": "1f4d2fa8fc2483e8d70cf8b2de38ae34bf9d4021",
+          "asset": "r125-carrier-repair-7bbf2ebee244.tar.gz",
+          "sha256": "7bbf2ebee24404a4669b1f3ec0af9ec1bca88e87f95558c0e7594ce6db5d9197",
+          "manifest_sha256": "d118b6d40757540865c6bf46f32eb06d893a31729c2c83147106c35b351c4e21",
+          "bytes": 4478069,
+          "files": 93,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-carrier-repair-7bbf2ebee244.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
