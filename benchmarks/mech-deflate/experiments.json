@@ -12461,6 +12461,17 @@
           "files": 59,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-carrier-primary-summary-9e0cfd4a795d.tar.gz"
+        },
+        {
+          "event": "carrier-scale-measure-1024",
+          "source_revision": "1f4d2fa8fc2483e8d70cf8b2de38ae34bf9d4021",
+          "asset": "r125-carrier-scale-measure-1024-d5ff205d31f9.tar.gz",
+          "sha256": "d5ff205d31f92deb4d6591879097cbfb16cc2ec75ac97b875c59abcc0b39641f",
+          "manifest_sha256": "b8d91873246f1470b6e980bf8c634d171d660e9453fb22a80de2522e5f769e9f",
+          "bytes": 148406,
+          "files": 73,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-carrier-scale-measure-1024-d5ff205d31f9.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
