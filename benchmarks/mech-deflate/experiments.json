@@ -10550,6 +10550,17 @@
           "files": 40,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-zero-trip-round118-20261102/archives/r118-pinned-inputs-c8967896da92.tar.gz"
+        },
+        {
+          "event": "analysis-final",
+          "source_revision": "509c0d8e05a234020372b43832d7785f255c1b59",
+          "asset": "r118-analysis-final-9a50e9e60862.tar.gz",
+          "sha256": "9a50e9e60862a358b7c17744b8c4009aeed994a1eae9460e58b35642a659a90a",
+          "manifest_sha256": "8a3dc6b773a87ba151b8a144b3605b603d055e8edaa024b034e4aa37382ee28f",
+          "bytes": 88506,
+          "files": 46,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-zero-trip-round118-20261102/archives/r118-analysis-final-9a50e9e60862.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
