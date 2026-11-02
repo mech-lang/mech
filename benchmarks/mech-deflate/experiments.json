@@ -11540,6 +11540,33 @@
           "files": 51,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-call-bank-round122-20261102/archives/r122-primary-group3-ecbfbfcc3653.tar.gz"
+        },
+        {
+          "event": "primary-summary",
+          "source_revision": "da58ad43e12a7c9e078631514f1c06d874d4c384",
+          "asset": "r122-primary-summary-a56d0fece5c8.tar.gz",
+          "sha256": "a56d0fece5c811dba91cdda7f56255b24f03b2b9ab745ff0f1bc666c1099f6cc",
+          "manifest_sha256": "3fb81ad520a25e8cd6d008e5672db324054d0b115c9a44bf1aaef48e7d3e6ad5",
+          "bytes": 58217,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-call-bank-round122-20261102/archives/r122-primary-summary-a56d0fece5c8.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.000286,
+            "medians": {
+              "after": 0.002178292,
+              "before": 0.0021988545
+            },
+            "multiples_of_reference": {
+              "after": 7.616405594405594,
+              "before": 7.688302447552447
+            },
+            "after_over_before": 0.9906485399556907,
+            "improving_groups": 4,
+            "improving_blocks": 58,
+            "adverse_blocks": 6
+          }
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
