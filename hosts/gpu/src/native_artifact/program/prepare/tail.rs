@@ -369,6 +369,7 @@ impl Layout {
 pub(in crate::native_artifact) fn validate_image(
     plan: &NativeProgramArtifactPlan,
     frames: &mech_engine::native_artifact::NativeBufferFrames,
+    owners: &mech_engine::native_artifact::NativeMapOwnerWords,
     serialized_aggregates: &mech_engine::native_artifact::NativeScalarAggregates,
     calls: &[Option<mech_engine::native_artifact::NativePreparedLibraryCall>],
     serialized: &Layout,
@@ -403,24 +404,15 @@ pub(in crate::native_artifact) fn validate_image(
         &aggregates,
         &facts.text_line_retention_frontiers(),
     )?;
-    let owners = facts.map_owner_words().map_err(str::to_owned)?;
     for (site, visit) in visits.iter_mut().enumerate() {
         visit.work = visit
             .work
             .checked_add(borrowed.extra_work(site)?)
             .and_then(|n| n.checked_add(super::prefix::extra_work(prefix.as_ref(), site)))
-            .and_then(|n| n.checked_add(super::map_owner::extra_work(&owners, site).ok()?))
+            .and_then(|n| n.checked_add(super::map_owner::extra_work(owners, site).ok()?))
             .ok_or("restored closed-tail price overflows")?;
     }
-    let proved = Layout::derive(
-        plan,
-        &borrowed,
-        &visits,
-        &aggregates,
-        &owners,
-        frames,
-        calls,
-    )?;
+    let proved = Layout::derive(plan, &borrowed, &visits, &aggregates, owners, frames, calls)?;
     if serde_json::to_vec(&proved).map_err(|e| e.to_string())?
         != serde_json::to_vec(serialized).map_err(|e| e.to_string())?
     {

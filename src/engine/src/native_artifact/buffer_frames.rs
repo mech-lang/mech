@@ -1,4 +1,4 @@
-//! Private tuple/record frames with native scalar leaves and admitted managed owners.
+//! Private structural frames with native scalar leaves and admitted managed owners.
 //! The complete connected component must have only pack/copy/project uses.
 use super::{
     NativeCollectionPrimitive as Primitive, NativeControlLoop as Loop,
@@ -9,9 +9,23 @@ use super::{
 };
 use mech_core::{IntegerWidth, SchemaBody, SchemaId};
 
+#[path = "buffer_frames_tagged.rs"]
+mod tagged;
+
 #[derive(Clone, Debug)]
 pub enum NativeBufferFrameOperation {
     Pack {
+        output: Value,
+    },
+    EnumPack {
+        output: Value,
+        payload: Value,
+        ordinal: u32,
+    },
+    Observe {
+        source: Value,
+        path: Box<[Step]>,
+        observation: Observation,
         output: Value,
     },
     Copy {
@@ -46,6 +60,13 @@ pub enum NativeBufferFrameLane {
     },
     Managed {
         at: usize,
+    },
+    /// A tag and disjoint variant payload spans. The tag has a separate
+    /// current-visit validity word, just like a scalar lane.
+    Tagged {
+        tag: usize,
+        at: usize,
+        count: usize,
     },
     /// A structural span in this same layout, never a canonical owner lane.
     Composite {
@@ -103,10 +124,22 @@ impl NativeBufferFrames {
         self.fields.get(at..at + count)
     }
     pub fn children(&self, field: NativeBufferFrameField) -> Option<&[NativeBufferFrameField]> {
-        let NativeBufferFrameLane::Composite { at, count } = field.lane else {
+        let (NativeBufferFrameLane::Composite { at, count }
+        | NativeBufferFrameLane::Tagged { at, count, .. }) = field.lane
+        else {
             return None;
         };
-        self.fields.get(at..at + count)
+        self.fields.get(at..at.checked_add(count)?)
+    }
+    pub fn tagged_variant(
+        &self,
+        field: NativeBufferFrameField,
+        ordinal: u32,
+    ) -> Option<NativeBufferFrameField> {
+        if !matches!(field.lane, NativeBufferFrameLane::Tagged { .. }) {
+            return None;
+        }
+        self.children(field)?.get(ordinal as usize).copied()
     }
 }
 
@@ -126,6 +159,9 @@ fn composable(plan: &Plan, value: Value) -> bool {
         match body {
             SchemaBody::Tuple(fields) => fields.iter().all(|f| visit(f, bound)),
             SchemaBody::Record(fields) => fields.iter().all(|f| visit(&f.schema, bound)),
+            SchemaBody::Enum { variants, .. } => variants
+                .iter()
+                .all(|v| v.payload.as_ref().is_some_and(|p| visit(p, bound))),
             SchemaBody::Matrix {
                 element,
                 dimensions,
@@ -179,6 +215,28 @@ fn composition_shape_matches(
             {
                 a.iter().map(|f| &f.schema).collect()
             }
+            (
+                SchemaBody::Enum {
+                    key: ak,
+                    variants: a,
+                },
+                SchemaBody::Enum {
+                    key: bk,
+                    variants: b,
+                },
+            ) if ak == bk
+                && a.len() == b.len()
+                && a.iter().zip(b).all(|(a, b)| a.name == b.name) =>
+            {
+                let Some(payloads) = a
+                    .iter()
+                    .map(|v| v.payload.as_ref())
+                    .collect::<Option<Vec<_>>>()
+                else {
+                    return false;
+                };
+                payloads
+            }
             _ => return false,
         };
         let Some(children) = layouts.get(&actual) else {
@@ -218,6 +276,9 @@ fn field_shape(plan: &Plan, value: Value) -> Option<(usize, bool)> {
     {
         return None;
     }
+    if let Some(variants) = tagged::schemas(plan, value) {
+        return Some((variants.len(), true));
+    }
     let fields = match plan.values()[value.get() as usize].definition().body() {
         SchemaBody::Tuple(fields) => fields.iter().collect::<Vec<_>>(),
         SchemaBody::Record(fields) => fields.iter().map(|field| &field.schema).collect(),
@@ -245,6 +306,7 @@ fn field_shape(plan: &Plan, value: Value) -> Option<(usize, bool)> {
             {
                 eligible = true
             }
+            body if tagged::opaque_map(body) => eligible = true,
             // Candidate compound siblings may remain opaque canonical Values.
             // The complete shape/use proof below selects structural spans only
             // when the child can stay private through every composition edge.
@@ -343,7 +405,36 @@ fn last_use(facts: &Facts<'_>, value: Value, frontier: u32) -> bool {
 
 impl Facts<'_> {
     /// Recomputed from the same validated plan on independent image loading.
+    /// Existing retained-map transport has priority over canonical-owner lanes.
     pub fn buffer_frames(&self) -> NativeBufferFrames {
+        #[cfg(feature = "map_ops")]
+        {
+            self.buffer_frame_owner_layouts()
+                .map(|(frames, _)| frames)
+                .unwrap_or_default()
+        }
+        #[cfg(not(feature = "map_ops"))]
+        self.buffer_frames_excluding(&[])
+    }
+
+    /// Derive both owners from this exact immutable plan borrow. No supplied
+    /// or serialized exclusion set can authorize a competing representation.
+    /// The map proof grants optional native ownership; a canonical frame may
+    /// not simultaneously demand a canonical Value for any private map root.
+    #[cfg(feature = "map_ops")]
+    pub fn buffer_frame_owner_layouts(
+        &self,
+    ) -> Result<(NativeBufferFrames, super::NativeMapOwnerWords), &'static str> {
+        let owners = self.map_owner_words()?;
+        let excluded = owners
+            .regions()
+            .iter()
+            .flat_map(|region| region.values().iter().copied())
+            .collect::<Vec<_>>();
+        Ok((self.buffer_frames_excluding(&excluded), owners))
+    }
+
+    fn buffer_frames_excluding(&self, excluded: &[Value]) -> NativeBufferFrames {
         let plan = self.plan();
         let count = plan.values().len();
         let mut bad = (0..count)
@@ -359,6 +450,12 @@ impl Facts<'_> {
         let mut schemas = vec![None::<Vec<SchemaId>>; count];
         let mut by_schema = std::collections::BTreeMap::new();
         let mut ambiguous = std::collections::BTreeSet::new();
+        for (i, layout) in schemas.iter_mut().enumerate() {
+            if let Some(fields) = tagged::schemas(plan, Value(i as u32)) {
+                by_schema.insert(plan.values()[i].schema(), fields.clone());
+                *layout = Some(fields);
+            }
+        }
         for action in actions.iter() {
             if let Some((value, fields)) = pack(plan, action) {
                 let schema = plan.values()[value.get() as usize].schema();
@@ -438,6 +535,12 @@ impl Facts<'_> {
             }
         };
         for action in actions.iter() {
+            if let Some((output, payload, _)) = tagged::pack(plan, action) {
+                link(output, payload);
+            }
+            if let Some((source, output)) = tagged::observation(plan, action) {
+                link(source, output);
+            }
             if let Some((output, _)) = pack(plan, action) {
                 let Action::LibraryCall { operands, .. } = action else {
                     unreachable!()
@@ -484,6 +587,38 @@ impl Facts<'_> {
         let connected = |parent: Value, child: Value| {
             composition[parent.get() as usize].contains(&(child.get() as usize))
         };
+        // Build every shape/copy/composition edge BEFORE applying owner
+        // conflicts. Otherwise rejecting a parent early could hide its edge to
+        // a child and leave a private child feeding a canonical fallback pack.
+        let mut owned = vec![false; count];
+        for value in excluded {
+            let Some(slot) = owned.get_mut(value.get() as usize) else {
+                return NativeBufferFrames::default();
+            };
+            *slot = true;
+        }
+        let mut conflicts = owned.clone();
+        for action in actions.iter() {
+            if let Some((output, _)) = pack(plan, action) {
+                let Action::LibraryCall { operands, .. } = action else {
+                    unreachable!()
+                };
+                conflicts[output.get() as usize] |=
+                    operands.iter().any(|value| owned[value.get() as usize]);
+            }
+            if let Some((output, payload, _)) = tagged::pack(plan, action) {
+                conflicts[output.get() as usize] |= owned[payload.get() as usize];
+            }
+            if let Some((source, _, output)) = projection(plan, action) {
+                conflicts[source.get() as usize] |= owned[output.get() as usize];
+            }
+            if let Some((source, output)) = tagged::observation(plan, action) {
+                conflicts[source.get() as usize] |= owned[output.get() as usize];
+            }
+        }
+        for (rejected, conflict) in bad.iter_mut().zip(conflicts) {
+            *rejected |= conflict;
+        }
         for i in 0..count {
             if bad[i] {
                 continue;
@@ -500,6 +635,10 @@ impl Facts<'_> {
                 Producer::Library | Producer::Structural => d.site().is_none_or(|site| {
                     let action = &actions[site as usize];
                     pack(plan, action).is_none()
+                        && tagged::pack(plan, action).is_none()
+                        && !tagged::observation(plan, action).is_some_and(|(source, output)| {
+                            output == value && connected(source, output)
+                        })
                         && !projection(plan, action).is_some_and(|(source, _, output)| {
                             output == value && connected(source, output)
                         })
@@ -527,6 +666,10 @@ impl Facts<'_> {
                                 && fields.get(ordinal).is_some_and(|schema| {
                                     *schema == plan.values()[output.get() as usize].schema()
                                 })
+                        } else if let Some((source, _)) = tagged::observation(plan, action) {
+                            source == value
+                        } else if let Some((output, payload, _)) = tagged::pack(plan, action) {
+                            payload == value && connected(output, value)
                         } else if let Some((output, _)) = pack(plan, action) {
                             connected(output, value)
                         } else {
@@ -578,6 +721,10 @@ impl Facts<'_> {
             .iter()
             .map(|ty| (ty.schema(), ty.scalar_kind()))
             .collect::<std::collections::BTreeMap<_, _>>();
+        let tagged_schemas = (0..count)
+            .filter(|&i| !bad[i] && tagged::schemas(plan, Value(i as u32)).is_some())
+            .map(|i| plan.values()[i].schema())
+            .collect::<std::collections::BTreeSet<_>>();
         let mut scalar_fields = 0;
         let mut managed_fields = 0;
         let mut field_layout = Vec::new();
@@ -589,6 +736,7 @@ impl Facts<'_> {
             schemas: &[SchemaId],
             compose: bool,
             nested: &std::collections::BTreeSet<SchemaId>,
+            tagged_schemas: &std::collections::BTreeSet<SchemaId>,
             by_schema: &std::collections::BTreeMap<SchemaId, Vec<SchemaId>>,
             kinds: &std::collections::BTreeMap<SchemaId, Option<super::NativeScalarKind>>,
             field_layout: &mut Vec<NativeBufferFrameField>,
@@ -610,13 +758,20 @@ impl Facts<'_> {
                         &by_schema[schema],
                         true,
                         nested,
+                        tagged_schemas,
                         by_schema,
                         kinds,
                         field_layout,
                         scalar_fields,
                         managed_fields,
                     );
-                    NativeBufferFrameLane::Composite { at, count }
+                    if tagged_schemas.contains(schema) {
+                        let tag = *scalar_fields;
+                        *scalar_fields += 1;
+                        NativeBufferFrameLane::Tagged { tag, at, count }
+                    } else {
+                        NativeBufferFrameLane::Composite { at, count }
+                    }
                 } else {
                     let at = *managed_fields;
                     *managed_fields += 1;
@@ -631,10 +786,16 @@ impl Facts<'_> {
                 if bad[i] {
                     return None;
                 }
+                let root = [plan.values()[i].schema()];
                 Some(layout(
-                    schemas[i].as_ref()?,
+                    if tagged_schemas.contains(&root[0]) {
+                        &root
+                    } else {
+                        schemas[i].as_ref()?
+                    },
                     composable[i],
                     &nested,
+                    &tagged_schemas,
                     &by_schema,
                     &kinds,
                     &mut field_layout,
@@ -659,6 +820,37 @@ impl Facts<'_> {
                         (
                             NativeBufferFrameOperation::Pack { output },
                             operands.to_vec(),
+                            output,
+                        )
+                    } else if let Some((output, payload, ordinal)) =
+                        tagged::pack(plan, action).filter(|(v, _, _)| selected(*v))
+                    {
+                        (
+                            NativeBufferFrameOperation::EnumPack {
+                                output,
+                                payload,
+                                ordinal,
+                            },
+                            vec![payload],
+                            output,
+                        )
+                    } else if let Some((source, output)) =
+                        tagged::observation(plan, action).filter(|(v, _)| selected(*v))
+                    {
+                        let Action::Structural {
+                            path, observation, ..
+                        } = action
+                        else {
+                            unreachable!()
+                        };
+                        (
+                            NativeBufferFrameOperation::Observe {
+                                source,
+                                path: path.clone(),
+                                observation: *observation,
+                                output,
+                            },
+                            vec![source],
                             output,
                         )
                     } else if let Some((source, output)) =

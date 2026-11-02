@@ -100,6 +100,22 @@ fn flatten(
                     .checked_add(flatten(layout, children, operations)?)
                     .ok_or("frame field count overflows")?;
             }
+            Lane::Tagged { tag, .. } => {
+                // Every variant has a disjoint bank. Inactive owners are
+                // normally empty, but retirement clears the complete recipe.
+                let start = tag.checked_mul(2).ok_or("frame tag index overflows")?;
+                let end = start.checked_add(2).ok_or("frame tag end overflows")?;
+                if tag >= layout.scalar_fields() {
+                    return Err("frame tag retirement exceeds bank");
+                }
+                operations.push(Operation::Scalars(start..end));
+                let children = layout
+                    .children(*field)
+                    .ok_or("frame variant span missing")?;
+                count = count
+                    .checked_add(flatten(layout, children, operations)?)
+                    .ok_or("frame variant count overflows")?;
+            }
         }
     }
     Ok(count)

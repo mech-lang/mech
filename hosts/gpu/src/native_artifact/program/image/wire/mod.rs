@@ -207,15 +207,38 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
         return Err("constant ownership bounds differ from canonical runtime reads".into());
     }
     let closed_tails: native::program::prepare::tail::Layout = w.closed_tails.into();
-    let buffer_frames = plan.facts().buffer_frames();
+    let (buffer_frames, map_owner_words) = plan
+        .facts()
+        .buffer_frame_owner_layouts()
+        .map_err(str::to_owned)?;
     native::program::prepare::prepare_frame_composition(&plan, &buffer_frames, &mut calls)?;
     native::program::prepare::tail::validate_image(
         &plan,
         &buffer_frames,
+        &map_owner_words,
         &w.scalar_aggregates,
         &calls,
         &closed_tails,
     )?;
+    let borrowed_strings: native::program::prepare::borrowed::Layout = w.borrowed_strings.into();
+    let occupied = native::program::prepare::frame_prefix_words(
+        &plan,
+        &w.scalar_aggregates,
+        &borrowed_strings,
+        &closed_tails,
+    )
+    .ok_or("restored map owner frame prefix overflows")?;
+    let map_owner_words = map_owner_words
+        .after_frame_words(occupied)
+        .map_err(str::to_owned)?;
+    let map_owner_words = (!map_owner_words.regions().is_empty()).then_some(map_owner_words);
+    if serde_json::to_vec(&map_owner_words).map_err(|e| e.to_string())?
+        != serde_json::to_vec(&w.map_owner_words).map_err(|e| e.to_string())?
+    {
+        return Err(
+            "retained-map owner lanes differ from independently validated source uses".into(),
+        );
+    }
     let visits = w
         .visits
         .into_vec()
@@ -225,7 +248,7 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
     let admission = native::program::prepare::map_admission::Layout::derive(
         &plan,
         &w.scalar_aggregates,
-        w.map_owner_words.as_ref(),
+        map_owner_words.as_ref(),
         &visits,
         &closed_tails,
     )
@@ -233,8 +256,7 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
     if admission != w.map_admission {
         return Err("native path admission differs from its source frontiers".into());
     }
-    let frozen_maps = w
-        .map_owner_words
+    let frozen_maps = map_owner_words
         .as_ref()
         .map(|owner| {
             native::program::prepare::frozen_map::Layout::derive(&plan, owner, &closed_tails)
@@ -312,11 +334,11 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
             window_regions: w.window_regions,
             string_map_regions: w.string_map_regions,
             scalar_aggregates: w.scalar_aggregates,
-            map_owner_words: w.map_owner_words,
+            map_owner_words,
             frozen_maps,
             map_admission: w.map_admission,
             parallel: w.parallel,
-            borrowed_strings: w.borrowed_strings.into(),
+            borrowed_strings,
             closed_tails,
             selected_joins: w.selected_joins.into(),
             line_matrices: w.line_matrices.into(),

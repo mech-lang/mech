@@ -121,6 +121,9 @@ pub(super) fn frame_words(
         .ok_or_else(|| backend("numeric frame lost fields"))?
         .operation();
     match operation {
+        Frame::EnumPack { .. } | Frame::Observe { .. } => {
+            return Err(backend("tagged frame outside numeric word emitter"));
+        }
         Frame::Pack { output } => {
             let Action::LibraryCall { operands, .. } = code.blocks()[site].action() else {
                 return Err(backend("numeric pack lost operands"));

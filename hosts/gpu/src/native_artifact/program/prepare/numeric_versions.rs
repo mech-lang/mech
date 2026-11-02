@@ -215,6 +215,9 @@ fn pass(
         let fresh = |state: &State, key: Key| state.get(&key).copied().unwrap_or(false);
         match actions.iter().find(|(s, _)| *s == site).map(|(_, op)| op) {
             Some(Operation::Frame) => match frames.action(site).unwrap().operation() {
+                Frame::EnumPack { .. } | Frame::Observe { .. } => {
+                    return Err("tagged frame has no numeric array version proof");
+                }
                 Frame::Pack { output } => {
                     let Action::LibraryCall { operands, .. } = plan.blocks()[site].action() else {
                         return Err("version pack lost operands");

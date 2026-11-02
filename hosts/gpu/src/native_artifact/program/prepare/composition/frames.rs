@@ -115,6 +115,9 @@ impl Origins<'_, '_> {
             let mut selected = None;
             for site in definitions {
                 let source = match self.frames.action(site).unwrap().operation() {
+                    Frame::EnumPack { .. } | Frame::Observe { .. } => {
+                        return Err("tagged frame outside numeric parent provenance");
+                    }
                     Frame::Pack { .. } => {
                         let Action::LibraryCall { operands, .. } =
                             self.plan.blocks()[site].action()
@@ -163,6 +166,9 @@ impl Layout {
         for &site in &segment.sites {
             if let Some(frame) = frames.action(site as usize) {
                 match frame.operation() {
+                    Frame::EnumPack { .. } | Frame::Observe { .. } => {
+                        return Err("tagged frame outside numeric parent composition");
+                    }
                     Frame::Pack { output } => {
                         writes.entry(output.get()).or_default().push(site as usize);
                         written_values.insert(output.get(), *output);
@@ -224,7 +230,9 @@ impl Layout {
                 .fields_at(value as usize)
                 .ok_or("parent frame lacks exact fields")?;
             if fields.iter().any(|field| {
-                matches!(field.lane(), Lane::Composite { .. }) && !scalar_children(frames, *field)
+                matches!(field.lane(), Lane::Tagged { .. })
+                    || (matches!(field.lane(), Lane::Composite { .. })
+                        && !scalar_children(frames, *field))
             }) {
                 return Err("parent composite frame requires scalar-only children");
             }
@@ -257,6 +265,7 @@ impl Layout {
                         scalar.push(None);
                         arrays.push(Some(at));
                     }
+                    Lane::Tagged { .. } => return Err("tagged frame outside numeric parent lanes"),
                     Lane::Composite { .. } => {
                         scalar.push(None);
                         arrays.push(None);

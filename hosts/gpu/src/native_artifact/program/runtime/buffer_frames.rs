@@ -155,13 +155,13 @@ impl BufferFrames {
                 Lane::Managed { .. }
                     if *word == 0
                         && owner.as_ref().is_some_and(|v| v.schema() == field.schema()) => {}
-                Lane::Composite { .. } if owner.is_none() && *word == 0 => {
+                Lane::Composite { .. } | Lane::Tagged { .. } if owner.is_none() && *word == 0 => {
                     self.check_copy(
                         layout,
                         layout
                             .fields(operands[index])
                             .ok_or_else(|| invalid("private child has no source lanes"))?,
-                        layout.children(*field).unwrap(),
+                        Self::composite_target(layout, field)?,
                     )?;
                 }
                 _ => return Err(invalid("private frame field representation differs")),
@@ -170,11 +170,11 @@ impl BufferFrames {
         for (index, ((field, owner), word)) in
             fields.iter().zip(inputs.iter_mut()).zip(bits).enumerate()
         {
-            if let Some(children) = layout.children(*field) {
+            if matches!(field.lane(), Lane::Composite { .. } | Lane::Tagged { .. }) {
                 self.copy_fields::<false>(
                     layout,
                     layout.fields(operands[index]).unwrap(),
-                    children,
+                    Self::composite_target(layout, field)?,
                 )?;
                 continue;
             }
@@ -191,7 +191,7 @@ impl BufferFrames {
                 // These temporary owners are otherwise cleared immediately by
                 // the caller; original arena roots and outside aliases remain.
                 Lane::Managed { at } => inner.owners.values_mut()[at] = owner.take(),
-                Lane::Composite { .. } => unreachable!("handled child span"),
+                Lane::Composite { .. } | Lane::Tagged { .. } => unreachable!("handled child span"),
             }
         }
         Ok(())
@@ -232,6 +232,27 @@ impl BufferFrames {
             if from.schema() != to.schema() {
                 return Err(invalid("private frame copy schemas differ"));
             }
+            match (from.lane(), to.lane()) {
+                (Lane::Tagged { count: a, .. }, Lane::Tagged { count: b, .. }) if a == b => {
+                    let ordinal = self.current_tag(*from)?;
+                    let source = layout
+                        .tagged_variant(*from, ordinal as u32)
+                        .ok_or_else(|| invalid("private enum source variant missing"))?;
+                    let target = layout
+                        .tagged_variant(*to, ordinal as u32)
+                        .ok_or_else(|| invalid("private enum target variant missing"))?;
+                    self.check_copy(
+                        layout,
+                        core::slice::from_ref(&source),
+                        core::slice::from_ref(&target),
+                    )?;
+                    continue;
+                }
+                (Lane::Tagged { .. }, _) | (_, Lane::Tagged { .. }) => {
+                    return Err(invalid("private enum copy layouts differ"));
+                }
+                _ => {}
+            }
             match (layout.children(*from), layout.children(*to)) {
                 (Some(a), Some(b)) => self.check_copy(layout, a, b)?,
                 (None, None) => {
@@ -256,6 +277,38 @@ impl BufferFrames {
         target: &[FrameField],
     ) -> Result<(), NativeProgramExecutionError> {
         for (from, to) in source.iter().zip(target) {
+            if let (Lane::Tagged { .. }, Lane::Tagged { tag, count, .. }) = (from.lane(), to.lane())
+            {
+                let ordinal = self.current_tag(*from)?;
+                let active_from = layout
+                    .tagged_variant(*from, ordinal as u32)
+                    .ok_or_else(|| invalid("private enum source variant missing"))?;
+                let active_to = layout
+                    .tagged_variant(*to, ordinal as u32)
+                    .ok_or_else(|| invalid("private enum target variant missing"))?;
+                // Complete check_copy already staged readiness/type proof for
+                // every active leaf. Variant banks are disjoint per value.
+                self.copy_fields::<TAKE>(
+                    layout,
+                    core::slice::from_ref(&active_from),
+                    core::slice::from_ref(&active_to),
+                )?;
+                for inactive in 0..count {
+                    if inactive != ordinal {
+                        let field = layout
+                            .tagged_variant(*to, inactive as u32)
+                            .ok_or_else(|| invalid("private enum inactive variant missing"))?;
+                        self.clear_fields(layout, core::slice::from_ref(&field))?;
+                    }
+                }
+                let inner = self
+                    .inner
+                    .as_mut()
+                    .ok_or_else(|| invalid("private enum lanes missing"))?;
+                inner.words.values_mut()[tag * 2] = ordinal as u64;
+                inner.words.values_mut()[tag * 2 + 1] = 1;
+                continue;
+            }
             if let (Some(a), Some(b)) = (layout.children(*from), layout.children(*to)) {
                 self.copy_fields::<TAKE>(layout, a, b)?;
                 continue;
@@ -324,8 +377,8 @@ impl BufferFrames {
         let source = layout
             .fields(source)
             .and_then(|f| f.get(ordinal))
-            .and_then(|f| layout.children(*f))
             .ok_or_else(|| invalid("private projection lacks child span"))?;
+        let source = Self::composite_target(layout, source)?;
         let target = layout
             .fields(output)
             .ok_or_else(|| invalid("private child output lacks lanes"))?;
@@ -635,3 +688,6 @@ impl BufferFrames {
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "buffer_frame_retirement_tests/mod.rs"]
 mod tests;
+
+#[path = "buffer_frames_tagged.rs"]
+mod tagged;

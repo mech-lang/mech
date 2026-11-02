@@ -21,6 +21,7 @@ mod record_lookup;
 mod resources;
 mod scalar_child;
 mod schema_key;
+mod tagged_map_carrier;
 mod wide_scalar_array;
 
 #[test]
@@ -62,11 +63,11 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                101
+                102
             );
             assert_eq!(
                 report.work, 88_531_834,
-                "policy101 preserves flat Huffman work while funding nested paths, captured numeric loops and shallow String cache inspection"
+                "policy102 preserves flat Huffman work while funding nested paths, captured numeric loops, shallow String cache inspection and private tagged map carriers"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(

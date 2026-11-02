@@ -116,10 +116,10 @@ pub(super) fn derive(
     let fields = frames
         .fields(value)
         .ok_or("numeric result frame escapes or lacks exact private fields")?;
-    if fields
-        .iter()
-        .any(|f| matches!(f.lane(), Lane::Composite { .. }) && !scalar_children(frames, *f))
-    {
+    if fields.iter().any(|f| {
+        matches!(f.lane(), Lane::Tagged { .. })
+            || (matches!(f.lane(), Lane::Composite { .. }) && !scalar_children(frames, *f))
+    }) {
         return Err("numeric result composite requires scalar-only children");
     }
     let managed = fields

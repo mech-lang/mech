@@ -115,7 +115,11 @@ impl PreparedNativeProgram {
         plan.validate_current_visits().map_err(str::to_owned)?;
         let facts = plan.facts();
         let scalar_aggregates = facts.scalar_aggregates();
-        let buffer_frames = facts.buffer_frames();
+        // One same-plan ownership decision: retained native map words keep
+        // their existing components, while disjoint private frames may use
+        // admitted canonical owners. A managed value cannot occupy both.
+        let (buffer_frames, map_owner_words) =
+            facts.buffer_frame_owner_layouts().map_err(str::to_owned)?;
         let parallel =
             native::program::prepare::parallel::Layout::derive(&facts, &scalar_aggregates)
                 .map_err(str::to_owned)?;
@@ -176,7 +180,6 @@ impl PreparedNativeProgram {
             },
             "borrowed String visit work overflow",
         )?;
-        let map_owner_words = facts.map_owner_words().map_err(str::to_owned)?;
         compose_work(
             &mut analysis_visits,
             &mut visits,
@@ -501,7 +504,7 @@ fn compose_work(
 
 // The sole canonical frame-prefix formula. Owner relocation occurs only in
 // preparation; later consumers inspect this existing assignment.
-fn frame_prefix_words(
+pub(in crate::native_artifact) fn frame_prefix_words(
     plan: &NativeProgramArtifactPlan,
     aggregates: &mech_engine::native_artifact::NativeScalarAggregates,
     borrowed: &native::program::prepare::borrowed::Layout,

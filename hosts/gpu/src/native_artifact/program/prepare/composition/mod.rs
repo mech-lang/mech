@@ -138,8 +138,9 @@ impl Layout {
             }
             if !frames.fields(parent.carrier()).is_some_and(|f| {
                 f.iter().all(|f| {
-                    !matches!(f.lane(), Lane::Composite { .. })
-                        || super::readonly_numeric::scalar_children(frames, *f)
+                    !matches!(f.lane(), Lane::Tagged { .. })
+                        && (!matches!(f.lane(), Lane::Composite { .. })
+                            || super::readonly_numeric::scalar_children(frames, *f))
                 })
             }) {
                 continue;
@@ -466,8 +467,9 @@ fn eligible(
         let native_frame = |value| {
             frames.fields(value).is_some_and(|fields| {
                 fields.iter().all(|f| {
-                    !matches!(f.lane(), Lane::Composite { .. })
-                        || super::readonly_numeric::scalar_children(frames, *f)
+                    !matches!(f.lane(), Lane::Tagged { .. })
+                        && (!matches!(f.lane(), Lane::Composite { .. })
+                            || super::readonly_numeric::scalar_children(frames, *f))
                 })
             })
         };
@@ -478,6 +480,7 @@ fn eligible(
                         .as_ref()
                         .is_some_and(|c| c.supports_invariant_buffer_frame())
             }
+            Frame::EnumPack { .. } | Frame::Observe { .. } => false,
             Frame::Copy { source, output } => native_frame(*source) && native_frame(*output),
             Frame::Project {
                 source,

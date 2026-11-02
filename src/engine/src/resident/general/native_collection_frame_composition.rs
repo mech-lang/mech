@@ -27,6 +27,7 @@ pub(super) struct Composition {
     remove_wrappers: u64,
     add_containers: u64,
     elements: u64,
+    enum_ordinal: Option<u32>,
 }
 
 fn components(body: &SchemaBody) -> Option<Vec<&SchemaBody>> {
@@ -114,6 +115,7 @@ impl NativePreparedLibraryCall {
             remove: 0,
             add: 0,
         };
+        let mut enum_ordinal = None;
         let elements = match operation {
             Operation::Pack { .. } => {
                 if !operands.iter().any(|v| layout.fields(*v).is_some()) {
@@ -164,7 +166,69 @@ impl NativePreparedLibraryCall {
                     .ok_or("private projection structure differs")?;
                 1
             }
-            Operation::Copy { .. } => return Ok(()),
+            Operation::EnumPack {
+                payload, ordinal, ..
+            } => {
+                if self.template.primitive() != Primitive::EnumPack
+                    || operands.len() != 2
+                    || contract.inputs.len() != 2
+                    || operands[1] != *payload
+                {
+                    return Err("private enum operation differs");
+                }
+                let SchemaBody::Enum { variants, .. } = self.template.output().body() else {
+                    return Err("private enum output differs");
+                };
+                let expected = variants
+                    .get(*ordinal as usize)
+                    .and_then(|v| v.payload.as_ref())
+                    .ok_or("private enum ordinal has no payload")?;
+                let schema = contract.inputs[1].schema;
+                let definition = self
+                    .schemas
+                    .get(schema)
+                    .ok_or("private enum payload missing")?;
+                if !definition.dimension_parameters().is_empty()
+                    || definition.body() != expected
+                    || !self.template.output().dimension_parameters().is_empty()
+                    || self.template.inputs()[0].body() != &SchemaBody::Index
+                {
+                    return Err("private enum payload identity differs");
+                }
+                // Match the maintained EnumPack output envelope: the root
+                // canonical wrapper, enum payload slot and cloned child slot
+                // coexist with the child's canonical logical footprint. No
+                // canonical owner or draft is allocated by this private path.
+                leaves.add =
+                    mech_core::snapshot::CompositeSnapshotConstructor::value_container_bytes(
+                        self.template.output().dimension_parameters().len(),
+                    )
+                    .and_then(|n| u64::try_from(n).ok())
+                    .and_then(|n| {
+                        n.checked_add(
+                            (core::mem::size_of::<mech_core::ValueData>() as u64).checked_mul(2)?,
+                        )
+                    })
+                    .ok_or("private enum logical footprint overflow")?;
+                if let Some(fields) = layout.fields(*payload) {
+                    leaves.add = leaves
+                        .add
+                        .checked_add(
+                            wrapper(schema, &self.schemas).ok_or("private wrapper overflow")?,
+                        )
+                        .ok_or("private enum logical footprint overflow")?;
+                    leaves
+                        .composite(expected, schema, fields)
+                        .ok_or("private enum payload structure differs")?;
+                } else {
+                    leaves.sources.push(Source::Input(1));
+                    leaves.schemas.push(schema);
+                    leaves.expected.push(expected);
+                }
+                enum_ordinal = Some(*ordinal);
+                1
+            }
+            Operation::Copy { .. } | Operation::Observe { .. } => return Ok(()),
         };
         let shape = super::frame_shape::FrameShapeRecipe::derive_leaves(
             output,
@@ -192,6 +256,7 @@ impl NativePreparedLibraryCall {
             remove_wrappers: leaves.remove,
             add_containers: leaves.add,
             elements,
+            enum_ordinal,
         }));
         Ok(())
     }
@@ -241,6 +306,20 @@ impl NativePreparedLibraryCall {
                 let _nodes = memory.reserve_nodes(recipe.sources.len() as u64 + 8)?;
                 if let Some((selector, ordinal)) = selector {
                     self.admit_composed_selector(selector, ordinal, &memory, &context)?;
+                }
+                if let Some(ordinal) = recipe.enum_ordinal {
+                    if words.first() != Some(&0) {
+                        return Err(InvokeError::InvalidInput);
+                    }
+                    self.admit_composed_enum_selector(
+                        inputs
+                            .first()
+                            .and_then(Option::as_ref)
+                            .ok_or(InvokeError::InvalidInput)?,
+                        ordinal,
+                        &memory,
+                        &context,
+                    )?;
                 }
                 let mut meter = ResidentBudgetMeter::for_native_projection(work, limits)?;
                 let measured = match &recipe.admission {
@@ -327,6 +406,54 @@ impl NativePreparedLibraryCall {
                 Ok(())
             },
         )?
+    }
+
+    fn admit_composed_enum_selector(
+        &self,
+        selector: &Value,
+        ordinal: u32,
+        memory: &mech_core::ManagedMemoryBudget,
+        context: &NativeProjectionIndexContext<'_>,
+    ) -> Result<(), InvokeError> {
+        let mech_core::ResolvedOperationContract::Declared(contract) = self.template.contract()
+        else {
+            return Err(InvokeError::InvalidInput);
+        };
+        if selector.schema() != contract.inputs[0].schema
+            || selector.schema_key() != self.input_keys[0]
+            || !selector.shape().parameter_values().is_empty()
+        {
+            return Err(InvokeError::InvalidInput);
+        }
+        selector
+            .validate_against(&self.schemas)
+            .map_err(|_| InvokeError::InvalidInput)?;
+        let bytes = selector
+            .memory_budget_retained_bytes(memory)
+            .ok_or(InvokeError::UnadmittedValue)?;
+        let nodes = selector
+            .memory_budget_retained_nodes(memory)
+            .ok_or(InvokeError::UnadmittedValue)?;
+        let context = context.with_added_capacity(bytes, nodes)?;
+        context.check_capacity(0, 0)?;
+        let SchemaBody::Enum { variants, .. } = self.template.output().body() else {
+            return Err(InvokeError::InvalidInput);
+        };
+        context.charge(
+            (variants.len() as u64)
+                .checked_mul(64)
+                .and_then(|n| n.checked_add(128))
+                .ok_or(InvokeError::InvalidInput)?,
+            0,
+        )?;
+        match selector.data() {
+            mech_core::ValueData::Index(selected)
+                if selected.checked_sub(1) == Some(u64::from(ordinal)) =>
+            {
+                Ok(())
+            }
+            _ => Err(InvokeError::InvalidInput),
+        }
     }
 
     fn admit_composed_selector(

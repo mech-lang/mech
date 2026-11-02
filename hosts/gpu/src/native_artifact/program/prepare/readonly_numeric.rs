@@ -169,7 +169,7 @@ pub(in crate::native_artifact::program::prepare) fn scalar_children(
         Lane::Composite { .. } => frames.children(field).is_some_and(|children| {
             !children.is_empty() && children.iter().all(|child| scalar_children(frames, *child))
         }),
-        Lane::Managed { .. } => false,
+        Lane::Managed { .. } | Lane::Tagged { .. } => false,
     }
 }
 
@@ -194,7 +194,7 @@ pub(in crate::native_artifact::program::prepare) fn scalar_paths(
                 words,
                 output,
             ),
-            Lane::Managed { .. } => {}
+            Lane::Managed { .. } | Lane::Tagged { .. } => {}
         }
         path.pop();
     }
@@ -306,10 +306,10 @@ pub(in crate::native_artifact) fn derive(
     let fields = frames
         .fields(tail.carrier())
         .ok_or("carrier escapes or lacks an exact private frame")?;
-    if fields
-        .iter()
-        .any(|f| matches!(f.lane(), Lane::Composite { .. }) && !scalar_children(frames, *f))
-    {
+    if fields.iter().any(|f| {
+        matches!(f.lane(), Lane::Tagged { .. })
+            || (matches!(f.lane(), Lane::Composite { .. }) && !scalar_children(frames, *f))
+    }) {
         return Err("numeric carrier composite requires scalar-only children");
     }
     let iteration = plan
@@ -399,7 +399,9 @@ pub(in crate::native_artifact) fn derive(
                     .fields_at(value as usize)
                     .ok_or("frame lost exact fields")?;
                 if fields.iter().any(|f| {
-                    matches!(f.lane(), Lane::Composite { .. }) && !scalar_children(frames, *f)
+                    matches!(f.lane(), Lane::Tagged { .. })
+                        || (matches!(f.lane(), Lane::Composite { .. })
+                            && !scalar_children(frames, *f))
                 }) {
                     return Err("numeric frame composite requires scalar-only children");
                 }
@@ -435,6 +437,9 @@ pub(in crate::native_artifact) fn derive(
                     if frames.fields(*output).is_some() {
                         remember(output.get())?;
                     }
+                }
+                Frame::EnumPack { .. } | Frame::Observe { .. } => {
+                    return Err("tagged frame is outside numeric array proof");
                 }
             }
             Operation::Frame
@@ -605,7 +610,7 @@ pub(in crate::native_artifact) fn derive(
                         .iter()
                         .find(|(path, _)| path.as_slice() == [ordinal])
                         .map(|(_, slot)| *slot),
-                    Lane::Managed { .. } | Lane::Composite { .. } => None,
+                    Lane::Managed { .. } | Lane::Composite { .. } | Lane::Tagged { .. } => None,
                 })
                 .collect();
             let array_fields = frames
