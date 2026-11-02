@@ -11716,8 +11716,8 @@
           "manifest_sha256": "06f6adced7ed23eccc4a1341549875d1174eeb187891e2fdf732e8abdf61c921",
           "bytes": 59641,
           "files": 50,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-first-complete-native-8114dfc7da24.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r123-first-complete-native-8114dfc7da24.tar.gz"
         },
         {
           "event": "scaled-witness",
@@ -11727,8 +11727,8 @@
           "manifest_sha256": "a1d7163891be7c303fdd8026a038b0197416da08f5867e2877fa5cec4f69455d",
           "bytes": 67191,
           "files": 56,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-scaled-witness-aea6b7302194.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r123-scaled-witness-aea6b7302194.tar.gz"
         },
         {
           "event": "primary-reference",
@@ -11738,8 +11738,8 @@
           "manifest_sha256": "9d9478355a8388af68c3417afc45ffa9931e51e630f9da7301da4978277c042a",
           "bytes": 154144,
           "files": 55,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-primary-reference-b86a5dbfa8be.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r123-primary-reference-b86a5dbfa8be.tar.gz"
         },
         {
           "event": "primary-group0",
@@ -11749,8 +11749,8 @@
           "manifest_sha256": "3e73b22c86d080cb7ca900e7f03ba5315de2b611252db714e9da9e704fb272e1",
           "bytes": 96025,
           "files": 57,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-primary-group0-3fdda0e4b2cb.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r123-primary-group0-3fdda0e4b2cb.tar.gz"
         },
         {
           "event": "primary-group1",
@@ -11760,8 +11760,8 @@
           "manifest_sha256": "4499b7b5e8ebcabfb1501aa05fc41fec2fdf8ba8adc33870994085cd9f67a1fa",
           "bytes": 95976,
           "files": 57,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-primary-group1-7845bd267744.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r123-primary-group1-7845bd267744.tar.gz"
         },
         {
           "event": "primary-group2",
@@ -11771,8 +11771,8 @@
           "manifest_sha256": "202f9459ba99c60b6f01eb8cce952e087bc5b7cbbe2ca55bb32f8f144db48352",
           "bytes": 96198,
           "files": 57,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-primary-group2-0c2c462073d4.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r123-primary-group2-0c2c462073d4.tar.gz"
         },
         {
           "event": "primary-group3",
@@ -11782,8 +11782,8 @@
           "manifest_sha256": "0717f28d47ddab3b8a625a8b6b23bdf739906d69d8598a7c205155b65f036533",
           "bytes": 95632,
           "files": 57,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-primary-group3-2f15bee60baa.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r123-primary-group3-2f15bee60baa.tar.gz"
         },
         {
           "event": "primary-summary",
@@ -11793,8 +11793,7 @@
           "manifest_sha256": "6866c0169d2747b94d7c7e3a1b5c14128783e1e33268c4666e53d0dc033f9bf2",
           "bytes": 68294,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-primary-summary-d299f2871931.tar.gz",
+          "publication": "published; server SHA-256 verified",
           "timing": {
             "primary_observations": 3968,
             "reference_seconds": 0.00029,
@@ -11810,7 +11809,8 @@
             "improving_groups": 2,
             "improving_blocks": 27,
             "adverse_blocks": 37
-          }
+          },
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r123-primary-summary-d299f2871931.tar.gz"
         },
         {
           "event": "scale-measure-1024",
@@ -11820,8 +11820,8 @@
           "manifest_sha256": "466d44396a8401bcecc574157dd12461be7a5a987f05d3d63e5a98f02d2819df",
           "bytes": 85877,
           "files": 68,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-scale-measure-1024-9b682ea9b831.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r123-scale-measure-1024-9b682ea9b831.tar.gz"
         },
         {
           "event": "match-rich-measure-1024",
@@ -11831,8 +11831,8 @@
           "manifest_sha256": "26f72ac0c83fb070f14dd5110208828d874059faf3b6af58df0fc4822616c16f",
           "bytes": 84748,
           "files": 68,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-match-rich-measure-1024-d98f7a9c30f6.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r123-match-rich-measure-1024-d98f7a9c30f6.tar.gz"
         },
         {
           "event": "boundary-census-before",
@@ -11842,8 +11842,8 @@
           "manifest_sha256": "db574fa19b249ba9207cc96b7dbcc274c90d7d3057d05007b14e17b2e660b0c0",
           "bytes": 294259,
           "files": 74,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-boundary-census-before-18cb6084ab3a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r123-boundary-census-before-18cb6084ab3a.tar.gz"
         },
         {
           "event": "boundary-census-after",
@@ -11853,8 +11853,8 @@
           "manifest_sha256": "dd7cdfb20dfbc1b1a48829eaa14e1d4e57636aad28a5b641af44482e20db721d",
           "bytes": 290500,
           "files": 74,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-boundary-census-after-5b762cbb6edc.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r123-boundary-census-after-5b762cbb6edc.tar.gz"
         },
         {
           "event": "scalar-controls",
@@ -11864,8 +11864,8 @@
           "manifest_sha256": "34249342cb5a1ebeb50dc9bb89bb656efa3ce34824e7e9ebc5cc9a6370f5c9dd",
           "bytes": 81513,
           "files": 111,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-scalar-controls-d6b8b049e8c5.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r123-scalar-controls-d6b8b049e8c5.tar.gz"
         },
         {
           "event": "counters",
@@ -11875,8 +11875,8 @@
           "manifest_sha256": "4b6db6639d883eb28ce0b0642f30ee3a283a511390271de1697edf5921c31329",
           "bytes": 248514,
           "files": 75,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-counters-3acd8498a8df.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r123-counters-3acd8498a8df.tar.gz"
         },
         {
           "event": "scale-counters",
@@ -11886,8 +11886,8 @@
           "manifest_sha256": "1be2fcdb9a5b933fce068289b348e6cd05ffb58d936ba97e15ba62ba4fe298ea",
           "bytes": 92942,
           "files": 89,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-scale-counters-fc0e61b7173c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r123-scale-counters-fc0e61b7173c.tar.gz"
         },
         {
           "event": "rich-counters",
@@ -11897,8 +11897,8 @@
           "manifest_sha256": "6d7e9bf8dd0a22cb38a4b542addb77f4b1babfd5172b9b7db46a4e10e5440ed3",
           "bytes": 75841,
           "files": 69,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-rich-counters-88c784a6ce15.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r123-rich-counters-88c784a6ce15.tar.gz"
         },
         {
           "event": "isolated-profile-scale",
@@ -11908,8 +11908,8 @@
           "manifest_sha256": "dd75c75ea8bdff705da970d977c7b803cd84e4362d1bb551f3eb374fd8d04984",
           "bytes": 324626,
           "files": 68,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-isolated-profile-scale-1805c37adefa.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r123-isolated-profile-scale-1805c37adefa.tar.gz"
         },
         {
           "event": "isolated-profile-rich",
@@ -11919,8 +11919,8 @@
           "manifest_sha256": "14d02baff49d1c1ea81288992b9d09f25410752b9bdeb4f1530cfec0ad17f657",
           "bytes": 274137,
           "files": 68,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-isolated-profile-rich-a84b034e4f89.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r123-isolated-profile-rich-a84b034e4f89.tar.gz"
         },
         {
           "event": "closure",
@@ -11930,13 +11930,13 @@
           "manifest_sha256": "525ef66d5ae7eb0b9d822766763f20311a5840991b80b7e4b64dcc4cf957ce0f",
           "bytes": 10517293,
           "files": 438,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-closure-bbd156d78d8d.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r123-closure-bbd156d78d8d.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "retained": true,
       "versions": [
         150,
