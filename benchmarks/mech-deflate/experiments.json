@@ -11855,6 +11855,17 @@
           "files": 74,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-boundary-census-after-5b762cbb6edc.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "71f8cb7bed8bc84bfcb75915b79b8c299401adc5",
+          "asset": "r123-scalar-controls-d6b8b049e8c5.tar.gz",
+          "sha256": "d6b8b049e8c56a25e177ee5544c97184296b592a63d7d325ee7e1c10a7cfc9a6",
+          "manifest_sha256": "34249342cb5a1ebeb50dc9bb89bb656efa3ce34824e7e9ebc5cc9a6370f5c9dd",
+          "bytes": 81513,
+          "files": 111,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-scalar-controls-d6b8b049e8c5.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
