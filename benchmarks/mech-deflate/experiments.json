@@ -7612,6 +7612,17 @@
             "improving_blocks": 29,
             "adverse_blocks": 35
           }
+        },
+        {
+          "event": "counters",
+          "source_revision": "636da5e074add0632f7154f14d8d39848721cd16",
+          "asset": "r104-counters-656cab4d468a.tar.gz",
+          "sha256": "656cab4d468af2419088f36c0ad0f978b409d2493f94e700f6626d5975aa8900",
+          "manifest_sha256": "42ec5fab2331cdbea998c788733c33d96319f1b5000149a0cdcf884d3c4d6be2",
+          "bytes": 319777,
+          "files": 82,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-counters-656cab4d468a.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
