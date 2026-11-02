@@ -9368,6 +9368,17 @@
           "files": 65,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-linked-multi-0e68379ea5e7.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "f327ef9489aaa0997f4d8627256f1a14eb70b0c4",
+          "asset": "r114-scalar-controls-5357c231b09f.tar.gz",
+          "sha256": "5357c231b09f458d6b3ec9d3ef2b9d732439f6691bdc30bb18de497986bf94d2",
+          "manifest_sha256": "ec7877f2887babc7f3c6d1c4f4d1f465b0dd5f59cc3670cc0ecbd239a99680e1",
+          "bytes": 80712,
+          "files": 105,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-scalar-controls-5357c231b09f.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
