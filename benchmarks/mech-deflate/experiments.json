@@ -9704,6 +9704,17 @@
           "files": 62,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-isolated-profile-scale-f88659cfe7bd.tar.gz"
+        },
+        {
+          "event": "scale-confirm-1024",
+          "source_revision": "2f0cc8b85e7dbcef53abfe16d76742872a7ceca2",
+          "asset": "r115-scale-confirm-1024-d648c0952f03.tar.gz",
+          "sha256": "d648c0952f031364f67c3925ba8eaac8ab9b9f4e776a69287b3f09b70b21a51e",
+          "manifest_sha256": "400ac38ed3f572f43b99dddc6dc2e3fac1494e9460ede30f7f16ab0575ef0e81",
+          "bytes": 111678,
+          "files": 67,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-native-boundaries-round115-20261102/archives/r115-scale-confirm-1024-d648c0952f03.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
