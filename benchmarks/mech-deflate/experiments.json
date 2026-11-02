@@ -7288,6 +7288,26 @@
         "verified_archives": 14,
         "verified_file_occurrences": 942
       }
+    },
+    "103": {
+      "base": "9bc0fae10a806eeb5e0a8f980f3ce6d6df11ad72",
+      "production": "a43888583dc37806a1c9e39b4b98d6dece3dac52",
+      "compiler_source": "6b064cdeb678f2e7c89e5c2a39143e5ac2f36e79",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "6b064cdeb678f2e7c89e5c2a39143e5ac2f36e79",
+          "asset": "r103-initial-bac887fe4d10.tar.gz",
+          "sha256": "bac887fe4d10000db4862d7c906a4c780f5d58f603e46ef865c11193576a2eb5",
+          "manifest_sha256": "15a8a8b94870a33b7b5e216ab1e64e7ad55996fe2e3124fffe196e4b7483bbde",
+          "bytes": 58815,
+          "files": 29,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-shared-shape-round103-20261101/archives/r103-initial-bac887fe4d10.tar.gz"
+        }
+      ],
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
