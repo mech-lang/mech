@@ -61,6 +61,30 @@ fn scalar_aggregate_actions_stay_in_parent_ssa_with_current_words_and_retry() {
             !interior.is_empty(),
             "scalar aggregate still splits the native parent piece"
         );
+        assert!(
+            metadata
+                .compositions
+                .parents
+                .iter()
+                .flat_map(|parent| &parent.segments)
+                .any(|piece| {
+                    metadata.compositions.entry(piece.entry as usize).is_some()
+                        && piece.exits.iter().any(|&(_, to)| {
+                            metadata
+                                .map_admission
+                                .group(to as usize)
+                                .is_some_and(|group| {
+                                    group.owner.is_none()
+                                        && piece.sites.contains(&group.start())
+                                        && group
+                                            .sites
+                                            .iter()
+                                            .any(|site| !piece.sites.contains(site))
+                                })
+                        })
+                }),
+            "fixture must exercise an unfunded ordinary scalar suffix after native exit"
+        );
         for restored in [false, true] {
             let memory = mode.memory_budget();
             let mut outputs = vec![None; artifact.outputs().len()];
