@@ -617,3 +617,31 @@ then prepared schema headers; no allocation saving is claimed for R102. The
 independent instruction track remains prepared transfers/known-zero arguments/
 entry-local source reuse. Exact pins, all commands, source/readers, raw cohorts,
 controlled failure/retry and numerical replay are in the compact archive index.
+
+
+## R103: shape-owner forwarding, allocation improvement only
+
+Core construction retains the existing immutable shape Arc for checked unsigned
+replacements, including aliased payload copies. Fresh data identity, ordinary
+validation, original conservative charges and ownership order remain. Production
+`a43888583dc37806a1c9e39b4b98d6dece3dac52`; compiler
+`6b064cdeb678f2e7c89e5c2a39143e5ac2f36e79`; test-only audit repair `750adeea5`.
+
+Requests **5,077→4,405 (−672; −13.236163%)**; requested bytes−13,440, peak−320B,
+reallocations162 unchanged. Fresh complete traces prove the entire histogram
+diff is exactly336 eight-byte clones plus336 32-byte shape owners. No compression
+payload-copy reduction is claimed. Elapsed **8.205418×→8.233392×** reference
+(+0.340918%; one of four pairs improves), instructions+0.151280%, cycles−5.938511%
+in their separate cohort. Retain for resource/representation improvement, without
+an elapsed win; all contrary observations remain. Object/image/metadata are
+byte-identical, stack unchanged, whole linked text+4,896B.
+
+Actual Core48, fresh no_std check, runtime356, work33, native CI65, image1,
+components236/connected8/path1, linked40, scalar12 (same1.05 gate,max1.024748),
+frame8, workflow132 and architecture15 pass. The new test's raw casts caused an
+introduced architecture failure; clean parent passes, Arc identity repair plus
+full Core/architecture reruns pass, no allowlist/runtime changes. CI guard5→8 is
+separate and retains execution. Measured binaries remain unchanged by the repair.
+Raw failures, exact commands, source pins, all cohorts and numerical replay stay
+in immutable archives. Prepared schema headers are next; their148-request target
+is conditional and overlaps the larger constructor family by132 requests.
