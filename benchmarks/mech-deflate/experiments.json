@@ -12648,6 +12648,17 @@
           "files": 114,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-continuation-counters-e239838d29cd.tar.gz"
+        },
+        {
+          "event": "continuation-isolated-profile-rich",
+          "source_revision": "914ab57fab23f831f6bb99e5f8a0e8419d2c3004",
+          "asset": "r125-continuation-isolated-profile-rich-9f02d799f2c3.tar.gz",
+          "sha256": "9f02d799f2c34cf3422be90a1cf77762a7f975d06c04f135229b00a897777219",
+          "manifest_sha256": "6699f4a5661d2c95e760c0fe21e6b826908f6d0119b16b9b9c7936a2fb4fbf8a",
+          "bytes": 335369,
+          "files": 83,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-continuation-isolated-profile-rich-9f02d799f2c3.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
