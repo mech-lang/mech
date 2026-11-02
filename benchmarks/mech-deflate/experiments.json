@@ -7453,6 +7453,17 @@
           "files": 76,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-shared-shape-round103-20261101/archives/r103-frame-allocation-1dd0b56e0189.tar.gz"
+        },
+        {
+          "event": "current-census",
+          "source_revision": "6b064cdeb678f2e7c89e5c2a39143e5ac2f36e79",
+          "asset": "r103-current-census-99e2133e99f7.tar.gz",
+          "sha256": "99e2133e99f7f210958f5e08ea859f996085c7fd257a459c428a9899fbcae1b5",
+          "manifest_sha256": "6505a4c73a240190d728f1d5db0cec7e143a000197ba4c86df5cdbb666b2766e",
+          "bytes": 674203,
+          "files": 65,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-shared-shape-round103-20261101/archives/r103-current-census-99e2133e99f7.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
