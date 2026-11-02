@@ -29,6 +29,7 @@ pub(in crate::native_artifact) struct Report {
     pub typed_loads: Vec<(usize, u8)>,
     pub typed_stores: Vec<(usize, u8)>,
     pub first_change_boundaries: Vec<usize>,
+    pub cold_exits: Vec<(usize, usize)>,
     pub length_sites: Vec<usize>,
     pub append_sites: Vec<(usize, u8)>,
     pub capacity_guards: Vec<(usize, usize)>,
@@ -83,6 +84,7 @@ pub(in crate::native_artifact) fn emit_entry(
         return Err(backend("numeric leaf lacks managed program"));
     };
     let setup_start = b.func.dfg.num_insts();
+    tail::resume_cold(controls.options(), b, locals, region, site, hooks, error)?;
     let ordinary = b.create_block();
     let selected = b.create_block();
     let ready = b
@@ -124,6 +126,11 @@ pub(in crate::native_artifact) fn emit_entry(
         typed_loads: Vec::new(),
         typed_stores: Vec::new(),
         first_change_boundaries: Vec::new(),
+        cold_exits: proof
+            .exits
+            .iter()
+            .map(|exit| (exit.from, exit.to))
+            .collect(),
         length_sites: Vec::new(),
         append_sites: Vec::new(),
         capacity_guards: Vec::new(),
@@ -135,6 +142,35 @@ pub(in crate::native_artifact) fn emit_entry(
     };
     for &site in &proof.sites {
         b.switch_to_block(target(site as u32));
+        if matches!(proof.action(site), Some(Operation::Fallback)) {
+            boundaries.insert(target(site as u32));
+            words.spill_all(b, locals)?;
+            set_origin(b, frame, site as u64);
+            let origin = b.ins().iconst(types::I64, site as i64);
+            tail::leave(
+                controls.options(),
+                b,
+                locals,
+                region,
+                origin,
+                6,
+                hooks,
+                error,
+            )?;
+            let one = b.ins().iconst(types::I64, 1);
+            b.ins().store(
+                MemFlags::new(),
+                one,
+                locals,
+                offset(region.cold_resume().unwrap())?,
+            );
+            b.ins().jump(
+                ordinary_blocks[site]
+                    .ok_or_else(|| backend("cold numeric continuation is absent"))?,
+                &[],
+            );
+            continue;
+        }
         let fail = b.create_block();
         b.append_block_param(fail, types::I64);
         b.set_cold_block(fail);
@@ -232,6 +268,7 @@ pub(in crate::native_artifact) fn emit_entry(
             words.write(b, shadow + debit.counter, count);
         }
         match proof.action(site) {
+            Some(Operation::Fallback) => unreachable!("cold edge emitted above"),
             Some(Operation::Aggregate) => {
                 let layout = &program.metadata().scalar_aggregates;
                 let action = layout

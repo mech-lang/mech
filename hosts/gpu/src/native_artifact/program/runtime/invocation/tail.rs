@@ -30,7 +30,22 @@ impl Invocation<'_, '_, '_> {
             .get(site)
             .copied()
             .flatten()
-            .ok_or_else(|| invalid("closed Tail outside initializer"))?;
+            .filter(|_| self.state.control.previous == Some(site as u32))
+            .or_else(|| {
+                layout.sites.get(site).copied().flatten().filter(|&id| {
+                    let region = &layout.regions[id];
+                    region.tail.header() as usize == site
+                        && region
+                            .numeric
+                            .as_ref()
+                            .is_some_and(|proof| !proof.exits.is_empty())
+                        && self.state.control.previous == Some(region.tail.latch())
+                        && self.numeric_prepaid.is_none()
+                })
+            })
+            .ok_or_else(|| {
+                invalid("closed Tail outside initializer or cold continuation header")
+            })?;
         self.begin_closed_region(site, args, region)
     }
     pub(in crate::native_artifact::program::runtime) fn begin_closed_region(
@@ -49,6 +64,14 @@ impl Invocation<'_, '_, '_> {
         }
         let layout = &self.descriptor.metadata().closed_tails;
         let proof = &layout.regions[region];
+        if self.numeric_prepaid.is_some()
+            && proof
+                .numeric
+                .as_ref()
+                .is_some_and(|proof| !proof.exits.is_empty())
+        {
+            return Ok(Some(0));
+        }
         if self.state.control.current != Some(proof.iteration)
             || self.progress[proof.iteration as usize * 2..][..2] != [0, 1]
         {
@@ -222,6 +245,10 @@ impl Invocation<'_, '_, '_> {
             5 if proof.numeric.as_ref().and_then(|p| p.action(site)).is_some_and(|a| matches!(a,
                 crate::native_artifact::program::prepare::readonly_numeric::Operation::Write { .. }
                 | crate::native_artifact::program::prepare::readonly_numeric::Operation::Append { .. })) => site as u32,
+            6 if (traversals > 0 || state.partial) && self.numeric_prepaid.is_none() => proof.numeric.as_ref()
+                .and_then(|proof| proof.exits.iter().find(|exit| exit.to == site))
+                .map(|exit| exit.from as u32)
+                .ok_or_else(|| invalid("numeric cold exit is outside its exact source edge"))?,
             _ => return Err(invalid("closed Tail exit outside its proved boundary")),
         };
         self.synchronize_numeric_carrier(region, site, args[2])?;
@@ -235,6 +262,10 @@ impl Invocation<'_, '_, '_> {
         // This is one proved bulk transition, not fabricated/replayed per-op
         // visits. The report counts the remaining actual admitted CFG visits.
         self.state.control.previous = Some(previous);
+        if args[2] == 6 {
+            self.numeric_prepaid = Some(region);
+            self.state.scalar_path = None;
+        }
         if proof.map.is_some() && args[2] == 0 {
             self.state.map_owners.closed_exit = Some((previous, proof.tail.exit()));
         }

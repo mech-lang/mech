@@ -12,11 +12,13 @@ use mech_engine::native_artifact::{
 use std::collections::{BTreeMap, BTreeSet};
 mod atoms;
 mod bounds;
+mod cold;
 mod flow;
 mod homes;
 mod schedule;
 mod words;
 pub(in crate::native_artifact) use bounds::Bound;
+pub(in crate::native_artifact) use cold::Child as ColdChild;
 pub(in crate::native_artifact) use homes::boundary_work;
 pub(in crate::native_artifact) use schedule::Schedule;
 
@@ -52,6 +54,7 @@ pub(in crate::native_artifact) struct Loop {
 #[derive(Debug)]
 pub(in crate::native_artifact) struct Forest {
     pub loops: Vec<Loop>,
+    pub cold: Vec<ColdChild>,
     pub sites: BTreeSet<usize>,
     /// A current traversal order, cutting each declared latch backedge.
     pub order: Vec<usize>,
@@ -233,6 +236,25 @@ impl Forest {
         plan: &Plan,
         root: &NativeTailLoop,
     ) -> Result<Self, &'static str> {
+        Self::derive_inventory(plan, root, false)
+    }
+
+    pub(in crate::native_artifact) fn with_cold_children(
+        plan: &Plan,
+        root: &NativeTailLoop,
+    ) -> Result<Self, &'static str> {
+        Self::derive_inventory(plan, root, true)
+    }
+
+    pub fn successors(&self, plan: &Plan, site: usize) -> Vec<usize> {
+        cold::successors(&self.cold, plan, site)
+    }
+
+    fn derive_inventory(
+        plan: &Plan,
+        root: &NativeTailLoop,
+        allow_cold: bool,
+    ) -> Result<Self, &'static str> {
         let root_id = plan
             .iterations()
             .iter()
@@ -241,7 +263,12 @@ impl Forest {
             })
             .ok_or("numeric phase root is absent")? as u32;
         let mut members = BTreeSet::from([root_id]);
-        loop {
+        let cold = if allow_cold {
+            cold::children(plan, root_id)?
+        } else {
+            Vec::new()
+        };
+        while !allow_cold {
             let before = members.len();
             for (id, loop_) in plan.iterations().iter().enumerate() {
                 if loop_
@@ -285,9 +312,9 @@ impl Forest {
                 return Err("numeric phase has an unsupported terminator");
             }
             pending.extend(
-                NativeProgramFacts::control_successors(block.terminator())
+                cold::successors(&cold, plan, site as usize)
                     .into_iter()
-                    .flatten(),
+                    .map(|s| s as u32),
             );
         }
         let mut loops = Vec::new();
@@ -329,11 +356,7 @@ impl Forest {
             .map(|&s| (s, 0usize))
             .collect::<BTreeMap<_, _>>();
         for &site in &sites {
-            for next in NativeProgramFacts::control_successors(plan.blocks()[site].terminator())
-                .into_iter()
-                .flatten()
-                .map(|s| s as usize)
-            {
+            for next in cold::successors(&cold, plan, site) {
                 if next != root.exit() as usize && !backedges.contains(&(site, next)) {
                     *incoming
                         .get_mut(&next)
@@ -348,11 +371,7 @@ impl Forest {
         let mut order = Vec::new();
         while let Some(site) = ready.pop() {
             order.push(site);
-            for next in NativeProgramFacts::control_successors(plan.blocks()[site].terminator())
-                .into_iter()
-                .flatten()
-                .map(|s| s as usize)
-            {
+            for next in cold::successors(&cold, plan, site) {
                 if next == root.exit() as usize || backedges.contains(&(site, next)) {
                     continue;
                 }
@@ -368,6 +387,7 @@ impl Forest {
         }
         Ok(Self {
             loops,
+            cold,
             sites,
             order,
         })

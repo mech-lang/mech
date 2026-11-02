@@ -6,6 +6,7 @@ use mech_engine::ProgramArtifact;
 mod admission_overlap;
 mod bounds_retry;
 mod child_cleanup;
+mod cold_child;
 mod collection_lifetime;
 mod exit_transport;
 mod managed_carriers;
@@ -61,11 +62,11 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                103
+                104
             );
             assert_eq!(
                 report.work, 88_531_834,
-                "policy103 retains policy102 leaf/parent prices and omits unread constant owners while retaining structural alias pricing and scalar-prefix debits"
+                "policy104 retains existing child-free leaf/parent prices, constant ownership, structural alias pricing and scalar-prefix debits"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(

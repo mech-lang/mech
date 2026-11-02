@@ -83,6 +83,22 @@ pub(in crate::native_artifact) fn leave(
             b.ins()
                 .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
         }
+        if mode == 6 {
+            // Only reached cold paths need ordinary continuation frame lanes.
+            // The exact edge recipe is checked again by the runtime consumer.
+            for value in proof.exits.iter().flat_map(|exit| &exit.frames) {
+                for slot in proof
+                    .fields(*value)
+                    .ok_or_else(|| backend("cold frame lacks scalar lanes"))?
+                    .iter()
+                    .flatten()
+                {
+                    let value = load(options, b, locals, region, shadow + slot)?;
+                    b.ins()
+                        .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
+                }
+            }
+        }
         if let Some(phase) = &proof.phase {
             for debit in &phase.loops {
                 let value = load(options, b, locals, region, shadow + debit.counter)?;
@@ -282,6 +298,45 @@ fn prepare_region(
         };
         store(options, b, locals, region, destination, word)?;
     }
+    if let Some(word) = region.cold_resume() {
+        store(options, b, locals, region, word, zero)?;
+    }
+    Ok(())
+}
+
+/// A cold ordinary suffix may re-enter only at the original next header. The
+/// flag is per invocation and cleared even when the fresh same-account view
+/// preview declines; an ordinary loop never repeatedly attempts a refused loan.
+pub(in crate::native_artifact) fn resume_cold(
+    options: OptimizationOptions,
+    b: &mut FunctionBuilder<'_>,
+    locals: Value,
+    region: &Region,
+    site: usize,
+    hooks: &Hooks,
+    error: Block,
+) -> Result<(), NativeCompileError> {
+    let Some(word) = region.cold_resume() else {
+        return Ok(());
+    };
+    let pending = load(options, b, locals, region, word)?;
+    let resume = b.create_block();
+    let ready = b.create_block();
+    b.set_cold_block(resume);
+    b.ins().brif(pending, resume, &[], ready, &[]);
+    b.switch_to_block(resume);
+    prepare_region(
+        options,
+        b,
+        locals,
+        region,
+        site,
+        program_abi::CLOSED_TAIL_BEGIN,
+        hooks,
+        error,
+    )?;
+    b.ins().jump(ready, &[]);
+    b.switch_to_block(ready);
     Ok(())
 }
 /// Emit native admission or leave in the ordinary callback arm; the caller

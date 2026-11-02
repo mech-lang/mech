@@ -286,7 +286,8 @@ fn selected_template(
 // numeric reconciliation words. Physical backing and original prices remain.
 // IR150 rederives checked-offset positive-stride phase bounds on the retained
 // canonical first-change handoff and independently bounded argument owners.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 150;
+// IR151 reconstructs exact current-state cold child exits for numeric loops.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 151;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -490,7 +491,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 150;
 // Policy103 composes reached traversal prices in positive-stride phases.
 // Admission envelopes remain conservative bounds, never prepaid debits.
 // Existing leaf/parent prices and original per-site failure order remain.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 103;
+// Policy104 retains the paid root traversal across an ordinary child and suffix.
+// Only those proved source visits are prepaid; child/factory work stays dynamic.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 104;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

@@ -174,7 +174,9 @@ fn nested_numeric_phase_declines_wrapping_offset_zero_or_dynamic_stride() {
                     .regions
                     .iter()
                     .any(|r| r.iteration == 0
-                        && r.numeric.as_ref().is_some_and(|p| p.phase.is_some()))
+                        && r.numeric
+                            .as_ref()
+                            .is_some_and(|p| p.phase.is_some() && p.exits.is_empty()))
             );
         }
     }

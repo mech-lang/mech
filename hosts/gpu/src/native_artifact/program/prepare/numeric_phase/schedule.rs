@@ -22,6 +22,7 @@ pub(in crate::native_artifact) struct Debit {
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Schedule {
     pub loops: Vec<Debit>,
+    pub cold: Vec<ColdChild>,
     pub boundary_work: u64,
     pub compute_bound: Bound,
     pub comparison_bound: Bound,
@@ -105,6 +106,7 @@ impl Schedule {
         let (compute_bound, comparison_bound) = envelopes.remove(&loops[0].iteration).unwrap();
         Ok(Self {
             loops,
+            cold: forest.cold.clone(),
             boundary_work,
             compute_bound,
             comparison_bound,

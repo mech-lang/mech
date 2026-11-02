@@ -10,6 +10,7 @@ use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeMatchValue};
 mod buffer_frames;
 pub(super) mod continuation;
 mod helper_fallbacks;
+mod numeric_exits;
 mod numeric_segments;
 mod numeric_writes;
 mod readonly_numeric;
@@ -164,6 +165,7 @@ pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visi
     pub(in crate::native_artifact::program::runtime) borrowed_strings: Option<borrowed::State>,
     pub(in crate::native_artifact::program::runtime) closed_tail:
         Option<crate::native_artifact::program::runtime::invocation::tail::State>,
+    pub(super) numeric_prepaid: Option<usize>,
     // Scalar edge identity only; all owners remain in the inventoried frame/arena banks.
     pub(in crate::native_artifact::program::runtime) parent_continuation: continuation::Pending,
     pub(in crate::native_artifact::program::runtime) selected_join:
@@ -397,6 +399,10 @@ impl Invocation<'_, '_, '_> {
             let site = usize::try_from(site).map_err(|_| invalid("closed Tail site overflow"))?;
             return self.end_closed_tail(site, args);
         }
+        if tag == GlobalHelper::ClosedTailBegin {
+            let site = usize::try_from(site).map_err(|_| invalid("closed Tail site overflow"))?;
+            return self.begin_closed_tail(site, args);
+        }
         if tag == GlobalHelper::NumericWritePrepare {
             let site = usize::try_from(site)
                 .map_err(|_| invalid("numeric materialization site overflow"))?;
@@ -450,9 +456,6 @@ impl Invocation<'_, '_, '_> {
         #[cfg(all(test, feature = "canonical-native-program"))]
         crate::native_artifact::program::runtime::collections::before_span_helper(self, site)?;
         let descriptor = self.descriptor;
-        if tag == GlobalHelper::ClosedTailBegin {
-            return self.begin_closed_tail(site, args);
-        }
         if tag == GlobalHelper::NumericSegmentBegin {
             return self.begin_numeric_segment(site, args);
         }
@@ -683,6 +686,14 @@ impl Invocation<'_, '_, '_> {
         if let Some(state) = &self.state.collections {
             state.validate_span_boundary(block.action())?;
         }
+        let prepaid = self.numeric_prepaid.is_some_and(|region| {
+            let region = &self.descriptor.metadata().closed_tails.regions[region];
+            block.iteration() == Some(region.iteration)
+                && region
+                    .numeric
+                    .as_ref()
+                    .is_some_and(|proof| proof.sites.contains(&index))
+        });
         let group = self
             .descriptor
             .metadata()
@@ -710,6 +721,13 @@ impl Invocation<'_, '_, '_> {
         if group.is_some_and(|group| u64::from(group.start()) != site) {
             return Err(invalid("ordinary visit inside admitted scalar group"));
         }
+        // Closed numeric membership excludes ordinary scalar groups. A later
+        // grouping extension must prove its own paid coverage, not inherit it.
+        if prepaid && group.is_some() {
+            return Err(invalid(
+                "prepaid numeric visit overlaps a scalar admission group",
+            ));
+        }
         if previous.is_none() && self.worker.is_some() {
             let worker = self.worker.as_ref().unwrap();
             let region = self
@@ -723,6 +741,16 @@ impl Invocation<'_, '_, '_> {
                 return Err(invalid("worker entry outside constructor proof"));
             }
             self.control().visit_outlined_entry(site, region.begin)?;
+        } else if prepaid {
+            #[cfg(test)]
+            let already_paid = self.state.control.work.used();
+            self.control().visit_prepaid_from(site, previous)?;
+            #[cfg(test)]
+            assert_eq!(
+                self.state.control.work.used(),
+                already_paid,
+                "a prepaid source visit must neither debit twice nor renew work"
+            );
         } else {
             self.control()
                 .visit_from(site, group.map(|group| group.work), previous)?;
@@ -732,6 +760,12 @@ impl Invocation<'_, '_, '_> {
             .filter(|group| group.owner.is_none())
             .map(|group| group.start());
         self.state.map_owners.closed_exit = None;
+        if let Some(region) = self.numeric_prepaid {
+            let tail = &self.descriptor.metadata().closed_tails.regions[region].tail;
+            if index == tail.latch() as usize || index == tail.finish() as usize {
+                self.numeric_prepaid = None;
+            }
+        }
         let descriptor = self.descriptor;
         if let Some(mech_engine::native_artifact::NativeBorrowedStringAction::Equal { .. }) =
             self.borrowed_action(index)

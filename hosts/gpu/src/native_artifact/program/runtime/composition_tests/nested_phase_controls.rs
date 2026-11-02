@@ -98,7 +98,9 @@ fn nested_numeric_phase_declines_unknown_progress_mutation_and_collection() {
                     .regions
                     .iter()
                     .any(|r| r.iteration == 0
-                        && r.numeric.as_ref().is_some_and(|p| p.phase.is_some()))
+                        && r.numeric
+                            .as_ref()
+                            .is_some_and(|p| p.phase.is_some() && p.exits.is_empty()))
             );
         }
     }
