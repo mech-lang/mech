@@ -10257,6 +10257,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-retirement-binary-1715a63e44a3.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "8e7334a4fdd929c58f0d741195c3d8a1857d81af",
+          "asset": "r117-closure-2f144f349710.tar.gz",
+          "sha256": "2f144f349710cb398321db168f6284342d95fdafea4e97570e5d6d4ad6e25763",
+          "manifest_sha256": "c639d33e39a71ec3c77ea2468ab10b11d04641975cff99190a214ad94e9de419",
+          "bytes": 4877410,
+          "files": 166,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-closure-2f144f349710.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
