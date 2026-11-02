@@ -12121,6 +12121,17 @@
           "files": 65,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-match-rich-measure-1024-475899ee9820.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "fc8e98e8d7230b78ff01644ae1457828f281673b",
+          "asset": "r124-scalar-controls-f1fa00232a2a.tar.gz",
+          "sha256": "f1fa00232a2a20526b32c353bb01bd8445484b5a777edc6aa758e09101a2d9df",
+          "manifest_sha256": "adb48f105fd994c29ef96c3ce903320054ceb076aa8aea71128bf95dcee41e72",
+          "bytes": 228611,
+          "files": 111,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-scalar-controls-f1fa00232a2a.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
