@@ -10,7 +10,7 @@ use crate::native_artifact::compiler::{backend, offset, primitive, set_origin};
 use crate::native_artifact::program::codegen::{hooks::Hooks, tail};
 use crate::native_artifact::program::prepare::{
     readonly_numeric::{Operation, Proof},
-    tail::{FIXED_OVERHEAD, Layout, OVERHEAD},
+    tail::{Layout, OVERHEAD},
 };
 use crate::native_artifact::{NativeCompileError, abi::STATUS_ABI};
 use cranelift_codegen::ir::condcodes::IntCC;
@@ -96,6 +96,11 @@ pub(in crate::native_artifact) fn emit_entry(
         .ok_or_else(|| backend("numeric region lacks scratch home"))?;
     let slots = slots(code, proof, region.words, shadow)?;
     let register_words = slots.len();
+    if register_words > proof.boundary_words {
+        return Err(backend(
+            "numeric backend homes exceed independent boundary inventory",
+        ));
+    }
     let words = Words::new(b, locals, code, slots)?;
     let setup_work = b.func.dfg.num_insts() - setup_start;
     let exit = b.create_block();
@@ -412,7 +417,7 @@ pub(in crate::native_artifact) fn emit_entry(
     words.spill_all(b, locals)?;
     b.ins().jump(error, &[status.into()]);
     report.fixed_template_instructions = setup_work + b.func.dfg.num_insts() - boundary;
-    if report.fixed_template_instructions > FIXED_OVERHEAD as usize {
+    if report.fixed_template_instructions as u64 > proof.boundary_work {
         return Err(backend("numeric leaf exceeds finite boundary envelope"));
     }
     // Inspect the actual emitted graph, stopping at the admitted cold/exit

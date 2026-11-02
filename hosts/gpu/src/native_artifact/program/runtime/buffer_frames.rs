@@ -402,17 +402,11 @@ impl BufferFrames {
             .and_then(Option::take)
             .ok_or_else(|| invalid("numeric handoff lost current carrier owner"))
     }
-    pub(super) fn synchronize_scalar(
+    pub(super) fn synchronize_scalar_leaf(
         &mut self,
-        layout: &Layout,
-        value: NativeMatchValue,
-        ordinal: usize,
+        field: FrameField,
         bits: u64,
     ) -> Result<(), NativeProgramExecutionError> {
-        let field = layout
-            .fields(value)
-            .and_then(|fields| fields.get(ordinal))
-            .ok_or_else(|| invalid("numeric reconciliation outside frame"))?;
         let Lane::Scalar { at, kind } = field.lane() else {
             return Err(invalid("numeric reconciliation is not scalar"));
         };

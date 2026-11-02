@@ -137,8 +137,10 @@ impl Layout {
                 continue;
             }
             if !frames.fields(parent.carrier()).is_some_and(|f| {
-                f.iter()
-                    .all(|f| !matches!(f.lane(), Lane::Composite { .. }))
+                f.iter().all(|f| {
+                    !matches!(f.lane(), Lane::Composite { .. })
+                        || super::readonly_numeric::scalar_children(frames, *f)
+                })
             }) {
                 continue;
             }
@@ -461,28 +463,37 @@ fn eligible(
 ) -> bool {
     let action = plan.blocks()[site].action();
     if let Some(frame) = frames.action(site) {
-        let flat = |value| {
+        let native_frame = |value| {
             frames.fields(value).is_some_and(|fields| {
-                fields
-                    .iter()
-                    .all(|f| !matches!(f.lane(), Lane::Composite { .. }))
+                fields.iter().all(|f| {
+                    !matches!(f.lane(), Lane::Composite { .. })
+                        || super::readonly_numeric::scalar_children(frames, *f)
+                })
             })
         };
         return match frame.operation() {
             Frame::Pack { output } => {
-                flat(*output)
+                native_frame(*output)
                     && calls[site]
                         .as_ref()
                         .is_some_and(|c| c.supports_invariant_buffer_frame())
             }
-            Frame::Copy { source, output } => flat(*source) && flat(*output),
+            Frame::Copy { source, output } => native_frame(*source) && native_frame(*output),
             Frame::Project {
                 source,
                 ordinal,
                 output,
             } => {
-                flat(*source)
+                native_frame(*source)
                     && (plan.values()[output.get() as usize].scalar_kind().is_some()
+                        || (native_frame(*output)
+                            && frames
+                                .fields(*source)
+                                .and_then(|fields| fields.get(*ordinal))
+                                .is_some_and(|field| {
+                                    matches!(field.lane(), Lane::Composite { .. })
+                                        && super::readonly_numeric::scalar_children(frames, *field)
+                                }))
                         || ((matches!(action, Action::Structural { .. })
                             || matches!(action, Action::LibraryCall { template, .. }
                                 if template.primitive() == Primitive::RecordFieldAccess

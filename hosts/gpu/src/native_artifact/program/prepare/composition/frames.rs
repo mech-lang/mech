@@ -1,7 +1,9 @@
 //! Current frame/owner sources for one acyclic parent piece. Sources are checked
 //! descriptions; the runtime must still establish current invocation availability.
 use super::Segment;
-use crate::native_artifact::program::prepare::readonly_numeric::FrameWords;
+use crate::native_artifact::program::prepare::readonly_numeric::{
+    FrameWords, scalar_children, scalar_paths,
+};
 use mech_engine::native_artifact::{
     NativeBufferFrameLane as Lane, NativeBufferFrameOperation as Frame, NativeBufferFrames,
     NativeIterationAction as Action, NativeMatchValue, NativeProgramArtifactPlan as Plan,
@@ -165,6 +167,16 @@ impl Layout {
                         writes.entry(output.get()).or_default().push(site as usize);
                         written_values.insert(output.get(), *output);
                         values.insert(output.get());
+                        if let Action::LibraryCall { operands, .. } =
+                            plan.blocks()[site as usize].action()
+                        {
+                            values.extend(
+                                operands
+                                    .iter()
+                                    .filter(|value| frames.fields(**value).is_some())
+                                    .map(|value| value.get()),
+                            );
+                        }
                     }
                     Frame::Copy { source, output } => {
                         writes.entry(output.get()).or_default().push(site as usize);
@@ -173,7 +185,11 @@ impl Layout {
                     }
                     Frame::Project { source, output, .. } => {
                         values.insert(source.get());
-                        if plan.values()[output.get() as usize].scalar_kind().is_none() {
+                        if frames.fields(*output).is_some() {
+                            writes.entry(output.get()).or_default().push(site as usize);
+                            values.insert(output.get());
+                            written_values.insert(output.get(), *output);
+                        } else if plan.values()[output.get() as usize].scalar_kind().is_none() {
                             projected.insert(output.get(), *output);
                             written_values.insert(output.get(), *output);
                         }
@@ -204,6 +220,16 @@ impl Layout {
         for value in values {
             let mut scalar = Vec::new();
             let mut arrays = Vec::new();
+            let fields = frames
+                .fields_at(value as usize)
+                .ok_or("parent frame lacks exact fields")?;
+            if fields.iter().any(|field| {
+                matches!(field.lane(), Lane::Composite { .. }) && !scalar_children(frames, *field)
+            }) {
+                return Err("parent composite frame requires scalar-only children");
+            }
+            let mut paths = Vec::new();
+            scalar_paths(frames, fields, &mut Vec::new(), &mut words, &mut paths);
             for (ordinal, field) in frames
                 .fields_at(value as usize)
                 .ok_or("parent frame lacks exact fields")?
@@ -212,9 +238,13 @@ impl Layout {
             {
                 match field.lane() {
                     Lane::Scalar { .. } => {
-                        scalar.push(Some(words));
+                        scalar.push(
+                            paths
+                                .iter()
+                                .find(|(path, _)| path.as_slice() == [ordinal])
+                                .map(|(_, slot)| *slot),
+                        );
                         arrays.push(None);
-                        words = words.checked_add(1).ok_or("parent scalar words overflow")?;
                     }
                     Lane::Managed { .. } => {
                         let source = origins.field(value, ordinal)?;
@@ -227,11 +257,15 @@ impl Layout {
                         scalar.push(None);
                         arrays.push(Some(at));
                     }
-                    Lane::Composite { .. } => return Err("parent frame requires flat fields"),
+                    Lane::Composite { .. } => {
+                        scalar.push(None);
+                        arrays.push(None);
+                    }
                 }
             }
             recipes.push(FrameWords {
                 value,
+                scalar_paths: paths,
                 fields: scalar,
                 arrays,
             });
@@ -298,7 +332,7 @@ impl Layout {
                     maybe.insert(output.get());
                 }
                 if let Frame::Project { output, .. } = action.operation()
-                    && projected.contains_key(&output.get())
+                    && (projected.contains_key(&output.get()) || frames.fields(*output).is_some())
                 {
                     valid.insert(output.get());
                     maybe.insert(output.get());
@@ -307,7 +341,8 @@ impl Layout {
                     && let Action::LibraryCall { operands, .. } =
                         plan.blocks()[site as usize].action()
                     && operands.iter().any(|value| {
-                        projected.contains_key(&value.get()) && !valid.contains(&value.get())
+                        (projected.contains_key(&value.get()) || frames.fields(*value).is_some())
+                            && !valid.contains(&value.get())
                     })
                 {
                     return Err("parent pack reads an unreached or retired array alias");

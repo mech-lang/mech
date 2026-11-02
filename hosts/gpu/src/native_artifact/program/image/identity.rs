@@ -277,7 +277,12 @@ fn selected_template(
 // IR144 belongs to the held aggregate-in-numeric-pieces experiment.
 // IR145 funds the existing private scalar aggregate word actions through the
 // ordinary scalar path. Images rederive those same current source frontiers.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 145;
+// IR146 carries exact recursive scalar paths in numeric frame recipes. Only
+// scalar-only composite spans may enter the existing native word bank; array
+// identity/version proofs and checked runtime boundaries remain unchanged.
+// IR147 pins immutable ancestor/root numeric captures of scalar-state Tails,
+// including their exact selected factories, current-view and cold error route.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 147;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -471,7 +476,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 145;
 // Policy99 prices only reached setup construction for constants with a runtime
 // consumer. Unread constants retain their immutable plan/type/local metadata,
 // but no independent admission, arena installation or owner cleanup is needed.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 99;
+// Policy100 funds word-scaled entry/exit templates of recursive scalar frames.
+// Existing flat-frame envelopes and prices remain unchanged.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 100;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

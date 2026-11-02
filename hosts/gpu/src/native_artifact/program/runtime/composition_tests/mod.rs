@@ -5,19 +5,23 @@ use mech_core::ValueDataDraft as Data;
 use mech_engine::ProgramArtifact;
 mod admission_overlap;
 mod bounds_retry;
+mod captured_numeric;
 mod child_cleanup;
 mod collection_lifetime;
+mod deep_nested_scalar;
 mod exit_transport;
 mod managed_carriers;
 mod managed_projections;
 mod multiple_children;
 mod named_managed_projections;
+mod nested_scalar_array;
 mod observe;
 mod pack;
 mod record_lookup;
 mod resources;
 mod scalar_child;
 mod schema_key;
+mod wide_scalar_array;
 
 #[test]
 fn huffman_parent_cleanup_selects_funded_retirement_batches() {
@@ -58,11 +62,11 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                99
+                100
             );
             assert_eq!(
                 report.work, 88_531_834,
-                "policy99 omits unread constant owners while retaining structural alias pricing and scalar-prefix debits"
+                "policy100 preserves flat Huffman work while funding nested paths and captured numeric loops"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(

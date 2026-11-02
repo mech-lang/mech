@@ -48,7 +48,7 @@ impl Layout {
                     .iter()
                     .find(|frame| frame.value == value.get())
                     .ok_or("parent exit lacks its escaping frame recipe")?;
-                for &word in recipe.fields.iter().flatten() {
+                for word in recipe.scalar_slots() {
                     if word >= frames.scalar_words {
                         return Err("parent exit scalar word is outside its frame bank");
                     }
@@ -181,7 +181,10 @@ impl Layout {
         // Native frame copies, spills and exit synchronization use the existing
         // word adapter. Fund their actual bounded word inventory as well.
         let fields = frames.frames.iter().try_fold(0usize, |n, f| {
-            n.checked_add(f.fields.len())
+            f.scalar_paths
+                .iter()
+                .try_fold(n, |n, (path, _)| n.checked_add(path.len()))
+                .and_then(|n| n.checked_add(f.arrays.iter().flatten().count()))
                 .ok_or("parent field count overflows")
         })?;
         compute = u64::try_from(fields)

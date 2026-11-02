@@ -22,9 +22,9 @@ pub(in crate::native_artifact) enum ResultRecipe {
     },
 }
 
-/// Reuse the connected private-use proof and its exact scalar word count.
-/// Numeric leaves initially compose only flat tuples/records, not enum tags or
-/// nested fields. Their ordinary shared aggregate emitter owns bit semantics.
+/// Reuse the connected private-use proof and its exact scalar word count for
+/// flat scalar aggregates. Nested scalar spans use the separate buffer-frame
+/// recipe; the ordinary shared aggregate emitter still owns bit semantics here.
 pub(in crate::native_artifact::program::prepare) fn scalar_aggregate(
     plan: &Plan,
     aggregates: &NativeScalarAggregates,
@@ -112,15 +112,15 @@ pub(super) fn derive(
     }
     // The connected private-use proof supplies the exact tuple/record field
     // order and rejects public escape. Both use the same per-field roots and
-    // terminal freshness proof; nested composites remain unsupported here.
+    // terminal freshness proof. Nested spans must contain scalar leaves only.
     let fields = frames
         .fields(value)
         .ok_or("numeric result frame escapes or lacks exact private fields")?;
     if fields
         .iter()
-        .any(|f| matches!(f.lane(), Lane::Composite { .. }))
+        .any(|f| matches!(f.lane(), Lane::Composite { .. }) && !scalar_children(frames, *f))
     {
-        return Err("numeric result requires flat fields");
+        return Err("numeric result composite requires scalar-only children");
     }
     let managed = fields
         .iter()

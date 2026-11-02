@@ -108,11 +108,10 @@ pub(super) fn frame_words(
     let CodePlan::Program(program) = code else {
         return Err(backend("numeric frame lacks managed plan"));
     };
-    let fields = |value| {
+    let recipe = |value| {
         recipes
             .iter()
             .find(|f| f.value == value)
-            .map(|f| f.fields.as_slice())
             .ok_or_else(|| backend("numeric frame lost exact scalar fields"))
     };
     let operation = program
@@ -126,19 +125,41 @@ pub(super) fn frame_words(
             let Action::LibraryCall { operands, .. } = code.blocks()[site].action() else {
                 return Err(backend("numeric pack lost operands"));
             };
-            for (field, operand) in fields(output.get())?.iter().zip(operands) {
-                if let Some(field) = field {
-                    let value = words.read(b, operand.get() as usize);
-                    words.write(b, shadow + field, value);
+            let mut copied = Vec::new();
+            for (ordinal, operand) in operands.iter().enumerate() {
+                let target = recipe(output.get())?
+                    .field_slots(ordinal)
+                    .collect::<Vec<_>>();
+                if target.is_empty() {
+                    continue;
                 }
+                if code.kind(*operand).is_some() {
+                    if target.len() != 1 {
+                        return Err(backend("numeric scalar pack span differs"));
+                    }
+                    copied.push((target[0], words.read(b, operand.get() as usize)));
+                } else {
+                    let source = recipe(operand.get())?.scalar_slots().collect::<Vec<_>>();
+                    if source.len() != target.len() {
+                        return Err(backend("numeric composite pack span differs"));
+                    }
+                    copied.extend(
+                        source
+                            .into_iter()
+                            .zip(target)
+                            .map(|(from, to)| (to, words.read(b, shadow + from))),
+                    );
+                }
+            }
+            for (to, value) in copied {
+                words.write(b, shadow + to, value);
             }
         }
         Frame::Copy { source, output } => {
             // Read every old scalar before writing any next-state lane.
-            let copied = fields(source.get())?
-                .iter()
-                .zip(fields(output.get())?)
-                .filter_map(|(from, to)| from.zip(*to))
+            let copied = recipe(source.get())?
+                .scalar_slots()
+                .zip(recipe(output.get())?.scalar_slots())
                 .map(|(from, to)| (to, words.read(b, shadow + from)))
                 .collect::<Vec<_>>();
             for (to, value) in copied {
@@ -150,9 +171,27 @@ pub(super) fn frame_words(
             ordinal,
             output,
         } => {
-            if let Some(field) = fields(source.get())?[*ordinal] {
+            if let Some(field) = recipe(source.get())?.fields[*ordinal] {
                 let value = words.read(b, shadow + field);
                 words.write(b, output.get() as usize, value);
+            } else {
+                let source = recipe(source.get())?
+                    .field_slots(*ordinal)
+                    .collect::<Vec<_>>();
+                if !source.is_empty() {
+                    let target = recipe(output.get())?.scalar_slots().collect::<Vec<_>>();
+                    if source.len() != target.len() {
+                        return Err(backend("numeric composite projection span differs"));
+                    }
+                    let copied = source
+                        .into_iter()
+                        .zip(target)
+                        .map(|(from, to)| (to, words.read(b, shadow + from)))
+                        .collect::<Vec<_>>();
+                    for (to, value) in copied {
+                        words.write(b, shadow + to, value);
+                    }
+                }
             }
         }
     }

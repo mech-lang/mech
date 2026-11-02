@@ -96,6 +96,14 @@ impl Invocation<'_, '_, '_> {
             .ok()
             .and_then(|n| metadata.observation_schema_bytes.checked_mul(n))
             .and_then(|n| n.checked_add(amount(proof.words, 128, 2048).ok()?));
+        let scalar_steps = frames
+            .frames
+            .iter()
+            .flat_map(|frame| &frame.scalar_paths)
+            .try_fold(0usize, |count, (path, _)| {
+                count.checked_add(path.len().saturating_sub(1))
+            });
+        entry = entry.and_then(|n| n.checked_add(amount(scalar_steps?, 64, 0).ok()?));
         // These borrows cover this entry only. Owner tables and source values
         // are immutable throughout preflight; the separate argument word bank
         // may be written below. Large inventories keep the ordinary lookup.
@@ -193,15 +201,29 @@ impl Invocation<'_, '_, '_> {
         // A stale previous physical definition must be retired by its original
         // path, rather than silently overwritten by a virtual frame.
         for frame in &frames.frames {
-            if !frames.inputs.contains(&frame.value)
-                && metadata
-                    .buffer_frames
-                    .fields_at(frame.value as usize)
-                    .is_some_and(|f| {
-                        f.iter()
-                            .any(|f| self.state.buffer_frames.current_leaf(*f).is_some())
-                    })
-            {
+            if frames.inputs.contains(&frame.value) {
+                continue;
+            }
+            let mut live = metadata
+                .buffer_frames
+                .fields_at(frame.value as usize)
+                .is_some_and(|fields| {
+                    fields
+                        .iter()
+                        .any(|field| self.state.buffer_frames.current_leaf(*field).is_some())
+                });
+            for (path, _) in &frame.scalar_paths {
+                if path.len() == 1 {
+                    continue;
+                }
+                let field = super::readonly_numeric::scalar_leaf(
+                    &metadata.buffer_frames,
+                    frame.value,
+                    path,
+                )?;
+                live |= self.state.buffer_frames.current_leaf(field).is_some();
+            }
+            if live {
                 return Ok(Some(0));
             }
         }
@@ -243,18 +265,13 @@ impl Invocation<'_, '_, '_> {
                 .iter()
                 .find(|f| f.value == value)
                 .ok_or_else(|| invalid("parent input frame has no scalar lanes"))?;
-            for (ordinal, slot) in recipe.fields.iter().enumerate() {
-                if let Some(slot) = slot {
-                    let Some((_, bits)) = metadata
-                        .buffer_frames
-                        .fields_at(value as usize)
-                        .and_then(|f| f.get(ordinal))
-                        .and_then(|f| self.state.buffer_frames.current_leaf(*f))
-                    else {
-                        return Ok(Some(0));
-                    };
-                    self.write_borrowed_word(*slot, bits)?;
-                }
+            for (path, slot) in &recipe.scalar_paths {
+                let field =
+                    super::readonly_numeric::scalar_leaf(&metadata.buffer_frames, value, path)?;
+                let Some((None, bits)) = self.state.buffer_frames.current_leaf(field) else {
+                    return Ok(Some(0));
+                };
+                self.write_borrowed_word(*slot, bits)?;
             }
         }
         for frame in &frames.frames {
@@ -269,20 +286,16 @@ impl Invocation<'_, '_, '_> {
             // avoids revisiting fields when it already fits the current cap.
             let mut upper = frame_capacity_bound(
                 largest_source_bytes,
-                frame.arrays.len(),
+                frame.scalar_nodes() + frame.arrays.iter().flatten().count(),
                 self.limits.max_output_bytes,
             );
             if upper.is_none() {
-                upper = Some(0u64);
-                for source in &frame.arrays {
-                    let bound = if let Some(source) = source {
-                        let Some(owner) = current_source(*source)? else {
-                            return Ok(Some(0));
-                        };
-                        owner.memory_budget_retained_bytes(&memory)
-                    } else {
-                        Some(scalar_bytes)
+                upper = scalar_bytes.checked_mul(frame.scalar_nodes() as u64);
+                for source in frame.arrays.iter().flatten() {
+                    let Some(owner) = current_source(*source)? else {
+                        return Ok(Some(0));
                     };
+                    let bound = owner.memory_budget_retained_bytes(&memory);
                     upper = upper.and_then(|n| n.checked_add(bound?));
                     if upper.is_none() {
                         break;
@@ -293,19 +306,18 @@ impl Invocation<'_, '_, '_> {
             if upper.is_none_or(|n| n.max(8) > self.limits.max_output_bytes.unwrap_or(u64::MAX)) {
                 // A refused/overflowing upper bound proves nothing. Preserve
                 // the exact original walk, sum, overflow and byte-limit check.
-                bytes = 0;
-                for source in &frame.arrays {
-                    let bound = if let Some(source) = source {
-                        let Some(owner) = current_source(*source)? else {
-                            return Ok(Some(0));
-                        };
-                        let Ok(footprint) = owner.retained_footprint(&metadata.schemas) else {
-                            return Ok(Some(0));
-                        };
-                        footprint.retained_bytes
-                    } else {
-                        scalar_bytes
+                let Some(scalars) = scalar_bytes.checked_mul(frame.scalar_nodes() as u64) else {
+                    return Ok(Some(0));
+                };
+                bytes = scalars;
+                for source in frame.arrays.iter().flatten() {
+                    let Some(owner) = current_source(*source)? else {
+                        return Ok(Some(0));
                     };
+                    let Ok(footprint) = owner.retained_footprint(&metadata.schemas) else {
+                        return Ok(Some(0));
+                    };
+                    let bound = footprint.retained_bytes;
                     let Some(next) = bytes.checked_add(bound) else {
                         return Ok(Some(0));
                     };
@@ -490,18 +502,19 @@ impl Invocation<'_, '_, '_> {
                             .iter()
                             .find(|f| f.value == value.get())
                             .unwrap();
-                        for (ordinal, (word, source)) in
-                            recipe.fields.iter().zip(&recipe.arrays).enumerate()
-                        {
-                            if let Some(word) = word {
-                                let bits = self.read_borrowed_word(*word)?;
-                                self.state.buffer_frames.synchronize_scalar(
-                                    &metadata.buffer_frames,
-                                    *value,
-                                    ordinal,
-                                    bits,
-                                )?;
-                            } else if let Some(source) = source {
+                        for (path, word) in &recipe.scalar_paths {
+                            let bits = self.read_borrowed_word(*word)?;
+                            let field = super::readonly_numeric::scalar_leaf(
+                                &metadata.buffer_frames,
+                                value.get(),
+                                path,
+                            )?;
+                            self.state
+                                .buffer_frames
+                                .synchronize_scalar_leaf(field, bits)?;
+                        }
+                        for (ordinal, source) in recipe.arrays.iter().enumerate() {
+                            if let Some(source) = source {
                                 let owner = self.state.call_inputs.values()[*source]
                                     .as_ref()
                                     .ok_or_else(|| invalid("parent export source pin missing"))?
@@ -512,10 +525,6 @@ impl Invocation<'_, '_, '_> {
                                     ordinal,
                                     owner,
                                 )?;
-                            } else {
-                                return Err(invalid(
-                                    "parent export has no scalar or managed source",
-                                ));
                             }
                         }
                     }

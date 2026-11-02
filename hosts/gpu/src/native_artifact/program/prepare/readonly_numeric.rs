@@ -32,9 +32,39 @@ pub(in crate::native_artifact) struct Array {
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct FrameWords {
     pub value: u32,
-    /// Relative native scalar lane, or None for an invariant managed field.
+    /// Relative direct scalar lane, or None for an array/composite field.
     pub fields: Vec<Option<usize>>,
     pub arrays: Vec<Option<usize>>,
+    /// Recursive scalar leaves in field order. Paths retain exact structural
+    /// identity; a composite span never hides a managed array or owner.
+    pub scalar_paths: Vec<(Vec<usize>, usize)>,
+}
+impl FrameWords {
+    pub fn scalar_slots(&self) -> impl Iterator<Item = usize> + '_ {
+        self.scalar_paths.iter().map(|(_, slot)| *slot)
+    }
+    pub fn field_slots(&self, ordinal: usize) -> impl Iterator<Item = usize> + '_ {
+        self.scalar_paths
+            .iter()
+            .filter(move |(path, _)| path.first() == Some(&ordinal))
+            .map(|(_, slot)| *slot)
+    }
+    pub fn scalar_nodes(&self) -> usize {
+        // Paths are prepared in depth-first field order. Count each structural
+        // prefix once without allocating during invocation admission.
+        let mut previous: &[usize] = &[];
+        let mut count = 0;
+        for (path, _) in &self.scalar_paths {
+            let common = previous
+                .iter()
+                .zip(path)
+                .take_while(|(a, b)| a == b)
+                .count();
+            count += path.len() - common;
+            previous = path;
+        }
+        count
+    }
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -70,6 +100,9 @@ pub(in crate::native_artifact) struct Proof {
     pub sites: Vec<usize>,
     pub scalar_words: usize,
     pub words: usize,
+    /// Independently bounded source and shadow homes for entry/exit emission.
+    pub boundary_words: usize,
+    pub boundary_work: u64,
     pub result: ResultRecipe,
 }
 impl Proof {
@@ -79,11 +112,15 @@ impl Proof {
             .find(|(s, _)| *s == site)
             .map(|(_, action)| action)
     }
+    #[cfg(test)]
     pub fn fields(&self, value: u32) -> Option<&[Option<usize>]> {
         self.frames
             .iter()
             .find(|f| f.value == value)
             .map(|f| f.fields.as_slice())
+    }
+    pub fn frame(&self, value: u32) -> Option<&FrameWords> {
+        self.frames.iter().find(|frame| frame.value == value)
     }
     pub fn view(&self, array: usize) -> usize {
         self.scalar_words + array * 4
@@ -121,6 +158,46 @@ pub(super) fn width(body: &SchemaBody) -> Option<u8> {
         SchemaBody::UnsignedInteger(IntegerWidth::W64) => 8,
         _ => return None,
     })
+}
+
+pub(in crate::native_artifact::program::prepare) fn scalar_children(
+    frames: &NativeBufferFrames,
+    field: mech_engine::native_artifact::NativeBufferFrameField,
+) -> bool {
+    match field.lane() {
+        Lane::Scalar { .. } => true,
+        Lane::Composite { .. } => frames.children(field).is_some_and(|children| {
+            !children.is_empty() && children.iter().all(|child| scalar_children(frames, *child))
+        }),
+        Lane::Managed { .. } => false,
+    }
+}
+
+pub(in crate::native_artifact::program::prepare) fn scalar_paths(
+    frames: &NativeBufferFrames,
+    fields: &[mech_engine::native_artifact::NativeBufferFrameField],
+    path: &mut Vec<usize>,
+    words: &mut usize,
+    output: &mut Vec<(Vec<usize>, usize)>,
+) {
+    for (ordinal, field) in fields.iter().enumerate() {
+        path.push(ordinal);
+        match field.lane() {
+            Lane::Scalar { .. } => {
+                output.push((path.clone(), *words));
+                *words += 1;
+            }
+            Lane::Composite { .. } => scalar_paths(
+                frames,
+                frames.children(*field).unwrap(),
+                path,
+                words,
+                output,
+            ),
+            Lane::Managed { .. } => {}
+        }
+        path.pop();
+    }
 }
 
 // A key denotes either an array Value or one managed field in a private frame.
@@ -231,9 +308,9 @@ pub(in crate::native_artifact) fn derive(
         .ok_or("carrier escapes or lacks an exact private frame")?;
     if fields
         .iter()
-        .any(|f| matches!(f.lane(), Lane::Composite { .. }))
+        .any(|f| matches!(f.lane(), Lane::Composite { .. }) && !scalar_children(frames, *f))
     {
-        return Err("numeric carrier requires flat fields");
+        return Err("numeric carrier composite requires scalar-only children");
     }
     let iteration = plan
         .iterations()
@@ -321,11 +398,10 @@ pub(in crate::native_artifact) fn derive(
                 let fields = frames
                     .fields_at(value as usize)
                     .ok_or("frame lost exact fields")?;
-                if fields
-                    .iter()
-                    .any(|f| matches!(f.lane(), Lane::Composite { .. }))
-                {
-                    return Err("numeric frame requires flat fields");
+                if fields.iter().any(|f| {
+                    matches!(f.lane(), Lane::Composite { .. }) && !scalar_children(frames, *f)
+                }) {
+                    return Err("numeric frame composite requires scalar-only children");
                 }
                 for (ordinal, field) in fields.iter().enumerate() {
                     if matches!(field.lane(), Lane::Managed { .. })
@@ -354,7 +430,12 @@ pub(in crate::native_artifact) fn derive(
                     remember(source.get())?;
                     remember(output.get())?;
                 }
-                Frame::Project { source, .. } => remember(source.get())?,
+                Frame::Project { source, output, .. } => {
+                    remember(source.get())?;
+                    if frames.fields(*output).is_some() {
+                        remember(output.get())?;
+                    }
+                }
             }
             Operation::Frame
         } else if let Some(action) = aggregates.action(site) {
@@ -503,21 +584,28 @@ pub(in crate::native_artifact) fn derive(
         &result,
     )?;
     let mut scalar_words = 0;
-    let frame_words = frame_values
+    let frame_words: Vec<FrameWords> = frame_values
         .into_iter()
         .map(|value| {
+            let mut paths = Vec::new();
+            scalar_paths(
+                frames,
+                frames.fields_at(value as usize).unwrap(),
+                &mut Vec::new(),
+                &mut scalar_words,
+                &mut paths,
+            );
             let fields = frames
                 .fields_at(value as usize)
                 .unwrap()
                 .iter()
-                .map(|field| match field.lane() {
-                    Lane::Scalar { .. } => {
-                        let at = scalar_words;
-                        scalar_words += 1;
-                        Some(at)
-                    }
-                    Lane::Managed { .. } => None,
-                    Lane::Composite { .. } => unreachable!("flat numeric proof"),
+                .enumerate()
+                .map(|(ordinal, field)| match field.lane() {
+                    Lane::Scalar { .. } => paths
+                        .iter()
+                        .find(|(path, _)| path.as_slice() == [ordinal])
+                        .map(|(_, slot)| *slot),
+                    Lane::Managed { .. } | Lane::Composite { .. } => None,
                 })
                 .collect();
             let array_fields = frames
@@ -538,6 +626,7 @@ pub(in crate::native_artifact) fn derive(
                 value,
                 fields,
                 arrays: array_fields,
+                scalar_paths: paths,
             }
         })
         .collect();
@@ -557,6 +646,31 @@ pub(in crate::native_artifact) fn derive(
         })
         .and_then(|n| n.checked_add(arrays.iter().filter(|a| a.appends).count()))
         .ok_or("numeric word count overflows")?;
+    let boundary_words = register_bound(plan, aggregates, &sites)?
+        .checked_add(words)
+        .and_then(|n| n.checked_add(3))
+        .ok_or("numeric boundary register count overflows")?;
+    let recursive = frame_words
+        .iter()
+        .any(|frame: &FrameWords| frame.scalar_paths.iter().any(|(path, _)| path.len() > 1));
+    let boundary_work = if recursive {
+        // One entry load and three possible spill templates per admitted home;
+        // the cold leave additionally loads/exports each carrier scalar. The
+        // fixed allowance covers guards, fuel settlement and branch templates.
+        // Keep the original flat-frame price and its exact regression receipts.
+        let carrier = frame_words
+            .iter()
+            .find(|frame| frame.value == tail.carrier().get())
+            .ok_or("numeric boundary carrier frame missing")?;
+        (boundary_words as u64)
+            .checked_mul(4)
+            .and_then(|n| n.checked_add(carrier.scalar_paths.len() as u64 * 2))
+            .and_then(|n| n.checked_add(128))
+            .ok_or("numeric boundary work overflows")?
+            .max(super::tail::FIXED_OVERHEAD)
+    } else {
+        super::tail::FIXED_OVERHEAD
+    };
     Ok(Proof {
         arrays,
         frames: frame_words,
@@ -564,6 +678,91 @@ pub(in crate::native_artifact) fn derive(
         sites: sites.into_iter().collect(),
         scalar_words,
         words,
+        boundary_words,
+        boundary_work,
         result,
     })
+}
+
+/// Conservative static inventory, independent of backend instructions. Whole
+/// aggregate spans may overcount a projection; no source scalar home is omitted.
+fn register_bound(
+    plan: &Plan,
+    aggregates: &NativeScalarAggregates,
+    sites: &BTreeSet<usize>,
+) -> Result<usize, &'static str> {
+    let mut words = BTreeSet::new();
+    let span = |value, words: &mut BTreeSet<usize>| -> Result<(), &'static str> {
+        let (base, count) = aggregates
+            .slot(value)
+            .ok_or("numeric aggregate span missing")?;
+        words.extend(
+            base..base
+                .checked_add(count)
+                .ok_or("numeric aggregate span overflows")?,
+        );
+        Ok(())
+    };
+    for &site in sites {
+        if let Some(action) = aggregates.action(site) {
+            match action {
+                Aggregate::Pack {
+                    output,
+                    words: inputs,
+                } => {
+                    span(*output, &mut words)?;
+                    for input in inputs {
+                        match input {
+                            NativeAggregateWord::Scalar(value) => {
+                                words.insert(value.get() as usize);
+                            }
+                            NativeAggregateWord::Field(value, _) => span(*value, &mut words)?,
+                            NativeAggregateWord::Constant(_) => {}
+                        }
+                    }
+                }
+                Aggregate::Copy { source, output } | Aggregate::Project { source, output, .. } => {
+                    span(*source, &mut words)?;
+                    span(*output, &mut words)?;
+                }
+                Aggregate::Observe { source, output, .. } => {
+                    span(*source, &mut words)?;
+                    words.insert(output.get() as usize);
+                }
+            }
+        }
+        let mut scalar = |value: mech_engine::native_artifact::NativeMatchValue| {
+            if plan.values()[value.get() as usize].scalar_kind().is_some() {
+                words.insert(value.get() as usize);
+            }
+        };
+        match plan.blocks()[site].action() {
+            Action::Scalar(Scalar::Copy { source, output }) => {
+                scalar(*source);
+                scalar(*output);
+            }
+            Action::Scalar(Scalar::Primitive {
+                operands, output, ..
+            })
+            | Action::LibraryCall {
+                operands, output, ..
+            } => {
+                for operand in operands {
+                    scalar(*operand);
+                }
+                scalar(*output);
+            }
+            Action::Structural { output, .. } => scalar(*output),
+            _ => {}
+        }
+        match plan.blocks()[site].terminator() {
+            Term::Scalar(Branch::Branch { condition, .. }) => scalar(condition),
+            Term::Scalar(Branch::LiteralBranch { left, right, .. }) => {
+                scalar(left);
+                scalar(right);
+            }
+            _ => {}
+        }
+    }
+    Ok(words.len())
 }

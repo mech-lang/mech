@@ -8,6 +8,8 @@ pub(in crate::native_artifact) mod borrowed;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod bound_shim;
 #[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod captured_numeric;
+#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod cfg_cleanup;
 pub(in crate::native_artifact) mod hooks;
 #[cfg(feature = "canonical-native-program")]

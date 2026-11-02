@@ -2,8 +2,33 @@
 //! no ordinary helper can run while the same closed-tail loan is outstanding.
 use super::{Error, Invocation, invalid};
 use crate::native_artifact::program::prepare::readonly_numeric::Operation;
+use crate::native_artifact::program::runtime::amount;
 use crate::native_artifact::program::runtime::buffer_frames::Field;
 use mech_engine::native_artifact::NativeIterationAction as Action;
+use mech_engine::native_artifact::{NativeBufferFrameField, NativeBufferFrames};
+
+pub(super) fn scalar_leaf(
+    layout: &NativeBufferFrames,
+    value: u32,
+    path: &[usize],
+) -> Result<NativeBufferFrameField, Error> {
+    let mut fields = layout
+        .fields_at(value as usize)
+        .ok_or_else(|| invalid("numeric scalar frame missing"))?;
+    let mut selected = None;
+    for (depth, ordinal) in path.iter().enumerate() {
+        let field = *fields
+            .get(*ordinal)
+            .ok_or_else(|| invalid("numeric scalar path outside frame"))?;
+        selected = Some(field);
+        if depth + 1 < path.len() {
+            fields = layout
+                .children(field)
+                .ok_or_else(|| invalid("numeric scalar path lost composite"))?;
+        }
+    }
+    selected.ok_or_else(|| invalid("numeric scalar path is empty"))
+}
 
 impl Invocation<'_, '_, '_> {
     pub(super) fn begin_numeric_views(&mut self, region: usize) -> Result<bool, Error> {
@@ -96,13 +121,11 @@ impl Invocation<'_, '_, '_> {
             + core::mem::size_of::<mech_core::ValueData>()
             + 8) as u64;
         for frame in &proof.frames {
-            let mut bytes = 0u64;
-            for array in &frame.arrays {
-                let bound = if let Some(array) = array {
-                    self.read_borrowed_word(2 + proof.view(*array))?
-                } else {
-                    scalar_bytes
-                };
+            let Some(mut bytes) = scalar_bytes.checked_mul(frame.scalar_nodes() as u64) else {
+                return Ok(false);
+            };
+            for array in frame.arrays.iter().flatten() {
+                let bound = self.read_borrowed_word(2 + proof.view(*array))?;
                 let Some(total) = bytes.checked_add(bound) else {
                     return Ok(false);
                 };
@@ -172,24 +195,20 @@ impl Invocation<'_, '_, '_> {
                 self.write_borrowed_word(2 + proof.view(at) + index, word)?;
             }
         }
-        for (ordinal, slot) in proof
-            .fields(region.tail.carrier().get())
+        for (path, slot) in &proof
+            .frame(region.tail.carrier().get())
             .ok_or_else(|| invalid("numeric scalar frame missing"))?
-            .iter()
-            .enumerate()
+            .scalar_paths
         {
-            if let Some(slot) = slot {
-                let Field::Scalar { value, .. } = self.state.buffer_frames.project(
-                    &metadata.buffer_frames,
-                    region.tail.carrier(),
-                    ordinal,
-                    &mut self.state.control.work,
-                )?
-                else {
-                    return Err(invalid("numeric scalar has managed owner"));
-                };
-                self.write_borrowed_word(2 + slot, value.to_bits())?;
-            }
+            let field = scalar_leaf(&metadata.buffer_frames, region.tail.carrier().get(), path)?;
+            self.state.control.work.charge(
+                crate::native_artifact::NativeExecutionPhase::Setup,
+                amount(path.len(), 64, 0)?,
+            )?;
+            let Some((None, bits)) = self.state.buffer_frames.current_leaf(field) else {
+                return Err(invalid("numeric scalar has no current word"));
+            };
+            self.write_borrowed_word(2 + slot, bits)?;
         }
         if proof.writes() || proof.result.direct_array().is_some() {
             let publication = if let Some(array) = proof.result.direct_array() {
@@ -256,21 +275,16 @@ impl Invocation<'_, '_, '_> {
         let Some(proof) = &region.numeric else {
             return Ok(());
         };
-        for (ordinal, slot) in proof
-            .fields(region.tail.carrier().get())
+        for (path, slot) in &proof
+            .frame(region.tail.carrier().get())
             .ok_or_else(|| invalid("numeric scalar frame missing"))?
-            .iter()
-            .enumerate()
+            .scalar_paths
         {
-            if let Some(slot) = slot {
-                let bits = self.read_borrowed_word(2 + slot)?;
-                self.state.buffer_frames.synchronize_scalar(
-                    &metadata.buffer_frames,
-                    region.tail.carrier(),
-                    ordinal,
-                    bits,
-                )?;
-            }
+            let bits = self.read_borrowed_word(2 + slot)?;
+            let field = scalar_leaf(&metadata.buffer_frames, region.tail.carrier().get(), path)?;
+            self.state
+                .buffer_frames
+                .synchronize_scalar_leaf(field, bits)?;
         }
         if mode == 5 {
             return Ok(());
@@ -322,16 +336,16 @@ impl Invocation<'_, '_, '_> {
                     .iter()
                     .find(|f| f.value == value)
                     .ok_or_else(|| invalid("numeric result lost exact frame lanes"))?;
-                for (ordinal, (slot, array)) in frame.fields.iter().zip(&frame.arrays).enumerate() {
-                    if let Some(slot) = slot {
-                        let bits = self.read_borrowed_word(2 + slot)?;
-                        self.state.buffer_frames.synchronize_scalar(
-                            &metadata.buffer_frames,
-                            region.tail.returned(),
-                            ordinal,
-                            bits,
-                        )?;
-                    } else if let Some(array) = array {
+                for (path, slot) in &frame.scalar_paths {
+                    let bits = self.read_borrowed_word(2 + slot)?;
+                    let field =
+                        scalar_leaf(&metadata.buffer_frames, region.tail.returned().get(), path)?;
+                    self.state
+                        .buffer_frames
+                        .synchronize_scalar_leaf(field, bits)?;
+                }
+                for (ordinal, array) in frame.arrays.iter().enumerate() {
+                    if let Some(array) = array {
                         // Clone only after private cells have frozen. No extra
                         // entry pin can defeat the consuming first-write handoff.
                         let owner = self
@@ -350,8 +364,6 @@ impl Invocation<'_, '_, '_> {
                             ordinal,
                             owner,
                         )?;
-                    } else {
-                        return Err(invalid("numeric result field lacks a native lane"));
                     }
                 }
             }

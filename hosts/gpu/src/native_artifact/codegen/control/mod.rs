@@ -643,6 +643,10 @@ impl<'plan> CfgDefinition<'plan> {
         #[cfg(feature = "canonical-native-program")]
         let prefix = self.prefix;
         #[cfg(feature = "canonical-native-program")]
+        crate::native_artifact::program::codegen::scalar_loop::select_captures(
+            controls, plan, closed, aggregates, borrowed,
+        );
+        #[cfg(feature = "canonical-native-program")]
         let map_admission = self.map_admission;
         #[cfg(feature = "canonical-native-program")]
         let parallel = self.parallel;
@@ -1441,7 +1445,7 @@ impl<'plan> CfgDefinition<'plan> {
             #[cfg(feature = "canonical-native-program")]
             if let Some(hooks) = &hooks {
                 crate::native_artifact::program::codegen::tail::prepare(
-                    *options, b, locals, &closed, index, hooks, error,
+                    controls, b, locals, &closed, index, hooks, error,
                 )?;
             }
             #[cfg(feature = "canonical-native-program")]

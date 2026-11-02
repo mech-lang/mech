@@ -21,6 +21,8 @@ pub(in crate::native_artifact) struct Region {
     /// the same account; scalar body work is prepaid in bounded batches.
     pub map: Option<usize>,
     pub numeric: Option<super::readonly_numeric::Proof>,
+    /// Immutable enclosing-invocation matrices used by a scalar-state loop.
+    pub captures: Option<super::captured_numeric::Proof>,
     /// Invariant key width only; actual packed storage requires runtime entry.
     pub packed: Option<crate::native_artifact::program::prepare::packed_map::Proof>,
     // Emission and checkpoint validation use the identical admitted word lane.
@@ -94,7 +96,16 @@ impl Layout {
             } else {
                 None
             };
-            if (tail.parent().is_some() && map.is_none() && numeric.is_none())
+            let captures = if map.is_none()
+                && numeric.is_none()
+                && aggregates.slot(tail.carrier()).is_some()
+                && borrowed.initializers[tail.initialize() as usize].is_none()
+            {
+                super::captured_numeric::derive(plan, tail, calls).ok()
+            } else {
+                None
+            };
+            if (tail.parent().is_some() && map.is_none() && numeric.is_none() && captures.is_none())
                 || (map.is_none()
                     && numeric.is_none()
                     && aggregates.action(tail.initialize() as usize).is_none())
@@ -114,6 +125,9 @@ impl Layout {
                 let native = numeric
                     .as_ref()
                     .is_some_and(|p| p.action(site as usize).is_some())
+                    || captures
+                        .as_ref()
+                        .is_some_and(|p| p.action(site as usize).is_some())
                     || aggregates.action(site as usize).is_some()
                     || borrowed.action(site as usize).is_some()
                     || map.is_some_and(|owner| {
@@ -180,6 +194,9 @@ impl Layout {
                 continue;
             }
             let mut compute = FIXED_OVERHEAD;
+            if let Some(proof) = &numeric {
+                compute = proof.boundary_work;
+            }
             let mut comparison = 0u64;
             for &site in &sites {
                 compute = compute
@@ -206,17 +223,57 @@ impl Layout {
                         .checked_add(1)
                         .ok_or("Tail store comparison work overflow")?;
                 }
+                if captures
+                    .as_ref()
+                    .and_then(|proof| proof.action(site as usize))
+                    .is_some_and(|action| {
+                        matches!(action, super::captured_numeric::Operation::Length { .. })
+                    })
+                {
+                    comparison = comparison
+                        .checked_add(1)
+                        .ok_or("captured length comparison work overflow")?;
+                }
             }
-            if let Some(fields) = numeric
+            if let Some(proof) = &numeric {
+                let carrier = proof
+                    .frame(tail.carrier().get())
+                    .ok_or("numeric carrier words missing")?;
+                if carrier.scalar_paths.iter().any(|(path, _)| path.len() > 1) {
+                    let steps = carrier
+                        .scalar_paths
+                        .iter()
+                        .try_fold(0u64, |n, (path, _)| n.checked_add(path.len() as u64))
+                        .ok_or("numeric carrier paths overflow")?;
+                    // Each array has at most one first-change bridge, followed
+                    // by one successful/cold exit. Prepay the recursive scalar
+                    // synchronization even on a one-traversal invocation.
+                    let boundaries =
+                        proof.arrays.iter().filter(|array| array.writable).count() as u64 + 1;
+                    compute = steps
+                        .checked_mul(boundaries)
+                        .and_then(|n| n.checked_mul(64))
+                        .and_then(|n| compute.checked_add(n))
+                        .ok_or("numeric carrier synchronization work overflow")?;
+                }
+            }
+            if let Some(frame) = numeric
                 .as_ref()
-                .and_then(|p| p.result.frame().and_then(|value| p.fields(value)))
+                .and_then(|p| p.result.frame().and_then(|value| p.frame(value)))
             {
                 // Current result fields synchronize once at exit, in the
                 // already admitted frame lanes. Conservatively fund that
                 // bounded work on every traversal, including the terminal one.
                 compute = compute
                     .checked_add(
-                        (fields.len() as u64)
+                        (frame
+                            .scalar_paths
+                            .iter()
+                            .try_fold(frame.arrays.iter().flatten().count(), |count, (path, _)| {
+                                count.checked_add(path.len())
+                            })
+                            .ok_or("numeric result path count overflows")?
+                            as u64)
                             .checked_mul(64)
                             .ok_or("numeric result work overflow")?,
                     )
@@ -244,6 +301,7 @@ impl Layout {
                     )
                 }),
                 numeric,
+                captures,
                 words: _word_offset,
                 shadow: None,
                 compute,
@@ -253,11 +311,12 @@ impl Layout {
                 .logical_words
                 .checked_add(
                     if map.is_some() { 5 } else { 3 }
-                        + layout
-                            .regions
-                            .last()
-                            .and_then(|r| r.numeric.as_ref())
-                            .map_or(0, |p| p.words),
+                        + layout.regions.last().map_or(0, |r| {
+                            r.numeric.as_ref().map_or_else(
+                                || r.captures.as_ref().map_or(0, |p| p.words()),
+                                |p| p.words,
+                            )
+                        }),
                 )
                 .ok_or("Tail words overflow")?;
             layout.words = layout
@@ -271,14 +330,18 @@ impl Layout {
         let maximum = layout
             .regions
             .iter()
-            .filter_map(|r| r.numeric.as_ref().map(|p| p.words))
+            .map(|r| {
+                r.numeric
+                    .as_ref()
+                    .map_or_else(|| r.captures.as_ref().map_or(0, |p| p.words()), |p| p.words)
+            })
             .max()
             .unwrap_or(0);
         let shadow = base
             .checked_add(layout.words)
             .ok_or("numeric shadow offset overflows")?;
         for region in &mut layout.regions {
-            if region.numeric.is_some() {
+            if region.numeric.is_some() || region.captures.is_some() {
                 region.shadow = Some(shadow);
             }
         }

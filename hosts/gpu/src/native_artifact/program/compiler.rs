@@ -279,6 +279,11 @@ impl NativeProgramObject {
             let result = crate::native_artifact::program::prepare::readonly_numeric::derive(&prepared.plan, tail, &prepared.buffer_frames, &prepared.scalar_aggregates, &prepared.calls);
             Some(serde_json::json!({"iteration":iteration,"header":tail.header(),"parent":tail.parent(),"origin":tail.origin(),"proof_eligible":result.is_ok(),"selected":prepared.closed_tails.regions.iter().any(|region| region.iteration as usize == iteration && region.numeric.is_some()),"rejection":result.err()}))
         }).collect::<Vec<_>>());
+        metadata["captured_numeric_candidates"] = serde_json::json!(prepared.plan.iterations().iter().enumerate().filter_map(|(iteration, control)| {
+            let mech_engine::native_artifact::NativeControlLoop::Tail(tail) = control else { return None };
+            let result = crate::native_artifact::program::prepare::captured_numeric::derive(&prepared.plan, tail, &prepared.calls);
+            Some(serde_json::json!({"iteration":iteration,"header":tail.header(),"parent":tail.parent(),"scalar_carrier_words":prepared.scalar_aggregates.slot(tail.carrier()),"native_initializer":prepared.scalar_aggregates.action(tail.initialize() as usize).is_some(),"proof_eligible":result.is_ok(),"selected":prepared.closed_tails.regions.iter().any(|region| region.iteration as usize == iteration && region.captures.is_some()),"rejection":result.err()}))
+        }).collect::<Vec<_>>());
         metadata["numeric_parent_partitions"] = serde_json::json!(prepared.compositions);
         metadata["compiled_numeric_segments"] = serde_json::json!(&self.codegen.numeric_segments);
         metadata["compiled_readonly_numeric_loops"] =
@@ -286,6 +291,8 @@ impl NativeProgramObject {
         metadata["compiled_numeric_write_loops"] =
             serde_json::json!(&self.codegen.numeric_write_loops);
         metadata["compiled_scalar_loops"] = serde_json::json!(&self.codegen.scalar_loops);
+        metadata["compiled_captured_numeric_loops"] =
+            serde_json::json!(&self.codegen.captured_numeric_loops);
         metadata
     }
 }

@@ -8,6 +8,7 @@ use mech_core::{MemoryBudgetLimits, Value};
 use mech_engine::native_artifact::{NativeLibraryWorkBudget, NativeMatchValue};
 
 mod buffer_frames;
+mod captured_numeric;
 pub(super) mod continuation;
 mod helper_fallbacks;
 mod numeric_segments;

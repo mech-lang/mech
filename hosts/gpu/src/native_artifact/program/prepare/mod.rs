@@ -369,6 +369,15 @@ impl PreparedNativeProgram {
                     .unwrap_or(0),
             )
             .max(usize::from(!parallel.regions.is_empty()))
+            .max(
+                closed_tails
+                    .regions
+                    .iter()
+                    .filter_map(|region| region.captures.as_ref())
+                    .map(|proof| proof.words() + 2)
+                    .max()
+                    .unwrap_or(0),
+            )
             .max(if closed_tails.regions.is_empty() {
                 0
             } else {
@@ -554,6 +563,7 @@ pub(in crate::native_artifact) fn validate_type_slots(
     Ok(())
 }
 
+pub(in crate::native_artifact) mod captured_numeric;
 pub(in crate::native_artifact) mod readonly_numeric;
 pub(in crate::native_artifact) mod retirement;
 

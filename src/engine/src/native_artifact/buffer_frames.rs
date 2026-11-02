@@ -207,7 +207,7 @@ fn composition_shape_matches(
     }
 }
 
-fn fields(plan: &Plan, value: Value) -> Option<usize> {
+fn field_shape(plan: &Plan, value: Value) -> Option<(usize, bool)> {
     // Activation shape histories retain their ordinary bound-factory owner.
     // A private frame carries only fixed or freshly resolved Turn geometry.
     if plan.values()[value.get() as usize]
@@ -259,7 +259,14 @@ fn fields(plan: &Plan, value: Value) -> Option<usize> {
             _ => return None,
         }
     }
-    eligible.then_some(fields.len())
+    // A closed scalar child may be a structural span of a mixed frame. Its
+    // complete copy/composition component must reach an existing mixed-frame
+    // root before it is selected below; standalone scalar aggregates retain
+    // their ordinary scalar-aggregate owner and instruction recipes.
+    (!fields.is_empty()).then_some((fields.len(), eligible))
+}
+fn fields(plan: &Plan, value: Value) -> Option<usize> {
+    field_shape(plan, value).map(|(count, _)| count)
 }
 fn pack(plan: &Plan, action: &Action) -> Option<(Value, Vec<SchemaId>)> {
     let Action::LibraryCall {
@@ -448,6 +455,31 @@ impl Facts<'_> {
                     link(source, output);
                 }
             }
+        }
+        // Scalar-only children participate in the same exact shape/use proof,
+        // but do not establish an independent buffer-frame component. Keep
+        // the scalar-aggregate specialization authoritative unless a selected
+        // mixed frame actually embeds the child through composition edges.
+        let mut rooted = vec![false; count];
+        let mut pending = (0..count)
+            .filter(|&i| {
+                !bad[i] && field_shape(plan, Value(i as u32)).is_some_and(|(_, mixed)| mixed)
+            })
+            .collect::<Vec<_>>();
+        while let Some(i) = pending.pop() {
+            if std::mem::replace(&mut rooted[i], true) {
+                continue;
+            }
+            pending.extend(
+                edges[i]
+                    .iter()
+                    .chain(&composition[i])
+                    .copied()
+                    .filter(|&j| !bad[j]),
+            );
+        }
+        for (i, rejected) in bad.iter_mut().enumerate() {
+            *rejected |= !rooted[i];
         }
         let connected = |parent: Value, child: Value| {
             composition[parent.get() as usize].contains(&(child.get() as usize))
@@ -673,3 +705,7 @@ impl Facts<'_> {
         }
     }
 }
+
+#[cfg(all(test, feature = "source", feature = "record", feature = "tuple"))]
+#[path = "buffer_frames_tests.rs"]
+mod tests;

@@ -70,14 +70,14 @@ pub(in crate::native_artifact) fn leave(
             .result
             .frame()
             .filter(|_| mode == 0)
-            .and_then(|value| proof.fields(value))
-            .unwrap_or(&[]);
+            .and_then(|value| proof.frame(value))
+            .into_iter()
+            .flat_map(|frame| frame.scalar_slots());
         for slot in proof
-            .fields(region.tail.carrier().get())
+            .frame(region.tail.carrier().get())
             .unwrap()
-            .iter()
-            .chain(terminal.iter())
-            .flatten()
+            .scalar_slots()
+            .chain(terminal)
         {
             let value = load(options, b, locals, region, shadow + slot)?;
             b.ins()
@@ -141,7 +141,7 @@ pub(in crate::native_artifact) fn abort(
     Ok(())
 }
 pub(in crate::native_artifact) fn prepare(
-    options: OptimizationOptions,
+    controls: &crate::native_artifact::codegen::options::CompilationControls,
     b: &mut FunctionBuilder,
     locals: Value,
     layout: &Layout,
@@ -149,10 +149,15 @@ pub(in crate::native_artifact) fn prepare(
     hooks: &Hooks,
     error: Block,
 ) -> Result<(), NativeCompileError> {
+    let options = controls.options();
     let Some(region) = layout.initializers.get(site).copied().flatten() else {
         return Ok(());
     };
     let region = &layout.regions[region];
+    if region.captures.is_some() && !controls.scalar_capture_selected(region.tail.header() as usize)
+    {
+        return Ok(());
+    }
     if region.numeric.is_some()
         && !options.enabled(crate::native_artifact::codegen::options::OptimizationPass::ScalarLoops)
     {
@@ -255,12 +260,15 @@ fn prepare_region(
     for i in 0..if region.map.is_some() {
         4
     } else {
-        2 + region.numeric.as_ref().map_or(0, |p| p.words)
+        2 + region.numeric.as_ref().map_or_else(
+            || region.captures.as_ref().map_or(0, |p| p.words()),
+            |p| p.words,
+        )
     } {
         let word = b
             .ins()
             .load(types::I64, MemFlags::new(), hooks.arguments, offset(i)?);
-        let destination = if region.numeric.is_some() && i >= 2 {
+        let destination = if (region.numeric.is_some() || region.captures.is_some()) && i >= 2 {
             region
                 .shadow
                 .ok_or_else(|| backend("numeric entry lacks scratch home"))?

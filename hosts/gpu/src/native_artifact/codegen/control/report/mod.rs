@@ -23,6 +23,8 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub steady_loops: Vec<SteadyLoop>,
     pub join_map_copies: Vec<JoinMapCopy>,
     pub scalar_loops: Vec<ScalarLoop>,
+    pub captured_numeric_loops:
+        Vec<crate::native_artifact::program::codegen::captured_numeric::Report>,
     pub readonly_numeric_loops:
         Vec<crate::native_artifact::program::codegen::readonly_numeric::Report>,
     pub numeric_write_loops:

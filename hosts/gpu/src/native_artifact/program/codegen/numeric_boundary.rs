@@ -26,10 +26,9 @@ pub(super) fn materialize(
         .store(MemFlags::new(), zero, locals, offset(region.words)?);
     hooks.require_argument_words(b, proof.words + 4, error);
     for field in proof
-        .fields(region.tail.carrier().get())
+        .frame(region.tail.carrier().get())
         .unwrap()
-        .iter()
-        .flatten()
+        .scalar_slots()
     {
         let value = words.read(b, shadow + field);
         b.ins()

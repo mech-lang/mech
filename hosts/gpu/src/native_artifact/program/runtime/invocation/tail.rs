@@ -43,7 +43,10 @@ impl Invocation<'_, '_, '_> {
         if args != [0; 3]
             || self.closed_tail.is_some()
             || self.window_region.is_some()
-            || (self.state.consumed && proof.map.is_none() && proof.numeric.is_none())
+            || (self.state.consumed
+                && proof.map.is_none()
+                && proof.numeric.is_none()
+                && proof.captures.is_none())
         {
             return Err(invalid("duplicate or malformed closed Tail entry"));
         }
@@ -54,7 +57,7 @@ impl Invocation<'_, '_, '_> {
         {
             return Err(invalid("closed Tail outside active invocation"));
         }
-        if proof.numeric.is_some()
+        if (proof.numeric.is_some() || proof.captures.is_some())
             && proof
                 .tail
                 .parent()
@@ -89,6 +92,16 @@ impl Invocation<'_, '_, '_> {
                 .library
                 .unscoped_remaining()
                 .ok_or_else(|| invalid("numeric entry changed account scope"))?;
+        }
+        if proof.captures.is_some() {
+            if !self.begin_captured_numeric_views(region)? {
+                return Ok(Some(0));
+            }
+            remaining = self
+                .state
+                .library
+                .unscoped_remaining()
+                .ok_or_else(|| invalid("numeric capture entry changed account scope"))?;
         }
         if proof.map.is_some() {
             let Some(words) = self.begin_closed_map(region)? else {
@@ -141,7 +154,7 @@ impl Invocation<'_, '_, '_> {
                 "closed Tail account or entry changed during native execution",
             ));
         }
-        if proof.numeric.is_some()
+        if (proof.numeric.is_some() || proof.captures.is_some())
             && proof
                 .tail
                 .parent()

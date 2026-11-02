@@ -69,6 +69,7 @@ pub(in crate::native_artifact) struct CompilationControls {
     options: OptimizationOptions,
     packed_regions: std::cell::Cell<usize>,
     scalar_regions: std::cell::Cell<usize>,
+    scalar_captures: std::cell::RefCell<std::collections::BTreeSet<usize>>,
     invariant: EmissionBudget,
     mutation: EmissionBudget,
     count_value: EmissionBudget,
@@ -81,6 +82,7 @@ impl CompilationControls {
             options,
             packed_regions: Default::default(),
             scalar_regions: Default::default(),
+            scalar_captures: Default::default(),
             invariant: Default::default(),
             mutation: Default::default(),
             count_value: Default::default(),
@@ -126,6 +128,20 @@ impl CompilationControls {
     }
     pub fn emitted_scalar_region(&self) {
         self.scalar_regions.set(self.scalar_regions.get() + 1);
+    }
+    pub fn reserve_scalar_capture(&self, header: usize) -> bool {
+        if self.scalar_captures.borrow().contains(&header) {
+            return true;
+        }
+        if !self.scalar_region_available() {
+            return false;
+        }
+        self.emitted_scalar_region();
+        self.scalar_captures.borrow_mut().insert(header);
+        true
+    }
+    pub fn scalar_capture_selected(&self, header: usize) -> bool {
+        self.scalar_captures.borrow().contains(&header)
     }
     pub fn reserve_invariant_region(&self, records: usize) -> bool {
         self.invariant.reserve(records)
