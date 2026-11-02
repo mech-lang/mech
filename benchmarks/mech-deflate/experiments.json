@@ -10922,8 +10922,8 @@
           "manifest_sha256": "267a480d707e5b276045822d2fad930f743af6fb0afd671ff4d8666fea010d50",
           "bytes": 43673,
           "files": 36,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-initial-bdbe7c4c55b9.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-initial-bdbe7c4c55b9.tar.gz"
         },
         {
           "event": "first-complete-native",
@@ -10933,8 +10933,8 @@
           "manifest_sha256": "5e3acee147b27bc8b9401cadb8cb89e0b76321d517e933e241a5276ac228aaa1",
           "bytes": 49730,
           "files": 34,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-first-complete-native-e0daef9b02af.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-first-complete-native-e0daef9b02af.tar.gz"
         },
         {
           "event": "scaled-witness",
@@ -10944,8 +10944,8 @@
           "manifest_sha256": "611ec00d11c04f599a8121d76e1b1b4536d79fd4af9a31bdcbdb05c527f309cb",
           "bytes": 51042,
           "files": 38,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-scaled-witness-49a05be0745f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-scaled-witness-49a05be0745f.tar.gz"
         },
         {
           "event": "primary-reference",
@@ -10955,8 +10955,8 @@
           "manifest_sha256": "66c28d3712d0109a9bd1ebe1ecf20faca7edd0f660da4ebc14c55acc9291d688",
           "bytes": 138988,
           "files": 38,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-primary-reference-5c961a70362d.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-primary-reference-5c961a70362d.tar.gz"
         },
         {
           "event": "primary-group0",
@@ -10966,8 +10966,8 @@
           "manifest_sha256": "4dbec0764f613b12f9301d604dac0cd71527a8d6dee002a3977cce4fb649f865",
           "bytes": 81228,
           "files": 40,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-primary-group0-28672bd13ce8.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-primary-group0-28672bd13ce8.tar.gz"
         },
         {
           "event": "primary-group1",
@@ -10977,8 +10977,8 @@
           "manifest_sha256": "3c3a237382914f6b3b9a85ac33148715ba8760c45f9a4c8333301ca8683b7ed0",
           "bytes": 81506,
           "files": 40,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-primary-group1-9b40f3e6975b.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-primary-group1-9b40f3e6975b.tar.gz"
         },
         {
           "event": "primary-group2",
@@ -10988,8 +10988,8 @@
           "manifest_sha256": "f891b863332bf9282aac9208ba54c9d1e20421f279aac980e57d5e5fb87fee75",
           "bytes": 81148,
           "files": 40,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-primary-group2-b64ffcb06711.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-primary-group2-b64ffcb06711.tar.gz"
         },
         {
           "event": "primary-group3",
@@ -10999,8 +10999,8 @@
           "manifest_sha256": "e99102ed49476492183d0793b1ea0c3a6afe5c03cb13df674dcb57040efa7b3f",
           "bytes": 81389,
           "files": 40,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-primary-group3-c418b35f3ee3.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-primary-group3-c418b35f3ee3.tar.gz"
         },
         {
           "event": "primary-summary",
@@ -11010,8 +11010,7 @@
           "manifest_sha256": "72aa7db8a7f4f945d01a98636992c058ff616383bf44e69a7066e812a5c0da5a",
           "bytes": 52774,
           "files": 37,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-primary-summary-630dbe48bfae.tar.gz",
+          "publication": "published; server SHA-256 verified",
           "timing": {
             "primary_observations": 3968,
             "reference_seconds": 0.000284,
@@ -11027,7 +11026,8 @@
             "improving_groups": 0,
             "improving_blocks": 1,
             "adverse_blocks": 63
-          }
+          },
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-primary-summary-630dbe48bfae.tar.gz"
         },
         {
           "event": "scale-measure-1024",
@@ -11037,8 +11037,8 @@
           "manifest_sha256": "1f2b9b7c4cd74b1a88af9b3df02a35b03f646a3b22d0af9307570561cd251ac1",
           "bytes": 69232,
           "files": 51,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-scale-measure-1024-3e6e9cd68dec.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-scale-measure-1024-3e6e9cd68dec.tar.gz"
         },
         {
           "event": "match-rich-measure-1024",
@@ -11048,8 +11048,8 @@
           "manifest_sha256": "7d58d996a58ab3ec9f449c5b04c1ee182d0c5c5077620ac147e51c03c7859d84",
           "bytes": 68964,
           "files": 51,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-match-rich-measure-1024-9467a0dcde1a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-match-rich-measure-1024-9467a0dcde1a.tar.gz"
         },
         {
           "event": "scale-counters",
@@ -11059,8 +11059,8 @@
           "manifest_sha256": "47e72ffedee423e5e2f3818045aa56229de6ad71f07dd5e34a498ddbc6a60813",
           "bytes": 79295,
           "files": 73,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-scale-counters-fc772a927c60.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-scale-counters-fc772a927c60.tar.gz"
         },
         {
           "event": "rich-counters",
@@ -11070,8 +11070,8 @@
           "manifest_sha256": "3365f3d9acd9dad9f86565a3bb801650caf87a085c3861d41e8bac3a6cfe241b",
           "bytes": 62526,
           "files": 53,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-rich-counters-966536e644a7.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-rich-counters-966536e644a7.tar.gz"
         },
         {
           "event": "isolated-profile-scale",
@@ -11081,8 +11081,8 @@
           "manifest_sha256": "b1520fe23f41f989e3bde115045b90d2364b7317ede4800c7d0752605f42917f",
           "bytes": 306224,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-isolated-profile-scale-7eae559f6610.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-isolated-profile-scale-7eae559f6610.tar.gz"
         },
         {
           "event": "isolated-profile-rich",
@@ -11092,8 +11092,8 @@
           "manifest_sha256": "9c8067c02b9df2386abaa2ec6b5323d51fcdff87abec4402b9c7488d4e23c8a2",
           "bytes": 270676,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-isolated-profile-rich-4b7d3f1dd33a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-isolated-profile-rich-4b7d3f1dd33a.tar.gz"
         },
         {
           "event": "counters",
@@ -11103,8 +11103,8 @@
           "manifest_sha256": "8a3013c67447664b3b6f086a742a1ae4c43eb036a0421be21839cd6d37666075",
           "bytes": 240161,
           "files": 62,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-counters-a170fa3b55a0.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-counters-a170fa3b55a0.tar.gz"
         },
         {
           "event": "boundary-census-after",
@@ -11114,8 +11114,8 @@
           "manifest_sha256": "914d4d97c37c87183f4d53efa4e12c52aabc2e69bc663c5e3caf3266cb2b7baf",
           "bytes": 208681,
           "files": 59,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-boundary-census-after-8937a3e3362d.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-boundary-census-after-8937a3e3362d.tar.gz"
         },
         {
           "event": "binary-audit",
@@ -11125,8 +11125,8 @@
           "manifest_sha256": "3060de3707181d3d5a78e27244881df8df305b4e1f055d6729512cc75bb9cb39",
           "bytes": 64294,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-binary-audit-c426e35b9767.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-binary-audit-c426e35b9767.tar.gz"
         },
         {
           "event": "phase-owner-trace",
@@ -11136,8 +11136,8 @@
           "manifest_sha256": "724227181ee49dd84453120b11b3796368df81824800fe0e3e9f9dfffe2e9333",
           "bytes": 287463,
           "files": 64,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-phase-owner-trace-888af15a36ec.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-phase-owner-trace-888af15a36ec.tar.gz"
         },
         {
           "event": "phase-owner-proof",
@@ -11147,8 +11147,8 @@
           "manifest_sha256": "6b4746ad3f0463687d8312dce7ac92339bfb25d13fbf3984258c63a96d809352",
           "bytes": 544758,
           "files": 80,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-phase-owner-proof-e8d483fcd493.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-phase-owner-proof-e8d483fcd493.tar.gz"
         },
         {
           "event": "closure",
@@ -11158,13 +11158,13 @@
           "manifest_sha256": "0b1dffc1a437bead2d1ca5158e7eb8f8d0dc2b2271c0948bc1dc1b39ceca7a89",
           "bytes": 5946540,
           "files": 211,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-closure-02647362e5a6.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-closure-02647362e5a6.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified"
     }
   },
   "repository": "mech-lang/mech",
