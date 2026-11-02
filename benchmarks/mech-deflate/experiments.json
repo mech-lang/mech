@@ -7656,6 +7656,17 @@
           "files": 62,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-linked-multi-1fa038a9cc95.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "636da5e074add0632f7154f14d8d39848721cd16",
+          "asset": "r104-scalar-controls-15e0f8a9b6ec.tar.gz",
+          "sha256": "15e0f8a9b6ec6db630056cdaddd48e1a1d36560a3853dd451f27721e69469fed",
+          "manifest_sha256": "67f5d4e8281241c20c3a38534e09339364043ddbef8d6eb5e4fe0dd53eefd04e",
+          "bytes": 162521,
+          "files": 100,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-scalar-controls-15e0f8a9b6ec.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
