@@ -10564,7 +10564,16 @@
         "source_bytes": 161193,
         "source_sha256": "85fba4bc9f55796c8a83c7ff0533590d4bf5e97bd8be42d4dd56c5d448427b36"
       },
-      "retained": true
+      "retained": true,
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "scorecard.json": "12e26d998ecab07350e72ccc7c2daacbe76c90316cf382181cfcd3b122512783",
+          "diagnostics.json": "37b29c0c88683ac29970fcf61658e2a807b957f52480dab5d79c7bad620d0d2a",
+          "profile-numbers.json": "51878c651ed64f8aeea5a28fb6c5647ec7c02236eef79f25e6ec3c0d5ec98c60",
+          "validation.json": "119e686e4100a9e8af092e8840ff960d1c633de83205b910d3d1bf7250839473"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
