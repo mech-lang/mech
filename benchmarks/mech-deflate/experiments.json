@@ -8264,6 +8264,17 @@
           "files": 55,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round108-20261102/archives/r107-isolated-profile-9c1ab9f79758.tar.gz"
+        },
+        {
+          "event": "isolated-profile-scale",
+          "source_revision": "705c5acdc4fc92be5beeacf28d02721ea4e39ddf",
+          "asset": "r107-isolated-profile-scale-ac34d82de91f.tar.gz",
+          "sha256": "ac34d82de91f83ce89e5a36afd9c048e77ba384509bc64a4ff6c608c4d6ae1b9",
+          "manifest_sha256": "2876c9e32e79a3c28dcd64dc75b4e0dfbddb5ecade39166ea292c115ccbf2b15",
+          "bytes": 333726,
+          "files": 57,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round108-20261102/archives/r107-isolated-profile-scale-ac34d82de91f.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
