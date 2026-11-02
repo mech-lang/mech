@@ -56,6 +56,7 @@ impl Layout {
         frames: &mech_engine::native_artifact::NativeBufferFrames,
         calls: &[Option<mech_engine::native_artifact::NativePreparedLibraryCall>],
     ) -> Result<Self, &'static str> {
+        let discovery = super::numeric_tree::Discovery::new(plan)?;
         let mut layout = Self {
             sites: vec![None; plan.blocks().len()],
             initializers: vec![None; plan.blocks().len()],
@@ -108,7 +109,7 @@ impl Layout {
             let mut numeric_tree = None;
             let mut numeric =
                 if map.is_none() && frames.action(tail.initialize() as usize).is_some() {
-                    if let Ok(tree) = super::numeric_tree::discover(plan, tail) {
+                    if let Ok(tree) = discovery.discover(tail) {
                         match super::readonly_numeric::derive_tree(
                             plan, tail, frames, aggregates, calls, &tree,
                         ) {

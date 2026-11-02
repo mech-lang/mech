@@ -292,17 +292,23 @@ pub(in crate::native_artifact) fn emit_entry(
             );
             let mut enough = b.ins().band(a, c);
             // Capacity is checked before ANY source operation in this visit.
-            // Count all append sites: a conservative DAG traversal bound, even
-            // if a branch would skip some. A miss uses the existing header exit.
+            // A tree frontier ends at its next header check and includes any
+            // ancestor continuation after a child returns. Leaves retain their
+            // original conservative whole-traversal site count.
             for (array, _) in proof.arrays.iter().enumerate().filter(|(_, a)| a.appends) {
-                let count = proof
-                    .actions
-                    .iter()
-                    .filter(|(_, op)| {
-                        matches!(op,
-                    Operation::Append { array: at, .. } if *at == array)
-                    })
-                    .count();
+                let count = if region.numeric_tree.is_some() {
+                    proof
+                        .append_limit(site, array)
+                        .ok_or_else(|| backend("numeric header lost its append frontier"))?
+                } else {
+                    proof
+                        .actions
+                        .iter()
+                        .filter(|(_, op)| {
+                            matches!(op, Operation::Append { array: at, .. } if *at == array)
+                        })
+                        .count()
+                };
                 let length = words.read(b, shadow + proof.view(array) + 1);
                 let capacity = words.read(b, shadow + proof.capacity(array).unwrap());
                 let valid = b

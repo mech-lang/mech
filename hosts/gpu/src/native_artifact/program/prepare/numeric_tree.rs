@@ -61,11 +61,23 @@ impl Proof {
 /// Discover only a closed, properly nested Tail tree. No collection, arbitrary
 /// cycle, activation boundary, cross-child jump, or ambiguous return is admitted.
 /// The numeric/alias proof subsequently checks every action in this inventory.
-pub(in crate::native_artifact) fn discover(
-    plan: &Plan,
-    root: &NativeTailLoop,
-) -> Result<Proof, &'static str> {
-    plan.validate_current_visits()?;
+pub(in crate::native_artifact) struct Discovery<'a> {
+    plan: &'a Plan,
+}
+impl<'a> Discovery<'a> {
+    /// One validation covers every candidate borrowed from this immutable plan.
+    /// Discovery still checks every candidate's own structured edge inventory.
+    pub fn new(plan: &'a Plan) -> Result<Self, &'static str> {
+        plan.validate_current_visits()?;
+        Ok(Self { plan })
+    }
+
+    pub fn discover(&self, root: &NativeTailLoop) -> Result<Proof, &'static str> {
+        discover(self.plan, root)
+    }
+}
+
+fn discover(plan: &Plan, root: &NativeTailLoop) -> Result<Proof, &'static str> {
     let root_iteration = plan
         .iterations()
         .iter()

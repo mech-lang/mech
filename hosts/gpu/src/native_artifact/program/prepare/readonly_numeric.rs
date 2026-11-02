@@ -11,6 +11,8 @@ use mech_engine::native_artifact::{
     NativeScalarKind, NativeTailLoop,
 };
 use std::collections::{BTreeMap, BTreeSet};
+#[path = "numeric_append.rs"]
+mod append;
 #[path = "numeric_results.rs"]
 mod results;
 #[path = "numeric_versions.rs"]
@@ -187,6 +189,9 @@ pub(in crate::native_artifact) struct Proof {
     /// Exact immutable scalar Frame shadows needed by a final header fallback.
     /// These are restored only after the generated loan has finished.
     pub cold_scalars: Vec<(usize, Vec<ScalarBinding>)>,
+    /// Maximum appends before the next tree header or final exit. Includes the
+    /// ancestor continuation after a child returns, not just its lexical body.
+    pub append_limits: Vec<(usize, Vec<(usize, usize)>)>,
 }
 impl Proof {
     pub fn action(&self, site: usize) -> Option<&Operation> {
@@ -220,6 +225,15 @@ impl Proof {
                 + self.arrays.len() * 5
                 + self.arrays[..array].iter().filter(|a| a.appends).count()
         })
+    }
+    pub fn append_limit(&self, header: usize, array: usize) -> Option<usize> {
+        self.append_limits
+            .iter()
+            .find(|(site, _)| *site == header)?
+            .1
+            .iter()
+            .find(|(at, _)| *at == array)
+            .map(|(_, limit)| *limit)
     }
 }
 
@@ -763,6 +777,11 @@ fn derive_inner(
         )?;
         versions::ColdHomes::default()
     };
+    let append_limits = if let Some(tree) = tree {
+        append::derive(plan, tree, &sites, &actions, &arrays)?
+    } else {
+        Vec::new()
+    };
     let mut scalar_words = 0;
     let frame_words: Vec<FrameWords> = frame_values
         .into_iter()
@@ -898,6 +917,7 @@ fn derive_inner(
         result,
         cold_aliases: cold_homes.aliases,
         cold_scalars,
+        append_limits,
     })
 }
 

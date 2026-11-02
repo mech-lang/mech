@@ -292,7 +292,10 @@ fn selected_template(
 // selected read-only consumer, including the canonical publication boundary.
 // IR153 pins closed numeric loop trees: one owner/view bank, internal child
 // edges, per-node traversal settlement and exact cold source reconstruction.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 153;
+// IR154 pins bottom-up current-array child contracts and their composed cold
+// aliases. Every child call invalidates old versions before exposing only its
+// proved current return; images rederive the complete same-plan tree proof.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 154;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

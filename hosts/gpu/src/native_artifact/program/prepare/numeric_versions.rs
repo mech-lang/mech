@@ -6,6 +6,8 @@ use super::*;
 use mech_engine::native_artifact::{NativeIterationValueScope as Scope, NativeMatchValue as Value};
 type Key = (u32, Option<usize>);
 type State = BTreeMap<Key, bool>;
+#[path = "numeric_induction.rs"]
+mod induction;
 #[derive(Default)]
 pub(super) struct ColdHomes {
     pub aliases: Vec<(usize, Vec<ColdAlias>)>,
@@ -24,10 +26,6 @@ impl Traversal {
         sites: &BTreeSet<usize>,
     ) -> Result<Self, &'static str> {
         let mut next = BTreeMap::new();
-        let mut incoming = sites
-            .iter()
-            .map(|&s| (s, 0usize))
-            .collect::<BTreeMap<_, _>>();
         for &site in sites {
             let successors = if site == tail.latch() as usize {
                 Vec::new()
@@ -39,10 +37,21 @@ impl Traversal {
                     .filter(|n| sites.contains(n))
                     .collect::<Vec<_>>()
             };
-            for n in &successors {
-                *incoming.get_mut(n).unwrap() += 1;
-            }
             next.insert(site, successors);
+        }
+        Self::from_next(tail.header() as usize, next)
+    }
+    fn from_next(header: usize, next: BTreeMap<usize, Vec<usize>>) -> Result<Self, &'static str> {
+        let mut incoming = next
+            .keys()
+            .map(|&s| (s, 0usize))
+            .collect::<BTreeMap<_, _>>();
+        for successors in next.values() {
+            for n in successors {
+                *incoming
+                    .get_mut(n)
+                    .ok_or("numeric traversal edge leaves its source inventory")? += 1;
+            }
         }
         let mut ready = incoming
             .iter()
@@ -59,11 +68,11 @@ impl Traversal {
                 }
             }
         }
-        if order.len() != sites.len() {
+        if order.len() != next.len() {
             return Err("numeric traversal has an undeclared cycle");
         }
         Ok(Self {
-            header: tail.header() as usize,
+            header,
             order,
             next,
         })
@@ -280,7 +289,13 @@ pub(super) fn validate_tree(
             }
         }
     }
-    original.map(|_| ColdHomes::default())
+    // Child currentness is an inductive theorem, not a guessed initial fact.
+    // A compositional proof can establish it even when one unified fixed point
+    // cannot bootstrap both the parent's and the child's carrier invariants.
+    let analysis = induction::validate(
+        plan, tail, frames, provenance, actions, arrays, result, tree,
+    )?;
+    cold_aliases(plan, tail, frames, provenance, arrays, tree, &analysis)
 }
 
 struct Partition {

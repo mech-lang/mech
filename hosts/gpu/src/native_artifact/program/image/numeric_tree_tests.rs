@@ -158,6 +158,21 @@ fn numeric_tree_object_identity_rejects_ir152_and_work104_images() {
     }
 }
 
+#[test]
+fn numeric_induction_object_identity_rejects_ir153_images() {
+    let catalog = mech_stdlib::source_catalog();
+    assert!(identity::NATIVE_PROGRAM_TYPED_IR_VERSION > 153);
+    for artifact in artifacts() {
+        let object = emit_program_object(&artifact, &catalog).unwrap();
+        let mut old = *object.identity().bytes();
+        old[16..24].copy_from_slice(&153u64.to_le_bytes());
+        assert!(
+            crate::native_artifact::program::linked::prepare_descriptor(&artifact, &catalog, &old)
+                .is_err()
+        );
+    }
+}
+
 const APPEND_CAPTURE_TREE: &str = r#"+> sequence
 capture-inner(data<[u64]>, ids<[u64]>, a<u64>, b<u64>, c<u64>, end<u64>) => (out<[u64]>) :=
   more := c < end

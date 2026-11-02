@@ -18,6 +18,7 @@ mod named_managed_projections;
 mod nested_scalar_array;
 mod numeric_bindings;
 mod numeric_tree;
+mod numeric_induction;
 mod observe;
 mod pack;
 mod record_lookup;
