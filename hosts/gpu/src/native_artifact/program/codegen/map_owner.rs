@@ -336,14 +336,39 @@ pub(in crate::native_artifact) fn emit(
         };
         hooks.call(b, site, GlobalHelper::MapOwnerSpan, args, error);
     } else if exit.is_some() {
-        let token = load(b, locals, region.tail().returned().get() as usize)?;
-        hooks.call(
-            b,
-            site,
-            GlobalHelper::MapOwnerEnd,
-            [token, zero, zero],
-            error,
-        );
+        let (base, count) = owner
+            .aggregates()
+            .slot(region.tail().returned())
+            .ok_or_else(|| backend("map owner returned value has no fixed slice"))?;
+        let CodePlan::Program(program) = code else {
+            return Err(backend("map owner exit outside canonical program"));
+        };
+        let schema = program.plan().values()[region.tail().returned().get() as usize]
+            .definition()
+            .body();
+        let map_word = match schema {
+            mech_core::SchemaBody::Map { .. } => Some(0),
+            mech_core::SchemaBody::Tuple(fields) => fields
+                .iter()
+                .position(|field| matches!(field, mech_core::SchemaBody::Map { .. })),
+            mech_core::SchemaBody::Record(fields) => fields
+                .iter()
+                .position(|field| matches!(field.schema, mech_core::SchemaBody::Map { .. })),
+            _ => None,
+        }
+        .ok_or_else(|| backend("map owner result map field missing"))?;
+        let token = load(b, locals, base + map_word)?;
+        let args = if matches!(schema, mech_core::SchemaBody::Map { .. }) {
+            [token, zero, zero]
+        } else {
+            for word in 0..count {
+                let value = load(b, locals, base + word)?;
+                store(b, hooks.arguments, word, value)?;
+            }
+            let count = b.ins().iconst(types::I64, count as i64);
+            [token, hooks.arguments, count]
+        };
+        hooks.call(b, site, GlobalHelper::MapOwnerEnd, args, error);
         let token = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
         store(b, locals, flag, token)?;
         // Canonical publication returns zero; private publication returns the
@@ -374,14 +399,71 @@ pub(in crate::native_artifact) fn emit(
         )?;
         let word = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
         store(b, locals, output.get() as usize, word)?;
-    } else if !crate::native_artifact::codegen::common::aggregates::emit_memory(
-        b,
-        locals,
-        owner.aggregates(),
-        site,
-        error,
-    )? {
-        return Err(backend("map owner action lacks word transport"));
+    } else {
+        if let NativeIterationAction::LibraryCall {
+            template, operands, ..
+        } = code.blocks()[site].action()
+            && matches!(
+                template.primitive(),
+                mech_engine::native_artifact::NativeCollectionPrimitive::CompositePack(_)
+                    | mech_engine::native_artifact::NativeCollectionPrimitive::EnumPack
+            )
+        {
+            let CodePlan::Program(program) = code else {
+                return Err(backend("map owner constructor outside program"));
+            };
+            let compound_result = !matches!(
+                program.plan().values()[region.tail().returned().get() as usize]
+                    .definition()
+                    .body(),
+                mech_core::SchemaBody::Map { .. }
+            );
+            if compound_result {
+                let token = operands
+                    .iter()
+                    .find_map(|value| {
+                        let body = program.plan().values()[value.get() as usize]
+                            .definition()
+                            .body();
+                        let ordinal = match body {
+                            mech_core::SchemaBody::Map { .. } => Some(0),
+                            mech_core::SchemaBody::Tuple(fields) => {
+                                fields.iter().position(|field| {
+                                    matches!(field, mech_core::SchemaBody::Map { .. })
+                                })
+                            }
+                            mech_core::SchemaBody::Record(fields) => {
+                                fields.iter().position(|field| {
+                                    matches!(field.schema, mech_core::SchemaBody::Map { .. })
+                                })
+                            }
+                            _ => None,
+                        }?;
+                        owner
+                            .aggregates()
+                            .slot(*value)
+                            .map(|(base, _)| base + ordinal)
+                    })
+                    .ok_or_else(|| backend("map owner constructor token source missing"))?;
+                let token = load(b, locals, token)?;
+                hooks.call(
+                    b,
+                    site,
+                    GlobalHelper::MapOwnerConstructorCheck,
+                    [token, zero, zero],
+                    error,
+                );
+            }
+        }
+        if !crate::native_artifact::codegen::common::aggregates::emit_memory(
+            b,
+            locals,
+            owner.aggregates(),
+            site,
+            error,
+        )? {
+            return Err(backend("map owner action lacks word transport"));
+        }
     }
     b.ins().jump(joined, &[]);
     b.switch_to_block(ordinary);

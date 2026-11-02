@@ -12,6 +12,7 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 enum Step {
     Tuple(u32),
+    Record(u32),
     Variant(u32),
 }
 #[derive(Clone, Debug)]
@@ -70,6 +71,13 @@ fn paths(
                 path.pop();
             }
         }
+        SchemaBody::Record(fields) => {
+            for (index, field) in fields.iter().enumerate() {
+                path.push(Step::Record(index as u32));
+                paths(&field.schema, path, out, depth + 1)?;
+                path.pop();
+            }
+        }
         SchemaBody::Enum { variants, .. } => {
             for (index, variant) in variants.iter().enumerate() {
                 if let Some(body) = &variant.payload {
@@ -117,6 +125,18 @@ struct Transfer {
     pairs: Vec<(usize, usize)>,
 }
 fn transfer(plan: &Plan, fields: &Fields, action: &Action) -> Option<Transfer> {
+    if let Some((source, ordinal, output)) = super::record_projection::constant_field(plan, action)
+    {
+        let mut pairs = Vec::new();
+        for (path, &to) in &fields.by_value[output.get() as usize] {
+            let mut from = vec![Step::Record(ordinal as u32)];
+            from.extend_from_slice(path);
+            if let Some(&from) = fields.by_value[source.get() as usize].get(&from) {
+                pairs.push((from, to));
+            }
+        }
+        return Some(Transfer { output, pairs });
+    }
     match action {
         Action::Scalar(Scalar::Copy { source, output }) => {
             let mut pairs = Vec::new();
@@ -162,6 +182,11 @@ fn transfer(plan: &Plan, fields: &Fields, action: &Action) -> Option<Transfer> {
                 (Primitive::CompositePack(_), SchemaBody::Tuple(_)) => {
                     for (index, &source) in operands.iter().enumerate() {
                         fields.link(source, *output, &[Step::Tuple(index as u32)], &mut pairs);
+                    }
+                }
+                (Primitive::CompositePack(_), SchemaBody::Record(_)) => {
+                    for (index, &source) in operands.iter().enumerate() {
+                        fields.link(source, *output, &[Step::Record(index as u32)], &mut pairs);
                     }
                 }
                 (Primitive::EnumPack, SchemaBody::Enum { variants, .. }) if operands.len() == 2 => {

@@ -148,6 +148,18 @@ fn tagged_map_carrier_keeps_current_maps_scalars_and_record_tuple_captures() {
             mode.compilation(),
         )
         .unwrap();
+        // Bool is deliberately outside the retained Map+U64 compound-result
+        // witness. The original Map+U64 fixture is exercised independently in
+        // retained_compound_map; this one must keep the generic tagged path.
+        assert!(
+            jit.descriptor()
+                .plan()
+                .facts()
+                .map_owner_words()
+                .unwrap()
+                .regions()
+                .is_empty()
+        );
         let packs = selected_sites(&jit);
         for restored in [false, true] {
             let memory = mode.memory_budget();

@@ -73,6 +73,17 @@ impl Layout {
             let map = owners
                 .initializer(tail.initialize() as usize)
                 .filter(|&owner| {
+                    // Compound Map results use checked constructor admission
+                    // at their ordinary source sites. The existing packed
+                    // closed loop has no such constructor boundary yet.
+                    if !matches!(
+                        plan.values()[tail.returned().get() as usize]
+                            .definition()
+                            .body(),
+                        mech_core::SchemaBody::Map { .. }
+                    ) {
+                        return false;
+                    }
                     let spans = owners
                         .spans()
                         .iter()

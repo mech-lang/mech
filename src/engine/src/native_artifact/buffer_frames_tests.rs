@@ -5,7 +5,9 @@ use mech_syntax::document::{
 };
 use std::sync::Arc;
 
-fn plans(source: &str) -> [Plan; 2] {
+fn plan_results(
+    source: &str,
+) -> [Result<Plan, crate::native_artifact::NativeArtifactLoweringError>; 2] {
     let parsed = parse_canonical_document(
         TextSnapshot::new(DocumentId(0x42554646), Revision(1), source).unwrap(),
         ParseConfig::default(),
@@ -30,7 +32,11 @@ fn plans(source: &str) -> [Plan; 2] {
     )
     .unwrap();
     [original, decoded]
-        .map(|artifact| super::super::lower_native_program_artifact(&artifact, &catalog).unwrap())
+        .map(|artifact| super::super::lower_native_program_artifact(&artifact, &catalog))
+}
+
+fn plans(source: &str) -> [Plan; 2] {
+    plan_results(source).map(Result::unwrap)
 }
 
 fn scalar_span(frames: &NativeBufferFrames, field: NativeBufferFrameField) -> bool {
@@ -317,5 +323,170 @@ update-owner(h<{string:u64}>) => (out<{string:u64}>) :=
                 "external seed stays canonical"
             );
         }
+    }
+}
+
+#[test]
+fn retained_map_owner_publishes_flat_record_or_tuple_results() {
+    let source = r#"
++> map
+<dictionary> := <{index<{string:u64}> count<u64>}>
+#Collect(initial<{string:u64}>, limit<u64>) => <dictionary>
+  | :Next(index<{string:u64}>, count<u64>)
+  | :Done(index<{string:u64}>, count<u64>).
+#Collect(initial, limit) -> :Next(initial, 0u64)
+  :Next(index, count)
+    | count < limit -> :Next(map/insert(index, "needle", count), count + 1u64)
+    | * -> :Done(index, count)
+  :Done(index, count) => {index: index, count: count}.
+words := #Collect(initial<{string:u64}>, limit<u64>)
+words
+"#;
+    let tuple = source
+        .replace(
+            "<dictionary> := <{index<{string:u64}> count<u64>}>",
+            "<dictionary> := <({string:u64},u64)>",
+        )
+        .replace("{index: index, count: count}.", "(index, count).");
+    for source in [source, &tuple] {
+        for plan in plans(source) {
+            let (frames, owners) = plan.facts().buffer_frame_owner_layouts().unwrap();
+            assert_eq!(owners.regions().len(), 1);
+            let region = &owners.regions()[0];
+            assert!(owners.aggregates().slot(region.tail().returned()).is_some());
+            assert!(
+                owners.aggregates().slot(region.tail().result()).is_none(),
+                "canonical result is not a private native token"
+            );
+            for value in region.values() {
+                assert!(frames.slot(*value).is_none(), "owner selection is disjoint");
+                assert!(
+                    matches!(
+                        plan.values()[value.get() as usize].definition().body(),
+                        SchemaBody::Map { .. }
+                            | SchemaBody::Record(_)
+                            | SchemaBody::Tuple(_)
+                            | SchemaBody::Enum { .. }
+                    ),
+                    "scalar never becomes a Map owner word"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn an_old_map_record_alias_blocks_private_mutation() {
+    let source = r#"
++> map
+<dictionary> := <{index<{string:u64}> count<u64>}>
+#Alias(initial<{string:u64}>, limit<u64>) => <dictionary>
+  | :Next(index<{string:u64}>, count<u64>)
+  | :Done(index<{string:u64}>, count<u64>).
+#Alias(initial, limit) -> :Next(initial, 0u64)
+  :Next(index, count)
+    | count < limit -> {
+        old := {index: index, count: count}
+        next := map/insert(index, "needle", count)
+        observed := old.index{"needle"}
+      } -> :Done(next, observed)
+    | * -> :Done(index, count)
+  :Done(index, count) => {index: index, count: count}.
+#Alias(initial<{string:u64}>, limit<u64>)
+"#;
+    let early = source
+        .replace(
+            "next := map/insert",
+            "prior-index := old.index\n        next := map/insert",
+        )
+        .replace("observed := old.index{", "observed := prior-index{");
+    let copied = source
+        .replace(
+            "next := map/insert",
+            "saved := old\n        next := map/insert",
+        )
+        .replace("observed := old.index{", "observed := saved.index{");
+    for source in [
+        source.to_owned(),
+        early,
+        copied,
+        source
+            .replace(
+                "old := {index: index, count: count}",
+                "old := (index, count)",
+            )
+            .replace("old.index{", "old.1{"),
+    ] {
+        for plan in plans(&source) {
+            assert!(plan.map_owner_words().unwrap().regions().is_empty());
+            let writes = plan.map_write_uses().unwrap();
+            assert!(!writes.is_empty());
+            assert!(
+                writes.iter().any(|write| !write.late_reads().is_empty()),
+                "Record/Tuple projection must keep the old Map version live"
+            );
+        }
+    }
+}
+
+#[test]
+fn record_payload_binding_keeps_its_required_structural_draft_witness() {
+    let source = r#"
++> map
+<dictionary> := <{index<{string:u64}> count<u64>}>
+#Carry(initial<{string:u64}>, limit<u64>) => <dictionary>
+  | :Next(words<dictionary>)
+  | :Done(words<dictionary>).
+#Carry(initial, limit) -> :Next({index: initial, count: 0u64})
+  :Next(words)
+    | words.count < limit -> {
+        next := map/insert(words.index, "needle", words.count)
+      } -> :Next({index: next, count: words.count + 1u64})
+    | * -> :Done(words)
+  :Done(words) => words.
+#Carry(initial<{string:u64}>, limit<u64>)
+"#;
+    for result in plan_results(source) {
+        assert!(
+            matches!(
+                result,
+                Err(
+                    crate::native_artifact::NativeArtifactLoweringError::UnsupportedNode {
+                        feature: "structural child requires a native draft expansion witness",
+                        ..
+                    }
+                )
+            ),
+            "a Record payload binding still needs its canonical label/draft witness"
+        );
+    }
+}
+
+#[test]
+fn bounded_map_alias_analysis_declines_without_rejecting_unrelated_deep_records() {
+    let mut source = String::from(
+        r#"
++> map
+#Owner(initial<{string:u64}>) => <{string:u64}>
+  | :Run(index<{string:u64}>)
+  | :Done(index<{string:u64}>).
+#Owner(initial) -> :Run(initial)
+  :Run(index) | * -> :Done(map/insert(index, "needle", 7u64))
+  :Done(index) => index.
+#Owner(initial<{string:u64}>)
+r0 := {leaf: seed<u64>}
+"#,
+    );
+    for i in 1..=34 {
+        source.push_str(&format!("r{i} := {{next: r{}}}\n", i - 1));
+    }
+    source.push_str("r34\n");
+    for plan in plans(&source) {
+        assert!(matches!(
+            plan.map_write_uses(),
+            Err("native map alias schema depth")
+        ));
+        assert!(plan.map_owner_words().unwrap().regions().is_empty());
+        assert!(plan.facts().buffer_frame_owner_layouts().is_ok());
     }
 }

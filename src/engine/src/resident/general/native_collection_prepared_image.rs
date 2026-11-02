@@ -73,6 +73,8 @@ impl NativePreparedLibraryCall {
         #[cfg(feature = "sequence_buffers")]
         let record_selector = super::record_selector::RecordSelector::derive(&template);
         let descriptor_templates = super::descriptor_templates(&template);
+        let constructor_normalization =
+            super::map_owner_constructors::normalization(&template, &schemas);
         let call = Self {
             template,
             schemas,
@@ -93,6 +95,7 @@ impl NativePreparedLibraryCall {
             record_selector,
             #[cfg(feature = "sequence_buffers")]
             frame_composition: None,
+            constructor_normalization,
             span_selector_metadata_bytes: wire.span_selector_metadata_bytes,
             span_selector_work: wire.span_selector_work,
             #[cfg(feature = "pure_text")]

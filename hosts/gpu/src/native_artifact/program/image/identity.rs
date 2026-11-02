@@ -284,7 +284,11 @@ fn selected_template(
 // including their exact selected factories, current-view and cold error route.
 // IR149 makes private-frame/retained-map single-owner selection part of the
 // executable contract. Images emitted before that arbitration are rejected.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 149;
+// IR150 binds generated physical scalar-frame transport and fused numeric
+// entry admission, plus complete retained-Map Tuple/Record result words.
+// IR151 also binds direct child numeric carrier transport and narrowed private
+// boundary spills; prototype IR150 child argument words cannot be reused.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 151;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -484,7 +488,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 149;
 // matrix call-cache admission/eviction. Other operation-family prices stay.
 // Policy102 funds disjoint private tagged variant banks, checked current-tag
 // observations and inactive-bank clearing. Existing untagged prices remain.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 102;
+// Policy103 funds the complete canonical structured retained-Map publication;
+// scalar-frame transport keeps the existing logical and finite work charges.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 103;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

@@ -1,6 +1,43 @@
 //! Synchronous invocation orchestration for this owner.
 use super::*;
 impl Invocation<'_, '_, '_> {
+    pub(in crate::native_artifact::program::runtime) fn retained_constructor_check(
+        &mut self,
+        site: usize,
+        args: [u64; 3],
+    ) -> Result<Option<u64>, Error> {
+        if args[1..] != [0; 2] || self.state.consumed {
+            return Err(invalid("malformed or replayed retained constructor check"));
+        }
+        let mut state = self
+            .state
+            .map_owners
+            .state
+            .take()
+            .ok_or_else(|| invalid("retained constructor has no owner session"))?;
+        let result = state.constructor_statistics(&mut MapExecution::new(self), site, args[0]);
+        self.state.map_owners.state = Some(state);
+        let (entries, key_bytes) = result?;
+        let descriptor = self.descriptor;
+        let call = descriptor.metadata().calls[site]
+            .as_ref()
+            .ok_or_else(|| invalid("retained constructor lost selected factory"))?;
+        let coexistence = self.selected_join_coexistence(None)?;
+        call.admit_map_owner_constructor(
+            entries,
+            key_bytes,
+            self.limits,
+            &self.state.library,
+            coexistence,
+        )
+        .map_err(|error| Error::Library {
+            origin: descriptor.metadata().plan.blocks()[site].origin(),
+            error,
+        })?;
+        self.state.consumed = true;
+        Ok(None)
+    }
+
     /// Retire private views at the SAME Tail latch/exit boundary as ordinary
     /// immutable locals. A later iteration can never read an earlier key.
     pub(in crate::native_artifact::program::runtime) fn retire_keys(
@@ -116,6 +153,7 @@ impl Invocation<'_, '_, '_> {
         &mut self,
         site: usize,
         token: u64,
+        words: &[u64],
     ) -> Result<Publication, Error> {
         let mut state = self
             .state
@@ -123,7 +161,7 @@ impl Invocation<'_, '_, '_> {
             .state
             .take()
             .ok_or_else(|| invalid("retained map session publication before admitted entry"))?;
-        let result = state.publish_retained(&mut MapExecution::new(self), site, token);
+        let result = state.publish_retained(&mut MapExecution::new(self), site, token, words);
         self.state.map_owners.state = Some(state);
         result
     }
@@ -246,9 +284,6 @@ impl Invocation<'_, '_, '_> {
             self.state.consumed = true;
             Ok(Some(result))
         } else if operation == MAP_OWNER_END {
-            if args[1..] != [0; 2] {
-                return Err(invalid("malformed retained map publication"));
-            }
             let Action::Scalar(mech_engine::native_artifact::NativeMatchAction::Copy {
                 output,
                 ..
@@ -257,7 +292,38 @@ impl Invocation<'_, '_, '_> {
                 return Err(invalid("retained map exit lacks canonical destination"));
             };
             let output = *output;
-            let token = match self.finish_retained_map(site, args[0])? {
+            let layout = self
+                .descriptor
+                .metadata()
+                .map_owner_words
+                .as_ref()
+                .ok_or_else(|| invalid("retained map exit layout missing"))?;
+            let region = layout
+                .exit(site)
+                .and_then(|id| layout.regions().get(id))
+                .ok_or_else(|| invalid("retained map exit proof missing"))?;
+            let count = layout
+                .aggregates()
+                .slot(region.tail().returned())
+                .ok_or_else(|| invalid("retained map result word slot missing"))?
+                .1;
+            let mut words = [0u64; 32];
+            if count == 1 && args[1..] == [0; 2] {
+                words[0] = args[0];
+            } else {
+                if count > words.len()
+                    || count > self.argument_capacity
+                    || args[1] != self.arguments as usize as u64
+                    || args[2] != count as u64
+                {
+                    return Err(invalid("malformed retained map publication words"));
+                }
+                // SAFETY: the exact invocation-owned argument pointer/count
+                // was checked; generated execution remains suspended.
+                words[..count]
+                    .copy_from_slice(unsafe { core::slice::from_raw_parts(self.arguments, count) });
+            }
+            let token = match self.finish_retained_map(site, args[0], &words[..count])? {
                 Publication::Canonical(value) => {
                     self.state
                         .arena

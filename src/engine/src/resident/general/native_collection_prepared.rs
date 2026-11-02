@@ -104,6 +104,8 @@ mod frame_composition;
 mod frame_shape;
 #[path = "native_collection_histogram.rs"]
 mod histogram;
+#[path = "native_collection_map_owner_constructors.rs"]
+mod map_owner_constructors;
 #[cfg(feature = "sequence_buffers")]
 #[path = "native_collection_record_selector.rs"]
 mod record_selector;
@@ -179,6 +181,8 @@ pub struct NativePreparedLibraryCall {
     #[cfg(feature = "sequence_buffers")]
     #[serde(skip)]
     frame_composition: Option<Box<frame_composition::Composition>>,
+    #[serde(skip)]
+    constructor_normalization: Option<mech_core::snapshot::CompositeBindingCost>,
     span_selector_metadata_bytes: u64,
     span_selector_work: u64,
     #[cfg(feature = "pure_text")]
@@ -402,11 +406,14 @@ pub fn prepare_native_program_library_call(
     #[cfg(feature = "sequence_buffers")]
     let record_selector = record_selector::RecordSelector::derive(&template);
     let descriptor_templates = descriptor_templates(&template);
+    let constructor_normalization =
+        map_owner_constructors::normalization(&template, artifact.schemas());
     Ok(NativePreparedLibraryCall {
         template,
         schemas: Arc::new(artifact.schemas().clone()),
         factory,
         descriptor_templates,
+        constructor_normalization,
         binding_bytes,
         binding_work,
         binding_nodes,

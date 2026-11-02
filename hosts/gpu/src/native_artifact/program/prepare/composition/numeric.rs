@@ -41,21 +41,6 @@ impl Layout {
             .checked_sub(frames.retirements.len())
             .ok_or("parent exit retirement words exceed its argument bank")?;
         let mut words = (flags..self.words).collect::<Vec<_>>();
-        for exit in &frames.exits {
-            for value in &exit.frames {
-                let recipe = frames
-                    .frames
-                    .iter()
-                    .find(|frame| frame.value == value.get())
-                    .ok_or("parent exit lacks its escaping frame recipe")?;
-                for word in recipe.scalar_slots() {
-                    if word >= frames.scalar_words {
-                        return Err("parent exit scalar word is outside its frame bank");
-                    }
-                    words.push(word);
-                }
-            }
-        }
         words.sort_unstable();
         words.dedup();
         Ok(words)

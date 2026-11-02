@@ -38,6 +38,8 @@ pub(in crate::native_artifact) struct FrameWords {
     /// Recursive scalar leaves in field order. Paths retain exact structural
     /// identity; a composite span never hides a managed array or owner.
     pub scalar_paths: Vec<(Vec<usize>, usize)>,
+    /// Count exact structural prefixes once during independent preparation.
+    pub scalar_node_count: usize,
 }
 impl FrameWords {
     pub fn scalar_slots(&self) -> impl Iterator<Item = usize> + '_ {
@@ -50,21 +52,88 @@ impl FrameWords {
             .map(|(_, slot)| *slot)
     }
     pub fn scalar_nodes(&self) -> usize {
-        // Paths are prepared in depth-first field order. Count each structural
-        // prefix once without allocating during invocation admission.
-        let mut previous: &[usize] = &[];
-        let mut count = 0;
-        for (path, _) in &self.scalar_paths {
-            let common = previous
-                .iter()
-                .zip(path)
-                .take_while(|(a, b)| a == b)
-                .count();
-            count += path.len() - common;
-            previous = path;
-        }
-        count
+        self.scalar_node_count
     }
+}
+pub(in crate::native_artifact::program::prepare) fn scalar_node_count(
+    paths: &[(Vec<usize>, usize)],
+) -> usize {
+    let mut previous: &[usize] = &[];
+    let mut count = 0;
+    for (path, _) in paths {
+        let common = previous
+            .iter()
+            .zip(path)
+            .take_while(|(a, b)| a == b)
+            .count();
+        count += path.len() - common;
+        previous = path;
+    }
+    count
+}
+/// Fixed invocation scalar-bank offsets, derived from the exact current plan.
+/// Neither an offset nor a schema path grants ownership or entry authority.
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(in crate::native_artifact) struct ScalarBinding {
+    pub value: u32,
+    pub word: usize,
+    pub physical: usize,
+    #[serde(deserialize_with = "deserialize_scalar_kind")]
+    pub kind: NativeScalarKind,
+    pub steps: usize,
+}
+fn deserialize_scalar_kind<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<NativeScalarKind, D::Error> {
+    let value = <String as serde::Deserialize>::deserialize(deserializer)?;
+    match value.as_str() {
+        "Bool" => Ok(NativeScalarKind::Bool),
+        "U8" => Ok(NativeScalarKind::U8),
+        "U16" => Ok(NativeScalarKind::U16),
+        "U32" => Ok(NativeScalarKind::U32),
+        "U64" => Ok(NativeScalarKind::U64),
+        "I64" => Ok(NativeScalarKind::I64),
+        "F64" => Ok(NativeScalarKind::F64),
+        _ => Err(serde::de::Error::custom(
+            "unknown prepared scalar binding kind",
+        )),
+    }
+}
+pub(in crate::native_artifact::program::prepare) fn scalar_bindings(
+    frames: &NativeBufferFrames,
+    value: u32,
+    paths: &[(Vec<usize>, usize)],
+) -> Result<Vec<ScalarBinding>, &'static str> {
+    paths
+        .iter()
+        .map(|(path, word)| {
+            let mut span = frames
+                .fields_at(value as usize)
+                .ok_or("scalar binding lacks frame")?;
+            let mut leaf = None;
+            for (depth, ordinal) in path.iter().enumerate() {
+                let field = *span.get(*ordinal).ok_or("scalar binding leaves its span")?;
+                if depth + 1 == path.len() {
+                    leaf = Some(field);
+                } else {
+                    span = frames
+                        .children(field)
+                        .ok_or("scalar binding loses its child")?;
+                }
+            }
+            let Some(Lane::Scalar { at, kind }) = leaf.map(|field| field.lane()) else {
+                return Err("scalar binding is not a scalar leaf");
+            };
+            Ok(ScalarBinding {
+                value,
+                word: *word,
+                physical: at,
+                kind,
+                steps: path.len(),
+            })
+        })
+        .collect()
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -99,6 +168,8 @@ pub(in crate::native_artifact) struct Proof {
     pub actions: Vec<(usize, Operation)>,
     pub sites: Vec<usize>,
     pub scalar_words: usize,
+    pub scalar_inputs: Vec<ScalarBinding>,
+    pub scalar_outputs: Vec<ScalarBinding>,
     pub words: usize,
     /// Independently bounded source and shadow homes for entry/exit emission.
     pub boundary_words: usize,
@@ -631,6 +702,7 @@ pub(in crate::native_artifact) fn derive(
                 value,
                 fields,
                 arrays: array_fields,
+                scalar_node_count: scalar_node_count(&paths),
                 scalar_paths: paths,
             }
         })
@@ -676,12 +748,28 @@ pub(in crate::native_artifact) fn derive(
     } else {
         super::tail::FIXED_OVERHEAD
     };
+    let carrier = frame_words
+        .iter()
+        .find(|frame| frame.value == tail.carrier().get())
+        .ok_or("numeric scalar carrier recipe missing")?;
+    let scalar_inputs = scalar_bindings(frames, carrier.value, &carrier.scalar_paths)?;
+    let scalar_outputs = if let Some(value) = result.frame() {
+        let returned = frame_words
+            .iter()
+            .find(|frame| frame.value == value)
+            .ok_or("numeric scalar result recipe missing")?;
+        scalar_bindings(frames, value, &returned.scalar_paths)?
+    } else {
+        Vec::new()
+    };
     Ok(Proof {
         arrays,
         frames: frame_words,
         actions,
         sites: sites.into_iter().collect(),
         scalar_words,
+        scalar_inputs,
+        scalar_outputs,
         words,
         boundary_words,
         boundary_work,

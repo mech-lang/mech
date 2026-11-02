@@ -2,7 +2,7 @@
 //! descriptions; the runtime must still establish current invocation availability.
 use super::Segment;
 use crate::native_artifact::program::prepare::readonly_numeric::{
-    FrameWords, scalar_children, scalar_paths,
+    FrameWords, ScalarBinding, scalar_bindings, scalar_children, scalar_node_count, scalar_paths,
 };
 use mech_engine::native_artifact::{
     NativeBufferFrameLane as Lane, NativeBufferFrameOperation as Frame, NativeBufferFrames,
@@ -38,6 +38,8 @@ pub(in crate::native_artifact) struct Layout {
     pub frames: Vec<FrameWords>,
     pub inputs: Vec<u32>,
     pub scalar_words: usize,
+    pub scalar_bindings: Vec<ScalarBinding>,
+    pub scalar_entry_steps: usize,
     pub retirements: Vec<(u32, Vec<u32>)>,
     pub exits: Vec<Exit>,
 }
@@ -223,6 +225,7 @@ impl Layout {
         let mut sources = Vec::new();
         let mut words = 0usize;
         let mut recipes = Vec::new();
+        let mut physical_bindings = Vec::new();
         for value in values {
             let mut scalar = Vec::new();
             let mut arrays = Vec::new();
@@ -272,8 +275,10 @@ impl Layout {
                     }
                 }
             }
+            physical_bindings.extend(scalar_bindings(frames, value, &paths)?);
             recipes.push(FrameWords {
                 value,
+                scalar_node_count: scalar_node_count(&paths),
                 scalar_paths: paths,
                 fields: scalar,
                 arrays,
@@ -413,12 +418,25 @@ impl Layout {
                     .collect(),
             });
         }
+        let scalar_entry_steps = physical_bindings
+            .iter()
+            .try_fold(0usize, |sum, binding| {
+                let frame = recipes.iter().find(|frame| frame.value == binding.value)?;
+                let (path, _) = frame
+                    .scalar_paths
+                    .iter()
+                    .find(|(_, word)| *word == binding.word)?;
+                sum.checked_add(path.len().saturating_sub(1))
+            })
+            .ok_or("parent scalar entry price overflows")?;
         Ok(Self {
             sources,
             aliases,
             frames: recipes,
             inputs,
             scalar_words: words,
+            scalar_entry_steps,
+            scalar_bindings: physical_bindings,
             retirements,
             exits,
         })

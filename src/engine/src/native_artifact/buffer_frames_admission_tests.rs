@@ -241,6 +241,27 @@ fn enum_logical_output_limit_matches_selected_constructor_for_map_and_private_tu
                     let work = NativeLibraryWorkBudget::new(u64::MAX, u64::MAX, &memory).unwrap();
                     let mut output = None;
                     let canonical = call.invoke_current(&ordinary, &mut output, limits, &work);
+                    let owner_work =
+                        NativeLibraryWorkBudget::new(u64::MAX, u64::MAX, &memory).unwrap();
+                    let owner = call.admit_map_owner_constructor(
+                        entries as u64,
+                        (entries * (4 + key_len)) as u64,
+                        limits,
+                        &owner_work,
+                        mech_core::ResourceDemand::default(),
+                    );
+                    assert_eq!(
+                        owner.is_ok(),
+                        canonical.is_ok(),
+                        "owner constructor differs from maintained EnumPack: owner={owner:?}, ordinary={canonical:?}"
+                    );
+                    if let (Err(owner), Err(canonical)) = (&owner, &canonical) {
+                        assert_eq!(
+                            owner, canonical,
+                            "EnumPack must preserve its maintained denial"
+                        );
+                    }
+                    drop(owner_work);
                     assert_eq!(
                         canonical.is_ok(),
                         accepts,
@@ -289,4 +310,149 @@ fn enum_logical_output_limit_matches_selected_constructor_for_map_and_private_tu
         }
         assert_eq!(kinds, [false, true].into_iter().collect());
     }
+}
+
+#[test]
+fn owner_composite_caps_match_the_maintained_constructor() {
+    let parsed = parse_canonical_document(
+        TextSnapshot::new(DocumentId(0x4d415043), Revision(0), SOURCE).unwrap(),
+        ParseConfig::default(),
+    );
+    let mut builder = mech_core::FunctionCatalogBuilder::new();
+    engine::install_intrinsic_runtime(&mut builder).unwrap();
+    engine::install_intrinsic_compiler_runtime(&mut builder).unwrap();
+    engine::install_intrinsic_resident(&mut builder).unwrap();
+    engine::install_intrinsic_source(&mut builder).unwrap();
+    let catalog = Arc::new(builder.build().unwrap());
+    let original = engine::CanonicalSourceFrontend
+        .compile_document_with_catalog(
+            &DocumentSyntax::cast(parsed.syntax()).unwrap(),
+            catalog.clone(),
+        )
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let decoded = engine::decode_program_artifact_bytecode_v1(
+        &engine::encode_program_artifact_bytecode_v1(&original).unwrap(),
+    )
+    .unwrap();
+    let mut checked = 0;
+    for artifact in [original, decoded] {
+        let plan = lower_native_program_artifact(&artifact, &catalog).unwrap();
+        for block in plan.blocks() {
+            let Action::LibraryCall { template, .. } = block.action() else {
+                continue;
+            };
+            if !matches!(
+                template.primitive(),
+                engine::native_artifact::NativeCollectionPrimitive::CompositePack(2)
+            ) || !matches!(template.inputs()[0].body(), SchemaBody::Map { .. })
+                || template.inputs()[1].body()
+                    != &SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)
+            {
+                continue;
+            }
+            let call = prepare_native_program_library_call(&artifact, template, &catalog).unwrap();
+            let mech_core::ResolvedOperationContract::Declared(contract) = template.contract()
+            else {
+                panic!()
+            };
+            for (entries, key_len) in [(0, 0), (1, 1), (4, 129)] {
+                let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                let values = template
+                    .inputs()
+                    .iter()
+                    .zip(&contract.inputs)
+                    .map(|(schema, port)| {
+                        Some(admitted(
+                            &artifact,
+                            port.schema,
+                            sample(schema.body(), entries, key_len),
+                            &memory,
+                        ))
+                    })
+                    .collect::<Vec<_>>();
+                let child_bytes = values
+                    .iter()
+                    .map(|value| {
+                        let value = value.as_ref().unwrap();
+                        let mut bytes = core::mem::size_of::<Value>() as u64;
+                        mech_core::snapshot::visit_canonical_data_work(
+                            artifact.schemas().get(value.schema()).unwrap().body(),
+                            value.data(),
+                            |chunk| -> Result<(), ()> {
+                                bytes += chunk.retained_bytes;
+                                Ok(())
+                            },
+                        )
+                        .unwrap();
+                        bytes + core::mem::size_of::<mech_core::ValueData>() as u64
+                    })
+                    .sum::<u64>();
+                let output_bytes = child_bytes
+                    + mech_core::snapshot::CompositeSnapshotConstructor::value_container_bytes(0)
+                        .unwrap() as u64;
+                let normalization =
+                    mech_core::snapshot::CompositeSnapshotConstructor::binding_cost_for_inputs(
+                        contract.outputs[0].schema,
+                        contract.inputs.len(),
+                        |i| Some(contract.inputs[i].schema),
+                        artifact.schemas(),
+                    )
+                    .unwrap();
+                for kind in ["elements", "output", "clone"] {
+                    let bound = match kind {
+                        "elements" => 2,
+                        "output" => output_bytes,
+                        _ => child_bytes + normalization.temporary_bytes,
+                    };
+                    for (limit, accepts) in [(bound - 1, false), (bound, true)] {
+                        let mut limits = mech_core::TargetMemoryProfile::current_resident_cpu()
+                            .unwrap()
+                            .limits;
+                        limits.max_compute_work = Some(u64::MAX);
+                        limits.max_comparison_work = Some(u64::MAX);
+                        limits.max_temporary_bytes = Some(256 * 1024 * 1024);
+                        limits.max_output_bytes = Some(u64::MAX);
+                        limits.max_cloned_bytes = Some(u64::MAX);
+                        limits.max_output_elements = Some(u64::MAX);
+                        match kind {
+                            "elements" => limits.max_output_elements = Some(limit),
+                            "output" => limits.max_output_bytes = Some(limit),
+                            _ => limits.max_cloned_bytes = Some(limit),
+                        };
+                        let work =
+                            NativeLibraryWorkBudget::new(u64::MAX, u64::MAX, &memory).unwrap();
+                        let mut output = None;
+                        let canonical = call.invoke_current(&values, &mut output, limits, &work);
+                        let owner = call.admit_map_owner_constructor(
+                            entries as u64,
+                            (entries * (4 + key_len)) as u64,
+                            limits,
+                            &work,
+                            mech_core::ResourceDemand::default(),
+                        );
+                        assert_eq!(
+                            canonical.is_ok(),
+                            accepts,
+                            "canonical {kind} bound={bound} limit={limit}: {canonical:?}"
+                        );
+                        assert_eq!(
+                            owner.is_ok(),
+                            canonical.is_ok(),
+                            "{kind}: owner={owner:?} canonical={canonical:?}"
+                        );
+                        if let (Err(owner), Err(canonical)) = (&owner, &canonical) {
+                            assert_eq!(
+                                owner, canonical,
+                                "{kind} must retain the maintained error variant/order"
+                            );
+                        }
+                        checked += 1;
+                    }
+                }
+            }
+        }
+    }
+    assert!(checked >= 36);
 }

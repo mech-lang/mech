@@ -451,6 +451,9 @@ impl Invocation<'_, '_, '_> {
         #[cfg(all(test, feature = "canonical-native-program"))]
         crate::native_artifact::program::runtime::collections::before_span_helper(self, site)?;
         let descriptor = self.descriptor;
+        if tag == GlobalHelper::MapOwnerConstructorCheck {
+            return self.retained_constructor_check(site, args);
+        }
         if tag == GlobalHelper::ClosedTailBegin {
             return self.begin_closed_tail(site, args);
         }

@@ -227,6 +227,17 @@ impl Invocation<'_, '_, '_> {
             self.state.map_owners.closed_exit = Some((previous, proof.tail.exit()));
         }
         self.state.consumed = proof.numeric.is_some() && !matches!(args[2], 2 | 5);
+        if args[2] == 0
+            && proof.numeric.as_ref().is_some_and(|numeric| {
+                !numeric.scalar_inputs.is_empty() || !numeric.scalar_outputs.is_empty()
+            })
+        {
+            let bank = self
+                .state
+                .buffer_frames
+                .scalar_bank_pointer(&descriptor.metadata().buffer_frames)?;
+            self.write_borrowed_word(2, bank)?;
+        }
         if args[2] == 3 {
             // Arithmetic/assertion/rejection exits have no leaf callback to consume the
             // owner loan. Drop it before the existing typed error is returned.

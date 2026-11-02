@@ -206,6 +206,38 @@ impl BufferFrames {
             })
             .sum()
     }
+    /// Fixed for the owning invocation; the admitted storage never resizes.
+    /// No Rust reference to a lane survives the synchronous generated entry.
+    pub(super) fn scalar_bank_pointer(
+        &mut self,
+        layout: &Layout,
+    ) -> Result<u64, NativeProgramExecutionError> {
+        let expected = Self::word_count(layout)?;
+        let inner = self
+            .inner
+            .as_mut()
+            .ok_or_else(|| invalid("numeric scalar bank missing"))?;
+        if inner.words.values().len() != expected {
+            return Err(invalid(
+                "numeric scalar bank extent differs from its derived layout",
+            ));
+        }
+        Ok(inner.words.values_mut().as_mut_ptr() as u64)
+    }
+    pub(super) fn current_scalar_binding(
+        &self,
+        physical: usize,
+        kind: mech_engine::native_artifact::NativeScalarKind,
+    ) -> bool {
+        self.inner
+            .as_ref()
+            .and_then(|inner| {
+                let at = physical.checked_mul(2)?;
+                let words = inner.words.values().get(at..at.checked_add(2)?)?;
+                Some(words[1] == 1 && kind.accepts_bits(words[0]))
+            })
+            .unwrap_or(false)
+    }
     pub(super) fn current_leaf(&self, field: FrameField) -> Option<(Option<&Value>, u64)> {
         let inner = self.inner.as_ref()?;
         match field.lane() {
@@ -455,6 +487,28 @@ impl BufferFrames {
             .and_then(Option::take)
             .ok_or_else(|| invalid("numeric handoff lost current carrier owner"))
     }
+    pub(super) fn synchronize_scalar_binding(
+        &mut self,
+        physical: usize,
+        kind: mech_engine::native_artifact::NativeScalarKind,
+        bits: u64,
+    ) -> Result<(), NativeProgramExecutionError> {
+        if !kind.accepts_bits(bits) {
+            return Err(invalid("numeric reconciliation has invalid scalar bits"));
+        }
+        let at = physical
+            .checked_mul(2)
+            .ok_or_else(|| invalid("numeric scalar binding offset overflows"))?;
+        let words = self
+            .inner
+            .as_mut()
+            .and_then(|inner| inner.words.values_mut().get_mut(at..at.checked_add(2)?))
+            .ok_or_else(|| invalid("numeric scalar binding outside its admitted bank"))?;
+        words[0] = bits;
+        words[1] = 1;
+        Ok(())
+    }
+    #[cfg(test)]
     pub(super) fn synchronize_scalar_leaf(
         &mut self,
         field: FrameField,

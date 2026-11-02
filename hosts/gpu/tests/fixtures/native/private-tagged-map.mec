@@ -1,6 +1,6 @@
 +> map
 +> sequence
-<dictionary> := <{index<{string:u64}> count<u64>}>
+<dictionary> := <{index<{string:u64}> count<u64> extra<bool>}>
 checked(allowed<bool>, value<u64>) => (out<u64>) :=
   allowed! := allowed
   out := value.
@@ -20,6 +20,6 @@ consume(words<dictionary>, marker<u64>, key<string>) => (out<u64>) :=
         next-count := admitted / divisor + increment
       } -> :Visit(at + 1u64, next-index, next-count)
     | * -> :Done(index, count)
-  :Done(index, count) => {index: index, count: count}.
+  :Done(index, count) => {index: index, count: count, extra: true}.
 result := #Collect(keys<[string]>, initial<{string:u64}>, steps<u64>, seed<u64>, allowed<bool>, divisor<u64>)
 consume(result, marker<u64>, query<string>)

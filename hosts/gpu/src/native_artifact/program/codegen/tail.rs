@@ -78,6 +78,7 @@ pub(in crate::native_artifact) fn leave(
             .unwrap()
             .scalar_slots()
             .chain(terminal)
+            .filter(|_| mode != 0)
         {
             let value = load(options, b, locals, region, shadow + slot)?;
             b.ins()
@@ -90,6 +91,7 @@ pub(in crate::native_artifact) fn leave(
                 .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
         }
     }
+    let normal_exit = mode == 0;
     let mode = b.ins().iconst(types::I64, mode);
     hooks.call_at(
         b,
@@ -98,6 +100,28 @@ pub(in crate::native_artifact) fn leave(
         [compute, comparison, mode],
         error,
     );
+    if normal_exit {
+        if let Some(proof) = &region.numeric {
+            if !proof.scalar_inputs.is_empty() || !proof.scalar_outputs.is_empty() {
+                let bank = b
+                    .ins()
+                    .load(types::I64, MemFlags::new(), hooks.arguments, 16);
+                let shadow = region
+                    .shadow
+                    .ok_or_else(|| backend("numeric export lacks scratch"))?;
+                let ready = b.ins().iconst(types::I64, 1);
+                for binding in proof.scalar_inputs.iter().chain(&proof.scalar_outputs) {
+                    let value = load(options, b, locals, region, shadow + binding.word)?;
+                    let at = binding
+                        .physical
+                        .checked_mul(2)
+                        .ok_or_else(|| backend("numeric scalar export offset overflows"))?;
+                    b.ins().store(MemFlags::new(), value, bank, offset(at)?);
+                    b.ins().store(MemFlags::new(), ready, bank, offset(at + 1)?);
+                }
+            }
+        }
+    }
     b.ins().jump(done, &[]);
     b.switch_to_block(done);
     Ok(())
@@ -260,10 +284,11 @@ fn prepare_region(
     for i in 0..if region.map.is_some() {
         4
     } else {
-        2 + region.numeric.as_ref().map_or_else(
-            || region.captures.as_ref().map_or(0, |p| p.words()),
-            |p| p.words,
-        )
+        if region.numeric.is_some() {
+            2
+        } else {
+            2 + region.captures.as_ref().map_or(0, |p| p.words())
+        }
     } {
         let word = b
             .ins()

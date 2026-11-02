@@ -4,7 +4,7 @@ use super::*;
 use crate::native_artifact::codegen::options::OptimizationPass;
 use crate::native_artifact::program::prepare::readonly_numeric::Operation;
 
-const SOURCE: &str = r#"+> sequence
+pub(super) const SOURCE: &str = r#"+> sequence
 <rank> := <((u8,u64),u64)>
 <state> := <([u8],rank)>
 put(xs<[u8]>, at<u64>, value<u8>) => (out<[u8]>) :=
@@ -464,7 +464,8 @@ mod stale_composite {
         c: u64,
         output: *mut u64,
     ) -> u64 {
-        let numeric = op == GlobalHelper::NumericSegmentBegin.raw();
+        let fused_numeric = op == GlobalHelper::AdmitNumericSegmentBegin.raw();
+        let numeric = fused_numeric || op == GlobalHelper::NumericSegmentBegin.raw();
         let visit = if numeric {
             VISITS.with(|count| {
                 let next = count.get() + 1;
@@ -528,7 +529,7 @@ mod stale_composite {
         // helper. Its live output word is read only after successful return.
         let status = unsafe { HELPER.with(Cell::get).unwrap()(context, site, op, a, b, c, output) };
         if numeric && status == 0 {
-            let selected = unsafe { *output };
+            let selected = unsafe { *output } >> u32::from(fused_numeric);
             if let Some(mut probe) = fresh
                 && selected == 1
             {

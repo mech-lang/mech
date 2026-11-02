@@ -1,5 +1,6 @@
 //! Same-source semantic/error reference, compatible with pre-tagged compilers.
-//! Run the old closure with `canonical`, and the new closure with `tagged`;
+//! Run the old closure with `canonical`, the IR149 checkpoint with `tagged`,
+//! and a compound-owner compiler with `retained`;
 //! their JSON lines must be identical. Work, policy and timing are excluded.
 use mech_core::{
     ManagedMemoryBudget, Value, ValueDataDraft as Data,
@@ -12,7 +13,9 @@ use mech_syntax::document::{
     parse_canonical_document,
 };
 
-const SOURCE: &str = include_str!("../tests/fixtures/native/private-tagged-map.mec");
+// This copy preserves the exact Mech text used by the historical before/after
+// controls, independently of the Bool-result generic-tagged fallback fixture.
+const SOURCE: &str = include_str!("../tests/fixtures/native/retained-compound-map.mec");
 
 fn arguments(
     artifact: &ProgramArtifact,
@@ -78,10 +81,11 @@ fn contents(values: &[Value]) -> Vec<Data> {
 }
 
 fn run() {
-    let expected_tagged = match std::env::args().nth(1).as_deref() {
-        Some("canonical") => false,
-        Some("tagged") => true,
-        _ => panic!("expected canonical or tagged"),
+    let route = std::env::args().nth(1).unwrap();
+    let expected_tagged = match route.as_str() {
+        "canonical" | "retained" => false,
+        "tagged" => true,
+        _ => panic!("expected canonical, tagged or retained"),
     };
     let parsed = parse_canonical_document(
         TextSnapshot::new(DocumentId(0x54414745), Revision(0), SOURCE).unwrap(),
@@ -124,6 +128,18 @@ fn run() {
             tagged, expected_tagged,
             "the reference must exercise the requested real carrier route"
         );
+        if route == "retained" {
+            assert!(
+                !jit.descriptor()
+                    .plan()
+                    .facts()
+                    .map_owner_words()
+                    .unwrap()
+                    .regions()
+                    .is_empty(),
+                "the current reference must exercise retained compound ownership"
+            );
+        }
         let memory = mode.memory_budget();
         let mut outputs = vec![None; artifact.outputs().len()];
         for (case, (steps, seed, allowed, divisor, query, expected)) in [

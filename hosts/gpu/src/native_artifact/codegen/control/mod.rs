@@ -938,7 +938,16 @@ impl<'plan> CfgDefinition<'plan> {
             };
             #[cfg(not(feature = "canonical-native-program"))]
             let admitted_helper: Option<GlobalHelper> = None;
-            if admitted_helper.is_none() {
+            #[cfg(feature = "canonical-native-program")]
+            let fused_numeric_admission = controls
+                .enabled(crate::native_artifact::codegen::options::OptimizationPass::ScalarLoops)
+                && admission_join.is_none()
+                && map_admission_join.is_none()
+                && matches!(plan, crate::native_artifact::codegen::control::plan::CodePlan::Program(program)
+                    if program.metadata().compositions.entry(index).is_some());
+            #[cfg(not(feature = "canonical-native-program"))]
+            let fused_numeric_admission = false;
+            if admitted_helper.is_none() && !fused_numeric_admission {
                 admit(b, callback_signature, callback, user_context, index, error);
             }
             #[cfg(feature = "canonical-native-program")]
@@ -954,7 +963,17 @@ impl<'plan> CfgDefinition<'plan> {
             #[cfg(feature = "canonical-native-program")]
             let segment_ir = if let Some(hooks) = &hooks {
                 crate::native_artifact::program::codegen::numeric_segments::emit_entry(
-                    &controls, b, frame, locals, plan, index, hooks, &blocks, error, report,
+                    &controls,
+                    b,
+                    frame,
+                    locals,
+                    plan,
+                    index,
+                    hooks,
+                    &blocks,
+                    error,
+                    report,
+                    fused_numeric_admission,
                 )?
             } else {
                 0

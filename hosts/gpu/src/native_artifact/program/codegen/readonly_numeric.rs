@@ -37,6 +37,12 @@ pub(in crate::native_artifact) struct Report {
     pub successful_backedge_helpers: usize,
     pub maximum_source_instructions: usize,
     pub fixed_template_instructions: usize,
+    pub scalar_input_loads: usize,
+    pub scalar_output_stores: usize,
+    pub entry_shadow_argument_copies: usize,
+    pub private_boundary_words: usize,
+    pub source_home_words: usize,
+    pub runtime_scalar_path_walks: usize,
 }
 
 fn slots(
@@ -101,7 +107,64 @@ pub(in crate::native_artifact) fn emit_entry(
             "numeric backend homes exceed independent boundary inventory",
         ));
     }
-    let words = Words::new(b, locals, code, slots)?;
+    let bank = if proof.scalar_inputs.is_empty() {
+        b.ins().iconst(types::I64, 0)
+    } else {
+        b.ins()
+            .load(types::I64, MemFlags::new(), hooks.arguments, 16)
+    };
+    let words = Words::new_with(b, locals, code, slots, |b, slot| {
+        if !(shadow..shadow + proof.words).contains(&slot) {
+            return Ok(None);
+        }
+        let relative = slot - shadow;
+        if let Some(binding) = proof
+            .scalar_inputs
+            .iter()
+            .find(|binding| binding.word == relative)
+        {
+            let at = binding
+                .physical
+                .checked_mul(2)
+                .ok_or_else(|| backend("numeric scalar import offset overflows"))?;
+            return Ok(Some(b.ins().load(
+                types::I64,
+                MemFlags::new(),
+                bank,
+                offset(at)?,
+            )));
+        }
+        let metadata_input = proof.arrays.iter().enumerate().any(|(array, _)| {
+            (proof.view(array)..proof.view(array) + 4).contains(&relative)
+                || proof.capacity(array) == Some(relative)
+        });
+        if metadata_input {
+            Ok(Some(b.ins().load(
+                types::I64,
+                MemFlags::new(),
+                hooks.arguments,
+                offset(2 + relative)?,
+            )))
+        } else {
+            Ok(Some(b.ins().iconst(types::I64, 0)))
+        }
+    })?;
+    // Every ordinary scalar operand home is retained conservatively. Private
+    // virtual-frame intermediates have no cold consumer: reconciliation reads
+    // only current carrier/result leaves and exact view/flag/capacity lanes.
+    let source_homes = super::numeric_words::source_slots(
+        code,
+        proof.sites.iter().copied(),
+        &proof.actions,
+        core::iter::empty(),
+    )?;
+    let mut live = source_homes.clone();
+    live.extend(region.words..region.words + 3);
+    let mut private_live = BTreeSet::new();
+    private_live.extend(proof.scalar_inputs.iter().map(|binding| binding.word));
+    private_live.extend(proof.scalar_outputs.iter().map(|binding| binding.word));
+    private_live.extend(proof.scalar_words..proof.words);
+    live.extend(private_live.iter().map(|word| shadow + word));
     let setup_work = b.func.dfg.num_insts() - setup_start;
     let exit = b.create_block();
     let bailout = b.create_block();
@@ -137,6 +200,12 @@ pub(in crate::native_artifact) fn emit_entry(
         successful_backedge_helpers: 0,
         maximum_source_instructions: 0,
         fixed_template_instructions: 0,
+        scalar_input_loads: proof.scalar_inputs.len(),
+        scalar_output_stores: (proof.scalar_inputs.len() + proof.scalar_outputs.len()) * 2,
+        entry_shadow_argument_copies: 0,
+        private_boundary_words: private_live.len(),
+        source_home_words: source_homes.len(),
+        runtime_scalar_path_walks: 0,
     };
     for &site in &proof.sites {
         b.switch_to_block(target(site as u32));
@@ -280,7 +349,7 @@ pub(in crate::native_artifact) fn emit_entry(
                 b.ins().brif(valid, good, &[], bad, &[]);
                 b.switch_to_block(bad);
                 set_origin(b, frame, site as u64);
-                words.spill_all(b, locals)?;
+                words.spill_live(b, locals, &live)?;
                 tail::failure(controls.options(), b, locals, closed, site, hooks, error)?;
                 let Action::LibraryCall { operands, .. } = code.blocks()[site].action() else {
                     return Err(backend("numeric read lost selected call"));
@@ -395,7 +464,7 @@ pub(in crate::native_artifact) fn emit_entry(
     }
     let boundary = b.func.dfg.num_insts();
     b.switch_to_block(bailout);
-    words.spill_all(b, locals)?;
+    words.spill_live(b, locals, &live)?;
     let header = b.ins().iconst(types::I64, region.tail.header() as i64);
     tail::leave(
         controls.options(),
@@ -409,12 +478,12 @@ pub(in crate::native_artifact) fn emit_entry(
     )?;
     b.ins().jump(ordinary, &[]);
     b.switch_to_block(exit);
-    words.spill_all(b, locals)?;
+    words.spill_live(b, locals, &live)?;
     b.ins()
         .jump(ordinary_blocks[region.tail.exit() as usize].unwrap(), &[]);
     b.switch_to_block(failed);
     let status = b.block_params(failed)[0];
-    words.spill_all(b, locals)?;
+    words.spill_live(b, locals, &live)?;
     b.ins().jump(error, &[status.into()]);
     report.fixed_template_instructions = setup_work + b.func.dfg.num_insts() - boundary;
     if report.fixed_template_instructions as u64 > proof.boundary_work {

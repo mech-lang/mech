@@ -11,8 +11,10 @@ type Admit = unsafe extern "C" fn(*mut c_void, u64) -> u64;
 pub(super) struct Counts {
     // Admission attempts include visits composed inside zero-word helpers.
     pub admits: BTreeMap<u64, u64>,
+    pub admission_callbacks: BTreeMap<u64, u64>,
     pub helpers: BTreeMap<(u64, u64), u64>,
     pub selected: u64,
+    pub fused_numeric_entries: u64,
     pub poisoned_exit_words: usize,
     pub poisoned_private_homes: usize,
     pub checked_private_homes: usize,
@@ -38,7 +40,11 @@ fn private_homes(
     unsafe { locals.add(start) }
 }
 unsafe extern "C" fn admit(context: *mut c_void, site: u64) -> u64 {
-    COUNTS.with(|v| *v.borrow_mut().admits.entry(site).or_default() += 1);
+    COUNTS.with(|v| {
+        let mut counts = v.borrow_mut();
+        *counts.admits.entry(site).or_default() += 1;
+        *counts.admission_callbacks.entry(site).or_default() += 1;
+    });
     // SAFETY: run retains and restores this same synchronous callback/context.
     unsafe { ADMIT.with(Cell::get).unwrap()(context, site) }
 }
@@ -53,11 +59,27 @@ unsafe extern "C" fn helper(
 ) -> u64 {
     if matches!(
         GlobalHelper::decode(op),
-        GlobalHelper::AdmitMove | GlobalHelper::AdmitStructuralObservation
+        GlobalHelper::AdmitMove
+            | GlobalHelper::AdmitStructuralObservation
+            | GlobalHelper::AdmitNumericSegmentBegin
     ) {
         COUNTS.with(|v| *v.borrow_mut().admits.entry(site).or_default() += 1);
     }
-    COUNTS.with(|v| *v.borrow_mut().helpers.entry((site, op)).or_default() += 1);
+    let fused_numeric = op == GlobalHelper::AdmitNumericSegmentBegin.raw();
+    if fused_numeric {
+        COUNTS.with(|v| v.borrow_mut().fused_numeric_entries += 1);
+    }
+    let logical_op = if fused_numeric {
+        GlobalHelper::NumericSegmentBegin.raw()
+    } else {
+        op
+    };
+    COUNTS.with(|v| {
+        *v.borrow_mut()
+            .helpers
+            .entry((site, logical_op))
+            .or_default() += 1
+    });
     if op == GlobalHelper::NumericSegmentEnd.raw() && POISON_UNUSED_EXIT.with(Cell::get) {
         // SAFETY: the synchronous checked entry retains this same Invocation;
         // no reference crosses the delegated helper or generated continuation.
@@ -102,11 +124,9 @@ unsafe extern "C" fn helper(
     }
     // SAFETY: unchanged arguments and result pointer from the checked entry.
     let status = unsafe { HELPER.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
-    if op == crate::native_artifact::program::protocol::GlobalHelper::NumericSegmentBegin.raw()
-        && status == 0
-    {
+    if logical_op == GlobalHelper::NumericSegmentBegin.raw() && status == 0 {
         // SAFETY: the original helper has successfully filled its live result.
-        let selected = unsafe { *out };
+        let selected = unsafe { *out } >> u32::from(fused_numeric);
         if selected == 1 && POISON_UNUSED_EXIT.with(Cell::get) {
             // Poison the unused physical homes before selected SSA entry. The
             // body must initialize from arguments, and no exit may spill here.
