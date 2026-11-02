@@ -6,6 +6,124 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Hosted CI is not awaited under
 instruction; no green hosted-CI claim is made.
 
+## R119: complete nested path phases, original source fixed
+
+Base **`e7acd5c17bc1f73f424f1a375563d8c77796f06a`**; representation extraction
+`48f42c2371`; production compiler **`99fef709f1d984e32ad22e5c8929e8dfd0ff0984`**.
+The compiler comparison uses retained R116 `509c0d8e05a234020372b43832d7785f255c1b59`
+and the identical original pinned source/bytecode on both sides. R118's source
+variant is excluded from these timings. IR/work/ABI/MBC are **146/100/38/14**.
+
+| Complete level-12 elapsed cohort | Before / Roc | R119 / Roc | Reduction |
+|---|---:|---:|---:|
+|8B, four prepared pairs|8.584585×|8.243080×|3.978123%|
+|1KB random, no matches|105.755961×|72.897517×|31.070064%|
+|1KB repeated `a`, many matches|175.226011×|58.371386×|66.687944%|
+
+Fresh common reference medians are respectively0.283/0.297/0.317ms. Mech medians
+are2.4294375→2.3327915ms,31.4095205→21.6505625ms and55.5466455→18.5037295ms.
+All4 prepared pairs and64 descriptive8B blocks improve; all8 alternating blocks
+improve in each1KB cohort. Preserve3,968 primary/3,984 total8B observations and
+128 observations per version in each separate1KB cohort. Do not pool or compound
+these results. Largest timed input remains1KB; parity remains1×.
+
+The path root and its two nested match/length state machines now execute under
+one checked numeric plan, current views, private nodes owner and native fuel.
+Six views retain the five invariant input tables and current growing nodes;
+scalar/enum arguments and results remain native. Selected path iterations136
+and170 each include all three loops,398 source sites,94 scalar operations,
+10 typed loads and one append. Actual generated success backedges contain zero
+helpers. Two identical complete-call diagnostic traces per size confirm the
+replaced path segments disappear:1KB path alias exports **18,450→0**, including
+18,432 per-position exports and18 terminal exports. Across the complete call,
+ordinary admissions fall100,264→48,025, helpers96,648→72,063 and segment alias
+exports39,527→21,077. These are callback/export counts, not allocation counts.
+
+Separate hardware/heap cohorts show:
+
+| Metric per complete call |8B before→after|1KB random before→after|1KB repeated `a` before→after|
+|---|---:|---:|---:|
+|Retired instructions|26,164,238→24,973,897.5|494,401,360→337,779,025|947,224,009→300,909,708.5|
+|CPU cycles|7,218,221.5→6,874,517.5|100,771,717.5→68,846,886|179,882,224.5→58,976,932|
+|Allocation requests|4,257→4,101|47,796→29,391|40,631→16,091|
+|Requested bytes|95,876,945→17,728,849|7,523,247,338→19,981,650|10,023,567,217→19,212,913|
+|Incremental peak live usable bytes|17,782,424→15,175,816|17,773,224→15,174,280|17,784,368→15,178,400|
+
+Hardware uses32 observations per subject, heap8 per Mech subject; reference
+hardware/heap each32 where collected. Reference1KB random instructions are
+1,690,857 and heap requests84. Repeated-data reference hardware/heap was not
+collected. All68 reallocations per Mech call remain. Requested capacity is not
+initialized/copied bytes. Whole-harness1KB random RSS is319,258,624→318,963,712B,
+physical footprint228,968,192→228,607,744B and between-call allocator live bytes
+144,335,128→144,345,464B. This harness embeds compiler/JIT seed/clear support and
+the full prepared plan; these are not minimum runtime-only AOT memory figures.
+No zero-copy input claim is made.
+
+Generated text grows14,584,260→14,780,140B (**+195,880B**); entry stack
+134,960→144,528B (**+9,568B**). Whole1KB harness text grows63,660,224→63,966,888B;
+the reference harness text is195,132B. The whole-binary figures include host
+support and must stay separate from generated compressor text. Native binaries
+and Objects remain local.
+
+Fresh serial profiles cover130 complete calls per Mech subject at each1KB input.
+Random-data exclusive context weights: generated3.83→5.28%, other host callbacks
+82.06→78.05%, cleanup9.13→11.54%, private-frame callbacks3.53→3.92%. Match-rich
+generated share rises9.63→16.83%, other callbacks fall74.15→69.39%. Remaining
+hot symbols include numeric-segment entry/settlement, account debits, owner
+retirement and thread-local access. Those callbacks also include useful algorithm
+work. A separate long reference harness profile places1,505/1,521 weights
+(98.95%) in generated reference functions; opaque symbols are not assigned
+source names. CPU-time sample weights are not retired-instruction partitions.
+
+Original/decoded/restored witnesses now require complete three-loop selection,
+zero hot child handoffs and constant boundary counts as positions increase.
+The growing-array witness reads appended nodes and their new length on the next
+child visit, preserves the older external alias, fails after prior mutation,
+keeps published output unchanged and retries successfully. Controls retain fresh
+Boolean arguments, assertion/bounds/division precedence and origins, checked
+overflow, metadata tamper rejection, finite funding after a nonempty native
+prefix, capacity fallback without duplicate append and admission-bound overflow
+falling back before source checks.
+
+Passing inventories: nested phase9, selected native74, profile-compatible GPU
+units499, unchanged component236, connected8, structural path1, explicit native
+path/entry controls4, retained source-variant components3/complete1, workflow132,
+scalar original/decoded12 (unchanged1.05× gate, worst1.032241×, no request/byte
+increase), architecture/catalog15 and runtime-only metadata with warnings as
+errors. Existing finite path allowances/goldens stay unchanged; separate
+NoLimits controls require the real path phase rather than accepting fallback.
+CI inventory repairs `fd466b3aef`/`c005ad976a` are separately reviewable.
+
+The initial broad selected-dependency GPU run passed498 and failed8. All8 also
+fail on clean parent `e7acd5c` with the same frozen dependencies. One inherited
+stale ABI34 assertion is repaired separately in `1532e432ff` and its test passes.
+Seven inherited configuration failures remain explicitly excluded from the499:
+five batched tests lack the GPU f32 feature, one lacks matrix/matmul and one lacks
+stats/sum in the selected registry. Their exact commands and parent failures
+are archived. This is not a claim that a full-feature CI run is green.
+
+Exact raw bytes, independent inflate, input aliases, capacities13/1,029,
+clear/rebind outside `evaluate_into` and final managed bytes/nodes zero hold
+throughout. Original algorithm/tables/search limits/depth300/nice258/near-EOF
+limits,262,144U16 tree,1,500,513U32 cache,305,257U64 path reservation and pinned
+allocator remain unchanged. Source SHA256 remains
+`331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9`;
+revision14 MBC SHA256 remains
+`a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7`.
+
+The initial conservative outer-traversal funding guard is397,217,883,291,064;
+actual traversals, not that maximum, determine charges. Existing1e12 finite
+component budgets lawfully fall back. A tighter compositional length bound,
+nested growth/exhaustion, child managed results and worker/scoped funding remain
+future work. Preparation also repeatedly reconstructs definition facts; that is
+a known compile/restore cost outside these `evaluate_into` timings. Keep these
+limitations explicit before selecting the next measured compiler change.
+
+No fresh Core/no_std/all-features/minimal dependency rebuild, linked40/frame8
+rerun, hosted CI completion, review approval or full-scale timing is claimed.
+The compact index supplies immutable journals, source revisions, exact commands,
+counter/profile scopes and deterministic offline report reconstruction.
+
 ## R118: zero-trip source variant; R116 compiler unchanged
 
 Compiler control **`509c0d8e05a234020372b43832d7785f255c1b59`**; published base

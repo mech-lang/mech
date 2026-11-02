@@ -72,6 +72,59 @@ enter map admission. Frame assignment retains scalar + iteration + aggregate +
 borrowed + closed words, then relocates owner words once. Unselected frontiers
 remain in the identity transcript.
 
+## Complete synchronous numeric phases
+
+R119 extends numeric lowering over the existing canonical CFG. The common
+`numeric_plan` vocabulary supplies operations, buffer bindings, scalar homes and
+result recipes to leaf loops, parent segments and complete phases. Existing
+scalar emission and `SsaWords` remain shared. There is no second IR, guest
+dispatcher, unrolling or function-name specialization.
+
+Preparation first derives a root tail and eligible synchronous descendants,
+then selects a nonoverlapping execution owner before parent composition. A
+selected phase owns its source sites; its children do not retain separate
+entry/exit protocols or parent segments. Uncovered cases retain the existing
+leaf/segment and ordinary paths. These adapters still cover effects beyond the
+initial phase contract and are not yet eligible for blanket deletion.
+
+The initial contract permits unsigned packed views, one root append owner,
+scalar/fixed-aggregate child results and scalar enum transitions. Child effects
+are read-only during each invocation. Definitions and branches are resolved in
+the current traversal; the acyclic order cuts all declared loop backedges and
+rejects remaining cycles or unsupported edges. Mutations must follow all child
+calls in that outer traversal so a first-change bridge cannot spend fuel needed
+by a later child. Collections, activations, escaping managed child results,
+unknown progress/effects, workers and active maintained scopes decline.
+
+Array provenance identifies a binding; current-version validation separately
+proves every child read, forwarded carrier and result uses the current functional
+version. The parent's logical length and append contents remain current on the
+next child visit. Core establishes exclusive storage at first effective change
+or preserves a live older alias through its existing copy path. Parent/child
+scalars and traversal counters have distinct logical homes; only separate phases
+share the outer scratch bank. Generated child entry, latch, return and scalar
+results are direct control flow inside one numeric loan and private-owner state.
+
+At the original outer header, checked sufficient envelopes admit one complete
+traversal and its children. Overflow or insufficient credit/capacity settles the
+completed native prefix and resumes the ordinary header before new source work.
+The envelope is not the debit: generated counters and local fuel charge each
+actually reached traversal at its policy price. Settlement independently
+reconciles the fuel difference with the sum of those traversal prices. First
+change spills counters/scalars, settles, invokes the original operation and
+resumes the already funded traversal; it does not renew fuel or replay append.
+Failure cleans up unpublished state and retains original source origins/order.
+Publication remains at real exits. Cold growth within an active nested child is
+outside this first contract.
+
+Build-owned image validation independently reconstructs phase membership,
+bindings/current versions, homes, bounds, debit identities and result recipes
+from the validated program. Serialized metadata grants no raw-view authority.
+The emitted fixed boundary is bounded from the phase's word inventory, then
+checked against the actual emitted instruction count. The new current versions
+are typed IR146 and work100, with ABI38 and bytecode14 unchanged; the version
+numbers below describe the historical consolidation baseline.
+
 ## Runtime and protocols
 
 One ExecutionState owns control, arena, collections/maps, retained calls,
