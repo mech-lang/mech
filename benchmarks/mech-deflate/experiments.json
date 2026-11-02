@@ -10085,8 +10085,8 @@
           "manifest_sha256": "1aa799a09f5ad399c5e5d5e1e8b12d9be736689a69f204726a45ca1bee310a92",
           "bytes": 159991,
           "files": 50,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-primary-reference-c56e25ce0dab.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r117-primary-reference-c56e25ce0dab.tar.gz"
         },
         {
           "event": "primary-group0",
@@ -10096,8 +10096,8 @@
           "manifest_sha256": "22f1f0ba7cbb60a00e109ce490f9b527326dc109ea4b39598a4f99b53c6832fc",
           "bytes": 101794,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-primary-group0-56eefa23e2ba.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r117-primary-group0-56eefa23e2ba.tar.gz"
         },
         {
           "event": "primary-group1",
@@ -10107,8 +10107,8 @@
           "manifest_sha256": "259dbcfbdd3edb4c33c7b0248cf493527ed8bd0cc1ca0c4eb7893125b87eba37",
           "bytes": 101888,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-primary-group1-5ded7ad09d7b.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r117-primary-group1-5ded7ad09d7b.tar.gz"
         },
         {
           "event": "primary-group2",
@@ -10118,8 +10118,8 @@
           "manifest_sha256": "64d564d8a348e77f8f80b70e636ad710e40e23b7349ed373d5099184d425e4ac",
           "bytes": 101931,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-primary-group2-8b98dda485fe.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r117-primary-group2-8b98dda485fe.tar.gz"
         },
         {
           "event": "primary-group3",
@@ -10129,8 +10129,8 @@
           "manifest_sha256": "4b7944e9556152f559ae82c0935720e0efe5fed8e064a6e75d0e52e3af6218cf",
           "bytes": 102001,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-primary-group3-30ec1fe4deb8.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r117-primary-group3-30ec1fe4deb8.tar.gz"
         },
         {
           "event": "primary-summary",
@@ -10140,8 +10140,7 @@
           "manifest_sha256": "feef236501dd03f092254d151349c6d864939c560e5752a7a27272775692ab9b",
           "bytes": 73823,
           "files": 49,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-primary-summary-1d8988fba65f.tar.gz",
+          "publication": "published; server SHA-256 verified",
           "timing": {
             "primary_observations": 3968,
             "reference_seconds": 0.000285,
@@ -10157,7 +10156,8 @@
             "improving_groups": 0,
             "improving_blocks": 13,
             "adverse_blocks": 51
-          }
+          },
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r117-primary-summary-1d8988fba65f.tar.gz"
         },
         {
           "event": "scale-measure-1024",
@@ -10167,8 +10167,8 @@
           "manifest_sha256": "d897e8e7a0a500cf3198e0749f7c9c43cd73726a09769e76daa5af11c44ef3c3",
           "bytes": 92107,
           "files": 63,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-scale-measure-1024-40ee8bce6576.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r117-scale-measure-1024-40ee8bce6576.tar.gz"
         },
         {
           "event": "counters",
@@ -10178,8 +10178,8 @@
           "manifest_sha256": "e6b2895007bfaadded862124f5646c4082d76c8a0173dad4b90504732834fb97",
           "bytes": 263160,
           "files": 87,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-counters-bd52895c3659.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r117-counters-bd52895c3659.tar.gz"
         },
         {
           "event": "scale-counters",
@@ -10189,8 +10189,8 @@
           "manifest_sha256": "9872a55bf0ef2dd02f4bc753b1f3aed3d55ee4c4aad93ed4358b631c36122f2b",
           "bytes": 96901,
           "files": 80,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-scale-counters-6e1222225417.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r117-scale-counters-6e1222225417.tar.gz"
         },
         {
           "event": "isolated-profile",
@@ -10200,8 +10200,8 @@
           "manifest_sha256": "4e772f7250b7869ca3f25e76e3d1db12a886e90b013db4bc3755f8a748592124",
           "bytes": 274361,
           "files": 57,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-isolated-profile-68298d63bb7a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r117-isolated-profile-68298d63bb7a.tar.gz"
         },
         {
           "event": "isolated-profile-scale",
@@ -10211,8 +10211,8 @@
           "manifest_sha256": "653aeacbd335ba98e6d05dda669a21251b11fece84b66b51b9387abefda40752",
           "bytes": 334873,
           "files": 59,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-isolated-profile-scale-3bb5440c9650.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r117-isolated-profile-scale-3bb5440c9650.tar.gz"
         },
         {
           "event": "phase-diagnostic-before",
@@ -10222,8 +10222,8 @@
           "manifest_sha256": "f2aeabcab6fbf611ebf7e15b6536fd01867e8f766557e5c063ea0f04e57d1020",
           "bytes": 157054,
           "files": 72,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-phase-diagnostic-before-fef5349bd31a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r117-phase-diagnostic-before-fef5349bd31a.tar.gz"
         },
         {
           "event": "retirement-census-before",
@@ -10233,8 +10233,8 @@
           "manifest_sha256": "44da3d85b823cc57dcfa91ce0d217d1210b390a2c56213d2f7810bc36f49905c",
           "bytes": 141341,
           "files": 65,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-retirement-census-before-35223a8c0505.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r117-retirement-census-before-35223a8c0505.tar.gz"
         },
         {
           "event": "retirement-census-after",
@@ -10244,8 +10244,8 @@
           "manifest_sha256": "fdcc5e2ef99fa73777a9ca324d966cd991a059767d250f3345a0891739705adc",
           "bytes": 142104,
           "files": 65,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-retirement-census-after-38d274d698d3.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r117-retirement-census-after-38d274d698d3.tar.gz"
         },
         {
           "event": "retirement-binary",
@@ -10255,8 +10255,8 @@
           "manifest_sha256": "14cdeac891acf558e2b4373b1a24155dfa8549b25a97a4401f14e1e525ffc237",
           "bytes": 78464,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-retirement-binary-1715a63e44a3.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r117-retirement-binary-1715a63e44a3.tar.gz"
         },
         {
           "event": "closure",
@@ -10266,8 +10266,8 @@
           "manifest_sha256": "c639d33e39a71ec3c77ea2468ab10b11d04641975cff99190a214ad94e9de419",
           "bytes": 4877410,
           "files": 166,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-closure-2f144f349710.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r117-closure-2f144f349710.tar.gz"
         },
         {
           "event": "analysis-final",
@@ -10277,13 +10277,13 @@
           "manifest_sha256": "c72723d020e3a272c11b3f0abad10cde136e3215665387c49148309d806d5f63",
           "bytes": 94318,
           "files": 55,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-analysis-final-be11c35074a3.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r117-analysis-final-be11c35074a3.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "retained": false,
       "versions": [
         145,
