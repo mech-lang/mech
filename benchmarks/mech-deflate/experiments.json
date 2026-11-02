@@ -8093,7 +8093,7 @@
       "base": "ac80ae5e7766c0aef16978f5ba39b90aafd198c2",
       "production": "705c5acdc4fc92be5beeacf28d02721ea4e39ddf",
       "compiler_source": "705c5acdc4fc92be5beeacf28d02721ea4e39ddf",
-      "decision": "under measurement",
+      "decision": "retain: 8B time -1.295113%, 1KB -1.829872%; instructions -0.562510%/-0.987482%; heap demand unchanged; helper stack +80B",
       "events": [
         {
           "event": "initial",
@@ -8275,11 +8275,31 @@
           "files": 57,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round108-20261102/archives/r107-isolated-profile-scale-ac34d82de91f.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "705c5acdc4fc92be5beeacf28d02721ea4e39ddf",
+          "asset": "r107-closure-246fc503bef0.tar.gz",
+          "sha256": "246fc503bef0830987497575a094820d7c571534fa5a6362508e8401ef4466ca",
+          "manifest_sha256": "7f14655fdf1f24077b8dbf1d30c6ba45f108159dea4463ae31b0c33892ccf553",
+          "bytes": 5084399,
+          "files": 377,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round108-20261102/archives/r107-closure-246fc503bef0.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "671f0a8b8cdeb29ccf233fd014e9708e2cfdb2fbe72a5dca024cc13416e707a8",
+          "profile-numbers.json": "c5c88c3fc2a5fc7b53c1016adcfb600296976c8099df2d4008f3feb2e2562770",
+          "scorecard.json": "9233c20576534b8a131b7b77c6a32714ce210f87c269becc3aff977b8fcf6c80",
+          "validation.json": "07952e389171cfd7e5b33f458130db5f29a1aab78254854b5d83b25776a78fc4"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
