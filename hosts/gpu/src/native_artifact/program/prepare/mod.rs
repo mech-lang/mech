@@ -576,6 +576,7 @@ pub(in crate::native_artifact) fn validate_type_slots(
 
 pub(in crate::native_artifact) mod captured_numeric;
 pub(in crate::native_artifact) mod readonly_numeric;
+pub(in crate::native_artifact) mod numeric_tree;
 pub(in crate::native_artifact) mod retirement;
 
 pub(in crate::native_artifact) fn constant_admission_total(bounds: &[u64]) -> Result<u64, String> {

@@ -12,6 +12,28 @@ impl Pending {
     pub(super) fn current(&self) -> Option<usize> {
         self.0.map(|value| value.get() - 1)
     }
+    /// Replace only a sealed loop-tree's scalar edge marker. The caller has
+    /// independently checked both markers against the current source ancestry;
+    /// this neither borrows an owner nor admits an unvisited ordinary action.
+    pub(super) fn reconcile_tree(
+        &mut self,
+        previous: Option<usize>,
+        current: Option<usize>,
+    ) -> Result<(), Error> {
+        if self.current() != previous {
+            return Err(invalid("numeric tree changed its pending parent edge"));
+        }
+        let next = current
+            .map(|value| {
+                value
+                    .checked_add(1)
+                    .and_then(NonZeroUsize::new)
+                    .ok_or_else(|| invalid("numeric tree parent edge overflows"))
+            })
+            .transpose()?;
+        self.0 = next;
+        Ok(())
+    }
     fn arm(&mut self, child: usize, outer: Option<usize>) -> Result<(), Error> {
         if self.current() != outer {
             return Err(invalid("parent child edge differs from active ancestor"));

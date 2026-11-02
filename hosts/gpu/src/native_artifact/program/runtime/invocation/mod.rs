@@ -12,6 +12,7 @@ mod captured_numeric;
 pub(super) mod continuation;
 mod helper_fallbacks;
 mod numeric_segments;
+mod numeric_tree;
 mod numeric_writes;
 mod readonly_numeric;
 mod selected_calls;

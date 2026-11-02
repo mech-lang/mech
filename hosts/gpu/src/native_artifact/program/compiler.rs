@@ -286,6 +286,13 @@ impl NativeProgramObject {
             let result = crate::native_artifact::program::prepare::captured_numeric::derive(&prepared.plan, tail, &prepared.calls);
             Some(serde_json::json!({"iteration":iteration,"header":tail.header(),"parent":tail.parent(),"scalar_carrier_words":prepared.scalar_aggregates.slot(tail.carrier()),"native_initializer":prepared.scalar_aggregates.action(tail.initialize() as usize).is_some(),"proof_eligible":result.is_ok(),"selected":prepared.closed_tails.regions.iter().any(|region| region.iteration as usize == iteration && region.captures.is_some()),"rejection":result.err()}))
         }).collect::<Vec<_>>());
+        metadata["numeric_tree_candidates"] = serde_json::json!(prepared.plan.iterations().iter().enumerate().filter_map(|(iteration, control)| {
+            let mech_engine::native_artifact::NativeControlLoop::Tail(tail) = control else { return None };
+            if prepared.buffer_frames.fields(tail.carrier()).is_none() { return None }
+            let result = crate::native_artifact::program::prepare::numeric_tree::discover(&prepared.plan,tail)
+                .and_then(|tree| crate::native_artifact::program::prepare::readonly_numeric::derive_tree(&prepared.plan,tail,&prepared.buffer_frames,&prepared.scalar_aggregates,&prepared.calls,&tree).map(|_|tree.nodes.len()));
+            Some(serde_json::json!({"iteration":iteration,"header":tail.header(),"parent":tail.parent(),"proof_eligible":result.is_ok(),"nodes":result.as_ref().ok(),"rejection":result.err(),"selected":prepared.closed_tails.regions.iter().any(|region| region.iteration as usize==iteration && region.numeric_tree.is_some())}))
+        }).collect::<Vec<_>>());
         metadata["numeric_parent_partitions"] = serde_json::json!(prepared.compositions);
         metadata["compiled_numeric_segments"] = serde_json::json!(&self.codegen.numeric_segments);
         metadata["compiled_readonly_numeric_loops"] =

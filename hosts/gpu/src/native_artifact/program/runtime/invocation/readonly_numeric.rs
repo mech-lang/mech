@@ -3,6 +3,7 @@
 use super::{Error, Invocation, invalid};
 use crate::native_artifact::program::prepare::readonly_numeric::Operation;
 use crate::native_artifact::program::runtime::amount;
+use crate::native_artifact::program::runtime::buffer_frames::BufferFrames;
 use crate::native_artifact::program::runtime::buffer_frames::Field;
 use mech_engine::native_artifact::NativeIterationAction as Action;
 
@@ -41,10 +42,40 @@ impl Invocation<'_, '_, '_> {
         let Some(entry_work) = entry_work else {
             return Ok(false);
         };
+        let mut cold_scalar_work = Some(0u64);
+        for (_, bindings) in &proof.cold_scalars {
+            for binding in bindings {
+                if !self
+                    .state
+                    .buffer_frames
+                    .empty_scalar_binding(binding.physical)
+                {
+                    return Ok(false);
+                }
+                cold_scalar_work = cold_scalar_work.and_then(|n| {
+                    n.checked_add((binding.steps as u64).checked_mul(64)?.checked_add(64)?)
+                });
+            }
+        }
+        let Some(entry_work) = cold_scalar_work.and_then(|n| n.checked_add(entry_work)) else {
+            return Ok(false);
+        };
+        let Some(cold_alias_count) = proof
+            .cold_aliases
+            .iter()
+            .try_fold(0usize, |n, (_, aliases)| n.checked_add(aliases.len()))
+        else {
+            return Ok(false);
+        };
+        let Some(entry_work) =
+            entry_work.checked_add(BufferFrames::cold_publication_work(cold_alias_count)?)
+        else {
+            return Ok(false);
+        };
         let Some((remaining, _)) = self.state.library.unscoped_remaining() else {
             return Ok(false);
         };
-        let publication_work = if let Some(array) = proof.result.direct_array() {
+        let mut publication_work = if let Some(array) = proof.result.direct_array() {
             self.state
                 .buffer_frames
                 .managed_owner(
@@ -58,6 +89,32 @@ impl Invocation<'_, '_, '_> {
         } else {
             Some(0)
         };
+        // Tickets bind empty current slots, exact schemas and this arena
+        // generation before entering generated code. They retain no Value and
+        // therefore cannot introduce a hidden COW alias during a private loan.
+        for (_, aliases) in &proof.cold_aliases {
+            for alias in aliases {
+                let Some(array) = proof.arrays.get(alias.array) else {
+                    return Err(invalid("numeric cold alias has a foreign array"));
+                };
+                let Some(owner) = self.state.buffer_frames.managed_owner(
+                    &metadata.buffer_frames,
+                    region.tail.carrier(),
+                    array.field,
+                ) else {
+                    return Err(invalid("numeric cold alias lost its current owner"));
+                };
+                let Some(work) = self.state.arena.native_alias_put_work(
+                    alias.value,
+                    owner,
+                    &self.state.control.work,
+                )?
+                else {
+                    return Ok(false);
+                };
+                publication_work = publication_work.and_then(|n| n.checked_add(work));
+            }
+        }
         if publication_work
             .and_then(|n| n.checked_add(entry_work))
             .is_none_or(|n| n > remaining)
@@ -184,7 +241,7 @@ impl Invocation<'_, '_, '_> {
                 return Err(invalid("numeric scalar has no current word"));
             }
         }
-        if proof.writes() || proof.result.direct_array().is_some() {
+        if proof.writes() || proof.result.direct_array().is_some() || cold_alias_count != 0 {
             let publication = if let Some(array) = proof.result.direct_array() {
                 let owner = self
                     .state
@@ -210,6 +267,7 @@ impl Invocation<'_, '_, '_> {
                 proof.arrays.len(),
                 proof.arrays.iter().any(|a| a.appends),
                 publication,
+                cold_alias_count,
                 &memory,
             )? {
                 return Ok(false);
@@ -226,8 +284,32 @@ impl Invocation<'_, '_, '_> {
                 };
                 *self.state.buffer_frames.append_preparation_mut(id, at)? = Some(preparation);
             }
+            for (index, alias) in proof
+                .cold_aliases
+                .iter()
+                .flat_map(|(_, aliases)| aliases)
+                .enumerate()
+            {
+                let owner = self
+                    .state
+                    .buffer_frames
+                    .managed_owner(
+                        &metadata.buffer_frames,
+                        region.tail.carrier(),
+                        proof.arrays[alias.array].field,
+                    )
+                    .ok_or_else(|| invalid("numeric cold alias lost its admitted owner"))?;
+                let ticket = self.state.arena.prepare_put(
+                    alias.value,
+                    owner,
+                    &mut self.state.control.work,
+                )?;
+                self.state
+                    .buffer_frames
+                    .set_private_alias(id, index, alias.value, ticket)?;
+            }
         }
-        if !proof.scalar_inputs.is_empty() {
+        if !proof.scalar_inputs.is_empty() || region.numeric_tree.is_some() {
             let bank = self
                 .state
                 .buffer_frames
@@ -266,7 +348,13 @@ impl Invocation<'_, '_, '_> {
         if mode == 5 {
             return Ok(());
         }
-        if proof.writes() || proof.result.direct_array().is_some() {
+        if proof.writes()
+            || proof.result.direct_array().is_some()
+            || proof
+                .cold_aliases
+                .iter()
+                .any(|(_, aliases)| !aliases.is_empty())
+        {
             for (at, array) in proof.arrays.iter().enumerate() {
                 if let Some(private) = self.state.buffer_frames.private_array_mut(id, at)?.take() {
                     let length = if array.appends {

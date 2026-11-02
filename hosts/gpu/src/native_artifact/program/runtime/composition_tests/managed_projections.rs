@@ -11,12 +11,7 @@ fn managed_projection_aliases_execute_inside_parent_pieces() {
     for artifact in artifacts(SOURCE) {
         let mode = NativeProgramLimitMode::NoLimits;
         let memory = mode.memory_budget();
-        let jit = JitProgramArtifact::compile_with_limits(
-            &artifact,
-            &mech_stdlib::source_catalog(),
-            mode.compilation(),
-        )
-        .unwrap();
+        let jit = compile_parent_pieces(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let metadata = jit.descriptor().metadata();
         let projections = metadata
             .compositions

@@ -162,6 +162,12 @@ pub(in crate::native_artifact) enum Operation {
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
+pub(in crate::native_artifact) struct ColdAlias {
+    pub value: u32,
+    pub array: usize,
+}
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Proof {
     pub arrays: Vec<Array>,
     pub frames: Vec<FrameWords>,
@@ -175,6 +181,12 @@ pub(in crate::native_artifact) struct Proof {
     pub boundary_words: usize,
     pub boundary_work: u64,
     pub result: ResultRecipe,
+    /// Exact node-header continuation and current ancestor array values that
+    /// ordinary execution can still consume without replaying their producer.
+    pub cold_aliases: Vec<(usize, Vec<ColdAlias>)>,
+    /// Exact immutable scalar Frame shadows needed by a final header fallback.
+    /// These are restored only after the generated loan has finished.
+    pub cold_scalars: Vec<(usize, Vec<ScalarBinding>)>,
 }
 impl Proof {
     pub fn action(&self, site: usize) -> Option<&Operation> {
@@ -281,10 +293,18 @@ struct Provenance<'a, 'p> {
     calls: &'a [Option<NativePreparedLibraryCall>],
     cache: BTreeMap<(u32, Option<usize>), Option<usize>>,
     active: BTreeSet<(u32, Option<usize>)>,
+    /// Child carrier fields are identity phis rooted through the exact seed.
+    /// Their next/return values are independently checked before selection.
+    child_roots: BTreeMap<(u32, usize), usize>,
 }
 impl Provenance<'_, '_> {
     fn array(&mut self, value: u32, field: Option<usize>) -> Option<usize> {
         let key = (value, field);
+        if let Some(ordinal) = field {
+            if let Some(root) = self.child_roots.get(&(value, ordinal)) {
+                return Some(*root);
+            }
+        }
         if value == self.tail.carrier().get() {
             let ordinal = field?;
             return matches!(
@@ -374,6 +394,28 @@ pub(in crate::native_artifact) fn derive(
     aggregates: &NativeScalarAggregates,
     calls: &[Option<NativePreparedLibraryCall>],
 ) -> Result<Proof, &'static str> {
+    derive_inner(plan, tail, frames, aggregates, calls, None)
+}
+
+pub(in crate::native_artifact) fn derive_tree(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    tree: &super::numeric_tree::Proof,
+) -> Result<Proof, &'static str> {
+    derive_inner(plan, tail, frames, aggregates, calls, Some(tree))
+}
+
+fn derive_inner(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    tree: Option<&super::numeric_tree::Proof>,
+) -> Result<Proof, &'static str> {
     let fields = frames
         .fields(tail.carrier())
         .ok_or("carrier escapes or lacks an exact private frame")?;
@@ -397,7 +439,10 @@ pub(in crate::native_artifact) fn derive(
             continue;
         }
         let block = &plan.blocks()[site as usize];
-        if block.iteration() != Some(iteration) || plan.activation_boundary() == Some(site) {
+        if (tree.map_or(block.iteration() != Some(iteration), |tree| {
+            tree.node(site as usize).is_none()
+        })) || plan.activation_boundary() == Some(site)
+        {
             return Err("not a leaf: child loop or activation boundary");
         }
         match block.terminator() {
@@ -420,7 +465,33 @@ pub(in crate::native_artifact) fn derive(
         calls,
         cache: BTreeMap::new(),
         active: BTreeSet::new(),
+        child_roots: BTreeMap::new(),
     };
+    if let Some(tree) = tree {
+        for node in tree.nodes.iter().skip(1) {
+            if let Some(fields) = frames.fields(node.tail.carrier()) {
+                for (ordinal, field) in fields.iter().enumerate() {
+                    if matches!(field.lane(), Lane::Managed { .. }) {
+                        let root = provenance
+                            .array(node.tail.seed().get(), Some(ordinal))
+                            .ok_or("numeric child seed has an unknown array root")?;
+                        provenance
+                            .child_roots
+                            .insert((node.tail.carrier().get(), ordinal), root);
+                    }
+                }
+            } else if plan.values()[node.tail.carrier().get() as usize]
+                .scalar_kind()
+                .is_none()
+                && aggregates.slot(node.tail.carrier()).is_none()
+            {
+                return Err("numeric child carrier lacks exact private scalar/frame words");
+            }
+        }
+        // A failed cyclic lookup before a later child phi was known cannot be
+        // reused once the complete declared identity roots have been installed.
+        provenance.cache.clear();
+    }
     let mut arrays = Vec::new();
     for (ordinal, field) in fields.iter().enumerate() {
         if matches!(field.lane(), Lane::Managed { .. }) {
@@ -529,10 +600,13 @@ pub(in crate::native_artifact) fn derive(
                 }
                 Aggregate::Observe { source, .. } => values.push(*source),
             }
-            if !values
-                .into_iter()
-                .all(|value| results::scalar_aggregate(plan, aggregates, value))
-            {
+            if !values.into_iter().all(|value| {
+                results::scalar_aggregate(plan, aggregates, value)
+                    // Internal scalar FSM tags/payloads keep exactly the same
+                    // same-plan owner and guarded common emitter as ordinary
+                    // scalar execution. No managed word enters this component.
+                    || (tree.is_some() && aggregates.slot(value).is_some())
+            }) {
                 return Err("numeric aggregate requires exact private flat scalar fields");
             }
             Operation::Aggregate
@@ -649,16 +723,46 @@ pub(in crate::native_artifact) fn derive(
     if arrays.iter().any(|array| array.witness == usize::MAX) {
         return Err("unwitnessed retained array");
     }
-    versions::validate(
-        plan,
-        tail,
-        frames,
-        &mut provenance,
-        &sites,
-        &actions,
-        &arrays,
-        &result,
-    )?;
+    let cold_homes = if let Some(tree) = tree {
+        for node in tree.nodes.iter().skip(1) {
+            if let Some(fields) = frames.fields(node.tail.carrier()) {
+                for (ordinal, field) in fields.iter().enumerate() {
+                    if matches!(field.lane(), Lane::Managed { .. })
+                        && provenance.array(node.tail.next().get(), Some(ordinal))
+                            != provenance
+                                .child_roots
+                                .get(&(node.tail.carrier().get(), ordinal))
+                                .copied()
+                    {
+                        return Err("numeric child recursive edge changes its array root");
+                    }
+                }
+            }
+        }
+        versions::validate_tree(
+            plan,
+            tail,
+            frames,
+            &mut provenance,
+            &sites,
+            &actions,
+            &arrays,
+            &result,
+            tree,
+        )?
+    } else {
+        versions::validate(
+            plan,
+            tail,
+            frames,
+            &mut provenance,
+            &sites,
+            &actions,
+            &arrays,
+            &result,
+        )?;
+        versions::ColdHomes::default()
+    };
     let mut scalar_words = 0;
     let frame_words: Vec<FrameWords> = frame_values
         .into_iter()
@@ -762,6 +866,24 @@ pub(in crate::native_artifact) fn derive(
     } else {
         Vec::new()
     };
+    let cold_scalars = cold_homes
+        .scalars
+        .into_iter()
+        .map(|(header, values)| {
+            let mut bindings = Vec::new();
+            for value in values {
+                let frame = frame_words
+                    .iter()
+                    .find(|frame| frame.value == value)
+                    .ok_or("numeric cold scalar frame lost its shadow recipe")?;
+                if frame.arrays.iter().any(Option::is_some) {
+                    return Err("numeric cold scalar frame contains a managed lane");
+                }
+                bindings.extend(scalar_bindings(frames, value, &frame.scalar_paths)?);
+            }
+            Ok((header, bindings))
+        })
+        .collect::<Result<Vec<_>, &'static str>>()?;
     Ok(Proof {
         arrays,
         frames: frame_words,
@@ -774,6 +896,8 @@ pub(in crate::native_artifact) fn derive(
         boundary_words,
         boundary_work,
         result,
+        cold_aliases: cold_homes.aliases,
+        cold_scalars,
     })
 }
 

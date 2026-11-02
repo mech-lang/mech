@@ -43,6 +43,8 @@ pub(in crate::native_artifact) struct Report {
     pub private_boundary_words: usize,
     pub source_home_words: usize,
     pub runtime_scalar_path_walks: usize,
+    pub tree_nodes: Vec<usize>,
+    pub direct_child_edges: Vec<(usize, usize, usize)>,
 }
 
 fn slots(
@@ -79,6 +81,9 @@ pub(in crate::native_artifact) fn emit_entry(
         return Ok(());
     };
     let region = &closed.regions[id];
+    if region.numeric_tree.is_some() && !controls.enabled(OptimizationPass::NumericTrees) {
+        return Ok(());
+    }
     let Some(proof) = &region.numeric else {
         return Ok(());
     };
@@ -107,7 +112,7 @@ pub(in crate::native_artifact) fn emit_entry(
             "numeric backend homes exceed independent boundary inventory",
         ));
     }
-    let bank = if proof.scalar_inputs.is_empty() {
+    let bank = if proof.scalar_inputs.is_empty() && region.numeric_tree.is_none() {
         b.ins().iconst(types::I64, 0)
     } else {
         b.ins()
@@ -118,6 +123,14 @@ pub(in crate::native_artifact) fn emit_entry(
             return Ok(None);
         }
         let relative = slot - shadow;
+        if let Some(tree) = &region.numeric_tree {
+            if relative == tree.bank() {
+                return Ok(Some(bank));
+            }
+            if relative == tree.active(0) {
+                return Ok(Some(b.ins().iconst(types::I64, 1)));
+            }
+        }
         if let Some(binding) = proof
             .scalar_inputs
             .iter()
@@ -163,15 +176,36 @@ pub(in crate::native_artifact) fn emit_entry(
     let mut private_live = BTreeSet::new();
     private_live.extend(proof.scalar_inputs.iter().map(|binding| binding.word));
     private_live.extend(proof.scalar_outputs.iter().map(|binding| binding.word));
+    private_live.extend(
+        proof
+            .cold_scalars
+            .iter()
+            .flat_map(|(_, bindings)| bindings.iter().map(|binding| binding.word)),
+    );
+    if let Some(tree) = &region.numeric_tree {
+        private_live.extend(
+            tree.nodes
+                .iter()
+                .flat_map(|node| node.scalar_bindings.iter().map(|binding| binding.word)),
+        );
+    }
     private_live.extend(proof.scalar_words..proof.words);
     live.extend(private_live.iter().map(|word| shadow + word));
     let setup_work = b.func.dfg.num_insts() - setup_start;
     let exit = b.create_block();
-    let bailout = b.create_block();
+    let bailouts = if let Some(tree) = &region.numeric_tree {
+        tree.nodes
+            .iter()
+            .map(|node| (node.tail.header() as usize, b.create_block()))
+            .collect::<BTreeMap<_, _>>()
+    } else {
+        BTreeMap::from([(region.tail.header() as usize, b.create_block())])
+    };
     let failed = b.create_block();
     b.append_block_param(failed, types::I64);
     b.set_cold_block(failed);
-    let mut boundaries = BTreeSet::from([exit, bailout, failed]);
+    let mut boundaries = BTreeSet::from([exit, failed]);
+    boundaries.extend(bailouts.values().copied());
     let blocks = proof
         .sites
         .iter()
@@ -206,6 +240,25 @@ pub(in crate::native_artifact) fn emit_entry(
         private_boundary_words: private_live.len(),
         source_home_words: source_homes.len(),
         runtime_scalar_path_walks: 0,
+        tree_nodes: region.numeric_tree.as_ref().map_or_else(Vec::new, |tree| {
+            tree.nodes
+                .iter()
+                .map(|n| n.tail.header() as usize)
+                .collect()
+        }),
+        direct_child_edges: region.numeric_tree.as_ref().map_or_else(Vec::new, |tree| {
+            tree.nodes
+                .iter()
+                .skip(1)
+                .map(|n| {
+                    (
+                        n.tail.initialize() as usize,
+                        n.tail.header() as usize,
+                        n.tail.exit() as usize,
+                    )
+                })
+                .collect()
+        }),
     };
     for &site in &proof.sites {
         b.switch_to_block(target(site as u32));
@@ -214,18 +267,28 @@ pub(in crate::native_artifact) fn emit_entry(
         b.set_cold_block(fail);
         boundaries.insert(fail);
         let before = b.func.dfg.num_insts();
-        if site == region.tail.header() as usize {
+        let tree_node = region.numeric_tree.as_ref().and_then(|tree| {
+            tree.nodes
+                .iter()
+                .position(|node| node.tail.header() as usize == site)
+        });
+        if site == region.tail.header() as usize || tree_node.is_some() {
+            let (compute_cost, comparison_cost) =
+                tree_node.map_or((region.compute, region.comparison), |node| {
+                    let n = &region.numeric_tree.as_ref().unwrap().nodes[node];
+                    (n.compute, n.comparison)
+                });
             let compute = words.read(b, region.words + 1);
             let comparison = words.read(b, region.words + 2);
             let a = b.ins().icmp_imm(
                 IntCC::UnsignedGreaterThanOrEqual,
                 compute,
-                region.compute as i64,
+                compute_cost as i64,
             );
             let c = b.ins().icmp_imm(
                 IntCC::UnsignedGreaterThanOrEqual,
                 comparison,
-                region.comparison as i64,
+                comparison_cost as i64,
             );
             let mut enough = b.ins().band(a, c);
             // Capacity is checked before ANY source operation in this visit.
@@ -254,13 +317,22 @@ pub(in crate::native_artifact) fn emit_entry(
                 report.capacity_guards.push((array, count));
             }
             let funded = b.create_block();
-            b.ins().brif(enough, funded, &[], bailout, &[]);
+            b.ins().brif(enough, funded, &[], bailouts[&site], &[]);
             b.switch_to_block(funded);
-            let cost = b.ins().iconst(types::I64, region.compute as i64);
+            let cost = b.ins().iconst(types::I64, compute_cost as i64);
             let compute = b.ins().isub(compute, cost);
-            let comparison = b.ins().iadd_imm(comparison, -(region.comparison as i64));
+            let comparison = b.ins().iadd_imm(comparison, -(comparison_cost as i64));
             words.write(b, region.words + 1, compute);
             words.write(b, region.words + 2, comparison);
+            if let Some(node) = tree_node {
+                super::numeric_tree::debit(
+                    b,
+                    &words,
+                    shadow,
+                    region.numeric_tree.as_ref().unwrap(),
+                    node,
+                );
+            }
         }
         match proof.action(site) {
             Some(Operation::Aggregate) => {
@@ -350,7 +422,21 @@ pub(in crate::native_artifact) fn emit_entry(
                 b.switch_to_block(bad);
                 set_origin(b, frame, site as u64);
                 words.spill_live(b, locals, &live)?;
-                tail::failure(controls.options(), b, locals, closed, site, hooks, error)?;
+                // Ordinary source sites retain their deepest independent leaf
+                // proof for a declined outer tree. This generated path owns
+                // the known root loan, so reconcile that exact region instead
+                // of looking up the ordinary site's shadowed leaf region.
+                let source_site = b.ins().iconst(types::I64, site as i64);
+                tail::leave(
+                    controls.options(),
+                    b,
+                    locals,
+                    region,
+                    source_site,
+                    2,
+                    hooks,
+                    error,
+                )?;
                 let Action::LibraryCall { operands, .. } = code.blocks()[site].action() else {
                     return Err(backend("numeric read lost selected call"));
                 };
@@ -443,6 +529,9 @@ pub(in crate::native_artifact) fn emit_entry(
                 _ => return Err(backend("numeric proof contains unsupported action")),
             },
         }
+        if let Some(tree) = &region.numeric_tree {
+            super::numeric_tree::control(b, &words, shadow, tree, site)?;
+        }
         terminators::emit_source_terminator(
             b,
             &words,
@@ -463,20 +552,30 @@ pub(in crate::native_artifact) fn emit_entry(
         }
     }
     let boundary = b.func.dfg.num_insts();
-    b.switch_to_block(bailout);
-    words.spill_live(b, locals, &live)?;
-    let header = b.ins().iconst(types::I64, region.tail.header() as i64);
-    tail::leave(
-        controls.options(),
-        b,
-        locals,
-        region,
-        header,
-        1,
-        hooks,
-        error,
-    )?;
-    b.ins().jump(ordinary, &[]);
+    for (&site, &bailout) in &bailouts {
+        b.switch_to_block(bailout);
+        words.spill_live(b, locals, &live)?;
+        let header = b.ins().iconst(types::I64, site as i64);
+        tail::leave(
+            controls.options(),
+            b,
+            locals,
+            region,
+            header,
+            1,
+            hooks,
+            error,
+        )?;
+        if site == region.tail.header() as usize {
+            b.ins().jump(ordinary, &[]);
+        } else {
+            b.ins().jump(
+                ordinary_blocks[site]
+                    .ok_or_else(|| backend("numeric tree child header is not emitted"))?,
+                &[],
+            );
+        }
+    }
     b.switch_to_block(exit);
     words.spill_live(b, locals, &live)?;
     b.ins()

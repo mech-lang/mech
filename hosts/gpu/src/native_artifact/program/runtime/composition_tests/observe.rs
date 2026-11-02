@@ -20,6 +20,8 @@ pub(super) struct Counts {
     pub checked_private_homes: usize,
     pub exit_modes: BTreeMap<u64, u64>,
     pub selected_sites: BTreeMap<u64, u64>,
+    pub closed_tail_exits: Vec<[u64; 4]>,
+    pub closed_tail_work: BTreeMap<u64, u64>,
 }
 thread_local! {
     static COUNTS: RefCell<Counts> = RefCell::new(Counts::default());
@@ -80,6 +82,9 @@ unsafe extern "C" fn helper(
             .entry((site, logical_op))
             .or_default() += 1
     });
+    if op == GlobalHelper::ClosedTailEnd.raw() {
+        COUNTS.with(|v| v.borrow_mut().closed_tail_exits.push([site, a, b, c]));
+    }
     if op == GlobalHelper::NumericSegmentEnd.raw() && POISON_UNUSED_EXIT.with(Cell::get) {
         // SAFETY: the synchronous checked entry retains this same Invocation;
         // no reference crosses the delegated helper or generated continuation.
@@ -124,6 +129,16 @@ unsafe extern "C" fn helper(
     }
     // SAFETY: unchanged arguments and result pointer from the checked entry.
     let status = unsafe { HELPER.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
+    if op == GlobalHelper::ClosedTailEnd.raw() && c == 0 && status == 0 {
+        // SAFETY: the delegated callback has returned and ended its exclusive
+        // borrow of this same live Invocation. Observe the actual settled work.
+        let invocation = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        COUNTS.with(|v| {
+            v.borrow_mut()
+                .closed_tail_work
+                .insert(site, invocation.state.library.used().0)
+        });
+    }
     if logical_op == GlobalHelper::NumericSegmentBegin.raw() && status == 0 {
         // SAFETY: the original helper has successfully filled its live result.
         let selected = unsafe { *out } >> u32::from(fused_numeric);

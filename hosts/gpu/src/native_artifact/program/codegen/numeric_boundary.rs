@@ -34,6 +34,24 @@ pub(super) fn materialize(
         b.ins()
             .store(MemFlags::new(), value, hooks.arguments, offset(2 + field)?);
     }
+    if let Some(tree) = &region.numeric_tree {
+        for node in &tree.nodes {
+            for binding in &node.scalar_bindings {
+                let value = words.read(b, shadow + binding.word);
+                b.ins().store(
+                    MemFlags::new(),
+                    value,
+                    hooks.arguments,
+                    offset(2 + binding.word)?,
+                );
+            }
+        }
+        for slot in tree.counters..tree.bank() {
+            let value = words.read(b, shadow + slot);
+            b.ins()
+                .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
+        }
+    }
     b.ins().store(
         MemFlags::new(),
         index,
@@ -84,6 +102,21 @@ pub(super) fn materialize(
             offset(argument)?,
         );
         words.write(b, slot, value);
+    }
+    if let Some(tree) = &region.numeric_tree {
+        for slot in tree.counters..tree.bank() {
+            let value = b.ins().load(
+                types::I64,
+                MemFlags::new(),
+                hooks.arguments,
+                offset(2 + slot)?,
+            );
+            words.write(b, shadow + slot, value);
+        }
+        let bank = b
+            .ins()
+            .load(types::I64, MemFlags::new(), hooks.arguments, 16);
+        words.write(b, shadow + tree.bank(), bank);
     }
     let one = b.ins().iconst(types::I64, 1);
     words.write(b, region.words, one);

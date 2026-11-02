@@ -26,6 +26,10 @@ pub(in crate::native_artifact) enum OptimizationPass {
     CandidateValues,
     PairedCandidates,
     ScalarLoops,
+    /// Public compilation always enables complete numeric trees. Tests may
+    /// ablate only their emission to exercise the independently proved smaller
+    /// parent pieces and leaf loans retained on the ordinary fallback route.
+    NumericTrees,
     DisjointState,
     NontrappingHomes,
 }

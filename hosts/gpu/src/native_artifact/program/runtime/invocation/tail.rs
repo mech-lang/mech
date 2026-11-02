@@ -65,6 +65,17 @@ impl Invocation<'_, '_, '_> {
         {
             return Err(invalid("numeric child has no suspended active parent"));
         }
+        if let Some(tree) = &proof.numeric_tree {
+            if self.worker.is_some()
+                || tree
+                    .nodes
+                    .iter()
+                    .skip(1)
+                    .any(|node| self.progress[node.iteration as usize * 2..][..2] != [0, 0])
+            {
+                return Ok(Some(0));
+            }
+        }
         // Covers entry/exit metadata and all exceptional cleanup dispatch arms.
         self.state.control.work.charge(
             NativeExecutionPhase::Setup,
@@ -142,6 +153,9 @@ impl Invocation<'_, '_, '_> {
         let Region::Tail(region) = state.region else {
             return Err(invalid("closed Tail exit received a parent segment loan"));
         };
+        if layout.regions[region].numeric_tree.is_some() {
+            return self.end_numeric_tree(region, state, site, args);
+        }
         let proof = &layout.regions[region];
         if self.state.control.previous != Some(state.entry)
             || self.state.control.current != Some(proof.iteration)
@@ -266,6 +280,16 @@ impl Invocation<'_, '_, '_> {
             .ok_or_else(|| invalid("numeric materialization changed account scope"))?;
         self.write_borrowed_word(0, remaining.0)?;
         self.write_borrowed_word(1, remaining.1)?;
+        if let Some(tree) = &self.descriptor.metadata().closed_tails.regions[region].numeric_tree {
+            for node in 0..tree.nodes.len() {
+                self.write_borrowed_word(2 + tree.traversals(node), 0)?;
+            }
+            let bank = self
+                .state
+                .buffer_frames
+                .scalar_bank_pointer(&self.descriptor.metadata().buffer_frames)?;
+            self.write_borrowed_word(2, bank)?;
+        }
         self.closed_tail = Some(State {
             region: Region::Tail(region),
             used: self.state.library.used(),

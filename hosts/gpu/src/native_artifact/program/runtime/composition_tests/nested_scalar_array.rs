@@ -597,12 +597,7 @@ mod stale_composite {
         );
         for artifact in artifacts(&source) {
             let mode = NativeProgramLimitMode::NoLimits;
-            let jit = JitProgramArtifact::compile_with_limits(
-                &artifact,
-                &mech_stdlib::source_catalog(),
-                mode.compilation(),
-            )
-            .unwrap();
+            let jit = compile_parent_pieces(&artifact, &mech_stdlib::source_catalog()).unwrap();
             let metadata = jit.descriptor().metadata();
             let candidates = metadata
                 .compositions

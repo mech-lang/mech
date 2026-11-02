@@ -55,6 +55,7 @@ struct TailRegion {
     borrowed: Option<usize>,
     map: Option<usize>,
     numeric: Option<native::program::prepare::readonly_numeric::Proof>,
+    numeric_tree: Option<NumericTree>,
     captures: Option<native::program::prepare::captured_numeric::Proof>,
     packed: Option<native::program::prepare::packed_map::Proof>,
     words: usize,
@@ -70,12 +71,51 @@ impl From<TailRegion> for native::program::prepare::tail::Region {
             borrowed: w.borrowed,
             map: w.map,
             numeric: w.numeric,
+            numeric_tree: w.numeric_tree.map(Into::into),
             captures: w.captures,
             packed: w.packed,
             words: w.words,
             shadow: w.shadow,
             compute: w.compute,
             comparison: w.comparison,
+        }
+    }
+}
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct NumericTreeNode {
+    iteration: u32,
+    parent: Option<usize>,
+    #[serde(deserialize_with = "proof")]
+    tail: NativeTailLoop,
+    compute: u64,
+    comparison: u64,
+    scalar_bindings: Vec<native::program::prepare::readonly_numeric::ScalarBinding>,
+}
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct NumericTree {
+    nodes: Vec<NumericTreeNode>,
+    sites: Vec<(usize, usize)>,
+    counters: usize,
+}
+impl From<NumericTree> for native::program::prepare::numeric_tree::Proof {
+    fn from(w: NumericTree) -> Self {
+        Self {
+            nodes: w
+                .nodes
+                .into_iter()
+                .map(|node| native::program::prepare::numeric_tree::Node {
+                    iteration: node.iteration,
+                    parent: node.parent,
+                    tail: node.tail,
+                    compute: node.compute,
+                    comparison: node.comparison,
+                    scalar_bindings: node.scalar_bindings,
+                })
+                .collect(),
+            sites: w.sites,
+            counters: w.counters,
         }
     }
 }

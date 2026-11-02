@@ -21,6 +21,9 @@ pub(in crate::native_artifact) struct Region {
     /// the same account; scalar body work is prepaid in bounded batches.
     pub map: Option<usize>,
     pub numeric: Option<super::readonly_numeric::Proof>,
+    /// One independently priced structured subtree shares the root loan and
+    /// scalar/view bank. Children have no successful callback boundary.
+    pub numeric_tree: Option<super::numeric_tree::Proof>,
     /// Immutable enclosing-invocation matrices used by a scalar-state loop.
     pub captures: Option<super::captured_numeric::Proof>,
     /// Invariant key width only; actual packed storage requires runtime entry.
@@ -102,11 +105,28 @@ impl Layout {
             // A closed map body may run inside an ordinary comprehension.
             // Its own body must still contain no child loop; the parent is
             // suspended until this private owner publishes at the Tail exit.
-            let numeric = if map.is_none() && frames.action(tail.initialize() as usize).is_some() {
-                super::readonly_numeric::derive(plan, tail, frames, aggregates, calls).ok()
-            } else {
-                None
-            };
+            let mut numeric_tree = None;
+            let mut numeric =
+                if map.is_none() && frames.action(tail.initialize() as usize).is_some() {
+                    if let Ok(tree) = super::numeric_tree::discover(plan, tail) {
+                        match super::readonly_numeric::derive_tree(
+                            plan, tail, frames, aggregates, calls, &tree,
+                        ) {
+                            Ok(proof) => {
+                                numeric_tree = Some(tree);
+                                Some(proof)
+                            }
+                            Err(_) => super::readonly_numeric::derive(
+                                plan, tail, frames, aggregates, calls,
+                            )
+                            .ok(),
+                        }
+                    } else {
+                        super::readonly_numeric::derive(plan, tail, frames, aggregates, calls).ok()
+                    }
+                } else {
+                    None
+                };
             let captures = if map.is_none()
                 && numeric.is_none()
                 && aggregates.slot(tail.carrier()).is_some()
@@ -154,7 +174,11 @@ impl Layout {
                     )
                     || matches!(block.action(), Action::Scalar(Scalar::Copy { output, .. })
                         if plan.values()[output.get() as usize].scalar_kind().is_some());
-                if block.iteration() != Some(iteration as u32)
+                if numeric_tree
+                    .as_ref()
+                    .map_or(block.iteration() != Some(iteration as u32), |tree| {
+                        tree.node(site as usize).is_none()
+                    })
                     || !native
                     || (map.is_some() && borrowed.action(site as usize).is_some())
                     || plan.activation_boundary() == Some(site)
@@ -178,7 +202,15 @@ impl Layout {
             let mut incoming = vec![0usize; plan.blocks().len()];
             for &site in &sites {
                 for next in visits[site as usize].successors.into_iter().flatten() {
-                    if next != tail.exit() && !(site == tail.latch() && next == tail.header()) {
+                    let backedge = numeric_tree.as_ref().map_or(
+                        site == tail.latch() && next == tail.header(),
+                        |tree| {
+                            tree.nodes
+                                .iter()
+                                .any(|node| site == node.tail.latch() && next == node.tail.header())
+                        },
+                    );
+                    if next != tail.exit() && !backedge {
                         incoming[next as usize] += 1;
                     }
                 }
@@ -192,7 +224,15 @@ impl Layout {
             while let Some(site) = ready.pop() {
                 count += 1;
                 for next in visits[site as usize].successors.into_iter().flatten() {
-                    if next == tail.exit() || (site == tail.latch() && next == tail.header()) {
+                    let backedge = numeric_tree.as_ref().map_or(
+                        site == tail.latch() && next == tail.header(),
+                        |tree| {
+                            tree.nodes
+                                .iter()
+                                .any(|node| site == node.tail.latch() && next == node.tail.header())
+                        },
+                    );
+                    if next == tail.exit() || backedge {
                         continue;
                     }
                     incoming[next as usize] -= 1;
@@ -290,6 +330,87 @@ impl Layout {
                     )
                     .ok_or("numeric result synchronization work overflow")?;
             }
+            if let (Some(tree), Some(proof)) = (&mut numeric_tree, &mut numeric) {
+                tree.counters = proof.words;
+                proof.words = proof
+                    .words
+                    .checked_add(tree.words())
+                    .ok_or("numeric tree counter words overflow")?;
+                proof.boundary_words = proof
+                    .boundary_words
+                    .checked_add(tree.words())
+                    .ok_or("numeric tree boundary words overflow")?;
+                let mut synchronization = 0u64;
+                for node in &mut tree.nodes {
+                    if let Some(frame) = proof.frame(node.tail.carrier().get()) {
+                        node.scalar_bindings = super::readonly_numeric::scalar_bindings(
+                            frames,
+                            frame.value,
+                            &frame.scalar_paths,
+                        )?;
+                        synchronization = node
+                            .scalar_bindings
+                            .iter()
+                            .try_fold(synchronization, |n, binding| {
+                                n.checked_add((binding.steps as u64).checked_mul(64)?)
+                            })
+                            .ok_or("numeric tree carrier synchronization work overflow")?;
+                    }
+                }
+                // Every possible first change and terminal/cold boundary may
+                // reify the entire active ancestry. Price that static maximum
+                // on each node traversal before entering its source body.
+                let boundaries = proof.arrays.iter().filter(|a| a.writable).count() as u64 + 1;
+                let templates = (tree.nodes.len() as u64)
+                    .checked_mul(4)
+                    .and_then(|n| n.checked_add(8))
+                    .ok_or("numeric tree template count overflow")?;
+                // Newly live scalar-frame words spill at each node bailout,
+                // normal exit and failure. The selected header additionally
+                // loads/exports each exact leaf. Count duplicate header words
+                // conservatively; this bound is independent of emitted IR.
+                let cold_scalar_templates = proof
+                    .cold_scalars
+                    .iter()
+                    .try_fold(0u64, |n, (_, bindings)| {
+                        n.checked_add(bindings.len() as u64)
+                    })
+                    .and_then(|n| n.checked_mul((tree.nodes.len() as u64).checked_add(4)?))
+                    .ok_or("numeric tree cold scalar template work overflow")?;
+                let boundary = synchronization
+                    .checked_mul(boundaries)
+                    .and_then(|n| {
+                        n.checked_add((proof.boundary_words as u64).checked_mul(templates)?)
+                    })
+                    .and_then(|n| n.checked_add(FIXED_OVERHEAD))
+                    .and_then(|n| n.checked_add(cold_scalar_templates))
+                    .ok_or("numeric tree boundary price overflow")?;
+                for (ordinal, node) in tree.nodes.iter_mut().enumerate() {
+                    node.compute = boundary;
+                    node.comparison = 0;
+                    for &(site, owner) in &tree.sites {
+                        if owner != ordinal {
+                            continue;
+                        }
+                        node.compute = node
+                            .compute
+                            .checked_add(visits[site].work)
+                            .and_then(|n| n.checked_add(OVERHEAD))
+                            .ok_or("numeric tree node price overflow")?;
+                        if proof.action(site).is_some_and(|a| {
+                            matches!(a, super::readonly_numeric::Operation::Write { .. })
+                        }) {
+                            node.comparison = node
+                                .comparison
+                                .checked_add(1)
+                                .ok_or("numeric tree comparison price overflow")?;
+                        }
+                    }
+                }
+                compute = tree.nodes[0].compute;
+                comparison = tree.nodes[0].comparison;
+                proof.boundary_work = boundary;
+            }
             let index = layout.regions.len();
             for site in sites {
                 layout.sites[site as usize] = Some(index);
@@ -312,6 +433,7 @@ impl Layout {
                     )
                 }),
                 numeric,
+                numeric_tree,
                 captures,
                 words: _word_offset,
                 shadow: None,

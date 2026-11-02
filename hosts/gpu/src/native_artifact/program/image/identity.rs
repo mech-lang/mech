@@ -290,7 +290,9 @@ fn selected_template(
 // boundary spills; prototype IR150 child argument words cannot be reused.
 // IR152 pins current-generation opaque Record-to-Map views and their exact
 // selected read-only consumer, including the canonical publication boundary.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 152;
+// IR153 pins closed numeric loop trees: one owner/view bank, internal child
+// edges, per-node traversal settlement and exact cold source reconstruction.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 153;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -494,7 +496,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 152;
 // scalar-frame transport keeps the existing logical and finite work charges.
 // Policy104 pays current canonical-root and selected borrowed-Map inspection.
 // Views retain no payload and cannot renew the invocation's finite allowance.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 104;
+// Policy105 funds composed numeric-tree traversal inventories and boundaries.
+// Every node keeps its own finite debit; existing leaf prices stay unchanged.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 105;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

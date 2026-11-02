@@ -146,6 +146,8 @@ impl NativeProgramDescriptor {
 }
 #[cfg(all(test, feature = "canonical-native-program"))]
 mod borrowed_record_map_tests;
+#[cfg(test)]
+mod numeric_tree_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 mod string_map_factory_tests;
 impl crate::native_artifact::iteration_runtime::VisitPlan for NativeProgramDescriptor {

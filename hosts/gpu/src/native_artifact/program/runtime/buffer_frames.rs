@@ -22,9 +22,42 @@ struct PrivateNumeric {
     region: usize,
     arrays: Vec<Option<mech_core::snapshot::PrivateUnsignedMatrix>>,
     append: Option<Vec<Option<mech_core::snapshot::PrivateUnsignedAppendPreparation>>>,
-    publication: Option<crate::native_artifact::values::PreparedValuePut>,
+    publication: Option<PrivatePublication>,
     _nodes: mech_core::ManagedNodeReservation,
     _reservation: mech_core::ManagedMemoryReservation,
+}
+type PutTicket = crate::native_artifact::values::PreparedValuePut;
+enum PrivatePublication {
+    Direct(PutTicket),
+    Cold(Box<ColdPublications>),
+}
+// The extra capability is heap-owned only for a tree with real cold aliases.
+// Established numeric leaves retain their exact metadata envelope.
+const _: () = assert!(
+    core::mem::size_of::<Option<PrivatePublication>>() == core::mem::size_of::<Option<PutTicket>>()
+);
+pub(super) struct ColdPublications {
+    direct: Option<PutTicket>,
+    entries: Vec<Option<(u32, PutTicket)>>,
+    _nodes: mech_core::ManagedNodeReservation,
+    _reservation: mech_core::ManagedMemoryReservation,
+}
+impl ColdPublications {
+    pub(super) fn take(
+        &mut self,
+        index: usize,
+        value: u32,
+    ) -> Result<PutTicket, NativeProgramExecutionError> {
+        let entry = self
+            .entries
+            .get_mut(index)
+            .and_then(Option::take)
+            .ok_or_else(|| invalid("numeric cold alias lost publication admission"))?;
+        if entry.0 != value {
+            return Err(invalid("numeric cold alias publication has foreign value"));
+        }
+        Ok(entry.1)
+    }
 }
 pub(super) enum Field {
     Scalar {
@@ -110,6 +143,10 @@ impl BufferFrames {
             inner.nodes.nodes()
                 + inner.private.as_ref().map_or(0, |p| {
                     p._nodes.nodes()
+                        + match &p.publication {
+                            Some(PrivatePublication::Cold(cold)) => cold._nodes.nodes(),
+                            _ => 0,
+                        }
                         + p.arrays
                             .iter()
                             .flatten()
@@ -235,6 +272,18 @@ impl BufferFrames {
                 let at = physical.checked_mul(2)?;
                 let words = inner.words.values().get(at..at.checked_add(2)?)?;
                 Some(words[1] == 1 && kind.accepts_bits(words[0]))
+            })
+            .unwrap_or(false)
+    }
+    /// A virtual producer may acquire a physical home only if no earlier
+    /// current definition occupies either its payload or validity word.
+    pub(super) fn empty_scalar_binding(&self, physical: usize) -> bool {
+        self.inner
+            .as_ref()
+            .and_then(|inner| {
+                let at = physical.checked_mul(2)?;
+                let words = inner.words.values().get(at..at.checked_add(2)?)?;
+                Some(words == [0, 0])
             })
             .unwrap_or(false)
     }
@@ -534,6 +583,7 @@ impl BufferFrames {
         count: usize,
         append: bool,
         publication: Option<crate::native_artifact::values::PreparedValuePut>,
+        cold_aliases: usize,
         memory: &ManagedMemoryBudget,
     ) -> Result<bool, NativeProgramExecutionError> {
         let inner = self
@@ -543,6 +593,28 @@ impl BufferFrames {
         if inner.private.is_some() {
             return Err(invalid("overlapping private numeric owners"));
         }
+        let publication = if cold_aliases == 0 {
+            publication.map(PrivatePublication::Direct)
+        } else {
+            let bytes = Self::cold_publication_bytes(cold_aliases)?;
+            let Ok(reservation) = memory.reserve_capacity(bytes) else {
+                return Ok(false);
+            };
+            let Ok(nodes) = memory.reserve_nodes(amount(cold_aliases, 1, 1)?) else {
+                return Ok(false);
+            };
+            let mut entries = Vec::new();
+            if entries.try_reserve_exact(cold_aliases).is_err() {
+                return Ok(false);
+            }
+            entries.resize_with(cold_aliases, || None);
+            Some(PrivatePublication::Cold(Box::new(ColdPublications {
+                direct: publication,
+                entries,
+                _nodes: nodes,
+                _reservation: reservation,
+            })))
+        };
         let bytes = amount(
             count,
             (core::mem::size_of::<Option<mech_core::snapshot::PrivateUnsignedMatrix>>()
@@ -585,6 +657,67 @@ impl BufferFrames {
             _reservation: reservation,
         });
         Ok(true)
+    }
+    pub(super) fn cold_publication_bytes(count: usize) -> Result<u64, NativeProgramExecutionError> {
+        amount(
+            count,
+            core::mem::size_of::<Option<(u32, PutTicket)>>() as u64,
+            core::mem::size_of::<ColdPublications>() as u64,
+        )
+    }
+    pub(super) fn cold_publication_work(count: usize) -> Result<u64, NativeProgramExecutionError> {
+        if count == 0 {
+            return Ok(0);
+        }
+        Self::cold_publication_bytes(count)?
+            .checked_mul(8)
+            .and_then(|n| n.checked_add(256))
+            .ok_or_else(|| invalid("numeric cold alias setup work overflows"))
+    }
+    pub(super) fn set_private_alias(
+        &mut self,
+        region: usize,
+        index: usize,
+        value: u32,
+        ticket: PutTicket,
+    ) -> Result<(), NativeProgramExecutionError> {
+        let Some(PrivatePublication::Cold(cold)) = self
+            .inner
+            .as_mut()
+            .and_then(|inner| inner.private.as_mut())
+            .filter(|p| p.region == region)
+            .and_then(|p| p.publication.as_mut())
+        else {
+            return Err(invalid("numeric cold alias has no admitted metadata"));
+        };
+        let entry = cold
+            .entries
+            .get_mut(index)
+            .filter(|entry| entry.is_none())
+            .ok_or_else(|| invalid("numeric cold alias publication index is invalid"))?;
+        *entry = Some((value, ticket));
+        Ok(())
+    }
+    pub(super) fn take_private_aliases(
+        &mut self,
+        region: usize,
+    ) -> Result<Option<Box<ColdPublications>>, NativeProgramExecutionError> {
+        let private = self
+            .inner
+            .as_mut()
+            .and_then(|inner| inner.private.as_mut())
+            .filter(|p| p.region == region)
+            .ok_or_else(|| invalid("numeric cold aliases have no active owner bank"))?;
+        match private.publication.take() {
+            Some(PrivatePublication::Cold(mut cold)) => {
+                private.publication = cold.direct.take().map(PrivatePublication::Direct);
+                Ok(Some(cold))
+            }
+            direct => {
+                private.publication = direct;
+                Ok(None)
+            }
+        }
     }
     pub(super) fn private_array_mut(
         &mut self,
@@ -631,7 +764,11 @@ impl BufferFrames {
         if state.region != region || state.arrays.iter().any(Option::is_some) {
             return Err(invalid("private numeric owners not synchronized"));
         }
-        Ok(state.publication)
+        Ok(match state.publication {
+            Some(PrivatePublication::Direct(ticket)) => Some(ticket),
+            Some(PrivatePublication::Cold(cold)) => cold.direct,
+            None => None,
+        })
     }
     pub(super) fn synchronize_managed(
         &mut self,

@@ -6,6 +6,11 @@ use super::*;
 use mech_engine::native_artifact::{NativeIterationValueScope as Scope, NativeMatchValue as Value};
 type Key = (u32, Option<usize>);
 type State = BTreeMap<Key, bool>;
+#[derive(Default)]
+pub(super) struct ColdHomes {
+    pub aliases: Vec<(usize, Vec<ColdAlias>)>,
+    pub scalars: Vec<(usize, Vec<u32>)>,
+}
 
 struct Traversal {
     header: usize,
@@ -184,6 +189,670 @@ pub(super) fn validate(
         }
     }
     original
+}
+
+/// Must-current analysis over a structured subtree. The root backedge is the
+/// induction boundary; child backedges remain in the graph. Starting at top
+/// and meeting every incoming edge proves arbitrary child traversal counts,
+/// including zero writes and alternation between branch paths. A correlated
+/// predicate is immutable only within its own proved lexical traversal; the
+/// analysis forgets it before the next traversal or a completed activation.
+pub(super) fn validate_tree(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    provenance: &mut Provenance<'_, '_>,
+    sites: &BTreeSet<usize>,
+    actions: &[(usize, Operation)],
+    arrays: &[Array],
+    result: &ResultRecipe,
+    tree: &super::super::numeric_tree::Proof,
+) -> Result<ColdHomes, &'static str> {
+    let mut next = BTreeMap::new();
+    for &site in sites {
+        next.insert(
+            site,
+            if site == tail.latch() as usize {
+                Vec::new()
+            } else {
+                NativeProgramFacts::control_successors(plan.blocks()[site].terminator())
+                    .into_iter()
+                    .flatten()
+                    .map(|s| s as usize)
+                    .filter(|s| sites.contains(s))
+                    .collect()
+            },
+        );
+    }
+    let traversal = Traversal {
+        header: tail.header() as usize,
+        order: sites.iter().copied().collect(),
+        next,
+    };
+    let mut analysis = analyze_tree(
+        plan, tail, frames, provenance, &traversal, actions, arrays, result, tree, None,
+    )?;
+    let original = verify_tree(plan, tail, frames, &analysis, actions, arrays, result, tree);
+    if original.is_ok() {
+        return cold_aliases(plan, tail, frames, provenance, arrays, tree, &analysis);
+    }
+    for node in &tree.nodes {
+        let mut local_next = traversal.next.clone();
+        local_next.insert(node.tail.latch() as usize, Vec::new());
+        local_next.insert(node.tail.exit() as usize, Vec::new());
+        let mut local_sites = BTreeSet::new();
+        let mut pending = vec![node.tail.header() as usize];
+        while let Some(site) = pending.pop() {
+            if local_sites.insert(site) {
+                pending.extend(&local_next[&site]);
+            }
+        }
+        let local = Traversal {
+            header: node.tail.header() as usize,
+            order: local_sites.into_iter().collect(),
+            next: local_next,
+        };
+        for edges in local.predicates(provenance.facts) {
+            let partition = Partition {
+                iteration: node.iteration,
+                header: node.tail.header() as usize,
+                exit: node.tail.exit() as usize,
+                edges,
+            };
+            let refined = analyze_tree(
+                plan,
+                tail,
+                frames,
+                provenance,
+                &traversal,
+                actions,
+                arrays,
+                result,
+                tree,
+                Some(&partition),
+            )?;
+            // Every pass is independently a sound must-analysis. Unioning its
+            // proven facts combines predicates without a valuation product;
+            // no pass assumes a fact supplied by another pass.
+            analysis.strengthen(refined);
+            if verify_tree(plan, tail, frames, &analysis, actions, arrays, result, tree).is_ok() {
+                return cold_aliases(plan, tail, frames, provenance, arrays, tree, &analysis);
+            }
+        }
+    }
+    original.map(|_| ColdHomes::default())
+}
+
+struct Partition {
+    iteration: u32,
+    header: usize,
+    exit: usize,
+    edges: Vec<(usize, (usize, usize))>,
+}
+struct Analysis {
+    inputs: BTreeMap<usize, State>,
+    outputs: BTreeMap<usize, State>,
+    known: Vec<KnownPredicate>,
+}
+struct KnownPredicate {
+    iteration: u32,
+    truth: BTreeMap<usize, bool>,
+    edges: Vec<(usize, (usize, usize))>,
+}
+impl Analysis {
+    fn strengthen(&mut self, other: Self) {
+        self.known.extend(other.known);
+        for (current, other) in [
+            (&mut self.inputs, other.inputs),
+            (&mut self.outputs, other.outputs),
+        ] {
+            current.retain(|site, state| {
+                let Some(proven) = other.get(site) else {
+                    return false;
+                };
+                for (key, fresh) in state {
+                    *fresh |= proven.get(key).copied().unwrap_or(false);
+                }
+                true
+            });
+        }
+    }
+}
+
+fn analyze_tree(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    provenance: &mut Provenance<'_, '_>,
+    traversal: &Traversal,
+    actions: &[(usize, Operation)],
+    arrays: &[Array],
+    _result: &ResultRecipe,
+    _tree: &super::super::numeric_tree::Proof,
+    partition: Option<&Partition>,
+) -> Result<Analysis, &'static str> {
+    // A key is immutable SSA identity, never just the root number. A store
+    // invalidates every earlier identity even when backing storage is shared.
+    let mut top = State::new();
+    for value in 0..plan.values().len() as u32 {
+        if provenance.array(value, None).is_some() {
+            top.insert((value, None), true);
+        }
+        if let Some(fields) = frames.fields_at(value as usize) {
+            for ordinal in 0..fields.len() {
+                if provenance.array(value, Some(ordinal)).is_some() {
+                    top.insert((value, Some(ordinal)), true);
+                }
+            }
+        }
+    }
+    let entry = top
+        .keys()
+        .map(|key| {
+            (
+                *key,
+                key.0 == tail.carrier().get() && arrays.iter().any(|a| key.1 == Some(a.field)),
+            )
+        })
+        .collect::<State>();
+    let mut states = BTreeMap::new();
+    for &site in &traversal.order {
+        for truth in 0..if partition.is_some() { 3 } else { 1 } {
+            states.insert((site, truth), top.clone());
+        }
+    }
+    states.insert((traversal.header, 0), entry.clone());
+    let mut pending = std::collections::VecDeque::from([(traversal.header, 0)]);
+    let mut reachable = BTreeSet::new();
+    let mut outputs = BTreeMap::new();
+    while let Some((site, truth)) = pending.pop_front() {
+        let mut state = states[&(site, truth)].clone();
+        reachable.insert((site, truth));
+        transfer(plan, frames, provenance, site, actions, arrays, &mut state)?;
+        outputs.insert((site, truth), state.clone());
+        for &next in &traversal.next[&site] {
+            let mut next_truth = truth;
+            if let Some(partition) = partition {
+                if let Some((_, (no, yes))) =
+                    partition.edges.iter().find(|(branch, _)| *branch == site)
+                {
+                    if no != yes {
+                        let edge = if next == *no {
+                            1
+                        } else if next == *yes {
+                            2
+                        } else {
+                            return Err("numeric predicate edge leaves its source branch");
+                        };
+                        if truth != 0 && truth != edge {
+                            continue;
+                        }
+                        next_truth = edge;
+                    }
+                }
+                // No predicate observation survives a new lexical traversal or
+                // a completed activation. The same SSA number may then contain
+                // the opposite Bool, which must be checked independently.
+                if next == partition.header || next == partition.exit {
+                    next_truth = 0;
+                }
+            }
+            let merged = states
+                .get_mut(&(next, next_truth))
+                .ok_or("numeric tree freshness edge leaves graph")?;
+            let mut changed = false;
+            for (key, current) in merged.iter_mut() {
+                let value = *current && state.get(key).copied().unwrap_or(false);
+                changed |= value != *current;
+                *current = value;
+            }
+            if changed || !reachable.contains(&(next, next_truth)) {
+                pending.push_back((next, next_truth));
+            }
+        }
+    }
+    let collapse = |bank: BTreeMap<(usize, u8), State>| {
+        let mut result = BTreeMap::<usize, State>::new();
+        for ((site, truth), state) in bank {
+            if !reachable.contains(&(site, truth)) {
+                continue;
+            }
+            if let Some(current) = result.get_mut(&site) {
+                for (key, fresh) in current {
+                    *fresh &= state.get(key).copied().unwrap_or(false);
+                }
+            } else {
+                result.insert(site, state);
+            }
+        }
+        result
+    };
+    let known = partition
+        .map(|partition| {
+            let mut truths = BTreeMap::<usize, BTreeSet<u8>>::new();
+            for &(site, truth) in &reachable {
+                truths.entry(site).or_default().insert(truth);
+            }
+            KnownPredicate {
+                iteration: partition.iteration,
+                edges: partition.edges.clone(),
+                truth: truths
+                    .into_iter()
+                    .filter_map(|(site, truths)| {
+                        (truths.len() == 1 && !truths.contains(&0))
+                            .then(|| (site, truths.contains(&2)))
+                    })
+                    .collect(),
+            }
+        })
+        .into_iter()
+        .collect();
+    Ok(Analysis {
+        inputs: collapse(states),
+        outputs: collapse(outputs),
+        known,
+    })
+}
+
+fn verify_tree(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    analysis: &Analysis,
+    actions: &[(usize, Operation)],
+    arrays: &[Array],
+    result: &ResultRecipe,
+    tree: &super::super::numeric_tree::Proof,
+) -> Result<(), &'static str> {
+    for (&site, state) in &analysis.inputs {
+        if let Some(
+            operation @ (Operation::Read { array, .. }
+            | Operation::Write { array, .. }
+            | Operation::Append { array, .. }
+            | Operation::Length { array, .. }),
+        ) = actions.iter().find(|(s, _)| *s == site).map(|(_, a)| a)
+        {
+            let Action::LibraryCall { operands, .. } = plan.blocks()[site].action() else {
+                return Err("tree array action lost operands");
+            };
+            if (!matches!(operation, Operation::Length { .. }) || arrays[*array].appends)
+                && !state
+                    .get(&(operands[0].get(), None))
+                    .copied()
+                    .unwrap_or(false)
+            {
+                return Err("numeric tree content use reads an older array version");
+            }
+        }
+        let state = &analysis.outputs[&site];
+        for node in &tree.nodes {
+            if site == node.tail.latch() as usize {
+                if let Some(fields) = frames.fields(node.tail.carrier()) {
+                    for (ordinal, field) in fields.iter().enumerate() {
+                        if matches!(field.lane(), Lane::Managed { .. })
+                            && !state
+                                .get(&(node.tail.next().get(), Some(ordinal)))
+                                .copied()
+                                .unwrap_or(false)
+                        {
+                            return Err(
+                                "numeric tree recursive edge forwards an older array version",
+                            );
+                        }
+                    }
+                }
+            }
+            if site == node.tail.finish() as usize {
+                let returned = node.tail.returned().get();
+                let keys = state.keys().filter(|(value, _)| *value == returned);
+                if keys
+                    .into_iter()
+                    .any(|key| !state.get(key).copied().unwrap_or(false))
+                {
+                    return Err("numeric tree child returns an older array version");
+                }
+            }
+        }
+    }
+    // Result recipe is checked independently against the root's terminal edge.
+    if let Some(state) = analysis.outputs.get(&(tail.finish() as usize)) {
+        let fresh = |key| state.get(&key).copied().unwrap_or(false);
+        let current = match result {
+            ResultRecipe::Scalar | ResultRecipe::Aggregate { .. } => true,
+            ResultRecipe::Array { .. } => fresh((tail.returned().get(), None)),
+            ResultRecipe::Frame { value, arrays } => arrays
+                .iter()
+                .all(|(field, _)| fresh((*value, Some(*field)))),
+        };
+        if !current {
+            return Err("numeric tree returns an older array version");
+        }
+    }
+    Ok(())
+}
+
+/// A header bailout does not replay already executed ancestor projections.
+/// Restore exactly the current array aliases and scalar Frame homes its
+/// ordinary continuation needs. Older mutable aliases are never promoted to
+/// the current root version, and managed Frame intermediates still decline.
+fn cold_aliases(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    provenance: &mut Provenance<'_, '_>,
+    arrays: &[Array],
+    tree: &super::super::numeric_tree::Proof,
+    analysis: &Analysis,
+) -> Result<ColdHomes, &'static str> {
+    use mech_engine::native_artifact::NativeProgramReadRole as Read;
+    let ancestor = |mut child: usize, parent: usize| {
+        for _ in 0..tree.nodes.len() {
+            if child == parent {
+                return true;
+            }
+            let Some(next) = tree.nodes[child].parent else {
+                return false;
+            };
+            child = next;
+        }
+        false
+    };
+    let root_fields = frames
+        .fields(tail.carrier())
+        .ok_or("cold alias root lost its fields")?;
+    let mut recipes = ColdHomes::default();
+    let mut count = 0usize;
+    let bound = plan
+        .values()
+        .len()
+        .checked_mul(tree.nodes.len())
+        .ok_or("cold alias inventory size overflows")?;
+    for (current, node) in tree.nodes.iter().enumerate() {
+        let header = node.tail.header() as usize;
+        let Some(state) = analysis.inputs.get(&header) else {
+            continue;
+        };
+        let mut aliases = Vec::new();
+        let mut scalars = Vec::new();
+        for value in 0..plan.values().len() as u32 {
+            let Scope::Immutable {
+                iteration: Some(scope),
+            } = plan.value_scopes()[value as usize]
+            else {
+                continue;
+            };
+            let Some(owner) = tree.nodes.iter().position(|node| node.iteration == scope) else {
+                continue;
+            };
+            if owner == current || !ancestor(current, owner) {
+                continue;
+            }
+            let root = provenance.array(value, None);
+            let virtual_frame = frames.fields_at(value as usize).is_some();
+            if root.is_none() && !virtual_frame {
+                continue;
+            }
+            let definitions = provenance.facts.definition_sites(value)?;
+            if definitions.is_empty()
+                || definitions.iter().any(|definition| {
+                    definition.iteration() != Some(scope)
+                        || definition
+                            .site()
+                            .is_none_or(|site| tree.node(site as usize).is_none())
+                })
+            {
+                // An ordinary enclosing definition already has its own Arena
+                // publication. Only definitions elided by this tree need one.
+                continue;
+            }
+            let definitions = definitions
+                .iter()
+                .filter_map(|definition| definition.site())
+                .map(|site| site as usize)
+                .collect::<BTreeSet<_>>();
+            let mut readers = BTreeSet::new();
+            let native_value = match plan.blocks()
+                [*definitions.first().ok_or("cold alias has no producer")?]
+            .action()
+            {
+                Action::Scalar(Scalar::Copy { output, .. })
+                | Action::LibraryCall { output, .. }
+                | Action::Structural { output, .. } => *output,
+                _ => return Err("cold alias producer has no immutable result"),
+            };
+            if native_value.get() != value {
+                return Err("cold alias producer differs from its current value");
+            }
+            for role in provenance.facts.read_roles(native_value)? {
+                readers.insert(match *role {
+                    Read::Action(site) | Read::Terminator(site) => site as usize,
+                    Read::LoopSeed(iteration) => {
+                        plan.iterations()[iteration as usize].as_ref().initialize() as usize
+                    }
+                    Read::LoopNext(iteration) => {
+                        plan.iterations()[iteration as usize].as_ref().latch() as usize
+                    }
+                    Read::LoopReturned(iteration) => match &plan.iterations()[iteration as usize] {
+                        NativeControlLoop::Tail(tail) => tail.finish() as usize,
+                        _ => return Err("numeric cold alias return belongs to a non-Tail loop"),
+                    },
+                    Read::CollectionSource(_) | Read::Output(_) | Read::Effect(_) => {
+                        return Err("numeric tree cold alias has an unsupported escaping use");
+                    }
+                });
+            }
+            // A current ancestor Bool remains invariant until this alias's
+            // scope ends. Use only independently proved entry truth, never a
+            // branch valuation borrowed from another traversal/activation.
+            let mut allowed = BTreeMap::new();
+            for predicate in &analysis.known {
+                let Some(predicate_owner) = tree
+                    .nodes
+                    .iter()
+                    .position(|node| node.iteration == predicate.iteration)
+                else {
+                    continue;
+                };
+                if !ancestor(owner, predicate_owner) {
+                    continue;
+                }
+                if let Some(truth) = predicate.truth.get(&header) {
+                    for &(site, (no, yes)) in &predicate.edges {
+                        let next = if *truth { yes } else { no };
+                        if allowed.insert(site, next).is_some_and(|old| old != next) {
+                            return Err("cold alias predicate facts conflict");
+                        }
+                    }
+                }
+            }
+            let mut pending = vec![header];
+            let mut seen = BTreeSet::new();
+            let mut needed = false;
+            while let Some(site) = pending.pop() {
+                if !seen.insert(site) || definitions.contains(&site) {
+                    continue;
+                }
+                if readers.contains(&site) {
+                    needed = true;
+                    break;
+                }
+                if site == tree.nodes[owner].tail.header() as usize
+                    || site == tree.nodes[owner].tail.latch() as usize
+                    || site == tree.nodes[owner].tail.finish() as usize
+                    || site == tree.nodes[owner].tail.exit() as usize
+                {
+                    continue;
+                }
+                for next in NativeProgramFacts::control_successors(plan.blocks()[site].terminator())
+                    .into_iter()
+                    .flatten()
+                {
+                    if allowed
+                        .get(&site)
+                        .is_none_or(|selected| *selected == next as usize)
+                    {
+                        pending.push(next as usize);
+                    }
+                }
+            }
+            if !needed {
+                continue;
+            }
+            count = count
+                .checked_add(1)
+                .ok_or("cold alias inventory count overflows")?;
+            if count > bound {
+                return Err("cold alias inventory exceeds bounded SSA storage");
+            }
+            // Active carriers have their own recipe. Other wholly scalar
+            // ancestor frames retain exact immutable shadow words and can be
+            // restored into existing physical lanes without owners or Values.
+            // A managed frame still needs its own current-version recipe.
+            if virtual_frame {
+                let fields = frames.fields_at(value as usize).unwrap();
+                if fields.iter().any(|field| match field.lane() {
+                    Lane::Scalar { .. } => false,
+                    Lane::Composite { .. } => !scalar_children(frames, *field),
+                    Lane::Managed { .. } | Lane::Tagged { .. } => true,
+                }) {
+                    return Err(
+                        "numeric tree cold continuation requires an unavailable ancestor managed frame",
+                    );
+                }
+                // Whole-plan dominance is insufficient for a repeated SSA
+                // visit. Every path in THIS ancestor traversal must cross a
+                // current producer before reaching this child header.
+                let owner_tail = &tree.nodes[owner].tail;
+                let mut pending = vec![owner_tail.header() as usize];
+                let mut seen = BTreeSet::new();
+                while let Some(site) = pending.pop() {
+                    if !seen.insert(site) || definitions.contains(&site) {
+                        continue;
+                    }
+                    if site == header {
+                        return Err(
+                            "numeric cold scalar frame lacks a current dominating producer",
+                        );
+                    }
+                    if site == owner_tail.latch() as usize
+                        || site == owner_tail.finish() as usize
+                        || site == owner_tail.exit() as usize
+                    {
+                        continue;
+                    }
+                    pending.extend(
+                        NativeProgramFacts::control_successors(plan.blocks()[site].terminator())
+                            .into_iter()
+                            .flatten()
+                            .map(|next| next as usize),
+                    );
+                }
+                scalars.push(value);
+                continue;
+            }
+            let root = root.ok_or("cold alias loses its logical array root")?;
+            let array = arrays
+                .iter()
+                .position(|array| array.field == root)
+                .ok_or("cold alias loses its logical array root")?;
+            if !state.get(&(value, None)).copied().unwrap_or(false) {
+                return Err(
+                    "numeric tree cold continuation requires an older or unavailable array alias",
+                );
+            }
+            if plan.values()[value as usize].schema() != root_fields[root].schema() {
+                return Err("numeric tree cold alias requires unsupported schema rebinding");
+            }
+            aliases.push(ColdAlias { value, array });
+        }
+        if !aliases.is_empty() {
+            recipes.aliases.push((header, aliases));
+        }
+        if !scalars.is_empty() {
+            recipes.scalars.push((header, scalars));
+        }
+    }
+    Ok(recipes)
+}
+
+fn transfer(
+    plan: &Plan,
+    frames: &NativeBufferFrames,
+    provenance: &mut Provenance<'_, '_>,
+    site: usize,
+    actions: &[(usize, Operation)],
+    arrays: &[Array],
+    state: &mut State,
+) -> Result<(), &'static str> {
+    let fresh = |state: &State, key: Key| state.get(&key).copied().unwrap_or(false);
+    match actions.iter().find(|(s, _)| *s == site).map(|(_, a)| a) {
+        Some(Operation::Frame) => match frames
+            .action(site)
+            .ok_or("tree frame lost recipe")?
+            .operation()
+        {
+            Frame::Pack { output } => {
+                let Action::LibraryCall { operands, .. } = plan.blocks()[site].action() else {
+                    return Err("tree pack lost operands");
+                };
+                for (ordinal, operand) in operands.iter().enumerate() {
+                    if provenance.array(operand.get(), None).is_some() {
+                        let current = fresh(state, (operand.get(), None));
+                        state.insert((output.get(), Some(ordinal)), current);
+                    }
+                }
+            }
+            Frame::Copy { source, output } => {
+                let copied = frames
+                    .fields(*source)
+                    .ok_or("tree copy lost fields")?
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, f)| matches!(f.lane(), Lane::Managed { .. }))
+                    .map(|(ordinal, _)| {
+                        (
+                            (output.get(), Some(ordinal)),
+                            fresh(state, (source.get(), Some(ordinal))),
+                        )
+                    })
+                    .collect::<Vec<_>>();
+                state.extend(copied);
+            }
+            Frame::Project {
+                source,
+                ordinal,
+                output,
+            } => {
+                if provenance.array(output.get(), None).is_some() {
+                    let current = fresh(state, (source.get(), Some(*ordinal)));
+                    state.insert((output.get(), None), current);
+                }
+            }
+            _ => return Err("tagged frame is outside numeric tree freshness"),
+        },
+        Some(Operation::ArrayCopy) => {
+            let Action::Scalar(Scalar::Copy { source, output }) = plan.blocks()[site].action()
+            else {
+                return Err("tree array copy lost operands");
+            };
+            let current = fresh(state, (source.get(), None));
+            state.insert((output.get(), None), current);
+        }
+        Some(Operation::Write { array, .. } | Operation::Append { array, .. }) => {
+            let Action::LibraryCall { output, .. } = plan.blocks()[site].action() else {
+                return Err("tree write lost output");
+            };
+            let root = arrays[*array].field;
+            for (&(value, field), current) in state.iter_mut() {
+                if provenance.array(value, field) == Some(root) {
+                    *current = false;
+                }
+            }
+            state.insert((output.get(), None), true);
+        }
+        _ => {}
+    }
+    Ok(())
 }
 
 fn pass(

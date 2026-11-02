@@ -63,10 +63,10 @@ fn assert_prior(output: &[Option<Value>], prior: &[Option<Value>]) {
 #[test]
 fn numeric_scalar_bindings_are_independently_derived_and_emitted_directly() {
     for artifact in artifacts(SOURCE) {
-        let object = crate::native_artifact::emit_program_object_with_limits(
+        let object = crate::native_artifact::program::compiler::emit_program_object_for_test(
             &artifact,
             &mech_stdlib::source_catalog(),
-            NativeProgramLimitMode::NoLimits.compilation(),
+            crate::native_artifact::codegen::options::OptimizationPass::NumericTrees,
         )
         .unwrap();
         let metadata = object.descriptor().metadata();
@@ -140,12 +140,7 @@ fn numeric_scalar_bindings_read_fresh_nested_words_and_ignore_omitted_argument_h
     let mut printed = false;
     for artifact in artifacts(SOURCE) {
         let mode = NativeProgramLimitMode::NoLimits;
-        let jit = JitProgramArtifact::compile_with_limits(
-            &artifact,
-            &mech_stdlib::source_catalog(),
-            mode.compilation(),
-        )
-        .unwrap();
+        let jit = compile_parent_pieces(&artifact, &mech_stdlib::source_catalog()).unwrap();
         for restored in [false, true] {
             let memory = mode.memory_budget();
             let mut output = vec![None; artifact.outputs().len()];
