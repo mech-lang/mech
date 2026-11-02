@@ -10642,8 +10642,8 @@
           "manifest_sha256": "68919c3c48b72d8ec820ed8357be0e8bc529f74c03144493fe7642a99207158c",
           "bytes": 53775,
           "files": 48,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-first-complete-native-4200e4ce6a8d.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-first-complete-native-4200e4ce6a8d.tar.gz"
         },
         {
           "event": "primary-reference",
@@ -10653,8 +10653,8 @@
           "manifest_sha256": "76508817d4cec9a1b17e229fbcbe25f0265d2d8f5b1ad70bdd719b7b0f6d83df",
           "bytes": 144438,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-primary-reference-3b04df50c43b.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-primary-reference-3b04df50c43b.tar.gz"
         },
         {
           "event": "primary-group0",
@@ -10664,8 +10664,8 @@
           "manifest_sha256": "c011d1ce95ff9123dc91c432574aa6b1e6c8d06d1bedfa470dac31f4ddaba742",
           "bytes": 86722,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-primary-group0-c0cb2abafc4d.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-primary-group0-c0cb2abafc4d.tar.gz"
         },
         {
           "event": "primary-group1",
@@ -10675,8 +10675,8 @@
           "manifest_sha256": "bbb6375ca6f4eac8fbf11f6095d661eb14699d26901c609824e2cf7f2fcfc8db",
           "bytes": 86801,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-primary-group1-12e7cbbca3f0.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-primary-group1-12e7cbbca3f0.tar.gz"
         },
         {
           "event": "primary-group2",
@@ -10686,8 +10686,8 @@
           "manifest_sha256": "77bc7760edbee1aaced007cac9ca6c73bc42476e6d1aab9be24f9454e53d93f9",
           "bytes": 86906,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-primary-group2-78152cd3c83f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-primary-group2-78152cd3c83f.tar.gz"
         },
         {
           "event": "primary-group3",
@@ -10697,8 +10697,8 @@
           "manifest_sha256": "ce10fd5e4b3227f69fb6e0400ddea0e02e31fecb3528681ecddc10587352cda8",
           "bytes": 86965,
           "files": 54,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-primary-group3-c7c69f29cb62.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-primary-group3-c7c69f29cb62.tar.gz"
         },
         {
           "event": "primary-summary",
@@ -10708,8 +10708,7 @@
           "manifest_sha256": "3ac5b80857180b3404c61da4d689bb86b8c8f2de4817b441ad2e1dd42379d7b0",
           "bytes": 58917,
           "files": 51,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-primary-summary-a2f5e3ad86b8.tar.gz",
+          "publication": "published; server SHA-256 verified",
           "timing": {
             "primary_observations": 3968,
             "reference_seconds": 0.000283,
@@ -10725,7 +10724,8 @@
             "improving_groups": 4,
             "improving_blocks": 64,
             "adverse_blocks": 0
-          }
+          },
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-primary-summary-a2f5e3ad86b8.tar.gz"
         },
         {
           "event": "scaled-witness",
@@ -10735,8 +10735,8 @@
           "manifest_sha256": "1f23486a7f8856405879f7b24210705444da452289a3eaa353e6d1a84f180c54",
           "bytes": 60671,
           "files": 56,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-scaled-witness-87347f40866e.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-scaled-witness-87347f40866e.tar.gz"
         },
         {
           "event": "scale-measure-1024",
@@ -10746,8 +10746,8 @@
           "manifest_sha256": "e9aaa24611da1978b4277d9016c49e0466875b587d40aa365e8669d876e009b9",
           "bytes": 82287,
           "files": 69,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-scale-measure-1024-8720619245c9.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-scale-measure-1024-8720619245c9.tar.gz"
         },
         {
           "event": "match-rich-measure-1024",
@@ -10757,8 +10757,8 @@
           "manifest_sha256": "d2b166c1d19100aba949c0793a9665ac550b6e6b0f020ce666c82bce81c7f0b7",
           "bytes": 81779,
           "files": 69,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-match-rich-measure-1024-7ff11ac246a9.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-match-rich-measure-1024-7ff11ac246a9.tar.gz"
         },
         {
           "event": "counters",
@@ -10768,8 +10768,8 @@
           "manifest_sha256": "667a977f312844669a270d053431c706062a34ab8453a6fd67c8efc3b1ddac7b",
           "bytes": 268447,
           "files": 96,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-counters-ef757633d77c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-counters-ef757633d77c.tar.gz"
         },
         {
           "event": "scale-counters",
@@ -10779,8 +10779,8 @@
           "manifest_sha256": "beea9954acebc8fe1689774d3f02e9eeb8f5f25c2be521317ccb0efc92f7c27b",
           "bytes": 91446,
           "files": 89,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-scale-counters-c5cc1896a824.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-scale-counters-c5cc1896a824.tar.gz"
         },
         {
           "event": "boundary-census-after",
@@ -10790,8 +10790,8 @@
           "manifest_sha256": "5a1096f0f64eb2f5c00f2c358ad3323b61e24270f50f71787de831d05952e598",
           "bytes": 221851,
           "files": 75,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-boundary-census-after-4afb53dfe468.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-boundary-census-after-4afb53dfe468.tar.gz"
         },
         {
           "event": "isolated-profile-scale",
@@ -10801,8 +10801,8 @@
           "manifest_sha256": "3f80ebed6d3dd1e3478de75f8678953d533579c2d657a05d6570d2026d6fae5b",
           "bytes": 329312,
           "files": 73,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-isolated-profile-scale-a0f3cfff16ea.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-isolated-profile-scale-a0f3cfff16ea.tar.gz"
         },
         {
           "event": "isolated-profile-rich",
@@ -10812,8 +10812,8 @@
           "manifest_sha256": "cb88bfc30c2f7673acde0ee6bc53d15f8f8edeba393e333dd5d762e536653fbc",
           "bytes": 314302,
           "files": 73,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-isolated-profile-rich-8a5643f695ee.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-isolated-profile-rich-8a5643f695ee.tar.gz"
         },
         {
           "event": "reference-profile",
@@ -10823,8 +10823,8 @@
           "manifest_sha256": "382dc6fe9de54a5fcfb1c3c0eb4579f02c5c9ed0f6cc8cfb832a14dc0531ee8c",
           "bytes": 134446,
           "files": 69,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-reference-profile-4f9f073d68f2.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-reference-profile-4f9f073d68f2.tar.gz"
         },
         {
           "event": "rich-counters",
@@ -10834,8 +10834,8 @@
           "manifest_sha256": "af13a89e8aa51ba39d0c9efb36d49e8f6a9bc2d6ae47a3c4229d978ca5fddad9",
           "bytes": 82142,
           "files": 76,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-rich-counters-a966d5632c60.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-rich-counters-a966d5632c60.tar.gz"
         },
         {
           "event": "scalar-controls",
@@ -10845,8 +10845,8 @@
           "manifest_sha256": "e4ddb9fc2438803300f8a17b5149339728d3f43cc4b80a988e3babae87fceb3d",
           "bytes": 95196,
           "files": 131,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-scalar-controls-48a5f29b5496.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-scalar-controls-48a5f29b5496.tar.gz"
         },
         {
           "event": "closure",
@@ -10856,13 +10856,13 @@
           "manifest_sha256": "be25317489dcfd05ff3fec341556b0a7d5bd728333d73289ee793cb165067f9e",
           "bytes": 6205350,
           "files": 376,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-closure-91feaa4b58ee.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-closure-91feaa4b58ee.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "initial_baseline": {
         "base": "6a303c6d92d14f5a88ab4aecb9999fda205f285a",
         "compiler_source": "509c0d8e05a234020372b43832d7785f255c1b59",
