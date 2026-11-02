@@ -10,6 +10,9 @@ use crate::native_artifact::program::runtime::*;
 
 mod call_cache_allocation;
 
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod argument_bank_tests;
+
 mod capture;
 #[cfg(feature = "canonical-native-program-host-runtime")]
 mod capture_admission;
