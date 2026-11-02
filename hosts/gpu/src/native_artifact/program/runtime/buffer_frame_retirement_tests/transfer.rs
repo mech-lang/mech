@@ -584,28 +584,29 @@ fn reused_frame_geometry_keeps_kind_type_rejection_and_recovery() {
         drop(claim);
         let before = snapshot(&frames);
         let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
-        for (error, expected) in [
-            (
-                frames.synchronize_scalar_field(boolean, 2).unwrap_err(),
-                "invalid scalar bits",
-            ),
-            (
-                frames.synchronize_scalar_field(managed, 1).unwrap_err(),
-                "not scalar",
-            ),
-            (
-                frames
-                    .synchronize_managed_field(boolean, bad.clone())
-                    .unwrap_err(),
-                "not managed",
-            ),
-            (
-                frames
-                    .synchronize_managed_field(managed, bad.clone())
-                    .unwrap_err(),
-                "type differs",
-            ),
-        ] {
+        for case in 0..4 {
+            let (error, expected) = match case {
+                0 => (
+                    frames.synchronize_scalar_field(boolean, 2).unwrap_err(),
+                    "invalid scalar bits",
+                ),
+                1 => (
+                    frames.synchronize_scalar_field(managed, 1).unwrap_err(),
+                    "not scalar",
+                ),
+                2 => (
+                    frames
+                        .synchronize_managed_field(boolean, bad.clone())
+                        .unwrap_err(),
+                    "not managed",
+                ),
+                _ => (
+                    frames
+                        .synchronize_managed_field(managed, bad.clone())
+                        .unwrap_err(),
+                    "type differs",
+                ),
+            };
             assert!(format!("{error:?}").contains(expected));
             unchanged(&frames, &before);
             assert_eq!(
