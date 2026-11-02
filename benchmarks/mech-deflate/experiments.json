@@ -9954,6 +9954,17 @@
           "files": 60,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-aggregate-funding-round116-20261102/archives/r116-linked-multi-20d081c58983.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "509c0d8e05a234020372b43832d7785f255c1b59",
+          "asset": "r116-scalar-controls-816937346683.tar.gz",
+          "sha256": "816937346683b4bf66d108a40b3b07f74e7eb1c3396a2b0dc46d4345500266a1",
+          "manifest_sha256": "df2eb30dc542dda27ab93db4f5d0f7a094960837d3db3f40922451fdc2e932f4",
+          "bytes": 81413,
+          "files": 98,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-aggregate-funding-round116-20261102/archives/r116-scalar-controls-816937346683.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
