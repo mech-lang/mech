@@ -17,6 +17,7 @@ mod pack;
 mod record_lookup;
 mod resources;
 mod scalar_child;
+mod scalar_words;
 mod schema_key;
 
 #[test]
