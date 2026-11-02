@@ -212,7 +212,7 @@ fn unsigned_reconstruction_keeps_exclusive_handoff_finite_admission_and_recovery
     let source = raw.into_memory_budget(&mut charge).unwrap();
     drop(charge);
     let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
-    let shape_pointer = source.shape() as *const ShapeInstance;
+    let shape = source.shape.clone();
     let identity = source.frozen_storage_identity();
     let constructor = source
         .unsigned_matrix_replacement_constructor(table)
@@ -233,7 +233,7 @@ fn unsigned_reconstruction_keeps_exclusive_handoff_finite_admission_and_recovery
     };
     words[1] = 99;
     let result = constructor.finish(buffer).unwrap();
-    assert_eq!(result.shape() as *const ShapeInstance, shape_pointer);
+    assert!(Arc::ptr_eq(&result.shape, &shape));
     assert!(!identity.matches(&result));
     let required = result.memory_budget_admission_bytes(&memory).unwrap();
     assert!(admission.capacity_bytes() >= required);
@@ -261,7 +261,7 @@ fn unsigned_reconstruction_keeps_exclusive_handoff_finite_admission_and_recovery
         panic!("u64")
     };
     assert_eq!(words, &[1, 99, 3]);
-    drop((result, identity, value_identity));
+    drop((result, identity, value_identity, shape));
     assert_eq!(
         (memory.used_bytes(), memory.retained_snapshot_nodes()),
         (0, 0)
