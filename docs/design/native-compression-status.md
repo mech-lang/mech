@@ -78,6 +78,13 @@ bounded by each symbol's address range. No performance claim uses those initial
 counts. Static module matches may include cold/drop helpers; the census supplies
 the executed encoding-family proof. No correctness failure remains.
 
+The initial evidence upload hit GitHub's 1,000-asset release cap (HTTP422), an
+environmental publication failure. The [continuation evidence release](https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2)
+retains this round's complete packets. Partial original uploads and original
+sidecars remain. Payload archive hashes are unchanged; canonical sidecars and the
+round index point to the continuation. The maintained replay harness accepts an
+optional per-round release tag while preserving historical default downloads.
+
 Fresh isolated profiles retain695 complete calls per subject, excluded from
 primary timing. Their1175/1292 sample weights are not retired instructions.
 Current registration admission/removal accounts for29/1292 weights, frame-copy
