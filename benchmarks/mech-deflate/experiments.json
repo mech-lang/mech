@@ -9379,6 +9379,17 @@
           "files": 105,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-scalar-controls-5357c231b09f.tar.gz"
+        },
+        {
+          "event": "frame-allocation",
+          "source_revision": "f327ef9489aaa0997f4d8627256f1a14eb70b0c4",
+          "asset": "r114-frame-allocation-840a0ad6a936.tar.gz",
+          "sha256": "840a0ad6a93609221e5471050351c0ff36ed9bc3d93eb9eae378a2557e344829",
+          "manifest_sha256": "a195a367ff4e62f8148f2b4f6828f29e729cc68b0d4eae24cf2fcfca3e5742c4",
+          "bytes": 71991,
+          "files": 83,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-frame-allocation-840a0ad6a936.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
