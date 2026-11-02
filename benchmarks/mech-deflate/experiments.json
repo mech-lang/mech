@@ -12516,6 +12516,17 @@
           "files": 68,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-carrier-pin-regression-99b1b020c300.tar.gz"
+        },
+        {
+          "event": "carrier-profile-analysis",
+          "source_revision": "1f4d2fa8fc2483e8d70cf8b2de38ae34bf9d4021",
+          "asset": "r125-carrier-profile-analysis-5d47f1d6f23f.tar.gz",
+          "sha256": "5d47f1d6f23f90c0ce8395cce1db992cf78c4f52f3ceb66d704f53dc54838a85",
+          "manifest_sha256": "dea2726d588fdb35249aefefcdd0afdd59817f7e7b58984d7394d4c2369bfed9",
+          "bytes": 158264,
+          "files": 62,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-carrier-profile-analysis-5d47f1d6f23f.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
