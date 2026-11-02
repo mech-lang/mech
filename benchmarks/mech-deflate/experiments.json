@@ -10792,6 +10792,17 @@
           "files": 75,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-boundary-census-after-4afb53dfe468.tar.gz"
+        },
+        {
+          "event": "isolated-profile-scale",
+          "source_revision": "99fef709f1d984e32ad22e5c8929e8dfd0ff0984",
+          "asset": "r119-isolated-profile-scale-a0f3cfff16ea.tar.gz",
+          "sha256": "a0f3cfff16ea9f928ffd742e889eba4ea97843a7f513155d0f0105b1394b0cd0",
+          "manifest_sha256": "3f80ebed6d3dd1e3478de75f8678953d533579c2d657a05d6570d2026d6fae5b",
+          "bytes": 329312,
+          "files": 73,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-isolated-profile-scale-a0f3cfff16ea.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
