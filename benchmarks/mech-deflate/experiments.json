@@ -9965,6 +9965,17 @@
           "files": 98,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-aggregate-funding-round116-20261102/archives/r116-scalar-controls-816937346683.tar.gz"
+        },
+        {
+          "event": "frame-allocation",
+          "source_revision": "509c0d8e05a234020372b43832d7785f255c1b59",
+          "asset": "r116-frame-allocation-8c62387392fc.tar.gz",
+          "sha256": "8c62387392fc313aba3ef486fd68ab8b3166ef111bb025bee2c9c2089fd83575",
+          "manifest_sha256": "c74774d198c00fbe4be86c22238e6c4c7192d2cb3be5b6645d1e9ad626be5c18",
+          "bytes": 72847,
+          "files": 76,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-aggregate-funding-round116-20261102/archives/r116-frame-allocation-8c62387392fc.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
