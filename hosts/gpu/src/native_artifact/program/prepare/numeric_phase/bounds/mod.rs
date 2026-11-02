@@ -176,6 +176,7 @@ fn prove(
     };
     let tag = *tag;
     let coordinate = Atom::Field(tail.carrier().get(), guard.field);
+    let mut stride = 0u64;
     for (site, words) in &next {
         if tag_at(words)? != tag {
             continue;
@@ -187,11 +188,20 @@ fn prove(
         if !matches!(op, NativeScalarOp::U64Add | NativeScalarOp::U64WrappingAdd)
             || args.len() != 2
             || resolver.atom(Atom::Scalar(args[0]))? != coordinate
-            || resolver.atom(Atom::Scalar(args[1]))? != Atom::Constant(1)
             || !flow.edge_dominates(guard, *site, tag)
         {
             return None;
         }
+        let Atom::Constant(amount) = resolver.atom(Atom::Scalar(args[1]))? else {
+            return None;
+        };
+        if amount == 0 {
+            return None;
+        }
+        stride = stride.max(amount);
+    }
+    if stride == 0 {
+        return None;
     }
     // A counter can advance only on the selected comparison edge. The opposite
     // edge cannot continue the active state, even through an unchanged pack.
@@ -210,15 +220,23 @@ fn prove(
     let bound = match guard.op {
         NativeScalarOp::U64Lt | NativeScalarOp::U64Le => {
             let upper = upper.value(other, guard.site)?;
-            // Also proves that a wrapping increment cannot wrap on a continuing
-            // edge: the emitted envelope's checked arithmetic must fit at entry.
-            upper.plus(if guard.op == NativeScalarOp::U64Le {
-                3
-            } else {
+            // The checked affine guard implies field <= opposite. Every
+            // continuing update advances by at least one. This conservative
+            // padding also proves the largest wrapping step cannot wrap: the
+            // emitted envelope must fit at entry. Keep unit-stride prices and
+            // envelopes unchanged; the admission maximum is never the debit.
+            upper.plus(stride.checked_add(if guard.op == NativeScalarOp::U64Le {
                 2
-            })
+            } else {
+                1
+            })?)
         }
         NativeScalarOp::U64Ne => {
+            // A larger step can skip an equality target. A checked offset
+            // changes that target, so retain the original exact unit proof.
+            if stride != 1 || guard.offset != 0 {
+                return None;
+            }
             let mut count = None;
             for (_, words) in seed {
                 if tag_at(&words)? != tag {
