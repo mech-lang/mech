@@ -12165,6 +12165,17 @@
           "files": 69,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-rich-counters-235aa9c267aa.tar.gz"
+        },
+        {
+          "event": "boundary-census-before",
+          "source_revision": "fc8e98e8d7230b78ff01644ae1457828f281673b",
+          "asset": "r124-boundary-census-before-c82097e3db42.tar.gz",
+          "sha256": "c82097e3db4226e803daede66db041496c9ad2ca3ace68a47713b73e9a599411",
+          "manifest_sha256": "c64335539709f6e4a9f032ac0076e868411f2c5cc52735053c3c86b9a2b7ce97",
+          "bytes": 448462,
+          "files": 77,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-boundary-census-before-c82097e3db42.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
