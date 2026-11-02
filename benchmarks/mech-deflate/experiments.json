@@ -10633,11 +10633,22 @@
           "files": 59,
           "publication": "published; server SHA-256 verified",
           "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r119-initial-430920a5bc71.tar.gz"
+        },
+        {
+          "event": "first-complete-native",
+          "source_revision": "99fef709f1d984e32ad22e5c8929e8dfd0ff0984",
+          "asset": "r119-first-complete-native-4200e4ce6a8d.tar.gz",
+          "sha256": "4200e4ce6a8da7fb46a2044f41396d0a5ad73c3528f2d0716a5731bd52a51d89",
+          "manifest_sha256": "68919c3c48b72d8ec820ed8357be0e8bc529f74c03144493fe7642a99207158c",
+          "bytes": 53775,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-first-complete-native-4200e4ce6a8d.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified"
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
