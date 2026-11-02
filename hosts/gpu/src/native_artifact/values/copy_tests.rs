@@ -10,6 +10,21 @@ fn exhausted_retirement_generation_of_an_empty_slot_keeps_epoch_and_original_cha
     let mut arena = NativeValueArena::new(&types, TRANSPORT_LIMIT, &memory, &mut work).unwrap();
     arena.generations.values_mut()[0] = u64::MAX;
     assert!(arena.native_retirement_available(0, &work).unwrap());
+    assert!(arena.native_retirements_available([0, 0], &work).unwrap());
+    let foreign = NativeWorkMeter::new(1_000_000).unwrap();
+    assert!(arena.native_retirements_available([], &foreign).unwrap());
+    assert_eq!(
+        arena.native_retirements_available([0], &foreign),
+        Err(NativeValueError::WrongWorkLedger)
+    );
+    assert_eq!(
+        arena.native_retirements_available([1], &foreign),
+        Err(NativeValueError::WrongWorkLedger)
+    );
+    assert_eq!(
+        arena.native_retirements_available([1], &work),
+        Err(NativeValueError::InvalidSlot)
+    );
     let before = work.used();
     arena.retire_current(0, &mut work).unwrap();
     assert_eq!(work.used(), before + 32);
@@ -34,12 +49,35 @@ fn exhausted_retirement_generation_declines_preview_and_preserves_live_alias() {
     arena.generations.values_mut()[0] = u64::MAX;
     handle.generation = u64::MAX;
     assert!(!arena.native_retirement_available(0, &work).unwrap());
+    let before_preview = work.used();
+    for slots in [vec![], vec![0], vec![0, 1], vec![1, 0], vec![0, 0]] {
+        let mut expected = Ok(true);
+        for &slot in &slots {
+            expected = arena.native_retirement_available(slot, &work);
+            if expected != Ok(true) {
+                break;
+            }
+        }
+        assert_eq!(arena.native_retirements_available(slots, &work), expected);
+        assert_eq!(work.used(), before_preview);
+        assert_eq!(arena.generations.values()[0], u64::MAX);
+    }
     let before = work.used();
     assert_eq!(
         arena.retire_current(0, &mut work),
         Err(NativeValueError::GenerationExhausted)
     );
     assert_eq!(work.used(), before + 32);
+    assert!(
+        arena
+            .get(handle, &mut work)
+            .unwrap()
+            .shares_frozen_storage(&payload)
+    );
+    // The preview retains no result across a changed current generation.
+    arena.generations.values_mut()[0] = u64::MAX - 1;
+    handle.generation = u64::MAX - 1;
+    assert!(arena.native_retirements_available([0, 0], &work).unwrap());
     assert!(
         arena
             .get(handle, &mut work)
