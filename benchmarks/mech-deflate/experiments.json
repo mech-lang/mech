@@ -9181,8 +9181,8 @@
           "manifest_sha256": "6d57eadbf36d5284f2f7ad8e5b6cd09e83d9355f79b4b5a7faa0e575d1472da6",
           "bytes": 4406644,
           "files": 79,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-initial-c968380656d3.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-initial-c968380656d3.tar.gz"
         },
         {
           "event": "primary-reference",
@@ -9192,8 +9192,8 @@
           "manifest_sha256": "f9a0137881a0b96ab771e0ba096800ce05715ca4bfeceb8cf33997b40d977d99",
           "bytes": 149371,
           "files": 47,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-primary-reference-523bd0f260e0.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-primary-reference-523bd0f260e0.tar.gz"
         },
         {
           "event": "primary-group0",
@@ -9203,8 +9203,8 @@
           "manifest_sha256": "b22fe1ee6e3c23adf4980b62bf4dbb6eb203e7f05f47833ecbc0e4afb1871996",
           "bytes": 90782,
           "files": 49,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-primary-group0-96c7fa5fb7cb.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-primary-group0-96c7fa5fb7cb.tar.gz"
         },
         {
           "event": "primary-group1",
@@ -9214,8 +9214,8 @@
           "manifest_sha256": "bb3446193357078c8efcd430848473a8ed5eb6875f7285503bbf31ee671bed49",
           "bytes": 90622,
           "files": 49,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-primary-group1-00ae2a1d5994.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-primary-group1-00ae2a1d5994.tar.gz"
         },
         {
           "event": "primary-group2",
@@ -9225,8 +9225,8 @@
           "manifest_sha256": "c78dde3a571408d124f247508b54c64a339502eaa61d63ba48f9e5134418e492",
           "bytes": 90834,
           "files": 49,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-primary-group2-31247f3a2349.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-primary-group2-31247f3a2349.tar.gz"
         },
         {
           "event": "primary-group3",
@@ -9236,8 +9236,8 @@
           "manifest_sha256": "5b87246adc4909662f289681b89e59bf56ed367efa0ebf96c0486b3b64e49826",
           "bytes": 90771,
           "files": 49,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-primary-group3-e948c926d7ad.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-primary-group3-e948c926d7ad.tar.gz"
         },
         {
           "event": "primary-summary",
@@ -9247,8 +9247,7 @@
           "manifest_sha256": "fe74f2df8cce7fef4c9824d23c0589dc5d7a49f7a07a460a20067616e6da5046",
           "bytes": 63810,
           "files": 46,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-primary-summary-f04a6978ef2a.tar.gz",
+          "publication": "published; server SHA-256 verified",
           "timing": {
             "primary_observations": 3968,
             "reference_seconds": 0.00029,
@@ -9264,7 +9263,8 @@
             "improving_groups": 3,
             "improving_blocks": 41,
             "adverse_blocks": 23
-          }
+          },
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-primary-summary-f04a6978ef2a.tar.gz"
         },
         {
           "event": "scale-measure-1024",
@@ -9274,8 +9274,8 @@
           "manifest_sha256": "d8a298fde640b74addfcb6f3e024b6a6ad8aed82c05a57dd1b1e3047560b1f1f",
           "bytes": 81920,
           "files": 60,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-scale-measure-1024-5119dea0f45c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-scale-measure-1024-5119dea0f45c.tar.gz"
         },
         {
           "event": "confirm-reference",
@@ -9285,8 +9285,8 @@
           "manifest_sha256": "a565b17f56e27b87b23954d59d511bae2806789f2dad7f0c89e7a5f04022e991",
           "bytes": 152503,
           "files": 51,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-confirm-reference-f9b5f6781769.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-confirm-reference-f9b5f6781769.tar.gz"
         },
         {
           "event": "confirm-group0",
@@ -9296,8 +9296,8 @@
           "manifest_sha256": "bfe5f4aa0a558a64b861f8f3a8a07a64f574d472a8b1766e416047e5112c1550",
           "bytes": 94791,
           "files": 53,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-confirm-group0-139b40c7af54.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-confirm-group0-139b40c7af54.tar.gz"
         },
         {
           "event": "confirm-group1",
@@ -9307,8 +9307,8 @@
           "manifest_sha256": "a3b8e316a9c12857b6bd81a16cce053df0573e08668525f2b7afb14778d2817e",
           "bytes": 94806,
           "files": 53,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-confirm-group1-c478854da0d5.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-confirm-group1-c478854da0d5.tar.gz"
         },
         {
           "event": "confirm-group2",
@@ -9318,8 +9318,8 @@
           "manifest_sha256": "a0db9694092c82571d80996d151243af7ea74e3c9d9a4ede6ec150f264f50f29",
           "bytes": 94647,
           "files": 53,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-confirm-group2-f57e2a85a41f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-confirm-group2-f57e2a85a41f.tar.gz"
         },
         {
           "event": "confirm-group3",
@@ -9329,8 +9329,8 @@
           "manifest_sha256": "70d234a88d5efffb6c64462461d154f9c05ac3c04fd12a95de5239264f230502",
           "bytes": 94697,
           "files": 53,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-confirm-group3-7adf73fc1e54.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-confirm-group3-7adf73fc1e54.tar.gz"
         },
         {
           "event": "confirm-summary",
@@ -9340,8 +9340,7 @@
           "manifest_sha256": "46c9225dfce391cd708e1f3844b2881a27a051283bf44fef7a73684ee5d3a164",
           "bytes": 66144,
           "files": 50,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-confirm-summary-9093b7592b25.tar.gz",
+          "publication": "published; server SHA-256 verified",
           "timing": {
             "primary_observations": 3968,
             "reference_seconds": 0.000287,
@@ -9357,7 +9356,8 @@
             "improving_groups": 4,
             "improving_blocks": 51,
             "adverse_blocks": 13
-          }
+          },
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-confirm-summary-9093b7592b25.tar.gz"
         },
         {
           "event": "scale-confirm-1024",
@@ -9367,8 +9367,8 @@
           "manifest_sha256": "ae5b1ceb3b2d6e919d567a04a9496b587f775e76ab2f747b24fccc75335861cf",
           "bytes": 84108,
           "files": 64,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-scale-confirm-1024-12b15ecd8b15.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-scale-confirm-1024-12b15ecd8b15.tar.gz"
         },
         {
           "event": "counters",
@@ -9378,8 +9378,8 @@
           "manifest_sha256": "53695330eccb218c07c130fbb607bee10807a260e53a0b7d163fc8d89012263e",
           "bytes": 263952,
           "files": 88,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-counters-753af99e9fa4.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-counters-753af99e9fa4.tar.gz"
         },
         {
           "event": "scale-counters",
@@ -9389,8 +9389,8 @@
           "manifest_sha256": "ea262be24d96d56ff094353ad2c26835a1556792ffa70ffa44f385dcb49a8024",
           "bytes": 90289,
           "files": 80,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-scale-counters-212afe47502c.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-scale-counters-212afe47502c.tar.gz"
         },
         {
           "event": "isolated-profile",
@@ -9400,8 +9400,8 @@
           "manifest_sha256": "641a1016452eb5c72a4d9981bde4e88df359a3f6ffbbcb2d845f227fb493f067",
           "bytes": 269224,
           "files": 57,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-isolated-profile-13c992b61f8d.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-isolated-profile-13c992b61f8d.tar.gz"
         },
         {
           "event": "isolated-profile-scale",
@@ -9411,8 +9411,8 @@
           "manifest_sha256": "a95e249853209051ef7aa661ae05641d7d6e0da4f9ba1ed203acc52d961a64b9",
           "bytes": 314020,
           "files": 59,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-isolated-profile-scale-b9a2f1be130d.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-isolated-profile-scale-b9a2f1be130d.tar.gz"
         },
         {
           "event": "linked-multi",
@@ -9422,8 +9422,8 @@
           "manifest_sha256": "e7a014446303b919c4542826f4b35c8b6d37ba47086053e596d3be5c4f6f97d9",
           "bytes": 99798,
           "files": 65,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-linked-multi-0e68379ea5e7.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-linked-multi-0e68379ea5e7.tar.gz"
         },
         {
           "event": "scalar-controls",
@@ -9433,8 +9433,8 @@
           "manifest_sha256": "ec7877f2887babc7f3c6d1c4f4d1f465b0dd5f59cc3670cc0ecbd239a99680e1",
           "bytes": 80712,
           "files": 105,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-scalar-controls-5357c231b09f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-scalar-controls-5357c231b09f.tar.gz"
         },
         {
           "event": "frame-allocation",
@@ -9444,8 +9444,8 @@
           "manifest_sha256": "a195a367ff4e62f8148f2b4f6828f29e729cc68b0d4eae24cf2fcfca3e5742c4",
           "bytes": 71991,
           "files": 83,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-frame-allocation-840a0ad6a936.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-frame-allocation-840a0ad6a936.tar.gz"
         },
         {
           "event": "closure",
@@ -9455,8 +9455,8 @@
           "manifest_sha256": "dad2872018be72f0967b5686921e8ceb717f98f82b645b8107753a97445a2480",
           "bytes": 5003899,
           "files": 347,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-closure-bbcdc9caba8e.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-closure-bbcdc9caba8e.tar.gz"
         },
         {
           "event": "analysis-final",
@@ -9466,13 +9466,13 @@
           "manifest_sha256": "9d38e97badf74547d5301209ce3a83f02218aa6f7ce32096300aa674ee29fb60",
           "bytes": 86965,
           "files": 58,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-analysis-final-25f23deecdac.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r114-analysis-final-25f23deecdac.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "retained": true,
       "versions": [
         143,
