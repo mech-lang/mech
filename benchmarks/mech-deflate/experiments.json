@@ -11706,7 +11706,7 @@
       "base": "2d9a0b3d8092836a21cab938f0d1356646e2a27b",
       "production": "71f8cb7bed8bc84bfcb75915b79b8c299401adc5",
       "compiler_source": "71f8cb7bed8bc84bfcb75915b79b8c299401adc5",
-      "decision": "under measurement",
+      "decision": "Retain complete positive-stride matching phases on repaired runtime. Repeated1KB elapsed improves29.918% and instructions fall about100million; random elapsed improves0.255% while its instructions rise slightly;8B elapsed regresses0.248%. Preserve contrary cohorts and additional metadata allocations/30,208-byte peak increase. The prior four extra full-cache copies are not reintroduced. Next follow the new brief: Huffman native loops with explicit fallback exits, before collector owner forwarding and fixed-size mutable children.",
       "events": [
         {
           "event": "first-complete-native",
@@ -11921,11 +11921,38 @@
           "files": 68,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-isolated-profile-rich-a84b034e4f89.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "71f8cb7bed8bc84bfcb75915b79b8c299401adc5",
+          "asset": "r123-closure-bbd156d78d8d.tar.gz",
+          "sha256": "bbd156d78d8de4ef208186202b0062d2717aa8f8105fcc0eab95194593602825",
+          "manifest_sha256": "525ef66d5ae7eb0b9d822766763f20311a5840991b80b7e4b64dcc4cf957ce0f",
+          "bytes": 10517293,
+          "files": 438,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-closure-bbd156d78d8d.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "retained": true,
+      "versions": [
+        150,
+        103,
+        38,
+        14
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "3229999cda2922b18caa59a4daabcfe0a2cdd2cfbd51b726676b133698132570",
+          "profile-numbers.json": "a52d9ac23c784d7fc26aaacbe6ff092f7114a62bb5843b2cd43b0ec9d36e5756",
+          "scorecard.json": "10b2168ae0600055b0170293d75b379adab65c83d8a04f3c78115d87f7bf37c9",
+          "validation.json": "2da1a5ae9b6a6abadee9e20096419b2a82b2e65bd32edeaa0a68922c632529cf"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
