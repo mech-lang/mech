@@ -12362,6 +12362,17 @@
           "files": 57,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-match-rich-measure-1024-67cd0a9bb948.tar.gz"
+        },
+        {
+          "event": "regression-heap",
+          "source_revision": "a03a04a13a266ea39edaacf96725af10f6989874",
+          "asset": "r125-regression-heap-57cf5efeb6fd.tar.gz",
+          "sha256": "57cf5efeb6fd136e7c5be3af002e20ca9a1a50360b4c309bafc20eb1bbf1bd9e",
+          "manifest_sha256": "e9ffc88f1d4d530f2528621fc345fd5055234481c0050358f6cbbbd5d0596944",
+          "bytes": 118908,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-regression-heap-57cf5efeb6fd.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
