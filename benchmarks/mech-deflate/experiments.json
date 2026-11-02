@@ -11485,6 +11485,17 @@
           "files": 45,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-call-bank-round122-20261102/archives/r122-scaled-witness-79ad179abc22.tar.gz"
+        },
+        {
+          "event": "primary-reference",
+          "source_revision": "da58ad43e12a7c9e078631514f1c06d874d4c384",
+          "asset": "r122-primary-reference-1caaa873169d.tar.gz",
+          "sha256": "1caaa873169dffd9d0ff04669d25fc9fe6c5e1b080d85fe9223a2b0b607718c0",
+          "manifest_sha256": "c18518d7bf9ae7c3b66f8c8d5714b45623d0c8b8de243f686be084928ce5f770",
+          "bytes": 144494,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-call-bank-round122-20261102/archives/r122-primary-reference-1caaa873169d.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
