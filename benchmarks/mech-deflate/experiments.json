@@ -12351,6 +12351,17 @@
           "files": 57,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-scale-measure-1024-06ed6df70e54.tar.gz"
+        },
+        {
+          "event": "match-rich-measure-1024",
+          "source_revision": "a03a04a13a266ea39edaacf96725af10f6989874",
+          "asset": "r125-match-rich-measure-1024-67cd0a9bb948.tar.gz",
+          "sha256": "67cd0a9bb948e757afa29083212b5b30daf067b5db54f746bd7808bfd1ba9b9a",
+          "manifest_sha256": "c8c0ebc521c76dd2ac1a6c1885f1594d387926eabb73e2aeed6774402daae39e",
+          "bytes": 134320,
+          "files": 57,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-match-rich-measure-1024-67cd0a9bb948.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
