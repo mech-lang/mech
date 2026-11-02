@@ -8946,6 +8946,17 @@
             "improving_blocks": 31,
             "adverse_blocks": 33
           }
+        },
+        {
+          "event": "scale-measure-1024",
+          "source_revision": "c85dfe8bcea3bc39a626a5287f2fa1ee5a22ad5c",
+          "asset": "r112-scale-measure-1024-74c9e67b54e2.tar.gz",
+          "sha256": "74c9e67b54e27de176df1ee406b5a3e1aec9a7c345f4c1dd7b5020d421bb6cbe",
+          "manifest_sha256": "7ef94afe3723eb12da93bb986c0b2940f2e284d1aa952e24a8d2712af89c0735",
+          "bytes": 85569,
+          "files": 57,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-scale-measure-1024-74c9e67b54e2.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
