@@ -11218,7 +11218,7 @@
       "base": "445cf91bcd8ea50955942c5a1895206a620a92ad",
       "production": "6ed4e0fb7e7e34abd1162f090e112045bc052565",
       "compiler_source": "6ed4e0fb7e7e34abd1162f090e112045bc052565",
-      "decision": "under measurement",
+      "decision": "Retain the bounded nested-phase canonical pin handoff repair and its controls. Standalone elapsed results are mixed, with a repeated-data regression; no broad speedup claim. The real-buffer causal witness removes four extra initialized cache copies in the held larger-phase candidate. Existing leaf prices and compressor source remain unchanged.",
       "events": [
         {
           "event": "first-complete-native",
@@ -11426,7 +11426,23 @@
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified"
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "retained": true,
+      "versions": [
+        148,
+        102,
+        38,
+        14
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "66b27fed5e5843a04abf9cc0c609499a944a786cbd2124acd3206a827e72ee9a",
+          "profile-numbers.json": "dcb8dcec0e468c8254bafdc03fca97f215d3e8bbd5a7492f5dbb4f1905d93c3a",
+          "scorecard.json": "1a01a5ca0acbac23cc7cf7cfb0fd47ab2aec8d29cbeda77b6716c0b1cd19046a",
+          "validation.json": "e5f92769abbbf1048e9b1ed2d92f8a374139971639c15a6b884fbfff623e38cc"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
