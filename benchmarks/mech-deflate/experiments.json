@@ -10748,6 +10748,17 @@
           "files": 69,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-scale-measure-1024-8720619245c9.tar.gz"
+        },
+        {
+          "event": "match-rich-measure-1024",
+          "source_revision": "99fef709f1d984e32ad22e5c8929e8dfd0ff0984",
+          "asset": "r119-match-rich-measure-1024-7ff11ac246a9.tar.gz",
+          "sha256": "7ff11ac246a980f34893f550ae631bf4052c676c6b9c636ef412fbb7b665742f",
+          "manifest_sha256": "d2b166c1d19100aba949c0793a9665ac550b6e6b0f020ce666c82bce81c7f0b7",
+          "bytes": 81779,
+          "files": 69,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-match-rich-measure-1024-7ff11ac246a9.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
