@@ -11127,6 +11127,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-binary-audit-c426e35b9767.tar.gz"
+        },
+        {
+          "event": "phase-owner-trace",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-phase-owner-trace-888af15a36ec.tar.gz",
+          "sha256": "888af15a36ec5cc6435903e4c3100f98b5ae29683f4472ca6249080b8ec3e3c7",
+          "manifest_sha256": "724227181ee49dd84453120b11b3796368df81824800fe0e3e9f9dfffe2e9333",
+          "bytes": 287463,
+          "files": 64,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-phase-owner-trace-888af15a36ec.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
