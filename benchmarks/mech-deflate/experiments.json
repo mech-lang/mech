@@ -12538,6 +12538,17 @@
           "files": 78,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-carrier-boundary-census-after-d177f57bfdf3.tar.gz"
+        },
+        {
+          "event": "continuation-repair",
+          "source_revision": "914ab57fab23f831f6bb99e5f8a0e8419d2c3004",
+          "asset": "r125-continuation-repair-01169abea94a.tar.gz",
+          "sha256": "01169abea94ac4ac50c0519872fdc5aabe8241fa144b3f1790f6ae43ab309105",
+          "manifest_sha256": "31fdb305e7db81b552fde9e2753624ee7b117882889009d49eceb0813f201e4f",
+          "bytes": 4532326,
+          "files": 157,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-continuation-repair-01169abea94a.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
