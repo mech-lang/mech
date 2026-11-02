@@ -9011,7 +9011,25 @@
           "scorecard.json": "0e05216d951d26003945ff1186d8e97dfb52ba732444387f03443bf1a8f26a56"
         }
       },
-      "source_disposition": "Held; default restored to ABI38 in 951eb640a6. All candidate source commits and diagnostic patches retained."
+      "source_disposition": "Held; default restored to ABI38 in 951eb640a6. All candidate source commits and diagnostic patches retained.",
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "diagnostics.json",
+          "scorecard.json"
+        ],
+        "paths_with_multiple_preserved_versions": 1,
+        "round": 112,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 199,
+        "verified_archives": 11,
+        "verified_file_occurrences": 705
+      },
+      "archive_verification": {
+        "archives": 11,
+        "sidecars": 11,
+        "all_server_digests_match": true,
+        "native_binaries_included": false
+      }
     },
     "113": {
       "base": "a105e9a76978ff7bbb4a8dd56968a3c7b8e457b8",
@@ -9165,7 +9183,25 @@
           "scorecard.json": "bb1a8fa9c68345416c2f2668748531cd15aadd8f26bb81c59982d6858b576ec6"
         }
       },
-      "source_disposition": "Held; default restored to ABI38 in 951eb640a6. All candidate source commits and diagnostic patches retained."
+      "source_disposition": "Held; default restored to ABI38 in 951eb640a6. All candidate source commits and diagnostic patches retained.",
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "diagnostics.json",
+          "scorecard.json"
+        ],
+        "paths_with_multiple_preserved_versions": 2,
+        "round": 113,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 178,
+        "verified_archives": 10,
+        "verified_file_occurrences": 643
+      },
+      "archive_verification": {
+        "archives": 10,
+        "sidecars": 10,
+        "all_server_digests_match": true,
+        "native_binaries_included": false
+      }
     },
     "114": {
       "base": "a105e9a76978ff7bbb4a8dd56968a3c7b8e457b8",
@@ -9493,7 +9529,27 @@
       },
       "object_source": "705c5acdc4fc92be5beeacf28d02721ea4e39ddf",
       "object_reused": true,
-      "source_disposition": "Retain one runtime inline attribute; compiler/protocol/types unchanged. Exact R108 Object reused with validated provenance."
+      "source_disposition": "Retain one runtime inline attribute; compiler/protocol/types unchanged. Exact R108 Object reused with validated provenance.",
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "mechanism.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 3,
+        "round": 114,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 491,
+        "verified_archives": 24,
+        "verified_file_occurrences": 1747
+      },
+      "archive_verification": {
+        "archives": 24,
+        "sidecars": 24,
+        "all_server_digests_match": true,
+        "native_binaries_included": false
+      }
     }
   },
   "repository": "mech-lang/mech",
