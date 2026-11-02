@@ -18,12 +18,9 @@
 use crate::native_artifact::abi::NativeEntryFrame;
 use crate::native_artifact::program::protocol::GlobalHelper;
 use core::ffi::c_void;
-// ABI39 composes adjacent admission and numeric entry. The helper returns
-// selection in bit0 and the paid scalar-prefix decision in bit1. A false
-// captured argument-capacity guard performs admission only; native code then
-// reports the original ABI failure before any numeric entry or pointer check.
-// ABI38 ordinary helper composition and the frozen frame layout remain.
-pub(in crate::native_artifact) const VERSION: u64 = 39;
+// ABI38 composes an ordinary admission and zero-word helper in one callback.
+// The frozen scalar prefix and frame layout remain unchanged.
+pub(in crate::native_artifact) const VERSION: u64 = 38;
 pub(in crate::native_artifact) const JOIN_MAP_MISSING_BYTE: u8 = 0x80;
 pub(in crate::native_artifact) const PHASE_ACTIVATION: u64 = 0;
 pub(in crate::native_artifact) const PHASE_TURN: u64 = 1;

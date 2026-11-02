@@ -53,9 +53,7 @@ unsafe extern "C" fn helper(
 ) -> u64 {
     if matches!(
         GlobalHelper::decode(op),
-        GlobalHelper::AdmitMove
-            | GlobalHelper::AdmitStructuralObservation
-            | GlobalHelper::AdmitNumericSegmentBegin
+        GlobalHelper::AdmitMove | GlobalHelper::AdmitStructuralObservation
     ) {
         COUNTS.with(|v| *v.borrow_mut().admits.entry(site).or_default() += 1);
     }
@@ -104,13 +102,11 @@ unsafe extern "C" fn helper(
     }
     // SAFETY: unchanged arguments and result pointer from the checked entry.
     let status = unsafe { HELPER.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
-    if matches!(
-        GlobalHelper::decode(op),
-        GlobalHelper::NumericSegmentBegin | GlobalHelper::AdmitNumericSegmentBegin
-    ) && status == 0
+    if op == crate::native_artifact::program::protocol::GlobalHelper::NumericSegmentBegin.raw()
+        && status == 0
     {
         // SAFETY: the original helper has successfully filled its live result.
-        let selected = unsafe { *out } & 1;
+        let selected = unsafe { *out };
         if selected == 1 && POISON_UNUSED_EXIT.with(Cell::get) {
             // Poison the unused physical homes before selected SSA entry. The
             // body must initialize from arguments, and no exit may spill here.
