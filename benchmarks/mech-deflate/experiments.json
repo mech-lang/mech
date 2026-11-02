@@ -9346,6 +9346,17 @@
           "files": 57,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-isolated-profile-13c992b61f8d.tar.gz"
+        },
+        {
+          "event": "isolated-profile-scale",
+          "source_revision": "f327ef9489aaa0997f4d8627256f1a14eb70b0c4",
+          "asset": "r114-isolated-profile-scale-b9a2f1be130d.tar.gz",
+          "sha256": "b9a2f1be130da262d507e9432a8a995b63b4f71b09c1e26723e027421798e615",
+          "manifest_sha256": "a95e249853209051ef7aa661ae05641d7d6e0da4f9ba1ed203acc52d961a64b9",
+          "bytes": 314020,
+          "files": 59,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-isolated-profile-scale-b9a2f1be130d.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
