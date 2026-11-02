@@ -11149,6 +11149,17 @@
           "files": 80,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-phase-owner-proof-e8d483fcd493.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-closure-02647362e5a6.tar.gz",
+          "sha256": "02647362e5a6c48aa7eb1798b47d9ba45793fed803e5daccb24f8de9f1e31511",
+          "manifest_sha256": "0b1dffc1a437bead2d1ca5158e7eb8f8d0dc2b2271c0948bc1dc1b39ceca7a89",
+          "bytes": 5946540,
+          "files": 211,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-closure-02647362e5a6.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
