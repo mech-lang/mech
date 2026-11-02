@@ -12329,6 +12329,17 @@
           "files": 43,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-corrected-complete-native-d8f9b8ee2517.tar.gz"
+        },
+        {
+          "event": "corrected-scaled-witness",
+          "source_revision": "a03a04a13a266ea39edaacf96725af10f6989874",
+          "asset": "r125-corrected-scaled-witness-08d4dd7fc1c4.tar.gz",
+          "sha256": "08d4dd7fc1c45d8380636251c38ae1d9ae06c88b4a991b32044b2056ed5c7219",
+          "manifest_sha256": "ff6c08a1717f49507348140a8c3ec5863fd459fc88e9725c91cdfda0276ca40b",
+          "bytes": 117183,
+          "files": 46,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-corrected-scaled-witness-08d4dd7fc1c4.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
