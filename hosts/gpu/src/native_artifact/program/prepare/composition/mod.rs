@@ -211,7 +211,7 @@ impl Layout {
                         })
                         && plan.activation_boundary() != Some(site as u32)
                         && matches!(block.terminator(), Term::Scalar(_))
-                        && eligible(plan, frames, aggregates, calls, site))
+                        && eligible(plan, frames, calls, site))
                     .then_some(site as u32)
                 })
                 .collect::<BTreeSet<_>>();
@@ -298,7 +298,6 @@ impl Layout {
                             plan,
                             &facts,
                             frames,
-                            aggregates,
                             calls,
                             visits,
                             retirements,
@@ -457,7 +456,6 @@ fn scalar_child_tree(
 fn eligible(
     plan: &Plan,
     frames: &NativeBufferFrames,
-    aggregates: &NativeScalarAggregates,
     calls: &[Option<NativePreparedLibraryCall>],
     site: usize,
 ) -> bool {
@@ -495,12 +493,6 @@ fn eligible(
                                 .is_some_and(|field| matches!(field.lane(), Lane::Managed { .. }))))
             }
         };
-    }
-    // The independently derived aggregate layout already proves private
-    // scalar-only word storage. Keep its checked Pack/Copy/Project/Observe
-    // action in this SSA piece, using the ordinary shared emitter and guards.
-    if aggregates.action(site).is_some() {
-        return true;
     }
     match action {
         Action::Scalar(Scalar::None | Scalar::Primitive { .. }) => true,
