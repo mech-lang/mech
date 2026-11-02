@@ -10429,6 +10429,17 @@
           "files": 46,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-zero-trip-round118-20261102/archives/r118-scale-measure-1024-766e0c9b4c85.tar.gz"
+        },
+        {
+          "event": "counters",
+          "source_revision": "509c0d8e05a234020372b43832d7785f255c1b59",
+          "asset": "r118-counters-952ffede74af.tar.gz",
+          "sha256": "952ffede74af42e08e2b1a2359b9ebac20eb938ebda9e091f43f74985317f88c",
+          "manifest_sha256": "dd0e968d939426c93418fed95c201a6b65f81a38215f1fb12527ca5c737f357a",
+          "bytes": 255709,
+          "files": 75,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-zero-trip-round118-20261102/archives/r118-counters-952ffede74af.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
