@@ -71,6 +71,19 @@ impl Invocation<'_, '_, '_> {
                 .arena
                 .put(value, &owner, &mut self.state.control.work)?;
         }
+        // The ordinary continuation owns its exact live exports now. Keeping a
+        // dead carrier pin would force otherwise exclusive suffix updates to
+        // copy. This releases only that proved dead visit; live exported aliases
+        // and Core's final consuming-update check keep their normal authority.
+        if exit.retire_carrier
+            && !self.state.buffer_frames.retire(
+                &metadata.frame_retirements,
+                region.tail.carrier().get(),
+                &mut self.state.control.work,
+            )?
+        {
+            return Err(invalid("cold carrier lacks its retirement recipe"));
+        }
         Ok(())
     }
 }

@@ -289,7 +289,9 @@ fn selected_template(
 // IR151 reconstructs exact current-state cold child exits for numeric loops.
 // IR152 adds actual cold source cuts and independently proved prepaid membership.
 // IR153 keeps SSA and boundary accesses in each private home's same alias region.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 153;
+// IR154 independently reconstructs dead root carrier retirement after all live
+// values have been exported at an actual native interval boundary.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 154;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -495,7 +497,11 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 153;
 // Existing leaf/parent prices and original per-site failure order remain.
 // Policy104 retains the paid root traversal across an ordinary child and suffix.
 // Only those proved source visits are prepaid; child/factory work stays dynamic.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 105;
+// Policy105 extends that membership to exact interval cuts and retains each
+// private fuel home's boundary alias region.
+// Policy106 charges the existing frame retirement recipe when a dead interval
+// carrier releases its pins after exporting the ordinary continuation.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 106;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
