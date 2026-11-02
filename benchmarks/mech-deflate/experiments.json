@@ -10699,6 +10699,33 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-primary-group3-c7c69f29cb62.tar.gz"
+        },
+        {
+          "event": "primary-summary",
+          "source_revision": "99fef709f1d984e32ad22e5c8929e8dfd0ff0984",
+          "asset": "r119-primary-summary-a2f5e3ad86b8.tar.gz",
+          "sha256": "a2f5e3ad86b8bd005b61f6e98f74e4f41ca6958d0d14d1bfbb08c3813b0782cc",
+          "manifest_sha256": "3ac5b80857180b3404c61da4d689bb86b8c8f2de4817b441ad2e1dd42379d7b0",
+          "bytes": 58917,
+          "files": 51,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-primary-summary-a2f5e3ad86b8.tar.gz",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.000283,
+            "medians": {
+              "after": 0.0023327915,
+              "before": 0.0024294375
+            },
+            "multiples_of_reference": {
+              "after": 8.243079505300354,
+              "before": 8.58458480565371
+            },
+            "after_over_before": 0.9602187749221784,
+            "improving_groups": 4,
+            "improving_blocks": 64,
+            "adverse_blocks": 0
+          }
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
