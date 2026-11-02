@@ -10836,6 +10836,17 @@
           "files": 76,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-rich-counters-a966d5632c60.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "99fef709f1d984e32ad22e5c8929e8dfd0ff0984",
+          "asset": "r119-scalar-controls-48a5f29b5496.tar.gz",
+          "sha256": "48a5f29b5496eca3249ac505a8c259e367d9b617c2807d1ab5f03611c11c238c",
+          "manifest_sha256": "e4ddb9fc2438803300f8a17b5149339728d3f43cc4b80a988e3babae87fceb3d",
+          "bytes": 95196,
+          "files": 131,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-scalar-controls-48a5f29b5496.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
