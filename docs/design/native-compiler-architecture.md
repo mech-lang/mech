@@ -117,6 +117,15 @@ Failure cleans up unpublished state and retains original source origins/order.
 Publication remains at real exits. Cold growth within an active nested child is
 outside this first contract.
 
+R121 also applies the existing ordinary source-site canonical alias-retirement
+proof at a nested phase's first effective mutation. The bridge funds its exact
+candidate checks after settling the current loan, takes the carrier pin, and
+retires only candidates with the same current frozen identity. It then uses the
+original checked replacement/append factory and Core's exclusivity decision.
+Live frame fields and external aliases remain owners; no arena-wide scan grants
+consumption. An absent last-use candidate retains the copy path. Existing
+child-free leaf handoffs and their qualified prices remain unchanged.
+
 Build-owned image validation independently reconstructs phase membership,
 bindings/current versions, homes, bounds, debit identities and result recipes
 from the validated program. Serialized metadata grants no raw-view authority.

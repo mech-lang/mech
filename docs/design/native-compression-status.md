@@ -6,13 +6,68 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Hosted CI is not awaited under
 instruction; no green hosted-CI claim is made.
 
+## R121: canonical owner handoff at a nested phase's first change
+
+Update base `445cf91bcd8ea50955942c5a1895206a620a92ad`; measured compiler
+**`6ed4e0fb7e7e34abd1162f090e112045bc052565`**; IR/work/ABI/MBC **148/102/38/14**.
+The cold bridge now applies the existing same-plan ordinary alias-retirement
+proof before Core decides whether a changed array can be consumed. It retires
+only currently matching dead canonical pins. Live earlier results and outside
+aliases remain owners. Existing child-free handoffs, prices, golden values and
+component allowances remain unchanged.
+
+| Fresh matched elapsed cohort | R119 / Roc | R121 / Roc | Change |
+|---|---:|---:|---:|
+|8B|7.571121×|7.547341×|0.314079% faster|
+|1KB random|71.710410×|71.500138×|0.293224% faster|
+|1KB repeated `a`|57.128589×|57.431283×|0.529847% slower|
+
+This is an enabling repair with mixed standalone elapsed results. Only two of
+four8B prepared pairs improve;41 descriptive blocks improve and23 regress.
+Random data improves in6/8 blocks; repeated data regresses in8/8. Keep all3,968
+primary/3,984 total8B observations and128 per-version observations in each1KB
+cohort. References are fresh within each row; do not compare absolute ratios
+across rounds or compound independently collected improvements.
+
+Separate retired-instruction medians are24,971,843.5→24,888,483 for8B,
+338,023,420→336,812,584.5 for random data and300,963,185→300,396,174 for repeated
+data. Allocation requests remain4,101/29,391/16,091 respectively, and incremental
+peak usable heap remains15,175,816/15,174,280/15,178,400B. Generated text remains
+14,780,140B; entry stack144,528B; numeric emitter reports and source logical work
+match R119. No allocation reduction in the retained benchmark is claimed.
+
+A separate causal witness combines the unchanged held R120 Object with this
+final cold handoff. Across two complete repeated-data calls, its eight first
+cache changes reuse their backing: the four extra1,500,513-word U32 cache copies
+per call disappear. This is a mechanism witness, not a portable-image or elapsed
+comparison. The larger phase still needs a complete rebuilt performance cohort.
+The prior live-result control still copies; denying that original copy preserves
+published output, frees unpublished state and permits a successful retry.
+
+Passing checks:12 nested-phase controls,77 selected native tests,502 compatible
+GPU units,236 unchanged components,8 connected tests,1 path-structure test,
+132 workflow tests,15 architecture/catalog checks and runtime-only metadata.
+All12 optimized original/decoded scalar controls pass the unchanged1.05 gate
+(worst1.003103), with no request/byte increase. Seven previously reproduced
+missing-feature/registry failures remain excluded. No fresh full-feature/Core/
+no_std/minimal-graph, linked40/frame8, source-variant complete run, hosted CI
+green, clean review or full-scale timing is claimed.
+
+Fresh profiles retain130 complete calls per subject/input. Other host callbacks
+account for81.89% of random-data sample weights and68.33% of repeated-data
+weights after the repair. These are CPU-time samples, not instruction counts.
+The next concrete target is raw numeric argument capacity inflating the managed
+value bank: the held larger phase grows it61→239, causing147,562 additional
+empty-slot checks across829 tiny-input parent exits. Separating those prepared
+bounds is proposed; its performance benefit has not yet been measured.
+
 ## R120: strided matching phases held outside the retained compiler
 
 Candidate compiler `740e98506ea6abc3ac8d889999cdcfcc628684e8` extends the existing
 phase proof to positive constant strides behind checked affine bounds. The
 original source and bytecode stay fixed. This selects the search/skip matching
 children as complete native phases, but is **not retained** because its results
-are mixed. R119 remains the published production compiler.
+are mixed. The retained compiler keeps R119 selection with R121's cold handoff.
 
 | Fresh matched elapsed cohort | R119 / Roc | Candidate / Roc | Change |
 |---|---:|---:|---:|
