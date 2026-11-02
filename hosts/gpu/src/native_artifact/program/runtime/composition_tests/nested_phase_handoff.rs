@@ -5,16 +5,17 @@ use super::*;
 fn source(keep_old: bool) -> String {
     let original = include_str!("../../../../../tests/fixtures/native/numeric-nested-phase.mec");
     let main = original.lines().last().unwrap();
-    let call = main.replace("sequence/reserve(nodes<[u64]>, 305257u64)", "prepared");
+    let signature = "values<[u32]>, nodes<[u64]>, steps<u64>, flag<bool>, allowed<bool>, deny-at<u64>, divisor<u64>, bias<u64>";
     let result = if keep_old {
-        format!("answer := {call}\n(prepared, answer)")
+        "(prepared, answer)"
     } else {
-        call
+        "answer"
     };
+    let kind = if keep_old { "([u64],[u64])" } else { "[u64]" };
     original.replacen(
         main,
         &format!(
-            "~prepared := sequence/reserve(nodes<[u64]>, 305257u64)\nprepared[1u64] = bias<u64>\n{result}"
+            "handoff({signature}) => (out<{kind}>) :=\n  ~prepared := sequence/reserve(nodes, 305257u64)\n  prepared[1u64] = bias\n  answer := phase-scan(values, prepared, steps, 0u64, flag, allowed, deny-at, divisor, bias)\n  out := {result}.\n\nhandoff({signature})"
         ),
         1,
     )
