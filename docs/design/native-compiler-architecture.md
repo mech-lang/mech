@@ -126,12 +126,21 @@ Live frame fields and external aliases remain owners; no arena-wide scan grants
 consumption. An absent last-use candidate retains the copy path. Existing
 child-free leaf handoffs and their qualified prices remain unchanged.
 
+R122 separates canonical call owners from raw numeric argument words. Preparation
+and independent image loading derive the owner span from source call arity,
+parent-piece source pins and fixed window/string-map support. The span is not a
+serialized permission. A checked `CallInputs` view exposes only that prefix;
+its unexposed tail stays empty. The original full backing, initialization,
+admission floor and transport/header charges remain. Numeric words retain their
+separate existing typed storage. A larger numeric phase therefore cannot expand
+every canonical stale-owner scan merely by needing more scalar scratch words.
+
 Build-owned image validation independently reconstructs phase membership,
 bindings/current versions, homes, bounds, debit identities and result recipes
 from the validated program. Serialized metadata grants no raw-view authority.
 The emitted fixed boundary is bounded from the phase's word inventory, then
-checked against the actual emitted instruction count. The new current versions
-are typed IR146 and work100, with ABI38 and bytecode14 unchanged; the version
+checked against the actual emitted instruction count. The current versions
+are typed IR149 and work102, with ABI38 and bytecode14 unchanged; the version
 numbers below describe the historical consolidation baseline.
 
 ## Runtime and protocols
