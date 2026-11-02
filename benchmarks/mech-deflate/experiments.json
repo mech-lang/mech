@@ -7703,6 +7703,17 @@
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-closure-3a13572b9f86.tar.gz",
           "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r104-closure-3a13572b9f86.tar.gz"
+        },
+        {
+          "event": "publication-recovery",
+          "source_revision": "636da5e074add0632f7154f14d8d39848721cd16",
+          "asset": "r104-publication-recovery-4c4bae5e9c35.tar.gz",
+          "sha256": "4c4bae5e9c35391310e335c78532faa91fd5b16d904460209ac9ee62ebdae953",
+          "manifest_sha256": "ebf49c5ccf31eeb5df60cdc9bfec2d975dfa70514e4b841af276659b0e09125d",
+          "bytes": 201638,
+          "files": 90,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-publication-recovery-4c4bae5e9c35.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending",
@@ -7713,8 +7724,8 @@
         "expected_outputs": {
           "mechanism.json": "abfdf3e0ed34d3d8ff71a272c87ddad69d50dcd794fd2882c3f61e51bee9511a",
           "profile-numbers.json": "bed568177919c7b0379bf5c633a14065defbf31a70b981effa9b5ca5f04d7371",
-          "scorecard.json": "e0d9c781181589bc94f80d553fddcf0ea1fc43f0f5f60b19f7ec265e7d2c5c52",
-          "validation.json": "66d471d0719ce95f2227395328c88196422466120c408214ee33e4a59f4d5163"
+          "scorecard.json": "6d040ad383e6d7b8581bc7db896b025dd98f09063411495bd1411d9340dfe318",
+          "validation.json": "4b123667d16282b0ecefb5391e582114f158858024bc73f1e95f93adbc04493d"
         }
       },
       "release_tag": "evidence-native-compression-experiments-2",
