@@ -125,6 +125,13 @@ scope. The baseline negative regression is intentional. Obsolete failed-test
 executables from R115 are deleted after their source/commands/receipts were
 archived, freeing 337,841,784B; active baseline and candidate binaries remain pinned.
 
+All 19 R116 archives (12,815,394 compressed bytes), plus sidecars, have verified
+server digests. Fresh independent retrieval verifies 1,445 file occurrences /
+482 unique paths, including all preserved versions, and reproduces all four
+indexed reports byte-for-byte. Native binaries stay local. The maintained
+`experiment.py replay-round --round 116` entry verifies and reconstructs the
+numbers without compiling or compressing.
+
 ## R115: scalar aggregate parent pieces held
 
 Base `e7644df6bb40969bfbe3b7e38856071fc4ef2090`; initial candidate

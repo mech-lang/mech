@@ -10049,7 +10049,27 @@
         "fresh Core/no_std/all-features/minimal dependency graph",
         "hosted CI",
         "full-scale timing"
-      ]
+      ],
+      "independent_replay": {
+        "byte_identical_outputs": [
+          "mechanism.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 2,
+        "round": 116,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 482,
+        "verified_archives": 19,
+        "verified_file_occurrences": 1445
+      },
+      "archive_verification": {
+        "archives": 19,
+        "sidecars": 19,
+        "all_server_digests_match": true,
+        "native_binaries_included": false
+      }
     }
   },
   "repository": "mech-lang/mech",
