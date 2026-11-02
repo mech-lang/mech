@@ -9943,6 +9943,17 @@
           "files": 54,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-aggregate-funding-round116-20261102/archives/r116-isolated-profile-scale-8f8f383e53a6.tar.gz"
+        },
+        {
+          "event": "linked-multi",
+          "source_revision": "509c0d8e05a234020372b43832d7785f255c1b59",
+          "asset": "r116-linked-multi-20d081c58983.tar.gz",
+          "sha256": "20d081c589830c7cb451df37959106a3ec3747e29bd73a4b1816b6a44046ddbb",
+          "manifest_sha256": "d69838afdc246811d7fd7051d42fa5c849abe5cd693ddcdbe0ddc3f9facd9cda",
+          "bytes": 101281,
+          "files": 60,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-aggregate-funding-round116-20261102/archives/r116-linked-multi-20d081c58983.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
