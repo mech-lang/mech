@@ -8209,6 +8209,17 @@
           "files": 60,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-entry-round108-20261102/archives/r107-linked-multi-fcf93132cc29.tar.gz"
+        },
+        {
+          "event": "counters",
+          "source_revision": "705c5acdc4fc92be5beeacf28d02721ea4e39ddf",
+          "asset": "r107-counters-a586797b95dc.tar.gz",
+          "sha256": "a586797b95dc4ed3cfd65a5576f8ec6bbd38a20373683524a246cd17ad9aaf77",
+          "manifest_sha256": "be3696d665fedd27ce6a5f126225af12bb3ce191ae8e8ca4b43b100bf72bb129",
+          "bytes": 268238,
+          "files": 84,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-entry-round108-20261102/archives/r107-counters-a586797b95dc.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
