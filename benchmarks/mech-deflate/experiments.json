@@ -11701,6 +11701,28 @@
         "verified_archives": 17,
         "verified_file_occurrences": 1351
       }
+    },
+    "123": {
+      "base": "2d9a0b3d8092836a21cab938f0d1356646e2a27b",
+      "production": "71f8cb7bed8bc84bfcb75915b79b8c299401adc5",
+      "compiler_source": "71f8cb7bed8bc84bfcb75915b79b8c299401adc5",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "first-complete-native",
+          "source_revision": "71f8cb7bed8bc84bfcb75915b79b8c299401adc5",
+          "asset": "r123-first-complete-native-8114dfc7da24.tar.gz",
+          "sha256": "8114dfc7da24ab6cc436a95d82c801da8cc09ad2ad4612d9f6866658b93564a0",
+          "manifest_sha256": "06f6adced7ed23eccc4a1341549875d1174eeb187891e2fdf732e8abdf61c921",
+          "bytes": 59641,
+          "files": 50,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-first-complete-native-8114dfc7da24.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
