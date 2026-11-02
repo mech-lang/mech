@@ -4,6 +4,7 @@ use crate::native_artifact::program::prepare::tail::Region;
 
 pub(super) fn materialize(
     b: &mut FunctionBuilder<'_>,
+    options: crate::native_artifact::codegen::options::OptimizationOptions,
     words: &Words,
     region: &Region,
     proof: &Proof,
@@ -22,8 +23,12 @@ pub(super) fn materialize(
     set_origin(b, frame, site as u64);
     let zero = b.ins().iconst(types::I64, 0);
     // No active generated loan survives a failed cold call.
-    b.ins()
-        .store(MemFlags::new(), zero, locals, offset(region.words)?);
+    b.ins().store(
+        tail::flags(options, region),
+        zero,
+        locals,
+        offset(region.words)?,
+    );
     hooks.require_argument_words(b, proof.words + 4, error);
     for field in proof
         .fields(region.tail.carrier().get())
@@ -102,7 +107,11 @@ pub(super) fn materialize(
     }
     let one = b.ins().iconst(types::I64, 1);
     words.write(b, region.words, one);
-    b.ins()
-        .store(MemFlags::new(), one, locals, offset(region.words)?);
+    b.ins().store(
+        tail::flags(options, region),
+        one,
+        locals,
+        offset(region.words)?,
+    );
     Ok(())
 }

@@ -287,7 +287,9 @@ fn selected_template(
 // IR150 rederives checked-offset positive-stride phase bounds on the retained
 // canonical first-change handoff and independently bounded argument owners.
 // IR151 reconstructs exact current-state cold child exits for numeric loops.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 152;
+// IR152 adds actual cold source cuts and independently proved prepaid membership.
+// IR153 keeps SSA and boundary accesses in each private home's same alias region.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 153;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
