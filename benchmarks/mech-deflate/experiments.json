@@ -7409,6 +7409,17 @@
           "files": 82,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-shared-shape-round103-20261101/archives/r103-counters-215dbfab5b31.tar.gz"
+        },
+        {
+          "event": "isolated-profile",
+          "source_revision": "6b064cdeb678f2e7c89e5c2a39143e5ac2f36e79",
+          "asset": "r103-isolated-profile-8074aeaaf81f.tar.gz",
+          "sha256": "8074aeaaf81f27d24e287636b2d9e921e98207fb42fe425b48d8e914e8ce5a7e",
+          "manifest_sha256": "b46a80d39149ba88868d154f18a5d2bb47cc113e3cb65af3f6ac6cea5569640b",
+          "bytes": 320273,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-shared-shape-round103-20261101/archives/r103-isolated-profile-8074aeaaf81f.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
