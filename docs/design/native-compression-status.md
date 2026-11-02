@@ -6,6 +6,46 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Hosted CI is not awaited under
 instruction; no green hosted-CI claim is made.
 
+## R120: strided matching phases held outside the retained compiler
+
+Candidate compiler `740e98506ea6abc3ac8d889999cdcfcc628684e8` extends the existing
+phase proof to positive constant strides behind checked affine bounds. The
+original source and bytecode stay fixed. This selects the search/skip matching
+children as complete native phases, but is **not retained** because its results
+are mixed. R119 remains the published production compiler.
+
+| Fresh matched elapsed cohort | R119 / Roc | Candidate / Roc | Change |
+|---|---:|---:|---:|
+|8B|7.725280×|7.944908×|2.842985% slower|
+|1KB random|71.650316×|78.479788×|9.531670% slower|
+|1KB repeated `a`|57.456581×|45.452363×|20.892677% faster|
+
+These are new paired cohorts with fresh common references, separate from the
+R119 table below. Instructions change24,974,182.5→25,695,890.5 for8B,
+337,873,526.5→354,285,515 for random data and301,093,187.5→210,928,847.5 for
+repeated data. Repeated-data requests increase16,091→17,113 and requested bytes
+19,212,913→43,775,641; incremental peak rises15,178,400→18,566,688B. Generated
+text grows14,780,140→16,533,748B and entry stack144,528→148,240B.
+
+The exact owner diagnostic finds four first changes per repeated-data call
+copying the1,500,513-word cache while dead canonical slot1117 remains. The
+existing same-plan ordinary ownership proof already includes that slot. The
+numeric first-change bridge does not apply that retirement inventory. This
+demonstrated handoff gap is the next bounded repair; an arena-wide scan remains
+diagnostic only. Requested capacity and initialized copy volume are separate
+metrics. The tiny-input callback counts remain identical; the instruction
+regression's cause has not been established. A larger generated body is a
+hypothesis, and the host-assembly relocation comparison is inconclusive.
+
+Candidate checks pass13 nested-phase tests,78 selected native tests,236 unchanged
+components,8 connected tests,3 retained source-variant components,1 complete
+source-variant test and1 path-structure test, with warnings as errors. No fresh
+scalar12, broad GPU, architecture/catalog/runtime-only, Core/full-feature,
+linked40/frame8 or full-scale gate is claimed for this held candidate. All
+adverse timings and corrected diagnostic-harness errors are preserved in the
+compact index and public diagnostic archives. The candidate remains available
+as an experiment; it does not replace R119's accepted improvement.
+
 ## R119: complete nested path phases, original source fixed
 
 Base **`e7acd5c17bc1f73f424f1a375563d8c77796f06a`**; representation extraction

@@ -10907,6 +10907,312 @@
         "verified_archives": 20,
         "verified_file_occurrences": 1678
       }
+    },
+    "120": {
+      "base": "1dfbfc374108d08a982fe4560d5fd0f516330029",
+      "production": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+      "compiler_source": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+      "decision": "Hold positive-stride phase eligibility outside the retained compiler. Repeated data improves, but tiny/random data regress and four cache copies increase peak memory. Preserve the candidate and all contrary evidence; repair the demonstrated cold owner handoff separately before reconsidering it.",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-initial-bdbe7c4c55b9.tar.gz",
+          "sha256": "bdbe7c4c55b9900dfb20bcab419d36e64880452d296b5d6e21e01ede71c073ea",
+          "manifest_sha256": "267a480d707e5b276045822d2fad930f743af6fb0afd671ff4d8666fea010d50",
+          "bytes": 43673,
+          "files": 36,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-initial-bdbe7c4c55b9.tar.gz"
+        },
+        {
+          "event": "first-complete-native",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-first-complete-native-e0daef9b02af.tar.gz",
+          "sha256": "e0daef9b02afc1c8f61f539d5ab668cdaadc5051f44aee98914e0c58921eb36c",
+          "manifest_sha256": "5e3acee147b27bc8b9401cadb8cb89e0b76321d517e933e241a5276ac228aaa1",
+          "bytes": 49730,
+          "files": 34,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-first-complete-native-e0daef9b02af.tar.gz"
+        },
+        {
+          "event": "scaled-witness",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-scaled-witness-49a05be0745f.tar.gz",
+          "sha256": "49a05be0745f5ed3749f64e909f3d0274fb7589406ffd1e4a96dc04495bd9a9b",
+          "manifest_sha256": "611ec00d11c04f599a8121d76e1b1b4536d79fd4af9a31bdcbdb05c527f309cb",
+          "bytes": 51042,
+          "files": 38,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-scaled-witness-49a05be0745f.tar.gz"
+        },
+        {
+          "event": "primary-reference",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-primary-reference-5c961a70362d.tar.gz",
+          "sha256": "5c961a70362d82a8b84d0ec27599c5695de59e061c0184a5e9842b515ae77853",
+          "manifest_sha256": "66c28d3712d0109a9bd1ebe1ecf20faca7edd0f660da4ebc14c55acc9291d688",
+          "bytes": 138988,
+          "files": 38,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-primary-reference-5c961a70362d.tar.gz"
+        },
+        {
+          "event": "primary-group0",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-primary-group0-28672bd13ce8.tar.gz",
+          "sha256": "28672bd13ce893dc9ddc47b3f5361895aecd12ab4a573554b04fcd5663034545",
+          "manifest_sha256": "4dbec0764f613b12f9301d604dac0cd71527a8d6dee002a3977cce4fb649f865",
+          "bytes": 81228,
+          "files": 40,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-primary-group0-28672bd13ce8.tar.gz"
+        },
+        {
+          "event": "primary-group1",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-primary-group1-9b40f3e6975b.tar.gz",
+          "sha256": "9b40f3e6975b6244c0fe61a9332abb1abfb2fedc2b9559dc06d1eb48b8f32636",
+          "manifest_sha256": "3c3a237382914f6b3b9a85ac33148715ba8760c45f9a4c8333301ca8683b7ed0",
+          "bytes": 81506,
+          "files": 40,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-primary-group1-9b40f3e6975b.tar.gz"
+        },
+        {
+          "event": "primary-group2",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-primary-group2-b64ffcb06711.tar.gz",
+          "sha256": "b64ffcb067118cf39a0afeb37101ab9edb773a1959907d0c2ec257524d8dd6e9",
+          "manifest_sha256": "f891b863332bf9282aac9208ba54c9d1e20421f279aac980e57d5e5fb87fee75",
+          "bytes": 81148,
+          "files": 40,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-primary-group2-b64ffcb06711.tar.gz"
+        },
+        {
+          "event": "primary-group3",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-primary-group3-c418b35f3ee3.tar.gz",
+          "sha256": "c418b35f3ee385fdb02848a1045e4ff2248f72a6109b53256e7779b50edffa9f",
+          "manifest_sha256": "e99102ed49476492183d0793b1ea0c3a6afe5c03cb13df674dcb57040efa7b3f",
+          "bytes": 81389,
+          "files": 40,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-primary-group3-c418b35f3ee3.tar.gz"
+        },
+        {
+          "event": "primary-summary",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-primary-summary-630dbe48bfae.tar.gz",
+          "sha256": "630dbe48bfae6d22a907513900f4b2d124e25ce65cbe3f0b70362e1b6083d04c",
+          "manifest_sha256": "72aa7db8a7f4f945d01a98636992c058ff616383bf44e69a7066e812a5c0da5a",
+          "bytes": 52774,
+          "files": 37,
+          "publication": "published; server SHA-256 verified",
+          "timing": {
+            "primary_observations": 3968,
+            "reference_seconds": 0.000284,
+            "medians": {
+              "after": 0.0022563540000000003,
+              "before": 0.0021939795
+            },
+            "multiples_of_reference": {
+              "after": 7.944908450704226,
+              "before": 7.725279929577465
+            },
+            "after_over_before": 1.028429846313514,
+            "improving_groups": 0,
+            "improving_blocks": 1,
+            "adverse_blocks": 63
+          },
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-primary-summary-630dbe48bfae.tar.gz"
+        },
+        {
+          "event": "scale-measure-1024",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-scale-measure-1024-3e6e9cd68dec.tar.gz",
+          "sha256": "3e6e9cd68deca52c19d0938e5b3a01caf6c3f4cad4d0a1b2119f7bcb87731541",
+          "manifest_sha256": "1f2b9b7c4cd74b1a88af9b3df02a35b03f646a3b22d0af9307570561cd251ac1",
+          "bytes": 69232,
+          "files": 51,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-scale-measure-1024-3e6e9cd68dec.tar.gz"
+        },
+        {
+          "event": "match-rich-measure-1024",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-match-rich-measure-1024-9467a0dcde1a.tar.gz",
+          "sha256": "9467a0dcde1a11caa57010a565eadaea24830de392c630b8bc76d2e52067863c",
+          "manifest_sha256": "7d58d996a58ab3ec9f449c5b04c1ee182d0c5c5077620ac147e51c03c7859d84",
+          "bytes": 68964,
+          "files": 51,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-match-rich-measure-1024-9467a0dcde1a.tar.gz"
+        },
+        {
+          "event": "scale-counters",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-scale-counters-fc772a927c60.tar.gz",
+          "sha256": "fc772a927c600beb2603522124501f7f5c7b0610ff170b2dc0ffedd0e76715f8",
+          "manifest_sha256": "47e72ffedee423e5e2f3818045aa56229de6ad71f07dd5e34a498ddbc6a60813",
+          "bytes": 79295,
+          "files": 73,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-scale-counters-fc772a927c60.tar.gz"
+        },
+        {
+          "event": "rich-counters",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-rich-counters-966536e644a7.tar.gz",
+          "sha256": "966536e644a72edd71812b877e4faac7b4f0e8a83a2141379c0ac9e6995e6b2e",
+          "manifest_sha256": "3365f3d9acd9dad9f86565a3bb801650caf87a085c3861d41e8bac3a6cfe241b",
+          "bytes": 62526,
+          "files": 53,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-rich-counters-966536e644a7.tar.gz"
+        },
+        {
+          "event": "isolated-profile-scale",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-isolated-profile-scale-7eae559f6610.tar.gz",
+          "sha256": "7eae559f66102a186b08b86395caa89a62a1a26910788f3ebffd14a57aae9de8",
+          "manifest_sha256": "b1520fe23f41f989e3bde115045b90d2364b7317ede4800c7d0752605f42917f",
+          "bytes": 306224,
+          "files": 52,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-isolated-profile-scale-7eae559f6610.tar.gz"
+        },
+        {
+          "event": "isolated-profile-rich",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-isolated-profile-rich-4b7d3f1dd33a.tar.gz",
+          "sha256": "4b7d3f1dd33a880df37726da3fc5b28b9dbce3f19e8cbc7d2e9adea6ee81d44d",
+          "manifest_sha256": "9c8067c02b9df2386abaa2ec6b5323d51fcdff87abec4402b9c7488d4e23c8a2",
+          "bytes": 270676,
+          "files": 52,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-isolated-profile-rich-4b7d3f1dd33a.tar.gz"
+        },
+        {
+          "event": "counters",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-counters-a170fa3b55a0.tar.gz",
+          "sha256": "a170fa3b55a046ef81bceba91026b6025d77240cb48c25564d98865b62981a40",
+          "manifest_sha256": "8a3013c67447664b3b6f086a742a1ae4c43eb036a0421be21839cd6d37666075",
+          "bytes": 240161,
+          "files": 62,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-counters-a170fa3b55a0.tar.gz"
+        },
+        {
+          "event": "boundary-census-after",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-boundary-census-after-8937a3e3362d.tar.gz",
+          "sha256": "8937a3e3362dc12dce22079954f3ed51f4d749c1f425064928b14fde0599047c",
+          "manifest_sha256": "914d4d97c37c87183f4d53efa4e12c52aabc2e69bc663c5e3caf3266cb2b7baf",
+          "bytes": 208681,
+          "files": 59,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-boundary-census-after-8937a3e3362d.tar.gz"
+        },
+        {
+          "event": "binary-audit",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-binary-audit-c426e35b9767.tar.gz",
+          "sha256": "c426e35b97670362e8e4cc251f50508b5f09743c6bee93cfc55f4f43392179ae",
+          "manifest_sha256": "3060de3707181d3d5a78e27244881df8df305b4e1f055d6729512cc75bb9cb39",
+          "bytes": 64294,
+          "files": 48,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-binary-audit-c426e35b9767.tar.gz"
+        },
+        {
+          "event": "phase-owner-trace",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-phase-owner-trace-888af15a36ec.tar.gz",
+          "sha256": "888af15a36ec5cc6435903e4c3100f98b5ae29683f4472ca6249080b8ec3e3c7",
+          "manifest_sha256": "724227181ee49dd84453120b11b3796368df81824800fe0e3e9f9dfffe2e9333",
+          "bytes": 287463,
+          "files": 64,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-phase-owner-trace-888af15a36ec.tar.gz"
+        },
+        {
+          "event": "phase-owner-proof",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-phase-owner-proof-e8d483fcd493.tar.gz",
+          "sha256": "e8d483fcd4936186f2f06a6f3e988e103ff5437d5b10628cf3d6d10ac4c2f07f",
+          "manifest_sha256": "6b4746ad3f0463687d8312dce7ac92339bfb25d13fbf3984258c63a96d809352",
+          "bytes": 544758,
+          "files": 80,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-phase-owner-proof-e8d483fcd493.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-closure-02647362e5a6.tar.gz",
+          "sha256": "02647362e5a6c48aa7eb1798b47d9ba45793fed803e5daccb24f8de9f1e31511",
+          "manifest_sha256": "0b1dffc1a437bead2d1ca5158e7eb8f8d0dc2b2271c0948bc1dc1b39ceca7a89",
+          "bytes": 5946540,
+          "files": 211,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-closure-02647362e5a6.tar.gz"
+        },
+        {
+          "event": "replay-inputs",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-replay-inputs-bf565d569ab4.tar.gz",
+          "sha256": "bf565d569ab436169fcc87cb7b7219265df917216d8ab8d3ba65768fd1799016",
+          "manifest_sha256": "e9983cd1c921f027fef95135f978a52c62c3ffd718b67686ec25da203485e025",
+          "bytes": 4442042,
+          "files": 67,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-replay-inputs-bf565d569ab4.tar.gz"
+        },
+        {
+          "event": "replay-owner-proof",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-replay-owner-proof-a27b98399de3.tar.gz",
+          "sha256": "a27b98399de3426cac13c7b43f67cb2fdd0ddd42c38130bac5dabffc939af393",
+          "manifest_sha256": "266f533dc4ae170298e18f533998744354505fbb273b21d248ef4f38b0289a7b",
+          "bytes": 5703461,
+          "files": 104,
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r120-replay-owner-proof-a27b98399de3.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "retained": false,
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "e637cb5d497e22fbd36a139e04e2bda4fa48093e89b5c97e8246478fe74ceb31",
+          "profile-numbers.json": "d2b97def9f54f11c5a8b43af3db4dcfaa1c593d814b329951ff09045a34c8b5e",
+          "scorecard.json": "5419cf04dd00bb764267b443beb5f75c126b10c1f66ca8db1d020ae960fa9ad3",
+          "validation.json": "05cbb2b3f19a85ddcd24b08b8b97c333a1cbc8e09dadee9bb9d1cd913983b23a"
+        }
+      },
+      "next_bounded_step": "Apply the existing same-plan canonical alias retirement proof at the numeric first-change boundary; preserve actual frozen identity, external aliases, finite charges, errors, publication and retry. Investigate instruction regression independently.",
+      "experiment_branch": "codex/numeric-stride-r120-experiment",
+      "public_replay": {
+        "byte_identical_outputs": [
+          "mechanism.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 15,
+        "round": 120,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 363,
+        "verified_archives": 23,
+        "verified_file_occurrences": 1370
+      }
     }
   },
   "repository": "mech-lang/mech",
