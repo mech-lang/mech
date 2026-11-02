@@ -14,6 +14,11 @@ impl Invocation<'_, '_, '_> {
             .numeric
             .as_ref()
             .ok_or_else(|| invalid("missing numeric leaf proof"))?;
+        // A worker's observed shared remainder is not an exclusive reservation.
+        // Whole phases initially borrow only the synchronous invocation account.
+        if proof.phase.is_some() && self.worker.is_some() {
+            return Ok(false);
+        }
         if self.has_uninventoried_private_owners() {
             return Ok(false);
         }
@@ -232,6 +237,11 @@ impl Invocation<'_, '_, '_> {
                     return Ok(false);
                 };
                 *self.state.buffer_frames.append_preparation_mut(id, at)? = Some(preparation);
+            }
+        }
+        if let Some(phase) = &proof.phase {
+            for debit in &phase.loops {
+                self.write_borrowed_word(2 + debit.counter, 0)?;
             }
         }
         if proof.writes() {

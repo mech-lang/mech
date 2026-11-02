@@ -35,6 +35,17 @@ pub(super) fn materialize(
         b.ins()
             .store(MemFlags::new(), value, hooks.arguments, offset(2 + field)?);
     }
+    if let Some(phase) = &proof.phase {
+        for debit in &phase.loops {
+            let value = words.read(b, shadow + debit.counter);
+            b.ins().store(
+                MemFlags::new(),
+                value,
+                hooks.arguments,
+                offset(2 + debit.counter)?,
+            );
+        }
+    }
     b.ins().store(
         MemFlags::new(),
         index,
@@ -69,6 +80,9 @@ pub(super) fn materialize(
             shadow + proof.view(array) + 3,
             shadow + capacity,
         ]);
+    }
+    if let Some(phase) = &proof.phase {
+        reload.extend(phase.loops.iter().map(|debit| shadow + debit.counter));
     }
     for slot in reload {
         let argument = if slot == region.words + 1 {

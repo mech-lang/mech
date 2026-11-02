@@ -18,8 +18,10 @@ mod versions;
 pub(in crate::native_artifact) use results::ResultRecipe;
 pub(super) use results::scalar_aggregate;
 
-// Leaf and parent adapters share the same numeric representation.
-pub(in crate::native_artifact) use super::numeric_plan::{Array, FrameWords, Operation, Plan as Proof};
+// Existing leaf and parent adapters use the common numeric representation.
+pub(in crate::native_artifact) use super::numeric_plan::{
+    Array, FrameWords, Operation, Plan as Proof,
+};
 
 pub(super) fn width(body: &SchemaBody) -> Option<u8> {
     let SchemaBody::Matrix {
@@ -51,6 +53,7 @@ struct Provenance<'a, 'p> {
     calls: &'a [Option<NativePreparedLibraryCall>],
     cache: BTreeMap<(u32, Option<usize>), Option<usize>>,
     active: BTreeSet<(u32, Option<usize>)>,
+    children: BTreeMap<(u32, usize), usize>,
 }
 impl Provenance<'_, '_> {
     fn array(&mut self, value: u32, field: Option<usize>) -> Option<usize> {
@@ -62,6 +65,11 @@ impl Provenance<'_, '_> {
                 Lane::Managed { .. }
             )
             .then_some(ordinal);
+        }
+        if let Some(field) = field
+            && let Some(origin) = self.children.get(&(value, field))
+        {
+            return Some(*origin);
         }
         if let Some(answer) = self.cache.get(&key) {
             return *answer;
@@ -143,6 +151,7 @@ pub(in crate::native_artifact) fn derive(
     frames: &NativeBufferFrames,
     aggregates: &NativeScalarAggregates,
     calls: &[Option<NativePreparedLibraryCall>],
+    visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
 ) -> Result<Proof, &'static str> {
     let fields = frames
         .fields(tail.carrier())
@@ -153,35 +162,15 @@ pub(in crate::native_artifact) fn derive(
     {
         return Err("numeric carrier requires flat fields");
     }
-    let iteration = plan
-        .iterations()
-        .iter()
-        .position(|c| matches!(c, NativeControlLoop::Tail(t) if t.header() == tail.header()))
-        .ok_or("missing leaf iteration")? as u32;
-    // The parent remains an ordinary suspended loop. A body traversal cannot
-    // enter/exit any child or change the current invocation identity.
-    let mut sites = BTreeSet::new();
-    let mut pending = vec![tail.header()];
-    while let Some(site) = pending.pop() {
-        if site == tail.exit() || !sites.insert(site as usize) {
-            continue;
-        }
-        let block = &plan.blocks()[site as usize];
-        if block.iteration() != Some(iteration) || plan.activation_boundary() == Some(site) {
-            return Err("not a leaf: child loop or activation boundary");
-        }
-        match block.terminator() {
-            Term::TailHeader { body, .. } | Term::Scalar(Branch::Jump(body)) => pending.push(body),
-            Term::Scalar(
-                Branch::Branch { yes, no, .. } | Branch::LiteralBranch { yes, no, .. },
-            ) => pending.extend([yes, no]),
-            Term::Scalar(Branch::Reject | Branch::IntegrityFailure) => {}
-            _ => return Err("unsupported leaf terminator"),
-        }
-    }
-    if !sites.contains(&(tail.latch() as usize)) || !sites.contains(&(tail.finish() as usize)) {
-        return Err("incomplete leaf boundaries");
-    }
+    let forest = super::numeric_phase::Forest::derive(plan, tail)?;
+    let nested = forest.loops.len() > 1;
+    let trips = if nested {
+        forest.validate_child_actions(plan, frames, aggregates, calls)?;
+        forest.bounded_children(plan, frames, aggregates, calls)?
+    } else {
+        Vec::new()
+    };
+    let sites = forest.sites.clone();
     let facts = plan.facts();
     let mut provenance = Provenance {
         facts: &facts,
@@ -190,7 +179,47 @@ pub(in crate::native_artifact) fn derive(
         calls,
         cache: BTreeMap::new(),
         active: BTreeSet::new(),
+        children: BTreeMap::new(),
     };
+    for child in forest.loops.iter().skip(1) {
+        let NativeControlLoop::Tail(child_tail) = &plan.iterations()[child.iteration as usize]
+        else {
+            unreachable!()
+        };
+        if plan.values()[child_tail.returned().get() as usize]
+            .scalar_kind()
+            .is_none()
+            && aggregates.slot(child_tail.returned()).is_none()
+            && !frames
+                .fields(child_tail.returned())
+                .is_some_and(|f| f.iter().all(|f| matches!(f.lane(), Lane::Scalar { .. })))
+        {
+            return Err("numeric child exposes a managed result");
+        }
+        if let Some(child_fields) = frames.fields(child_tail.carrier()) {
+            for (ordinal, field) in child_fields.iter().enumerate() {
+                if matches!(field.lane(), Lane::Managed { .. }) {
+                    let origin = provenance
+                        .array(child_tail.seed().get(), Some(ordinal))
+                        .ok_or("child argument is not a phase buffer binding")?;
+                    provenance
+                        .children
+                        .insert((child_tail.carrier().get(), ordinal), origin);
+                }
+            }
+            for (ordinal, field) in child_fields.iter().enumerate() {
+                if matches!(field.lane(), Lane::Managed { .. })
+                    && provenance.array(child_tail.next().get(), Some(ordinal))
+                        != provenance
+                            .children
+                            .get(&(child_tail.carrier().get(), ordinal))
+                            .copied()
+                {
+                    return Err("child changes its buffer binding");
+                }
+            }
+        }
+    }
     let mut arrays = Vec::new();
     for (ordinal, field) in fields.iter().enumerate() {
         if matches!(field.lane(), Lane::Managed { .. }) {
@@ -290,10 +319,13 @@ pub(in crate::native_artifact) fn derive(
                 }
                 Aggregate::Observe { source, .. } => values.push(*source),
             }
-            if !values
-                .into_iter()
-                .all(|value| results::scalar_aggregate(plan, aggregates, value))
-            {
+            if !values.into_iter().all(|value| {
+                if nested {
+                    aggregates.slot(value).is_some()
+                } else {
+                    results::scalar_aggregate(plan, aggregates, value)
+                }
+            }) {
                 return Err("numeric aggregate requires exact private flat scalar fields");
             }
             Operation::Aggregate
@@ -419,6 +451,7 @@ pub(in crate::native_artifact) fn derive(
         &actions,
         &arrays,
         &result,
+        &forest,
     )?;
     let mut scalar_words = 0;
     let frame_words = frame_values
@@ -459,7 +492,7 @@ pub(in crate::native_artifact) fn derive(
             }
         })
         .collect();
-    let words = scalar_words
+    let mut words = scalar_words
         .checked_add(
             arrays
                 .len()
@@ -475,6 +508,36 @@ pub(in crate::native_artifact) fn derive(
         })
         .and_then(|n| n.checked_add(arrays.iter().filter(|a| a.appends).count()))
         .ok_or("numeric word count overflows")?;
+    let phase = if nested {
+        let fields = result
+            .frame()
+            .and_then(|value| frames.fields_at(value as usize))
+            .map_or(0, |f| f.len());
+        let boundary_work = super::numeric_phase::boundary_work(
+            plan,
+            aggregates,
+            &forest,
+            words
+                .checked_add(forest.loops.len())
+                .ok_or("phase counter size overflows")?,
+        )?;
+        let schedule = super::numeric_phase::Schedule::derive(
+            &forest,
+            trips,
+            visits,
+            &actions,
+            fields,
+            words,
+            boundary_work,
+        )?;
+        super::numeric_phase::validate_mutation_order(plan, &forest, &actions)?;
+        words = words
+            .checked_add(schedule.loops.len())
+            .ok_or("phase counter size overflows")?;
+        Some(schedule)
+    } else {
+        None
+    };
     Ok(Proof {
         arrays,
         frames: frame_words,
@@ -483,5 +546,6 @@ pub(in crate::native_artifact) fn derive(
         scalar_words,
         words,
         result,
+        phase,
     })
 }

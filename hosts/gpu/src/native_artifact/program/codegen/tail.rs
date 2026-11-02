@@ -83,6 +83,17 @@ pub(in crate::native_artifact) fn leave(
             b.ins()
                 .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
         }
+        if let Some(phase) = &proof.phase {
+            for debit in &phase.loops {
+                let value = load(options, b, locals, region, shadow + debit.counter)?;
+                b.ins().store(
+                    MemFlags::new(),
+                    value,
+                    hooks.arguments,
+                    offset(2 + debit.counter)?,
+                );
+            }
+        }
         for (array, _) in proof.arrays.iter().enumerate().filter(|(_, a)| a.appends) {
             let slot = proof.view(array) + 1;
             let value = load(options, b, locals, region, shadow + slot)?;

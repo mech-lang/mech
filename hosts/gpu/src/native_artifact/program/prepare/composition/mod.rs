@@ -127,6 +127,20 @@ impl Layout {
             let Loop::Tail(parent) = control else {
                 continue;
             };
+            if closed
+                .sites
+                .get(parent.header() as usize)
+                .copied()
+                .flatten()
+                .is_some_and(|id| {
+                    closed.regions[id]
+                        .numeric
+                        .as_ref()
+                        .is_some_and(|p| p.phase.is_some())
+                })
+            {
+                continue;
+            }
             let children = plan
                 .iterations()
                 .iter()

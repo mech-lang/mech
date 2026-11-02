@@ -184,6 +184,7 @@ fn check_write_fuel(source: &str, expected: ValueDataDraft, mixed: bool) {
                                 &metadata.buffer_frames,
                                 &metadata.scalar_aggregates,
                                 &metadata.calls,
+                                &metadata.visits,
                             )
                             .err(),
                         )

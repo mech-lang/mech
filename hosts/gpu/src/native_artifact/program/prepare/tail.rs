@@ -68,6 +68,11 @@ impl Layout {
             let NativeControlLoop::Tail(tail) = control else {
                 continue;
             };
+            // Select outer numeric candidates before their descendants. Each
+            // included source site has one execution owner and one loan.
+            if layout.sites[tail.header() as usize].is_some() {
+                continue;
+            }
             let map = owners
                 .initializer(tail.initialize() as usize)
                 .filter(|&owner| {
@@ -90,7 +95,7 @@ impl Layout {
             // Its own body must still contain no child loop; the parent is
             // suspended until this private owner publishes at the Tail exit.
             let numeric = if map.is_none() && frames.action(tail.initialize() as usize).is_some() {
-                super::readonly_numeric::derive(plan, tail, frames, aggregates, calls).ok()
+                super::readonly_numeric::derive(plan, tail, frames, aggregates, calls, visits).ok()
             } else {
                 None
             };
@@ -129,7 +134,10 @@ impl Layout {
                     )
                     || matches!(block.action(), Action::Scalar(Scalar::Copy { output, .. })
                         if plan.values()[output.get() as usize].scalar_kind().is_some());
-                if block.iteration() != Some(iteration as u32)
+                if !(block.iteration() == Some(iteration as u32)
+                    || numeric
+                        .as_ref()
+                        .is_some_and(|p| p.sites.contains(&(site as usize))))
                     || !native
                     || (map.is_some() && borrowed.action(site as usize).is_some())
                     || plan.activation_boundary() == Some(site)
@@ -148,12 +156,28 @@ impl Layout {
             if !closed || !seen[tail.finish() as usize] || !seen[tail.latch() as usize] {
                 continue;
             }
-            // Removing the sole declared latch backedge must make the region a
-            // DAG. Then summing every block bounds any one header-to-boundary path.
+            // Cut all and only the declared backedges in the selected phase.
+            let backedges = numeric.as_ref().and_then(|p| p.phase.as_ref()).map_or_else(
+                || std::collections::BTreeSet::from([(tail.latch(), tail.header())]),
+                |phase| {
+                    phase
+                        .loops
+                        .iter()
+                        .map(|loop_| {
+                            let NativeControlLoop::Tail(t) =
+                                &plan.iterations()[loop_.iteration as usize]
+                            else {
+                                unreachable!()
+                            };
+                            (t.latch(), t.header())
+                        })
+                        .collect()
+                },
+            );
             let mut incoming = vec![0usize; plan.blocks().len()];
             for &site in &sites {
                 for next in visits[site as usize].successors.into_iter().flatten() {
-                    if next != tail.exit() && !(site == tail.latch() && next == tail.header()) {
+                    if next != tail.exit() && !backedges.contains(&(site, next)) {
                         incoming[next as usize] += 1;
                     }
                 }
@@ -167,7 +191,7 @@ impl Layout {
             while let Some(site) = ready.pop() {
                 count += 1;
                 for next in visits[site as usize].successors.into_iter().flatten() {
-                    if next == tail.exit() || (site == tail.latch() && next == tail.header()) {
+                    if next == tail.exit() || backedges.contains(&(site, next)) {
                         continue;
                     }
                     incoming[next as usize] -= 1;
@@ -222,6 +246,10 @@ impl Layout {
                     )
                     .ok_or("numeric result synchronization work overflow")?;
             }
+            if let Some(phase) = numeric.as_ref().and_then(|p| p.phase.as_ref()) {
+                compute = phase.loops[0].compute;
+                comparison = phase.loops[0].comparison;
+            }
             let index = layout.regions.len();
             for site in sites {
                 layout.sites[site as usize] = Some(index);
@@ -265,7 +293,8 @@ impl Layout {
                 .checked_add(if map.is_some() { 5 } else { 3 })
                 .ok_or("Tail state words overflow")?;
         }
-        // Every selected numeric body is child-free. The runtime admits only
+        // Distinct phases never overlap at runtime. Each includes its own
+        // simultaneously live parent/child homes. The runtime admits only
         // one closed loan and reconciles it before ordinary/parent execution.
         // Sharing the flags too would let global abort export the wrong region.
         let maximum = layout

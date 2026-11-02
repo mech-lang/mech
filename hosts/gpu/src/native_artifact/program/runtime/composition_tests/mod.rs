@@ -13,6 +13,7 @@ mod managed_projections;
 mod multiple_children;
 mod named_managed_projections;
 mod nested_phase;
+mod nested_phase_growing;
 mod observe;
 mod pack;
 mod record_lookup;
@@ -59,11 +60,11 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                99
+                100
             );
             assert_eq!(
                 report.work, 88_531_834,
-                "policy99 omits unread constant owners while retaining structural alias pricing and scalar-prefix debits"
+                "policy100 retains policy99 leaf/parent prices and omits unread constant owners while retaining structural alias pricing and scalar-prefix debits"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(

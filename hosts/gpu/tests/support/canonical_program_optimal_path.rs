@@ -67,61 +67,74 @@ fn policy() -> mech_gpu::native_artifact::NativeProgramExecutionLimits {
 }
 
 #[test]
-fn path_scan_emits_native_pieces_around_its_nested_scalar_child() {
+fn path_scan_emits_one_native_phase_with_nested_scalar_children() {
     for artifact in artifacts(SOURCE).0 {
         let object = super::emit_program_object(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let metadata = object.metadata();
-        let parents = metadata["numeric_parent_partitions"]["parents"]
+        let selected = metadata["numeric_write_regions"]
             .as_array()
-            .unwrap();
-        let segments = metadata["compiled_numeric_segments"].as_array().unwrap();
-        let selected = parents
+            .unwrap()
             .iter()
-            .filter(|parent| parent["children"][0]["scalar_child"] == true)
-            .filter(|parent| {
-                segments
-                    .iter()
-                    .any(|segment| segment["iteration"] == parent["iteration"])
+            .filter(|region| {
+                region["proof"]["phase"]["loops"]
+                    .as_array()
+                    .is_some_and(|loops| loops.len() == 3)
             })
             .collect::<Vec<_>>();
         assert_eq!(
             selected.len(),
             1,
-            "the unchanged path scan must emit native pieces"
+            "the unchanged path scan must select one complete numeric phase"
         );
-        let parent = selected[0];
+        let region = selected[0];
+        let proof = &region["proof"];
+        let loops = proof["phase"]["loops"].as_array().unwrap();
+        let arrays = proof["arrays"].as_array().unwrap();
+        assert_eq!(arrays.len(), 6);
+        assert_eq!(
+            arrays
+                .iter()
+                .filter(|array| array["writable"] == true)
+                .count(),
+            1
+        );
+        assert_eq!(
+            arrays
+                .iter()
+                .filter(|array| array["appends"] == true && array["width"] == 8)
+                .count(),
+            1
+        );
+        let sites = proof["sites"].as_array().unwrap();
+        for (index, child) in loops.iter().enumerate() {
+            assert!(sites.contains(&child["header"]));
+            assert!(sites.contains(&child["latch"]));
+            assert!(sites.contains(&child["finish"]));
+            if index > 0 {
+                assert!(sites.contains(&child["initialize"]));
+                assert!(sites.contains(&child["exit"]));
+            }
+        }
+        assert_eq!(loops[1]["parent"], loops[0]["iteration"]);
+        assert_eq!(loops[2]["parent"], loops[1]["iteration"]);
+        let report = metadata["compiled_numeric_write_loops"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|report| report["header"] == region["header"])
+            .unwrap();
+        assert_eq!(report["successful_backedge_helpers"], 0);
+        assert_eq!(report["source_sites"], proof["sites"]);
+        assert_eq!(report["append_sites"].as_array().unwrap().len(), 1);
         assert!(
-            parent["children"][0]["returned_arrays"]
+            metadata["compiled_numeric_segments"]
                 .as_array()
                 .unwrap()
-                .is_empty()
-        );
-        let child = parent["children"][0]["child"].as_u64().unwrap() as u32;
-        assert!(
-            object
-                .descriptor()
-                .plan()
-                .iterations()
                 .iter()
-                .any(|iteration| iteration.as_ref().parent() == Some(child)),
-            "the actual match-choice child retains its nested length search"
-        );
-        for segment in segments
-            .iter()
-            .filter(|segment| segment["iteration"] == parent["iteration"])
-        {
-            assert_eq!(segment["successful_interior_helpers"], 0);
-            assert!(
-                segment["source_sites"]
-                    .as_array()
-                    .unwrap()
+                .all(|segment| !loops
                     .iter()
-                    .all(|site| {
-                        site != &parent["children"][0]["child_initialize"]
-                            && site != &parent["children"][0]["child_exit"]
-                    })
-            );
-        }
+                    .any(|child| child["iteration"] == segment["iteration"]))
+        );
     }
 }
 
