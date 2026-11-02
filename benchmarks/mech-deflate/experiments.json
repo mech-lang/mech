@@ -12110,6 +12110,17 @@
           "files": 65,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-scale-measure-1024-9cea160f8559.tar.gz"
+        },
+        {
+          "event": "match-rich-measure-1024",
+          "source_revision": "fc8e98e8d7230b78ff01644ae1457828f281673b",
+          "asset": "r124-match-rich-measure-1024-475899ee9820.tar.gz",
+          "sha256": "475899ee9820773c976b6dc555e1b73d7a16dec03dd1155758746074e466d336",
+          "manifest_sha256": "9187f1e4b24652a2af6e841da5964f85c2a23fca84848baf71c14e37462a1f13",
+          "bytes": 228348,
+          "files": 65,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-match-rich-measure-1024-475899ee9820.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
