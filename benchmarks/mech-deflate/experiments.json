@@ -9027,8 +9027,8 @@
           "manifest_sha256": "8f7a16db7a74dbc125fa8aed531579a673c24b682a1cdfee882b45719cbb3f51",
           "bytes": 4401540,
           "files": 88,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round113-20261102/archives/r113-initial-b4f07b68dc9f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r113-initial-b4f07b68dc9f.tar.gz"
         },
         {
           "event": "primary-reference",
@@ -9038,8 +9038,8 @@
           "manifest_sha256": "2976fff14e2d679e4582567793d0f817b45f47815c9a19ad5164be40f74ce108",
           "bytes": 156738,
           "files": 47,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round113-20261102/archives/r113-primary-reference-95b78e257852.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r113-primary-reference-95b78e257852.tar.gz"
         },
         {
           "event": "primary-group0",
@@ -9049,8 +9049,8 @@
           "manifest_sha256": "a68378df7f7cd6dd312f506e6e15ec1673095107b48a5f665888ef90903c250f",
           "bytes": 97964,
           "files": 49,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round113-20261102/archives/r113-primary-group0-02f51311eb95.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r113-primary-group0-02f51311eb95.tar.gz"
         },
         {
           "event": "primary-group1",
@@ -9060,8 +9060,8 @@
           "manifest_sha256": "8d900681ce7725b3630c8109196759e51b792e0a99a4ebba191b5b1511b880df",
           "bytes": 97803,
           "files": 49,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round113-20261102/archives/r113-primary-group1-1fbd5a6ba698.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r113-primary-group1-1fbd5a6ba698.tar.gz"
         },
         {
           "event": "primary-group2",
@@ -9071,8 +9071,8 @@
           "manifest_sha256": "f0eb59302239d5001131d9c041fe9523dfda1c1b4516e9ba1e96272b8fb54a0a",
           "bytes": 97543,
           "files": 49,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round113-20261102/archives/r113-primary-group2-0931e3e30bfb.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r113-primary-group2-0931e3e30bfb.tar.gz"
         },
         {
           "event": "primary-group3",
@@ -9082,8 +9082,8 @@
           "manifest_sha256": "308ea87659a052e3122b8844e6d9faf7f4fe655820b7649d728de2612d3fa43d",
           "bytes": 98204,
           "files": 49,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round113-20261102/archives/r113-primary-group3-b9b6f5dc8c90.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r113-primary-group3-b9b6f5dc8c90.tar.gz"
         },
         {
           "event": "primary-summary",
@@ -9093,8 +9093,7 @@
           "manifest_sha256": "4bbbe36c77b40319941713147ad7842e7288ad5dfea3248e6fc76a45b5f205e6",
           "bytes": 69929,
           "files": 46,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round113-20261102/archives/r113-primary-summary-4e8ab2d3f0e5.tar.gz",
+          "publication": "published; server SHA-256 verified",
           "timing": {
             "primary_observations": 3968,
             "reference_seconds": 0.00029,
@@ -9110,7 +9109,8 @@
             "improving_groups": 0,
             "improving_blocks": 10,
             "adverse_blocks": 54
-          }
+          },
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r113-primary-summary-4e8ab2d3f0e5.tar.gz"
         },
         {
           "event": "scale-measure-1024",
@@ -9120,8 +9120,8 @@
           "manifest_sha256": "332864fd7afd7d3661f63961bc15150998d9f6222bf0f834c2540c60a226134f",
           "bytes": 88249,
           "files": 60,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round113-20261102/archives/r113-scale-measure-1024-091affa3f52a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r113-scale-measure-1024-091affa3f52a.tar.gz"
         },
         {
           "event": "isolated-profile-scale",
@@ -9131,8 +9131,8 @@
           "manifest_sha256": "43b71c829b10953431fdc98711bda7f9b2fd28f1928085981876b2aafe9069f2",
           "bytes": 326887,
           "files": 56,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round113-20261102/archives/r113-isolated-profile-scale-c279838b0528.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r113-isolated-profile-scale-c279838b0528.tar.gz"
         },
         {
           "event": "closure",
@@ -9142,13 +9142,13 @@
           "manifest_sha256": "859664508dd5a13fba6489ef077a474835518bd55b252fbf5079c55e3b638df3",
           "bytes": 4845010,
           "files": 150,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-numeric-admission-round113-20261102/archives/r113-closure-9f9d39e8f0f6.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r113-closure-9f9d39e8f0f6.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "retained": false,
       "versions": [
         143,
