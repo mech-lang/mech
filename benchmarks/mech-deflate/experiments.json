@@ -9412,6 +9412,17 @@
           "files": 83,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-frame-allocation-840a0ad6a936.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "f327ef9489aaa0997f4d8627256f1a14eb70b0c4",
+          "asset": "r114-closure-bbcdc9caba8e.tar.gz",
+          "sha256": "bbcdc9caba8ea222a7b1407b76f341ee52ebaceaf545052731230a20b38da976",
+          "manifest_sha256": "dad2872018be72f0967b5686921e8ceb717f98f82b645b8107753a97445a2480",
+          "bytes": 5003899,
+          "files": 347,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-helper-inline-round114-20261102/archives/r114-closure-bbcdc9caba8e.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
