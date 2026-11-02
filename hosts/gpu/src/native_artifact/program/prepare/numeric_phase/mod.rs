@@ -28,6 +28,9 @@ pub(in crate::native_artifact) struct Guard {
     pub site: usize,
     pub predicate: u32,
     pub field: usize,
+    /// The compared value is the current field plus this checked constant.
+    /// Wrapping affine comparisons do not establish an ordered upper bound.
+    pub offset: u64,
     pub other: u32,
     pub op: NativeScalarOp,
     pub yes: u32,
@@ -62,6 +65,12 @@ impl Forest {
         aggregates: &NativeScalarAggregates,
     ) -> Vec<(u32, Vec<Guard>)> {
         let facts = plan.facts();
+        let resolver = atoms::Resolver {
+            plan,
+            frames,
+            aggregates,
+            forest: self,
+        };
         self.loops
             .iter()
             .map(|loop_| {
@@ -129,11 +138,42 @@ impl Forest {
                                 {
                                     return None;
                                 }
-                                let field = words.carrier(operands[0].get())?;
+                                let (field, offset) =
+                                    if let Some(field) = words.carrier(operands[0].get()) {
+                                        (field, 0)
+                                    } else {
+                                        let [definition] =
+                                            facts.definition_sites(operands[0].get()).ok()?
+                                        else {
+                                            return None;
+                                        };
+                                        let at = definition.site()? as usize;
+                                        if plan.blocks()[at].iteration() != Some(loop_.iteration) {
+                                            return None;
+                                        }
+                                        let Action::Scalar(Scalar::Primitive {
+                                            op: NativeScalarOp::U64Add,
+                                            operands: add,
+                                            output,
+                                        }) = plan.blocks()[at].action()
+                                        else {
+                                            return None;
+                                        };
+                                        if *output != operands[0] || add.len() != 2 {
+                                            return None;
+                                        }
+                                        let atoms::Atom::Constant(offset) =
+                                            resolver.atom(atoms::Atom::Scalar(add[1].get()))?
+                                        else {
+                                            return None;
+                                        };
+                                        (words.carrier(add[0].get())?, offset)
+                                    };
                                 Some(Guard {
                                     site,
                                     predicate: predicate.get(),
                                     field,
+                                    offset,
                                     other: operands[1].get(),
                                     op: *op,
                                     yes,
