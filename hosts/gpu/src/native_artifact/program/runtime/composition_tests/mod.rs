@@ -14,6 +14,7 @@ mod multiple_children;
 mod named_managed_projections;
 mod nested_phase;
 mod nested_phase_growing;
+mod nested_phase_handoff;
 mod observe;
 mod pack;
 mod record_lookup;
