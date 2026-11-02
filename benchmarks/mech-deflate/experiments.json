@@ -11400,6 +11400,17 @@
           "files": 67,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-handoff-round121-20261102/archives/r121-isolated-profile-scale-1e30d22f01ba.tar.gz"
+        },
+        {
+          "event": "isolated-profile-rich",
+          "source_revision": "6ed4e0fb7e7e34abd1162f090e112045bc052565",
+          "asset": "r121-isolated-profile-rich-ddf701a70b06.tar.gz",
+          "sha256": "ddf701a70b06bc4c44cbc67b837df2f4581e9d3d12ccc6d48b82e6c380bf010b",
+          "manifest_sha256": "3b13005ec726763006996eae1e1c9258f93d1f5ae6d4a4d1e446cfe37d9a4991",
+          "bytes": 280549,
+          "files": 67,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-handoff-round121-20261102/archives/r121-isolated-profile-rich-ddf701a70b06.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
