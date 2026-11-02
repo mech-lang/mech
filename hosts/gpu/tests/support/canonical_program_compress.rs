@@ -18,6 +18,9 @@ mod repeated_output;
 mod assembly;
 use assembly::COMPONENTS;
 
+#[path = "../../../../benchmarks/mech-deflate/source-variants/zero_trip.rs"]
+mod zero_trip;
+
 fn matrix(value: &[u8]) -> Data {
     Data::Matrix(value.iter().copied().map(Data::U8).collect())
 }
@@ -68,6 +71,19 @@ fn complete_artifacts(source: &str) -> [ProgramArtifact; 2] {
 fn complete_level12_compression_matches_pinned_bytes() {
     with_compiler_stack(|| {
         let source = complete_source();
+        qualify_complete(
+            ["original", "decoded"]
+                .into_iter()
+                .zip(complete_artifacts(&source)),
+            false,
+        );
+    });
+}
+
+#[test]
+fn zero_trip_level12_compression_matches_pinned_bytes() {
+    with_compiler_stack(|| {
+        let source = zero_trip::source(&complete_source());
         qualify_complete(
             ["original", "decoded"]
                 .into_iter()
