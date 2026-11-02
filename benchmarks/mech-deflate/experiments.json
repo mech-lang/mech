@@ -10737,6 +10737,17 @@
           "files": 56,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-scaled-witness-87347f40866e.tar.gz"
+        },
+        {
+          "event": "scale-measure-1024",
+          "source_revision": "99fef709f1d984e32ad22e5c8929e8dfd0ff0984",
+          "asset": "r119-scale-measure-1024-8720619245c9.tar.gz",
+          "sha256": "8720619245c92643e33b56079718d380205e94cf83ec555a370304171dff7cbb",
+          "manifest_sha256": "e9aaa24611da1978b4277d9016c49e0466875b587d40aa365e8669d876e009b9",
+          "bytes": 82287,
+          "files": 69,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-scale-measure-1024-8720619245c9.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
