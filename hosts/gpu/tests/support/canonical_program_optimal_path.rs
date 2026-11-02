@@ -3,6 +3,9 @@ use super::{allocation_probe, artifacts, inputs, limits};
 use mech_core::{ManagedMemoryBudget, ValueData, ValueDataDraft as Data};
 use mech_gpu::native_artifact::JitProgramArtifact;
 
+#[path = "../../../../benchmarks/mech-deflate/source-variants/zero_trip.rs"]
+mod zero_trip;
+
 const SOURCE: &str = concat!(
     include_str!("../fixtures/native/deflate-optimal-path.mec"),
     "\npath := optimal-find-min-cost-path(block-length<u64>, cache<[u32]>, cache-end<u64>, sequence/with-capacity(0u64, capacity<u64>), literal-costs<[u32]>, length-costs<[u32]>, offset-costs<[u32]>, slots<[u8]>)\npath.nodes\n"
@@ -124,11 +127,20 @@ fn path_scan_emits_native_pieces_around_its_nested_scalar_child() {
 
 #[test]
 fn pinned_min_cost_paths_keep_exact_nodes_and_real_reservation() {
+    qualify_min_cost_paths(SOURCE);
+}
+
+#[test]
+fn zero_trip_min_cost_paths_keep_exact_nodes_and_real_reservation() {
+    qualify_min_cost_paths(&zero_trip::path_source(SOURCE));
+}
+
+fn qualify_min_cost_paths(source: &str) {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "../fixtures/native/deflate-optimal-path-reference.json"
     ))
     .unwrap();
-    for (form, artifact) in ["original", "decoded"].into_iter().zip(artifacts(SOURCE).0) {
+    for (form, artifact) in ["original", "decoded"].into_iter().zip(artifacts(source).0) {
         let compile_start = std::time::Instant::now();
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
         println!(
@@ -176,6 +188,15 @@ fn pinned_min_cost_paths_keep_exact_nodes_and_real_reservation() {
 
 #[test]
 fn path_checks_preserve_entry_order_publication_aliases_and_recovery() {
+    qualify_path_checks(SOURCE);
+}
+
+#[test]
+fn zero_trip_path_checks_preserve_entry_order_publication_aliases_and_recovery() {
+    qualify_path_checks(&zero_trip::path_source(SOURCE));
+}
+
+fn qualify_path_checks(source: &str) {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "../fixtures/native/deflate-optimal-path-reference.json"
     ))
@@ -194,7 +215,7 @@ fn path_checks_preserve_entry_order_publication_aliases_and_recovery() {
     let too_long = invalid(259);
     let mut both = too_short.clone();
     both["length_costs"] = short["length_costs"].clone();
-    for artifact in artifacts(SOURCE).0 {
+    for artifact in artifacts(source).0 {
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
         let mut output = vec![None; artifact.outputs().len()];
@@ -249,6 +270,15 @@ fn path_checks_preserve_entry_order_publication_aliases_and_recovery() {
 
 #[test]
 fn one_compiled_program_collects_its_own_matches_and_selects_the_reference_path() {
+    qualify_collected_path(false);
+}
+
+#[test]
+fn zero_trip_compiled_collector_selects_the_reference_path() {
+    qualify_collected_path(true);
+}
+
+fn qualify_collected_path(zero_trip: bool) {
     use mech_gpu::native_artifact::NativeCompileLimits;
     let source = concat!(
         include_str!("../fixtures/native/deflate-matchfinder.mec"),
@@ -267,6 +297,11 @@ fn one_compiled_program_collects_its_own_matches_and_selects_the_reference_path(
         "\n",
         "collected := optimal-first-block(input<[u8]>)\npath := optimal-find-min-cost-path(collected.block-end - collected.block-begin, collected.cache, collected.cache-end, sequence/with-capacity(0u64, 305257u64), literal-costs<[u32]>, length-costs<[u32]>, offset-costs<[u32]>, slots<[u8]>)\npath.nodes\n"
     );
+    let source = if zero_trip {
+        zero_trip::source(source)
+    } else {
+        source.to_owned()
+    };
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "../fixtures/native/deflate-optimal-path-reference.json"
     ))
@@ -275,7 +310,10 @@ fn one_compiled_program_collects_its_own_matches_and_selects_the_reference_path(
         "../fixtures/native/deflate-block-reference.json"
     ))
     .unwrap();
-    for (form, artifact) in ["original", "decoded"].into_iter().zip(artifacts(source).0) {
+    for (form, artifact) in ["original", "decoded"]
+        .into_iter()
+        .zip(artifacts(&source).0)
+    {
         let compile_start = std::time::Instant::now();
         // The same explicit finite compilation profile as the existing full
         // block completion diagnostic. No compiler default is changed.
