@@ -11971,8 +11971,8 @@
     "124": {
       "base": "0a7237f66c407f0ec880b3ad5768a8433c7b6ec0",
       "production": null,
-      "compiler_source": "0a7237f66c407f0ec880b3ad5768a8433c7b6ec0",
-      "decision": "under measurement",
+      "compiler_source": "71f8cb7bed8bc84bfcb75915b79b8c299401adc5",
+      "decision": "Baseline only: unchanged compiler passes ten original/decoded semantic controls, but native-parent acceptance fails. Explicit cold-exit implementation and measurement pending.",
       "events": [
         {
           "event": "baseline-reproduce",
@@ -11984,11 +11984,23 @@
           "files": 11,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-baseline-reproduce-da294ce25364.tar.gz"
+        },
+        {
+          "event": "baseline-full",
+          "source_revision": "71f8cb7bed8bc84bfcb75915b79b8c299401adc5",
+          "asset": "r124-baseline-full-1a76e7b73095.tar.gz",
+          "sha256": "1a76e7b7309512fd510bb60a17515ad2250eb0c6589cbe2795138f46c1b8fb28",
+          "manifest_sha256": "e146f72742c5967559a4667589b96a076d380b7776e8003b65551903d3a6598e",
+          "bytes": 32229,
+          "files": 15,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-baseline-full-1a76e7b73095.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "retained": false
     }
   },
   "repository": "mech-lang/mech",
