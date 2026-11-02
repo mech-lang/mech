@@ -8957,6 +8957,17 @@
           "files": 57,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-scale-measure-1024-74c9e67b54e2.tar.gz"
+        },
+        {
+          "event": "scale-counters",
+          "source_revision": "c85dfe8bcea3bc39a626a5287f2fa1ee5a22ad5c",
+          "asset": "r112-scale-counters-a8b04101073c.tar.gz",
+          "sha256": "a8b04101073ca5238a32ea65ff5ae402621ab000986379afa1e455487568271c",
+          "manifest_sha256": "d2bba928faac5c88b3fbf28d4da18d701affef830e6cecf08b6ec3a5a260e6f5",
+          "bytes": 91072,
+          "files": 74,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-scale-counters-a8b04101073c.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
