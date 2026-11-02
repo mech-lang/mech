@@ -192,7 +192,15 @@ fn qualify_nested_inventory(jit: &JitProgramArtifact) {
     let regions = &jit.descriptor().metadata().closed_tails.regions;
     assert_eq!(regions.len(), 1);
     let selected = regions[0].numeric.as_ref().expect("complete native phase");
-    assert_eq!(selected.phase.as_ref().unwrap().loops.len(), 3);
+    assert_eq!(
+        selected
+            .phase
+            .as_ref()
+            .expect("complete nested numeric phase must be selected")
+            .loops
+            .len(),
+        3
+    );
     assert_eq!(
         selected
             .sites
