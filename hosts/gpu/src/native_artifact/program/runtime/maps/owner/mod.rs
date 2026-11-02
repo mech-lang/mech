@@ -13,6 +13,7 @@ use crate::native_artifact::{
 use mech_core::{ManagedMemoryBudget, ManagedMemoryReservation, ManagedNodeReservation, Value};
 use mech_engine::native_artifact::{NativeIterationAction as Action, NativeMapOwnerRegion};
 
+pub(in crate::native_artifact::program::runtime) mod borrowed_records;
 mod caller_geometry;
 mod closed;
 pub(in crate::native_artifact::program::runtime) mod frozen;
@@ -191,6 +192,7 @@ pub(in crate::native_artifact::program::runtime) struct State<'plan> {
     caller: Option<caller_geometry::Caller>,
     reservation: ManagedMemoryReservation,
     _nodes: ManagedNodeReservation,
+    borrowed_records: borrowed_records::Lanes,
 }
 
 fn storage_error(error: StorageError) -> Error {
@@ -245,7 +247,10 @@ impl<'plan> State<'plan> {
             amount(
                 count,
                 (2 * core::mem::size_of::<Slot<'plan>>()) as u64,
-                (core::mem::size_of::<Self>() + 128) as u64,
+                // Two generation/visit witnesses fit the existing fixed
+                // header slack; they retain no payload or allocation.
+                (core::mem::size_of::<Self>() - core::mem::size_of::<borrowed_records::Lanes>()
+                    + 128) as u64,
             )?,
             amount(
                 span_count,
@@ -292,6 +297,7 @@ impl<'plan> State<'plan> {
             caller: None,
             reservation,
             _nodes: nodes,
+            borrowed_records: borrowed_records::Lanes::default(),
         }))
     }
 

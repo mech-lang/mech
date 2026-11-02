@@ -288,7 +288,9 @@ fn selected_template(
 // entry admission, plus complete retained-Map Tuple/Record result words.
 // IR151 also binds direct child numeric carrier transport and narrowed private
 // boundary spills; prototype IR150 child argument words cannot be reused.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 151;
+// IR152 pins current-generation opaque Record-to-Map views and their exact
+// selected read-only consumer, including the canonical publication boundary.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 152;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -490,7 +492,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 151;
 // observations and inactive-bank clearing. Existing untagged prices remain.
 // Policy103 funds the complete canonical structured retained-Map publication;
 // scalar-frame transport keeps the existing logical and finite work charges.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 103;
+// Policy104 pays current canonical-root and selected borrowed-Map inspection.
+// Views retain no payload and cannot renew the invocation's finite allowance.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 104;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
@@ -554,6 +558,7 @@ pub(in crate::native_artifact) fn typed_ir_sha256(
     lines: &[NativeTextLineMatrixRegion],
     map_owners: Option<&mech_engine::native_artifact::NativeMapOwnerWords>,
     frozen_maps: &crate::native_artifact::program::prepare::frozen_map::Layout,
+    borrowed_record_maps: &crate::native_artifact::program::prepare::borrowed_record_map::Layout,
     string_maps: &[mech_engine::native_artifact::NativeStringMapRegion],
 ) -> [u8; 32] {
     let mut hash = Sha256::new();
@@ -587,6 +592,9 @@ pub(in crate::native_artifact) fn typed_ir_sha256(
     // sink is infallible. A failure still receives a distinct invalid marker.
     let encoded = serde_json::to_writer(ProofDigest(&mut hash), &map_owners);
     word(&mut hash, u64::from(encoded.is_ok()));
+    bytes(&mut hash, b"mech.borrowed-record-map-layout.v1");
+    serde_json::to_writer(ProofDigest(&mut hash), borrowed_record_maps)
+        .expect("borrowed record-map proof contains only finite ordered integer fields");
     word(&mut hash, frontiers.len() as u64);
     for frontier in frontiers {
         word(&mut hash, u64::from(frontier.iteration()));

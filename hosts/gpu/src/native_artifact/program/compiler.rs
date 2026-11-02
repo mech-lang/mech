@@ -243,6 +243,8 @@ impl NativeProgramObject {
             "compiled_loop_invariants": &self.codegen.loop_invariants,
             "linked": false, "executed": false, "timing_samples": 0,
         });
+        metadata["compiled_borrowed_record_maps"] =
+            serde_json::json!(&self.descriptor.metadata().borrowed_record_maps.regions);
         metadata["ordinary_scalar_admission_groups"] = serde_json::json!(
             self.descriptor
                 .metadata()

@@ -2770,6 +2770,24 @@ pub(crate) fn measure_borrowed_canonical_value_footprint(
     measure_borrowed_canonical_value_footprint_with_proof(meter, value, schemas, &mut proof)
 }
 
+/// Same logical footprint/debits as a closed canonical child Value, without
+/// allocating a wrapper. The caller must prove that this immutable component
+/// belongs to its current admitted root and exact selected output schema.
+#[cfg(all(feature = "native-artifact", feature = "sequence_buffers"))]
+pub(crate) fn measure_borrowed_canonical_component_footprint(
+    meter: &mut ResidentBudgetMeter,
+    body: &SchemaBody,
+    data: &ValueData,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    meter.charge_compute_work(BORROWED_FOOTPRINT_METADATA_WORK)?;
+    if !borrowed_footprint_schema_supported(meter, body, 0)? {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    meter.charge_retained_nodes(1)?;
+    let data = measure_proven_borrowed_canonical_data_footprint(meter, body, data, true)?;
+    projected_canonical_value_footprint(data, 0)
+}
+
 /// The snapshot-access source alone may reuse a complete DATA-only summary
 /// owned by the current native invocation. Current schema support, wrapper,
 /// shape and retained nodes are still measured/admitted here on every use.

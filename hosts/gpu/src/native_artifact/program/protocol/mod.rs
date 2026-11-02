@@ -44,6 +44,8 @@ pub(in crate::native_artifact) enum GlobalHelper {
     AdmitStructuralObservation,
     AdmitNumericSegmentBegin,
     MapOwnerConstructorCheck,
+    BorrowedRecordMapProject,
+    BorrowedRecordMapRead,
 }
 impl GlobalHelper {
     // Decoding classifies only. Site, phase, lane, admission and cursor checks
@@ -85,6 +87,8 @@ impl GlobalHelper {
             value if value == u64::MAX - 30 => Self::AdmitStructuralObservation,
             value if value == u64::MAX - 31 => Self::AdmitNumericSegmentBegin,
             value if value == u64::MAX - 32 => Self::MapOwnerConstructorCheck,
+            value if value == u64::MAX - 33 => Self::BorrowedRecordMapProject,
+            value if value == u64::MAX - 34 => Self::BorrowedRecordMapRead,
             value => Self::Output(OutputIndex(value - 3)),
         }
     }
@@ -126,6 +130,8 @@ impl GlobalHelper {
             Self::AdmitStructuralObservation => u64::MAX - 30,
             Self::AdmitNumericSegmentBegin => u64::MAX - 31,
             Self::MapOwnerConstructorCheck => u64::MAX - 32,
+            Self::BorrowedRecordMapProject => u64::MAX - 33,
+            Self::BorrowedRecordMapRead => u64::MAX - 34,
         }
     }
     #[cfg(feature = "canonical-native-program")]

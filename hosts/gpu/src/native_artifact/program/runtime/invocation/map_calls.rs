@@ -328,6 +328,31 @@ impl Invocation<'_, '_, '_> {
                     self.state
                         .arena
                         .put(output.get(), &value, &mut self.state.control.work)?;
+                    if let Some(owner) = layout.exit(site)
+                        && self
+                            .descriptor
+                            .metadata()
+                            .borrowed_record_maps
+                            .regions
+                            .iter()
+                            .any(|r| r.owner == owner)
+                    {
+                        let source = self
+                            .state
+                            .arena
+                            .current_handle(output.get(), &mut self.state.control.work)?;
+                        self.state
+                            .map_owners
+                            .state
+                            .as_mut()
+                            .unwrap()
+                            .borrowed_records
+                            .published = Some(super::borrowed_records::Published {
+                            owner,
+                            source,
+                            visit: self.state.control.visits,
+                        });
+                    }
                     0
                 }
                 Publication::Frozen(token) => token,

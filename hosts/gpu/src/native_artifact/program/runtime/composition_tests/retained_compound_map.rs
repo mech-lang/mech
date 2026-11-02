@@ -46,7 +46,7 @@ fn source(shape: Shape, publish: bool) -> String {
     source
 }
 
-fn arguments(
+pub(super) fn arguments(
     artifact: &ProgramArtifact,
     memory: &ManagedMemoryBudget,
     keys: &[&str],

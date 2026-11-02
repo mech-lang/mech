@@ -454,6 +454,15 @@ impl Invocation<'_, '_, '_> {
         if tag == GlobalHelper::MapOwnerConstructorCheck {
             return self.retained_constructor_check(site, args);
         }
+        if matches!(
+            tag,
+            GlobalHelper::BorrowedRecordMapProject | GlobalHelper::BorrowedRecordMapRead
+        ) {
+            return self.borrowed_record_map_helper(site, tag, args);
+        }
+        if tag == GlobalHelper::Library && self.borrowed_record_map_pending(site) {
+            return Err(invalid("ordinary helper at borrowed Record Map read"));
+        }
         if tag == GlobalHelper::ClosedTailBegin {
             return self.begin_closed_tail(site, args);
         }

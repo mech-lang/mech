@@ -91,6 +91,9 @@ fn descriptor_templates(
 mod image;
 
 #[cfg(feature = "sequence_buffers")]
+#[path = "native_collection_borrowed_record_map.rs"]
+mod borrowed_record_map;
+#[cfg(feature = "sequence_buffers")]
 #[path = "native_collection_buffer_frames.rs"]
 mod buffer_frames;
 #[cfg(feature = "sequence_buffers")]

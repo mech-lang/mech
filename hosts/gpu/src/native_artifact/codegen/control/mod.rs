@@ -1185,9 +1185,40 @@ impl<'plan> CfgDefinition<'plan> {
                         let zero = b.ins().iconst(types::I64, 0);
                         b.ins().store(MemFlags::new(), zero, hooks.result, 0);
                     }
-                    hooks.library(
+                    #[cfg(feature = "canonical-native-program")]
+                    let operation = match plan {
+                        plan::CodePlan::Program(program)
+                            if program
+                                .metadata()
+                                .borrowed_record_maps
+                                .projects
+                                .get(index)
+                                .copied()
+                                .flatten()
+                                .is_some() =>
+                        {
+                            GlobalHelper::BorrowedRecordMapProject.raw()
+                        }
+                        plan::CodePlan::Program(program)
+                            if program
+                                .metadata()
+                                .borrowed_record_maps
+                                .reads
+                                .get(index)
+                                .copied()
+                                .flatten()
+                                .is_some() =>
+                        {
+                            GlobalHelper::BorrowedRecordMapRead.raw()
+                        }
+                        _ => GlobalHelper::Library.raw(),
+                    };
+                    #[cfg(not(feature = "canonical-native-program"))]
+                    let operation = 0;
+                    hooks.library_operation(
                         b,
                         index,
+                        operation,
                         operands,
                         locals,
                         |operand| plan.kind(operand).is_some(),

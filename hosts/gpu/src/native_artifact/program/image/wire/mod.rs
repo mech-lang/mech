@@ -123,6 +123,7 @@ struct Descriptor<'a> {
     scalar_aggregates: NativeScalarAggregates,
     #[serde(deserialize_with = "proof")]
     map_owner_words: Option<NativeMapOwnerWords>,
+    borrowed_record_maps: native::program::prepare::borrowed_record_map::Layout,
     frozen_maps: native::program::prepare::frozen_map::Layout,
     map_admission: native::program::prepare::map_admission::Layout,
     parallel: native::program::prepare::parallel::Layout,
@@ -239,6 +240,17 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
             "retained-map owner lanes differ from independently validated source uses".into(),
         );
     }
+    let borrowed_record_maps = map_owner_words
+        .as_ref()
+        .map(|owners| native::program::prepare::borrowed_record_map::Layout::derive(&plan, owners))
+        .transpose()
+        .map_err(str::to_owned)?
+        .unwrap_or_default();
+    if borrowed_record_maps != w.borrowed_record_maps {
+        return Err(
+            "borrowed record-map proof differs from exact canonical publication uses".into(),
+        );
+    }
     let visits = w
         .visits
         .into_vec()
@@ -335,6 +347,7 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
             string_map_regions: w.string_map_regions,
             scalar_aggregates: w.scalar_aggregates,
             map_owner_words,
+            borrowed_record_maps,
             frozen_maps,
             map_admission: w.map_admission,
             parallel: w.parallel,
