@@ -6,6 +6,75 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Hosted CI is not awaited under
 instruction; no green hosted-CI claim is made.
 
+## R122: separate canonical owner spans from numeric transport words
+
+Update base `7eaebbd7e6bd8deb572af5aafccddb0b0d0e22ad`; measured compiler
+**`da58ad43e12a7c9e078631514f1c06d874d4c384`**; IR/work/ABI/MBC **149/102/38/14**.
+The same-build independently restored descriptor confirms 61 funded argument
+slots but only 36 canonical owner slots. Numeric word requirements no longer
+expand the managed prefix. The original physical backing, initialization,
+resource admission and all logical prices remain. The prefix is independently
+derived from source operations and parent/window recipes, never serialized as
+authority. Original/decoded/restored controls establish 75/9 on the small witness.
+
+| Fresh matched elapsed cohort | R121 / Roc | R122 / Roc | Reduction |
+|---|---:|---:|---:|
+|8 bytes|7.688302×|7.616406×|0.935146%|
+|1KB random|72.580879×|71.841963×|1.018059%|
+|1KB repeated byte|57.627250×|56.801056×|1.433687%|
+
+Each row uses a fresh common reference. Four of four prepared 8B pairs improve,
+with 58 improving / 6 adverse blocks. Both 1 KB cohorts improve in 8/8 blocks.
+All 3,968 primary / 3,984 total 8B observations and 128 per-version observations in
+each 1 KB cohort are retained. Exact raw output, independent inflation, input
+aliases, output capacities, source/bytecode, allocator and timing boundary agree.
+No full-scale timing.
+
+Separate hardware cohorts show instructions 24,887,726→24,844,684 at 8B,
+337,065,606.5→335,451,272.5 on random data and300,357,022.5→299,273,793.5
+on repeated data. Cycles are 9,462,679→6,853,749.5,68,514,460.5→68,477,069 and
+58,848,421→58,728,198.5 respectively. The disproportionately large 8B cycle
+change is preserved as observed; it is not a matched elapsed or causal speedup
+claim. Hardware/heap cohorts are separate from primary elapsed and CPU samples.
+
+Requests stay 4,101 / 29,391 / 16,091; requested bytes stay 17,728,849 / 19,981,650 /
+19,212,913, and incremental peak heap stays 15,175,816 / 15,174,280 / 15,178,400
+bytes for8B/random/repeated. Generated text 14,780,140 and stack 144,528 bytes,
+numeric selections and cleanup reports are unchanged. Actual host disassembly
+confirms the same successful empty-slot loop over the checked shorter slice;
+static instruction counts are not retired instruction counts. No fresh dynamic
+callback census was collected. Fresh after CPU-time profiles attribute 81.01%
+(random) and 68.31% (repeated) to other callbacks under generated entry; generated
+body shares are 4.95% / 18.78%. Those sample weights are not an instruction ledger.
+
+Passing checks: 3 new argument-bank tests, 80 inventoried native tests, 505 compatible
+GPU tests, unchanged 236 component / 8 connected / 1 structural path controls,
+132 workflow tests,15 architecture/catalog checks, runtime-only metadata,
+formatting and warnings as errors. Twelve optimized original/decoded scalar
+controls pass the unchanged 1.05 gate (worst 1.004283) with no request/byte increase.
+The unchanged Huffman work golden is 88,531,834. Seven previously demonstrated
+selected-profile feature/registry failures remain excluded. No fresh Core,
+all-feature/no_std/minimal-dependency build, linked 40/frame 8, source-variant
+complete qualification, hosted green CI or clean review is claimed.
+
+The parent reproducer fails 75 versus 9 before the repair and passes afterward.
+Full backing remains admitted under tight limits; invalid geometry is rejected;
+the final canonical owner remains checked; clearing preserves live aliases and
+releases managed memory. Full compressor work pins are unchanged. macOS denied
+an optional noninteractive debugger launch; that diagnostic produced no
+compression result. An ordinary same-build public Debug view independently
+confirmed the 61/36 geometry without a compiler edit.
+
+All 17 public archives (8,054,420 compressed bytes) and sidecars have verified
+server hashes. Fresh retrieval verifies 1,351 file occurrences / 399 unique paths
+and regenerates four reports byte-for-byte. Native outputs remain local.
+
+Retain this measured improvement. Next: rebuild the held positive-stride
+matching phases on R121's owner handoff and this separated bank, then repeat the
+same small cohorts. Its earlier repeated-data gain was accompanied by cache
+copies and a numeric-word-induced scan increase; neither old regression is
+assumed solved until that new complete executable is measured.
+
 ## R121: canonical owner handoff at a nested phase's first change
 
 Update base `445cf91bcd8ea50955942c5a1895206a620a92ad`; measured compiler
