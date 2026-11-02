@@ -302,3 +302,5 @@ fn nested_numeric_phase_finite_limits_keep_publication_and_retry() {
 mod controls;
 #[path = "nested_phase_fallback.rs"]
 mod fallback;
+#[path = "nested_phase_stride.rs"]
+mod stride;
