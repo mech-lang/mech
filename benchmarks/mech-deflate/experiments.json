@@ -12154,6 +12154,17 @@
           "files": 89,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-scale-counters-1c7054de6b37.tar.gz"
+        },
+        {
+          "event": "rich-counters",
+          "source_revision": "fc8e98e8d7230b78ff01644ae1457828f281673b",
+          "asset": "r124-rich-counters-235aa9c267aa.tar.gz",
+          "sha256": "235aa9c267aa1647fc73deb26616a3617a4d3e3b7d9b2fce7142d794af053a00",
+          "manifest_sha256": "c51249ae163df7d13fe9f3fdc9a3b9663ad9d13a8cde373581cfdfbba2a546d3",
+          "bytes": 222952,
+          "files": 69,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-rich-counters-235aa9c267aa.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
