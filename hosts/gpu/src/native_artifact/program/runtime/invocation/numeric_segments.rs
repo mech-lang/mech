@@ -243,12 +243,11 @@ impl Invocation<'_, '_, '_> {
                 .iter()
                 .find(|f| f.value == value)
                 .ok_or_else(|| invalid("parent input frame has no scalar lanes"))?;
-            // This immutable lookup has no charge or failure. Keep each field's
-            // availability check at its original read, after preceding fields.
-            let current_fields = metadata.buffer_frames.fields_at(value as usize);
             for (ordinal, slot) in recipe.fields.iter().enumerate() {
                 if let Some(slot) = slot {
-                    let Some((_, bits)) = current_fields
+                    let Some((_, bits)) = metadata
+                        .buffer_frames
+                        .fields_at(value as usize)
                         .and_then(|f| f.get(ordinal))
                         .and_then(|f| self.state.buffer_frames.current_leaf(*f))
                     else {
@@ -491,33 +490,28 @@ impl Invocation<'_, '_, '_> {
                             .iter()
                             .find(|f| f.value == value.get())
                             .unwrap();
-                        let current_fields = metadata.buffer_frames.fields(*value);
                         for (ordinal, (word, source)) in
                             recipe.fields.iter().zip(&recipe.arrays).enumerate()
                         {
                             if let Some(word) = word {
                                 let bits = self.read_borrowed_word(*word)?;
-                                let field = current_fields
-                                    .and_then(|fields| fields.get(ordinal))
-                                    .ok_or_else(|| {
-                                    invalid("numeric reconciliation outside frame")
-                                })?;
-                                self.state
-                                    .buffer_frames
-                                    .synchronize_scalar_field(field, bits)?;
+                                self.state.buffer_frames.synchronize_scalar(
+                                    &metadata.buffer_frames,
+                                    *value,
+                                    ordinal,
+                                    bits,
+                                )?;
                             } else if let Some(source) = source {
                                 let owner = self.state.call_inputs.values()[*source]
                                     .as_ref()
                                     .ok_or_else(|| invalid("parent export source pin missing"))?
                                     .clone();
-                                let field = current_fields
-                                    .and_then(|fields| fields.get(ordinal))
-                                    .ok_or_else(|| {
-                                    invalid("numeric managed reconciliation outside frame")
-                                })?;
-                                self.state
-                                    .buffer_frames
-                                    .synchronize_managed_field(field, owner)?;
+                                self.state.buffer_frames.synchronize_managed(
+                                    &metadata.buffer_frames,
+                                    *value,
+                                    ordinal,
+                                    owner,
+                                )?;
                             } else {
                                 return Err(invalid(
                                     "parent export has no scalar or managed source",
