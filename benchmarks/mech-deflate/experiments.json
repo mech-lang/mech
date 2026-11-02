@@ -7360,6 +7360,17 @@
           "files": 48,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-shared-shape-round103-20261101/archives/r103-primary-group2-d1c414e2f2cc.tar.gz"
+        },
+        {
+          "event": "primary-group3",
+          "source_revision": "6b064cdeb678f2e7c89e5c2a39143e5ac2f36e79",
+          "asset": "r103-primary-group3-20242d9f3fcf.tar.gz",
+          "sha256": "20242d9f3fcfb2e714f2b790a528d3f9faa02b9b7ca5bdf8e75f6afd5a81db05",
+          "manifest_sha256": "3ee55d9c859f6f89edbbdcca0ae57aa925200aeb065e0afdf49d68a5d5b67a12",
+          "bytes": 141407,
+          "files": 48,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-shared-shape-round103-20261101/archives/r103-primary-group3-20242d9f3fcf.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
