@@ -8979,6 +8979,17 @@
           "files": 53,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-isolated-profile-scale-fbd26d9c51c7.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "c85dfe8bcea3bc39a626a5287f2fa1ee5a22ad5c",
+          "asset": "r112-closure-c173f04740df.tar.gz",
+          "sha256": "c173f04740dfeb691b93c95b5eaf5d847a8ee3f3b9bb448c93d375e4c1906eeb",
+          "manifest_sha256": "57f8abe18edda0bfedc05d5d348fc74db20d5c332c1116831820e1beeb8ee218",
+          "bytes": 4858091,
+          "files": 171,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-admission-round112-20261102/archives/r112-closure-c173f04740df.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
