@@ -8036,6 +8036,17 @@
           "files": 128,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-input-scaling-profile-round107-20261101/archives/r107-input-scaling-profile-faa40a3a0bc6.tar.gz"
+        },
+        {
+          "event": "held-candidate-scaling-raw",
+          "source_revision": "8f6e6a8de9e4928a88f1341dd0538504bd2336e6",
+          "asset": "r107-held-candidate-scaling-raw-af8bc97e3ab4.tar.gz",
+          "sha256": "af8bc97e3ab45916b2b47efcc144e15585a75594de38a4debbc934b6e7b3c71a",
+          "manifest_sha256": "07278c57af3ca901f2ee55665319d08f824080ed3f2ce3e35e4b2f992b4d7d6c",
+          "bytes": 310848,
+          "files": 120,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-input-scaling-profile-round107-20261101/archives/r107-held-candidate-scaling-raw-af8bc97e3ab4.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
