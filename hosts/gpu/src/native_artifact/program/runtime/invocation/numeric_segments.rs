@@ -96,7 +96,11 @@ impl Invocation<'_, '_, '_> {
             .ok()
             .and_then(|n| metadata.observation_schema_bytes.checked_mul(n))
             .and_then(|n| n.checked_add(amount(proof.words, 128, 2048).ok()?));
-        for source in &frames.sources {
+        // These borrows cover this entry only. Owner tables and source values
+        // are immutable throughout preflight; the separate argument word bank
+        // may be written below. Large inventories keep the ordinary lookup.
+        let mut current_sources: [Option<&Value>; 8] = [None; 8];
+        for (at, source) in frames.sources.iter().enumerate() {
             let Some(owner) = self.segment_source(source)? else {
                 return Ok(Some(0));
             };
@@ -110,7 +114,17 @@ impl Invocation<'_, '_, '_> {
             };
             largest_source_bytes = largest_source_bytes.max(bytes);
             entry = entry.and_then(|n| n.checked_add(bytes.checked_mul(8)?));
+            if let Some(current) = current_sources.get_mut(at) {
+                *current = Some(owner);
+            }
         }
+        let current_source = |at: usize| {
+            if let Some(owner) = current_sources.get(at).copied().flatten() {
+                Ok(Some(owner))
+            } else {
+                self.segment_source(&frames.sources[at])
+            }
+        };
         let mut alias_work = Some(0u64);
         for alias in &frames.aliases {
             // The constant/unambiguous selector is proved by the original
@@ -139,7 +153,7 @@ impl Invocation<'_, '_, '_> {
             {
                 return Ok(Some(0));
             }
-            let Some(owner) = self.segment_source(&frames.sources[alias.source])? else {
+            let Some(owner) = current_source(alias.source)? else {
                 return Ok(Some(0));
             };
             let Some(work) = self.state.arena.native_alias_put_work(
@@ -262,7 +276,7 @@ impl Invocation<'_, '_, '_> {
                 upper = Some(0u64);
                 for source in &frame.arrays {
                     let bound = if let Some(source) = source {
-                        let Some(owner) = self.segment_source(&frames.sources[*source])? else {
+                        let Some(owner) = current_source(*source)? else {
                             return Ok(Some(0));
                         };
                         owner.memory_budget_retained_bytes(&memory)
@@ -282,7 +296,7 @@ impl Invocation<'_, '_, '_> {
                 bytes = 0;
                 for source in &frame.arrays {
                     let bound = if let Some(source) = source {
-                        let Some(owner) = self.segment_source(&frames.sources[*source])? else {
+                        let Some(owner) = current_source(*source)? else {
                             return Ok(Some(0));
                         };
                         let Ok(footprint) = owner.retained_footprint(&metadata.schemas) else {
@@ -311,7 +325,7 @@ impl Invocation<'_, '_, '_> {
             }
         }
         for (array, view) in proof.views.iter().enumerate() {
-            let Some(owner) = self.segment_source(&frames.sources[view.source])? else {
+            let Some(owner) = current_source(view.source)? else {
                 return Ok(Some(0));
             };
             let call = metadata.calls[view.witness]
