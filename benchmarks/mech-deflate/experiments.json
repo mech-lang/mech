@@ -9987,6 +9987,17 @@
           "files": 61,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-aggregate-funding-round116-20261102/archives/r116-boundary-census-before-3741568aef5d.tar.gz"
+        },
+        {
+          "event": "boundary-census-after",
+          "source_revision": "509c0d8e05a234020372b43832d7785f255c1b59",
+          "asset": "r116-boundary-census-after-123437612f8a.tar.gz",
+          "sha256": "123437612f8a42f81aa8f4042b6797480e0f814f697a16d5118b1a3558b8db6b",
+          "manifest_sha256": "bec092360d34b287b04c021a099613adf38a9f7395c597bc06a49ece12ad96a7",
+          "bytes": 226400,
+          "files": 61,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-aggregate-funding-round116-20261102/archives/r116-boundary-census-after-123437612f8a.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
