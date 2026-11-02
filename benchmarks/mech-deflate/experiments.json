@@ -9976,6 +9976,17 @@
           "files": 76,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-aggregate-funding-round116-20261102/archives/r116-frame-allocation-8c62387392fc.tar.gz"
+        },
+        {
+          "event": "boundary-census-before",
+          "source_revision": "509c0d8e05a234020372b43832d7785f255c1b59",
+          "asset": "r116-boundary-census-before-3741568aef5d.tar.gz",
+          "sha256": "3741568aef5de92fba86a5f491fcffc9b82c98bd744981497be30fc7bf045052",
+          "manifest_sha256": "f18c319234683a40b874ca0312a794fd0baaa22787fb636b068f17ce830e7693",
+          "bytes": 228736,
+          "files": 61,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-aggregate-funding-round116-20261102/archives/r116-boundary-census-before-3741568aef5d.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
