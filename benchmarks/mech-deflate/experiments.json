@@ -10781,6 +10781,17 @@
           "files": 89,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-scale-counters-c5cc1896a824.tar.gz"
+        },
+        {
+          "event": "boundary-census-after",
+          "source_revision": "99fef709f1d984e32ad22e5c8929e8dfd0ff0984",
+          "asset": "r119-boundary-census-after-4afb53dfe468.tar.gz",
+          "sha256": "4afb53dfe468d4dadbe8eabb672a17388db7924fd553d07e1b3dcf6f7a8aa179",
+          "manifest_sha256": "5a1096f0f64eb2f5c00f2c358ad3323b61e24270f50f71787de831d05952e598",
+          "bytes": 221851,
+          "files": 75,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-boundary-census-after-4afb53dfe468.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
