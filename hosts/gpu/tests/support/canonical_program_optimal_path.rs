@@ -192,7 +192,7 @@ fn path_checks_preserve_entry_order_publication_aliases_and_recovery() {
 }
 
 #[test]
-fn zero_trip_path_checks_preserve_entry_order_publication_aliases_and_recovery() {
+fn zero_trip_checks_keep_errors_aliases_and_recovery() {
     qualify_path_checks(&zero_trip::path_source(SOURCE));
 }
 
