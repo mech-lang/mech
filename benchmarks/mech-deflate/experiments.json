@@ -11083,6 +11083,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-isolated-profile-scale-7eae559f6610.tar.gz"
+        },
+        {
+          "event": "isolated-profile-rich",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-isolated-profile-rich-4b7d3f1dd33a.tar.gz",
+          "sha256": "4b7d3f1dd33a880df37726da3fc5b28b9dbce3f19e8cbc7d2e9adea6ee81d44d",
+          "manifest_sha256": "9c8067c02b9df2386abaa2ec6b5323d51fcdff87abec4402b9c7488d4e23c8a2",
+          "bytes": 270676,
+          "files": 52,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-isolated-profile-rich-4b7d3f1dd33a.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
