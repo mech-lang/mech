@@ -587,22 +587,22 @@ fn reused_frame_geometry_keeps_kind_type_rejection_and_recovery() {
         for case in 0..4 {
             let (error, expected) = match case {
                 0 => (
-                    frames.synchronize_scalar_field(boolean, 2).unwrap_err(),
+                    frames.synchronize_scalar_field(&boolean, 2).unwrap_err(),
                     "invalid scalar bits",
                 ),
                 1 => (
-                    frames.synchronize_scalar_field(managed, 1).unwrap_err(),
+                    frames.synchronize_scalar_field(&managed, 1).unwrap_err(),
                     "not scalar",
                 ),
                 2 => (
                     frames
-                        .synchronize_managed_field(boolean, bad.clone())
+                        .synchronize_managed_field(&boolean, bad.clone())
                         .unwrap_err(),
                     "not managed",
                 ),
                 _ => (
                     frames
-                        .synchronize_managed_field(managed, bad.clone())
+                        .synchronize_managed_field(&managed, bad.clone())
                         .unwrap_err(),
                     "type differs",
                 ),
@@ -615,12 +615,12 @@ fn reused_frame_geometry_keeps_kind_type_rejection_and_recovery() {
             );
         }
         for bit in [0, 1, 0] {
-            frames.synchronize_scalar_field(boolean, bit).unwrap();
+            frames.synchronize_scalar_field(&boolean, bit).unwrap();
             assert_eq!(frames.current_leaf(boolean).unwrap().1, bit);
         }
         let owner = value(managed.schema(), &artifact, &memory);
         frames
-            .synchronize_managed_field(managed, owner.clone())
+            .synchronize_managed_field(&managed, owner.clone())
             .unwrap();
         assert!(
             frames
@@ -640,14 +640,14 @@ fn reused_frame_geometry_keeps_kind_type_rejection_and_recovery() {
         assert!(
             format!(
                 "{:?}",
-                missing.synchronize_scalar_field(boolean, 2).unwrap_err()
+                missing.synchronize_scalar_field(&boolean, 2).unwrap_err()
             )
             .contains("invalid scalar bits")
         );
         assert!(
             format!(
                 "{:?}",
-                missing.synchronize_scalar_field(boolean, 1).unwrap_err()
+                missing.synchronize_scalar_field(&boolean, 1).unwrap_err()
             )
             .contains("no lanes")
         );
@@ -655,7 +655,7 @@ fn reused_frame_geometry_keeps_kind_type_rejection_and_recovery() {
             format!(
                 "{:?}",
                 missing
-                    .synchronize_managed_field(managed, bad.clone())
+                    .synchronize_managed_field(&managed, bad.clone())
                     .unwrap_err()
             )
             .contains("type differs")
