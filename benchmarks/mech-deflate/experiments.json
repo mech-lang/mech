@@ -8984,6 +8984,28 @@
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
       "archive_publication": "local-only at measurement; external publication pending"
+    },
+    "113": {
+      "base": "a105e9a76978ff7bbb4a8dd56968a3c7b8e457b8",
+      "production": "62b901e9b0cb81b2c84359bc41a48a50f56ecfa5",
+      "compiler_source": "62b901e9b0cb81b2c84359bc41a48a50f56ecfa5",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "62b901e9b0cb81b2c84359bc41a48a50f56ecfa5",
+          "asset": "r113-initial-b4f07b68dc9f.tar.gz",
+          "sha256": "b4f07b68dc9faadffc9355e0f860d11a49fcda5d150a42f5e9d215fb38a6cd31",
+          "manifest_sha256": "8f7a16db7a74dbc125fa8aed531579a673c24b682a1cdfee882b45719cbb3f51",
+          "bytes": 4401540,
+          "files": 88,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-admission-round113-20261102/archives/r113-initial-b4f07b68dc9f.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
