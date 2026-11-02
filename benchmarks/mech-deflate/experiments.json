@@ -11345,6 +11345,17 @@
           "files": 61,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-handoff-round121-20261102/archives/r121-match-rich-measure-1024-9bf6e6d1d3d8.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "6ed4e0fb7e7e34abd1162f090e112045bc052565",
+          "asset": "r121-scalar-controls-14a59f4e0564.tar.gz",
+          "sha256": "14a59f4e0564a9f554b19753c3797e99d03eb16010a60d8eab0d9d06ebfdba04",
+          "manifest_sha256": "1f35a537061977a438007916517fd0ae690f74f0bbc6edb31e5738112954d7e5",
+          "bytes": 76648,
+          "files": 110,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-handoff-round121-20261102/archives/r121-scalar-controls-14a59f4e0564.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
