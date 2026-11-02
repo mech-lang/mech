@@ -95,7 +95,12 @@ pub(in crate::native_artifact::program::runtime) unsafe extern "C" fn helper(
             GlobalHelper::StructuralObservation.raw()
         }
         GlobalHelper::AdmitNumericSegmentBegin => {
-            let status = admit_current(context, site);
+            let outcome = admission_word(context, site);
+            let scalar_ready = match &outcome {
+                Ok(Some(word)) => *word,
+                _ => 0,
+            };
+            let status = finish_callback(context, outcome);
             if status != STATUS_OK {
                 return status;
             }
@@ -104,7 +109,6 @@ pub(in crate::native_artifact::program::runtime) unsafe extern "C" fn helper(
             if first == 0 {
                 return STATUS_OK;
             }
-            let scalar_ready = context.scalar_admission_word(site).unwrap_or(0);
             let outcome = if result.is_null() || result != context.result {
                 Err(invalid("helper result pointer mismatch"))
             } else if first != 1 {
@@ -135,10 +139,18 @@ fn admit_current(context: &mut Invocation<'_, '_, '_>, site: u64) -> u64 {
     // Finish the complete original admission, including its optional scalar
     // decision word, before validating any helper pointer or operand. A fused
     // callback grants no permission beyond the same current visit.
-    let outcome = context
-        .visit(site)
-        .map(|()| context.scalar_admission_word(site));
+    let outcome = admission_word(context, site);
     finish_callback(context, outcome)
+}
+
+#[inline(always)]
+fn admission_word(
+    context: &mut Invocation<'_, '_, '_>,
+    site: u64,
+) -> Result<Option<u64>, NativeProgramExecutionError> {
+    context
+        .visit(site)
+        .map(|()| context.scalar_admission_word(site))
 }
 
 #[inline]
