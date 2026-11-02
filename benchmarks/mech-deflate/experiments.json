@@ -7678,6 +7678,17 @@
           "files": 78,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-frame-allocation-ec41e490bc98.tar.gz"
+        },
+        {
+          "event": "closure",
+          "source_revision": "636da5e074add0632f7154f14d8d39848721cd16",
+          "asset": "r104-closure-3a13572b9f86.tar.gz",
+          "sha256": "3a13572b9f867fa4845a189ff737da49621d4b70e36a51f1de179bee70e7d309",
+          "manifest_sha256": "f4f9252d10e7efde7adeb41f01485c2b61fb179c499f5d894e737b643e3ea7ad",
+          "bytes": 5568490,
+          "files": 446,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-closure-3a13572b9f86.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
