@@ -7917,6 +7917,17 @@
           "files": 59,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-linked-multi-391ad2228700.tar.gz"
+        },
+        {
+          "event": "linked-constants",
+          "source_revision": "ec55e3f856306b07d34050b8b95ac0289a28fb5f",
+          "asset": "r105-linked-constants-6d224a0f95df.tar.gz",
+          "sha256": "6d224a0f95df8e9d188d00098fe8cc9e12d1253a459ab2bcdb0745516c27d84c",
+          "manifest_sha256": "0bf290ac89238be42d47bcad4d93f00e418b0c0128726fed7948e42727e33847",
+          "bytes": 128669,
+          "files": 60,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-linked-constants-6d224a0f95df.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
