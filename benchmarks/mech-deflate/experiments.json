@@ -7950,6 +7950,17 @@
           "files": 97,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-scalar-controls-c4e64f63f399.tar.gz"
+        },
+        {
+          "event": "frame-allocation",
+          "source_revision": "ec55e3f856306b07d34050b8b95ac0289a28fb5f",
+          "asset": "r105-frame-allocation-8d5b655972b6.tar.gz",
+          "sha256": "8d5b655972b6165c4c211dfbc0640288d67445b3fd00c2df423e7fabab6357d9",
+          "manifest_sha256": "c9101f23b67852b8ff851ef86d62bd7bb71a5a5685d04a59b58f7b5f49635bbc",
+          "bytes": 122019,
+          "files": 75,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-append-shape-round105-20261101/archives/r105-frame-allocation-8d5b655972b6.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
