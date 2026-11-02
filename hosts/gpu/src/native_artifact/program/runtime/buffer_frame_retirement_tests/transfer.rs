@@ -537,3 +537,132 @@ fn checked_nested_frame_calls_preserve_publication_on_failure_and_recover() {
         );
     }
 }
+
+#[test]
+fn reused_frame_geometry_keeps_kind_type_rejection_and_recovery() {
+    for artifact in artifacts(FLAT) {
+        let plan = mech_engine::native_artifact::lower_native_program_artifact(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+        )
+        .unwrap();
+        let layout = plan.facts().buffer_frames();
+        let (source, _) = pair(&layout, &plan, false);
+        let fields = layout.fields(source).unwrap();
+        let boolean = *fields
+            .iter()
+            .find(|f| {
+                matches!(
+                    f.lane(),
+                    Lane::Scalar {
+                        kind: mech_engine::native_artifact::NativeScalarKind::Bool,
+                        ..
+                    }
+                )
+            })
+            .unwrap();
+        let managed = *fields
+            .iter()
+            .find(|f| matches!(f.lane(), Lane::Managed { .. }))
+            .unwrap();
+        let memory = ManagedMemoryBudget::new(64 * 1024 * 1024);
+        let mut work = NativeWorkMeter::new(u64::MAX).unwrap();
+        let mut frames = BufferFrames::new(&layout, u64::MAX, &memory, &mut work).unwrap();
+        fill(&layout, fields, &artifact, &mut frames, &memory, 7);
+        let published = snapshot(&frames);
+        let bad = ValueDraft {
+            schema: boolean.schema(),
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Bool(true),
+        }
+        .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+        .unwrap();
+        let mut claim = memory
+            .reserve_capacity(bad.memory_budget_admission_bytes(&memory).unwrap())
+            .unwrap();
+        let bad = bad.into_memory_budget(&mut claim).unwrap();
+        drop(claim);
+        let before = snapshot(&frames);
+        let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+        for (error, expected) in [
+            (
+                frames.synchronize_scalar_field(boolean, 2).unwrap_err(),
+                "invalid scalar bits",
+            ),
+            (
+                frames.synchronize_scalar_field(managed, 1).unwrap_err(),
+                "not scalar",
+            ),
+            (
+                frames
+                    .synchronize_managed_field(boolean, bad.clone())
+                    .unwrap_err(),
+                "not managed",
+            ),
+            (
+                frames
+                    .synchronize_managed_field(managed, bad.clone())
+                    .unwrap_err(),
+                "type differs",
+            ),
+        ] {
+            assert!(format!("{error:?}").contains(expected));
+            unchanged(&frames, &before);
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                retained
+            );
+        }
+        for bit in [0, 1, 0] {
+            frames.synchronize_scalar_field(boolean, bit).unwrap();
+            assert_eq!(frames.current_leaf(boolean).unwrap().1, bit);
+        }
+        let owner = value(managed.schema(), &artifact, &memory);
+        frames
+            .synchronize_managed_field(managed, owner.clone())
+            .unwrap();
+        assert!(
+            frames
+                .current_leaf(managed)
+                .unwrap()
+                .0
+                .unwrap()
+                .shares_frozen_storage(&owner)
+        );
+        for alias in published.1.iter().flatten() {
+            assert_eq!(
+                alias.canonical_data_draft().unwrap(),
+                ValueDataDraft::Matrix(vec![ValueDataDraft::U32(7)].into())
+            );
+        }
+        let mut missing = BufferFrames { inner: None };
+        assert!(
+            format!(
+                "{:?}",
+                missing.synchronize_scalar_field(boolean, 2).unwrap_err()
+            )
+            .contains("invalid scalar bits")
+        );
+        assert!(
+            format!(
+                "{:?}",
+                missing.synchronize_scalar_field(boolean, 1).unwrap_err()
+            )
+            .contains("no lanes")
+        );
+        assert!(
+            format!(
+                "{:?}",
+                missing
+                    .synchronize_managed_field(managed, bad.clone())
+                    .unwrap_err()
+            )
+            .contains("type differs")
+        );
+        drop((frames, before, published, bad, owner));
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
+}
