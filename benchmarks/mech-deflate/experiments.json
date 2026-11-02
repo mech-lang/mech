@@ -10618,10 +10618,10 @@
       }
     },
     "119": {
-      "base": "6a303c6d92d14f5a88ab4aecb9999fda205f285a",
-      "production": null,
-      "compiler_source": "509c0d8e05a234020372b43832d7785f255c1b59",
-      "decision": "under measurement",
+      "base": "e7acd5c17bc1f73f424f1a375563d8c77796f06a",
+      "production": "99fef709f1d984e32ad22e5c8929e8dfd0ff0984",
+      "compiler_source": "99fef709f1d984e32ad22e5c8929e8dfd0ff0984",
+      "decision": "Retain complete synchronous native numeric phases: all matched elapsed pairs improve; actual path exports disappear; finite-budget, version, alias, publication, failure, recovery and restored-image controls pass. Larger text/stack and conservative phase funding remain explicit.",
       "events": [
         {
           "event": "initial",
@@ -10851,7 +10851,37 @@
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "initial_baseline": {
+        "base": "6a303c6d92d14f5a88ab4aecb9999fda205f285a",
+        "compiler_source": "509c0d8e05a234020372b43832d7785f255c1b59",
+        "production": null
+      },
+      "versions": [
+        146,
+        100,
+        38,
+        14
+      ],
+      "retained": true,
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "b3b58008ac572df196deef496a49a3607bbb04915702d6539e80fc7436a260cc",
+          "profile-numbers.json": "2e87f180b2590243e1cd4c8a2f58989302e84a9c120605b1741e43f8e4e230a7",
+          "scorecard.json": "458b858af0232c18fce47c676bd70e3156acaa561ebcd278a4a3d6f57ea170c3",
+          "validation.json": "b4504f4441300cf0ce10504f1e5040d12978ddb9c6bee6f89c830415fb8f8332"
+        },
+        "scope": "Offline reconstruction from raw journals; no native compilation or compression. Each elapsed cohort has its own fresh common reference; hardware, heap and sample cohorts remain separate."
+      },
+      "compiler_comparison": {
+        "before": "509c0d8e05a234020372b43832d7785f255c1b59",
+        "after": "99fef709f1d984e32ad22e5c8929e8dfd0ff0984",
+        "original_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "bytecode_revision": 14,
+        "source_variant_included": false
+      }
     }
   },
   "repository": "mech-lang/mech",
