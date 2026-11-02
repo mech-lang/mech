@@ -10268,6 +10268,17 @@
           "files": 166,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-closure-2f144f349710.tar.gz"
+        },
+        {
+          "event": "analysis-final",
+          "source_revision": "8e7334a4fdd929c58f0d741195c3d8a1857d81af",
+          "asset": "r117-analysis-final-be11c35074a3.tar.gz",
+          "sha256": "be11c35074a319af524a60e796fb3520cb2ef303ba89c17c8bc494bb5c8fe906",
+          "manifest_sha256": "c72723d020e3a272c11b3f0abad10cde136e3215665387c49148309d806d5f63",
+          "bytes": 94318,
+          "files": 55,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-analysis-final-be11c35074a3.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
