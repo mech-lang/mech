@@ -10770,6 +10770,17 @@
           "files": 96,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-counters-ef757633d77c.tar.gz"
+        },
+        {
+          "event": "scale-counters",
+          "source_revision": "99fef709f1d984e32ad22e5c8929e8dfd0ff0984",
+          "asset": "r119-scale-counters-c5cc1896a824.tar.gz",
+          "sha256": "c5cc1896a824ef0ec3d419d5268e711ebc48576a6d4fe1be6d713aa1acca238a",
+          "manifest_sha256": "beea9954acebc8fe1689774d3f02e9eeb8f5f25c2be521317ccb0efc92f7c27b",
+          "bytes": 91446,
+          "files": 89,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-scale-counters-c5cc1896a824.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
