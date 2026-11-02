@@ -274,7 +274,9 @@ fn selected_template(
 // spills only source homes. Exit exports, capacity guards and prices stay.
 // IR143 reconstructs finite ordinary collection-source reads through finalization.
 // IR142 belongs to the rejected adjacent-seed experiment and is not reused.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 143;
+// IR144 composes independently derived private scalar aggregate word actions
+// into acyclic numeric parent pieces, using their shared checked emitter.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 144;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
