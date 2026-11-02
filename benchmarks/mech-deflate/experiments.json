@@ -11970,9 +11970,9 @@
     },
     "124": {
       "base": "0a7237f66c407f0ec880b3ad5768a8433c7b6ec0",
-      "production": null,
-      "compiler_source": "71f8cb7bed8bc84bfcb75915b79b8c299401adc5",
-      "decision": "Baseline only: unchanged compiler passes ten original/decoded semantic controls, but native-parent acceptance fails. Explicit cold-exit implementation and measurement pending.",
+      "production": "fc8e98e8d7230b78ff01644ae1457828f281673b",
+      "compiler_source": "fc8e98e8d7230b78ff01644ae1457828f281673b",
+      "decision": "Retain native scalar-child cold exits for the measured 8B and random-input gains. Preserve the repeated-input timing/instruction regression and larger generated code/stack. Only the first of four requested capabilities is complete.",
       "events": [
         {
           "event": "baseline-reproduce",
@@ -12220,12 +12220,40 @@
           "files": 70,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-isolated-profile-rich-49994af0fe4b.tar.gz"
+        },
+        {
+          "event": "analysis",
+          "source_revision": "fc8e98e8d7230b78ff01644ae1457828f281673b",
+          "asset": "r124-analysis-cfb45522855f.tar.gz",
+          "sha256": "cfb45522855f5384fd6140c6cf995c054b09cfabd9c7c809a5472e733b1f704d",
+          "manifest_sha256": "bba866503f27cccc1a908a9285e1699c6d176e90b4c569441ff83e28f25efd9c",
+          "bytes": 271346,
+          "files": 65,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-cold-exit-round124-20261102/archives/r124-analysis-cfb45522855f.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
       "archive_publication": "local-only at measurement; external publication pending",
-      "retained": false
+      "retained": false,
+      "qualified_compiler": "d73f332c467db89b5ba03659062b7917d8185c6a",
+      "format_revision": "2169f283b754c1fc77bf08dd1d8aec2f940485f1",
+      "versions": [
+        151,
+        104,
+        38,
+        14
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "mechanism.json": "c40ceefa918969151b831066fcdf4832229f830546d10a94ab5b2e51a2c08b2c",
+          "profile-numbers.json": "055fc695b1be8c575ec71cecbb5f043b6c2f122616a9aa04941d38e324c24dbd",
+          "scorecard.json": "5e18d0054b213c8dfec72c3e1286ad7bb5e449053a9edf6264e5d3776ba8fc8a",
+          "validation.json": "d3f2288cf17467f902a81cbc6619628af95fa8aa70c5e7d5a04fcf9c5d787c20"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
