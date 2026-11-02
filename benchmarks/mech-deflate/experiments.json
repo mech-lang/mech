@@ -11039,6 +11039,17 @@
           "files": 51,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-scale-measure-1024-3e6e9cd68dec.tar.gz"
+        },
+        {
+          "event": "match-rich-measure-1024",
+          "source_revision": "740e98506ea6abc3ac8d889999cdcfcc628684e8",
+          "asset": "r120-match-rich-measure-1024-9467a0dcde1a.tar.gz",
+          "sha256": "9467a0dcde1a11caa57010a565eadaea24830de392c630b8bc76d2e52067863c",
+          "manifest_sha256": "7d58d996a58ab3ec9f449c5b04c1ee182d0c5c5077620ac147e51c03c7859d84",
+          "bytes": 68964,
+          "files": 51,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-numeric-stride-round120-20261102/archives/r120-match-rich-measure-1024-9467a0dcde1a.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
