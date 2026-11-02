@@ -413,13 +413,13 @@ impl BufferFrames {
             .fields(value)
             .and_then(|fields| fields.get(ordinal))
             .ok_or_else(|| invalid("numeric reconciliation outside frame"))?;
-        self.synchronize_scalar_field(*field, bits)
+        self.synchronize_scalar_field(field, bits)
     }
     // A descriptor field is immutable geometry, not current availability or
     // permission. Reusing it retains all per-field kind and backing checks.
     pub(super) fn synchronize_scalar_field(
         &mut self,
-        field: FrameField,
+        field: &FrameField,
         bits: u64,
     ) -> Result<(), NativeProgramExecutionError> {
         let Lane::Scalar { at, kind } = field.lane() else {
@@ -552,11 +552,11 @@ impl BufferFrames {
             .fields(value)
             .and_then(|f| f.get(ordinal))
             .ok_or_else(|| invalid("numeric managed reconciliation outside frame"))?;
-        self.synchronize_managed_field(*field, owner)
+        self.synchronize_managed_field(field, owner)
     }
     pub(super) fn synchronize_managed_field(
         &mut self,
-        field: FrameField,
+        field: &FrameField,
         owner: Value,
     ) -> Result<(), NativeProgramExecutionError> {
         let Lane::Managed { at } = field.lane() else {

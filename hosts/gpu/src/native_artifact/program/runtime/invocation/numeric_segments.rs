@@ -243,14 +243,11 @@ impl Invocation<'_, '_, '_> {
                 .iter()
                 .find(|f| f.value == value)
                 .ok_or_else(|| invalid("parent input frame has no scalar lanes"))?;
-            // Resolve immutable geometry lazily at the first actual field read,
-            // preserving declines for absent or invalid current field values.
-            let mut current_fields = None;
+            // This immutable lookup has no charge or failure. Keep each field's
+            // availability check at its original read, after preceding fields.
+            let current_fields = metadata.buffer_frames.fields_at(value as usize);
             for (ordinal, slot) in recipe.fields.iter().enumerate() {
                 if let Some(slot) = slot {
-                    if current_fields.is_none() {
-                        current_fields = metadata.buffer_frames.fields_at(value as usize);
-                    }
                     let Some((_, bits)) = current_fields
                         .and_then(|f| f.get(ordinal))
                         .and_then(|f| self.state.buffer_frames.current_leaf(*f))
@@ -494,15 +491,12 @@ impl Invocation<'_, '_, '_> {
                             .iter()
                             .find(|f| f.value == value.get())
                             .unwrap();
-                        let mut current_fields = None;
+                        let current_fields = metadata.buffer_frames.fields(*value);
                         for (ordinal, (word, source)) in
                             recipe.fields.iter().zip(&recipe.arrays).enumerate()
                         {
                             if let Some(word) = word {
                                 let bits = self.read_borrowed_word(*word)?;
-                                if current_fields.is_none() {
-                                    current_fields = metadata.buffer_frames.fields(*value);
-                                }
                                 let field = current_fields
                                     .and_then(|fields| fields.get(ordinal))
                                     .ok_or_else(|| {
@@ -510,15 +504,12 @@ impl Invocation<'_, '_, '_> {
                                 })?;
                                 self.state
                                     .buffer_frames
-                                    .synchronize_scalar_field(*field, bits)?;
+                                    .synchronize_scalar_field(field, bits)?;
                             } else if let Some(source) = source {
                                 let owner = self.state.call_inputs.values()[*source]
                                     .as_ref()
                                     .ok_or_else(|| invalid("parent export source pin missing"))?
                                     .clone();
-                                if current_fields.is_none() {
-                                    current_fields = metadata.buffer_frames.fields(*value);
-                                }
                                 let field = current_fields
                                     .and_then(|fields| fields.get(ordinal))
                                     .ok_or_else(|| {
@@ -526,7 +517,7 @@ impl Invocation<'_, '_, '_> {
                                 })?;
                                 self.state
                                     .buffer_frames
-                                    .synchronize_managed_field(*field, owner)?;
+                                    .synchronize_managed_field(field, owner)?;
                             } else {
                                 return Err(invalid(
                                     "parent export has no scalar or managed source",
