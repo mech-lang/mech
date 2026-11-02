@@ -6,6 +6,125 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Hosted CI is not awaited under
 instruction; no green hosted-CI claim is made.
 
+## R116: fund native scalar aggregate words through the ordinary path
+
+Base **`d5e88ff2e66714ad4ee1d1f200518958401cea9a`**; retained compiler/runtime
+**`509c0d8e05a234020372b43832d7785f255c1b59`**; focused regression
+`b91ab7e6a3`. Independently derived private scalar aggregate actions already
+emit checked native words. They now share the existing ordinary scalar funding
+path, without a new owner frame, argument bank or cache. Owned-map selection,
+lifecycle boundaries, lexical failures and the shared aggregate emitter remain
+unchanged. Image loading rederives the same groups after validating the scalar
+word layout. IR145 rejects IR143 and the held IR144; work policy99, private
+ABI38 and bytecode14 remain.
+
+| Matched elapsed cohort | Baseline / reference | Candidate / reference | Change |
+|---|---:|---:|---:|
+|8B, four prepared pairs|7.979811×|7.874930×|−1.314335%|
+|1KB, alternating blocks|113.499239×|104.174555×|−8.215636%|
+
+8B takes 2.322125→2.2916045 ms against a fresh 0.291 ms reference. All four
+prepared pairs improve; 61/64 descriptive blocks improve and three worsen.
+The cohort retains 3,968 primary / 3,984 total observations. The separate 1KB
+cohort takes 34.163271→31.356541 ms against a fresh 0.301 ms reference, with
+128 observations per version; all eight blocks improve. Each row has its own
+common reference. Historical ratios and independent cohorts are not pooled or
+compounded. The target remains 1×; no larger-input or full-scale speed is claimed.
+
+| Separate hardware cohort | Baseline | Candidate |
+|---|---:|---:|
+|8B retired instructions|26,773,029|26,168,226|
+|8B cycles|7,394,977.5|7,211,731.5|
+|1KB retired instructions|552,038,310|494,396,024|
+|1KB cycles|109,262,186.5|100,770,407.5|
+
+At 1KB, instructions fall **10.441718%** and cycles **7.771928%**, independently
+of the primary elapsed cohort. Hardware has 32 observations per subject; heap
+has eight Mech observations after controls are excluded. Instrumented elapsed
+is not a primary timing result. The fresh 1KB reference uses 1,690,857 instructions
+and 974,536.5 cycles. Samples are CPU-time weights, not function instruction counts.
+
+Per-call heap demand is exactly unchanged: 8B 4,257 requests / 95,876,945 requested
+bytes / 17,782,424B incremental live peak; 1KB 47,796 requests / 7,523,247,338 requested
+bytes / 17,773,224B peak. Reallocations 68, included in requests. Requested capacity
+is neither initialized bytes copied nor live memory. Between-call allocator live
+bytes rise **1,224B** at both sizes in the whole prepared harness; that metric
+includes current values and is not an exclusive prepared-metadata census. This
+small increase remains explicit rather than claiming a universal heap reduction.
+
+Generated native text shrinks **20,436B**, 14,604,696→14,584,260B; machine entry
+stack shrinks **768B**, 135,728→134,960B. Whole linked instruction text falls
+21,844B to 63,660,796B; executable bytes fall 15,744 to 172,981,960. These are
+actual binary/metadata measurements, not a complete host-stack census. Fresh
+bounded ARM64 inspection covers helper, entry and exit functions. The pinned
+reference is inspected again: its complete 195,456B text includes platform and
+allocator, while the Mech generated-text row excludes its host runtime. Opaque
+reference symbols are not assigned source names.
+
+### Executed mechanism
+
+| Registered ABI callbacks per complete call | 8B before → after | 1KB before → after |
+|---|---:|---:|
+|Ordinary admission|4,890 →3,823|201,648 →100,264|
+|Helpers, including fused callbacks|4,911 →4,901|96,655 →96,648|
+|Total|9,801 →8,724|298,303 →196,912|
+|Numeric entries/exits|938 →933|31,916 →31,912|
+
+Two diagnostic executions agree at each size and compiler. The observer counts
+the registered admission callback and helper separately; a fused helper counts
+once. Internal admission routines are not falsely counted as another ABI call.
+These are callback counts, not payload copying or retired instructions. Array
+alias exports remain 981 at 8B and 39,527 at 1KB. Ordinary scalar groups rise
+1,372→1,373, with 8,642→8,939 covered static sites and 35 groups containing native
+aggregate actions. Emitted numeric pieces decrease 484→479. This removes repeated
+funding work instead of adding the extra owner-entry boundaries seen in R115.
+
+The exact blocking source remains `#OptimalPathMatches :Try(m,k,best,item)` at
+pinned source lines 700–714, including four-word tuple and enum packing. All
+algorithm code, tables, search limits, near-EOF bounds, real capacities, source
+allocation sites, allocator and evaluate_into timing boundaries are unchanged.
+Mech performs the complete compression. Exact raw bytes, independent inflation,
+input aliases, output capacity 13/1029, clear/rebind outside the timer and final
+managed bytes/nodes 0 pass at both sizes.
+
+### Correctness and validation
+
+The existing scalar-funding regression is extended with a private tuple and
+changing true/false arguments, retaining its original source variant and expected
+behavior. It fails on the clean parent at missing aggregate group coverage.
+Original/decoded and independently restored artifacts then pass native interior
+arithmetic origins, one-short funding fallback, assertion-before-overflow order,
+unchanged prior publication, live aliases and success→failure→retry. Test inventory
+counts and allowances do not increase. No R115 numeric-aggregate SSA selection is
+enabled. Successful numeric exit clears both the scalar marker and its shared
+readiness lane so an unfunded ordinary suffix retains its original admissions.
+
+Passing selections: runtime 356, work/memory 33, guarded native 65, image 1;
+unchanged components 236 / connected 8 / path 1 with actual listed and executed counts;
+linked 16+12+12; scalar 12 and frame 8. Scalar's maximum elapsed ratio is 1.005790
+under the unchanged 1.05 gate; pure scalar requests/bytes are equal and loop
+allocation slope is zero. Frame requests/bytes/work do not increase. Workflow 132,
+architecture/type/memory 15, runtime-only cfg and full formatting pass, with
+warnings-as-errors. No golden or allowance changes. No fresh Core/no_std,
+all-features or minimal dependency graph qualification is claimed; the existing
+expensive knucleotide-body exclusion remains explicit. Hosted CI is not awaited
+and the PR stays draft pending green CI and clean review.
+
+Logical resource work is not hardware instructions. Existing policy99 prices
+the changed funding/partition geometry: 42,410,605,541→42,390,445,317 at 8B,
+1,970,398,096,074→1,970,438,688,821 at 1KB. Both actual work values are pinned
+separately in every timing and hardware cohort. No source operation is removed
+to lower that counter. Fresh serial profiles cover 695 complete calls per 8B
+subject and 130 per 1KB subject. Remaining sampling cost is concentrated in numeric
+entry/exit, budget checks and cleanup; callback sample shares are not a causal
+instruction ledger. The next measurement should split those remaining entry
+checks before another implementation change.
+
+No newly introduced compiler/runtime or diagnostic failure remains in executed
+scope. The baseline negative regression is intentional. Obsolete failed-test
+executables from R115 are deleted after their source/commands/receipts were
+archived, freeing 337,841,784B; active baseline and candidate binaries remain pinned.
+
 ## R115: scalar aggregate parent pieces held
 
 Base `e7644df6bb40969bfbe3b7e38856071fc4ef2090`; initial candidate
