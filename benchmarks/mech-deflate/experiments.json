@@ -10191,6 +10191,17 @@
           "files": 80,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-scale-counters-6e1222225417.tar.gz"
+        },
+        {
+          "event": "isolated-profile",
+          "source_revision": "8e7334a4fdd929c58f0d741195c3d8a1857d81af",
+          "asset": "r117-isolated-profile-68298d63bb7a.tar.gz",
+          "sha256": "68298d63bb7a6bdafb58182ee4b6afabd6e24397dda3b45bffe4ca67624b2d0c",
+          "manifest_sha256": "4e772f7250b7869ca3f25e76e3d1db12a886e90b013db4bc3755f8a748592124",
+          "bytes": 274361,
+          "files": 57,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-isolated-profile-68298d63bb7a.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
