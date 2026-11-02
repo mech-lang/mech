@@ -10726,6 +10726,17 @@
             "improving_blocks": 64,
             "adverse_blocks": 0
           }
+        },
+        {
+          "event": "scaled-witness",
+          "source_revision": "99fef709f1d984e32ad22e5c8929e8dfd0ff0984",
+          "asset": "r119-scaled-witness-87347f40866e.tar.gz",
+          "sha256": "87347f40866ed8b5c20cbe5561b4ac3f9e2763889d9e0cd53fa2b02a946a2d8f",
+          "manifest_sha256": "1f23486a7f8856405879f7b24210705444da452289a3eaa353e6d1a84f180c54",
+          "bytes": 60671,
+          "files": 56,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-nested-phase-round119-20261102/archives/r119-scaled-witness-87347f40866e.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
