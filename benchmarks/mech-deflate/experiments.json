@@ -7634,6 +7634,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-isolated-profile-80934e124f08.tar.gz"
+        },
+        {
+          "event": "current-census",
+          "source_revision": "636da5e074add0632f7154f14d8d39848721cd16",
+          "asset": "r104-current-census-a19750498dbf.tar.gz",
+          "sha256": "a19750498dbfd9cfb7181b20188815cdb3316e6219cb03bff30201556d4c20c4",
+          "manifest_sha256": "4aeca695c362ab1c4718814a31e2e25bce55ca083cefeadc3af5e24097b766a6",
+          "bytes": 683047,
+          "files": 65,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-schema-header-round104-20261101/archives/r104-current-census-a19750498dbf.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
