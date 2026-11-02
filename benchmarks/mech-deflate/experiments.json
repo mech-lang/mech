@@ -11633,6 +11633,17 @@
           "files": 63,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-call-bank-round122-20261102/archives/r122-rich-counters-4c4d78a1a5c3.tar.gz"
+        },
+        {
+          "event": "isolated-profile-scale",
+          "source_revision": "da58ad43e12a7c9e078631514f1c06d874d4c384",
+          "asset": "r122-isolated-profile-scale-7e4d183ef46f.tar.gz",
+          "sha256": "7e4d183ef46fb96b7cb965a9b7d35e45ab04843952f4e5271c4c39ccaa032004",
+          "manifest_sha256": "94a0078c2128727037743cb61ef46a42f8537815292493dc471b4f6f1d8b38c3",
+          "bytes": 311450,
+          "files": 62,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-call-bank-round122-20261102/archives/r122-isolated-profile-scale-7e4d183ef46f.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
