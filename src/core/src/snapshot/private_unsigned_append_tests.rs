@@ -120,3 +120,180 @@ fn native_reserved_views_initialize_spare_cells_then_publish_all_widths_and_empt
     check!(U32, W32, u32, u32::MAX);
     check!(U64, W64, u64, u64::MAX);
 }
+
+#[test]
+fn shared_replacement_shape_finishes_unselected_private_append() {
+    shared_replacement_shape_case(false);
+}
+
+#[test]
+fn shared_replacement_shape_finishes_selected_private_append() {
+    shared_replacement_shape_case(true);
+}
+
+fn shared_replacement_shape_case(append: bool) {
+    macro_rules! check {
+        ($kind:ident, $width:ident, $ty:ty) => {{
+            for abort in [false, true] {
+                let (id, schemas) = row(IntegerWidth::$width);
+                let shape = schemas
+                    .get(id)
+                    .unwrap()
+                    .instantiate_shape([2u64].into())
+                    .unwrap();
+                let mut initial = Vec::<$ty>::with_capacity(8);
+                initial.extend_from_slice(&[7, 8]);
+                let source = Value::from_unsigned_matrix_buffer(
+                    id,
+                    shape,
+                    UnsignedMatrixBuffer::$kind(initial),
+                    schemas.clone(),
+                )
+                .unwrap();
+                let budget = crate::ManagedMemoryBudget::new(1_000_000);
+                let mut admission = budget
+                    .reserve_capacity(source.memory_budget_admission_bytes(&budget).unwrap())
+                    .unwrap();
+                let source = source.into_memory_budget(&mut admission).unwrap();
+                drop(admission);
+                let alias = source.clone();
+                let original = source.canonical_data_draft().unwrap();
+                let baseline = (budget.used_bytes(), budget.retained_nodes());
+                let preparation = source
+                    .prepare_private_unsigned_appends(&budget)
+                    .unwrap()
+                    .unwrap();
+                let constructor = source
+                    .unsigned_matrix_replacement_constructor(schemas.clone())
+                    .unwrap();
+                let mut cells = Vec::<$ty>::with_capacity(8);
+                cells.extend_from_slice(&[9, 8]);
+                let value = constructor
+                    .finish(UnsignedMatrixBuffer::$kind(cells))
+                    .unwrap();
+                assert!(Arc::ptr_eq(&source.shape, &value.shape));
+                let mut admission = budget
+                    .reserve_capacity(value.memory_budget_admission_bytes(&budget).unwrap())
+                    .unwrap();
+                let private = value.into_private_unsigned_matrix(&mut admission).unwrap();
+                drop(admission);
+                let mut private = private.with_append_preparation(preparation).unwrap();
+                if append {
+                    assert!(private.append_in_capacity(11));
+                }
+                if abort {
+                    drop(private);
+                    assert_eq!((budget.used_bytes(), budget.retained_nodes()), baseline);
+                } else {
+                    let frozen = private.finish();
+                    frozen.validate_against(&schemas).unwrap();
+                    assert!(!Arc::ptr_eq(&source.shape, &frozen.shape));
+                    assert!(!source.shares_frozen_storage(&frozen));
+                    assert_eq!(
+                        frozen.shape().parameter_values(),
+                        &[if append { 3 } else { 2 }]
+                    );
+                    let expected = if append { vec![9, 8, 11] } else { vec![9, 8] };
+                    assert_eq!(
+                        frozen.canonical_data_draft().unwrap(),
+                        crate::ValueDataDraft::Matrix(
+                            expected
+                                .into_iter()
+                                .map(crate::ValueDataDraft::$kind)
+                                .collect()
+                        )
+                    );
+                    drop(frozen);
+                    assert_eq!((budget.used_bytes(), budget.retained_nodes()), baseline);
+                }
+                assert_eq!(source.shape().parameter_values(), &[2]);
+                assert_eq!(alias.shape().parameter_values(), &[2]);
+                assert_eq!(source.canonical_data_draft().unwrap(), original);
+                assert_eq!(alias.canonical_data_draft().unwrap(), original);
+                source.validate_against(&schemas).unwrap();
+                alias.validate_against(&schemas).unwrap();
+                drop((source, alias));
+                assert_eq!((budget.used_bytes(), budget.retained_nodes()), (0, 0));
+            }
+        }};
+    }
+    check!(U8, W8, u8);
+    check!(U16, W16, u16);
+    check!(U32, W32, u32);
+    check!(U64, W64, u64);
+}
+
+#[test]
+fn append_scratch_keeps_current_parameters_when_preparation_came_from_another_value() {
+    let mut builder = SchemaTableBuilder::new();
+    let schema = SchemaDraft {
+        body: SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+            dimensions: [
+                DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                DimensionExpr::Parameter(DimensionParameterId::new(1)),
+            ]
+            .into(),
+        },
+        dimension_parameters: (0..3)
+            .map(|i| DimensionParameterDeclaration {
+                id: DimensionParameterId::new(i),
+                origin: DimensionParameterOrigin::Explicit,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            })
+            .collect(),
+    }
+    .finalize()
+    .unwrap();
+    let handle = builder.insert(schema).unwrap();
+    let built = builder.finish().unwrap();
+    let id = built.resolve(handle).unwrap();
+    let schemas = Arc::new(built.table);
+    let budget = crate::ManagedMemoryBudget::new(1_000_000);
+    let make = |extra| {
+        let shape = schemas
+            .get(id)
+            .unwrap()
+            .instantiate_shape([1, 2, extra].into())
+            .unwrap();
+        let mut words = Vec::with_capacity(8);
+        words.extend_from_slice(&[7u64, 8]);
+        Value::from_unsigned_matrix_buffer(
+            id,
+            shape,
+            UnsignedMatrixBuffer::U64(words),
+            schemas.clone(),
+        )
+        .unwrap()
+    };
+    let source = make(13);
+    let mut admission = budget
+        .reserve_capacity(source.memory_budget_admission_bytes(&budget).unwrap())
+        .unwrap();
+    let source = source.into_memory_budget(&mut admission).unwrap();
+    drop(admission);
+    let preparation = source
+        .prepare_private_unsigned_appends(&budget)
+        .unwrap()
+        .unwrap();
+    let current = make(41);
+    let mut admission = budget
+        .reserve_capacity(current.memory_budget_admission_bytes(&budget).unwrap())
+        .unwrap();
+    let mut private = current
+        .into_private_unsigned_matrix(&mut admission)
+        .unwrap()
+        .with_append_preparation(preparation)
+        .unwrap();
+    drop(admission);
+    assert!(private.append_in_capacity(11));
+    let frozen = private.finish();
+    frozen.validate_against(&schemas).unwrap();
+    assert_eq!(frozen.shape().parameter_values(), &[1, 3, 41]);
+    assert_eq!(source.shape().parameter_values(), &[1, 2, 13]);
+    source.validate_against(&schemas).unwrap();
+    drop((frozen, source));
+    assert_eq!((budget.used_bytes(), budget.retained_nodes()), (0, 0));
+}
