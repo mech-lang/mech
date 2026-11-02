@@ -285,6 +285,16 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
     if w.max_library_inputs < compositions.argument_words() {
         return Err("restored parent native argument bank is too small".into());
     }
+    // The managed prefix is not serialized permission. Reconstruct it from
+    // source calls, checked parent pieces and source-derived window candidates.
+    let max_call_values = native::program::prepare::call_value_bound(
+        &plan,
+        &compositions,
+        !plan.window_regions().is_empty() || !plan.string_map_regions().is_empty(),
+    );
+    if max_call_values > w.max_library_inputs {
+        return Err("restored canonical arguments exceed admitted backing".into());
+    }
     let descriptor = NativeProgramDescriptor {
         metadata: native::program::prepare::ProgramMetadata {
             plan,
@@ -304,6 +314,7 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
             scalar_bytes: w.scalar_bytes,
             observation_schema_bytes: w.observation_schema_bytes,
             max_library_inputs: w.max_library_inputs,
+            max_call_values,
             uniform_word_collections,
             unsigned_buffer_calls,
             buffer_frames,

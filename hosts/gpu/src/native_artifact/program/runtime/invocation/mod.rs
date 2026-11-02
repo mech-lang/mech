@@ -1103,7 +1103,7 @@ impl<'borrow, 'state, 'visit, 'plan> CollectionExecution<'borrow, 'state, 'visit
         let state = &mut *self.invocation.state;
         collections::charge(
             &mut state.control.work,
-            amount(state.call_inputs.values().len(), 16, 128)?,
+            amount(state.call_inputs.funded_len(), 16, 128)?,
         )
     }
 }
