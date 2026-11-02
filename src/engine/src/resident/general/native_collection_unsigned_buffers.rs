@@ -243,7 +243,7 @@ impl NativePreparedLibraryCall {
                     Operation::AppendLeBytes | Operation::AppendSublist
                 ) && extent_argument == 0
                     && source.as_ref().is_some_and(|value| {
-                        value.schema_key() == self.template.output().key()
+                        value.schema_key() == self.output_key
                             && value.schema()
                                 == match self.template.contract() {
                                     mech_core::ResolvedOperationContract::Declared(contract) => {

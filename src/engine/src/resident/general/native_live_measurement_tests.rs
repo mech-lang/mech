@@ -141,6 +141,135 @@ fn same(new: &Outcome, old: &Outcome) {
     assert_eq!(new.spent, old.spent);
 }
 
+fn measure_prepared_header(
+    call: &NativeCollectionCall,
+    input: &Option<Value>,
+    memory: &ManagedMemoryBudget,
+    account: u64,
+    call_limit: u64,
+) -> Outcome {
+    let budget = NativeLibraryWorkBudget::new(account, 0, memory).unwrap();
+    budget.charge(11, 0).unwrap();
+    let (result, observed, checks, scans) = budget
+        .with_call_limits(call_limit, 0, || {
+            let mut check = Recording {
+                inner: NativeMeasurementCheck::new(call, None, memory),
+                checks: 0,
+                scans: 0,
+            };
+            let mut observed = ResourceDemand::default();
+            observed.work.compute = 17;
+            let result = live::footprint_with_schema_check(
+                ResidentValueRef::Snapshot(core::slice::from_ref(input)),
+                &call.memory.inputs[0].descriptor,
+                call.schemas.entry(call.inputs[0].schema_id).unwrap(),
+                &mut observed,
+                &mut check,
+            );
+            (result, observed, check.checks, check.scans)
+        })
+        .unwrap();
+    Outcome {
+        result,
+        observed,
+        spent: budget.used(),
+        checks,
+        scans,
+    }
+}
+
+#[test]
+fn prepared_schema_header_keeps_current_payloads_and_exact_denial_prefixes() {
+    for artifact in variants() {
+        for length in [0, 4, 64] {
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let (mut call, inputs) = fixture(&artifact, &memory, length, true);
+            let baseline = measure(&call, &inputs[0], &memory, true, 1_000_000, 1_000_000);
+            let total = baseline.observed.work.compute;
+            for compute in [0, total - 1, total, total + 1] {
+                call.memory.target.limits.max_compute_work = Some(compute);
+                for nodes in [0, length + 2, length + 3, 1_024] {
+                    call.memory.target.limits.max_retained_nodes = Some(nodes);
+                    for account in [11, baseline.spent.0 - 1, baseline.spent.0 + 1] {
+                        for limit in [0, total - 1, total, total + 1] {
+                            let old = measure(&call, &inputs[0], &memory, true, account, limit);
+                            let new =
+                                measure_prepared_header(&call, &inputs[0], &memory, account, limit);
+                            same(&new, &old);
+                            assert_eq!((new.checks, new.scans), (old.checks, old.scans));
+                        }
+                    }
+                }
+            }
+            drop(inputs);
+            drop(call);
+            assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+        }
+    }
+}
+
+#[test]
+fn prepared_schema_header_rejects_wrong_contract_and_preserves_overflow() {
+    for artifact in variants() {
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let (call, inputs) = fixture(&artifact, &memory, 4, true);
+        let descriptor = &call.memory.inputs[0].descriptor;
+        let entry = call.schemas.entry(call.inputs[0].schema_id).unwrap();
+        let wrong_entry = call.schemas.entry(call.inputs[1].schema_id).unwrap();
+        let mut observed = ResourceDemand::default();
+        let mut checks = 0;
+        assert_eq!(
+            live::footprint_with_schema_check(
+                ResidentValueRef::Snapshot(&inputs[..1]),
+                descriptor,
+                wrong_entry,
+                &mut observed,
+                &mut |_, _| {
+                    checks += 1;
+                    Ok(())
+                },
+            ),
+            Err(MemoryPlanError::DescriptorMismatch)
+        );
+        assert_eq!((observed, checks), (ResourceDemand::default(), 0));
+        // The prepared descriptor cannot authorize an actual value from a
+        // different contract, even if both are valid canonical snapshots.
+        for input in [&inputs[0], &inputs[1], &None] {
+            for initial in [0, u64::MAX] {
+                let run = |prepared| {
+                    let mut observed = ResourceDemand::default();
+                    observed.work.compute = initial;
+                    let mut prefixes = Vec::new();
+                    let mut check = |footprint, work| {
+                        prefixes.push((footprint, work));
+                        Ok(())
+                    };
+                    let value = ResidentValueRef::Snapshot(core::slice::from_ref(input));
+                    let result = if prepared {
+                        live::footprint_with_schema_check(
+                            value,
+                            descriptor,
+                            entry,
+                            &mut observed,
+                            &mut check,
+                        )
+                    } else {
+                        live::footprint_with_check(
+                            value,
+                            descriptor,
+                            &call.schemas,
+                            &mut observed,
+                            &mut check,
+                        )
+                    };
+                    (result, observed, prefixes)
+                };
+                assert_eq!(run(true), run(false));
+            }
+        }
+    }
+}
+
 #[test]
 fn native_live_metadata_scan_keeps_actual_sizes_and_reduces_only_checks() {
     for artifact in variants() {

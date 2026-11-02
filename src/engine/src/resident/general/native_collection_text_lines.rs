@@ -460,7 +460,7 @@ impl NativePreparedLibraryCall {
             &self.schemas,
             self.template.clone(),
             self.factory,
-            self.descriptor_templates.as_deref(),
+            Some(self.binding_metadata()),
             &[&[]],
             shape.parameter_values(),
             None,
