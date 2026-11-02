@@ -11822,6 +11822,17 @@
           "files": 68,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-scale-measure-1024-9b682ea9b831.tar.gz"
+        },
+        {
+          "event": "match-rich-measure-1024",
+          "source_revision": "71f8cb7bed8bc84bfcb75915b79b8c299401adc5",
+          "asset": "r123-match-rich-measure-1024-d98f7a9c30f6.tar.gz",
+          "sha256": "d98f7a9c30f6482519f0fcddd4ed2c2a57c4fb27621d5602c900bb439a50478a",
+          "manifest_sha256": "26f72ac0c83fb070f14dd5110208828d874059faf3b6af58df0fc4822616c16f",
+          "bytes": 84748,
+          "files": 68,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-matching-phase-round123-20261102/archives/r123-match-rich-measure-1024-d98f7a9c30f6.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
