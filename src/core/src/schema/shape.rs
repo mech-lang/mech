@@ -64,6 +64,20 @@ impl Schema {
 }
 
 impl ShapeInstance {
+    /// Copy values into existing private storage without allocating. This does
+    /// not validate them for a schema; the caller retains that obligation.
+    pub(crate) fn copy_parameters_from(&mut self, source: &Self) -> Result<(), SemanticModelError> {
+        if self.parameter_values.len() != source.parameter_values.len() {
+            return Err(SemanticModelError::ShapeParameterCountMismatchV1 {
+                expected: self.parameter_values.len() as u32,
+                actual: source.parameter_values.len() as u32,
+            });
+        }
+        self.parameter_values
+            .copy_from_slice(&source.parameter_values);
+        Ok(())
+    }
+
     /// Update unpublished shape metadata without constructing another owner.
     /// Failure restores the previous validated instance, including its bounds.
     pub(crate) fn update_parameter_checked(

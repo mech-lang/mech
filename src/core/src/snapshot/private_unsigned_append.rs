@@ -253,7 +253,7 @@ impl PrivateUnsignedMatrix {
     }
 
     pub(super) fn finish_append_shape(&mut self) {
-        let Some(preparation) = self.append.take() else {
+        let Some(mut preparation) = self.append.take() else {
             return;
         };
         let length = self.elements().len() as u64;
@@ -262,18 +262,21 @@ impl PrivateUnsignedMatrix {
             .schemas
             .get(self.value.schema)
             .expect("private schema");
+        // A shape-preserving replacement may share its immutable shape with
+        // a live old value. The already admitted scratch is private, including
+        // when no append was selected. Keep all current non-column parameters.
+        let shape = Arc::get_mut(&mut preparation.scratch).expect("private append shape scratch");
+        shape
+            .copy_parameters_from(&self.value.shape)
+            .expect("prepared shape parameter count");
+        shape
+            .update_parameter_checked(schema, preparation.column, length)
+            .expect("prepared unbounded row shape");
         let registration =
             Arc::get_mut(&mut self.ownership.registration).expect("unpublished registration");
         let root = Arc::get_mut(&mut self.value.root).expect("private root");
         let data = Arc::get_mut(&mut root.data).expect("private data");
-        // Temporarily release the two unpublished references to the final
-        // shape. The pre-admitted scratch prevents allocation in make_mut.
-        data.shape = preparation.scratch.clone();
-        registration.shape = preparation.scratch.clone();
-        Arc::get_mut(&mut self.value.shape)
-            .expect("private shape")
-            .update_parameter_checked(schema, preparation.column, length)
-            .expect("prepared unbounded row shape");
+        self.value.shape = preparation.scratch.clone();
         data.shape = self.value.shape.clone();
         registration.shape = self.value.shape.clone();
         // All scratch metadata retires before its capacity charge is released.
