@@ -10075,7 +10075,7 @@
       "base": "6a303c6d92d14f5a88ab4aecb9999fda205f285a",
       "production": "8e7334a4fdd929c58f0d741195c3d8a1857d81af",
       "compiler_source": "8e7334a4fdd929c58f0d741195c3d8a1857d81af",
-      "decision": "under measurement",
+      "decision": "hold: matched8B elapsed +0.959624% (0/4 improving pairs),1KB +0.989766% (0/8 improving blocks); separate1KB instructions +1.355282%, cycles adverse. No heap improvement. Restore R116 runtime and pursue whole-phase execution and separately measured source zero-trip paths.",
       "events": [
         {
           "event": "primary-reference",
@@ -10213,11 +10213,48 @@
           "files": 59,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-isolated-profile-scale-3bb5440c9650.tar.gz"
+        },
+        {
+          "event": "phase-diagnostic-before",
+          "source_revision": "8e7334a4fdd929c58f0d741195c3d8a1857d81af",
+          "asset": "r117-phase-diagnostic-before-fef5349bd31a.tar.gz",
+          "sha256": "fef5349bd31a9e00f19e2dc9cf78a20e4290dbc453b716b6d61f324ad44b07cb",
+          "manifest_sha256": "f2aeabcab6fbf611ebf7e15b6536fd01867e8f766557e5c063ea0f04e57d1020",
+          "bytes": 157054,
+          "files": 72,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-entry-preflight-round117-20261102/archives/r117-phase-diagnostic-before-fef5349bd31a.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "retained": false,
+      "versions": [
+        145,
+        99,
+        38,
+        14
+      ],
+      "retained_baseline": "6a303c6d92d14f5a88ab4aecb9999fda205f285a",
+      "source_disposition": "Held: three GPU runtime/test files restored exactly to R116 in a057d5f570fc3ad9b460bf66876af182fa442257",
+      "skipped_coverage": [
+        "fresh component236/connected8/path1 qualification",
+        "fresh40-case linked mini-program suite",
+        "fresh scalar12/frame8 gates",
+        "Core/no_std/all-features/minimal dependency graph",
+        "hosted CI",
+        "full-scale timing"
+      ],
+      "analysis": {
+        "script": "analysis/analyze.py",
+        "expected_outputs": {
+          "diagnostics.json": "f047fdf218bdc9d2ada05958c756442dee4f056f125b77e55b37100a010b9afb",
+          "profile-numbers.json": "e1df36b2d8737b0c2a3ed9c6275771fa582ffa3e054d85a3bcc86dfa2b1f3185",
+          "scorecard.json": "e60d8b5c611a9f54292a9793b3fae0b40f675e221bdeb0e2d83826c9566ce8bb",
+          "validation.json": "7c26eeb0a4f2f6d22c7f02a73dab7c4140bf35618974f125a35ca05a6da4d344"
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",
