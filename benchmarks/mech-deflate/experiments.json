@@ -7420,6 +7420,17 @@
           "files": 52,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-shared-shape-round103-20261101/archives/r103-isolated-profile-8074aeaaf81f.tar.gz"
+        },
+        {
+          "event": "linked-multi",
+          "source_revision": "6b064cdeb678f2e7c89e5c2a39143e5ac2f36e79",
+          "asset": "r103-linked-multi-33105e4cec41.tar.gz",
+          "sha256": "33105e4cec41ca338898761c82c3566a51785de249427514fd4a4e57687b22e8",
+          "manifest_sha256": "b4a5f1ed999bf1306c0aaff128a49bfe536053ac35fc529b009a85d90b023377",
+          "bytes": 147335,
+          "files": 61,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-shared-shape-round103-20261101/archives/r103-linked-multi-33105e4cec41.tar.gz"
         }
       ],
       "archive_publication": "local-only at measurement; external publication pending"
