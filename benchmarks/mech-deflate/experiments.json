@@ -8419,6 +8419,17 @@
             "improving_blocks": 13,
             "adverse_blocks": 51
           }
+        },
+        {
+          "event": "scale-measure-1024",
+          "source_revision": "0cbf5b9f6b5870c40aac5a75bc7c89bb23c9b32a",
+          "asset": "r107-scale-measure-1024-8b66d1da7163.tar.gz",
+          "sha256": "8b66d1da7163a816d3dbd6949856f981c90a1cf68de6e787cbcb342bb7b48b87",
+          "manifest_sha256": "22aac32f42547ad07dd63653a29fe5389707eb4fac3f5f5d354e1eaca0b967b6",
+          "bytes": 88420,
+          "files": 57,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-frame-geometry-round109-20261102/archives/r107-scale-measure-1024-8b66d1da7163.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
