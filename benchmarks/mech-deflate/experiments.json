@@ -8062,7 +8062,32 @@
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified"
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "independent_replay": {
+        "round": 107,
+        "archives": 3,
+        "all_archives_freshly_downloaded": true,
+        "all_archive_manifest_hashes_verified": true,
+        "file_occurrences": 276,
+        "unique_paths": 239,
+        "multi_version_paths": [
+          "MANIFEST.json"
+        ],
+        "reports": {
+          "input-scaling-profile/counter-summary.json": "acb4a57d2c61700e46d66f5b1477216c78e924d7c46ff8214c5e9df84ef6ce69",
+          "input-scaling-profile/counter-comparison.json": "a929b145d71e8a65842ccdb08ae5d2560ef731f671e036f45b0650dfd37d8efe",
+          "input-scaling-profile/sample-summary.json": "4a29dc27a3760819986f9c32841fff777d50c38b4ade8bf33acba73f33ee074a",
+          "scaling-summary.json": "6341a30e8f43806fb1e331cb6dbd6ab5b0f7b703b19a7b159cb1c57e6613814a"
+        },
+        "reports_byte_identical": true,
+        "compiler_or_compressor_executed": false
+      },
+      "publication_verification": {
+        "archives": 3,
+        "sidecars": 3,
+        "all_server_digests_match": true,
+        "native_binaries_included": false
+      }
     }
   },
   "repository": "mech-lang/mech",
