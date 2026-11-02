@@ -12264,6 +12264,20 @@
           "scorecard.json": "5e18d0054b213c8dfec72c3e1286ad7bb5e449053a9edf6264e5d3776ba8fc8a",
           "validation.json": "d3f2288cf17467f902a81cbc6619628af95fa8aa70c5e7d5a04fcf9c5d787c20"
         }
+      },
+      "public_replay": {
+        "byte_identical_outputs": [
+          "mechanism.json",
+          "profile-numbers.json",
+          "scorecard.json",
+          "validation.json"
+        ],
+        "paths_with_multiple_preserved_versions": 12,
+        "round": 124,
+        "scope": "Every version verified before chronological overlay; numerical replay only, without compiling or compressing.",
+        "unique_paths": 483,
+        "verified_archives": 23,
+        "verified_file_occurrences": 1858
       }
     }
   },

@@ -6,6 +6,109 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Hosted CI is not awaited under
 instruction; no green hosted-CI claim is made.
 
+## R124: native parents with exact cold scalar-child exits
+
+Update base `0a7237f66c407f0ec880b3ad5768a8433c7b6ec0`; measured compiler
+**`fc8e98e8d7230b78ff01644ae1457828f281673b`**; qualified diagnostic correction
+**`d73f332c467db89b5ba03659062b7917d8185c6a`**; formatting-only follow-up
+`2169f283b754c1fc77bf08dd1d8aec2f940485f1`. IR/work/ABI/MBC **151/104/38/14**.
+The correction preserves the original proof refusal when both selection attempts
+decline. Its full pinned Object and descriptor are byte-identical to the measured
+compiler, as are source and bytecode; measured libraries and workers stay immutable.
+
+The first part of the new brief is complete: Huffman counting retains its buffers
+and scalar state natively until a conditional unsupported scalar child is actually
+needed. The exact exit exports live current versions after earlier stores and
+runs the original child and remaining source iteration ordinarily. The parent can
+re-enter at its next original header. One prepaid parent traversal and actual
+child/library work share the same authoritative account. There is no prefix replay,
+allowance renewal or duplicate source debit. The resume flag occupies independent
+region state, outside scratch shared by successive phases. Image restoration
+reconstructs exits, live versions and debit facts independently.
+
+| Fresh matched elapsed cohort | Before | R124 | Before / Roc | R124 / Roc | Change |
+|---|---:|---:|---:|---:|---:|
+|8 bytes|2.183042ms|2.0305625ms|7.686768×|7.149868×|6.984726% faster|
+|1KB random|21.4515625ms|18.819708ms|69.761179×|61.202302×|12.268824% faster|
+|1KB repeated byte|12.831042ms|12.987021ms|39.000128×|39.474228×|1.215638% slower|
+
+Each row has a fresh common reference: 0.284ms, 0.3075ms and 0.329ms respectively.
+All 3,968 primary/3,984 total eight-byte observations and 128 per version per 1KB
+cohort are retained. All 4 eight-byte pairs improve, with 61 improving/3 adverse
+blocks; random improves in 8/8 blocks, repeated data regresses in 8/8. The contrary
+repeated-data timing remains part of the retention decision. No full-scale timing.
+
+| Separate serial hardware/heap cohort | Before | R124 |
+|---|---:|---:|
+|8B instructions|24,975,234.5|22,827,125|
+|Random instructions|335,823,511|292,561,285.5|
+|Repeated instructions|199,272,682.5|199,405,344.5|
+|8B cycles|6,840,859|6,429,108|
+|Random cycles|68,107,211|59,407,498.5|
+|Repeated cycles|41,025,796.5|40,906,187.5|
+|8B requests|4,101|3,733|
+|Random requests|29,396|21,173|
+|Repeated requests|17,109|17,021|
+|8B requested bytes|17,744,809|17,674,585|
+|Random requested bytes|20,001,570|18,222,818|
+|Repeated requested bytes|19,767,433|19,754,529|
+
+Incremental peak usable heap is unchanged: 15,206,024 /15,204,488 /15,208,608 bytes
+for 8B/random/repeated. Reallocations remain 68. The repeated-data instruction increase
+of 0.066573% is retained alongside its elapsed regression; lower cycles in the
+separate cohort do not override either observation. Generated text grows
+16,533,748→17,064,660 bytes and entry stack 148,240→154,112 bytes. Requested bytes,
+physical footprint, live heap, source work and retired instructions are distinct.
+
+Fresh separate diagnostic calls count callbacks including ordinary admission:
+8B 7,892→6,780; random 119,933→99,601; repeated 52,945→52,585. Ordinary changed indexed
+replacement finalizations fall 180→64 /6,499→4,243 /4,167→4,131. These count the actual
+changed branch whose selected Engine operation constructs one canonical result,
+not all stores multiplied by a guessed allocation cost. Private-array finalizations
+rise 172→188 /1,281→1,295 /197→209; first-change preparations have those same counts.
+These are separate observed construction families, not a complete allocation ledger.
+Parent exits fall 829→573 /22,655→18,129 /8,780→8,692; they are a subset of helpers.
+Array alias exports fall 765→669 /21,057→19,539 /5,772→5,732. The 13 newly eligible
+scalar-cold parent instances have zero taken cold exits in these complete small
+calls; positive post-write fallback is established by the focused regression tests.
+Fresh serial CPU-time samples cover 130 complete calls per version/input. Other
+host callbacks retain 79.88% of random-data sample weights and 63.51% on repeated
+data; generated entry shares are 4.94% and 23.56%. These are CPU samples rather
+than function-level retired-instruction counts. Collector/child boundaries remain
+a concrete next coverage target.
+
+All source/bytecode pins, source algorithm, tables, depth 300, nice 258, near-EOF
+rules, allocation sites, real capacities, pinned allocator, exact raw output,
+independent inflation, aliases, output clear/rebind and evaluate_into boundary stay
+unchanged. Large-request histograms still show one 6,002,052-byte cache, one 524,288-byte
+tree and three 2,442,056-byte path requests. Final managed bytes/nodes remain zero.
+
+Passing qualification: 3 new cold-child tests across original/decoded/restored
+forms, 16 existing nested-phase controls, 3 argument-bank controls, 512 compatible GPU
+tests, 87 inventoried native contracts, unchanged 236 components/8 connected/1 structural
+path case, 12 optimized original/decoded scalar controls at the unchanged 1.05 gate
+(worst 1.008892), 132 workflow tests, 15 architecture/catalog checks, runtime-only
+metadata, formatting and warnings as errors. Huffman work golden remains 88,531,834.
+No expected value or allowance increase. The initially failing older-array-version
+component diagnostic is fixed separately; the initial rustfmt line-wrap failure
+and its correction are retained in evidence. Seven inherited selected-profile
+feature/registry exclusions remain explicit. No fresh Core/full-feature/no_std/
+minimal-graph build, linked 40/frame 8, source-variant complete qualification, green
+hosted CI or clean review is claimed.
+
+All 23 public diagnostic archives (20,619,880 compressed bytes) and their sidecars
+have verified server SHA-256 hashes. Native binaries, Objects, libraries and bytecode
+stay local. Fresh public retrieval verifies 1,858 file occurrences/483 unique paths, preserves
+12 multi-version paths and reproduces all four reports byte-for-byte. The compact
+index retains every timing event and numerical replay entry.
+
+Retain the tiny/random elapsed and instruction gains with the repeated-input and
+code/stack tradeoffs. Only scalar-return synchronous Tail children are covered.
+The remaining brief is: collector intervals with genuine cold collection/checkpoint
+exits and terminal buffer-owner forwarding; fixed-size mutable children/header runs;
+then cleanup removal for values proven never materialized. No collector coverage,
+managed child result or whole-brief completion is claimed by R124.
+
 ## R123: retain whole matching phases on the repaired runtime
 
 Update base `2d9a0b3d8092836a21cab938f0d1356646e2a27b`; measured compiler
