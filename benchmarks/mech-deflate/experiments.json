@@ -12296,6 +12296,17 @@
           "files": 15,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-baseline-reproduce-fab5fe69883e.tar.gz"
+        },
+        {
+          "event": "first-complete-native",
+          "source_revision": "0d8785ef95b161bbfea02dff32749479aa54b001",
+          "asset": "r125-first-complete-native-98a603ebadd0.tar.gz",
+          "sha256": "98a603ebadd0e08604e6bcdf4afda3ac72c40fc5ff1ec6c02d92cd54777aaa48",
+          "manifest_sha256": "c1b60a0cc14fbf89ae34dbb2172eaee3d588b9b14754ff306be610600163abf6",
+          "bytes": 103689,
+          "files": 32,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-first-complete-native-98a603ebadd0.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
