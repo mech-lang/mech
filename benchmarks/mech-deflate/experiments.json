@@ -12670,6 +12670,17 @@
           "files": 133,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-final-qualification-1a02094798ae.tar.gz"
+        },
+        {
+          "event": "continuation-boundary-census-after",
+          "source_revision": "914ab57fab23f831f6bb99e5f8a0e8419d2c3004",
+          "asset": "r125-continuation-boundary-census-after-cfcd3c19e768.tar.gz",
+          "sha256": "cfcd3c19e76890b8e1449cc31a67bac5beb57b63d9816a91999c51693cf37d00",
+          "manifest_sha256": "e279df1f33fee730d9cdc6dab08e0a067d97b2f7982a3459e70b4c8bd47b2e15",
+          "bytes": 366483,
+          "files": 95,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-continuation-boundary-census-after-cfcd3c19e768.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
