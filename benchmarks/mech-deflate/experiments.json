@@ -12692,6 +12692,17 @@
           "files": 128,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-continuation-scalar-controls-5ece403929dc.tar.gz"
+        },
+        {
+          "event": "analysis",
+          "source_revision": "914ab57fab23f831f6bb99e5f8a0e8419d2c3004",
+          "asset": "r125-analysis-15a4fcb60291.tar.gz",
+          "sha256": "15a4fcb602918ccbf5ad793f1c4f82d13291903f75c99028d2929f5a5c78ce3d",
+          "manifest_sha256": "18301d093291d4b9b43274d9c3cc3a218d59726a479d6e5e4f8e9e621ab4ee7a",
+          "bytes": 181247,
+          "files": 80,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-collector-exits-round125-20261102/archives/r125-analysis-15a4fcb60291.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
