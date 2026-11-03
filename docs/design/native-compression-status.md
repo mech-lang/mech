@@ -6,6 +6,106 @@ retain the reproduction path. [PR #973](https://github.com/mech-lang/mech/pull/9
 stays draft pending green CI and clean review. Hosted CI is not awaited under
 instruction; no green hosted-CI claim is made.
 
+## R125: collector intervals and paid native continuations
+
+Update base **`0baa0519a2725ed1387fa6bb0ba0648da29a5184`**; measured compiler
+**`914ab57fab23f831f6bb99e5f8a0e8419d2c3004`**; CI inventory update
+`ea41f99050`. IR/work/ABI/MBC **155/107/38/14**. This is compiler/runtime work;
+compressor source and revision-14 bytecode retain their exact pins.
+
+The real skip collector now retains its native recurrence, stops at the actual
+unsupported Tail/collection/range boundary, and forwards current buffer fields
+at its terminal return. Cold exits freeze current versions, export only live
+values and release a proved dead root carrier after those exports. Live older
+aliases still require independent storage. The ordinary continuation can use the
+existing native parent pieces: only the exact current root's already-paid source
+visits receive credit. Current entry, per-piece overhead, synchronization and
+reached cleanup remain charged. No child account, previous invocation or later
+traversal can lend credit. Repeated immutable conditions also prevent an impossible
+backedge from displacing the existing acyclic optimization. Images reconstruct
+these facts independently; native SSA and boundary accesses use the same memory
+region for each home.
+
+| Fresh matched complete-call elapsed | R124 | R125 | R124 / Roc | R125 / Roc | Change |
+|---|---:|---:|---:|---:|---:|
+|8 bytes|2.0326245ms|2.020479ms|7.057724×|7.015552×|0.597528% faster|
+|1KB random|18.794521ms|18.3514375ms|62.233513×|60.766349×|2.357514% faster|
+|1KB repeated byte|12.9634165ms|11.2805625ms|39.643476×|34.497133×|12.981562% faster|
+
+Each row has a fresh common reference: 0.288/0.302/0.327ms. All 3,968 primary /
+3,984 total eight-byte observations are retained: four improving groups, 47
+improving and 17 adverse blocks. Both 1KB cohorts retain 128 observations per
+version; random improves in seven blocks with one adverse, repeated in all eight.
+No full-scale timing was run. The largest input completed in this round is 1KB;
+exact raw bytes, independent inflation, input aliases, capacities and zero final
+managed bytes/nodes agree on all three inputs.
+
+| Separate hardware / heap cohort | R124 | R125 |
+|---|---:|---:|
+|8B instructions|22,826,219|22,609,033|
+|Random instructions|292,553,294|283,838,633.5|
+|Repeated instructions|199,373,853|172,899,575|
+|8B cycles|6,414,749.5|6,372,169|
+|Random cycles|59,636,804|58,918,948|
+|Repeated cycles|41,175,546|35,988,504.5|
+|8B requests|3,733|3,741|
+|Random requests|21,173|22,197|
+|Repeated requests|17,021|11,948|
+|8B requested bytes|17,674,585|17,680,961|
+|Random requested bytes|18,222,818|19,033,866|
+|Repeated requested bytes|19,754,529|19,798,753|
+
+These are separate cohorts, not factors to multiply. There are 32 CPU and four
+heap observations per version/input. Incremental peak usable heap remains
+15,206,024 /15,204,488 /15,208,608 bytes; reallocations remain 68. The random case
+adds 1,024 small allocation requests despite its elapsed/instruction gain. Generated
+text grows 17,064,660→17,335,388 bytes; entry stack 154,112→158,144 bytes. Retain
+these costs explicitly. Requested capacity is not initialized bytes copied or RSS.
+Large-request histograms remain one cache and one tree; path reservations are two
+on random input and three on the other cases, identically before/after.
+
+Separate executed callback counts, including admission, fall 6,780→6,732 /
+99,601→93,457 /52,585→35,228 on 8B/random/repeated. The repeated case takes 1,014
+real cold exits. These counts are neither retired instructions nor a complete
+allocation ledger. Fresh repeated-input CPU sampling assigns 26.40% to generated
+entry code, 60.31% to other callbacks, 4.54% to the frame callback subtree, 6.44% to
+tail cleanup and 2.31% outside/unrecognized. Some callback work is actual algorithm
+work. Do not infer function instruction counts from sample weights.
+
+The rejected intermediate is preserved: one version requested the full 6MB cache
+1,015 times; the lifetime repair restores one but still regresses repeated-input
+elapsed by 59.53%, with 111,098 callbacks. Restoring native continuations resolves
+that regression. The shared SSA memory-region correction resolves an earlier
+phase debit mismatch. Test-only observer mistakes and a diagnostic link failure
+from disk exhaustion are also retained with their corrections; the identical link
+succeeds after verified lossless build backups. No remaining introduced failure.
+
+Passing qualification: 521 compatible GPU tests; 96 inventoried and executed CI
+contracts; unchanged 236 components /8 connected /1 structural path case; all 13
+focused interval, named-field and Huffman checks, including the unchanged
+88,531,834 work golden; 12 optimized original/decoded scalar controls at the
+unchanged 1.05 gate (worst 1.017598), no allocation/byte increases and zero loop
+allocation slope; 132 workflow tests; 15 architecture/catalog checks; runtime-only
+metadata; formatting; warnings as errors. Original/decoded/restored regressions
+cover post-write cold selection, live/dead aliases, real tree/cache buffers,
+finite denial, unchanged previous publication, cleanup, retry and forged images.
+Seven inherited selected-profile feature/registry exclusions remain explicit.
+No fresh Core/full-feature/no_std/minimal-graph rebuild, linked40/frame8,
+complete source-variant qualification, hosted green CI or clean review is claimed.
+
+All algorithm, table, depth 300, nice 258, near-EOF, allocation-site, real-capacity,
+allocator and evaluate_into boundaries remain fixed. Retain this measured
+checkpoint; fixed-size mutable children/header loops and never-materialized-value
+cleanup remain next. This does not complete the whole brief or establish parity.
+All 39 public diagnostic archives (34,888,296 compressed bytes) and sidecars have
+verified server hashes. Fresh public retrieval verifies 3,613 file occurrences /
+846 unique paths, preserves 11 multi-version paths, and rebuilds four reports
+byte-for-byte without compiling or compressing. Native executables, libraries,
+Objects and bytecode remain local; completed intermediate executables have
+verified lossless local backups after disk cleanup. Raw evidence and numerical
+reconstruction stay outside source, hash-indexed in
+[the evidence ledger](../../benchmarks/mech-deflate/experiments.json).
+
 ## R124: native parents with exact cold scalar-child exits
 
 Update base `0a7237f66c407f0ec880b3ad5768a8433c7b6ec0`; measured compiler

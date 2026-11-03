@@ -175,8 +175,24 @@ bindings/current versions, homes, bounds, debit identities and result recipes
 from the validated program. Serialized metadata grants no raw-view authority.
 The emitted fixed boundary is bounded from the phase's word inventory, then
 checked against the actual emitted instruction count. The current versions
-are typed IR151 and work104, with ABI38 and bytecode14 unchanged; the version
+are typed IR155 and work107, with ABI38 and bytecode14 unchanged; the version
 numbers below describe the historical consolidation baseline.
+
+Actual numeric intervals cut the source CFG at the unsupported synchronous Tail,
+collection or range boundary; they do not invent a managed child result. Native
+membership and prepaid root membership are separate. A cold exit exports live
+current frames/aliases before retiring a dead root carrier with the existing
+charged recipe. Core still checks actual exclusivity, so a live older alias keeps
+its copy semantics. Original and restored images derive the same inventory.
+
+The ordinary cold route retains the existing parent-piece lowering. Prepared
+source-price coverage requires one exact root, all segment members and a sufficient
+root traversal debit. Runtime credit requires that same current continuation;
+entry, synchronization, per-piece overhead and reached retirement keep their own
+charges. No account or earlier debit is refunded. Acyclic prefixes and contradictory
+immutable backedge conditions retain their existing parent pieces. Shared SSA
+initialization, spill, reload and boundary accesses use the same per-home memory
+region; private fuel cannot be a disjoint alias class from its own stores.
 
 ## Runtime and protocols
 
