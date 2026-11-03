@@ -124,6 +124,7 @@ struct Descriptor<'a> {
     #[serde(deserialize_with = "proof")]
     map_owner_words: Option<NativeMapOwnerWords>,
     borrowed_record_maps: native::program::prepare::borrowed_record_map::Layout,
+    utf8_reads: native::program::prepare::utf8_reads::Layout,
     frozen_maps: native::program::prepare::frozen_map::Layout,
     map_admission: native::program::prepare::map_admission::Layout,
     parallel: native::program::prepare::parallel::Layout,
@@ -251,12 +252,37 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
             "borrowed record-map proof differs from exact canonical publication uses".into(),
         );
     }
-    let visits = w
+    let utf8_reads =
+        native::program::prepare::utf8_reads::Layout::derive(&plan).map_err(str::to_owned)?;
+    if utf8_reads != w.utf8_reads {
+        return Err("native UTF8 lookup proof differs from exact source collection uses".into());
+    }
+    let visits: Box<[native::iteration_abi::NativeIterationVisit]> = w
         .visits
         .into_vec()
         .into_iter()
         .map(Into::into)
         .collect::<Box<[_]>>();
+    let base_visits = native::iteration_abi::control_visits(
+        plan.blocks(),
+        plan.iterations().iter().map(Into::into),
+        0,
+    )
+    .map_err(str::to_owned)?;
+    for region in &utf8_reads.regions {
+        let site = region.header as usize;
+        let required = base_visits
+            .get(site)
+            .and_then(|visit| {
+                visit
+                    .work
+                    .checked_add(native::program::prepare::utf8_reads::HEADER_WORK)
+            })
+            .ok_or("native UTF8 lookup header price overflows")?;
+        if visits.get(site).is_none_or(|visit| visit.work < required) {
+            return Err("native UTF8 lookup header template is not funded".into());
+        }
+    }
     let admission = native::program::prepare::map_admission::Layout::derive(
         &plan,
         &w.scalar_aggregates,
@@ -348,6 +374,7 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
             scalar_aggregates: w.scalar_aggregates,
             map_owner_words,
             borrowed_record_maps,
+            utf8_reads,
             frozen_maps,
             map_admission: w.map_admission,
             parallel: w.parallel,

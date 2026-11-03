@@ -28,6 +28,11 @@ pub use prepared::{
     NativePreparedLibraryCall, NativePreparedLibraryCallCache, NativeSelectedStringSpanSelector,
     prepare_native_program_library_call,
 };
+#[cfg(feature = "sequence_buffers")]
+pub use prepared::{
+    NativeStringMatrixKeyCell, NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal,
+    NativeStringMatrixKeyView,
+};
 #[cfg(feature = "pure_text")]
 pub use prepared::{
     NativePrivateStringBuffer, NativeSelectedStringMatrix, NativeTextLineCaptureFacts,

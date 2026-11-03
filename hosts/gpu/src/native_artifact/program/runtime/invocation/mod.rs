@@ -17,6 +17,7 @@ mod numeric_writes;
 mod readonly_numeric;
 mod selected_calls;
 mod unsigned_buffers;
+mod utf8_read;
 mod word_reads;
 mod word_updates;
 
@@ -452,6 +453,15 @@ impl Invocation<'_, '_, '_> {
         #[cfg(all(test, feature = "canonical-native-program"))]
         crate::native_artifact::program::runtime::collections::before_span_helper(self, site)?;
         let descriptor = self.descriptor;
+        if self
+            .state
+            .collections
+            .as_ref()
+            .is_some_and(|collections| collections.has_utf8_read())
+            && tag != GlobalHelper::Utf8ReadFinish
+        {
+            return Err(invalid("helper while native String lookup loan is active"));
+        }
         if tag == GlobalHelper::MapOwnerConstructorCheck {
             return self.retained_constructor_check(site, args);
         }
@@ -602,6 +612,11 @@ impl Invocation<'_, '_, '_> {
             }
             self.state.consumed = true;
             Ok(None)
+        } else if matches!(
+            tag,
+            GlobalHelper::Utf8ReadPrepare | GlobalHelper::Utf8ReadFinish
+        ) {
+            self.utf8_read_helper(site, tag, args)
         } else if tag == GlobalHelper::Collection {
             if self.state.consumed || args[2] != 0 {
                 return Err(invalid("duplicate collection helper"));
@@ -615,6 +630,16 @@ impl Invocation<'_, '_, '_> {
         &mut self,
         site: u64,
     ) -> Result<(), NativeProgramExecutionError> {
+        if self
+            .state
+            .collections
+            .as_ref()
+            .is_some_and(|collections| collections.has_utf8_read())
+        {
+            return Err(invalid(
+                "source visit while native String lookup loan is active",
+            ));
+        }
         if self
             .prefix
             .as_ref()
@@ -977,6 +1002,18 @@ impl<'borrow, 'state, 'visit, 'plan> CollectionExecution<'borrow, 'state, 'visit
             &mut self.invocation.state.call_caches,
             &self.invocation.state.library,
         )
+    }
+    #[inline]
+    pub(in crate::native_artifact::program::runtime) fn arena_entry_is_current(
+        &self,
+        slot: u32,
+    ) -> Result<bool, Error> {
+        Ok(self
+            .invocation
+            .state
+            .arena
+            .native_entry_preview(slot, &self.invocation.state.control.work)?
+            .is_some())
     }
     #[inline]
     pub(in crate::native_artifact::program::runtime) fn arena_copy_current(

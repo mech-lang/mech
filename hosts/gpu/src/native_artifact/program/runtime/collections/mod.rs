@@ -29,6 +29,7 @@ pub(in crate::native_artifact::program::runtime) fn admitted_capacity<T>(
 }
 mod data;
 mod uniform_words;
+mod utf8_read;
 pub(in crate::native_artifact::program::runtime) fn source_count(
     value: &Value,
 ) -> Result<u64, Error> {
@@ -114,6 +115,7 @@ pub(in crate::native_artifact::program::runtime) struct State {
     string_spans: Vec<Option<string_span::Lane>>,
     string_maps: Vec<Option<string_map_entry::Lane>>,
     current: Option<u32>,
+    native_read: Option<Box<utf8_read::Loan>>,
     live_bytes: u64,
     // Genuine query scalar roots stay in the arena after token cleanup.
     // Keep their complete bound in every later collection workspace peak.
@@ -245,7 +247,11 @@ impl State {
             return Ok(0);
         }
         add(
-            (size_of::<[u64; 6]>()
+            (if descriptor.metadata().utf8_reads.regions.is_empty() {
+                0
+            } else {
+                size_of::<Option<Box<utf8_read::Loan>>>()
+            } + size_of::<[u64; 6]>()
                 + size_of::<Vec<Option<string_span::Lane>>>()
                 + size_of::<Vec<Option<string_map_entry::Lane>>>()) as u64
                 + if descriptor.metadata().window_regions.is_empty() {
@@ -310,6 +316,7 @@ impl State {
             string_spans,
             string_maps,
             current: None,
+            native_read: None,
             live_bytes: bytes,
             query_scalar_bytes: 0,
             query_scalar_nodes: 0,
@@ -323,6 +330,9 @@ impl State {
         }))
     }
     pub(in crate::native_artifact::program::runtime) fn is_complete(&self) -> bool {
+        if self.native_read.is_some() {
+            return false;
+        }
         self.current.is_none()
             && self.sources.iter().all(Option::is_none)
             && self.prepared_ranges.iter().all(Option::is_none)

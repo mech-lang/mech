@@ -986,6 +986,26 @@ impl<'plan> CfgDefinition<'plan> {
                 && let NativeIterationTerminator::Header {
                     iteration, exit, ..
                 } = block.terminator()
+                && prepared.metadata().utf8_reads.at_header(index).is_some()
+            {
+                crate::native_artifact::program::codegen::utf8_lookup::emit_entry(
+                    b,
+                    locals,
+                    index,
+                    hooks
+                        .as_ref()
+                        .ok_or_else(|| backend("native UTF8 collection lacks owner hooks"))?,
+                    plan.value_count() + iteration as usize,
+                    blocks[exit as usize].expect("reachable native UTF8 collection exit"),
+                    error,
+                )?;
+            }
+            #[cfg(feature = "canonical-native-program")]
+            if let crate::native_artifact::codegen::control::plan::CodePlan::Program(prepared) =
+                plan
+                && let NativeIterationTerminator::Header {
+                    iteration, exit, ..
+                } = block.terminator()
                 && let Some(region) = prepared
                     .metadata()
                     .uniform_word_collections
@@ -1760,6 +1780,13 @@ fn emission_template_bound(
                         .map_err(backend)?,
                 )
                 .and_then(|n| n.checked_add(metadata.closed_tails.extra_work(index)))
+                .and_then(|n| {
+                    n.checked_add(if metadata.utf8_reads.at_header(index).is_some() {
+                        crate::native_artifact::program::prepare::utf8_reads::HEADER_WORK
+                    } else {
+                        0
+                    })
+                })
                 .and_then(|n| {
                     n.checked_add(
                         crate::native_artifact::program::prepare::prefix::extra_work(

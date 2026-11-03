@@ -105,10 +105,15 @@ pub(in crate::native_artifact) fn optimize(
             break;
         }
     }
-    context.compute_cfg();
-    context.compute_domtree();
-    context.eliminate_unreachable_code(isa).map_err(backend)?;
-    context.remove_constant_phis(isa).map_err(backend)?;
+    // A zero-fold round already ended with valid reachability and cleaned phi
+    // inputs. Repeating that exact sweep cannot expose another branch. Only a
+    // final fold at the round limit leaves changed edges requiring cleanup.
+    if !report.fixed_point {
+        context.compute_cfg();
+        context.compute_domtree();
+        context.eliminate_unreachable_code(isa).map_err(backend)?;
+        context.remove_constant_phis(isa).map_err(backend)?;
+    }
     let (blocks, instructions) = counts(&context.func);
     report.after_blocks = blocks;
     report.after_instructions = instructions;

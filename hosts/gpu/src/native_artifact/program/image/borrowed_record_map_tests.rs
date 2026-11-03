@@ -43,6 +43,7 @@ fn hash(descriptor: &NativeProgramDescriptor, borrowed: &Layout) -> [u8; 32] {
         metadata.map_owner_words.as_ref(),
         &metadata.frozen_maps,
         borrowed,
+        &metadata.utf8_reads,
         &metadata.string_map_regions,
     )
 }

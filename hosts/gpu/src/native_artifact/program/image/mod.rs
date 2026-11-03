@@ -21,7 +21,7 @@ pub(in crate::native_artifact) struct NativeCodeFootprint {
 impl serde::Serialize for NativeProgramDescriptor {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         use serde::ser::SerializeStruct;
-        let mut fields = serializer.serialize_struct("NativeProgramDescriptor", 26)?;
+        let mut fields = serializer.serialize_struct("NativeProgramDescriptor", 27)?;
         fields.serialize_field("plan", &self.metadata.plan)?;
         #[derive(serde::Serialize)]
         struct Schemas<'a>(
@@ -47,6 +47,7 @@ impl serde::Serialize for NativeProgramDescriptor {
         fields.serialize_field("scalar_aggregates", &self.metadata.scalar_aggregates)?;
         fields.serialize_field("map_owner_words", &self.metadata.map_owner_words)?;
         fields.serialize_field("borrowed_record_maps", &self.metadata.borrowed_record_maps)?;
+        fields.serialize_field("utf8_reads", &self.metadata.utf8_reads)?;
         fields.serialize_field("frozen_maps", &self.metadata.frozen_maps)?;
         fields.serialize_field("map_admission", &self.metadata.map_admission)?;
         fields.serialize_field("parallel", &self.metadata.parallel)?;
@@ -75,6 +76,7 @@ impl NativeProgramDescriptor {
             metadata.map_owner_words.as_ref(),
             &metadata.frozen_maps,
             &metadata.borrowed_record_maps,
+            &metadata.utf8_reads,
             &metadata.string_map_regions,
         );
         Self {

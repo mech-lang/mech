@@ -295,7 +295,9 @@ fn selected_template(
 // IR154 pins bottom-up current-array child contracts and their composed cold
 // aliases. Every child call invalidates old versions before exposing only its
 // proved current return; images rederive the complete same-plan tree proof.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 154;
+// IR155 pins closed String-matrix/immutable-Map lookup collections, explicit
+// pinned byte-table geometry and atomic private-output preflight/commit.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 155;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -501,7 +503,10 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 154;
 // Views retain no payload and cannot renew the invocation's finite allowance.
 // Policy105 funds composed numeric-tree traversal inventories and boundaries.
 // Every node keeps its own finite debit; existing leaf prices stay unchanged.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 105;
+// Policy106 funds native UTF8 table setup and whole-loop physical preflight.
+// Logical source/builder floors and declared finite caps stay explicit; the
+// native lookup price replaces canonical per-key planning/materialization.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 106;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]
@@ -566,6 +571,7 @@ pub(in crate::native_artifact) fn typed_ir_sha256(
     map_owners: Option<&mech_engine::native_artifact::NativeMapOwnerWords>,
     frozen_maps: &crate::native_artifact::program::prepare::frozen_map::Layout,
     borrowed_record_maps: &crate::native_artifact::program::prepare::borrowed_record_map::Layout,
+    utf8_reads: &crate::native_artifact::program::prepare::utf8_reads::Layout,
     string_maps: &[mech_engine::native_artifact::NativeStringMapRegion],
 ) -> [u8; 32] {
     let mut hash = Sha256::new();
@@ -602,6 +608,9 @@ pub(in crate::native_artifact) fn typed_ir_sha256(
     bytes(&mut hash, b"mech.borrowed-record-map-layout.v1");
     serde_json::to_writer(ProofDigest(&mut hash), borrowed_record_maps)
         .expect("borrowed record-map proof contains only finite ordered integer fields");
+    bytes(&mut hash, b"mech.native-utf8-map-read-layout.v1");
+    serde_json::to_writer(ProofDigest(&mut hash), utf8_reads)
+        .expect("native UTF8 lookup proof contains only finite ordered integer fields");
     word(&mut hash, frontiers.len() as u64);
     for frontier in frontiers {
         word(&mut hash, u64::from(frontier.iteration()));

@@ -147,6 +147,7 @@ fn map_owner_identity_covers_unused_candidates_words_and_site_inventories() {
                     Some(&changed),
                     &descriptor.metadata().frozen_maps,
                     &descriptor.metadata().borrowed_record_maps,
+                    &descriptor.metadata().utf8_reads,
                     &(plan).string_map_regions()
                 ),
                 "a changed candidate/layout must change Object association",
@@ -285,6 +286,7 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                 owners,
                 &descriptor.metadata().frozen_maps,
                 &descriptor.metadata().borrowed_record_maps,
+                &descriptor.metadata().utf8_reads,
                 &(plan).string_map_regions(),
             );
             assert_eq!(*descriptor.typed_ir_sha256(), fresh, "{name}");
@@ -314,6 +316,7 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                         owners,
                         &descriptor.metadata().frozen_maps,
                         &descriptor.metadata().borrowed_record_maps,
+                        &descriptor.metadata().utf8_reads,
                         &(plan).string_map_regions()
                     )
                 );
@@ -329,6 +332,7 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                         owners,
                         &descriptor.metadata().frozen_maps,
                         &descriptor.metadata().borrowed_record_maps,
+                        &descriptor.metadata().utf8_reads,
                         &(plan).string_map_regions()
                     )
                 );
@@ -344,6 +348,7 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                         owners,
                         &descriptor.metadata().frozen_maps,
                         &descriptor.metadata().borrowed_record_maps,
+                        &descriptor.metadata().utf8_reads,
                         &(plan).string_map_regions()
                     )
                 );
@@ -359,6 +364,7 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                         owners,
                         &descriptor.metadata().frozen_maps,
                         &descriptor.metadata().borrowed_record_maps,
+                        &descriptor.metadata().utf8_reads,
                         &(plan).string_map_regions()
                     )
                 );
@@ -376,6 +382,7 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                         owners,
                         &descriptor.metadata().frozen_maps,
                         &descriptor.metadata().borrowed_record_maps,
+                        &descriptor.metadata().utf8_reads,
                         &(plan).string_map_regions()
                     )
                 );
@@ -393,6 +400,7 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                         owners,
                         &descriptor.metadata().frozen_maps,
                         &descriptor.metadata().borrowed_record_maps,
+                        &descriptor.metadata().utf8_reads,
                         &(plan).string_map_regions()
                     )
                 );

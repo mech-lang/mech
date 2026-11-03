@@ -94,6 +94,14 @@ mod image;
 #[path = "native_collection_borrowed_record_map.rs"]
 mod borrowed_record_map;
 #[cfg(feature = "sequence_buffers")]
+#[path = "native_collection_string_matrix_key.rs"]
+mod string_matrix_key;
+#[cfg(feature = "sequence_buffers")]
+pub use string_matrix_key::{
+    NativeStringMatrixKeyCell, NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal,
+    NativeStringMatrixKeyView,
+};
+#[cfg(feature = "sequence_buffers")]
 #[path = "native_collection_buffer_frames.rs"]
 mod buffer_frames;
 #[cfg(feature = "sequence_buffers")]

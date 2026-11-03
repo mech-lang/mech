@@ -141,6 +141,11 @@ pub use crate::resident::general::native_collection_calls::{
     NativeTextLineChunks, NativeTextLineJoinChunk, NativeTextLineMatrix,
     NativeTextLineMatrixChoice, NativeTextLineWindow,
 };
+#[cfg(feature = "sequence_buffers")]
+pub use crate::resident::general::native_collection_calls::{
+    NativeStringMatrixKeyCell, NativeStringMatrixKeyLoan, NativeStringMatrixKeyOrdinal,
+    NativeStringMatrixKeyView,
+};
 #[cfg(feature = "pure_text")]
 pub use selected_text_join::{NativeSelectedTextJoin, NativeSelectedTextJoinRange};
 

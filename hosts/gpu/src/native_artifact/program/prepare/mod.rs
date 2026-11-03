@@ -77,6 +77,7 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     // it is neither serialized authority nor another preparation pipeline.
     pub(in crate::native_artifact) uniform_word_collections:
         Box<[mech_engine::native_artifact::NativeUniformWordCollection]>,
+    pub(in crate::native_artifact) utf8_reads: utf8_reads::Layout,
     pub(in crate::native_artifact) window_regions:
         Box<[mech_engine::native_artifact::NativeWindowRegion]>,
     pub(in crate::native_artifact) string_map_regions:
@@ -138,6 +139,7 @@ impl PreparedNativeProgram {
         let selected_joins =
             native::program::prepare::selected_join::Layout::derive(&plan, &string_map_regions)?;
         let line_matrices = native::program::prepare::line_matrix::Layout::derive(&plan)?;
+        let utf8_reads = utf8_reads::Layout::derive(&plan).map_err(str::to_owned)?;
         let mut analysis_visits = native::iteration_abi::control_visits(
             plan.blocks(),
             plan.iterations().iter().map(Into::into),
@@ -156,6 +158,18 @@ impl PreparedNativeProgram {
         selected_joins
             .fund_visit_checks(&mut visits)
             .map_err(str::to_owned)?;
+        compose_work(
+            &mut analysis_visits,
+            &mut visits,
+            |site| {
+                Ok(if utf8_reads.at_header(site).is_some() {
+                    utf8_reads::HEADER_WORK
+                } else {
+                    0
+                })
+            },
+            "native UTF8 lookup header work overflow",
+        )?;
         // Derive this proof once from the SAME immutable plan. Both layout and
         // identity inspect the complete result, including unsupported/multiple
         // frontiers; no caller-provided or persistent proof cache is consulted.
@@ -452,6 +466,7 @@ impl PreparedNativeProgram {
             observation_schema_bytes,
             max_library_inputs,
             uniform_word_collections,
+            utf8_reads,
             unsigned_buffer_calls,
             buffer_frames,
             frame_retirements,
@@ -575,8 +590,8 @@ pub(in crate::native_artifact) fn validate_type_slots(
 }
 
 pub(in crate::native_artifact) mod captured_numeric;
-pub(in crate::native_artifact) mod readonly_numeric;
 pub(in crate::native_artifact) mod numeric_tree;
+pub(in crate::native_artifact) mod readonly_numeric;
 pub(in crate::native_artifact) mod retirement;
 
 pub(in crate::native_artifact) fn constant_admission_total(bounds: &[u64]) -> Result<u64, String> {
@@ -600,3 +615,4 @@ pub(in crate::native_artifact) mod tail;
 pub(in crate::native_artifact) mod window_histogram;
 
 pub(in crate::native_artifact) mod query_stages;
+pub(in crate::native_artifact) mod utf8_reads;

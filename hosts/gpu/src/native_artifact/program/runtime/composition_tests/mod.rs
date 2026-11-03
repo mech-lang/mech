@@ -28,6 +28,7 @@ mod scalar_child;
 mod schema_key;
 mod tagged_map_carrier;
 mod wide_scalar_array;
+mod utf8_reads;
 
 /// Retain direct coverage of the independently proved around-child path. A
 /// complete tree normally consumes these source sites before the pieces run;
@@ -77,8 +78,11 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                105
+                106
             );
+            // Policy106 reprices selected String/Map WORK only. This numeric
+            // fixture has no UTF8 region, so the policy105 decomposition below
+            // remains exact and independently checked.
             // The policy104 checkpoint for this exact fixture was 88,531,834.
             // Emission ablation preserves the new tree's independently checked
             // proof and fallback inventory. Policy105 pays their larger shared
