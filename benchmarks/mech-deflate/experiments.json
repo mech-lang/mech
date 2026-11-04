@@ -14145,6 +14145,17 @@
           "files": 67,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-time-profiler-mech-random-cc2afa8ccdb5.tar.gz"
+        },
+        {
+          "event": "time-profiler-reference-random",
+          "source_revision": "61b7d0b51a1ef17daf97992844c5f413b3203400",
+          "asset": "r135-time-profiler-reference-random-64f7036904aa.tar.gz",
+          "sha256": "64f7036904aa4e32a4a69314b68510e36b15ce2ec1901e8628fde03d7a303cf4",
+          "manifest_sha256": "9606b1502461dfebaa435a651aac45e344da4eaea06b3cc6e88a35f4c3fc2850",
+          "bytes": 174161,
+          "files": 67,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-time-profiler-reference-random-64f7036904aa.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
