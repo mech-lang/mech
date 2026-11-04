@@ -70,6 +70,7 @@ fn physical_exit_values_are_reconstructed_from_canonical_source() {
             .unwrap();
         for suffix in [
             "boundary_values/header",
+            "boundary_values/candidates",
             "boundary_values/exit",
             "exits/0/values",
         ] {
