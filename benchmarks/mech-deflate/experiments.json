@@ -14143,8 +14143,8 @@
           "manifest_sha256": "a7c414acecbb3317b6d9f14f6982c0480f27a65251be3e7d886a3541c7006806",
           "bytes": 2396165,
           "files": 67,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-time-profiler-mech-random-cc2afa8ccdb5.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r135-time-profiler-mech-random-cc2afa8ccdb5.tar.gz"
         },
         {
           "event": "time-profiler-reference-random",
@@ -14154,8 +14154,8 @@
           "manifest_sha256": "9606b1502461dfebaa435a651aac45e344da4eaea06b3cc6e88a35f4c3fc2850",
           "bytes": 174161,
           "files": 67,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-time-profiler-reference-random-64f7036904aa.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r135-time-profiler-reference-random-64f7036904aa.tar.gz"
         },
         {
           "event": "history-random-primary",
@@ -14165,8 +14165,8 @@
           "manifest_sha256": "a8419bbdc0d4b3a07ea9e8d69e9ad02fedbb0f48bb7fdea61d7e6e70ca7864c6",
           "bytes": 67025,
           "files": 50,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-history-random-primary-7a8f5729a9bc.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r135-history-random-primary-7a8f5729a9bc.tar.gz"
         },
         {
           "event": "history-repeated-primary",
@@ -14176,8 +14176,8 @@
           "manifest_sha256": "890e875e94c74c540ecb9c9de52f8e7d02887f5a2fb235b7616f1eff1f448d96",
           "bytes": 68630,
           "files": 52,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-history-repeated-primary-5c4dc37a788e.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r135-history-repeated-primary-5c4dc37a788e.tar.gz"
         },
         {
           "event": "eight-primary",
@@ -14187,8 +14187,8 @@
           "manifest_sha256": "455fbdb9b361e133482c7bde0351aa8cf17cba1b4ba1ad935a1a50857ec5357e",
           "bytes": 206255,
           "files": 59,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-eight-primary-de02055cfe0a.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r135-eight-primary-de02055cfe0a.tar.gz"
         },
         {
           "event": "random-primary",
@@ -14198,8 +14198,8 @@
           "manifest_sha256": "3efc5ea9eaa077a49d9d464a3a9b34877783d8f1e365339c84014c08f0c364e0",
           "bytes": 77714,
           "files": 56,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-random-primary-a11a364614cf.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r135-random-primary-a11a364614cf.tar.gz"
         },
         {
           "event": "repeated-primary",
@@ -14209,8 +14209,8 @@
           "manifest_sha256": "fe9cec88b5370513349ca547f635d4999629984d3b9116fc23a57e9b324204af",
           "bytes": 79785,
           "files": 58,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-repeated-primary-b74fe93a8e79.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r135-repeated-primary-b74fe93a8e79.tar.gz"
         },
         {
           "event": "history-profile-random",
@@ -14220,8 +14220,8 @@
           "manifest_sha256": "63a7d745773a9d502e66bf033d48d57aba43d2926fcfaf5df140c6b20ecccfd1",
           "bytes": 104666,
           "files": 53,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-history-profile-random-db033257e974.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r135-history-profile-random-db033257e974.tar.gz"
         },
         {
           "event": "history-profile-repeated",
@@ -14231,8 +14231,8 @@
           "manifest_sha256": "48f1d299b42964840ea606af80664496baa7c6d2d411de477abe0a7f2bf5ee42",
           "bytes": 100327,
           "files": 55,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-history-profile-repeated-539acf097e1e.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r135-history-profile-repeated-539acf097e1e.tar.gz"
         },
         {
           "event": "clean-parent",
@@ -14242,8 +14242,8 @@
           "manifest_sha256": "3059c814d9a4ae8d9e03874f17fc5c46be4a2bc69de756cb4b81f045d0d69983",
           "bytes": 82291,
           "files": 60,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-clean-parent-7b2feb17c7a2.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r135-clean-parent-7b2feb17c7a2.tar.gz"
         },
         {
           "event": "counters",
@@ -14253,8 +14253,8 @@
           "manifest_sha256": "2828cee6bfffe0d1e46b391c6bbd389a71c4da52e0d498da71179eb77aae927c",
           "bytes": 109074,
           "files": 122,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-counters-b6ce9f4ea7fa.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r135-counters-b6ce9f4ea7fa.tar.gz"
         },
         {
           "event": "closure",
@@ -14264,13 +14264,13 @@
           "manifest_sha256": "2d327fc3f4be3f74e59aacb6d237ff43234fd335d60c9587c83005fb9dd7d8ee",
           "bytes": 9876832,
           "files": 555,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-native-live-state-round135-20261104/archives/r135-closure-ac59645a8e53.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r135-closure-ac59645a8e53.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending",
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "before_compiler_source": "61b7d0b51a1ef17daf97992844c5f413b3203400",
       "versions": {
         "typed_ir": 164,
