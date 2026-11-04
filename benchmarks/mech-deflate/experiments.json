@@ -14416,6 +14416,17 @@
           "files": 53,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-physical-exits-round136-20261104/archives/r136-history-random-primary-9e7e00a64667.tar.gz"
+        },
+        {
+          "event": "history-repeated-primary",
+          "source_revision": "1acbb2388a20c9b177c43afea0c01ba529856950",
+          "asset": "r136-history-repeated-primary-d619d3ba3fcc.tar.gz",
+          "sha256": "d619d3ba3fcc9e835c37c5e12ee0133cd11f9983495b9e2a38da586a9366a316",
+          "manifest_sha256": "036d95490979047e128dd4e2b6f6d9fa91ef311464e0a57debf82548a3428c5a",
+          "bytes": 59402,
+          "files": 55,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-physical-exits-round136-20261104/archives/r136-history-repeated-primary-d619d3ba3fcc.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
