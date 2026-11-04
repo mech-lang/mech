@@ -541,7 +541,18 @@ pub(in crate::native_artifact) fn emit_entry(
         .jump(ordinary_blocks[region.tail.exit() as usize].unwrap(), &[]);
     b.switch_to_block(failed);
     let status = b.block_params(failed)[0];
-    words.spill_all(b, locals)?;
+    // Terminal errors do not resume ordinary source instructions. The shared
+    // consumer reads only its exact current settlement inputs; preserving all
+    // source temporaries here needlessly keeps them live across every check.
+    let failure_words = (region.words..region.words + 3)
+        .chain(
+            tail::numeric_exit_words(region, 3, None)?
+                .into_iter()
+                .map(|word| shadow + word),
+        )
+        .collect::<BTreeSet<_>>();
+    words.spill_live(b, locals, &failure_words)?;
+    report.failure_spill_words = failure_words.len();
     b.ins().jump(error, &[status.into()]);
     report.fixed_template_instructions = setup_work + b.func.dfg.num_insts() - boundary;
     if report.fixed_template_instructions
