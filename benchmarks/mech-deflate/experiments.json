@@ -13448,6 +13448,17 @@
           "files": 60,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-bounds-snapshot-round132-20261104/archives/r132-history-repeated-corrected-witness-61f18df75bc8.tar.gz"
+        },
+        {
+          "event": "history-random-primary",
+          "source_revision": "f6f47a06a98c0aeb97cd596250676209897e9648",
+          "asset": "r132-history-random-primary-94df986f8d30.tar.gz",
+          "sha256": "94df986f8d30df86349f48c8f7e7577d141e6e57b2fdb6392fbdda657e159807",
+          "manifest_sha256": "1f2e272d003c4fcdab35c31601655b45977c3091bb673bb9d548ce3aa2ce897a",
+          "bytes": 148909,
+          "files": 57,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-bounds-snapshot-round132-20261104/archives/r132-history-random-primary-94df986f8d30.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
