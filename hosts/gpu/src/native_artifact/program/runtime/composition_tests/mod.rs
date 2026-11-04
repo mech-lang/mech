@@ -68,8 +68,8 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
                 107
             );
             assert_eq!(
-                report.work, 88_531_834,
-                "policy107 retains existing child-free leaf/parent prices, constant ownership, structural alias pricing and scalar-prefix debits"
+                report.work, 41_515_530,
+                "policy107 prices are unchanged; one fueled phase replaces per-child boundary/materialization work"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(
@@ -161,6 +161,26 @@ fn contents(values: &[Value]) -> Vec<Data> {
         .collect()
 }
 
+fn selected_native_sites(jit: &JitProgramArtifact) -> std::collections::BTreeSet<u64> {
+    let metadata = jit.descriptor().metadata();
+    metadata
+        .compositions
+        .parents
+        .iter()
+        .flat_map(|parent| &parent.segments)
+        .filter(|piece| metadata.compositions.entry(piece.entry as usize).is_some())
+        .flat_map(|piece| piece.sites.iter().map(|&site| u64::from(site)))
+        .chain(
+            metadata
+                .closed_tails
+                .regions
+                .iter()
+                .filter_map(|region| region.numeric.as_ref())
+                .flat_map(|proof| proof.sites.iter().map(|&site| site as u64)),
+        )
+        .collect()
+}
+
 #[test]
 fn composition_counts_real_child_initializations_and_completed_empty_calls() {
     let source = include_str!("../../../../../tests/fixtures/native/numeric-parent-child.mec");
@@ -172,7 +192,22 @@ fn composition_counts_real_child_initializations_and_completed_empty_calls() {
             mode.compilation(),
         )
         .unwrap();
-        let proof = &jit.descriptor().metadata().compositions.parents[0];
+        let metadata = jit.descriptor().metadata();
+        let region = metadata
+            .closed_tails
+            .regions
+            .iter()
+            .find(|region| {
+                region.tail.parent().is_none()
+                    && region
+                        .numeric
+                        .as_ref()
+                        .is_some_and(|proof| proof.phase.is_some())
+            })
+            .unwrap();
+        let phase = region.numeric.as_ref().unwrap();
+        assert_eq!(phase.phase.as_ref().unwrap().loops.len(), 2);
+        let child = &phase.phase.as_ref().unwrap().loops[1];
         let mut output = vec![None; artifact.outputs().len()];
         let memory = mode.memory_budget();
         for (width, counts, expected_calls, expected) in [
@@ -185,35 +220,25 @@ fn composition_counts_real_child_initializations_and_completed_empty_calls() {
             let (result, actual) =
                 observe::run(&jit, &args, &mut output, mode.execution(), &memory);
             result.unwrap();
-            assert!(actual.selected > 0);
+            assert_eq!(actual.phases, 1);
             assert_eq!(
                 actual
                     .admits
-                    .get(&u64::from(proof.children[0].child_initialize))
+                    .get(&u64::from(child.initialize as u64))
                     .copied()
                     .unwrap_or(0),
-                expected_calls
+                0
             );
             assert_eq!(
                 actual
                     .admits
-                    .get(&u64::from(proof.children[0].child_exit))
+                    .get(&u64::from(child.exit as u64))
                     .copied()
                     .unwrap_or(0),
-                expected_calls
+                0
             );
             if width == 0 || expected == vec![9, 9, 9, 9] {
-                let writes = jit
-                    .descriptor()
-                    .metadata()
-                    .closed_tails
-                    .regions
-                    .iter()
-                    .find(|r| r.iteration == proof.children[0].child)
-                    .unwrap()
-                    .numeric
-                    .as_ref()
-                    .unwrap();
+                let writes = phase;
                 for &(site, _) in writes.actions.iter().filter(|(_, op)| matches!(op, crate::native_artifact::program::prepare::readonly_numeric::Operation::Write { .. })) {
                     assert!(
                         actual.helpers.keys().all(|&(s, _)| s != site as u64),
@@ -234,7 +259,7 @@ fn composition_counts_real_child_initializations_and_completed_empty_calls() {
             );
             println!(
                 "{}",
-                serde_json::json!({"witness":"actual-child-boundaries", "width":width, "child_calls":expected_calls, "selected_parent_fragments":actual.selected})
+                serde_json::json!({"witness":"actual-child-boundaries", "width":width, "source_child_calls":expected_calls, "selected_parent_fragments":actual.selected})
             );
         }
         drop(output);
@@ -277,18 +302,29 @@ fn composition_native_parent_resumes_after_an_ordinary_empty_child() {
         policy.library.max_output_elements = Some(5);
         let (result, counts) = observe::run(&jit, &args, &mut output, policy, &memory);
         result.unwrap();
-        assert!(counts.selected > 0);
-        let proof = &jit.descriptor().metadata().compositions.parents[0];
+        assert_eq!(
+            counts.phases, 0,
+            "tight limits must keep ordinary execution"
+        );
+        let metadata = jit.descriptor().metadata();
+        let root = metadata
+            .plan
+            .iterations()
+            .iter()
+            .position(|loop_| loop_.as_ref().parent().is_none())
+            .unwrap() as u32;
+        let child_id = metadata
+            .plan
+            .iterations()
+            .iter()
+            .position(|loop_| loop_.as_ref().parent() == Some(root))
+            .unwrap();
         let mech_engine::native_artifact::NativeControlLoop::Tail(child) =
-            &jit.descriptor().plan().iterations()[proof.children[0].child as usize]
+            &jit.descriptor().plan().iterations()[child_id]
         else {
             panic!()
         };
-        for site in [
-            proof.children[0].child_initialize,
-            child.body(),
-            proof.children[0].child_exit,
-        ] {
+        for site in [child.initialize(), child.body(), child.exit()] {
             assert_eq!(
                 counts.admits.get(&u64::from(site)).copied().unwrap_or(0),
                 3,
