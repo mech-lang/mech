@@ -14618,7 +14618,7 @@
       "base": "c7a8b7c2caf039830e6a0cb7a30fcd4648d9744b",
       "production": "f37ccd3eaa6a83417b9f5ad2d38ca7ae1a77e20e",
       "compiler_source": "f37ccd3eaa6a83417b9f5ad2d38ca7ae1a77e20e",
-      "decision": "under measurement",
+      "decision": "retained: both repeated sizes improve substantially, large random and eight-byte medians improve modestly; small random results and restored-size controls are reported individually with every adverse cohort retained; no uniform latency win claimed; measured heap unchanged",
       "events": [
         {
           "event": "parent",
@@ -14795,11 +14795,302 @@
           "files": 82,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-shared-quotient-round137-20261104/archives/r137-random-256-confirmation-065cb43fc9ef.tar.gz"
+        },
+        {
+          "event": "qualification",
+          "source_revision": "f37ccd3eaa6a83417b9f5ad2d38ca7ae1a77e20e",
+          "asset": "r137-qualification-38f19ac2ddfc.tar.gz",
+          "sha256": "38f19ac2ddfcacc8d3c01f09238666207a024af55aa6dca81aff8eb2e5c7cedc",
+          "manifest_sha256": "4888940a2633b84395c311cc7558eedf2f300af5efaab175def073d5c41213ea",
+          "bytes": 142603,
+          "files": 78,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-shared-quotient-round137-20261104/archives/r137-qualification-38f19ac2ddfc.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "versions": {
+        "typed_ir": 166,
+        "work_policy": 107,
+        "private_abi": 39,
+        "bytecode": 14
+      },
+      "before_compiler_source": "1acbb2388a20c9b177c43afea0c01ba529856950",
+      "validation": {
+        "compatible_gpu_passed": 553,
+        "inherited_profile_exclusions": 7,
+        "executed_ci_native": 128,
+        "workflow_tests": 132,
+        "architecture_catalog_checks": 15,
+        "components": 236,
+        "connected": 8,
+        "path_mechanism": 1,
+        "focused": 3,
+        "clean_parent": "two semantic address controls pass; single-machine-division expectation fails showing two ARM64 UDIVs"
+      },
+      "primary": {
+        "eight": {
+          "adverse_blocks": 8,
+          "after_over_before": 0.9910602510251416,
+          "all_observations": 1992,
+          "geometric_block_ratio": 0.9913014884043742,
+          "improving_blocks": 24,
+          "improving_groups": 2,
+          "median_block_ratio": 0.9923593341630876,
+          "medians": {
+            "after": 0.001330375,
+            "before": 0.0013423755
+          },
+          "multiples_of_reference": {
+            "after": 4.667982456140351,
+            "before": 4.710089473684211
+          },
+          "primary_observations": 1984,
+          "reference_seconds": 0.000285,
+          "scope": "Blocks within a prepared pair are descriptive, not independent experiments. All adverse observations retained."
+        },
+        "random-64": {
+          "adverse_blocks": 6,
+          "after_over_before": 1.0121843418127934,
+          "all_observations": 260,
+          "geometric_block_ratio": 1.0117756187303417,
+          "improving_blocks": 2,
+          "improving_groups": 0,
+          "median_block_ratio": 1.0030145336111183,
+          "medians": {
+            "after": 0.0012807295000000002,
+            "before": 0.0012653125
+          },
+          "multiples_of_reference": {
+            "after": 4.446977430555556,
+            "before": 4.393446180555555
+          },
+          "primary_observations": 256,
+          "reference_seconds": 0.000288,
+          "scope": "Blocks within a prepared pair are descriptive, not independent experiments. All adverse observations retained."
+        },
+        "random-256": {
+          "adverse_blocks": 5,
+          "after_over_before": 1.0092651250292537,
+          "all_observations": 260,
+          "geometric_block_ratio": 1.006216884467005,
+          "improving_blocks": 3,
+          "improving_groups": 0,
+          "median_block_ratio": 1.0128903425349454,
+          "medians": {
+            "after": 0.001339042,
+            "before": 0.0013267495
+          },
+          "multiples_of_reference": {
+            "after": 4.55456462585034,
+            "before": 4.512753401360545
+          },
+          "primary_observations": 256,
+          "reference_seconds": 0.000294,
+          "scope": "Blocks within a prepared pair are descriptive, not independent experiments. All adverse observations retained."
+        },
+        "random": {
+          "adverse_blocks": 6,
+          "after_over_before": 1.0073010509773106,
+          "all_observations": 260,
+          "geometric_block_ratio": 1.0102820358877784,
+          "improving_blocks": 2,
+          "improving_groups": 0,
+          "median_block_ratio": 1.008533196232484,
+          "medians": {
+            "after": 0.0012819164999999999,
+            "before": 0.0012726249999999999
+          },
+          "multiples_of_reference": {
+            "after": 4.2168305921052625,
+            "before": 4.18626644736842
+          },
+          "primary_observations": 256,
+          "reference_seconds": 0.000304,
+          "scope": "Blocks within a prepared pair are descriptive, not independent experiments. All adverse observations retained."
+        },
+        "repeated": {
+          "adverse_blocks": 0,
+          "after_over_before": 0.9105732346683485,
+          "all_observations": 260,
+          "geometric_block_ratio": 0.9102857333164989,
+          "improving_blocks": 8,
+          "improving_groups": 1,
+          "median_block_ratio": 0.9109149810561024,
+          "medians": {
+            "after": 0.0021022295,
+            "before": 0.0023086879999999997
+          },
+          "multiples_of_reference": {
+            "after": 6.508450464396285,
+            "before": 7.147640866873064
+          },
+          "primary_observations": 256,
+          "reference_seconds": 0.000323,
+          "scope": "Blocks within a prepared pair are descriptive, not independent experiments. All adverse observations retained."
+        },
+        "history-random": {
+          "adverse_blocks": 3,
+          "after_over_before": 0.986350816077125,
+          "all_observations": 36,
+          "geometric_block_ratio": 0.9848304310715585,
+          "improving_blocks": 5,
+          "improving_groups": 1,
+          "median_block_ratio": 0.9862061049238784,
+          "medians": {
+            "after": 0.008221563,
+            "before": 0.0083353335
+          },
+          "multiples_of_reference": {
+            "after": 7.815173954372623,
+            "before": 7.923320817490494
+          },
+          "primary_observations": 32,
+          "reference_seconds": 0.001052,
+          "scope": "Blocks within a prepared pair are descriptive, not independent experiments. All adverse observations retained."
+        },
+        "history-repeated": {
+          "adverse_blocks": 0,
+          "after_over_before": 0.8032625637882007,
+          "all_observations": 36,
+          "geometric_block_ratio": 0.8039406053208541,
+          "improving_blocks": 8,
+          "improving_groups": 1,
+          "median_block_ratio": 0.8039794915983536,
+          "medians": {
+            "after": 0.0278150415,
+            "before": 0.0346275835
+          },
+          "multiples_of_reference": {
+            "after": 20.850855697151424,
+            "before": 25.957708770614698
+          },
+          "primary_observations": 32,
+          "reference_seconds": 0.001334,
+          "scope": "Blocks within a prepared pair are descriptive, not independent experiments. All adverse observations retained."
+        }
+      },
+      "separate_random_confirmation": {
+        "adverse_blocks": 7,
+        "after_over_before": 0.9867568255210883,
+        "all_observations": 1032,
+        "geometric_block_ratio": 0.9879481266712872,
+        "improving_blocks": 25,
+        "improving_groups": 2,
+        "median_block_ratio": 0.9908154537545236,
+        "medians": {
+          "after": 0.0012604585,
+          "before": 0.0012773749999999999
+        },
+        "multiples_of_reference": {
+          "after": 3.9266619937694704,
+          "before": 3.9793613707165107
+        },
+        "primary_observations": 1024,
+        "reference_seconds": 0.000321,
+        "scope": "Blocks within a prepared pair are descriptive, not independent experiments. All adverse observations retained."
+      },
+      "separate_restored_size_confirmations": {
+        "64": {
+          "adverse_blocks": 15,
+          "after_over_before": 0.9974219568303069,
+          "all_observations": 1032,
+          "geometric_block_ratio": 0.9981590308762721,
+          "improving_blocks": 17,
+          "improving_groups": 2,
+          "median_block_ratio": 0.99735491460561,
+          "medians": {
+            "after": 0.0012736455,
+            "before": 0.0012769375
+          },
+          "multiples_of_reference": {
+            "after": 4.453305944055944,
+            "before": 4.464816433566433
+          },
+          "primary_observations": 1024,
+          "reference_seconds": 0.000286,
+          "scope": "Blocks within a prepared pair are descriptive, not independent experiments. All adverse observations retained."
+        },
+        "256": {
+          "adverse_blocks": 11,
+          "after_over_before": 0.9997184826477817,
+          "all_observations": 1032,
+          "geometric_block_ratio": 1.0002574909799984,
+          "improving_blocks": 21,
+          "improving_groups": 2,
+          "median_block_ratio": 0.9957895519551077,
+          "medians": {
+            "after": 0.0013299165000000002,
+            "before": 0.001330291
+          },
+          "multiples_of_reference": {
+            "after": 4.462807046979867,
+            "before": 4.464063758389262
+          },
+          "primary_observations": 1024,
+          "reference_seconds": 0.000298,
+          "scope": "Blocks within a prepared pair are descriptive, not independent experiments. All adverse observations retained."
+        }
+      },
+      "compression_regression_scope": "User clarified all compression inputs and sizes. Seven retained timing cases now include the historical64/256B random controls. Separate counter/heap coverage remains the original five cases. The separate ten-workload suite is outside the requested matrix. Source variants remain separately labeled; no full corpus or unmeasured size is implied.",
+      "failure_dispositions": [
+        {
+          "failure": "new test-only JIT entry missing unsafe audit manifest entry",
+          "classification": "introduced",
+          "resolution": "exact test-only entry documented in d86dec8bb2; final strict audit passes, no production boundary weakened"
+        },
+        {
+          "failure": "counter packet Git staging denied at shared index.lock",
+          "classification": "environmental",
+          "resolution": "same sealed packet/index committed as869b1e0ead with authorized metadata access; no measurement rerun"
+        },
+        {
+          "failure": "small random initial elapsed +0.730105%",
+          "classification": "observed adverse performance cohort",
+          "resolution": "retained unchanged; separate confirmation -1.324317%,25/32 improving blocks. Small effect is mixed, not established uniform speedup"
+        },
+        {
+          "failure": "restored64/256B initial elapsed +1.218434% /+0.926513%",
+          "classification": "observed adverse performance cohorts",
+          "resolution": "Original observations and two-fresh-pair confirmations retained separately; see exact restored-size summaries. No uniform small-input speedup claimed"
+        },
+        {
+          "failure": "eight-byte and small-random CPU-cycle medians increase",
+          "classification": "observed adverse separate counter cohort",
+          "resolution": "retained unchanged alongside primary and confirmation, not substituted for primary elapsed"
+        },
+        {
+          "failure": "independent image validation/startup roughly35-37s versus17s beforeR136",
+          "classification": "inherited from R136, introduced there",
+          "resolution": "unresolved; outside evaluate_into. R137 qualification startup overlaps tests and is not a controlled startup comparison"
+        },
+        {
+          "failure": "parent single-division test",
+          "classification": "expected test-first evidence",
+          "resolution": "all3 focused and553 compatible tests pass after bounded quotient-sharing change"
+        }
+      ],
+      "generated_binary": {
+        "before": {
+          "code_bytes": 7879164,
+          "stack_bytes": 7200
+        },
+        "after": {
+          "code_bytes": 7816196,
+          "stack_bytes": 7136
+        },
+        "object_sha256": "64fe68d3833fb25d314c6abe14d2bd577af1d6c1e1b690bbebe7d47dbb3fbe7d"
+      },
+      "source_unchanged": true,
+      "remaining": [
+        "Continue defined compression input/size coverage",
+        "Remaining native stack/address and checked-read costs as demonstrated by actual executable profiles",
+        "Repeated independent image-proof preparation cost",
+        "General entry inputs and lifetime word compaction",
+        "Parity with reference"
+      ]
     }
   },
   "repository": "mech-lang/mech",
