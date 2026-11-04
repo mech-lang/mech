@@ -92,3 +92,36 @@ fn each_live_fact_is_propagated_once_per_control_edge() {
         "{facts} propagated facts exceed one pass of each live fact per edge"
     );
 }
+
+#[test]
+fn liveness_projection_keeps_exactly_the_requested_values() {
+    let next = BTreeMap::from([(0, vec![1, 2]), (1, vec![3]), (2, vec![0, 3]), (3, vec![1])]);
+    let reads = BTreeMap::from([
+        (0, BTreeSet::from([1, 5])),
+        (1, BTreeSet::from([2])),
+        (2, BTreeSet::from([3])),
+        (3, BTreeSet::from([1, 4])),
+    ]);
+    let definitions = BTreeMap::from([
+        (0, BTreeSet::from([2])),
+        (1, BTreeSet::from([1, 3])),
+        (3, BTreeSet::from([5])),
+    ]);
+    let (full, _, _) = solve_liveness(&next, &reads, &definitions);
+    for mask in 0..64 {
+        let wanted = (0..6)
+            .filter(|value| mask & (1 << value) != 0)
+            .collect::<BTreeSet<_>>();
+        let projected = reads
+            .iter()
+            .map(|(&site, values)| (site, values.intersection(&wanted).copied().collect()))
+            .collect();
+        let (actual, _, _) = solve_liveness(&next, &projected, &definitions);
+        for site in 0..4 {
+            assert_eq!(
+                actual[&site],
+                full[&site].intersection(&wanted).copied().collect()
+            );
+        }
+    }
+}
