@@ -13135,7 +13135,7 @@
       "base": "1f91efb8fa39b77183903c1f58421bc35ce8f0d4",
       "production": "11f0ea49d2ba577bf18b563a566f325ac7957c7f",
       "compiler_source": "11f0ea49d2ba577bf18b563a566f325ac7957c7f",
-      "decision": "under measurement",
+      "decision": "Retain: large matched elapsed/instruction/callback/allocation gains on both1KB cases, with the code-size/stack/peak-heap increases and contrary8B blocks retained. No performance-parity claim.",
       "events": [
         {
           "event": "eight-primary",
@@ -13184,7 +13184,9 @@
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified"
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "before_compiler_source": "ccb9aab277081555385e37b02d824d0c5ef3db3b",
+      "qualified_compiler": "11f0ea49d2ba577bf18b563a566f325ac7957c7f"
     }
   },
   "repository": "mech-lang/mech",
