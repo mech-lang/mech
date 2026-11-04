@@ -13086,6 +13086,28 @@
         "decision": "Held prerequisite: generic mutable children now compose, but actual compressor native region inventory/code size are unchanged;42 new bounded-recurrence refusals remain. Random and repeated elapsed regress about1%; preserve all adverse observations. Continue only on the demonstrated loop-funding blocker."
       },
       "new_complete_program_native_regions": 0
+    },
+    "128": {
+      "base": "97cea2df8ded46f8b0de920aadb3543aea30c7ab",
+      "production": "2fbb199e2bc1c684f987ad6e4f0d468c2fb17dcb",
+      "compiler_source": "2fbb199e2bc1c684f987ad6e4f0d468c2fb17dcb",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "closure",
+          "source_revision": "2fbb199e2bc1c684f987ad6e4f0d468c2fb17dcb",
+          "asset": "r128-closure-5ac1cf5a1aa2.tar.gz",
+          "sha256": "5ac1cf5a1aa2c7edef8fe046b72240481385260b75c9fe6e2aba49d426ff57b1",
+          "manifest_sha256": "3341cf6fb7965f94db443e5653457c52283c4d5addb325c415ac1169d3f0e9ff",
+          "bytes": 5488832,
+          "files": 362,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-child-fuel-round128-20261104/archives/r128-closure-5ac1cf5a1aa2.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
