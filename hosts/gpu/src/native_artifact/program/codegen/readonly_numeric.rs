@@ -37,6 +37,7 @@ pub(in crate::native_artifact) struct Report {
     pub capacity_guards: Vec<(usize, usize)>,
     pub scalar_operations: usize,
     pub register_words: usize,
+    pub bounds_error_spill_words: Vec<(usize, usize)>,
     pub successful_backedge_helpers: usize,
     pub maximum_source_instructions: usize,
     pub fixed_template_instructions: usize,
@@ -149,6 +150,7 @@ pub(in crate::native_artifact) fn emit_entry(
         capacity_guards: Vec::new(),
         scalar_operations: 0,
         register_words,
+        bounds_error_spill_words: Vec::new(),
         successful_backedge_helpers: 0,
         maximum_source_instructions: 0,
         fixed_template_instructions: 0,
@@ -394,6 +396,7 @@ pub(in crate::native_artifact) fn emit_entry(
                 b.ins().brif(valid, good, &[], bad, &[]);
                 b.switch_to_block(bad);
                 set_origin(b, frame, site as u64);
+                report.bounds_error_spill_words.push((site, register_words));
                 words.spill_all(b, locals)?;
                 tail::failure(controls.options(), b, locals, closed, site, hooks, error)?;
                 let Action::LibraryCall { operands, .. } = code.blocks()[site].action() else {

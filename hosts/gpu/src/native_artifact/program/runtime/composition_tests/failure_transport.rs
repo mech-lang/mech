@@ -4,6 +4,30 @@ use super::*;
 const SOURCE: &str =
     include_str!("../../../../../tests/fixtures/native/numeric-nested-phase-growing.mec");
 
+#[test]
+fn numeric_bounds_error_snapshot_omits_unconsumed_scalar_temporaries() {
+    for artifact in artifacts(SOURCE) {
+        let object = crate::native_artifact::emit_program_object_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            NativeProgramLimitMode::NoLimits.compilation(),
+        )
+        .unwrap();
+        let report = object.metadata();
+        let rows = report["compiled_numeric_write_loops"].as_array().unwrap();
+        let mut checks = 0;
+        for row in rows {
+            let all = row["register_words"].as_u64().unwrap();
+            for pair in row["bounds_error_spill_words"].as_array().unwrap() {
+                let saved = pair[1].as_u64().unwrap();
+                assert!(saved > 0 && saved < all, "{row}");
+                checks += 1;
+            }
+        }
+        assert!(checks > 0, "the witness must contain a native read");
+    }
+}
+
 fn failing_source(load: bool, load_first: bool) -> String {
     let mut source = SOURCE
         .replace(
