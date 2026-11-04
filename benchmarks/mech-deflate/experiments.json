@@ -13415,11 +13415,22 @@
           "files": 266,
           "publication": "published; server SHA-256 verified",
           "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r132-closure-9a90a1b0fd15.tar.gz"
+        },
+        {
+          "event": "history-random-witness",
+          "source_revision": "f6f47a06a98c0aeb97cd596250676209897e9648",
+          "asset": "r132-history-random-witness-3139a609de57.tar.gz",
+          "sha256": "3139a609de5709ca4734a2bf4491eae261e9921171508b8bb8c50bb9d33bf553",
+          "manifest_sha256": "046da166f6cfa035d5a7e280c6d1b8f8dbe4ace9ce2f06b27f17461890246e26",
+          "bytes": 227474,
+          "files": 59,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-bounds-snapshot-round132-20261104/archives/r132-history-random-witness-3139a609de57.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "archive_publication": "local-only at measurement; external publication pending",
       "retained": true,
       "primary": {
         "eight": {
