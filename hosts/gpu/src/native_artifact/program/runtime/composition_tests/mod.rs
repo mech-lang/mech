@@ -6,6 +6,7 @@ use mech_engine::ProgramArtifact;
 mod admission_overlap;
 mod bounds_retry;
 mod child_cleanup;
+mod child_fuel;
 mod cold_child;
 mod cold_intervals;
 mod collection_lifetime;

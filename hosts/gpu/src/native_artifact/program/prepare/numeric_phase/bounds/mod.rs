@@ -10,8 +10,6 @@ mod upper;
 pub(in crate::native_artifact) enum Bound {
     Constant(u64),
     Length(u32),
-    /// Current logical length of an independently proved root buffer field.
-    BufferLength(usize),
     Root(usize),
     Add(Box<Bound>, Box<Bound>),
     Multiply(Box<Bound>, Box<Bound>),

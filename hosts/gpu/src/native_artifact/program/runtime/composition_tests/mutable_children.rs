@@ -1,7 +1,7 @@
 //! Generic witness for the fixed-size mutable children used by header loops.
 use super::*;
 
-const SOURCE: &str =
+pub(super) const SOURCE: &str =
     include_str!("../../../../../tests/fixtures/native/numeric-mutable-children.mec");
 
 #[test]

@@ -14,6 +14,7 @@ pub(in crate::native_artifact) struct Debit {
     pub exit: usize,
     pub parent: Option<u32>,
     pub counter: usize,
+    pub first_visit: Option<usize>,
     pub compute: u64,
     pub comparison: u64,
     pub trips: Option<bounds::Trips>,
@@ -26,6 +27,7 @@ pub(in crate::native_artifact) struct Schedule {
     pub boundary_work: u64,
     pub compute_bound: Bound,
     pub comparison_bound: Bound,
+    pub checked_children: bool,
 }
 impl Schedule {
     pub fn derive(
@@ -78,12 +80,32 @@ impl Schedule {
                 counter: counter
                     .checked_add(index)
                     .ok_or("phase counter home overflows")?,
+                first_visit: if forest.checked_children && index > 0 {
+                    Some(
+                        counter
+                            .checked_add(forest.loops.len())
+                            .and_then(|word| word.checked_add(index - 1))
+                            .ok_or("child entry home overflows")?,
+                    )
+                } else {
+                    None
+                },
                 compute,
                 comparison,
                 trips: trips
                     .iter()
                     .find(|p| p.iteration == loop_.iteration)
                     .cloned(),
+            });
+        }
+        if forest.checked_children {
+            return Ok(Self {
+                compute_bound: Bound::Constant(loops[0].compute),
+                comparison_bound: Bound::Constant(loops[0].comparison),
+                loops,
+                cold: forest.cold.clone(),
+                boundary_work,
+                checked_children: true,
             });
         }
         let mut envelopes = BTreeMap::<u32, (Bound, Bound)>::new();
@@ -110,6 +132,16 @@ impl Schedule {
             boundary_work,
             compute_bound,
             comparison_bound,
+            checked_children: false,
         })
+    }
+
+    pub fn words(&self) -> usize {
+        self.loops.len()
+            + self
+                .loops
+                .iter()
+                .filter(|loop_| loop_.first_visit.is_some())
+                .count()
     }
 }

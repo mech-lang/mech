@@ -47,6 +47,13 @@ pub(in crate::native_artifact) enum Operation {
         incoming: u32,
     },
 }
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(in crate::native_artifact) enum ExitKind {
+    Unsupported,
+    ChildInitialize { iteration: u32 },
+    ChildHeader { iteration: u32 },
+}
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Exit {
@@ -56,6 +63,7 @@ pub(in crate::native_artifact) struct Exit {
     pub aliases: Vec<(u32, usize)>,
     /// All live fields have been exported, and the old root visit is dead.
     pub retire_carrier: bool,
+    pub kind: ExitKind,
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]

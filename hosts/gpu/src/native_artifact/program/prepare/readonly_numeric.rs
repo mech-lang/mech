@@ -186,9 +186,29 @@ pub(in crate::native_artifact) fn derive(
             visits,
             Coverage::ScalarCold,
         )
+        .or_else(|_| derive_fueled(plan, tail, frames, aggregates, calls, visits))
         .or_else(|_| derive_interval(plan, tail, frames, aggregates, calls, visits))
         .map_err(|_| reason)
     })
+}
+
+pub(in crate::native_artifact) fn derive_fueled(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
+) -> Result<Proof, &'static str> {
+    derive_with_children(
+        plan,
+        tail,
+        frames,
+        aggregates,
+        calls,
+        visits,
+        Coverage::Fueled,
+    )
 }
 
 pub(in crate::native_artifact) fn derive_interval(
@@ -232,11 +252,19 @@ fn derive_with_children(
         Coverage::Complete => super::numeric_phase::Forest::derive(plan, tail)?,
         Coverage::ScalarCold => super::numeric_phase::Forest::with_cold_children(plan, tail)?,
         Coverage::Intervals => super::numeric_phase::Forest::intervals(plan, tail)?,
+        Coverage::Fueled => super::numeric_phase::Forest::fueled(plan, tail)?,
     };
+    if mode == Coverage::Fueled && forest.loops.len() < 2 {
+        return Err("checked child funding requires a nested Tail");
+    }
     let nested = forest.loops.len() > 1 || !forest.cold.is_empty() || !forest.stops.is_empty();
     let trips = if forest.loops.len() > 1 {
         forest.validate_child_actions(plan, frames, aggregates, calls)?;
-        forest.bounded_children(plan, frames, aggregates, calls)?
+        if forest.checked_children {
+            Vec::new()
+        } else {
+            forest.bounded_children(plan, frames, aggregates, calls)?
+        }
     } else {
         Vec::new()
     };
@@ -604,10 +632,17 @@ fn derive_with_children(
             &forest,
             words
                 .checked_add(forest.loops.len())
+                .and_then(|n| {
+                    n.checked_add(if forest.checked_children {
+                        forest.loops.len() - 1
+                    } else {
+                        0
+                    })
+                })
                 .and_then(|n| n.checked_add(usize::from(!exits.is_empty())))
                 .ok_or("phase counter size overflows")?,
         )?;
-        let mut schedule = super::numeric_phase::Schedule::derive(
+        let schedule = super::numeric_phase::Schedule::derive(
             &forest,
             trips,
             visits,
@@ -616,38 +651,13 @@ fn derive_with_children(
             words,
             boundary_work,
         )?;
-        if super::numeric_phase::mutation_needs_funding(plan, &forest, &actions)? {
-            use super::numeric_phase::Bound;
-            for (array, definition) in arrays.iter().enumerate() {
-                let mut base = None::<u64>;
-                let mut element = 0;
-                for &(site, ref action) in &actions {
-                    if !matches!(action, Operation::Write { array: at, .. } if *at == array) {
-                        continue;
-                    }
-                    let (fixed, per_element) = calls[site]
-                        .as_ref()
-                        .and_then(|call| call.unsigned_matrix_replace_private_work_bound())
-                        .ok_or("mutable child lacks first-change funding")?;
-                    base = Some(base.map_or(fixed, |old| old.max(fixed)));
-                    element = element.max(per_element);
-                }
-                if let Some(base) = base {
-                    let bridge = Bound::add(
-                        Bound::Constant(base),
-                        Bound::multiply(
-                            Bound::BufferLength(definition.field),
-                            Bound::Constant(element),
-                        ),
-                    );
-                    schedule.compute_bound = Bound::add(schedule.compute_bound, bridge);
-                    schedule.comparison_bound =
-                        Bound::add(schedule.comparison_bound, Bound::Constant(1));
-                }
-            }
+        if super::numeric_phase::mutation_needs_funding(plan, &forest, &actions)?
+            && !forest.checked_children
+        {
+            return Err("mutable children require current-account visit funding");
         }
         words = words
-            .checked_add(schedule.loops.len())
+            .checked_add(schedule.words())
             .ok_or("phase counter size overflows")?;
         Some(schedule)
     } else {
