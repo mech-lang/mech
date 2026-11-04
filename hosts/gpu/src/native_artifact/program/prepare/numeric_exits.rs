@@ -187,7 +187,7 @@ fn live_before(
             }
         }
     }
-    let (mut live, _) = solve_liveness(&next, &reads, &definitions);
+    let (mut live, _, _) = solve_liveness(&next, &reads, &definitions);
     Ok(live.remove(&start).unwrap())
 }
 
@@ -195,7 +195,7 @@ fn solve_liveness(
     next: &BTreeMap<usize, Vec<usize>>,
     reads: &BTreeMap<usize, BTreeSet<u32>>,
     definitions: &BTreeMap<usize, BTreeSet<u32>>,
-) -> (BTreeMap<usize, BTreeSet<u32>>, usize) {
+) -> (BTreeMap<usize, BTreeSet<u32>>, usize, usize) {
     // Seed each local read, then propagate only newly live facts through the
     // same graph. Definitions kill incoming successor facts, never local reads.
     let mut live = reads.clone();
@@ -215,10 +215,12 @@ fn solve_liveness(
         .copied()
         .collect::<std::collections::VecDeque<_>>();
     let mut visits = 0usize;
+    let mut propagated_facts = 0usize;
     while let Some(site) = pending.pop_front() {
         queued.remove(&site);
         visits = visits.saturating_add(1);
         let values = live[&site].clone();
+        propagated_facts = propagated_facts.saturating_add(values.len());
         for &predecessor in &predecessors[&site] {
             let kills = definitions.get(&predecessor);
             let destination = live.get_mut(&predecessor).unwrap();
@@ -233,7 +235,7 @@ fn solve_liveness(
             }
         }
     }
-    (live, visits)
+    (live, visits, propagated_facts)
 }
 
 #[cfg(test)]
