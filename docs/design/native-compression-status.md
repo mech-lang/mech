@@ -1,21 +1,107 @@
 # Native compression: current status
 
-## R132 prospective experiment: exact bounds-error transport
+## R132: exact state at native bounds failures
 
-The retained R130 collector has 293 typed-load bounds edges, each saving its
-3,590-word SSA bank. Trace the existing mode2 consumer and original selected
-call. Save only their current inputs: root carrier scalars, append lengths,
-traversal counters, loan state and exact scalar operands. Keep the source origin,
-original reader/replacement call, finite charges and error precedence. The
-rejected R131 shared terminal-failure narrowing remains disabled; success,
-bailout, first-change, child fuel and ordinary continuations remain unchanged.
+Update base: `b4e6e1601349c694eb0a6a9ffca2d190e06126b0`.
+Measured compiler: **`f6f47a06a98c0aeb97cd596250676209897e9648`**; retained
+control: `11f0ea49d2ba577bf18b563a566f325ac7957c7f` (R130).
+IR/work/ABI/MBC: **162/107/38/14**; stack base remains
+`eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`. Dependencies and compressor source
+remain frozen. R131's shared terminal-failure narrowing remains reverted.
 
-Commit a failing original/decoded Object witness before the implementation.
-Run retained ordinary/native/restored post-append error controls and full
-compatible qualification. Compare all three small workloads to actual R130
-binaries, commit each timing and collect separate counters/profiles. Preserve
-source/bytecode/tables/buffers/allocator/clear-reuse and timing boundaries. This
-is a prospective experiment, not a claimed gain.
+At a native bounds miss the existing mode2 consumer settles the current carrier,
+finishes its private arrays at their current lengths and materializes the exact
+managed operand. The original selected reader/replacement consumes its current
+scalar arguments and returns the same source error. It never continues ordinary
+source work. The compiler now spills exactly those inputs: readiness/fuel,
+carrier scalars, traversal counters, append lengths and current scalar operands.
+The shared exit inventory retains all original ordering and duplicates for the
+other modes. Success, root bailout, child funding, ordinary continuations and
+first-change transport are unchanged. No source check, account authority,
+argument-capacity requirement or conservative price is removed.
+
+The real collector's **293** bounds edges each saved **3,590 words**. They now
+save **46 words at243 edges and47 at50**, removing **1,038,342 statically emitted
+snapshot stores** from those edges. These are static counts, not executed stores
+or hardware instructions. The full 3,590-word SSA inventory remains; this is one
+exit family in the broader physical-liveness brief.
+
+| Complete evaluate_into | R130 control / Roc | R132 / Roc | Change |
+|---|---:|---:|---:|
+| 8 bytes | 5.784984× | 5.717743× | 1.162343% faster |
+| Random 1KB | 11.684204× | 11.481581× | 1.734163% faster |
+| Repeated 1KB | 15.078916× | 15.248975× | 1.127799% slower |
+
+Matched elapsed: **1.6776455→1.6581455 ms /3.5812085→3.5191045 ms /
+4.908187→4.9635415 ms**. Fresh reference medians are
+**0.290/0.3065/0.3255 ms**. Eight bytes has 3,968 primary observations, four
+improving prepared pairs, 50 improving and14 adverse blocks. Each1KB version has
+128 observations; random has8 improving blocks, repeated has8 adverse blocks.
+Timing commits: `3965d4232f`, `92cba42fdf`, `237386f975`. All adverse data remain.
+
+| Separate hardware cohort | R130 control | R132 |
+|---|---:|---:|
+| 8B instructions | 17,294,128.5 | 16,809,468 |
+| Random instructions | 59,474,645.5 | 58,609,213.5 |
+| Repeated instructions | 83,568,627 | 84,140,476.5 |
+| 8B cycles | 5,237,517.5 | 5,103,013.5 |
+| Random cycles | 11,428,296 | 11,116,953.5 |
+| Repeated cycles | 15,542,014.5 | 15,843,489.5 |
+
+Hardware has32 calls/version/input; heap has4, separately. Requests remain
+**3,350 /3,157 /3,392**, requested bytes
+**17,639,393 /15,154,378 /17,646,983**, peak usable heap
+**15,279,752 /15,278,216 /15,282,336**. Text falls
+**58,489,744→39,095,068 bytes (33.159106%)**; entry stack grows
+**246,624→248,688 bytes (+2,064)**. The patch is retained for the code-size
+reduction and two elapsed gains, with the repeated-input elapsed, instruction
+and cycle regressions explicitly retained as its cost. This is a measured
+tradeoff, not a uniform elapsed improvement. Full Object emission took221.81s
+outside primary cohorts; concurrent qualification and old build cohorts prevent
+a controlled compilation-speed claim.
+
+Fresh isolated two-second CPU profiles still place the dominant work in the
+generated body. Random control→candidate is **70.94→68.57%**, repeated
+**72.74→70.74%**. Callback shares are separate, useful algorithm work is included,
+and percentages are not a retired-instruction partition. Representative sampled
+PC excerpts still show substantial stack transport; their static instruction
+windows are archived with actual binary hashes. The reference binary and its
+retained typed-store/vector-subtraction assembly were hash-verified again.
+
+Passing qualification: **536** compatible GPU tests (same7 inherited profile
+exclusions); **111** CI contracts both inventoried and executed; unchanged
+**236** components, **8** connected cases and **1** structural path case;
+**132** workflow tests; **15** architecture/catalog checks; runtime-only metadata,
+formatting and warnings as errors. The focused original/decoded structural
+witness fails on the parent, then passes. The retained ordinary/native/restored
+post-append controls preserve exact arithmetic/assertion/read errors and origins,
+both assertion/read orders, previous publication, aliases, cleanup and retry.
+Finite-denial and private-operand cases pass in the current qualification.
+No fresh full/minimal/no_std dependency, Core/Engine, linked40, scalar12 or frame8
+execution is claimed. Ordinary hosted CI remains outside qualification by user
+direction; the PR stays draft.
+
+All complete-call cases preserve source hash
+`331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9`, bytecode hash
+`a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7`, exact raw bytes,
+independent inflate, input aliases, original tables/search/near-EOF rules, real
+scratch capacities, output13/1029 with clear/reuse, mimalloc2.1.7 and evaluate_into
+boundaries. Work remains **18,067,825,665 /18,264,396,817 /25,477,511,424**;
+final managed bytes/nodes are zero. The allocation-counter link initially failed
+with **errno28 (disk space)**. SHA-verified lossless archiving of34 completed older
+executables freed **4,773,437,293 bytes**, and its link-only retry passed. The
+transient formatting diff was corrected before commit. No semantic failure
+remains introduced by this patch.
+
+The newly accepted brief remains a larger assignment. Next: preserve scalar
+continuation liveness from the existing analysis, expand exact aggregate lanes,
+finish exit-family recipes with image reconstruction, then remove internal entry
+loads and compact storage. Independently develop deferred Huffman/codeword/header
+pricing and shared histogram variants, measure private writes with an early
+private branch, and take a fresh allocation census. Keep compiler-only source
+pins; measure application variants separately and together. Add random/repeated
+history-boundary cases above32KiB after this retained checkpoint. Source pricing,
+entry compaction, other exit families and that scale check are not complete yet.
 
 ## R131: rejected terminal-error snapshot experiment
 

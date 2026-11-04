@@ -13370,7 +13370,7 @@
       "base": "b4e6e1601349c694eb0a6a9ffca2d190e06126b0",
       "production": "f6f47a06a98c0aeb97cd596250676209897e9648",
       "compiler_source": "f6f47a06a98c0aeb97cd596250676209897e9648",
-      "decision": "under measurement",
+      "decision": "retain for 33.16% text reduction and 8B/random gains; preserve repeated1KB elapsed +1.127799% and instruction +0.684129% regressions",
       "events": [
         {
           "event": "eight-primary",
@@ -13408,7 +13408,214 @@
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "retained": true,
+      "primary": {
+        "eight": {
+          "observations_per_source": 1984,
+          "seconds": {
+            "before": 0.0016776455,
+            "after": 0.0016581455
+          },
+          "reference_seconds": 0.00029,
+          "multiples_of_reference": {
+            "before": 5.78498448275862,
+            "after": 5.717743103448275
+          },
+          "change_percent": -1.1623432960062186,
+          "improving_groups": 4,
+          "improving_blocks": 50,
+          "adverse_blocks": 14,
+          "separate_counters": {
+            "before-cpu": {
+              "observations": 32,
+              "instructions": 17294128.5,
+              "cycles": 5237517.5
+            },
+            "after-cpu": {
+              "observations": 32,
+              "instructions": 16809468.0,
+              "cycles": 5103013.5
+            },
+            "before-memory": {
+              "observations": 4,
+              "allocation_requests": 3350.0,
+              "requested_bytes": 17639393.0,
+              "incremental_peak_live_usable": 15279752.0
+            },
+            "after-memory": {
+              "observations": 4,
+              "allocation_requests": 3350.0,
+              "requested_bytes": 17639393.0,
+              "incremental_peak_live_usable": 15279752.0
+            }
+          }
+        },
+        "random": {
+          "observations_per_source": 128,
+          "seconds": {
+            "before": 0.0035812085,
+            "after": 0.0035191045
+          },
+          "reference_seconds": 0.0003065,
+          "multiples_of_reference": {
+            "before": 11.684203915171288,
+            "after": 11.48158075040783
+          },
+          "change_percent": -1.7341632021704356,
+          "improving_groups": 1,
+          "improving_blocks": 8,
+          "adverse_blocks": 0,
+          "separate_counters": {
+            "before-cpu": {
+              "observations": 32,
+              "instructions": 59474645.5,
+              "cycles": 11428296.0
+            },
+            "after-cpu": {
+              "observations": 32,
+              "instructions": 58609213.5,
+              "cycles": 11116953.5
+            },
+            "before-memory": {
+              "observations": 4,
+              "allocation_requests": 3157.0,
+              "requested_bytes": 15154378.0,
+              "incremental_peak_live_usable": 15278216.0
+            },
+            "after-memory": {
+              "observations": 4,
+              "allocation_requests": 3157.0,
+              "requested_bytes": 15154378.0,
+              "incremental_peak_live_usable": 15278216.0
+            }
+          }
+        },
+        "repeated": {
+          "observations_per_source": 128,
+          "seconds": {
+            "before": 0.004908187,
+            "after": 0.0049635415
+          },
+          "reference_seconds": 0.0003255,
+          "multiples_of_reference": {
+            "before": 15.078915514592932,
+            "after": 15.248975422427035
+          },
+          "change_percent": 1.1277993279392273,
+          "improving_groups": 0,
+          "improving_blocks": 0,
+          "adverse_blocks": 8,
+          "separate_counters": {
+            "before-cpu": {
+              "observations": 32,
+              "instructions": 83568627.0,
+              "cycles": 15542014.5
+            },
+            "after-cpu": {
+              "observations": 32,
+              "instructions": 84140476.5,
+              "cycles": 15843489.5
+            },
+            "before-memory": {
+              "observations": 4,
+              "allocation_requests": 3392.0,
+              "requested_bytes": 17646983.0,
+              "incremental_peak_live_usable": 15282336.0
+            },
+            "after-memory": {
+              "observations": 4,
+              "allocation_requests": 3392.0,
+              "requested_bytes": 17646983.0,
+              "incremental_peak_live_usable": 15282336.0
+            }
+          }
+        }
+      },
+      "qualified_compiler": "f6f47a06a98c0aeb97cd596250676209897e9648",
+      "qualification": {
+        "profile-compatible": {
+          "passed": 536,
+          "command": [
+            "/private/tmp/mech-bounds-snapshot-round132-20261104/tests",
+            "--test-threads=1",
+            "--skip",
+            "batched::aot::tests::aot_rejected_updates_preserve_backing_buffers_before_dispatch",
+            "--skip",
+            "batched::aot::tests::concurrent_aot_builds_publish_complete_isolated_libraries",
+            "--skip",
+            "batched::aot::tests::isa_features_shared_flags_and_abi_change_cache_identity",
+            "--skip",
+            "batched::axis_tests::gpu_matrix_solve_rejects_singular_inputs_without_publishing",
+            "--skip",
+            "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+            "--skip",
+            "batched::jit::tests::jit_rejected_updates_preserve_backing_buffers_before_dispatch",
+            "--skip",
+            "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+          ]
+        },
+        "qualification/components": {
+          "passed": 236,
+          "command": [
+            "/private/tmp/mech-bounds-snapshot-round132-20261104/qualification/tests",
+            "scalar_path_qualification",
+            "multi_result_qualification",
+            "nested_frame_qualification",
+            "scalar_record_qualification",
+            "record_buffer_qualification",
+            "packed_update_qualification",
+            "buffer_frame_qualification",
+            "sequence_capacity_qualification",
+            "collection_qualification",
+            "uniform_words_qualification",
+            "word_read_qualification",
+            "narrow_word_qualification",
+            "matchfinder_qualification",
+            "assembled_compressor_source_preserves_its_pinned_bytes",
+            "scalar_state_qualification",
+            "tail_qualification",
+            "costs_qualification",
+            "default_costs_qualification",
+            "block_choice_qualification",
+            "pinned_min_cost_paths_keep_exact_nodes_and_real_reservation",
+            "path_checks_preserve_entry_order_publication_aliases_and_recovery",
+            "argument_transport_qualification",
+            "shared_transport_qualification",
+            "numeric_write_qualification",
+            "numeric_tail_qualification",
+            "numeric_result_qualification",
+            "numeric_predicate_qualification",
+            "dynamic_projection_qualification",
+            "binding_pressure_qualification",
+            "--nocapture",
+            "--test-threads=1"
+          ]
+        },
+        "qualification/composition": {
+          "passed": 8,
+          "command": [
+            "/private/tmp/mech-bounds-snapshot-round132-20261104/qualification/tests",
+            "numeric_composition_qualification",
+            "--nocapture",
+            "--test-threads=1"
+          ]
+        },
+        "qualification/path-mechanism": {
+          "passed": 1,
+          "command": [
+            "/private/tmp/mech-bounds-snapshot-round132-20261104/qualification/tests",
+            "optimal_path_qualification::path_scan_emits_one_native_phase_with_nested_scalar_children",
+            "--test-threads=1"
+          ]
+        },
+        "ci_inventory": 111,
+        "ci_execution": 111,
+        "workflow_python": 132,
+        "architecture_catalog_checks": 15,
+        "runtime_only_metadata": true,
+        "warnings_as_errors": true
+      }
     }
   },
   "repository": "mech-lang/mech",
