@@ -179,7 +179,8 @@ pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visi
     pub(in crate::native_artifact::program::runtime) error: Option<NativeProgramExecutionError>,
     pub(in crate::native_artifact::program::runtime) activation_phase: bool,
     pub(in crate::native_artifact::program::runtime) execution_limits: NativeExecutionLimits,
-    pub(in crate::native_artifact::program::runtime) worker: Option<parallel::Worker>,
+    // Worker-only receipts stay off the scalar caller's charged inline layout.
+    pub(in crate::native_artifact::program::runtime) worker: Option<Box<parallel::Worker>>,
     pub(in crate::native_artifact::program::runtime) parallel_batch: Option<parallel::Batch>,
     pub(in crate::native_artifact::program::runtime) window_region: Option<(u32, u64)>,
     pub(in crate::native_artifact::program::runtime) window_hashes: Option<
@@ -1108,7 +1109,9 @@ impl<'borrow, 'state, 'visit, 'plan> CollectionExecution<'borrow, 'state, 'visit
         self.invocation.retirements
     }
     #[inline]
-    pub(in crate::native_artifact::program::runtime) fn worker(&self) -> &Option<parallel::Worker> {
+    pub(in crate::native_artifact::program::runtime) fn worker(
+        &self,
+    ) -> &Option<Box<parallel::Worker>> {
         &self.invocation.worker
     }
     #[inline]

@@ -137,6 +137,10 @@ pub struct NativeProgramExecutionReport {
     pub parallel_tasks: u64,
     /// Observed peak simultaneously executing workers, not admitted capacity.
     pub parallel_peak_workers: u64,
+    /// Generated numeric loans actually reconciled by worker entries.
+    pub parallel_numeric_regions: u64,
+    /// Exact generated compute debits committed by those worker loans.
+    pub parallel_numeric_work: u64,
 }
 fn invalid(reason: &'static str) -> NativeProgramExecutionError {
     NativeExecutionError::Descriptor { reason }.into()

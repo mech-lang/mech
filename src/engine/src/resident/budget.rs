@@ -39,7 +39,7 @@ mod workers;
 #[cfg(feature = "native-artifact")]
 pub use workers::{
     NativeWorkDebitBatch, NativeWorkGroup, NativeWorkerBudgetError, NativeWorkerCreditStatistics,
-    NativeWorkerWorkLoan,
+    NativeWorkerNativeFuel, NativeWorkerWorkLoan,
 };
 
 #[path = "word_draft_expansion.rs"]
@@ -941,7 +941,11 @@ fn checked_control_account_work_at_limits(
     let next = checked_local_control_account_work_at_limits(account, compute, comparison, limits)?;
     #[cfg(feature = "native-artifact")]
     if let Some(worker) = &account.worker {
-        worker.preview(compute, comparison)?;
+        worker.preview(
+            compute,
+            comparison,
+            account.reserved.compute == 0 && account.reserved.comparison == 0,
+        )?;
     }
     Ok(next)
 }
@@ -971,7 +975,11 @@ fn charge_control_account_at_limits(
     if let Some(worker) = &account.worker {
         // Local call caps were checked first. Both shared dimensions commit
         // together before the infallible local-counter assignment.
-        worker.charge(compute, comparison)?;
+        worker.charge(
+            compute,
+            comparison,
+            account.reserved.compute == 0 && account.reserved.comparison == 0,
+        )?;
     }
     account.used = next;
     Ok(())

@@ -223,8 +223,12 @@ impl SemanticBuilder {
         }
 
         self.match_depth += 1;
-        self.active_recursive_outputs
-            .push((name.to_owned(), expected, self.match_depth));
+        self.active_recursive_outputs.push((
+            name.to_owned(),
+            expected,
+            self.match_depth,
+            self.comprehension_depth,
+        ));
         let result = self.control_block_with(
             body,
             &pattern,

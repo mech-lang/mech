@@ -377,7 +377,7 @@ pub(in crate::native_artifact::program::runtime) struct Prepared<'a> {
     paused: Option<u32>,
     retention: Option<crate::native_artifact::program::runtime::invocation::prefix::Retention>,
     window_work_seen: u64,
-    worker: Option<crate::native_artifact::program::runtime::invocation::parallel::Worker>,
+    worker: Option<Box<crate::native_artifact::program::runtime::invocation::parallel::Worker>>,
     // Invocation/frame roots outlive every synchronous Invocation and worker.
     // Payload Values and private owners hold their separate shared claims.
     _fixed_nodes: mech_core::ManagedNodeReservation,
@@ -836,10 +836,23 @@ impl<'a> Prepared<'a> {
                     }
                     state.arena.put(slot, &value, &mut state.control.work)?;
                 }
+                crate::native_artifact::program::runtime::invocation::parallel::Capture::Frame(
+                    slot,
+                    capture,
+                ) if slot == expected => {
+                    state.buffer_frames.import_frame(
+                        &descriptor.metadata().buffer_frames,
+                        slot,
+                        &capture,
+                        &mut state.control.work,
+                    )?;
+                }
                 _ => return Err(invalid("worker capture inventory differs")),
             }
         }
-        prepared.worker = Some(worker);
+        // The scoped scheduler holds an explicit byte/node claim for this
+        // worker-only box until every thread joins. Scalar callers allocate none.
+        prepared.worker = Some(Box::new(worker));
         prepared.activated = true;
         prepared.run(
             &mut |frame| {
@@ -1008,6 +1021,8 @@ impl<'a> Prepared<'a> {
             parallel_batches: state.stats.parallel_batches,
             parallel_tasks: state.stats.parallel_tasks,
             parallel_peak_workers: state.stats.parallel_peak_workers,
+            parallel_numeric_regions: state.stats.parallel_numeric_regions,
+            parallel_numeric_work: state.stats.parallel_numeric_work,
         })
     }
 

@@ -17,8 +17,36 @@ pub(in crate::native_artifact::program::runtime) struct State {
     pub(super) remaining: (u64, u64),
     pub(super) entry: u32,
     pub(super) partial: bool,
+    pub(super) native_fuel: Option<mech_engine::native_artifact::NativeWorkerNativeFuel>,
+}
+impl State {
+    pub(super) fn same_budget(
+        &self,
+        budget: &mech_engine::native_artifact::NativeLibraryWorkBudget,
+    ) -> bool {
+        budget.used() == self.used
+            && match &self.native_fuel {
+                Some(fuel) => fuel.shares_account(budget) && fuel.allowance() == self.remaining,
+                None => budget.unscoped_remaining() == Some(self.remaining),
+            }
+    }
 }
 impl Invocation<'_, '_, '_> {
+    pub(super) fn record_worker_numeric(&mut self, compute: u64) -> Result<(), Error> {
+        self.state.stats.parallel_numeric_regions = self
+            .state
+            .stats
+            .parallel_numeric_regions
+            .checked_add(1)
+            .ok_or_else(|| invalid("parallel numeric region count overflow"))?;
+        self.state.stats.parallel_numeric_work = self
+            .state
+            .stats
+            .parallel_numeric_work
+            .checked_add(compute)
+            .ok_or_else(|| invalid("parallel numeric debit count overflow"))?;
+        Ok(())
+    }
     pub(in crate::native_artifact::program::runtime) fn begin_closed_tail(
         &mut self,
         site: usize,
@@ -66,12 +94,11 @@ impl Invocation<'_, '_, '_> {
             return Err(invalid("numeric child has no suspended active parent"));
         }
         if let Some(tree) = &proof.numeric_tree {
-            if self.worker.is_some()
-                || tree
-                    .nodes
-                    .iter()
-                    .skip(1)
-                    .any(|node| self.progress[node.iteration as usize * 2..][..2] != [0, 0])
+            if tree
+                .nodes
+                .iter()
+                .skip(1)
+                .any(|node| self.progress[node.iteration as usize * 2..][..2] != [0, 0])
             {
                 return Ok(Some(0));
             }
@@ -114,6 +141,24 @@ impl Invocation<'_, '_, '_> {
                 .unscoped_remaining()
                 .ok_or_else(|| invalid("numeric capture entry changed account scope"))?;
         }
+        let native_fuel =
+            if self.worker.is_some() && (proof.numeric.is_some() || proof.captures.is_some()) {
+                let Some(fuel) =
+                    self.state
+                        .library
+                        .reserve_native_worker_fuel()
+                        .map_err(|error| Error::Collection {
+                            origin: proof.tail.origin(),
+                            error,
+                        })?
+                else {
+                    return Ok(Some(0));
+                };
+                remaining = fuel.allowance();
+                Some(fuel)
+            } else {
+                None
+            };
         if proof.map.is_some() {
             let Some(words) = self.begin_closed_map(region)? else {
                 return Ok(Some(0));
@@ -135,6 +180,7 @@ impl Invocation<'_, '_, '_> {
                 .previous
                 .ok_or_else(|| invalid("closed Tail has no current predecessor"))?,
             partial: false,
+            native_fuel,
         });
         Ok(Some(1))
     }
@@ -144,7 +190,7 @@ impl Invocation<'_, '_, '_> {
         site: usize,
         args: [u64; 3],
     ) -> Result<Option<u64>, Error> {
-        let state = self
+        let mut state = self
             .closed_tail
             .take()
             .ok_or_else(|| invalid("closed Tail exit without entry"))?;
@@ -160,9 +206,7 @@ impl Invocation<'_, '_, '_> {
         if self.state.control.previous != Some(state.entry)
             || self.state.control.current != Some(proof.iteration)
             || self.progress[proof.iteration as usize * 2..][..2] != [0, 1]
-            || (proof.map.is_none()
-                && (self.state.library.used() != state.used
-                    || self.state.library.unscoped_remaining() != Some(state.remaining)))
+            || (proof.map.is_none() && !state.same_budget(&self.state.library))
         {
             return Err(invalid(
                 "closed Tail account or entry changed during native execution",
@@ -226,14 +270,25 @@ impl Invocation<'_, '_, '_> {
                 | crate::native_artifact::program::prepare::readonly_numeric::Operation::Append { .. })) => site as u32,
             _ => return Err(invalid("closed Tail exit outside its proved boundary")),
         };
+        let worker_funded = state.native_fuel.is_some();
+        if let Some(fuel) = state.native_fuel.take() {
+            fuel.finish(compute, comparison)
+                .map_err(|error| Error::Collection {
+                    origin: descriptor.metadata().plan.blocks()[site].origin(),
+                    error,
+                })?;
+            self.record_worker_numeric(compute)?;
+        }
         self.synchronize_numeric_carrier(region, site, args[2])?;
-        self.state
-            .library
-            .charge(compute, comparison)
-            .map_err(|error| Error::Collection {
-                origin: descriptor.metadata().plan.blocks()[site].origin(),
-                error,
-            })?;
+        if !worker_funded {
+            self.state
+                .library
+                .charge(compute, comparison)
+                .map_err(|error| Error::Collection {
+                    origin: descriptor.metadata().plan.blocks()[site].origin(),
+                    error,
+                })?;
+        }
         // This is one proved bulk transition, not fabricated/replayed per-op
         // visits. The report counts the remaining actual admitted CFG visits.
         self.state.control.previous = Some(previous);
@@ -273,11 +328,26 @@ impl Invocation<'_, '_, '_> {
                 "numeric materialization resume outside settled site",
             ));
         }
-        let remaining = self
+        let mut remaining = self
             .state
             .library
             .unscoped_remaining()
             .ok_or_else(|| invalid("numeric materialization changed account scope"))?;
+        let native_fuel = if self.worker.is_some() {
+            let fuel = self
+                .state
+                .library
+                .reserve_native_worker_fuel()
+                .map_err(|error| Error::Collection {
+                    origin: self.descriptor.metadata().plan.blocks()[site].origin(),
+                    error,
+                })?
+                .ok_or_else(|| invalid("numeric worker materialization lost its account"))?;
+            remaining = fuel.allowance();
+            Some(fuel)
+        } else {
+            None
+        };
         self.write_borrowed_word(0, remaining.0)?;
         self.write_borrowed_word(1, remaining.1)?;
         if let Some(tree) = &self.descriptor.metadata().closed_tails.regions[region].numeric_tree {
@@ -296,6 +366,7 @@ impl Invocation<'_, '_, '_> {
             remaining,
             entry: site as u32,
             partial: true,
+            native_fuel,
         });
         Ok(())
     }

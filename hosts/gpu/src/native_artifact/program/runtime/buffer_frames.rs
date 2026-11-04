@@ -66,6 +66,9 @@ pub(super) enum Field {
     },
     Managed(Value),
 }
+#[path = "buffer_frames_capture.rs"]
+mod capture;
+pub(super) use capture::CapturedFrame;
 impl BufferFrames {
     fn word_count(layout: &Layout) -> Result<usize, NativeProgramExecutionError> {
         layout

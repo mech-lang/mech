@@ -5,7 +5,6 @@ use mech_core::ValueDataDraft as Data;
 use mech_engine::ProgramArtifact;
 mod admission_overlap;
 mod bit_counts;
-mod scalar_selects;
 mod borrowed_record_map;
 mod bounds_retry;
 mod captured_numeric;
@@ -17,8 +16,8 @@ mod managed_carriers;
 mod managed_projections;
 mod multiple_children;
 mod named_managed_projections;
-mod nested_scalar_array;
 mod nested_numeric;
+mod nested_scalar_array;
 mod numeric_bindings;
 mod numeric_induction;
 mod numeric_tree;
@@ -28,6 +27,7 @@ mod record_lookup;
 mod resources;
 mod retained_compound_map;
 mod scalar_child;
+mod scalar_selects;
 mod schema_key;
 mod tagged_map_carrier;
 mod tuple_capture;
@@ -82,10 +82,10 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                108
+                110
             );
-            // Policies107/108 add native fills and recursive managed frames.
-            // This fixture has neither, so the policy105 decomposition below
+            // Policies107/108/110 add fills, recursive frames and worker transport.
+            // This fixture has none, so the policy105 decomposition below
             // remains exact and independently checked.
             // The policy104 checkpoint for this exact fixture was 88,531,834.
             // Emission ablation preserves the new tree's independently checked

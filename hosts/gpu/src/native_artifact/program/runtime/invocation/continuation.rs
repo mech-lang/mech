@@ -70,9 +70,6 @@ impl Pending {
 
 impl Invocation<'_, '_, '_> {
     pub(super) fn arm_parent_continuation(&mut self, site: usize) -> Result<(), Error> {
-        if self.worker.is_some() {
-            return Ok(());
-        }
         let metadata = self.descriptor.metadata();
         if let Some((boundary, true)) = metadata.compositions.boundary(site) {
             let (parent, child) = metadata
@@ -98,9 +95,6 @@ impl Invocation<'_, '_, '_> {
         previous: Option<u32>,
         site: u64,
     ) -> Result<(), Error> {
-        if self.worker.is_some() {
-            return Ok(());
-        }
         let metadata = self.descriptor.metadata();
         if let Some((boundary, false)) =
             previous.and_then(|p| self.descriptor.metadata().compositions.boundary(p as usize))

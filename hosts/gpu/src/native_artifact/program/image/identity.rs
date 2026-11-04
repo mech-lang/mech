@@ -306,7 +306,8 @@ fn selected_template(
 // IR162 supports exact nested managed leaves in private numeric frames.
 // IR163 retains only exact private consumers at numeric cold boundaries.
 // IR169 retains radix frame admission while eliding single-bucket index moves.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 169;
+// IR173 admits recursive numeric workers and their private field transport.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 173;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -518,7 +519,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 169;
 // Policy107 funds the explicit native fill bank and prepaid SIMD/scalar stores.
 // Policy108 funds nested managed-leaf synchronization and cold private-frame
 // reconciliation. Existing flat-frame prices retain their original formula.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 108;
+// Policy110 includes numeric worker receipts and shared native-fuel metadata.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 110;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

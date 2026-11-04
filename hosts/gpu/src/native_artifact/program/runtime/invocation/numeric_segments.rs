@@ -355,6 +355,7 @@ impl Invocation<'_, '_, '_> {
                 .ok_or_else(|| invalid("parent entry changed account scope"))?,
             entry: site as u32,
             partial: false,
+            native_fuel: None,
         };
         // Selection proves that any active ordinary scalar group is wholly
         // inside this piece. Its existing debit is retained. Every decline

@@ -86,7 +86,7 @@ impl Invocation<'_, '_, '_> {
     pub(super) fn end_numeric_tree(
         &mut self,
         id: usize,
-        state: State,
+        mut state: State,
         site: usize,
         args: [u64; 3],
     ) -> Result<Option<u64>, Error> {
@@ -118,9 +118,7 @@ impl Invocation<'_, '_, '_> {
         };
         if self.state.control.previous != Some(state.entry)
             || self.state.control.current != entry_iteration
-            || self.state.library.used() != state.used
-            || self.state.library.unscoped_remaining() != Some(state.remaining)
-            || self.worker.is_some()
+            || !state.same_budget(&self.state.library)
         {
             return Err(invalid(
                 "numeric tree account or entry changed during execution",
@@ -220,14 +218,25 @@ impl Invocation<'_, '_, '_> {
         let new_pending = self.numeric_tree_pending(Some(current.iteration))?;
         // Mode5 deliberately keeps the sole private owner in the root bank.
         // Internal managed aliases must not be cloned before consuming it.
+        let worker_funded = state.native_fuel.is_some();
+        if let Some(fuel) = state.native_fuel.take() {
+            fuel.finish(compute, comparison)
+                .map_err(|error| Error::Collection {
+                    origin: metadata.plan.blocks()[site].origin(),
+                    error,
+                })?;
+            self.record_worker_numeric(compute)?;
+        }
         self.synchronize_numeric_tree_carriers(id, node, site, args[2])?;
-        self.state
-            .library
-            .charge(compute, comparison)
-            .map_err(|error| Error::Collection {
-                origin: metadata.plan.blocks()[site].origin(),
-                error,
-            })?;
+        if !worker_funded {
+            self.state
+                .library
+                .charge(compute, comparison)
+                .map_err(|error| Error::Collection {
+                    origin: metadata.plan.blocks()[site].origin(),
+                    error,
+                })?;
+        }
         self.parent_continuation
             .reconcile_tree(old_pending, new_pending)?;
         for (index, selected) in tree.nodes.iter().enumerate() {

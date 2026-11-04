@@ -28,6 +28,7 @@ pub(in crate::native_artifact::program::runtime) fn admitted_capacity<T>(
     allocation::exact_capacity(values, count, reason)
 }
 mod data;
+mod row_blocks;
 pub(in crate::native_artifact) mod uniform_words;
 mod utf8_read;
 pub(in crate::native_artifact::program::runtime) fn source_count(
@@ -770,6 +771,16 @@ impl State {
                 Ok(result)
             }
             Action::CollectionPush { collection, value } => {
+                if matches!(
+                    plan.collections()[*collection as usize].kind(),
+                    ComprehensionKind::MatrixHorizontalBlocks { .. }
+                ) {
+                    if words != [0; 2] {
+                        return Err(invalid("row-block yield has an unexpected scalar payload"));
+                    }
+                    self.push_row_block(ctx, *collection, *value)?;
+                    return Ok(None);
+                }
                 if matches!(
                     plan.collections()[*collection as usize].result(),
                     mech_engine::native_artifact::NativeCollectionResult::GuardedHistogramQuery(_)
