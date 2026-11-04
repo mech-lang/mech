@@ -15541,6 +15541,17 @@
           "files": 29,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-case-33027-periodic-window-primary-54776d4a94f2.tar.gz"
+        },
+        {
+          "event": "case-16384-distribution-change-primary",
+          "source_revision": "f04df6c76ac2a38506becf76a980533e7954b146",
+          "asset": "r139-case-16384-distribution-change-primary-655f9b00de82.tar.gz",
+          "sha256": "655f9b00de82df0d73e764836ce448dfb499aad0fbfe83301d667a091b693430",
+          "manifest_sha256": "e95f875b39f80ffb626a84fbd632e84b697c900f482c223f2299186cadd91eb7",
+          "bytes": 163321,
+          "files": 30,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-case-16384-distribution-change-primary-655f9b00de82.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
