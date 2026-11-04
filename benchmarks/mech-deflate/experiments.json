@@ -13710,7 +13710,7 @@
       "base": "6dcab422ee0ea364ec713060147a3e45686a9d9d",
       "production": "9d23729e5f48466f5b606bb00cec3a19be106469",
       "compiler_source": "9d23729e5f48466f5b606bb00cec3a19be106469",
-      "decision": "under measurement",
+      "decision": "Retain logarithmic immutable membership lookup for history-boundary elapsed/instruction gains; explicitly retain eight-byte elapsed +2.828734% with contrary cycle cohort and unestablished cause.",
       "events": [
         {
           "event": "initial",
@@ -13814,7 +13814,95 @@
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "before_compiler_source": "f6f47a06a98c0aeb97cd596250676209897e9648",
+      "versions": {
+        "typed_ir": 162,
+        "work_policy": 107,
+        "private_abi": 38,
+        "bytecode": 14
+      },
+      "largest_qualified_input_bytes": 32769,
+      "source_unchanged": true,
+      "same_generated_object": true,
+      "same_descriptor": true,
+      "paired_primary": {
+        "eight": {
+          "medians": {
+            "after": 0.0016986875000000001,
+            "before": 0.001651958
+          },
+          "multiples_of_reference": {
+            "after": 5.857543103448276,
+            "before": 5.696406896551724
+          },
+          "after_over_before": 1.028287341445727,
+          "primary_observations": 1984,
+          "adverse_blocks": 32
+        },
+        "random": {
+          "medians": {
+            "after": 0.0035089789999999997,
+            "before": 0.00353
+          },
+          "multiples_of_reference": {
+            "after": 10.999934169278996,
+            "before": 11.065830721003135
+          },
+          "after_over_before": 0.9940450424929177,
+          "primary_observations": 256,
+          "adverse_blocks": 1
+        },
+        "repeated": {
+          "medians": {
+            "after": 0.0049718965,
+            "before": 0.004999
+          },
+          "multiples_of_reference": {
+            "after": 15.158221036585365,
+            "before": 15.240853658536585
+          },
+          "after_over_before": 0.9945782156431285,
+          "primary_observations": 256,
+          "adverse_blocks": 0
+        },
+        "history-random": {
+          "medians": {
+            "after": 0.176555146,
+            "before": 0.7144730420000001
+          },
+          "multiples_of_reference": {
+            "after": 167.74835724465558,
+            "before": 678.8342441805225
+          },
+          "after_over_before": 0.24711239699929782,
+          "primary_observations": 32,
+          "adverse_blocks": 0
+        },
+        "history-repeated": {
+          "medians": {
+            "after": 0.21490454199999998,
+            "before": 0.746953187
+          },
+          "multiples_of_reference": {
+            "after": 161.09785757121438,
+            "before": 559.9349227886057
+          },
+          "after_over_before": 0.2877081800308323,
+          "primary_observations": 32,
+          "adverse_blocks": 0
+        }
+      },
+      "qualified": {
+        "gpu": 536,
+        "ci_inventory": 111,
+        "ci_executed": 111,
+        "components": 236,
+        "connected": 8,
+        "path": 1,
+        "workflow": 132,
+        "architecture_catalog": 15
+      }
     }
   },
   "repository": "mech-lang/mech",

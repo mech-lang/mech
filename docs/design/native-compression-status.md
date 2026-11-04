@@ -1,5 +1,134 @@
 # Native compression: current status
 
+## R133: remove a linear scan at every cold source visit
+
+Update base: `6dcab422ee0ea364ec713060147a3e45686a9d9d`.
+Control compiler: `f6f47a06a98c0aeb97cd596250676209897e9648` (R132).
+Measured runtime: **`9d23729e5f48466f5b606bb00cec3a19be106469`**.
+IR/work/ABI/MBC remain **162/107/38/14**. Stack base remains
+`eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`.
+
+The newly authorized **32,769-byte** random and repeated cases cross the first
+32KiB history-window boundary and execute the original262,144-entry U16 rebase.
+R132's first larger primary baselines were **674.336449× /557.604602× Roc**;
+its smaller random1KB cohort was **11.481581×**. Those are different inputs,
+not a same-input optimization regression. The small cohort hid a real cold-path
+performance cliff. Both larger cases already agreed exactly with the reference.
+
+Fresh R132 CPU samples put **77.753465% /72.992701%** exclusively in
+`Invocation::numeric_source_prepaid`. Actual ARM64 hot PCs at offsets160/164
+sit inside a SIMD linear scan of the collector's **4,574** source sites.
+The fallback inventory, like the separate interval/prepaid inventory, already
+comes from a `BTreeSet` and is reconstructed independently on image load.
+The runtime now binary-searches that fallback inventory. It retains the same
+choice of inventory, current region, deepest paid activation and ancestor walk;
+no permission, charge, admission, source visit or current-account check is skipped.
+The comparator is ordinary `usize` identity; no new cache or allocation is added.
+
+Tests were strengthened first in `130c60dd66ef9a23c341a8d2939ead800427db45`.
+Both complete-source and interval images reject reordered and duplicated
+membership; complete-source images also reject omission. Those controls pass on
+the parent. Existing original/decoded/restored child funding, finite denial,
+current writes, lexical scope, aliases, unchanged publication and retry controls
+pass before and after. The implementation changes one lookup, with a comment.
+
+| Complete evaluate_into | R132 control | R133 | Control→current / Roc |
+|---|---:|---:|---:|
+|8B|1.651958 ms|1.6986875 ms|5.696407×→5.857543×|
+|Random1KB|3.530000 ms|3.508979 ms|11.065831×→10.999934×|
+|Repeated1KB|4.999000 ms|4.9718965 ms|15.240854×→15.158221×|
+|Random32,769B|714.473042 ms|176.555146 ms|678.834244×→167.748357×|
+|Repeated32,769B|746.953187 ms|214.904542 ms|559.934923×→161.097858×|
+
+Fresh reference medians: **0.290 /0.319 /0.328 /1.0525 /1.334 ms**.
+Large random improves **75.288760% (4.046742×)**, repeated **71.229182%
+(3.475744×)**. Each has16 observations per version and8/8 improving paired
+blocks. Each1KB version has128 observations; random improves7 blocks with1
+adverse, repeated8 with0. The eight-byte control has992 observations per version
+across2 prepared pairs and32 blocks, all adverse: **2.828734% slower**. This cost
+is retained explicitly rather than discarded. Independent cohorts are not compounded.
+
+Each primary cohort was committed immediately: random/repeated large
+`6b64265c8e` /`0678f7a821`, eight bytes `ea5b751ad3`, random/repeated1KB
+`7fed47cc69` /`6fe63f515a`. These paired measurements use the actual retained
+R132 executables, not a rebuilt estimate. Preparation, clear, rebind, aliases,
+validation, independent inflate and cleanup remain outside evaluate_into.
+
+| Separate hardware cohort | R132 instructions | R133 instructions | R132 cycles | R133 cycles |
+|---|---:|---:|---:|---:|
+|8B|16,809,749.5|16,808,302.5|6,856,780.5|5,205,889.5|
+|Random1KB|58,609,360|58,607,405.5|11,238,757.5|11,135,631|
+|Repeated1KB|84,140,882|84,139,353.5|15,942,780|15,839,269.5|
+|Random32,769B|13,804,631,175|3,346,485,535|2,273,383,051|561,269,864|
+|Repeated32,769B|14,611,094,517.5|4,152,998,871|2,395,461,657.5|684,759,970|
+
+Hardware:32 calls/version for each small case,4 for each large. Large instructions
+fall **75.758240% /71.576401%**, cycles **75.311250% /71.414280%**.
+The eight-byte instruction count is nearly unchanged and its separate cycle
+cohort improves, contrary to its primary elapsed regression. Both observations
+remain; the cause of that small-case elapsed cost is not established. Hardware
+windows are per-call counters, not per-function instruction attribution.
+No new larger reference instruction/heap cohort is claimed.
+
+Heap is measured separately:4 calls/version for small cases and2 for large.
+Requests, requested bytes and peak live usable heap are identical before/after:
+**3,350 /3,157 /3,392 /5,263 /3,428** requests;
+**17,639,393 /15,154,378 /17,646,983 /16,547,794 /16,245,514** requested bytes;
+**15,279,752 /15,278,216 /15,282,336 /15,314,280 /15,313,264** peak usable bytes.
+This is an instruction/control-flow reduction, not an allocation or memory win.
+The generated Object and descriptor are byte-identical: text **39,095,068B**,
+entry stack **248,688B**; no compressor re-emission was needed. GPU/runtime alone
+was rebuilt with the same frozen dependencies and warnings as errors.
+
+Fresh two-second actual-executable CPU samples show the lookup falling to
+**4.679245% /3.373016%**. Generated code is now **41.283019% /51.058201%**
+exclusive; the remaining disjoint callback/cleanup shares include useful algorithm
+work as well as overhead. CPU sample weights are not retired-instruction shares.
+The actual runtime function changes from181 to138 statically disassembled
+instructions; its SIMD inventory scan disappears. This is not a dynamic count.
+
+The same source/bytecode pins remain
+`331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9` /
+`a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7`.
+All14 reference source files were recovered and hash-verified against the original
+671077457ff7ef3a3d44caf715a3fc595addf379 pin. Large random raw output is32,774B,
+SHA256 `ee86a84061f43999d5000831832c615f29db244ab4e19d0cdddedd85bc3553a1`;
+repeated is47B, SHA256
+`8c359ea8a8ab0873b34186db8ee504220d4df00a850fcfe323365767ab74b1f4`.
+Independent inflate, input aliases, original depth300/nice258/near-EOF rules,
+262144U16/1500513U32/305257U64 scratch, pinned mimalloc2.1.7 and output clear/reuse
+all pass. Large output capacity is **32,804**, from the original
+`n +5*max(1,ceil(n/5000))` bound. The initial harness incorrectly extrapolated
+small-input `n+5`; its rejection is archived, then the harness was corrected.
+No compressor allocation or allowance was changed. Large logical work remains
+**129,288,746,789 /270,676,915,001**, distinct from hardware instructions.
+Final managed bytes/nodes are zero.
+
+Passing checks: **536** compatible GPU tests with the same7 inherited exclusions;
+**111** CI tests inventoried and separately executed; unchanged **236** components,
+**8** connected cases and **1** structural path case; **132** workflow tests;
+**15** architecture/catalog checks; runtime-only metadata, formatting and
+warnings as errors. Selected GPU library uses opt3 and the maintained AOT/JIT/
+canonical program features; unit root uses opt1, nightly2026-03-03 aarch64 macOS.
+Frozen Core/Engine/stdlib/math were reused. No new full/minimal/no_std dependency
+or linked40/scalar12/frame8 run is claimed. The two initial parent filters that
+selected0 tests were corrected to registered nested modules; all11 actual parent
+and candidate controls passed. Their receipts are preserved. No introduced
+correctness failure remains. The eight-byte elapsed regression remains a measured
+performance cost. Ordinary hosted CI is canceled under standing instruction;
+the PR stays draft. Raw diagnostics are external hash-listed release assets;
+native binaries, libraries, Objects and bytecode stay local.
+
+The broader brief is unfinished: exact scalar/aggregate exit liveness beyond
+bounds, true entry initialization, storage compaction, separate Huffman/header
+pricing and histogram source variants, early private-write branching, fresh
+allocation-stack census and evidence-guided binding/materialization/storage work
+remain. The requested bounded history-boundary check is now established. Fresh
+large profiles split remaining cost between native state transport/computation
+and ordinary callbacks; source-specific callback counts should guide the next
+bounded lowering step. No complete-corpus, full Reymont, all source-variant
+multiblock/degenerate or parity claim is made.
+
 ## R132: exact state at native bounds failures
 
 Update base: `b4e6e1601349c694eb0a6a9ffca2d190e06126b0`.
