@@ -15102,6 +15102,28 @@
         "General entry inputs and lifetime word compaction",
         "Parity with reference"
       ]
+    },
+    "138": {
+      "base": "5d2bc0a2f827597449546f035f998465c12e8a4b",
+      "production": "f04df6c76ac2a38506becf76a980533e7954b146",
+      "compiler_source": "f04df6c76ac2a38506becf76a980533e7954b146",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "parent",
+          "source_revision": "97896f9a1560150efac722c8e33fffdec68791ff",
+          "asset": "r138-parent-552a3b271451.tar.gz",
+          "sha256": "552a3b27145193d3330bec9de871311bdf6dff84d96df25139cf20fa48c156b6",
+          "manifest_sha256": "3ebadc20bf20c773ec82e77777e96913032229c497e5ece2d10355f9dbc482be",
+          "bytes": 48018,
+          "files": 34,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-unsigned-guards-round138-20261104/archives/r138-parent-552a3b271451.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
