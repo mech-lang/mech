@@ -22,6 +22,9 @@ use std::collections::BTreeMap;
 #[path = "narrow_scalar_tests.rs"]
 mod narrow_scalar_tests;
 
+#[cfg(test)]
+mod checked_unsigned_tests;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct NativeCompileLimits {
