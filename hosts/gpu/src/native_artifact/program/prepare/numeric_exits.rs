@@ -196,28 +196,41 @@ fn solve_liveness(
     reads: &BTreeMap<usize, BTreeSet<u32>>,
     definitions: &BTreeMap<usize, BTreeSet<u32>>,
 ) -> (BTreeMap<usize, BTreeSet<u32>>, usize) {
-    let mut live = next
+    // Seed each local read, then propagate only newly live facts through the
+    // same graph. Definitions kill incoming successor facts, never local reads.
+    let mut live = reads.clone();
+    let mut predecessors = next
         .keys()
-        .map(|&s| (s, BTreeSet::<u32>::new()))
+        .map(|&site| (site, Vec::new()))
         .collect::<BTreeMap<_, _>>();
-    let mut visits = 0;
-    loop {
-        let mut changed = false;
-        for (&site, successors) in next.iter().rev() {
-            visits += 1;
-            let mut values = successors
-                .iter()
-                .flat_map(|s| live[s].iter().copied())
-                .collect::<BTreeSet<_>>();
-            if let Some(writes) = definitions.get(&site) {
-                values.retain(|v| !writes.contains(v));
-            }
-            values.extend(&reads[&site]);
-            changed |= live[&site] != values;
-            live.insert(site, values);
+    for (&site, successors) in next {
+        for successor in successors {
+            predecessors.get_mut(successor).unwrap().push(site);
         }
-        if !changed {
-            break;
+    }
+    let mut queued = next.keys().copied().collect::<BTreeSet<_>>();
+    let mut pending = next
+        .keys()
+        .rev()
+        .copied()
+        .collect::<std::collections::VecDeque<_>>();
+    let mut visits = 0usize;
+    while let Some(site) = pending.pop_front() {
+        queued.remove(&site);
+        visits = visits.saturating_add(1);
+        let values = live[&site].clone();
+        for &predecessor in &predecessors[&site] {
+            let kills = definitions.get(&predecessor);
+            let destination = live.get_mut(&predecessor).unwrap();
+            let mut changed = false;
+            for &value in &values {
+                if !kills.is_some_and(|kills| kills.contains(&value)) {
+                    changed |= destination.insert(value);
+                }
+            }
+            if changed && queued.insert(predecessor) {
+                pending.push_back(predecessor);
+            }
         }
     }
     (live, visits)
