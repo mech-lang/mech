@@ -14493,6 +14493,17 @@
           "files": 70,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-physical-exits-round136-20261104/archives/r136-qualification-531474067e6f.tar.gz"
+        },
+        {
+          "event": "time-profiler-mech-current-random",
+          "source_revision": "1acbb2388a20c9b177c43afea0c01ba529856950",
+          "asset": "r136-time-profiler-mech-current-random-753024c15db5.tar.gz",
+          "sha256": "753024c15db5e41e756710c5c8a2c21a9a8f8ac68d450a6c493e4e1995b9d853",
+          "manifest_sha256": "156ec4ccebccbcfe005542fcb6af7fb424d05294698101646df381ceea67008b",
+          "bytes": 2492845,
+          "files": 71,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-physical-exits-round136-20261104/archives/r136-time-profiler-mech-current-random-753024c15db5.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
