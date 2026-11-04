@@ -3,7 +3,8 @@
 ## R129: eliminate cleanup for unmaterialized native segment values
 
 Update base: `9a3bc1b66340b70647f1824d6f91b48383af9b7b` (published R128).
-Measured compiler: **`ccb9aab277`**; initial experiment: `aadf0447f8`.
+Measured compiler: **`ccb9aab277081555385e37b02d824d0c5ef3db3b`**;
+initial experiment: `aadf0447f84de3ad74206c59dfc0b9567ee30ad2`.
 IR/work/ABI/MBC: **159/107/38/14**. Stack base remains
 `eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`. All non-GPU dependencies remain frozen.
 
@@ -15,7 +16,7 @@ current input frames and actual owners keep their existing retirement. Existing
 current admission proves aliases empty; omitted frame retirements additionally
 check canonical emptiness. Native execution creates neither kind of owner, and
 actual escaping values are installed after cleanup. This adds no batching layer,
-permission cache, owner scan, source rewrite or runtime dispatcher.
+permission cache, owner scan, source rewrite or guest execution loop.
 
 Unchanged groups retain their original loop. Additional slot checks apply only
 to frames whose retirement is actually omitted. This refinement removes the
