@@ -13365,6 +13365,28 @@
           }
         }
       }
+    },
+    "132": {
+      "base": "b4e6e1601349c694eb0a6a9ffca2d190e06126b0",
+      "production": "f6f47a06a98c0aeb97cd596250676209897e9648",
+      "compiler_source": "f6f47a06a98c0aeb97cd596250676209897e9648",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "eight-primary",
+          "source_revision": "f6f47a06a98c0aeb97cd596250676209897e9648",
+          "asset": "r132-eight-primary-8f5485ebcdab.tar.gz",
+          "sha256": "8f5485ebcdabc734fb9fe34088b0dba943cba77f121ff37685c8afea8d6fe856",
+          "manifest_sha256": "497669fdc962fcb3c97d62879f21e320a9fc56539861c9c6f5f2dd83e63552b6",
+          "bytes": 249676,
+          "files": 62,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-bounds-snapshot-round132-20261104/archives/r132-eight-primary-8f5485ebcdab.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
