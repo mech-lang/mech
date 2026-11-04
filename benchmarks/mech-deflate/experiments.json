@@ -15240,6 +15240,17 @@
           "files": 80,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-unsigned-guards-round138-20261104/archives/r138-reference-kernels-e388790a8773.tar.gz"
+        },
+        {
+          "event": "history-profile-random",
+          "source_revision": "f04df6c76ac2a38506becf76a980533e7954b146",
+          "asset": "r138-history-profile-random-c9fe0dced6c8.tar.gz",
+          "sha256": "c9fe0dced6c84c125b169e418e615df9e4587cb32be0a2cec5405e192f103861",
+          "manifest_sha256": "be94d04ee80c8325344f36229077745441720f4e8d9b7e9c4dbcc10dce743573",
+          "bytes": 158266,
+          "files": 64,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-unsigned-guards-round138-20261104/archives/r138-history-profile-random-c9fe0dced6c8.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
