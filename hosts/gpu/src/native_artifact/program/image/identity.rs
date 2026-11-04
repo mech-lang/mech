@@ -300,7 +300,8 @@ fn selected_template(
 // IR156 emits complete uniform unsigned range collections with checked private banks.
 // IR157 retains only live ordinary source homes at numeric cold boundaries.
 // IR158 proves immutable conditional joins available before uniform construction.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 158;
+// IR159 folds repeated tests of native-produced Booleans on unchanged CFG edges.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 159;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

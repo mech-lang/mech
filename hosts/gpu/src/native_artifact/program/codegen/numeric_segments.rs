@@ -383,6 +383,8 @@ pub(in crate::native_artifact) fn emit_entry(
             b,
             &words,
             code,
+            source,
+            controls.options(),
             code.blocks()[source].terminator(),
             failure,
             |next| {

@@ -421,6 +421,8 @@ pub(in crate::native_artifact) fn emit_entry(
                     b,
                     &words,
                     code,
+                    index,
+                    controls.options(),
                     code.blocks()[index].terminator(),
                     fail_at,
                     |next| {
@@ -438,6 +440,8 @@ pub(in crate::native_artifact) fn emit_entry(
                 b,
                 &words,
                 code,
+                index,
+                controls.options(),
                 code.blocks()[index].terminator(),
                 fail_at,
                 |_| unreachable!(),

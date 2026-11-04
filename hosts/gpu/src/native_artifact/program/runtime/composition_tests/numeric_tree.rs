@@ -106,18 +106,68 @@ fn expected(bytes: &[u8], rounds: usize, width: usize, marker: u64) -> Data {
 
 #[test]
 fn numeric_tree_source_liveness_ablation_keeps_outputs_errors_and_retry() {
+    check_emission_ablation(OptimizationPass::SourceLiveness);
+}
+
+#[test]
+fn numeric_tree_boolean_branch_ablation_keeps_reports_errors_and_retry() {
+    check_emission_ablation(OptimizationPass::BooleanBranches);
+}
+
+#[test]
+fn boolean_branch_proof_keeps_unknown_inputs_library_words_and_integer_matches() {
+    use crate::native_artifact::codegen::common::boolean_branches;
+    use crate::native_artifact::codegen::control::plan::CodePlan;
+    use crate::native_artifact::codegen::options::OptimizationOptions;
+    use crate::native_artifact::program::prepare::PreparedNativeProgram;
+    use mech_engine::native_artifact::{
+        NativeIterationTerminator as T, NativeMatchTerminator as B,
+    };
+    for text in [
+        "gate := flag<bool>\n(gate? | true => 1u64 | false => 2u64)\n",
+        "+> map\nindex<{string:u64}> := map/new()\ngate := word<string> ∈ index\n(gate? | true => 1u64 | false => 2u64)\n",
+        "value := number<u64>\n(value? | 0u64 => 1u64 | 1u64 => 2u64 | * => 3u64)\n",
+    ] {
+        for artifact in artifacts(text) {
+            let catalog = mech_stdlib::source_catalog();
+            let native = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let prepared = PreparedNativeProgram::prepare(
+                &artifact,
+                &catalog,
+                native.descriptor().plan().clone(),
+            )
+            .unwrap();
+            let code = CodePlan::Program(&prepared);
+            let mut branches = 0;
+            for (site, block) in code.blocks().iter().enumerate() {
+                if matches!(block.terminator(), T::Scalar(B::LiteralBranch { .. })) {
+                    branches += 1;
+                    assert!(
+                        boolean_branches::target(code, site, OptimizationOptions::default())
+                            .is_none(),
+                        "an unproved result or integer match must retain its original test: {site}"
+                    );
+                }
+            }
+            assert!(branches >= 2);
+        }
+    }
+}
+
+fn check_emission_ablation(pass: OptimizationPass) {
     for artifact in artifacts(SOURCE) {
         let mode = NativeProgramLimitMode::NoLimits;
         let catalog = mech_stdlib::source_catalog();
         let native =
             JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
                 .unwrap();
-        let conservative = JitProgramArtifact::compile_for_test(
-            &artifact,
-            &catalog,
-            OptimizationPass::SourceLiveness,
-        )
-        .unwrap();
+        let conservative = JitProgramArtifact::compile_for_test(&artifact, &catalog, pass).unwrap();
+        if pass == OptimizationPass::BooleanBranches {
+            assert!(
+                native.descriptor().code_bytes() < conservative.descriptor().code_bytes(),
+                "native-produced Boolean branches must remove emitted comparisons"
+            );
+        }
         for restored in [false, true] {
             let memory = mode.memory_budget();
             let mut outputs = [

@@ -556,6 +556,8 @@ pub(in crate::native_artifact) fn emit_entry(
             b,
             &words,
             code,
+            site,
+            controls.options(),
             code.blocks()[site].terminator(),
             fail,
             target,
