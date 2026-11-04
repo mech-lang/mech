@@ -187,6 +187,7 @@ pub(in crate::native_artifact) fn derive(
             Coverage::ScalarCold,
         )
         .or_else(|_| derive_fueled(plan, tail, frames, aggregates, calls, visits))
+        .or_else(|_| derive_hybrid(plan, tail, frames, aggregates, calls, visits))
         .or_else(|_| derive_interval(plan, tail, frames, aggregates, calls, visits))
         .map_err(|_| reason)
     })
@@ -208,6 +209,25 @@ pub(in crate::native_artifact) fn derive_fueled(
         calls,
         visits,
         Coverage::Fueled,
+    )
+}
+
+pub(in crate::native_artifact) fn derive_hybrid(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
+) -> Result<Proof, &'static str> {
+    derive_with_children(
+        plan,
+        tail,
+        frames,
+        aggregates,
+        calls,
+        visits,
+        Coverage::Hybrid,
     )
 }
 
@@ -253,9 +273,13 @@ fn derive_with_children(
         Coverage::ScalarCold => super::numeric_phase::Forest::with_cold_children(plan, tail)?,
         Coverage::Intervals => super::numeric_phase::Forest::intervals(plan, tail)?,
         Coverage::Fueled => super::numeric_phase::Forest::fueled(plan, tail)?,
+        Coverage::Hybrid => super::numeric_phase::Forest::hybrid(plan, tail)?,
     };
     if mode == Coverage::Fueled && forest.loops.len() < 2 {
         return Err("checked child funding requires a nested Tail");
+    }
+    if mode == Coverage::Hybrid && (forest.loops.len() < 2 || forest.stops.is_empty()) {
+        return Err("nested cold selection requires both Tail children and a cold boundary");
     }
     let nested = forest.loops.len() > 1 || !forest.cold.is_empty() || !forest.stops.is_empty();
     let trips = if forest.loops.len() > 1 {
@@ -278,7 +302,7 @@ fn derive_with_children(
         cache: BTreeMap::new(),
         active: BTreeSet::new(),
         children: BTreeMap::new(),
-        native_sites: (mode == Coverage::Intervals).then_some(&sites),
+        native_sites: matches!(mode, Coverage::Intervals | Coverage::Hybrid).then_some(&sites),
     };
     for child in forest.loops.iter().skip(1) {
         let NativeControlLoop::Tail(child_tail) = &plan.iterations()[child.iteration as usize]
@@ -299,6 +323,18 @@ fn derive_with_children(
                         .insert((child_tail.carrier().get(), ordinal), origin);
                 }
             }
+        }
+    }
+    // A child's next state can use a deeper child's current return. Register
+    // the full input binding tree before checking those returns; an incomplete
+    // tree cannot establish that a descendant changed its buffer identity.
+    provenance.cache.clear();
+    for child in forest.loops.iter().skip(1) {
+        let NativeControlLoop::Tail(child_tail) = &plan.iterations()[child.iteration as usize]
+        else {
+            unreachable!()
+        };
+        if let Some(child_fields) = frames.fields(child_tail.carrier()) {
             for (ordinal, field) in child_fields.iter().enumerate() {
                 if matches!(field.lane(), Lane::Managed { .. })
                     && provenance.array(child_tail.next().get(), Some(ordinal))

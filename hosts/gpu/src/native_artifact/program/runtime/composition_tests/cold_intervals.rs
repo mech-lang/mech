@@ -272,9 +272,13 @@ fn numeric_interval_readonly_array_child_settles_without_first_change() {
             .find(|r| r.iteration == 0)
             .unwrap();
         let proof = region.numeric.as_ref().unwrap();
-        assert!(!proof.prepaid_sites.is_empty());
-        assert!(!proof.writes());
-        assert!(proof.result.direct_array().is_none());
+        assert!(!proof.exits.is_empty());
+        assert!(!proof.actions.iter().any(|(site, operation)| {
+            matches!(
+                operation,
+                crate::native_artifact::program::prepare::numeric_plan::Operation::Write { .. }
+            ) && jit.descriptor().plan().blocks()[*site].iteration() == Some(region.iteration)
+        }));
         let memory = mode.memory_budget();
         let args = inputs(
             &artifact,

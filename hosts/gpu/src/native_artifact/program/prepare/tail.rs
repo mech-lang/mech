@@ -118,8 +118,10 @@ impl Layout {
             };
             let successors = |site: usize| {
                 if numeric.as_ref().is_some_and(|proof| {
-                    !proof.prepaid_sites.is_empty()
-                        && proof.exits.iter().any(|exit| exit.to == site)
+                    proof.exits.iter().any(|exit| {
+                        exit.to == site
+                            && matches!(exit.kind, super::numeric_plan::ExitKind::Unsupported)
+                    })
                 }) {
                     return Vec::new();
                 }

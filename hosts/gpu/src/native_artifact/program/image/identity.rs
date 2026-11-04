@@ -302,7 +302,9 @@ fn selected_template(
 // unmaterialized frames/aliases retain ordered original charges, not drops.
 // IR159 keeps unchanged cleanup groups on their original route and checks
 // canonical emptiness only for the frame retirements actually omitted.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 159;
+// IR160 composes current-funded Tail children with exact cold Collection exits,
+// restoring the reached active Tail and only its paid ancestor traversal credit.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 160;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

@@ -29,6 +29,8 @@ pub(in crate::native_artifact) enum Coverage {
     ScalarCold,
     Intervals,
     Fueled,
+    /// Current-funded Tail descendants with exact exits before non-Tail work.
+    Hybrid,
 }
 
 /// Candidate source comparison. A bounded-trip proof must additionally prove
@@ -219,6 +221,9 @@ impl Forest {
         let mut reads = 0;
         for child in self.loops.iter().skip(1) {
             for &site in &child.sites {
+                if self.stops.contains(&site) {
+                    continue;
+                }
                 if frames.action(site).is_some() || aggregates.action(site).is_some() {
                     continue;
                 }
@@ -277,6 +282,13 @@ impl Forest {
         Self::derive_inventory(plan, root, Coverage::Fueled)
     }
 
+    pub(in crate::native_artifact) fn hybrid(
+        plan: &Plan,
+        root: &NativeTailLoop,
+    ) -> Result<Self, &'static str> {
+        Self::derive_inventory(plan, root, Coverage::Hybrid)
+    }
+
     pub fn successors(&self, plan: &Plan, site: usize) -> Vec<usize> {
         if self.stops.contains(&site) {
             Vec::new()
@@ -308,14 +320,10 @@ impl Forest {
         } else {
             (BTreeSet::new(), BTreeSet::new())
         };
-        let successors = |site| {
-            if stops.contains(&site) {
-                Vec::new()
-            } else {
-                cold::successors(&cold, plan, site)
-            }
-        };
-        while matches!(mode, Coverage::Complete | Coverage::Fueled) {
+        while matches!(
+            mode,
+            Coverage::Complete | Coverage::Fueled | Coverage::Hybrid
+        ) {
             let before = members.len();
             for (id, loop_) in plan.iterations().iter().enumerate() {
                 if loop_
@@ -324,6 +332,9 @@ impl Forest {
                     .is_some_and(|p| members.contains(&p))
                 {
                     if !matches!(loop_, NativeControlLoop::Tail(_)) {
+                        if mode == Coverage::Hybrid {
+                            continue;
+                        }
                         return Err("numeric phase contains a non-Tail child");
                     }
                     members.insert(id as u32);
@@ -333,6 +344,43 @@ impl Forest {
                 break;
             }
         }
+        if mode == Coverage::Hybrid {
+            // Keep synchronous Tail calls inside the same owner/fuel region.
+            // A Collection owns hidden builder/progress state and must begin
+            // ordinarily, even when nested inside an otherwise native child.
+            for (site, block) in plan.blocks().iter().enumerate() {
+                if !block
+                    .iteration()
+                    .is_some_and(|owner| members.contains(&owner))
+                {
+                    continue;
+                }
+                let child = match block.action() {
+                    Action::Initialize { iteration } | Action::PrepareU64Range { iteration } => {
+                        Some(*iteration)
+                    }
+                    Action::CollectionBegin { collection } => plan
+                        .iterations()
+                        .iter()
+                        .position(|child| {
+                            matches!(child, NativeControlLoop::Collection(loop_)
+                                if loop_.collection() == *collection)
+                        })
+                        .map(|n| n as u32),
+                    _ => None,
+                };
+                if child.is_some_and(|child| !members.contains(&child)) {
+                    stops.insert(site);
+                }
+            }
+        }
+        let successors = |site| {
+            if stops.contains(&site) {
+                Vec::new()
+            } else {
+                cold::successors(&cold, plan, site)
+            }
+        };
         let mut sites = BTreeSet::new();
         let mut pending = vec![root.header()];
         while let Some(site) = pending.pop() {
@@ -446,7 +494,7 @@ impl Forest {
             order,
             stops,
             prepaid_sites,
-            checked_children: mode == Coverage::Fueled,
+            checked_children: matches!(mode, Coverage::Fueled | Coverage::Hybrid),
         })
     }
 }
