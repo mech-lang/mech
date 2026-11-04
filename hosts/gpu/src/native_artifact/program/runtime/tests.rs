@@ -1122,7 +1122,7 @@ unsafe extern "C" fn observe_numeric_fuel(
                     let owner = ctx
                         .state
                         .buffer_frames
-                        .managed_owner(&metadata.buffer_frames, region.tail.carrier(), array.field)
+                        .numeric_owner(array.physical, array.schema)
                         .unwrap();
                     let ValueData::Matrix(matrix) = owner.data() else {
                         panic!("numeric fuel owner is not a matrix")

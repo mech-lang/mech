@@ -18,6 +18,7 @@ mod managed_projections;
 mod multiple_children;
 mod named_managed_projections;
 mod nested_scalar_array;
+mod nested_numeric;
 mod numeric_bindings;
 mod numeric_induction;
 mod numeric_tree;
@@ -81,10 +82,10 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                107
+                108
             );
-            // Policy107 adds native uniform collection WORK. This numeric
-            // fixture has no collection, so the policy105 decomposition below
+            // Policies107/108 add native fills and recursive managed frames.
+            // This fixture has neither, so the policy105 decomposition below
             // remains exact and independently checked.
             // The policy104 checkpoint for this exact fixture was 88,531,834.
             // Emission ablation preserves the new tree's independently checked

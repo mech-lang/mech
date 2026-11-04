@@ -502,6 +502,7 @@ impl BufferFrames {
             _ => Err(invalid("private frame field is not current")),
         }
     }
+    #[cfg(test)]
     pub(super) fn managed_owner(
         &self,
         layout: &Layout,
@@ -516,25 +517,65 @@ impl BufferFrames {
     /// Transfer this invocation's carrier pin to its selected consuming store.
     /// Other frame fields, arena roots and external aliases remain real owners;
     /// core's exclusive handoff decides whether backing can actually be reused.
-    pub(super) fn take_managed_owner(
+    /// Slots and schemas are derived from the same validated frame leaves as
+    /// the numeric proof. Decoded images rederive and compare this metadata.
+    pub(super) fn numeric_owner(&self, at: usize, schema: mech_core::SchemaId) -> Option<&Value> {
+        self.inner
+            .as_ref()?
+            .owners
+            .values()
+            .get(at)?
+            .as_ref()
+            .filter(|v| v.schema() == schema)
+    }
+    pub(super) fn empty_numeric_owner(&self, at: usize) -> bool {
+        self.inner
+            .as_ref()
+            .and_then(|i| i.owners.values().get(at))
+            .is_some_and(Option::is_none)
+    }
+    pub(super) fn project_numeric_owner(
+        &self,
+        at: usize,
+        schema: mech_core::SchemaId,
+        work: &mut NativeWorkMeter,
+    ) -> Result<Field, NativeProgramExecutionError> {
+        work.charge(NativeExecutionPhase::Setup, 64)?;
+        self.numeric_owner(at, schema)
+            .cloned()
+            .map(Field::Managed)
+            .ok_or_else(|| invalid("numeric view has no current owner"))
+    }
+    pub(super) fn take_numeric_owner(
         &mut self,
-        layout: &Layout,
-        value: NativeMatchValue,
-        ordinal: usize,
+        at: usize,
+        schema: mech_core::SchemaId,
     ) -> Result<Value, NativeProgramExecutionError> {
-        let Lane::Managed { at } = layout
-            .fields(value)
-            .and_then(|f| f.get(ordinal))
-            .ok_or_else(|| invalid("numeric handoff outside carrier"))?
-            .lane()
-        else {
-            return Err(invalid("numeric handoff has scalar field"));
-        };
+        if self.numeric_owner(at, schema).is_none() {
+            return Err(invalid("numeric handoff lost current carrier owner"));
+        }
         self.inner
             .as_mut()
             .and_then(|i| i.owners.values_mut().get_mut(at))
             .and_then(Option::take)
             .ok_or_else(|| invalid("numeric handoff lost current carrier owner"))
+    }
+    pub(super) fn synchronize_numeric_owner(
+        &mut self,
+        at: usize,
+        schema: mech_core::SchemaId,
+        owner: Value,
+    ) -> Result<(), NativeProgramExecutionError> {
+        if schema != owner.schema() {
+            return Err(invalid("numeric managed reconciliation type differs"));
+        }
+        let slot = self
+            .inner
+            .as_mut()
+            .and_then(|i| i.owners.values_mut().get_mut(at))
+            .ok_or_else(|| invalid("numeric managed reconciliation outside frame"))?;
+        *slot = Some(owner);
+        Ok(())
     }
     pub(super) fn synchronize_scalar_binding(
         &mut self,

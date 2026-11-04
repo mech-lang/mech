@@ -281,6 +281,15 @@ impl Layout {
                 scalar_node_count: scalar_node_count(&paths),
                 scalar_paths: paths,
                 fields: scalar,
+                array_bindings: fields
+                    .iter()
+                    .zip(&arrays)
+                    .filter_map(|(field, array)| match (field.lane(), array) {
+                        (Lane::Managed { at }, Some(array)) => Some((at, *array)),
+                        _ => None,
+                    })
+                    .collect(),
+                maximum_arity: fields.len(),
                 arrays,
             });
         }

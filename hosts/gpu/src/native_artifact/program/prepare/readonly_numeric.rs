@@ -13,6 +13,8 @@ use mech_engine::native_artifact::{
 use std::collections::{BTreeMap, BTreeSet};
 #[path = "numeric_append.rs"]
 mod append;
+#[path = "numeric_fields.rs"]
+pub(super) mod numeric_fields;
 #[path = "numeric_results.rs"]
 mod results;
 #[path = "numeric_versions.rs"]
@@ -23,7 +25,11 @@ pub(super) use results::scalar_aggregate;
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Array {
+    /// Flattened structural leaf in the exact root carrier.
     pub field: usize,
+    /// Same-plan current owner slot; never supplied by source or caller.
+    pub physical: usize,
+    pub schema: mech_core::SchemaId,
     pub width: u8,
     /// Exact selected site whose original factory validates the entry view.
     pub witness: usize,
@@ -37,6 +43,8 @@ pub(in crate::native_artifact) struct FrameWords {
     /// Relative direct scalar lane, or None for an array/composite field.
     pub fields: Vec<Option<usize>>,
     pub arrays: Vec<Option<usize>>,
+    pub array_bindings: Vec<(usize, usize)>,
+    pub maximum_arity: usize,
     /// Recursive scalar leaves in field order. Paths retain exact structural
     /// identity; a composite span never hides a managed array or owner.
     pub scalar_paths: Vec<(Vec<usize>, usize)>,
@@ -171,6 +179,7 @@ pub(in crate::native_artifact) struct ColdAlias {
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Proof {
+    pub nested_managed: bool,
     pub arrays: Vec<Array>,
     pub frames: Vec<FrameWords>,
     pub actions: Vec<(usize, Operation)>,
@@ -189,6 +198,8 @@ pub(in crate::native_artifact) struct Proof {
     /// Exact immutable scalar Frame shadows needed by a final header fallback.
     /// These are restored only after the generated loan has finished.
     pub cold_scalars: Vec<(usize, Vec<ScalarBinding>)>,
+    /// Exact current managed leaves of elided immutable ancestor frames.
+    pub cold_frames: Vec<(usize, Vec<(usize, usize)>)>,
     /// Maximum appends before the next tree header or final exit. Includes the
     /// ancestor continuation after a child returns, not just its lexical body.
     pub append_limits: Vec<(usize, Vec<(usize, usize)>)>,
@@ -322,7 +333,7 @@ impl Provenance<'_, '_> {
         if value == self.tail.carrier().get() {
             let ordinal = field?;
             return matches!(
-                self.frames.fields_at(value as usize)?.get(ordinal)?.lane(),
+                numeric_fields::at(self.frames, value)?.get(ordinal)?.lane(),
                 Lane::Managed { .. }
             )
             .then_some(ordinal);
@@ -349,11 +360,20 @@ impl Provenance<'_, '_> {
             let action = self.facts.plan().blocks()[site].action();
             let origin = if let Some(frame) = self.frames.action(site) {
                 match (frame.operation(), field) {
-                    (Frame::Pack { output }, Some(ordinal)) if output.get() == value => {
+                    (Frame::Pack { output }, Some(leaf)) if output.get() == value => {
                         let Action::LibraryCall { operands, .. } = action else {
                             return None;
                         };
-                        self.array(operands.get(ordinal)?.get(), None)?
+                        let (ordinal, range) = (0..operands.len()).find_map(|ordinal| {
+                            let range = numeric_fields::span(self.frames, value, ordinal)?;
+                            range.contains(&leaf).then_some((ordinal, range))
+                        })?;
+                        let (source, field) = numeric_fields::operand(
+                            self.frames,
+                            *operands.get(ordinal)?,
+                            leaf - range.start,
+                        )?;
+                        self.array(source, field)?
                     }
                     (Frame::Copy { source, output }, Some(ordinal)) if output.get() == value => {
                         self.array(source.get(), Some(ordinal))?
@@ -364,8 +384,15 @@ impl Provenance<'_, '_> {
                             ordinal,
                             output,
                         },
-                        None,
-                    ) if output.get() == value => self.array(source.get(), Some(*ordinal))?,
+                        relative,
+                    ) if output.get() == value => {
+                        let range = numeric_fields::span(self.frames, source.get(), *ordinal)?;
+                        let at = range.start.checked_add(relative.unwrap_or(0))?;
+                        if !range.contains(&at) {
+                            return None;
+                        }
+                        self.array(source.get(), Some(at))?
+                    }
                     _ => return None,
                 }
             } else if let (Action::Scalar(Scalar::Copy { source, output }), None) = (action, field)
@@ -430,15 +457,8 @@ fn derive_inner(
     calls: &[Option<NativePreparedLibraryCall>],
     tree: Option<&super::numeric_tree::Proof>,
 ) -> Result<Proof, &'static str> {
-    let fields = frames
-        .fields(tail.carrier())
-        .ok_or("carrier escapes or lacks an exact private frame")?;
-    if fields.iter().any(|f| {
-        matches!(f.lane(), Lane::Tagged { .. })
-            || (matches!(f.lane(), Lane::Composite { .. }) && !scalar_children(frames, *f))
-    }) {
-        return Err("numeric carrier composite requires scalar-only children");
-    }
+    let fields = numeric_fields::at(frames, tail.carrier().get())
+        .ok_or("numeric carrier lacks exact untagged leaves")?;
     let iteration = plan
         .iterations()
         .iter()
@@ -483,7 +503,7 @@ fn derive_inner(
     };
     if let Some(tree) = tree {
         for node in tree.nodes.iter().skip(1) {
-            if let Some(fields) = frames.fields(node.tail.carrier()) {
+            if let Some(fields) = numeric_fields::at(frames, node.tail.carrier().get()) {
                 for (ordinal, field) in fields.iter().enumerate() {
                     if matches!(field.lane(), Lane::Managed { .. }) {
                         let root = provenance
@@ -514,6 +534,11 @@ fn derive_inner(
             }
             arrays.push(Array {
                 field: ordinal,
+                physical: match field.lane() {
+                    Lane::Managed { at } => at,
+                    _ => unreachable!(),
+                },
+                schema: field.schema(),
                 width: 0,
                 witness: usize::MAX,
                 writable: false,
@@ -529,7 +554,7 @@ fn derive_inner(
         tail,
         frames,
         aggregates,
-        fields,
+        &fields,
         &arrays,
         &mut provenance,
     )?;
@@ -551,23 +576,20 @@ fn derive_inner(
         }
         let operation = if let Some(frame) = frames.action(site) {
             let mut remember = |value: u32| -> Result<(), &'static str> {
-                let fields = frames
-                    .fields_at(value as usize)
-                    .ok_or("frame lost exact fields")?;
-                if fields.iter().any(|f| {
-                    matches!(f.lane(), Lane::Tagged { .. })
-                        || (matches!(f.lane(), Lane::Composite { .. })
-                            && !scalar_children(frames, *f))
-                }) {
-                    return Err("numeric frame composite requires scalar-only children");
-                }
+                let fields = numeric_fields::at(frames, value)
+                    .ok_or("numeric frame lost exact untagged leaves")?;
                 for (ordinal, field) in fields.iter().enumerate() {
-                    if matches!(field.lane(), Lane::Managed { .. })
-                        && !arrays
+                    if matches!(field.lane(), Lane::Managed { .. }) {
+                        let origin = provenance.array(value, Some(ordinal));
+                        let array = arrays
                             .iter()
-                            .any(|a| provenance.array(value, Some(ordinal)) == Some(a.field))
-                    {
-                        return Err("frame has an unknown managed field");
+                            .find(|a| origin == Some(a.field))
+                            .ok_or("frame has an unknown managed field")?;
+                        // A physical owner binding forwards this exact Value;
+                        // schema rebinding requires the ordinary constructor.
+                        if field.schema() != array.schema {
+                            return Err("numeric frame leaf requires schema rebinding");
+                        }
                     }
                 }
                 frame_values.insert(value);
@@ -734,12 +756,24 @@ fn derive_inner(
         };
         actions.push((site, operation));
     }
-    if arrays.iter().any(|array| array.witness == usize::MAX) {
+    // A retained leaf with no selected content operation remains an opaque
+    // immutable owner. It grants no native pointer/view and cannot be written.
+    // Current-version proof still covers every structural forwarding edge.
+    if arrays.iter().any(|array| array.witness == usize::MAX)
+        && !numeric_fields::has_nested_managed(frames, frames.fields(tail.carrier()).unwrap())
+    {
+        // Opaque retention belongs to the new recursive managed-frame proof.
+        // Keep the established flat-frame eligibility and callback controls.
         return Err("unwitnessed retained array");
+    }
+    if arrays.iter().any(|array| {
+        array.witness == usize::MAX && (array.width != 0 || array.writable || array.appends)
+    }) {
+        return Err("unwitnessed retained array has content effects");
     }
     let cold_homes = if let Some(tree) = tree {
         for node in tree.nodes.iter().skip(1) {
-            if let Some(fields) = frames.fields(node.tail.carrier()) {
+            if let Some(fields) = numeric_fields::at(frames, node.tail.carrier().get()) {
                 for (ordinal, field) in fields.iter().enumerate() {
                     if matches!(field.lane(), Lane::Managed { .. })
                         && provenance.array(node.tail.next().get(), Some(ordinal))
@@ -807,9 +841,8 @@ fn derive_inner(
                     Lane::Managed { .. } | Lane::Composite { .. } | Lane::Tagged { .. } => None,
                 })
                 .collect();
-            let array_fields = frames
-                .fields_at(value as usize)
-                .unwrap()
+            let flat_fields = numeric_fields::at(frames, value).unwrap();
+            let array_fields = flat_fields
                 .iter()
                 .enumerate()
                 .map(|(ordinal, field)| {
@@ -820,12 +853,28 @@ fn derive_inner(
                         None
                     }
                 })
+                .collect::<Vec<_>>();
+            let array_bindings = flat_fields
+                .iter()
+                .zip(&array_fields)
+                .filter_map(|(field, array)| match (field.lane(), array) {
+                    (Lane::Managed { at }, Some(array)) => Some((at, *array)),
+                    _ => None,
+                })
                 .collect();
             FrameWords {
                 value,
                 fields,
                 arrays: array_fields,
-                scalar_node_count: scalar_node_count(&paths),
+                array_bindings,
+                maximum_arity: numeric_fields::maximum_arity(
+                    frames,
+                    frames.fields_at(value as usize).unwrap(),
+                ),
+                scalar_node_count: numeric_fields::logical_nodes(
+                    frames,
+                    frames.fields_at(value as usize).unwrap(),
+                ),
                 scalar_paths: paths,
             }
         })
@@ -885,25 +934,31 @@ fn derive_inner(
     } else {
         Vec::new()
     };
-    let cold_scalars = cold_homes
-        .scalars
-        .into_iter()
-        .map(|(header, values)| {
-            let mut bindings = Vec::new();
-            for value in values {
-                let frame = frame_words
-                    .iter()
-                    .find(|frame| frame.value == value)
-                    .ok_or("numeric cold scalar frame lost its shadow recipe")?;
-                if frame.arrays.iter().any(Option::is_some) {
-                    return Err("numeric cold scalar frame contains a managed lane");
-                }
-                bindings.extend(scalar_bindings(frames, value, &frame.scalar_paths)?);
-            }
-            Ok((header, bindings))
-        })
-        .collect::<Result<Vec<_>, &'static str>>()?;
+    let mut cold_scalars = Vec::new();
+    let mut cold_frames = Vec::new();
+    for (header, values) in cold_homes.scalars {
+        let mut bindings = Vec::new();
+        let mut owners = Vec::new();
+        for value in values {
+            let frame = frame_words
+                .iter()
+                .find(|frame| frame.value == value)
+                .ok_or("numeric cold frame lost its shadow recipe")?;
+            bindings.extend(scalar_bindings(frames, value, &frame.scalar_paths)?);
+            owners.extend(frame.array_bindings.iter().copied());
+        }
+        if !bindings.is_empty() {
+            cold_scalars.push((header, bindings));
+        }
+        if !owners.is_empty() {
+            cold_frames.push((header, owners));
+        }
+    }
+    let nested_managed = frame_words.iter().any(|frame| {
+        numeric_fields::has_nested_managed(frames, frames.fields_at(frame.value as usize).unwrap())
+    });
     Ok(Proof {
+        nested_managed,
         arrays,
         frames: frame_words,
         actions,
@@ -917,6 +972,7 @@ fn derive_inner(
         result,
         cold_aliases: cold_homes.aliases,
         cold_scalars,
+        cold_frames,
         append_limits,
     })
 }

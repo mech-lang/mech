@@ -302,7 +302,9 @@ fn selected_template(
 // IR158 proves immutable conditional joins available before uniform construction.
 // IR159 folds repeated tests of native-produced Booleans on unchanged CFG edges.
 // IR160 lowers exact unsigned SWAR population-count idioms to native popcount.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 161;
+// IR161 lowers pure scalar choices across empty source-edge chains to selects.
+// IR162 supports exact nested managed leaves in private numeric frames.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 162;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -512,7 +514,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 161;
 // Logical source/builder floors and declared finite caps stay explicit; the
 // native lookup price replaces canonical per-key planning/materialization.
 // Policy107 funds the explicit native fill bank and prepaid SIMD/scalar stores.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 107;
+// Policy108 funds nested managed-leaf synchronization and cold private-frame
+// reconciliation. Existing flat-frame prices retain their original formula.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 108;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

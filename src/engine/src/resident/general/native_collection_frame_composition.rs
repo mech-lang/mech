@@ -30,6 +30,15 @@ pub(super) struct Composition {
     enum_ordinal: Option<u32>,
 }
 
+impl Composition {
+    /// The composition has already related every nested structural leaf to
+    /// the selected output schema. Apply the same strict unconstrained-axis
+    /// identity test as flat frames; tags remain outside numeric frames.
+    pub(super) fn is_identity_forwarding(&self) -> bool {
+        self.enum_ordinal.is_none() && self.shape.is_identity_forwarding()
+    }
+}
+
 fn components(body: &SchemaBody) -> Option<Vec<&SchemaBody>> {
     match body {
         SchemaBody::Tuple(fields) => Some(fields.iter().collect()),

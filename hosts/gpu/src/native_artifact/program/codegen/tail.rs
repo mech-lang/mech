@@ -93,7 +93,7 @@ pub(in crate::native_artifact) fn leave(
                 .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
         }
         if let Some(tree) = &region.numeric_tree {
-            if mode == 1 && !proof.cold_scalars.is_empty() {
+            if mode == 1 && (!proof.cold_scalars.is_empty() || !proof.cold_frames.is_empty()) {
                 // Header bailouts have a literal same-plan source site. Read
                 // only that header's live frame words; other virtual frames
                 // may not yet have a current value in this activation.

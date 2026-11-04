@@ -113,15 +113,8 @@ pub(super) fn derive(
     // The connected private-use proof supplies the exact tuple/record field
     // order and rejects public escape. Both use the same per-field roots and
     // terminal freshness proof. Nested spans must contain scalar leaves only.
-    let fields = frames
-        .fields(value)
-        .ok_or("numeric result frame escapes or lacks exact private fields")?;
-    if fields.iter().any(|f| {
-        matches!(f.lane(), Lane::Tagged { .. })
-            || (matches!(f.lane(), Lane::Composite { .. }) && !scalar_children(frames, *f))
-    }) {
-        return Err("numeric result composite requires scalar-only children");
-    }
+    let fields = numeric_fields::at(frames, value.get())
+        .ok_or("numeric result frame escapes or lacks exact untagged leaves")?;
     let managed = fields
         .iter()
         .enumerate()

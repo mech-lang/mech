@@ -353,7 +353,7 @@ fn analyze_tree(
         if provenance.array(value, None).is_some() {
             top.insert((value, None), true);
         }
-        if let Some(fields) = frames.fields_at(value as usize) {
+        if let Some(fields) = numeric_fields::at(frames, value) {
             for ordinal in 0..fields.len() {
                 if provenance.array(value, Some(ordinal)).is_some() {
                     top.insert((value, Some(ordinal)), true);
@@ -502,7 +502,7 @@ fn verify_tree(
         let state = &analysis.outputs[&site];
         for node in &tree.nodes {
             if site == node.tail.latch() as usize {
-                if let Some(fields) = frames.fields(node.tail.carrier()) {
+                if let Some(fields) = numeric_fields::at(frames, node.tail.carrier().get()) {
                     for (ordinal, field) in fields.iter().enumerate() {
                         if matches!(field.lane(), Lane::Managed { .. })
                             && !state
@@ -572,8 +572,7 @@ fn cold_aliases(
         }
         false
     };
-    let root_fields = frames
-        .fields(tail.carrier())
+    let root_fields = numeric_fields::at(frames, tail.carrier().get())
         .ok_or("cold alias root lost its fields")?;
     let mut recipes = ColdHomes::default();
     let mut count = 0usize;
@@ -603,7 +602,7 @@ fn cold_aliases(
                 continue;
             }
             let root = provenance.array(value, None);
-            let virtual_frame = frames.fields_at(value as usize).is_some();
+            let virtual_frame = numeric_fields::at(frames, value).is_some();
             if root.is_none() && !virtual_frame {
                 continue;
             }
@@ -724,15 +723,17 @@ fn cold_aliases(
             // restored into existing physical lanes without owners or Values.
             // A managed frame still needs its own current-version recipe.
             if virtual_frame {
-                let fields = frames.fields_at(value as usize).unwrap();
-                if fields.iter().any(|field| match field.lane() {
-                    Lane::Scalar { .. } => false,
-                    Lane::Composite { .. } => !scalar_children(frames, *field),
-                    Lane::Managed { .. } | Lane::Tagged { .. } => true,
-                }) {
-                    return Err(
-                        "numeric tree cold continuation requires an unavailable ancestor managed frame",
-                    );
+                let fields = numeric_fields::at(frames, value).unwrap();
+                for (ordinal, field) in fields.iter().enumerate() {
+                    if matches!(field.lane(), Lane::Managed { .. }) {
+                        if provenance.array(value, Some(ordinal)).is_none()
+                            || !state.get(&(value, Some(ordinal))).copied().unwrap_or(false)
+                        {
+                            return Err(
+                                "numeric cold frame requires an older or unavailable managed leaf",
+                            );
+                        }
+                    }
                 }
                 // Whole-plan dominance is insufficient for a repeated SSA
                 // visit. Every path in THIS ancestor traversal must cross a
@@ -801,50 +802,14 @@ fn transfer(
 ) -> Result<(), &'static str> {
     let fresh = |state: &State, key: Key| state.get(&key).copied().unwrap_or(false);
     match actions.iter().find(|(s, _)| *s == site).map(|(_, a)| a) {
-        Some(Operation::Frame) => match frames
-            .action(site)
-            .ok_or("tree frame lost recipe")?
-            .operation()
-        {
-            Frame::Pack { output } => {
-                let Action::LibraryCall { operands, .. } = plan.blocks()[site].action() else {
-                    return Err("tree pack lost operands");
-                };
-                for (ordinal, operand) in operands.iter().enumerate() {
-                    if provenance.array(operand.get(), None).is_some() {
-                        let current = fresh(state, (operand.get(), None));
-                        state.insert((output.get(), Some(ordinal)), current);
-                    }
-                }
-            }
-            Frame::Copy { source, output } => {
-                let copied = frames
-                    .fields(*source)
-                    .ok_or("tree copy lost fields")?
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, f)| matches!(f.lane(), Lane::Managed { .. }))
-                    .map(|(ordinal, _)| {
-                        (
-                            (output.get(), Some(ordinal)),
-                            fresh(state, (source.get(), Some(ordinal))),
-                        )
-                    })
-                    .collect::<Vec<_>>();
-                state.extend(copied);
-            }
-            Frame::Project {
-                source,
-                ordinal,
-                output,
-            } => {
-                if provenance.array(output.get(), None).is_some() {
-                    let current = fresh(state, (source.get(), Some(*ordinal)));
-                    state.insert((output.get(), None), current);
-                }
-            }
-            _ => return Err("tagged frame is outside numeric tree freshness"),
-        },
+        Some(Operation::Frame) => {
+            let copied = numeric_fields::transfers(plan, frames, site)?
+                .into_iter()
+                .filter(|(_, source)| provenance.array(source.0, source.1).is_some())
+                .map(|(target, source)| (target, fresh(state, source)))
+                .collect::<Vec<_>>();
+            state.extend(copied);
+        }
         Some(Operation::ArrayCopy) => {
             let Action::Scalar(Scalar::Copy { source, output }) = plan.blocks()[site].action()
             else {
@@ -898,48 +863,14 @@ fn pass(
         };
         let fresh = |state: &State, key: Key| state.get(&key).copied().unwrap_or(false);
         match actions.iter().find(|(s, _)| *s == site).map(|(_, op)| op) {
-            Some(Operation::Frame) => match frames.action(site).unwrap().operation() {
-                Frame::EnumPack { .. } | Frame::Observe { .. } => {
-                    return Err("tagged frame has no numeric array version proof");
-                }
-                Frame::Pack { output } => {
-                    let Action::LibraryCall { operands, .. } = plan.blocks()[site].action() else {
-                        return Err("version pack lost operands");
-                    };
-                    for (ordinal, operand) in operands.iter().enumerate() {
-                        if provenance.array(operand.get(), None).is_some() {
-                            let current = fresh(&state, (operand.get(), None));
-                            state.insert((output.get(), Some(ordinal)), current);
-                        }
-                    }
-                }
-                Frame::Copy { source, output } => {
-                    let copied = frames
-                        .fields(*source)
-                        .ok_or("version copy lost fields")?
-                        .iter()
-                        .enumerate()
-                        .filter(|(_, f)| matches!(f.lane(), Lane::Managed { .. }))
-                        .map(|(ordinal, _)| {
-                            (
-                                (output.get(), Some(ordinal)),
-                                fresh(&state, (source.get(), Some(ordinal))),
-                            )
-                        })
-                        .collect::<Vec<_>>();
-                    state.extend(copied);
-                }
-                Frame::Project {
-                    source,
-                    ordinal,
-                    output,
-                } => {
-                    if provenance.array(output.get(), None).is_some() {
-                        let current = fresh(&state, (source.get(), Some(*ordinal)));
-                        state.insert((output.get(), None), current);
-                    }
-                }
-            },
+            Some(Operation::Frame) => {
+                let copied = numeric_fields::transfers(plan, frames, site)?
+                    .into_iter()
+                    .filter(|(_, source)| provenance.array(source.0, source.1).is_some())
+                    .map(|(target, source)| (target, fresh(&state, source)))
+                    .collect::<Vec<_>>();
+                state.extend(copied);
+            }
             Some(Operation::ArrayCopy) => {
                 let Action::Scalar(Scalar::Copy { source, output }) = plan.blocks()[site].action()
                 else {

@@ -349,6 +349,15 @@ impl Layout {
                             frame.value,
                             &frame.scalar_paths,
                         )?;
+                        if proof.nested_managed {
+                            synchronization = synchronization
+                                .checked_add(
+                                    (frame.array_bindings.len() as u64).checked_mul(64).ok_or(
+                                        "nested numeric owner synchronization work overflow",
+                                    )?,
+                                )
+                                .ok_or("nested numeric owner synchronization work overflow")?;
+                        }
                         synchronization = node
                             .scalar_bindings
                             .iter()

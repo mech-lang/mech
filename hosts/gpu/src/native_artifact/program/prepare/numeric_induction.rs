@@ -28,7 +28,7 @@ pub(super) fn validate(
         if let Some(root) = provenance.array(value, None) {
             roots.insert((value, None), root);
         }
-        if let Some(fields) = frames.fields_at(value as usize) {
+        if let Some(fields) = numeric_fields::at(frames, value) {
             for ordinal in 0..fields.len() {
                 if let Some(root) = provenance.array(value, Some(ordinal)) {
                     roots.insert((value, Some(ordinal)), root);
@@ -282,29 +282,11 @@ fn read_keys(
         }
     };
     match actions.iter().find(|(s, _)| *s == site).map(|(_, op)| op) {
-        Some(Operation::Frame) => match frames
-            .action(site)
-            .ok_or("numeric induction frame lost its recipe")?
-            .operation()
-        {
-            Frame::Pack { .. } => {
-                let Action::LibraryCall { operands, .. } = plan.blocks()[site].action() else {
-                    return Err("numeric induction pack lost operands");
-                };
-                for operand in operands {
-                    add((operand.get(), None));
-                }
+        Some(Operation::Frame) => {
+            for (_, source) in numeric_fields::transfers(plan, frames, site)? {
+                add(source);
             }
-            Frame::Copy { source, .. } => {
-                for key in keys_for(roots, source.get()) {
-                    add(key);
-                }
-            }
-            Frame::Project {
-                source, ordinal, ..
-            } => add((source.get(), Some(*ordinal))),
-            _ => return Err("numeric induction contains a tagged managed frame"),
-        },
+        }
         Some(Operation::ArrayCopy) => {
             let Action::Scalar(Scalar::Copy { source, .. }) = plan.blocks()[site].action() else {
                 return Err("numeric induction copy lost its source");

@@ -317,6 +317,26 @@ impl Invocation<'_, '_, '_> {
                     )?;
                 }
             }
+            for (_, bindings) in proof
+                .cold_frames
+                .iter()
+                .filter(|(header, _)| *header == site)
+            {
+                for &(physical, array) in bindings {
+                    let root = &proof.arrays[array];
+                    let owner = self
+                        .state
+                        .buffer_frames
+                        .numeric_owner(root.physical, root.schema)
+                        .ok_or_else(|| invalid("numeric cold frame lost its current root owner"))?
+                        .clone();
+                    self.state.buffer_frames.synchronize_numeric_owner(
+                        physical,
+                        root.schema,
+                        owner,
+                    )?;
+                }
+            }
             let mut base = 0usize;
             for (header, aliases) in &proof.cold_aliases {
                 if *header == site {
@@ -330,10 +350,9 @@ impl Invocation<'_, '_, '_> {
                         let owner = self
                             .state
                             .buffer_frames
-                            .managed_owner(
-                                &metadata.buffer_frames,
-                                region.tail.carrier(),
-                                proof.arrays[alias.array].field,
+                            .numeric_owner(
+                                proof.arrays[alias.array].physical,
+                                proof.arrays[alias.array].schema,
                             )
                             .ok_or_else(|| {
                                 invalid("numeric cold continuation lost its frozen current owner")
@@ -376,24 +395,19 @@ impl Invocation<'_, '_, '_> {
                     }
                     return Err(invalid("numeric tree child carrier lost its exact frame"));
                 };
-                for (ordinal, array) in frame.arrays.iter().enumerate() {
-                    if let Some(array) = array {
+                for &(physical, array) in &frame.array_bindings {
+                    {
                         let owner = self
                             .state
                             .buffer_frames
-                            .managed_owner(
-                                &metadata.buffer_frames,
-                                region.tail.carrier(),
-                                proof.arrays[*array].field,
-                            )
+                            .numeric_owner(proof.arrays[array].physical, proof.arrays[array].schema)
                             .ok_or_else(|| {
                                 invalid("numeric tree child lost its current root owner")
                             })?
                             .clone();
-                        self.state.buffer_frames.synchronize_managed(
-                            &metadata.buffer_frames,
-                            node.tail.carrier(),
-                            ordinal,
+                        self.state.buffer_frames.synchronize_numeric_owner(
+                            physical,
+                            proof.arrays[array].schema,
                             owner,
                         )?;
                     }
@@ -413,10 +427,9 @@ impl Invocation<'_, '_, '_> {
                     "numeric tree bounds exit lost its original selected call",
                 ));
             };
-            let Field::Managed(owner) = self.state.buffer_frames.project(
-                &metadata.buffer_frames,
-                region.tail.carrier(),
-                proof.arrays[*array].field,
+            let Field::Managed(owner) = self.state.buffer_frames.project_numeric_owner(
+                proof.arrays[*array].physical,
+                proof.arrays[*array].schema,
                 &mut self.state.control.work,
             )?
             else {
