@@ -12923,7 +12923,7 @@
       "base": "ee0285ef06",
       "production": "6c1cb798e35da3e056d8043381d3488253d319f1",
       "compiler_source": "6c1cb798e35da3e056d8043381d3488253d319f1",
-      "decision": "under measurement",
+      "decision": "Held prerequisite, not a compressor performance win; complete selected region inventory unchanged, actual loop-funding blocker remains.",
       "events": [
         {
           "event": "closure",
@@ -12933,13 +12933,159 @@
           "manifest_sha256": "00323df3db36d41a20198db114b3a48afe2235989526cb2d2cc73de2efe1660f",
           "bytes": 4685867,
           "files": 204,
-          "publication": "local-only; this exact new packet is not yet submitted for external publication",
-          "local_archive": "/private/tmp/mech-mutable-children-round127-20261104/archives/r127-closure-829fc2e3d43f.tar.gz"
+          "publication": "published; server SHA-256 verified",
+          "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-2/r127-closure-829fc2e3d43f.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
+      "retained": false,
+      "timing": {
+        "eight": {
+          "observations_per_source": 1984,
+          "seconds": {
+            "before": 0.0020192705,
+            "after": 0.002013875
+          },
+          "reference_seconds": 0.000285,
+          "multiples_of_reference": {
+            "before": 7.085159649122807,
+            "after": 7.066228070175439
+          },
+          "change_percent": -0.2672004567986219,
+          "improving_groups": 3,
+          "improving_blocks": 37,
+          "adverse_blocks": 27,
+          "separate_counters": {
+            "before-cpu": {
+              "observations": 32,
+              "instructions": 22608935.0,
+              "cycles": 6357565.0
+            },
+            "after-cpu": {
+              "observations": 32,
+              "instructions": 22598122.5,
+              "cycles": 6414657.0
+            },
+            "before-memory": {
+              "observations": 4,
+              "allocation_requests": 3741.0,
+              "requested_bytes": 17680961.0,
+              "incremental_peak_live_usable": 15206024.0
+            },
+            "after-memory": {
+              "observations": 4,
+              "allocation_requests": 3741.0,
+              "requested_bytes": 17680961.0,
+              "incremental_peak_live_usable": 15206024.0
+            }
+          }
+        },
+        "random": {
+          "observations_per_source": 128,
+          "seconds": {
+            "before": 0.0183290625,
+            "after": 0.018508499999999997
+          },
+          "reference_seconds": 0.000303,
+          "multiples_of_reference": {
+            "before": 60.491955445544555,
+            "after": 61.08415841584158
+          },
+          "change_percent": 0.9789780573883577,
+          "improving_groups": 0,
+          "improving_blocks": 0,
+          "adverse_blocks": 8,
+          "separate_counters": {
+            "before-cpu": {
+              "observations": 32,
+              "instructions": 283642867.5,
+              "cycles": 58789398.0
+            },
+            "after-cpu": {
+              "observations": 32,
+              "instructions": 283464874.0,
+              "cycles": 58966090.5
+            },
+            "before-memory": {
+              "observations": 4,
+              "allocation_requests": 22197.0,
+              "requested_bytes": 19033866.0,
+              "incremental_peak_live_usable": 15204488.0
+            },
+            "after-memory": {
+              "observations": 4,
+              "allocation_requests": 22197.0,
+              "requested_bytes": 19033866.0,
+              "incremental_peak_live_usable": 15204488.0
+            }
+          }
+        },
+        "repeated": {
+          "observations_per_source": 128,
+          "seconds": {
+            "before": 0.011222125,
+            "after": 0.0113385415
+          },
+          "reference_seconds": 0.000322,
+          "multiples_of_reference": {
+            "before": 34.85131987577639,
+            "after": 35.212861801242234
+          },
+          "change_percent": 1.037383739710629,
+          "improving_groups": 0,
+          "improving_blocks": 0,
+          "adverse_blocks": 8,
+          "separate_counters": {
+            "before-cpu": {
+              "observations": 32,
+              "instructions": 172674166.5,
+              "cycles": 35859091.0
+            },
+            "after-cpu": {
+              "observations": 32,
+              "instructions": 172626070.5,
+              "cycles": 36122670.0
+            },
+            "before-memory": {
+              "observations": 4,
+              "allocation_requests": 11948.0,
+              "requested_bytes": 19798753.0,
+              "incremental_peak_live_usable": 15208608.0
+            },
+            "after-memory": {
+              "observations": 4,
+              "allocation_requests": 11948.0,
+              "requested_bytes": 19798753.0,
+              "incremental_peak_live_usable": 15208608.0
+            }
+          }
+        }
+      },
+      "validation_scope": {
+        "compiler_unchanged": false,
+        "source_and_mbc_pins": {
+          "baseline_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+          "bytecode_bytes": 4138627,
+          "bytecode_revision": 14,
+          "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+          "canonical_roundtrip": true,
+          "kind": "pinned unchanged program numeric-phase candidate",
+          "source_and_codec_seconds": 0.078238875,
+          "source_bytes": 160857,
+          "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        },
+        "exact_reference_and_inflate_every_call": true,
+        "all_workers_finish_zero_managed_bytes_and_nodes": true,
+        "focused_mutable_child_tests": 2,
+        "original_decoded_restored_generic_witness": true,
+        "full_compatible_gpu_suite": false,
+        "maximum_timed_input_bytes": 1024,
+        "scope": "Pinned source/MBC identical; current original/decoded/restored generic mutable-child and conservative-fallback controls pass. Complete8B/random1KB/repeated1KB bytecode native calls preserve exact bytes, inflate, aliases and cleanup. No full-scale timing, hosted CI or broad final qualification yet.",
+        "decision": "Held prerequisite: generic mutable children now compose, but actual compressor native region inventory/code size are unchanged;42 new bounded-recurrence refusals remain. Random and repeated elapsed regress about1%; preserve all adverse observations. Continue only on the demonstrated loop-funding blocker."
+      },
+      "new_complete_program_native_regions": 0
     }
   },
   "repository": "mech-lang/mech",
