@@ -13953,6 +13953,17 @@
           "files": 64,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-history-map-round134-20261104/archives/r134-eight-primary-75f0224242a3.tar.gz"
+        },
+        {
+          "event": "random-primary",
+          "source_revision": "61b7d0b51a1ef17daf97992844c5f413b3203400",
+          "asset": "r134-random-primary-cf362afd0d2b.tar.gz",
+          "sha256": "cf362afd0d2bd874ef48b2028edce40df21d2b3e0350b1de740c0afbe9263bba",
+          "manifest_sha256": "47885ff14069bf23d957aed3a47e4359244276d7b2cbabf38bcf09244da3bdf5",
+          "bytes": 69995,
+          "files": 61,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-history-map-round134-20261104/archives/r134-random-primary-cf362afd0d2b.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
