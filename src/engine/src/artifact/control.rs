@@ -1827,7 +1827,7 @@ pub(crate) fn is_control_result_schema(schema: &mech_core::Schema) -> bool {
             && matrix_result(schema.body()) == Some(true))
 }
 
-/// Lexical matrices and records of matrices retain their turn-local geometry
+/// Lexical matrices and tuples/records of matrices retain their turn-local geometry
 /// in a canonical snapshot. This does not widen pattern or state eligibility.
 pub(crate) fn is_control_capture_schema(schema: &mech_core::Schema) -> bool {
     use mech_core::{DimensionLifetime, SchemaBody};
@@ -1850,6 +1850,9 @@ pub(crate) fn is_control_capture_schema(schema: &mech_core::Schema) -> bool {
             {
                 Some(true)
             }
+            SchemaBody::Tuple(fields) => fields.iter().try_fold(false, |matrix, body| {
+                carrier(body).map(|child| matrix || child)
+            }),
             SchemaBody::Record(fields) => fields.iter().try_fold(false, |matrix, field| {
                 carrier(&field.schema).map(|child| matrix || child)
             }),
@@ -2200,6 +2203,76 @@ mod tests {
     }
 
     #[test]
+    fn turn_tuple_matrix_capture_keeps_leaf_and_lifetime_restrictions() {
+        use mech_core::{
+            DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin, IntegerWidth, SchemaField,
+        };
+        let matrix = |element, rank| SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: (0..rank)
+                .map(|axis| {
+                    if axis == 0 {
+                        DimensionExpr::Constant(1)
+                    } else {
+                        DimensionExpr::Parameter(DimensionParameterId::new(0))
+                    }
+                })
+                .collect(),
+        };
+        let tuple = |body| {
+            SchemaBody::Tuple(
+                vec![
+                    SchemaBody::UnsignedInteger(IntegerWidth::W64),
+                    SchemaBody::Record(
+                        vec![SchemaField {
+                            name: "nested".into(),
+                            schema: SchemaBody::Tuple(vec![body].into_boxed_slice()),
+                        }]
+                        .into_boxed_slice(),
+                    ),
+                ]
+                .into_boxed_slice(),
+            )
+        };
+        let schema = |body, lifetime| {
+            SchemaDraft {
+                body,
+                dimension_parameters: vec![DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(0),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: None,
+                }]
+                .into_boxed_slice(),
+            }
+            .finalize()
+            .unwrap()
+        };
+        let leaf = SchemaBody::UnsignedInteger(IntegerWidth::W64);
+        let capture = schema(tuple(matrix(leaf.clone(), 2)), DimensionLifetime::Turn);
+        assert!(is_control_capture_schema(&capture));
+        assert!(!is_control_value_schema(&capture));
+        assert!(!is_control_capture_schema(&schema(
+            tuple(matrix(leaf.clone(), 2)),
+            DimensionLifetime::Activation,
+        )));
+        assert!(!is_control_capture_schema(&schema(
+            tuple(matrix(leaf.clone(), 3)),
+            DimensionLifetime::Turn,
+        )));
+        assert!(!is_control_capture_schema(&schema(
+            tuple(matrix(SchemaBody::Dynamic, 2)),
+            DimensionLifetime::Turn,
+        )));
+        assert!(!is_control_capture_schema(&schema(
+            tuple(matrix(matrix(leaf, 2), 2)),
+            DimensionLifetime::Turn,
+        )));
+    }
+
+    #[test]
     fn turn_matrix_capture_eligibility_does_not_widen_closed_values() {
         use mech_core::{
             DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
@@ -2318,7 +2391,10 @@ mod tests {
             assert!(!is_control_literal_schema(&turn));
             assert_eq!(
                 is_control_capture_schema(&turn),
-                matches!(body, SchemaBody::Matrix { .. } | SchemaBody::Record(_))
+                matches!(
+                    body,
+                    SchemaBody::Matrix { .. } | SchemaBody::Tuple(_) | SchemaBody::Record(_)
+                )
             );
             let activation = schema(body, DimensionLifetime::Activation);
             assert!(!is_control_result_schema(&activation));

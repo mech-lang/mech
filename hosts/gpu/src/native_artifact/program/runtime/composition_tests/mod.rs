@@ -29,6 +29,7 @@ mod schema_key;
 mod tagged_map_carrier;
 mod wide_scalar_array;
 mod utf8_reads;
+mod tuple_capture;
 
 /// Retain direct coverage of the independently proved around-child path. A
 /// complete tree normally consumes these source sites before the pieces run;
