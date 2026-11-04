@@ -29,9 +29,19 @@ pub(super) struct Counts {
     pub checked_private_homes: usize,
     pub exit_modes: BTreeMap<u64, u64>,
     pub child_fuel_exits: Vec<(u64, bool)>,
+    pub prepaid_source_visits: BTreeMap<usize, u64>,
     pub selected_sites: BTreeMap<u64, u64>,
     pub segment_retirements: BTreeMap<(u32, u32), u64>,
     pub virtual_retirements: BTreeMap<u32, u64>,
+}
+pub(in crate::native_artifact::program::runtime) fn prepaid_source_visit(site: usize) {
+    COUNTS.with(|counts| {
+        *counts
+            .borrow_mut()
+            .prepaid_source_visits
+            .entry(site)
+            .or_default() += 1;
+    });
 }
 pub(in crate::native_artifact::program::runtime) fn segment_retirement(site: u32, value: u32) {
     COUNTS.with(|counts| {

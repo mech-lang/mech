@@ -732,6 +732,10 @@ impl Invocation<'_, '_, '_> {
             state.validate_span_boundary(block.action())?;
         }
         let prepaid = self.numeric_source_prepaid(index);
+        #[cfg(test)]
+        if prepaid {
+            super::composition_tests::observe::prepaid_source_visit(index);
+        }
         let group = self
             .descriptor
             .metadata()

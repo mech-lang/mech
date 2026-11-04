@@ -267,14 +267,7 @@ impl Invocation<'_, '_, '_> {
         // This is one proved bulk transition, not fabricated/replayed per-op
         // visits. The report counts the remaining actual admitted CFG visits.
         self.state.control.previous = Some(previous);
-        if args[2] == 6 {
-            self.numeric_prepaid = Some(super::NumericPrepaid {
-                region,
-                deepest: proof.iteration,
-            });
-            self.state.scalar_path = None;
-        }
-        if args[2] == 7 {
+        if matches!(args[2], 6 | 7) {
             let exit = proof
                 .numeric
                 .as_ref()
@@ -283,16 +276,29 @@ impl Invocation<'_, '_, '_> {
                 .iter()
                 .find(|exit| exit.to == site)
                 .unwrap();
-            let (iteration, header) = match exit.kind {
-                ExitKind::ChildInitialize { iteration } => (iteration, false),
-                ExitKind::ChildHeader { iteration } => (iteration, true),
-                ExitKind::Unsupported => return Err(invalid("fuel continuation lost its kind")),
+            let (active, deepest) = match exit.kind {
+                ExitKind::Unsupported if args[2] == 6 => {
+                    let active = descriptor.metadata().plan.blocks()[exit.from]
+                        .iteration()
+                        .ok_or_else(|| invalid("cold continuation lacks its active Tail"))?;
+                    (active, active)
+                }
+                ExitKind::ChildInitialize { iteration } | ExitKind::ChildHeader { iteration }
+                    if args[2] == 7 =>
+                {
+                    let parent = descriptor.metadata().plan.iterations()[iteration as usize]
+                        .as_ref()
+                        .parent()
+                        .ok_or_else(|| invalid("fuel continuation lacks its paid parent"))?;
+                    let active = if matches!(exit.kind, ExitKind::ChildHeader { .. }) {
+                        iteration
+                    } else {
+                        parent
+                    };
+                    (active, parent)
+                }
+                _ => return Err(invalid("numeric continuation differs from its exit kind")),
             };
-            let parent = descriptor.metadata().plan.iterations()[iteration as usize]
-                .as_ref()
-                .parent()
-                .ok_or_else(|| invalid("fuel continuation lacks its paid parent"))?;
-            let active = if header { iteration } else { parent };
             // Native synchronous Tail children have no hidden counted-loop or
             // collection state. Export/finalization and all fallible charges
             // finish before restoring their exact lexical activation chain.
@@ -323,10 +329,7 @@ impl Invocation<'_, '_, '_> {
                     .ok_or_else(|| invalid("fuel continuation escapes its native root"))?;
             }
             self.state.control.current = Some(active);
-            self.numeric_prepaid = Some(super::NumericPrepaid {
-                region,
-                deepest: parent,
-            });
+            self.numeric_prepaid = Some(super::NumericPrepaid { region, deepest });
             self.state.scalar_path = None;
         }
         if proof.map.is_some() && args[2] == 0 {

@@ -298,11 +298,20 @@ fn prepare_region(
     hooks.call(b, site, GlobalHelper::decode(operation), [zero; 3], error);
     let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
     store(options, b, locals, region, region.words, ready)?;
-    for i in 0..if region.map.is_some() {
-        4
+    let inputs = if let Some(proof) = &region.numeric {
+        (0..2)
+            .chain(
+                proof
+                    .entry_words(region.tail.carrier().get())
+                    .map_err(backend)?
+                    .into_iter()
+                    .map(|word| word + 2),
+            )
+            .collect::<Vec<_>>()
     } else {
-        2 + region.numeric.as_ref().map_or(0, |p| p.words)
-    } {
+        (0..if region.map.is_some() { 4 } else { 2 }).collect()
+    };
+    for i in inputs {
         let word = b
             .ins()
             .load(types::I64, MemFlags::new(), hooks.arguments, offset(i)?);

@@ -58,7 +58,11 @@ fn numeric_interval_real_skip_forwards_current_buffers_and_keeps_cold_rebase() {
             .find(|region| region.tail.parent().is_none())
             .expect("the actual skip root has a native interval");
         let proof = root.numeric.as_ref().unwrap();
-        assert!(!proof.prepaid_sites.is_empty());
+        assert!(proof.phase.as_ref().unwrap().checked_children);
+        assert!(proof.exits.iter().any(|exit| matches!(
+            exit.kind,
+            crate::native_artifact::program::prepare::numeric_plan::ExitKind::Unsupported
+        )));
         assert!(proof.result.frame().is_some());
         assert!(proof.arrays.len() >= 2);
         let memory = mode.memory_budget();
@@ -126,7 +130,7 @@ fn numeric_interval_real_skip_forwards_current_buffers_and_keeps_cold_rebase() {
                     assert!(next_cache[2..].iter().all(|&word| word == 0));
                     if slide == 0 {
                         assert!(!counts.cold_private_arrays.is_empty());
-                        assert!(!counts.prepaid_segment_charges.is_empty(), "{counts:?}");
+                        assert!(!counts.prepaid_source_visits.is_empty(), "{counts:?}");
                         assert!(
                             counts
                                 .prepaid_segment_charges
