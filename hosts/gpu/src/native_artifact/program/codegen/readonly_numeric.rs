@@ -107,6 +107,20 @@ pub(in crate::native_artifact) fn emit_entry(
         .shadow
         .ok_or_else(|| backend("numeric region lacks scratch home"))?;
     let slots = slots(code, proof, region.words, shadow)?;
+    let candidates =
+        snapshots::source_words(code, proof, shadow, &proof.boundary_values.candidates)?;
+    if slots
+        .iter()
+        .copied()
+        .filter(|slot| {
+            !(region.words..region.words + 3).contains(slot)
+                && !(shadow..shadow + proof.words).contains(slot)
+        })
+        .chain(shadow..shadow + proof.scalar_words)
+        .any(|slot| !candidates.contains(&slot))
+    {
+        return Err(backend("numeric exit query omits a registered source word"));
+    }
     let register_words = slots.len();
     let mut fresh = BTreeSet::new();
     for &value in &proof.fresh_values {

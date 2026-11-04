@@ -117,6 +117,17 @@ fn live_before(
     start: usize,
     known: &BTreeMap<u32, bool>,
 ) -> Result<BTreeSet<u32>, &'static str> {
+    live_query(plan, tail, facts, start, known, None)
+}
+
+fn live_query(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    facts: &NativeProgramFacts<'_>,
+    start: usize,
+    known: &BTreeMap<u32, bool>,
+    wanted: Option<&BTreeSet<u32>>,
+) -> Result<BTreeSet<u32>, &'static str> {
     let mut next = BTreeMap::new();
     let mut reads = BTreeMap::<usize, BTreeSet<u32>>::new();
     let mut pending = vec![start];
@@ -174,10 +185,16 @@ fn live_before(
         }
         pending.extend(&successors);
         next.insert(site, successors);
+        if let Some(wanted) = wanted {
+            used.retain(|value| wanted.contains(value));
+        }
         reads.insert(site, used);
     }
     let mut definitions = BTreeMap::<usize, BTreeSet<u32>>::new();
     for value in 0..plan.values().len() {
+        if wanted.is_some_and(|wanted| !wanted.contains(&(value as u32))) {
+            continue;
+        }
         for definition in facts.definition_sites(value as u32)? {
             if let Some(site) = definition.site() {
                 definitions
@@ -333,15 +350,77 @@ pub(super) fn boundary_values(
     plan: &Plan,
     tail: &NativeTailLoop,
     facts: &NativeProgramFacts<'_>,
+    forest: &super::super::numeric_phase::Forest,
+    frames: &[FrameWords],
 ) -> Result<super::super::numeric_plan::BoundaryValues, &'static str> {
+    let mut candidates = frames
+        .iter()
+        .map(|frame| frame.value)
+        .collect::<BTreeSet<_>>();
+    candidates.extend([tail.carrier().get(), tail.returned().get()]);
+    for &site in &forest.sites {
+        match plan.blocks()[site].action() {
+            Action::Initialize { iteration } | Action::Latch { iteration }
+                if matches!(
+                    plan.iterations()[*iteration as usize],
+                    NativeControlLoop::Tail(_)
+                ) =>
+            {
+                let NativeControlLoop::Tail(child) = &plan.iterations()[*iteration as usize] else {
+                    unreachable!()
+                };
+                candidates.insert(
+                    if matches!(plan.blocks()[site].action(), Action::Initialize { .. }) {
+                        child.seed().get()
+                    } else {
+                        child.next().get()
+                    },
+                );
+            }
+            _ => facts.parallel_action_reads(site as u32, &mut |value| {
+                candidates.insert(value.get());
+                Ok(())
+            })?,
+        }
+        match plan.blocks()[site].terminator() {
+            Term::Scalar(Branch::Branch { condition, .. }) => {
+                candidates.insert(condition.get());
+            }
+            Term::Scalar(Branch::LiteralBranch { left, right, .. }) => {
+                candidates.extend([left.get(), right.get()]);
+            }
+            _ => {}
+        }
+    }
+    for value in 0..plan.values().len() {
+        if facts
+            .definition_sites(value as u32)?
+            .iter()
+            .any(|definition| {
+                definition
+                    .site()
+                    .is_some_and(|site| forest.sites.contains(&(site as usize)))
+            })
+        {
+            candidates.insert(value as u32);
+        }
+    }
     let known = BTreeMap::new();
     Ok(super::super::numeric_plan::BoundaryValues {
+        candidates: candidates.iter().copied().collect(),
         header: live_before(plan, tail, facts, tail.header() as usize, &known)?
             .into_iter()
             .collect(),
-        exit: live_before(plan, tail, facts, tail.exit() as usize, &known)?
-            .into_iter()
-            .collect(),
+        exit: live_query(
+            plan,
+            tail,
+            facts,
+            tail.exit() as usize,
+            &known,
+            Some(&candidates),
+        )?
+        .into_iter()
+        .collect(),
     })
 }
 

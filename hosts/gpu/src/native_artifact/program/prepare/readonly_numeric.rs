@@ -603,7 +603,7 @@ fn derive_with_children(
         &exits,
     )?;
     let mut scalar_words = 0;
-    let frame_words = frame_values
+    let frame_words: Vec<FrameWords> = frame_values
         .into_iter()
         .map(|value| {
             let fields = frames
@@ -701,7 +701,8 @@ fn derive_with_children(
     };
     let fresh_values =
         exits::fresh_values(plan, tail, frames, aggregates, &forest, provenance.facts)?;
-    let boundary_values = exits::boundary_values(plan, tail, provenance.facts)?;
+    let boundary_values =
+        exits::boundary_values(plan, tail, provenance.facts, &forest, &frame_words)?;
     Ok(Proof {
         arrays,
         frames: frame_words,
