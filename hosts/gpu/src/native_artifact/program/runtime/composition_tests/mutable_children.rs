@@ -181,3 +181,68 @@ fn fixed_size_child_compound_guard_keeps_conservative_fallback() {
         );
     }
 }
+
+#[test]
+fn mutable_child_data_guard_needs_no_whole_child_trip_bound() {
+    let source = SOURCE.replacen(
+        "  more := at < end\n",
+        "  more := values[at + 1u64] != 0u32\n",
+        1,
+    );
+    assert_ne!(source, SOURCE);
+    for artifact in artifacts(&source) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        assert!(
+            jit.descriptor()
+                .metadata()
+                .closed_tails
+                .regions
+                .iter()
+                .any(|region| region.tail.parent().is_none()
+                    && region.numeric.as_ref().is_some_and(|proof| proof
+                        .phase
+                        .as_ref()
+                        .is_some_and(|phase| phase.loops.len() > 1))),
+            "data-dependent fixed-size children must retain native execution with checked fuel"
+        );
+        let memory = mode.memory_budget();
+        let args = inputs(
+            &artifact,
+            &[
+                ("values", Data::Matrix([4, 8, 0].map(Data::U32).into())),
+                ("rounds", Data::U64(2)),
+                ("amount", Data::U32(1)),
+                ("prime", Data::Bool(false)),
+                ("reject", Data::U64(u64::MAX)),
+            ],
+            &memory,
+        );
+        let before = contents(&args);
+        let mut output = vec![None; artifact.outputs().len()];
+        let (result, counts) = observe::run(&jit, &args, &mut output, mode.execution(), &memory);
+        result.unwrap();
+        assert_eq!(counts.phases, 1);
+        assert_eq!(
+            output
+                .last()
+                .unwrap()
+                .as_ref()
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            Data::Matrix([6, 10, 0].map(Data::U32).into())
+        );
+        assert_eq!(contents(&args), before);
+        drop((args, output));
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
+}
