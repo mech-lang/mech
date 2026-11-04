@@ -14613,6 +14613,28 @@
           "observations": 32
         }
       }
+    },
+    "137": {
+      "base": "c7a8b7c2caf039830e6a0cb7a30fcd4648d9744b",
+      "production": "f37ccd3eaa6a83417b9f5ad2d38ca7ae1a77e20e",
+      "compiler_source": "f37ccd3eaa6a83417b9f5ad2d38ca7ae1a77e20e",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "parent",
+          "source_revision": "4c1a4b50c1db568cdf05bb1b0a73b7a58be23eb4",
+          "asset": "r137-parent-37df722ae31f.tar.gz",
+          "sha256": "37df722ae31f41914fbce41365e02460379f518381ea67afe509746d6b3e29f9",
+          "manifest_sha256": "5c3f4fc4b433fb77013cde2f402942851bcf756ea4b6fe50b4dead163de07e76",
+          "bytes": 45984,
+          "files": 29,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-shared-quotient-round137-20261104/archives/r137-parent-37df722ae31f.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
