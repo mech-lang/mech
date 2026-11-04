@@ -12750,6 +12750,28 @@
         "verified_archives": 39,
         "verified_file_occurrences": 3613
       }
+    },
+    "126": {
+      "base": "7fe6b6e611e678e34ec141efd4aeebd3726bf54f",
+      "production": "50751f9445356b9b33d16b89f636876e6014379f",
+      "compiler_source": "914ab57fab23f831f6bb99e5f8a0e8419d2c3004",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "closure",
+          "source_revision": "914ab57fab23f831f6bb99e5f8a0e8419d2c3004",
+          "asset": "r126-closure-5cd6c81181bd.tar.gz",
+          "sha256": "5cd6c81181bd37a7ed39e230028d2943af9fc2ca34ecfdfa4848256e916a6be4",
+          "manifest_sha256": "bde4b812871318b43944507e2ac7bb30ecdb8d680a6be04380de1918aa8b6891",
+          "bytes": 4660924,
+          "files": 141,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-source-recheck-round126-20261104/archives/r126-closure-5cd6c81181bd.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
