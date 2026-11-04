@@ -72,6 +72,24 @@ enter map admission. Frame assignment retains scalar + iteration + aggregate +
 borrowed + closed words, then relocates owner words once. Unselected frontiers
 remain in the identity transcript.
 
+## Direct checked unsigned scalar guards
+
+R138 shares exact word-comparison guards across scalar and Program emission.
+For U64 addition, the wrapping sum is valid exactly when sum>=left. Subtraction
+is valid exactly when left>=right, before computing the same difference. The
+existing arithmetic error arm, source origin, admission and publication remain;
+no source overflow becomes wrapping behavior. Signed/narrow operations and
+multiplication retain their previous emission. No alternate scalar vocabulary,
+runtime dispatch or extra permission is introduced.
+
+Actual ARM64 tests reject materialized carry/borrow Booleans for scalar-none and
+program-speed emission. Original/decoded native results match independent Rust
+checked arithmetic at full-width boundaries, with finite rejection precedence,
+unchanged failed publication and retry. Existing scalar latency/allocation and
+frame controls remain unchanged. IR167 commits the lowering and rejects166;
+work107/private ABI39/MBC14 remain. Current buffers and physical exit consumers
+stay intact; the measured80B stack increase remains explicit.
+
 ## Shared general numeric address quotient
 
 R137 preserves canonical column-major selection over row-major backing while

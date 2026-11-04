@@ -1,5 +1,143 @@
 # Native compression: current status
 
+## R138: branch directly on checked unsigned word comparisons
+
+Update base: `5d2bc0a2f827597449546f035f998465c12e8a4b`.
+Control compiler: `f37ccd3eaa6a83417b9f5ad2d38ca7ae1a77e20e` (R137).
+Measured compiler: **`f04df6c76ac2a38506becf76a980533e7954b146`**.
+Test-first: `97896f9a15`; separate CI scheduling: `bb13bf1eba`.
+IR/work/ABI/MBC: **167/107/39/14**. Stack base remains
+`eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`.
+
+The real byte-reading hot path materialized an overflow Boolean, normalized its
+width, compared it to zero and branched. The shared scalar emitter now computes
+the wrapping U64 sum and checks `sum>=left`; subtraction checks `left>=right`
+before the same subtraction. These are exact overflow/underflow conditions for
+all word values. Source arithmetic still rejects overflow; original admission,
+origins, source order and publication remain. Multiplication, signed operations
+and narrow arithmetic are unchanged. No source or algorithm change.
+
+The actual shared ARM64 primitive no longer materializes carry/borrow Booleans
+under scalar-none or program-speed compilation. The clean parent passes the
+semantic control and fails the instruction expectation. Current original/decoded
+public scalar calls agree with Rust checked arithmetic at 0/1/2, signed-boundary,
+MAX-1/MAX combinations; overflow preserves previous outputs, finite admission
+precedes arithmetic and retry succeeds. Native IR166 is strictly rejected.
+
+| Complete evaluate_into | R137 matched control | R138 | Control→current / Roc | Elapsed change |
+|---|---:|---:|---:|---:|
+|8B|1.3396665 ms|1.3245420 ms|4.572241×→4.520621×|-1.128975%|
+|Random64B|1.2820415 ms|1.2775830 ms|4.405641×→4.390320×|-0.347766%|
+|Random256B|1.3422705 ms|1.3317500 ms|4.550069×→4.514407×|-0.783784%|
+|Random1KB|1.2664165 ms|1.2672705 ms|4.111742×→4.114515×|+0.067434%|
+|Repeated1KB|2.0909165 ms|2.0077290 ms|6.204500×→5.957653×|-3.978519%|
+|Random32,769B|8.2537495 ms|8.1509375 ms|7.816051×→7.718691×|-1.245640%|
+|Repeated32,769B|27.8458330 ms|24.9558755 ms|20.905280×→18.735642×|-10.378420%|
+
+The largest repeated case runs first and improves in8/8 descriptive blocks.
+Repeated1KB also improves8/8. Other improving/adverse block counts are8B25/7,
+64B5/3,256B6/2, random1KB5/3 and large random5/3. The small-random1KB median is
+**0.067434% slower**, retained unchanged; no uniform win is claimed. Eight bytes
+has992 observations/version; other small cases128, large cases16. Blocks within
+one prepared pair are descriptive, not independent replications. Every primary
+timing is sealed and committed immediately. All seven retained compression
+inputs/sizes are controls; no separate ten-workload or full-corpus timing claim.
+
+| Separate hardware cohort | Retired instructions | Instruction change | Cycle change |
+|---|---:|---:|---:|
+|8B|12,544,919.5→12,487,914.0|-0.454411%|+0.229561%|
+|Random1KB|12,827,880.0→12,653,041.0|-1.362961%|-1.606914%|
+|Repeated1KB|28,632,344.5→25,655,587.0|-10.396485%|-5.034831%|
+|Random32,769B|114,975,199.5→111,341,277.0|-3.160614%|-2.321456%|
+|Repeated32,769B|609,388,960.0→503,130,059.0|-17.436959%|-10.591953%|
+
+The larger repeated call executes **106,258,901 fewer instructions**,17.436959%
+less; its cycle median falls10.591953%. The small8B cycle median increases0.229561%
+and remains visible. Hardware/heap are separate from primary timing, covering
+the original five cases (32/4 calls per version small,4/2 large). All five
+allocation request counts, requested bytes, reallocations and incremental live
+usable heap peaks remain exactly equal. Restored64/256B are elapsed/correctness
+controls, with no new hardware/heap cohort claimed.
+
+Generated text falls7,816,196→7,815,044B, but machine stack grows7,136→7,216B
+(**+80B**). Static CSETs fall6,952→3,543 and UXTBs7,403→4,025, while LDRs increase
+by 6,484. Total static instructions fall1,954,049→1,953,761. The extra loads and
+stack are retained tradeoffs; this is not a stack or total-memory reduction.
+Static counts are not dynamic visits. All 3590 registered/3004 fresh collector
+words and physical exit inventories remain equal. Object SHA256:
+`978b3dde98e49e18db5c397d7447af6c952d198a4809f90c9875e32be69b4f75`.
+
+Fresh actual-executable CPU samples put **67.411168% /83.566201%**
+in generated code for larger random/repeated inputs. Separate raw-PC captures
+retain886/2500
+and978/2433
+timer observations at stack memory instructions. These are CPU-time samples,
+not retired-instruction partitions. Full callback work includes real algorithm
+work; no claim that all host callbacks are overhead.
+
+Separate C and Rust diagnostics compile the guarded eight-byte little-endian
+read into eight ARM64 instructions, including **one 64-bit load**. Rust overflow
+checks stay enabled. Both Rust formulations and the local C implementation pass
+2,275 readable/short/maximum-offset window cases. These are kernel instruction
+patterns, not whole-compressor timings. They assume a one-dimensional slice;
+general Mech matrices retain column-major selection over row-major backing.
+A future combined read needs current geometry/window guards and exact scalar
+fallbacks; no such new pass or source optimization is introduced here. The
+full reference CPU sample is retained from R135, not freshly sampled this round.
+
+Passing at the measured compiler: **555** compatible GPU tests (same 7 inherited
+profile exclusions), **130** guarded native CI tests listed and executed,
+unchanged **236** components, **8** numeric-composition tests and **1** path case, **132** workflow
+tests, **15** architecture/catalog checks, runtime-only metadata, formatting and
+warnings as errors. Both focused tests pass. Source work, current arguments,
+original/decoded/restored behavior, aliases, lexical errors, publication and
+recovery remain covered without changing expectations or resource allowances.
+
+Because the shared scalar emitter changed, fresh **12** scalar and **8** frame
+controls compare rebuilt current/control libraries through the unchanged
+maintained harness. The existing scalar latency allowance stays 1.05; maximum
+observed ratio is **1.028896**. Pure scalar
+request/byte counts stay equal, loop allocation slope remains zero and frame
+request/byte/work counts do not increase. No scalar speedup is inferred from
+mixed control ratios. No fresh linked40, full/minimal/no_std dependency graph
+rerun is claimed. GPU opt3/test root opt1 use nightly2026-03-03 aarch64 macOS;
+Core/Engine/Stdlib/math remain frozen.
+
+The compiler-sampling attempt raced with normal producer completion; no compiler
+profile is claimed. The full image emits successfully in144.461s while other
+qualification runs, so this is not a controlled compiler-speed comparison.
+Image-validation startup inherited fromR136 remains unresolved and outside
+evaluate_into. No introduced correctness failure remains; the tiny adverse
+random median,8B cycle result, larger stack and additional static loads remain.
+Hosted CI is cancelled by standing instruction, with no green hosted-CI claim;
+the PR remains draft pending green CI and clean review.
+
+Source/MBC SHA256 remain
+`331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9` /
+`a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7`.
+Algorithms, tables, depth300/nice258, near-EOF rules,262144U16/1500513U32/305257U64
+real capacities, source allocation sites, allocator, aliases, retained output
+capacity/clear/reuse and evaluate_into boundaries remain. All cases match exact
+pinned raw bytes and independently inflate; final managed bytes/nodes are zero.
+Largest input remains32,769B. No source-variant or full-corpus timing is claimed.
+These seven timing cases do not exhaust the maintained compression fixtures:
+the nine small complete-stream cases and two block/window boundary fixtures add
+ten cases beyond the shared eight-literal case. Their original input bytes,
+output prefixes and expected raw bytes remain checked in. Expanding the timing
+matrix to those cases is the next coverage step; the eight numeric-composition
+tests above are not executions of those eleven complete-stream fixtures.
+
+All raw observations, parent receipts, source revisions/feature profiles,
+micro-controls, actual assembly and numerical analysis are retained through
+round138 in`benchmarks/mech-deflate/experiments.json`. All **17** evidence archives
+(**16,145,641B**) and their sidecars are published with server SHA256 verification.
+Diagnostic packets exclude
+native binaries/libraries/Objects, Instruments stores and bytecode. The next
+major native target is the repeated byte-reading computation: geometry/range
+proofs and a combined read with exact fallbacks, guided by the actual binaries.
+Current native operand reloads and independent image-proof preparation also
+remain open. Parity is not established.
+
 ## R137: reuse the exact quotient in general numeric matrix addresses
 
 Update base: `c7a8b7c2caf039830e6a0cb7a30fcd4648d9744b`.
