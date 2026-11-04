@@ -13192,7 +13192,7 @@
       "base": "27e7cc4c4c51370d5beb6473a2a9ff6a39df1b0b",
       "production": "e79a6272aff4a06ebf5fb3fa3dc8f78be23c363a",
       "compiler_source": "e79a6272aff4a06ebf5fb3fa3dc8f78be23c363a",
-      "decision": "under measurement",
+      "decision": "rejected; restored R130 production emission; retain semantic post-append controls",
       "events": [
         {
           "event": "eight-primary",
@@ -13230,7 +13230,130 @@
       ],
       "release_tag": "evidence-native-compression-experiments-2",
       "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
-      "archive_publication": "local-only at measurement; external publication pending"
+      "archive_publication": "local-only at measurement; external publication pending",
+      "retained": false,
+      "primary": {
+        "eight": {
+          "observations_per_source": 1984,
+          "seconds": {
+            "before": 0.0016780835,
+            "after": 0.0017141665
+          },
+          "reference_seconds": 0.000289,
+          "multiples_of_reference": {
+            "before": 5.806517301038063,
+            "after": 5.931371972318339
+          },
+          "change_percent": 2.1502505685801587,
+          "improving_groups": 0,
+          "improving_blocks": 4,
+          "adverse_blocks": 60,
+          "separate_counters": {
+            "before-cpu": {
+              "observations": 32,
+              "instructions": 17294534.0,
+              "cycles": 5359468.0
+            },
+            "after-cpu": {
+              "observations": 32,
+              "instructions": 16961845.0,
+              "cycles": 5392603.5
+            },
+            "before-memory": {
+              "observations": 4,
+              "allocation_requests": 3350.0,
+              "requested_bytes": 17639393.0,
+              "incremental_peak_live_usable": 15279752.0
+            },
+            "after-memory": {
+              "observations": 4,
+              "allocation_requests": 3350.0,
+              "requested_bytes": 17639393.0,
+              "incremental_peak_live_usable": 15279752.0
+            }
+          }
+        },
+        "random": {
+          "observations_per_source": 128,
+          "seconds": {
+            "before": 0.003602396,
+            "after": 0.009521021000000001
+          },
+          "reference_seconds": 0.000303,
+          "multiples_of_reference": {
+            "before": 11.889095709570958,
+            "after": 31.422511551155118
+          },
+          "change_percent": 164.29690128458952,
+          "improving_groups": 0,
+          "improving_blocks": 0,
+          "adverse_blocks": 8,
+          "separate_counters": {
+            "before-cpu": {
+              "observations": 32,
+              "instructions": 59474745.5,
+              "cycles": 11415994.0
+            },
+            "after-cpu": {
+              "observations": 32,
+              "instructions": 81956091.5,
+              "cycles": 30257213.0
+            },
+            "before-memory": {
+              "observations": 4,
+              "allocation_requests": 3157.0,
+              "requested_bytes": 15154378.0,
+              "incremental_peak_live_usable": 15278216.0
+            },
+            "after-memory": {
+              "observations": 4,
+              "allocation_requests": 3157.0,
+              "requested_bytes": 15154378.0,
+              "incremental_peak_live_usable": 15278216.0
+            }
+          }
+        },
+        "repeated": {
+          "observations_per_source": 128,
+          "seconds": {
+            "before": 0.004902271,
+            "after": 0.02312
+          },
+          "reference_seconds": 0.000325,
+          "multiples_of_reference": {
+            "before": 15.08391076923077,
+            "after": 71.13846153846154
+          },
+          "change_percent": 371.61815411673496,
+          "improving_groups": 0,
+          "improving_blocks": 0,
+          "adverse_blocks": 8,
+          "separate_counters": {
+            "before-cpu": {
+              "observations": 32,
+              "instructions": 83567633.5,
+              "cycles": 15553697.0
+            },
+            "after-cpu": {
+              "observations": 32,
+              "instructions": 192367311.5,
+              "cycles": 70705588.5
+            },
+            "before-memory": {
+              "observations": 4,
+              "allocation_requests": 3392.0,
+              "requested_bytes": 17646983.0,
+              "incremental_peak_live_usable": 15282336.0
+            },
+            "after-memory": {
+              "observations": 4,
+              "allocation_requests": 3392.0,
+              "requested_bytes": 17646983.0,
+              "incremental_peak_live_usable": 15282336.0
+            }
+          }
+        }
+      }
     }
   },
   "repository": "mech-lang/mech",

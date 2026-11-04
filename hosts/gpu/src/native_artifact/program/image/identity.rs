@@ -304,9 +304,7 @@ fn selected_template(
 // canonical emptiness only for the frame retirements actually omitted.
 // IR160 composes current-funded Tail children with exact cold Collection exits,
 // restoring the reached active Tail and only its paid ancestor traversal credit.
-// IR161 narrows terminal numeric failure snapshots to the existing consumer's
-// exact settlement inputs; source checks, prices and continuations stay intact.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 161;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 160;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

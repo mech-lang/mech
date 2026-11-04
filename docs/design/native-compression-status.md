@@ -1,21 +1,79 @@
 # Native compression: current status
 
-## R131 prospective experiment: terminal failure transport
+## R131: rejected terminal-error snapshot experiment
 
-Before measurement, base `27e7cc4c4c51370d5beb6473a2a9ff6a39df1b0b`: R130's
-generated body now dominates both 1KB CPU profiles. Its collector has 3,590 SSA
-words; the shared terminal failure sink saves them all although the consumer
-reads only current carrier fields, append lengths, counters and loan state.
-The existing growing-buffer witness confirms the full 108-word snapshot.
+Update base: `27e7cc4c4c51370d5beb6473a2a9ff6a39df1b0b`.
+Measured candidate: `e79a6272aff4a06ebf5fb3fa3dc8f78be23c363a`;
+retained control: `11f0ea49d2ba577bf18b563a566f325ac7957c7f` (R130).
+Candidate IR/work/ABI/MBC: **161/107/38/14**. The compiler change is **rejected**.
+Production emission and identity are restored to R130; the new semantic error
+controls remain. Source, bytecode, dependencies, resource prices and work are
+unchanged. R130 remains the performance baseline.
 
-Factor the existing exit-word inventory, preserve its order/content, and use
-the existing SSA subset spill only at terminal numeric failure. Keep success,
-bailout, bounds retry, first-change and child-fuel paths unchanged. Require
-original/decoded/restored error-after-append, ordinary-path error/origin agreement,
-assertion/load/arithmetic precedence, previous publication, aliases, cleanup,
-finite denial and retry. Retain component expectations/allowances. Compare all
-three small workloads to the retained R130 binaries; commit each timing and
-then collect separate counters/profiles. No result is claimed yet.
+The candidate factored the existing exit-word inventory without changing its
+order/content, then used the existing subset spill only at the shared terminal
+numeric error. The collector's snapshot fell **3,590→45 words**, but changing
+that SSA sink adversely changed generated transport and register allocation.
+This hypothesis did not survive measurement; smaller snapshots or Objects alone
+are insufficient acceptance evidence.
+
+| Complete evaluate_into | Retained control / Roc | Rejected candidate / Roc | Change |
+|---|---:|---:|---:|
+| 8 bytes | 5.806517× | 5.931372× | 2.150251% slower |
+| Random 1KB | 11.889096× | 31.422512× | 164.296901% slower |
+| Repeated 1KB | 15.083911× | 71.138462× | 371.618154% slower |
+
+Elapsed medians: **1.6780835→1.7141665 ms /3.602396→9.521021 ms /
+4.902271→23.120000 ms**; fresh references **0.289/0.303/0.325 ms**.
+The 8B cohort has 3,968 primary observations, zero improving pairs of four,
+four improving and 60 adverse blocks. Each 1KB version has 128 primary
+observations and zero improving blocks of eight. Results were committed after
+each timing: `6e167036fc`, `add6e0f0dd`, `57519ad345`. All observations remain
+archived; there is no replacement or historical compounding.
+
+| Separate counter | Control | Rejected candidate |
+|---|---:|---:|
+| 8B instructions | 17,294,534 | 16,961,845 |
+| Random instructions | 59,474,745.5 | 81,956,091.5 |
+| Repeated instructions | 83,567,633.5 | 192,367,311.5 |
+| 8B cycles | 5,359,468 | 5,392,603.5 |
+| Random cycles | 11,415,994 | 30,257,213 |
+| Repeated cycles | 15,553,697 | 70,705,588.5 |
+
+Hardware has 32 calls per version/input; heap has four, separately. Allocation
+requests remain **3,350 /3,157 /3,392**, requested bytes
+**17,639,393 /15,154,378 /17,646,983**, and incremental peak usable heap
+**15,279,752 /15,278,216 /15,282,336**. Machine entry stack grows
+**246,624→431,056 bytes** despite text shrinking **58,489,744→44,240,292 bytes**.
+No heap or code-size result overrides the execution regression.
+
+Fresh isolated two-second CPU samples put generated-body exclusive time at
+**69.35→88.03%** on random input and **71.14→92.31%** on repeated input.
+Weights are **1,207/1,261** and **1,490/1,508**. Counts are respectively
+2,050/1,026 and 2,050/514 complete calls, outside primary timing. Actual sampled
+PC excerpts contain repeated large-offset stack-to-stack moves. These static
+windows demonstrate surviving transport, not a weighted instruction ledger or
+an exact dynamic attribution of the regression. The retained reference binary
+and its typed-store/vector-subtraction assembly were verified again.
+
+The parent structural witness fails as predicted; both candidate focused tests
+pass, as do all **72** composition controls. Original/decoded/restored cases
+compare the full ordinary error and origin after append, assertion/read ordering,
+unchanged prior publication, input aliases, cleanup and recovery. All three
+linked compressor witnesses retain exact raw bytes, independent inflation,
+capacities13/1029 and zero final managed bytes/nodes. Work remains
+**18,067,825,665 /18,264,396,817 /25,477,511,424**. The first link failed with
+**errno28 (disk space)** after successful Object emission; losslessly archiving
+old builds and retrying only the link completed it. This was environmental.
+The broader component/architecture/CI suites were not rerun for this rejected
+emission experiment; R130's qualification is not presented as new coverage.
+
+The rollback preserves the semantic post-append test and schedules it in the
+native CI group. The experimental structural test and changed production
+emission are removed. The next bounded experiment will examine exact mode2
+bounds-error consumers and current scalar operands while leaving the rejected
+shared failure optimization disabled. Ordinary continuations, first-change,
+child fuel, finite admission and error precedence retain their current paths.
 
 ## R130: retain collector state through nested native loops
 
