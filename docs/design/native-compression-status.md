@@ -1,5 +1,132 @@
 # Native compression: current status
 
+## R136: preserve only the physical words consumed at numeric exits
+
+Update base: `3f372480e28b477f33d720bcc2d7d8ffa52c42d1`.
+Control compiler: `5a0d926a2ead208466bc8aa13a4dad301aaeb5ef` (R135).
+Measured compiler: **`1acbb2388a20c9b177c43afea0c01ba529856950`**.
+Test-first witness: `5760adce90`; liveness controls: `292e677f77`, `f14d70238f`,
+`ef68114952`. IR/work/ABI/MBC: **165/107/39/14**. Stack base remains
+`eacb00fcb3352fbbf3d4dddb7b983f4c130f4a7b`.
+
+The previous real executable had2158/2494 raw timer samples at stack memory
+instructions. Each full-bank boundary kept otherwise dead temporary SSA values
+live throughout successful execution. The compiler now derives exact current
+canonical continuation values for ordinary cold, checked child funding, root
+header and successful exits. Shared scalar/frame/aggregate layouts expand those
+values into physical words and union the existing loan, view and settlement
+consumers. Terminal failure retains its abort consumers and cannot resume source
+execution. Bounds and first-change bridges keep their existing behavior.
+The existing mode6 path now restores the source edge's exact active frames.
+No source operation, original charge, finite admission, alias permission, error
+origin, publication or retry path is removed. Full admitted word capacity stays.
+
+The independent image verifier reconstructs every ordered list and candidate
+superset; missing, duplicated or forged values are rejected. Codegen additionally
+requires candidates to cover every registered source word. Old native IR164 is
+rejected; public bytecode stays14. Normal-exit liveness queries only these proved
+candidates, preserving the same graph, kills, lexical cuts and least fixed point.
+A predecessor worklist propagates new facts once, replacing repeated whole-graph
+sweeps and old-fact replay. Independent path and projection oracles establish the
+same results; cyclic controls first fail on their respective clean solver parents.
+
+The real collector still registers3590 words, with3004 fresh root-traversal words.
+Physical exits now save96/98 words for its2 ordinary edges,68–116 for50 child
+edges,80 at the header,98 at success and45 at terminal failure. Generated text
+falls **29,384,768→7,879,164B**, entry stack **126,720→7,200B**. Object SHA256:
+`95920a40459b3f44b11963076be721353ac8d7acc0a3ab8e9f35490b4c5d5a7e`.
+This narrows consumers; it does not compact the admitted word bank. R131's rejected
+terminal-error-only experiment remains rejected.
+
+| Complete evaluate_into | R135 control | R136 | Control→current / Roc |
+|---|---:|---:|---:|
+|8B|1.577229 ms|1.336854 ms|5.495571×→4.658028×|
+|Random1KB|2.940458 ms|1.264416 ms|9.609340×→4.132078×|
+|Repeated1KB|4.0407295 ms|2.287062 ms|12.587942×→7.124804×|
+|Random32,769B|55.266896 ms|8.3323755 ms|52.535072×→7.920509×|
+|Repeated32,769B|83.366250 ms|34.6210205 ms|62.493441×→25.952789×|
+
+Fresh reference medians are0.287 /0.306 /0.321 /1.052 /1.334ms. Elapsed improves
+**15.240336% /56.999352% /43.399775% /84.923388% /58.471179%**. Both prepared eight-byte pairs and32/32
+blocks improve, with992 observations/version. Each1KB case has128/version and
+8/8 improving blocks; each32,769B case has16/version and8/8 improving blocks.
+All individual observations, including contrary variation, remain archived.
+Each primary timing was committed immediately. Independent cohorts are not
+compounded. **All programs and defined input sizes are regression controls; eight bytes is
+one row, not the optimization focus.** This round completes the five compression
+cases. The wider ten-workload benchmark inventory is separate and its current
+compiler/size executions remain pending; component tests are not substitute
+timing coverage.
+
+| Separate hardware cohort | R135 instructions | R136 instructions | R135 cycles | R136 cycles |
+|---|---:|---:|---:|---:|
+|8B|15,800,766.5|12,548,063|4,904,959|4,266,957|
+|Random1KB|37,671,201|12,848,865|9,352,051.5|3,920,443.5|
+|Repeated1KB|62,561,509.5|29,843,296.5|12,825,331|7,216,723|
+|Random32,769B|815,004,280|115,911,737.5|176,826,653|26,032,782.5|
+|Repeated32,769B|1,617,176,020.5|653,537,615.5|266,691,728.5|110,232,174|
+
+Hardware uses32 calls/version small and4 large; heap uses4 small and2 large.
+All five allocation counts, requested bytes, reallocations and incremental live
+usable peaks are unchanged. Eight bytes remains3350 requests and15,279,752B
+incremental peak; larger peaks remain15,314,280 /15,313,264B. Smaller machine stack
+is not a heap-saving claim. These are separate cohorts from primary elapsed.
+
+Fresh2-second actual-executable CPU samples put **65.803503% /87.830688%**
+in generated code for random/repeated32,769B. The separate raw-PC captures
+find **906/2495** and **1216/2453** timer observations at stack memory
+instructions (2418 /2422 resolved within the main binary); random previously
+had2158/2494. The repeated case remains the largest timing gap and still has
+substantial generated stack traffic. These are time-based opcode observations,
+not retired-instruction shares. The optimized nondebug reference diagnostic is
+retained fromR135, not freshly sampled here. Its4096-call wrapper differs from
+the primary256-call binary; two inspected function opcode streams agree, without
+a whole-binary identity claim. Primary timing always uses the original optimized
+reference executable. No new C/Rust timing is claimed.
+
+Validation at the measured source: **551** compatible GPU tests, with the same7
+inherited exclusions; **126** native CI contracts inventoried and executed;
+unchanged **236** components, **8** connected and **1** path case; **132** workflow
+tests; **15** architecture/catalog checks, runtime-only metadata, formatting and
+warnings as errors. GPU opt3/unit-root opt1 use nightly2026-03-03 aarch64 macOS
+and frozen dependencies. All7 new focused tests pass. Original/decoded/restored
+controls retain current Boolean arguments, nested/repeated visits, finite
+errors and source precedence, private writes, unselected invalid paths, current
+aliases, unchanged publication, cleanup and recovery. The clean parent passes
+the semantic control and fails the2 physical/proof expectations. No fresh full/
+minimal/no_std dependency or linked40/scalar12/frame8 suite is claimed.
+
+The published parent had an **inherited** CI inventory failure: its guard expected
+111 while the actual maintained Rust list contained119. Separate commit
+`8939382983` reproduces and repairs that equality. Subsequent commits schedule
+the7 new tests, so the final guarded execution is126. The initial introduced
+formatting error was fixed in`292e677f77`; the final formatting check passes.
+Three full compiler attempts were deliberately stopped after757.692s /578.398s /
+872.239s when live samples located expensive liveness analysis. They are retained
+as analysis-cost failures, not resource denials. The final unchanged full Object
+emits in121.861s, overlapping qualification; no controlled compiler-speed gain
+is claimed. Independent image validation/startup remains a cost: roughly35–37s
+versus17s for the control's eight-byte diagnostic command, outside evaluate_into.
+This introduced startup regression remains unresolved; the compression result
+does not establish faster startup. No introduced runtime
+correctness failure remains; hosted CI is cancelled by standing instruction,
+with no green hosted-CI claim. Latest-head review is pending; the PR stays draft.
+
+Pinned source/bytecode, algorithms/tables, depth300/nice258, near-EOF rules,
+source allocation sites,262144U16/1500513U32/305257U64 scratch, allocator, input
+aliases, output13/1029/32804 clear/reuse and evaluate_into boundaries remain fixed.
+All cases match exact pinned raw bytes and independently inflate; larger logical
+work stays129,288,746,789 /270,676,915,001 and final managed bytes/nodes are zero.
+No full-corpus timing was attempted. True entry loading, lifetime compaction,
+remaining measured native/host costs, image-preparation cost, separate source
+variants and parity remain open.
+
+Reproduction, all raw cohorts, parent controls and failure dispositions are
+indexed in`benchmarks/mech-deflate/experiments.json`, round136. Diagnostic packets
+exclude native binaries, libraries, Objects, Instruments binary stores and
+bytecode. All **12** packets (17,515,586B) and sidecar receipts are published
+with server SHA256 verification.
+
 ## R135: retire historical temporary state at each lexical traversal
 
 Update base: `6f009e8db6b02c5aa5d4c182d009dfdb560b0bc2`.
