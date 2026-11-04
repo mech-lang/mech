@@ -13187,6 +13187,28 @@
       "archive_publication": "published; all archive and sidecar server SHA-256 digests verified",
       "before_compiler_source": "ccb9aab277081555385e37b02d824d0c5ef3db3b",
       "qualified_compiler": "11f0ea49d2ba577bf18b563a566f325ac7957c7f"
+    },
+    "131": {
+      "base": "27e7cc4c4c51370d5beb6473a2a9ff6a39df1b0b",
+      "production": "e79a6272aff4a06ebf5fb3fa3dc8f78be23c363a",
+      "compiler_source": "e79a6272aff4a06ebf5fb3fa3dc8f78be23c363a",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "eight-primary",
+          "source_revision": "e79a6272aff4a06ebf5fb3fa3dc8f78be23c363a",
+          "asset": "r131-eight-primary-3a55ad0b629f.tar.gz",
+          "sha256": "3a55ad0b629f1143b73e784a21ac8740a67019e4f263d31f78cdb70e493c7880",
+          "manifest_sha256": "dfb2fe08f5c356b2d970dec9950219ad2b1da88d281cc5bcbf586e883562d33f",
+          "bytes": 245643,
+          "files": 59,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-failure-snapshot-round131-20261104/archives/r131-eight-primary-3a55ad0b629f.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
