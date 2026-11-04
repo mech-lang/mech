@@ -5,6 +5,8 @@ pub(super) fn emit(
     b: &mut FunctionBuilder<'_>,
     options: crate::native_artifact::codegen::options::OptimizationOptions,
     words: &Words,
+    code: CodePlan<'_>,
+    registered: &BTreeSet<usize>,
     region: &crate::native_artifact::program::prepare::tail::Region,
     proof: &Proof,
     site: usize,
@@ -14,9 +16,9 @@ pub(super) fn emit(
     ordinary: &[Option<Block>],
     error: Block,
     boundaries: &mut BTreeSet<Block>,
-) -> Result<(), NativeCompileError> {
+) -> Result<Option<usize>, NativeCompileError> {
     let Some(phase) = proof.phase.as_ref().filter(|phase| phase.checked_children) else {
-        return Ok(());
+        return Ok(None);
     };
     let Some(debit) = phase
         .loops
@@ -24,7 +26,7 @@ pub(super) fn emit(
         .skip(1)
         .find(|debit| debit.initialize == site || debit.header == site)
     else {
-        return Ok(());
+        return Ok(None);
     };
     let shadow = region
         .shadow
@@ -61,7 +63,22 @@ pub(super) fn emit(
     boundaries.insert(cold);
     b.ins().brif(enough, funded, &[], cold, &[]);
     b.switch_to_block(cold);
-    words.spill_all(b, locals)?;
+    let exit = proof
+        .exits
+        .iter()
+        .find(|exit| exit.to == site)
+        .ok_or_else(|| backend("child fuel snapshot lacks its exact continuation"))?;
+    let spill_words = snapshots::spill(
+        b,
+        words,
+        locals,
+        code,
+        region,
+        7,
+        Some(site),
+        &exit.values,
+        registered,
+    )?;
     set_origin(b, frame, site as u64);
     let origin = b.ins().iconst(types::I64, site as i64);
     tail::leave_at(
@@ -109,5 +126,5 @@ pub(super) fn emit(
         let zero = b.ins().iconst(types::I64, 0);
         words.write(b, first, zero);
     }
-    Ok(())
+    Ok(Some(spill_words))
 }

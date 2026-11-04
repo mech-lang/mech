@@ -61,9 +61,17 @@ pub(in crate::native_artifact) struct Exit {
     pub to: usize,
     pub frames: Vec<u32>,
     pub aliases: Vec<(u32, usize)>,
+    /// Values read by this exact continuation before a new definition.
+    pub values: Vec<u32>,
     /// All live fields have been exported, and the old root visit is dead.
     pub retire_carrier: bool,
     pub kind: ExitKind,
+}
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(in crate::native_artifact) struct BoundaryValues {
+    pub header: Vec<u32>,
+    pub exit: Vec<u32>,
 }
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -80,6 +88,7 @@ pub(in crate::native_artifact) struct Plan {
     pub exits: Vec<Exit>,
     /// Source-local values that cannot observe their previous root traversal.
     pub fresh_values: Vec<u32>,
+    pub boundary_values: BoundaryValues,
 }
 impl Plan {
     /// Only current input lanes cross an initial entry. Internal frame lanes

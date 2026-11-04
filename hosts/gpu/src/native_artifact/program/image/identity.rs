@@ -308,7 +308,8 @@ fn selected_template(
 // bounds-error snapshots to exact settlement inputs and current call operands.
 // IR163 binds total unsigned pointwise CFGs to admitted collection views.
 // IR164 reconstructs fresh private SSA values at each lexical root traversal.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 164;
+// IR165 reconstructs exact current consumer values for every numeric exit family.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 165;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
