@@ -15207,6 +15207,17 @@
           "files": 68,
           "publication": "local-only; this exact new packet is not yet submitted for external publication",
           "local_archive": "/private/tmp/mech-unsigned-guards-round138-20261104/archives/r138-random-256-primary-9598d37ab98a.tar.gz"
+        },
+        {
+          "event": "scalar-controls",
+          "source_revision": "f04df6c76ac2a38506becf76a980533e7954b146",
+          "asset": "r138-scalar-controls-942fab9ff08a.tar.gz",
+          "sha256": "942fab9ff08a8f70fece7feaed541b6c0c0bad2034f2e222f9ba7602126243fb",
+          "manifest_sha256": "2277d403adc22960b26442c61399e2551ca417e28fed2e0e5306e18710347928",
+          "bytes": 76968,
+          "files": 114,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-unsigned-guards-round138-20261104/archives/r138-scalar-controls-942fab9ff08a.tar.gz"
         }
       ],
       "release_tag": "evidence-native-compression-experiments-2",
