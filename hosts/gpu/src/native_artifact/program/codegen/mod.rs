@@ -38,9 +38,9 @@ pub(in crate::native_artifact) mod window;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod numeric_segments;
 #[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) mod numeric_words;
-#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod numeric_tree;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod numeric_words;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod ordinary_helpers;
 #[cfg(feature = "canonical-native-program")]
@@ -48,3 +48,6 @@ pub(in crate::native_artifact) mod readonly_numeric;
 
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod utf8_lookup;
+
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod constant_fill;

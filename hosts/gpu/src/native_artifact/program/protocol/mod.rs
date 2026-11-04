@@ -48,6 +48,8 @@ pub(in crate::native_artifact) enum GlobalHelper {
     BorrowedRecordMapRead,
     Utf8ReadPrepare,
     Utf8ReadFinish,
+    UniformFillPrepare,
+    UniformFillFinish,
 }
 impl GlobalHelper {
     // Decoding classifies only. Site, phase, lane, admission and cursor checks
@@ -93,6 +95,8 @@ impl GlobalHelper {
             value if value == u64::MAX - 34 => Self::BorrowedRecordMapRead,
             value if value == u64::MAX - 35 => Self::Utf8ReadPrepare,
             value if value == u64::MAX - 36 => Self::Utf8ReadFinish,
+            value if value == u64::MAX - 37 => Self::UniformFillPrepare,
+            value if value == u64::MAX - 38 => Self::UniformFillFinish,
             value => Self::Output(OutputIndex(value - 3)),
         }
     }
@@ -138,6 +142,8 @@ impl GlobalHelper {
             Self::BorrowedRecordMapRead => u64::MAX - 34,
             Self::Utf8ReadPrepare => u64::MAX - 35,
             Self::Utf8ReadFinish => u64::MAX - 36,
+            Self::UniformFillPrepare => u64::MAX - 37,
+            Self::UniformFillFinish => u64::MAX - 38,
         }
     }
     #[cfg(feature = "canonical-native-program")]

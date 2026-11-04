@@ -17,8 +17,8 @@ mod multiple_children;
 mod named_managed_projections;
 mod nested_scalar_array;
 mod numeric_bindings;
-mod numeric_tree;
 mod numeric_induction;
+mod numeric_tree;
 mod observe;
 mod pack;
 mod record_lookup;
@@ -27,9 +27,9 @@ mod retained_compound_map;
 mod scalar_child;
 mod schema_key;
 mod tagged_map_carrier;
-mod wide_scalar_array;
-mod utf8_reads;
 mod tuple_capture;
+mod utf8_reads;
+mod wide_scalar_array;
 
 /// Retain direct coverage of the independently proved around-child path. A
 /// complete tree normally consumes these source sites before the pieces run;
@@ -79,10 +79,10 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                106
+                107
             );
-            // Policy106 reprices selected String/Map WORK only. This numeric
-            // fixture has no UTF8 region, so the policy105 decomposition below
+            // Policy107 adds native uniform collection WORK. This numeric
+            // fixture has no collection, so the policy105 decomposition below
             // remains exact and independently checked.
             // The policy104 checkpoint for this exact fixture was 88,531,834.
             // Emission ablation preserves the new tree's independently checked
@@ -495,3 +495,5 @@ fn composition_native_parent_resumes_after_an_ordinary_empty_child() {
         );
     }
 }
+
+mod uniform_fill;

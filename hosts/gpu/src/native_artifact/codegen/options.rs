@@ -30,6 +30,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     /// ablate only their emission to exercise the independently proved smaller
     /// parent pieces and leaf loans retained on the ordinary fallback route.
     NumericTrees,
+    /// Emission-only ablation retains the ordinary collection error path.
+    UniformWords,
     DisjointState,
     NontrappingHomes,
 }

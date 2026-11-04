@@ -51,7 +51,7 @@ fn fixed<T: Copy>(len: usize, value: T) -> Option<Box<[T]>> {
     }
     Some(unsafe { out.assume_init() })
 }
-fn boxed<T>(value: T) -> Option<Box<T>> {
+pub(super) fn boxed<T>(value: T) -> Option<Box<T>> {
     let layout = std::alloc::Layout::new::<T>();
     if layout.size() == 0 {
         return Some(Box::new(value));

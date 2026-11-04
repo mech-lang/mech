@@ -1006,6 +1006,9 @@ impl<'plan> CfgDefinition<'plan> {
                 && let NativeIterationTerminator::Header {
                     iteration, exit, ..
                 } = block.terminator()
+                && controls.enabled(
+                    crate::native_artifact::codegen::options::OptimizationPass::UniformWords,
+                )
                 && let Some(region) = prepared
                     .metadata()
                     .uniform_word_collections

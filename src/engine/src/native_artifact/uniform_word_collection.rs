@@ -8,16 +8,20 @@ use crate::native_artifact::{
 };
 use std::collections::BTreeSet;
 
-/// A precise pure region: `yield | i <- 0..=limit, i < limit`. Both outer
-/// words are already defined on every entry. This neither admits allocation
-/// nor waives the original selected range's preparation/error boundary.
+/// A pure uniform unsigned range collection. It either yields once for every
+/// selected range element, or retains the established `0..=limit, i < limit`
+/// prefix form. All outer words are already current before source preparation.
+/// This supplies no allocation, visit or range-error authority.
 #[derive(Clone, Debug, serde::Serialize)]
 pub struct NativeUniformWordCollection {
     collection: u32,
     iteration: u32,
     header: u32,
     word: Value,
+    start: Value,
     limit: Value,
+    inclusive: bool,
+    filtered: bool,
     kind: NativeScalarKind,
 }
 impl NativeUniformWordCollection {
@@ -32,6 +36,15 @@ impl NativeUniformWordCollection {
     }
     pub const fn word(&self) -> Value {
         self.word
+    }
+    pub const fn start(&self) -> Value {
+        self.start
+    }
+    pub const fn inclusive(&self) -> bool {
+        self.inclusive
+    }
+    pub const fn filtered(&self) -> bool {
+        self.filtered
     }
     pub const fn limit(&self) -> Value {
         self.limit
@@ -67,7 +80,11 @@ impl NativeProgramFacts<'_> {
             feature = "map_ops",
             feature = "sequence_buffers"
         ))]
-        let inclusive_range = cursor.template().primitive().name() == "range/inclusive";
+        let range_kind = match cursor.template().primitive().name() {
+            "range/inclusive" => Some(true),
+            "range/exclusive" => Some(false),
+            _ => None,
+        };
         // The base profile has no typed selected-library vocabulary. Decline
         // this optional proof rather than infer factory semantics from a name.
         #[cfg(not(any(
@@ -75,10 +92,8 @@ impl NativeProgramFacts<'_> {
             feature = "map_ops",
             feature = "sequence_buffers"
         )))]
-        let inclusive_range = false;
-        if !inclusive_range {
-            return None;
-        }
+        let range_kind: Option<bool> = None;
+        let inclusive = range_kind?;
         let plan = self.plan();
         let definition = plan.collections().get(generator.collection() as usize)?;
         if definition.generators() != [index as u32]
@@ -87,68 +102,96 @@ impl NativeProgramFacts<'_> {
             return None;
         }
         let [start, limit] = *cursor.operands();
-        if !plan.constants().iter().any(|constant| {
-            constant.value() == start
-                && matches!(constant.constant().data(), mech_core::ValueData::U64(0))
-        }) || !self.available_before(limit, generator.initialize())
+        if !self.available_before(start, generator.initialize())
+            || !self.available_before(limit, generator.initialize())
         {
             return None;
         }
-        let element = generator.element()?;
         let mut sites = BTreeSet::new();
-        let mut site = generator.body();
-        let mut saw_element = false;
-        let (condition, yes, no) = loop {
-            if !sites.insert(site) {
+        let complete = complete_body(
+            plan,
+            generator.body(),
+            generator.latch(),
+            index as u32,
+            generator.collection(),
+            &mut sites,
+        );
+        let filtered = complete.is_none();
+        let mut condition = None;
+        let word = if let Some(word) = complete {
+            word
+        } else {
+            sites.clear();
+            if !inclusive
+                || !plan.constants().iter().any(|constant| {
+                    constant.value() == start
+                        && matches!(constant.constant().data(), mech_core::ValueData::U64(0))
+                })
+            {
                 return None;
             }
-            let block = plan.blocks().get(site as usize)?;
-            if block.iteration() != Some(index as u32) {
+            let element = generator.element()?;
+            let mut site = generator.body();
+            let mut saw_element = false;
+            let (tested, yes, no) = loop {
+                if !sites.insert(site) {
+                    return None;
+                }
+                let block = plan.blocks().get(site as usize)?;
+                if block.iteration() != Some(index as u32) {
+                    return None;
+                }
+                match (block.action(), block.terminator()) {
+                    (Action::Scalar(Scalar::None), Terminator::Scalar(Term::Jump(next))) => {
+                        site = next
+                    }
+                    (
+                        Action::CollectionElement { iteration },
+                        Terminator::Scalar(Term::Jump(next)),
+                    ) if *iteration == index as u32 && !saw_element => {
+                        saw_element = true;
+                        site = next;
+                    }
+                    (
+                        Action::Scalar(Scalar::Primitive {
+                            op: NativeScalarOp::U64Lt,
+                            operands,
+                            output,
+                        }),
+                        Terminator::Scalar(Term::Branch { condition, yes, no }),
+                    ) if saw_element
+                        && operands.as_ref() == [element, limit]
+                        && *output == condition =>
+                    {
+                        break (condition, yes, no);
+                    }
+                    _ => return None,
+                }
+            };
+            let word = arm(
+                plan,
+                yes,
+                generator.latch(),
+                index as u32,
+                generator.collection(),
+                &mut sites,
+            )??;
+            if arm(
+                plan,
+                no,
+                generator.latch(),
+                index as u32,
+                generator.collection(),
+                &mut sites,
+            )?
+            .is_some()
+            {
                 return None;
             }
-            match (block.action(), block.terminator()) {
-                (Action::Scalar(Scalar::None), Terminator::Scalar(Term::Jump(next))) => site = next,
-                (Action::CollectionElement { iteration }, Terminator::Scalar(Term::Jump(next)))
-                    if *iteration == index as u32 && !saw_element =>
-                {
-                    saw_element = true;
-                    site = next;
-                }
-                (
-                    Action::Scalar(Scalar::Primitive {
-                        op: NativeScalarOp::U64Lt,
-                        operands,
-                        output,
-                    }),
-                    Terminator::Scalar(Term::Branch { condition, yes, no }),
-                ) if saw_element
-                    && operands.as_ref() == [element, limit]
-                    && *output == condition =>
-                {
-                    break (condition, yes, no);
-                }
-                _ => return None,
-            }
+            condition = Some(tested);
+            word
         };
-        let word = arm(
-            plan,
-            yes,
-            generator.latch(),
-            index as u32,
-            generator.collection(),
-            &mut sites,
-        )??;
-        if arm(
-            plan,
-            no,
-            generator.latch(),
-            index as u32,
-            generator.collection(),
-            &mut sites,
-        )?
-        .is_some()
-            || !self.available_before(word, generator.initialize())
-        {
+        if !self.available_before(word, generator.initialize()) {
             return None;
         }
         let latch = plan.blocks().get(generator.latch() as usize)?;
@@ -160,13 +203,30 @@ impl NativeProgramFacts<'_> {
         }
         // No skipped body definition can feed a later outer operation,
         // collection source, lexical effect or published output.
-        for value in [element, condition] {
+        for value in generator.element().into_iter().chain(condition) {
             if self.read_roles(value).ok()?.iter().any(|read| {
                 !matches!(read,
                     Read::Action(site) | Read::Terminator(site) if sites.contains(site))
             }) {
                 return None;
             }
+        }
+        // The selected body contains every owned visit. No activation,
+        // additional entry, hidden effect or unvisited owned block is omitted.
+        for (site, block) in plan.blocks().iter().enumerate() {
+            if block.iteration() == Some(index as u32)
+                && site as u32 != generator.initialize()
+                && site as u32 != generator.header()
+                && !sites.contains(&(site as u32))
+            {
+                return None;
+            }
+        }
+        if sites
+            .iter()
+            .any(|&site| plan.activation_boundary() == Some(site))
+        {
+            return None;
         }
         let kind = plan.values().get(word.get() as usize)?.scalar_kind()?;
         let body = plan
@@ -198,7 +258,10 @@ impl NativeProgramFacts<'_> {
             iteration: index as u32,
             header: generator.header(),
             word,
+            start,
             limit,
+            inclusive,
+            filtered,
             kind,
         })
     }
@@ -245,4 +308,46 @@ fn arm(
         site = next;
     }
     Some(word)
+}
+
+// Full source order is irrelevant only because the source element is unused
+// by the yielded word, and the exhaustive outer-use inventory is checked by
+// the caller. Preserve exactly one source visit and one push per iteration.
+fn complete_body(
+    plan: &Plan,
+    mut site: u32,
+    latch: u32,
+    iteration: u32,
+    collection: u32,
+    sites: &mut BTreeSet<u32>,
+) -> Option<Value> {
+    let mut element = false;
+    let mut word = None;
+    while site != latch {
+        if !sites.insert(site) {
+            return None;
+        }
+        let block = plan.blocks().get(site as usize)?;
+        if block.iteration() != Some(iteration) {
+            return None;
+        }
+        match block.action() {
+            Action::Scalar(Scalar::None) => {}
+            Action::CollectionElement { iteration: actual }
+                if *actual == iteration && !element && word.is_none() =>
+            {
+                element = true
+            }
+            Action::CollectionPush {
+                collection: actual,
+                value,
+            } if *actual == collection && element && word.is_none() => word = Some(*value),
+            _ => return None,
+        }
+        let Terminator::Scalar(Term::Jump(next)) = block.terminator() else {
+            return None;
+        };
+        site = next;
+    }
+    word
 }

@@ -16,6 +16,7 @@ mod numeric_tree;
 mod numeric_writes;
 mod readonly_numeric;
 mod selected_calls;
+mod uniform_fill;
 mod unsigned_buffers;
 mod utf8_read;
 mod word_reads;
@@ -462,6 +463,15 @@ impl Invocation<'_, '_, '_> {
         {
             return Err(invalid("helper while native String lookup loan is active"));
         }
+        if self
+            .state
+            .collections
+            .as_ref()
+            .is_some_and(|state| state.has_uniform_fill())
+            && tag != GlobalHelper::UniformFillFinish
+        {
+            return Err(invalid("helper while native fill loan is active"));
+        }
         if tag == GlobalHelper::MapOwnerConstructorCheck {
             return self.retained_constructor_check(site, args);
         }
@@ -617,6 +627,11 @@ impl Invocation<'_, '_, '_> {
             GlobalHelper::Utf8ReadPrepare | GlobalHelper::Utf8ReadFinish
         ) {
             self.utf8_read_helper(site, tag, args)
+        } else if matches!(
+            tag,
+            GlobalHelper::UniformFillPrepare | GlobalHelper::UniformFillFinish
+        ) {
+            self.uniform_fill_helper(site, tag, args)
         } else if tag == GlobalHelper::Collection {
             if self.state.consumed || args[2] != 0 {
                 return Err(invalid("duplicate collection helper"));
@@ -639,6 +654,14 @@ impl Invocation<'_, '_, '_> {
             return Err(invalid(
                 "source visit while native String lookup loan is active",
             ));
+        }
+        if self
+            .state
+            .collections
+            .as_ref()
+            .is_some_and(|state| state.has_uniform_fill())
+        {
+            return Err(invalid("source visit while native fill loan is active"));
         }
         if self
             .prefix

@@ -263,6 +263,10 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
         .into_iter()
         .map(Into::into)
         .collect::<Box<[_]>>();
+    let uniform_word_collections = plan
+        .facts()
+        .uniform_unsigned_collections()
+        .into_boxed_slice();
     let base_visits = native::iteration_abi::control_visits(
         plan.blocks(),
         plan.iterations().iter().map(Into::into),
@@ -281,6 +285,16 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
             .ok_or("native UTF8 lookup header price overflows")?;
         if visits.get(site).is_none_or(|visit| visit.work < required) {
             return Err("native UTF8 lookup header template is not funded".into());
+        }
+    }
+    for region in &uniform_word_collections {
+        let site = region.header() as usize;
+        let required = base_visits
+            .get(site)
+            .ok_or("native fill header outside source visits")?
+            .work;
+        if visits.get(site).is_none_or(|visit| visit.work < required) {
+            return Err("native fill header template is not funded".into());
         }
     }
     let admission = native::program::prepare::map_admission::Layout::derive(
@@ -310,10 +324,7 @@ pub(in crate::native_artifact::program::image::decode) fn decode(
     if selected_joins.maps != w.selected_joins.maps {
         return Err("selected-join map proof differs from its complete source uses".into());
     }
-    let uniform_word_collections = plan
-        .facts()
-        .uniform_unsigned_collections()
-        .into_boxed_slice();
+
     let unsigned_buffer_calls = plan.unsigned_buffer_calls().into_boxed_slice();
     let call_routes = native::program::prepare::call_routes::derive(
         &plan,
