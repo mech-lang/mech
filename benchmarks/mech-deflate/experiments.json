@@ -15513,6 +15513,28 @@
         "Independent image-proof preparation cost",
         "Continue defined compression input/size regression matrix"
       ]
+    },
+    "139": {
+      "base": "cd13ae3ad786c82cd6fdeff65ec1422ab888a7f9",
+      "production": "f04df6c76ac2a38506becf76a980533e7954b146",
+      "compiler_source": "f04df6c76ac2a38506becf76a980533e7954b146",
+      "decision": "under measurement",
+      "events": [
+        {
+          "event": "initial",
+          "source_revision": "f04df6c76ac2a38506becf76a980533e7954b146",
+          "asset": "r139-initial-d7a0b7615387.tar.gz",
+          "sha256": "d7a0b7615387dd714d437c588259d2903fdc8259b38e928ffd1418e518ca5b59",
+          "manifest_sha256": "93de4e723e82d7adc23f333880926c305470e76c334af1fb99e599d8b3ba9fdd",
+          "bytes": 157899,
+          "files": 27,
+          "publication": "local-only; this exact new packet is not yet submitted for external publication",
+          "local_archive": "/private/tmp/mech-compression-matrix-round139-20261104/archives/r139-initial-d7a0b7615387.tar.gz"
+        }
+      ],
+      "release_tag": "evidence-native-compression-experiments-2",
+      "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-experiments-2",
+      "archive_publication": "local-only at measurement; external publication pending"
     }
   },
   "repository": "mech-lang/mech",
